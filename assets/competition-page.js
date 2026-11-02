@@ -382,7 +382,6 @@
       ["gd","standingsDifference","GD"],["pts","standingsPoints","Pts"]
     ];
     const formKeys = {W:"standingsDemoFormWin",D:"standingsDemoFormDraw",L:"standingsDemoFormLoss"};
-    const formLetterKeys = {W:"standingsDemoWinLetter",D:"standingsDemoDrawLetter",L:"standingsDemoLossLetter"};
     const element = (tag, cls = "", value = "") => {
       const el = document.createElement(tag);
       el.className = cls;
@@ -407,6 +406,7 @@
         throw Error("Incomplete mobile standings model");
       const identities = new Set();
       const clubs = new Map(rows.map(row => [definition.category==='international'?window.faCompetitionRules.clubKey(row.club):row.club?.clubId,row.club]));
+      const formEntries=[];
       const items = rows.map((row,index) => {
         const club = row.club;
         const id = club?.countryId + "-" + club?.clubId;
@@ -435,18 +435,14 @@
         const form = element("span","app-world-mobile-form");
         form.appendChild(translation("standingsMobileRecent","Recent form"));
         if (!row.recent.length) {
-          form.appendChild(element("span","app-world-mobile-no-form","—"));
+          form.appendChild(element("span","app-world-mobile-no-form",""));
         } else {
           for (const game of row.recent) {
             if (!Object.hasOwn(formKeys,game.result) ||
                 !Number.isInteger(game.round) || !clubs.has(game.homeId) ||
                 !clubs.has(game.awayId)) throw Error("Invalid mobile fixture metadata");
-            const mark = element("span","app-world-form-dot app-world-form-" +
-              game.result.toLowerCase() + (row.recent.indexOf(game) === 0 ? " app-world-form-last" : ""),game.result);
-            mark.dataset.appI18n = formLetterKeys[game.result];
-            mark.setAttribute("aria-hidden","true");
-            form.append(mark,translation(formKeys[game.result],
-              game.result === "W" ? "Win" : game.result === "D" ? "Draw" : "Loss"));
+            const entry={...createFormMark(game,{latest:row.recent.indexOf(game)===0,mobile:true}),ownId:definition.category==='international'?window.faCompetitionRules.clubKey(club):club.clubId,club};
+            formEntries.push(entry);form.append(entry.button,translation(formKeys[game.result],game.result==='W'?'Win':game.result==='D'?'Draw':'Loss'));
           }
         }
         const ptsLabel = translation("standingsPoints","Pts ");
@@ -473,7 +469,7 @@
         return li;
       });
       if (identities.size !== definition.capacity) throw Error("Invalid mobile standings size");
-      return (incremental=false) => {
+      const commit=(incremental=false) => {
         if(incremental && list.children.length===items.length){
           // Reuse club cards, expanded details and crest hosts across DEV progress changes.
           const existing=new Map([...list.children].map(item=>[item.dataset.worldClub,item]));
@@ -504,6 +500,7 @@
         updateVisibility();
         window.faAppRenderLanguage?.();
       };
+      commit.entries=formEntries;return commit;
     }
     updateVisibility();
     return Object.freeze({prepare});
@@ -571,6 +568,42 @@
     return tr;
   }
 
+  // Canonical standings presentation for both authoritative and protected Debug data.
+  function updateFormMark(entry,game,{latest=false}={}){
+    if(!game||!Object.hasOwn(formLabels,game.result)||!Number.isInteger(game.round))throw Error('Invalid recent-form game');
+    const [key,label,letter]=formLabels[game.result],{button,glyph,mobile}=entry;
+    button.className='app-world-form-dot'+(mobile?'':' app-world-form-control')+' app-world-form-'+game.result.toLowerCase()+(latest?' app-world-form-last':'');
+    button.dataset.appAria=latest?key+'Latest':key;button.setAttribute('aria-label',label+(latest?' — latest match':''));
+    glyph.dataset.appI18n=letter;glyph.textContent=game.result;
+    entry.game=game;entry.latest=latest;return entry;
+  }
+  function createFormMark(game,{latest=false,mobile=false}={}){
+    const button=document.createElement(mobile?'span':'button');
+    if(mobile){button.tabIndex=0;button.setAttribute('role','button')}else button.type='button';
+    button.setAttribute('aria-haspopup','true');
+    const glyph=mobile?button:document.createElement('span');
+    if(!mobile){glyph.className='app-world-form-glyph';button.appendChild(glyph)}
+    return updateFormMark({button,glyph,mobile},game,{latest});
+  }
+  function bindFormKeyboard(entry,open,listen){
+    if(entry.mobile)listen(entry.button,'keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();open()}});
+  }
+  function createSharedStandingsRow(row,position){
+    const element=createStandingsRow(row.club),entries=[];
+    if(row.played===null)return {element,entries};
+    decorateStanding(element,position);
+    const values=[position,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>k==='gd'&&row[k]>0?'+'+row[k]:row[k])];
+    values.forEach((value,i)=>{if(i!==1){element.children[i].className='app-world-stat-value';element.children[i].textContent=String(value)}});
+    const strip=document.createElement('span');strip.className='app-world-form-strip';
+    for(const [index,game] of row.recent.entries()){
+      const entry={...createFormMark(game,{latest:index===0}),ownId:definition.category==='international'?window.faCompetitionRules.clubKey(row.club):row.club.clubId,club:row.club};
+      entries.push(entry);strip.appendChild(entry.button);
+    }
+    element.children[10].replaceChildren(strip);
+    return {element,entries};
+  }
+  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard});
+
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
     let slots,scores,initialSlots,bracketEmpty,initialHomeLabels;
@@ -580,8 +613,9 @@
       initialHomeLabels=slots.map(slot=>{const label=slot.parentElement?.querySelector('.app-knockout-home');return label?{label,key:label.dataset.appI18n,text:label.textContent}:null});
     };capture();
     let graph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
-    let suppliedOwned=false;
+    let suppliedOwned=false,cleanupForm=()=>{};
     const empty=()=>{
+      cleanupForm();cleanupForm=()=>{};
       if(definition.category==='domestic'&&!(activeDebugSeason===null&&(window.faCompetitionContext?.selectedSeason>1||authoritativeWorld?.seasonNumber>0))){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const desktop=division.clubs.map(club=>createStandingsRow(club));reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);mobile.prepare(rows)();window.faPostseason?.prepare(null)();suppliedOwned=false;return;
@@ -618,11 +652,9 @@
           return {...row,club,position:index+1,recent:row.recent||[]};
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const commitMobile=mobile.prepare(rows);
-        const desktop=rows.map((row,index)=>{
-          const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
-          if(supplied){const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)})}
-          return tr;
-        });
+        const builtRows=rows.map((row,index)=>createSharedStandingsRow(row,supplied?index+1:null));
+        const desktop=builtRows.map(row=>row.element);
+        const formEntries=[...builtRows.flatMap(row=>row.entries),...(commitMobile.entries||[])];
         // Resolving a referenced winner requires a complete original table and an explicit completed tie.
         const qualified=Boolean(supplied&&rows.every(row=>row.played===roundCount));
         const completed=(data.results||[]).filter(result=>result?.tieId||result?.id);
@@ -647,7 +679,8 @@
           const [id,side]=slot.dataset.postseasonConfigSlot.split(':');return {slot,club:resolved.get(id)?.[Number(side)]||null};
         });
         const commitDomestic=definition.category==='domestic'?window.faPostseason?.prepare(rows):null;
-        reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);commitMobile();commitDomestic?.();suppliedOwned=true;resetBracket();
+        cleanupForm();reuseCrestHosts(tbody,desktop);tbody.replaceChildren(...desktop);commitMobile();commitDomestic?.();suppliedOwned=true;resetBracket();
+        cleanupForm=attachFormTooltips(new Map(rows.map(row=>[definition.category==='international'?rules.clubKey(row.club):row.club.clubId,row.club])),formEntries)||(()=>{});
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
           const name=document.createElement('a');name.className='app-world-standing-club-link';name.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});name.textContent=club.primaryName;
@@ -676,8 +709,10 @@
 
   // Form tooltips are regression-tested against isolated Node fixtures.
   // A fixed, document-level tooltip stays visible above both nested scroll regions.
-  function attachFormTooltips(clubs) {
-    if (!demoFormTriggers.length) return;
+  function attachFormTooltips(clubs,entries=demoFormTriggers) {
+    if (!entries.length) return;
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    const listen=(target,type,fn,options={})=>target?.addEventListener(type,fn,controller?{...options,signal:controller.signal}:options);
     const tooltip = document.createElement("div");
     tooltip.id = "app-world-form-tooltip";
     tooltip.className = "app-world-form-tooltip";
@@ -710,7 +745,7 @@
     const opponents = [...clubs.values()];
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
     let active = null, wasOpenOnPress = false;
-    tooltip.addEventListener("animationend",event => {
+    listen(tooltip,"animationend",event => {
       if (event.target === tooltip && event.animationName === "app-world-tooltip-out" && !active) {
         tooltip.hidden = true;
         tooltip.className = "app-world-form-tooltip";
@@ -755,6 +790,13 @@
     }
     function open(entry) {
       if (active && active !== entry.button) active.removeAttribute("aria-describedby");
+      if(entry.game){
+        const game=entry.game,homeClub=clubs.get(game.homeId),awayClub=clubs.get(game.awayId);
+        if(!homeClub||!awayClub||!Number.isInteger(game.homeGoals)||!Number.isInteger(game.awayGoals))return;
+        homeName.textContent=homeClub.primaryName;awayName.textContent=awayClub.primaryName;
+        score.textContent=game.homeGoals+' – '+game.awayGoals;number.textContent=String(game.round);
+        const isHome=game.homeId===entry.ownId;home.hidden=!isHome;away.hidden=isHome;
+      }else{
       const others = opponents.filter(c => c.clubId !== entry.club.clubId);
       const opponent = others[(entry.club.clubId + entry.round*3) % others.length];
       const isHome = (entry.club.clubId + entry.round) % 2 === 0;
@@ -766,6 +808,7 @@
       number.textContent = String(entry.round);
       home.hidden = !isHome;
       away.hidden = isHome;
+      }
       active = entry.button;
       active.setAttribute("aria-describedby",tooltip.id);
       tooltip.removeAttribute("aria-hidden");
@@ -773,39 +816,42 @@
       tooltip.hidden = false;
       place();
     }
-    for (const entry of demoFormTriggers) {
+    for (const entry of entries) {
       const button = entry.button;
-      button.addEventListener("pointerenter",event => {
+      bindFormKeyboard(entry,()=>open(entry),listen);
+      listen(button,"pointerenter",event => {
         if (event.pointerType === "mouse" || event.pointerType === "pen") open(entry);
       });
-      button.addEventListener("pointerleave",event => {
+      listen(button,"pointerleave",event => {
         if ((event.pointerType === "mouse" || event.pointerType === "pen") &&
             active === button && document.activeElement !== button) close();
       });
-      button.addEventListener("focus",() => open(entry));
-      button.addEventListener("blur",() => { if (active === button) close(); });
-      button.addEventListener("pointerdown",event => {
+      listen(button,"focus",() => open(entry));
+      listen(button,"blur",() => { if (active === button) close(); });
+      listen(button,"pointerdown",event => {
         wasOpenOnPress = (event.pointerType === "touch" || event.pointerType === "pen") && active === button;
       });
-      button.addEventListener("click",() => {
+      listen(button,"click",event => {
+        if(entry.mobile){event.preventDefault();event.stopPropagation()}
         if (wasOpenOnPress && active === button) close();
         else open(entry);
         wasOpenOnPress = false;
       });
     }
-    document.addEventListener("pointerdown",event => {
+    listen(document,"pointerdown",event => {
       if (active && event.target !== active) close();
     });
-    document.addEventListener("keydown",event => {
+    listen(document,"keydown",event => {
       if (event.key === "Escape" && active) {
         close();
         event.stopPropagation();
       }
     });
-    window.addEventListener("resize",place);
-    window.addEventListener("scroll",place,{passive:true});
-    document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
-    document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
+    listen(window,"resize",place);
+    listen(window,"scroll",place,{passive:true});
+    listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
+    listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    return ()=>{close();controller?.abort();tooltip.remove?.();};
   }
   function loadScript(url,asModule=false) {
     return new Promise((resolve,reject) => {

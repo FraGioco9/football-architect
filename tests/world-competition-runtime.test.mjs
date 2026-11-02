@@ -721,3 +721,52 @@ test('PAGE-LOAD: a committed empty source replaces retained DEV rows even withou
  r.window.faCompetitionContextApi.clearSeasonData({committed:true});
  assert.ok(!r.fields.get('app-standings-body').children.includes(retained));
 });
+
+test('STANDINGS-SHARED: API and Debug use one desktop row/form builder with latest result first',async()=>{
+ const division=manifest.divisions[0],r=await simulate({division,devSeason:1});
+ const rows=createPreviewStandings(division,8,1).rows;
+ assert.ok(r.window.faStandingsView,'shared presentation API');
+ const built=r.window.faStandingsView.createRow(rows[0],1);
+ assert.equal(built.element.children.length,11);
+ assert.equal(built.entries.length,5);
+ assert.deepEqual(Array.from(built.entries,entry=>entry.game.result),rows[0].recent.map(game=>game.result));
+ assert.equal(built.entries[0].latest,true);
+ const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:[],results:[],statistics:{standings:rows},status:'partial'};
+ // Public consumers accept the same supplied row model as the protected Debug producer.
+ assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true);
+ const rendered=r.fields.get('app-standings-body').children;
+ assert.equal(rendered[0].children[10].children[0].children.length,5);
+ const control=rendered[0].children[10].children[0].children[0];
+ assert.equal(control.dataset.appI18n,undefined,'glyph span owns translation');
+ control.emit('focus');
+ const tooltip=r.body.children.find(node=>node.attrs.role==='tooltip');assert.ok(tooltip);
+ const match=rows[0].recent[0];
+ assert.equal(tooltip.children[1].children[1].textContent,match.homeGoals+' – '+match.awayGoals,'tooltip shows actual scores');
+ r.document.emit('keydown',{key:'Escape',stopPropagation(){}});assert.equal(tooltip.attrs['aria-hidden'],'true');
+});
+
+test('STANDINGS-SHARED: refreshing a form mark updates its translation key and latest state',async()=>{
+ const division=manifest.divisions[0],r=await simulate({division,devSeason:1});
+ const game=createPreviewStandings(division,8,1).rows[0].recent[0];
+ const view=r.window.faStandingsView,entry=view.createFormMark({...game,result:'W'},{latest:true});
+ assert.equal(entry.glyph.dataset.appI18n,'standingsDemoWinLetter');
+ view.updateFormMark(entry,{...game,result:'L'},{latest:false});
+ assert.equal(entry.glyph.dataset.appI18n,'standingsDemoLossLetter');assert.equal(entry.glyph.textContent,'L');
+ assert.ok(!entry.button.className.includes('app-world-form-last'));
+});
+
+test('STANDINGS-SHARED: empty Form has no dash that can survive a later data update',async()=>{
+ const division=manifest.divisions[0],r=await simulate({division,devSeason:1});
+ const row=createPreviewStandings(division,0,1).rows[0];
+ const built=r.window.faStandingsView.createRow(row,1);
+ assert.equal(built.element.children[10].children[0].textContent,'');assert.equal(built.entries.length,0);
+});
+test('STANDINGS-SHARED: mobile Form Enter/Space opens the match without toggling its row',async()=>{
+ const division=manifest.divisions[0],r=await simulate({division,devSeason:1});
+ const game=createPreviewStandings(division,1,1).rows[0].recent[0],view=r.window.faStandingsView;
+ const entry=view.createFormMark(game,{mobile:true});let opened=0,prevented=0,stopped=0;
+ assert.equal(typeof view.bindFormKeyboard,'function');
+ view.bindFormKeyboard(entry,()=>opened++,(target,type,fn)=>target.addEventListener(type,fn));
+ for(const key of ['Enter',' '])entry.button.emit('keydown',{key,preventDefault(){prevented++},stopPropagation(){stopped++}});
+ assert.equal(opened,2);assert.equal(prevented,2);assert.equal(stopped,2);
+});

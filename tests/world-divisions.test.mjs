@@ -192,7 +192,7 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(renderer.includes('tooltip.setAttribute("role","tooltip")'));
  assert.ok(renderer.includes('document.body.appendChild(tooltip)'));
  assert.ok(renderer.includes('active.setAttribute("aria-describedby",tooltip.id)'));
- assert.ok(renderer.includes('attachFormTooltips(clubs)'));
+ assert.ok(renderer.includes('attachFormTooltips(clubs,entries=demoFormTriggers)'));
  assert.ok(renderer.includes('if (event.key === "Escape" && active)'));
  assert.ok(renderer.includes('isLatest ? " app-world-form-last" : ""'));
  assert.ok(renderer.includes("for (let i = form.length - 1; i >= 0; i--)"));
@@ -381,7 +381,7 @@ test("STANDINGS-LINK-01 compact table cells and navigable club names",()=>{
  }
  // Actual compact/mobile hydration is additionally exercised in world-competition-runtime.test.mjs.
  const dev=read("tools/dev-standings-preview-client.mjs");
- assert.ok(dev.includes('clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview"'));
+ assert.ok(dev.includes('window.faStandingsView.createRow(row,position+1)'));
 });
 
 test("CLUB-NAV-02 links competition views to approved club routes and seasons",()=>{

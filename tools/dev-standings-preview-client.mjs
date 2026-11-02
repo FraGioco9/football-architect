@@ -658,44 +658,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     // Construct the entire table detached. Inconsistencies cannot partly alter the UI.
     const fragment = document.createDocumentFragment();
     const entries = [];
-    rows.forEach((r, position) => {
-      const tr = node("tr");
-      tr.dataset.worldClub = r.club.countryId + "-" + r.club.clubId;
-      window.faStandingsOutcomes?.decorate(tr, position + 1);
-      const value = (text, cls = "app-world-stat-value") => {
-        const td = node("td", cls, String(text));
-        tr.appendChild(td);
-        return td;
-      };
-      value(position + 1);
-      const clubCell = node("th", "app-world-standing-club");
-      clubCell.scope = "row";
-      const identity = node("span", "app-world-club-identity");
-      const crest = node("span", "app-world-club-crest-placeholder");
-      crest.dataset.clubCrest = tr.dataset.worldClub;
-      crest.setAttribute("aria-hidden", "true");
-      const clubLink = node("a", "app-world-club-name app-world-standing-club-link", r.club.primaryName);
-      clubLink.href = "/clubs/" + r.club.countryId.toLowerCase() + "/" + r.club.clubId + "/overview";
-      identity.append(crest, clubLink);
-      clubCell.append(identity);
-      tr.append(clubCell);
-      for (const number of [r.played, r.won, r.drawn, r.lost, r.gf, r.ga,
-        r.gd > 0 ? "+" + r.gd : r.gd, r.pts]) value(number);
-      const formCell = node("td");
-      const strip = node("span", "app-world-form-strip");
-      for (const [index, game] of r.recent.entries()) {
-        const button = node("button", "app-world-form-dot app-world-form-control app-world-form-" +
-          game.result.toLowerCase() + (index === 0 ? " app-world-form-last" : ""));
-        button.type = "button";
-        button.setAttribute("aria-haspopup","true");
-        const glyph = node("span","app-world-form-glyph",game.result);
-        button.append(glyph);
-        entries.push({ button, glyph, game, ownId: r.club.clubId, latest: index === 0 });
-        strip.append(button);
-      }
-      formCell.append(strip);
-      tr.append(formCell);
-      fragment.append(tr);
+    if(!window.faStandingsView?.createRow)throw Error('Shared standings presentation unavailable');
+    rows.forEach((row,position)=>{
+      const rendered=window.faStandingsView.createRow(row,position+1);
+      fragment.appendChild(rendered.element);entries.push(...rendered.entries);
     });
     if (entries.length !== competitionModel.profile.capacity*Math.min(5,playedDays) || fragment.childNodes.length !== competitionModel.profile.capacity) {
       throw Error("Incomplete DEV standings rendering");
@@ -866,6 +832,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     });
     function bindFormEntry(entry){
       const btn = entry.button;
+      window.faStandingsView.bindFormKeyboard(entry,()=>open(entry),listen);
       listen(btn,"pointerenter", e => {
         if (e.pointerType === "mouse" || e.pointerType === "pen") open(entry);
       });
@@ -937,12 +904,9 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
         }
         buttons.forEach((button,i)=>{
           const game=row.recent[i];
-          button.className="app-world-form-dot app-world-form-control app-world-form-"+
-            game.result.toLowerCase()+(i===0?" app-world-form-last":"");
           const entry=entries.find(item=>item.button===button);
           if(!entry)throw Error("Missing desktop form entry");
-          entry.game=game;entry.latest=i===0;
-          entry.glyph.textContent=game.result;
+          window.faStandingsView.updateFormMark(entry,game,{latest:i===0});
         });
         tbody.appendChild(tr);
       }

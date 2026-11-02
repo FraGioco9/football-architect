@@ -1159,3 +1159,8 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
  .app-world-standings[data-standings-state="pending"] #app-standings-full{display:none!important}
  .app-world-standings[data-standings-state="pending"] #app-standings-compact{display:block!important}
 }
+
+/* Pending rows reserve logo geometry without drawing a provisional badge or box. */
+.app-world-standings[data-standings-state="pending"] .app-world-club-crest-placeholder,
+.app-world-standings [data-standings-slot] .app-world-club-crest-placeholder{border-color:transparent;background:transparent}
+.app-world-standings [data-standings-slot] .app-world-club-crest-placeholder::before{display:none}

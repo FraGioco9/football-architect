@@ -43,7 +43,7 @@ test('a confirmed empty active season does not substitute catalogue membership',
  const source=read('assets/competition-page.js'),start=source.indexOf('    const empty=()=>{'),end=source.indexOf('    const resetBracket=',start);
  for(const seasonNumber of [0,1]){
   let rendered=[];
-  const sandbox={definition:{category:'domestic'},activeDebugSeason:null,authoritativeWorld:{seasonNumber},window:{faCompetitionContext:{selectedSeason:1}},
+  const sandbox={cleanupForm(){},definition:{category:'domestic'},activeDebugSeason:null,authoritativeWorld:{seasonNumber},window:{faCompetitionContext:{selectedSeason:1}},
    division:{clubs:Array.from({length:16},(_,i)=>({clubId:i+1}))},tbody:{replaceChildren:(...rows)=>rendered=rows},mobile:{prepare:()=>()=>{}},reuseCrestHosts(){},createStandingsRow:club=>({club}),suppliedOwned:false,
    document:{createElement:()=>({dataset:{},appendChild(){}}),getElementById:()=>({replaceChildren(){}})}};
   runInNewContext(source.slice(start,end)+';empty();',sandbox);
@@ -64,4 +64,10 @@ test('loopback HTML serves the visible pending structure before either data sour
    assert.doesNotMatch(response.body,/<style>[^\n]*(?:\.app-world-standings|\.app-world-standing-table|#app-standings-compact-list)[^\n]*visibility:hidden/);
   }
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve))}
+});
+
+test('pending crest slots reserve size without a visible badge or dashed box',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/\[data-standings-slot\] \.app-world-club-crest-placeholder\{border-color:transparent;background:transparent\}/);
+ assert.match(css,/\[data-standings-slot\] \.app-world-club-crest-placeholder::before\{display:none\}/);
 });

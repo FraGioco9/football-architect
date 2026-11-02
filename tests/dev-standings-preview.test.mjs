@@ -589,7 +589,7 @@ test("DEV-MATCHDAYS-STYLE: numeric input occupies the former slider output posit
 });
 
 
-test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV-only",()=>{
+test("STANDINGS-UX-01C: localized recent-form controls use shared accessible markup",()=>{
  const client=read("tools/dev-standings-preview-client.mjs").toString();
  const mobile=read("assets/competition-page.js").toString();
  const css=read("assets/app.css").toString();
@@ -600,11 +600,11 @@ test("STANDINGS-UX-01C: localized recent-form controls remain accessible and DEV
   fr:'letters: {W:"V",D:"N",L:"D"}',
   it:'letters: {W:"V",D:"N",L:"P"}'
  }))assert.ok(client.includes(letters),"localized result letters: "+locale);
- assert.ok(client.includes('button.setAttribute("aria-haspopup","true")'));
+ assert.ok(mobile.includes("button.setAttribute('aria-haspopup','true')"));
  assert.ok(client.includes('entry.glyph.textContent = t.letters[entry.game.result]'));
  assert.ok(client.includes('entry.button.setAttribute("aria-label", t[entry.game.result]'));
- assert.ok(client.includes('index === 0 ? " app-world-form-last"'));
- assert.ok(mobile.includes('mark.dataset.appI18n = formLetterKeys[game.result]'));
+ assert.ok(mobile.includes("latest?' app-world-form-last'"));
+ assert.ok(mobile.includes("glyph.dataset.appI18n=letter"));
  assert.ok(mobile.includes('"standingsDemoWinLetter"'));
  assert.ok(css.includes(".app-world-form-strip .app-world-form-control{width:18px;height:18px;border-radius:5px}"));
  assert.ok(css.includes(".app-world-form-strip .app-world-form-control + .app-world-form-control{margin-left:-4px}"));
@@ -630,7 +630,7 @@ test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained view
  assert.ok(client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124") ||
   client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124;"),
   "positioning measures the adaptive tooltip dimensions");
- assert.ok(publicRuntime.includes("if (!demoFormTriggers.length) return"));
+ assert.ok(publicRuntime.includes("if (!entries.length) return"));
  assert.ok(!publicRuntime.includes("data-dev-control"),"DEV controls remain isolated from public rendering");
 });
 
@@ -641,7 +641,7 @@ test("STANDINGS-UX-01D: mobile compact form keeps its appearance and opens toolt
  assert.ok(client.includes('item.querySelectorAll(".app-world-mobile-form .app-world-form-dot")'));
  assert.ok(client.includes('if(entry.mobile){e.preventDefault();e.stopPropagation();}'));
  assert.ok(client.includes('[...entries,...mobileEntries]'));
- assert.ok(canonical.includes('element("span","app-world-form-dot app-world-form-"'));
+ assert.ok(canonical.includes("createFormMark(game,{latest:row.recent.indexOf(game)===0,mobile:true})"));
  assert.ok(!client.includes('node("button","app-world-form-dot app-world-form-control app-world-form-"'));
 });
 
