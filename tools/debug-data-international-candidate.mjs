@@ -31,7 +31,7 @@ export function buildInternationalLeagueCandidate({seasonNumber,cupId,participan
    const eventId=[datasetId,seasonNumber,cupId,"I"+String(round).padStart(2,"0"),slot,homeId,awayId].join(":");
    events.push({eventId,competitionId:cupId,phaseId:"league",roundId:String(round),day:DAYS[round-1],order:100+slot,homeId,awayId,result:{homeGoals:score(seed,eventId+":h"),awayGoals:score(seed,eventId+":a")}});
   };
-  for(let i=r%2;i<8;i+=2)add(pots[intra][i],pots[intra][(i+1)%8],i/2);
+  for(let i=r%2;i<8;i+=2)add(pots[intra][i],pots[intra][(i+1)%8],Math.floor(i/2));
   for(let i=0;i<8;i++)add(pots[homePot][i],pots[awayPot][(i+1)%8],4+i);
  }
  events.sort((a,b)=>a.day-b.day||a.order-b.order||a.eventId.localeCompare(b.eventId));
