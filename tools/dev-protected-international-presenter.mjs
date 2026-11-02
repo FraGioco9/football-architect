@@ -1,27 +1,63 @@
-// I05 opt-in candidate International Cup presenter.
-// Uses an isolated readout within the existing fixtures panel; never changes
-// matchday navigation, official fixture containers, or public route state.
+// I05 DEV-only native International Fixtures transaction. No public import.
 import {attachProtectedPresenter} from "./dev-protected-page-bridge.mjs";
-const item=(tag,text)=>{const node=document.createElement(tag);node.textContent=text;return node};
-export function attachProtectedInternationalPresenter({panel,competitionId}){
- if(!panel||!/^int-[12]$/.test(competitionId))return ()=>{};
+const fail=message=>{throw Error("I05 International: "+message)};
+function prepareSeason(payload,definition,season){
+ if(payload?.acceptance!=="UNSEALED_NOT_FOR_RUNTIME"||!Array.isArray(payload.clubs)||
+    payload.clubs.length!==24||!Array.isArray(payload.fixtures)||!Array.isArray(payload.standings))
+  fail("unverified candidate");
+ const clubs=new Map(payload.clubs.map(c=>[c.canonicalId,c]));
+ if(clubs.size!==24||payload.participants.some(id=>!clubs.has(id)))fail("membership");
+ const standings=payload.standings.map(row=>{
+  const club=clubs.get(row.clubId);if(!club)fail("ranking identity");
+  return {...row,club};
+ });
+ const fixtures=[];
+ for(const event of payload.fixtures){
+  if(event.phaseId==="league"){
+   fixtures.push({phaseId:"league",round:Number(event.roundId),homeId:event.homeId,awayId:event.awayId,
+    homeGoals:event.result?.homeGoals??null,awayGoals:event.result?.awayGoals??null,kickoff:null});
+   continue;
+  }
+  if(!event.result)continue; // Future knockout slots stay in the existing fixed UI.
+  const phase=definition.rules.phases.find(p=>p.ties?.some(t=>t.id===event.phaseId));
+  const tie=phase?.ties.find(t=>t.id===event.phaseId);
+  const leg=Number(event.eventId?.match(/:(1|2)$/)?.[1]);
+  if(!tie||!Number.isInteger(leg)||leg<1||leg>tie.legs)fail("unknown knockout stage");
+  fixtures.push({phaseId:phase.id,round:phase.id,tieId:tie.id,leg,
+   homeId:event.homeId,awayId:event.awayId,neutral:tie.homePolicy==="neutral",
+   homeGoals:event.result.homeGoals,awayGoals:event.result.awayGoals,kickoff:null,
+   penalties:event.tiebreak?.penalties??null});
+ }
+ const results=payload.resolvedTies.map(t=>({tieId:t.tieId,winnerId:t.winner}));
+ return {season,competitionId:definition.id,rulesVersion:definition.rules.version,rulesSnapshot:definition.rules,
+  participants:payload.clubs,fixtures,results,statistics:{standings},
+  status:payload.history.status==="candidate-complete"?"available":"partial",
+  provenance:{kind:"debug",namespace:"local-debug",datasetId:payload.source.datasetId}};
+}
+export function attachProtectedInternationalPresenter({competitionId}){
+ if(!/^int-[12]$/.test(competitionId))return ()=>{};
  return attachProtectedPresenter({
   kind:"international",
   prepare(payload,{cursor}){
-   if(cursor.competitionId!==competitionId||payload.acceptance!=="UNSEALED_NOT_FOR_RUNTIME")throw Error("I05 International source mismatch");
-   const target=panel.querySelector("[data-i05-international-candidate]");
-   if(!target)throw Error("I05 International outlet missing");
-   const old=[...target.childNodes],hidden=target.hidden;
-   const list=document.createElement("ol");
-   const played=payload.fixtures.filter(e=>e.result!==null&&e.day<=cursor.worldDay);
-   for(const fixture of played){
-    const score=fixture.result;
-    if(!Number.isInteger(score.homeGoals)||!Number.isInteger(score.awayGoals))throw Error("I05 International invalid result");
-    list.append(item("li",fixture.homeId+" "+score.homeGoals+" – "+score.awayGoals+" "+fixture.awayId));
-   }
-   return {target,old,hidden,list,visible:played.length>0};
+   const context=window.faCompetitionContext;
+   const definition=context?.currentDefinition||context?.definition;
+   if(cursor.competitionId!==competitionId||definition?.id!==competitionId||
+      typeof window.faFixtures?.prepare!=="function"||
+      typeof window.faFixtures?.snapshot!=="function"||
+      typeof window.faCompetitionContextApi?.prepareProtectedInternationalSeasonData!=="function")
+    fail("shared renderer unavailable");
+   const data=prepareSeason(payload,definition,cursor.seasonNumber);
+   const tx=window.faCompetitionContextApi.prepareProtectedInternationalSeasonData(data,context.revision);
+   return {tx,data,definition,restore:window.faFixtures.snapshot(),committed:false};
   },
-  commit(tx){tx.target.replaceChildren(tx.list);tx.target.hidden=!tx.visible},
-  rollback(tx){tx.target.replaceChildren(...tx.old);tx.target.hidden=tx.hidden}
+  commit(p){
+   try{
+    p.tx.commit();
+    const apply=window.faFixtures.prepare(p.data.fixtures,{definition:p.definition,
+      participants:p.data.participants,currentMatchday:null});
+    apply();p.committed=true;p.tx.publish();
+   }catch(error){try{p.restore()}catch{}p.tx.rollback();throw error}
+  },
+  rollback(p){if(p.tx.isCurrent()){if(p.committed)p.restore();p.tx.rollback()}}
  });
 }
