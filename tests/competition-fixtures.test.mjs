@@ -139,7 +139,7 @@ test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does
  assert.ok(contents(r.fields.get('app-fixtures-list')).includes('Club 0'));
  r.route.set({matchday:'quarterfinals:2'});
  assert.equal(r.window.faCompetitionContext,context);
- assert.equal(r.fields.get('app-fixtures-list').children.length,0,'unavailable later fixtures stay empty');
+ assert.ok(r.fields.get('app-fixtures-list').children.every(row=>row.className?.includes('app-fixture-pending-row')||row.className?.includes('app-fixture-stage')),'unavailable knockout stages display only non-authoritative pending shells');
  assert.equal(r.fields.get('app-fixtures-empty').hidden,false,'selected unsupplied choice explains its empty state');
  r.window.faCompetitionContext={...context,selectedSeason:2,seasonData:null};r.events['fa:competition-context-change']();
  assert.equal(r.fields.get('app-fixtures-list').children.length,0);
