@@ -209,16 +209,42 @@
     return item;
   }
   // One stage builder for domestic playout and all international two-leg ties.
-  function appendStage(target,labelKey,fallback,games,count,placeholder){
+  function appendStage(target,labelKey,fallback,games,count,placeholder,renderRow=matchRow){
     if(labelKey){
       const section=element('li','app-fixture-stage'),heading=element('h3');
       heading.append(word(labelKey,fallback));section.append(heading);target.push(section);
     }
     const display=games.length?games:Array.from({length:count},(_,index)=>placeholder(index));
-    target.push(...display.map(matchRow));
+    target.push(...display.map(renderRow));
+  }
+  function renderPendingCupStage(){
+    if(!international||fields.list.dataset.fixturesState!=='pending')return;
+    const routeChoice=navigation.get().matchday;
+    const choice=configured.find(c=>c.value===routeChoice);
+    const phase=choice&&knockoutPhases.find(p=>p.id===choice.phaseId);
+    const template=fields.list.querySelector('.app-fixture-pending-row');
+    if(!template)return;
+    const pending=[];
+    const row=(leg,index)=>{
+      const copy=template.cloneNode(true);
+      copy.dataset.fixtureSlot=phase.id+':'+leg+':'+index;
+      return copy;
+    };
+    if(phase){
+      const legs=Math.max(...phase.ties.map(t=>t.legs));
+      for(let leg=1;leg<=legs;leg++){
+        // Same stage arrangement and labels as the domestic play-out renderer.
+        const label=legs===1?null:leg===1?'postseasonFirstLeg':'postseasonSecondLeg';
+        appendStage(pending,label,leg===1?'First leg':'Second leg',[],phase.ties.length,
+          index=>({index,leg}),entry=>row(entry.leg,entry.index));
+      }
+    }else{
+      for(let index=0;index<definition.capacity/2;index++)pending.push(row(1,index));
+    }
+    fields.list.replaceChildren(...pending);
   }
   function render(){
-    if(rounds===null&&fields.list.dataset.fixturesState==="pending")return;
+    if(rounds===null&&fields.list.dataset.fixturesState==="pending"){renderPendingCupStage();return;}
     // The visible match rows belong to their committed season, not a pending route.
     const incomingSource=window.faCompetitionContext?.seasonData?.provenance?.kind||null;
     if(rounds!==null&&committedSeason!==null&&(committedSeason!==navigation.get().season||(incomingSource!==null&&committedSource!==null&&incomingSource!==committedSource))){
