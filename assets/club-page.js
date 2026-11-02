@@ -83,7 +83,12 @@
    for(const link of staging.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    const currentDivision=host.querySelector('.club-header-division'),nextDivision=staging.querySelector('.club-header-division');
    if(currentDivision&&nextDivision&&currentDivision.innerHTML!==nextDivision.innerHTML)currentDivision.replaceWith(nextDivision);
-   const panel=host.querySelector('.club-competition');if(!panel)return;
+   const panel=host.querySelector('.club-competition');
+   if(!panel){
+    const existing=host.querySelector('.club-empty'),replacement=staging.querySelector('.club-empty');
+    if(existing&&replacement)existing.replaceWith(replacement);
+    return;
+   }
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const replacement=staging.querySelector('.club-competition');
    const logo=panel.querySelector('.club-competition-logo'),nextLogo=replacement.querySelector('.club-competition-logo');
