@@ -273,7 +273,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-competition-logo-placeholder-large{width:var(--app-competition-logo-size);height:var(--app-competition-logo-size);border-radius:13px;font-size:15px}
 .app-competition-identity{flex:1 1 260px;min-width:0;align-self:center}
 .app-competition-identity .app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-competition-heading-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;overflow-wrap:anywhere}
-.app-world-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 0;color:var(--muted);font-size:12px}
+.app-world-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0 0;min-height:1.4em;color:var(--muted);font-size:12px}
 .app-competition-return{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:44px;height:44px;padding:8px 13px;margin-left:auto;white-space:nowrap;border-radius:9px;text-decoration:none}
 .app-competition-return:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* IT-1 demonstration: temporary numbers only, not official match or league data. */
@@ -546,7 +546,7 @@ html[data-theme="light"] .app-world-mobile-stat{background:#F5F9F6;border-color:
 .app-competition-season{display:flex;align-items:center;gap:8px;margin-inline-start:auto;font-size:13px}
 .app-competition-season>span{font-weight:700}
 .app-competition-season .language-control{width:88px}
-#app-competition-season-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app-competition-season-value{display:inline-block;min-width:1ch;min-height:1em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
 .app-competition-season .language-trigger{width:100%;min-width:0;height:44px}
 .app-competition-season .language-menu{width:100%;min-width:0}
 #app-competition-season-unavailable[hidden]{display:none}
