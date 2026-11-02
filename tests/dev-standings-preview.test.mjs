@@ -76,10 +76,10 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
  const context={devWorldClock:{publish(){}},debugSeason:1,matchdays:0,progressRevision:0,SEASON_KEY:'season',DAY_KEY:'world-day',ROUNDS_KEY:'days',sessionStorage:{getItem:key=>stored.get(key)??null,setItem:(key,value)=>stored.set(key,value)},
   refreshProgress:async()=>true,window:{faCompetitionRoute:{set:next=>changes.push(next)}}};
  const setSeason=runWithModel(source+';setSeason',context);
- for(const season of [0,1,2,3,4])assert.equal(await setSeason(season),true);
- for(const season of [-1,5,1.5,NaN])assert.equal(await setSeason(season),false);
+ for(const season of [0,1,2,3,4,5])assert.equal(await setSeason(season),true);
+ for(const season of [-1,6,1.5,NaN])assert.equal(await setSeason(season),false);
  assert.deepEqual(changes,[]);
- assert.equal(context.debugSeason,4);assert.equal(stored.get('season'),'4');
+ assert.equal(context.debugSeason,5);assert.equal(stored.get('season'),'5');
 });
 
 test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset preview",async()=>{
