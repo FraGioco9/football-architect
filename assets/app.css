@@ -1175,5 +1175,11 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 /* PAGE-LOAD A03: identity-free fixtures first paint reserves final match rows. */
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-label,
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-number{visibility:hidden}
-.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{min-height:94px;box-sizing:border-box;pointer-events:none}
-@media(max-width:620px){.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{min-height:100px}}
+/* Pending rows use the same club/result grid as populated match cards. */
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{box-sizing:border-box;pointer-events:none}
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-world-club-crest-placeholder{border-color:transparent;background:transparent;color:transparent}
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-world-club-crest-placeholder::before{display:none}
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-fixture-status{min-height:1.4em}
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-fixture-score{min-height:1em}
+.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-fixture-stadium{min-height:1.4em}
+@media(max-width:620px){.app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-fixture-stadium{min-height:2.8em}}
