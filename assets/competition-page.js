@@ -611,7 +611,6 @@
     separator.textContent='–';element.append(home,separator,away);
     return {element,update(homeGoals,awayGoals){home.textContent=String(homeGoals);away.textContent=String(awayGoals)}};
   }
-  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard,createFormScore,attachFormTooltips,suspendFormTooltips});
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
@@ -877,6 +876,8 @@
     formTooltipBindings.add(binding);
     return ()=>{close();formTooltipBindings.delete(binding);for(const release of releases.splice(0))release();tooltip.remove?.();};
   }
+  window.faStandingsView=Object.freeze({createRow:createSharedStandingsRow,createFormMark,updateFormMark,bindFormKeyboard,createFormScore,attachFormTooltips,suspendFormTooltips});
+
   function loadScript(url,asModule=false) {
     return new Promise((resolve,reject) => {
       const script = document.createElement("script");
