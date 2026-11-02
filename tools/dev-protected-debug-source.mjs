@@ -3,7 +3,7 @@
 const state={enabled:false,revision:0,abort:null,view:null};
 const key="football-architect:local-debug-visible";
 const readEnabled=()=>{try{return sessionStorage.getItem(key)==="1"}catch{return false}};
-const getNumber=(key,defaultValue)=>{try{const n=Number(sessionStorage.getItem(key));return Number.isInteger(n)?n:defaultValue}catch{return defaultValue}};
+const getNumber=(key,defaultValue)=>{try{const raw=sessionStorage.getItem(key);if(raw===null||raw.trim()==="")return defaultValue;const n=Number(raw);return Number.isInteger(n)?n:defaultValue}catch{return defaultValue}};
 const routeCompetition=()=>location.pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12]|int-[12])(?:\/|$)/i)?.[1]?.toUpperCase().replace(/^INT-/,"int-")??null;
 const emit=(name,detail)=>window.dispatchEvent(new CustomEvent(name,{detail}));
 export function currentDebugSource(){return Object.freeze({enabled:state.enabled,revision:state.revision,view:state.view});}
@@ -16,10 +16,10 @@ export async function refreshDebugSource(){
  const competitionId=routeCompetition();
  if(!state.enabled||season===0||!competitionId){
   state.view=null;
-  emit("fa:protected-debug-source-change",{kind:"global",enabled:state.enabled,revision});
+  emit("fa:protected-debug-source-change",{kind:!state.enabled?"global":"debug-unstarted",enabled:state.enabled,revision});
   return;
  }
- if(season<1||season>5||day<1||day>56)return;
+ if(season<1||season>5||day<1||day>56){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:400});return;}
  // Request only via HttpOnly local session. Never send the owner bearer token.
  try{
   const query=new URLSearchParams({season:String(season),day:String(day),competition:competitionId});
@@ -28,7 +28,7 @@ export async function refreshDebugSource(){
   if(!response.ok){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:response.status});return;}
   const view=await response.json();
   if(revision!==state.revision)return;
-  if(view.kind!=="protected-debug-projection"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId)return;
+  if(view.kind!=="protected-debug-projection"||view.seasonNumber!==season||view.worldDay!==day||view.competitionId!==competitionId){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:422});return;}
   state.view=view;
   emit("fa:protected-debug-source-change",{kind:"protected-debug",enabled:true,revision,view});
  }catch(error){if(revision===state.revision&&error?.name!=="AbortError"){state.view=null;emit("fa:protected-debug-source-unavailable",{revision,status:0});}}

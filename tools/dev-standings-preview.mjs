@@ -29,7 +29,8 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
   "/__fa_dev__/dev-international-preview.mjs": "dev-international-preview.mjs",
   "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
-  "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs"
+  "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs",
+  "/__fa_dev__/protected-debug-source.mjs": "dev-protected-debug-source.mjs"
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -156,6 +157,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
+      if(raw==="/__fa_dev__/protected-debug-source.mjs" && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
       const virtual = VIRTUAL[raw];
       let body, type, file;
       if (virtual) {
@@ -188,7 +190,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
               .replace('id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true"',
                 'id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="false"')
             : html;
-          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
+          body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + (process.env.FA_DEBUG_I03_PROTECTED==="1"&&process.env.FA_DEBUG_I03_BROWSER_BRIDGE==="1"&&(DETAIL.test(raw)||CUP_DETAIL.test(raw))?'<script type="module" src="/__fa_dev__/protected-debug-source.mjs"></script>':"") + "\n</head>"), "utf8");
         }
       }
       if ((devPreview || sharedBackend) && subdomains && type === TYPES[".html"]) {
