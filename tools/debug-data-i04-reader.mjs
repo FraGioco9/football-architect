@@ -79,7 +79,9 @@ export function createProtectedDebugSeasonReader({loadCorpus,divisions,cupCatalo
   if(!current(token,requested))return {status:"stale",epoch:token};
   // Read-only candidate summaries, not a claim of a sealed historical receipt.
   // A season is eligible only when strictly earlier than the selected season.
-  const records=corpus.seasons.filter(s=>s.seasonNumber<beforeSeasonNumber).map(s=>({
+  const eligible=corpus.seasons.filter(s=>s.seasonNumber<beforeSeasonNumber);
+  requireValue(eligible.length===beforeSeasonNumber-1,"incomplete historical sequence");
+  const records=eligible.map(s=>({
    seasonNumber:s.seasonNumber,candidateHash:s.candidateHash,
    domesticChampions:Object.fromEntries(Object.entries(s.domesticOutcomes).map(([id,o])=>[id,o.champion])),
    internationalWinners:copy(s.internationalWinners),
