@@ -20,7 +20,7 @@ window.addEventListener("fa:protected-debug-domestic-presentation",event=>{
   window.dispatchEvent(new CustomEvent("fa:protected-debug-render-committed",{detail:{revision,competitionId,season}}));
  }catch(error){try{next.rollback()}catch{}window.dispatchEvent(new CustomEvent("fa:protected-debug-render-failed",{detail:{revision,reason:"commit"}}))}
 });
-for(const name of ["fa:debug-mode-change","fa:competition-route-change","fa:protected-debug-source-unavailable","fa:dev-progress-change","fa:dev-world-day-change"]){
+for(const name of ["fa:debug-mode-change","fa:competition-route-change","fa:protected-debug-source-unavailable","fa:dev-progress-change","fa:dev-world-day-change","fa:protected-debug-source-pending"]){
  window.addEventListener(name,()=>{if(restore)clear()});
 }
 window.addEventListener('fa:protected-debug-source-change',event=>{
