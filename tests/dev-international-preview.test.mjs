@@ -74,3 +74,10 @@ test('A04 fixture knockout labels do not include middle dot and Final has no leg
  assert.match(source,/choice\.phaseId!=='final'/);
  assert.match(source,/selectedChoice\.phaseId!=='final'/);
 });
+
+test('A04 shared fixture picker keeps full knockout round labels on one line',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-fixtures-select\{width:214px;flex:0 0 214px/);
+ assert.match(css,/#app-fixtures-round-number,\.app-fixtures-picker \.language-option\{white-space:nowrap\}/);
+ assert.match(css,/@media\(max-width:360px\)\{\.app-fixtures-select\{width:190px;flex-basis:190px/);
+});
