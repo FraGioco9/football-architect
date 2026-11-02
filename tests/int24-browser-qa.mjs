@@ -23,7 +23,7 @@ try {
  const routePage=await browser.newPage({viewport:{width:390,height:900}});
  try{
   for(const slug of allRoutes){
-   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"networkidle"});
+   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,"shared route "+slug);
    await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
    const actual=await routePage.evaluate(()=>({
@@ -42,7 +42,7 @@ try {
   page.on("pageerror",e=>errors.push(e.message));
   for(const view of views){
    const url=base+"/competitions/"+cup+"/"+view;
-   const response=await page.goto(url,{waitUntil:"networkidle"});
+   const response=await page.goto(url,{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,url);
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
    assert.equal(await page.locator("#competition-panel-"+view).isVisible(),true);
@@ -92,7 +92,7 @@ try {
    }
    checks++;
   }
-  await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
+  await page.goto(base+"/competitions/"+cup,{waitUntil:"domcontentloaded"});
   for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
@@ -105,7 +105,7 @@ try {
   }
   for(const theme of ["dark","light"]){
    await page.evaluate(value=>localStorage.setItem("football-architect:theme",value),theme);
-   await page.reload({waitUntil:"networkidle"});
+   await page.reload({waitUntil:"domcontentloaded"});
    assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
    await page.locator('#competition-tab-postseason').click();
    await screenshot(page,cup+"-"+width+"-"+theme+".png");
@@ -164,9 +164,9 @@ try {
   assert.equal(await tabs.nth(1).evaluate(el=>document.activeElement===el),true);
   await page.keyboard.press("End");
   await page.waitForURL("**/awards?season=1");
-  await page.reload({waitUntil:"networkidle"});
+  await page.reload({waitUntil:"domcontentloaded"});
   assert.equal(await page.locator("#competition-panel-awards").isVisible(),true);
-  await page.goBack({waitUntil:"networkidle"});
+  await page.goBack({waitUntil:"domcontentloaded"});
   assert.equal(await page.locator("#competition-panel-postseason").isVisible(),true);
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
@@ -180,7 +180,7 @@ try {
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
  for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
-  await page.goto(base+route,{waitUntil:"networkidle"});
+  await page.goto(base+route,{waitUntil:"domcontentloaded"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
