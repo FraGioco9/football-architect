@@ -48,3 +48,10 @@ test('A04 cup preview is linked to Debug source events, not just popup visibilit
  assert.match(source,/fa:debug-mode-change/);
  assert.match(source,/fa:competition-route-change/);
 });
+
+test('A04: DEV virtual modules expose all cup preview imports so Debug Settings mounts',()=>{
+ const server=readFileSync(new URL('../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
+ const client=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
+ assert.match(client,/from "\.\/dev-international-preview\.mjs"/);
+ assert.match(server,/"\/__fa_dev__\/dev-international-preview\.mjs": "dev-international-preview\.mjs"/);
+});
