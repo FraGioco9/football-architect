@@ -49,6 +49,8 @@ for(const workflow of workflows){
   mkdirSync(join(root,'guide'));writeFileSync(join(root,'guide/index.html'),'fixture');git(root,'add','.');git(root,'commit','-qm','guide');
   mkdirSync(join(root,'tools'));
   writeFileSync(join(root,'tools/ci-opt-01-impact.mjs'),readFileSync(new URL('../tools/ci-opt-01-impact.mjs',import.meta.url)));
+  writeFileSync(join(root,'tools/ci-select-tests.mjs'),readFileSync(new URL('../tools/ci-select-tests.mjs',import.meta.url)));
+  writeFileSync(join(root,'package.json'),'{"type":"module"}');
   const script=stepScript(read(workflow),'Classify fast-safe changes');
   const output=join(root,'output');
   for(const [event,draft,baseSha,expected] of [
@@ -60,7 +62,7 @@ for(const workflow of workflows){
    writeFileSync(output,'');
    const result=spawnSync('bash',['-e','-o','pipefail','-c',render(script,{
     'github.event_name':event,'github.event.pull_request.draft':draft
-   })],{cwd:root,env:{...process.env,GITHUB_EVENT_NAME:event,PR_BASE_SHA:baseSha,GITHUB_OUTPUT:output},encoding:'utf8'});
+   })],{cwd:root,env:{...process.env,GITHUB_EVENT_NAME:event,PR_BASE_SHA:baseSha,EXPECTED_HEAD_SHA:git(root,'rev-parse','HEAD'),GITHUB_OUTPUT:output},encoding:'utf8'});
    assert.equal(result.status,0,result.stderr);
    const fields=Object.fromEntries(readFileSync(output,'utf8').trim().split('\n').map(x=>x.split('=')));
    assert.equal(fields.mode,expected,event+'/'+draft+'/'+baseSha);
@@ -71,7 +73,7 @@ for(const workflow of workflows){
   mkdirSync(join(root,'docs'));writeFileSync(join(root,'docs/check.md'),'fixture');git(root,'add','docs');git(root,'commit','-qm','docs');
   writeFileSync(output,'');
   execFileSync('bash',['-e','-o','pipefail','-c',render(script,{'github.event_name':'pull_request','github.event.pull_request.draft':'true'})],{
-   cwd:root,env:{...process.env,GITHUB_EVENT_NAME:'pull_request',PR_BASE_SHA:docsBase,GITHUB_OUTPUT:output}
+   cwd:root,env:{...process.env,GITHUB_EVENT_NAME:'pull_request',PR_BASE_SHA:docsBase,EXPECTED_HEAD_SHA:git(root,'rev-parse','HEAD'),GITHUB_OUTPUT:output}
   });
   assert.match(readFileSync(output,'utf8'),/^mode=fast$/m);
  }));
