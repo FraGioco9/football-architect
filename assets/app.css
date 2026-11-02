@@ -1179,8 +1179,8 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-label,
 .app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-number{visibility:hidden}
 /* International first paint shows its real toolbar geometry and route-defined stage; no loading values. */
-.app-fixtures-toolbar[data-fixtures-category="international"][data-fixtures-state="pending"] #app-fixtures-round-label,
-.app-fixtures-toolbar[data-fixtures-category="international"][data-fixtures-state="pending"] #app-fixtures-round-number{visibility:visible}
+.app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-label,
+.app-fixtures-toolbar[data-fixtures-state="pending"] #app-fixtures-round-number{visibility:visible}
 /* Pending rows use the same club/result grid as populated match cards. */
 .app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row{box-sizing:border-box;pointer-events:none}
 .app-fixtures-list[data-fixtures-state="pending"] .app-fixture-pending-row .app-world-club-crest-placeholder{border-color:transparent;background:transparent;color:transparent}
