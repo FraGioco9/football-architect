@@ -1,0 +1,61 @@
+name: CI-OPT-03 FULL evidence gate
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to verify
+        required: true
+        type: string
+      expected_head:
+        description: Exact 40-digit PR HEAD SHA
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+concurrency:
+  group: ci-opt-03-full-evidence-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  full-evidence:
+    name: CI FULL exact-head evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify exact PR head and complete FULL workflow evidence
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+        with:
+          script: |
+            const prNumber=Number(process.env.PR_NUMBER);
+            const expected=process.env.EXPECTED_HEAD;
+            if (!Number.isSafeInteger(prNumber)||prNumber<1||!/^[0-9a-f]{40}$/.test(expected)) {
+              core.setFailed('Invalid PR number or expected SHA');return;
+            }
+            const {owner,repo}=context.repo;
+            const {data:pr}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
+            if(pr.state!=='open'||pr.head.repo.full_name!==owner+'/'+repo||pr.head.sha!==expected) {
+              core.setFailed('PR closed, foreign head, or stale HEAD');return;
+            }
+            if(pr.base.ref!=='main'){core.setFailed('Unexpected target branch');return;}
+            const required=['landing-checks.yml','int24-browser-qa.yml'];
+            const evidence=[];
+            for(const workflow_id of required){
+              const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
+              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&run.event==='workflow_dispatch'&&run.conclusion==='success'&&run.run_attempt>=1);
+              if(!matches.length){core.setFailed('Missing successful manually dispatched FULL '+workflow_id+' for '+expected);return;}
+              const selected=matches.sort((a,b)=>b.id-a.id)[0];
+              const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
+              const names=jobs.filter(j=>j.conclusion==='success').map(j=>j.name);
+              const expectedJob=workflow_id==='landing-checks.yml'?'landing':'chromium';
+              if(!names.some(n=>n===expectedJob||n.endsWith(' / '+expectedJob))){
+                core.setFailed('Missing completed FULL job '+expectedJob+' in '+workflow_id);return;
+              }
+              evidence.push(workflow_id+': '+selected.html_url+' ('+selected.head_sha+')');
+            }
+            const {data:fresh}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
+            if(fresh.head.sha!==expected){core.setFailed('PR HEAD changed during verification');return;}
+            await core.summary.addHeading('CI-OPT-03 FULL evidence').addRaw('Exact HEAD: '+expected+'\\n\\n'+evidence.join('\\n\\n')).write();
+            core.info('All required FULL workflow evidence verified on exact HEAD '+expected);
