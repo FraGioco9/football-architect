@@ -9,7 +9,7 @@ const score=(season,round,home,away)=>{
  return [h%4,Math.floor(h/13)%4];
 };
 export function buildCupPreview(manifest,definition,season,day){
- if(!competitionModel.validManifest(manifest)||definition?.category!=='international'||!['int-1','int-2'].includes(definition.id)||!Number.isInteger(season)||season<1||season>4||!Number.isInteger(day)||day<1||day>56)throw Error('Invalid international DEV request');
+ if(!competitionModel.validManifest(manifest)||definition?.category!=='international'||!['int-1','int-2'].includes(definition.id)||!Number.isInteger(season)||season<1||season>5||!Number.isInteger(day)||day<1||day>56)throw Error('Invalid international DEV request');
  const positions=definition.id==='int-1'?[0,1,2]:[3,4,5];
  const byCountry=COUNTRY_IDS.map(countryId=>{
   const division=manifest.divisions.find(d=>d.id===countryId+'-1');
