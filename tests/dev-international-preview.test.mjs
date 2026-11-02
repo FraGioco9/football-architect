@@ -71,7 +71,7 @@ for(const id of ['int-1','int-2']){
 test('A04 fixture knockout labels do not include middle dot and Final has no leg suffix',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/textContent\+=' · '\+selectedChoice\.round/);
- assert.match(source,/legs===1\?'postseasonFinal'/);
+ assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
 });
 
 test('A04 shared fixture picker keeps full knockout round labels on one line',()=>{
