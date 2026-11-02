@@ -47,8 +47,8 @@
   postChoice.append(word(stageKey,stage==='playout'?'Playout':'Playoffs'));
   postChoice.hidden=false;picker.append(postChoice);
   }
-  function updateDefinition(next){
-    if(!next||next.id!==definition.id||JSON.stringify(next.rules)===JSON.stringify(definition.rules))return;
+  function updateDefinition(next,force=false){
+    if(!next||next.id!==definition.id||!force&&JSON.stringify(next.rules)===JSON.stringify(definition.rules))return;
     definition=next;capacity=next.capacity;league=next.rules.phases.find(p=>p.rankOutcomes);
     ({rounds:roundCount,matches:matchCount,matchesPerRound}=next.metrics.phases[league.id]);
     configured=rules.fixtureChoices(next);stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
@@ -65,6 +65,8 @@
     picker.replaceChildren(...choices);postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
     postChoice.hidden=!Boolean(rounds&&stage);menuHasPostseason=false;roundMenu.update(choices);
   }
+  // Generated HTML includes the full round set; collapse international legs at initial mount.
+  if(international)updateDefinition(definition,true);
   function validatePostseason(games){
     if(!Array.isArray(games))throw Error('Invalid post-season fixtures');
     if(!games.length)return [];
