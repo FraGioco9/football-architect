@@ -94,3 +94,7 @@ are contained, and obsolete prepared candidate transactions are discarded.
 This module is **not injected or auto-mounted**. No public page is yet rendered
 from the new corpus; specific DOM presenter adapters and owner-approved I06
 acceptance are still necessary. No full regression test run.
+
+## Ninth I05 block — actual Stats renderer adapter
+
+Added `tools/dev-protected-stats-presenter.mjs`, an optional DEV integration using the existing `faCompetitionStats.mount`/`update` API via the reversible page bridge. The protected Stats projection now carries played league events and canonical club metadata. Team metrics (clean sheets and current unbeaten streak included) are derived exclusively from events whose result is visible at the selected world day, not invented player data. The presenter can restore the previous Stats context on rollback. It is not injected or automatically enabled; browser/display acceptance is deferred and it must not be called complete.
