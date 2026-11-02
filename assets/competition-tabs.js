@@ -152,10 +152,24 @@
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
   const configuredChoices=()=>window.faCompetitionContext&&window.faCompetitionRules?.fixtureChoices(window.faCompetitionContext.definition);
+  const cupPhaseNames=new Set(['playoffs','quarterfinals','semifinals','final']);
+  const cupPhase=value=>typeof value==='string'&&cupPhaseNames.has(value)?value:null;
+  const fromUrlRound=value=>{
+    const phase=cupPhase(value);
+    if(phase&&window.faCompetitionContext?.definition?.category==='international')return phase+':1';
+    return value;
+  };
+  const toUrlRound=value=>{
+    if(window.faCompetitionContext?.definition?.category==='international'&&typeof value==='string'){
+      const phase=value.match(/^(playoffs|quarterfinals|semifinals|final):1$/);
+      if(phase)return phase[1];
+    }
+    return value;
+  };
   const validFixtureRound=value=>{const choices=configuredChoices();return choices?choices.some(c=>c.value===value):model.validRound(value)||value==="playoffs"||value==="playout"};
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
+    const id=params.get("season"),round=fromUrlRound(params.get("matchday")),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
     return {season:devSeasons.length&&!availableSeasons.includes(requested)?"1":requested,
@@ -172,7 +186,7 @@
     if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
     url.searchParams.set("season",state.season);
     // The internal 1 is provisional until Fixtures resolves the actual current day.
-    if(state.view==="fixtures"&&!pendingDefaultMatchday)url.searchParams.set("matchday",String(state.matchday));
+    if(state.view==="fixtures"&&!pendingDefaultMatchday)url.searchParams.set("matchday",String(toUrlRound(state.matchday)));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
     season.disabled=false;
