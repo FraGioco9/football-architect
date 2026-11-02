@@ -71,7 +71,7 @@ for(const id of ['int-1','int-2']){
 test('A04 fixture knockout labels do not include middle dot and Final has no leg suffix',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/textContent\+=' · '\+selectedChoice\.round/);
- assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
+ assert.match(source,/appendStage\(matches,legs===1\?null/);
 });
 
 test('A04 shared fixture picker keeps full knockout round labels on one line',()=>{
@@ -101,7 +101,7 @@ test('A04 international Fixtures phase label is identical in menu and selected b
 test('A04 cup stage headings are per-leg only and do not repeat Final',()=>{
  const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
  assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
- assert.match(source,/if\(title\)matches\.push\(title\)/);
+ assert.match(source,/target\.push\(\.\.\.display\.map\(matchRow\)\)/);
  assert.match(source,/for\(let leg=1;leg<=legs;leg\+\+\)/);
 });
 test('A04 fixtures chevron follows aria-expanded menu state',()=>{
@@ -114,4 +114,12 @@ test('A04 Fixtures atomically replaces old stage headings on Debug changes',()=>
  assert.match(source,/fields\.list\.replaceChildren\(\.\.\.next\)/);
  assert.doesNotMatch(source,/fields\.list\.insertBefore\(next\[i\]/);
  assert.match(source,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
+});
+
+test('A04 domestic and international two-leg Fixtures use one shared stage builder',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/function appendStage\(target,labelKey,fallback,games,count,placeholder\)/);
+ assert.match(source,/appendStage\(matches,legs===1\?null/);
+ assert.match(source,/appendStage\(matches,round===31\?'postseasonFirstLeg'/);
+ assert.match(source,/phase\.ties\.length,index=>\(\{/);
 });
