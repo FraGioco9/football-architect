@@ -180,7 +180,7 @@
   }
   function matchRow(game){
     const item=element("li","app-fixture-match");
-    item.dataset.fixtureMatch=game.round+":"+(game.tieId||game.slot??"")+":"+game.homeId+":"+game.awayId;
+    item.dataset.fixtureMatch=game.round+":"+(game.tieId??game.slot??"")+":"+game.homeId+":"+game.awayId;
     item.dataset.fixtureRound=String(game.round);
     const result=element("div","app-fixture-result"),played=game.homeGoals!==null;
     let status;
