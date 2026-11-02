@@ -45,6 +45,6 @@ export function prepareProtectedDomesticContext(view,{competitionId,season,day,k
   tiebreak:e.tiebreak??null
  }));
  ensure(postseason.every(e=>e.day<=day||e.homeGoals===null&&e.awayGoals===null),"future postseason leakage");
- return {season,rulesVersion:null,participants:[...participants],clubs:participants.map(id=>identities.get(id)),fixtures,results,statistics:null,
+ return {season,worldDay:day,rulesVersion:null,participants:[...participants],clubs:participants.map(id=>identities.get(id)),fixtures,results,statistics:null,
   status:view.completed?"complete":"partial",standings:view.standings.map(r=>({...r})),postseason};
 }

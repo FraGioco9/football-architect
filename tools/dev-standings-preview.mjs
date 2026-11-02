@@ -34,6 +34,7 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/protected-domestic-context.mjs": "dev-protected-domestic-context.mjs",
   "/__fa_dev__/protected-domestic-presentation.mjs": "dev-protected-domestic-presentation.mjs",
   "/__fa_dev__/protected-domestic-presenter.mjs": "dev-protected-domestic-presenter.mjs",
+  "/__fa_dev__/protected-domestic-postseason.mjs": "dev-protected-domestic-postseason.mjs",
   "/__fa_dev__/protected-domestic-transaction.mjs": "dev-protected-domestic-transaction.mjs"
 });
 const TYPES = {
@@ -161,7 +162,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
-      if((raw==="/__fa_dev__/protected-debug-source.mjs"||raw==="/__fa_dev__/protected-domestic-context.mjs"||raw==="/__fa_dev__/protected-domestic-presentation.mjs"||raw==="/__fa_dev__/protected-domestic-presenter.mjs"||raw==="/__fa_dev__/protected-domestic-transaction.mjs") && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
+      if((raw==="/__fa_dev__/protected-debug-source.mjs"||raw==="/__fa_dev__/protected-domestic-context.mjs"||raw==="/__fa_dev__/protected-domestic-presentation.mjs"||raw==="/__fa_dev__/protected-domestic-presenter.mjs"||raw==="/__fa_dev__/protected-domestic-postseason.mjs"||raw==="/__fa_dev__/protected-domestic-transaction.mjs") && (process.env.FA_DEBUG_I03_PROTECTED!=="1"||process.env.FA_DEBUG_I03_BROWSER_BRIDGE!=="1"||!devPreview))return reject(res,404);
       const virtual = VIRTUAL[raw];
       let body, type, file;
       if (virtual) {

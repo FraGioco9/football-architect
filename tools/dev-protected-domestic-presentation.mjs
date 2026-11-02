@@ -1,5 +1,6 @@
 // I03 prepare one coherent rendering model; no DOM side effects.
 // Consumers must commit standings, fixtures and postseason together.
+import {prepareProtectedPostseason} from "./protected-domestic-postseason.mjs";
 const fail=message=>{throw new Error("Protected domestic view: "+message)};
 export function createProtectedDomesticPresentation(payload){
  if(payload?.clubs?.length!==16||payload?.standings?.length!==16||payload?.fixtures?.length!==240)fail("wrong dimensions");
@@ -19,7 +20,7 @@ export function createProtectedDomesticPresentation(payload){
  });
  const gamesPlayed=fixtures.filter(g=>g.homeGoals!==null&&g.awayGoals!==null).length;
  if(standings.reduce((n,row)=>n+row.played,0)!==gamesPlayed*2)fail("played totals disagree");
- const postseason=(payload.postseason??[]).map(e=>({...e}));
+ const postseason=prepareProtectedPostseason(payload.postseason,{tier:payload.postseason.length===2?1:2,day:payload.worldDay,participants:payload.participants});
  return Object.freeze({season:payload.season,participants:payload.participants.slice(),standings,fixtures,postseason,
    status:payload.status,gameCount:gamesPlayed});
 }
