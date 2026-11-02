@@ -59,7 +59,7 @@ ${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>
             <p id="app-fixtures-empty" hidden class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" data-fixtures-state="pending">${Array.from({length:Math.floor((d.capacity||16)/2)},(_,i)=>`<li class="app-fixture-match app-fixture-pending-row" data-fixture-slot="${i}" aria-hidden="true"></li>`).join("")}</ol>`;
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" data-fixtures-state="pending">${Array.from({length:Math.floor((d.capacity||16)/2)},(_,i)=>`<li class="app-fixture-match app-fixture-pending-row" data-fixture-slot="${i}" aria-hidden="true"><span class="app-fixture-club app-fixture-home"><span class="app-world-club-crest-placeholder"></span><span class="app-fixture-name"></span></span><div class="app-fixture-result"><span class="app-fixture-status"></span><strong class="app-fixture-score"></strong><span class="app-fixture-stadium"></span></div><span class="app-fixture-club"><span class="app-world-club-crest-placeholder"></span><span class="app-fixture-name"></span></span></li>`).join("")}</ol>`;
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
