@@ -591,8 +591,6 @@ html[data-competition-view="awards"] .app-competition-panel:not(#competition-pan
 html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}
 
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
-html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
-html[data-fa-debug-pending="true"] #competition-panel-fixtures,
 html[data-fa-dev-standings-pending="true"] #competition-panel-history,
 html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 
