@@ -22,7 +22,9 @@ test('CONFIG-CLOCK: current fixture choices use existing markers without extendi
 
 test('CONFIG-PHASES: fixture choices derive domestic and international phase lengths',()=>{
  assert.equal(typeof rules.fixtureChoices,'function');
- assert.deepEqual(rules.fixtureChoices(definitions.find(d=>d.id==='IT-1')).map(c=>c.value),[...Array.from({length:30},(_,i)=>i+1),'playout']);
+ const first=definitions.find(d=>d.id==='IT-1');
+ const domesticRounds=first.metrics.phases[first.rules.phases.find(phase=>phase.type!=='knockout').id].rounds;
+ assert.deepEqual(rules.fixtureChoices(first).map(c=>c.value),[...Array.from({length:domesticRounds},(_,i)=>i+1),'playout']);
  assert.equal(rules.fixtureChoices(definitions.find(d=>d.id==='IT-2')).at(-1).value,'playoffs');
  for(const d of definitions.filter(d=>d.category==='international')){
   const choices=rules.fixtureChoices(d);
@@ -43,7 +45,7 @@ test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an h
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');
   assert.ok(html.includes('id="app-fixtures-round"'),d.id);
   assert.ok(html.includes('aria-controls="app-fixtures-picker"'),d.id);
-  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,30,d.id);
+  assert.equal((html.match(/data-fixture-round-choice="\d+"/g)||[]).length,d.metrics.phases[d.rules.phases.find(phase=>phase.type!=='knockout').id].rounds,d.id);
   assert.ok(html.includes('id="app-fixtures-list"'),d.id);
   assert.ok(html.includes('id="app-fixtures-empty"'),d.id);
   assert.ok(html.includes('aria-live="polite"'),d.id);
