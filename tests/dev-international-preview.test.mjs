@@ -108,3 +108,10 @@ test('A04 fixtures chevron follows aria-expanded menu state',()=>{
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(css,/\.app-fixtures-trigger\[aria-expanded="true"\]>\.language-chevron\{transform:translateY\(-50%\) rotate\(180deg\)\}/);
 });
+
+test('A04 Fixtures atomically replaces old stage headings on Debug changes',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/fields\.list\.replaceChildren\(\.\.\.next\)/);
+ assert.doesNotMatch(source,/fields\.list\.insertBefore\(next\[i\]/);
+ assert.match(source,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
+});
