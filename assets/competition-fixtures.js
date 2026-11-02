@@ -278,11 +278,11 @@
     if(!pending.length)stage(null,'',international?12:8,'league');
     fields.list.replaceChildren(...pending);
     fields.list.dataset.fixturesState='pending';
-    fields.toolbar.dataset.fixturesState='pending';
+    // Keep the existing toolbar, arrows, selected matchday and open menu mounted
+    // while the next season's fixtures are being resolved. Only match rows change.
     fields.list.hidden=false;fields.summary.hidden=true;fields.empty.hidden=true;
     delete fields.list.dataset.presentedSeason;
-    fields.round.disabled=true;fields.previous.disabled=true;fields.next.disabled=true;fields.current.hidden=true;
-    roundMenu.close();
+    // Do not tear down the selector or briefly reset its controls on season changes.
   }
   function render(){
     if(rounds===null&&fields.list.dataset.fixturesState==="pending"){renderPendingCupStage();return;}
@@ -314,7 +314,9 @@
     if(label)label.hidden=isPostseason;
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.phaseLabel(selectedChoice.labelKey,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
     
-    number.replaceChildren(selectedLabel);
+    // Preserve the selected label node when its value is unchanged (e.g. season switch).
+    if(number.textContent!==selectedLabel.textContent||number.children.length!==1||
+      number.firstElementChild?.tagName!=='SPAN')number.replaceChildren(selectedLabel);
     const visibleChoice=international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected;
     roundMenu.sync(String(visibleChoice));
     if(!available)roundMenu.close();
