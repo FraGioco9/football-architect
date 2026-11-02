@@ -7,9 +7,20 @@ function prepareSeason(payload,definition,season){
   fail("unverified candidate");
  const clubs=new Map(payload.clubs.map(c=>[c.canonicalId,c]));
  if(clubs.size!==24||payload.participants.some(id=>!clubs.has(id)))fail("membership");
+ const losses=new Map(payload.participants.map(id=>[id,0]));
+ for(const event of payload.fixtures.filter(e=>e.phaseId==="league"&&e.result!==null)){
+  const h=event.result.homeGoals,a=event.result.awayGoals;
+  if(!Number.isSafeInteger(h)||!Number.isSafeInteger(a))fail("invalid league score");
+  if(h<a)losses.set(event.homeId,(losses.get(event.homeId)||0)+1);
+  if(a<h)losses.set(event.awayId,(losses.get(event.awayId)||0)+1);
+ }
  const standings=payload.standings.map(row=>{
   const club=clubs.get(row.clubId);if(!club)fail("ranking identity");
-  return {...row,club};
+  const played=row.played,won=row.wins,lost=losses.get(row.clubId);
+  if(!Number.isSafeInteger(played)||!Number.isSafeInteger(won)||!Number.isSafeInteger(lost)||played-won-lost<0)
+   fail("invalid ranking totals");
+  return {club,played,won,drawn:played-won-lost,lost,
+   gf:row.goalsFor,ga:row.goalsAgainst,gd:row.goalDifference,pts:row.points};
  });
  const fixtures=[];
  for(const event of payload.fixtures){
