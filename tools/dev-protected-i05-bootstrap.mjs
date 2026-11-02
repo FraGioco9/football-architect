@@ -10,6 +10,7 @@ if(enabled()){
   if(!route.toLowerCase().includes("/int-"))await import("./dev-protected-domestic-controller.mjs");
   await import("./dev-protected-stats-controller.mjs");
   await import("./dev-protected-history-controller.mjs");
+  await import("./dev-protected-history-archive.mjs");
   await import("./dev-protected-international-controller.mjs");
  }else if(route==="/calendar"||/^\/clubs\/(?:it|eng|es|de|fr|pt|nl|br)\/(?:[1-9]|[1-3][0-9]|40)(?:\/|$)/i.test(route)){
   await import("./dev-protected-world-presenter.mjs");
