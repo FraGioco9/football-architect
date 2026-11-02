@@ -312,8 +312,8 @@
   }
   navigation.subscribe(route=>{
     selected=route.matchday;
-    if(route.view==="fixtures"&&rounds!==null&&committedSeason===route.season){
-      navigation.defaultMatchday(currentMatchday??1);
+    if(route.view==="fixtures"&&rounds!==null&&currentMatchday!==null&&committedSeason===route.season){
+      navigation.defaultMatchday(currentMatchday);
       selected=navigation.get().matchday;
     }
     roundMenu.close();render();
@@ -339,7 +339,8 @@
         fields.empty.dataset.appI18n='competitionFixturesEmpty';
         fields.empty.textContent='No scheduled matches or results are available.';
         fields.toolbar.dataset.fixturesState="ready";
-        navigation.defaultMatchday(currentMatchday??1);
+        // Do not write a provisional matchday=1 before the world clock is resolved.
+        if(currentMatchday!==null)navigation.defaultMatchday(currentMatchday);
         render();
       };
     },
