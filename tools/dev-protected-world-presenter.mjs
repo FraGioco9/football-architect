@@ -28,3 +28,6 @@ window.addEventListener("fa:protected-world-ready",event=>commit(event.detail));
 window.addEventListener("fa:protected-world-reset",event=>{latest=Math.max(latest,event.detail?.revision??0);clear()});
 window.addEventListener("fa:protected-world-unavailable",()=>clear());
 window.addEventListener("fa:debug-mode-change",()=>{if(!active())clear()});
+window.addEventListener("fa:calendar-selection-change",()=>{
+ if(location.pathname==="/calendar")clear();
+});
