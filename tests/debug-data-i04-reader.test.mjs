@@ -33,3 +33,21 @@ test("I04 invalidates in-flight source reads when source changes or Debug OFF",a
  assert.deepEqual(await old,{status:"stale",epoch:oldEpoch});
  assert.equal(r.getEpoch(),oldEpoch+1);
 });
+
+test("I04 old pending dataset cannot contaminate newly activated dataset",async()=>{
+ const releases=new Map();
+ const r=createProtectedDebugSeasonReader({
+  loadCorpus:id=>new Promise(resolve=>releases.set(id,resolve)),divisions,cupCatalog
+ });
+ const firstEpoch=r.activate({datasetId:"debug-old"});
+ const first=r.read({seasonNumber:1,worldDay:12,competitionId:"IT-1"});
+ await Promise.resolve();
+ const secondEpoch=r.activate({datasetId:"debug-new"});
+ const second=r.read({seasonNumber:1,worldDay:13,competitionId:"IT-1"});
+ await Promise.resolve();
+ releases.get("debug-old")({datasetId:"debug-old",status:"UNSEALED_NOT_FOR_RUNTIME"});
+ assert.deepEqual(await first,{status:"stale",epoch:firstEpoch});
+ assert.equal(r.isCurrent(secondEpoch,"debug-new"),true);
+ releases.get("debug-new")({datasetId:"wrong",status:"UNSEALED_NOT_FOR_RUNTIME"});
+ await assert.rejects(second,/dataset identity mismatch/);
+});
