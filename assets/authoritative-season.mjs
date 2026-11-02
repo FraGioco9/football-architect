@@ -132,7 +132,9 @@ export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJs
  return Object.freeze({async load(){
   if(disposed||isDev())return false;
   const ticket=++epoch;controller?.abort();controller=new AbortController();const signal=controller.signal;
-  clear();onState('loading');const context=getContext();if(!context)return false;
+  // Retain the last committed standings/fixtures until a validated global snapshot replaces them.
+  // Clearing first creates an empty-state flash and invalidates competing context revisions.
+  onState('loading');const context=getContext();if(!context)return false;
   const current=()=>!disposed&&ticket===epoch&&!isDev()&&getContext()?.revision===context.revision&&getContext()?.selectedSeason===context.selectedSeason;
   let completed=false;
   try{
