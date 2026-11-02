@@ -91,3 +91,20 @@ test('A04 international picker groups two legs into one phase selection',()=>{
  assert.match(css,/\.app-fixtures-trigger\{[^}]*justify-content:center/);
  assert.match(css,/\.app-fixtures-trigger>\.language-chevron\{position:absolute/);
 });
+
+test('A04 international Fixtures phase label is identical in menu and selected box',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/phaseLabel\(choice\.labelKey,document\.documentElement\.lang\)/);
+ assert.match(source,/phaseLabel\(selectedChoice\.labelKey,document\.documentElement\.lang\)/);
+ assert.match(source,/choices=\(international\?configured\.filter\(choice=>!choice\.round\|\|typeof choice\.value==='number'\|\|choice\.round===1\)/);
+});
+test('A04 cup stage headings are per-leg only and do not repeat Final',()=>{
+ const source=readFileSync(new URL('../assets/competition-fixtures.js',import.meta.url),'utf8');
+ assert.match(source,/const title=legs===1\?null:element\('li','app-fixture-stage'\)/);
+ assert.match(source,/if\(title\)matches\.push\(title\)/);
+ assert.match(source,/for\(let leg=1;leg<=legs;leg\+\+\)/);
+});
+test('A04 fixtures chevron follows aria-expanded menu state',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-fixtures-trigger\[aria-expanded="true"\]>\.language-chevron\{transform:translateY\(-50%\) rotate\(180deg\)\}/);
+});
