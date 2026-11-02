@@ -121,12 +121,14 @@ const detailContent = function detailContent(d,neutral=false){
  const c=countryById[d.countryId];
  if(!c&&d.category!=="international")throw Error("unknown detail "+d.id);
  const level=d.tier===1?"divisionTier1":"divisionTier2";
+ const identityMeta=d.category==="international"
+  ?'<span id="app-competition-country" data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span id="app-competition-tier" data-cup-copy="summary">24 clubs · 8 countries</span>'
+  :inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span>';
  return '          <header class="app-competition-header">\n'+
  '            '+(neutral?'<div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>':renderLogo(d))+'\n'+
  '            <div class="app-competition-identity">\n'+
  '              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">'+(d.category==="international"?encode(d.name):neutral?"Competition":encode(d.name))+'</span></h1>\n'+
- (d.category==="international"?'              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>\n':
- '              <div class="app-world-detail-meta">'+inlineCountryFlag(c,"app-competition-flag")+' <span id="app-competition-country" data-world-country="'+(neutral?"":d.countryId)+'">'+(neutral?"Country":encode(c.name.en))+'</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="'+level+'">'+(d.tier===1?'First division':'Second division')+'</span></div>\n')+
+ '              <div class="app-world-detail-meta">'+identityMeta+'</div>\n'+
  '            </div>\n'+
  '            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span>'+menuChevron+'</button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>\n'+
  '            <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>\n'+
