@@ -1,5 +1,6 @@
+import sporting from './sporting-contract.js';
 // ARCH-CLEAN-02 A01: pure, immutable canonical identity/relationship lookup.
-const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+const countries=sporting.countries;
 const languages=['en','de','es','fr','it'];
 const native={IT:'it',ENG:'en',ES:'es',DE:'de',FR:'fr',PT:'pt',NL:'nl',BR:'pt'};
 const fail=(message)=>{throw Error('World Catalog: '+message)};
@@ -23,7 +24,7 @@ export function createWorldCatalog({clubs,divisions,internationalCompetitions,pr
   const record=freeze(structuredClone(d));byDivision.set(d.id,record);byCompetition.set(d.id,record);
  }
  for(const cup of internationalCompetitions){
-  if(!['int-1','int-2'].includes(cup.id)||byCompetition.has(cup.id)||cup.capacity!==24)fail('cup '+cup.id);
+  if(!sporting.international.includes(cup.id)||byCompetition.has(cup.id)||cup.capacity!==24)fail('cup '+cup.id);
   byCompetition.set(cup.id,freeze(structuredClone(cup)));
  }
  const used=new Set();

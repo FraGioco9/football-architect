@@ -1,8 +1,9 @@
+import sporting from '../../../../assets/sporting-contract.js';
 /** Season-independent INT24 pot construction from approved qualified club IDs.
  * Three actual qualifiers per nation per cup. Never infer ranking from club ID.
  */
 import {ApiError} from '../../errors.ts';
-export const internationalCountries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
+export const internationalCountries=sporting.countries;
 const fail=():never=>{throw new ApiError(422,'schedule_invalid')};
 export function qualificationPots(clubs:readonly string[],countryOrder:readonly string[]){
  if(clubs.length!==24||new Set(clubs).size!==24||countryOrder.length!==8||

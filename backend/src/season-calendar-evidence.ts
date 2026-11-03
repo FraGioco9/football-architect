@@ -1,3 +1,4 @@
+import sporting from '../../assets/sporting-contract.js';
 /** Season 1 design-calendar evidence. Not a fixture/scheduling engine. */
 import calendarModel from '../../assets/world-calendar-model.js';
 import approval from '../catalogues/season-1.approval.json' with {type:'json'};
@@ -9,10 +10,8 @@ type Day={id:string;day:number;kind:string;pairing:string|null;events:Marker[]};
 export type CalendarEvidence=Readonly<{
  season:number;calendarVersion:string;calendarHash:string;calendarJson:string;
 }>;
-const countryIds=['IT','ENG','ES','DE','FR','PT','NL','BR'];
-const domestic=countryIds.flatMap(country=>[country+'-1',country+'-2']);
-const international=['int-1','int-2'];
-const hasExact=(actual:string[],expected:string[])=>actual.length===expected.length&&expected.every((x,i)=>actual[i]===x);
+const {domestic,international}=sporting;
+const hasExact=(actual:string[],expected:readonly string[])=>actual.length===expected.length&&expected.every((x,i)=>actual[i]===x);
 const fail=():never=>{throw new ApiError(422,'calendar_invalid')};
 
 /** Derives and checks design event markers, never football fixtures or results. */
