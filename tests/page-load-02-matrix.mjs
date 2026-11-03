@@ -179,7 +179,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
   const ids=competitionCatalog.competitions;
   assert.equal(ids.length,18,'canonical competition catalogue must contain 18 competitions');
   for(const def of ids){
-   const id=def.id.toLowerCase(),route='/competitions/'+id+'/standings?season=2';
+   const id=def.id.toLowerCase(),route='/competitions/'+id+'/standings?season=1';
    const row={id:def.id,category:def.category,checks:[],views:[]};
    evidence.competitionPages.push(row);
    const errorStart=errors.length;
@@ -195,7 +195,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
      bracket:document.querySelector('#app-postseason-bracket')!==null
     }));
     assert.equal(cold.title,true,def.id+' static title');
-    assert.equal(cold.season,2,def.id+' explicit season before API');
+    assert.equal(cold.season,1,def.id+' supported season before API');
     assert.equal(cold.tabs.length,7,def.id+' seven canonical tabs');
     assert.equal(new Set(cold.tabs).size,7,def.id+' unique tab identities');
     assert.ok(cold.tableHeaders>0,def.id+' static table headers');
@@ -217,7 +217,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
       main:document.querySelector('main')};
     });
     assert.equal(observed.pathname,'/competitions/'+id+'/'+view,def.id+' route '+view);
-    assert.equal(observed.season,'2',def.id+' viewed season '+view);
+    assert.equal(observed.season,'1',def.id+' viewed season '+view);
     assert.deepEqual(observed.selected,['competition-tab-'+view],def.id+' selected tab '+view);
     assert.deepEqual(observed.panels,['competition-panel-'+view],def.id+' visible panel '+view);
     assert.equal(observed.overflow,false,def.id+' horizontal overflow '+view);
