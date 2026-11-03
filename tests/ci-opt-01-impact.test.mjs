@@ -40,7 +40,7 @@ test("workflow gates preserve final FULL and main browser safety",async()=>{
  assert.match(node,/node tools\/ci-opt-01-node-runner\.mjs/);
  assert.match(browser,/node tests\/int24-browser-qa\.mjs/);
  assert.match(browser,/node tests\/clean-ui-03-webkit-iphone\.mjs/);
- assert.match(browser,/github\.event_name.*workflow_dispatch/);
+ assert.match(browser,/needs\.scope\.outputs\.mode == 'full'/);
  assert.match(browser,/PR_BASE_SHA=.*node tests\/clean-ui-03-css-parity\.mjs/);
 });
 
