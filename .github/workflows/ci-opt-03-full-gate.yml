@@ -23,6 +23,7 @@ jobs:
   full-evidence:
     name: CI FULL exact-head evidence
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Verify exact PR head and complete FULL workflow evidence
         uses: actions/github-script@v7
@@ -49,11 +50,16 @@ jobs:
             if(needsAdmin)required.push('admin-world-checks.yml');
             const evidence=[];
             for(const workflow_id of required){
-              const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
-              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&['pull_request','workflow_dispatch'].includes(run.event)&&run.run_attempt>=1);
-              if(!matches.length){core.setFailed('Missing FULL workflow '+workflow_id+' for '+expected);return;}
-              const selected=matches.sort((a,b)=>b.id-a.id)[0];
-              if(selected.status!=='completed'||selected.conclusion!=='success'){
+              let selected;
+              for(let attempt=0;attempt<80;attempt++){
+                const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
+                const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&['pull_request','workflow_dispatch'].includes(run.event)&&run.run_attempt>=1);
+                selected=matches.sort((a,b)=>b.id-a.id)[0];
+                if(selected?.status==='completed')break;
+                if(attempt===79){core.setFailed('Timed out waiting for FULL workflow '+workflow_id+' on '+expected);return;}
+                await new Promise(resolve=>setTimeout(resolve,15000));
+              }
+              if(selected.conclusion!=='success'){
                 core.setFailed('Latest FULL workflow is not a completed PASS: '+workflow_id+' '+selected.html_url);return;
               }
               const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
