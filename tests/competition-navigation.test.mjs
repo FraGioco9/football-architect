@@ -376,5 +376,11 @@ test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab ra
   assert.match(critical,/\.app-competition-tabs>\.app-competition-tab\{display:block;flex:0 0 112px/,id+' first-paint button dimensions independent of stylesheet');
   assert.match(critical,/border-bottom:1px solid/,id+' first-paint permanent underline');
   assert.match(critical,/@media\(max-width:620px\)/,id+' first-paint mobile sizes');
+  assert.match(critical,/app-competition-logo-image\{display:block;width:100%;height:100%;object-fit:contain\}/,id+' reserved logo image at first paint');
+  if(!id.startsWith('int-')){
+   const logo=html.match(/<div id="app-competition-badge"[^>]*>([\s\S]*?)<\/div>/)?.[1]||'';
+   assert.match(logo,/^<img class="app-competition-logo-image" src="\/assets\/divisions\/[^"<>]+\/compact\.svg" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high">$/,id+' canonical image, no blocking inline crest');
+   assert.ok(!logo.includes('shadowrootmode'),id+' no inline SVG shadow tree on critical detail path');
+  }
  }
 });
