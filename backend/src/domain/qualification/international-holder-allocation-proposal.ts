@@ -1,8 +1,8 @@
 /** Approved INT24 ChampionAwareV1 holder placement policy.
  * Pure, deterministic: no D1 writes or Season 2 activation.
  */
-import {ApiError} from './errors.ts';
-import type {NextSeasonMembership} from './next-season-membership.ts';
+import {ApiError} from '../../errors.ts';
+import type {NextSeasonMembership} from '../../next-season-membership.ts';
 import type {HolderReview} from './international-holder-review.ts';
 export interface HolderMove {
  readonly cup:'int-1'|'int-2';

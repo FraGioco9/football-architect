@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {reviewInternationalHolders} from '../src/international-holder-review.ts';
+import {reviewInternationalHolders} from '../src/domain/qualification/international-holder-review.ts';
 import type {Progression} from '../src/knockout-progression.ts';
 import type {NextSeasonMembership} from '../src/next-season-membership.ts';
 const candidate:NextSeasonMembership={season:2,status:'provisional-results-derived',bindings:[

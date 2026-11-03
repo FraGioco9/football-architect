@@ -2,8 +2,8 @@
 import {ApiError} from './errors.ts';
 import type {Progression} from './knockout-progression.ts';
 import {membershipCandidateFromProgression} from './next-season-membership.ts';
-import {reviewInternationalHolders} from './international-holder-review.ts';
-import {proposeHolderAllocation} from './international-holder-allocation-proposal.ts';
+import {reviewInternationalHolders} from './domain/qualification/international-holder-review.ts';
+import {proposeHolderAllocation} from './domain/qualification/international-holder-allocation-proposal.ts';
 
 export function seasonArchiveSportingSummary(state:Progression){
  if(state.lastDay!==56||state.results.size!==4082||state.ties.size!==54)throw new ApiError(422,'archive_invalid');

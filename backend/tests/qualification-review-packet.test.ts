@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {buildQualificationReviewPacket} from '../src/qualification-review-packet.ts';
+import {buildQualificationReviewPacket} from '../src/domain/qualification/qualification-review-packet.ts';
 import type {NextSeasonMembership} from '../src/next-season-membership.ts';
-import type {HolderReview} from '../src/international-holder-review.ts';
+import type {HolderReview} from '../src/domain/qualification/international-holder-review.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 const candidate:NextSeasonMembership={season:2,status:'provisional-results-derived',bindings:[
  ...countries.flatMap(c=>[1,2].map(tier=>({competitionId:c+'-'+tier,clubIds:Array.from({length:16},(_,i)=>c+'-'+(i+1+(tier-1)*16))}))),
