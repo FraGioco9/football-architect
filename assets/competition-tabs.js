@@ -258,8 +258,8 @@
     seasonPicker.update(seasonOptions());apply({...state,season:selectLatest?latestSeason:state.season},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
-    if((window.faDevPreviewMode!==true&&!devSeasons.length)||!Number.isInteger(limit)||limit<0||limit>4)return false;
-    devSeasons=['1','2','3','4'];
+    if((window.faDevPreviewMode!==true&&!devSeasons.length)||!Number.isInteger(limit)||limit<0||limit>5)return false;
+    devSeasons=['1','2','3','4','5'];
     document.documentElement.dataset.faDevSeasons=devSeasons.join(',');
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
     document.documentElement.dataset.faDevCurrentSeason=String(limit);
