@@ -201,7 +201,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
      tabs:[...document.querySelectorAll('.app-competition-tabs [role="tab"]')].map(x=>x.id),
      tableHeaders:document.querySelectorAll('#competition-panel-standings th').length,
      bracket:document.querySelector('#app-postseason-bracket')!==null,
-     blankUnknown:[...document.querySelectorAll('#app-standings-body .app-world-stat-unknown')].every(x=>getComputedStyle(x).visibility==='hidden')
+     blankUnknown:[...document.querySelectorAll('#app-standings-body .app-world-stat-unknown')].every(x=>getComputedStyle(x).color==='rgba(0, 0, 0, 0)')
     }));
     assert.equal(cold.title,true,def.id+' static title');
     assert.equal(cold.season,1,def.id+' supported season before API');

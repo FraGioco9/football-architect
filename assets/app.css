@@ -1158,4 +1158,4 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 
 /* PAGE-LOAD-02: keep permanent club rows and cell geometry, but never display
    synthetic unknown league statistics as sporting results before validation. */
-#app-standings-body .app-world-stat-unknown{visibility:hidden}
+#app-standings-body .app-world-stat-unknown{color:transparent}
