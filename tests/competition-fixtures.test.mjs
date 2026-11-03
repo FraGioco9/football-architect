@@ -266,7 +266,7 @@ test('FIXTURES-07: result groups show full time or supplied date above the score
   view.prepare(fixtures)();
   const check=played=>{
    for(const row of fields.get('app-fixtures-list').children){
-    const homeId=Number(row.dataset.fixtureMatch.split(':')[1]);
+    const homeId=Number(row.dataset.fixtureMatch.split(':')[2]);
     const home=canonical.find(c=>c.countryId===d.countryId&&c.clubId===homeId);
     const result=row.children.find(n=>n.className==='app-fixture-result');
     assert.ok(result,'one result group per match');
