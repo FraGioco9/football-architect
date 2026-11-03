@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
 import {runInNewContext} from 'node:vm';
 const modelUrl=new URL('../assets/competition-model.js',import.meta.url);
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const manifest=()=>JSON.parse(read('competitions/_shared/manifest.json'));
 const getModel=()=>{
  assert.ok(existsSync(modelUrl),'Shared competition model must exist');
- return createRequire(import.meta.url)(modelUrl.pathname);
+ return createRequire(import.meta.url)(fileURLToPath(modelUrl));
 };
 
 test('browser and Node entry points expose the same immutable competition contract',()=>{
