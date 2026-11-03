@@ -9,7 +9,7 @@ import {spawnSync,execFileSync} from 'node:child_process';
 const workflows=['landing-checks.yml','int24-browser-qa.yml'];
 const read=name=>readFileSync(new URL('../.github/workflows/'+name,import.meta.url),'utf8');
 function stepScript(source,name){
- const lines=source.split('\n');
+ const lines=source.split(/\r?\n/);
  const start=lines.indexOf('      - name: '+name);
  assert.ok(start>=0,'Missing workflow step: '+name);
  const next=lines.findIndex((line,i)=>i>start&&/^      - (?:name:|uses:)/.test(line));
@@ -24,6 +24,10 @@ function stepScript(source,name){
  assert.ok(body.length,'Empty workflow shell');
  return body.join('\n');
 }
+test('workflow extraction tolerates CRLF without weakening step boundaries',()=>{
+ const fixture='      - name: Expected\r\n        run: |\r\n          echo verified\r\n      - name: Later\r\n        run: |\r\n          echo unrelated';
+ assert.equal(stepScript(fixture,'Expected'),'echo verified');
+});
 test('workflow extraction cannot execute a later step when the named step loses its multiline run',()=>{
  const fixture='      - name: Expected\n        run: echo inline\n      - name: Later\n        run: |\n          echo unrelated';
  assert.throws(()=>stepScript(fixture,'Expected'),/Missing multiline shell/);
