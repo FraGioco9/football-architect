@@ -1294,8 +1294,14 @@
     // A pending or unavailable world is not a sporting value. Keep the reserved
     // shell slot blank instead of flashing an apparent result placeholder.
     const full=current?(snapshot.source==='dev'?'Debug · ':'')+(current.season===0?strings.noSeason:strings.historySeasonLabel+' '+current.season+' · '+day+' '+current.day+'/56'):'';
-    for(const node of document.querySelectorAll('.fa-shell-date-full'))node.textContent=full;
-    for(const node of document.querySelectorAll('.fa-shell-date-short'))node.textContent=current?current.season+' · '+current.day+'/56':'';
+    for(const node of document.querySelectorAll('.fa-shell-date-full')){
+      node.textContent=full;
+      if(current)node.setAttribute?.('data-fa-world-ready','');else node.removeAttribute?.('data-fa-world-ready');
+    }
+    for(const node of document.querySelectorAll('.fa-shell-date-short')){
+      node.textContent=current?current.season+' · '+current.day+'/56':'';
+      if(current)node.setAttribute?.('data-fa-world-ready','');else node.removeAttribute?.('data-fa-world-ready');
+    }
   }
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
