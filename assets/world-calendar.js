@@ -94,6 +94,11 @@
     const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1];
     details.dataset.day=String(state.day);content.dataset.filter=filter;content.dataset.division=division;
     heading.textContent=w.day+' '+d.day+' · '+(d.events.length?w.events:w[d.kind]);
+    const prior=[...(content.querySelectorAll?.('.calendar-detail-card[data-marker]')||[])];
+    const expanded=new Set(prior.filter(card=>card.querySelector('details')?.open).map(card=>card.dataset.marker));
+    const active=document.activeElement;
+    const focusedMarker=content.contains(active)?active.closest('.calendar-detail-card[data-marker]')?.dataset.marker:null;
+    const scrollTop=content.scrollTop;
     content.replaceChildren();
     const visible=d.events.filter(matches);
     if(!visible.length){
@@ -109,9 +114,18 @@
       const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='int-1'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
       for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
       disclosure.append(info);article.append(disclosure);
-      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href=window.faRoutesRegistry.buildRoute({kind:'competition',id:division,view:'fixtures'})+'?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
+      if(expanded.has(e.marker))disclosure.open=true;
+      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href=window.faRoutesRegistry.buildRoute({kind:'competition',id:division,view:'fixtures'})+'?season='+encodeURIComponent(String(window.faCalendarSelectedSeason?.()??1))+'&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
       content.append(article);
     }
+    // Retain the same disclosure and keyboard context when a locale/filter
+    // refresh leaves the canonical event identity present.
+    if(focusedMarker){
+      const target=[...(content.querySelectorAll?.('.calendar-detail-card[data-marker]')||[])]
+        .find(card=>card.dataset.marker===focusedMarker);
+      target?.querySelector('summary')?.focus({preventScroll:true});
+    }
+    if(content.scrollTop!==scrollTop)content.scrollTop=scrollTop;
   }
   // CAL-IMP-04: filter and navigation are presentation state, not sporting progress.
   // CAL-IMP-05A: only explicit DEV snapshots; public and missing sources remain unavailable.

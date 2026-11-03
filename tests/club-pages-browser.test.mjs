@@ -238,6 +238,17 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await wait("document.querySelectorAll('.nav01-card').length===320");
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
+     // PAGE-LOAD-02 P16: filtering and restoring never discard a known crest card.
+     const cachedCard=await run(`(()=>{
+       const href='/clubs/it/1/overview',saved=document.querySelector('.nav01-card[href="'+href+'"]');
+       const input=document.querySelector('.nav01-filters input');
+       if(!saved||!input)return false;
+       input.value='__page_load_02_no_clubs__';input.dispatchEvent(new Event('input',{bubbles:true}));
+       if(document.querySelectorAll('.nav01-card').length!==0)return false;
+       input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));
+       return document.querySelector('.nav01-card[href="'+href+'"]')===saved;
+     })()`);
+     assert.equal(cachedCard,true,'P16 club card and crest survive filter reset');
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
      assert.equal(state.overflow,false,JSON.stringify({width,theme,lang,state}));assert.ok(state.labels.every(Boolean));
      assert.equal(await run("document.querySelectorAll('.nav01-filter [role=combobox]:not(:disabled)').length"),2);

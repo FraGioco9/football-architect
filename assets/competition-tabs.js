@@ -85,7 +85,9 @@
     return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");
-  if(!tablist)return;
+  // Club subpages reuse the visual tab class. They are owned by club-page.js,
+  // never by competition URL state even if a shared menu helper is loaded.
+  if(!tablist||!window.location.pathname.startsWith('/competitions/'))return;
   const model=window.faCompetitionModel;
   const views=model.views.map(view=>view.id);
   const tabs=[...tablist.querySelectorAll('[role="tab"]')];
@@ -260,6 +262,7 @@
     else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
   });
   window.addEventListener("popstate",()=>{
+    if(!window.location.pathname.startsWith('/competitions/'))return;
     pendingDefaultMatchday=false;
     apply(read(),{replace:true});
   });

@@ -58,7 +58,7 @@
   const root=create('div');root.id='fa-dev-stats';
   const nav=create('div',undefined,'fa-dev-stats-nav');nav.setAttribute('role','group');nav.setAttribute('aria-label','Stats');nav.dataset.appAria='competitionTabStats';
   const content=create('div',undefined,'fa-dev-stats-content');root.append(nav,content);panel.replaceChildren(root);
-  let context=null,stats=null,view='overview',revision=-1,dialog=null,opener=null,closeTimer=null,destroyed=false,invalid=false;
+  let context=null,stats=null,view='overview',revision=-1,dialog=null,opener=null,closeTimer=null,destroyed=false,invalid=false,renderedSignature=null;
   const navButtons=[];
   const removeDialog=(restore=true)=>{
    if(!dialog)return;const current=dialog;dialog=null;clearTimeout(closeTimer);
@@ -144,13 +144,22 @@
     const valid=next&&Number.isSafeInteger(next.revision)&&next.revision>=0&&text(next.definition?.id)&&count(next.definition.capacity)&&next.definition.capacity>0&&text(next.definition.rules?.version)&&Number.isSafeInteger(next.selectedSeason)&&next.selectedSeason>0;
     if(!valid){
      if(Number.isSafeInteger(next?.revision))revision=next.revision;
-     const hadDialog=Boolean(dialog);removeDialog(false);stats=null;invalid=true;render();
+     if(invalid&&renderedSignature==='invalid')return false;
+     const hadDialog=Boolean(dialog);removeDialog(false);stats=null;invalid=true;renderedSignature='invalid';render();
      if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return false;
     }
     if(context&&next.definition.id!==context.definition.id)return false;
     if(next.revision===revision){removeDialog(false);return false;}
-    revision=next.revision;context=next;const hadDialog=Boolean(dialog);removeDialog(false);
-    invalid=false;try{stats=normalize(next)}catch{stats=null;invalid=true}render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
+    let candidate=null,invalidCandidate=false;
+    try{candidate=normalize(next)}catch{invalidCandidate=true}
+    const signature=invalidCandidate?'invalid':'valid:'+JSON.stringify(candidate);
+    revision=next.revision;context=next;
+    // Same validated statistics across world revisions must not destroy cards,
+    // crest images, keyboard focus or an open statistics dialog.
+    if(signature===renderedSignature)return true;
+    const hadDialog=Boolean(dialog);removeDialog(false);
+    stats=candidate;invalid=invalidCandidate;renderedSignature=signature;
+    render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
    },
    destroy(){if(destroyed)return;destroyed=true;removeDialog(false);root.remove();mounted.delete(panel)}
   });

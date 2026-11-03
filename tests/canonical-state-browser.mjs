@@ -28,7 +28,33 @@ export function calendarPublished(season,day,currentWorld){
  const fixtures=manifest.divisions.flatMap(d=>published(d.id,season,currentWorld).data.fixtures.filter(f=>f.day===day));
  return {schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:season,day,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${currentWorld.generation}:season:${season}:`+'a'.repeat(64)},data:{season,day,seasonState:{day:currentWorld.day,phase:'active'},calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
 }
-const routes=['/dashboard','/competitions','/competitions/it-1/standings?season=1','/competitions/int-1/stats?season=1','/calendar?season=1&calendarView=week','/clubs','/clubs/it/1/overview','/settings'];
+// PAGE-LOAD-02: each concrete page/view is navigated independently in both engines.
+// This smoke grid complements (but does not replace) per-view delayed/error QA.
+const routes=[
+ '/dashboard','/competitions',
+ '/competitions/it-1/overview?season=1',
+ '/competitions/it-1/standings?season=1',
+ '/competitions/it-1/fixtures?season=1&matchday=3',
+ '/competitions/it-1/stats?season=1',
+ '/competitions/it-1/history?season=1',
+ '/competitions/it-1/rules?season=1',
+ '/competitions/it-1/awards?season=1',
+ '/competitions/int-1/postseason?season=1',
+ '/competitions/int-1/standings?season=1',
+ '/competitions/int-1/fixtures?season=1&matchday=1',
+ '/competitions/int-1/stats?season=1',
+ '/competitions/int-1/history?season=1',
+ '/competitions/int-1/rules?season=1',
+ '/calendar?season=1&calendarView=season',
+ '/calendar?season=1&calendarView=week',
+ '/clubs',
+ '/clubs/it/1/overview',
+ '/clubs/it/1/roster',
+ '/clubs/it/1/fixtures',
+ '/clubs/it/1/stats',
+ '/clubs/it/1/history',
+ '/settings'
+];
 const unavailable={kind:'none',sourceRef:null,resultAuthority:null};
 const json=(route,status,body)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 async function server(devPreview){
@@ -40,7 +66,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
  const publicHost=await server(false),debugHost=await server(true);
  const origin='http://127.0.0.1:'+publicHost.address().port,debugOrigin='http://127.0.0.1:'+debugHost.address().port;
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
- const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const errors=[];page.on('pageerror',error=>errors.push(error.stack||error.message));
  let offline=false,admin=false,worldCalls=0,holdSeasonOne=null,heldStarted=null,holdNumber='1',populated=false,apiWorld=world;
  await page.route('**/api/**',async route=>{
   const path=new URL(route.request().url()).pathname;
@@ -81,6 +107,21 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
     assert.equal(new URL(state.calendar,origin).searchParams.get('season'),'2',path+' global sidebar');
     if(path.includes('?season=1'))assert.equal(new URL(page.url()).searchParams.get('season'),'1',path+' historical URL');
+    // PAGE-LOAD-02: each individual view, not just a sibling route, must
+    // remain within the viewport at all four supported breakpoints.
+    if(refresh){
+     for(const probe of [320,390,768,1440]){
+      await page.setViewportSize({width:probe,height:844});
+      const geometry=await page.evaluate(()=>({
+       overflow:document.documentElement.scrollWidth>innerWidth+2,
+       headings:document.querySelectorAll('h1').length
+      }));
+      assert.equal(geometry.overflow,false,path+' horizontal overflow at '+probe);
+      assert.ok(geometry.headings>=1,path+' missing static title at '+probe);
+      checks++;
+     }
+     await page.setViewportSize({width,height:844});
+    }
     checks++;
    }
   }
@@ -123,6 +164,27 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.goto(origin+'/clubs/it/1/overview',{waitUntil:'networkidle'});
   await page.waitForFunction(()=>window.faWorldState?.get().current===null&&document.documentElement.dataset.clubReady==='true');
   assert.ok((await page.locator('.club-header h1').textContent()).length>0);assert.equal(await page.locator('.club-tabs a').count(),5);checks++;
+  // PAGE-LOAD-02 P17/P18: independently check club image/focus preservation.
+  await page.waitForFunction(()=>document.querySelector('.club-header [data-club-crest] .app-club-crest-image')?.complete);
+  await page.evaluate(()=>{window.p17Crest=document.querySelector('.club-header [data-club-crest] .app-club-crest-image');window.p17Header=document.querySelector('.club-header')});
+  for(const lang of ['de','es','fr','it','en']){
+   await page.locator('.club-tabs [aria-current="page"]').focus();
+   await page.evaluate(value=>document.documentElement.lang=value,lang);
+   await page.waitForFunction(value=>document.title.includes(window.faClubModel.copies[value].overview),lang);
+   assert.equal(await page.evaluate(()=>document.querySelector('.club-header [data-club-crest] .app-club-crest-image')===window.p17Crest),true,'P17 crest identity '+lang);
+   assert.equal(await page.evaluate(()=>document.activeElement?.matches('.club-tabs [aria-current="page"]')),true,'P17 focused tab '+lang);
+   checks++;
+  }
+  // Capture the current translated header: earlier language switches
+  // intentionally replaced its text and its wrapper.
+  await page.evaluate(()=>{window.p17Header=document.querySelector('.club-header')});
+  await page.locator('.club-tabs a[href*="/fixtures"]').click();
+  await page.waitForURL('**/fixtures*');
+  assert.equal(await page.evaluate(()=>document.querySelector('.club-header')===window.p17Header),true,'P18 header survives tab navigation');
+  await page.goBack();
+  await page.waitForURL('**/overview*');
+  assert.equal(await page.evaluate(()=>document.querySelector('.club-header')===window.p17Header),true,'P18 header survives Back');
+  checks++;
   offline=false;
   // Protected source ignores API data and retains its own empty Season 0 after reset/reload.
   const callsBefore=worldCalls;
@@ -158,7 +220,31 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===21);
   assert.equal(new URL(page.url()).searchParams.get('season'),'2','OFF retains viewed season');
   releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===5);
-  assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
+  assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');
+  // PAGE-LOAD-02 P04: changing sources may clear incompatible sporting rows;
+  // consecutive validated revisions of the same source must retain stable rows.
+  await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16);
+  await page.evaluate(()=>{
+   window.p04Row=document.querySelector('#app-standings-body tr');
+   window.p04Before={club:window.p04Row.dataset.worldClub,rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length};
+  });
+  apiWorld={...world,revision:6,day:22};
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
+  const p04=await page.evaluate(()=>({
+   row:window.p04Row===document.querySelector('#app-standings-body tr'),
+   count:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
+   crest:document.querySelector('#app-standings-body tr [data-club-crest]')?.dataset.clubCrest,
+   provenance:window.faCompetitionContext?.seasonData?.provenance?.kind,
+   afterClub:document.querySelector('#app-standings-body tr')?.dataset.worldClub,
+   before:window.p04Before,
+   sourceState:document.querySelector('.app-competition-status')?.textContent
+  }));
+  assert.equal(p04.count,16,'P04 valid standings rows: '+JSON.stringify(p04));
+  assert.equal(p04.row,true,'P04 preserve club row identity: '+JSON.stringify(p04));
+  assert.ok(p04.crest,'P04 retained known crest identity');
+  assert.equal(p04.provenance,'authoritative');
+  checks+=2;
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();

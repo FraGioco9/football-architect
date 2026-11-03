@@ -247,6 +247,7 @@
     "tests/ci-repair-benchmark.test.mjs": "site-node",
     "tests/canonical-world-state.test.mjs": "site-node",
     "tests/canonical-state-browser.mjs": "support",
-    "tests/sh-01-sporting-contract.test.mjs": "site-node"
+    "tests/sh-01-sporting-contract.test.mjs": "site-node",
+    "tests/page-load-02-club-browser.mjs": "manual"
   }
 }
