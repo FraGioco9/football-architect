@@ -1,5 +1,6 @@
 import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
+import {accountJson as json,accountCookie as cookie,accountInput as body} from './account-http.ts';
 import {changePlayerPassword,revokeOtherSessions,deletePlayerAccount} from './player-account-management.ts';
 import {requestPasswordReset,completePasswordReset} from './player-password-reset.ts';
 import {registerPlayer,verifyPlayerEmail,type VerificationDelivery} from './player-registration.ts';
@@ -10,21 +11,6 @@ import {requireDatabase} from './database.ts';
 import {requireMutationOrigin} from './origin-policy.ts';
 import {playerLogin,playerAuthenticate,playerRequireCsrf,playerCsrfFor} from './player-auth.ts';
 export interface PlayerEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string;PLAYER_VERIFICATION_DELIVERY?:VerificationDelivery;PLAYER_RESET_DELIVERY?:VerificationDelivery}
-const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};
-const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
-function cookie(request:Request,name:string){
- const values=(request.headers.get('Cookie')??'').split(';').map(v=>v.trim()).filter(v=>v.startsWith(name+'='));
- if(values.length>1)throw new ApiError(401,'unauthorized');
- return values[0]?.slice(name.length+1)??'';
-}
-async function body(request:Request){
- if(request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase()!=='application/json')throw new ApiError(415,'json_required');
- if(!request.body)throw new ApiError(400,'invalid_json');
- const reader=request.body.getReader();const parts:Uint8Array[]=[];let length=0;
- try{for(;;){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>4096){await reader.cancel();throw new ApiError(413,'request_too_large')}parts.push(value)}}finally{reader.releaseLock()}
- const data=new Uint8Array(length);let index=0;for(const part of parts){data.set(part,index);index+=part.length}
- try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(data)) as unknown}catch{throw new ApiError(400,'invalid_json')}
-}
 export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Response>{
  const path=new URL(request.url).pathname;
  const methods:Record<string,string>={'/api/player/password-reset/request':'POST','/api/player/password-reset/complete':'POST','/api/player/register':'POST','/api/player/verify-email':'POST','/api/player/account/change-password':'POST','/api/player/account/revoke-other-sessions':'POST','/api/player/account/delete':'POST','/api/player/login':'POST','/api/player/logout':'POST','/api/player/session':'GET','/api/player/sessions':'GET','/api/player/permissions':'GET','/api/player/admin/world':'GET'};
