@@ -196,8 +196,11 @@ try {
   console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"domcontentloaded"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
-  await page.locator('.fa-dev-widget-button').click();
+  // DEV panel open state persists between route reloads; never blindly toggle closed.
+  if(!await page.locator('[data-dev-control="season-number"]').isVisible())
+   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
+  await season.waitFor({state:'visible'});
   assert.equal(await season.getAttribute('min'),'0');
   await season.fill('0');await season.dispatchEvent('change');
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
@@ -236,7 +239,9 @@ try {
    assert.deepEqual(await page.locator('#calendar-season-menu [role=option]').allTextContents(),['1']);
    await page.locator('#calendar-season-picker').click();
   }
-  await page.locator('.fa-dev-widget-button').click();
+  if(!await page.locator('[data-dev-control="season-number"]').isVisible())
+   await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="season-number"]').waitFor({state:'visible'});
   await page.locator('[data-dev-control="season-number"]').fill('1');
   await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false&&window.faDevWorldClockSnapshot?.current?.season===1);
