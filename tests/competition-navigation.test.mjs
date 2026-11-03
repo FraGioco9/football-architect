@@ -377,7 +377,7 @@ test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab ra
   assert.match(critical,/border-bottom:1px solid/,id+' first-paint permanent underline');
   assert.match(critical,/html\[data-fa-competition-prepaint\] body\{visibility:hidden\}/,id+' do not paint shell before static tabs');
   assert.ok(html.includes('setAttribute("data-fa-competition-prepaint","")'),id+' prepaint gate activated in head');
-  assert.ok(html.includes('removeAttribute("data-fa-competition-prepaint")})();</script>'),id+' gate released synchronously when tablist parses');
+  assert.ok(html.includes('<script data-fa-competition-shell-ready>document.documentElement.removeAttribute("data-fa-competition-prepaint")</script>'),id+' shell revealed when header and static tabs are both parsed');
   assert.match(critical,/@media\(max-width:620px\)/,id+' first-paint mobile sizes');
   if(!id.startsWith('int-')){
    assert.match(html,/<div id="app-competition-badge"[^>]*><template shadowrootmode="open">/,id+' approved inline crest in initial HTML');
