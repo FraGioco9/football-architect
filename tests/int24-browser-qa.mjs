@@ -66,13 +66,18 @@ try {
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
    if(view==='fixtures'){
-    // International knockout legs share one stage option; the other leg is selected
-    // within that stage. Verify the exact visible selector contract, not just its size.
+    // The fixture menu is hydrated after DOMContentLoaded. Its early 10-option
+    // shell is not the settled 13-option rules contract; wait for the exact
+    // rules-backed set instead of racing against initial DOM preparation.
     const expectedChoices=await page.evaluate(()=>window.faCompetitionRules.fixtureChoices(window.faCompetitionContext.definition)
-     .filter(choice=>!choice.round||typeof choice.value==='number'||choice.round===1)
      .map(choice=>String(choice.value)));
+    await page.waitForFunction(expected=>{
+     const actual=[...document.querySelectorAll('[data-fixture-round-choice]')]
+      .map(node=>node.dataset.fixtureRoundChoice);
+     return actual.length===expected.length&&actual.every((choice,index)=>choice===expected[index]);
+    },expectedChoices,{timeout:10000});
     assert.deepEqual(await page.locator('[data-fixture-round-choice]').evaluateAll(nodes=>nodes.map(node=>node.dataset.fixtureRoundChoice)),
-     expectedChoices,'fixture stages must match the shared competition rules after leg grouping');
+     expectedChoices,'fixture stages must match the settled shared competition rules');
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),true,'Fixtures keeps its navigation geometry even without a schedule');
     assert.equal(await page.locator('#app-fixtures-previous').isDisabled(),true);
