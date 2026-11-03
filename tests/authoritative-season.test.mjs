@@ -111,3 +111,13 @@ test('same-selection revalidation retains the coherent snapshot until replacemen
  assert.equal(await loader.load(),true);assert.equal(seen,old);assert.equal(clears,0);
  fail=true;await loader.load();assert.equal(context.seasonData,null);assert.equal(clears,1);
 });
+
+test('PAGE-LOAD-02: competition season source errors do not display the unavailable banner',()=>{
+ const source=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(source,/live\.hidden=!\['loading','empty'\]\.includes\(sourceState\)/);
+ assert.match(source,/sourceState==='empty'\?words\[1\]:''/);
+ for(const message of ['Season data is unavailable.','Dati della stagione non disponibili.','Saisondaten sind nicht verfügbar.','Los datos de la temporada no están disponibles.','Les données de la saison sont indisponibles.']){
+  assert.equal(source.includes(message),false,'obsolete status copy: '+message);
+ }
+ assert.match(source,/No published season data yet\./,'confirmed-empty copy remains available');
+});
