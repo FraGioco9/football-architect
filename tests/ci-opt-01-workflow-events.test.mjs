@@ -118,7 +118,7 @@ test('PR CSS parity receives exactly the trusted base SHA',()=>{
  const base='b'.repeat(40);const {result,calls}=browserCommands({css:true,base});
  assert.equal(result.status,0,result.stderr);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
- assert.equal(calls[1].base,base);
+ assert.equal(calls[2].base,base);
 });
 test('PR without CSS retains full browsers and omits screenshot parity',()=>{
  const {result,calls}=browserCommands();assert.equal(result.status,0,result.stderr);
