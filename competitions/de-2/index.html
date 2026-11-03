@@ -161,7 +161,23 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <script>(()=>{performance.mark("fa-competition-tabs-parsed");const view=document.documentElement.dataset.competitionView||"standings",list=document.querySelector(".app-competition-tabs");for(const tab of list?.querySelectorAll('[role="tab"]')||[]){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}const active=list?.querySelector('[aria-selected="true"]');if(active){const row=list.getBoundingClientRect(),rect=active.getBoundingClientRect();if(rect.left<row.left+16)list.scrollLeft+=rect.left-row.left-16;else if(rect.right>row.right-16)list.scrollLeft+=rect.right-row.right+16}document.documentElement.removeAttribute("data-fa-competition-prepaint")})();</script>
 
           <header class="app-competition-header">
-            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><img class="app-competition-logo-image" src="/assets/divisions/de-2-vereinsliga/compact.svg" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high"></div>
+            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="176 50 672 923" width="672" height="923">
+	<style>
+.s0 { fill: #6a6571 }
+.s1 { fill: #243039 }
+</style>
+	<g>
+		<g>
+			<g>
+				<path class="s0" d="m176.1 397.11l150.81-141.82v597.68h-150.81z"/>
+				<path class="s0" d="m847.9 852.97h-150.81v-597.68l150.81 141.82z"/>
+				<path class="s0" d="m368.47 852.97v-663.66l143.53-138.81 143.53 138.81v663.66h-100.26v-609.67l-43.27-41.99-43.27 41.99v609.67z"/>
+				<path class="s1" d="m512 373.11l90.4 90.4-90.4 90.41-90.4-90.41z"/>
+				<path class="s1" d="m321.77 879.53h380.46l-62.56 92.97h-255.34z"/>
+			</g>
+		</g>
+	</g>
+</svg></template><span>DE-2</span></div>
             <div class="app-competition-identity">
               <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Vereinsliga</span></h1>
               <div class="app-world-detail-meta"><span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fa-competition-flag-de"><rect width="5" height="4" rx="0.625" ry="0.625"/></clipPath></defs><g clip-path="url(#fa-competition-flag-de)"><svg x="0" y="0" width="5" height="4" viewBox="0 0 5 3" preserveAspectRatio="none"><defs><mask id="fa-de-fa-flag-rounded-de" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="5.0" height="3.0"><rect x="0.0" y="0.0" width="5.0" height="3.0" rx="0" ry="0" fill="#fff" /></mask></defs><g mask="url(#fa-de-fa-flag-rounded-de)"><path d="M0 0h5v3H0z" /><path fill="#D00" d="M0 1h5v2H0z" /><path fill="#FFCE00" d="M0 2h5v1H0z" /></g></svg></g></svg></span> <span id="app-competition-country" data-world-country="DE">Germany</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier2">Second division</span></div>
