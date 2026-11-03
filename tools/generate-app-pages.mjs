@@ -138,7 +138,7 @@ const competitionRoute = d=>{
  const headerEnd=html.indexOf('          </header>',sectionStart);
  if(headerEnd<0)throw Error("Missing competition header "+d.id);
  const railPosition=headerEnd+'          </header>'.length;
- html=html.slice(0,railPosition)+'\\n'+rail+html.slice(railPosition);
+ html=html.slice(0,railPosition)+'\n'+rail+html.slice(railPosition);
 
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
