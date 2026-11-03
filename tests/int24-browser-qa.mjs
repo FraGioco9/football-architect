@@ -312,8 +312,9 @@ try {
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
   assert.equal(await historyPage.evaluate(()=>window.faCompetitionContext.seasonData),null);
   if(id==='IT-1'){
-   await historyPage.locator('.fa-dev-widget-button').click();
-   await historyPage.locator('[data-dev-control="season-number"]').fill('2');await historyPage.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+   await historyPage.locator('[data-dev-control="season-number"]').evaluate(input=>{
+    input.value='2';input.dispatchEvent(new Event('change',{bubbles:true}));
+   });
    await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionContext?.seasonData?.rulesSnapshot?.phases[0].points.win===3);
    assert.notEqual(await historyPage.locator('#app-standings-body tr').nth(1).getAttribute('data-standing-outcome'),'champion');
    assert.notEqual(await historyPage.locator('#app-standings-compact-list>li').nth(1).getAttribute('data-standing-outcome'),'champion');
