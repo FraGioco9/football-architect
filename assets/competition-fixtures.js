@@ -344,7 +344,7 @@
     const navigationChoices=international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured;
     const choiceIndex=navigationChoices.findIndex(c=>c.value===(international&&isPostseason?configured.find(c=>c.phaseId===selectedChoice.phaseId)?.value:selected));
     fields.previous.disabled=!available||choiceIndex<=0;
-    fields.next.disabled=!available||choiceIndex===navigationChoices.length-1;
+    fields.next.disabled=!available||choiceIndex<0||choiceIndex===navigationChoices.length-1;
     fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
@@ -422,8 +422,20 @@
     roundMenu.close();render();
   });
   fields.current.addEventListener("click",()=>{if(!fields.current.hidden){select(currentMatchday);fields.round.focus()}});
-  fields.previous.addEventListener("click",()=>{if(!fields.previous.disabled)select((international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured)[(international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured).findIndex(c=>c.value===selected)-1].value)});
-  fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select((international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured)[(international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured).findIndex(c=>c.value===selected)+1].value)});
+  // The international selector groups both legs under one knockout phase.
+  // Resolve a second-leg route to its visible phase before moving either arrow.
+  const navigationOptions=()=>international?configured.filter(c=>typeof c.value==='number'||!c.round||c.round===1):configured;
+  function stepFixtureChoice(offset){
+    const options=navigationOptions();
+    const current=configured.find(c=>c.value===selected);
+    const visible=international&&current&&typeof selected==='string'
+      ?configured.find(c=>c.phaseId===current.phaseId)?.value:selected;
+    const index=options.findIndex(c=>c.value===visible);
+    const next=index<0?null:options[index+offset];
+    if(next&&validChoice(next.value))select(next.value);
+  }
+  fields.previous.addEventListener("click",()=>{if(!fields.previous.disabled)stepFixtureChoice(-1)});
+  fields.next.addEventListener("click",()=>{if(!fields.next.disabled)stepFixtureChoice(1)});
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
     prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition,participants=null}={}){
