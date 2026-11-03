@@ -127,6 +127,7 @@ const competitionRoute = d=>{
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
 
  // Permanent competition tablist must be parsed ahead of seasonal content.
+ // The shared renderer owns tab markup; it must not be recreated by hydration.
  const railStart=html.indexOf('          <div class="app-competition-tabs" role="tablist"');
  const railEnd=html.indexOf('          </div>',railStart);
  const selectorStart=html.indexOf('          <script>(()=>{const view=document.documentElement.dataset.competitionView',railEnd);
