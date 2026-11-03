@@ -1,0 +1,46 @@
+{
+  "scenario": "Draft Admin bounded selection: identical checkout, Node, fixtures and unique test files; before uses former essential + area subprocesses, after unique union",
+  "node": "v24.22.1",
+  "platform": "linux",
+  "trials": [
+    {
+      "before": {
+        "milliseconds": 11633,
+        "fileExecutions": 22,
+        "tests": 159
+      },
+      "after": {
+        "milliseconds": 12269,
+        "fileExecutions": 19,
+        "tests": 124
+      }
+    },
+    {
+      "after": {
+        "milliseconds": 12185,
+        "fileExecutions": 19,
+        "tests": 124
+      },
+      "before": {
+        "milliseconds": 13514,
+        "fileExecutions": 22,
+        "tests": 159
+      }
+    },
+    {
+      "before": {
+        "milliseconds": 16102,
+        "fileExecutions": 22,
+        "tests": 159
+      },
+      "after": {
+        "milliseconds": 13272,
+        "fileExecutions": 19,
+        "tests": 124
+      }
+    }
+  ],
+  "uniqueFiles": 19,
+  "duplicateFilesRemoved": 3,
+  "limitations": "Local warm-cache samples, alternating order, n=3. Not a GitHub runner SLA or a measured human repair-time reduction. Historical detection/repair time is not reconstructible from workflow duration alone."
+}

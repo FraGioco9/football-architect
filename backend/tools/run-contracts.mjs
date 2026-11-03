@@ -4,11 +4,11 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 const testRoot=new URL('../tests/',import.meta.url);
 export function discoverContracts(root=testRoot){
- const files=readdirSync(root).filter(name=>name.endsWith('.test.ts')&&!name.endsWith('runtime.test.ts')&&name!=='d1-integration.test.ts').sort();
+ const files=readdirSync(root).filter(name=>(name.endsWith('.test.ts')||name==='admin-end-season-policy.test.mts')&&!name.endsWith('runtime.test.ts')&&name!=='d1-integration.test.ts').sort();
  if(!files.length)throw Error('No backend Node contracts found');
  for(const file of files){
   const source=readFileSync(new URL(file,root),'utf8');
-  if(!/from ['"]node:test['"]/.test(source)||/from ['"](?:vitest|cloudflare:)/.test(source))throw Error('Unclassified backend test: '+file);
+  if(!/from\s*['"]node:test['"]/.test(source)||/from\s*['"](?:vitest|cloudflare:)/.test(source))throw Error('Unclassified backend test: '+file);
  }
  return files.map(file=>fileURLToPath(new URL(file,root)));
 }

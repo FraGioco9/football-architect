@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
 
 permissions:
+  actions: read
   contents: read
 jobs:
   # Focused Draft diagnostics are covered by Admin World; retain normal final/main gates.
@@ -20,6 +21,7 @@ jobs:
       mode: ${{ steps.scope.outputs.mode }}
       area: ${{ steps.scope.outputs.area }}
       tests: ${{ steps.scope.outputs.tests }}
+      reuse: ${{ steps.reuse.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +34,8 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           echo "Verified source HEAD: $EXPECTED_SHA"
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -46,6 +50,27 @@ jobs:
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Final review or main: mandatory full regression suite."
           fi
+      - name: Upload CI diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.job }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Reuse completed exact-head FULL evidence
+        id: reuse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if(context.payload.pull_request?.head.repo.full_name!==context.repo.owner+'/'+context.repo.repo)return;
+            const {findReusable}=require('./tools/ci-full-evidence.cjs');
+            const run=await findReusable({github,...context.repo,sha:context.payload.pull_request?.head.sha||context.sha,workflow:'landing-checks.yml',currentRun:context.runId,prNumber:context.payload.pull_request.number,baseSha:context.payload.pull_request.base.sha});
+            core.setOutput('run_id',run||'');
+            if(run)await core.summary.addRaw('Reused completed FULL evidence on identical HEAD: '+process.env.GITHUB_SERVER_URL+'/'+context.repo.owner+'/'+context.repo.repo+'/actions/runs/'+run).write();
+
+
   landing:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
     runs-on: ubuntu-latest
@@ -56,18 +81,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Assert integration checked-out SHA
+      - name: Assert exact source checked-out SHA
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          echo "Verified integration SHA: $EXPECTED_SHA"
+          echo "Verified source SHA: $EXPECTED_SHA"
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Verify JavaScript syntax
+        if: ${{ !needs.head-exact.outputs.reuse }}
         run: |
           node --check assets/admin-settings.js
           node --check assets/authoritative-season.mjs
@@ -83,27 +112,26 @@ jobs:
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
       - name: Site contracts (full)
-        if: needs.head-exact.outputs.mode == 'full'
+        if: ${{ (needs.head-exact.outputs.mode == 'full') && !needs.head-exact.outputs.reuse }}
         run: |
           if git diff --name-only "${{ github.event.pull_request.base.sha || github.event.before }}"...HEAD -- tools/ci-opt-01-node-review.json | grep -q .; then
-            node tools/ci-opt-01-node-runner.mjs --benchmark
+            node tools/ci-run.mjs 1-landing-checks -- node tools/ci-opt-01-node-runner.mjs --benchmark
           fi
-          node tools/ci-opt-01-node-runner.mjs
+          node tools/ci-run.mjs 2-landing-checks -- node tools/ci-opt-01-node-runner.mjs
       - name: Site essential contracts (FAST and TARGETED)
-        if: needs.head-exact.outputs.mode != 'full'
-        run: |
-          node --test --test-concurrency=1 tests/ci-fast-scope.test.mjs tests/ci-opt-01-impact.test.mjs tests/ci-opt-01-node-inventory.test.mjs tests/ci-opt-01-node-runner.test.mjs tests/provider-contract.test.mjs tests/static-provider.test.mjs tests/dev-fictional-provider.test.mjs tests/verified-history-provider.test.mjs tests/provider-selectors.test.mjs tests/publication-gate.test.mjs tests/arch-clean-02-security.test.mjs tests/admin-settings.test.mjs tests/season-two-controls.test.mjs tests/authoritative-season.test.mjs tests/authoritative-calendar.test.mjs tests/authoritative-history.test.mjs tests/dev-admin-api-proxy.test.mjs tests/backend-test-discovery.test.mjs tests/admin-public-preview.test.mjs
-      - name: Targeted area contracts
-        if: needs.head-exact.outputs.mode == 'targeted'
+        if: ${{ (needs.head-exact.outputs.mode != 'full') && !needs.head-exact.outputs.reuse }}
         env:
           TARGETED_TESTS: ${{ needs.head-exact.outputs.tests }}
         run: |
-          test -n "$TARGETED_TESTS"
-          read -ra TEST_FILES <<< "$TARGETED_TESTS"
-          node --test --test-concurrency=1 "${TEST_FILES[@]}"
-      - name: Validate TARGETED Node selection on CI changes
-        if: needs.head-exact.outputs.mode == 'full' && github.event_name == 'pull_request'
-        run: |
-          if git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
-            node tools/ci-opt-01-scenarios.mjs --node
-          fi
+          node tools/ci-run.mjs 3-landing-checks -- node tools/ci-selected.mjs
+      - name: FULL coverage completed
+        if: needs.head-exact.outputs.mode == 'full'
+        run: echo 'All Site FULL source checks completed on exact HEAD.'
+      - name: Upload CI diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.job }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

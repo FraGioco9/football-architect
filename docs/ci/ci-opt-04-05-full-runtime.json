@@ -1,0 +1,53 @@
+{
+  "sha": "7604d6a763a2565e14b21f2af1ca21ea71dbfb11",
+  "meaning": "First complete acceptance before splitting serial Admin account engines. Applications, fixtures, assertions and unique scenario coverage are unchanged by the scheduling optimization.",
+  "site": {
+    "run": 41574813240,
+    "jobSeconds": 296,
+    "tests": 797,
+    "skipped": 0
+  },
+  "browser": {
+    "run": 41574813348,
+    "jobSeconds": 359,
+    "chromiumChecks": 245,
+    "screenshots": 52,
+    "engines": [
+      "chromium",
+      "webkit"
+    ]
+  },
+  "admin": {
+    "run": 41574813364,
+    "jobs": [
+      {
+        "name": "scope",
+        "seconds": 7
+      },
+      {
+        "name": "Final local operator persistence, restart and browser lifecycle",
+        "seconds": 115
+      },
+      {
+        "name": "Admin foundation contracts (Node 22)",
+        "seconds": 552
+      }
+    ]
+  },
+  "gate": {
+    "run": 41574813241,
+    "result": "PASS",
+    "observedTransitions": [
+      "all PENDING",
+      "Site PASS, Browser/Admin PENDING",
+      "Site/Browser PASS, Admin PENDING",
+      "all PASS"
+    ]
+  },
+  "after": "Final new-SHA results will be recorded in PR #372 after hosted execution. This file is not itself final acceptance.",
+  "limitations": [
+    "One hosted sample per revision, shared runners and caches can affect timing.",
+    "No numeric human diagnosis/repair-time claim is made from workflow duration.",
+    "First revision is a before-measurement only; its green checks cannot satisfy the new HEAD."
+  ]
+}

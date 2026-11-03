@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
 
 permissions:
+  actions: read
   contents: read
 jobs:
   # Focused Draft diagnostics are covered by Admin World; retain normal final/main gates.
@@ -20,6 +21,7 @@ jobs:
       mode: ${{ steps.scope.outputs.mode }}
       area: ${{ steps.scope.outputs.area }}
       tests: ${{ steps.scope.outputs.tests }}
+      reuse: ${{ steps.reuse.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +32,8 @@ jobs:
         env:
           EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED"
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -44,6 +48,18 @@ jobs:
             echo "mode=full" >> "$GITHUB_OUTPUT"
             echo "Final review or main: mandatory full regression suite."
           fi
+      - name: Reuse completed exact-head FULL evidence
+        id: reuse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if(context.payload.pull_request?.head.repo.full_name!==context.repo.owner+'/'+context.repo.repo)return;
+            const {findReusable}=require('./tools/ci-full-evidence.cjs');
+            const run=await findReusable({github,...context.repo,sha:context.payload.pull_request?.head.sha||context.sha,workflow:'int24-browser-qa.yml',currentRun:context.runId,prNumber:context.payload.pull_request.number,baseSha:context.payload.pull_request.base.sha});
+            core.setOutput('run_id',run||'');
+            if(run)await core.summary.addRaw('Reused completed FULL evidence on identical HEAD: '+process.env.GITHUB_SERVER_URL+'/'+context.repo.owner+'/'+context.repo.repo+'/actions/runs/'+run).write();
+
+
   chromium:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
     needs: scope
@@ -65,20 +81,22 @@ jobs:
           if [ -n "$EXPECTED" ]; then
             test "$(git rev-parse HEAD)" = "$EXPECTED"
           fi
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Defer full browser checks on draft or provider-only PR
-        if: needs.scope.outputs.mode == 'fast'
+        if: ${{ (needs.scope.outputs.mode == 'fast') && !needs.scope.outputs.reuse }}
         run: echo 'Full browser suite deferred to ready-for-review or main; fast-safe scope.'
       - name: Restore pinned Playwright browser cache
-        if: needs.scope.outputs.mode != 'fast'
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers-1.58.2-${{ needs.scope.outputs.mode }}-v2
+          key: ${{ runner.os }}-playwright-browsers-1.58.2-v3
       - name: Install isolated browser test dependency
-        if: needs.scope.outputs.mode != 'fast'
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
           if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
             npm install --no-save --no-package-lock playwright@1.58.2
@@ -88,7 +106,7 @@ jobs:
           npx playwright install chromium
           npx playwright install --with-deps webkit
       - name: Run loopback preview and browser checks
-        if: needs.scope.outputs.mode != 'fast'
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
@@ -96,19 +114,19 @@ jobs:
             sleep 1
           done
           if [ "${{ needs.scope.outputs.mode }}" = "targeted" ]; then
-            FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
-            FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tests/ci-opt-01-browser-smoke.mjs
+            FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tools/ci-run.mjs 1-int24-browser-qa -- node tests/ci-opt-01-browser-smoke.mjs
+            FA_BROWSER_ENGINE=webkit FA_TARGET_AREA="${{ needs.scope.outputs.area }}" node tools/ci-run.mjs 2-int24-browser-qa -- node tests/ci-opt-01-browser-smoke.mjs
             exit 0
           fi
           if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
             node tools/ci-opt-01-scenarios.mjs --browser
           fi
-          node tests/int24-browser-qa.mjs
+          node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="${{ github.event.pull_request.base.sha }}"
             test "$BASE" != ""
             if git diff --name-only "$BASE"...HEAD -- "assets/app.css" | grep -q .; then
-              PR_BASE_SHA="$BASE" node tests/clean-ui-03-css-parity.mjs
+              PR_BASE_SHA="$BASE" node tools/ci-run.mjs 4-int24-browser-qa -- node tests/clean-ui-03-css-parity.mjs
             else
               echo "app.css unchanged; its baseline-versus-HEAD parity audit is not applicable. FULL Chromium and WebKit remain required."
             fi
@@ -116,17 +134,21 @@ jobs:
             echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
           fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            node tests/clean-ui-03-network-baseline.mjs
+            node tools/ci-run.mjs 5-int24-browser-qa -- node tests/clean-ui-03-network-baseline.mjs
           else
             echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
           fi
-          node tests/clean-ui-03-webkit-iphone.mjs
+          node tools/ci-run.mjs 6-int24-browser-qa -- node tests/clean-ui-03-webkit-iphone.mjs
+      - name: FULL coverage completed
+        if: needs.scope.outputs.mode == 'full'
+        run: echo 'All Browser FULL source checks completed on exact HEAD.'
       - name: Upload screenshots and server log
-        if: failure() && needs.scope.outputs.mode != 'fast'
+        if: always() && needs.scope.outputs.mode != 'fast'
         uses: actions/upload-artifact@v4
         with:
           name: int24-chromium-screenshots
           path: |
+            ${{ runner.temp }}/fa-ci-artifacts/
             int24-browser-artifacts/
             /tmp/int24-preview.log
           if-no-files-found: warn

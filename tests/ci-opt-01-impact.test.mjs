@@ -26,7 +26,7 @@ test("impact combinations fail closed and targeted test paths are deterministic"
 
 test("workflow gates preserve final FULL and main browser safety",async()=>{
  const {readFileSync}=await import("node:fs");
- const node=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8");
+ const node=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8")+readFileSync(new URL("../tools/ci-selected.mjs",import.meta.url),"utf8");
  const browser=readFileSync(new URL("../.github/workflows/int24-browser-qa.yml",import.meta.url),"utf8");
  for(const workflow of [node,browser]){
   assert.match(workflow,/ready_for_review/);
@@ -100,12 +100,13 @@ test("Admin World changes select bounded Settings contracts without skipping cro
 test("Admin workflow keeps exact-head contract checks while deferring heavy draft runtime",async()=>{
  const {readFileSync}=await import("node:fs");
  const admin=readFileSync(new URL("../.github/workflows/admin-world-checks.yml",import.meta.url),"utf8");
- const site=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8");
+ const site=readFileSync(new URL("../.github/workflows/landing-checks.yml",import.meta.url),"utf8")+readFileSync(new URL("../tools/ci-selected.mjs",import.meta.url),"utf8");
  assert.match(admin,/Test password and world contracts/);
  assert.match(admin,/Verify D1-compatible SQLite migration locally/);
  assert.match(admin,/Typecheck backend with pinned TypeScript/);
- assert.match(admin,/cancel-in-progress: true/);
- assert.match(admin,/if: \$\{\{ !github\.event\.pull_request\.draft \|\| contains\(github\.event\.pull_request\.body, '<!-- admin-world-final-verification -->'\) \}\}/);
+ assert.match(admin,/cancel-in-progress:.*github\.event\.action == 'synchronize'/);
+ assert.match(admin,/if: \$\{\{ needs\.scope\.outputs\.mode == 'full' \}\}/);
+ assert.match(admin,/admin-world-final-verification/);
  assert.match(site,/node --check assets\/admin-settings\.js/);
  assert.match(site,/tests\/admin-settings\.test\.mjs/);
 });

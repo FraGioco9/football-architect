@@ -3,57 +3,56 @@ name: Admin World foundation checks
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
-    paths:
-      - 'backend/**'
-      - 'account/**'
-      - 'assets/account-*'
-      - 'assets/account.css'
-      - 'assets/profile-navigation.js'
-      - 'assets/competition-tabs.js'
-      - 'tools/render-sidebar.mjs'
-      - 'assets/sidebar-first-paint.js'
-      - 'assets/theme.js'
-      - 'assets/landing.css'
-      - 'assets/clubs-directory.css'
-      - 'tests/control-focus-browser.mjs'
-      - 'tests/competition-season-zero-club-links-browser.mjs'
-      - 'tests/player-safe-return-browser.mjs'
-      - 'tests/account-*'
-      - 'tests/profile-*'
-      - 'assets/admin-settings.*'
-      - 'assets/authoritative-*'
-      - 'assets/competition-page.js'
-      - 'assets/competition-fixtures.js'
-      - 'assets/competition-tabs.js'
-      - 'assets/calendar-simplified.js'
-      - 'assets/world-calendar.js'
-      - 'calendar/index.html'
-      - 'tools/render-admin-settings.mjs'
-      - 'tools/dev-admin-api-proxy.mjs'
-      - 'tools/shared-nonproduction-proxy.mjs'
-      - 'tests/shared-nonproduction-proxy.test.mjs'
-      - 'tests/hosted-preview-origins.test.mjs'
-      - 'tools/dev-standings-preview.mjs'
-      - 'tools/generate-app-pages.mjs'
-      - 'settings/index.html'
-      - 'tests/admin-settings*'
-      - 'tests/admin-world-lifecycle-browser.mjs'
-      - 'tests/admin-world-lifecycle-runner.mts'
-      - 'tests/season-two-*'
-      - 'tests/authoritative-*'
-      - 'tests/backend-test-discovery.test.mjs'
-      - 'tests/admin-public-preview.test.mjs'
-      - 'tests/dev-admin-api-proxy.test.mjs'
-      - '.github/workflows/admin-world-checks.yml'
 
 concurrency:
   group: admin-world-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event.action == 'synchronize' }}
 permissions:
+  actions: read
   contents: read
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.scope.outputs.mode }}
+      reuse: ${{ steps.reuse.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Classify Admin impact on exact HEAD
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          node tools/ci-discovery.mjs
+          if [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+          else
+            echo 'mode=full' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reuse completed exact-head FULL evidence
+        id: reuse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if(context.payload.pull_request?.head.repo.full_name!==context.repo.owner+'/'+context.repo.repo)return;
+            const {findReusable}=require('./tools/ci-full-evidence.cjs');
+            const run=await findReusable({github,...context.repo,sha:context.payload.pull_request?.head.sha||context.sha,workflow:'admin-world-checks.yml',currentRun:context.runId,prNumber:context.payload.pull_request.number,baseSha:context.payload.pull_request.base.sha});
+            core.setOutput('run_id',run||'');
+            if(run)await core.summary.addRaw('Reused completed FULL evidence on identical HEAD: '+process.env.GITHUB_SERVER_URL+'/'+context.repo.owner+'/'+context.repo.repo+'/actions/runs/'+run).write();
+
+
   password-policy:
+    needs: scope
     name: Admin foundation contracts (Node 22)
     runs-on: ubuntu-24.04
     steps:
@@ -66,12 +65,15 @@ jobs:
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Check current Admin and public JavaScript syntax before expensive tests
+        if: ${{ !needs.scope.outputs.reuse }}
         run: |
           node --check assets/admin-settings.js
           node --check assets/authoritative-season.mjs
@@ -82,99 +84,58 @@ jobs:
           node --check tests/admin-world-lifecycle-runner.mts
           node --check tests/season-two-navigation-browser.mjs
       - name: Verify CI optimization safety contracts before dependency installation
-        run: node --test tests/ci-opt-02-workflow-contract.test.mjs
+        if: ${{ !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 1-admin-world-checks -- node --test tests/ci-opt-02-workflow-contract.test.mjs
       - name: Test password and world contracts (no remote services)
-        run: npm --prefix backend run test:contracts
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 2-admin-world-checks -- npm --prefix backend run test:contracts
       - name: Verify D1-compatible SQLite migration locally
-        run: python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 3-admin-world-checks -- python3 -m unittest discover -s backend/tests -p 'test_*migration.py' -v
       - name: Install pinned Worker toolchain without remote credentials
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
-        run: npm --prefix backend run typecheck
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 4-admin-world-checks -- npm --prefix backend run typecheck
       - name: Audit backend imports and cycles (read-only BE-01)
+        if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
-          node --test backend/tests/import-graph.test.mjs
+          node tools/ci-run.mjs 5-admin-world-checks -- node --test backend/tests/import-graph.test.mjs
           node backend/tools/audit-import-graph.mjs
       - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
-        if: ${{ github.event.pull_request.draft && !contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: npm --prefix backend run test:auth-local
+        if: ${{ (needs.scope.outputs.mode == 'targeted') && !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 6-admin-world-checks -- npm --prefix backend run test:auth-local
       # Explicit final-gate opt-in while the PR stays Draft/HOLD; ordinary draft pushes stay light.
       # The complete backend test command below already includes the historical
       # archive/season suites. Avoid running those Vitest files twice.
       - name: Execute smoke tests in actual local Worker runtime
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: npm --prefix backend test
-      - name: Cache pinned Chromium and WebKit account browser binaries
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-webkit-1.58.2
-      - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: |
-          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
-      - name: Verify safe post-login return routes in Chromium
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/player-safe-return-browser.mjs
-      - name: Verify account style, language, app entry and registration in Chromium
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-pages-browser.mjs
-      - name: Verify account feedback and stable first visible paint
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-feedback-browser.mjs
-      - name: Verify account password assistance, inline errors and nationality selection
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-usability-browser.mjs
-      - name: Verify shared control focus and selectable text fields
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/control-focus-browser.mjs
-      - name: Verify signed-out and authenticated Profile sidebar entry
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/profile-navigation-browser.mjs
-      - name: Verify account pointer, keyboard and dropdown matrix in Chromium
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-interaction-browser.mjs
-      - name: Verify account spacing and viewport-aware dropdowns in Chromium
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/account-layout-browser.mjs
-      - name: Verify Season 0 club navigation in Chromium
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tests/competition-season-zero-club-links-browser.mjs
-      - name: Verify complete isolated account UI suite in WebKit
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        env:
-          FA_AUTH_BROWSER: webkit
-          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
-          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
-        run: |
-          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction account-layout competition-season-zero-club-links; do
-            node "tests/$suite-browser.mjs"
-          done
-      # Operator persistence runs in a separate independent final-gate job.
-      - name: Cache pinned Chromium browser binaries for final gate
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-1.58.2
-      - name: Install isolated pinned Chromium test tooling
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: |
-          npm install --prefix "$RUNNER_TEMP/fa-admin-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-admin-browser/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Verify signed-out unified Settings and public-page isolation
-        timeout-minutes: 20
-        if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
-        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-admin-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-settings-browser.mjs
+        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 7-admin-world-checks -- npm --prefix backend test
+      - name: FULL coverage completed
+        if: ${{ needs.scope.outputs.mode == 'full' }}
+        run: echo 'All Admin foundation FULL checks completed; account engines have independent required jobs.'
 
-  operator-final:
-    name: Final local operator persistence, restart and browser lifecycle
-    if: ${{ !github.event.pull_request.draft || contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
+      - name: Upload CI diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.job }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  account-browser:
+    needs: scope
+    name: Account UI (${{ matrix.engine }})
+    if: ${{ needs.scope.outputs.mode == 'full' }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
     steps:
       - name: Checkout exact pull request head
         uses: actions/checkout@v4
@@ -188,23 +149,96 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
+      - name: Cache pinned account engine
+        if: ${{ !needs.scope.outputs.reuse }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ matrix.engine }}-1.58.2
+      - name: Install isolated pinned account engine
+        if: ${{ !needs.scope.outputs.reuse }}
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"
+      - name: Verify account matrix
+        if: ${{ !needs.scope.outputs.reuse }}
+        env:
+          FA_AUTH_BROWSER: ${{ matrix.engine }}
+          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+        run: |
+          for suite in tests/player-safe-return-browser.mjs tests/account-pages-browser.mjs tests/account-feedback-browser.mjs tests/account-usability-browser.mjs tests/control-focus-browser.mjs tests/profile-navigation-browser.mjs tests/account-interaction-browser.mjs tests/account-layout-browser.mjs tests/competition-season-zero-club-links-browser.mjs; do
+            node tools/ci-run.mjs "account-${{ matrix.engine }}-${suite##*/}" -- node "$suite"
+          done
+      - name: Verify signed-out unified Settings and public-page isolation
+        if: ${{ matrix.engine == 'chromium' && !needs.scope.outputs.reuse }}
+        timeout-minutes: 20
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs admin-settings -- node --experimental-strip-types tests/admin-settings-browser.mjs
+      - name: FULL account coverage completed
+        run: echo 'All account source checks completed for this engine on exact HEAD.'
+      - name: Upload account diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-account-${{ matrix.engine }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  operator-final:
+    needs: scope
+    name: Final local operator persistence, restart and browser lifecycle
+    if: ${{ needs.scope.outputs.mode == 'full' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Install pinned Worker toolchain
+        if: ${{ !needs.scope.outputs.reuse }}
         run: |
           npm install -g npm@11.6.2 --no-audit --no-fund
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Verify operator bootstrap, recovery and local persistence across restart
-        run: npm --prefix backend run test:operator
+        if: ${{ !needs.scope.outputs.reuse }}
+        run: node tools/ci-run.mjs 18-admin-world-checks -- npm --prefix backend run test:operator
       - name: Cache pinned lifecycle Chromium binaries
+        if: ${{ !needs.scope.outputs.reuse }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-chromium-1.58.2
       - name: Install isolated lifecycle browser tooling
+        if: ${{ !needs.scope.outputs.reuse }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-lifecycle-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
           "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium
       - name: Verify unified Admin two-season lifecycle with real local Worker and D1
+        if: ${{ !needs.scope.outputs.reuse }}
         timeout-minutes: 10
-        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-lifecycle-browser/node_modules/playwright/index.mjs" node --experimental-strip-types tests/admin-world-lifecycle-runner.mts
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-lifecycle-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 19-admin-world-checks -- node --experimental-strip-types tests/admin-world-lifecycle-runner.mts
+      - name: Upload CI diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.job }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

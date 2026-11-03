@@ -1,3 +1,4 @@
+import {requestHandshake} from './helpers/request-handshake.mjs';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
@@ -83,11 +84,12 @@ try{
   await page.route('**/api/player/sessions',r=>r.fulfill({status:200,body:'{"sessions":[]}'}));
   await page.goto('http://app.localhost:2000/account/');await page.locator('#protected').waitFor();
   for(const [formId,buttonId,path] of [['change-form','change-button','change-password'],['delete-form','delete-button','delete']]){
-   let pending,calls=0;await page.route('**/api/player/account/'+path,r=>{calls++;pending=r;});
+   const handshake=requestHandshake('account/'+path);
+   let pending,calls=0;await page.route('**/api/player/account/'+path,r=>{calls++;pending=r;handshake.arrive(r);});
    const form=page.locator('#'+formId);
    for(const input of await form.locator('input').all())await input.fill((await input.getAttribute('name'))==='confirmation'?'DELETE MY ACCOUNT':'synthetic-password-2026');
    await page.locator('#'+buttonId).click();
-   for(let attempt=0;!pending&&attempt<100;attempt++)await new Promise(resolve=>setTimeout(resolve,10));
+   await handshake.ready;
    assert.equal(calls,1,'The pending request has reached the handler');
    assert.equal(await page.locator('#'+buttonId).isDisabled(),true,'Actual submit is disabled while pending');
    assert.equal(await form.locator('[data-password-toggle]').first().isDisabled(),false);

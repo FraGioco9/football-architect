@@ -9,7 +9,7 @@ test('CI-OPT-02 keeps exact-head, secure checkout and conservative production bo
  assert.ok(count('ref: ${{ github.event.pull_request.head.sha }}')>=2);
  assert.ok(count('persist-credentials: false')>=2);
  assert.ok(count('EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}')>=2);
- assert.match(workflow,/cancel-in-progress: true/);
+ assert.match(workflow,/cancel-in-progress:.*github\.event\.action == 'synchronize'/);
  assert.match(workflow,/contents: read/);
  assert.doesNotMatch(workflow,/wrangler deploy|--remote|remote = true/);
 });

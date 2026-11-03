@@ -1,0 +1,59 @@
+{
+  "measurement": "Original job-log elapsed timestamps; includes setup, not human diagnosis or repair time. Historical commits are not current-HEAD acceptance evidence.",
+  "records": [
+    {
+      "run": 41566837487,
+      "job": 125690290287,
+      "start": "2026-11-03T02:33:21.1815117Z",
+      "firstFailure": "2026-11-03T02:33:23.6227420Z",
+      "firstFailureSeconds": 2.441,
+      "jobLogSpanSeconds": 2.503,
+      "error": "2026-11-03T02:33:23.6227420Z ##[error]Missing FULL workflow landing-checks.yml for 6d36f7e14d25dee0575511fe98b132fac4dd9bdf"
+    },
+    {
+      "run": 41564420106,
+      "job": 125682374309,
+      "start": "2026-11-03T02:10:19.2336097Z",
+      "firstFailure": "2026-11-03T02:10:22.3577709Z",
+      "firstFailureSeconds": 3.124,
+      "jobLogSpanSeconds": 3.193,
+      "error": "2026-11-03T02:10:22.3577709Z ##[error]Missing FULL workflow landing-checks.yml for 2aefcb283eeaac420cc7506d9a3842c9535d0fa1"
+    },
+    {
+      "run": 41565973603,
+      "job": 125687535493,
+      "start": "2026-11-03T02:25:15.3626579Z",
+      "firstFailure": "2026-11-03T02:28:04.9100487Z",
+      "firstFailureSeconds": 169.548,
+      "jobLogSpanSeconds": 171.486,
+      "error": "2026-11-03T02:28:04.9100487Z AssertionError [ERR_ASSERTION]: /settings"
+    },
+    {
+      "run": 41555721092,
+      "job": 125654058456,
+      "start": "2026-11-03T00:50:54.7343285Z",
+      "firstFailure": "2026-11-03T00:51:56.4253187Z",
+      "firstFailureSeconds": 61.691,
+      "jobLogSpanSeconds": 63.152,
+      "error": "2026-11-03T00:51:56.4253187Z AssertionError [ERR_ASSERTION]: empty published season keeps all standings slots reserved"
+    },
+    {
+      "run": 41555720936,
+      "job": 125654477980,
+      "start": "2026-11-03T00:52:00.0446793Z",
+      "firstFailure": "2026-11-03T00:52:26.6527756Z",
+      "firstFailureSeconds": 26.608,
+      "jobLogSpanSeconds": 226.319,
+      "error": "2026-11-03T00:52:26.6527756Z     not ok 2 - E2/E3: real DEV MD0/15/30, Season 0 persistence and historical snapshot output"
+    },
+    {
+      "run": 41556529519,
+      "job": 125656661170,
+      "start": "2026-11-03T00:57:59.3072713Z",
+      "firstFailure": "2026-11-03T00:58:02.9055289Z",
+      "firstFailureSeconds": 3.598,
+      "jobLogSpanSeconds": 3.932,
+      "error": "2026-11-03T00:58:02.9055289Z Error: Unclassified backend test: account-http.test.ts"
+    }
+  ]
+}
