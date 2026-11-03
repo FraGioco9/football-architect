@@ -375,6 +375,9 @@ test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab ra
   const critical=html.match(/<style data-fa-competition-first-paint>([\s\S]*?)<\/style>/)?.[1]||'';
   assert.match(critical,/\.app-competition-tabs>\.app-competition-tab\{display:block;flex:0 0 112px/,id+' first-paint button dimensions independent of stylesheet');
   assert.match(critical,/border-bottom:1px solid/,id+' first-paint permanent underline');
+  assert.match(critical,/html\[data-fa-competition-prepaint\] body\{visibility:hidden\}/,id+' do not paint shell before static tabs');
+  assert.ok(html.includes('setAttribute("data-fa-competition-prepaint","")'),id+' prepaint gate activated in head');
+  assert.ok(html.includes('removeAttribute("data-fa-competition-prepaint")})();</script>'),id+' gate released synchronously when tablist parses');
   assert.match(critical,/@media\(max-width:620px\)/,id+' first-paint mobile sizes');
   assert.match(critical,/app-competition-logo-image\{display:block;width:100%;height:100%;object-fit:contain\}/,id+' reserved logo image at first paint');
   if(!id.startsWith('int-')){
