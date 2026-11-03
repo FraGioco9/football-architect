@@ -1155,3 +1155,7 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 /* PAGE-LOAD-02 P01: do not expose the static template's provisional world text
    before the global authority resolves. Visibility preserves slot geometry. */
 .fa-shell-date-full:not([data-fa-world-ready]),.fa-shell-date-short:not([data-fa-world-ready]){visibility:hidden}
+
+/* PAGE-LOAD-02: keep permanent club rows and cell geometry, but never display
+   synthetic unknown league statistics as sporting results before validation. */
+#app-standings-body .app-world-stat-unknown{visibility:hidden}
