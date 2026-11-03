@@ -17,12 +17,13 @@ permissions:
   contents: read
   pull-requests: read
 concurrency:
-  group: ci-opt-03-full-evidence-${{ github.run_id }}
-  cancel-in-progress: false
+  group: ci-opt-03-full-evidence-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
 jobs:
   full-evidence:
     name: CI FULL exact-head evidence
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     steps:
       - name: Verify exact PR head and complete FULL workflow evidence
         uses: actions/github-script@v7
@@ -31,41 +32,79 @@ jobs:
           EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.expected_head }}
         with:
           script: |
-            const prNumber=Number(process.env.PR_NUMBER);
-            const expected=process.env.EXPECTED_HEAD;
-            if (!Number.isSafeInteger(prNumber)||prNumber<1||!/^[0-9a-f]{40}$/.test(expected)) {
-              core.setFailed('Invalid PR number or expected SHA');return;
+            // Read-only evidence observer. Never dispatches, cancels or mutates checks.
+            const requirements={
+             'landing-checks.yml':[['landing','FULL coverage completed','Site contracts (full)']],
+             'int24-browser-qa.yml':[['chromium','FULL coverage completed','Run loopback preview and browser checks']],
+             'admin-world-checks.yml':[['Admin foundation contracts (Node 22)','FULL coverage completed','Execute smoke tests in actual local Worker runtime'],['Final local operator persistence, restart and browser lifecycle','Verify unified Admin two-season lifecycle with real local Worker and D1']]
+            };
+            function evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}={}){
+             if(run.head_sha!==sha)return {state:'STALE'};
+             if(run.event!=='pull_request')return {state:'IGNORED'};
+             if(baseSha&&!run.pull_requests?.some(pr=>pr.number===prNumber&&pr.base.sha===baseSha&&pr.head.sha===sha))return {state:'STALE'};
+             // A completed narrowed run is not FULL evidence, even if its workflow is green.
+             const required=requirements[workflow];
+             const find=name=>jobs.find(j=>j.name===name||j.name.endsWith(' / '+name));
+             const markers=required.map(([name,step])=>find(name)?.steps?.find(s=>s.name===step));
+             if(run.status!=='completed')return {state:'PENDING',url:run.html_url};
+             if(run.conclusion!=='success')return {state:run.conclusion==='cancelled'?'CANCELLED':'FAIL',url:run.html_url};
+             if(markers.some(s=>s?.conclusion==='skipped'))return {state:'NARROW',url:run.html_url};
+             const source=required.map(([name,step,execution])=>find(name)?.steps?.find(s=>s.name===(execution||step)));
+             if(markers.every(s=>s?.conclusion==='success')&&source.some(s=>s?.conclusion==='skipped'))return {state:'REUSED',url:run.html_url};
+             if(source.some(s=>s?.conclusion!=='success'))return {state:'MISSING',url:run.html_url};
+             if(!required.every(([name],i)=>find(name)?.conclusion==='success'&&markers[i]?.conclusion==='success'))return {state:'MISSING',url:run.html_url};
+             return {state:'PASS',url:run.html_url};
             }
-            const {owner,repo}=context.repo;
-            const {data:pr}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
-            if(pr.state!=='open'||pr.head.repo.full_name!==owner+'/'+repo||pr.head.sha!==expected) {
-              core.setFailed('PR closed, foreign head, or stale HEAD');return;
-            }
-            if(pr.base.ref!=='main'){core.setFailed('Unexpected target branch');return;}
-            const changed=await github.paginate(github.rest.pulls.listFiles,{owner,repo,pull_number:prNumber,per_page:100});
-            if(changed.length>=3000){core.setFailed('PR diff too large to trust; manual audit required');return;}
-            const needsAdmin=changed.some(f=>/^(?:backend\/|account\/|assets\/(?:account-|profile-|admin-settings|authoritative-)|tools\/(?:dev-admin-|shared-nonproduction-|render-admin-)|\.github\/workflows\/admin-world-checks\.yml)/.test(f.filename));
-            const required=['landing-checks.yml','int24-browser-qa.yml'];
-            if(needsAdmin)required.push('admin-world-checks.yml');
-            const evidence=[];
-            for(const workflow_id of required){
-              const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
-              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&run.event===(workflow_id==='admin-world-checks.yml'?'pull_request':'workflow_dispatch')&&run.run_attempt>=1);
-              if(!matches.length){core.setFailed('Missing FULL workflow '+workflow_id+' for '+expected);return;}
-              const selected=matches.sort((a,b)=>b.id-a.id)[0];
-              if(selected.status!=='completed'||selected.conclusion!=='success'){
-                core.setFailed('Latest FULL workflow is not a completed PASS: '+workflow_id+' '+selected.html_url);return;
+            async function observe({github,owner,repo,sha,prNumber,baseSha}){
+             const rows=[];
+             for(const workflow_id of Object.keys(requirements)){
+              const runs=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id,head_sha:sha,per_page:100});
+              let row={workflow:workflow_id,state:'MISSING'};
+              for(const run of runs.filter(r=>r.head_sha===sha&&r.event==='pull_request').sort((a,b)=>b.id-a.id)){
+               const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+               const value=evaluateRun(run,jobs,sha,workflow_id,{prNumber,baseSha});
+               if(['NARROW','IGNORED','STALE','REUSED'].includes(value.state))continue;
+               row={workflow:workflow_id,run:run.id,attempt:run.run_attempt,...value};break;
               }
-              const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
-              const names=jobs.filter(j=>j.conclusion==='success').map(j=>j.name);
-              const expectedJob=workflow_id==='landing-checks.yml'?'landing':workflow_id==='int24-browser-qa.yml'?'chromium':'Final local operator persistence, restart and browser lifecycle';
-              if(!names.some(n=>n===expectedJob||n.endsWith(' / '+expectedJob))){
-                core.setFailed('Missing completed FULL job '+expectedJob+' in '+workflow_id);return;
-              }
-              if(workflow_id==='admin-world-checks.yml' && !names.some(n=>n==='Admin foundation contracts (Node 22)'||n.endsWith(' / Admin foundation contracts (Node 22)'))){core.setFailed('Missing Admin foundation FULL contracts');return;}
-              evidence.push(workflow_id+': '+selected.html_url+' ('+selected.head_sha+')');
+              rows.push(row);
+             }
+             return rows;
             }
-            const {data:fresh}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
-            if(fresh.head.sha!==expected){core.setFailed('PR HEAD changed during verification');return;}
-            await core.summary.addHeading('CI-OPT-03 FULL evidence').addRaw('Exact HEAD: '+expected+'\\n\\n'+evidence.join('\\n\\n')).write();
-            core.info('All required FULL workflow evidence verified on exact HEAD '+expected);
+            async function verify({github,core,context,prNumber,expected,maxWaitMs=45*60*1000,intervalMs=30000,now=Date.now,wait=ms=>new Promise(r=>setTimeout(r,ms))}){
+             const {owner,repo}=context.repo;
+             if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^[0-9a-f]{40}$/.test(expected))throw Error('Invalid PR number or expected SHA');
+             const start=now();let last='';
+             async function current(){
+              const {data:pr}=await github.rest.pulls.get({owner,repo,pull_number:prNumber});
+              if(pr.state!=='open'||pr.head.repo?.full_name!==owner+'/'+repo||pr.head.sha!==expected||pr.base.ref!=='main')throw Error('BLOCKED: closed/foreign PR, stale HEAD or unexpected base');
+              return pr;
+             }
+             while(true){
+              const live=await current();
+              const rows=await observe({github,owner,repo,sha:expected,prNumber,baseSha:live.base.sha});
+              const summary=JSON.stringify({head:expected,rows});
+              if(summary!==last){core.info(summary);last=summary;await core.summary.addHeading('FULL exact-head evidence').addCodeBlock(summary,'json').write();}
+              if(rows.every(r=>r.state==='PASS')){const fresh=await current();if(fresh.base.sha!==live.base.sha)throw Error('BLOCKED: PR base changed during verification');return rows;}
+              if(rows.some(r=>['FAIL','CANCELLED'].includes(r.state)))throw Error('CI evidence FAIL/CANCELLED (not an inferred product regression): '+summary);
+              if(now()-start>=maxWaitMs)throw Error('BLOCKED: missing or PENDING CI evidence after observation deadline; rerun only this gate when FULL evidence is available. '+summary);
+              // Missing and PENDING evidence keep this required job in progress, never PASS.
+              await wait(intervalMs);
+             }
+            }
+            async function findReusable({github,owner,repo,sha,workflow,currentRun,prNumber,baseSha}){
+             const runs=await github.paginate(github.rest.actions.listWorkflowRuns,{owner,repo,workflow_id:workflow,head_sha:sha,per_page:100});
+             for(const run of runs.filter(r=>r.id<Number(currentRun)&&r.head_sha===sha&&r.event==='pull_request').sort((a,b)=>b.id-a.id)){
+              const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:run.id,filter:'latest',per_page:100});
+              const state=evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}).state;
+              if(state==='PASS')return run.id;
+              if(!['NARROW','IGNORED','STALE','REUSED'].includes(state))return null;
+             }
+             return null;
+            }
+            // MISSING/PENDING keeps the required job in progress. The bounded deadline
+            // reports BLOCKED evidence, never an inferred application regression.
+            try {
+              await verify({github,core,context,prNumber:Number(process.env.PR_NUMBER),expected:process.env.EXPECTED_HEAD});
+            } catch(error) {
+              core.setFailed(error.message);
+            }

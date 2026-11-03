@@ -1,3 +1,4 @@
+import {requestHandshake} from './helpers/request-handshake.mjs';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
@@ -67,13 +68,14 @@ try{
   await page.waitForFunction(()=>document.getElementById('status').textContent.includes('vérifié'));
   await chooseMenu(page,'account-language','it');
   assert.equal(new URL(page.url()).searchParams.has('token'),false);assert.equal(verified,1);checks++;
+  const resetHandshake=requestHandshake('password-reset/request');
   let release;
-  await page.route('**/api/player/password-reset/request',r=>new Promise(resolve=>{release=async()=>{await r.fulfill({status:503,body:'{}',contentType:'application/json'});resolve();};}));
+  await page.route('**/api/player/password-reset/request',r=>new Promise(resolve=>{release=async()=>{await r.fulfill({status:503,body:'{}',contentType:'application/json'});resolve();};resetHandshake.arrive();}));
   await page.goto('http://app.localhost:2000/account/recover/?lang=en');
   await page.locator('[name=email]').fill('synthetic@example.invalid');
   await page.locator('#request-button').click();await page.waitForFunction(()=>document.getElementById('request-button').disabled);
   await chooseMenu(page,'account-language','it');
-  while(!release)await new Promise(r=>setTimeout(r,10));await release();
+  await resetHandshake.ready;await release();
   await page.waitForFunction(()=>!document.getElementById('request-button').disabled);
   assert.equal(await page.locator('#request-button').textContent(),'Invia email di recupero');checks++;
   await page.goto('http://app.localhost:2000/account/register/?lang=it');

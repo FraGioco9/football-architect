@@ -81,7 +81,8 @@ function browserCommands({event='pull_request',mode='full',area='',css=false,bas
  return temporary(root=>{
   const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);writeFileSync(record,'');
   const executable=(name,source)=>writeFileSync(join(bin,name),'#!/bin/sh\n'+source,{mode:0o755});
-  executable('node',`[ "$1" != tools/dev-standings-preview.mjs ] || exit 0
+  executable('node',`if [ \"$1\" = tools/ci-run.mjs ]; then shift 4; fi
+[ "$1" != tools/dev-standings-preview.mjs ] || exit 0
 printf '%s|%s|%s|%s\\n' "$*" "\${FA_BROWSER_ENGINE:-chromium}" "\${FA_TARGET_AREA:-}" "\${PR_BASE_SHA:-}" >> "$FA_RECORD"
 if [ "$1" = tests/clean-ui-03-css-parity.mjs ]; then
   [ "\${PR_BASE_SHA:-}" = "$FA_EXPECTED_BASE" ] || exit 77
@@ -147,7 +148,7 @@ test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebK
  const base=git(root,'rev-parse','HEAD');
  writeFileSync(join(root,'assets/admin-settings.css'),'.admin-settings{display:grid}');git(root,'add','.');git(root,'commit','-qm','component');
  const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);
- writeFileSync(join(bin,'node'),'#!/bin/sh\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\nprintf "%s\\n" "$1" >> "$FA_RECORD"\n',{mode:0o755});
+ writeFileSync(join(bin,'node'),'#!/bin/sh\nif [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\n[ "$1" != tools/dev-standings-preview.mjs ] || exit 0\nprintf "%s\\n" "$1" >> "$FA_RECORD"\n',{mode:0o755});
  writeFileSync(join(bin,'curl'),'#!/bin/sh\nexit 0\n',{mode:0o755});
  const script=render(stepScript(read('int24-browser-qa.yml'),'Run loopback preview and browser checks'),{
   'github.event_name':'pull_request','github.event.pull_request.base.sha':base,'needs.scope.outputs.mode':'full','needs.scope.outputs.area':''
