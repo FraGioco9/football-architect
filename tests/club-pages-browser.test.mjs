@@ -286,7 +286,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
-    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128");
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     assert.equal(await run("document.querySelector('#nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.navigate',{url:origin+'/clubs?q=Torino&country=IT&division=first'});
     await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
