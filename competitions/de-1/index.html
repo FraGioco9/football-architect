@@ -161,24 +161,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings",list=document.querySelector(".app-competition-tabs");for(const tab of list?.querySelectorAll('[role="tab"]')||[]){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}const active=list?.querySelector('[aria-selected="true"]');if(active){const row=list.getBoundingClientRect(),rect=active.getBoundingClientRect();if(rect.left<row.left+16)list.scrollLeft+=rect.left-row.left-16;else if(rect.right>row.right-16)list.scrollLeft+=rect.right-row.right+16}})();</script>
 
           <header class="app-competition-header">
-            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="180 52 664 920" width="664" height="920">
-	<style>
-.s0 { fill: #4a5063 }
-.s1 { fill: #243039 }
-</style>
-	<g>
-		<g>
-			<g>
-				<path class="s0" d="m512 52l56.5 102.48-56.5 102.48-56.5-102.48z"/>
-				<path class="s0" d="m430 168.46l-149 163.03 33 241.07 63 172.35 72 227.09h38v-167.7l-47-104.81-77-193.31z"/>
-				<path class="s0" d="m661 506.18l-77 193.31-47 104.81v167.7h38l72-227.09 63-172.35 33-241.07-149-163.03z"/>
-				<path class="s1" d="m512 269.77l112.5 249.22-112.5 249.21-112.5-249.21z"/>
-				<path class="s1" d="m260 421.16l-80 104.81 168 315.6 75 128.1-135-392.46z"/>
-				<path class="s1" d="m736 577.21l-135 392.46 75-128.1 168-315.6-80-104.81z"/>
-			</g>
-		</g>
-	</g>
-</svg></template><span>DE-1</span></div>
+            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><img class="app-competition-logo-image" src="/assets/divisions/de-1-meisterliga/compact.svg" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high"></div>
             <div class="app-competition-identity">
               <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Meisterliga</span></h1>
               <div class="app-world-detail-meta"><span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fa-competition-flag-de"><rect width="5" height="4" rx="0.625" ry="0.625"/></clipPath></defs><g clip-path="url(#fa-competition-flag-de)"><svg x="0" y="0" width="5" height="4" viewBox="0 0 5 3" preserveAspectRatio="none"><defs><mask id="fa-de-fa-flag-rounded-de" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="5.0" height="3.0"><rect x="0.0" y="0.0" width="5.0" height="3.0" rx="0" ry="0" fill="#fff" /></mask></defs><g mask="url(#fa-de-fa-flag-rounded-de)"><path d="M0 0h5v3H0z" /><path fill="#D00" d="M0 1h5v2H0z" /><path fill="#FFCE00" d="M0 2h5v1H0z" /></g></svg></g></svg></span> <span id="app-competition-country" data-world-country="DE">Germany</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier1">First division</span></div>
