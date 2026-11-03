@@ -1,8 +1,8 @@
 /** Deterministic next-season membership proposal from verified sporting outcomes.
  * Pure projection only; never an approved snapshot or D1 mutation.
  */
-import {ApiError} from './errors.ts';
-import type {Progression} from './knockout-progression.ts';
+import {ApiError} from '../../errors.ts';
+import type {Progression} from '../../knockout-progression.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 export interface FinishedDivision {competitionId:string;rankedClubIds:readonly string[]}
 export interface CountryPostseason {countryId:string;playoutRelegatedClubId:string;playoffPromotedClubId:string}

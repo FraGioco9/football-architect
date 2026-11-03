@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {rescheduleAdministrativeMilestone,dueAdministrativeMilestones,proposeAdministrativeMilestones,type AdministrativeMilestone} from '../src/admin-calendar-policy.ts';
+import {rescheduleAdministrativeMilestone,dueAdministrativeMilestones,proposeAdministrativeMilestones,type AdministrativeMilestone} from '../src/domain/calendar/admin-calendar-policy.ts';
 const milestones:AdministrativeMilestone[]=[
  {id:'domestic:entrants',scope:'domestic',kind:'confirm-domestic-entrants',day:1,order:1,status:'scheduled'},
  {id:'domestic:calendar',scope:'domestic',kind:'generate-domestic-calendar',day:2,order:1,status:'scheduled'},

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {ApiError} from '../src/errors.ts';
-import {proposeLifecycleTransition,type PrerequisiteEvidence} from '../src/lifecycle-policy.ts';
+import {proposeLifecycleTransition,type PrerequisiteEvidence} from '../src/domain/lifecycle/lifecycle-policy.ts';
 
 const generation='550e8400-e29b-41d4-a716-446655440000';
 const evidence:PrerequisiteEvidence={

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,rescheduleAdministrativeMilestone,dueAdministrativeMilestones} from '../src/admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,rescheduleAdministrativeMilestone,dueAdministrativeMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
 const all=()=>[...proposeAdministrativeMilestones(),...proposeEndSeasonMilestones()];
 test('end-season policy: fixed identifiers, day 56 and strictly ordered execution',()=>{
  const events=proposeEndSeasonMilestones();

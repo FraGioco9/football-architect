@@ -6,7 +6,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {rescheduleAdministrativeMilestone,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {rescheduleAdministrativeMilestone,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 
 interface EventRow {event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status']}
 export function parseRescheduleRequest(value:unknown){

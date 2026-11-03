@@ -3,7 +3,7 @@
  * Generators/draws require their own atomic sporting artifact commands;
  * this policy must never mark them complete without such an outcome.
  */
-import {ApiError} from './errors.ts';
+import {ApiError} from '../../errors.ts';
 import {dueAdministrativeMilestones,type AdministrativeMilestone,type MilestoneKind} from './admin-calendar-policy.ts';
 export type AdminEventAction='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar';
 export type EventExecution=Readonly<{event:AdministrativeMilestone;requiresArtifact:boolean}>;

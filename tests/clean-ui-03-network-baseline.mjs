@@ -24,4 +24,16 @@ try{
 }finally{await browser.close()}
 mkdirSync("int24-browser-artifacts",{recursive:true});
 writeFileSync("int24-browser-artifacts/clean-ui-03-network-baseline.json",JSON.stringify({measurement:"Chromium loopback DEV, cold context per route; transferSize may be 0 due to browser timing restrictions/cache",results},null,2));
-for(const x of results){assert.deepEqual(x.failed,[],x.route);assert.ok(x.requests>=1,x.route);console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}`)}
+// The standalone loopback preview intentionally has no Admin Worker attached.
+// Settings may probe its own session route; the preview's 404 is an expected
+// unavailable auth endpoint, not a failed static resource or broken page.
+// All other HTTP failures remain strict, including any other Admin API route.
+for(const x of results){
+ const unavailableAdminSession=x.failed.filter(r=>x.route==="/settings"&&
+   r.url===origin+"/api/admin/session"&&r.status===404&&r.type==="fetch");
+ assert.ok(unavailableAdminSession.length<=1,"unexpected repeated Admin session probe "+x.route);
+ const unexpected=x.failed.filter(r=>!unavailableAdminSession.includes(r));
+ assert.deepEqual(unexpected,[],x.route);
+ assert.ok(x.requests>=1,x.route);
+ console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}, unavailable Admin session: ${unavailableAdminSession.length}`);
+}

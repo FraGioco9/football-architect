@@ -8,7 +8,7 @@ import {readWorld} from './world-repository.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
-import {dueAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 export async function stageDomesticCalendar(db:Database,session:AdminSession,input:PrepareRequest,idempotencyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(idempotencyInput);

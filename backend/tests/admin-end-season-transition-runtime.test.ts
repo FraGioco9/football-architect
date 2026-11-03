@@ -12,7 +12,7 @@ import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {type AdminSession} from '../src/auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
-import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
+import {proposeEndSeasonMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>,baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 const input=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});

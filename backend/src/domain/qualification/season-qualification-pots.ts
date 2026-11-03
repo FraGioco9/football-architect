@@ -1,7 +1,7 @@
 /** Season-independent INT24 pot construction from approved qualified club IDs.
  * Three actual qualifiers per nation per cup. Never infer ranking from club ID.
  */
-import {ApiError} from './errors.ts';
+import {ApiError} from '../../errors.ts';
 export const internationalCountries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 const fail=():never=>{throw new ApiError(422,'schedule_invalid')};
 export function qualificationPots(clubs:readonly string[],countryOrder:readonly string[]){

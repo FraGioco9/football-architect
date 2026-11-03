@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {qualificationPots,internationalCountries} from '../src/season-qualification-pots.ts';
+import {qualificationPots,internationalCountries} from '../src/domain/qualification/season-qualification-pots.ts';
 const countries=[...internationalCountries];
 test('draw pots use qualified order, including changed club numbers in Season 2',()=>{
  const clubs=countries.flatMap(country=>[8,3,27].map(n=>country+'-'+n));

@@ -8,7 +8,7 @@ import type {Database} from './database.ts';
 import {parseIdempotencyKey,parsePrepareRequest,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './domain/calendar/admin-calendar-policy.ts';
 
 export async function initializeAdministrativeEvents(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const command=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);

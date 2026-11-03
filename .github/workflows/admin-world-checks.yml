@@ -93,6 +93,10 @@ jobs:
           npm --prefix backend ci --prefer-offline --no-audit --no-fund
       - name: Typecheck backend with pinned TypeScript
         run: npm --prefix backend run typecheck
+      - name: Audit backend imports and cycles (read-only BE-01)
+        run: |
+          node --test backend/tests/import-graph.test.mjs
+          node backend/tools/audit-import-graph.mjs
       - name: PLAYER-AUTH-01 local Worker D1 security and Admin migration acceptance
         if: ${{ github.event.pull_request.draft && !contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}
         run: npm --prefix backend run test:auth-local

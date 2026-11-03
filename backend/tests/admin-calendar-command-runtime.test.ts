@@ -9,7 +9,7 @@ import {type AdminSession} from '../src/auth.ts';
 import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
-import {proposeAdministrativeMilestones} from '../src/admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
 import {handleAdmin} from '../src/http-admin.ts';
 import type {Database} from '../src/database.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='d'.repeat(64);

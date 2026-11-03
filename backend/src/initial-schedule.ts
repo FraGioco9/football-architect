@@ -2,7 +2,7 @@
 import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
-import {qualificationPots} from './season-qualification-pots.ts';
+import {qualificationPots} from './domain/qualification/season-qualification-pots.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
 export interface InitialSchedule {
  schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;

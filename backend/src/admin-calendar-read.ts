@@ -2,7 +2,7 @@
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
-import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 /** Read receipts for an explicitly selected source season, even after the active
  * world pointer advances. Callers must authenticate before exposing this data.

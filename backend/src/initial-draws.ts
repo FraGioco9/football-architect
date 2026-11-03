@@ -1,6 +1,6 @@
 import {canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {requireGeneratedSchedule,type InitialSchedule} from './initial-schedule.ts';
-import {qualificationPots,internationalCountries} from './season-qualification-pots.ts';
+import {qualificationPots,internationalCountries} from './domain/qualification/season-qualification-pots.ts';
 /** Exact server-owned draw payload shared by persistence and lifecycle validation. */
 export async function initialDrawOutcomes(schedule:InitialSchedule,snapshot:ApprovedSnapshot){
  requireGeneratedSchedule(schedule,snapshot);

@@ -2,8 +2,8 @@
  * The full displacement rule is not implemented in the approved Season1 snapshot;
  * block final approval when a holder is outside the league-derived allocation.
  */
-import {ApiError} from './errors.ts';
-import type {Progression} from './knockout-progression.ts';
+import {ApiError} from '../../errors.ts';
+import type {Progression} from '../../knockout-progression.ts';
 import type {NextSeasonMembership} from './next-season-membership.ts';
 export interface HolderReview {
  readonly competitionId:'int-1'|'int-2';
