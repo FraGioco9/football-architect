@@ -372,5 +372,9 @@ test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab ra
   const panel=html.indexOf('id="competition-panel-standings"',start);
   assert.ok(start>=0&&tab>start&&crest>tab&&panel>crest&&dashboard>panel,id+' tabs parse before crest, panels and hidden pages');
   assert.ok(html.includes('data-fa-competition-first-paint'),id+' critical first-paint style present');
+  const critical=html.match(/<style data-fa-competition-first-paint>([\s\S]*?)<\/style>/)?.[1]||'';
+  assert.match(critical,/\.app-competition-tabs>\.app-competition-tab\{display:block;flex:0 0 112px/,id+' first-paint button dimensions independent of stylesheet');
+  assert.match(critical,/border-bottom:1px solid/,id+' first-paint permanent underline');
+  assert.match(critical,/@media\(max-width:620px\)/,id+' first-paint mobile sizes');
  }
 });
