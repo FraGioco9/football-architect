@@ -348,3 +348,15 @@ test('PAGE-LOAD-02: the seven competition view buttons and panels stay bound dur
   s.back();identity();s.forward();identity();
  }
 });
+
+test('PAGE-LOAD-02: all competition view buttons are static and deep-link selection scrolls before the router',()=>{
+ const ids=['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[1,2].map(tier=>country+'-'+tier)).concat(['int-1','int-2']);
+ for(const id of ids){
+  const html=readFileSync(new URL('../competitions/'+id+'/index.html',import.meta.url),'utf8');
+  assert.equal((html.match(/class="app-competition-tabs"/g)||[]).length,1,id+' tablist');
+  assert.equal((html.match(/role="tab"/g)||[]).length,7,id+' static tabs');
+  assert.ok(html.includes('const active=list?.querySelector(\'[aria-selected="true"]\')'),id+' static selected tab');
+  assert.ok(html.includes('list.scrollLeft+=rect.right-row.right+16'),id+' prepaint scroll');
+  assert.ok(html.indexOf('app-competition-tabs')<html.indexOf('src="/assets/competition-tabs.js"'),id+' static markup before router');
+ }
+});

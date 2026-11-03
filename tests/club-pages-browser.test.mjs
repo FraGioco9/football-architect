@@ -176,6 +176,26 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
      }
     }
+    // PAGE-LOAD-02: a directly selected final tab must be visible before
+    // the deferred competition router and network-driven hydration execute.
+    holdDeferred=true;
+    try{
+     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+     await cmd('Page.navigate',{url:origin+'/competitions/it-1/awards?season=1'});
+     await wait("document.readyState==='interactive'&&performance.getEntriesByName('first-contentful-paint').length>0");
+     const initial=await run(`(()=>{
+      const list=document.querySelector('.app-competition-tabs'),selected=document.querySelector('#competition-tab-awards');
+      const b=list?.getBoundingClientRect(),t=selected?.getBoundingClientRect();
+      return {count:list?.querySelectorAll('[role=tab]').length,scroll:list?.scrollLeft,
+       visible:!!t&&!!b&&t.width>0&&t.height>0&&t.left>=b.left-2&&t.right<=b.right+2,
+       selected:selected?.getAttribute('aria-selected'),mounted:!!window.faCompetitionRoute};
+     })()`);
+     assert.equal(initial.count,7,'P04 seven view buttons exist before deferred JS');
+     assert.equal(initial.selected,'true','P04 Awards selected directly from URL');
+     assert.equal(initial.visible,true,'P04 deep-link tab visible before router hydration');
+     assert.equal(initial.mounted,false,'P04 first-paint tab position does not depend on the router');
+     assert.ok(initial.scroll>0,'P04 offscreen selected tab already scrolled into view');
+    }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
     // PAGE-LOAD-02 P16: a direct filtered URL must not flash 320 wrong cards
     // before the manifest/JavaScript hydration, or replace matching crest nodes.
     holdDeferred=true;
