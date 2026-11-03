@@ -1,11 +1,12 @@
 // Independent PAGE-LOAD-02 transport/shell evidence, invoked by both FULL engines.
 // This records the scope actually exercised; it is not blanket P01-P23 acceptance.
 import assert from 'node:assert/strict';
-import {mkdirSync,writeFileSync} from 'node:fs';
+import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:2,day:20,phase:'active'};
 const provenance={kind:'none',sourceRef:null,resultAuthority:null};
+const competitionCatalog=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 export const pageLoadCases=[
  ['P01','/'],['P02','/dashboard'],['P03','/competitions'],
  ...['standings','fixtures','overview','stats','history','rules','awards','postseason','teams'].map(view=>[
@@ -97,17 +98,31 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
     if(route.startsWith('/calendar'))assert.equal(cold.calendarDays,56,route+' static 56-day structure');
     if(route.startsWith('/clubs/'))assert.equal(cold.clubTabs,5,route+' static club tabs');
     if(route.startsWith('/competitions/')&&route.includes('?'))assert.equal(cold.season,2,route+' explicit viewed season before API');
-    // On an API-gated cold visit, a world progress slot must remain reserved
-   // but blank; a dash would incorrectly present pending data as a value.
-   const pendingWorldSlots=await page.locator('.fa-shell-date-full,.fa-shell-date-short').allTextContents();
-   assert.ok(pendingWorldSlots.every(value=>value.trim()===''),route+' pending world progress must be blank');
+    // The world request can finish before a page-specific competition request
+    // enters its gate. A confirmed world must remain visible; only unresolved
+    // data is hidden. Never assert blank text after a valid authoritative read.
+    const worldProgress=await page.evaluate(()=>{
+     const state=window.faWorldState?.get?.(),full=document.querySelector('.fa-shell-date-full'),
+       short=document.querySelector('.fa-shell-date-short');
+     return {current:state?.current||null,full:full?.textContent.trim()||'',
+       short:short?.textContent.trim()||'',ready:full?.hasAttribute('data-fa-world-ready')||false,
+       visible:full?getComputedStyle(full).visibility:null};
+    });
+    if(worldProgress.current){
+     assert.equal(worldProgress.ready,true,route+' accepted world must mark header ready');
+     assert.equal(worldProgress.short,worldProgress.current.season+' · '+worldProgress.current.day+'/56',
+       route+' accepted world must display real current progress');
+    }else{
+     assert.equal(worldProgress.ready,false,route+' pending world must not be marked ready');
+     assert.equal(worldProgress.visible,'hidden',route+' unresolved world must remain invisible');
+    }
    const bracketExpected=expectedBracket(route);
    if(bracketExpected){
     row.bracketCold=await bracketShape(page);
     assert.deepEqual(row.bracketCold,bracketExpected,route+' canonical first-paint knockout leg/tie count');
     row.checks.push('static-knockout-ties-and-legs');
    }
-   row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api','pending-world-progress-blank');
+   row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api','pending-or-valid-world-progress');
    }finally{gate=null;release()}
    await page.waitForLoadState('networkidle');await nextFrame(page);
    row.confirmedEmpty=await snapshot();
@@ -155,6 +170,72 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    row.checks.push('five-locales-two-themes-four-widths');
    assert.deepEqual(errors.slice(errorStart),[],route+' page errors');
    row.status='PASS';console.log('PAGE-LOAD-02 '+engine+' '+item+' '+route+' PASS '+row.checks.join(', '));
+  }
+
+  // PAGE-LOAD-02: explicitly audit each of the 16 domestic leagues and both
+  // international cups. A shared renderer passing on IT-1 is not proof that
+  // another catalogue entry, season, tab, or knockout shape works.
+  evidence.competitionPages=[];
+  const ids=competitionCatalog.competitions;
+  assert.equal(ids.length,18,'canonical competition catalogue must contain 18 competitions');
+  for(const def of ids){
+   const id=def.id.toLowerCase(),route='/competitions/'+id+'/standings?season=2';
+   const row={id:def.id,category:def.category,checks:[],views:[]};
+   evidence.competitionPages.push(row);
+   const errorStart=errors.length;
+   let release;gateRequests=0;gate=new Promise(resolve=>release=resolve);
+   try{
+    await page.goto(origin+route,{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>!!window.faCompetitionContext);
+    const cold=await page.evaluate(()=>({
+     title:[...document.querySelectorAll('main h1')].some(x=>x.getClientRects().length>0),
+     season:window.faCompetitionContext?.selectedSeason,
+     tabs:[...document.querySelectorAll('.app-competition-tabs [role="tab"]')].map(x=>x.id),
+     tableHeaders:document.querySelectorAll('#competition-panel-standings th').length,
+     bracket:document.querySelector('#app-postseason-bracket')!==null
+    }));
+    assert.equal(cold.title,true,def.id+' static title');
+    assert.equal(cold.season,2,def.id+' explicit season before API');
+    assert.equal(cold.tabs.length,7,def.id+' seven canonical tabs');
+    assert.equal(new Set(cold.tabs).size,7,def.id+' unique tab identities');
+    assert.ok(cold.tableHeaders>0,def.id+' static table headers');
+    assert.equal(cold.bracket,true,def.id+' static knockout scaffold');
+    row.cold=cold;row.checks.push('cold-static-tabs-standings-and-postseason');
+   }finally{gate=null;release()}
+   await page.waitForLoadState('networkidle');
+   await page.waitForFunction(()=>!!window.faCompetitionContext);
+   // Exercise every actual tab and its URL without reloading this document.
+   const views=['standings','postseason','fixtures','stats','history','rules','awards'];
+   for(const view of views){
+    await page.locator('#competition-tab-'+view).click();
+    const observed=await page.evaluate(()=>{
+     const selected=[...document.querySelectorAll('.app-competition-tabs [role="tab"][aria-selected="true"]')];
+     const panels=[...document.querySelectorAll('.app-competition-panel')].filter(x=>!x.hidden);
+     return {pathname:location.pathname,season:new URLSearchParams(location.search).get('season'),
+      selected:selected.map(x=>x.id),panels:panels.map(x=>x.id),
+      overflow:document.documentElement.scrollWidth>innerWidth+2,
+      main:document.querySelector('main')};
+    });
+    assert.equal(observed.pathname,'/competitions/'+id+'/'+view,def.id+' route '+view);
+    assert.equal(observed.season,'2',def.id+' viewed season '+view);
+    assert.deepEqual(observed.selected,['competition-tab-'+view],def.id+' selected tab '+view);
+    assert.deepEqual(observed.panels,['competition-panel-'+view],def.id+' visible panel '+view);
+    assert.equal(observed.overflow,false,def.id+' horizontal overflow '+view);
+    if(view==='postseason'){
+     const shape=await bracketShape(page);
+     const expected=def.category==='international'?{ties:11,first:10,second:10}:
+       def.tier===2?{ties:0,first:2,second:2}:{ties:0,first:1,second:1};
+     assert.deepEqual(shape,expected,def.id+' knockout legs and ties');
+     row.bracket=shape;
+    }
+    row.views.push(view);
+   }
+   await page.reload({waitUntil:'networkidle'});
+   assert.equal(new URL(page.url()).pathname,'/competitions/'+id+'/awards',def.id+' hard refresh retains selected view');
+   assert.deepEqual(errors.slice(errorStart),[],def.id+' page-level JavaScript errors');
+   row.checks.push('all-seven-tabs-routes-and-refresh','canonical-knockout-topology');
+   row.status='PASS';
+   console.log('PAGE-LOAD-02 '+engine+' competition '+def.id+' PASS '+row.views.join(','));
   }
   assert.deepEqual(writes,[],'audit must not send mutations');
   evidence.status='PASS';
