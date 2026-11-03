@@ -13,7 +13,7 @@ Baseline: main `08c04e7363c19cc227264e0c170760317512cbb5` (squash of SH-03 #373)
 | Later-season evidence and archives | backend season authority and archival boundary | History and public read projections | Historical results remain immutable |
 | Static club/catalogue identities | `assets/world-catalog.mjs` (data catalogue) | Node generation / static presentation | Not an authority for live membership |
 
-The pure identity module contains no Worker, DOM, mutable season or membership dependency. It is not a source for historical rules snapshots. Calendar derives marker placements; explicit Worker adapters validate their projections against approved, versioned snapshots. Worker and Node duplicate local arrays removed where identity equality is exact; browser fallback arrays remain an intentional compatibility representation, guarded with execution-based parity tests; actual removal requires #359's coordinated script-loading change.
+The pure identity module contains no Worker, DOM, mutable season or membership dependency. It is not a source for historical rules snapshots. Calendar derives marker placements; explicit Worker adapters validate their projections against approved, versioned snapshots. Worker and Node duplicate local arrays removed where identity equality is exact; browser fallback arrays and the exact pinned calendar definition remain an intentional compatibility representation, guarded with execution-based parity tests; actual removal requires #359's coordinated script-loading change.
 
 ## Deliberate non-deduplications
 
@@ -30,7 +30,7 @@ Focused tests: `node --test tests/sh-01-sporting-contract.test.mjs tests/rules-r
 ## Explicit consumer parity and compatibility rationale
 
 - `assets/rules-registry.js`: Node resolves `sporting-contract.js`; standalone browser UMD retains the frozen three-version/final mirror. VM-based test proves browser bindings equal Node bindings.
-- `assets/world-calendar-model.js`: Node uses the same canonical competition IDs; browser UMD retains the pre-existing 56-day source, event ordering and mirrored identity fallback. The standalone VM projection must match Node output byte-for-byte after JSON serialization.
+- `assets/world-calendar-model.js`: The approved file remains byte-identical to the Season 1 SHA-256 pin; Worker calendar evidence checks it against canonical competition IDs. Browser and Node UMD retain the pre-existing 56-day source, event ordering and mirrored identity fallback. The standalone VM projection must match Node output byte-for-byte after JSON serialization.
 - `assets/world-catalog.mjs`: pure Node generator takes canonical country/competition IDs, preserving 320 identities, 256 provisional participants and 352 rivalries.
 - Backend `catalogue-snapshot`, `season-calendar-evidence`, `initial-schedule` and `season-qualification-pots` use the same immutable ID array; snapshot and archive hashes are never recomputed from a browser instance.
 - `backend/src/calendar-rules-compat.ts` remains the explicit legacy season-one bridge; no persisted calendar markers or historic snapshots are rewritten.
@@ -38,3 +38,7 @@ Focused tests: `node --test tests/sh-01-sporting-contract.test.mjs tests/rules-r
 - INT-24 draw and bracket progression keep backend-only trust and approved participant/seed authority; broad HTTP and public-data transport changes are explicitly delegated to #349.
 - Season 0 remains a navigation/debug/provisional-view state, not an approved scheduling season. `createSeason(0)` must continue to reject design calendar creation without altering Season 0 visibility.
 - Isolated generator fixtures must explicitly copy the pure shared module; `tests/generator-windows.test.mjs` protects Windows CRLF parity.
+
+### Frozen Season 1 source pin
+
+`backend/tools/season-one-candidate.mts` protects `assets/world-calendar-model.js` with SHA-256 `1d2461e0fff14afe0bd84b604ed7e75486710e8171abf710c446d4206f797f9b`. SH-01 MUST NOT rewrite this asset or update the pin. Runtime/Worker projection parity is enforced by executable contracts instead of changing approved source bytes.
