@@ -225,7 +225,10 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   // PAGE-LOAD-02 P04: changing sources may clear incompatible sporting rows;
   // consecutive validated revisions of the same source must retain stable rows.
   await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16);
+  await page.keyboard.press('Escape');
+  await page.locator('.fa-dev-widget-panel').waitFor({state:'hidden'});
   await page.setViewportSize({width:390,height:844});
+  await page.locator('#app-standings-compact-list').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelector('#app-standings-compact-list [data-club-crest] img')?.complete);
   await page.evaluate(()=>{
    window.p04Row=document.querySelector('#app-standings-body tr');
@@ -235,6 +238,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    window.p04Mobile.querySelector('summary').focus({preventScroll:true});
    window.p04Before={club:window.p04Row.dataset.worldClub,rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length};
   });
+  assert.equal(await page.evaluate(()=>document.activeElement===window.p04Mobile.querySelector('summary')),true,'P04 establish compact summary focus before refresh');
   apiWorld={...world,revision:6,day:22};
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
