@@ -100,6 +100,8 @@ test('INT-24: Knockouts uses a localized cup empty state instead of domestic ins
  const {runInNewContext}=await import('node:vm');
  const app=read('assets/app.js');
  const dictionaries=app.slice(app.indexOf('  const copies ='),app.indexOf('  const worldCountryNames'));
+ // Keep the actual shell progress dependency inside the isolated language-refresh VM.
+ const progress=app.slice(app.indexOf('  function renderWorldProgress()'),app.indexOf('  function activeView()'));
  const renderer=app.slice(app.indexOf('  function renderLanguage()'),app.indexOf('  function renderView()'));
  for(const slug of names){
   const html=read('competitions/'+slug+'/index.html');
@@ -109,7 +111,7 @@ test('INT-24: Knockouts uses a localized cup empty state instead of domestic ins
  }
  for(const [lang,expected] of Object.entries({en:'No knockout results available yet.',de:'Noch keine Ergebnisse der K.-o.-Phase verfügbar.',es:'Todavía no hay resultados de las eliminatorias.',fr:'Aucun résultat des phases à élimination directe disponible.',it:'Nessun risultato della fase a eliminazione diretta ancora disponibile.'})){
   const message={dataset:{appI18n:'cupKnockoutsEmpty'},textContent:'old domestic instruction'};
-  runInNewContext(dictionaries+renderer+'renderLanguage()',{language:()=>lang,words:()=>[message],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
+  runInNewContext(dictionaries+progress+renderer+'renderLanguage()',{language:()=>lang,words:()=>[message],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
   assert.equal(message.textContent,expected);
  }
 });
