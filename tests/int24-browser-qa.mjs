@@ -172,9 +172,9 @@ try {
   await page.keyboard.press("End");
   await page.waitForURL("**/awards?season=1");
   await page.reload({waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator("#competition-panel-awards").isVisible(),true);
+  await page.locator("#competition-panel-awards").waitFor({state:"visible"});
   await page.goBack({waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator("#competition-panel-postseason").isVisible(),true);
+  await page.locator("#competition-panel-postseason").waitFor({state:"visible"});
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
