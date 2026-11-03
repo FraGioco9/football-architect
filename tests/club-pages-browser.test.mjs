@@ -196,6 +196,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(initial.mounted,false,'P04 first-paint tab position does not depend on the router');
      assert.ok(initial.scroll>0,'P04 offscreen selected tab already scrolled into view');
     }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
+    await wait("document.readyState==='complete'&&!!window.faCompetitionRoute");
+    assert.equal(await run(`(()=>{
+     const list=document.querySelector('.app-competition-tabs'),tab=document.querySelector('#competition-tab-awards');
+     const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect();
+     return b.left>=a.left-2&&b.right<=a.right+2&&tab.getAttribute('aria-selected')==='true';
+    })()`),true,'P04 deferred router must not temporarily lose the selected static tab');
     // PAGE-LOAD-02 P16: a direct filtered URL must not flash 320 wrong cards
     // before the manifest/JavaScript hydration, or replace matching crest nodes.
     holdDeferred=true;

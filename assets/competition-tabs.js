@@ -269,7 +269,10 @@
   apply(read(),{replace:true});
   const restoreTabScroll=()=>{
     if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
-    syncTabOverflow();
+    // Restored offsets must never obscure the URL-selected tab between
+    // hydration and the later animation frames. The static HTML already
+    // revealed it synchronously before first paint.
+    revealSelectedTab();
   };
   const scheduleFrame=typeof window.requestAnimationFrame==="function"?window.requestAnimationFrame.bind(window):callback=>callback();
   restoreTabScroll();
