@@ -126,21 +126,19 @@ const competitionRoute = d=>{
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
 
- // Keep the permanent view rail ahead of every API-backed panel.
- // This is generated HTML: no client router or world request creates the controls.
+ // Permanent competition tablist must be parsed ahead of seasonal content.
  const railStart=html.indexOf('          <div class="app-competition-tabs" role="tablist"');
  const railEnd=html.indexOf('          </div>',railStart);
  const selectorStart=html.indexOf('          <script>(()=>{const view=document.documentElement.dataset.competitionView',railEnd);
  const selectorEnd=html.indexOf('</script>',selectorStart);
  const sectionStart=html.indexOf('<section id="app-divisions"');
- if(railStart<0||railEnd<0||selectorStart<0||selectorEnd<0||sectionStart<0)throw Error("Missing canonical competition rail "+d.id);
- const rail=html.slice(railStart,selectorEnd+'</script>'.length);
- // Move only immutable rail markup and its synchronous URL selector.
- html=html.slice(0,railStart)+html.slice(selectorEnd+'</script>'.length);
+ if(railStart<0||railEnd<0||selectorStart<0||selectorEnd<0||sectionStart<0)throw Error("Missing competition tablist "+d.id);
+ const rail=html.slice(railStart,selectorEnd+9);
+ html=html.slice(0,railStart)+html.slice(selectorEnd+9);
  const headerEnd=html.indexOf('          </header>',sectionStart);
  if(headerEnd<0)throw Error("Missing competition header "+d.id);
  const railPosition=headerEnd+'          </header>'.length;
- html=html.slice(0,railPosition)+'\n'+rail+html.slice(railPosition);
+ html=html.slice(0,railPosition)+'\\n'+rail+html.slice(railPosition);
 
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
