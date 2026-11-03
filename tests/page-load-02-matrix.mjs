@@ -62,7 +62,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    overflow:document.documentElement.scrollWidth>innerWidth+2,
    lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,
    season:window.faCompetitionContext?.selectedSeason,
-   calendarDays:document.querySelectorAll('[data-calendar-day]').length,
+   calendarDays:document.querySelectorAll('#world-calendar button[data-calendar-day]').length,
    clubTabs:document.querySelectorAll('.club-tabs a').length};
  });
  try{
