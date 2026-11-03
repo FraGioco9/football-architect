@@ -63,7 +63,7 @@
    unavailable(ticket){if(source!=='authoritative'||ticket?.sourceRevision!==sourceRevision||ticket?.readRevision!==readRevision)return false;world=null;current=null;emit();return true}
   });
  }
- function createSnapshotReader({getIdentity,isEnabled=()=>true,worldState=globalThis.faWorldState,getSource=()=>worldState?.get?.(),clear,fetchWorld,read,validate,commit,onState=()=>{},onBeforeWorld=()=>{},onWorld=()=>{}}){
+ function createSnapshotReader({timeoutMs=8000,getIdentity,isEnabled=()=>true,worldState=globalThis.faWorldState,getSource=()=>worldState?.get?.(),clear,fetchWorld,read,validate,commit,onState=()=>{},onBeforeWorld=()=>{},onWorld=()=>{}}){
   let epoch=0,controller=null,disposed=false;
   const cancel=()=>{epoch++;controller?.abort()};
   return Object.freeze({async load(){
@@ -73,7 +73,7 @@
    clear();const identity=getIdentity();
    const current=()=>!disposed&&ticket===epoch&&isEnabled()&&getSource()?.sourceRevision===sourceRevision&&getSource()?.source!=='dev'&&getIdentity()===identity;
    if(identity===null||identity===undefined)return false;
-   onState('loading');let completed=false;
+   onState('loading');let completed=false;const requestController=controller,timer=setTimeout(()=>requestController.abort(),timeoutMs);
    try{
     const before=await fetchWorld({signal});if(!current()||!validPublicWorld(before))return false;
     if(worldState&&!worldState.acceptWorld(before,worldTicket)&&!sameWorld(worldState.get().world,before))return false;
@@ -84,7 +84,7 @@
     // The caller commits synchronously. It may update its own context revision.
     if(commit(payload)===false)return false;
     completed=true;onWorld(after);onState(payload.status);return true;
-   }catch{return false}finally{if(!completed&&current())onState('unavailable')}
+   }catch{return false}finally{clearTimeout(timer);if(!completed&&current())onState('unavailable')}
   },cancel,dispose(){disposed=true;cancel()}});
  }
  function mountWorldState({window,document,onChange=()=>{}}){
@@ -105,13 +105,13 @@
     const refresh=async()=>{
       if(protectedSource&&window.faDebugEnabled!==false){syncDebug();return;}
       state.setSource({kind:'authoritative'});
-      controller?.abort();controller=new AbortController();const ticket=state.beginRead();
+      controller?.abort();controller=new AbortController();const ticket=state.beginRead(),requestController=controller,timer=setTimeout(()=>requestController.abort(),8000);
       try{
         const response=await window.fetch('/api/world',{signal:controller.signal,credentials:'omit',cache:'no-store',redirect:'error'});
         if(!response.ok)throw Error('World unavailable');
         const world=(await response.json())?.world;
         if(!validPublicWorld(world))state.unavailable(ticket);else state.acceptWorld(world,ticket);
-      }catch{state.unavailable(ticket)}
+      }catch{state.unavailable(ticket)}finally{clearTimeout(timer)}
     };
     window.addEventListener('fa:dev-progress-change',syncDebug);
     window.addEventListener('fa:dev-world-day-change',syncDebug);

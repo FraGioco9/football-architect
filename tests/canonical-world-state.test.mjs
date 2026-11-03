@@ -112,3 +112,8 @@ test('disabled calendar clears once even when world notification re-enters selec
  reload=runInNewContext(snippet+';reload',scope);
  assert.doesNotThrow(()=>reload());reload();assert.equal(cancels,1);assert.equal(clears,1);
 });
+test('a stalled API snapshot reaches unavailable within the client deadline',async()=>{
+ const states=[];
+ const reader=api.createSnapshotReader({timeoutMs:10,getIdentity:()=>1,clear:()=>{},fetchWorld:({signal})=>new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true})),read:async()=>{throw Error('must not read sport data')},validate:x=>x,commit:()=>{throw Error('must not commit')},onState:s=>states.push(s)});
+ assert.equal(await reader.load(),false);assert.deepEqual(states,['loading','unavailable']);
+});
