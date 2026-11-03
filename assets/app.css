@@ -369,6 +369,12 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 @media(max-width:360px){.app-world-mobile-summary{grid-template-columns:21px minmax(0,1fr) 36px;column-gap:4px;padding:8px 5px}.app-world-mobile-points{font-size:15px}.app-world-mobile-name{font-size:11.5px}}
 
 /* Competition views share the same page and never fabricate data. */
+/* PAGE-LOAD-02: immutable navigation is visible in the initial response. */
+#app-divisions:has(> .app-competition-tabs){display:flex;flex-direction:column}
+#app-divisions > .app-competition-header{order:0}
+#app-divisions > .app-competition-tabs{order:1;flex-shrink:0}
+#app-divisions > #app-competition-season-unavailable{order:2}
+#app-divisions > .app-competition-panel{order:3}
 .app-competition-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
 .app-competition-tabs::-webkit-scrollbar{height:5px}
 .app-competition-tabs::-webkit-scrollbar-track{background:transparent}
