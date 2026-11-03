@@ -7,7 +7,7 @@ import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {createProgression,processSportingDay,tieKey} from './knockout-progression.ts';
-import {membershipCandidateFromProgression} from './next-season-membership.ts';
+import {membershipCandidateFromProgression} from './domain/qualification/next-season-membership.ts';
 import {reviewInternationalHolders} from './domain/qualification/international-holder-review.ts';
 import {proposeHolderAllocation} from './domain/qualification/international-holder-allocation-proposal.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';

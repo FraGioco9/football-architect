@@ -1,7 +1,7 @@
 /** Audit-friendly, read-only Season2 qualification review packet. No approval capability. */
 import {ApiError} from '../../errors.ts';
 import {canonicalHash} from '../../catalogue-snapshot.ts';
-import type {NextSeasonMembership} from '../../next-season-membership.ts';
+import type {NextSeasonMembership} from './next-season-membership.ts';
 import type {HolderReview} from './international-holder-review.ts';
 import {proposeHolderAllocation} from './international-holder-allocation-proposal.ts';
 export interface QualificationReviewPacket {

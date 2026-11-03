@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {reviewInternationalHolders} from '../src/domain/qualification/international-holder-review.ts';
 import type {Progression} from '../src/knockout-progression.ts';
-import type {NextSeasonMembership} from '../src/next-season-membership.ts';
+import type {NextSeasonMembership} from '../src/domain/qualification/next-season-membership.ts';
 const candidate:NextSeasonMembership={season:2,status:'provisional-results-derived',bindings:[
  {competitionId:'int-1',clubIds:['IT-1','IT-2','IT-3',...Array.from({length:21},(_,i)=>'ENG-'+(i+1))]},
  {competitionId:'int-2',clubIds:['IT-4','IT-5','IT-6',...Array.from({length:21},(_,i)=>'FR-'+(i+1))]}

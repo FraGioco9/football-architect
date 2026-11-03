@@ -1,5 +1,5 @@
-import {ApiError} from './errors.ts';
-import {parseWorldV1,type WorldV1} from './types.ts';
+import {ApiError} from '../../errors.ts';
+import {parseWorldV1,type WorldV1} from '../../types.ts';
 
 /**
  * Pure lifecycle decision boundary for ADMIN-WORLD-01 PR2.

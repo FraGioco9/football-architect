@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {proposeHolderAllocation} from '../src/domain/qualification/international-holder-allocation-proposal.ts';
-import type {NextSeasonMembership} from '../src/next-season-membership.ts';
+import type {NextSeasonMembership} from '../src/domain/qualification/next-season-membership.ts';
 import type {HolderReview} from '../src/domain/qualification/international-holder-review.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 const candidate:NextSeasonMembership={season:2,status:'provisional-results-derived',bindings:[

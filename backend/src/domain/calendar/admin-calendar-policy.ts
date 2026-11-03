@@ -2,7 +2,7 @@
  * No database writes, no fixtures and no DEV world-clock authority here.
  * A protected D1 command must enforce expected world revision and persist receipts.
  */
-import {ApiError} from './errors.ts';
+import {ApiError} from '../../errors.ts';
 export type MilestoneKind='confirm-domestic-entrants'|'confirm-international-entrants'|'generate-domestic-calendar'|'draw-international'|'generate-international-calendar'|'archive-season'|'close-season'|'prepare-next-season';
 export type MilestoneStatus='scheduled'|'completed';
 export interface AdministrativeMilestone {

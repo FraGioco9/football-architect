@@ -7,7 +7,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {loadApprovedSeasonTwoAuthority} from './season-two-initial-schedule.ts';
 import {seasonTwoSourceGuards} from './season-snapshot-authority.ts';
-import {proposeLifecycleTransition} from './lifecycle-policy.ts';
+import {proposeLifecycleTransition} from './domain/lifecycle/lifecycle-policy.ts';
 export async function prepareSeasonTwo(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'prepare_next_unavailable');

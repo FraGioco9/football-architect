@@ -5,7 +5,7 @@ import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './domain/calendar/admin-calendar-policy.ts';
 import {planAdministrativeAdvance,type AdvanceEventRow} from './admin-calendar-advance-plan.ts';
 
 export async function advanceAdministrativeClock(db:Database,session:AdminSession,action:'start'|'advance',input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{

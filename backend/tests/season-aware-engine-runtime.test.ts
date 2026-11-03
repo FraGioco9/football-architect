@@ -5,7 +5,7 @@ import {buildInitialSchedule,buildTrustedSeasonSchedule} from '../src/initial-sc
 import {createProgression,processSportingDay} from '../src/knockout-progression.ts';
 import {simulateTemporaryMatch} from '../src/temporary-simulation.ts';
 import {initialDrawOutcomes} from '../src/initial-draws.ts';
-import {membershipCandidateFromProgression} from '../src/next-season-membership.ts';
+import {membershipCandidateFromProgression} from '../src/domain/qualification/next-season-membership.ts';
 import {internationalCountries} from '../src/domain/qualification/season-qualification-pots.ts';
 const seed='season-aware-synthetic-seed-0001';
 async function qualified(){

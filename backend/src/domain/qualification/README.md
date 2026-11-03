@@ -1,15 +1,16 @@
 # Backend domain boundaries — BE-01
 
-This directory contains the **pure international qualification policy** used by season planning and historical review. Four modules have moved here without changes to their algorithms, public function names, input contracts, error codes or persisted data.
+This directory contains the **pure international qualification policy** used by season planning and historical review. Five modules have moved here without changes to their algorithms, public function names, input contracts, error codes or persisted data.
 
 | Module | Owns |
 | --- | --- |
+| `next-season-membership.ts` | Pure next-season participant proposal from verified sporting progression; never activates or writes D1 |
 | `international-holder-review.ts` | Read-only holder evidence from sporting progression |
 | `international-holder-allocation-proposal.ts` | Deterministic ChampionAwareV1 holder placement |
 | `qualification-review-packet.ts` | Canonical approval evidence packet; never approves or writes |
 | `season-qualification-pots.ts` | Deterministic INT24 pots from actual qualified IDs |
 
-Dependencies flow from route/command modules into these pure policies. Keep storage and transport concerns in existing owners; do not import D1 adapters or HTTP into this directory. Existing `next-season-membership.ts`, `knockout-progression.ts` and `catalogue-snapshot.ts` remain in their current location until their cross-module consumers are audited.
+Dependencies flow from route/command modules into these pure policies. Keep storage and transport concerns in existing owners; do not import D1 adapters or HTTP into this directory. `next-season-membership.ts` is now owned by qualification policy; `knockout-progression.ts` and `catalogue-snapshot.ts` remain in their existing locations because their wider consumers and persistence boundaries need separate review.
 
 ## Migration and validation
 

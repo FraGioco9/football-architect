@@ -6,7 +6,7 @@ import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
 import {archiveSeason} from '../src/season-archive-command.ts';
-import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
+import {proposeEndSeasonMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {loadApprovedSeasonTwoAuthority,buildApprovedSeasonTwoInitialSchedule} from '../src/season-two-initial-schedule.ts';

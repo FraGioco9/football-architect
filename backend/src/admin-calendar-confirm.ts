@@ -9,7 +9,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import {dueAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status']};
 export function parseCompleteEventRequest(value:unknown){

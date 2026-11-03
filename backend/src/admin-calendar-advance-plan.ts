@@ -7,7 +7,7 @@ import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule,type InitialSchedule} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
-import {dueAdministrativeMilestones,type AdministrativeMilestone} from './admin-calendar-policy.ts';
+import {dueAdministrativeMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 import {createProgression,processSportingDay} from './knockout-progression.ts';
 import {sportingDayPayload} from './sporting-day-payload.ts';
 export interface AdvanceEventRow {

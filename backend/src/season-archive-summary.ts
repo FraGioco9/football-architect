@@ -1,7 +1,7 @@
 /** Immutable sporting projections derived only after validating all persisted day receipts. */
 import {ApiError} from './errors.ts';
 import type {Progression} from './knockout-progression.ts';
-import {membershipCandidateFromProgression} from './next-season-membership.ts';
+import {membershipCandidateFromProgression} from './domain/qualification/next-season-membership.ts';
 import {reviewInternationalHolders} from './domain/qualification/international-holder-review.ts';
 import {proposeHolderAllocation} from './domain/qualification/international-holder-allocation-proposal.ts';
 

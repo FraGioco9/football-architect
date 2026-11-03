@@ -8,7 +8,7 @@ import {canonicalHash} from './catalogue-snapshot.ts';
 import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {createProgression,processSportingDay,tieKey} from './knockout-progression.ts';
 import {sportingDayPayload} from './sporting-day-payload.ts';
-import {proposeLifecycleTransition} from './lifecycle-policy.ts';
+import {proposeLifecycleTransition} from './domain/lifecycle/lifecycle-policy.ts';
 type Evidence=Awaited<ReturnType<typeof loadSeasonSportingEvidence>>;
 interface Receipt {day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string}
 interface TieRow {generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string}

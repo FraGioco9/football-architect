@@ -9,7 +9,7 @@ import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
 import {archiveSeason} from '../src/season-archive-command.ts';
-import {proposeEndSeasonMilestones} from '../src/admin-calendar-policy.ts';
+import {proposeEndSeasonMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {readWorld} from '../src/world-repository.ts';

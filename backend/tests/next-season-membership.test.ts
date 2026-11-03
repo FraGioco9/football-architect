@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {proposeNextSeasonMembership} from '../src/next-season-membership.ts';
+import {proposeNextSeasonMembership} from '../src/domain/qualification/next-season-membership.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
 const divisions=countries.flatMap(countryId=>[1,2].map(tier=>({competitionId:countryId+'-'+tier,rankedClubIds:Array.from({length:16},(_,i)=>countryId+'-'+(i+1+(tier-1)*16))})));
 const outcomes=countries.map(countryId=>({countryId,playoutRelegatedClubId:countryId+'-14',playoffPromotedClubId:countryId+'-19'}));

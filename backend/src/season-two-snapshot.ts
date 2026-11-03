@@ -4,7 +4,7 @@
  */
 import {ApiError} from './errors.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import type {NextSeasonMembership} from './next-season-membership.ts';
+import type {NextSeasonMembership} from './domain/qualification/next-season-membership.ts';
 import type {HolderReview} from './domain/qualification/international-holder-review.ts';
 import {proposeHolderAllocation} from './domain/qualification/international-holder-allocation-proposal.ts';
 const invalid=():never=>{throw new ApiError(422,'qualification_evidence_invalid')};

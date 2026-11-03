@@ -4,7 +4,7 @@
  */
 import {ApiError} from '../../errors.ts';
 import type {Progression} from '../../knockout-progression.ts';
-import type {NextSeasonMembership} from '../../next-season-membership.ts';
+import type {NextSeasonMembership} from './next-season-membership.ts';
 export interface HolderReview {
  readonly competitionId:'int-1'|'int-2';
  readonly championClubId:string;

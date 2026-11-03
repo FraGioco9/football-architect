@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {proposeAdministrativeMilestones} from '../src/admin-calendar-policy.ts';
-import {planDueAdministrativeEvents} from '../src/admin-calendar-execution-policy.ts';
+import {proposeAdministrativeMilestones} from '../src/domain/calendar/admin-calendar-policy.ts';
+import {planDueAdministrativeEvents} from '../src/domain/calendar/admin-calendar-execution-policy.ts';
 test('day one confirmations are independently ordered without simulated match results',()=>{
  const plan=planDueAdministrativeEvents(proposeAdministrativeMilestones(),1,0);
  assert.deepEqual(plan.map(e=>e.event.id),['domestic:entrants','international:entrants']);
