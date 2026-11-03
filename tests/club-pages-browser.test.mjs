@@ -125,6 +125,28 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.equal(await run("getComputedStyle(document.querySelector('.fa-shell-date-full')).visibility"),'hidden','P01 pre-script static world progress cannot masquerade as Season 0');
        assert.equal(await run("getComputedStyle(document.querySelector('.fa-shell-date-short')).visibility"),'hidden','P01 pre-script short world progress cannot flash a dash');
        const before=await run(navSnapshot);
+       if(path==='/competitions/it-1/standings'){
+        // PAGE-LOAD-02: prove that the actual tab row has painted before the
+        // deferred competition router/manifest can execute. DOM presence alone
+        // is insufficient: every button must have visible geometry.
+        const firstPaint=await run(`(()=>{
+         const tablist=document.querySelector('.app-competition-tabs'),
+           tabs=[...document.querySelectorAll('.app-competition-tabs [role="tab"]')];
+         const box=tablist?.getBoundingClientRect(),style=tablist&&getComputedStyle(tablist);
+         return {count:tabs.length,visible:!!box&&box.width>0&&box.height>0&&
+          style.display==='flex'&&style.visibility==='visible'&&style.opacity==='1',
+          controls:tabs.map(tab=>({id:tab.id,width:tab.getBoundingClientRect().width,
+           height:tab.getBoundingClientRect().height,visible:getComputedStyle(tab).visibility==='visible'})),
+          selected:tabs.filter(tab=>tab.getAttribute('aria-selected')==='true').map(tab=>tab.id),
+          mounted:!!window.faCompetitionRoute};
+        })()`);
+        assert.equal(firstPaint.count,7,'P04 pre-script seven view buttons must exist at first contentful paint');
+        assert.equal(firstPaint.visible,true,'P04 tablist must be visibly painted before deferred JS');
+        assert.ok(firstPaint.controls.every(x=>x.width>0&&x.height>0&&x.visible),'P04 every static view button must have geometry before JS');
+        assert.deepEqual(firstPaint.selected,['competition-tab-standings'],'P04 selected static tab');
+        assert.equal(firstPaint.mounted,false,'P04 pre-script first paint must not rely on competition router');
+        await run("window.__p04StaticTabs=[...document.querySelectorAll('.app-competition-tabs [role=tab]')]");
+       }
        if(path==='/clubs'){
         assert.equal(await run("document.querySelectorAll('.nav01-grid .nav01-card').length"),320,'P16 static first paint before deferred JavaScript');
         assert.equal(await run("document.querySelector('.nav01-grid').getAttribute('aria-busy')"),'true','P16 initial manifest hydration remains pending');
@@ -142,6 +164,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
        await wait("document.readyState==='complete'");await delay(50);
        const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
+       if(path==='/competitions/it-1/standings'){
+        assert.equal(await run("window.__p04StaticTabs.every((tab,i)=>tab.isConnected&&document.querySelectorAll('.app-competition-tabs [role=tab]')[i]===tab)"),true,
+         'P04 route hydration must retain the same painted tab button nodes');
+       }
        if(path==='/clubs'){
         await wait("document.querySelector('.nav01-grid').getAttribute('aria-busy')==='false'");
         assert.equal(await run("window.__p16StaticCard.isConnected&&window.__p16StaticCrest===window.__p16StaticCard.querySelector('.nav01-crest')"),true,'P16 hydration preserves the first-paint card and crest nodes');
@@ -322,7 +348,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
-    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128");
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     assert.equal(await run("document.querySelector('#nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.navigate',{url:origin+'/clubs?q=Torino&country=IT&division=first'});
     await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
