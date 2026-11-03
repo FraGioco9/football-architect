@@ -1,6 +1,6 @@
 /* ARCH-CLEAN-02 A02: pure, versioned rules registry. No I/O or runtime state. */
 ((root,factory)=>{
- const api=factory();
+ const api=factory(root);
  root.faRulesRegistry=api;
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis,()=>{

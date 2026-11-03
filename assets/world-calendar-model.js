@@ -1,6 +1,6 @@
 /* CAL-IMP-01: read-only WORLD-TIME QA-06 projection. Not a live clock or fixture engine. */
 ((root,factory)=>{
-  const model=factory();
+  const model=factory(root);
   root.faWorldCalendarModel=model;
   if(typeof module!=="undefined"&&module.exports)module.exports=model;
 })(typeof window!=="undefined"?window:globalThis,()=>{
