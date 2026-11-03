@@ -318,7 +318,7 @@ test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qua
    assert.equal(fields.get('app-fixtures-next').disabled,true);
    const rows=fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match');
    assert.equal(rows.length,d.tier===1?2:5);
-   assert.deepEqual(rows.slice(0,games.length).map(row=>row.dataset.fixtureMatch),[...games].sort((a,b)=>a.round-b.round).map(g=>g.round+':'+g.homeId+':'+g.awayId));
+   assert.deepEqual(rows.slice(0,games.length).map(row=>row.dataset.fixtureMatch),[...games].sort((a,b)=>a.round-b.round).map(g=>g.round+':'+(g.tieId??g.slot??'')+':'+g.homeId+':'+g.awayId));
    const walk=n=>[n,...n.children.flatMap(walk)];
    const scores=walk(fields.get('app-fixtures-list')).filter(n=>n.className==='app-fixture-goals');
    assert.equal(scores.length,games.filter(g=>g.homeGoals!==null).length*2);
@@ -349,7 +349,7 @@ test("DEBUG-CREST-01 preserves mounted standings and Fixtures crest hosts",()=>{
  assert.match(fixtures,/const existing=new Map\(\[\.\.\.fields\.list\.children\]/);
  assert.match(fixtures,/return previous;/);
  assert.match(fixtures,/const next=matches\.map\(item=>\{/);
- assert.match(fixtures,/if\(typeof fields\.list\.insertBefore==="function"\)/);
+ assert.match(fixtures,/fields\.list\.replaceChildren\(\.\.\.next\)/);
 });
 
 test("STANDINGS-DEBUG-OUTCOME-01 clears stale winner and position bands",()=>{
