@@ -127,7 +127,7 @@ test('the shared header shows canonical current progress rather than a historica
   const paint=runInNewContext(source.slice(start,end)+';renderWorldProgress',{window:{faWorldState:{get:()=>snapshot}},copies:{[lang]:{historySeasonLabel:seasonLabel,noSeason:'inactive'}},language:()=>lang,document:{querySelectorAll:selector=>selector==='.fa-shell-date-full'?[full]:selector==='.fa-shell-date-short'?[short]:[]}});
   paint();assert.equal(full.textContent,seasonLabel+' 2 · '+dayLabel+' 21/56');assert.equal(short.textContent,'2 · 21/56');
   snapshot={source:'dev',current:{season:0,day:0}};paint();assert.equal(full.textContent,'Debug · inactive');
-  snapshot={source:'authoritative',current:null};paint();assert.equal(full.textContent,'—');assert.equal(short.textContent,'—');
+  snapshot={source:'authoritative',current:null};paint();assert.equal(full.textContent,'');assert.equal(short.textContent,'');
  }
 });
 test('a newly mounted shell consumes an already accepted world immediately',()=>{
