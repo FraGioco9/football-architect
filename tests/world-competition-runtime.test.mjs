@@ -103,6 +103,12 @@ function node(tag){
   tagName:tag,children,attrs,dataset:{},className:"",textContent:"",style:{},
   offsetWidth:300,offsetHeight:124,events:{},
   appendChild(item){children.push(item);return item},
+  querySelector(selector){
+   const matches=item=>selector==='[data-club-crest]'?item.dataset.clubCrest!==undefined:
+    selector.startsWith('.')?item.className.split(/\s+/).includes(selector.slice(1)):false;
+   for(const child of children){if(matches(child))return child;const nested=child.querySelector(selector);if(nested)return nested}
+   return null;
+  },
   removeAttribute(name){delete attrs[name]},
   append(...items){children.push(...items)},
   replaceChildren(...items){children.splice(0,children.length,...items)},

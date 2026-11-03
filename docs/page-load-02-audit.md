@@ -82,4 +82,19 @@ The full P01-P23 independent audit remains incomplete. Final exact-head executio
 
 ## Mainline coordination checkpoint
 
-The main branch advanced to `c0031787568d843f321804c6b5e3a9d29b192db1` as BE-02 and SH-01 were squash-merged independently. This branch intentionally leaves their HTTP and sporting contract modules untouched. Its own base ancestry remains the original verified SH-03 squash; no merge or force/rewrite of the owner-held branch is authorized here. A new exact-head CI run must be evaluated against the current PR base before any integration decision.
+The main branch advanced to `c0031787568d843f321804c6b5e3a9d29b192db1` as BE-02 and SH-01 were squash-merged independently. The resumed PR HEAD `812138812d3bd04f4ae320a71986f066f57d24b4` already includes that mainline commit in its ancestry. No new branch, PR, rebase or mainline merge is needed. This branch leaves their HTTP and sporting contract modules untouched.
+
+## Resumed verification — 2026-11-03
+
+At source HEAD `812138812d3bd04f4ae320a71986f066f57d24b4`, GitHub Browser QA run `41639698624` and Admin run `41639698616` passed. Site run `41639698644` reported 830/832 passing tests and two failures:
+
+- `world-calendar-ui.test.mjs`: its simulated details element did not implement DOM `contains`.
+- `world-competition-runtime.test.mjs`: simulated bracket slots did not implement `querySelector`; the missing method threw inside the renderer, which correctly cleared the supplied table through its failure path. This made the test observe one empty-state row instead of 24 standings rows.
+
+Both failures were reproduced locally before editing the test harnesses. The harnesses now model descendant containment and querying, with the original fixture/link/standings assertions preserved. The focused four-file regression command passed **51/51**, test discovery passed, syntax checks passed, and generated HTML remained **23/23** byte-equivalent. The separate club-browser script also now captures the translated header immediately before testing tab navigation, matching the already-correct FULL helper.
+
+The complete local Site command was attempted. After removing an incidental local dependency symlink, its remaining six failures were browser prerequisites: no executable browser initially, then Chrome launch denied by the environment (`socket() failed: Operation not permitted`). These are not recorded as product PASS or used to weaken CI. Browser QA must execute in GitHub Actions; no native iPhone Safari result is claimed.
+
+`tests/page-load-02-matrix.mjs` adds **42 separately identified routes** to both existing FULL browser engines. For every route it records a delayed-transport cold shell, confirmed-empty shell, hard refresh, same-document Back/Forward, failed transport/private boundaries, five locales, both themes and four widths. Stats Overview/Teams/Players are clicked independently where implemented. Account requests are mocked with a synthetic identity, Admin stays unauthorized, and all outgoing mutations fail the audit. Per-engine JSON records the exact checked-out SHA and each route's actual result in `int24-browser-artifacts/page-load-02-<engine>.json`.
+
+This expanded matrix is not yet executed at this checkpoint. It explicitly does **not** certify every populated sporting outcome, per-view Debug transition, focus/menu/scroll case, or native Safari behavior. Same-document history checks do not substitute for the separate cross-route checks. The five locales and two themes cover each dimension per route, not their full Cartesian product. P01–P23 acceptance therefore remains open until the corresponding missing evidence is collected.

@@ -15,6 +15,7 @@ function element(){
     setAttribute(k,v){this.attrs[k]=String(v)},getAttribute(k){return this.attrs[k]},
     addEventListener(k,fn){this.events[k]=fn},emit(k,extra={}){this.events[k]?.({target:this,preventDefault(){},...extra})},
     focus(){this.focused=true},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},classList:{toggle(){}}};
+  n.contains=target=>target===n||n.children.some(child=>child.contains(target));
   return n;
 }
 function boot({mobile=false,saved=null,blocked=false}={}){

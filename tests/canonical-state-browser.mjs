@@ -5,6 +5,7 @@ import calendarModel from '../assets/world-calendar-model.js';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+import {verifyPageLoadMatrix} from './page-load-02-matrix.mjs';
 const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:2,day:20,phase:'active'};
 const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
 export function published(competitionId,selectedSeason,currentWorld){
@@ -254,6 +255,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
   assert.deepEqual(errors,[],engine+' SH-03 browser errors');
   console.log('SH-03 '+engine+' PASS: '+checks+' individual page/state checks');
+  await verifyPageLoadMatrix(browser,engine,origin);
  }catch(error){
   const snapshot=await page.evaluate(()=>({url:location.href,world:window.faWorldState?.get?.(),route:window.faCompetitionRoute?.get?.(),context:{season:window.faCompetitionContext?.selectedSeason,world:window.faCompetitionContext?.seasonData?.world},status:document.querySelector('.app-competition-status')?.textContent,admin:document.querySelector('[data-admin-status]')?.textContent})).catch(()=>null);
   console.error('SH-03 failure state: '+JSON.stringify({engine,snapshot,errors}));

@@ -44,6 +44,9 @@ try{
     assert.equal(state.tabs,5);
     assert.equal(state.overflow,false);
    }
+   // Locale changes deliberately translate the header wrapper. Compare the
+   // current translated header across tab navigation, not its pre-locale node.
+   await page.evaluate(()=>window.pageLoad02Header=document.querySelector('.club-header'));
    await page.locator('.club-tabs a[href*="/fixtures"]').click();
    await page.waitForURL('**/fixtures*');
    assert.equal(await page.evaluate(()=>window.pageLoad02Header===document.querySelector('.club-header')),true,'tab reuses same header');

@@ -11,6 +11,7 @@
     "manual": "Explicit diagnostic/development scenario; not claimed as required FULL coverage"
   },
   "tests": {
+    "tests/page-load-02-matrix.mjs": "support",
     "tests/a03-04g-legacy-baseline.test.mjs": "site-node",
     "tests/a04-11-isolation-boundary.test.mjs": "site-node",
     "tests/a04-provider-baseline-evidence.test.mjs": "site-node",
