@@ -50,18 +50,21 @@ jobs:
             const evidence=[];
             for(const workflow_id of required){
               const {data}=await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:expected,per_page:100});
-              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&run.event===(workflow_id==='admin-world-checks.yml'?'pull_request':'workflow_dispatch')&&run.run_attempt>=1);
+              const matches=data.workflow_runs.filter(run=>run.head_sha===expected&&['pull_request','workflow_dispatch'].includes(run.event)&&run.run_attempt>=1);
               if(!matches.length){core.setFailed('Missing FULL workflow '+workflow_id+' for '+expected);return;}
               const selected=matches.sort((a,b)=>b.id-a.id)[0];
               if(selected.status!=='completed'||selected.conclusion!=='success'){
                 core.setFailed('Latest FULL workflow is not a completed PASS: '+workflow_id+' '+selected.html_url);return;
               }
               const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:selected.id,per_page:100});
-              const names=jobs.filter(j=>j.conclusion==='success').map(j=>j.name);
+              const successfulJobs=jobs.filter(j=>j.conclusion==='success');
+              const names=successfulJobs.map(j=>j.name);
               const expectedJob=workflow_id==='landing-checks.yml'?'landing':workflow_id==='int24-browser-qa.yml'?'chromium':'Final local operator persistence, restart and browser lifecycle';
               if(!names.some(n=>n===expectedJob||n.endsWith(' / '+expectedJob))){
                 core.setFailed('Missing completed FULL job '+expectedJob+' in '+workflow_id);return;
               }
+              if(workflow_id==='landing-checks.yml' && !successfulJobs.some(j=>(j.name===expectedJob||j.name.endsWith(' / '+expectedJob)) && j.steps?.some(s=>s.name==='Site contracts (full)' && s.conclusion==='success'))){core.setFailed('Missing FULL Site contracts evidence');return;}
+              if(workflow_id==='int24-browser-qa.yml' && !successfulJobs.some(j=>(j.name===expectedJob||j.name.endsWith(' / '+expectedJob)) && j.steps?.some(s=>s.name==='Start isolated local Admin Worker for FULL network audit' && s.conclusion==='success') && j.steps?.some(s=>s.name==='Run loopback preview and browser checks' && s.conclusion==='success'))){core.setFailed('Missing FULL Browser/Worker audit evidence');return;}
               if(workflow_id==='admin-world-checks.yml' && !names.some(n=>n==='Admin foundation contracts (Node 22)'||n.endsWith(' / Admin foundation contracts (Node 22)'))){core.setFailed('Missing Admin foundation FULL contracts');return;}
               evidence.push(workflow_id+': '+selected.html_url+' ('+selected.head_sha+')');
             }
