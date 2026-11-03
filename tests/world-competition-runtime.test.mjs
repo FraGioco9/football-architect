@@ -17,9 +17,32 @@ const source=read("assets/competition-page.js");
 const marker="  start().catch(fail);";
 assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
-  "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
+  "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker)
+  .replace('const sync=(target,source)=>{','const sync=window.__faSyncMobile=(target,source)=>{');
 const manifest=JSON.parse(read("competitions/_shared/manifest.json"));
 const root="http://127.0.0.1:2000";
+test('PAGE-LOAD-02: mobile reconciliation retains the loaded image and load flags of an unchanged crest',async()=>{
+ const division=divisionsForTest('IT-1'),r=await simulate({division,devSeason:1,testHooks:true});
+ r.window.faStandingsMobile.prepare(createPreviewStandings(division,15).rows)(true);
+ assert.equal(typeof r.window.__faSyncMobile,'function');
+ // Model the actual DOM contract at the asynchronous image-renderer boundary:
+ // source is a fresh empty host; target already owns a loaded image.
+ const host={nodeType:1,nodeName:'SPAN',dataset:{clubCrest:'IT-1'},
+  attrs:{'data-club-crest':'IT-1','data-club-crest-loaded':'true'},childNodes:[],
+  get attributes(){return Object.entries(this.attrs).map(([name,value])=>({name,value}))},
+  get lastChild(){return this.childNodes.at(-1)},
+  getAttribute(name){return this.attrs[name]},removeAttribute(name){delete this.attrs[name]},
+  setAttribute(name,value){this.attrs[name]=value}};
+ const image={remove(){host.childNodes.splice(host.childNodes.indexOf(image),1)}};host.childNodes.push(image);
+ const incoming={nodeType:1,nodeName:'SPAN',dataset:{clubCrest:'IT-1'},childNodes:[],
+  attributes:[{name:'data-club-crest',value:'IT-1'}],hasAttribute(name){return name==='data-club-crest'}};
+ r.window.__faSyncMobile(host,incoming);
+ assert.equal(host.childNodes[0],image,'a validated refresh must retain the loaded image node');
+ assert.equal(host.attrs['data-club-crest-loaded'],'true','loaded visibility must survive reconciliation');
+ incoming.dataset.clubCrest='IT-2';incoming.attributes[0].value='IT-2';
+ r.window.__faSyncMobile(host,incoming);
+ assert.equal(host.childNodes.length,0,'a changed crest identity must clear the previous image');
+});
 test('SEASON-DEV-BANDS: publishing a historical provider snapshot repairs desktop and mobile bands prepared before publication',async()=>{
  const data=structuredClone(manifest),current=data.competitions.find(d=>d.id==='IT-1');
  current.rules.phases[0].rankOutcomes[0].to=2;current.rules.phases[0].rankOutcomes[1].from=3;

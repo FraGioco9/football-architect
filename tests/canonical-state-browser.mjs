@@ -225,8 +225,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   // PAGE-LOAD-02 P04: changing sources may clear incompatible sporting rows;
   // consecutive validated revisions of the same source must retain stable rows.
   await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body tr[data-world-club]').length===16);
+  await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>document.querySelector('#app-standings-compact-list [data-club-crest] img')?.complete);
   await page.evaluate(()=>{
    window.p04Row=document.querySelector('#app-standings-body tr');
+   window.p04Mobile=document.querySelector('#app-standings-compact-list li');
+   window.p04MobileCrest=window.p04Mobile.querySelector('[data-club-crest] img');
+   window.p04Mobile.querySelector('details').open=true;
+   window.p04Mobile.querySelector('summary').focus({preventScroll:true});
    window.p04Before={club:window.p04Row.dataset.worldClub,rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length};
   });
   apiWorld={...world,revision:6,day:22};
@@ -234,6 +240,10 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
   const p04=await page.evaluate(()=>({
    row:window.p04Row===document.querySelector('#app-standings-body tr'),
+   mobileCard:window.p04Mobile===document.querySelector('#app-standings-compact-list li'),
+   mobileImage:window.p04MobileCrest===document.querySelector('#app-standings-compact-list [data-club-crest] img'),
+   expanded:window.p04Mobile.querySelector('details').open,
+   focused:document.activeElement===window.p04Mobile.querySelector('summary'),
    count:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
    crest:document.querySelector('#app-standings-body tr [data-club-crest]')?.dataset.clubCrest,
    provenance:window.faCompetitionContext?.seasonData?.provenance?.kind,
@@ -243,6 +253,10 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   }));
   assert.equal(p04.count,16,'P04 valid standings rows: '+JSON.stringify(p04));
   assert.equal(p04.row,true,'P04 preserve club row identity: '+JSON.stringify(p04));
+  assert.equal(p04.mobileCard,true,'P04 preserve compact club card');
+  assert.equal(p04.mobileImage,true,'P04 preserve loaded compact crest image');
+  assert.equal(p04.expanded,true,'P04 preserve expanded compact details');
+  assert.equal(p04.focused,true,'P04 preserve compact summary focus');
   assert.ok(p04.crest,'P04 retained known crest identity');
   assert.equal(p04.provenance,'authoritative');
   checks+=2;

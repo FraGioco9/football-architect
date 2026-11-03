@@ -459,6 +459,9 @@
             }
             if(target.nodeType===3){if(target.nodeValue!==source.nodeValue)target.nodeValue=source.nodeValue;return target}
             if(target.nodeType!==1)return target;
+            // Crest rendering owns its loaded image and visibility attributes.
+            // An unchanged identity must not be reset to the fresh empty host.
+            if(target.dataset?.clubCrest&&target.dataset.clubCrest===source.dataset?.clubCrest)return target;
             for(const attr of [...target.attributes])if(!source.hasAttribute(attr.name)&&attr.name!=="open")target.removeAttribute(attr.name);
             for(const attr of [...source.attributes])if(target.getAttribute(attr.name)!==attr.value)target.setAttribute(attr.name,attr.value);
             const oldChildren=[...target.childNodes],newChildren=[...source.childNodes];

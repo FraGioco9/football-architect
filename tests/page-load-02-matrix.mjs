@@ -55,7 +55,9 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
   }catch(error){if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error}
  });
  const snapshot=()=>page.evaluate(()=>{
-  const main=document.querySelector('main'),title=main?.querySelector('h1'),box=title?.getBoundingClientRect();
+  const main=document.querySelector('main');
+  const title=[...(main?.querySelectorAll('h1')||[])].find(node=>node.getClientRects().length&&getComputedStyle(node).visibility!=='hidden');
+  const box=title?.getBoundingClientRect();
   return {title:title?.textContent.trim(),titleWidth:box?.width,titleHeight:box?.height,
    overflow:document.documentElement.scrollWidth>innerWidth+2,
    lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,
@@ -72,7 +74,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    let release;gateRequests=0;gate=new Promise(resolve=>release=resolve);mode='empty';
    try{
     await page.goto(origin+route,{waitUntil:'domcontentloaded'});
-    await page.locator('main h1').first().waitFor({state:'visible'});
+    await page.locator('main h1:visible').first().waitFor({state:'visible'});
     if(route.startsWith('/competitions/')&&route.includes('?'))await page.waitForFunction(()=>!!window.faCompetitionContext);
     if(route.startsWith('/clubs/'))await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
     await nextFrame(page);
