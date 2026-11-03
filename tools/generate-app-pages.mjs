@@ -227,7 +227,7 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
   const id=c.countryId+'-'+c.clubId,crest=firstPaintCrests[id],division=firstPaintDivisionById.get(c.divisionId);
   return '<a class="nav01-card" href="/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview">'+(crest?'<img class="nav01-crest" src="/'+encode(crest)+'" alt="" loading="lazy">':'<span class="nav01-crest" aria-hidden="true">◆</span>')+'<span><strong>'+encode(c.primaryName)+'</strong><small>'+encode(c.city)+' · <img class="nav01-country-flag" src="/'+encode(flagForCountry(c.countryId))+'" alt="'+encode(c.countryId)+'" loading="lazy">'+(division?' · '+encode(division.name):'')+'</small></span></a>';
  }).join('');
- const firstPaintContent=content.replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\\s\\S]*?<\\/script>/,'');
+ const firstPaintContent=content.replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');
  let html=source.slice(0,begin)+firstPaintContent+source.slice(finish);
  html=html.replace("<title>Competitions — Football Architect</title>","<title>Clubs — Football Architect</title>");
 
