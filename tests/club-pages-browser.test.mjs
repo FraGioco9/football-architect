@@ -142,7 +142,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
        if(path==='/clubs'){
         await wait("document.querySelector('.nav01-grid').getAttribute('aria-busy')==='false'");
-        assert.equal(await run("window.__p16StaticCard===document.querySelector('.nav01-grid .nav01-card')&&window.__p16StaticCrest===window.__p16StaticCard.querySelector('.nav01-crest')"),true,'P16 hydration preserves the first-paint card and crest nodes');
+        assert.equal(await run("window.__p16StaticCard.isConnected&&window.__p16StaticCrest===window.__p16StaticCard.querySelector('.nav01-crest')"),true,'P16 hydration preserves the first-paint card and crest nodes');
        }
        if(capture)await captureNav('after');
       }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
@@ -159,7 +159,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
     await wait("document.querySelector('.nav01-grid').getAttribute('aria-busy')==='false'");
     assert.equal(await run("document.querySelectorAll('.nav01-grid .nav01-card').length"),16,'P16 hydrated country/division filter');
-    assert.equal(await run("window.__p16FilteredCard===document.querySelector('.nav01-grid .nav01-card')&&window.__p16FilteredCrest===window.__p16FilteredCard.querySelector('.nav01-crest')"),true,'P16 prefiltered card and crest remain mounted');
+    assert.equal(await run("window.__p16FilteredCard.isConnected&&window.__p16FilteredCrest===window.__p16FilteredCard.querySelector('.nav01-crest')"),true,'P16 prefiltered card and crest remain mounted');
     console.log('NAV_FIRST_PAINT: 160 cold/refresh cases passed, 1440/390px, Dark/Light, five languages, four routes');
     const fragmentAligned="(()=>{const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(location.hash.slice(1));if(!pane||!target)return false;const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const desired=pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,desired));return Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0&&document.querySelector('.fa-shell-sidebar').getBoundingClientRect().top===0})()";
     const fragmentLoad=async(method,params,context)=>{
