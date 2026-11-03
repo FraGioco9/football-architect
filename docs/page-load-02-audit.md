@@ -106,3 +106,18 @@ A new deterministic regression reproduced a genuine P04 issue: compact-row recon
 The full focused nine-file block now passes **123/123** locally, with syntax and **23/23** generator verification passing. Browser execution remains delegated to the exact-head CI runners because local Chrome cannot open its required socket.
 
 The first expanded-matrix CI run at `b2fd970483e2d6375620fd7dfb6985d11406bc48` passed the 185 existing Chromium page/state checks and the new Landing and Dashboard scenarios, then exposed a test-selector defect on the Competitions directory: the shared shell intentionally contains several hidden page titles, and `main h1:first` selected the hidden Dashboard title. The audit now selects and measures the visible title, retaining the visibility/geometry assertions. This failed run is not treated as full acceptance.
+
+## Verified GitHub handoff checkpoint — 2026-11-03 (PR #374)
+
+This checkpoint supersedes earlier *execution-pending* statements above for the specifically named source commit, without certifying full issue acceptance.
+
+- Source HEAD before this documentation-only checkpoint: `3b6051d912d149be357f3eaeae6df0f013e8f21a`. Main baseline: `c0031787568d843f321804c6b5e3a9d29b192db1` (SH-01 and BE-02 already merged). PR #374 remains open/Draft/HOLD.
+- Site FULL: [run 41699182362](https://github.com/FraGioco9/football-architect/actions/runs/41699182362), 833/833 passing tests (119 files), reported for that source HEAD.
+- Admin: [run 41699182358](https://github.com/FraGioco9/football-architect/actions/runs/41699182358), PASS as reported on the PR.
+- Browser FULL: [run 41699182434](https://github.com/FraGioco9/football-architect/actions/runs/41699182434), 42/42 independent route cases in Chromium and 42/42 in WebKit, in addition to 185 shared cases per engine, as recorded in the PR. Browser artifact reports for both engines were checked for matching SHA and PASS.
+- FULL evidence gate: [run 41699182442](https://github.com/FraGioco9/football-architect/actions/runs/41699182442), PASS for the source HEAD.
+- Focused local regressions previously reported: 123/123, plus 39/39 and 22/22 follow-up checks; generated HTML 23/23 unchanged.
+
+**Acceptance remains open (P01–P23):** A passing cross-route matrix proves the listed dimensions and engines, not the six independent mandatory checks for *each* page. Still to execute and record: populated authoritative sporting fixtures/standings, both domestic and international knockout leg/arrow/selector geometry, per-view Debug OFF/ON/Reset and unsupported-season cases, delayed Clubs catalogue first paint, shared world-header pending-state display, stale/out-of-order source responses, focus/scroll/menu retention for all applicable views, and native iPhone Safari when available. P10 has no separately routable cup Overview and must be assessed as a route-contract exception, not silently marked PASS. Preserve the UNKNOWN entries above until independently verified.
+
+This checkpoint makes no code, HTTP/auth or sporting-rule changes. If a later implementation commit changes the PR HEAD, all CI evidence above is **historical** and must not be reused as exact-head evidence for the new commit. No merge, deploy or remote D1 action is authorized by this note.
