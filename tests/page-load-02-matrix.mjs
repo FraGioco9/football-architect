@@ -84,7 +84,11 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
     if(route.startsWith('/calendar'))assert.equal(cold.calendarDays,56,route+' static 56-day structure');
     if(route.startsWith('/clubs/'))assert.equal(cold.clubTabs,5,route+' static club tabs');
     if(route.startsWith('/competitions/')&&route.includes('?'))assert.equal(cold.season,2,route+' explicit viewed season before API');
-    row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api');
+    // On an API-gated cold visit, a world progress slot must remain reserved
+   // but blank; a dash would incorrectly present pending data as a value.
+   const pendingWorldSlots=await page.locator('.fa-shell-date-full,.fa-shell-date-short').allTextContents();
+   assert.ok(pendingWorldSlots.every(value=>value.trim()===''),route+' pending world progress must be blank');
+   row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api','pending-world-progress-blank');
    }finally{gate=null;release()}
    await page.waitForLoadState('networkidle');await nextFrame(page);
    row.confirmedEmpty=await snapshot();
