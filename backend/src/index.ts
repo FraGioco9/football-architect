@@ -1,3 +1,4 @@
+import {httpJson,routeMethod} from './http-contract.ts';
 import {assertEnvironmentPool,resolveAccountConfiguration} from './environment-pool.ts';
 import {handleAdmin,type AdminEnv} from './http-admin.ts';
 import {handlePlayer,type PlayerEnv} from './http-player.ts';
@@ -14,15 +15,7 @@ export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv, GmailDe
   DB?: WorldDatabase;
 }
 
-const headers = {
-  'Content-Type': 'application/json; charset=utf-8',
-  'Cache-Control': 'no-store',
-  'X-Content-Type-Options': 'nosniff',
-};
-
-function json(status: number, payload: unknown): Response {
-  return new Response(JSON.stringify(payload), { status, headers });
-}
+const json=(status:number,payload:unknown)=>httpJson('public',status,payload);
 
 /**
  * Anonymous public read and separately configured, server-authorized Admin routes.
@@ -35,7 +28,7 @@ export default {
     if(expected!==null&&(expected!=='dev-preview'||env.PLAYER_MODE!=='preview'))return json(503,{error:{code:'environment_unavailable'}});
     if(url.pathname==='/api/local-dev/inbox')return handleLocalInbox(request,env);
     if(url.pathname==='/api/environment'){
-      if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       try{
         if(env.PLAYER_MODE!=='preview'||url.search)throw new ApiError(503,'environment_unavailable');
         const c=await resolveAccountConfiguration(request,env,'environment_unavailable');
@@ -46,7 +39,7 @@ export default {
       try{await assertEnvironmentPool(env)}catch{return json(503,{error:{code:'environment_unavailable'}})}
     }
     if (url.pathname === '/api/world') {
-      if (request.method !== 'GET') return json(405, { error: { code: 'method_not_allowed' } });
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       try {
         return json(200, { world: projectWorld(await readWorld(env.DB)) });
       } catch (error) {
@@ -56,7 +49,7 @@ export default {
     }
     const sporting=url.pathname.match(/^\/api\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))\/seasons\/([1-9][0-9]*)$/);
     if(sporting){
-      if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search||!Number.isSafeInteger(Number(sporting[2])))return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicSportingSeason(requireDatabase(env.DB),sporting[1],Number(sporting[2])))}
       catch(error){
@@ -67,7 +60,7 @@ export default {
     const calendar=url.pathname.match(/^\/api\/calendar\/seasons\/([1-9][0-9]*)\/days\/([1-9][0-9]?)$/);
     if(calendar){
       if(Number(calendar[2])>56)return json(404,{error:{code:'not_found'}});
-      if(request.method!=='GET')return json(405,{error:{code:'method_not_allowed'}});
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search||!Number.isSafeInteger(Number(calendar[1])))return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicCalendarDay(requireDatabase(env.DB),Number(calendar[1]),Number(calendar[2])))}
       catch(error){
