@@ -104,7 +104,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(await page.locator('#app-competition-season').getAttribute('aria-expanded'),'true');
   assert.equal(await page.evaluate(()=>window.sh03Header===document.querySelector('.app-competition-header')&&window.sh03Picker===document.querySelector('#app-competition-season')),true);checks++;
   await page.keyboard.press('Escape');
-  await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:'3'}));
+  await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:3}));
   await page.waitForURL('**/fixtures?season=2&matchday=3');
   await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
   await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
@@ -140,6 +140,8 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faWorldState?.get().current?.season===0);
   await page.reload({waitUntil:'networkidle'});assert.equal(await page.evaluate(()=>window.faWorldState.get().current.season),0);checks++;
   await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="season-number"]').fill('2');await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+  await page.waitForFunction(()=>window.faWorldState?.get().current?.season===2);
   populated=true;
   const switcher=page.locator('[data-dev-control="debug-enabled"]');
   await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().source==='authoritative'&&window.faWorldState.get().current?.season===2);
@@ -150,7 +152,8 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
   holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await oldStarted;
-  await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev');
+  await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===2);
+  assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
   apiWorld={...world,revision:5,day:21};
   await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===21);
   assert.equal(new URL(page.url()).searchParams.get('season'),'2','OFF retains viewed season');
@@ -165,6 +168,10 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
   assert.deepEqual(errors,[],engine+' SH-03 browser errors');
   console.log('SH-03 '+engine+' PASS: '+checks+' individual page/state checks');
+ }catch(error){
+  const snapshot=await page.evaluate(()=>({url:location.href,world:window.faWorldState?.get?.(),route:window.faCompetitionRoute?.get?.(),context:{season:window.faCompetitionContext?.selectedSeason,world:window.faCompetitionContext?.seasonData?.world},status:document.querySelector('.app-competition-status')?.textContent,admin:document.querySelector('[data-admin-status]')?.textContent})).catch(()=>null);
+  console.error('SH-03 failure state: '+JSON.stringify({engine,snapshot,errors}));
+  await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-failure.png',fullPage:true}).catch(()=>{});throw error;
  }finally{
   await context.close();for(const host of [publicHost,debugHost]){host.closeAllConnections();await new Promise(resolve=>host.close(resolve));}
  }
