@@ -196,13 +196,12 @@ try {
   console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"domcontentloaded"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
-  // DEV panel open state persists between route reloads; never blindly toggle closed.
-  if(!await page.locator('[data-dev-control="season-number"]').isVisible())
-   await page.locator('.fa-dev-widget-button').click();
+  // This scenario verifies Season 0 clock semantics, not the independently
+  // tested DEV settings popover layout (which may be hidden on mobile).
   const season=page.locator('[data-dev-control="season-number"]');
-  await season.waitFor({state:'visible'});
+  await season.waitFor({state:'attached'});
   assert.equal(await season.getAttribute('min'),'0');
-  await season.fill('0');await season.dispatchEvent('change');
+  await season.evaluate(input=>{input.value='0';input.dispatchEvent(new Event('change',{bubbles:true}))});
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
   assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
   assert.equal(await page.locator('[data-dev-control-row="world-day"] button:disabled').count(),2);
@@ -239,11 +238,9 @@ try {
    assert.deepEqual(await page.locator('#calendar-season-menu [role=option]').allTextContents(),['1']);
    await page.locator('#calendar-season-picker').click();
   }
-  if(!await page.locator('[data-dev-control="season-number"]').isVisible())
-   await page.locator('.fa-dev-widget-button').click();
-  await page.locator('[data-dev-control="season-number"]').waitFor({state:'visible'});
-  await page.locator('[data-dev-control="season-number"]').fill('1');
-  await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+  await page.locator('[data-dev-control="season-number"]').evaluate(input=>{
+   input.value='1';input.dispatchEvent(new Event('change',{bubbles:true}));
+  });
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===false&&window.faDevWorldClockSnapshot?.current?.season===1);
   assert.equal(await page.evaluate(()=>window.faDevWorldClockSnapshot?.current?.season),1);
   if(route.startsWith('/competitions/')){
