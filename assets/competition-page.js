@@ -968,7 +968,7 @@
     // The module bootstrap does not delay legacy shared-page initialization.
     // Selector module is optional to boot: never stall existing public consumers.
     void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});
-    for (const script of ["landing.js","app.js","app-search.js","club-crests.js","competition-tabs.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
+    for (const script of ["landing.js","app-search.js","club-crests.js","competition-history.js","competition-fixtures.js","competition-stats.js","competition-awards.js",...(definition.category==="international"?["international-cups.js"]:[])])
       await loadScript(script);
     window.addEventListener('fa:competition-context-change',()=>window.faAppRenderLanguage?.());
     refreshSeasonPresentation();

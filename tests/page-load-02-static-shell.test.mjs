@@ -9,6 +9,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('PAGE-LOAD-02: all competition tablists are present before API-dependent panels in initial HTML',()=>{
  for(const id of competitions){
   const html=read('competitions/'+id+'/index.html');
+  assert.ok(html.includes('<script src="/assets/app.js" defer></script>')&&html.includes('<script src="/assets/competition-tabs.js" defer></script>'),id+': tabs bootstrap must not await manifest');
   const start=html.indexOf('<section id="app-divisions"');
   const header=html.indexOf('<header class="app-competition-header"',start);
   const rail=html.indexOf('<div class="app-competition-tabs"',start);
