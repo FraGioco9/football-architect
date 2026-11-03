@@ -48,7 +48,7 @@
    }
   }
   if(byCompetition.size!==18||byVersion.size!==3)fail('registry cardinality');
-  for(const country of (sporting?.countries||['IT','ENG','ES','DE','FR','PT','NL','BR'])for(const tier of [1,2])if(!byCompetition.has(country+'-'+tier))fail('missing division');
+  for(const country of (sporting?.countries||['IT','ENG','ES','DE','FR','PT','NL','BR']))for(const tier of [1,2])if(!byCompetition.has(country+'-'+tier))fail('missing division');
   for(const cup of Object.keys(cups))if(!byCompetition.has(cup))fail('missing cup');
   return Object.freeze({
    versions,
