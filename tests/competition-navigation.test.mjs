@@ -354,7 +354,7 @@ test('PAGE-LOAD-02: all competition view buttons are static and deep-link select
  for(const id of ids){
   const html=readFileSync(new URL('../competitions/'+id+'/index.html',import.meta.url),'utf8');
   assert.equal((html.match(/class="app-competition-tabs"/g)||[]).length,1,id+' tablist');
-  assert.equal((html.match(/role="tab"/g)||[]).length,7,id+' static tabs');
+  assert.equal((html.match(/<button type="button" role="tab"/g)||[]).length,7,id+' static tabs');
   assert.ok(html.includes('const active=list?.querySelector(\'[aria-selected="true"]\')'),id+' static selected tab');
   assert.ok(html.includes('list.scrollLeft+=rect.right-row.right+16'),id+' prepaint scroll');
   assert.ok(html.indexOf('app-competition-tabs')<html.indexOf('src="/assets/competition-tabs.js"'),id+' static markup before router');
