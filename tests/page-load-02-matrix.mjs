@@ -114,7 +114,8 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
        route+' accepted world must display real current progress');
     }else{
      assert.equal(worldProgress.ready,false,route+' pending world must not be marked ready');
-     assert.equal(worldProgress.visible,'hidden',route+' unresolved world must remain invisible');
+     // Landing and other non-app shells have no world slot at all.
+     if(worldProgress.visible!==null)assert.equal(worldProgress.visible,'hidden',route+' unresolved world must remain invisible');
     }
    const bracketExpected=expectedBracket(route);
    if(bracketExpected){
@@ -125,6 +126,13 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api','pending-or-valid-world-progress');
    }finally{gate=null;release()}
    await page.waitForLoadState('networkidle');await nextFrame(page);
+   // Overview and Teams are accepted legacy domestic paths, not separate
+   // seven-tab panels; the canonical UI transparently selects Standings.
+   if(/^\/competitions\/[^/]+\/(overview|teams)\?/.test(route)){
+    const expected=route.slice(0,route.lastIndexOf('/'))+'/standings';
+    assert.equal(new URL(page.url()).pathname,expected,route+' canonical alias target');
+    row.checks.push('legacy-route-resolves-to-existing-standings');
+   }
    row.confirmedEmpty=await snapshot();
    assert.ok(row.confirmedEmpty.title,route+' confirmed-empty title');
    if(route.includes('/stats')){
