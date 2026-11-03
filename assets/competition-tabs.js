@@ -267,23 +267,10 @@
     apply(read(),{replace:true});
   });
   apply(read(),{replace:true});
-  const restoreTabScroll=()=>{
-    if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
-    // Restored offsets must never obscure the URL-selected tab between
-    // hydration and the later animation frames. The static HTML already
-    // revealed it synchronously before first paint.
-    revealSelectedTab();
-  };
-  const scheduleFrame=typeof window.requestAnimationFrame==="function"?window.requestAnimationFrame.bind(window):callback=>callback();
-  restoreTabScroll();
-  scheduleFrame(()=>{
-    restoreTabScroll();
-    scheduleFrame(()=>{
-      restoreTabScroll();
-      restoringTabScroll=false;
-      // Keep the route-selected tab visible after restoring the previous strip offset.
-      revealSelectedTab();
-      if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
-    });
-  });
+  // The URL-selected tab already has its scroll offset in the static HTML.
+  // Do not overwrite it from sessionStorage or run multi-frame restoration:
+  // those writes made the rail jump visibly after the first paint.
+  revealSelectedTab();
+  restoringTabScroll=false;
+  if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
 })();
