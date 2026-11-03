@@ -360,3 +360,17 @@ test('PAGE-LOAD-02: all competition view buttons are static and deep-link select
   assert.ok(html.indexOf('app-competition-tabs')<html.indexOf('src="/assets/competition-tabs.js"'),id+' static markup before router');
  }
 });
+
+test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab rail first',()=>{
+ const ids=['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[1,2].map(tier=>country+'-'+tier)).concat(['int-1','int-2']);
+ for(const id of ids){
+  const html=readFileSync(new URL('../competitions/'+id+'/index.html',import.meta.url),'utf8');
+  const start=html.indexOf('<main class="app-main"');
+  const tab=html.indexOf('class="app-competition-tabs"',start);
+  const crest=html.indexOf('id="app-competition-badge"',start);
+  const dashboard=html.indexOf('id="app-dashboard"',start);
+  const panel=html.indexOf('id="competition-panel-standings"',start);
+  assert.ok(start>=0&&tab>start&&crest>tab&&panel>crest&&dashboard>panel,id+' tabs parse before crest, panels and hidden pages');
+  assert.ok(html.includes('data-fa-competition-first-paint'),id+' critical first-paint style present');
+ }
+});

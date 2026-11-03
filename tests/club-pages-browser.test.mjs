@@ -138,10 +138,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
           controls:tabs.map(tab=>({id:tab.id,width:tab.getBoundingClientRect().width,
            height:tab.getBoundingClientRect().height,visible:getComputedStyle(tab).visibility==='visible'})),
           selected:tabs.filter(tab=>tab.getAttribute('aria-selected')==='true').map(tab=>tab.id),
+          underline:style.borderBottomStyle==='solid'&&parseFloat(style.borderBottomWidth)>=1,
+          firstVisible:document.querySelector('#main-content')?.firstElementChild?.id==='app-divisions',
           mounted:!!window.faCompetitionRoute};
         })()`);
         assert.equal(firstPaint.count,7,'P04 pre-script seven view buttons must exist at first contentful paint');
         assert.equal(firstPaint.visible,true,'P04 tablist must be visibly painted before deferred JS');
+        assert.equal(firstPaint.underline,true,'P04 underline must paint with static view buttons before JS');
+        assert.equal(firstPaint.firstVisible,true,'P04 competition section must be the first parsed main view on load and refresh');
         assert.ok(firstPaint.controls.every(x=>x.width>0&&x.height>0&&x.visible),'P04 every static view button must have geometry before JS');
         assert.deepEqual(firstPaint.selected,['competition-tab-standings'],'P04 selected static tab');
         assert.equal(firstPaint.mounted,false,'P04 pre-script first paint must not rely on competition router');
@@ -188,11 +192,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const b=list?.getBoundingClientRect(),t=selected?.getBoundingClientRect();
       return {count:list?.querySelectorAll('[role=tab]').length,scroll:list?.scrollLeft,
        visible:!!t&&!!b&&t.width>0&&t.height>0&&t.left>=b.left-2&&t.right<=b.right+2,
-       selected:selected?.getAttribute('aria-selected'),mounted:!!window.faCompetitionRoute};
+       selected:selected?.getAttribute('aria-selected'),
+       underline:!!list&&getComputedStyle(list).borderBottomStyle==='solid'&&
+        parseFloat(getComputedStyle(list).borderBottomWidth)>=1,
+       mounted:!!window.faCompetitionRoute};
      })()`);
      assert.equal(initial.count,7,'P04 seven view buttons exist before deferred JS');
      assert.equal(initial.selected,'true','P04 Awards selected directly from URL');
      assert.equal(initial.visible,true,'P04 deep-link tab visible before router hydration');
+     assert.equal(initial.underline,true,'P04 deep-link underline visible on cold first paint');
      assert.equal(initial.mounted,false,'P04 first-paint tab position does not depend on the router');
      assert.ok(initial.scroll>0,'P04 offscreen selected tab already scrolled into view');
     }finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}

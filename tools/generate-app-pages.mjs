@@ -125,6 +125,33 @@ const competitionRoute = d=>{
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-competition" content="'+encode(d.id)+'">'+(d.category==="domestic"?'\n  <meta name="fa-division" content="'+encode(d.id)+'">':''));
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
+ // PAGE-LOAD-02: emit the visible view controls before inline crest SVG.
+ // Keep the approved visual order with the static competition CSS.
+ const sectionMarker='<section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">';
+ const sectionPos=html.indexOf(sectionMarker);
+ const tabStart=html.indexOf('          <div class="app-competition-tabs" role="tablist"',sectionPos);
+ const selectorStart=html.indexOf('          <script>(()=>{const view=',tabStart);
+ const selectorClose=html.indexOf('</script>',selectorStart);
+ if(sectionPos<0||tabStart<0||selectorStart<0||selectorClose<0)throw Error('Missing static competition controls: '+d.id);
+ const tabShell=html.slice(tabStart,selectorClose+'</script>'.length);
+ html=html.slice(0,tabStart)+html.slice(selectorClose+'</script>'.length);
+ const sectionContentStart=html.indexOf(sectionMarker)+sectionMarker.length;
+ html=html.slice(0,sectionContentStart)+'\n'+tabShell+'\n'+html.slice(sectionContentStart);
+ // Remove hidden dashboard, calendar and settings from the critical parse path.
+ const sectionBegin=html.indexOf('        '+sectionMarker);
+ const sectionClose='        </section>\n      </main>';
+ const sectionFinish=html.indexOf(sectionClose,sectionBegin);
+ if(sectionBegin<0||sectionFinish<0)throw Error('Missing competition section boundary: '+d.id);
+ const sectionHTML=html.slice(sectionBegin,sectionFinish+'        </section>'.length);
+ html=html.slice(0,sectionBegin)+html.slice(sectionFinish+'        </section>'.length);
+ const mainMarker='<main class="app-main" id="main-content" tabindex="-1">';
+ const mainBegin=html.indexOf(mainMarker);
+ if(mainBegin<0)throw Error('Missing app main');
+ const mainStart=mainBegin+mainMarker.length;
+ html=html.slice(0,mainStart)+'\n'+sectionHTML+'\n'+html.slice(mainStart);
+ // The tab underline and flex order are first-paint CSS, not async app state.
+ const critical='<style data-fa-competition-first-paint>#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:1}#app-divisions>.app-competition-tabs{order:2;display:flex;border-bottom:1px solid var(--line,#31554c)}#app-divisions>.app-competition-panel{order:3}</style>';
+ html=html.replace('<link rel="stylesheet" href="/assets/app.css">',critical+'\n  <link rel="stylesheet" href="/assets/app.css">');
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
  return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
