@@ -923,7 +923,10 @@
     if(current.selectedSeason!==season)nextContext(season);
     return true;
   }
-  function clearSeasonData({committed=false}={}){
+  // Explicit clears must notify dependent panels (Fixtures, Stats, History) that
+  // their previously committed values are no longer valid. Pending selections
+  // use nextContext() directly and must not clear the active presentation.
+  function clearSeasonData({committed=true}={}){
     if(window.faCompetitionContext&&(window.faCompetitionContext.seasonData||committed))nextContext(window.faCompetitionContext.selectedSeason,null,committed);
   }
   function setDebugSeason(season){
