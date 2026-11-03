@@ -210,10 +210,25 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
     assert.ok(cold.tableHeaders>0,def.id+' static table headers');
     assert.equal(cold.bracket,true,def.id+' static knockout scaffold');
     assert.equal(cold.blankUnknown,true,def.id+' unknown sporting statistics must be visually blank');
+    await page.evaluate(()=>{
+     // Keep real DOM object references, not serializable identifiers.
+     window.__pageLoad02StaticTabs=[...document.querySelectorAll('.app-competition-tabs [role="tab"]')];
+     window.__pageLoad02StaticPanels=window.__pageLoad02StaticTabs.map(tab=>document.getElementById(tab.getAttribute('aria-controls')));
+     window.__pageLoad02StaticTablist=document.querySelector('.app-competition-tabs');
+    });
     row.cold=cold;row.checks.push('cold-static-tabs-standings-and-postseason');
    }finally{gate=null;release()}
    await page.waitForLoadState('networkidle');
    await page.waitForFunction(()=>!!window.faCompetitionContext);
+   const staticNodeStatus=()=>page.evaluate(()=>{
+    const tabs=window.__pageLoad02StaticTabs,panels=window.__pageLoad02StaticPanels;
+    return !!tabs&&tabs.length===7&&!!panels&&panels.length===7&&
+     document.querySelector('.app-competition-tabs')===window.__pageLoad02StaticTablist&&
+     tabs.every((tab,i)=>tab.isConnected&&document.getElementById(tab.id)===tab&&
+      panels[i].isConnected&&document.getElementById(panels[i].id)===panels[i]);
+   });
+   assert.equal(await staticNodeStatus(),true,def.id+' data hydration retains static view controls and panels');
+   row.checks.push('static-buttons-and-panels-survive-hydration');
    // Exercise every actual tab and its URL without reloading this document.
    const views=['standings','postseason','fixtures','stats','history','rules','awards'];
    for(const view of views){
@@ -231,6 +246,7 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
     assert.deepEqual(observed.selected,['competition-tab-'+view],def.id+' selected tab '+view);
     assert.deepEqual(observed.panels,['competition-panel-'+view],def.id+' visible panel '+view);
     assert.equal(observed.overflow,false,def.id+' horizontal overflow '+view);
+    assert.equal(await staticNodeStatus(),true,def.id+' switching to '+view+' must not replace static tabs/panels');
     if(view==='postseason'){
      const shape=await bracketShape(page);
      const expected=def.category==='international'?{ties:11,first:10,second:10}:
@@ -240,6 +256,23 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
     }
     row.views.push(view);
    }
+   // Keyboard, focus, unsupported/available seasons and a same-document
+   // source refresh must not replace the seven static interactive controls.
+   await page.locator('#competition-tab-awards').focus();
+   await page.keyboard.press('ArrowRight');
+   assert.equal(await page.evaluate(()=>document.activeElement?.id),'competition-tab-standings',
+     def.id+' focus moves to the canonical next tab');
+   assert.equal(new URL(page.url()).pathname,'/competitions/'+id+'/standings',
+     def.id+' keyboard routing');
+   assert.equal(await staticNodeStatus(),true,def.id+' keyboard navigation preserves tab identity');
+   await page.evaluate(()=>window.faCompetitionRoute.set({season:'2'}));
+   assert.equal(await staticNodeStatus(),true,def.id+' unavailable season must keep static view buttons');
+   await page.evaluate(()=>window.faCompetitionRoute.set({season:'1'}));
+   assert.equal(await staticNodeStatus(),true,def.id+' restored season must keep static view buttons');
+   await page.evaluate(()=>window.faCompetitionContextApi?.selectSeason?.(1));
+   assert.equal(await staticNodeStatus(),true,def.id+' dynamic season refresh must keep static view buttons');
+   row.checks.push('keyboard-focus','season-source-refresh-preserves-static-view-nodes');
+   await page.locator('#competition-tab-awards').click();
    await page.reload({waitUntil:'networkidle'});
    assert.equal(new URL(page.url()).pathname,'/competitions/'+id+'/awards',def.id+' hard refresh retains selected view');
    assert.deepEqual(errors.slice(errorStart),[],def.id+' page-level JavaScript errors');

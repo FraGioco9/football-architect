@@ -322,3 +322,29 @@ test('validated public world updates season choices without changing an explicit
  assert.equal(latest.window.faCompetitionRoute.get().season,'2','Reset keeps explicit viewed season unavailable');
  assert.equal(latest.fields.get('competition-panel-standings').hidden,true);
 });
+
+test('PAGE-LOAD-02: the seven competition view buttons and panels stay bound during every route and season transition',()=>{
+ for(const slug of ['it-1','it-2','int-1','int-2']){
+  const s=setup('/competitions/'+slug+'/standings?season=1');
+  const originalTabs=[...s.tabs],originalPanels=views.map(view=>s.fields.get('competition-panel-'+view));
+  const identity=()=>{
+   assert.ok(s.tabs.every((tab,i)=>tab===originalTabs[i]),slug+' static tabs not replaced');
+   assert.ok(views.every((view,i)=>s.fields.get('competition-panel-'+view)===originalPanels[i]),slug+' static panels not replaced');
+   assert.equal(new Set(s.tabs).size,7);
+  };
+  identity();
+  for(let i=0;i<views.length;i++){
+   s.tabs[i].events.click();identity();
+   assert.equal(s.window.faCompetitionRoute.get().view,views[i]);
+   assert.equal(s.tabs.filter(tab=>tab.attrs['aria-selected']==='true').length,1);
+  }
+  s.window.faCompetitionRoute.set({season:'2'});identity();
+  assert.ok(originalPanels.every(panel=>panel.hidden),slug+' unavailable season hides content, not tabs');
+  s.window.faCompetitionRoute.set({season:'1'});identity();
+  assert.equal(originalPanels[6].hidden,false);
+  s.tabs[6].events.keydown({key:'ArrowRight',preventDefault(){}});identity();
+  assert.equal(s.tabs[0].focused,true,slug+' keyboard focus returns to the first pre-rendered tab');
+  assert.equal(s.window.faCompetitionRoute.get().view,'standings');
+  s.back();identity();s.forward();identity();
+ }
+});
