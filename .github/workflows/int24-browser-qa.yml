@@ -94,7 +94,7 @@ jobs:
         run: |
           npm --prefix backend ci --no-audit --no-fund
           cd backend
-          ./node_modules/.bin/wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/fa-admin-ci-worker.log 2>&1 &
+          ./node_modules/.bin/wrangler dev --local --ip 127.0.0.1 --port 8787 --var PLAYER_ORIGIN:http://127.0.0.1:8787 > /tmp/fa-admin-ci-worker.log 2>&1 &
           READY=0
           for i in $(seq 1 45); do
             CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/admin/session || true)
