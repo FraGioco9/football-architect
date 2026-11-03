@@ -379,11 +379,8 @@ test('PAGE-LOAD-02: all 18 generated competitions emit the visible static tab ra
   assert.ok(html.includes('setAttribute("data-fa-competition-prepaint","")'),id+' prepaint gate activated in head');
   assert.ok(html.includes('removeAttribute("data-fa-competition-prepaint")})();</script>'),id+' gate released synchronously when tablist parses');
   assert.match(critical,/@media\(max-width:620px\)/,id+' first-paint mobile sizes');
-  assert.match(critical,/app-competition-logo-image\{display:block;width:100%;height:100%;object-fit:contain\}/,id+' reserved logo image at first paint');
   if(!id.startsWith('int-')){
-   const logo=html.match(/<div id="app-competition-badge"[^>]*>([\s\S]*?)<\/div>/)?.[1]||'';
-   assert.match(logo,/^<img class="app-competition-logo-image" src="\/assets\/divisions\/[^"<>]+\/compact\.svg" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high">$/,id+' canonical image, no blocking inline crest');
-   assert.ok(!logo.includes('shadowrootmode'),id+' no inline SVG shadow tree on critical detail path');
+   assert.match(html,/<div id="app-competition-badge"[^>]*><template shadowrootmode="open">/,id+' approved inline crest in initial HTML');
   }
  }
 });
