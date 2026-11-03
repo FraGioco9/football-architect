@@ -89,8 +89,8 @@ jobs:
           fi
           npx playwright install chromium
           npx playwright install --with-deps webkit
-      - name: Start isolated local Admin Worker for manual FULL network audit
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Start isolated local Admin Worker for FULL network audit
+        if: needs.scope.outputs.mode == 'full'
         run: |
           npm --prefix backend ci --no-audit --no-fund
           cd backend
@@ -112,7 +112,7 @@ jobs:
       - name: Run loopback preview and browser checks
         if: needs.scope.outputs.mode != 'fast'
         env:
-          FA_ADMIN_API_TARGET: ${{ github.event_name == 'workflow_dispatch' && 'http://127.0.0.1:8787' || '' }}
+          FA_ADMIN_API_TARGET: ${{ needs.scope.outputs.mode == 'full' && 'http://127.0.0.1:8787' || '' }}
         run: |
           node tools/dev-standings-preview.mjs > /tmp/int24-preview.log 2>&1 &
           for i in $(seq 1 30); do
@@ -139,11 +139,7 @@ jobs:
           else
             echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
           fi
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            node tests/clean-ui-03-network-baseline.mjs
-          else
-            echo "Network footprint baseline is diagnostic-only; skipped on regular FULL runs."
-          fi
+          node tests/clean-ui-03-network-baseline.mjs
           node tests/clean-ui-03-webkit-iphone.mjs
       - name: Upload screenshots and server log
         if: failure() && needs.scope.outputs.mode != 'fast'
