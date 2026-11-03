@@ -1,3 +1,4 @@
+import sporting from '../../assets/sporting-contract.js';
 /** Real Season1 initial fixtures. No DEV imports, results or future qualifiers. */
 import {canonicalHash,requireApprovedSnapshot,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
@@ -19,7 +20,7 @@ export function requireGeneratedSchedule(schedule:InitialSchedule,snapshot:Sched
  if(!generatedSchedules.has(schedule)||generatedSchedules.get(schedule)!==JSON.stringify({participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash,bindings:snapshot.bindings}))throw new ApiError(422,'schedule_invalid');
 }
 const fail=():never=>{throw new ApiError(422,'schedule_invalid')};
-const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+const countries=sporting.countries;
 /** SHA-256 counter stream: runtime-independent seed mixing and unbiased Fisher-Yates. */
 async function shuffle<T>(input:readonly T[],seed:string):Promise<T[]>{
  const result=[...input];let counter=0;
