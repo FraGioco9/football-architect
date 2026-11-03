@@ -15,9 +15,11 @@
   const nationalDays=[13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
     34,35,37,39,40,42,44,45,47,49,50,52,53,54];
   const internationalDays=[16,19,22,25,28,31,36,38,41,43,46,48];
-  const divisions=["IT","ENG","ES","DE","FR","PT","NL","BR"].flatMap(country=>[country+"-1",country+"-2"]);
+  // Browser legacy assets remain independently loadable; Node uses the canonical contract.
+  const sporting=root.faSportingContract||(typeof module!=="undefined"&&module.exports?require("./sporting-contract.js"):null);
+  const divisions=sporting?.domestic||["IT","ENG","ES","DE","FR","PT","NL","BR"].flatMap(country=>[country+"-1",country+"-2"]);
   // Calendar identity keys, not URL slugs or an implemented international catalogue.
-  const cups=["int-1","int-2"];
+  const cups=sporting?.international||["int-1","int-2"];
   const validSeason=value=>Number.isSafeInteger(value)&&value>0;
   const object=value=>value!==null&&typeof value==="object"&&!Array.isArray(value);
   const keys=(value,allowed)=>object(value)&&Object.keys(value).every(key=>allowed.includes(key));

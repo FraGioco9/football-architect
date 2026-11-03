@@ -1,3 +1,4 @@
+import {runInNewContext} from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -43,4 +44,22 @@ test('SH-01: world calendar projects all canonical identities, 56 days and stabl
  }
  assert.throws(()=>calendar.projectCompetition(1,'IT-3'),/Unknown competition/);
  assert.throws(()=>calendar.createSeason(0),/Invalid calendar season/);
+});
+
+test('SH-01: standalone browser adapters retain canonical Node identities without script-order changes',()=>{
+ const browser={};browser.globalThis=browser;
+ for(const file of ['world-calendar-model.js','rules-registry.js']){
+  const script=readFileSync(new URL('../assets/'+file,import.meta.url),'utf8');
+  runInNewContext(script,browser,{filename:file});
+ }
+ const nodeCalendar=calendar.createSeason(1),browserCalendar=browser.faWorldCalendarModel.createSeason(1);
+ assert.deepEqual(JSON.parse(JSON.stringify(browserCalendar)),nodeCalendar);
+ const definitions=[...source('divisions.json'),...source('international-competitions.json')];
+ const nodeRegistry=registry.createRulesRegistry(definitions,engine);
+ const browserRegistry=browser.faRulesRegistry.createRulesRegistry(definitions,engine);
+ assert.deepEqual(JSON.parse(JSON.stringify(browserRegistry.listBindings())),nodeRegistry.listBindings());
+ for(const id of sporting.domestic){
+  for(const phase of ['league',id.endsWith('-1')?'playout':'promotionPlayoffs'])
+   assert.deepEqual(JSON.parse(JSON.stringify(browser.faWorldCalendarModel.domesticPhaseMarkers(id,phase))),calendar.domesticPhaseMarkers(id,phase));
+ }
 });

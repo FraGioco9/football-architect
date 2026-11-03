@@ -5,8 +5,11 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis,()=>{
  'use strict';
- const versions=Object.freeze(['domestic-top-v1','domestic-second-v1','international-int24-v1']);
- const cups=Object.freeze({'int-1':'SOVEREIGN-FINAL','int-2':'FEDERATION-FINAL'});
+ // Browser pages retain the frozen inline mirror until the separate page-load rollout.
+ // Node/Worker consume the canonical pure contract; parity is tested in both runtimes.
+ const sporting=root.faSportingContract||(typeof module!=='undefined'&&module.exports?require('./sporting-contract.js'):null);
+ const versions=sporting?.versions||Object.freeze(['domestic-top-v1','domestic-second-v1','international-int24-v1']);
+ const cups=sporting?.cups||Object.freeze({'int-1':'SOVEREIGN-FINAL','int-2':'FEDERATION-FINAL'});
  const copy=value=>JSON.parse(JSON.stringify(value));
  const freeze=value=>{if(value&&typeof value==='object'&&!Object.isFrozen(value)){for(const x of Object.values(value))freeze(x);Object.freeze(value)}return value};
  const fail=message=>{throw new TypeError('Rules Registry: '+message)};
@@ -45,7 +48,7 @@
    }
   }
   if(byCompetition.size!==18||byVersion.size!==3)fail('registry cardinality');
-  for(const country of ['IT','ENG','ES','DE','FR','PT','NL','BR'])for(const tier of [1,2])if(!byCompetition.has(country+'-'+tier))fail('missing division');
+  for(const country of (sporting?.countries||['IT','ENG','ES','DE','FR','PT','NL','BR'])for(const tier of [1,2])if(!byCompetition.has(country+'-'+tier))fail('missing division');
   for(const cup of Object.keys(cups))if(!byCompetition.has(cup))fail('missing cup');
   return Object.freeze({
    versions,
