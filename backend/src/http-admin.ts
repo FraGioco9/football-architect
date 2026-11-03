@@ -1,3 +1,4 @@
+import {httpJson,httpError,routeMethod,readSessionCookie,readJsonBody} from './http-contract.ts';
 import {resolveAccountConfiguration} from './environment-pool.ts';
 import {ApiError} from './errors.ts';
 import {requireDatabase} from './database.ts';
@@ -27,28 +28,12 @@ import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
-const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};
-const json=(status:number,body:unknown,extra:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extra}});
+const json=(status:number,body:unknown,extra:Record<string,string>={})=>httpJson('account',status,body,extra);
 const known=new Map([['/api/admin/login','POST'],['/api/admin/session','GET'],['/api/admin/world','GET'],['/api/admin/seasons/events','GET'],['/api/admin/seasons/archives','GET'],['/api/admin/seasons/history','GET'],['/api/admin/seasons/next-candidate','GET'],['/api/admin/seasons/next-approve','POST'],['/api/admin/seasons/next-prepare','POST'],['/api/admin/logout','POST'],['/api/admin/seasons/prepare','POST'],['/api/admin/seasons/calendar','POST'],['/api/admin/seasons/start','POST'],['/api/admin/seasons/advance','POST'],['/api/admin/seasons/events/reschedule','POST'],['/api/admin/seasons/events/initialize','POST'],['/api/admin/seasons/events/confirm','POST'],['/api/admin/seasons/events/start','POST'],['/api/admin/seasons/events/advance','POST'],['/api/admin/seasons/events/domestic-calendar','POST'],['/api/admin/seasons/events/international-draw','POST'],['/api/admin/seasons/events/international-calendar','POST'],['/api/admin/seasons/archive','POST'],['/api/admin/seasons/close','POST'],['/api/admin/world/reset','POST']]);
-function readCookie(request:Request,name:string){
- const values=(request.headers.get('Cookie')??'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));
- if(values.length>1)throw new ApiError(401,'unauthorized');
- return values[0]?.slice(name.length+1)??'';
-}
-async function input(request:Request){
- if(request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase()!=='application/json')throw new ApiError(415,'json_required');
- const limit=4096,reader=request.body?.getReader();if(!reader)throw new ApiError(400,'invalid_json');
- const chunks:Uint8Array[]=[];let total=0;
- try{
-  for(;;){const {value,done}=await reader.read();if(done)break;total+=value.byteLength;if(total>limit){await reader.cancel();throw new ApiError(413,'request_too_large')}chunks.push(value)}
- }finally{reader.releaseLock()}
- const data=new Uint8Array(total);let offset=0;for(const chunk of chunks){data.set(chunk,offset);offset+=chunk.length}
- try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(data)) as unknown}catch{throw new ApiError(400,'invalid_json')}
-}
 export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response>{
  const path=new URL(request.url).pathname,method=known.get(path);
  if(!method)return json(404,{error:{code:'not_found'}});
- if(request.method!==method)return json(405,{error:{code:'method_not_allowed'}},{Allow:method});
+ const denied=routeMethod(request,method,'account');if(denied)return denied;
  try{
   const config=await resolveAccountConfiguration(request,env,'admin_unavailable'),db=requireDatabase(env.DB),now=Math.floor(Date.now()/1000);
   if(request.method==='POST'||request.headers.has('Origin'))requireMutationOrigin(request.headers.get('Origin'),config.origin);
@@ -57,7 +42,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/login'||path==='/api/admin/logout')
    return json(410,{error:{code:'legacy_admin_login_retired'}});
   const playerCookie=config.cookie;
-  const playerToken=readCookie(request,playerCookie);
+  const playerToken=readSessionCookie(request,playerCookie);
   const isWrite=request.method!=='GET';
   const player=await authorizeUnifiedAdmin(db,playerToken,now,
    isWrite?'admin.world.write':'admin.world.read',
@@ -78,7 +63,7 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
    return json(200,await readClosedSeasonHistory(db,Number(raw)));
   }
   if(path==='/api/admin/seasons/events')return json(200,await readAdministrativeCalendar(db));
-  const rawCommand=await input(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
+  const rawCommand=await readJsonBody(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
   if(path==='/api/admin/seasons/next-approve')return json(200,await approveSeasonTwoSnapshot(db,session,rawCommand,key,now));
   if(path==='/api/admin/world/reset')return json(200,await resetWorld(db,session,rawCommand as Parameters<typeof resetWorld>[2],key,now));
@@ -96,7 +81,6 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/seasons/calendar')return json(200,await generateSeasonCalendar(db,session,command,key,now));
   return json(200,await prepareSeason(db,session,command,key,await loadApprovedSnapshot(),now));
  }catch(error){
-  if(error instanceof ApiError)return json(error.status,{error:{code:error.code}},error.status===429?{'Retry-After':'900'}:{});
-  return json(503,{error:{code:'admin_unavailable'}});
+  return httpError('account',error,'admin_unavailable');
  }
 }

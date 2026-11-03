@@ -175,6 +175,7 @@
     "backend/tests/gmail-delivery-runtime.test.ts": "backend-runtime",
     "backend/tests/gmail-email-delivery.test.ts": "backend-contract",
     "backend/tests/hosted-preview-runtime.test.ts": "backend-runtime",
+    "backend/tests/http-contract-runtime.test.ts": "backend-runtime",
     "backend/tests/http-public-runtime.test.ts": "backend-runtime",
     "backend/tests/import-graph.test.mjs": "backend-import",
     "backend/tests/initial-schedule-runtime.test.ts": "backend-runtime",
