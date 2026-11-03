@@ -94,3 +94,18 @@ test('FULL proof for another PR base is stale even on identical source HEAD',()=
  const old=run({pull_requests:[{number:1,head:{sha},base:{sha:'b'.repeat(40)}}]});
  assert.equal(evaluateRun(old,jobs('landing-checks.yml'),sha,'landing-checks.yml',{prNumber:1,baseSha:'c'.repeat(40)}).state,'STALE');
 });
+
+test('FULL Admin proof requires independently completed Chromium and WebKit account jobs',()=>{
+ const names=requirements['admin-world-checks.yml'].map(([name])=>name);
+ for(const name of ['Account UI (chromium)','Account UI (webkit)'])assert.ok(names.includes(name));
+ const incomplete=jobs('admin-world-checks.yml').filter(j=>j.name!=='Account UI (webkit)');
+ assert.notEqual(evaluateRun(run(),incomplete,sha,'admin-world-checks.yml').state,'PASS');
+});
+test('account engine matrix is independent of Worker contracts and preserves both engines',()=>{
+ const source=readFileSync('.github/workflows/admin-world-checks.yml','utf8');
+ const matrix=source.split('\n  account-browser:')[1]?.split('\n  operator-final:')[0];
+ assert.ok(matrix,'separate account job');assert.match(matrix,/needs: scope/);assert.doesNotMatch(matrix,/needs:.*password-policy/);
+ assert.match(matrix,/fail-fast: false/);assert.match(matrix,/engine: \[chromium, webkit\]/);
+ for(const suite of ['player-safe-return','account-pages','account-feedback','account-usability','control-focus','profile-navigation','account-interaction','account-layout','competition-season-zero-club-links'])assert.ok(matrix.includes('tests/'+suite+'-browser.mjs'),suite);
+ assert.match(matrix,/tests\/admin-settings-browser\.mjs/);assert.match(matrix,/FA_AUTH_BROWSER: \$\{\{ matrix.engine \}\}/);
+});

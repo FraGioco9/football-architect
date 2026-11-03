@@ -25,3 +25,7 @@ Retain the current workflow/check names and publication/security boundaries. Ext
 ## Constraints and review focus
 
 One Draft/HOLD PR; grouped commits; no merge, deploy, remote database, secrets, branch-protection or publication-guard modifications. Unknown impact fails closed. Pending/skipped/cancelled evidence never passes. Test cancellation/new pushes/reruns, empty and unrecognized discovery, duplicate test selection, first failure serialization and subprocess exit propagation. Benchmarks must not present diagnostic-only samples as end-to-end repair measurements.
+
+## Measured optimization follow-through
+
+First hosted acceptance at 7604d6a passed all four workflows on the exact source/base. It measured 552 seconds in the serial Admin foundation job. Preserve all nine account suites in each engine but move the two engines into independent jobs; retain Chromium Settings and require actual source proof from both jobs. Local executable shell/evidence tests and a focused independent review validate this scheduling change before the second grouped commit. Protection audit is now available via rulesets and shows only landing is required; adding the FULL gate remains separately protected.

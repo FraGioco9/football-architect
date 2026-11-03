@@ -2,7 +2,7 @@
 const requirements={
  'landing-checks.yml':[['landing','FULL coverage completed','Site contracts (full)']],
  'int24-browser-qa.yml':[['chromium','FULL coverage completed','Run loopback preview and browser checks']],
- 'admin-world-checks.yml':[['Admin foundation contracts (Node 22)','FULL coverage completed','Execute smoke tests in actual local Worker runtime'],['Final local operator persistence, restart and browser lifecycle','Verify unified Admin two-season lifecycle with real local Worker and D1']]
+ 'admin-world-checks.yml':[['Admin foundation contracts (Node 22)','FULL coverage completed','Execute smoke tests in actual local Worker runtime'],['Final local operator persistence, restart and browser lifecycle','Verify unified Admin two-season lifecycle with real local Worker and D1'],['Account UI (chromium)','FULL account coverage completed','Verify account matrix'],['Account UI (webkit)','FULL account coverage completed','Verify account matrix']]
 };
 function evaluateRun(run,jobs,sha,workflow,{prNumber,baseSha}={}){
  if(run.head_sha!==sha)return {state:'STALE'};

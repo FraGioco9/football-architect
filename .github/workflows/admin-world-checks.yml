@@ -114,69 +114,77 @@ jobs:
       - name: Execute smoke tests in actual local Worker runtime
         if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
         run: node tools/ci-run.mjs 7-admin-world-checks -- npm --prefix backend test
-      - name: Cache pinned Chromium and WebKit account browser binaries
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-webkit-1.58.2
-      - name: Install isolated browser tooling for PLAYER-AUTH-01 safe returns
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: |
-          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps chromium webkit
-      - name: Verify safe post-login return routes in Chromium
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_PLAYER_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 8-admin-world-checks -- node tests/player-safe-return-browser.mjs
-      - name: Verify account style, language, app entry and registration in Chromium
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 9-admin-world-checks -- node tests/account-pages-browser.mjs
-      - name: Verify account feedback and stable first visible paint
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 10-admin-world-checks -- node tests/account-feedback-browser.mjs
-      - name: Verify account password assistance, inline errors and nationality selection
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 11-admin-world-checks -- node tests/account-usability-browser.mjs
-      - name: Verify shared control focus and selectable text fields
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 12-admin-world-checks -- node tests/control-focus-browser.mjs
-      - name: Verify signed-out and authenticated Profile sidebar entry
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 13-admin-world-checks -- node tests/profile-navigation-browser.mjs
-      - name: Verify account pointer, keyboard and dropdown matrix in Chromium
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 14-admin-world-checks -- node tests/account-interaction-browser.mjs
-      - name: Verify account spacing and viewport-aware dropdowns in Chromium
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 15-admin-world-checks -- node tests/account-layout-browser.mjs
-      - name: Verify Season 0 club navigation in Chromium
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ACCOUNT_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 16-admin-world-checks -- node tests/competition-season-zero-club-links-browser.mjs
-      - name: Verify complete isolated account UI suite in WebKit
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        env:
-          FA_AUTH_BROWSER: webkit
-          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
-          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
-        run: |
-          for suite in player-safe-return account-pages account-feedback account-usability control-focus profile-navigation account-interaction account-layout competition-season-zero-club-links; do
-            node tools/ci-run.mjs "webkit-$suite" -- node "tests/$suite-browser.mjs"
-          done
-      # Operator persistence runs in a separate independent final-gate job.
-      - name: Verify signed-out unified Settings and public-page isolation
-        timeout-minutes: 20
-        if: ${{ (needs.scope.outputs.mode == 'full') && !needs.scope.outputs.reuse }}
-        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs 17-admin-world-checks -- node --experimental-strip-types tests/admin-settings-browser.mjs
-
       - name: FULL coverage completed
         if: ${{ needs.scope.outputs.mode == 'full' }}
-        run: echo 'All Admin foundation and browser FULL checks completed.'
+        run: echo 'All Admin foundation FULL checks completed; account engines have independent required jobs.'
 
       - name: Upload CI diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: diagnostics-${{ github.job }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  account-browser:
+    needs: scope
+    name: Account UI (${{ matrix.engine }})
+    if: ${{ needs.scope.outputs.mode == 'full' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - name: Checkout exact pull request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Discover test ownership before expensive checks
+        run: node tools/ci-discovery.mjs
+      - name: Cache pinned account engine
+        if: ${{ !needs.scope.outputs.reuse }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ matrix.engine }}-1.58.2
+      - name: Install isolated pinned account engine
+        if: ${{ !needs.scope.outputs.reuse }}
+        env:
+          ENGINE: ${{ matrix.engine }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"
+      - name: Verify account matrix
+        if: ${{ !needs.scope.outputs.reuse }}
+        env:
+          FA_AUTH_BROWSER: ${{ matrix.engine }}
+          FA_ACCOUNT_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+          FA_PLAYER_PLAYWRIGHT: ${{ runner.temp }}/fa-player-browser/node_modules/playwright/index.mjs
+        run: |
+          for suite in tests/player-safe-return-browser.mjs tests/account-pages-browser.mjs tests/account-feedback-browser.mjs tests/account-usability-browser.mjs tests/control-focus-browser.mjs tests/profile-navigation-browser.mjs tests/account-interaction-browser.mjs tests/account-layout-browser.mjs tests/competition-season-zero-club-links-browser.mjs; do
+            node tools/ci-run.mjs "account-${{ matrix.engine }}-${suite##*/}" -- node "$suite"
+          done
+      - name: Verify signed-out unified Settings and public-page isolation
+        if: ${{ matrix.engine == 'chromium' && !needs.scope.outputs.reuse }}
+        timeout-minutes: 20
+        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs admin-settings -- node --experimental-strip-types tests/admin-settings-browser.mjs
+      - name: FULL account coverage completed
+        run: echo 'All account source checks completed for this engine on exact HEAD.'
+      - name: Upload account diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-account-${{ matrix.engine }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/fa-ci-artifacts/
           if-no-files-found: ignore
           retention-days: 7

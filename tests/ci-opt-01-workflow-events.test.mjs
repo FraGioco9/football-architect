@@ -162,3 +162,13 @@ test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebK
  writeFileSync(join(root,'assets/app.css'),'body{color:blue}');git(root,'add','.');git(root,'commit','-qm','app stylesheet');
  assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
 }));
+
+for(const engine of ['chromium','webkit'])test('independent account '+engine+' dispatches the original nine suites and preserves failure exit',()=>temporary(root=>{
+ const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);
+ writeFileSync(join(bin,'node'),'#!/bin/sh\nif [ "$1" = tools/ci-run.mjs ]; then shift 4; fi\nprintf "%s|%s\\n" "$*" "$FA_AUTH_BROWSER" >> "$FA_RECORD"\nif [ "$FA_FAIL_SUITE" = 1 ] && [ "$1" = tests/account-usability-browser.mjs ]; then exit 42; fi\n',{mode:0o755});
+ const script=render(stepScript(read('admin-world-checks.yml'),'Verify account matrix'),{'matrix.engine':engine});
+ function execute(fail){writeFileSync(record,'');const r=spawnSync('bash',['-e','-o','pipefail','-c',script],{env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record,FA_AUTH_BROWSER:engine,FA_FAIL_SUITE:fail?'1':'0'},encoding:'utf8'});return {r,calls:readFileSync(record,'utf8').trim().split('\n')}}
+ const pass=execute(false);assert.equal(pass.r.status,0,pass.r.stderr);assert.equal(pass.calls.length,9);assert.ok(pass.calls.every(c=>c.endsWith('|'+engine)));
+ assert.equal(new Set(pass.calls).size,9);assert.ok(pass.calls.some(c=>c.startsWith('tests/competition-season-zero-club-links-browser.mjs')));
+ const fail=execute(true);assert.equal(fail.r.status,42);assert.equal(fail.calls.length,4,'failure cannot be masked by later suites');
+}));

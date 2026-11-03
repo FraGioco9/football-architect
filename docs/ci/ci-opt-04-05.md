@@ -6,9 +6,9 @@ Refs #360 and #371. Baseline is squash commit `75a672591085fbe4099deb7aee619e88c
 
 - **FAST:** explicit documentation-only changes. Every lane audits test ownership before dependency installation; Site runs syntax and essential publication, security, provider, Admin and authority contracts. Browser reports that no application scenario was selected; this is not FULL evidence.
 - **TARGETED:** one reviewed bounded Calendar, Clubs, Competitions, Guide or Admin surface. Site runs the union of essential, area and direct consumer contracts exactly once. Browser retains the pairwise viewport/locale/theme/touch matrix in both Chromium and WebKit. Admin runs Node contracts, SQLite migration checks, typecheck/import audit and isolated authentication runtime tests.
-- **FULL:** ready-for-review, main, manual dispatch and unknown/shared/mixed/CI/CSS/routing/database/security changes. Backend source edits remain FULL: no unproven backend subset is introduced. All previous complete suites remain, including operator persistence, account WebKit and lifecycle verification. The previously omitted pure `admin-end-season-policy.test.mts` now belongs to the Node contract runner.
+- **FULL:** ready-for-review, main, manual dispatch and unknown/shared/mixed/CI/CSS/routing/database/security changes. Backend source edits remain FULL: no unproven backend subset is introduced. All previous complete suites remain, including operator persistence, both account engines and lifecycle verification. Chromium and WebKit account suites now run in separate independent jobs after scope; all nine suites remain sequential within each job, avoiding shared port 2000. Chromium retains signed-out Settings coverage. Backend contracts/runtime and the operator job can run concurrently with those isolated engine jobs. The previously omitted pure `admin-end-season-policy.test.mts` now belongs to the Node contract runner.
 - Unknown asset/test names cannot opt into a lane just by matching a prefix. New reviewed paths require an explicit selector review. Renames are classified as both deletion and addition using `--no-renames`.
-- Existing job/check identities remain. No branch protection, required-check setting, secret, publication guard, deployment or remote database configuration was changed. Branch-protection settings could not be inspected through the available connector; merge enforcement is therefore not claimed as independently audited.
+- Existing job/check identities remain. No branch protection, required-check setting, secret, publication guard, deployment or remote database configuration was changed. The legacy branch-protection endpoint returned 403, but read-only ruleset inspection confirmed active `FA-MAIN-PROTECTION` (25124023): strict mode, squash-only PRs, no bypass actors, and only `landing` required (integration 15368). The standalone FULL gate is not currently required. Adding that check while preserving every existing rule requires separate owner authorization and administration capability; no protected merge-enforcement completion is claimed.
 
 `tools/ci-test-ownership.json` records every test/fixture, including non-code fixtures. `ci-discovery.mjs` rejects missing/unrecognized additions, unsupported new suffixes and owner/runner mismatches. Site Node files must match the actual runner glob, backend runtime files must match Vitest, and operator files must appear in its explicit command. Helpers and the separately documented Season 2 navigation diagnostic are not presented as independently executed regression suites.
 
@@ -27,7 +27,7 @@ The required `CI FULL exact-head evidence` job observes the three workflows read
 | Completed complete source | PASS only at the exact requested SHA |
 | New PR HEAD/closed/foreign PR/wrong target | BLOCKED immediately |
 
-The observer checks all mandatory FULL jobs, their actual execution steps and final completion markers. It rechecks live PR HEAD before acceptance. Manual dispatch cannot substitute for PR coverage because it lacks the PR base-dependent CSS parity context. Final acceptance uses automatic complete PR workflows. Regular dispatch remains a separate explicit diagnostic.
+The observer checks all mandatory FULL jobs, their actual execution steps and final completion markers. Admin evidence includes separate `Account UI (chromium)` and `Account UI (webkit)` execution proof as well as foundation/runtime and operator persistence proof. It rechecks live PR HEAD before acceptance. Manual dispatch cannot substitute for PR coverage because it lacks the PR base-dependent CSS parity context. Final acceptance uses automatic complete PR workflows. Regular dispatch remains a separate explicit diagnostic.
 
 Missing evidence is observed for at most 45 minutes (50-minute job budget), then reported as **BLOCKED CI evidence**, never as an inferred product regression. Once overdue evidence arrives, rerun only the gate on the unchanged SHA. This bounded wait consumes Actions runner time; it trades a bounded cost for eliminating premature red gates and repeated expensive suites.
 
@@ -95,8 +95,19 @@ The final alternating local samples averaged **13,749.7 ms before / 12,575.3 ms 
 
 ## Local validation before first push
 
-- CI selection, workflow shell, discovery, evidence state-machine, reuse, diagnostics and request-handshake regressions: **68 PASS** at the last combined run; the inline-gate/diagnostics subset also passed after its final changes.
+- CI selection, workflow shell, discovery, evidence state-machine, reuse, diagnostics and request-handshake regressions: **72 PASS** at the last combined run; the inline-gate/diagnostics subset also passed after its final changes.
 - Backend contracts: **86 PASS**, including the newly discovered end-season MTS contracts. Worker runtime: **238 PASS** in 38 files. SQLite migration tests: **44 PASS**. Import-graph tests: **3 PASS**; TypeScript typecheck PASS.
 - Account usability Chromium: **27 cases PASS**; account pages/reset-handshake matrix: **35 cases PASS**. Assertions and browser matrices were retained.
 - Full Site local attempt: **787 PASS / 788**, with the existing UI-THEME render matrix **cancelled at its 180-second deadline**. It is not a full PASS. The environment uses Node 24 and an externally extracted Chromium 143 because the pinned Playwright download returned empty archives; CI uses Node 22 and its supported browser provisioning. The isolated render-matrix reproduction also reached the unchanged 180-second deadline; this remains an explicit local limitation. No timeout or assertion was relaxed to hide this result.
 - GitHub full evidence must come from this PR's final exact SHA; these working-tree local observations are not substituted for it. Local diagnostic records expose tracked changes explicitly.
+
+
+## Hosted baseline and final scheduling experiment
+
+The first complete hosted acceptance at `7604d6a` passed Site (797 tests, zero skipped), Browser FULL, Admin FULL and the state-observing gate in their first attempts. The gate demonstrably transitioned from PENDING to all PASS without any suite or gate rerun.
+
+Actual job durations were Site **296 s**, Browser **359 s**, Admin operator **115 s**, Admin foundation **552 s**. The last job was the measured critical path because it serialized backend validation, all nine account Chromium suites, all nine WebKit suites and Settings. `ci-opt-04-05-full-runtime.json` records this before-sample.
+
+The final scheduling change separates the account engines into independent jobs after the same scope check. It retains every script, assertion, engine and Settings case, uses isolated runners/artifact names, and extends exact-head FULL proof to both engine jobs. Executable shell tests verify the exact nine-file list per engine and that a failure stops the loop instead of being hidden by later suites. The independent review found no important issue in this delta. This is a substantive scheduling optimization, not a commit to rerun CI.
+
+New-HEAD hosted timings and acceptance will be recorded in PR #372. The before-SHA PASS is never reused as acceptance for changed source. One hosted sample on each revision cannot establish a runner SLA or remove timing uncertainty; the controlled local duplicate comparison remains a separate measurement.
