@@ -111,3 +111,32 @@ Actual job durations were Site **296 s**, Browser **359 s**, Admin operator **11
 The final scheduling change separates the account engines into independent jobs after the same scope check. It retains every script, assertion, engine and Settings case, uses isolated runners/artifact names, and extends exact-head FULL proof to both engine jobs. Executable shell tests verify the exact nine-file list per engine and that a failure stops the loop instead of being hidden by later suites. The independent review found no important issue in this delta. This is a substantive scheduling optimization, not a commit to rerun CI.
 
 New-HEAD hosted timings and acceptance will be recorded in PR #372. The before-SHA PASS is never reused as acceptance for changed source. One hosted sample on each revision cannot establish a runner SLA or remove timing uncertainty; the controlled local duplicate comparison remains a separate measurement.
+
+## Failure-to-green closeout experiment
+
+Run `node tools/ci-repair-benchmark.mjs` on Node 22 (also valid from Windows PowerShell). The bounded experiment alternates three before/after pairs with identical faulty model bytes, six immutable test files and a deterministic CPU workload. Both strategies initially run the complete six-file suite, reproduce the same known failure twice, apply the same known **model-source correction**, then run all six tests to PASS with zero skipped. Test-file hashes must remain unchanged. The before strategy replays the original full-suite command; the after strategy executes the actual focused command obtained from `ci-run`'s diagnostic artifact. These fixed failure samples are benchmark measurements, not retry-until-green behavior.
+
+`ci-opt-04-05-repair-benchmark.json` contains every raw sample and fixture hash. Local Node24 observations (n=3; milliseconds, arithmetic means):
+
+| Phase | Before | After |
+| --- | ---: | ---: |
+| First failure detected | 574.7 | 490.8 |
+| Complete failure information: raw fields / structured replay-ready record | 576.2 | 494.6 |
+| One local reproduction (two samples per strategy) | 2,482.5 | 229.4 |
+| Known source patch application | 0.691 | 0.219 |
+| Complete final six-test validation | 1,264.1 | 1,224.2 |
+| Complete controlled failure-to-green cycle | 7,534.5 | 2,895.9 |
+
+The measured cycle is **61.6% shorter** for this controlled tool-assisted workload, chiefly because reproduction omits unrelated files while mandatory final validation still executes every file. Patch-application times below one millisecond are timing noise, not evidence of a faster correction algorithm. Raw-field availability and the richer structured record have different usability, and wrapper overhead can increase detection/diagnosis time on other runs. There are no timing assertions or promised thresholds. This completes a reproducible computational benchmark of every requested phase; real human diagnosis/repair durations cannot be reconstructed from the old logs and are not claimed.
+
+The final diagnostic closeout adds `reproductionCommand`, `suiteReproduce` and `firstDiagnosticMs`. Top-level Node failures replay their escaped literal test name and source file. Nested failures replay the containing file: filtering a child name can prevent its parent from running and incorrectly produce a green empty replay. A real subprocess regression verifies that the original nested failure remains a failure. Runtime/Vitest failures retain their genuine suite command. Windows TAP path escaping and safe scenario environment are retained. Rich assertion details stream as soon as source/expected/actual are available; raw logs and the complete suite command remain available. History groups on the original suite so a focused failing replay does not hide a contradictory same-head full-suite PASS.
+
+Backend contract discovery now accepts valid compact `from'node:test'` syntax and still rejects compact Vitest imports. This removes the formatting assumption behind historical discovery defects rather than requiring test authors to rewrite valid imports.
+
+### Final authorization and validation ledger
+
+- The owner authorized adding the FULL required check; readback confirms `landing` and `CI FULL exact-head evidence`, both integration 15368, strict policy preserved, main-only targeting, no bypass actors and all other rules unchanged.
+- The owner subsequently authorized completing the work through squash merge, conditional on final exact-head acceptance. Deployment, remote D1 and secret operations remain excluded.
+- The closeout has **80 local CI/discovery/diagnostic/repair regressions PASS**; backend Node contracts remain **86 PASS**. Publication guard, application behavior, fixtures and functional assertions are preserved.
+- The two earlier implementation batches had independent review. A further independent closeout review was unavailable because the reviewer hit its usage limit; the author performed the final separate review and added the real nested-replay regression. Final hosted full-suite verification is required on the new SHA before merge.
+- Final source/evidence and squash outcome are recorded in PR #372; earlier SHA results are benchmark baselines, not substituted acceptance.

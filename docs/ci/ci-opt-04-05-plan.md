@@ -29,3 +29,7 @@ One Draft/HOLD PR; grouped commits; no merge, deploy, remote database, secrets, 
 ## Measured optimization follow-through
 
 First hosted acceptance at 7604d6a passed all four workflows on the exact source/base. It measured 552 seconds in the serial Admin foundation job. Preserve all nine account suites in each engine but move the two engines into independent jobs; retain Chromium Settings and require actual source proof from both jobs. Local executable shell/evidence tests and a focused independent review validate this scheduling change before the second grouped commit. Protection audit is now available via rulesets and shows only landing is required; adding the FULL gate remains separately protected.
+
+## Final #371 measurement closeout
+
+Measure all computational repair phases in paired, alternating controlled runs: same faulty source, immutable tests/workload, two fixed failing reproductions, source-only known correction, and complete final passing coverage. Add genuine focused Node replay with nested-parent safety and Windows path handling, preserve the original suite for history correlation, stream complete assertion details, and remove import-format dependence from backend discovery. Publish one grouped closeout commit after local RED/GREEN and whole-tooling validation. The owner has authorized squash merge after final exact-head required checks; no further approval is needed for that merge. Do not infer permission for deployment, remote D1 or secrets.

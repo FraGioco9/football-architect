@@ -6,7 +6,7 @@ export function analyzeHistory(records){
  const signatures=new Map(),outcomes=new Map();
  for(const r of records){
   if(!r.head||!r.reproduce||!['FAIL','PASS'].includes(r.status))continue;
-  const key=r.head+'\n'+r.reproduce;
+  const key=r.head+'\n'+(r.suiteReproduce??r.reproduce);
   if(!outcomes.has(key))outcomes.set(key,new Set());outcomes.get(key).add(r.status);
   if(r.status==='FAIL'){
    const key=r.signature;signatures.set(key,(signatures.get(key)||0)+1);

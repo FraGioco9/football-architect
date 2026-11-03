@@ -8,7 +8,7 @@ export function discoverContracts(root=testRoot){
  if(!files.length)throw Error('No backend Node contracts found');
  for(const file of files){
   const source=readFileSync(new URL(file,root),'utf8');
-  if(!/from ['"]node:test['"]/.test(source)||/from ['"](?:vitest|cloudflare:)/.test(source))throw Error('Unclassified backend test: '+file);
+  if(!/from\s*['"]node:test['"]/.test(source)||/from\s*['"](?:vitest|cloudflare:)/.test(source))throw Error('Unclassified backend test: '+file);
  }
  return files.map(file=>fileURLToPath(new URL(file,root)));
 }

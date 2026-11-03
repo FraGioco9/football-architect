@@ -1,0 +1,202 @@
+{
+  "node": "v24.22.1",
+  "platform": "linux",
+  "workFactor": 50000,
+  "repairMode": "automated known-source patch; no assertion changes",
+  "trials": [
+    {
+      "before": {
+        "detectionMs": 952.9762890000001,
+        "diagnosisMs": 953.9243789999999,
+        "initialRunMs": 1701.985264,
+        "reproductions": [
+          {
+            "durationMs": 5927.330989,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 4213.048337,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 1.6934389999987616,
+        "fullValidation": {
+          "durationMs": 1640.2402989999991,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 13487.332804,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      },
+      "after": {
+        "detectionMs": 513.4440300000006,
+        "diagnosisMs": 517.6321019999996,
+        "initialRunMs": 1224.151124,
+        "reproductions": [
+          {
+            "durationMs": 216.24810199999956,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 234.61776399999872,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 0.3050059999986843,
+        "fullValidation": {
+          "durationMs": 1220.5459890000002,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 2898.321112999998,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      }
+    },
+    {
+      "after": {
+        "detectionMs": 479.2496549999996,
+        "diagnosisMs": 482.1238369999992,
+        "initialRunMs": 1210.6780639999997,
+        "reproductions": [
+          {
+            "durationMs": 247.403330000001,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 211.11404700000276,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 0.18071799999961513,
+        "fullValidation": {
+          "durationMs": 1212.3453010000012,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 2882.6204209999996,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      },
+      "before": {
+        "detectionMs": 400.58479400000215,
+        "diagnosisMs": 403.58957100000043,
+        "initialRunMs": 1099.6416759999993,
+        "reproductions": [
+          {
+            "durationMs": 1101.2679370000005,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 1186.1091540000016,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 0.16694700000152807,
+        "fullValidation": {
+          "durationMs": 1082.1707490000008,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 4470.421652000001,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      }
+    },
+    {
+      "before": {
+        "detectionMs": 370.66721900000266,
+        "diagnosisMs": 371.19261200000255,
+        "initialRunMs": 1107.9286100000027,
+        "reproductions": [
+          {
+            "durationMs": 1189.5734420000008,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 1277.3764499999997,
+            "files": 6,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 0.21299999999973807,
+        "fullValidation": {
+          "durationMs": 1069.8187660000003,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 4645.638715000001,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      },
+      "after": {
+        "detectionMs": 479.85290499999974,
+        "diagnosisMs": 484.06746700000076,
+        "initialRunMs": 1199.130000000001,
+        "reproductions": [
+          {
+            "durationMs": 258.1882770000011,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          },
+          {
+            "durationMs": 208.78532600000108,
+            "files": 1,
+            "failed": 1,
+            "expectedFailure": true
+          }
+        ],
+        "patchApplicationMs": 0.1721429999997781,
+        "fullValidation": {
+          "durationMs": 1239.669968000002,
+          "tests": 6,
+          "pass": 6,
+          "skipped": 0
+        },
+        "totalCycleMs": 2906.8672819999992,
+        "testsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "validatedTestsHash": "ed932aaa4d4ccdbbd8b7d028bc626f7e86c5e22d7bc71b419d402420e0f38c54",
+        "faultyModelHash": "d13af017aae7ce521ef978f898bcb518f5dd1f7cbd97cb81a5739630a69dcc48",
+        "repairedModelHash": "d7a7487645a280d0689e7f1f8014fd06efb459230a099cc595d57e5bd9d22b8a"
+      }
+    }
+  ],
+  "methodology": "Identical faulty model, six immutable test files and CPU workload per pair. Both strategies initially execute FULL and finish with all six tests PASS, zero skipped. Before replays the available full-suite command; after executes the focused command from the actual streamed diagnostic artifact. Two fixed failing replays per strategy; one known model-source repair; no retries to hide a failure.",
+  "limitations": "Controlled synthetic tool-assisted repair, not a human repair-time estimate or application performance claim. Raw diagnostic-field availability is compared with a richer structured replay-ready record; wrapper overhead can increase detection/diagnostic latency and is reported. Timing is observational, never a test assertion or SLA."
+}

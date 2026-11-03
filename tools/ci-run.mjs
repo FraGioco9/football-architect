@@ -10,7 +10,7 @@ if(divider<0||!process.argv[divider+1])throw Error('Usage: node tools/ci-run.mjs
 const label=(process.argv[2]||'suite').replace(/[^a-zA-Z0-9_-]/g,'-');
 const command=process.argv.slice(divider+1),start=performance.now();
 const dir=process.env.FA_CI_REPORT_DIR||join(process.env.RUNNER_TEMP||tmpdir(),'fa-ci-artifacts');mkdirSync(dir,{recursive:true});
-const stem=dir+'/'+label+'-'+Date.now();let text='',firstFailureMs=null;
+const stem=dir+'/'+label+'-'+Date.now();let text='',firstFailureMs=null,firstDiagnosticMs=null;
 writeFileSync(stem+'.log','');
 let executable=command[0],args=command.slice(1);
 // npm's JS entrypoint avoids .cmd shell quoting and preserves PowerShell parity.
@@ -28,11 +28,18 @@ function receive(chunk,stream){
   const record=diagnose({text,command});
   process.stderr.write('\nFirst actionable failure ('+firstFailureMs+'ms): '+JSON.stringify(record)+'\n');
  }
+ if(firstFailureMs!==null&&firstDiagnosticMs===null){
+  const details=diagnose({text,command});
+  if(details.testFile&&details.expected!==null&&details.actual!==null){
+   firstDiagnosticMs=Math.round(performance.now()-start);
+   process.stderr.write('Failure details ('+firstDiagnosticMs+'ms): '+JSON.stringify(details)+'\n');
+  }
+ }
 }
 child.stdout.on('data',c=>receive(c,process.stdout));child.stderr.on('data',c=>receive(c,process.stderr));
 child.on('error',e=>receive(String(e)+'\n',process.stderr));
 child.on('close',(code,signal)=>{
- const result={...diagnose({text,command,exitCode:code??1,signal}),durationMs:Math.round(performance.now()-start),firstFailureMs,
+ const result={...diagnose({text,command,exitCode:code??1,signal}),durationMs:Math.round(performance.now()-start),firstFailureMs,firstDiagnosticMs:code===0?null:(firstDiagnosticMs??Math.round(performance.now()-start)),
   trackedChanges:execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim().split('\n').filter(Boolean),
   head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),attempt:process.env.GITHUB_RUN_ATTEMPT??null,
   log:stem+'.log',run:process.env.GITHUB_RUN_ID?`${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`:null};

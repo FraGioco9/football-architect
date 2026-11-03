@@ -24,3 +24,13 @@ test('contract discovery fails closed on empty or unclassified suites and exclud
   assert.throws(()=>discoverContracts(url),/Unclassified backend test/);
  }finally{rmSync(folder,{recursive:true,force:true})}
 });
+
+test('valid compact Node imports are classified without imposing formatting, while compact runtime imports stay excluded',()=>{
+ const folder=mkdtempSync(join(tmpdir(),'fa-contract-spacing-')),url=pathToFileURL(folder+'/');
+ try{
+  writeFileSync(join(folder,'account-http.test.ts'),"import{test}from'node:test';test('contract',()=>{});");
+  assert.deepEqual(discoverContracts(url).map(file=>basename(file)),['account-http.test.ts']);
+  writeFileSync(join(folder,'mixed.test.ts'),"import{test}from'node:test';import{it}from'vitest';");
+  assert.throws(()=>discoverContracts(url),/Unclassified backend test/);
+ }finally{rmSync(folder,{recursive:true,force:true})}
+});

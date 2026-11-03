@@ -242,6 +242,7 @@
     "tests/ci-request-handshake.test.mjs": "site-node",
     "tests/helpers/request-handshake.mjs": "support",
     "tests/ci-diagnostics.test.mjs": "site-node",
-    "tests/fixtures/a03-browser-routes.json": "support"
+    "tests/fixtures/a03-browser-routes.json": "support",
+    "tests/ci-repair-benchmark.test.mjs": "site-node"
   }
 }
