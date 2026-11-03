@@ -130,7 +130,7 @@ const competitionRoute = d=>{
  const sectionMarker='<section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">';
  const sectionPos=html.indexOf(sectionMarker);
  const tabStart=html.indexOf('          <div class="app-competition-tabs" role="tablist"',sectionPos);
- const selectorStart=html.indexOf('          <script>(()=>{const view=',tabStart);
+ const selectorStart=html.indexOf('          <script>(()=>{performance.mark("fa-competition-tabs-parsed");const view=',tabStart);
  const selectorClose=html.indexOf('</script>',selectorStart);
  if(sectionPos<0||tabStart<0||selectorStart<0||selectorClose<0)throw Error('Missing static competition controls: '+d.id);
  const tabShell=html.slice(tabStart,selectorClose+'</script>'.length);
