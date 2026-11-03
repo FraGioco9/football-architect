@@ -14,6 +14,7 @@ export const pageLoadCases=[
  ...['int-1','int-2'].flatMap(cup=>['standings','fixtures','postseason','stats','history','rules','awards'].map(view=>[
   {standings:'P12',fixtures:'P11',postseason:'P11'}[view]||'P13','/competitions/'+cup+'/'+view+'?season=2'])),
  ['P14','/calendar?season=2&calendarView=season'],['P15','/calendar?season=2&calendarView=week'],
+ ['P05','/competitions/it-2/fixtures?season=2'],['P05','/competitions/it-2/postseason?season=2'],
  ['P16','/clubs'],
  ...['overview','roster','fixtures','stats','history'].map(view=>[view==='overview'?'P17':'P18','/clubs/it/1/'+view]),
  ['P19','/settings'],['P20','/settings'],
@@ -23,6 +24,18 @@ export const pageLoadCases=[
 
 const json=(route,status,body)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
 const nextFrame=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+const bracketShape=page=>page.evaluate(()=>{
+ const root=document.getElementById('app-postseason-bracket');
+ return root?{ties:root.querySelectorAll('[data-postseason-config-tie]').length,first:root.querySelectorAll('[data-app-aria="postseasonFirstLeg"]').length,second:root.querySelectorAll('[data-app-aria="postseasonSecondLeg"]').length}:null;
+});
+const expectedBracket=route=>{
+ if(!/\/(fixtures|postseason)\?/.test(route))return null;
+ if(/^\/competitions\/int-[12]\//.test(route))return {ties:11,first:10,second:10};
+ if(route.startsWith('/competitions/it-1/'))return {ties:0,first:1,second:1};
+ if(route.startsWith('/competitions/it-2/'))return {ties:0,first:2,second:2};
+ return null;
+};
+
 
 export async function verifyPageLoadMatrix(browser,engine,origin){
  const evidence={engine,sourceSha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
@@ -88,6 +101,12 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    // but blank; a dash would incorrectly present pending data as a value.
    const pendingWorldSlots=await page.locator('.fa-shell-date-full,.fa-shell-date-short').allTextContents();
    assert.ok(pendingWorldSlots.every(value=>value.trim()===''),route+' pending world progress must be blank');
+   const bracketExpected=expectedBracket(route);
+   if(bracketExpected){
+    row.bracketCold=await bracketShape(page);
+    assert.deepEqual(row.bracketCold,bracketExpected,route+' canonical first-paint knockout leg/tie count');
+    row.checks.push('static-knockout-ties-and-legs');
+   }
    row.initial=cold;row.apiRequestsWhileDelayed=gateRequests;row.checks.push('cold-title-and-shell-before-api','pending-world-progress-blank');
    }finally{gate=null;release()}
    await page.waitForLoadState('networkidle');await nextFrame(page);
@@ -105,7 +124,9 @@ export async function verifyPageLoadMatrix(browser,engine,origin){
    }
    row.checks.push('confirmed-empty-shell');
    await page.reload({waitUntil:'networkidle'});
-   assert.ok((await snapshot()).title,route+' hard refresh');row.checks.push('hard-refresh');
+   assert.ok((await snapshot()).title,route+' hard refresh');
+   if(expectedBracket(route))assert.deepEqual(await bracketShape(page),row.bracketCold,route+' no duplicated knockout ties or legs after hard refresh');
+   row.checks.push('hard-refresh');
    // A same-document history round-trip must retain its actual main node.
    await page.evaluate(()=>{window.pageLoadAuditMain=document.querySelector('main');history.pushState(history.state,'',location.pathname+location.search+'#page-load-audit')});
    await page.goBack();await nextFrame(page);
