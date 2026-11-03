@@ -145,9 +145,9 @@
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
-  let availableSeasons=[...new Set(["1",...devSeasons])];
+  let availableSeasons=[...new Set(["1",...(window.faDebugEnabled===false?[]:devSeasons)])];
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
-  if(devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
+  if(window.faDebugEnabled!==false&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
     availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   // Season 1 is a provisional display context, not an official calendar/history.
@@ -158,13 +158,13 @@
     const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
-    return {season:devSeasons.length&&!availableSeasons.includes(requested)?"1":requested,
+    return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?"1":requested,
       view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     state={...next};
-    if(devSeasons.length&&!availableSeasons.includes(state.season))state.season="1";
+    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season="1";
     const url=new URL(window.location.href);
     const identity=routePath();
     url.pathname=routes.buildRoute({kind:identity.kind,id:identity.base.slice("/competitions/".length),view:state.view});
@@ -237,11 +237,14 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
-    if(devSeasons.length||!Number.isInteger(limit)||limit<0||limit>2)return false;
-    availableSeasons=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));latestSeason=availableSeasons.at(-1);
+    if(devSeasons.length&&window.faDebugEnabled!==false||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    const next=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));
+    if(next.length===availableSeasons.length&&next.every((value,i)=>availableSeasons[i]===value)&&(!selectLatest||state.season===next.at(-1)))return true;
+    availableSeasons=next;latestSeason=availableSeasons.at(-1);
     seasonPicker.update(seasonOptions());apply({...state,season:selectLatest?latestSeason:state.season},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
+    if(window.faDebugEnabled===false)return false;
     if(limit!==0&&!devSeasons.includes(String(limit)))return false;
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
     document.documentElement.dataset.faDevCurrentSeason=String(limit);
@@ -252,6 +255,10 @@
     apply({...state,season:availableSeasons.includes(state.season)?state.season:"1"},{replace:true});
     return true;
   };
+  window.addEventListener('fa:source-change',()=>{
+    if(window.faDebugEnabled===false)window.faCompetitionRoute.setPublicSeasonLimit(window.faWorldState?.get?.().world?.seasonNumber||0);
+    else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
+  });
   window.addEventListener("popstate",()=>{
     pendingDefaultMatchday=false;
     apply(read(),{replace:true});

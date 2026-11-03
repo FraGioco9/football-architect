@@ -1,3 +1,4 @@
+import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
 import {webkit,devices} from "playwright";
 import assert from "node:assert/strict";
 import {runArea} from "./ci-opt-01-browser-smoke.mjs";
@@ -7,6 +8,7 @@ const browser=await webkit.launch({headless:true});
 const pages=["/calendar","/competitions/it-1/standings","/clubs","/guide"];
 const results=[];
 try{
+ await verifyCanonicalStateBrowser(browser,'webkit');
  for(const area of Object.keys(areaRoutes))await runArea(browser,area,"webkit");
  for(const route of pages){
   const context=await browser.newContext({...devices["iPhone 13"],locale:"en-US"});

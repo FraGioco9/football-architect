@@ -25,7 +25,7 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
     if(!valid(next.season,0,4)||!valid(next.day,1,56))return false;
     if(next.season===0)next={season:0,day:1};
     const before=read();
-    if(before.season===next.season&&before.day===next.day)return true;
+    if(next.season!==0&&before.season===next.season&&before.day===next.day)return true;
     let savedSeason,savedDay,savedRounds;
     try{
       savedSeason=storage.getItem(SEASON_KEY);savedDay=storage.getItem(DAY_KEY);savedRounds=storage.getItem(ROUNDS_KEY);
@@ -40,10 +40,6 @@ export function createDevWorldClock(storage=sessionStorage,dispatch=()=>{}){
     emit(next,before);
     return true;
   };
-  const reset=()=>{
-    const before=read();
-    try{storage.removeItem(SEASON_KEY);storage.removeItem(DAY_KEY);storage.removeItem(ROUNDS_KEY)}catch{return false}
-    revision++;emit(read(),before);return true;
-  };
+  const reset=()=>commit({season:0,day:1});
   return Object.freeze({read,revision:()=>revision,commit,setSeason:n=>commit({...read(),season:n}),setDay:n=>read().season===0?false:commit({...read(),day:n}),reset,nationalProgress:()=>read().season===0?0:nationalProgress(read().day),snapshot:()=>snapshot(read()),publish:()=>{const s=read();dispatch('fa:world-clock-snapshot',snapshot(s));dispatch('fa:dev-progress-change',{season:s.season,worldDay:s.day,matchdays:progress(s)})}});
 }

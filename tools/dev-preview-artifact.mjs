@@ -5,13 +5,14 @@ import {join,resolve,dirname,sep} from "node:path";
 import {repositoryRoot,planPublicFiles,listFiles} from "./publication-guard.mjs";
 
 export const ARTIFACT_CONTRACTS=Object.freeze(["public","protected_debug"]);
+export const DEBUG_MODE_BOOTSTRAP='<script>window.faDevPreviewMode=true;try{window.faDebugEnabled=sessionStorage.getItem("football-architect:debug-enabled")!=="off"}catch{window.faDebugEnabled=true}</script>';
 export const DEBUG_SEASONS=Object.freeze([1,2,3,4]); // Fictional Preview only, never official competition history.
 export const DEBUG_SEASON_BOOTSTRAP='<script>document.documentElement.dataset.faDevDefaultSeason="1";document.documentElement.dataset.faDevSeasons="'+DEBUG_SEASONS.join(",")+'";(()=>{let season=1;try{const raw=sessionStorage.getItem("football-architect:standings-dev-season"),value=raw===null||raw.trim()===""?NaN:Number(raw);if(Number.isInteger(value)&&value>=0&&value<=4)season=value}catch{}document.documentElement.dataset.faDevCurrentSeason=String(season)})()</script>';
 const MANIFEST="__fa_dev__/artifact-manifest.json";
 // Injected only into DEV responses/artifacts, before the body can paint.
 export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings,html[data-fa-debug-pending=\"true\"] #competition-panel-fixtures,html[data-fa-debug-pending=\"true\"] #competition-panel-history{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
-export const CLUB_SUMMARY_INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" data-fa-dev-club-summary src="/__fa_dev__/stats-client.mjs"></script>';
-const INJECTION='<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
+export const CLUB_SUMMARY_INJECTION=DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" data-fa-dev-club-summary src="/__fa_dev__/stats-client.mjs"></script>';
+const INJECTION=DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
  ["__fa_dev__/debug-settings.mjs","tools/dev-debug-settings.mjs"],
  ["__fa_dev__/standings-client.mjs","tools/dev-standings-preview-client.mjs"],
@@ -51,12 +52,12 @@ function debugHtml(bytes,path) {
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');
   return Buffer.from(html.replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
  }
- if(!/^(?:dashboard|calendar|settings|competitions)\//.test(path)||!path.endsWith("/index.html"))return bytes;
+ if(!/^(?:dashboard|calendar|settings|competitions|clubs)\//.test(path)||!path.endsWith("/index.html"))return bytes;
  let html=bytes.toString("utf8");
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
  const detail=/^competitions\/(?:(?:it|eng|es|de|fr|pt|nl|br)-[12]|int-1|int-2)\/index\.html$/.test(path);
- const calendarClock=path==="calendar/index.html"?'<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
+ const calendarClock=path==="calendar/index.html"?DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled!==false)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
  if(calendarClock)html=html.replace('<script data-calendar-bootstrap>',calendarClock+'<script data-calendar-bootstrap>');
  return Buffer.from(html.replace("</head>",
   DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"||path==="calendar/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");

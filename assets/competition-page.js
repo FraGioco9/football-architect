@@ -811,6 +811,7 @@
   }
   function nextContext(season,data=null){
     const current=window.faCompetitionContext;
+    if(current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
     publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
   }
   function selectSeason(season){
@@ -823,8 +824,8 @@
     if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason);
   }
   function setDebugSeason(season){
-    if(activeDebugSeason===null)return false;
-    if(!Number.isInteger(season)||season<0||season>4)return false;
+    if(season!==null&&window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return false;
+    if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
     if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
     if(season===0)selectSeason(1);
     return true;
@@ -873,7 +874,7 @@
     if(division)required.push("app-competition-flag","app-competition-country","app-competition-tier","app-competition-level");
     if(required.some(id=>!document.getElementById(id)))throw Error("Incomplete generated page");
     const dataset=document.documentElement?.dataset||{};
-    activeDebugSeason=dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
+    activeDebugSeason=window.faDebugEnabled===false||dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
     const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=4);
     const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
@@ -977,7 +978,7 @@
       window.addEventListener('fa:competition-context-change',event=>stats.update(event.detail));
       window.addEventListener('fa:competition-route-change',()=>stats.update(window.faCompetitionContext));
     }
-    if(activeDebugSeason===null){
+    {
       try{
         const initialExplicitSeason=requestedSeasonWasExplicit;let publicDefaultApplied=false;
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
@@ -988,12 +989,13 @@
         const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
         const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
-        let sourceState='loading';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
+        let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial','isolated'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
           commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
-        let selection='';const select=()=>{const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason;if(key===selection)return;selection=key;void loader.load()};
+        let selection='';const select=()=>{if(activeDebugSeason!==null){loader.cancel();sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:competition-context-change',select);
+        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.addEventListener('focus',()=>void loader.load());
         window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});

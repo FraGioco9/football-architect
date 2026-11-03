@@ -1242,8 +1242,8 @@
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
-    let activeSeason=1;
-    const isDevCalendar=window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev";
+    let activeSeason=Math.max(1,window.faWorldState?.get?.().current?.season||1);
+    const isDevCalendar=window.faDebugEnabled!==false&&(window.faWorldState?.get?.().source==='dev'||window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev");
     if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
     const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
@@ -1288,6 +1288,13 @@
   function language() {
     return Object.hasOwn(copies, document.documentElement.lang) ? document.documentElement.lang : "en";
   }
+  function renderWorldProgress() {
+    const snapshot=window.faWorldState?.get?.(),current=snapshot?.current;
+    const strings=copies[language()],day={en:'Day',de:'Tag',es:'Día',fr:'Jour',it:'Giorno'}[language()];
+    const full=current?(snapshot.source==='dev'?'Debug · ':'')+(current.season===0?strings.noSeason:strings.historySeasonLabel+' '+current.season+' · '+day+' '+current.day+'/56'):'—';
+    for(const node of document.querySelectorAll('.fa-shell-date-full'))node.textContent=full;
+    for(const node of document.querySelectorAll('.fa-shell-date-short'))node.textContent=current?current.season+' · '+current.day+'/56':'—';
+  }
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
@@ -1324,6 +1331,7 @@
     }
     const detail = document.getElementById("division-detail-name");
     if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
+    renderWorldProgress();
   }
   function renderView() {
     rewriteAppLinks();
@@ -1347,4 +1355,7 @@
     attributes: true, attributeFilter: ["lang"]
   });
   renderView();
+  // Global progress is read independently of the historical season in this URL.
+  // Reuse the existing allowlisted adapter; static shell rendering never awaits an API.
+  void import('/assets/world-clock-adapter.js').then(()=>window.faWorldClockAdapter?.mountWorldState({window,document,onChange:()=>{rewriteAppLinks();renderWorldProgress()}})).catch(()=>{});
 })();

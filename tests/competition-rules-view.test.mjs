@@ -116,11 +116,13 @@ test('RULES-CONFIG: decisive tie outcomes remain explicit rather than inferred f
 test('RULES-CONFIG: the actual app language refresh uses configured rules without fixed paragraph overrides',()=>{
  const app=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
  const dictionaries=app.slice(app.indexOf('  const copies ='),app.indexOf('  const worldCountryNames'));
+ // Keep the actual shell progress dependency inside the isolated language-refresh VM.
+ const progress=app.slice(app.indexOf('  function renderWorldProgress()'),app.indexOf('  function activeView()'));
  const renderer=app.slice(app.indexOf('  function renderLanguage()'),app.indexOf('  function renderView()'));
  const d=get('IT-1');d.rules.phases[0].points.win=2;
  const panel={innerHTML:''};
  for(const lang of ['en','de','es','fr','it']){
-  runInNewContext(dictionaries+renderer+'renderLanguage()',{window:{faCompetitionContext:{definition:d},faCompetitionRulesView:view},language:()=>lang,words:()=>[],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:id=>id==='competition-panel-rules'?panel:null,querySelectorAll:()=>[]}});
+  runInNewContext(dictionaries+progress+renderer+'renderLanguage()',{window:{faCompetitionContext:{definition:d},faCompetitionRulesView:view},language:()=>lang,words:()=>[],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:id=>id==='competition-panel-rules'?panel:null,querySelectorAll:()=>[]}});
   assert.equal(metric(panel.innerHTML,'points.win'),'2');
   assert.doesNotMatch(panel.innerHTML,/data-app-i18n="rulesFormatBody"/);
  }

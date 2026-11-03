@@ -36,7 +36,7 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
   for(const path of pub){
    const publicBytes=readFileSync(join(pubDir,path));
    const debugBytes=readFileSync(join(debugDir,path));
-   if(/^(?:dashboard|calendar|settings|competitions)\//.test(path)&&path.endsWith("/index.html")){
+   if((/^(?:dashboard|calendar|settings|competitions)\//.test(path)||path==='clubs/index.html')&&path.endsWith("/index.html")){
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);

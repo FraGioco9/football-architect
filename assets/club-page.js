@@ -66,6 +66,7 @@
    // Provider envelopes are selected explicitly; legacy summary payloads keep
    // their established rendering path until the producer migrates.
    const incoming=event.detail;
+   const previousSnapshot=JSON.stringify(competitionSnapshot);
    if(incoming?.schemaVersion===1){
     const selectors=window.faProviderSelectors;
     if(!selectors)return;
@@ -74,7 +75,11 @@
       :selectors.selectSeasonData(incoming,incoming.competitionId,incoming.selectedSeason);
     if(!chosen)return;
     competitionSnapshot=chosen;
-   }else competitionSnapshot=incoming;
+   }else {
+    if(incoming!==null&&window.faDevPreviewMode!==true&&!document.querySelector('script[data-fa-dev-club-summary]'))return;
+    competitionSnapshot=incoming;
+   }
+   if(JSON.stringify(competitionSnapshot)===previousSnapshot)return;
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);

@@ -62,7 +62,7 @@ test('A04-E4: actual context revision lease rejects late historical responses',(
  const start=source.indexOf('  const freeze=value=>'),end=source.indexOf('  async function start()',start);
  assert.ok(start>=0&&end>start);
  const input=catalogue.find(x=>x.id==='IT-1'),projection=manifest.divisions.find(x=>x.id==='IT-1');
- const window={dispatchEvent(){}};
+ const window={faDevPreviewMode:true,dispatchEvent(){}};
  const api=runInNewContext(source.slice(start,end)+';definition=input;division=projection;activeDebugSeason=1;({replaceSeasonData,clearSeasonData,createContext})',{
   model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
  });
@@ -171,12 +171,12 @@ test('A04-E4-History: pending manifest renders only the latest route and never a
 // observed commit boundaries; model, generation, season/rules and guards are real.
 test('A04-E4-boot: superseded DEV preparation cannot commit fixtures, postseason or context',async()=>{
  const client=read('../tools/dev-standings-preview-client.mjs');
- const start=client.indexOf('async function boot('),end=client.indexOf('/* CAL-SIMPLE-01:',start);
+ const start=client.indexOf('async function boot('),end=client.indexOf('// Calendar uses the same source/progress/reset controls',start);
  const page=read('../assets/competition-page.js'),cs=page.indexOf('  const freeze=value=>'),ce=page.indexOf('  async function start()',cs);
  assert.ok(start>=0&&end>start&&cs>=0&&ce>cs);
  for(const mode of ['season','off','superseded']){
   const input=catalogue.find(d=>d.id==='IT-1'),projection=manifest.divisions.find(d=>d.id==='IT-1');
-  const gates=[],commits=[],errors=[],visible={fixtures:null,postseason:null,rows:null},window={dispatchEvent(){}};
+  const gates=[],commits=[],errors=[],visible={fixtures:null,postseason:null,rows:null},window={faDevPreviewMode:true,dispatchEvent(){}};
   const api=runInNewContext(page.slice(cs,ce)+';definition=input;division=projection;activeDebugSeason=2;({replaceSeasonData,selectSeason,setDebugSeason,createContext})',{
    model,window,input,projection,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init.detail}}
   });
@@ -230,6 +230,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
  const server=createServer((req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;requests.push(path);
   if(delayedSources.has(path)){delayedSources.get(path)(res);return}
+  if(path==='/api/world'){res.writeHead(503,{'Content-Type':'application/json'});res.end('{"error":{"code":"world_unavailable"}}');return}
   const file=publicRequestFile(path);
   if(!allowed.has(file)){res.writeHead(404);res.end();return}
   res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(readFileSync(join(staged,file)));
@@ -272,7 +273,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    }
    assert.ok(requests.length>18);
    assert.deepEqual(requests.filter(path=>path.startsWith('/__fa_dev__/')||path.startsWith('/tools/')||path.startsWith('/tests/')),[]);
-   assert.ok(requests.every(path=>allowed.has(publicRequestFile(path))),'every actual request resolves inside the staged public manifest');
+   assert.ok(requests.every(path=>path==='/api/world'||allowed.has(publicRequestFile(path))),'every static request resolves inside the staged manifest; only the anonymous world API may be unavailable');
   });
   const division=manifest.divisions.find(d=>d.id==='IT-1'),definition=catalogue.find(d=>d.id==='IT-1');
   function seasonData(season,days=30){

@@ -8,7 +8,7 @@ import { resolve, dirname, relative, sep, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces } from "node:os";
 import { isAllowlistedPublicPath, publicRequestFile } from "./publication-guard.mjs";
-import { DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP, CLUB_SUMMARY_INJECTION } from "./dev-preview-artifact.mjs";
+import { DEBUG_MODE_BOOTSTRAP, DEBUG_FIRST_PAINT, DEBUG_SEASONS, DEBUG_SEASON_BOOTSTRAP, CLUB_SUMMARY_INJECTION } from "./dev-preview-artifact.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -170,7 +170,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
-          const bootstrap='<script>window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
+          const bootstrap=DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled!==false)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
           body=Buffer.from(body.toString("utf8").replace('<script data-calendar-bootstrap>',bootstrap+'<script data-calendar-bootstrap>'),"utf8");
         }
         if (devPreview && (DETAIL.test(raw) || CUP_DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html")) {
@@ -202,8 +202,9 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
             return all;
           }), "utf8");
       }
+      if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
-      if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",'<script>window.faDevPreviewMode=true</script>\n</head>'),"utf8");
+      if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",DEBUG_MODE_BOOTSTRAP+'\n</head>'),"utf8");
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": "no-store",

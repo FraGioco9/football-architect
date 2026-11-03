@@ -23,6 +23,7 @@ try{
    let adminCalls=0;
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'});});
    await page.route('**/api/player/permissions',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'}));
+   await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"world_unavailable"}}'}));
    await page.goto('http://localhost:2000/settings');
    const signIn=page.locator('[data-admin-signin-link] a');
    await signIn.waitFor({state:'visible'});
@@ -49,11 +50,14 @@ try{
  }
  const context=await browser.newContext();
  try{
-  const page=await context.newPage();let adminCalls=0;
+  const page=await context.newPage();let adminCalls=0;const pending=new Set();
+  page.on('request',request=>pending.add(request.url()));page.on('requestfinished',request=>pending.delete(request.url()));page.on('requestfailed',request=>pending.delete(request.url()));
   await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"admin_unavailable"}}'});});
+  await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"world_unavailable"}}'}));
   await page.goto('http://localhost:2000/dashboard');
-  await page.waitForLoadState('networkidle');
+  try{await page.waitForLoadState('networkidle')}catch(error){console.error('Anonymous dashboard pending requests: '+JSON.stringify([...pending]));throw error}
   assert.equal(adminCalls,0,'Anonymous public browsing must not invoke Admin APIs');
+  assert.equal(await page.evaluate(()=>window.faWorldState?.get().current),null,'Unavailable world data must not fabricate current progress');
   checks++;
  }finally{await context.close();}
  console.log('Unified Admin Settings browser contracts PASS: '+checks+' cases');

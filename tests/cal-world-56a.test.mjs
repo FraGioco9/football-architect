@@ -55,10 +55,10 @@ test('W56-12 published snapshot reflects persisted state',()=>{
  const {clock,events}=make({[SEASON_KEY]:'3',[DAY_KEY]:'36'});clock.publish();
  assert.deepEqual(events[0].detail.current,{season:3,day:36});
 });
-test('W56-13 reset removes legacy and canonical overrides',()=>{
+test('W56-13 reset persists canonical Season 0 and clears national progress',()=>{
  const {s,clock}=make({[SEASON_KEY]:'4',[DAY_KEY]:'56',[ROUNDS_KEY]:'33'});
- assert.equal(clock.reset(),true);assert.deepEqual(clock.read(),{season:1,day:1});
- for(const k of [SEASON_KEY,DAY_KEY,ROUNDS_KEY])assert.equal(s.getItem(k),null);
+ assert.equal(clock.reset(),true);assert.deepEqual(clock.read(),{season:0,day:1});
+ assert.equal(s.getItem(SEASON_KEY),'0');assert.equal(s.getItem(DAY_KEY),'1');assert.equal(s.getItem(ROUNDS_KEY),'0');assert.equal(clock.snapshot(),null);
 });
 test('W56-14 DEV module appears only in protected asset map',()=>{
  const source=readFileSync(new URL('../tools/dev-preview-artifact.mjs',import.meta.url),'utf8');

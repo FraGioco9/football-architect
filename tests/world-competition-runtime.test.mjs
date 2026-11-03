@@ -659,7 +659,7 @@ test('CONTEXT: a world-day change with unchanged domestic progress retains suppl
  const client=read('tools/dev-standings-preview-client.mjs');
  const refresh=client.slice(client.indexOf('async function refreshProgress()'),client.indexOf('async function setDebugProgress('));
  r.window.faCompetitionRoute={setSeasonLimit(){}};
- const run=runInNewContext(refresh+';refreshProgress',{window:r.window,debugSeason:1,matchdays:0,validPath:true,clubPath:false,setPreviewEnabled:async()=>true,refreshSeason:async()=>true,syncHistoryPreview(){},syncDebugControls(){},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ const run=runInNewContext(refresh+';refreshProgress',{debugEnabled:()=>true,window:r.window,debugSeason:1,matchdays:0,validPath:true,clubPath:false,setPreviewEnabled:async()=>true,refreshSeason:async()=>true,syncHistoryPreview(){},syncDebugControls(){},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  await run();
  assert.equal(r.window.faCompetitionContext,before,'no new domestic data or season means no invalidation');
  assert.equal(r.window.faCompetitionContext.seasonData.season,1);
@@ -682,4 +682,12 @@ test('PUBLIC-AUTHORITY: untrusted provider application cannot populate public co
  const payload={season:1,rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants:division.clubs,fixtures:null,results:[],statistics:null,status:'partial'};
  assert.equal(r.window.faCompetitionContextApi.replaceSeasonData(payload,r.window.faCompetitionContext.revision),false);
  assert.equal(r.window.faCompetitionContext.seasonData,null);
+});
+test('CONTEXT: a public page cannot authorize Debug through its context API or source event',async()=>{
+ const r=await simulate({division:manifest.divisions[0],ending:'/?season=1'});
+ const api=r.window.faCompetitionContextApi;
+ assert.equal(api.setDebugSeason(1),false);
+ r.window.emit('fa:source-change',{});
+ const data={season:1,rulesVersion:'domestic-top-v1',participants:structuredClone(manifest.divisions[0].clubs),fixtures:[],results:[],statistics:null,status:'partial'};
+ assert.equal(api.replaceSeasonData(data,r.window.faCompetitionContext.revision),false);
 });

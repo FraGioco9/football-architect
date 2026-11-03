@@ -2,17 +2,14 @@
 // Reuse the public canonical calendar/fixture-choice policies; no clock inference.
 import './world-calendar-model.js';
 import './competition-rules.js';
+import './world-clock-adapter.js';
 const idPattern=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/;
-const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const count=n=>Number.isSafeInteger(n)&&n>=0;
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const fail=()=>{throw TypeError('Invalid authoritative sporting source')};
 const key=club=>club.countryId+'-'+club.clubId;
 const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value)}return value};
-export function validPublicWorld(w){
- return object(w)&&w.schemaVersion===1&&typeof w.generation==='string'&&uuid.test(w.generation)&&count(w.revision)&&count(w.seasonNumber)&&count(w.day)&&w.day<=56&&
-  (w.phase==='unstarted'?w.seasonNumber===0&&w.day===0&&w.revision===0:w.seasonNumber>0&&(w.phase==='preparing'?w.day===0:w.phase==='active'?w.day>=1:w.phase==='closed'&&w.day===56));
-}
+export const validPublicWorld=globalThis.faWorldClockAdapter.validPublicWorld;
 export function viewedSeasonState(input){
  const w=input?.world,d=input?.data,season=input?.selectedSeason;
  if(!validPublicWorld(w)||![1,2].includes(season)||!d||season>w.seasonNumber)return null;
@@ -21,7 +18,6 @@ export function viewedSeasonState(input){
  if(season===w.seasonNumber)return state.day===w.day&&state.phase===w.phase?state:null;
  return state.phase==='closed'&&state.day===56?state:null;
 }
-function sameWorld(a,b){return ['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k])}
 function clubCatalog(manifest){return new Map((manifest?.divisions||[]).flatMap(d=>d.clubs||[]).map(c=>[key(c),c]))}
 export function scoreValid(r,f){
  if(!object(r)||!count(r.homeGoals)||!count(r.awayGoals)||r.homeGoals>100||r.awayGoals>100||!['regulation','extra-time','penalties'].includes(r.resolution)||
@@ -128,22 +124,15 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   currentMatchday:viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?currentChoice:null});
 }
 export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJson,manifest,onState=()=>{},onWorld=()=>{}}){
- let epoch=0,controller=null,disposed=false;
- return Object.freeze({async load(){
-  if(disposed||isDev())return false;
-  const ticket=++epoch;controller?.abort();controller=new AbortController();const signal=controller.signal;
-  clear();onState('loading');const context=getContext();if(!context)return false;
-  const current=()=>!disposed&&ticket===epoch&&!isDev()&&getContext()?.revision===context.revision&&getContext()?.selectedSeason===context.selectedSeason;
-  let completed=false;
-  try{
-   const before=await fetchJson('/api/world',{signal});if(!current()||!validPublicWorld(before?.world))return false;
-   onWorld(before.world);if(!current())return false;
-   const payload=await fetchJson(`/api/competitions/${context.definition.id}/seasons/${context.selectedSeason}`,{signal});if(!current())return false;
-   const source=validateAuthoritativeSeason(payload,context,manifest);
-   if(!sameWorld(before.world,source.world))return false;
-   const after=await fetchJson('/api/world',{signal});if(!current()||!validPublicWorld(after?.world)||!sameWorld(source.world,after.world))return false;
-   const accepted=commit(adaptAuthoritativeSeason(source,context,manifest),context.revision)===true;
-   if(accepted){completed=true;onState(source.status)}return accepted;
-  }catch{return false}finally{if(!completed&&current())onState('unavailable')}
- },dispose(){disposed=true;epoch++;controller?.abort()}});
+ let context,retained=false;
+ return globalThis.faWorldClockAdapter.createSnapshotReader({
+  getIdentity:()=>{const c=getContext();return c?JSON.stringify([c.definition?.id,c.selectedSeason,c.revision]):null},
+  isEnabled:()=>!isDev(),clear:()=>{retained=!!getContext()?.seasonData;if(!retained)clear();context=getContext()},
+  onState:state=>{if(state==='unavailable'&&retained)clear();onState(state)},
+  fetchWorld:async options=>(await fetchJson('/api/world',options))?.world,
+  onBeforeWorld:onWorld,
+  read:options=>fetchJson(`/api/competitions/${context.definition.id}/seasons/${context.selectedSeason}`,options),
+  validate:payload=>validateAuthoritativeSeason(payload,context,manifest),
+  commit:source=>commit(adaptAuthoritativeSeason(source,context,manifest),context.revision)
+ });
 }

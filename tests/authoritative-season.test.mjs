@@ -104,3 +104,10 @@ test('viewed season state cannot disguise current-world time or unsealed histori
  ];
  for(const alter of changes){const raw=source();alter(raw);assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));}
 });
+test('same-selection revalidation retains the coherent snapshot until replacement and clears on failure',async()=>{
+ const old={world,season:1},context={...ctx(),seasonData:old};let clears=0,fail=false,seen;
+ const loader=createAuthoritativeLoader({getContext:()=>context,clear:()=>{clears++;context.seasonData=null},commit:()=>true,isDev:()=>false,
+  fetchJson:async path=>{seen=context.seasonData;if(fail)throw Error('offline');return path==='/api/world'?{world}:empty()},manifest});
+ assert.equal(await loader.load(),true);assert.equal(seen,old);assert.equal(clears,0);
+ fail=true;await loader.load();assert.equal(context.seasonData,null);assert.equal(clears,1);
+});
