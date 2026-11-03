@@ -79,6 +79,7 @@
     "tests/club-crests.test.mjs": "site-node",
     "tests/club-pages-browser.test.mjs": "site-node",
     "tests/club-pages.test.mjs": "site-node",
+    "tests/page-load-02-club-browser.mjs": "browser",
     "tests/competition-fixtures.test.mjs": "site-node",
     "tests/competition-history.test.mjs": "site-node",
     "tests/competition-manifest-v2.test.mjs": "site-node",
