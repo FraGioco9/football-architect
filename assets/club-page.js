@@ -18,15 +18,33 @@
   if(!response.ok)throw Error('Club manifest unavailable');
   const manifest=await response.json();
   window.faClubCrests=manifest.clubCrests;
-  const paint=(preserveCrest=false)=>{
+  // Move already-loaded crest hosts rather than tearing down images on navigation,
+  // locale changes or a sporting summary refresh. Match within the relevant panel:
+  // the same club may legitimately appear more than once on a page.
+  const reuseCrests=(previous,next)=>{
+   const available=[...previous.querySelectorAll('[data-club-crest]')];
+   for(const incoming of [...next.querySelectorAll('[data-club-crest]')]){
+    const index=available.findIndex(old=>old.dataset.clubCrest===incoming.dataset.clubCrest
+     &&old.className===incoming.className);
+    if(index<0)continue;
+    const old=available.splice(index,1)[0];
+    if(old.querySelector('.app-club-crest-image'))incoming.replaceWith(old);
+   }
+  };
+  const paint=(preserveCrest=false,preserveFocus=false)=>{
+   const active=preserveFocus&&host.contains(document.activeElement)?document.activeElement:null;
+   const activeHref=active?.getAttribute('href');
+   const activeTranslate=active?.hasAttribute('data-translate-club');
+   const scrollX=window.scrollX,scrollY=window.scrollY;
    const markup=model.render(manifest,selected,language(),location.search,competitionSnapshot);
-   // Keep the existing header (and its loaded crest image) when switching club tabs.
+   const staging=document.createElement('div');staging.innerHTML=markup;
+   // The header is unchanged across tabs, but locale switches need a translated
+   // header; in both cases existing loaded crest nodes must survive.
    if(preserveCrest&&host.querySelector('.club-header')&&host.dataset.clubBase===selected.base){
-    const staging=document.createElement('div');staging.innerHTML=markup;
-    const currentHeader=host.querySelector('.club-header');
-    staging.querySelector('.club-header').replaceWith(currentHeader);
-    host.replaceChildren(...staging.childNodes);
-   }else host.innerHTML=markup;
+    staging.querySelector('.club-header')?.replaceWith(host.querySelector('.club-header'));
+   }
+   reuseCrests(host,staging);
+   host.replaceChildren(...staging.childNodes);
    host.dataset.clubBase=selected.base;
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
@@ -60,6 +78,13 @@
     const next={ArrowRight:(i+1)%n,ArrowLeft:(i+n-1)%n,Home:0,End:n-1}[event.key];
     if(next!==undefined){event.preventDefault();links[next].focus();}
    });
+   if(active){
+    const replacement=activeTranslate?host.querySelector('[data-translate-club]')
+     :activeHref?[...host.querySelectorAll('a')].find(link=>link.getAttribute('href')===activeHref)
+     :null;
+    replacement?.focus({preventScroll:true});
+    if(window.scrollX!==scrollX||window.scrollY!==scrollY)window.scrollTo(scrollX,scrollY);
+   }
    document.documentElement.dataset.clubReady='true';
   };
   window.addEventListener('fa:club-competition-summary',event=>{
@@ -85,13 +110,21 @@
    const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
    const replacement=staging.querySelector('.club-competition');
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   reuseCrests(panel,replacement);
    panel.replaceWith(replacement);
    if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
     if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}
   });
   paint();
-  // The app shell observes the same lang attribute; paint last to preserve the club title.
-  new MutationObserver(()=>paint()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  // Ignore unrelated attribute mutations and retain focus, scroll and SVG/image
+  // nodes when the user changes the interface language.
+  let renderedLanguage=language();
+  new MutationObserver(()=>{
+   const nextLanguage=language();
+   if(nextLanguage===renderedLanguage)return;
+   renderedLanguage=nextLanguage;
+   paint(false,true);
+  }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){selected=next;paint(true);host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}

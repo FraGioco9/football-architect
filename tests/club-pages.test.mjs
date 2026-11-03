@@ -292,3 +292,29 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  assert.ok(model.render(changed,selected).includes('A01-10 alternate name'));
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });
+
+test('PAGE-LOAD-02 P16 canonically known Clubs cards exist in static HTML before the manifest request',()=>{
+ const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ assert.equal(manifest.clubs.length,320);
+ assert.equal((html.match(/class="nav01-card"/g)||[]).length,320);
+ assert.equal((html.match(/class="nav01-country-flag"/g)||[]).length,320);
+ assert.equal((html.match(/class="nav01-crest"/g)||[]).length,320);
+ assert.equal((html.match(/data-country="/g)||[]).length,320);
+ assert.equal((html.match(/data-tier="/g)||[]).length,320);
+ assert.equal((html.match(/data-search="/g)||[]).length,320);
+ assert.match(html,/data-nav01-filter-first-paint/);
+ const divisionById=new Map(manifest.divisions.map(d=>[d.id,d]));
+ for(const club of manifest.clubs){
+  const division=divisionById.get(club.divisionId),tier=division?.tier||0;
+  const prefix='<a class="nav01-card" href="/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview"'+
+   ' data-country="'+club.countryId+'" data-tier="'+tier+'"';
+  assert.ok(html.includes(prefix),'static assignment must follow canonical provisional membership: '+club.countryId+'-'+club.clubId);
+ }
+ assert.doesNotMatch(html,/<span class="nav01-crest" aria-hidden="true">[^<]+<\/span>/,'missing canonical crest must reserve blank space, not a fake emblem');
+ assert.match(html,/<p class="nav01-count" aria-live="polite">320 clubs<\/p>/);
+ assert.doesNotMatch(html,/data-nav01-loading-first-paint|Loading clubs…/);
+ for(const c of manifest.clubs){
+  const href='/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview';
+  assert.ok(html.includes('href="'+href+'"'),'missing static club '+href);
+ }
+});
