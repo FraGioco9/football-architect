@@ -1151,3 +1151,7 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 @media(prefers-reduced-motion:reduce){
  .app-body :is(input,textarea,select,.language-trigger){transition:none}
 }
+
+/* PAGE-LOAD-02 P01: do not expose the static template's provisional world text
+   before the global authority resolves. Visibility preserves slot geometry. */
+.fa-shell-date-full:not([data-fa-world-ready]),.fa-shell-date-short:not([data-fa-world-ready]){visibility:hidden}
