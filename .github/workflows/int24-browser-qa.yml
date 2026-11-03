@@ -95,14 +95,20 @@ jobs:
           npm --prefix backend ci --no-audit --no-fund
           cd backend
           ./node_modules/.bin/wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/fa-admin-ci-worker.log 2>&1 &
+          READY=0
           for i in $(seq 1 45); do
-            if curl -sS -o /dev/null http://127.0.0.1:8787/api/admin/session; then break; fi
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/admin/session || true)
+            if [ "$CODE" != 000 ] && [ "$CODE" != 404 ] && [ "$CODE" != 503 ]; then
+              READY=1
+              break
+            fi
             sleep 1
           done
-          CODE=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/admin/session)
-          test "$CODE" != 000
-          test "$CODE" != 404
-          test "$CODE" != 503
+          if [ "$READY" != 1 ]; then
+            echo "::error::Admin Worker did not become ready: HTTP ${CODE}"
+            tail -n 100 /tmp/fa-admin-ci-worker.log || true
+            exit 1
+          fi
       - name: Run loopback preview and browser checks
         if: needs.scope.outputs.mode != 'fast'
         env:
