@@ -299,6 +299,10 @@ test('PAGE-LOAD-02 P16 canonically known Clubs cards exist in static HTML before
  assert.equal((html.match(/class="nav01-card"/g)||[]).length,320);
  assert.equal((html.match(/class="nav01-country-flag"/g)||[]).length,320);
  assert.equal((html.match(/class="nav01-crest"/g)||[]).length,320);
+ assert.equal((html.match(/data-country="/g)||[]).length,320);
+ assert.equal((html.match(/data-tier="/g)||[]).length,320);
+ assert.equal((html.match(/data-search="/g)||[]).length,320);
+ assert.match(html,/data-nav01-filter-first-paint/);
  assert.match(html,/<p class="nav01-count" aria-live="polite">320 clubs<\/p>/);
  assert.doesNotMatch(html,/data-nav01-loading-first-paint|Loading clubs…/);
  for(const c of manifest.clubs){
