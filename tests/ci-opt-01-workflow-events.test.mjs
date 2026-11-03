@@ -5,6 +5,9 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync,execFileSync} from 'node:child_process';
+// Workflow shell fixtures emulate POSIX executable scripts and are required on Linux CI.
+// Windows Git Bash cannot reliably execute these stubs or clean their temporary trees.
+const posixWorkflowTest=process.platform==='win32'?test.skip:test;
 
 const workflows=['landing-checks.yml','int24-browser-qa.yml'];
 const read=name=>readFileSync(new URL('../.github/workflows/'+name,import.meta.url),'utf8');
@@ -47,7 +50,7 @@ function git(root,...args){
 }
 
 for(const workflow of workflows){
- test(workflow+': real Draft diff selects FAST/TARGETED/FULL; review/main require FULL',()=>temporary(root=>{
+ posixWorkflowTest(workflow+': real Draft diff selects FAST/TARGETED/FULL; review/main require FULL',()=>temporary(root=>{
   git(root,'init','-q');writeFileSync(join(root,'baseline'),'fixture');git(root,'add','.');git(root,'commit','-qm','base');
   const base=git(root,'rev-parse','HEAD');
   mkdirSync(join(root,'guide'));writeFileSync(join(root,'guide/index.html'),'fixture');git(root,'add','.');git(root,'commit','-qm','guide');
@@ -114,26 +117,26 @@ exit 0
  });
 }
 
-test('push/main runs ordinary Chromium and WebKit without requiring a PR base or CSS parity',()=>{
+posixWorkflowTest('push/main runs ordinary Chromium and WebKit without requiring a PR base or CSS parity',()=>{
  const {result,calls}=browserCommands({event:'push',base:'',css:true});
  assert.equal(result.status,0,result.stderr);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
 });
-test('PR CSS parity receives exactly the trusted base SHA',()=>{
+posixWorkflowTest('PR CSS parity receives exactly the trusted base SHA',()=>{
  const base='b'.repeat(40);const {result,calls}=browserCommands({css:true,base});
  assert.equal(result.status,0,result.stderr);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
  assert.equal(calls[1].base,base);
 });
-test('PR without CSS retains full browsers and omits screenshot parity',()=>{
+posixWorkflowTest('PR without CSS retains full browsers and omits screenshot parity',()=>{
  const {result,calls}=browserCommands();assert.equal(result.status,0,result.stderr);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
 });
-test('PR with missing base fails closed instead of reporting successful FULL',()=>{
+posixWorkflowTest('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);
 });
 for(const area of ['calendar','clubs','competitions','guide']){
- test('TARGETED '+area+' runs only its two engine smoke suites',()=>{
+ posixWorkflowTest('TARGETED '+area+' runs only its two engine smoke suites',()=>{
   const {result,calls}=browserCommands({mode:'targeted',area});assert.equal(result.status,0,result.stderr);
   assert.deepEqual(calls.map(x=>[x.command,x.engine,x.area]),[
    ['tests/ci-opt-01-browser-smoke.mjs','chromium',area],
@@ -141,13 +144,13 @@ for(const area of ['calendar','clubs','competitions','guide']){
   ]);
  });
 }
-test('a failing Chromium suite fails the shell gate and cannot be masked by a later command',()=>{
+posixWorkflowTest('a failing Chromium suite fails the shell gate and cannot be masked by a later command',()=>{
  const {result,calls}=browserCommands({failFull:true});
  assert.equal(result.status,42);
  assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs']);
 });
 
-test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebKit for a new component stylesheet',()=>temporary(root=>{
+posixWorkflowTest('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebKit for a new component stylesheet',()=>temporary(root=>{
  git(root,'init','-q');mkdirSync(join(root,'assets'));
  writeFileSync(join(root,'assets/app.css'),'body{color:black}');git(root,'add','.');git(root,'commit','-qm','base');
  const base=git(root,'rev-parse','HEAD');
