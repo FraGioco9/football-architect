@@ -122,6 +122,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        if(mode==='cold')await cmd('Page.navigate',{url:origin+path});else await cmd('Page.reload',{ignoreCache:true});
        await wait("document.readyState==='interactive'&&document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
        await wait("document.fonts.status==='loaded'");
+       assert.equal(await run("getComputedStyle(document.querySelector('.fa-shell-date-full')).visibility"),'hidden','P01 pre-script static world progress cannot masquerade as Season 0');
+       assert.equal(await run("getComputedStyle(document.querySelector('.fa-shell-date-short')).visibility"),'hidden','P01 pre-script short world progress cannot flash a dash');
        const before=await run(navSnapshot);
        if(path==='/clubs'){
         assert.equal(await run("document.querySelectorAll('.nav01-grid .nav01-card').length"),320,'P16 static first paint before deferred JavaScript');
