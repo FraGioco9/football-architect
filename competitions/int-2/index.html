@@ -238,15 +238,6 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </div>
         </section>
         <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
-          <header class="app-competition-header">
-            <div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>
-            <div class="app-competition-identity">
-              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Federation Cup</span></h1>
-              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>
-            </div>
-            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>
-            <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>
-          </header>
           <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
             <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-postseason" aria-controls="competition-panel-postseason" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabKnockouts">Knockouts</button>
@@ -257,6 +248,16 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
           </div>
           <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>
+          <header class="app-competition-header">
+            <div class="app-competition-logo-placeholder app-competition-logo-placeholder-large" id="app-competition-badge" aria-hidden="true">—</div>
+            <div class="app-competition-identity">
+              <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Federation Cup</span></h1>
+              <div class="app-world-detail-meta"><span data-cup-copy="category">International Cups</span><span aria-hidden="true">·</span><span data-cup-copy="summary">24 clubs · 8 countries</span></div>
+            </div>
+            <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>
+            <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>
+          </header>
+
           <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>
 
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">

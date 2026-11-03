@@ -238,6 +238,16 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </div>
         </section>
         <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">
+          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
+            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-postseason" aria-controls="competition-panel-postseason" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayout">Playout</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
+            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
+          </div>
+          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>
           <header class="app-competition-header">
             <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 1024 1024" width="1024" height="1024">
 	<style>
@@ -265,16 +275,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <div class="app-competition-season"><span id="app-competition-season-label" data-app-i18n="competitionSeason">Season</span><div class="language-control" id="app-competition-season-control"><button type="button" id="app-competition-season" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="app-competition-season-menu" aria-labelledby="app-competition-season-label app-competition-season-value"><span id="app-competition-season-value">1</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div id="app-competition-season-menu" class="language-menu" role="listbox" aria-labelledby="app-competition-season-label" hidden><div id="app-competition-season-option-1" class="language-option" role="option" data-menu-value="1" aria-selected="true">1</div></div></div></div>
             <a class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions">All competitions</a>
           </header>
-          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">
-            <button type="button" role="tab" class="app-competition-tab is-active" id="competition-tab-standings" aria-controls="competition-panel-standings" aria-selected="true" tabindex="0" data-app-i18n="competitionTabStandings">Standings</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-postseason" aria-controls="competition-panel-postseason" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabPlayout">Playout</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-fixtures" aria-controls="competition-panel-fixtures" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabFixtures">Fixtures</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-stats" aria-controls="competition-panel-stats" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabStats">Stats</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-history" aria-controls="competition-panel-history" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabHistory">History</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-rules" aria-controls="competition-panel-rules" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabRules">Rules</button>
-            <button type="button" role="tab" class="app-competition-tab" id="competition-tab-awards" aria-controls="competition-panel-awards" aria-selected="false" tabindex="-1" data-app-i18n="competitionTabAwards">Awards</button>
-          </div>
-          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>
+
           <p id="app-competition-season-unavailable" class="app-competition-status" role="status" data-app-i18n="competitionSeasonUnavailable" hidden>Season unavailable</p>
 
           <div id="competition-panel-standings" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-standings" tabindex="0">

@@ -136,9 +136,7 @@ const competitionRoute = d=>{
  if(railStart<0||railEnd<0||selectorStart<0||selectorEnd<0||sectionStart<0)throw Error("Missing competition tablist "+d.id);
  const rail=html.slice(railStart,selectorEnd+9);
  html=html.slice(0,railStart)+html.slice(selectorEnd+9);
- const headerEnd=html.indexOf('          </header>',sectionStart);
- if(headerEnd<0)throw Error("Missing competition header "+d.id);
- const railPosition=headerEnd+'          </header>'.length;
+ const railPosition=html.indexOf('>',sectionStart)+1;
  html=html.slice(0,railPosition)+'\n'+rail+html.slice(railPosition);
 
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";

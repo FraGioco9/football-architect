@@ -14,7 +14,7 @@ test('PAGE-LOAD-02: all competition tablists are present before API-dependent pa
   const rail=html.indexOf('<div class="app-competition-tabs"',start);
   const seasonStatus=html.indexOf('id="app-competition-season-unavailable"',start);
   const firstPanel=html.indexOf('id="competition-panel-standings"',start);
-  assert.ok(start>=0&&header>start&&rail>header&&seasonStatus>rail&&firstPanel>seasonStatus,id+': static shell order');
+  assert.ok(start>=0&&rail>start&&header>rail&&seasonStatus>header&&firstPanel>seasonStatus,id+': static shell order');
   for(const view of views){
    assert.equal(html.split('id="competition-tab-'+view+'"').length-1,1,id+': unique '+view+' tab');
    assert.equal(html.split('id="competition-panel-'+view+'"').length-1,1,id+': unique '+view+' panel');
