@@ -142,6 +142,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
           firstVisible:document.querySelector('#main-content')?.firstElementChild?.id==='app-divisions',
           mounted:!!window.faCompetitionRoute};
         })()`);
+        assert.equal(await run("(()=>{const paint=performance.getEntriesByName('first-contentful-paint')[0],parsed=performance.getEntriesByName('fa-competition-tabs-parsed')[0];return !!paint&&!!parsed&&parsed.startTime<=paint.startTime})()"),true,'P04 static view rail must be parsed no later than actual first contentful paint');
         assert.equal(firstPaint.count,7,'P04 pre-script seven view buttons must exist at first contentful paint');
         assert.equal(firstPaint.visible,true,'P04 tablist must be visibly painted before deferred JS');
         assert.equal(firstPaint.underline,true,'P04 underline must paint with static view buttons before JS');
@@ -197,6 +198,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         parseFloat(getComputedStyle(list).borderBottomWidth)>=1,
        mounted:!!window.faCompetitionRoute};
      })()`);
+     assert.equal(await run("(()=>{const paint=performance.getEntriesByName('first-contentful-paint')[0],parsed=performance.getEntriesByName('fa-competition-tabs-parsed')[0];return !!paint&&!!parsed&&parsed.startTime<=paint.startTime})()"),true,'P04 mobile deep-link tabs parsed before actual first contentful paint');
      assert.equal(initial.count,7,'P04 seven view buttons exist before deferred JS');
      assert.equal(initial.selected,'true','P04 Awards selected directly from URL');
      assert.equal(initial.visible,true,'P04 deep-link tab visible before router hydration');
