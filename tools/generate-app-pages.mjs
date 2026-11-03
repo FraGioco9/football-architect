@@ -12,7 +12,7 @@ import {loadCompetitionCatalogue} from "./competition-catalogue.mjs";
 import {createCompetitionRenderer} from "./render-competition-page.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
 import {validateProvisionalAllocations} from "./validate-provisional-allocations.mjs";
-import {validateDivisionAssets,renderDivisionLogo,divisionAssetPath} from "./validate-division-assets.mjs";
+import {validateDivisionAssets,renderDivisionLogo} from "./validate-division-assets.mjs";
 
 // Normalize the source template too: Windows clones may retain CRLF from an earlier checkout.
 const template = readFileSync(new URL("../templates/app-page.html", import.meta.url), "utf8").replace(/\r\n/g,"\n");
@@ -102,7 +102,7 @@ const indexContent = function indexContent(){
  return '          <section id="domestic" class="nav01-competition-section" aria-labelledby="domestic-heading"><h2 id="domestic-heading" data-nav01-section="1">Domestic</h2>\n          <div class="app-world-countries">\n'+cards+'\n          </div></section>\n          <section id="international" class="nav01-competition-section" aria-labelledby="international-heading"><h2 id="international-heading" data-nav01-section="2">International</h2>'+internationalIndexCards+'</section>';
 };
 const detailContent=createCompetitionRenderer({countryById,encode,inlineCountryFlag,clubsByDivision:provisionalClubs,crestCatalog:clubCrestAssets().catalog,
- renderLogo:d=>'<div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><img class="app-competition-logo-image" src="/'+encode(divisionAssetPath(d,"compact"))+'" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high"></div>'});
+ renderLogo:d=>renderDivisionLogo(d.id,"compact",finalLogos,{large:true}).replace('<div ','<div id="app-competition-badge" ')});
 const worldPageReplacements = (division = null, neutral = false) => {
   const title = division ? (neutral?"Competition":division.name) : "Competitions";
   return {
