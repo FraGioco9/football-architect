@@ -245,6 +245,7 @@
     "tests/fixtures/a03-browser-routes.json": "support",
     "tests/ci-repair-benchmark.test.mjs": "site-node",
     "tests/canonical-world-state.test.mjs": "site-node",
-    "tests/canonical-state-browser.mjs": "support"
+    "tests/canonical-state-browser.mjs": "support",
+    "tests/sh-01-sporting-contract.test.mjs": "site-node"
   }
 }
