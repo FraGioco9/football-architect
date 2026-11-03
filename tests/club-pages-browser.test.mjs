@@ -123,6 +123,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        await wait("document.readyState==='interactive'&&document.querySelector('.fa-shell-nav')?.dataset.nav01Bound==='true'&&performance.getEntriesByName('first-contentful-paint').length>0");
        await wait("document.fonts.status==='loaded'");
        const before=await run(navSnapshot);
+       if(path==='/clubs'){
+        assert.equal(await run("document.querySelectorAll('.nav01-grid .nav01-card').length"),320,'P16 static first paint before deferred JavaScript');
+        assert.equal(await run("document.querySelector('.nav01-grid').getAttribute('aria-busy')"),'true','P16 initial manifest hydration remains pending');
+        await run("window.__p16StaticCard=document.querySelector('.nav01-grid .nav01-card');window.__p16StaticCrest=window.__p16StaticCard.querySelector('.nav01-crest')");
+       }
        assert.equal(before.lang,lang);assert.equal(before.theme,theme);
        assert.equal(await run("document.querySelector('#app-nav-world-title').textContent"),{en:'World',de:'Welt',es:'Mundo',fr:'Monde',it:'Mondo'}[lang]);
        assert.equal(await run("document.querySelector('#nav01-world-title').textContent"),{en:'Explore',de:'Entdecken',es:'Explorar',fr:'Explorer',it:'Esplora'}[lang]);
@@ -135,6 +140,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
        await wait("document.readyState==='complete'");await delay(50);
        const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
+       if(path==='/clubs'){
+        await wait("document.querySelector('.nav01-grid').getAttribute('aria-busy')==='false'");
+        assert.equal(await run("window.__p16StaticCard===document.querySelector('.nav01-grid .nav01-card')&&window.__p16StaticCrest===window.__p16StaticCard.querySelector('.nav01-crest')"),true,'P16 hydration preserves the first-paint card and crest nodes');
+       }
        if(capture)await captureNav('after');
       }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
      }
