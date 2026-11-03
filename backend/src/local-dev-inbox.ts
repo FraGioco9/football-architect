@@ -1,3 +1,4 @@
+import {httpJson,httpHeaders,routeMethod} from './http-contract.ts';
 import type {VerificationDelivery} from './player-registration.ts';
 import {buildAccountDeliveryMessage} from './cloudflare-email-delivery.ts';
 import {requireDatabase} from './database.ts';
@@ -10,8 +11,8 @@ export interface LocalInboxEnv{
  PLAYER_ORIGIN?:string;
  PLAYER_LOCAL_INBOX_ENABLED?:string;
 }
-const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'};
-const response=(status:number,payload:unknown)=>new Response(JSON.stringify(payload),{status,headers});
+const headers=httpHeaders('local-inbox');
+const response=(status:number,payload:unknown)=>httpJson('local-inbox',status,payload);
 const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]!));
 function htmlInbox(messages:{kind:string;recipient:string;subject:string;link:string;createdAt:number;expiresAt:number}[]){
  const rows=messages.map(message=>{
@@ -46,7 +47,7 @@ export function localInboxDeliveries(env:LocalInboxEnv):{verification?:Verificat
 }
 export async function handleLocalInbox(request:Request,env:LocalInboxEnv){
  if(!enabled(env))return response(404,{error:{code:'not_found'}});
- if(request.method!=='GET')return response(405,{error:{code:'method_not_allowed'}});
+ const denied=routeMethod(request,'GET','local-inbox',false);if(denied)return denied;
  try{
   const url=new URL(request.url);
   if(url.pathname!==LOCAL_INBOX_PATH||url.search)return response(404,{error:{code:'not_found'}});
