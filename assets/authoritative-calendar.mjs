@@ -81,7 +81,7 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
  const loader=createCalendarLoader({manifest,getSelection,fetchJson,isEnabled,clear:()=>{const s=getSelection(),key=s.season+':'+s.day;if(key!==loadedSelection){payload=null;onWorld(null);loadedSelection=key;render()}},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;if(s==='unavailable'){payload=null;onWorld(null)}render()}});
  const reload=event=>{if(!isEnabled()){if(!disabledCleared){disabledCleared=true;loader.cancel();payload=null;selectionKey='';loadedSelection='';onWorld(null);render()}return;}disabledCleared=false;const s=getSelection(),next=s.season+':'+s.day+':'+window.faWorldState?.get?.().sourceRevision;if(next===selectionKey&&!event?.detail?.refresh){render();return;}selectionKey=next;void loader.load()};
  window.addEventListener('fa:calendar-selection-change',reload);
- window.addEventListener('fa:source-change',()=>{loadedSelection='';reload({detail:{refresh:true}})});
+ window.addEventListener('fa:source-change',reload);
  window.addEventListener('focus',()=>void loader.load());
  window.addEventListener('pageshow',e=>{if(e.persisted)void loader.load()});
  window.addEventListener('pagehide',e=>{if(!e.persisted)loader.dispose()});

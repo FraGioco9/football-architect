@@ -48,6 +48,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   if(path==='/api/admin/session'&&admin)return json(route,200,{actor:{id:'read-only-admin',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)});
   if(path==='/api/player/permissions'&&admin)return json(route,200,{permissions:['admin.access','admin.world.read']});
   if(path==='/api/admin/world'&&admin)return json(route,200,{world:apiWorld});
+  if(path==='/api/admin/seasons/events'&&admin)return json(route,503,{error:{code:'events-unavailable'}});
   const match=path.match(/^\/api\/competitions\/([^/]+)\/seasons\/(\d+)$/);
   if(match){
    const payload=populated&&match[1]==='IT-1'&&match[2]==='2'?published('IT-1',2,apiWorld):{schemaVersion:1,providerId:'authoritative-world',competitionId:match[1],selectedSeason:Number(match[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable};
