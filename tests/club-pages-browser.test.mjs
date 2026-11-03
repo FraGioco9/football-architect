@@ -258,7 +258,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
      await cmd('Page.navigate',{url:origin+'/clubs'});
-     await wait("document.querySelectorAll('.nav01-card').length===320");
+     // The static HTML deliberately contains all cards before hydration. Wait
+     // for the manifest-backed input handlers before asserting filter behavior.
+     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      // PAGE-LOAD-02 P16: filtering and restoring never discard a known crest card.

@@ -222,9 +222,15 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  // PAGE-LOAD-02 P16: canonical identities/crests are already known at build time.
  // The grid is real static HTML, not a client-generated or API-gated placeholder.
  const firstPaintDivisionById=new Map(divisionData.map(d=>[d.id,d]));
+ // Club identities are permanent; provisional division membership is separate.
+ // Resolve the assignment explicitly rather than reading a nonexistent club.divisionId.
+ const firstPaintDivisionByClub=new Map(provisionalAssignments.allocations.flatMap(a=>{
+  const division=firstPaintDivisionById.get(a.divisionId);
+  return a.clubIds.map(clubId=>[division.countryId+'-'+clubId,division]);
+ }));
  const firstPaintCrests=clubCrestAssets().catalog;
  const firstPaintCards=clubData.slice().sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en')||a.countryId.localeCompare(b.countryId)||a.clubId-b.clubId).map(c=>{
-  const id=c.countryId+'-'+c.clubId,crest=firstPaintCrests[id],division=firstPaintDivisionById.get(c.divisionId);
+  const id=c.countryId+'-'+c.clubId,crest=firstPaintCrests[id],division=firstPaintDivisionByClub.get(id);
   return '<a class="nav01-card" href="/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview"'+' data-country="'+c.countryId+'" data-tier="'+(division?.tier||0)+'" data-search="'+encode([c.primaryName,c.fullName,c.city].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/gu,' '))+'"'+'>'+(crest?'<img class="nav01-crest" src="/'+encode(crest)+'" alt="" loading="lazy">':'<span class="nav01-crest" aria-hidden="true"></span>')+'<span><strong>'+encode(c.primaryName)+'</strong><small>'+encode(c.city)+' · <img class="nav01-country-flag" src="/'+encode(flagForCountry(c.countryId))+'" alt="'+encode(c.countryId)+'" loading="lazy">'+(division?' · '+encode(division.name):'')+'</small></span></a>';
  }).join('');
  const firstPaintContent=content.replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');

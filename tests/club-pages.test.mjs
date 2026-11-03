@@ -303,6 +303,13 @@ test('PAGE-LOAD-02 P16 canonically known Clubs cards exist in static HTML before
  assert.equal((html.match(/data-tier="/g)||[]).length,320);
  assert.equal((html.match(/data-search="/g)||[]).length,320);
  assert.match(html,/data-nav01-filter-first-paint/);
+ const divisionById=new Map(manifest.divisions.map(d=>[d.id,d]));
+ for(const club of manifest.clubs){
+  const division=divisionById.get(club.divisionId),tier=division?.tier||0;
+  const prefix='<a class="nav01-card" href="/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview"'+
+   ' data-country="'+club.countryId+'" data-tier="'+tier+'"';
+  assert.ok(html.includes(prefix),'static assignment must follow canonical provisional membership: '+club.countryId+'-'+club.clubId);
+ }
  assert.doesNotMatch(html,/<span class="nav01-crest" aria-hidden="true">[^<]+<\/span>/,'missing canonical crest must reserve blank space, not a fake emblem');
  assert.match(html,/<p class="nav01-count" aria-live="polite">320 clubs<\/p>/);
  assert.doesNotMatch(html,/data-nav01-loading-first-paint|Loading clubs…/);
