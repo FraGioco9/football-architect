@@ -90,7 +90,7 @@
  function mountWorldState({window,document,onChange=()=>{}}){
     const state=window.faWorldState;
     if(!state)return;
-    state.subscribe(()=>onChange());
+    state.subscribe(()=>onChange());onChange();
     const protectedSource=window.faDevPreviewMode===true||document.documentElement.dataset.faDevCurrentSeason!==undefined;
     const syncDebug=()=>{
       if(!protectedSource||window.faDebugEnabled===false)return;

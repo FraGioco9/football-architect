@@ -117,3 +117,22 @@ test('a stalled API snapshot reaches unavailable within the client deadline',asy
  const reader=api.createSnapshotReader({timeoutMs:10,getIdentity:()=>1,clear:()=>{},fetchWorld:({signal})=>new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true})),read:async()=>{throw Error('must not read sport data')},validate:x=>x,commit:()=>{throw Error('must not commit')},onState:s=>states.push(s)});
  assert.equal(await reader.load(),false);assert.deepEqual(states,['loading','unavailable']);
 });
+test('the shared header shows canonical current progress rather than a historical URL or stale no-season label',async()=>{
+ const {readFileSync}=await import('node:fs'),{runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8'),start=source.indexOf('  function renderWorldProgress() {'),end=source.indexOf('  function activeView()',start);
+ assert.ok(start>=0&&end>start);
+ for(const [lang,seasonLabel,dayLabel] of [['en','Season','Day'],['de','Saison','Tag'],['es','Temporada','Día'],['fr','Saison','Jour'],['it','Stagione','Giorno']]){
+  const full={textContent:'stale'},short={textContent:'stale'};
+  let snapshot={source:'authoritative',current:{season:2,day:21}};
+  const paint=runInNewContext(source.slice(start,end)+';renderWorldProgress',{window:{faWorldState:{get:()=>snapshot}},copies:{[lang]:{historySeasonLabel:seasonLabel,noSeason:'inactive'}},language:()=>lang,document:{querySelectorAll:selector=>selector==='.fa-shell-date-full'?[full]:selector==='.fa-shell-date-short'?[short]:[]}});
+  paint();assert.equal(full.textContent,seasonLabel+' 2 · '+dayLabel+' 21/56');assert.equal(short.textContent,'2 · 21/56');
+  snapshot={source:'dev',current:{season:0,day:0}};paint();assert.equal(full.textContent,'Debug · inactive');
+  snapshot={source:'authoritative',current:null};paint();assert.equal(full.textContent,'—');assert.equal(short.textContent,'—');
+ }
+});
+test('a newly mounted shell consumes an already accepted world immediately',()=>{
+ const state=api.createWorldState();state.acceptWorld(world,state.beginRead());const seen=[];
+ const window={faWorldState:state,addEventListener(){},fetch:async()=>({ok:true,json:async()=>({world})})};
+ api.mountWorldState({window,document:{documentElement:{dataset:{}}},onChange:()=>seen.push(state.get().current)});
+ assert.deepEqual(seen[0],{season:2,day:14});
+});
