@@ -1242,8 +1242,8 @@
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
-    let activeSeason=1;
-    const isDevCalendar=window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev";
+    let activeSeason=Math.max(1,window.faWorldState?.get?.().current?.season||1);
+    const isDevCalendar=window.faDebugEnabled!==false&&(window.faWorldState?.get?.().source==='dev'||window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev");
     if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
     const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
@@ -1347,4 +1347,7 @@
     attributes: true, attributeFilter: ["lang"]
   });
   renderView();
+  // Global progress is read independently of the historical season in this URL.
+  // Reuse the existing allowlisted adapter; static shell rendering never awaits an API.
+  void import('/assets/world-clock-adapter.js').then(()=>window.faWorldClockAdapter?.mountWorldState({window,document,onChange:rewriteAppLinks})).catch(()=>{});
 })();

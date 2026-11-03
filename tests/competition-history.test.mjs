@@ -468,7 +468,7 @@ test('Selecting a History season guards Safari first paint before revealing Stan
 });
 
 test('Restoring debug waits for History before completing the first-paint release',async()=>{
- const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nif(validPath||indexPath||clubPath){',start);
+ const start=client.indexOf('let transition=Promise.resolve();'),end=client.indexOf('\nconst sharedPath=',start);
  let finishHistory,settled=false;
  const historyReady=new Promise(resolve=>{finishHistory=resolve});
  const context={previewState:'OFF',activePreview:null,validPath:['/competitions/it-1','it-1'],

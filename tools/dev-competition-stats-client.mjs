@@ -2,12 +2,13 @@ import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPrevie
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 async function startClubSummary(){
-const enabled=()=>{try{return sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
 let catalogue,revision=0;
 const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
 async function refresh(){
  const version=++revision;
- const route=window.faClubModel?.route(location.pathname);
+ const route=window.faClubModel?.route(location.pathname),progress=readPreviewClubProgress(sessionStorage);
+ const identity=JSON.stringify([location.pathname,progress]);
  if(!enabled()||!route){publish(null);return;}
  try{
   catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'same-origin',cache:'no-store'}).then(async response=>{
@@ -15,9 +16,9 @@ async function refresh(){
    const data=await response.json();if(!competitionModel.validManifest(data))throw Error('Invalid club competition data');return data;
   }).catch(error=>{catalogue=null;throw error});
   const data=await catalogue;
-  if(version!==revision||!enabled())return;
+  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,readPreviewClubProgress(sessionStorage)]))return;
   const division=data.divisions.find(d=>d.countryId===route.countryId&&d.clubs.some(c=>c.clubId===route.clubId));
-  publish(division?createPreviewClubSummary(division,route.clubId,readPreviewClubProgress(sessionStorage)):null);
+  publish(division?createPreviewClubSummary(division,route.clubId,progress):null);
  }catch{if(version===revision)publish(null);}
 }
 await new Promise(resolve=>{
@@ -27,7 +28,7 @@ await new Promise(resolve=>{
  });
  observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-club-ready']});
 });
-for(const event of ['fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
+for(const event of ['fa:source-change','fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
 window.addEventListener('storage',event=>{if(event.key?.startsWith('football-architect:'))refresh();});
 await refresh();
 
@@ -37,7 +38,7 @@ if(document.getElementById('club-page'))await startClubSummary();
 // Data adapter only. Public presentation mounts from the generic competition context.
 function createStatsPreviewProvider(){
  let epoch=0,destroyed=false;
- const enabled=()=>{try{return sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+ const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
  const signature=statistics=>JSON.stringify(statistics?{overview:statistics.overview,teams:statistics.teams,players:statistics.players}:null);
  async function refresh(){
   const token=++epoch,context=window.faCompetitionContext,definition=context?.definition;

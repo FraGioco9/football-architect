@@ -228,7 +228,7 @@
    const explanation=state.message==='stale'?text.operationStale:state.message==='prerequisite'||state.errorCode?.includes('prerequisite')?text.operationBlocked:state.operation==='completed'?text.operationSuccess:state.world?text.operationPrerequisite:text.operationIdle;
    find('[data-admin-operation]').textContent=state.busy?text.working:explanation;
    find('[data-admin-error-code]').textContent=state.errorCode?state.errorCode:'';
-   const w=state.world;find('[data-admin-world]').textContent=w?`${text.season} ${w.seasonNumber} · ${text.revision} ${w.revision} · ${text.day} ${w.day} · ${text[w.phase]} · ${text.generationLabel} ${w.generation}`:'';
+   const w=state.world;if(state.operation==='completed'&&!state.busy&&validWorld(w)){const key=w.generation+':'+w.revision;if(host.dataset.publicInvalidation!==key){host.dataset.publicInvalidation=key;window.dispatchEvent(new Event('fa:world-invalidated'))}}find('[data-admin-world]').textContent=w?`${text.season} ${w.seasonNumber} · ${text.revision} ${w.revision} · ${text.day} ${w.day} · ${text[w.phase]} · ${text.generationLabel} ${w.generation}`:'';
   }
   find('[data-admin-next-season-confirm]').addEventListener('input',()=>render());
   find('[data-admin-next-season-approve]').addEventListener('click',async()=>{

@@ -1,7 +1,6 @@
 // Private read-only calendar transport. Browser events never confer world authority.
 import {validPublicWorld,scoreValid,viewedSeasonState} from './authoritative-season.mjs';
 const fail=()=>{throw TypeError('Invalid authoritative calendar')};
-const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
 const key=c=>c.countryId+'-'+c.clubId;
 export function validateCalendarDay(input,selection,manifest){
  if(input?.schemaVersion!==1||input.providerId!=='authoritative-world'||input.scope!=='calendar'||input.selectedSeason!==selection.season||input.day!==selection.day||!validPublicWorld(input.world))fail();
@@ -33,22 +32,19 @@ export function validateCalendarDay(input,selection,manifest){
  for(const event of events.filter(e=>e.phase==='league'))for(const id of event.competitionIds){const games=d.fixtures.filter(f=>f.competitionId===id&&f.marker===event.marker);if(games.length!==definitions.get(id).capacity/2||new Set(games.flatMap(f=>[f.homeClubId,f.awayClubId])).size!==definitions.get(id).capacity)fail()}
  return structuredClone(input);
 }
-export function createCalendarLoader({getSelection,clear,commit,fetchJson,manifest,onState=()=>{}}){
- let epoch=0,controller=null,disposed=false;
- return Object.freeze({async load(){
-  if(disposed)return false;const selection={...getSelection()},ticket=++epoch;controller?.abort();controller=new AbortController();const signal=controller.signal;
-  clear();onState('loading');const current=()=>!disposed&&ticket===epoch&&getSelection().season===selection.season&&getSelection().day===selection.day;
-  let completed=false;
-  try{
-   const before=await fetchJson('/api/world',{signal});if(!current()||!validPublicWorld(before?.world))return false;
-   const data=validateCalendarDay(await fetchJson(`/api/calendar/seasons/${selection.season}/days/${selection.day}`,{signal}),selection,manifest);if(!current()||!same(before.world,data.world))return false;
-   const after=await fetchJson('/api/world',{signal});if(!current()||!validPublicWorld(after?.world)||!same(data.world,after.world))return false;
-   commit(data);if(!current())return false;completed=true;onState(data.status);return true;
-  }catch{return false}finally{if(!completed&&current())onState('unavailable')}
- },dispose(){disposed=true;epoch++;controller?.abort()}});
+export function createCalendarLoader({getSelection,clear,commit,fetchJson,manifest,onState=()=>{},isEnabled=()=>true}){
+ let selection;
+ return globalThis.faWorldClockAdapter.createSnapshotReader({
+  isEnabled,getIdentity:()=>{const s=getSelection();return JSON.stringify([s?.season,s?.day,s?.sourceRevision])},
+  clear:()=>{clear();selection={...getSelection()}},onState,
+  fetchWorld:async options=>(await fetchJson('/api/world',options))?.world,
+  read:options=>fetchJson(`/api/calendar/seasons/${selection.season}/days/${selection.day}`,options),
+  validate:payload=>validateCalendarDay(payload,selection,manifest),commit
+ });
 }
+
 const words={en:['Loading season data…','Season data is unavailable.','No published season data yet.','No known fixtures for this day.','Scheduled','World day'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.','Nessuna partita definita per questo giorno.','In programma','Giorno del mondo'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.','Keine bekannten Spiele für diesen Tag.','Geplant','Welttag'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.','No hay partidos definidos para este día.','Programado','Día mundial'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.','Aucune rencontre connue pour ce jour.','Prévu','Jour mondial']};
-export async function mountAuthoritativeCalendar({root,document=globalThis.document,window=globalThis.window,onWorld}){
+export async function mountAuthoritativeCalendar({root,document=globalThis.document,window=globalThis.window,onWorld,isEnabled=()=>true}){
  const fetchJson=async(path,{signal}={})=>{const r=await window.fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!r.ok)throw Error('Calendar unavailable');return r.json()};
  const manifest=await fetchJson('/competitions/_shared/manifest.json'),catalog=new Map(manifest.divisions.flatMap(d=>d.clubs).map(c=>[key(c),c])),names=new Map(manifest.competitions.map(c=>[c.id,c.name]));
  if(!document.getElementById('calendar-event-dialog'))await new Promise(resolve=>{
@@ -57,14 +53,20 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
  });
  const dialog=document.getElementById('calendar-event-dialog'),details=document.getElementById('calendar-details-content');
  if(!dialog)throw Error('Calendar UI unavailable');
- let payload=null,state='loading',selectionKey='';
+ let payload=null,state='loading',selectionKey='',loadedSelection='',disabledCleared=false;
+ const rendered=new WeakMap();
  const getSelection=()=>({season:window.faCalendarSelectedSeason?.()??Number(root.dataset.season||1),day:Number(dialog?.dataset.authoritativeDay||document.documentElement.dataset.calendarDay||1)});
  const make=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);return n};
  const render=()=>{
   const t=words[document.documentElement.lang]||words.en;
   for(const host of [dialog?.open?dialog.querySelector('#calendar-event-dialog-details'):null,details].filter(Boolean)){
+   if(!isEnabled()){host.querySelector('[data-authoritative-calendar]')?.remove();continue;}
+   const visibleState=state==='loading'&&payload?payload.status:state;
+   const signature=JSON.stringify([document.documentElement.lang,visibleState,payload]);
+   if(rendered.get(host)===signature&&host.querySelector('[data-authoritative-calendar]'))continue;
+   rendered.set(host,signature);
    host.querySelector('[data-authoritative-calendar]')?.remove();const section=make('section');section.dataset.authoritativeCalendar='';section.setAttribute('aria-live','polite');
-   if(payload?.data&&['partial','available'].includes(state)){
+   if(payload?.data&&['partial','available'].includes(visibleState)){
     const fixtures=payload.data.fixtures;
     if(!fixtures.length)section.append(make('p',t[3]));
     const list=make('ul');for(const f of fixtures){const row=make('li');row.style.overflowWrap='anywhere';const home=catalog.get(f.homeClubId).primaryName,away=catalog.get(f.awayClubId).primaryName;
@@ -72,13 +74,14 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
      if(f.result?.penalties)row.append(make('span',' ('+f.result.penalties.home+'–'+f.result.penalties.away+')'));
      list.append(row);
     }section.append(list);
-   }else section.append(make('p',state==='loading'?t[0]:state==='empty'?t[2]:t[1]));
+   }else section.append(make('p',visibleState==='loading'?t[0]:visibleState==='empty'?t[2]:t[1]));
    host.append(section);
   }
  };
- const loader=createCalendarLoader({manifest,getSelection,fetchJson,clear:()=>{payload=null;onWorld(null);render()},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;render()}});
- const reload=event=>{const s=getSelection(),next=s.season+':'+s.day;if(next===selectionKey&&!event?.detail?.refresh){render();return;}selectionKey=next;void loader.load()};
+ const loader=createCalendarLoader({manifest,getSelection,fetchJson,isEnabled,clear:()=>{const s=getSelection(),key=s.season+':'+s.day;if(key!==loadedSelection){payload=null;onWorld(null);loadedSelection=key;render()}},commit:data=>{payload=data;onWorld(data.world)},onState:s=>{state=s;if(s==='unavailable'){payload=null;onWorld(null)}render()}});
+ const reload=event=>{if(!isEnabled()){if(!disabledCleared){disabledCleared=true;loader.cancel();payload=null;selectionKey='';loadedSelection='';onWorld(null);render()}return;}disabledCleared=false;const s=getSelection(),next=s.season+':'+s.day+':'+window.faWorldState?.get?.().sourceRevision;if(next===selectionKey&&!event?.detail?.refresh){render();return;}selectionKey=next;void loader.load()};
  window.addEventListener('fa:calendar-selection-change',reload);
+ window.addEventListener('fa:source-change',()=>{loadedSelection='';reload({detail:{refresh:true}})});
  window.addEventListener('focus',()=>void loader.load());
  window.addEventListener('pageshow',e=>{if(e.persisted)void loader.load()});
  window.addEventListener('pagehide',e=>{if(!e.persisted)loader.dispose()});

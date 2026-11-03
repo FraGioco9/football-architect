@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import { request } from "node:http";
 import { once } from "node:events";
 import { runInNewContext } from "node:vm";
-const runWithModel=(source,context={})=>runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}));
+const runWithModel=(source,context={})=>{context.debugEnabled??=()=>true;context.sharedPath??=false;return runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}))};
 import { fileURLToPath } from "node:url";
 import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
@@ -83,7 +83,7 @@ test("DEBUG-SEASON-CONTROL: Debug seasons persist without changing the viewed ro
 });
 
 test("DEBUG-RESET-RACE: a delayed season refresh cannot disable the reset preview",async()=>{
- const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath){'),client.indexOf('\nfunction strings()'));
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath||sharedPath){'),client.indexOf('\nfunction strings()'));
  const events={};let season=1,finishBoot;
  const context={
   validPath:['/competitions/it-1','it-1'],indexPath:false,clubPath:false,syncCompetitionLinks(){},debugSeason:1,renderKey:()=>String(season),
@@ -450,7 +450,7 @@ test("DEV-WIDGET: movable local-only control and clean standings page",()=>{
 test("DEV-M01: Debug mounts independently while preview waits for competition hydration", { timeout: 10000 }, async () => {
   const runtime = read("assets/competition-page.js").toString();
   assert.ok(runtime.includes("standings.outerHTML=withMobileShell(standings.outerHTML)"));
-  const start = client.indexOf("if(validPath||indexPath||clubPath){");
+  const start = client.indexOf("if(validPath||indexPath||clubPath||sharedPath){");
   const end = client.indexOf("\nfunction strings()", start);
   assert.ok(start >= 0 && end > start, "DEV initialization block missing");
   const initializer = client.slice(start, end);
@@ -688,7 +688,7 @@ test("HISTORY-DEV-01: History preview is gated by local DEV settings and derives
 test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and rejects stale commits",async()=>{
  assert.ok(serverSource.includes('html[data-fa-dev-season-transition="true"] #competition-panel-standings'),
   "The DEV server must install its visibility rule before the route changes");
- const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath){'),client.indexOf('\nfunction strings()'));
+ const initializer=client.slice(client.indexOf('if(validPath||indexPath||clubPath||sharedPath){'),client.indexOf('\nfunction strings()'));
  const events={},dataset={},pending=[],cleanups=[];
  let season=4;
  const context={

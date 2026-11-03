@@ -1,3 +1,4 @@
+import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
 import {chromium} from "playwright";
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
@@ -18,6 +19,7 @@ const screenshot=async(page,name)=>{
  await page.screenshot({path:out+'/'+name,fullPage:true});screenshots++;
 };
 try {
+ await verifyCanonicalStateBrowser(browser,'chromium');
  // Task 8: every canonical competition route initializes one shared, empty context.
  const allRoutes=["it","eng","es","de","fr","pt","nl","br"].flatMap(country=>[1,2].map(tier=>country+"-"+tier)).concat(cups);
  const routePage=await browser.newPage({viewport:{width:390,height:900}});

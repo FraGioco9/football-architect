@@ -1,0 +1,170 @@
+// Shared SH-03 acceptance, invoked by both existing Chromium and WebKit FULL runners.
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import calendarModel from '../assets/world-calendar-model.js';
+import {createServer} from 'node:http';
+import {once} from 'node:events';
+import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
+const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:2,day:20,phase:'active'};
+const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+export function published(competitionId,selectedSeason,currentWorld){
+ const def=manifest.competitions.find(c=>c.id===competitionId),ids=manifest.divisions.find(d=>d.id===competitionId).clubs.map(c=>c.countryId+'-'+c.clubId),ring=[...ids],fixtures=[];
+ const days=calendarModel.createSeason(selectedSeason).days;
+ for(let round=1;round<=15;round++){
+  for(let i=0;i<8;i++)for(const [r,h,a] of [[round,ring[i],ring[15-i]],[round+15,ring[15-i],ring[i]]]){
+   const marker='N'+String(r).padStart(2,'0'),day=days.find(d=>d.events.some(e=>e.marker===marker)).day;
+   fixtures.push({id:`season:${selectedSeason}:${competitionId}:${marker}:${h}:${a}`,competitionId,day,round:r,marker,homeClubId:h,awayClubId:a,phaseId:'league',tieId:null,leg:null,neutral:false,
+    result:day<=currentWorld.day?{homeGoals:0,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:null}:null});
+  }ring.splice(1,0,ring.pop());
+ }
+ const played=fixtures.filter(f=>f.result).length,clubPlayed=played/8;
+ const row=id=>({clubId:id,played:clubPlayed,won:0,drawn:clubPlayed,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
+ return {schemaVersion:1,providerId:'authoritative-world',competitionId,selectedSeason,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${currentWorld.generation}:season:${selectedSeason}:`+'a'.repeat(64)},data:{season:selectedSeason,seasonState:{day:currentWorld.day,phase:'active'},rulesVersion:def.rules.version,participants:ids,fixtures,
+  standings:{complete:false,rows:ids.map((id,i)=>({...row(id),rank:i+1,points:clubPlayed}))},statistics:{matchesPlayed:played,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...row(id),cleanSheets:clubPlayed})),players:null,playerStatus:'unavailable'},
+  calendar:days.map(d=>({day:d.day,fixtureIds:fixtures.filter(f=>f.day===d.day).map(f=>f.id),played:fixtures.filter(f=>f.day===d.day&&f.result).length})),history:null}};
+}
+export function calendarPublished(season,day,currentWorld){
+ const catalog=manifest.divisions.flatMap(d=>d.clubs),competitions=manifest.competitions.map(c=>({id:c.id,rulesVersion:c.rules.version,clubIds:c.category==='domestic'?manifest.divisions.find(d=>d.id===c.id).clubs.map(c=>c.countryId+'-'+c.clubId):catalog.filter(club=>c.id==='int-1'?club.clubId<=3:club.clubId>=4&&club.clubId<=6).map(c=>c.countryId+'-'+c.clubId)}));
+ const fixtures=manifest.divisions.flatMap(d=>published(d.id,season,currentWorld).data.fixtures.filter(f=>f.day===day));
+ return {schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:season,day,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${currentWorld.generation}:season:${season}:`+'a'.repeat(64)},data:{season,day,seasonState:{day:currentWorld.day,phase:'active'},calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
+}
+const routes=['/dashboard','/competitions','/competitions/it-1/standings?season=1','/competitions/int-1/stats?season=1','/calendar?season=1&calendarView=week','/clubs','/clubs/it/1/overview','/settings'];
+const unavailable={kind:'none',sourceRef:null,resultAuthority:null};
+const json=(route,status,body)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
+async function server(devPreview){
+ const router=createPreviewServer({devPreview});
+ const host=createServer((req,res)=>{req.headers.host='127.0.0.1:2000';router.emit('request',req,res)});
+ host.listen(0,'127.0.0.1');await once(host,'listening');return host;
+}
+export async function verifyCanonicalStateBrowser(browser,engine){
+ const publicHost=await server(false),debugHost=await server(true);
+ const origin='http://127.0.0.1:'+publicHost.address().port,debugOrigin='http://127.0.0.1:'+debugHost.address().port;
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ let offline=false,admin=false,worldCalls=0,holdSeasonOne=null,heldStarted=null,holdNumber='1',populated=false,apiWorld=world;
+ await page.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path==='/api/world'){worldCalls++;return json(route,offline?503:200,offline?{}:{world:apiWorld})}
+  if(path==='/api/admin/session'&&admin)return json(route,200,{actor:{id:'read-only-admin',email:'operator@example.invalid'},csrfToken:'a'.repeat(64)});
+  if(path==='/api/player/permissions'&&admin)return json(route,200,{permissions:['admin.access','admin.world.read']});
+  if(path==='/api/admin/world'&&admin)return json(route,200,{world:apiWorld});
+  const match=path.match(/^\/api\/competitions\/([^/]+)\/seasons\/(\d+)$/);
+  if(match){
+   const payload=populated&&match[1]==='IT-1'&&match[2]==='2'?published('IT-1',2,apiWorld):{schemaVersion:1,providerId:'authoritative-world',competitionId:match[1],selectedSeason:Number(match[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable};
+   if(holdSeasonOne&&match[2]===holdNumber){heldStarted();await holdSeasonOne;}
+   // Cancellation of the held request is expected when the user changes season.
+   try{return await json(route,200,payload)}catch(error){if(!/closed|handled|cancel|invalid|intercept/i.test(error.message))throw error;return;}
+  }
+  const day=path.match(/^\/api\/calendar\/seasons\/(\d+)\/days\/(\d+)$/);
+  if(day&&populated&&day[1]==='2'&&day[2]==='13')return json(route,200,calendarPublished(2,13,apiWorld));
+  if(day)return json(route,200,{schemaVersion:1,providerId:'authoritative-world',scope:'calendar',selectedSeason:Number(day[1]),day:Number(day[2]),world:apiWorld,status:'empty',reason:'calendar-unpublished',data:null,provenance:unavailable});
+  return json(route,401,{error:{code:'unauthorized'}});
+ });
+ await context.addInitScript(({debugPort})=>{
+  let prefs={lang:'en',theme:'dark'};try{prefs=JSON.parse(window.name)||prefs}catch{}
+  localStorage.setItem('football-architect:language',prefs.lang);localStorage.setItem('football-architect:theme',prefs.theme);
+  if(sessionStorage.getItem('football-architect:standings-dev-season')===null)sessionStorage.setItem('football-architect:standings-dev-season',location.port===debugPort?'0':'4');
+  if(sessionStorage.getItem('football-architect:calendar-dev-world-day')===null)sessionStorage.setItem('football-architect:calendar-dev-world-day','1');
+ },{debugPort:String(debugHost.address().port)});
+ let checks=0;
+ try{
+  for(const [i,path] of routes.entries()){
+   const width=[320,390,768,1440][i%4],lang=['en','de','es','fr','it'][i%5],theme=i%2?'light':'dark';
+   await page.setViewportSize({width,height:844});
+   await page.evaluate(({lang,theme})=>window.name=JSON.stringify({lang,theme}),{lang,theme});
+   for(const refresh of [false,true]){
+    if(refresh)await page.reload({waitUntil:'networkidle'});else await page.goto(origin+path,{waitUntil:'networkidle'});
+    await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===2);
+    const state=await page.evaluate(()=>({source:window.faWorldState.get().source,current:window.faWorldState.get().current,lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,overflow:document.documentElement.scrollWidth>innerWidth+2,calendar:document.getElementById('app-nav-calendar')?.getAttribute('href')}));
+    assert.equal(state.source,'authoritative',path);assert.deepEqual(state.current,{season:2,day:20});
+    assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
+    assert.equal(new URL(state.calendar,origin).searchParams.get('season'),'2',path+' global sidebar');
+    if(path.includes('?season=1'))assert.equal(new URL(page.url()).searchParams.get('season'),'1',path+' historical URL');
+    checks++;
+   }
+  }
+  // Read-only Admin uses the same world contract without granting any write capability.
+  admin=true;await page.reload({waitUntil:'networkidle'});
+  await page.waitForFunction(()=>document.querySelector('[data-admin-world]')?.textContent.includes('20'));
+  assert.equal(await page.locator('[data-admin-prepare]').isEnabled(),false);checks++;
+  apiWorld={...world,generation:'12345678-1234-4123-8123-123456789abc',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===0);
+  await page.evaluate(()=>new Promise(resolve=>{document.documentElement.lang='it';requestAnimationFrame(resolve)}));
+  assert.equal(await page.evaluate(()=>window.faWorldState.get().world.seasonNumber),0,'cached Admin render cannot undo a public reset');checks++;
+  apiWorld=world;admin=false;
+  await page.evaluate(()=>window.name=JSON.stringify({lang:'en',theme:'dark'}));
+  // Empty public competition refresh must preserve loaded header/crest DOM and open menus.
+  await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.faCompetitionRoute?.get().season==='1'&&window.faWorldState?.get().current?.season===2);
+  await page.locator('#app-competition-season').click();
+  await page.evaluate(()=>{window.sh03Header=document.querySelector('.app-competition-header');window.sh03Picker=document.querySelector('#app-competition-season');window.dispatchEvent(new Event('focus'))});
+  await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.textContent.includes('No published'));
+  assert.equal(await page.locator('#app-competition-season').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.evaluate(()=>window.sh03Header===document.querySelector('.app-competition-header')&&window.sh03Picker===document.querySelector('#app-competition-season')),true);checks++;
+  await page.keyboard.press('Escape');
+  await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:'3'}));
+  await page.waitForURL('**/fixtures?season=2&matchday=3');
+  await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
+  await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
+  let release;holdSeasonOne=new Promise(resolve=>release=resolve);const started=new Promise(resolve=>heldStarted=resolve);
+  await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});await started;
+  await page.evaluate(()=>window.faCompetitionRoute.set({season:'2'}));
+  await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
+  release();holdSeasonOne=null;await page.waitForLoadState('networkidle');
+  assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
+  await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
+  await page.locator('#calendar-season-picker').click();
+  await page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))}));
+  assert.equal(await page.evaluate(()=>window.sh03Option===document.querySelector('#calendar-season-menu [role=option]')),true);
+  assert.equal(await page.locator('#calendar-season-picker').getAttribute('aria-expanded'),'true');checks++;
+  offline=true;
+  await page.goto(origin+'/clubs/it/1/overview',{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.faWorldState?.get().current===null&&document.documentElement.dataset.clubReady==='true');
+  assert.ok((await page.locator('.club-header h1').textContent()).length>0);assert.equal(await page.locator('.club-tabs a').count(),5);checks++;
+  offline=false;
+  // Protected source ignores API data and retains its own empty Season 0 after reset/reload.
+  const callsBefore=worldCalls;
+  for(const path of routes){
+   await page.goto(debugOrigin+path,{waitUntil:'networkidle'});
+   await page.waitForFunction(()=>window.faWorldState?.get().source==='dev');
+   assert.deepEqual(await page.evaluate(()=>window.faWorldState.get().current),{season:0,day:0},'protected '+path);checks++;
+  }
+  assert.equal(worldCalls,callsBefore,'Debug pages must not read public world');
+  await page.goto(debugOrigin+'/competitions/it-1/standings',{waitUntil:'networkidle'});
+  await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="season-number"]').fill('2');await page.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+  await page.waitForFunction(()=>window.faWorldState?.get().current?.season===2);
+  await page.locator('[data-dev-control="reset-global"]').click();
+  await page.waitForFunction(()=>window.faWorldState?.get().current?.season===0);
+  await page.reload({waitUntil:'networkidle'});assert.equal(await page.evaluate(()=>window.faWorldState.get().current.season),0);checks++;
+  await page.locator('.fa-dev-widget-button').click();
+  populated=true;
+  const switcher=page.locator('[data-dev-control="debug-enabled"]');
+  await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().source==='authoritative'&&window.faWorldState.get().current?.season===2);
+  await page.evaluate(()=>window.faCompetitionRoute.set({season:'2'}));
+  await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative');
+  await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('focus'))});
+  await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
+  assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
+  holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await oldStarted;
+  await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev');
+  apiWorld={...world,revision:5,day:21};
+  await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===21);
+  assert.equal(new URL(page.url()).searchParams.get('season'),'2','OFF retains viewed season');
+  releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===5);
+  assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
+  await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
+  await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
+  await page.locator('[data-calendar-day="13"]').click();
+  await page.waitForFunction(()=>document.querySelectorAll('#calendar-event-dialog [data-authoritative-calendar] li').length===128);
+  await page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))}));
+  assert.equal(await page.evaluate(()=>window.sh03Dialog.open&&window.sh03Fixture===document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li')),true,'open populated calendar dialog survives refresh');checks++;
+  await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
+  assert.deepEqual(errors,[],engine+' SH-03 browser errors');
+  console.log('SH-03 '+engine+' PASS: '+checks+' individual page/state checks');
+ }finally{
+  await context.close();for(const host of [publicHost,debugHost]){host.closeAllConnections();await new Promise(resolve=>host.close(resolve));}
+ }
+}
