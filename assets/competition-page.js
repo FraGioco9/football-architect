@@ -559,12 +559,7 @@
       initialHomeLabels=slots.map(slot=>{const label=slot.parentElement?.querySelector('.app-knockout-home');return label?{label,key:label.dataset.appI18n,text:label.textContent}:null});
     };capture();
     let graph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));
-    let suppliedOwned=false,lastAccepted=null;
-    const sourceScope=()=>{
-      const world=window.faWorldState?.get?.();
-      const context=window.faCompetitionContext;
-      return JSON.stringify([context?.selectedSeason,world?.source,world?.world?.generation??null]);
-    };
+    let suppliedOwned=false;
     // Reconcile immutable club identities in place. Dynamic cells are updated only
     // after the complete sporting snapshot has passed the existing validation.
     // Reordering moves existing rows, not their already loaded crest images.
@@ -593,21 +588,6 @@
       }else tbody.replaceChildren(...rows);
     };
     const empty=()=>{
-      // An in-flight refresh of the same authoritative world/season must keep
-      // the established club identity nodes but blank unvalidated sporting cells.
-      // A different source, generation or season must never retain old rankings.
-      if(lastAccepted?.scope===sourceScope()){
-        const clubs=lastAccepted.clubs;
-        commitDesktop(clubs.map(club=>createStandingsRow(club)));
-        for(const row of tbody.children)for(let i=0;i<row.children.length;i++)
-          if(i!==1)row.children[i].textContent='';
-        const pending=clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        mobile.prepare(pending)(true);
-        window.faPostseason?.prepare(null)();
-        suppliedOwned=false;
-        return;
-      }
-      lastAccepted=null;
       if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         commitDesktop(division.clubs.map(club=>createStandingsRow(club)));mobile.prepare(rows)(true);window.faPostseason?.prepare(null)();suppliedOwned=false;return;
@@ -704,7 +684,6 @@
         });
         const commitDomestic=definition.category==='domestic'?window.faPostseason?.prepare(rows):null;
         commitDesktop(desktop);commitMobile(true);commitDomestic?.();suppliedOwned=true;
-        lastAccepted={scope:sourceScope(),clubs:rows.map(row=>row.club)};
         resetBracket(updates);
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
