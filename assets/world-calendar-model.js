@@ -3,7 +3,7 @@
   const model=factory(root);
   root.faWorldCalendarModel=model;
   if(typeof module!=="undefined"&&module.exports)module.exports=model;
-})(typeof window!=="undefined"?window:globalThis,()=>{
+})(typeof window!=="undefined"?window:globalThis,(root)=>{
   "use strict";
   const freeze=value=>{
     if(value&&typeof value==="object"){

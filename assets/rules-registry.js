@@ -3,7 +3,7 @@
  const api=factory(root);
  root.faRulesRegistry=api;
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis,()=>{
+})(typeof window!=='undefined'?window:globalThis,(root)=>{
  'use strict';
  // Browser pages retain the frozen inline mirror until the separate page-load rollout.
  // Node/Worker consume the canonical pure contract; parity is tested in both runtimes.
