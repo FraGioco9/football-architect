@@ -280,7 +280,10 @@ try {
    const participants=definition.category==='domestic'?window.faCompetitionDivision.clubs:Array.from({length:24},(_,i)=>({countryId:['IT','ENG','ES','DE','FR','PT','NL','BR'][Math.floor(i/3)],clubId:i%3+1,primaryName:'History Club '+i}));
    const key=i=>participants[i].countryId+'-'+participants[i].clubId;
    const data={season:1,rulesVersion:snapshot.version,rulesSnapshot:snapshot,participants,fixtures:definition.category==='international'?[{phaseId:'playoffs',tieId:'p512',leg:1,homeId:key(11),awayId:key(4),homeGoals:2,awayGoals:1,kickoff:null}]:null,results:[],statistics:definition.category==='international'?{standings:participants.map(club=>({club,played:6,won:0,drawn:6,lost:0,gf:0,ga:0,gd:0,pts:6,recent:[]}))}:null,status:'partial'};
-   if(!window.faCompetitionContextApi.replaceSeasonData(data,context.revision))throw Error('Historical snapshot rejected');
+   if(window.faDevPreviewMode!==true||!window.faCompetitionContextApi.setDebugSeason(1))
+    throw Error('Historical snapshot injection requires the explicit local Debug boundary');
+   if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))
+    throw Error('Historical snapshot rejected');
    return JSON.stringify(data);
   });
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='3');
