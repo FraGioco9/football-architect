@@ -122,6 +122,15 @@ const worldPageReplacements = (division = null, neutral = false) => {
 const competitionRoute = d=>{
  let html=template;
  for(const [token,value] of Object.entries(worldPageReplacements(d,d.category==="international")))html=html.replace(token,value);
+ // The routed first-paint panel script is a sibling of the competition section.
+ // Keep that boundary identical to the checked-in HTML, without moving the neutral shell.
+ const panelScript=html.match(/\n          <script data-competition-view-first-paint>[\s\S]*?<\/script>/);
+ if(panelScript){
+  html=html.replace(panelScript[0],"");
+  const sectionEnd='        </section>\n      </main>';
+  if(!html.includes(sectionEnd))throw Error('Missing competition section end');
+  html=html.replace(sectionEnd,'        </section>'+panelScript[0]+'\n      </main>');
+ }
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-competition" content="'+encode(d.id)+'">'+(d.category==="domestic"?'\n  <meta name="fa-division" content="'+encode(d.id)+'">':''));
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
