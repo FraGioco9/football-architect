@@ -1,3 +1,4 @@
+import sporting from '../../assets/sporting-contract.js';
 import {validateSeasonOneBindings} from '../catalogues/season-one-selection.mjs';
 import {ApiError} from './errors.ts';
 import {hashText} from './auth.ts';
@@ -12,10 +13,9 @@ export type ApprovedSnapshot = Readonly<{
  manifestVersion:1;approvalReference:string;participantsHash:string;rulesHash:string;bindings:readonly SnapshotBinding[];
 }>;
 const validated=new WeakSet<object>();
-const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
-const competitionIds=[...countries.flatMap(c=>[`${c}-1`,`${c}-2`]),'int-1','int-2'];
+const {countries,competitionIds}=sporting;
 const fail=():never=>{throw new ApiError(422,'catalogue_not_approved')};
-const version=(id:string)=>id.startsWith('int-')?'international-int24-v1':id.endsWith('-1')?'domestic-top-v1':'domestic-second-v1';
+const version=(id:string)=>sporting.rulesVersion(id);
 function canonical(value:unknown):string {
  if(value===null||typeof value==='boolean'||typeof value==='string')return JSON.stringify(value);
  if(typeof value==='number'&&Number.isFinite(value))return JSON.stringify(value);
