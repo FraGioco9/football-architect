@@ -220,7 +220,7 @@ try {
    assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
    assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
   }
-  await page.reload({waitUntil:'networkidle'});
+  await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForSelector('.fa-dev-widget-button');
   assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
   if(route.startsWith('/competitions/')){
@@ -269,7 +269,7 @@ try {
    }
    await route.fulfill({response,json});
   });
-  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:'networkidle'});
+  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:'domcontentloaded'});
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
   const historical=await historyPage.evaluate(()=>{
    const context=window.faCompetitionContext,definition=context.definition;
@@ -320,7 +320,7 @@ try {
  }
  // PR 318: shared domestic qualification bands, localized legends and centered form letters.
  const formPage=await browser.newPage({viewport:{width:1440,height:900}});
- await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:'networkidle'});
+ await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:'domcontentloaded'});
  await formPage.evaluate(()=>{
   sessionStorage.setItem('football-architect:standings-dev-preview','on');
   sessionStorage.setItem('football-architect:standings-dev-season','2');
@@ -328,7 +328,7 @@ try {
   sessionStorage.removeItem('football-architect:calendar-dev-world-day');
   window.dispatchEvent(new Event('fa:fictional-standings-change'));
  });
- await formPage.reload({waitUntil:'networkidle'});
+ await formPage.reload({waitUntil:'domcontentloaded'});
  await formPage.waitForSelector('.app-world-form-glyph');
  for(const width of widths)for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
   await formPage.setViewportSize({width,height:900});
