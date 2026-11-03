@@ -161,25 +161,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings",list=document.querySelector(".app-competition-tabs");for(const tab of list?.querySelectorAll('[role="tab"]')||[]){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}const active=list?.querySelector('[aria-selected="true"]');if(active){const row=list.getBoundingClientRect(),rect=active.getBoundingClientRect();if(rect.left<row.left+16)list.scrollLeft+=rect.left-row.left-16;else if(rect.right>row.right-16)list.scrollLeft+=rect.right-row.right+16}})();</script>
 
           <header class="app-competition-header">
-            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><template shadowrootmode="open"><style>:host{position:relative}svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible}</style><svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 1024 1024" width="1024" height="1024">
-	<style>
-		tspan { white-space:pre } 
-		.s0 { fill: #8b5129 } 
-		.s1 { fill: #243039 } 
-	</style>
-	<g>
-		<g>
-			<g>
-				<path class="s0" d="m560.76 905.48c44.42-50.42 78.03-115.25 98.44-190.88 21.61-75.64 24.01-151.27 22.81-235.31-1.2-105.64 27.62-183.68 103.25-235.3-86.44-8.4-142.86 19.21-183.68 75.63-26.41 36.02-40.82 80.44-40.82 128.46z"/>
-				<path class="s0" d="m463.24 905.27c-44.42-50.42-78.03-115.25-98.44-190.88-21.61-75.63-24.01-151.27-22.81-235.3 1.2-105.65-27.62-183.68-103.25-235.31 86.44-8.4 142.86 19.21 183.68 75.64 26.41 36.01 40.82 80.43 40.82 128.45z"/>
-				<path class="s0" d="m560.76 936.2c66.03-1.21 132.06-13.21 187.28-51.63 61.23-42.02 94.84-100.84 117.65-165.67 28.82-85.24 42.02-157.27 108.05-202.89-57.63-7.2-114.05 3.6-163.27 26.41-52.82 25.22-97.24 62.43-114.05 105.65-14.41 40.82-16.81 98.44-45.62 159.67-22.81 48.02-55.22 90.04-90.04 128.46z"/>
-				<path class="s0" d="m463.24 936.48c-66.03-1.2-132.06-13.2-187.28-51.62-61.23-42.02-94.84-100.84-117.65-165.67-28.82-85.24-42.02-157.27-108.05-202.89 57.63-7.2 114.05 3.6 163.27 26.41 52.82 25.21 97.24 62.43 114.05 105.65 14.41 40.82 16.81 98.44 45.62 159.67 22.81 48.02 55.22 90.04 90.04 128.45z"/>
-				<path class="s0" d="m486 938v-517c0-34-10-61-31-81l40-87 17 21 17-21 40 87c-21 20-31 47-31 81v517z"/>
-				<path fill-rule="evenodd" class="s1" d="m589.39 164.78l-77.78 77.78-77.78-77.78 77.78-77.78z"/>
-			</g>
-		</g>
-	</g>
-</svg></template><span>NL-1</span></div>
+            <div id="app-competition-badge" class="app-competition-logo-placeholder app-competition-logo-placeholder-large app-competition-logo-approved" data-division-variant="compact" aria-hidden="true"><img class="app-competition-logo-image" src="/assets/divisions/nl-1-oranjeliga/compact.svg" width="82" height="82" alt="" loading="eager" decoding="async" fetchpriority="high"></div>
             <div class="app-competition-identity">
               <h1 class="app-page-title" id="divisions-title"><span id="division-detail-name">Oranjeliga</span></h1>
               <div class="app-world-detail-meta"><span class="app-world-flag-frame" aria-hidden="true"><svg class="app-world-flag" id="app-competition-flag" aria-hidden="true" focusable="false" width="25" height="20" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fa-competition-flag-nl"><rect width="5" height="4" rx="0.625" ry="0.625"/></clipPath></defs><g clip-path="url(#fa-competition-flag-nl)"><svg x="0" y="0" width="5" height="4" viewBox="0 0 9 6" preserveAspectRatio="none"><defs><mask id="fa-nl-fa-flag-rounded-nl" maskUnits="userSpaceOnUse" x="0.0" y="0.0" width="9.0" height="6.0"><rect x="0.0" y="0.0" width="9.0" height="6.0" rx="0" ry="0" fill="#fff" /></mask></defs><g mask="url(#fa-nl-fa-flag-rounded-nl)"><path fill="#21468B" d="M0 0h9v6H0z" /><path fill="#FFF" d="M0 0h9v4H0z" /><path fill="#AE1C28" d="M0 0h9v2H0z" /></g></svg></g></svg></span> <span id="app-competition-country" data-world-country="NL">Netherlands</span><span aria-hidden="true">·</span> <span id="app-competition-tier" data-app-i18n="divisionTier1">First division</span></div>
