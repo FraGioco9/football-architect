@@ -121,6 +121,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       try{diagnostic=JSON.stringify(await run(`(()=>({url:location.href,body:document.body?.textContent?.slice(0,180),readyState:document.readyState,route:window.faCompetitionRoute?.get?.()||null,preview:sessionStorage.getItem('football-architect:standings-dev-preview'),pending:document.documentElement.dataset.faDevStandingsPending||null,fixturesApi:typeof window.faFixtures,prepare:typeof window.faFixtures?.prepare,fixtureRows:[...document.querySelectorAll('[data-fixture-match]')].map(n=>({id:n.dataset.fixtureMatch,score:n.querySelector('.app-fixture-score')?.textContent||null})),empty:(()=>{const e=document.getElementById('app-fixtures-empty');return e?{hidden:e.hidden,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,text:e.textContent}:null})(),errors:window.__faRuntimeErrors||[]}))()`));}catch(error){diagnostic=String(error)}
       throw Error("Timed out: "+expr+"; browser state: "+diagnostic);
     };
+    // First paint has four decorative archive rows too. Wait for the real
+    // season anchors after DEV History hydration before asserting their links.
+    const waitForHistoryArchive=async route=>{
+      const target=new URL(route,devOrigin);
+      await wait("location.origin==="+JSON.stringify(target.origin)+
+        "&&location.pathname==="+JSON.stringify(target.pathname)+
+        "&&[...document.querySelectorAll('.app-history-dev-archive>li')].length===4"+
+        "&&[...document.querySelectorAll('.app-history-dev-archive>li')].every(row=>row.querySelector('a.app-history-dev-season-link[href]'))");
+    };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
       await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
@@ -523,7 +532,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     let expansionChecks=0;
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/'+division.id.toLowerCase()+'/history');
       assert.equal(await run("!!document.querySelector('#app-history-hall,#app-history-final,.app-history-dev-banner,#competition-panel-history>h2')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev-archive>li')].map(b=>new URL(b.querySelector('.app-history-dev-season-link').href).searchParams.get('season'))"),['4','3','2','1']);
       assert.equal(await run("[...document.querySelectorAll('.app-history-dev-archive>li')].every(b=>!b.hasAttribute('aria-pressed'))"),true,division.id+' archive has no misleading toggle selection');
@@ -689,7 +698,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/it-1/history');
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
@@ -753,7 +762,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]');return !!root.querySelector('[data-history-team-empty]:not([hidden])')&&!!root.querySelector('[data-history-player-empty]:not([hidden])')&&root.querySelector('[data-history-team-records] .app-competition-stat-grid').getClientRects().length===0&&root.querySelector('[data-history-player-records] .app-competition-stat-grid').getClientRects().length===0})()"),true,'All-time empty state remains consolidated after switching scope');
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/it-1/history');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);

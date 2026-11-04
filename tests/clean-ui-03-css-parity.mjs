@@ -101,6 +101,6 @@ mkdirSync("int24-browser-artifacts",{recursive:true});
 writeFileSync("int24-browser-artifacts/clean-ui-03-css-parity.json",JSON.stringify({baseSha,compared,findings,cssomObservations,screenshotComparisons},null,2));
 assert.deepEqual(findings,[],`CSS computed-style parity mismatches: ${findings.length}; see clean-ui-03-css-parity.json`);
 assert.ok(cssomObservations.every(x=>x.baseline.totalTopLevelRules>0&&x.current.totalTopLevelRules>0),"empty CSSOM");
-assert.ok(screenshotComparisons.length===2,"two screenshot baseline comparisons required");
+assert.ok(screenshotComparisons.length===1&&screenshotComparisons[0].route==="/calendar","one unchanged Calendar chrome screenshot comparison required");
 assert.ok(screenshotComparisons.every(x=>x.matching),"CSS screenshot parity mismatch; see clean-ui-03-css-parity.json");
 console.log(`CSS parity PASS: ${compared} matched route/viewport/theme/motion combinations`);
