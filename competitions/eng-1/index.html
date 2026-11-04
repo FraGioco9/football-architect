@@ -432,17 +432,22 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p><script data-view-skeleton-first-paint="history">(function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&window.faFixturesInitialProgress){
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
   if(template&&skeleton)skeleton.replaceWith(template.content.cloneNode(true));
  }
- if(view==='history'&&window.faFixturesInitialProgress){
-  const progress=window.faFixturesInitialProgress,skeleton=panel.querySelector('[data-competition-skeleton-root]');
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+  const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');
   const last=Number(skeleton?.dataset.skeletonLastLeagueDay),rounds=Number(skeleton?.dataset.skeletonLeagueRounds);
-  const completed=Math.max(1,progress.currentSeason-1+((last>0&&progress.day>=last)||(!progress.day&&rounds>0&&progress.matchdays>=rounds)?1:0));
+  const season=Number(document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
+  const completed=Math.max(0,season-1+((last>0&&progress.day>=last)||(!progress.day&&rounds>0&&progress.matchdays>=rounds)?1:0));
   const archive=skeleton?.querySelector('.app-history-dev-archive');
   if(archive){
+   if(completed===0){
+    const shell=archive.closest('.app-view-skeleton-history-archive');
+    if(shell)shell.innerHTML='<p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p>';
+   }else{
    // Extend the four pre-rendered rows for histories longer than four seasons.
    const sample=archive.querySelector('[data-skeleton-archive-row]');
    while(sample&&archive.children.length<completed){
@@ -452,6 +457,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
    }
    for(const row of archive.querySelectorAll('[data-skeleton-archive-row]'))
     row.hidden=Number(row.dataset.skeletonArchiveRow)>=completed;
+   }
   }
  }
  if(document.documentElement.dataset.competitionView===view){panel.hidden=false;document.documentElement.removeAttribute('data-fa-competition-prepaint');}
