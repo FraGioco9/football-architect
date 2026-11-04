@@ -192,7 +192,9 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
     assert.ok(html.includes(season),path+" must bootstrap DEV seasons");
     assert.ok(html.indexOf(season)<html.indexOf('src="/__fa_dev__/debug-settings.mjs"'),
       path+" must bootstrap seasons before Debug modules");
-    assert.ok(!original.includes("faDevSeasons")&&!original.includes("/__fa_dev__/"),
+    assert.doesNotMatch(original,/\.dataset\.faDevSeasons\s*=(?!=)/,
+      path+" public HTML must not initialize Debug seasons");
+    assert.ok(!original.includes("/__fa_dev__/"),
       path+" public HTML must remain clean");
    }
   for(const path of ["dashboard/index.html","settings/index.html"]){

@@ -284,7 +284,9 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
   const html=read(file);
   assert.ok(html.includes('data-division-variant="compact"'),division.id);
   assert.equal((html.match(/<tr data-world-club=/g)||[]).length,16,division.id);
-  assert.ok((html.match(/class="app-world-club-crest-placeholder"/g)||[]).length>=16,division.id);
+  const renderedRows=[...html.matchAll(/<tr data-world-club=[^>]*>[\s\S]*?<\/tr>/g)];
+  assert.equal(renderedRows.length,16,division.id+' canonical club rows');
+  for(const row of renderedRows)assert.equal((row[0].match(/class="app-world-club-crest-placeholder"/g)||[]).length,1,division.id+' crest per club');
  }
 });
 

@@ -219,7 +219,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
             assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
             if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
-            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700");
+            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"400","Only standings Pts remains bold");
             assert.equal(desktop.crestWidth,"48px");assert.equal(desktop.crestHeight,"48px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");

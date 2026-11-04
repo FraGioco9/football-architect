@@ -60,3 +60,17 @@ test('Static Season 0 History uses the same archive wrapper and panel spacing as
  assert.match(renderer,/app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row"/);
  assert.match(css,/\.app-history-empty\[hidden\]/);
 });
+
+test('Static Season 0 History retains the final archive geometry and record labels on every route',()=>{
+ const slugs=['br','de','eng','es','fr','it','nl','pt'].flatMap(country=>[country+'-1',country+'-2']).concat(['int-1','int-2']);
+ for(const slug of slugs){
+  const html=readFileSync(new URL('../competitions/'+slug+'/index.html',import.meta.url),'utf8');
+  const start=html.indexOf('<div class="app-history-empty" data-history-empty>');
+  assert.ok(start>=0,slug+' includes the static empty-state structure');
+  const record=html.slice(start,start+9000);
+  assert.match(record,/<div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row"/,slug+' archive matches loaded History spacing');
+  assert.match(record,/data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season<\/button>/,slug+' final Season label');
+  assert.match(record,/data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time<\/button>/,slug+' final All-time label');
+  assert.ok(record.includes('data-history-team-empty')&&record.includes('data-history-player-empty'),slug+' static empty records');
+ }
+});

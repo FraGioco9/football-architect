@@ -14,7 +14,7 @@ import {it1Demo} from "./fixtures/it-1-demo.mjs";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const source=read("assets/competition-page.js");
 // The hook exists only in this Node VM, never in the browser-served code.
-const marker="  start().catch(fail);";
+const marker="  start().catch(fail).finally(()=>window.faStandingsLoading?.set(\'bootstrap\',false));";
 assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);

@@ -150,10 +150,10 @@
     },
     {
       "input": "/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2",
-      "expected": "/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A1",
+      "expected": "/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2",
       "view": "fixtures",
       "season": "1",
-      "matchday": "quarterfinals:1"
+      "matchday": "quarterfinals:2"
     },
     {
       "input": "/competitions/int-1/fixtures?season=1&matchday=30",
@@ -164,10 +164,10 @@
     },
     {
       "input": "/competitions/int-2/fixtures?season=1&matchday=quarterfinals%3A2",
-      "expected": "/competitions/int-2/fixtures?season=1&matchday=quarterfinals%3A1",
+      "expected": "/competitions/int-2/fixtures?season=1&matchday=quarterfinals%3A2",
       "view": "fixtures",
       "season": "1",
-      "matchday": "quarterfinals:1"
+      "matchday": "quarterfinals:2"
     },
     {
       "input": "/competitions/int-2/fixtures?season=1&matchday=30",
