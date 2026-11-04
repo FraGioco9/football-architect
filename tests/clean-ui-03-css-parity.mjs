@@ -54,7 +54,10 @@ try{
       return {totalTopLevelRules:rules.length,mediaRules:rules.filter(r=>r.type===CSSRule.MEDIA_RULE).length,calendarEnabledRules:rules.filter(r=>r.selectorText?.includes("#calendar-previous")&&r.selectorText?.includes(":not(:disabled)")).map(r=>r.selectorText)};
     });
     assert.ok(cssom,"app.css not found in browser CSSOM");
-    const shot=(route==="/calendar"||route==="/competitions/it-1/history")&&width===390&&!dark&&reducedMotion ? await page.screenshot({animations:"disabled",fullPage:true}) : null;
+    // History receives intentionally different first-paint geometry on this PR;
+    // its structure is covered by the History-specific tests below. Keep pixel
+    // parity for the unchanged Calendar and CSSOM comparisons for both routes.
+    const shot=route==="/calendar"&&width===390&&!dark&&reducedMotion ? await page.screenshot({animations:"disabled",fullPage:true}) : null;
     return {computed,cssom,shot};
    }finally{await context.close()}
   };

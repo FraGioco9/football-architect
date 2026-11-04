@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {renderViewSkeleton,viewSkeletonScript} from '../tools/competition-view-skeletons.mjs';
 
 // Regression: the loading manager re-mounts templates independently of the
 // first-paint script. It must reconcile rows on every subsequent load.
@@ -72,5 +73,21 @@ test('Static Season 0 History retains the final archive geometry and record labe
   assert.match(record,/data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season<\/button>/,slug+' final Season label');
   assert.match(record,/data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time<\/button>/,slug+' final All-time label');
   assert.ok(record.includes('data-history-team-empty')&&record.includes('data-history-player-empty'),slug+' static empty records');
+ }
+});
+
+// The generated initial markup must use the current renderer, not an outdated
+// authoritative-only History shell with a separately updated template.
+test('History initial skeleton and all view bootstrap scripts match the shared renderer',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+ for(const competition of manifest.competitions){
+  const html=readFileSync(new URL('../competitions/'+competition.slug+'/index.html',import.meta.url),'utf8');
+  const sectionStart=html.indexOf('id="competition-panel-history"');
+  const emptyStart=html.indexOf('<div class="app-history-empty" data-history-empty>',sectionStart);
+  assert.ok(sectionStart>=0&&emptyStart>sectionStart,competition.id+' History panel boundaries');
+  assert.ok(html.slice(sectionStart,emptyStart).includes(renderViewSkeleton(competition,'history')),
+   competition.id+' History initial shell is generated from current preview renderer');
+  for(const view of ['stats','history','awards'])
+   assert.ok(html.includes(viewSkeletonScript(view)),competition.id+' '+view+' uses current first-paint bootstrap');
  }
 });

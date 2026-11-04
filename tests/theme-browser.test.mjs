@@ -399,8 +399,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     // The public server still exposes its honest empty state.
     await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
     await cmd("Page.navigate",{url:origin+"/competitions/it-1/fixtures?season=1&matchday=1"});
-    await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
-    assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"Public Fixtures reveals the legitimate empty state");
+    // faFixtures is created before bootstrap finishes: the public empty state
+    // must be checked after the loading controller releases the skeleton.
+    await wait("!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'&&!document.documentElement.dataset.faDevStandingsPending");
+    await wait("(()=>{const e=document.getElementById('app-fixtures-empty');return e&&!e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()");
+    assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden"),true,"Public Fixtures hides the selector when the schedule is unavailable");
     // Mobile Fixtures QA uses CDP touch input rather than programmatic .click().
     const tap=async selector=>{
       const point=await run("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)throw Error('Missing touch target');e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
