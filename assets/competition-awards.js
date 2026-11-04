@@ -42,10 +42,10 @@ const createIcon=id=>{
  return svg;
 };
 function render(context){
- if(!context?.definition){panel.replaceChildren();return;}
+ if(!context?.definition){panel.dataset.faContentState='unknown';panel.replaceChildren();return;}
  let ids;
  try{ids=window.faCompetitionRulesView.awardIds(context.definition);}
- catch{panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));return;}
+ catch{panel.dataset.faContentState="unknown";panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));return;}
  const byId=new Map(definitions.map(item=>[item.id,item]));
  const visible=ids.map(id=>byId.get(id));
  const wrap=el("div","fa-awards");
@@ -74,6 +74,15 @@ function render(context){
   }
   grid.append(card);
  }
+ // Confirmed pending awards are meaningful content, not winners to load.
+ const sameSeason=context.seasonData&&String(context.seasonData.season)===String(context.selectedSeason);
+ const allPending=visible.length>0&&visible.every(award=>{
+  const recipients=context.seasonData?.awards?.[award.id]?.recipients;
+  return !Array.isArray(recipients)||recipients.length===0;
+ });
+ panel.dataset.faContentState=sameSeason&&allPending?'empty':sameSeason?'available':'unknown';
+ panel.dataset.faContentSeason=String(context.selectedSeason);
+ panel.dataset.faContentRevision=String(context.revision??'');
  panel.replaceChildren(wrap);
  window.faAppRenderLanguage?.();
 }

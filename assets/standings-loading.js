@@ -1,6 +1,13 @@
 /* Shared competition loading lifecycle; tokens prevent stale requests releasing newer loads. */
 (function(root){
   const views=['stats','history','awards'];
+  // Only a verified empty result for the selected season/revision may hide a skeleton.
+  function confirmedEmpty(panel,context,route){
+    return !!panel&&!!context&&panel.dataset.faContentState==='empty'&&
+      panel.dataset.faContentSeason===String(context.selectedSeason)&&
+      panel.dataset.faContentRevision===String(context.revision??'')&&
+      (!route?.season||String(route.season)===String(context.selectedSeason));
+  }
   function createStandingsLoading(update,updateView=()=>{}){
     const pending=new Set(['bootstrap']),perView=new Map();
     const sync=()=>update(pending.size>0);
@@ -15,14 +22,14 @@
       }
     });
   }
-  if(typeof module==='object'&&module.exports)module.exports={createStandingsLoading};
+  if(typeof module==='object'&&module.exports)module.exports={createStandingsLoading,confirmedEmpty};
   if(root.document){
     let requestsLoading=true;const local={};
     function syncSkeleton(view,loading){
       const panel=root.document.getElementById('competition-panel-'+view);
       if(!panel?.querySelector||!root.document.querySelector)return;
       let current=panel.querySelector('[data-competition-skeleton-root]');
-      if(!loading){current?.remove();return;}
+      if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const selected=view==='stats'?(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview'):null;
       const key=view==='stats'?'stats-'+selected:view==='history'?'history-'+(preview?'preview':'authoritative'):'awards';

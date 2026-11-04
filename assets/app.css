@@ -1204,6 +1204,8 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
 #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium>.app-skeleton-bar{width:min(120px,100%);margin:0}
 html[data-fa-standings-loading="true"] #competition-panel-fixtures .app-fixtures-skeleton{display:grid}
 html[data-fa-standings-loading="true"] #competition-panel-fixtures :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] .app-fixtures-skeleton{display:none!important}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] #app-fixtures-empty{display:block!important}
 /* Compatibility with a local server still injecting the old whole-panel visibility gate. */
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
 @media(max-width:620px){
@@ -1256,5 +1258,9 @@ html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #co
 html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>.app-competition-view-skeleton{display:block}
 html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats[data-fa-content-state="empty"]>.app-competition-view-skeleton,
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards[data-fa-content-state="empty"]>.app-competition-view-skeleton{display:none!important}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats[data-fa-content-state="empty"]>:not(.app-competition-view-skeleton),
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards[data-fa-content-state="empty"]>:not(.app-competition-view-skeleton){position:static;visibility:visible;pointer-events:auto}
 /* Compatibility with a DEV server retaining the old History panel gate. */
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}

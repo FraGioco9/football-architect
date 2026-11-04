@@ -152,13 +152,18 @@
     const valid=next&&Number.isSafeInteger(next.revision)&&next.revision>=0&&text(next.definition?.id)&&count(next.definition.capacity)&&next.definition.capacity>0&&text(next.definition.rules?.version)&&Number.isSafeInteger(next.selectedSeason)&&next.selectedSeason>0;
     if(!valid){
      if(Number.isSafeInteger(next?.revision))revision=next.revision;
-     const hadDialog=Boolean(dialog);removeDialog(false);stats=null;invalid=true;render();
+     const hadDialog=Boolean(dialog);removeDialog(false);stats=null;invalid=true;panel.dataset.faContentState='unknown';render();
      if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return false;
     }
     if(context&&next.definition.id!==context.definition.id)return false;
     if(next.revision===revision){removeDialog(false);return false;}
     revision=next.revision;context=next;const hadDialog=Boolean(dialog);removeDialog(false);
-    invalid=false;try{stats=normalize(next)}catch{stats=null;invalid=true}render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
+    invalid=false;try{stats=normalize(next)}catch{stats=null;invalid=true}
+    const noMatches=!invalid&&next.seasonData?.statistics?.overview?.matchesPlayed===0&&String(next.seasonData.season)===String(next.selectedSeason);
+    panel.dataset.faContentState=noMatches?'empty':stats?'available':'unknown';
+    panel.dataset.faContentSeason=String(next.selectedSeason);
+    panel.dataset.faContentRevision=String(next.revision??'');
+    render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
    },
    destroy(){if(destroyed)return;destroyed=true;removeDialog(false);root.remove();mounted.delete(panel)}
   });

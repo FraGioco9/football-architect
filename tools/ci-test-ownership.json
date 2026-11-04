@@ -82,6 +82,8 @@
     "tests/page-load-02-club-browser.mjs": "browser",
     "tests/competition-fixtures.test.mjs": "site-node",
     "tests/competition-history.test.mjs": "site-node",
+    "tests/competition-content-state.test.mjs": "site-node",
+    "tests/history-archive-skeleton-rows.test.mjs": "site-node",
     "tests/competition-manifest-v2.test.mjs": "site-node",
     "tests/competition-model.test.mjs": "site-node",
     "tests/competition-navigation.test.mjs": "site-node",

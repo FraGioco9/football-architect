@@ -297,6 +297,19 @@
       while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
     }else fields.list.replaceChildren(...matches);
     fields.summary.replaceChildren(element('span','',selectedLabel.textContent),element('strong','',String(matches.filter(item=>item.dataset.fixtureMatch).length)),word('fixturesMatches','matches'));
+    // Do not interpret missing or stale season data as an empty schedule.
+    const context=window.faCompetitionContext,data=context?.seasonData;
+    const matching=data&&String(data.season)===String(context.selectedSeason)&&String(context.selectedSeason)===String(navigation.get().season);
+    const absent=matching&&data.fixtures===null;
+    const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
+      (!international&&!isPostseason&&matches.length===0));
+    const panel=document.getElementById('competition-panel-fixtures');
+    if(panel){
+      panel.dataset.faContentState=absent||emptyRound?'empty':available?'available':'unknown';
+      panel.dataset.faContentSeason=String(context?.selectedSeason??'');
+      panel.dataset.faContentRevision=String(context?.revision??'');
+    }
+    if(absent||emptyRound){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
     window.faAppRenderLanguage?.();
   }
   function select(value){
