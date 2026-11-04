@@ -32,8 +32,6 @@
       if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const season=Number(root.document.documentElement.dataset.faDevCurrentSeason??root.faFixturesInitialProgress?.currentSeason??1);
-      // Season 0 has no completed competitions; retain the real empty History layout.
-      if(view==='history'&&preview&&season===0){current?.remove();return;}
       const selected=view==='stats'?(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview'):null;
       const key=view==='stats'?'stats-'+selected:view==='history'?'history-'+(preview?'preview':'authoritative'):'awards';
       if(current?.dataset.competitionSkeletonRoot!==key){

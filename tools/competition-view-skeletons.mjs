@@ -46,10 +46,7 @@ export function viewSkeletonFirstPaint(view){
  if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
-  if(template&&skeleton){
-   if(Number(document.documentElement.dataset.faDevCurrentSeason??window.faFixturesInitialProgress?.currentSeason??1)===0)skeleton.remove();
-   else skeleton.replaceWith(template.content.cloneNode(true));
-  }
+  if(template&&skeleton)skeleton.replaceWith(template.content.cloneNode(true));
  }
  if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
   const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');

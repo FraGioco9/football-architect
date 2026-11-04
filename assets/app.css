@@ -1284,6 +1284,3 @@ html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #com
 /* Compatibility with a DEV server retaining the old History panel gate. */
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}
 
-/* Season 0 has no completed History: preserve its real empty layout during refresh. */
-html[data-fa-dev-current-season="0"][data-fa-dev-seasons] :is(#competition-panel-history)>.app-competition-view-skeleton{display:none!important}
-html[data-fa-dev-current-season="0"][data-fa-dev-seasons] :is(#competition-panel-history)>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}

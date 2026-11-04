@@ -41,13 +41,12 @@ test('Season 0 uses the empty archive message instead of fabricated podium rows'
  assert.match(firstPaint,/competitionHistoryEmpty/);
 });
 
-// Season 0 is a known empty state, not a transient published-history loading table.
-test('Season 0 skips all History skeletons during refresh and first paint',()=>{
+
+test('Season 0 uses the DEV archive shell rather than published Hall of Champions',()=>{
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
  const firstPaint=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
- const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- assert.match(loading,/view==='history'&&preview&&season===0/);
- assert.match(firstPaint,/faDevCurrentSeason\?\?window\.faFixturesInitialProgress\?\.currentSeason\?\?1\)===0\)skeleton\.remove\(\)/);
- assert.match(css,/data-fa-dev-current-season="0"/);
- assert.match(css,/position:static!important;visibility:visible!important/);
+ assert.match(loading,/history-'\+\(preview\?'preview':'authoritative'\)/);
+ assert.doesNotMatch(loading,/view==='history'&&preview&&season===0\)\{current\?\.remove\(\)/);
+ assert.match(firstPaint,/if\(template&&skeleton\)skeleton\.replaceWith\(template\.content\.cloneNode\(true\)\)/);
+ assert.match(firstPaint,/if\(completed===0\)/);
 });
