@@ -55,7 +55,7 @@ test('Static Season 0 History uses the same archive wrapper and panel spacing as
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const renderer=readFileSync(new URL('../tools/render-competition-page.mjs',import.meta.url),'utf8');
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
- assert.match(css,/\\.app-competition-panel\\{margin-top:14px/);
+ assert.ok(css.includes('.app-competition-panel{margin-top:14px;min-width:0'));
  assert.doesNotMatch(css,/data-fa-history-static="true"\\] #competition-panel-history\\{margin-top:/);
  assert.match(renderer,/app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row"/);
  assert.match(css,/\.app-history-empty\[hidden\]/);

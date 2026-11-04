@@ -98,7 +98,7 @@ test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview
   const panel=html.split('id="competition-panel-stats"')[1].split('id="competition-panel-history"')[0];
   assert.ok(panel.includes('id="fa-dev-stats"'));
   assert.equal((panel.match(/<button[^>]*data-stats-view=/g)||[]).length,3);
-  assert.equal((panel.match(/fa-dev-stats-card"/g)||[]).length,3);
+  assert.equal((panel.match(/fa-dev-stats-card"/g)||[]).length,6); // three visible cards and three first-paint template cards
  }
 });
 test('STATS-SEASON: mismatched season/rules and reused revision cannot restore old statistics',()=>{
