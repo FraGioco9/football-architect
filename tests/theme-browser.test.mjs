@@ -800,9 +800,16 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       for(const country of ['DE','BR','PT']){
-        await visit('/competitions/'+country.toLowerCase()+'-1/standings','!!window.faFixtures');
+        // The image load event can precede the Standings hydration release:
+        // the real table is then still visibility:hidden behind its skeleton.
+        await visit('/competitions/'+country.toLowerCase()+'-1/standings',
+          "!!window.faFixtures&&!!document.querySelector('#competition-panel-standings>.app-world-standings')"+
+          "&&getComputedStyle(document.querySelector('#competition-panel-standings>.app-world-standings')).visibility==='visible'");
         const selector='[data-club-crest="'+country+'-1"]';
-        await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
+        // Preserve the strict rendering assertion below, but sample it only
+        // after the responsive projection and its loaded SVG are actually visible.
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")].filter(n=>n.getClientRects().length);return hosts.length===1&&hosts.every(n=>{const i=n.querySelector('img');if(!i)return false;const r=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&r.width>0&&r.height>0&&getComputedStyle(i).visibility==='visible'})})()");
         const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
         const geometry=await run("(()=>{const h=[...document.querySelectorAll("+JSON.stringify(selector)+")].find(n=>n.getClientRects().length),b=h.getBoundingClientRect(),r=h.closest('tr,summary').getBoundingClientRect();return {width:b.width,height:b.height,row:r.height,overflow:document.documentElement.scrollWidth>innerWidth}})()");
         assert.equal(geometry.width,width<620?40:48,'Crest slot width');
