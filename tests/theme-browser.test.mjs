@@ -866,9 +866,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     await wait('document.readyState===\'complete\'&&location.origin==='+JSON.stringify(devOrigin));
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','4');sessionStorage.setItem('football-architect:standings-dev-matchdays','30')");
     await cmd('Page.navigate',{url:devOrigin+'/competitions/pt-1/fixtures?season=4&matchday=1'});
-    await wait("!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
+    // An SVG can finish loading before the Fixtures view finishes hydration.
+    // The first-paint skeleton reserves sixteen slots while the actual rows
+    // remain hidden: naturalWidth alone does not certify visible geometry.
+    await wait("location.pathname==='/competitions/pt-1/fixtures'&&!!document.querySelector('#app-fixtures-list [data-club-crest=\"PT-1\"][data-club-crest-loaded=\"true\"] img')?.naturalWidth");
     for(const width of [1440,390,320]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+      const expected=width<620?56:64;
+      await wait("(()=>{const list=document.getElementById('app-fixtures-list');if(!list||getComputedStyle(list).visibility!=='visible')return false;const hosts=[...list.querySelectorAll('[data-club-crest]')];return hosts.length===16&&hosts.every(h=>{const r=h.getBoundingClientRect();return r.width==="+expected+"&&r.height==="+expected+"})})()");
       const sizes=await run("[...document.querySelectorAll('#app-fixtures-list [data-club-crest]')].map(h=>({w:h.getBoundingClientRect().width,h:h.getBoundingClientRect().height}))");
       assert.ok(sizes.length===16&&sizes.every(b=>b.w===(width<620?56:64)&&b.h===(width<620?56:64)),'Larger fixture crests: '+JSON.stringify({width,sizes}));
       assert.equal(await run("document.documentElement.scrollWidth>innerWidth"),false,'No page overflow from large fixture crests');
