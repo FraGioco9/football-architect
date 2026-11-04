@@ -190,12 +190,21 @@
   fr:{matchday:'Journée',playout:'Maintien',promotionPlayoffs:'Barrages',knockouts:'Barrages',first:'Aller',second:'Retour'},
   it:{matchday:'Giornata',playout:'Play-out',promotionPlayoffs:'Playoff',knockouts:'Playoff',first:'Andata',second:'Ritorno'}
  };
+ // UI phases group legs; the canonical calendar/data choices remain unchanged.
+ function fixturesDisplayChoices(d){
+  const choices=rules.fixtureChoices(d);
+  return d.category==='international'?choices.filter((choice,index)=>typeof choice.value==='number'||choices.findIndex(c=>c.phaseId===choice.phaseId)===index):choices;
+ }
+ function fixturesDisplayValue(d,value){
+  const choice=rules.fixtureChoices(d).find(c=>c.value===value);
+  if(!choice)return value;
+  return d.category==='international'&&typeof choice.value==='string'?fixturesDisplayChoices(d).find(c=>c.phaseId===choice.phaseId).value:choice.value;
+ }
  function fixturesChoiceLabel(d,choice,locale='en'){
   const t=fixtureCopy[locale]||fixtureCopy.en;
   if(typeof choice.value==='number')return t.matchday+' '+choice.round;
   const label=t[choice.labelKey]||phaseLabel(choice.labelKey,locale);
-  const phase=d.rules.phases.find(p=>p.id===choice.phaseId);
-  return choice.round&&phase?.ties.some(tie=>tie.legs===2)?label+' · '+(choice.round===1?t.first:t.second):label;
+  return label;
  }
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,renderStandingsLegend,fixturesChoiceLabel});
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,renderStandingsLegend,fixturesChoiceLabel,fixturesDisplayChoices,fixturesDisplayValue});
 });

@@ -7,17 +7,20 @@ const calendar=calendarModel.createSeason(1);
 const nationalDays=calendar.days.filter(d=>d.events.some(e=>e.family==='national')).map(d=>d.day);
 export function fixturesShellConfig(d){
  const league=d.rules.phases.find(p=>p.rankOutcomes),rounds=rules.phaseMetrics(d,league.id).rounds;
- const choices=rules.fixtureChoices(d).map(choice=>{
+ const choices=view.fixturesDisplayChoices(d).map(choice=>{
   let groups;
   if(typeof choice.value==='number')groups=[{count:d.capacity/2}];
-  else if(d.category==='international')groups=[{count:d.rules.phases.find(p=>p.id===choice.phaseId).ties.length}];
+  else if(d.category==='international'){
+   const phase=d.rules.phases.find(p=>p.id===choice.phaseId),legs=Math.max(...phase.ties.map(t=>t.legs));
+   groups=Array.from({length:legs},(_,i)=>({count:phase.ties.filter(t=>t.legs>i).length,...(legs===1?{}:{key:i===0?'postseasonFirstLeg':'postseasonSecondLeg',label:i===0?'First leg':'Second leg'})}));
+  }
   else{
    const phases=d.rules.phases.filter(p=>p.type==='knockout');
    const ties=phases[0].ties.filter(t=>t.legs===2).length;
    groups=[{count:ties,key:'postseasonFirstLeg',label:'First leg'},{count:ties,key:'postseasonSecondLeg',label:'Second leg'}];
    if(phases.some(p=>p.ties.some(t=>t.legs===1)))groups.push({count:1,key:'postseasonFinal',label:'Final'});
   }
-  return {value:choice.value,key:typeof choice.value==='number'?'league':choice.value,groups,
+  return {value:choice.value,aliases:rules.fixtureChoices(d).filter(c=>typeof c.value==='string'&&c.phaseId===choice.phaseId).map(c=>String(c.value)),key:typeof choice.value==='number'?'league':choice.value,groups,
    labels:Object.fromEntries(locales.map(locale=>[locale,view.fixturesChoiceLabel(d,choice,locale)]))};
  });
  return {international:d.category==='international',rounds,choices,nationalDays,
@@ -25,7 +28,7 @@ export function fixturesShellConfig(d){
 }
 // Pure and serializable, shared by generator tests and the synchronous browser bootstrap.
 export function resolveFixtureSelection(config,options={}){
- const explicit=config.choices.find(c=>String(c.value)===String(options.matchday));
+ const explicit=config.choices.find(c=>String(c.value)===String(options.matchday)||c.aliases.includes(String(options.matchday)));
  if(explicit)return explicit;
  if(options.matchday!==undefined&&options.matchday!==null)return config.choices[0];
  let selected=1;
@@ -38,9 +41,9 @@ export function resolveFixtureSelection(config,options={}){
    selected=played>=config.rounds?config.choices.find(c=>typeof c.value==='string')?.value||config.rounds:viewed===options.currentSeason?Math.min(config.rounds,played+1):1;
   }
  }
- return config.choices.find(c=>c.value===selected)||config.choices[0];
+ return config.choices.find(c=>c.value===selected||c.aliases.includes(String(selected)))||config.choices[0];
 }
-const card='<li class="app-fixture-match" data-skeleton-fixture><div class="app-fixture-club app-fixture-home"><span class="app-fixtures-skeleton-crest"></span><span class="app-fixture-name app-skeleton-bar"></span></div><div class="app-fixture-result"><span class="app-fixture-status app-skeleton-bar"></span><span class="app-fixture-score app-skeleton-bar"></span><span class="app-fixture-stadium app-skeleton-bar"></span></div><div class="app-fixture-club"><span class="app-fixtures-skeleton-crest"></span><span class="app-fixture-name app-skeleton-bar"></span></div></li>';
+const card='<li class="app-fixture-match" data-skeleton-fixture><div class="app-fixture-club app-fixture-home"><span class="app-fixtures-skeleton-crest"></span><span class="app-fixture-name"><span class="app-skeleton-bar"></span></span></div><div class="app-fixture-result"><span class="app-fixture-status"><span class="app-skeleton-bar"></span></span><span class="app-fixture-score"><span class="app-skeleton-bar"></span></span><span class="app-fixture-stadium"><span class="app-skeleton-bar"></span></span></div><div class="app-fixture-club"><span class="app-fixtures-skeleton-crest"></span><span class="app-fixture-name"><span class="app-skeleton-bar"></span></span></div></li>';
 const rows=choice=>choice.groups.map(g=>(g.key?'<li class="app-fixture-stage"><h3 data-app-i18n="'+g.key+'">'+g.label+'</h3></li>':'')+Array(g.count).fill(card).join('')).join('');
 export function renderFixturesSkeleton(d){
  const config=fixturesShellConfig(d),templates=[...new Map(config.choices.map(c=>[c.key,c])).values()];
@@ -57,7 +60,7 @@ export function fixturesShellBootstrap(config,resolve){
  const options={...window.faFixturesInitialProgress,matchday:params.get('matchday'),season:params.get('season')};
  let shape;
  function select(value){
-  const choice=config.choices.find(c=>String(c.value)===String(value));
+  const choice=config.choices.find(c=>String(c.value)===String(value)||c.aliases.includes(String(value)));
   if(!choice)return;
   if(shape!==choice.key){
    const template=document.querySelector('[data-fixtures-skeleton-template="'+choice.key+'"]');
