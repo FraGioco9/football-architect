@@ -1224,9 +1224,19 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
-/* Match the archive's real crest-driven row height, including responsive padding. */
+/* Archive skeleton mirrors the loaded grid: 48px crest rows on desktop,
+   and season + three 40px club identities stacked on mobile. */
 .app-view-skeleton-history-archive .app-history-dev-season-button{min-height:72px}
-@media(max-width:620px){.app-view-skeleton-history-archive .app-history-dev-season-button{min-height:60px}}
+.app-view-skeleton-history-archive .app-history-dev-season-button>span{display:flex;align-items:center;min-width:0;min-height:48px}
+.app-view-skeleton-history-archive .app-history-dev-season-button>span:first-child>.app-skeleton-bar{width:4ch}
+.app-view-skeleton-history-archive .app-history-dev-season-button>span:not(:first-child)>.app-skeleton-bar{width:min(140px,100%)}
+@media(max-width:620px){
+ .app-view-skeleton-history-archive .app-history-dev-season-button{min-height:0}
+ .app-view-skeleton-history-archive .app-history-dev-season-button>span:first-child{min-height:20px}
+ .app-view-skeleton-history-archive .app-history-dev-season-button>span:not(:first-child){min-height:40px}
+ .app-view-skeleton-history-archive .app-history-dev-season-button>span:nth-child(2){padding-block:4px}
+}
+@media(max-width:360px){.app-view-skeleton-history-archive .app-history-dev-season-button{padding:10px}}
 .app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
 .app-view-skeleton-champion>.app-skeleton-bar{max-width:180px}
 .app-view-skeleton-history-table{width:100%;table-layout:fixed;border-collapse:collapse}
