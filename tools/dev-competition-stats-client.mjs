@@ -53,6 +53,8 @@ function createStatsPreviewProvider(){
   // Do not race that writer or replace its fixtures/results with an older snapshot.
   if(days===0||data.season!==context.selectedSeason||data.rulesVersion!==definition.rules.version||
     !Array.isArray(data.results)||data.results.length!==days*definition.metrics.phases[league.id].matchesPerRound)return false;
+  const finishStats=window.faStandingsLoading?.beginView?.('stats')||(()=>{});
+  try{
   const aggregate=await aggregatePreviewStats({...division,rules:definition.rules},days,context.selectedSeason);
   const statistics={
    overview:{matchesPlayed:aggregate.overview.matchesPlayed,totalGoals:aggregate.overview.totalGoals,goalsPerMatch:aggregate.overview.goalsPerMatch},
@@ -64,6 +66,7 @@ function createStatsPreviewProvider(){
     readPreviewProgress(sessionStorage).season===0||document.documentElement.dataset.faDevCurrentSeason==='0')return false;
   if(signature(current.seasonData.statistics)===signature(statistics))return false;
   return window.faCompetitionContextApi.replaceSeasonData({...data,statistics:{...data.statistics,...statistics}},context.revision);
+  }finally{finishStats();}
  }
  const events=['fa:competition-context-change','fa:dev-progress-change','fa:fictional-standings-change','pageshow'];
  for(const event of events)window.addEventListener(event,refresh);

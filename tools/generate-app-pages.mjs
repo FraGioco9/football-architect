@@ -119,15 +119,52 @@ const worldPageReplacements = (division = null, neutral = false) => {
   };
 };
 // Full generated routes keep the approved Compact SVG in the initial response.
+// Keep static competition tabs in the initial parse path, before hidden pages and
+// inline division crests. Flex order retains header -> tabs -> panels visually.
+const frontloadCompetitionShell=(source,id)=>{
+ const sectionMarker='        <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">';
+ const mainMarker='<main class="app-main" id="main-content" tabindex="-1">';
+ const sectionStart=source.indexOf(sectionMarker);
+ const tabsStart=source.indexOf('          <div class="app-competition-tabs" role="tablist"',sectionStart);
+ const scriptStart=source.indexOf('          <script>(()=>{const view=document.documentElement.dataset.competitionView',tabsStart);
+ const scriptEnd=source.indexOf('</script>',scriptStart);
+ if([sectionStart,tabsStart,scriptStart,scriptEnd].some(n=>n<0))throw Error('Missing static competition controls: '+id);
+ const tabShell=source.slice(tabsStart,scriptEnd+'</script>'.length);
+ let html=source.slice(0,tabsStart)+source.slice(scriptEnd+'</script>'.length);
+ const sectionBody=html.indexOf(sectionMarker)+sectionMarker.length;
+ html=html.slice(0,sectionBody)+'\n'+tabShell+'\n'+html.slice(sectionBody);
+ const sectionBegin=html.indexOf(sectionMarker);
+ const sectionEnd=html.indexOf('        </section>\n      </main>',sectionBegin);
+ if(sectionEnd<0)throw Error('Missing competition section boundary: '+id);
+ const sectionClose='        </section>';
+ const section=html.slice(sectionBegin,sectionEnd+sectionClose.length);
+ html=html.slice(0,sectionBegin)+html.slice(sectionEnd+sectionClose.length);
+ const mainStart=html.indexOf(mainMarker);
+ if(mainStart<0)throw Error('Missing main element: '+id);
+ const insertion=mainStart+mainMarker.length;
+ let result=html.slice(0,insertion)+'\n'+section+'\n'+html.slice(insertion);
+ const headerStart=result.indexOf('          <header class="app-competition-header">',insertion);
+ const headerEnd=result.indexOf('          </header>',headerStart);
+ if(headerStart<0||headerEnd<0)throw Error('Missing static competition header: '+id);
+ const readyAt=headerEnd+'          </header>'.length;
+ return result.slice(0,readyAt)+'\n          <script data-fa-competition-first-paint-ready>if(!["standings","fixtures","stats","history","awards"].includes(document.documentElement.dataset.competitionView))document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>'+result.slice(readyAt);
+};
+const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint] body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
 const competitionRoute = d=>{
  let html=template;
  for(const [token,value] of Object.entries(worldPageReplacements(d,d.category==="international")))html=html.replace(token,value);
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-competition" content="'+encode(d.id)+'">'+(d.category==="domestic"?'\n  <meta name="fa-division" content="'+encode(d.id)+'">':''));
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
+ html=frontloadCompetitionShell(html,d.id);
+ // Reveal Standings after its static skeleton is parsed, without waiting for runtime/data.
+ html=html.replace('<!-- standings-skeleton-end -->','<!-- standings-skeleton-end --><script data-fa-standings-first-paint-ready>if(document.documentElement.dataset.competitionView==="standings")document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>');
+ html=html.replace('id="competition-panel-standings" class=', 'id="competition-panel-standings" aria-busy="true" class=');
+ html=html.replace('id="competition-panel-fixtures" class=', 'id="competition-panel-fixtures" aria-busy="true" class=');
+ for(const view of ['stats','history','awards'])html=html.replace('id="competition-panel-'+view+'" class=', 'id="competition-panel-'+view+'" aria-busy="true" class=');
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
- const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
- return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
+ const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\";document.documentElement.dataset.faStandingsLoading=\"true\"})();";
+ return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n    <script data-fa-competition-first-paint-init>document.documentElement.setAttribute("data-fa-competition-prepaint","");document.addEventListener("DOMContentLoaded",()=>document.documentElement.removeAttribute("data-fa-competition-prepaint"),{once:true});</script>\n  '+competitionShellCss+'\n  <link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/standings-loading.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
  schemaVersion:2,approved:provisionalAssignments.approved,profile:model.profile,clubCrests:clubCrestAssets().catalog,
@@ -150,15 +187,24 @@ const outputPages = [
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
  {name:"competitions",path:"competitions/index.html",replacements:worldPageReplacements()},
- {name:"competition-shared",path:"competitions/_shared/index.html",
-  replacements:worldPageReplacements(divisionData.find(d=>d.id==="IT-1"),true)},
  ...competitionManifest.competitions.map(definition=>({
   name:definition.id,path:"competitions/"+definition.slug+"/index.html",
   directContent:competitionRoute(definition)
  }))
 ];
-if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==23)
+if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==22)
  throw Error("Division catalogue cardinality changed; review the source data");
+// The neutral _shared fallback is a separately maintained compatibility
+// snapshot, not a division route. Its first-paint structure is under contract;
+// regenerating canonical division routes must never overwrite this snapshot.
+const neutralShell=readFileSync(new URL("../competitions/_shared/index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+for(const marker of ['id="app-divisions"','app-competition-tabs',
+ 'id="competition-panel-standings"','id="competition-panel-fixtures"',
+ 'id="competition-panel-stats"','id="competition-panel-history"',
+ 'id="competition-panel-awards"','data-history-empty',
+ 'data-skeleton-archive-row','id="app-competition-badge"']){
+ if(!neutralShell.includes(marker))throw Error("Neutral competition shell missing: "+marker);
+}
 const check = process.argv.length === 3 && process.argv[2] === "--check";
 if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
 const normalizeRouteLinks=(html,path)=>{
@@ -200,7 +246,7 @@ for(const page of outputPages){
    html=html.replaceAll(token,value);
   }
   if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
-  if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
+  if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
  if(page.name==="settings")html=html.replace('</head>','  <link rel="stylesheet" href="/assets/admin-settings.css">\n  <script src="/assets/admin-settings.js" defer></script>\n</head>').replace('<section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">',renderAdminSettings()+'\n            <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">');
  if(page.name==="competitions")html=html.replace("</head>","  <script src=\"/assets/international-cups.js\" defer></script>\n</head>");
@@ -242,4 +288,4 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  writeOutput("clubs/index.html",html);
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 19 Competitions), 1 neutral snapshot structurally audited, 1 competition manifest, 1 club template and 1 club manifest");

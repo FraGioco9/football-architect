@@ -404,7 +404,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
-    assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
+    assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/standings');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
@@ -529,6 +529,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?season=3&matchday=17'");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(advancedIndex+1));
     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
+    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings?season=3');
+    await run("document.querySelector('.club-competition-name a').click()");
+    await wait("location.pathname==='/competitions/it-1/standings'&&window.faCompetitionContext?.selectedSeason===3&&window.faCompetitionContext?.seasonData?.season===3&&document.documentElement.dataset.faStandingsLoading==='false'");
+    assert.deepEqual(await run("[...document.querySelectorAll('#app-standings-body tr[data-world-club]')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])"),advanced.rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),'Club -> Standings preserves the displayed season and full table');
+    await visit('/clubs/it/1/overview',devOrigin);
+    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings?season=3'");
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
     await wait("document.querySelector('[data-club-position]')?.textContent==='—'&&document.querySelector('.club-competition-next a')===null");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—');
@@ -548,13 +554,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      for(const row of baseline.competitionBrowser){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
-      assert.equal(await currentUrl(),row.expected,'A03-04C direct '+width+' '+row.input);
+      // Route parsing preserves legacy leg URLs; the deferred Fixtures UI groups both legs.
+      const groupedLeg=row.matchday==='quarterfinals:2';
+      if(groupedLeg)await wait("!!window.faFixtures&&window.faCompetitionRoute.get().matchday==='quarterfinals:1'");
+      assert.equal(await currentUrl(),groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals%3A1'):row.expected,'A03-04C direct '+width+' '+row.input);
       assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},'Core precedes deferred consumers');
       assert.equal(await run('Object.isFrozen(window.faRoutesRegistry)&&Object.isFrozen(window.faRoutesRegistry.countries)'),true);
       assert.equal(await run("window.faRoutesRegistry.buildRoute({kind:'club',country:'br',id:40,view:'history'})"),'/clubs/br/40/history');
 
       assert.equal(await run('window.faCompetitionRoute.get().view'),row.view);
-      assert.equal(await run('window.faCompetitionRoute.get().matchday'),row.matchday);
+      assert.equal(await run('window.faCompetitionRoute.get().matchday'),groupedLeg?'quarterfinals:1':row.matchday);
       assert.equal(await run("document.querySelectorAll('.app-competition-tabs [role=tab][aria-selected=true]').length"),1);
      }
     }

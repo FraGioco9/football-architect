@@ -14,7 +14,7 @@ import {it1Demo} from "./fixtures/it-1-demo.mjs";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const source=read("assets/competition-page.js");
 // The hook exists only in this Node VM, never in the browser-served code.
-const marker="  start().catch(fail);";
+const marker="  start().catch(fail).finally(()=>window.faStandingsLoading?.set(\'bootstrap\',false));";
 assert.equal(source.split(marker).length,2);
 const demoSource=source.replace(marker,
   "  window.__faFixtureHooks = { createStandingsRow, attachFormTooltips };\n"+marker);
@@ -374,7 +374,7 @@ test("DEMO-TOOLTIP-01: match context, hover, focus, tap, viewport clipping and d
  assert.equal(tooltip.hidden,false);
  assert.equal(newest.attrs["aria-describedby"],"app-world-form-tooltip");
  assert.equal(metadata.children[0].children[1].textContent,"15");
- assert.match(scoreline.children[1].textContent,/^(?:1 – 2|2 – 1|1 – 1)$/);
+ assert.match(scoreline.children[1].children.map(part=>part.textContent).join(""),/^(?:1 – 2|2 – 1|1 – 1)$/);
  assert.ok(scoreline.children[0].textContent);
  assert.ok(scoreline.children[2].textContent);
  assert.notEqual(scoreline.children[0].textContent,scoreline.children[2].textContent);

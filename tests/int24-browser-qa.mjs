@@ -68,7 +68,7 @@ try {
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
    if(view==='fixtures'){
-    assert.equal(await page.locator('[data-fixture-round-choice]').count(),13);
+    assert.equal(await page.locator('[data-fixture-round-choice]').count(),10); // 6 league rounds + 4 knockout phases; legs share one selector
     assert.equal(await page.locator('[data-fixture-round-choice="30"]').count(),0);
     assert.equal(await page.locator('#app-fixtures-toolbar').isVisible(),false);
    }
@@ -325,7 +325,7 @@ try {
    return {
     bands:[...document.querySelectorAll('#app-standings-body tr')].slice(0,7).map(el=>el.dataset.standingOutcome||''),
     centered:glyphs.length>0&&glyphs.every(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),box=el.getBoundingClientRect();return Math.abs((text.left+text.right)-(box.left+box.right))<=2&&Math.abs((text.top+text.bottom)-(box.top+box.bottom))<=3}),
-    labels:['sovereign','federation'].every(kind=>document.querySelector('#standings-outcome-'+kind+' [data-competition-outcome]').textContent===window.faCompetitionRulesView.outcomeLabel(window.faCompetitionContext.definition,{kind},document.documentElement.lang)),
+    labels:['sovereign','federation'].every(kind=>document.querySelector('#standings-outcome-'+kind+' [data-competition-outcome]').textContent===window.faCompetitionRulesView.legendLabel(window.faCompetitionContext.definition,{kind},document.documentElement.lang)),
     colors:['sovereign','federation'].map(kind=>getComputedStyle(document.querySelector('[data-standing-outcome="'+kind+'"]')).getPropertyValue('--standing-outcome-color').trim())
    };
   });

@@ -624,7 +624,7 @@ test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained view
  const publicRuntime=read("assets/competition-page.js").toString();
  assert.ok(css.includes("min-height:clamp(100px,29vw,114px);height:auto;max-height:min(60vh,260px);aspect-ratio:auto"));
  assert.ok(css.includes("overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain"));
- assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:400}"));
  for(const field of ["game.homeGoals","game.awayGoals","game.homeId","game.awayId","game.round","game.isHome"])
   assert.ok(client.includes(field),"tooltip retains real DEV match metadata: "+field);
  assert.ok(client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124") ||
@@ -734,4 +734,47 @@ test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and re
  assert.equal(context.previewState,'OFF','Failed hydration disables the DEV preview');
  assert.deepEqual(cleanups,['stale','current'],'Failed hydration restores canonical rows');
  assert.equal(dataset.faDevSeasonTransition,undefined,'Failure also releases the visibility guard');
+});
+
+test("competition first paint: served DEV tabs never wait for async scroll restoration", async () => {
+ await withServer(async get=>{
+  for(const id of [...allIds.map(id=>id.toLowerCase()),"int-1","int-2"]){
+   const response=await get(`/competitions/${id}/fixtures?season=1`);
+   assert.equal(response.status,200);
+   const html=response.body;
+   assert.ok(html.includes('data-fa-dev-preview'),"Exercise the DEV-injected response");
+   assert.ok(html.includes('class="app-competition-tabs"'),"Static navigation must be served");
+   const styles=[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(match=>match[1]).join("\n");
+   assert.doesNotMatch(styles,/[^{}]*\.app-competition-tabs[^{}]*\{[^}]*visibility\s*:\s*hidden/,"Static tabs must remain visible before dynamic scripts run: "+id);
+  }
+ });
+});
+
+
+test("FORM tooltip keeps the separator in equal score tracks and only the result bold",()=>{
+ const css=read("assets/app.css").toString();
+ assert.match(css,/\.app-world-form-tooltip-score\{[^}]*grid-template-columns:minmax\(2ch,1fr\) 1ch minmax\(2ch,1fr\)/);
+ assert.match(css,/\.app-world-form-tooltip-meta\{[^}]*font-weight:400/);
+ assert.match(css,/\.app-world-form-tooltip-team\{[^}]*font-weight:400/);
+ assert.ok(css.includes('#competition-panel-standings .app-world-form-glyph{font-weight:800}'));
+ for(const path of ['assets/competition-page.js','tools/dev-standings-preview-client.mjs']){
+  const source=read(path).toString();
+  assert.ok(source.includes('score.append(scoreHome,scoreSeparator,scoreAway)'),path);
+  assert.ok(source.includes('scoreHome.textContent = '),path);
+  assert.ok(source.includes('scoreAway.textContent = '),path);
+  assert.ok(!source.includes('const roundNumber = node("strong")'));
+  assert.ok(!source.includes('const number = item("strong","","")'));
+ }
+});
+
+test('club entry without a season uses the Debug season before and after router initialization',()=>{
+ const from=client.indexOf('function selectedSeason()'),to=client.indexOf('function syncCompetitionLinks()',from);
+ const context={availablePreviewSeasons:()=>[1,2,3,4],routeSeasonOverride:null,debugSeason:3,URL,window:{location:{href:'http://app.localhost:2000/competitions/it-1/standings'}}};
+ const select=runInNewContext(client.slice(from,to)+';selectedSeason',context);
+ assert.equal(select(),3,'The initial request must match the current Debug season');
+ context.window.faCompetitionRoute={get:()=>({season:'3'})};
+ assert.equal(select(),3,'Router readiness cannot invalidate initial hydration');
+ context.window.location.href+='?season=1';assert.equal(select(),1,'Explicit season is preserved');
+ context.routeSeasonOverride=2;assert.equal(select(),2,'A later routed season wins over the initial URL');
+ context.routeSeasonOverride=null;context.window.location.href='http://app.localhost:2000/competitions/it-1/standings';delete context.window.faCompetitionRoute;context.debugSeason=0;assert.equal(select(),1);
 });

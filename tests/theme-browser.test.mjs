@@ -121,6 +121,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       try{diagnostic=JSON.stringify(await run(`(()=>({url:location.href,body:document.body?.textContent?.slice(0,180),readyState:document.readyState,route:window.faCompetitionRoute?.get?.()||null,preview:sessionStorage.getItem('football-architect:standings-dev-preview'),pending:document.documentElement.dataset.faDevStandingsPending||null,fixturesApi:typeof window.faFixtures,prepare:typeof window.faFixtures?.prepare,fixtureRows:[...document.querySelectorAll('[data-fixture-match]')].map(n=>({id:n.dataset.fixtureMatch,score:n.querySelector('.app-fixture-score')?.textContent||null})),empty:(()=>{const e=document.getElementById('app-fixtures-empty');return e?{hidden:e.hidden,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,text:e.textContent}:null})(),errors:window.__faRuntimeErrors||[]}))()`));}catch(error){diagnostic=String(error)}
       throw Error("Timed out: "+expr+"; browser state: "+diagnostic);
     };
+    // First paint has four decorative archive rows too. Wait for the real
+    // season anchors after DEV History hydration before asserting their links.
+    const waitForHistoryArchive=async route=>{
+      const target=new URL(route,devOrigin);
+      await wait("location.origin==="+JSON.stringify(target.origin)+
+        "&&location.pathname==="+JSON.stringify(target.pathname)+
+        "&&[...document.querySelectorAll('.app-history-dev-archive>li')].length===4"+
+        "&&[...document.querySelectorAll('.app-history-dev-archive>li')].every(row=>row.querySelector('a.app-history-dev-season-link[href]'))");
+    };
     const visit=async(route,condition="true")=>{
       const url=origin+route;await cmd("Page.navigate",{url});
       await wait("location.pathname.replace(/\\/$/,\"\")==="+JSON.stringify(new URL(url).pathname.replace(/\/$/, ""))+"&&document.readyState==='complete'&&("+condition+")");
@@ -219,7 +228,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
             assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
             if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
-            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700");
+            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"400","Only standings Pts remains bold");
             assert.equal(desktop.crestWidth,"48px");assert.equal(desktop.crestHeight,"48px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
@@ -399,8 +408,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     // The public server still exposes its honest empty state.
     await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
     await cmd("Page.navigate",{url:origin+"/competitions/it-1/fixtures?season=1&matchday=1"});
-    await wait("!!window.faFixtures&&!document.documentElement.dataset.faDevStandingsPending");
-    assert.equal(await run("(()=>{const e=document.getElementById('app-fixtures-empty');return !e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()"),true,"Public Fixtures reveals the legitimate empty state");
+    // faFixtures is created before bootstrap finishes: the public empty state
+    // must be checked after the loading controller releases the skeleton.
+    await wait("!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'&&!document.documentElement.dataset.faDevStandingsPending");
+    await wait("(()=>{const e=document.getElementById('app-fixtures-empty');return e&&!e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'})()");
+    assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden"),true,"Public Fixtures hides the selector when the schedule is unavailable");
     // Mobile Fixtures QA uses CDP touch input rather than programmatic .click().
     const tap=async selector=>{
       const point=await run("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");if(!e)throw Error('Missing touch target');e.scrollIntoView({block:'center',inline:'nearest'});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
@@ -455,13 +467,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.ok(pickerGeometry.overlap>0&&pickerGeometry.above,'matchday menu paints above overlapping match cards');
       await snap("FIXTURES-MOBILE "+width+" "+theme+" matchday menu",width,height);
       await tap('#app-fixtures-round-option-1');await expectSeason(2,1);
-      const currentLayout=await run("(()=>{const n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect(),c=document.getElementById('app-fixtures-current').getBoundingClientRect();return {center:(n.left+n.right)/2,right:p.right,currentRight:c.right,top:n.top,currentTop:c.top}})()");
+      const currentLayout=await run("(()=>{const n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect(),c=document.getElementById('app-fixtures-current').getBoundingClientRect();return {center:(n.left+n.right)/2,right:p.right,currentRight:c.right,navigationBottom:n.bottom,currentTop:c.top}})()");
       assert.ok(Math.abs(currentLayout.center-centeredControls.center)<1,'showing current-matchday button never shifts navigation');
-      assert.ok(Math.abs(currentLayout.currentRight-currentLayout.right)<1&&Math.abs(currentLayout.currentTop-currentLayout.top)<1,'current-matchday button stays top right on the same row');
+      assert.ok(Math.abs(currentLayout.currentRight-currentLayout.right)<1&&currentLayout.currentTop>=currentLayout.navigationBottom-1,'current-matchday shortcut stays right aligned below mobile round navigation');
       assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
       await tap('#app-fixtures-round');await tap('#app-fixtures-previous');
       await wait("document.getElementById('app-fixtures-picker').hidden");await expectSeason(2,1);
-      await tap('#app-fixtures-next');await expectSeason(2,2);
+      const nextHit=await run("(()=>{const e=document.getElementById('app-fixtures-next'),r=e.getBoundingClientRect(),top=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return top===e||e.contains(top)})()");
+      assert.equal(nextHit,true,'Next round touch point must not be covered by current-round shortcut');
+      await tap('#app-fixtures-next');await wait("window.faCompetitionRoute?.get().matchday===2");await expectSeason(2,2);
       await tap('#app-fixtures-previous');await expectSeason(2,1);
       for(const season of [1,2]){
         await tap('#app-competition-season');await wait("!document.getElementById('app-competition-season-menu').hidden");await menuFits('app-competition-season-menu');
@@ -475,7 +489,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       for(const lang of ['en','it','de','es','fr']){
         await run("document.documentElement.lang="+JSON.stringify(lang)+";window.faAppRenderLanguage?.()");
-        const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),toolbar=r(document.querySelector('.app-fixtures-toolbar')),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:(!c.width&&!c.height)||((n.right<=c.left+1||c.right<=n.left+1)&&c.right<=innerWidth),geometry:{toolbar:{left:toolbar.left,right:toolbar.right,width:toolbar.width},navigation:{left:n.left,right:n.right,width:n.width,center:n.left+n.width/2},current:{left:c.left,right:c.right,width:c.width},lang:document.documentElement.lang}}})()");
+        const layout=await run("(()=>{const rows=[...document.querySelectorAll('[data-fixture-match]')],r=e=>e.getBoundingClientRect(),toolbar=r(document.querySelector('.app-fixtures-toolbar')),n=r(document.querySelector('.app-fixtures-navigation')),c=r(document.getElementById('app-fixtures-current'));return {rows:rows.length,scroll:document.documentElement.scrollWidth,width:innerWidth,fit:rows.every(e=>r(e).left>=0&&r(e).right<=innerWidth),names:rows.every(e=>[...e.querySelectorAll('.app-fixture-name')].every(n=>n.scrollWidth<=n.clientWidth+1)),controls:(!c.width&&!c.height)||((n.right<=c.left+1||c.right<=n.left+1||n.bottom<=c.top+1||c.bottom<=n.top+1)&&c.right<=innerWidth),geometry:{toolbar:{left:toolbar.left,right:toolbar.right,width:toolbar.width},navigation:{left:n.left,right:n.right,width:n.width,center:n.left+n.width/2},current:{left:c.left,right:c.right,width:c.width},lang:document.documentElement.lang}}})()");
         assert.equal(layout.rows,8);assert.ok(layout.scroll<=layout.width,width+" "+theme+" "+lang+" no horizontal page overflow");assert.equal(layout.fit,true);assert.equal(layout.names,true,"club names wrap without clipping");assert.equal(layout.controls,true,"round controls and current shortcut do not overlap; "+JSON.stringify(layout.geometry));
       }
       const matchDetails=await run("(()=>{const clubs=window.faCompetitionDivision.clubs,r=e=>e.getBoundingClientRect();return [...document.querySelectorAll('[data-fixture-match]')].every(row=>{const home=clubs.find(c=>c.clubId===Number(row.dataset.fixtureMatch.split(':')[1])),status=row.querySelector('.app-fixture-status'),score=row.querySelector('.app-fixture-score'),stadium=row.querySelector('.app-fixture-stadium');return stadium.textContent===home.stadiumName&&r(status).bottom<=r(score).top&&r(score).bottom<=r(stadium).top&&Math.abs(r(stadium).height-2*parseFloat(getComputedStyle(stadium).lineHeight))<=1&&getComputedStyle(stadium).whiteSpace==='normal'&&getComputedStyle(stadium).webkitLineClamp==='2'})})()");
@@ -503,7 +517,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("!document.getElementById('app-fixtures-toolbar').hidden"),true,"zero completed games still has a schedule");
       await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
       await cmd("Page.navigate",{url:origin+"/competitions/it-1/fixtures?season=1"});
-      await wait("!!window.faFixtures");
+      // Page.navigate may resolve before the new document and sporting provider
+      // finish hydration. Never assert against the previous DEV document.
+      await wait("location.origin==="+JSON.stringify(origin)+"&&location.pathname==='/competitions/it-1/fixtures'&&!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'&&!document.documentElement.dataset.faDevStandingsPending");
+      await wait("(()=>{const e=document.getElementById('app-fixtures-empty');return e&&!e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'&&document.getElementById('app-fixtures-toolbar').hidden})()");
       assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"Public Fixtures hides navigation and shows the empty state");
       await cmd("Page.navigate",{url:devOrigin+"/"});
       await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
@@ -515,7 +532,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     let expansionChecks=0;
     for(const division of historyManifest.divisions){
       await cmd('Page.navigate',{url:devOrigin+'/competitions/'+division.id.toLowerCase()+'/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/'+division.id.toLowerCase()+'/history');
       assert.equal(await run("!!document.querySelector('#app-history-hall,#app-history-final,.app-history-dev-banner,#competition-panel-history>h2')"),false);
       assert.deepEqual(await run("[...document.querySelectorAll('.app-history-dev-archive>li')].map(b=>new URL(b.querySelector('.app-history-dev-season-link').href).searchParams.get('season'))"),['4','3','2','1']);
       assert.equal(await run("[...document.querySelectorAll('.app-history-dev-archive>li')].every(b=>!b.hasAttribute('aria-pressed'))"),true,division.id+' archive has no misleading toggle selection');
@@ -681,7 +698,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<621});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/it-1/history');
       for(const lang of ['en','de','es','fr','it']){
         await run("document.documentElement.lang="+JSON.stringify(lang));
         const layout=await run("(()=>{const r=document.querySelector('.app-history-dev');return {fit:document.documentElement.scrollWidth<=innerWidth+1,nested:[...r.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).overflowX==='auto'),emptyLabels:[...r.querySelectorAll('[data-app-i18n]')].some(e=>!e.textContent.trim())}})()");
@@ -745,7 +762,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("(()=>{const root=document.querySelector('[data-history-empty]');return !!root.querySelector('[data-history-team-empty]:not([hidden])')&&!!root.querySelector('[data-history-player-empty]:not([hidden])')&&root.querySelector('[data-history-team-records] .app-competition-stat-grid').getClientRects().length===0&&root.querySelector('[data-history-player-records] .app-competition-stat-grid').getClientRects().length===0})()"),true,'All-time empty state remains consolidated after switching scope');
       assert.deepEqual(await run('window.__faRuntimeErrors'),[], 'History has no uncaught runtime errors');
       await cmd('Page.navigate',{url:devOrigin+'/competitions/it-1/history'});
-      await wait("document.querySelectorAll('.app-history-dev-archive>li').length===4");
+      await waitForHistoryArchive('/competitions/it-1/history');
       await run("document.querySelector('.app-history-dev [data-history-record-scope=\"all-time\"]').click()");
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-record]:not([hidden])').length"),6,'DEV History supports All-time scope');
       assert.equal(await run("document.querySelectorAll('.app-history-dev [data-history-player-record]:not([hidden])').length"),4);
@@ -783,9 +800,16 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       for(const country of ['DE','BR','PT']){
-        await visit('/competitions/'+country.toLowerCase()+'-1/standings','!!window.faFixtures');
+        // The image load event can precede the Standings hydration release:
+        // the real table is then still visibility:hidden behind its skeleton.
+        await visit('/competitions/'+country.toLowerCase()+'-1/standings',
+          "!!window.faFixtures&&!!document.querySelector('#competition-panel-standings>.app-world-standings')"+
+          "&&getComputedStyle(document.querySelector('#competition-panel-standings>.app-world-standings')).visibility==='visible'");
         const selector='[data-club-crest="'+country+'-1"]';
-        await wait(JSON.stringify(selector)+"&&[...document.querySelectorAll("+JSON.stringify(selector)+")].every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)");
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
+        // Preserve the strict rendering assertion below, but sample it only
+        // after the responsive projection and its loaded SVG are actually visible.
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")].filter(n=>n.getClientRects().length);return hosts.length===1&&hosts.every(n=>{const i=n.querySelector('img');if(!i)return false;const r=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&r.width>0&&r.height>0&&getComputedStyle(i).visibility==='visible'})})()");
         const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
         const geometry=await run("(()=>{const h=[...document.querySelectorAll("+JSON.stringify(selector)+")].find(n=>n.getClientRects().length),b=h.getBoundingClientRect(),r=h.closest('tr,summary').getBoundingClientRect();return {width:b.width,height:b.height,row:r.height,overflow:document.documentElement.scrollWidth>innerWidth}})()");
         assert.equal(geometry.width,width<620?40:48,'Crest slot width');

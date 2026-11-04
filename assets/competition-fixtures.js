@@ -20,10 +20,12 @@
   const number=document.getElementById("app-fixtures-round-number");
   if(!navigation||!picker||!number)return;
   let choices=[...picker.querySelectorAll("[data-fixture-round-choice]")];
-  let configured=rules.fixtureChoices(definition),stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
+  const displayChoices=d=>window.faCompetitionRulesView.fixturesDisplayChoices(d);
+  const displayValue=value=>window.faCompetitionRulesView.fixturesDisplayValue(definition,value);
+  let configured=displayChoices(definition),stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
   let stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
   const validRound=value=>Number.isInteger(value)&&value>=1&&value<=roundCount;
-  const validChoice=value=>configured.some(c=>c.value===value);
+  const validChoice=value=>configured.some(c=>c.value===displayValue(value));
   let knockoutPhases=definition.rules.phases.filter(p=>p.type==='knockout');
   let firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
@@ -50,7 +52,7 @@
     if(!next||next.id!==definition.id||JSON.stringify(next.rules)===JSON.stringify(definition.rules))return;
     definition=next;capacity=next.capacity;league=next.rules.phases.find(p=>p.rankOutcomes);
     ({rounds:roundCount,matches:matchCount,matchesPerRound}=next.metrics.phases[league.id]);
-    configured=rules.fixtureChoices(next);stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
+    configured=displayChoices(next);stage=international?null:configured.find(c=>typeof c.value==='string')?.value;
     stageKey=stage==='playout'?'competitionTabPlayout':'competitionTabPlayoffs';
     knockoutPhases=next.rules.phases.filter(p=>p.type==='knockout');firstTies=knockoutPhases[0]?.ties.filter(t=>t.legs===2)||[];
     hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
@@ -58,11 +60,11 @@
       const option=element('div','language-option');option.id='app-fixtures-round-option-'+choice.value;
       option.dataset.menuValue=String(choice.value);option.dataset.fixtureRoundChoice=String(choice.value);option.setAttribute('role','option');
       if(typeof choice.value==='number')option.append(word('fixturesMatchday','Matchday'),element('span','',' '+choice.round));
-      else{const label=element('span','',window.faCompetitionRulesView?.phaseLabel(choice.labelKey,document.documentElement.lang)||choice.labelKey);label.dataset.competitionPhase=choice.labelKey;option.append(label);if(choice.round)option.append(element('span','',' · '+choice.round));}
+      else{const label=element('span','',window.faCompetitionRulesView?.fixturesChoiceLabel?.(definition,choice,document.documentElement.lang)||choice.labelKey);label.dataset.competitionFixtureChoice=String(choice.value);option.append(label);}
       return option;
     });
     picker.replaceChildren(...choices);postChoice=choices.find(choice=>choice.dataset.fixtureRoundChoice===stage)||element('div','language-option');
-    postChoice.hidden=!Boolean(rounds&&stage);menuHasPostseason=false;roundMenu.update(choices);
+    postChoice.hidden=!Boolean(stage);menuHasPostseason=false;roundMenu.update(choices);
   }
   function validatePostseason(games){
     if(!Array.isArray(games))throw Error('Invalid post-season fixtures');
@@ -209,33 +211,46 @@
     const supplied=window.faCompetitionContext?.seasonData;
     const authoritative=supplied?.provenance?.kind==='authoritative'&&String(supplied.season)===navigation.get().season;
     const available=rounds!==null&&(authoritative||availableSeasons.has(navigation.get().season));
-    const hasPostseason=available&&Boolean(stage);
+    const hasPostseason=Boolean(stage);
     if(menuHasPostseason!==hasPostseason){
       menuHasPostseason=hasPostseason;postChoice.hidden=!hasPostseason;
       roundMenu.update(hasPostseason&&!choices.includes(postChoice)?[...choices,postChoice]:choices);
     }
+    const grouped=displayValue(selected);
+    if(grouped!==selected){navigation.set({matchday:grouped},{replace:true});return;}
     if(!validChoice(selected)){
       navigation.set({matchday:roundCount},{replace:true});return;
     }
     const isPostseason=typeof selected==='string';
     const selectedChoice=configured.find(c=>c.value===selected);
-    fields.toolbar.hidden=!available;
+    const loading=document.documentElement.dataset.faStandingsLoading==='true';
+    const hasSchedule=available&&([...rounds.values()].some(games=>games.length)||postseason.length>0);
+    fields.toolbar.hidden=!loading&&!hasSchedule;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
-    fields.round.value=String(selected);fields.round.disabled=!available;
+    fields.round.value=String(selected);fields.round.disabled=false;
     const label=document.getElementById('app-fixtures-round-label');
     if(label)label.hidden=isPostseason;
-    const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.phaseLabel(selectedChoice.labelKey,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
-    if(isPostseason&&selectedChoice.round)selectedLabel.textContent+=' · '+selectedChoice.round;
+    const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.fixturesChoiceLabel?.(definition,selectedChoice,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
+    if(isPostseason)selectedLabel.dataset.competitionFixtureChoice=String(selectedChoice.value);
+    window.faFixturesShell?.select(selected);
     number.replaceChildren(selectedLabel);
     roundMenu.sync(String(selected));
     if(!available)roundMenu.close();
     const choiceIndex=configured.findIndex(c=>c.value===selected);
-    fields.previous.disabled=!available||choiceIndex===0;
-    fields.next.disabled=!available||choiceIndex===configured.length-1;
+    fields.previous.disabled=choiceIndex===0;
+    fields.next.disabled=choiceIndex===configured.length-1;
     fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
-      if(international&&isPostseason)matches.push(...(postseason.filter(g=>g.phaseId===selectedChoice.phaseId&&g.leg===selectedChoice.round).map(matchRow)));
+      if(international&&isPostseason){
+        const phase=definition.rules.phases.find(p=>p.id===selectedChoice.phaseId),legs=Math.max(...phase.ties.map(t=>t.legs));
+        for(let leg=1;leg<=legs;leg++){
+          const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
+          if(!games.length)continue;
+          if(legs>1){const heading=element('li','app-fixture-stage'),title=element('h3');title.append(word(leg===1?'postseasonFirstLeg':'postseasonSecondLeg',leg===1?'First leg':'Second leg'));heading.append(title);matches.push(heading);}
+          matches.push(...games.map(matchRow));
+        }
+      }
       else if(isPostseason)for(const round of [31,32,33]){
         const games=postseason.filter(g=>g.round===round);
         if(round===33&&!hasFinal)continue;
@@ -282,12 +297,25 @@
       while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
     }else fields.list.replaceChildren(...matches);
     fields.summary.replaceChildren(element('span','',selectedLabel.textContent),element('strong','',String(matches.filter(item=>item.dataset.fixtureMatch).length)),word('fixturesMatches','matches'));
+    // Do not interpret missing or stale season data as an empty schedule.
+    const context=window.faCompetitionContext,data=context?.seasonData;
+    const matching=data&&String(data.season)===String(context.selectedSeason)&&String(context.selectedSeason)===String(navigation.get().season);
+    const absent=matching&&data.fixtures===null;
+    const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
+      (!international&&!isPostseason&&matches.length===0));
+    const panel=document.getElementById('competition-panel-fixtures');
+    if(panel){
+      panel.dataset.faContentState=absent||emptyRound?'empty':available?'available':'unknown';
+      panel.dataset.faContentSeason=String(context?.selectedSeason??'');
+      panel.dataset.faContentRevision=String(context?.revision??'');
+    }
+    if(absent||emptyRound){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
     window.faAppRenderLanguage?.();
   }
   function select(value){
     const round=/^[1-9]\d*$/.test(String(value))?Number(value):value;
-    if(rounds&&validChoice(round)){
-      navigation.set({matchday:round});
+    if(validChoice(round)){
+      navigation.set({matchday:displayValue(round)});
     }
   }
   navigation.subscribe(route=>{
@@ -311,7 +339,7 @@
       if(current!==null&&!validChoice(current))throw Error("Invalid current matchday");
        // The stage is selectable before participating clubs are known.
       return ()=>{
-        rounds=next;postseason=post;currentMatchday=next?current:null;selected=navigation.get().matchday;
+        rounds=next;postseason=post;currentMatchday=next&&current!==null?displayValue(current):null;selected=navigation.get().matchday;
         navigation.defaultMatchday(currentMatchday??1);
         render();
       };
@@ -319,8 +347,8 @@
     snapshot(){const previous=rounds,current=currentMatchday,post=postseason;return ()=>{
       rounds=previous;postseason=post;currentMatchday=current;selected=navigation.get().matchday;render()};}
   };
-  new MutationObserver(()=>{if(rounds)render()}).observe(document.documentElement,
-    {attributes:true,attributeFilter:["lang"]});
+  new MutationObserver(render).observe(document.documentElement,
+    {attributes:true,attributeFilter:["lang","data-fa-standings-loading"]});
   function contextChanged(){
     updateDefinition(window.faCompetitionContext?.definition);
     const data=window.faCompetitionContext?.seasonData;
@@ -339,7 +367,7 @@
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);
-    currentMatchday=calendar?rules.currentFixtureChoice(definition,calendar,event.detail):null;render();
+    currentMatchday=calendar?displayValue(rules.currentFixtureChoice(definition,calendar,event.detail)):null;render();
   });
   contextChanged();
   render();

@@ -167,3 +167,28 @@ test('STANDINGS-QUALIFICATION: shared bands preserve configured sporting outcome
   if(lang!=='en')assert.notEqual(label,view.outcomeLabel(d,{kind},'en'));
  }
 });
+
+test('LEGEND compact labels and overlapping qualification ranges preserve sporting rules',()=>{
+ const d=get('IT-1'),before=JSON.stringify(d);
+ assert.deepEqual(view.standingsLegendOutcomes(d).map(o=>[o.kind,o.from,o.to]),[
+  ['champion',1,1],['sovereign',1,3],['federation',4,6],['playout',13,14],['relegated',15,16]
+ ]);
+ assert.equal(view.standingsOutcomes(d).find(o=>o.kind==='sovereign').from,2);
+ assert.equal(JSON.stringify(d),before);
+ for(const locale of ['en','de','es','fr','it'])for(const definition of catalogue){
+  for(const o of view.standingsLegendOutcomes(definition)){
+   const label=view.legendLabel(definition,o,locale);
+   assert.ok(label.length>0&&label.length<=22,label);
+   assert.doesNotMatch(label,/\(/);
+  }
+ }
+ assert.equal(view.legendLabel(d,{kind:'sovereign'},'it'),'Sovereign Cup');
+ assert.equal(view.legendLabel(d,{kind:'relegated'},'en'),'Relegation');
+ const tier2=get('IT-2');
+ assert.equal(view.legendLabel(tier2,{kind:'promotionPlayoffs',targetPhaseId:'promotionPlayoffs'},'en'),'Playoffs');
+ const html=view.renderStandingsLegend(d,'it');
+ assert.doesNotMatch(html,/<details|data-competition-qualification-note|Qualification details/);
+ assert.ok(html.includes('Sovereign Cup'));
+ assert.ok(view.renderRules(d,'it').includes('campione'),'Qualification explanation remains in Rules');
+ assert.ok(!view.renderStandingsLegend(get('int-1')).includes('<details'));
+});

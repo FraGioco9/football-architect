@@ -192,7 +192,9 @@ test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons withou
     assert.ok(html.includes(season),path+" must bootstrap DEV seasons");
     assert.ok(html.indexOf(season)<html.indexOf('src="/__fa_dev__/debug-settings.mjs"'),
       path+" must bootstrap seasons before Debug modules");
-    assert.ok(!original.includes("faDevSeasons")&&!original.includes("/__fa_dev__/"),
+    assert.doesNotMatch(original,/\.dataset\.faDevSeasons\s*=(?!=)/,
+      path+" public HTML must not initialize Debug seasons");
+    assert.ok(!original.includes("/__fa_dev__/"),
       path+" public HTML must remain clean");
    }
   for(const path of ["dashboard/index.html","settings/index.html"]){
@@ -218,7 +220,7 @@ test("DEBUG-SEASONS-02: standings route resolver preserves Seasons 1–4 for the
  const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
   const url=new URL("https://example.test/competitions/it-1?season="+season);
   return runInNewContext("let routeSeasonOverride="+JSON.stringify(override)+";\n"+script+"\nselectedSeason()",{
-   URL,URLSearchParams,document:{documentElement:{dataset:{faDevSeasons:data}}},
+   URL,URLSearchParams,debugSeason:1,document:{documentElement:{dataset:{faDevSeasons:data}}},
    window:{location:{href:url.href},faCompetitionRoute:{get:()=>({season:routed})}},
    location:{href:url.href,search:url.search}
   });
@@ -276,4 +278,17 @@ test('Club competition summaries are injected only into DEV/protected club HTML'
   assert.equal(existsSync(join(publicPath,'__fa_dev__/club-summary.mjs')),false);
   assert.equal(existsSync(join(protectedPath,'__fa_dev__/stats-client.mjs')),true);
  }finally{rmSync(root,{recursive:true,force:true})}
+});
+
+test('FIXTURES prepaint progress is injected only for enabled local/protected Debug',async()=>{
+ const {DEBUG_SEASON_BOOTSTRAP}=await import('../tools/dev-preview-artifact.mjs');
+ const script=DEBUG_SEASON_BOOTSTRAP.match(/<script>([\s\S]*?)<\/script>/)[1];
+ for(const disabled of [false,true]){
+  const window={},dataset={};
+  const values={'football-architect:standings-dev-season':'3','football-architect:standings-dev-matchdays':'16','football-architect:calendar-dev-world-day':'28','football-architect:debug-enabled':disabled?'off':'on'};
+  runInNewContext(script,{window,document:{documentElement:{dataset}},sessionStorage:{getItem:key=>values[key]??null}});
+  assert.equal(dataset.faDevCurrentSeason,'3');
+  if(disabled)assert.equal(window.faFixturesInitialProgress,undefined);
+  else assert.deepEqual(JSON.parse(JSON.stringify(window.faFixturesInitialProgress)),{currentSeason:3,matchdays:16,day:28});
+ }
 });

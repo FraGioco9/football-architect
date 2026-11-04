@@ -154,5 +154,57 @@
  const outcomeLabel=(definition,outcome,locale='en')=>outcome.kind==='sovereign'||outcome.kind==='federation'
   ?(internationalOutcomeLabels[locale]||internationalOutcomeLabels.en)[outcome.kind==='sovereign'?0:1]
   :outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes});
+ // Compact presentation belongs to the legend; Rules retain full outcome descriptions.
+ const legendCopy={
+  en:{champion:'Champion',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Relegation',playout:'Playout',promoted:'Promotion',promotionPlayoffs:'Playoffs',quarterfinals:'Quarter-finals',knockouts:'Playoffs'},
+  de:{champion:'Meister',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Abstieg',playout:'Relegation',promoted:'Aufstieg',promotionPlayoffs:'Playoffs',quarterfinals:'Viertelfinale',knockouts:'Playoffs'},
+  es:{champion:'Campeón',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Descenso',playout:'Permanencia',promoted:'Ascenso',promotionPlayoffs:'Playoffs',quarterfinals:'Cuartos de final',knockouts:'Playoffs'},
+  fr:{champion:'Champion',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Relégation',playout:'Barrages de maintien',promoted:'Promotion',promotionPlayoffs:'Barrages',quarterfinals:'Quarts de finale',knockouts:'Barrages'},
+  it:{champion:'Campione',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Retrocessione',playout:'Playout',promoted:'Promozione',promotionPlayoffs:'Playoff',quarterfinals:'Quarti di finale',knockouts:'Playoff'}
+ };
+ function standingsLegendOutcomes(d){
+  const bands=standingsOutcomes(d).map(o=>({...o}));
+  const champion=bands.find(o=>o.kind==='champion'),sovereign=bands.find(o=>o.kind==='sovereign');
+  // Champion and international qualification overlap in the legend only.
+  if(d.category==='domestic'&&d.tier===1&&champion?.from===1&&champion.to===1&&sovereign?.from===2&&sovereign.to===3)sovereign.from=1;
+  return bands;
+ }
+ function legendLabel(d,outcome,locale='en'){
+  const t=legendCopy[locale]||legendCopy.en;
+  const key=outcome.targetPhaseId?d.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey:outcome.kind;
+  return t[key]||outcomeLabel(d,outcome,locale);
+ }
+ function renderStandingsLegend(d,locale='en'){
+  const bands=standingsLegendOutcomes(d);
+  if(!bands.length)return '';
+  const items=bands.map(o=>{
+   const style=rules.outcomeStyle(o.kind),range=o.from===o.to?String(o.from):o.from+'–'+o.to;
+   return '<li data-standing-outcome="'+escape(style)+'"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span class="app-standings-legend-label" id="standings-outcome-'+escape(style)+'"><strong class="app-standings-legend-range">'+range+'</strong> <span data-competition-outcome="'+escape(o.kind)+'" data-competition-legend=""'+(o.targetPhaseId?' data-competition-target="'+escape(o.targetPhaseId)+'"':'')+'>'+escape(legendLabel(d,o,locale))+'</span></span></li>';
+  }).join('');
+  return '<div class="app-standings-legend"><p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p><ul aria-labelledby="standings-outcome-legend-title">'+items+'</ul></div>';
+ }
+ const fixtureCopy={
+  en:{matchday:'Matchday',playout:'Play-out',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'First leg',second:'Second leg'},
+  de:{matchday:'Spieltag',playout:'Relegation',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'Hinspiel',second:'Rückspiel'},
+  es:{matchday:'Jornada',playout:'Permanencia',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'Ida',second:'Vuelta'},
+  fr:{matchday:'Journée',playout:'Maintien',promotionPlayoffs:'Barrages',knockouts:'Barrages',first:'Aller',second:'Retour'},
+  it:{matchday:'Giornata',playout:'Play-out',promotionPlayoffs:'Playoff',knockouts:'Playoff',first:'Andata',second:'Ritorno'}
+ };
+ // UI phases group legs; the canonical calendar/data choices remain unchanged.
+ function fixturesDisplayChoices(d){
+  const choices=rules.fixtureChoices(d);
+  return d.category==='international'?choices.filter((choice,index)=>typeof choice.value==='number'||choices.findIndex(c=>c.phaseId===choice.phaseId)===index):choices;
+ }
+ function fixturesDisplayValue(d,value){
+  const choice=rules.fixtureChoices(d).find(c=>c.value===value);
+  if(!choice)return value;
+  return d.category==='international'&&typeof choice.value==='string'?fixturesDisplayChoices(d).find(c=>c.phaseId===choice.phaseId).value:choice.value;
+ }
+ function fixturesChoiceLabel(d,choice,locale='en'){
+  const t=fixtureCopy[locale]||fixtureCopy.en;
+  if(typeof choice.value==='number')return t.matchday+' '+choice.round;
+  const label=t[choice.labelKey]||phaseLabel(choice.labelKey,locale);
+  return label;
+ }
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,renderStandingsLegend,fixturesChoiceLabel,fixturesDisplayChoices,fixturesDisplayValue});
 });

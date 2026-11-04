@@ -42,7 +42,9 @@ function selectedSeason(){
  if(available.includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
  if(available.includes(routed))return routed;
- return available[0];
+ // Match competition-page bootstrap before its async router exists.
+ const current=Math.max(1,debugSeason);
+ return available.includes(current)?current:available[0];
 }
 function syncCompetitionLinks(){
  if(!debugEnabled()){for(const link of document.querySelectorAll('a.app-division-card'))link.removeAttribute('data-dev-latest-season');return;}
@@ -55,6 +57,7 @@ function syncCompetitionLinks(){
 }
 function syncDebugControls(){
  document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+ document.documentElement.dataset.faHistoryStatic=String(debugSeason===0||!debugEnabled());
  widgetRoot?.syncVisibility?.();
  syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])
@@ -63,6 +66,8 @@ function syncDebugControls(){
   }
 }
 async function refreshProgress(){
+ const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
+ try{
  if(!debugEnabled()){syncDebugControls();return true;}
  window.faCompetitionContextApi?.setDebugSeason(debugSeason);
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
@@ -83,6 +88,7 @@ async function refreshProgress(){
  syncDebugControls();
  window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:{season:debugSeason,matchdays}}));
  return true;
+ }finally{finishStandings();}
 }
 async function setDebugProgress(key,value){
  const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay,savedRounds;
@@ -258,6 +264,7 @@ async function renderHistoryPreview(){
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
+ const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  try{
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
@@ -352,7 +359,7 @@ async function renderHistoryPreview(){
   if(status)status.hidden=false;
   if(errorMessage)errorMessage.hidden=false;
   window.faAppRenderLanguage?.();
- }
+ }finally{finishHistory();}
 }
 function syncHistoryPreview(){
  const route=window.faCompetitionRoute?.get?.();
@@ -362,6 +369,7 @@ function syncHistoryPreview(){
 
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
+ const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
  transition=transition.catch(()=>false).then(async()=>{
   if(previewState==="ERROR"){
    try{activePreview()}
@@ -405,6 +413,7 @@ function setPreviewEnabled(enabled) {
   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   return true;
  });
+ transition=transition.finally(finishStandings);
  return transition;
 }
 
@@ -460,7 +469,7 @@ if(validPath||indexPath||clubPath||sharedPath){
     delete document.documentElement.dataset.faDevSeasonTransition;
     return seasonRefresh;
    }
-   // Keep standings visible while detached DEV rows are prepared for a synchronous swap.
+   const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
@@ -492,6 +501,7 @@ if(validPath||indexPath||clubPath||sharedPath){
     }
     return false;
    }).finally(()=>{
+    finishStandings();
     // A stale request must never release the newest season's paint guard.
     if(request===seasonRequest)delete document.documentElement.dataset.faDevSeasonTransition;
    });
@@ -718,13 +728,17 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const meta = node("div", "app-world-form-tooltip-meta");
     const round = node("span", "app-world-form-tooltip-round");
     const roundLabel = node("span");
-    const roundNumber = node("strong");
+    const roundNumber = node("span");
     round.append(roundLabel, roundNumber);
     const date = node("time", "app-world-form-tooltip-date");
     meta.append(round,date);
     const scoreline = node("div", "app-world-form-tooltip-scoreline");
     const homeName = node("span", "app-world-form-tooltip-team");
     const score = node("strong", "app-world-form-tooltip-score");
+    const scoreHome = node("span");
+    const scoreSeparator = node("span");scoreSeparator.textContent=" – ";
+    const scoreAway = node("span");
+    score.append(scoreHome,scoreSeparator,scoreAway);
     const awayName = node("span", "app-world-form-tooltip-team");
     scoreline.append(homeName, score, awayName);
     const context = node("div", "app-world-form-tooltip-context");
@@ -796,7 +810,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       const game = entry.game;
       homeName.textContent = lookup.get(game.homeId).primaryName;
       awayName.textContent = lookup.get(game.awayId).primaryName;
-      score.textContent = game.homeGoals + " – " + game.awayGoals;
+      scoreHome.textContent = String(game.homeGoals);
+      scoreAway.textContent = String(game.awayGoals);
       roundNumber.textContent = String(game.round);
       stadium.textContent = lookup.get(game.homeId).stadiumName;
       tooltip.hidden = false;

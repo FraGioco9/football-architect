@@ -1,3 +1,5 @@
+import {renderViewSkeleton,renderViewTemplates,viewSkeletonScript} from './competition-view-skeletons.mjs';
+import {renderFixturesSkeleton} from './fixtures-static-shell.mjs';
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
 import rulesView from "../assets/competition-rules-view.js";
@@ -5,18 +7,18 @@ import rules from "../assets/competition-rules.js";
 import statsView from "../assets/competition-stats.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo,clubsByDivision,crestCatalog}){
+// Decorative skeleton mirrors the real table and compact rows; no fake identities or crests.
+const standingsSkeleton=(d,cols)=>{
+ const cells=Array.from({length:11},(_,i)=>'<'+(i===1?'th':'td')+'><span class="app-skeleton-bar"></span></'+(i===1?'th':'td')+'>').join('');
+ const rows=Array.from({length:d.capacity},()=>'<tr data-skeleton-row>'+cells+'</tr>').join('');
+ const mobile=Array.from({length:d.capacity},()=>'<li class="app-world-mobile-item" data-skeleton-mobile><div class="app-world-mobile-summary"><span class="app-world-mobile-position app-skeleton-bar"></span><span class="app-world-mobile-name app-skeleton-bar"></span><span class="app-world-mobile-points app-skeleton-bar"></span><span class="app-world-mobile-form app-skeleton-bar"></span></div></li>').join('');
+ return '<div class="app-standings-skeleton" aria-hidden="true"><div class="app-world-standing-scroll"><table class="app-world-standing-table"><thead><tr>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table></div><ol class="app-world-mobile-list app-skeleton-mobile">'+mobile+'</ol></div><!-- standings-skeleton-end -->';
+};
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
  const preRenderedRows=neutral||d.category==="international"?"":clubsByDivision.get(d.id).map(club=>`                  <tr data-world-club="${encode(club.countryId)}-${club.clubId}"><td class="app-world-stat-unknown">—</td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(club.countryId)}-${club.clubId}"${Object.hasOwn(crestCatalog,club.countryId+"-"+club.clubId)?' data-club-crest-pending="true"':""} aria-hidden="true"></span><span class="app-world-club-name">${encode(club.primaryName||club.abbr)}</span></span></th>${Array(9).fill('<td class="app-world-stat-unknown">—</td>').join("")}</tr>`).join("\n");
- const bands=neutral&&d.category!=='international'?[]:rulesView.standingsOutcomes(d).map(o=>[o.from===o.to?String(o.from):o.from+'–'+o.to,rules.outcomeStyle(o.kind),o.kind,rulesView.outcomeLabel(d,o),o]);
- const legend=bands.length?`
-          <div class="app-standings-legend">
-            <p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p>
-            <ul aria-labelledby="standings-outcome-legend-title">
-${bands.map(([range,outcome,key,label,o])=>`              <li data-standing-outcome="${outcome}"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-${outcome}"><strong>${range}</strong> · <span data-competition-outcome="${key}"${o.targetPhaseId?' data-competition-target="'+encode(o.targetPhaseId)+'"':''}>${encode(label)}</span></span></li>`).join("\n")}
-            </ul>
-          </div>`:"";
+ const legend=neutral&&d.category!=='international'?'':rulesView.renderStandingsLegend(d);
  return `
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">
@@ -32,18 +34,18 @@ ${d.category==="international"?'<tr><td colspan="11" class="app-competition-empt
                 </tbody>
               </table>
             </div>
-          </div>${legend}`;
+          </div>${standingsSkeleton(d,cols)}${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const fixtureOption=c=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'">'+(typeof c.value==='number'?'<span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+c.round:'<span data-competition-phase="'+c.labelKey+'">'+rulesView.phaseLabel(c.labelKey)+'</span>'+(c.round?' · '+c.round:''))+'</div>';
+const fixtureOption=(d,c)=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'"><span data-competition-fixture-choice="'+c.value+'">'+rulesView.fixturesChoiceLabel(d,c)+'</span></div>';
 const fixturesContent = (d)=>`
-            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
+            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar">
               <div class="app-fixtures-navigation">
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <div class="language-control app-fixtures-select">
-                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span>${menuChevron}</button>
+                <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span class="app-fixtures-trigger-label"><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span></span>${menuChevron}</button>
                 <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
-${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
+${rulesView.fixturesDisplayChoices(d).map(c=>fixtureOption(d,c)).join("\n")}
                 </div>
                 </div>
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -52,30 +54,32 @@ ${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>
             <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>`;
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>${renderFixturesSkeleton(d)}`;
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
-                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
               </section>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
                 <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
-                  <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season records</button>
-                  <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time records</button>
+                  <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season</button>
+                  <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time</button>
                 </div>
                 <section class="app-history-record-group" data-history-team-records>
                   <h4 data-app-i18n="historyTeamRecords">Team records</h4>
                 <div class="app-competition-stat-grid">
 ${[["historyBestAttack","Best attack in a season","season"],["historyBestDefence","Best defence in a season","season"],["historyMostSeasonWins","Most wins in a season","season"],["historyMostSeasonPoints","Most points in a season","season"],["historyBestGoalDifference","Best goal difference in a season","season"],["historyLargestTitleMargin","Largest title-winning points margin","season"],["historyMostTitles","Most league titles","all-time"],["historyMostPodiums","Most podium finishes","all-time"],["historyLongestTitleStreak","Most consecutive league titles","all-time"],["historyMostTotalWins","Most wins overall","all-time"],["historyMostTotalGoals","Most goals scored overall","all-time"],["historyMostTotalPoints","Most points overall","all-time"]].map(([key,label,scope])=>`                  <article class="app-competition-stat-card" data-history-scope="${scope}"${scope==="all-time"?" hidden":""}><h5 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>`).join("\n")}
                 </div>
+                <p class="app-competition-status app-history-record-empty-state" data-history-team-empty data-app-i18n="historyNoData">No historical data available yet.</p>
                 </section>
                 <section class="app-history-record-group" data-history-player-records>
                   <h4 data-app-i18n="historyPlayerRecords">Player records</h4>
                   <div class="app-competition-stat-grid">
 ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],["seasonAssists","historyPlayerSeasonAssists","Most assists in a season","season"],["seasonCleanSheets","historyPlayerSeasonCleanSheets","Most clean sheets in a season","season"],["totalGoals","historyPlayerTotalGoals","Most goals overall","all-time"],["totalAssists","historyPlayerTotalAssists","Most assists overall","all-time"],["totalAppearances","historyPlayerTotalAppearances","Most appearances overall","all-time"],["totalCleanSheets","historyPlayerTotalCleanSheets","Most clean sheets overall","all-time"]].map(([metric,key,label,scope])=>`                    <article class="app-competition-stat-card" data-history-player-record="${metric}" data-history-scope="${scope}"${scope==="all-time"?" hidden":""}><h5 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>`).join("\n")}
                   </div>
+                  <p class="app-competition-status app-history-record-empty-state" data-history-player-empty data-app-i18n="historyPlayerNoData">No historical player data available yet.</p>
                 </section>
               </section>
             </div>
@@ -101,11 +105,11 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
-  if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
+  if(id==="history")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${historyEmptyContent()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
-  if(id==="stats")return `          <section ${attrs}>${statsView.renderEmpty()}\n          </section>`;
-  if(id==="awards")return `          <section ${attrs}>\n          </section>`;
+  if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
+  if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
  return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${panels}\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;

@@ -85,17 +85,16 @@
     }
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
-    const outcomes=window.faCompetitionRulesView.standingsOutcomes(selected);
+    const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
     host.hidden=!outcomes.length;
     list.replaceChildren(...outcomes.map(outcome=>{
       const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
       const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');
-      const label=document.createElement('span');label.id='standings-outcome-'+style;
-      const range=document.createElement('strong');range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
-      const separator=document.createElement('span');separator.textContent=' · ';
-      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
-      text.textContent=window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
-      label.append(range,separator,text);li.append(swatch,label);return li;
+      const label=document.createElement('span');label.className='app-standings-legend-label';label.id='standings-outcome-'+style;
+      const range=document.createElement('strong');range.className='app-standings-legend-range';range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
+      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;text.dataset.competitionLegend='';if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
+      text.textContent=window.faCompetitionRulesView.legendLabel(selected,outcome,document.documentElement.lang);
+      label.append(range,' ',text);li.append(swatch,label);return li;
     }));
   }
 
@@ -667,12 +666,16 @@
     const header = item("div","app-world-form-tooltip-meta","");
     const round = item("span","app-world-form-tooltip-round","");
     const roundLabel = item("span","","Matchday","standingsTooltipRound");
-    const number = item("strong","","");
+    const number = item("span","","");
     round.append(roundLabel,number);
     header.appendChild(round);
     const match = item("div","app-world-form-tooltip-scoreline","");
     const homeName = item("span","app-world-form-tooltip-team","");
     const score = item("strong","app-world-form-tooltip-score","");
+    const scoreHome = item("span","","");
+    const scoreSeparator = item("span",""," – ");
+    const scoreAway = item("span","","");
+    score.append(scoreHome,scoreSeparator,scoreAway);
     const awayName = item("span","app-world-form-tooltip-team","");
     match.append(homeName,score,awayName);
     const footer = item("div","app-world-form-tooltip-context","");
@@ -736,7 +739,8 @@
       const against = entry.result === "W" ? 1 : entry.result === "D" ? 1 : 2;
       homeName.textContent = (isHome ? entry.club : opponent).primaryName;
       awayName.textContent = (isHome ? opponent : entry.club).primaryName;
-      score.textContent = (isHome ? own : against)+" – "+(isHome ? against : own);
+      scoreHome.textContent = String(isHome ? own : against);
+      scoreAway.textContent = String(isHome ? against : own);
       number.textContent = String(entry.round);
       home.hidden = !isHome;
       away.hidden = isHome;
@@ -964,7 +968,7 @@
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
     bindSuppliedPanels(suppliedMobile);
-    const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
+    if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.
     // Selector module is optional to boot: never stall existing public consumers.
     void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});
@@ -986,14 +990,14 @@
         const historyPanel=document.getElementById('competition-panel-history');
         if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
-        const copy={en:['Loading season data…','Season data is unavailable.','No published season data yet.'],it:['Caricamento dei dati della stagione…','Dati della stagione non disponibili.','Nessun dato della stagione ancora pubblicato.'],de:['Saisondaten werden geladen…','Saisondaten sind nicht verfügbar.','Noch keine veröffentlichten Saisondaten.'],es:['Cargando datos de la temporada…','Los datos de la temporada no están disponibles.','Aún no hay datos publicados de la temporada.'],fr:['Chargement des données de la saison…','Les données de la saison sont indisponibles.','Aucune donnée de saison publiée pour le moment.']};
+        const copy={en:'No published season data yet.',it:'Nessun dato della stagione ancora pubblicato.',de:'Noch keine veröffentlichten Saisondaten.',es:'Aún no hay datos publicados de la temporada.',fr:'Aucune donnée de saison publiée pour le moment.'};
         const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
-        let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{const words=copy[document.documentElement.lang]||copy.en;live.hidden=['available','partial','isolated'].includes(sourceState);live.textContent=sourceState==='loading'?words[0]:sourceState==='empty'?words[2]:words[1]};
+        let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{live.hidden=sourceState!=='empty';live.textContent=sourceState==='empty'?(copy[document.documentElement.lang]||copy.en):''};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
-        let selection='';const select=()=>{if(activeDebugSeason!==null){loader.cancel();sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void loader.load()};
+        let selection='';const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void loader.load()};
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.addEventListener('focus',()=>void loader.load());
@@ -1001,8 +1005,8 @@
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
         new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
-      }catch{clearSeasonData();}
+      }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }
   }
-  start().catch(fail);
+  start().catch(fail).finally(()=>window.faStandingsLoading?.set('bootstrap',false));
 })();

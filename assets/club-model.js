@@ -69,15 +69,19 @@
    .replace(/id="([^"]+)"/g,(_,id)=>'id="club-'+placement+'-'+id+'"')
    .replace(/url\(#([^)]+)\)/g,(_,id)=>'url(#club-'+placement+'-'+id+')')
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
-  const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'overview'}):null;
+  const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'standings'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
   const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
-  const divisionValue=division?'<a class="app-link" href="'+link+'">'+escape(division.name)+'</a>':escape(t.outside);
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
   const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
    (snapshot.position===null||Number.isInteger(snapshot.position)&&snapshot.position>=1&&snapshot.position<=16)&&
    Number.isInteger(snapshot.points)&&snapshot.points>=0&&snapshot.points<=90?snapshot:null;
+  const params=new URLSearchParams(search);
+  const requestedSeason=params.get('season');
+  const competitionSeason=summary?.season||(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null);
+  const competitionLink=link+(competitionSeason?'?season='+competitionSeason:'');
+  const divisionValue=division?'<a class="app-link" href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
   const next=summary?.nextMatch;
   const homeCandidate=next&&index.clubs.get(c.countryId+'-'+next.homeId);
   const home=homeCandidate&&homeCandidate.divisionId===c.divisionId?homeCandidate:null;
@@ -96,7 +100,6 @@
    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+rank+'</dd></div></dl>'+
    '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextContent+'</div></div></div></div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
-  const params=new URLSearchParams(search);
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));

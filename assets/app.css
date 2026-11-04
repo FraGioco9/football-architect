@@ -304,12 +304,12 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 @keyframes app-world-tooltip-in{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes app-world-tooltip-out{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(4px) scale(.985)}}
 @media(prefers-reduced-motion:reduce){.app-world-form-tooltip,.app-world-form-tooltip.is-closing{animation:none!important}}
-.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;min-height:clamp(11px,3.6vw,16px);color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px);font-weight:650}
+.app-world-form-tooltip-meta{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;min-height:clamp(11px,3.6vw,16px);color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px);font-weight:400}
 .app-world-form-tooltip-round{display:inline-flex;gap:clamp(3px,1.3vw,6px);white-space:nowrap}
 .app-world-form-tooltip-scoreline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:clamp(6px,2.3vw,10px);min-height:clamp(26px,9vw,40px)}
-.app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}
+.app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:400}
 .app-world-form-tooltip-team:last-child{text-align:right}
-.app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.app-world-form-tooltip-score{font-size:clamp(15px,4.5vw,20.3px);display:grid;grid-template-columns:minmax(2ch,1fr) 1ch minmax(2ch,1fr);column-gap:.25ch;align-items:center;text-align:center;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
 .app-world-form-tooltip-context{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;margin-top:0;padding-top:clamp(6px,2.05vw,9px);border-top:1px solid #34524d;color:#b5c9c1;font-size:clamp(9px,2.5vw,11.3px)}
 .app-world-form-tooltip-stadium,.app-world-form-tooltip-date{max-width:100%;overflow-wrap:anywhere}
 .app-world-form-tooltip-context [hidden]{display:none}
@@ -586,10 +586,7 @@ html[data-competition-view="awards"] .app-competition-panel:not(#competition-pan
 html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}
 
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
-html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
-html[data-fa-debug-pending="true"] #competition-panel-fixtures,
-html[data-fa-dev-standings-pending="true"] #competition-panel-history,
-html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
+
 
 /* Statistics and History: shared cards and record layouts. */
 /* Single card primitive for Stats/History; variants own only their required height. */
@@ -609,7 +606,7 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 
 /* Local History follows existing competition rows, identities and standings. */
 .app-history-dev,.app-history-empty{display:grid;gap:20px;min-width:0}
-.app-history-empty[hidden]{display:none!important}
+.app-history-empty[hidden],.app-history-empty [hidden]{display:none!important}
 .app-history-dev [hidden]{display:none!important}
 .app-history-dev-section{display:grid;gap:12px;min-width:0;scroll-margin-top:90px}
 .app-history-dev-section>h3{margin:0;font-size:.95rem;font-weight:700}
@@ -644,6 +641,13 @@ html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 .app-history-dev-season{font-size:12px;font-weight:700}
 .app-history-dev-archive{list-style:none;margin:0;padding:0}
 .app-history-dev-archive li:not(:last-child){border-bottom:1px solid var(--line)}
+/* Loaded and loading archive rows share a 72px desktop footprint.
+   Real multiline names may still grow instead of being clipped. */
+@media(min-width:621px){
+ .app-history-dev-archive li{box-sizing:border-box;min-height:72px}
+ .app-history-dev-archive .app-history-dev-season-button{min-height:70px;padding-block:10px}
+}
+
 .app-history-dev-archive-head,.app-history-dev-season-button{display:grid;grid-template-columns:76px repeat(3,minmax(0,1fr));align-items:center;gap:12px;padding:12px 10px}
 .app-history-dev-archive-head{border-bottom:1px solid var(--line);border-radius:12px 12px 0 0;background:#172d30;color:var(--muted);font-size:11px;font-weight:750}
 html[data-theme="light"] .app-history-dev-archive-head{background:#E8F1EB;color:#31594A}
@@ -688,8 +692,8 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 /* Keep the current-matchday shortcut beside, not over, mobile round controls. */
 @media(max-width:620px){
  .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
- .app-fixtures-navigation{grid-column:2;grid-row:1;justify-self:center;min-width:0}
- .app-fixtures-current{position:relative;inset-inline-end:auto;top:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;flex:0 0 32px;margin:0}
+ .app-fixtures-navigation{grid-column:2;grid-row:1;justify-self:center;min-width:0;z-index:2}
+ .app-fixtures-current{position:relative;inset-inline-end:auto;top:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;flex:0 0 32px;margin:0;z-index:1}
 }
 
 
@@ -758,11 +762,12 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-world-mobile-item[data-standing-outcome]{box-shadow:inset 3px 0 var(--standing-outcome-color);background:color-mix(in srgb,var(--surface) 92%,var(--standing-outcome-color) 8%)}
 .app-standings-legend{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:12px;line-height:1.5}
 .app-standings-legend p{margin:0 0 8px;font-weight:750}
-.app-standings-legend ul{display:flex;flex-wrap:wrap;gap:8px 20px;list-style:none;margin:0;padding:0}
+.app-standings-legend ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;list-style:none;margin:0;padding:0}
 .app-standings-legend li{display:flex;align-items:center;gap:8px;min-width:0}
-.app-standings-legend li>span:last-child{overflow-wrap:anywhere}
+.app-standings-legend-label{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:baseline;gap:8px;min-width:0;overflow-wrap:anywhere}
+.app-standings-legend-range{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:start}
 .app-standings-legend-swatch{flex:none;width:12px;height:12px;border-radius:3px;background:var(--standing-outcome-color)}
-@media(max-width:620px){.app-standings-legend ul{display:grid;gap:8px}.app-standings-legend{padding:10px}}
+@media(max-width:620px){.app-standings-legend ul{gap:8px}.app-standings-legend{padding:10px}}
 
 /* Symmetric knockout bracket: semi-finals at both ends, final in the centre. */
 .app-postseason-grid{--knockout-gap:24px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"left final right" ". winner .";gap:32px var(--knockout-gap);align-items:center;width:100%;max-width:none;margin-top:8px}
@@ -1092,7 +1097,25 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-top li:last-child{border-bottom:0}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
+/* Align actual empty text with the unchanged large-value skeleton baseline. */
+/* Empty-state copy and the unchanged skeleton share the same value-row
+   vertical centre, regardless of viewport/font size or localization. */
+.fa-dev-stats-grid .fa-dev-stats-card>.fa-dev-stats-empty{
+ display:flex;align-items:center;
+ min-height:calc(clamp(1.25rem,2.5vw,1.8rem) * 1.25);
+ transform:none;
+}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
+/* Teams and Players: align empty-state copy with the first skeleton row,
+   whose 48px crest slot determines its minimum height. */
+.fa-dev-stats-leader-card>.fa-dev-stats-empty{
+ display:flex;align-items:center;min-height:58px;
+ margin:0!important;padding:5px 0!important;
+ transform:none;
+}
+@media(max-width:620px){
+ .fa-dev-stats-leader-card>.fa-dev-stats-empty{min-height:50px}
+}
 .fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
 .fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
@@ -1151,3 +1174,124 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 @media(prefers-reduced-motion:reduce){
  .app-body :is(input,textarea,select,.language-trigger){transition:none}
 }
+
+/* Standings first paint and refresh share the final table/compact row geometry. */
+.app-standings-skeleton{display:none;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
+.app-standings-skeleton .app-skeleton-mobile{display:none}
+.app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+/* Club placeholder starts at the crest, not after it, and stays compact on wide tables. */
+.app-standings-skeleton tr>:nth-child(2) .app-skeleton-bar{width:148px;max-width:100%;margin-inline:0 auto}
+#competition-panel-standings{position:relative}
+html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-standings-skeleton{display:block}
+/* Only points are bold, including headings and the mobile projection. */
+#competition-panel-standings .app-world-standing-table :is(th,td),
+#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd){font-weight:400}
+#competition-panel-standings .app-world-standing-table tr>:nth-child(10),
+#competition-panel-standings .app-world-mobile-points{font-weight:800}
+@media(max-width:620px){
+ .app-standings-skeleton .app-skeleton-mobile{display:block}
+ .app-standings-skeleton .app-world-mobile-position{width:12px}
+ .app-standings-skeleton .app-world-mobile-name{width:148px;max-width:100%;margin-left:0}
+ .app-standings-skeleton .app-world-mobile-points{width:24px;min-height:30px;padding:0}
+ .app-standings-skeleton .app-world-mobile-form{width:60px;margin-left:48px}
+}
+/* DEV hides the canonical table until commit; the decorative table remains visible. */
+#competition-panel-standings>.app-standings-skeleton .app-world-standing-table{visibility:visible}
+
+/* Form keeps its compact glyphs legible; only the tooltip result is emphasized. */
+#competition-panel-standings .app-world-form-glyph{font-weight:800}
+.app-world-form-tooltip-context{font-weight:400}
+.app-world-form-tooltip-score>:first-child{text-align:right}
+.app-world-form-tooltip-score>:last-child{text-align:left}
+
+/* Fixtures keep static navigation visible while only the supplied match list loads. */
+#competition-panel-fixtures .app-fixtures-select{width:280px;max-width:calc(100vw - 128px);font-size:13px}
+#competition-panel-fixtures .app-fixtures-trigger{position:relative;white-space:nowrap;justify-content:center;flex-wrap:nowrap;padding-inline:28px;text-align:center}
+#competition-panel-fixtures .app-fixtures-trigger>.language-chevron{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);margin:0;flex:none}
+#competition-panel-fixtures .app-fixtures-trigger-label{display:inline-flex;justify-content:center;align-items:center;gap:4px;min-width:0}
+#competition-panel-fixtures :is(.app-fixtures-picker .language-option,#app-fixtures-round-number){white-space:nowrap}
+#competition-panel-fixtures .app-fixtures-skeleton{display:none}
+#competition-panel-fixtures .app-fixtures-skeleton-crest{display:block;flex:0 0 64px;width:64px;height:64px}
+.app-fixture-score{line-height:1.55;min-height:1.55em;align-items:center}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{display:flex;align-items:center;min-height:1.55em;width:140px;max-width:calc(100% - 72px)}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name>.app-skeleton-bar{width:100%;margin:0}
+#competition-panel-fixtures .app-fixtures-skeleton :is(.app-fixture-status,.app-fixture-stadium){display:flex;align-items:center;justify-content:center;min-height:1.4em}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-status{width:100%}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-status>.app-skeleton-bar{width:min(72px,100%);margin:0}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-score>.app-skeleton-bar{grid-column:1/-1;justify-self:center;width:4ch;max-width:100%;margin:0}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium>.app-skeleton-bar{width:min(120px,100%);margin:0}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures .app-fixtures-skeleton{display:grid}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] .app-fixtures-skeleton{display:none!important}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] #app-fixtures-empty{display:block!important}
+/* Compatibility with a local server still injecting the old whole-panel visibility gate. */
+html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
+@media(max-width:620px){
+ #competition-panel-fixtures .app-fixtures-select{font-size:clamp(12px,3vw,13px)}
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:56px;width:56px;height:56px}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{max-width:calc(100% - 64px)}
+ #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium{width:100%;height:2.8em}
+}
+@media(max-width:620px){
+ /* Reserve the current-round action below the wider selector on narrow screens. */
+ #competition-panel-fixtures .app-fixtures-toolbar{padding-bottom:0}
+ #competition-panel-fixtures .app-fixtures-current{grid-column:3;grid-row:2;top:auto;bottom:auto}
+}
+
+/* Shared, decorative Stats/History/Awards shells persist through runtime mounts. */
+.app-competition-view-skeleton{display:none;min-width:0;width:100%}
+:is(#competition-panel-stats,#competition-panel-history,#competition-panel-awards){position:relative}
+.app-competition-view-skeleton .app-skeleton-bar{width:100%;max-width:100%;margin:0}
+.app-competition-view-skeleton .app-competition-stat-value{display:flex;align-items:center;min-height:1.25em}
+.app-competition-view-skeleton .app-competition-stat-value>.app-skeleton-bar{width:5ch;height:12px}
+.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px}
+.app-competition-view-skeleton .fa-dev-stats-team-name{width:110px;max-width:100%;min-width:0}
+.app-competition-view-skeleton .fa-dev-stats-rank{width:12px}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong{width:3.5ch;display:flex;align-items:center;min-height:1.3em}
+.app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
+.app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
+.app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+/* Archive skeleton reuses live crest footprint; the name bar spans crest + name. */
+.app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
+.app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season .app-skeleton-bar{width:9ch;max-width:100%}
+.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-identity{position:relative;width:100%}
+.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-crest-placeholder{visibility:hidden}
+.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-name{position:absolute;left:0;top:50%;transform:translateY(-50%);display:block;width:148px;max-width:100%}
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name .app-skeleton-bar{width:100%;max-width:100%}
+/* The list item includes its divider: total desktop archive row is exactly 72px. */
+@media(min-width:621px){.app-view-skeleton-history-archive .app-history-dev-archive li{box-sizing:border-box;height:72px}.app-view-skeleton-history-archive .app-history-dev-season-button{box-sizing:border-box;height:100%;min-height:0;padding-block:10px}}
+.app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
+.app-view-skeleton-champion>.app-skeleton-bar{max-width:180px}
+.app-view-skeleton-history-table{width:100%;table-layout:fixed;border-collapse:collapse}
+.app-view-skeleton-history-table th:first-child{width:2em}
+.app-view-skeleton-history-table th:nth-child(n+3){width:4em}
+.app-view-skeleton-history-table td{height:24px;padding:4px}
+.app-view-skeleton-awards-pitch{width:min(100%,380px);aspect-ratio:4/3;border-radius:8px;background:color-mix(in srgb,var(--muted) 18%,var(--surface))}
+.app-view-skeleton-award-recipient{box-sizing:border-box;display:flex;align-items:center;min-width:110px;min-height:calc(1.55em + 14px)}
+@media(max-width:620px){.app-view-skeleton-crest-slot{flex-basis:40px;width:40px;height:40px}}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats[data-fa-content-state="empty"]>.app-competition-view-skeleton,
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards[data-fa-content-state="empty"]>.app-competition-view-skeleton{display:none!important}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats[data-fa-content-state="empty"]>:not(.app-competition-view-skeleton),
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards[data-fa-content-state="empty"]>:not(.app-competition-view-skeleton){position:static;visibility:visible;pointer-events:auto}
+/* Compatibility with a DEV server retaining the old History panel gate. */
+html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}
+
+
+/* A pre-season or disabled local Debug world has a fully known, static empty History. */
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>.app-competition-view-skeleton{display:none!important}
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}
+
+/* Static History matches the archive top edge without an intermediate loading shell. */
+
+/* First-paint pre-season History: show the final empty-state text, never placeholder cards. */
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-empty] .app-competition-stat-grid{display:none!important}
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-team-empty],
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-player-empty]{display:block!important}
