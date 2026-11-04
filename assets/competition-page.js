@@ -87,8 +87,6 @@
     if(!selected||!list||!window.faCompetitionRulesView)return;
     const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
     host.hidden=!outcomes.length;
-    const note=host.querySelector('.app-standings-legend-note');
-    if(note)note.hidden=selected.category!=='domestic'||selected.tier!==1;
     list.replaceChildren(...outcomes.map(outcome=>{
       const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
       const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');

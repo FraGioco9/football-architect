@@ -187,8 +187,8 @@ test('LEGEND compact labels and overlapping qualification ranges preserve sporti
  const tier2=get('IT-2');
  assert.equal(view.legendLabel(tier2,{kind:'promotionPlayoffs',targetPhaseId:'promotionPlayoffs'},'en'),'Playoffs');
  const html=view.renderStandingsLegend(d,'it');
- assert.match(html,/<details class="app-standings-legend-note"><summary/);
+ assert.doesNotMatch(html,/<details|data-competition-qualification-note|Qualification details/);
  assert.ok(html.includes('Sovereign Cup'));
- assert.ok(html.includes('campione'));
+ assert.ok(view.renderRules(d,'it').includes('campione'),'Qualification explanation remains in Rules');
  assert.ok(!view.renderStandingsLegend(get('int-1')).includes('<details'));
 });

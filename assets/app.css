@@ -1181,9 +1181,3 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
 .app-world-form-tooltip-context{font-weight:400}
 .app-world-form-tooltip-score>:first-child{text-align:right}
 .app-world-form-tooltip-score>:last-child{text-align:left}
-
-/* Native disclosure works with mouse, keyboard and touch without a hover-only tooltip. */
-.app-standings-legend-note{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
-.app-standings-legend-note>summary{width:fit-content;max-width:100%;cursor:pointer;color:var(--muted);padding:4px 0}
-.app-standings-legend-note>summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:3px}
-.app-standings-legend-note>p{margin:8px 0 0;font-weight:400;color:var(--muted);line-height:1.6}
