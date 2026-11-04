@@ -57,13 +57,11 @@ try{
    }finally{await context.close()}
   };
   const before=await run(true),after=await run(false);
-  // PLAYER-AUTH-01 deliberately adds the shared control transition. Preserve
-  // every other property/geometry comparison and require the exact new value.
+  // PLAYER-AUTH-01's shared control transition is present on both sides of
+  // this comparison. Compare it as-is rather than rewriting the observed CSS.
   const comparison=structuredClone(after.computed);
   if(!reducedMotion)for(const [index,item] of comparison["#calendar-current-week"].entries()){
-   assert.equal(before.computed["#calendar-current-week"][index].props.transition,"none");
-   assert.equal(item.props.transition,"border-color 0.16s, box-shadow 0.18s, background-color 0.16s");
-   item.props.transition="none";
+   assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }
   for(const selector of selectors){
    if(JSON.stringify(before.computed[selector])!==JSON.stringify(comparison[selector])){

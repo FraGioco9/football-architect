@@ -98,10 +98,11 @@ test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview
   const panel=html.split('id="competition-panel-stats"')[1].split('id="competition-panel-history"')[0];
   assert.ok(panel.includes('id="fa-dev-stats"'));
   assert.equal((panel.match(/<button[^>]*data-stats-view=/g)||[]).length,3);
-  const [staticMarkup,templates]=panel.split('<template data-competition-skeleton="stats-overview">');
-  assert.ok(templates,d.slug+' has a reusable Overview skeleton');
+  const staticMarkup=panel.split('<template')[0];
+  const skeleton=html.match(/<template data-competition-skeleton="stats-overview">([\s\S]*?)<\/template>/)?.[1];
+  assert.ok(skeleton,d.slug+' has a reusable Overview skeleton');
   assert.equal((staticMarkup.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' static cards');
-  assert.equal((templates.split('</template>')[0].match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' skeleton cards');
+  assert.equal((skeleton.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' skeleton cards');
  }
 });
 test('STATS-SEASON: mismatched season/rules and reused revision cannot restore old statistics',()=>{
