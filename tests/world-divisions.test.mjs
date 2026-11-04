@@ -278,8 +278,12 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  assert.ok(renderer.includes("name.textContent = club.primaryName || club.abbr"));
  assert.ok(!renderer.includes("name.textContent = club.fullName"));
  assert.ok(read("assets/competition-page.js").includes('createCrestHost(tr.dataset.worldClub)'));
- assert.ok(!page.includes("app-world-club-crest-placeholder"));
- assert.equal((page.match(/<tr data-world-club=/g)||[]).length,0);
+ // History preview skeletons legitimately reserve crest placeholders, but
+ // the neutral Standings table must not invent club identities or crests.
+ const neutralStandings=page.split('<tbody id="app-standings-body">')[1]?.split('</tbody>')[0];
+ assert.ok(neutralStandings!==undefined);
+ assert.ok(!neutralStandings.includes('app-world-club-crest-placeholder'));
+ assert.equal((neutralStandings.match(/<tr data-world-club=/g)||[]).length,0);
  for(const {division,file} of routes){
   const html=read(file);
   assert.ok(html.includes('data-division-variant="compact"'),division.id);

@@ -98,11 +98,12 @@ test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview
   const panel=html.split('id="competition-panel-stats"')[1].split('id="competition-panel-history"')[0];
   assert.ok(panel.includes('id="fa-dev-stats"'));
   assert.equal((panel.match(/<button[^>]*data-stats-view=/g)||[]).length,3);
-  const staticMarkup=panel.split('<template')[0];
+  const [firstPaint,emptyView]=panel.split('id="fa-dev-stats"');
   const skeleton=html.match(/<template data-competition-skeleton="stats-overview">([\s\S]*?)<\/template>/)?.[1];
-  assert.ok(skeleton,d.slug+' has a reusable Overview skeleton');
-  assert.equal((staticMarkup.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' static cards');
-  assert.equal((skeleton.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' skeleton cards');
+  assert.ok(emptyView&&skeleton,d.slug+' has static Overview and reusable skeleton');
+  assert.equal((firstPaint.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' first-paint cards');
+  assert.equal((emptyView.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' empty Overview cards');
+  assert.equal((skeleton.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' template cards');
  }
 });
 test('STATS-SEASON: mismatched season/rules and reused revision cannot restore old statistics',()=>{

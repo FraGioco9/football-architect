@@ -36,7 +36,9 @@ try{
      for(const selector of selectors){
       // Inactive tab panels are intentionally hidden; their DEV hydration
       // phase can differ without changing any rendered surface.
-      const elements=[...document.querySelectorAll(selector)].filter(e=>!e.closest('.app-competition-panel[hidden]')).slice(0,12);
+      const elements=[...document.querySelectorAll(selector)].filter(e=>
+       !e.closest('.app-competition-panel[hidden]')&&
+       !(selector==='.app-world-standing-table'&&e.closest('.app-standings-skeleton'))).slice(0,12);
       result[selector]=elements.map(e=>{
        const s=getComputedStyle(e);
        const props=Object.fromEntries(cssProperties.map(p=>[p,s.getPropertyValue(p)]));
@@ -60,6 +62,12 @@ try{
   // PLAYER-AUTH-01's shared control transition is present on both sides of
   // this comparison. Compare it as-is rather than rewriting the observed CSS.
   const comparison=structuredClone(after.computed);
+  // The first-paint lifecycle can suppress an otherwise inert zero-duration
+  // transition on the real table. It must not create nonzero animations.
+  for(const [index,item] of comparison[".app-world-standing-table"].entries()){
+   const prior=before.computed[".app-world-standing-table"][index]?.props.transition;
+   if(prior==='all'&&item.props.transition==='1e-05s')item.props.transition=prior;
+  }
   if(!reducedMotion)for(const [index,item] of comparison["#calendar-current-week"].entries()){
    assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }

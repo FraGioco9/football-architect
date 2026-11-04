@@ -692,8 +692,8 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 /* Keep the current-matchday shortcut beside, not over, mobile round controls. */
 @media(max-width:620px){
  .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
- .app-fixtures-navigation{grid-column:2;grid-row:1;justify-self:center;min-width:0}
- .app-fixtures-current{position:relative;inset-inline-end:auto;top:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;flex:0 0 32px;margin:0}
+ .app-fixtures-navigation{grid-column:2;grid-row:1;justify-self:center;min-width:0;z-index:2}
+ .app-fixtures-current{position:relative;inset-inline-end:auto;top:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;flex:0 0 32px;margin:0;z-index:1}
 }
 
 

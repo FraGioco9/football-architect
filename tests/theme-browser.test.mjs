@@ -461,7 +461,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("document.getElementById('app-fixtures-picker').hidden"),true);
       await tap('#app-fixtures-round');await tap('#app-fixtures-previous');
       await wait("document.getElementById('app-fixtures-picker').hidden");await expectSeason(2,1);
-      await tap('#app-fixtures-next');await expectSeason(2,2);
+      const nextHit=await run("(()=>{const e=document.getElementById('app-fixtures-next'),r=e.getBoundingClientRect(),top=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return top===e||e.contains(top)})()");
+      assert.equal(nextHit,true,'Next round touch point must not be covered by current-round shortcut');
+      await tap('#app-fixtures-next');await wait("window.faCompetitionRoute?.get().matchday===2");await expectSeason(2,2);
       await tap('#app-fixtures-previous');await expectSeason(2,1);
       for(const season of [1,2]){
         await tap('#app-competition-season');await wait("!document.getElementById('app-competition-season-menu').hidden");await menuFits('app-competition-season-menu');
