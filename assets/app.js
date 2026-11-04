@@ -1316,7 +1316,11 @@
     }
     if(runtime?.faCompetitionRulesView){
       for(const node of document.querySelectorAll('[data-competition-phase]'))node.textContent=runtime.faCompetitionRulesView.phaseLabel(node.dataset.competitionPhase,language());
-      if(definition)for(const node of document.querySelectorAll('[data-competition-outcome]'))node.textContent=runtime.faCompetitionRulesView.outcomeLabel(definition,{kind:node.dataset.competitionOutcome,targetPhaseId:node.dataset.competitionTarget},language());
+      if(definition)for(const node of document.querySelectorAll('[data-competition-outcome]'))node.textContent=runtime.faCompetitionRulesView[node.hasAttribute('data-competition-legend')?'legendLabel':'outcomeLabel'](definition,{kind:node.dataset.competitionOutcome,targetPhaseId:node.dataset.competitionTarget},language());
+    }
+    if(runtime?.faCompetitionRulesView){
+      for(const node of document.querySelectorAll('[data-competition-legend-note]'))node.textContent=runtime.faCompetitionRulesView.legendNoteLabel(language());
+      for(const node of document.querySelectorAll('[data-competition-qualification-note]'))node.textContent=runtime.faCompetitionRulesView.qualificationNote(language());
     }
     for (const node of words()) {
       if (Object.hasOwn(strings, node.dataset.appI18n)) node.textContent = strings[node.dataset.appI18n];

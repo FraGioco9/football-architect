@@ -154,5 +154,37 @@
  const outcomeLabel=(definition,outcome,locale='en')=>outcome.kind==='sovereign'||outcome.kind==='federation'
   ?(internationalOutcomeLabels[locale]||internationalOutcomeLabels.en)[outcome.kind==='sovereign'?0:1]
   :outcome.targetPhaseId?phaseLabel(definition.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey,locale):(copy[locale]||copy.en).outcomesLabels[outcome.kind]||'';
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes});
+ // Compact presentation belongs to the legend; Rules retain full outcome descriptions.
+ const legendCopy={
+  en:{champion:'Champion',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Relegation',playout:'Playout',promoted:'Promotion',promotionPlayoffs:'Playoffs',quarterfinals:'Quarter-finals',knockouts:'Playoffs',note:'Qualification details'},
+  de:{champion:'Meister',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Abstieg',playout:'Relegation',promoted:'Aufstieg',promotionPlayoffs:'Playoffs',quarterfinals:'Viertelfinale',knockouts:'Playoffs',note:'Qualifikation'},
+  es:{champion:'Campeón',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Descenso',playout:'Permanencia',promoted:'Ascenso',promotionPlayoffs:'Playoffs',quarterfinals:'Cuartos de final',knockouts:'Playoffs',note:'Clasificación'},
+  fr:{champion:'Champion',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Relégation',playout:'Barrages de maintien',promoted:'Promotion',promotionPlayoffs:'Barrages',quarterfinals:'Quarts de finale',knockouts:'Barrages',note:'Qualification'},
+  it:{champion:'Campione',sovereign:'Sovereign Cup',federation:'Federation Cup',relegated:'Retrocessione',playout:'Playout',promoted:'Promozione',promotionPlayoffs:'Playoff',quarterfinals:'Quarti di finale',knockouts:'Playoff',note:'Dettagli qualificazioni'}
+ };
+ function standingsLegendOutcomes(d){
+  const bands=standingsOutcomes(d).map(o=>({...o}));
+  const champion=bands.find(o=>o.kind==='champion'),sovereign=bands.find(o=>o.kind==='sovereign');
+  // Champion and international qualification overlap in the legend only.
+  if(d.category==='domestic'&&d.tier===1&&champion?.from===1&&champion.to===1&&sovereign?.from===2&&sovereign.to===3)sovereign.from=1;
+  return bands;
+ }
+ function legendLabel(d,outcome,locale='en'){
+  const t=legendCopy[locale]||legendCopy.en;
+  const key=outcome.targetPhaseId?d.rules.phases.find(p=>p.id===outcome.targetPhaseId)?.labelKey:outcome.kind;
+  return t[key]||outcomeLabel(d,outcome,locale);
+ }
+ function qualificationNote(locale='en'){return internationalQualificationNotes[locale]||internationalQualificationNotes.en;}
+ function legendNoteLabel(locale='en'){return (legendCopy[locale]||legendCopy.en).note;}
+ function renderStandingsLegend(d,locale='en'){
+  const bands=standingsLegendOutcomes(d);
+  if(!bands.length)return '';
+  const items=bands.map(o=>{
+   const style=rules.outcomeStyle(o.kind),range=o.from===o.to?String(o.from):o.from+'–'+o.to;
+   return '<li data-standing-outcome="'+escape(style)+'"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span class="app-standings-legend-label" id="standings-outcome-'+escape(style)+'"><strong class="app-standings-legend-range">'+range+'</strong> <span data-competition-outcome="'+escape(o.kind)+'" data-competition-legend=""'+(o.targetPhaseId?' data-competition-target="'+escape(o.targetPhaseId)+'"':'')+'>'+escape(legendLabel(d,o,locale))+'</span></span></li>';
+  }).join('');
+  const note=d.category==='domestic'&&d.tier===1?'<details class="app-standings-legend-note"><summary data-competition-legend-note>'+escape(legendNoteLabel(locale))+'</summary><p data-competition-qualification-note>'+escape(qualificationNote(locale))+'</p></details>':'';
+  return '<div class="app-standings-legend"><p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p><ul aria-labelledby="standings-outcome-legend-title">'+items+'</ul>'+note+'</div>';
+ }
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,qualificationNote,legendNoteLabel,renderStandingsLegend});
 });

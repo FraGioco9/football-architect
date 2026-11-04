@@ -16,14 +16,7 @@ const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
  const preRenderedRows=neutral||d.category==="international"?"":clubsByDivision.get(d.id).map(club=>`                  <tr data-world-club="${encode(club.countryId)}-${club.clubId}"><td class="app-world-stat-unknown">—</td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(club.countryId)}-${club.clubId}"${Object.hasOwn(crestCatalog,club.countryId+"-"+club.clubId)?' data-club-crest-pending="true"':""} aria-hidden="true"></span><span class="app-world-club-name">${encode(club.primaryName||club.abbr)}</span></span></th>${Array(9).fill('<td class="app-world-stat-unknown">—</td>').join("")}</tr>`).join("\n");
- const bands=neutral&&d.category!=='international'?[]:rulesView.standingsOutcomes(d).map(o=>[o.from===o.to?String(o.from):o.from+'–'+o.to,rules.outcomeStyle(o.kind),o.kind,rulesView.outcomeLabel(d,o),o]);
- const legend=bands.length?`
-          <div class="app-standings-legend">
-            <p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p>
-            <ul aria-labelledby="standings-outcome-legend-title">
-${bands.map(([range,outcome,key,label,o])=>`              <li data-standing-outcome="${outcome}"><span class="app-standings-legend-swatch" aria-hidden="true"></span><span id="standings-outcome-${outcome}"><strong>${range}</strong> · <span data-competition-outcome="${key}"${o.targetPhaseId?' data-competition-target="'+encode(o.targetPhaseId)+'"':''}>${encode(label)}</span></span></li>`).join("\n")}
-            </ul>
-          </div>`:"";
+ const legend=neutral&&d.category!=='international'?'':rulesView.renderStandingsLegend(d);
  return `
           <div class="app-world-standings">
             <div class="app-world-standing-scroll" role="region" aria-label="Standings statistics" data-app-aria="standingsTable">

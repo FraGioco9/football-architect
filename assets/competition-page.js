@@ -85,17 +85,18 @@
     }
     const selected=window.faCompetitionContext?.definition,host=document.querySelector('.app-standings-legend'),list=host?.querySelector?.('ul');
     if(!selected||!list||!window.faCompetitionRulesView)return;
-    const outcomes=window.faCompetitionRulesView.standingsOutcomes(selected);
+    const outcomes=window.faCompetitionRulesView.standingsLegendOutcomes(selected);
     host.hidden=!outcomes.length;
+    const note=host.querySelector('.app-standings-legend-note');
+    if(note)note.hidden=selected.category!=='domestic'||selected.tier!==1;
     list.replaceChildren(...outcomes.map(outcome=>{
       const style=window.faCompetitionRules.outcomeStyle(outcome.kind),li=document.createElement('li');li.dataset.standingOutcome=style;
       const swatch=document.createElement('span');swatch.className='app-standings-legend-swatch';swatch.setAttribute('aria-hidden','true');
-      const label=document.createElement('span');label.id='standings-outcome-'+style;
-      const range=document.createElement('strong');range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
-      const separator=document.createElement('span');separator.textContent=' · ';
-      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
-      text.textContent=window.faCompetitionRulesView.outcomeLabel(selected,outcome,document.documentElement.lang);
-      label.append(range,separator,text);li.append(swatch,label);return li;
+      const label=document.createElement('span');label.className='app-standings-legend-label';label.id='standings-outcome-'+style;
+      const range=document.createElement('strong');range.className='app-standings-legend-range';range.textContent=outcome.from===outcome.to?String(outcome.from):outcome.from+'–'+outcome.to;
+      const text=document.createElement('span');text.dataset.competitionOutcome=outcome.kind;text.dataset.competitionLegend='';if(outcome.targetPhaseId)text.dataset.competitionTarget=outcome.targetPhaseId;
+      text.textContent=window.faCompetitionRulesView.legendLabel(selected,outcome,document.documentElement.lang);
+      label.append(range,' ',text);li.append(swatch,label);return li;
     }));
   }
 
