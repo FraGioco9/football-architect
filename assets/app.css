@@ -1098,7 +1098,13 @@ svg.site-chevron>path{translate:0 .5px}
 .fa-dev-stats-top li>strong{justify-self:end;min-width:3.5ch;max-width:100%;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:.84rem;line-height:1.3}
 .fa-dev-stats-empty{font-size:.85rem;opacity:.65}
 /* Align actual empty text with the unchanged large-value skeleton baseline. */
-.fa-dev-stats-grid .fa-dev-stats-card>.fa-dev-stats-empty{transform:translateY(6px)}
+/* Empty-state copy and the unchanged skeleton share the same value-row
+   vertical centre, regardless of viewport/font size or localization. */
+.fa-dev-stats-grid .fa-dev-stats-card>.fa-dev-stats-empty{
+ display:flex;align-items:center;
+ min-height:calc(clamp(1.25rem,2.5vw,1.8rem) * 1.25);
+ transform:none;
+}
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
 .fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
 .fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
