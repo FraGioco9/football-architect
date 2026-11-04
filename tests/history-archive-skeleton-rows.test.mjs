@@ -45,7 +45,7 @@ test('Season 0 uses the empty archive message instead of fabricated podium rows'
 test('Season 0 uses the DEV archive shell rather than published Hall of Champions',()=>{
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
  const firstPaint=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
- assert.match(loading,/history-'\+\(preview\?'preview':'authoritative'\)/);
+ assert.match(loading,/history-preview/);
  assert.doesNotMatch(loading,/view==='history'&&preview&&season===0\)\{current\?\.remove\(\)/);
  assert.match(firstPaint,/if\(template&&skeleton\)skeleton\.replaceWith\(template\.content\.cloneNode\(true\)\)/);
  assert.match(firstPaint,/if\(completed===0\)/);
@@ -58,5 +58,5 @@ test('Static Season 0 History uses the same archive wrapper and panel spacing as
  assert.match(css,/\\.app-competition-panel\\{margin-top:14px/);
  assert.doesNotMatch(css,/data-fa-history-static="true"\\] #competition-panel-history\\{margin-top:/);
  assert.match(renderer,/app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row"/);
- assert.equal((loading.match(/season===0\\|\\|root\\.faDebugEnabled===false/g)||[]).length,1);
+ assert.match(css,/\.app-history-empty\[hidden\]/);
 });

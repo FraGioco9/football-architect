@@ -64,7 +64,8 @@ test('Club card renders rank, points and next fixture only from its own current 
  assert.match(empty,/>Status</);
  assert.ok(empty.includes('No scheduled match available.'));
  const html=card(snapshot);
- assert.doesNotMatch(html,/standings\?season=|data-club-position><a/);
+ assert.match(html,/\/competitions\/it-1\/standings\?season=3/);
+ assert.doesNotMatch(html,/data-club-position><a/);
  assert.doesNotMatch(html,/data-club-points/);
  assert.ok(html.includes('data-club-position>'+snapshot.position+(snapshot.position%100>=11&&snapshot.position%100<=13?'th':({1:'st',2:'nd',3:'rd'}[snapshot.position%10]||'th'))+'</dd>'));
  assert.ok(html.includes('fixtures?season=3&amp;matchday=16'));
