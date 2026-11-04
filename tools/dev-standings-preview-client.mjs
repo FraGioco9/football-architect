@@ -57,6 +57,7 @@ function syncCompetitionLinks(){
 }
 function syncDebugControls(){
  document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
+ document.documentElement.dataset.faHistoryStatic=String(debugSeason===0||!debugEnabled());
  widgetRoot?.syncVisibility?.();
  syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])

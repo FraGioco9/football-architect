@@ -1284,3 +1284,7 @@ html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #com
 /* Compatibility with a DEV server retaining the old History panel gate. */
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}
 
+
+/* A pre-season or disabled local Debug world has a fully known, static empty History. */
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>.app-competition-view-skeleton{display:none!important}
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}
