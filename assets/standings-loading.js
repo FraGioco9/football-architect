@@ -32,9 +32,6 @@
       if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const season=Number(root.document.documentElement.dataset.faDevCurrentSeason??root.faFixturesInitialProgress?.currentSeason??1);
-      if(view==='history'&&root.document.documentElement.dataset.faDevSeasons!==undefined&&(season===0||root.faDebugEnabled===false)){
-        current?.remove();return;
-      }
       if(view==='history'&&root.document.documentElement.dataset.faDevSeasons!==undefined&&
         (season===0||root.faDebugEnabled===false)){
         current?.remove();

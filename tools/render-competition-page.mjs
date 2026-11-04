@@ -59,7 +59,7 @@ const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
-                <div class="app-world-standings"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
               </section>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>

@@ -50,3 +50,13 @@ test('Season 0 uses the DEV archive shell rather than published Hall of Champion
  assert.match(firstPaint,/if\(template&&skeleton\)skeleton\.replaceWith\(template\.content\.cloneNode\(true\)\)/);
  assert.match(firstPaint,/if\(completed===0\)/);
 });
+
+test('Static Season 0 History uses the same archive wrapper and panel spacing as other seasons',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const renderer=readFileSync(new URL('../tools/render-competition-page.mjs',import.meta.url),'utf8');
+ const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
+ assert.match(css,/\\.app-competition-panel\\{margin-top:14px/);
+ assert.doesNotMatch(css,/data-fa-history-static="true"\\] #competition-panel-history\\{margin-top:/);
+ assert.match(renderer,/app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row"/);
+ assert.equal((loading.match(/season===0\\|\\|root\\.faDebugEnabled===false/g)||[]).length,1);
+});
