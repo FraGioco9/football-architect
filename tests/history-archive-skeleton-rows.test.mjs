@@ -30,3 +30,13 @@ test('archive loading rows contract after a later season regression',()=>{
  assert.equal(archive.rows.length,5);
  assert.equal(archive.rows.filter(row=>!row.hidden).length,2);
 });
+
+test('Season 0 uses the empty archive message instead of fabricated podium rows',()=>{
+ const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
+ const firstPaint=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
+ assert.match(loading,/season=Number\(root\.document\.documentElement\.dataset\.faDevCurrentSeason\?\?progress\.currentSeason\?\?1\)/);
+ assert.match(loading,/if\(completed===0\)/);
+ assert.match(firstPaint,/const completed=Math\.max\(0,/);
+ assert.match(firstPaint,/if\(completed===0\)/);
+ assert.match(firstPaint,/competitionHistoryEmpty/);
+});

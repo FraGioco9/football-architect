@@ -38,11 +38,18 @@
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
       if(view==='history'&&preview&&current?.querySelectorAll){
-        const progress=root.faFixturesInitialProgress||{},season=Number(root.document.documentElement.dataset.faDevCurrentSeason||progress.currentSeason||1);
+        const progress=root.faFixturesInitialProgress||{},season=Number(root.document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
         const day=root.faDevWorldClockSnapshot?.current?.day??progress.day,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));
         const archive=current.querySelector('.app-history-dev-archive');
         if(archive){
+          if(completed===0){
+            const shell=archive.closest('.app-view-skeleton-history-archive');
+            if(shell){
+              shell.innerHTML='<p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p>';
+              root.faAppRenderLanguage?.();
+            }
+          }else{
           const needed=Math.max(1,completed);
           const sample=archive.querySelector('[data-skeleton-archive-row]');
           // Recreated templates always start with four rows; extend when required.
@@ -54,6 +61,7 @@
           }
           for(const row of archive.querySelectorAll('[data-skeleton-archive-row]'))
             row.hidden=Number(row.dataset.skeletonArchiveRow)>=needed;
+          }
         }
       }
     }
