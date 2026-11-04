@@ -766,3 +766,15 @@ test("FORM tooltip keeps the separator in equal score tracks and only the result
   assert.ok(!source.includes('const number = item("strong","","")'));
  }
 });
+
+test('club entry without a season uses the Debug season before and after router initialization',()=>{
+ const from=client.indexOf('function selectedSeason()'),to=client.indexOf('function syncCompetitionLinks()',from);
+ const context={availablePreviewSeasons:()=>[1,2,3,4],routeSeasonOverride:null,debugSeason:3,URL,window:{location:{href:'http://app.localhost:2000/competitions/it-1/standings'}}};
+ const select=runInNewContext(client.slice(from,to)+';selectedSeason',context);
+ assert.equal(select(),3,'The initial request must match the current Debug season');
+ context.window.faCompetitionRoute={get:()=>({season:'3'})};
+ assert.equal(select(),3,'Router readiness cannot invalidate initial hydration');
+ context.window.location.href+='?season=1';assert.equal(select(),1,'Explicit season is preserved');
+ context.routeSeasonOverride=2;assert.equal(select(),2,'A later routed season wins over the initial URL');
+ context.routeSeasonOverride=null;context.window.location.href='http://app.localhost:2000/competitions/it-1/standings';delete context.window.faCompetitionRoute;context.debugSeason=0;assert.equal(select(),1);
+});

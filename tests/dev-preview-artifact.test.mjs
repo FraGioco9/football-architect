@@ -218,7 +218,7 @@ test("DEBUG-SEASONS-02: standings route resolver preserves Seasons 1–4 for the
  const resolve=(script,season,routed,override=null,data="1,2,3,4")=>{
   const url=new URL("https://example.test/competitions/it-1?season="+season);
   return runInNewContext("let routeSeasonOverride="+JSON.stringify(override)+";\n"+script+"\nselectedSeason()",{
-   URL,URLSearchParams,document:{documentElement:{dataset:{faDevSeasons:data}}},
+   URL,URLSearchParams,debugSeason:1,document:{documentElement:{dataset:{faDevSeasons:data}}},
    window:{location:{href:url.href},faCompetitionRoute:{get:()=>({season:routed})}},
    location:{href:url.href,search:url.search}
   });

@@ -42,7 +42,9 @@ function selectedSeason(){
  if(available.includes(requested))return requested;
  const routed=Number(window.faCompetitionRoute?.get?.().season);
  if(available.includes(routed))return routed;
- return available[0];
+ // Match competition-page bootstrap before its async router exists.
+ const current=Math.max(1,debugSeason);
+ return available.includes(current)?current:available[0];
 }
 function syncCompetitionLinks(){
  if(!debugEnabled()){for(const link of document.querySelectorAll('a.app-division-card'))link.removeAttribute('data-dev-latest-season');return;}

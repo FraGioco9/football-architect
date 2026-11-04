@@ -95,7 +95,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
    assert.ok(html.includes(base+'/fixtures?season=2&matchday=7'));
    if(view==='overview'){
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
-    if(c.divisionId)assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/overview'));
+    if(c.divisionId)assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));
     else assert.ok(html.includes(model.copies[lang].outside));
    }else assert.ok(html.includes('club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
@@ -224,7 +224,7 @@ test('CLUB-COMPETITION-02: active cards show localized metrics and inactive card
    assert.ok(box.includes('<dt>'+label+'</dt>'));
    assert.match(box,/data-club-position>—</);
    assert.doesNotMatch(box,/data-club-points/);
-   assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/overview"'));
+   assert.ok(box.includes('href="/competitions/'+c.divisionId.toLowerCase()+'/standings"'));
    assert.equal((box.match(/class="club-competition-logo"/g)||[]).length,1);
    assert.ok(!box.includes(model.copies[lang].provisional));
   }else{
@@ -250,7 +250,7 @@ test('A03-04C: active and inactive club tabs transfer only temporal context to F
   assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/stats?season=3&matchday=7',selected.base+'/history']);
   assert.equal((nav.match(/aria-current="page"/g)||[]).length,1);
   if(path.includes('/40/'))assert.doesNotMatch(html,/href="\/competitions\//,'Unallocated club cannot invent a competition link');
-  else assert.ok(html.includes('href="/competitions/it-1/overview"'));
+  else assert.ok(html.includes('href="/competitions/it-1/standings?season=3"'));
  }
 });
 
@@ -267,7 +267,7 @@ test('A03-04E: club parser and rendered links delegate to the real shared regist
  assert.equal(model.route('/clubs/it/1/overview/'),null);
  const html=model.render(JSON.parse(read('clubs/_shared/manifest.json')),selected,'en','?season=3&matchday=7');
  assert.ok(html.includes('href="/clubs/it/1/fixtures?season=3&matchday=7"'));
- assert.ok(html.includes('href="/competitions/it-1/overview"'));
+ assert.ok(html.includes('href="/competitions/it-1/standings?season=3"'));
  assert.ok(calls.some(([kind,path])=>kind==='parse'&&path==='/clubs/it/1/overview'));
  assert.ok(calls.some(([kind,family])=>kind==='build'&&family==='club'));
  assert.ok(calls.some(([kind,family])=>kind==='build'&&family==='competition'));
@@ -317,4 +317,15 @@ test('PAGE-LOAD-02 P16 canonically known Clubs cards exist in static HTML before
   const href='/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview';
   assert.ok(html.includes('href="'+href+'"'),'missing static club '+href);
  }
+});
+
+test('club competition links open Standings with the displayed season and no fixture round',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json')),selected=model.route('/clubs/it/1/overview');
+ const snapshot={source:'dev',divisionId:'IT-1',clubId:1,season:3,position:2,points:12,nextMatch:null};
+ const href=(search,summary)=>model.render(manifest,selected,'en',search,summary).match(/class="club-competition-name"><a[^>]*href="([^"]+)"/)?.[1];
+ assert.equal(href('',snapshot),'/competitions/it-1/standings?season=3');
+ assert.equal(href('?season=2&matchday=7',null),'/competitions/it-1/standings?season=2');
+ assert.equal(href('',null),'/competitions/it-1/standings');
+ assert.equal(href('?season=bad',null),'/competitions/it-1/standings');
 });
