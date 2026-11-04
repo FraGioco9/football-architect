@@ -735,3 +735,17 @@ test("DEV-SAFARI-FIRST-PAINT: a season switch preserves visible standings and re
  assert.deepEqual(cleanups,['stale','current'],'Failed hydration restores canonical rows');
  assert.equal(dataset.faDevSeasonTransition,undefined,'Failure also releases the visibility guard');
 });
+
+test("competition first paint: served DEV tabs never wait for async scroll restoration", async () => {
+ await withServer(async get=>{
+  for(const id of [...allIds.map(id=>id.toLowerCase()),"int-1","int-2"]){
+   const response=await get(`/competitions/${id}/fixtures?season=1`);
+   assert.equal(response.status,200);
+   const html=response.body;
+   assert.ok(html.includes('data-fa-dev-preview'),"Exercise the DEV-injected response");
+   assert.ok(html.includes('class="app-competition-tabs"'),"Static navigation must be served");
+   const styles=[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(match=>match[1]).join("\n");
+   assert.doesNotMatch(styles,/[^{}]*\.app-competition-tabs[^{}]*\{[^}]*visibility\s*:\s*hidden/,"Static tabs must remain visible before dynamic scripts run: "+id);
+  }
+ });
+});
