@@ -1232,7 +1232,7 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-crest-placeholder{visibility:hidden}
 .app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-name{position:absolute;left:0;top:50%;transform:translateY(-50%);display:block;width:148px;max-width:100%}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name .app-skeleton-bar{width:100%;max-width:100%}
-@media(min-width:621px){.app-view-skeleton-history-archive .app-history-dev-season-button{padding-block:10px;min-height:70px}}
+@media(min-width:621px){.app-view-skeleton-history-archive .app-history-dev-season-button{padding-block:10px;min-height:72px}}
 .app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
 .app-view-skeleton-champion>.app-skeleton-bar{max-width:180px}
 .app-view-skeleton-history-table{width:100%;table-layout:fixed;border-collapse:collapse}
