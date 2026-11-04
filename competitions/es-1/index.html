@@ -428,12 +428,12 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p><script data-view-skeleton-first-paint="history">(function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+ if(view==='history'){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
   if(template&&skeleton)skeleton.replaceWith(template.content.cloneNode(true));
  }
- if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+ if(view==='history'){
   const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');
   const last=Number(skeleton?.dataset.skeletonLastLeagueDay),rounds=Number(skeleton?.dataset.skeletonLeagueRounds);
   const season=Number(document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);

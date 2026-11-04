@@ -33,12 +33,12 @@
       const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
       const season=Number(root.document.documentElement.dataset.faDevCurrentSeason??root.faFixturesInitialProgress?.currentSeason??1);
       const selected=view==='stats'?(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview'):null;
-      const key=view==='stats'?'stats-'+selected:view==='history'?'history-'+(preview?'preview':'authoritative'):'awards';
+      const key=view==='stats'?'stats-'+selected:view==='history'?'history-preview':'awards';
       if(current?.dataset.competitionSkeletonRoot!==key){
         const template=root.document.querySelector('template[data-competition-skeleton="'+key+'"]');
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
-      if(view==='history'&&preview&&current?.querySelectorAll){
+      if(view==='history'&&current?.querySelectorAll){
         const progress=root.faFixturesInitialProgress||{},season=Number(root.document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
         const day=root.faDevWorldClockSnapshot?.current?.day??progress.day,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));

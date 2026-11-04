@@ -29,7 +29,7 @@ function awardCards(d){
  return '<div class="fa-awards">'+html+(previous?'</div></section>':'')+'</div>';
 }
 export function renderViewSkeleton(d,view,variant){
- const key=variant||(view==='stats'?'stats-overview':view==='history'?'history-authoritative':'awards');
+ const key=variant||(view==='stats'?'stats-overview':view==='history'?'history-preview':'awards');
  const league=d.rules.phases.find(p=>p.rankOutcomes),marker=league.calendarEvents?.at(-1);
  const lastDay=calendarModel.createSeason(1).days.find(day=>day.events.some(event=>event.marker===marker))?.day||0;
  const historyAttrs=key==='history-preview'?' data-skeleton-last-league-day="'+lastDay+'" data-skeleton-league-rounds="'+rules.phaseMetrics(d,league.id).rounds+'"':'';
@@ -43,12 +43,12 @@ export function renderViewTemplates(d,view){
 export function viewSkeletonScript(view){return '<script data-view-skeleton-first-paint="'+view+'">('+viewSkeletonFirstPaint.toString()+')('+JSON.stringify(view)+');</script>';}
 export function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+ if(view==='history'){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
   if(template&&skeleton)skeleton.replaceWith(template.content.cloneNode(true));
  }
- if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+ if(view==='history'){
   const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');
   const last=Number(skeleton?.dataset.skeletonLastLeagueDay),rounds=Number(skeleton?.dataset.skeletonLeagueRounds);
   const season=Number(document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
