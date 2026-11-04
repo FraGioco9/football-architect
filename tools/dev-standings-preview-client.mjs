@@ -263,6 +263,7 @@ async function renderHistoryPreview(){
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
+ const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  try{
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
@@ -357,7 +358,7 @@ async function renderHistoryPreview(){
   if(status)status.hidden=false;
   if(errorMessage)errorMessage.hidden=false;
   window.faAppRenderLanguage?.();
- }
+ }finally{finishHistory();}
 }
 function syncHistoryPreview(){
  const route=window.faCompetitionRoute?.get?.();

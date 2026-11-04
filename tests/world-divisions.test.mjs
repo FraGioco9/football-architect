@@ -482,3 +482,25 @@ test('competition unavailable source releases loading without a visible status m
   assert.equal(live.textContent,'',lang);
  }
 });
+
+test('Stats History and Awards have reusable static skeletons and prepaint release on every route',async()=>{
+ const {renderViewSkeleton}=await import('../tools/competition-view-skeletons.mjs');
+ for(const definition of manifest.competitions){
+  for(const view of ['stats','history','awards']){
+   const skeleton=renderViewSkeleton(definition,view);
+   assert.ok(skeleton.includes('aria-hidden="true"'));
+   assert.doesNotMatch(skeleton,/data-world-club|data-club-crest|data-award-id|PENDING|No statistics yet/);
+   const html=read('competitions/'+definition.slug+'/index.html');
+   assert.ok(html.includes('data-view-skeleton-first-paint="'+view+'"'),definition.id+' '+view);
+   assert.ok(html.includes('data-competition-skeleton="'+(view==='stats'?'stats-overview':view==='history'?'history-authoritative':'awards')+'"'));
+  }
+  assert.ok(read('competitions/'+definition.slug+'/index.html').includes('<link rel="stylesheet" href="/assets/competition-awards.css">'));
+ }
+ const {createStandingsLoading}=require('../assets/standings-loading.js');
+ const common=[],local=[],loading=createStandingsLoading(value=>common.push(value),(view,value)=>local.push([view,value]));
+ loading.set('bootstrap',false);
+ const first=loading.beginView('stats'),second=loading.beginView('stats');
+ assert.equal(common.at(-1),false,'A Stats request must not blank ready Standings/Fixtures');
+ first();assert.deepEqual(local.at(-1),['stats',true]);
+ second();assert.deepEqual(local.at(-1),['stats',false]);
+});

@@ -147,7 +147,7 @@ const frontloadCompetitionShell=(source,id)=>{
  const headerEnd=result.indexOf('          </header>',headerStart);
  if(headerStart<0||headerEnd<0)throw Error('Missing static competition header: '+id);
  const readyAt=headerEnd+'          </header>'.length;
- return result.slice(0,readyAt)+'\n          <script data-fa-competition-first-paint-ready>if(!["standings","fixtures"].includes(document.documentElement.dataset.competitionView))document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>'+result.slice(readyAt);
+ return result.slice(0,readyAt)+'\n          <script data-fa-competition-first-paint-ready>if(!["standings","fixtures","stats","history","awards"].includes(document.documentElement.dataset.competitionView))document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>'+result.slice(readyAt);
 };
 const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint] body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
 const competitionRoute = d=>{
@@ -161,9 +161,10 @@ const competitionRoute = d=>{
  html=html.replace('<!-- standings-skeleton-end -->','<!-- standings-skeleton-end --><script data-fa-standings-first-paint-ready>if(document.documentElement.dataset.competitionView==="standings")document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>');
  html=html.replace('id="competition-panel-standings" class=', 'id="competition-panel-standings" aria-busy="true" class=');
  html=html.replace('id="competition-panel-fixtures" class=', 'id="competition-panel-fixtures" aria-busy="true" class=');
+ for(const view of ['stats','history','awards'])html=html.replace('id="competition-panel-'+view+'" class=', 'id="competition-panel-'+view+'" aria-busy="true" class=');
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\";document.documentElement.dataset.faStandingsLoading=\"true\"})();";
- return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n    <script data-fa-competition-first-paint-init>document.documentElement.setAttribute("data-fa-competition-prepaint","");document.addEventListener("DOMContentLoaded",()=>document.documentElement.removeAttribute("data-fa-competition-prepaint"),{once:true});</script>\n  '+competitionShellCss+'\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/standings-loading.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
+ return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n    <script data-fa-competition-first-paint-init>document.documentElement.setAttribute("data-fa-competition-prepaint","");document.addEventListener("DOMContentLoaded",()=>document.documentElement.removeAttribute("data-fa-competition-prepaint"),{once:true});</script>\n  '+competitionShellCss+'\n  <link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/standings-loading.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
  schemaVersion:2,approved:provisionalAssignments.approved,profile:model.profile,clubCrests:clubCrestAssets().catalog,
@@ -236,7 +237,7 @@ for(const page of outputPages){
    html=html.replaceAll(token,value);
   }
   if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
-  if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
+  if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
  if(page.name==="settings")html=html.replace('</head>','  <link rel="stylesheet" href="/assets/admin-settings.css">\n  <script src="/assets/admin-settings.js" defer></script>\n</head>').replace('<section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">',renderAdminSettings()+'\n            <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">');
  if(page.name==="competitions")html=html.replace("</head>","  <script src=\"/assets/international-cups.js\" defer></script>\n</head>");

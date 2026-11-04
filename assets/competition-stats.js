@@ -16,6 +16,14 @@
  function renderEmpty(){
   return '<div id="fa-dev-stats"><div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats">'+views.map(([id,key,label],i)=>'<button type="button" class="language-trigger" data-stats-view="'+id+'" data-app-i18n="'+key+'" aria-pressed="'+(i===0)+'" tabindex="'+(i===0?'0':'-1')+'">'+label+'</button>').join('')+'</div><div class="fa-dev-stats-content"><div class="app-competition-stat-grid fa-dev-stats-grid">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span>'+emptyHtml+'</div>').join('')+'</div></div></div>';
  }
+ function renderSkeleton(selected='overview'){
+  const bar='<span class="app-skeleton-bar"></span>';
+  const nav='<div class="fa-dev-stats-nav">'+views.map(([id,key,label])=>'<button type="button" class="language-trigger" disabled aria-pressed="'+(id===selected)+'" data-app-i18n="'+key+'">'+label+'</button>').join('')+'</div>';
+  if(selected==='overview')return nav+'<div class="app-competition-stat-grid fa-dev-stats-grid">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span><strong class="app-competition-stat-value">'+bar+'</strong></div>').join('')+'</div>';
+  const player=selected==='players';
+  const row='<li><span class="fa-dev-stats-rank">'+bar+'</span><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="fa-dev-stats-team-name">'+bar+'</span></span><strong>'+bar+'</strong></li>';
+  return nav+'<section class="fa-dev-stats-section"><div class="fa-dev-stats-leader-grid">'+(player?players:teams).map(([,key,label])=>'<section class="app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card')+'"><h4 class="app-competition-stat-label fa-dev-stats-leader-title" data-app-i18n="'+key+'">'+label+'</h4><ol class="fa-dev-stats-top">'+row.repeat(5)+'</ol></section>').join('')+'</div></section>';
+ }
  function normalize(context){
   const current=context?.seasonData;
   const selectors=typeof window!=='undefined'?window.faProviderSelectors:null;
@@ -156,5 +164,5 @@
   });
   mounted.set(panel,api);api.update(initial);return api;
  }
- return Object.freeze({mount,renderEmpty});
+ return Object.freeze({mount,renderEmpty,renderSkeleton});
 });

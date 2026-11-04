@@ -968,7 +968,7 @@
       document.getElementById("app-standings-body").replaceChildren(empty);
     }
     bindSuppliedPanels(suppliedMobile);
-    const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);
+    if(!document.querySelector('link[href="/assets/competition-awards.css"]')){const awardsStyle=document.createElement("link");awardsStyle.rel="stylesheet";awardsStyle.href="/assets/competition-awards.css";document.head.append(awardsStyle);}
     // The module bootstrap does not delay legacy shared-page initialization.
     // Selector module is optional to boot: never stall existing public consumers.
     void loadScript('provider-selectors-bootstrap.mjs',true).catch(()=>{});

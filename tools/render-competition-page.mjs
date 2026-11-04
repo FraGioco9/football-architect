@@ -1,3 +1,4 @@
+import {renderViewSkeleton,renderViewTemplates,viewSkeletonScript} from './competition-view-skeletons.mjs';
 import {renderFixturesSkeleton} from './fixtures-static-shell.mjs';
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
@@ -102,11 +103,11 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
-  if(id==="history")return `          <section ${attrs}>${historyEmptyContent()}\n          </section>`;
+  if(id==="history")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${historyEmptyContent()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
-  if(id==="stats")return `          <section ${attrs}>${statsView.renderEmpty()}\n          </section>`;
-  if(id==="awards")return `          <section ${attrs}>\n          </section>`;
+  if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
+  if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
  return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${panels}\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;

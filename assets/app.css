@@ -586,8 +586,7 @@ html[data-competition-view="awards"] .app-competition-panel:not(#competition-pan
 html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}
 
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
-html[data-fa-dev-standings-pending="true"] #competition-panel-history,
-html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
+
 
 /* Statistics and History: shared cards and record layouts. */
 /* Single card primitive for Stats/History; variants own only their required height. */
@@ -1211,3 +1210,34 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
  #competition-panel-fixtures .app-fixtures-toolbar{padding-bottom:36px}
  #competition-panel-fixtures .app-fixtures-current{top:auto;bottom:0}
 }
+
+/* Shared, decorative Stats/History/Awards shells persist through runtime mounts. */
+.app-competition-view-skeleton{display:none;min-width:0;width:100%}
+:is(#competition-panel-stats,#competition-panel-history,#competition-panel-awards){position:relative}
+.app-competition-view-skeleton .app-skeleton-bar{width:100%;max-width:100%;margin:0}
+.app-competition-view-skeleton .app-competition-stat-value{display:flex;align-items:center;min-height:1.25em}
+.app-competition-view-skeleton .app-competition-stat-value>.app-skeleton-bar{width:5ch;height:12px}
+.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px}
+.app-competition-view-skeleton .fa-dev-stats-team-name{width:110px;max-width:100%;min-width:0}
+.app-competition-view-skeleton .fa-dev-stats-rank{width:12px}
+.app-competition-view-skeleton .fa-dev-stats-top li>strong{width:3.5ch;display:flex;align-items:center;min-height:1.3em}
+.app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
+.app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
+.app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+.app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
+.app-view-skeleton-champion>.app-skeleton-bar{max-width:180px}
+.app-view-skeleton-history-table{width:100%;table-layout:fixed;border-collapse:collapse}
+.app-view-skeleton-history-table th:first-child{width:2em}
+.app-view-skeleton-history-table th:nth-child(n+3){width:4em}
+.app-view-skeleton-history-table td{height:24px;padding:4px}
+.app-view-skeleton-awards-pitch{width:min(100%,380px);aspect-ratio:4/3;border-radius:8px;background:color-mix(in srgb,var(--muted) 18%,var(--surface))}
+.app-view-skeleton-award-recipient{box-sizing:border-box;display:flex;align-items:center;min-width:110px;min-height:calc(1.55em + 14px)}
+@media(max-width:620px){.app-view-skeleton-crest-slot{flex-basis:40px;width:40px;height:40px}}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>.app-competition-view-skeleton{display:block}
+html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+/* Compatibility with a DEV server retaining the old History panel gate. */
+html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}
