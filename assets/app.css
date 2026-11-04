@@ -1290,4 +1290,9 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}
 
 /* Static History matches the archive top edge without an intermediate loading shell. */
-html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history{margin-top:0}
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history{margin-top:14px}
+
+/* First-paint pre-season History: show the final empty-state text, never placeholder cards. */
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-empty] .app-competition-stat-grid{display:none!important}
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-team-empty],
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-player-empty]{display:block!important}

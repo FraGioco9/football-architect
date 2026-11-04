@@ -72,12 +72,14 @@ const historyEmptyContent = ()=>`
                 <div class="app-competition-stat-grid">
 ${[["historyBestAttack","Best attack in a season","season"],["historyBestDefence","Best defence in a season","season"],["historyMostSeasonWins","Most wins in a season","season"],["historyMostSeasonPoints","Most points in a season","season"],["historyBestGoalDifference","Best goal difference in a season","season"],["historyLargestTitleMargin","Largest title-winning points margin","season"],["historyMostTitles","Most league titles","all-time"],["historyMostPodiums","Most podium finishes","all-time"],["historyLongestTitleStreak","Most consecutive league titles","all-time"],["historyMostTotalWins","Most wins overall","all-time"],["historyMostTotalGoals","Most goals scored overall","all-time"],["historyMostTotalPoints","Most points overall","all-time"]].map(([key,label,scope])=>`                  <article class="app-competition-stat-card" data-history-scope="${scope}"${scope==="all-time"?" hidden":""}><h5 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h5><span class="app-competition-empty" data-app-i18n="historyNoData">No historical data available yet.</span></article>`).join("\n")}
                 </div>
+                <p class="app-competition-status app-history-record-empty-state" data-history-team-empty data-app-i18n="historyNoData">No historical data available yet.</p>
                 </section>
                 <section class="app-history-record-group" data-history-player-records>
                   <h4 data-app-i18n="historyPlayerRecords">Player records</h4>
                   <div class="app-competition-stat-grid">
 ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],["seasonAssists","historyPlayerSeasonAssists","Most assists in a season","season"],["seasonCleanSheets","historyPlayerSeasonCleanSheets","Most clean sheets in a season","season"],["totalGoals","historyPlayerTotalGoals","Most goals overall","all-time"],["totalAssists","historyPlayerTotalAssists","Most assists overall","all-time"],["totalAppearances","historyPlayerTotalAppearances","Most appearances overall","all-time"],["totalCleanSheets","historyPlayerTotalCleanSheets","Most clean sheets overall","all-time"]].map(([metric,key,label,scope])=>`                    <article class="app-competition-stat-card" data-history-player-record="${metric}" data-history-scope="${scope}"${scope==="all-time"?" hidden":""}><h5 class="app-competition-stat-label" data-app-i18n="${key}">${label}</h5><span class="app-competition-empty" data-app-i18n="historyPlayerNoData">No historical player data available yet.</span></article>`).join("\n")}
                   </div>
+                  <p class="app-competition-status app-history-record-empty-state" data-history-player-empty data-app-i18n="historyPlayerNoData">No historical player data available yet.</p>
                 </section>
               </section>
             </div>
