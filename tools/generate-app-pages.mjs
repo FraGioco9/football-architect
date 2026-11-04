@@ -125,9 +125,31 @@ const competitionRoute = d=>{
  html=html.replace('<meta charset="utf-8">','<meta charset="utf-8">\n  <base href="/competitions/'+d.id.toLowerCase()+'/">\n  <meta name="fa-competition" content="'+encode(d.id)+'">'+(d.category==="domestic"?'\n  <meta name="fa-division" content="'+encode(d.id)+'">':''));
  html=html.replace(/\s*<script src="\/assets\/(?:landing|app|app-search|competition-tabs|competition-history|competition-fixtures)\.js" defer><\/script>/g,"");
  html=html.replace(/<title>[^<]+<\/title>/,"<title>"+encode(d.name)+" — Football Architect</title>");
+ // PAGE-LOAD-02: avoid parsing large inline crest SVGs before the first paint.
+ if(d.category==="domestic"){
+   const crest=/<div id="app-competition-badge"([^>]*)><template shadowrootmode="open">[\s\S]*?<\/template><span>[^<]*<\/span><\/div>/;
+   if(!crest.test(html))throw Error("Missing compact division crest: "+d.id);
+   html=html.replace(crest,'<div id="app-competition-badge"$1><img class="app-competition-logo-image" src="/assets/divisions/'+d.id.toLowerCase()+'/compact.svg" alt="" decoding="async"></div>');
+ }
+ // PAGE-LOAD-02: place the permanent tab rail before large crests and hidden sections.
+ const marker='<section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title">';
+ const sp=html.indexOf(marker),ts=html.indexOf('          <div class="app-competition-tabs" role="tablist"',sp);
+ const ss=html.indexOf('          <script>(()=>{const view=document.documentElement.dataset.competitionView',ts),se=html.indexOf('</script>',ss);
+ if([sp,ts,ss,se].some(x=>x<0))throw Error('Missing static tabs: '+d.id);
+ const tabs=html.slice(ts,se+9);
+ html=html.slice(0,ts)+html.slice(se+9);
+ const p=html.indexOf(marker)+marker.length;
+ html=html.slice(0,p)+'\n'+tabs+'\n'+html.slice(p);
+ const b=html.indexOf('        '+marker),e=html.indexOf('        </section>\n      </main>',b);
+ if(b<0||e<0)throw Error('Missing section: '+d.id);
+ const section=html.slice(b,e+18);
+ html=html.slice(0,b)+html.slice(e+18);
+ const main='<main class="app-main" id="main-content" tabindex="-1">',m=html.indexOf(main);
+ if(m<0)throw Error('Missing main: '+d.id);
+ html=html.slice(0,m+main.length)+'\n'+section+'\n'+html.slice(m+main.length);
  const canonicalCupInit = d.category==="international" ? "(()=>{const u=new URL(location.href),view=u.searchParams.get(\"view\"),parts=u.pathname.match(/^\\/competitions\\/(int-[12])(?:\\/(?:index\\.html)?)?$/);if(parts){const choices=[\"standings\",\"postseason\",\"fixtures\",\"stats\",\"history\",\"rules\",\"awards\"];u.pathname=\"/competitions/\"+parts[1]+\"/\"+(choices.includes(view)?view:\"standings\");u.searchParams.delete(\"view\");if(!u.searchParams.has(\"season\")&&view!==\"history\"&&view!==\"rules\")u.searchParams.set(\"season\",\"1\");history.replaceState(null,\"\",u.pathname+u.search+u.hash)}})();" : "";
  const firstPaint="(()=>{const p=new URLSearchParams(location.search),v=location.pathname.split(\"/\").filter(Boolean).at(-1),s=p.get(\"season\");document.documentElement.dataset.competitionView="+JSON.stringify(model.views.map(view=>view.id))+".includes(v)?v:"+JSON.stringify(model.views.map(view=>view.id))+".includes(p.get(\"view\"))?p.get(\"view\"):\"standings\";document.documentElement.dataset.competitionSeasonUnavailable=\"false\"})();";
- return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
+ return html.replace('</head>',(canonicalCupInit?'  <script>'+canonicalCupInit+'</script>\n  ':'  ')+'<script>'+firstPaint+'</script>\n  <style data-competition-static-first-paint>#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:1}#app-divisions>.app-competition-tabs{order:2;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;min-height:48px;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line,#31554c);box-sizing:border-box}#app-divisions>.app-competition-panel{order:3}#app-divisions>.app-competition-tabs>.app-competition-tab{display:block;flex:0 0 112px;box-sizing:border-box;width:112px;min-width:112px;max-width:112px;min-height:40px;padding:10px 6px;border:0;border-radius:8px;background:transparent;color:var(--muted,#a6b6b1);font:inherit;font-size:12px;font-weight:650;white-space:nowrap;text-align:center;cursor:pointer}html[data-theme=light] #app-divisions>.app-competition-tabs>.app-competition-tab.is-active{color:#174c37;background:#d9eee1}@media(max-width:620px){#app-divisions>.app-competition-tabs>.app-competition-tab{flex-basis:max(92px,calc((100% - 8px)/2.5));width:max(92px,calc((100% - 8px)/2.5));min-width:max(92px,calc((100% - 8px)/2.5));max-width:max(92px,calc((100% - 8px)/2.5));min-height:34px;padding:7px 4px;font-size:11px}}</style>\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/competition-page.js" defer></script>\n</head>');
 };
 const competitionManifest = {
  schemaVersion:2,approved:provisionalAssignments.approved,profile:model.profile,clubCrests:clubCrestAssets().catalog,

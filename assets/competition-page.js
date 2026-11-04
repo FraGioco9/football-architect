@@ -21,7 +21,15 @@
     back.href = "../";
     back.textContent = "Back to Competitions";
     main.appendChild(back);
-    status.replaceChildren(main);
+    // A failed data request must not erase the server-rendered competition chrome.
+    const panel = document.querySelector("#app-divisions .app-competition-panel:not([hidden])")
+      || document.querySelector("#app-divisions .app-competition-panel");
+    if (panel) {
+      panel.replaceChildren(main);
+      panel.hidden = false;
+    } else {
+      status.appendChild(main);
+    }
   }
   const model=window.faCompetitionModel;
   const formLabels = {
