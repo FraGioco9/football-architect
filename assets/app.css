@@ -761,7 +761,7 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-standings-legend ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 20px;list-style:none;margin:0;padding:0}
 .app-standings-legend li{display:flex;align-items:center;gap:8px;min-width:0}
 .app-standings-legend-label{display:grid;grid-template-columns:5ch minmax(0,1fr);align-items:baseline;gap:8px;min-width:0;overflow-wrap:anywhere}
-.app-standings-legend-range{font-variant-numeric:tabular-nums;white-space:nowrap}
+.app-standings-legend-range{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .app-standings-legend-swatch{flex:none;width:12px;height:12px;border-radius:3px;background:var(--standing-outcome-color)}
 @media(max-width:620px){.app-standings-legend ul{gap:8px}.app-standings-legend{padding:10px}}
 

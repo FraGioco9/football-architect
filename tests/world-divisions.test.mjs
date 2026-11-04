@@ -470,3 +470,15 @@ test('standings loading keeps aria-busy synchronized with initial DEV hydration'
  const finish=window.faStandingsLoading.begin();
  assert.equal(attributes['aria-busy'],'true');finish();assert.equal(attributes['aria-busy'],'false');
 });
+
+test('competition unavailable source releases loading without a visible status message in every locale',()=>{
+ const source=read('assets/competition-page.js');
+ const copy=source.split('\n').find(line=>line.includes('const copy={en:'));
+ const presentation=source.split('\n').find(line=>line.includes('let sourceState=activeDebugSeason'));
+ for(const lang of ['en','de','es','fr','it']){
+  const live={hidden:false,textContent:''};
+  runInNewContext(copy+'\n'+presentation+'\nsourceState="unavailable";renderSource();',{live,activeDebugSeason:null,document:{documentElement:{lang}}});
+  assert.equal(live.hidden,true,lang);
+  assert.equal(live.textContent,'',lang);
+ }
+});

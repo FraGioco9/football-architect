@@ -88,7 +88,8 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   world=await click('reset','/api/admin/world/reset');release();
   assert.notEqual(world.generation,previous.generation);assert.equal(world.seasonNumber,0);
   await reread;
-  await publicPage.waitForFunction(()=>document.querySelector('.app-competition-status')?.textContent==='Season data is unavailable.');
+  await publicPage.waitForFunction(()=>window.faCompetitionContext&&document.documentElement.dataset.faStandingsLoading==='false');
+  assert.ok(!(await publicPage.locator('body').innerText()).includes('Season data is unavailable.'));
   assert.equal(await publicPage.evaluate(()=>window.faCompetitionContext?.seasonData),null);
   assert.deepEqual(await publicPage.evaluate(()=>window.__faAuthoritativeCommits),[],'An old projection must never commit, even transiently');
   const deleted=await publicPage.evaluate(()=>fetch('/api/competitions/IT-1/seasons/1').then(r=>r.json()));
