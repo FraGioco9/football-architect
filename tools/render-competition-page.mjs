@@ -5,6 +5,13 @@ import rules from "../assets/competition-rules.js";
 import statsView from "../assets/competition-stats.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo,clubsByDivision,crestCatalog}){
+// Decorative skeleton mirrors the real table and compact rows; no fake identities or crests.
+const standingsSkeleton=(d,cols)=>{
+ const cells=Array.from({length:11},(_,i)=>'<'+(i===1?'th':'td')+'><span class="app-skeleton-bar"></span></'+(i===1?'th':'td')+'>').join('');
+ const rows=Array.from({length:d.capacity},()=>'<tr data-skeleton-row>'+cells+'</tr>').join('');
+ const mobile=Array.from({length:d.capacity},()=>'<li class="app-world-mobile-item" data-skeleton-mobile><div class="app-world-mobile-summary"><span class="app-world-mobile-position app-skeleton-bar"></span><span class="app-world-mobile-name app-skeleton-bar"></span><span class="app-world-mobile-points app-skeleton-bar"></span><span class="app-world-mobile-form app-skeleton-bar"></span></div></li>').join('');
+ return '<div class="app-standings-skeleton" aria-hidden="true"><div class="app-world-standing-scroll"><table class="app-world-standing-table"><thead><tr>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table></div><ol class="app-world-mobile-list app-skeleton-mobile">'+mobile+'</ol></div><!-- standings-skeleton-end -->';
+};
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
@@ -32,7 +39,7 @@ ${d.category==="international"?'<tr><td colspan="11" class="app-competition-empt
                 </tbody>
               </table>
             </div>
-          </div>${legend}`;
+          </div>${standingsSkeleton(d,cols)}${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixtureOption=c=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'">'+(typeof c.value==='number'?'<span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+c.round:'<span data-competition-phase="'+c.labelKey+'">'+rulesView.phaseLabel(c.labelKey)+'</span>'+(c.round?' · '+c.round:''))+'</div>';

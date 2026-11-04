@@ -1151,3 +1151,26 @@ html[data-theme="light"] .app-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-
 @media(prefers-reduced-motion:reduce){
  .app-body :is(input,textarea,select,.language-trigger){transition:none}
 }
+
+/* Standings first paint and refresh share the final table/compact row geometry. */
+.app-standings-skeleton{display:none;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
+.app-standings-skeleton .app-skeleton-mobile{display:none}
+.app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.app-standings-skeleton tr>:nth-child(2) .app-skeleton-bar{width:45%;margin-inline:64px 0}
+#competition-panel-standings{position:relative}
+html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-standings-skeleton{display:block}
+/* Only points are bold, including headings and the mobile projection. */
+#competition-panel-standings .app-world-standing-table :is(th,td),
+#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd,.app-world-form-glyph){font-weight:400}
+#competition-panel-standings .app-world-standing-table tr>:nth-child(10),
+#competition-panel-standings .app-world-mobile-points{font-weight:800}
+@media(max-width:620px){
+ .app-standings-skeleton .app-skeleton-mobile{display:block}
+ .app-standings-skeleton .app-world-mobile-position{width:12px}
+ .app-standings-skeleton .app-world-mobile-name{width:55%;margin-left:48px}
+ .app-standings-skeleton .app-world-mobile-points{width:24px;min-height:30px;padding:0}
+ .app-standings-skeleton .app-world-mobile-form{width:60px;margin-left:48px}
+}
+/* DEV hides the canonical table until commit; the decorative table remains visible. */
+#competition-panel-standings>.app-standings-skeleton .app-world-standing-table{visibility:visible}

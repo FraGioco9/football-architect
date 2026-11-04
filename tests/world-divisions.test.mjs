@@ -1,3 +1,5 @@
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import {runInNewContext} from 'node:vm';
 import routeRegistry from '../assets/routes-registry.js';
@@ -123,7 +125,7 @@ test("COMPETITIONS-06 shares one full shell, 11 standings columns and seven tabs
  assert.ok(shared.includes('class="app-competition-header"'));
  assert.ok(shared.includes('class="app-competition-logo-placeholder app-competition-logo-placeholder-large"'));
  assert.ok(shared.includes('class="app-competition-return app-link app-link-secondary" href="/competitions" data-app-i18n="allDivisions"'));
- assert.equal((shared.match(/<th scope="col"/g)||[]).length,11);
+ assert.equal((shared.match(/<table class="app-world-standing-table">([\s\S]*?)<\/table>/)?.[1].match(/<th scope="col"/g)||[]).length,11);
  for(const key of cols)assert.ok(shared.includes('data-app-i18n="'+key+'"'),key);
  assert.equal((shared.match(/<tr data-world-club="/g)||[]).length,0);
  assert.equal((shared.match(/role="tab"/g)||[]).length,7);
@@ -259,7 +261,7 @@ test("COMPETITIONS-08 removes all provisional standings filters and highlights p
  assert.ok(page.includes('data-app-i18n="standingsPoints">Pts</th>'));
  assert.ok(css.includes(".app-world-standing-table tr>*:nth-child(10){background:#26473e"));
  assert.equal((page.match(/role="tab"/g)||[]).length,7);
- assert.equal((page.match(/<th scope="col"/g)||[]).length,11);
+ assert.equal((page.match(/<table class="app-world-standing-table">([\s\S]*?)<\/table>/)?.[1].match(/<th scope="col"/g)||[]).length,11);
 });
 
 test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club",()=>{
@@ -426,4 +428,45 @@ test("CLUB-COMPETITION-FULLWIDTH renders Competition after both top panels",()=>
  const model=read("assets/club-model.js"),css=read("assets/club-page.css");
  assert.ok(model.includes("'</div><aside class=\"app-panel club-kits\""));
  assert.ok(css.includes(".club-overview-layout>.club-competition{grid-column:1/-1"));
+});
+
+test('standings loading stays active until all overlapping requests finish',()=>{
+ const {createStandingsLoading}=require('../assets/standings-loading.js');
+ const states=[],loading=createStandingsLoading(value=>states.push(value));
+ const first=loading.begin(),second=loading.begin();
+ loading.set('bootstrap',false);
+ first();assert.equal(states.at(-1),true);
+ first();assert.equal(states.at(-1),true);
+ second();assert.equal(states.at(-1),false);
+ loading.set('api',true);assert.equal(states.at(-1),true);
+ loading.set('api',false);assert.equal(states.at(-1),false);
+});
+
+test('every competition serves a data-free desktop and mobile standings skeleton',()=>{
+ const ids=['br','de','eng','es','fr','it','nl','pt'].flatMap(c=>[c+'-1',c+'-2']).concat(['int-1','int-2']);
+ for(const id of ids){
+  const html=read('competitions/'+id+'/index.html');
+  assert.ok(html.includes('dataset.faStandingsLoading="true"'),id+' initializes before paint');
+  const skeleton=html.match(/<div class="app-standings-skeleton" aria-hidden="true">([\s\S]*?)<!-- standings-skeleton-end -->/)?.[1];
+  assert.ok(skeleton,id+' includes static skeleton');
+  const capacity=id.startsWith('int-')?24:16;
+  assert.equal((skeleton.match(/data-skeleton-row/g)||[]).length,capacity,id+' desktop rows');
+  assert.equal((skeleton.match(/data-skeleton-mobile/g)||[]).length,capacity,id+' mobile rows');
+  assert.doesNotMatch(skeleton,/<img|data-club-crest|data-world-club|id="/);
+  assert.ok(html.indexOf('standings-loading.js')<html.indexOf('competition-page.js'));
+  assert.ok(html.indexOf('data-fa-standings-first-paint-ready')>html.indexOf('<!-- standings-skeleton-end -->'));
+  assert.ok(html.includes('id="competition-panel-standings" aria-busy="true"'));
+ }
+});
+
+test('standings loading keeps aria-busy synchronized with initial DEV hydration',()=>{
+ const attributes={},dataset={faDevStandingsPending:'true'};let notify;
+ const window={document:{documentElement:{dataset},getElementById:()=>({setAttribute:(key,value)=>attributes[key]=value})},MutationObserver:class{constructor(callback){notify=callback;}observe(){}}};
+ runInNewContext(read('assets/standings-loading.js'),{window});
+ window.faStandingsLoading.set('bootstrap',false);
+ assert.equal(dataset.faStandingsLoading,'true');assert.equal(attributes['aria-busy'],'true');
+ delete dataset.faDevStandingsPending;notify();
+ assert.equal(dataset.faStandingsLoading,'false');assert.equal(attributes['aria-busy'],'false');
+ const finish=window.faStandingsLoading.begin();
+ assert.equal(attributes['aria-busy'],'true');finish();assert.equal(attributes['aria-busy'],'false');
 });

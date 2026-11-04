@@ -63,6 +63,8 @@ function syncDebugControls(){
   }
 }
 async function refreshProgress(){
+ const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
+ try{
  if(!debugEnabled()){syncDebugControls();return true;}
  window.faCompetitionContextApi?.setDebugSeason(debugSeason);
  window.faCompetitionRoute?.setSeasonLimit?.(debugSeason);
@@ -83,6 +85,7 @@ async function refreshProgress(){
  syncDebugControls();
  window.dispatchEvent(new CustomEvent("fa:dev-progress-change",{detail:{season:debugSeason,matchdays}}));
  return true;
+ }finally{finishStandings();}
 }
 async function setDebugProgress(key,value){
  const previous={season:debugSeason,matchdays},previousView=window.faCompetitionRoute?.get?.().season;let saved,savedDay,savedRounds;
@@ -362,6 +365,7 @@ function syncHistoryPreview(){
 
 let transition=Promise.resolve();
 function setPreviewEnabled(enabled) {
+ const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
  transition=transition.catch(()=>false).then(async()=>{
   if(previewState==="ERROR"){
    try{activePreview()}
@@ -405,6 +409,7 @@ function setPreviewEnabled(enabled) {
   window.dispatchEvent(new CustomEvent("fa:fictional-standings-change",{detail:{enabled:false}}));
   return true;
  });
+ transition=transition.finally(finishStandings);
  return transition;
 }
 
@@ -460,7 +465,7 @@ if(validPath||indexPath||clubPath||sharedPath){
     delete document.documentElement.dataset.faDevSeasonTransition;
     return seasonRefresh;
    }
-   // Keep standings visible while detached DEV rows are prepared for a synchronous swap.
+   const finishStandings=window.faStandingsLoading?.begin()||(()=>{});
    seasonRefresh=seasonRefresh.then(async()=>{
     await transition;
     if(previewState!=="ON"||request!==seasonRequest)return;
@@ -492,6 +497,7 @@ if(validPath||indexPath||clubPath||sharedPath){
     }
     return false;
    }).finally(()=>{
+    finishStandings();
     // A stale request must never release the newest season's paint guard.
     if(request===seasonRequest)delete document.documentElement.dataset.faDevSeasonTransition;
    });
