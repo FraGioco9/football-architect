@@ -277,3 +277,16 @@ test('Club competition summaries are injected only into DEV/protected club HTML'
   assert.equal(existsSync(join(protectedPath,'__fa_dev__/stats-client.mjs')),true);
  }finally{rmSync(root,{recursive:true,force:true})}
 });
+
+test('FIXTURES prepaint progress is injected only for enabled local/protected Debug',async()=>{
+ const {DEBUG_SEASON_BOOTSTRAP}=await import('../tools/dev-preview-artifact.mjs');
+ const script=DEBUG_SEASON_BOOTSTRAP.match(/<script>([\s\S]*?)<\/script>/)[1];
+ for(const disabled of [false,true]){
+  const window={},dataset={};
+  const values={'football-architect:standings-dev-season':'3','football-architect:standings-dev-matchdays':'16','football-architect:calendar-dev-world-day':'28','football-architect:debug-enabled':disabled?'off':'on'};
+  runInNewContext(script,{window,document:{documentElement:{dataset}},sessionStorage:{getItem:key=>values[key]??null}});
+  assert.equal(dataset.faDevCurrentSeason,'3');
+  if(disabled)assert.equal(window.faFixturesInitialProgress,undefined);
+  else assert.deepEqual(JSON.parse(JSON.stringify(window.faFixturesInitialProgress)),{currentSeason:3,matchdays:16,day:28});
+ }
+});

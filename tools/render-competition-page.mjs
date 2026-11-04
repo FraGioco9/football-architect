@@ -1,3 +1,4 @@
+import {renderFixturesSkeleton} from './fixtures-static-shell.mjs';
 // One detail renderer for all competition routes and the neutral shell.
 import model from "../assets/competition-model.js";
 import rulesView from "../assets/competition-rules-view.js";
@@ -35,15 +36,15 @@ ${d.category==="international"?'<tr><td colspan="11" class="app-competition-empt
           </div>${standingsSkeleton(d,cols)}${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const fixtureOption=c=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'">'+(typeof c.value==='number'?'<span data-app-i18n="fixturesMatchday">Matchday</span>&nbsp;'+c.round:'<span data-competition-phase="'+c.labelKey+'">'+rulesView.phaseLabel(c.labelKey)+'</span>'+(c.round?' · '+c.round:''))+'</div>';
+const fixtureOption=(d,c)=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'"><span data-competition-fixture-choice="'+c.value+'">'+rulesView.fixturesChoiceLabel(d,c)+'</span></div>';
 const fixturesContent = (d)=>`
-            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar" hidden>
+            <div class="app-fixtures-toolbar" id="app-fixtures-toolbar">
               <div class="app-fixtures-navigation">
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-previous" aria-label="Previous matchday" data-app-aria="fixturesPrevious" disabled><svg class="site-chevron site-chevron-left" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <div class="language-control app-fixtures-select">
                 <button type="button" id="app-fixtures-round" class="language-trigger app-fixtures-trigger" role="combobox" aria-haspopup="listbox" aria-labelledby="app-fixtures-round-label app-fixtures-round-number" aria-controls="app-fixtures-picker" aria-expanded="false" disabled><span id="app-fixtures-round-label" data-app-i18n="fixturesMatchday">Matchday</span> <span id="app-fixtures-round-number">1</span>${menuChevron}</button>
                 <div id="app-fixtures-picker" class="language-menu app-fixtures-picker" role="listbox" aria-labelledby="app-fixtures-round" hidden>
-${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
+${rules.fixtureChoices(d).map(c=>fixtureOption(d,c)).join("\n")}
                 </div>
                 </div>
                 <button type="button" class="language-trigger app-fixtures-arrow" id="app-fixtures-next" aria-label="Next matchday" data-app-aria="fixturesNext" disabled><svg class="site-chevron site-chevron-right" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -52,7 +53,7 @@ ${rules.fixtureChoices(d).map(fixtureOption).join("\n")}
               <p id="app-fixtures-summary" class="sr-only" role="status" aria-live="polite" aria-atomic="true" hidden></p>
             </div>
             <p id="app-fixtures-empty" class="app-competition-status" data-app-i18n="competitionFixturesEmpty">No scheduled matches or results are available.</p>
-            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>`;
+            <ol id="app-fixtures-list" class="app-fixtures-list" aria-label="Competition matches" data-app-aria="fixturesMatches" hidden></ol>${renderFixturesSkeleton(d)}`;
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">

@@ -1,3 +1,4 @@
+import rulesView from '../assets/competition-rules-view.js';
 import routeRegistry from '../assets/routes-registry.js';
 import competitionModel from "../assets/competition-model.js";
 import test from 'node:test';
@@ -62,7 +63,7 @@ function setup(d=divisions[0],registry=routeRegistry){
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
- const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
+ const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
@@ -135,7 +136,7 @@ test('CONFIG-FIXTURES: supplied cup matches keep composite IDs and browsing does
  assert.equal(r.fields.get('app-fixtures-empty').hidden,false,'selected unsupplied choice explains its empty state');
  r.window.faCompetitionContext={...context,selectedSeason:2,seasonData:null};r.events['fa:competition-context-change']();
  assert.equal(r.fields.get('app-fixtures-list').children.length,0);
- assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+ assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
 });
 test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded knockout fixtures fail closed',()=>{
  const cup=definitions.find(d=>d.id==='int-1'),r=setup(cup);
@@ -152,7 +153,7 @@ test('CONFIG-FIXTURES-INVALID: duplicate tie/leg and unresolved or misseeded kno
   r.window.faCompetitionContext={definition:cup,selectedSeason:1,seasonData:{participants,...variant}};
   r.events['fa:competition-context-change']();r.route.set({matchday:'quarterfinals:1'});
   assert.equal(r.fields.get('app-fixtures-list').children.length,0);
-  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,true);
+  assert.equal(r.fields.get('app-fixtures-toolbar').hidden,false);
  }
 });
 test('SEASON-FIXTURES: accepted historical seeds replace the definition captured at mount',()=>{
@@ -233,18 +234,18 @@ test('FIXTURES-05: return to supplied current round is conditional, transactiona
 });
 
 
-test('FIXTURES-06: matchday controls stay hidden without a schedule and recover with available rounds',()=>{
+test('FIXTURES-06: matchday controls remain visible while schedules load or are unavailable',()=>{
  const {view,fields,route}=setup(),toolbar=fields.get('app-fixtures-toolbar');
- assert.equal(toolbar.hidden,true,'initial public empty state');
+ assert.equal(toolbar.hidden,false,'navigation is static even without supplied data');
  view.prepare(schedule(divisions[0],0))();
  assert.equal(toolbar.hidden,false,'unplayed scheduled rounds still provide navigation');
  route.set({season:'2'});assert.equal(toolbar.hidden,false,'DEV season 2 retains navigation');
  route.set({season:'3'});assert.equal(toolbar.hidden,false,'DEV season 3 retains navigation');
  route.set({season:'4'});assert.equal(toolbar.hidden,false,'DEV season 4 retains navigation');
- route.set({season:'5'});assert.equal(toolbar.hidden,true,'unavailable season');
+ route.set({season:'5'});assert.equal(toolbar.hidden,false,'unavailable season');
  route.set({season:'1'});assert.equal(toolbar.hidden,false,'available season restored');
  const restore=view.snapshot();view.prepare(null)();
- assert.equal(toolbar.hidden,true,'removing schedule hides controls');
+ assert.equal(toolbar.hidden,false,'removing a schedule preserves static navigation');
  restore();assert.equal(toolbar.hidden,false,'rollback restores navigation');
 });
 
@@ -319,7 +320,7 @@ test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qua
    restore();route.set({matchday:key});assert.equal(fields.get('app-fixtures-list').children.filter(n=>n.className==='app-fixture-match').length,rows.length);
    fields.get('app-fixtures-previous').emit('click');assert.equal(route.get().matchday,30);
   }
-  view.prepare(null)();assert.equal(fields.get('app-fixtures-toolbar').hidden,true);
+  view.prepare(null)();assert.equal(fields.get('app-fixtures-toolbar').hidden,false);
  }
 });
 test('FIXTURES-POSTSEASON: invalid extra fixtures fail before mutating the league or playoff view',()=>{
@@ -358,4 +359,64 @@ test('A03-04E2: fixture identities delegate to the real registry with canonical 
  const links=walk(r.fields.get('app-fixtures-list')).filter(n=>n.tagName==='a').map(n=>n.href).sort();
  assert.deepEqual(links,d.clubs.map(club=>'/clubs/it/'+club.clubId+'/overview').sort());
  assert.equal(calls.filter(c=>c.kind==='club').length,16);
+});
+
+test('FIXTURES first paint resolves URL/Debug selection and knockout skeleton counts from rules',async()=>{
+ const {fixturesShellConfig,resolveFixtureSelection}=await import('../tools/fixtures-static-shell.mjs');
+ for(const definition of definitions){
+  const config=fixturesShellConfig(definition);
+  assert.equal(resolveFixtureSelection(config,{}).value,1);
+  const league=resolveFixtureSelection(config,{matchday:'2'});
+  assert.equal(league.groups[0].count,definition.capacity/2);
+  for(const choice of config.choices){
+   assert.equal(resolveFixtureSelection(config,{matchday:String(choice.value)}).value,choice.value);
+   assert.ok(choice.groups.every(g=>g.count>0));
+  }
+ }
+ const domestic=fixturesShellConfig(definitions.find(d=>d.id==='IT-1'));
+ assert.equal(resolveFixtureSelection(domestic,{currentSeason:3,season:3,matchdays:15}).value,16);
+ assert.equal(resolveFixtureSelection(domestic,{matchday:'invalid',currentSeason:3,matchdays:15}).value,1);
+ assert.equal(resolveFixtureSelection(domestic,{currentSeason:3,season:3,day:28}).value,17);
+ assert.deepEqual(resolveFixtureSelection(domestic,{matchday:'playout'}).groups.map(g=>g.count),[1,1]);
+ assert.equal(resolveFixtureSelection(domestic,{matchday:'playout'}).labels.en,'Play-out');
+ const promotion=fixturesShellConfig(definitions.find(d=>d.id==='IT-2'));
+ assert.deepEqual(resolveFixtureSelection(promotion,{matchday:'playoffs'}).groups.map(g=>g.count),[2,2,1]);
+ const cup=fixturesShellConfig(definitions.find(d=>d.id==='int-1'));
+ assert.equal(resolveFixtureSelection(cup,{matchday:'final:1'}).groups[0].count,1);
+ assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).groups[0].count,4);
+ assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).labels.en,'Quarter-finals · Second leg');
+ assert.equal(resolveFixtureSelection(cup,{currentSeason:1,season:1,day:31}).value,'playoffs:1');
+});
+
+test('FIXTURES static toolbar and skeleton are present before dynamic scripts on all 18 routes',()=>{
+ for(const d of definitions){
+  const html=read('competitions/'+d.slug+'/index.html');
+  assert.match(html,/id="app-fixtures-toolbar">/);
+  assert.ok(html.includes('id="app-fixtures-skeleton"'));
+  assert.ok(html.includes('data-fixtures-first-paint'));
+  assert.ok(!html.includes('data-fa-debug-pending="true"] #competition-panel-fixtures'));
+ }
+});
+
+test('FIXTURES inline bootstrap selects leg-specific skeletons synchronously without API calls',async()=>{
+ const {fixturesShellConfig}=await import('../tools/fixtures-static-shell.mjs');
+ for(const id of ['IT-1','IT-2','int-1','int-2']){
+  const d=definitions.find(d=>d.id===id),config=fixturesShellConfig(d),html=read('competitions/'+d.slug+'/index.html');
+  const script=html.match(/<script data-fixtures-first-paint>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script);
+  for(const choice of config.choices.filter(c=>c.value===2||typeof c.value==='string'))for(const lang of ['en','de','es','fr','it']){
+   const skeleton=node(),number=node(),label=node(),picker=node(),panel=node('section');panel.hidden=true;
+   picker.querySelectorAll=()=>[];
+   const root={lang,dataset:{competitionView:'fixtures'},removeAttribute(name){this.removed=name;}};
+   const fields={'competition-panel-fixtures':panel,'app-fixtures-skeleton':skeleton,'app-fixtures-round-number':number,'app-fixtures-round-label':label,'app-fixtures-picker':picker};
+   const window={faDebugEnabled:false};
+   const document={documentElement:root,getElementById:id=>fields[id],querySelector:selector=>({content:{cloneNode:()=>({template:selector})}})};
+   runInNewContext(script,{window,document,URLSearchParams,location:{search:'?matchday='+encodeURIComponent(choice.value)},sessionStorage:{getItem:()=>null},fetch(){throw Error('No prepaint API requests')}});
+   assert.equal(window.faFixturesInitialChoice,choice.value);
+   assert.equal(number.textContent,typeof choice.value==='number'?String(choice.value):choice.labels[lang]);
+   assert.equal(root.removed,'data-fa-competition-prepaint');
+   assert.equal(panel.hidden,false,'The Fixtures panel itself must be visible before async hydration');
+   assert.equal(label.hidden,typeof choice.value!=='number');
+  }
+ }
 });

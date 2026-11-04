@@ -1315,6 +1315,10 @@
       catch{rulesPanel.textContent=strings.rulesUnavailable;}
     }
     if(runtime?.faCompetitionRulesView){
+      if(definition)for(const node of document.querySelectorAll('[data-competition-fixture-choice]')){
+        const choice=runtime.faCompetitionRules.fixtureChoices(definition).find(choice=>String(choice.value)===node.dataset.competitionFixtureChoice);
+        if(choice)node.textContent=runtime.faCompetitionRulesView.fixturesChoiceLabel(definition,choice,language());
+      }
       for(const node of document.querySelectorAll('[data-competition-phase]'))node.textContent=runtime.faCompetitionRulesView.phaseLabel(node.dataset.competitionPhase,language());
       if(definition)for(const node of document.querySelectorAll('[data-competition-outcome]'))node.textContent=runtime.faCompetitionRulesView[node.hasAttribute('data-competition-legend')?'legendLabel':'outcomeLabel'](definition,{kind:node.dataset.competitionOutcome,targetPhaseId:node.dataset.competitionTarget},language());
     }

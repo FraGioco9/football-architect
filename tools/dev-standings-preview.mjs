@@ -46,9 +46,9 @@ const INJECT = [
   DEBUG_SEASON_BOOTSTRAP,
   '<script>document.documentElement.dataset.faDevStandingsPending="true"</script>',
   // Static view tabs stay visible while dynamic data and scroll restoration load.
-  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list,html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures{visibility:hidden}</style>',
+  '<style>html[data-fa-dev-standings-pending="true"] .app-world-standing-table,html[data-fa-dev-standings-pending="true"] #app-standings-compact-list{visibility:hidden}</style>',
   // Only DEV navigation uses this; never suppress the public competition views.
-  '<style>html[data-fa-dev-season-transition="true"] #competition-panel-standings,html[data-fa-dev-season-transition="true"] #competition-panel-fixtures{visibility:hidden!important}</style>',
+  '<style>html[data-fa-dev-season-transition="true"] #competition-panel-standings{visibility:hidden!important}</style>',
   '<script type="module" data-fa-dev-preview src="/__fa_dev__/standings-client.mjs"></script>',
   '<script type="module" data-fa-dev-stats src="/__fa_dev__/stats-client.mjs"></script>'
 ].join("\n");

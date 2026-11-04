@@ -14,7 +14,7 @@
       const state=root.document.documentElement.dataset;
       const loading=requestsLoading||['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
       root.document.documentElement.dataset.faStandingsLoading=String(loading);
-      root.document.getElementById('competition-panel-standings')?.setAttribute('aria-busy',String(loading));
+      for(const id of ['competition-panel-standings','competition-panel-fixtures'])root.document.getElementById(id)?.setAttribute('aria-busy',String(loading));
     };
     root.faStandingsLoading=createStandingsLoading(loading=>{requestsLoading=loading;render();});
     new root.MutationObserver(render).observe(root.document.documentElement,{attributes:true,

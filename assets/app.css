@@ -586,8 +586,6 @@ html[data-competition-view="awards"] .app-competition-panel:not(#competition-pan
 html[data-competition-season-unavailable="true"] .app-competition-panel{display:none}
 
 /* Keep DEV restoration guards effective when a running server has an older injected style. */
-html[data-fa-dev-standings-pending="true"] #competition-panel-fixtures,
-html[data-fa-debug-pending="true"] #competition-panel-fixtures,
 html[data-fa-dev-standings-pending="true"] #competition-panel-history,
 html[data-fa-debug-pending="true"] #competition-panel-history{visibility:hidden}
 
@@ -1181,3 +1179,25 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
 .app-world-form-tooltip-context{font-weight:400}
 .app-world-form-tooltip-score>:first-child{text-align:right}
 .app-world-form-tooltip-score>:last-child{text-align:left}
+
+/* Fixtures keep static navigation visible while only the supplied match list loads. */
+#competition-panel-fixtures .app-fixtures-select{width:280px;max-width:calc(100vw - 128px);font-size:13px}
+#competition-panel-fixtures .app-fixtures-trigger{white-space:nowrap;justify-content:flex-start;flex-wrap:nowrap}
+#competition-panel-fixtures .app-fixtures-trigger>.language-chevron{margin-inline-start:auto;flex:none}
+#competition-panel-fixtures :is(.app-fixtures-picker .language-option,#app-fixtures-round-number){white-space:nowrap}
+#competition-panel-fixtures .app-fixtures-skeleton{display:none}
+#competition-panel-fixtures .app-fixtures-skeleton-crest{display:block;flex:0 0 64px;width:64px;height:64px}
+#competition-panel-fixtures .app-fixtures-skeleton .app-fixture-stadium{width:60%;height:10px;display:block}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures .app-fixtures-skeleton{display:grid}
+html[data-fa-standings-loading="true"] #competition-panel-fixtures :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}
+/* Compatibility with a local server still injecting the old whole-panel visibility gate. */
+html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
+@media(max-width:620px){
+ #competition-panel-fixtures .app-fixtures-select{font-size:clamp(10px,2.9vw,13px)}
+ #competition-panel-fixtures .app-fixtures-skeleton-crest{flex-basis:56px;width:56px;height:56px}
+}
+@media(max-width:620px){
+ /* Reserve the current-round action below the wider selector on narrow screens. */
+ #competition-panel-fixtures .app-fixtures-toolbar{padding-bottom:36px}
+ #competition-panel-fixtures .app-fixtures-current{top:auto;bottom:0}
+}

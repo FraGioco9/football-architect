@@ -183,5 +183,19 @@
   }).join('');
   return '<div class="app-standings-legend"><p id="standings-outcome-legend-title" data-app-i18n="standingsOutcomeLegend">Legend</p><ul aria-labelledby="standings-outcome-legend-title">'+items+'</ul></div>';
  }
- return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,renderStandingsLegend});
+ const fixtureCopy={
+  en:{matchday:'Matchday',playout:'Play-out',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'First leg',second:'Second leg'},
+  de:{matchday:'Spieltag',playout:'Relegation',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'Hinspiel',second:'Rückspiel'},
+  es:{matchday:'Jornada',playout:'Permanencia',promotionPlayoffs:'Playoffs',knockouts:'Playoffs',first:'Ida',second:'Vuelta'},
+  fr:{matchday:'Journée',playout:'Maintien',promotionPlayoffs:'Barrages',knockouts:'Barrages',first:'Aller',second:'Retour'},
+  it:{matchday:'Giornata',playout:'Play-out',promotionPlayoffs:'Playoff',knockouts:'Playoff',first:'Andata',second:'Ritorno'}
+ };
+ function fixturesChoiceLabel(d,choice,locale='en'){
+  const t=fixtureCopy[locale]||fixtureCopy.en;
+  if(typeof choice.value==='number')return t.matchday+' '+choice.round;
+  const label=t[choice.labelKey]||phaseLabel(choice.labelKey,locale);
+  const phase=d.rules.phases.find(p=>p.id===choice.phaseId);
+  return choice.round&&phase?.ties.some(tie=>tie.legs===2)?label+' · '+(choice.round===1?t.first:t.second):label;
+ }
+ return Object.freeze({renderRules,renderPostseason,awardIds,update,phaseLabel,outcomeLabel,standingsOutcomes,standingsLegendOutcomes,legendLabel,renderStandingsLegend,fixturesChoiceLabel});
 });
