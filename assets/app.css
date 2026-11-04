@@ -606,7 +606,7 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 
 /* Local History follows existing competition rows, identities and standings. */
 .app-history-dev,.app-history-empty{display:grid;gap:20px;min-width:0}
-.app-history-empty[hidden]{display:none!important}
+.app-history-empty[hidden],.app-history-empty [hidden]{display:none!important}
 .app-history-dev [hidden]{display:none!important}
 .app-history-dev-section{display:grid;gap:12px;min-width:0;scroll-margin-top:90px}
 .app-history-dev-section>h3{margin:0;font-size:.95rem;font-weight:700}
