@@ -1106,6 +1106,16 @@ svg.site-chevron>path{translate:0 .5px}
  transform:none;
 }
 .fa-dev-stats-player-empty{display:block!important;font-size:.85rem;opacity:.65;text-align:center;padding:18px 8px!important}
+/* Teams and Players: align empty-state copy with the first skeleton row,
+   whose 48px crest slot determines its minimum height. */
+.fa-dev-stats-leader-card>.fa-dev-stats-empty{
+ display:flex;align-items:center;min-height:58px;
+ margin:0!important;padding:5px 0!important;
+ transform:none;
+}
+@media(max-width:620px){
+ .fa-dev-stats-leader-card>.fa-dev-stats-empty{min-height:50px}
+}
 .fa-dev-stats-rank{justify-self:center;min-width:0;font-size:.82rem;opacity:.7;font-variant-numeric:tabular-nums;text-align:center}
 .fa-dev-stats-top .app-world-club-identity{display:flex;align-items:center;min-width:0;gap:7px}
 .fa-dev-stats-expand{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px auto 0;padding:5px 9px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;font-size:.82rem;opacity:.75;cursor:pointer;transition:opacity .15s}
