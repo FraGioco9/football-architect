@@ -43,15 +43,19 @@ export function renderViewTemplates(d,view){
 export function viewSkeletonScript(view){return '<script data-view-skeleton-first-paint="'+view+'">('+viewSkeletonFirstPaint.toString()+')('+JSON.stringify(view)+');</script>';}
 export function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&window.faFixturesInitialProgress){
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
-  if(template&&skeleton)skeleton.replaceWith(template.content.cloneNode(true));
+  if(template&&skeleton){
+   if(Number(document.documentElement.dataset.faDevCurrentSeason??window.faFixturesInitialProgress?.currentSeason??1)===0)skeleton.remove();
+   else skeleton.replaceWith(template.content.cloneNode(true));
+  }
  }
- if(view==='history'&&window.faFixturesInitialProgress){
-  const progress=window.faFixturesInitialProgress,skeleton=panel.querySelector('[data-competition-skeleton-root]');
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&window.faDebugEnabled!==false){
+  const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');
   const last=Number(skeleton?.dataset.skeletonLastLeagueDay),rounds=Number(skeleton?.dataset.skeletonLeagueRounds);
-  const completed=Math.max(0,progress.currentSeason-1+((last>0&&progress.day>=last)||(!progress.day&&rounds>0&&progress.matchdays>=rounds)?1:0));
+  const season=Number(document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
+  const completed=Math.max(0,season-1+((last>0&&progress.day>=last)||(!progress.day&&rounds>0&&progress.matchdays>=rounds)?1:0));
   const archive=skeleton?.querySelector('.app-history-dev-archive');
   if(archive){
    if(completed===0){
