@@ -624,7 +624,7 @@ test("STANDINGS-UX-01D: result tooltips adapt to long names and constrained view
  const publicRuntime=read("assets/competition-page.js").toString();
  assert.ok(css.includes("min-height:clamp(100px,29vw,114px);height:auto;max-height:min(60vh,260px);aspect-ratio:auto"));
  assert.ok(css.includes("overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain"));
- assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:700}"));
+ assert.ok(css.includes(".app-world-form-tooltip-team{min-width:0;overflow-wrap:anywhere;white-space:normal;font-weight:400}"));
  for(const field of ["game.homeGoals","game.awayGoals","game.homeId","game.awayId","game.round","game.isHome"])
   assert.ok(client.includes(field),"tooltip retains real DEV match metadata: "+field);
  assert.ok(client.includes("const w = tooltip.offsetWidth || 300, h = tooltip.offsetHeight || 124") ||
@@ -748,4 +748,21 @@ test("competition first paint: served DEV tabs never wait for async scroll resto
    assert.doesNotMatch(styles,/[^{}]*\.app-competition-tabs[^{}]*\{[^}]*visibility\s*:\s*hidden/,"Static tabs must remain visible before dynamic scripts run: "+id);
   }
  });
+});
+
+
+test("FORM tooltip keeps the separator in equal score tracks and only the result bold",()=>{
+ const css=read("assets/app.css").toString();
+ assert.match(css,/\.app-world-form-tooltip-score\{[^}]*grid-template-columns:minmax\(2ch,1fr\) 1ch minmax\(2ch,1fr\)/);
+ assert.match(css,/\.app-world-form-tooltip-meta\{[^}]*font-weight:400/);
+ assert.match(css,/\.app-world-form-tooltip-team\{[^}]*font-weight:400/);
+ assert.ok(css.includes('#competition-panel-standings .app-world-form-glyph{font-weight:800}'));
+ for(const path of ['assets/competition-page.js','tools/dev-standings-preview-client.mjs']){
+  const source=read(path).toString();
+  assert.ok(source.includes('score.append(scoreHome,scoreSeparator,scoreAway)'),path);
+  assert.ok(source.includes('scoreHome.textContent = '),path);
+  assert.ok(source.includes('scoreAway.textContent = '),path);
+  assert.ok(!source.includes('const roundNumber = node("strong")'));
+  assert.ok(!source.includes('const number = item("strong","","")'));
+ }
 });

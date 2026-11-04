@@ -667,12 +667,16 @@
     const header = item("div","app-world-form-tooltip-meta","");
     const round = item("span","app-world-form-tooltip-round","");
     const roundLabel = item("span","","Matchday","standingsTooltipRound");
-    const number = item("strong","","");
+    const number = item("span","","");
     round.append(roundLabel,number);
     header.appendChild(round);
     const match = item("div","app-world-form-tooltip-scoreline","");
     const homeName = item("span","app-world-form-tooltip-team","");
     const score = item("strong","app-world-form-tooltip-score","");
+    const scoreHome = item("span","","");
+    const scoreSeparator = item("span",""," – ");
+    const scoreAway = item("span","","");
+    score.append(scoreHome,scoreSeparator,scoreAway);
     const awayName = item("span","app-world-form-tooltip-team","");
     match.append(homeName,score,awayName);
     const footer = item("div","app-world-form-tooltip-context","");
@@ -736,7 +740,8 @@
       const against = entry.result === "W" ? 1 : entry.result === "D" ? 1 : 2;
       homeName.textContent = (isHome ? entry.club : opponent).primaryName;
       awayName.textContent = (isHome ? opponent : entry.club).primaryName;
-      score.textContent = (isHome ? own : against)+" – "+(isHome ? against : own);
+      scoreHome.textContent = String(isHome ? own : against);
+      scoreAway.textContent = String(isHome ? against : own);
       number.textContent = String(entry.round);
       home.hidden = !isHome;
       away.hidden = isHome;

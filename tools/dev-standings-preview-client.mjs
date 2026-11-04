@@ -724,13 +724,17 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const meta = node("div", "app-world-form-tooltip-meta");
     const round = node("span", "app-world-form-tooltip-round");
     const roundLabel = node("span");
-    const roundNumber = node("strong");
+    const roundNumber = node("span");
     round.append(roundLabel, roundNumber);
     const date = node("time", "app-world-form-tooltip-date");
     meta.append(round,date);
     const scoreline = node("div", "app-world-form-tooltip-scoreline");
     const homeName = node("span", "app-world-form-tooltip-team");
     const score = node("strong", "app-world-form-tooltip-score");
+    const scoreHome = node("span");
+    const scoreSeparator = node("span");scoreSeparator.textContent=" – ";
+    const scoreAway = node("span");
+    score.append(scoreHome,scoreSeparator,scoreAway);
     const awayName = node("span", "app-world-form-tooltip-team");
     scoreline.append(homeName, score, awayName);
     const context = node("div", "app-world-form-tooltip-context");
@@ -802,7 +806,8 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       const game = entry.game;
       homeName.textContent = lookup.get(game.homeId).primaryName;
       awayName.textContent = lookup.get(game.awayId).primaryName;
-      score.textContent = game.homeGoals + " – " + game.awayGoals;
+      scoreHome.textContent = String(game.homeGoals);
+      scoreAway.textContent = String(game.awayGoals);
       roundNumber.textContent = String(game.round);
       stadium.textContent = lookup.get(game.homeId).stadiumName;
       tooltip.hidden = false;
