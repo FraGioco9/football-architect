@@ -508,7 +508,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       assert.equal(await run("!document.getElementById('app-fixtures-toolbar').hidden"),true,"zero completed games still has a schedule");
       await run("sessionStorage.removeItem('football-architect:standings-dev-preview')");
       await cmd("Page.navigate",{url:origin+"/competitions/it-1/fixtures?season=1"});
-      await wait("!!window.faFixtures");
+      // Page.navigate may resolve before the new document and sporting provider
+      // finish hydration. Never assert against the previous DEV document.
+      await wait("location.origin==="+JSON.stringify(origin)+"&&location.pathname==='/competitions/it-1/fixtures'&&!!window.faFixtures&&document.documentElement.dataset.faStandingsLoading==='false'&&!document.documentElement.dataset.faDevStandingsPending");
+      await wait("(()=>{const e=document.getElementById('app-fixtures-empty');return e&&!e.hidden&&e.getClientRects().length>0&&getComputedStyle(e).visibility==='visible'&&document.getElementById('app-fixtures-toolbar').hidden})()");
       assert.equal(await run("document.getElementById('app-fixtures-toolbar').hidden&&!document.getElementById('app-fixtures-empty').hidden"),true,"Public Fixtures hides navigation and shows the empty state");
       await cmd("Page.navigate",{url:devOrigin+"/"});
       await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
