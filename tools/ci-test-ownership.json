@@ -98,6 +98,8 @@
     "tests/competition-stats-view.test.mjs": "site-node",
     "tests/control-focus-browser.mjs": "browser",
     "tests/dev-admin-api-proxy.test.mjs": "site-node",
+    "tests/dev-env-01-browser.mjs": "manual",
+    "tests/dev-env-01-smoke.test.mjs": "site-node",
     "tests/dev-fictional-provider.test.mjs": "site-node",
     "tests/dev-preview-02c-isolation.test.mjs": "site-node",
     "tests/dev-preview-02d-security.test.mjs": "site-node",
