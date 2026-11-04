@@ -235,7 +235,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await run(`localStorage.setItem('football-architect:theme',${JSON.stringify(theme)});localStorage.setItem('football-architect:language',${JSON.stringify(lang)});`);
      await cmd('Page.navigate',{url:origin+'/clubs'});
-     await wait("document.querySelectorAll('.nav01-card').length===320");
+     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
      const state=await run(`(()=>{const pane=document.querySelector('.fa-shell-content-scroll');const cards=document.querySelectorAll('.nav01-card');return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,count:cards.length,href:cards[0].getAttribute('href'),overflow:document.documentElement.scrollWidth>innerWidth+1||pane.scrollWidth>pane.clientWidth+1,labels:[...document.querySelectorAll('.nav01-filters select')].map(el=>el.getAttribute('aria-label'))}})()`);
      assert.equal(state.language,lang);assert.equal(state.theme,theme);assert.equal(state.count,320);
      assert.match(state.href,/^\/clubs\/(it|eng|es|de|fr|pt|nl|br)\/([1-9]|[1-3][0-9]|40)\/overview$/);
@@ -266,7 +266,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      if(lang==='en'){const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});const bytes=Buffer.from(shot.data,'base64');assert.equal(bytes.readUInt32BE(16),width);if(process.env.FA_CLUB_QA_DIR){mkdirSync(process.env.FA_CLUB_QA_DIR,{recursive:true});writeFileSync(join(process.env.FA_CLUB_QA_DIR,`nav01-${width}-${theme}.png`),bytes)}}
     }
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     await run("document.querySelector('.nav01-filters select').value='IT';document.querySelector('.nav01-filters select').dispatchEvent(new Event('change',{bubbles:true}))");
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),40);
     // The public Clubs controls use the same keyboard model as Season/Matchday.
@@ -286,7 +286,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-card').length"),128);
     assert.equal(await run("document.getElementById('nav01-division-trigger').textContent.trim()"),'Prima');
     assert.equal(await run("new URLSearchParams(location.search).get('division')"),'first');
-    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128");
+    await cmd('Page.reload');await wait("document.querySelectorAll('.nav01-card').length===128&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     assert.equal(await run("document.querySelector('#nav01-division-trigger').textContent.trim()"),'Prima');
     await cmd('Page.navigate',{url:origin+'/clubs?q=Torino&country=IT&division=first'});
     await wait("document.querySelector('#nav01-country-trigger')?.disabled===false");
@@ -301,7 +301,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("new URLSearchParams(location.search).get('q')"),'Sao');
     await cmd('Page.reload');await wait("document.querySelector('.nav01-filters input')?.value==='Sao'");
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     // CLUBS-PAGE-03B: failed manifest, accessible localized retry, and recovery without refresh.
     manifestMode='unavailable';
     await cmd('Page.navigate',{url:origin+'/clubs?country=IT&division=first'});
@@ -320,7 +320,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("!!document.querySelector('.nav01-retry')");
     manifestMode='ok';
     await run("document.querySelector('.nav01-retry').click()");
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     console.log('CLUBS_03B: HTTP error, JSON error, retry, localization and URL recovery passed');
     // QA-02: use an accented city/name from the actual public manifest, not invented fixtures.
     const accentCase=await run("(async()=>{const manifest=await(await fetch('/clubs/_shared/manifest.json')).json();const normalize=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();for(const club of manifest.clubs){for(const field of ['city','primaryName','fullName']){const value=club[field];if(value&&normalize(value)!==value.toLowerCase())return {term:value,plain:normalize(value),href:'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'};}}return null})()");
@@ -336,14 +336,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelectorAll('.nav01-filters select')[1].value"),'second');
     assert.equal(await run("document.querySelector('.nav01-filters input').value"),'Torino');
     await cmd('Page.navigate',{url:origin+'/clubs?country=ZZ&division=third&q='});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     for(const language of ['en','de','es','fr','it']){
       await run("document.documentElement.lang="+JSON.stringify(language));
       assert.equal(await run("document.querySelectorAll('.nav01-card').length"),320);
     }
     console.log('CLUBS_03A_QA02: real accented manifest values, duplicate/invalid URLs and five languages passed');
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     // QA-01: custom dropdown pushes a history entry and Back restores its state.
     await run("document.getElementById('nav01-country-trigger').click();document.querySelector('#nav01-country-menu [data-menu-value=IT]').click()");
     assert.equal(await run("new URLSearchParams(location.search).get('country')"),'IT');
@@ -354,7 +354,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("history.forward()");
     await wait("document.querySelectorAll('.nav01-card').length===40&&document.querySelector('.nav01-filters select').value==='IT'");
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     console.log('NAV_CHEVRON: Clubs dropdowns passed all languages, themes and widths; filtering, keyboard, focus, outside close and refresh passed');
 
     // QA-02: inspect the actual viewport centers of the Calendar/Fixtures arrows.
@@ -367,7 +367,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     // NAV-01C: keyboard operation of the sidebar disclosure and focus.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     await run("sessionStorage.setItem('fa-nav01-expanded','false')");
     await cmd('Page.reload');
     await wait("document.querySelector('.nav01-expand')?.getAttribute('aria-expanded')==='false'");
@@ -407,7 +407,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/overview');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
-    await wait("document.querySelectorAll('.nav01-card').length===320");
+    await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
     assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
     await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
