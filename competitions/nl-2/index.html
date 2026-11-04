@@ -423,6 +423,10 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p><script data-view-skeleton-first-paint="history">(function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&(document.documentElement.dataset.faDevCurrentSeason==='0'||window.faDebugEnabled===false)){
+  panel.querySelector('[data-competition-skeleton-root]')?.remove();panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
+  if(document.documentElement.dataset.competitionView===view){panel.hidden=false;document.documentElement.removeAttribute('data-fa-competition-prepaint');}return;
+ }
  if(view==='history'){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');

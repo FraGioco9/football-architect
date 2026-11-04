@@ -1288,3 +1288,6 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):n
 /* A pre-season or disabled local Debug world has a fully known, static empty History. */
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>.app-competition-view-skeleton{display:none!important}
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}
+
+/* Static History matches the archive top edge without an intermediate loading shell. */
+html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history{margin-top:0}

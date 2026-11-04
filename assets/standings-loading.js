@@ -35,6 +35,12 @@
       if(view==='history'&&root.document.documentElement.dataset.faDevSeasons!==undefined&&(season===0||root.faDebugEnabled===false)){
         current?.remove();return;
       }
+      if(view==='history'&&root.document.documentElement.dataset.faDevSeasons!==undefined&&
+        (season===0||root.faDebugEnabled===false)){
+        current?.remove();
+        panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
+        return;
+      }
       const selected=view==='stats'?(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview'):null;
       const key=view==='stats'?'stats-'+selected:view==='history'?'history-preview':'awards';
       if(current?.dataset.competitionSkeletonRoot!==key){

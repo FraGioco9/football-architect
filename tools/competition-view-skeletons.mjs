@@ -43,6 +43,13 @@ export function renderViewTemplates(d,view){
 export function viewSkeletonScript(view){return '<script data-view-skeleton-first-paint="'+view+'">('+viewSkeletonFirstPaint.toString()+')('+JSON.stringify(view)+');</script>';}
 export function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
+ if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&
+    (document.documentElement.dataset.faDevCurrentSeason==='0'||window.faDebugEnabled===false)){
+  panel.querySelector('[data-competition-skeleton-root]')?.remove();
+  panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
+  if(document.documentElement.dataset.competitionView===view){panel.hidden=false;document.documentElement.removeAttribute('data-fa-competition-prepaint');}
+  return;
+ }
  if(view==='history'){
   const template=document.querySelector('template[data-competition-skeleton="history-preview"]');
   const skeleton=panel.querySelector('[data-competition-skeleton-root]');
