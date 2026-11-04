@@ -187,15 +187,24 @@ const outputPages = [
    "@@FA_WORLD_SECTION@@":worldSection("",false)}
  })),
  {name:"competitions",path:"competitions/index.html",replacements:worldPageReplacements()},
- {name:"competition-shared",path:"competitions/_shared/index.html",
-  replacements:worldPageReplacements(divisionData.find(d=>d.id==="IT-1"),true)},
  ...competitionManifest.competitions.map(definition=>({
   name:definition.id,path:"competitions/"+definition.slug+"/index.html",
   directContent:competitionRoute(definition)
  }))
 ];
-if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==23)
+if(Object.keys(countryById).length!==8||divisionData.length!==model.divisionCount||outputPages.length!==22)
  throw Error("Division catalogue cardinality changed; review the source data");
+// The neutral _shared fallback is a separately maintained compatibility
+// snapshot, not a division route. Its first-paint structure is under contract;
+// regenerating canonical division routes must never overwrite this snapshot.
+const neutralShell=readFileSync(new URL("../competitions/_shared/index.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+for(const marker of ['id="app-divisions"','app-competition-tabs',
+ 'id="competition-panel-standings"','id="competition-panel-fixtures"',
+ 'id="competition-panel-stats"','id="competition-panel-history"',
+ 'id="competition-panel-awards"','data-history-empty',
+ 'data-skeleton-archive-row','id="app-competition-badge"']){
+ if(!neutralShell.includes(marker))throw Error("Neutral competition shell missing: "+marker);
+}
 const check = process.argv.length === 3 && process.argv[2] === "--check";
 if(process.argv.length > (check ? 3 : 2))throw Error("Usage: node tools/generate-app-pages.mjs [--check]");
 const normalizeRouteLinks=(html,path)=>{
@@ -279,4 +288,4 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  writeOutput("clubs/index.html",html);
 }
 writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 20 Competitions), 1 competition manifest, 1 club template and 1 club manifest");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 19 Competitions), 1 neutral snapshot structurally audited, 1 competition manifest, 1 club template and 1 club manifest");

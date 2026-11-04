@@ -1235,8 +1235,8 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 }
 @media(max-width:620px){
  /* Reserve the current-round action below the wider selector on narrow screens. */
- #competition-panel-fixtures .app-fixtures-toolbar{padding-bottom:36px}
- #competition-panel-fixtures .app-fixtures-current{top:auto;bottom:0}
+ #competition-panel-fixtures .app-fixtures-toolbar{padding-bottom:0}
+ #competition-panel-fixtures .app-fixtures-current{grid-column:3;grid-row:2;top:auto;bottom:auto}
 }
 
 /* Shared, decorative Stats/History/Awards shells persist through runtime mounts. */
