@@ -641,6 +641,13 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 .app-history-dev-season{font-size:12px;font-weight:700}
 .app-history-dev-archive{list-style:none;margin:0;padding:0}
 .app-history-dev-archive li:not(:last-child){border-bottom:1px solid var(--line)}
+/* Loaded and loading archive rows share a 72px desktop footprint.
+   Real multiline names may still grow instead of being clipped. */
+@media(min-width:621px){
+ .app-history-dev-archive li{box-sizing:border-box;min-height:72px}
+ .app-history-dev-archive .app-history-dev-season-button{min-height:70px;padding-block:10px}
+}
+
 .app-history-dev-archive-head,.app-history-dev-season-button{display:grid;grid-template-columns:76px repeat(3,minmax(0,1fr));align-items:center;gap:12px;padding:12px 10px}
 .app-history-dev-archive-head{border-bottom:1px solid var(--line);border-radius:12px 12px 0 0;background:#172d30;color:var(--muted);font-size:11px;font-weight:750}
 html[data-theme="light"] .app-history-dev-archive-head{background:#E8F1EB;color:#31594A}

@@ -34,7 +34,20 @@
         const progress=root.faFixturesInitialProgress||{},season=Number(root.document.documentElement.dataset.faDevCurrentSeason||progress.currentSeason||1);
         const day=root.faDevWorldClockSnapshot?.current?.day??progress.day,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));
-        for(const row of current.querySelectorAll('[data-skeleton-archive-row]'))row.hidden=Number(row.dataset.skeletonArchiveRow)>=Math.max(1,completed);
+        const archive=current.querySelector('.app-history-dev-archive');
+        if(archive){
+          const needed=Math.max(1,completed);
+          const sample=archive.querySelector('[data-skeleton-archive-row]');
+          // Recreated templates always start with four rows; extend when required.
+          // This must run on every loading refresh, not only during first paint.
+          while(sample&&archive.querySelectorAll('[data-skeleton-archive-row]').length<needed){
+            const row=sample.cloneNode(true);
+            row.dataset.skeletonArchiveRow=String(archive.querySelectorAll('[data-skeleton-archive-row]').length);
+            archive.append(row);
+          }
+          for(const row of archive.querySelectorAll('[data-skeleton-archive-row]'))
+            row.hidden=Number(row.dataset.skeletonArchiveRow)>=needed;
+        }
       }
     }
     const render=()=>{
