@@ -80,6 +80,7 @@
     "tests/club-pages-browser.test.mjs": "site-node",
     "tests/club-pages.test.mjs": "site-node",
     "tests/page-load-02-club-browser.mjs": "browser",
+    "tests/page-load-02-club-static-first-paint.test.mjs": "site-node",
     "tests/competition-fixtures.test.mjs": "site-node",
     "tests/competition-history.test.mjs": "site-node",
     "tests/competition-content-state.test.mjs": "site-node",
