@@ -3,6 +3,7 @@ import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
+import {readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface ArchiveRow{season_number:number;generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
 export async function readSeasonArchives(db:Database){
  const world=await readWorld(db);
@@ -37,9 +38,9 @@ export async function readClosedSeasonHistory(db:Database,seasonNumber:number){
  const archive=archives.find(a=>a.seasonNumber===seasonNumber);
  if(!archive||!archive.hasSportingSummary)throw new ApiError(404,'archive_unavailable');
  if(seasonNumber===world.seasonNumber&&world.phase!=='closed')throw new ApiError(409,'archive_prerequisites');
- const closure=await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE season_number=? AND event_id='season:close' AND kind='close-season'").bind(seasonNumber).first<{status:string;receipt_hash:string|null}>();
+ const closure=await readSeasonCloseReceipt(db,seasonNumber);
  if(!closure||closure.status!=='completed'||closure.receipt_hash!==archive.archiveHash)throw new ApiError(409,'archive_prerequisites');
- const row=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(seasonNumber).first<{generation:string;archive_hash:string;summary_hash:string;summary_json:string}>();
+ const row=await readSeasonArchiveSummary(db,seasonNumber);
  if(!row||row.generation!==world.generation||row.archive_hash!==archive.archiveHash)throw new ApiError(422,'archive_invalid');
  let summary:unknown;try{summary=JSON.parse(row.summary_json)}catch{throw new ApiError(422,'archive_invalid')}
  if(await canonicalHash(summary)!==row.summary_hash)throw new ApiError(422,'archive_invalid');

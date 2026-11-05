@@ -13,8 +13,7 @@ import {proposeHolderAllocation} from './domain/qualification/international-hold
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildQualificationReviewPacket} from './domain/qualification/qualification-review-packet.ts';
 import {buildSeasonTwoSnapshot} from './season-two-snapshot.ts';
-type Receipt={day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string};
-type Tie={generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string};
+import {readSeasonDayOutcomes,readSeasonKnockoutTies} from './season-evidence-repository.ts';
 type Archive={generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number};
 export async function readSeasonTwoCandidateSource(db:Database,allowArchivedSource=false){
  const current=await readWorld(db);
@@ -24,8 +23,8 @@ export async function readSeasonTwoCandidateSource(db:Database,allowArchivedSour
  const archive=await db.prepare('SELECT * FROM season_archives WHERE season_number=1').first<Archive>();
  if(!archive||archive.generation!==world.generation||archive.calendar_hash!==evidence.calendar.calendar_hash||
     archive.days_count!==56||archive.results_count!==4082||archive.ties_count!==54)throw new ApiError(422,'qualification_evidence_invalid');
- const receipts=(await db.prepare('SELECT day,generation,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=1 ORDER BY day').all<Receipt>()).results;
- const ties=(await db.prepare('SELECT generation,competition_id,phase_id,tie_id,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=1 ORDER BY competition_id,phase_id,tie_id').all<Tie>()).results;
+ const receipts=await readSeasonDayOutcomes(db,1);
+ const ties=await readSeasonKnockoutTies(db,1);
  if(receipts.length!==56||ties.length!==54)throw new ApiError(422,'qualification_evidence_invalid');
  const state=createProgression(evidence.snapshot,evidence.schedule);
  for(let i=0;i<receipts.length;i++){

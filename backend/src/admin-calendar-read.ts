@@ -4,6 +4,9 @@ import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {dueAdministrativeMilestones,proposeAdministrativeMilestones,proposeEndSeasonMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
+async function querySeasonAdministrativeEvents(db:Database,seasonNumber:number):Promise<Row[]>{
+ return (await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(seasonNumber).all<Row>()).results;
+}
 /** Read receipts for an explicitly selected source season, even after the active
  * world pointer advances. Callers must authenticate before exposing this data.
  * The existing active-world API continues to use the current season only.
@@ -12,12 +15,12 @@ export async function readSeasonAdministrativeEventRows(db:Database,seasonNumber
  if(!Number.isSafeInteger(seasonNumber)||seasonNumber<1)throw new ApiError(422,'invalid_calendar_event');
  const world=await readWorld(db);
  if(seasonNumber>world.seasonNumber)throw new ApiError(409,'calendar_event_prerequisites');
- return (await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(seasonNumber).all<Row>()).results;
+ return querySeasonAdministrativeEvents(db,seasonNumber);
 }
 export async function readAdministrativeCalendar(db:Database){
  const world=await readWorld(db);
  if(world.seasonNumber===0)return {world,events:[],mode:'uninitialized' as const};
- const rows=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,completed_at,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<Row>()).results;
+ const rows=await querySeasonAdministrativeEvents(db,world.seasonNumber);
 
  const legacy=proposeAdministrativeMilestones();
  const expanded=[...legacy,...proposeEndSeasonMilestones()];
