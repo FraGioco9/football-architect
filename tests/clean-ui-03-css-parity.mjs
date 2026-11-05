@@ -57,7 +57,10 @@ try{
     // Pixel parity is scoped to static chrome: the Calendar's generated
     // schedule and first-paint lifecycle are not stable full-page baselines.
     // Dedicated browser tests still cover their complete visible layout.
-    const shot=route==="/calendar"&&width===390&&!dark&&reducedMotion ? await page.screenshot({animations:"disabled",clip:{x:0,y:0,width,height:96}}) : null;
+    // FE-02 legitimately enlarges sidebar navigation hit boxes below the
+     // 60px static shell header. Compare the unchanged 72px full-width chrome,
+     // not the resized mobile links. FE-02 browser asserts their 44px hit area.
+     const shot=route==="/calendar"&&width===390&&!dark&&reducedMotion ? await page.screenshot({animations:"disabled",clip:{x:0,y:0,width,height:72}}) : null;
     return {computed,cssom,shot};
    }finally{await context.close()}
   };
@@ -75,7 +78,22 @@ try{
    assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }
   for(const selector of selectors){
-   if(JSON.stringify(before.computed[selector])!==JSON.stringify(comparison[selector])){
+   const authorizedCalendar=route==="/calendar"&&width<=390&&
+    ["#world-calendar #calendar-controls","#calendar-previous","#calendar-next",
+     "#calendar-week-trigger","#calendar-current-week"].includes(selector);
+   const comparable=items=>items.map(item=>{
+    const result=structuredClone(item);
+    if(authorizedCalendar){
+     for(const key of ["width","height","padding"])delete result.props[key];
+     result.rect=null; // tested independently on both browser engines in FE-02.
+    }
+    return result;
+   });
+   if(authorizedCalendar)for(const item of comparison[selector]){
+    if(selector!=="#world-calendar #calendar-controls"&&item.rect[0]>0&&item.props.display!=="none")
+     assert.ok(item.rect[1]>=43.9,"FE-02 Calendar hit height "+selector+" "+width);
+   }
+   if(JSON.stringify(comparable(before.computed[selector]))!==JSON.stringify(comparable(comparison[selector]))){
     findings.push({route,width,theme:dark?"dark":"light",reducedMotion,selector,before:before.computed[selector],after:after.computed[selector]});
    }
   }

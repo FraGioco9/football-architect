@@ -1293,3 +1293,64 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-empty] .app-competition-stat-grid{display:none!important}
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-team-empty],
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history [data-history-player-empty]{display:block!important}
+
+
+/* FE-02 (#366): viewport geometry and approved mobile touch targets.
+ * FE-01 tokens, loaded markup, and FE-04 control semantics are unchanged. */
+.app-body .language-control > .language-menu[data-menu-placement="above"],
+.app-body .nav01-filter > .language-menu[data-menu-placement="above"]{
+  top:auto;bottom:calc(100% + 6px);
+}
+.app-body .language-control > .language-menu[data-menu-placement="below"],
+.app-body .nav01-filter > .language-menu[data-menu-placement="below"]{bottom:auto}
+
+/* The canonical standings link defaults to flex:none. In fixture club rows
+ * it must shrink inside narrow desktop/tablet tracks without changing size
+ * on wide screens; keep the existing min-width:0 and overflow-wrap:anywhere. */
+@media(min-width:621px){
+ .app-fixture-club>.app-fixture-name.app-world-standing-club-link{flex-shrink:1}
+}
+/* 621–800px: preserve full single-line stadium text below, not across clubs. */
+@media(min-width:621px) and (max-width:800px){
+ .app-fixture-match{position:relative;padding-bottom:44px}
+ .app-fixture-stadium{
+  position:absolute;inset-inline-start:50%;bottom:12px;transform:translateX(-50%);
+  box-sizing:border-box;width:320px;max-width:calc(100% - 24px);text-align:center;
+ }
+}
+@media(max-width:620px){
+ .fa-shell-link{height:var(--fa-control-height-regular);min-height:var(--fa-control-height-regular)}
+ .app-competition-tab,.club-tabs .app-competition-tab{min-height:var(--fa-control-height-regular)}
+ .app-fixtures-toolbar{min-height:var(--fa-control-height-regular)}
+ .app-fixtures-arrow{width:44px;min-width:44px!important;height:44px;min-height:44px}
+ .app-fixtures-trigger{height:44px;min-height:44px}
+ .app-fixtures-current{width:44px;min-width:44px;height:44px;min-height:44px}
+ .app-fixtures-picker .language-option{min-height:44px;padding-block:8px}
+ #world-calendar #calendar-controls{box-sizing:border-box;padding-inline-end:44px}
+ #world-calendar #calendar-controls #calendar-previous,
+ #world-calendar #calendar-controls #calendar-next{
+  box-sizing:border-box;flex-basis:44px;width:44px;min-width:44px;height:44px;min-height:44px;
+ }
+ #world-calendar #calendar-controls #calendar-week-trigger{height:44px;min-height:44px}
+ #world-calendar #calendar-controls #calendar-current-week{
+  width:44px;min-width:44px;height:44px;min-height:44px;
+ }
+ #world-calendar #calendar-controls #calendar-week-menu .language-option{
+  height:auto;min-height:44px;padding-block:8px;
+ }
+ .app-history-record-expand{min-height:44px}
+}
+/* Keep the existing 100px selector label readable at 320px: 40×44px
+ * arrows/shortcut replace the previous 28px arrows when width is constrained. */
+@media(max-width:360px){
+ .app-fixtures-toolbar{column-gap:4px}
+ .app-fixtures-navigation{gap:2px}
+ .app-fixtures-arrow{width:40px;min-width:40px!important}
+ .app-fixtures-current{width:40px;min-width:40px}
+}
+/* Calendar still uses seven columns and unchanged day cell heights. */
+@media(max-width:390px){
+ #world-calendar .calendar-event{
+  max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ }
+}

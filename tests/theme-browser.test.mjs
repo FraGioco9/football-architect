@@ -458,12 +458,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       await tap('#competition-tab-fixtures');await expectSeason(2,8);
       const centeredControls=await run("(()=>{const n=document.querySelector('.app-fixtures-navigation').getBoundingClientRect(),p=document.getElementById('competition-panel-fixtures').getBoundingClientRect(),b=document.getElementById('app-fixtures-round').getBoundingClientRect();return {center:(n.left+n.right)/2,panel:(p.left+p.right)/2,width:n.width,height:b.height,arrow:document.getElementById('app-fixtures-next').getBoundingClientRect().width}})()");
-      assert.ok(centeredControls.height<=32&&centeredControls.arrow<=32,'compact mobile matchday controls');
+      assert.ok(centeredControls.height>=44&&centeredControls.arrow>=(width<=360?40:44),'FE-02 accessible-height mobile matchday controls');
       assert.ok(Math.abs(centeredControls.center-centeredControls.panel)<1,'matchday navigation is centered');
       await tap('#app-fixtures-round');await wait("!document.getElementById('app-fixtures-picker').hidden");await menuFits('app-fixtures-picker');
       const pickerGeometry=await run("(()=>{const menu=document.getElementById('app-fixtures-picker'),m=menu.getBoundingClientRect(),trigger=document.getElementById('app-fixtures-round').getBoundingClientRect(),option=menu.querySelector('[role=option]'),r=option.getBoundingClientRect();let overlap=0;const above=[...document.querySelectorAll('[data-fixture-match]')].every(e=>{const b=e.getBoundingClientRect(),l=Math.max(m.left,b.left),t=Math.max(m.top,b.top),right=Math.min(m.right,b.right),bottom=Math.min(m.bottom,b.bottom);if(right<=l||bottom<=t)return true;overlap++;return menu.contains(document.elementFromPoint((l+right)/2,(t+bottom)/2))});return {menuWidth:m.width,triggerWidth:trigger.width,optionHeight:r.height,optionFont:parseFloat(getComputedStyle(option).fontSize),triggerFont:parseFloat(getComputedStyle(document.getElementById('app-fixtures-round')).fontSize),above,overlap}})()");
       assert.ok(Math.abs(pickerGeometry.menuWidth-pickerGeometry.triggerWidth)<1,'matchday menu matches trigger width');
-      assert.ok(pickerGeometry.optionHeight<=32&&pickerGeometry.optionFont===pickerGeometry.triggerFont,'matchday options match the compact trigger dimensions');
+      assert.ok(pickerGeometry.optionHeight>=44&&pickerGeometry.optionFont===pickerGeometry.triggerFont,'FE-02 matchday options preserve trigger font and a 44px hit height');
       assert.ok(pickerGeometry.overlap>0&&pickerGeometry.above,'matchday menu paints above overlapping match cards');
       await snap("FIXTURES-MOBILE "+width+" "+theme+" matchday menu",width,height);
       await tap('#app-fixtures-round-option-1');await expectSeason(2,1);

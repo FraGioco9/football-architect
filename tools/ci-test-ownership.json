@@ -100,6 +100,8 @@
     "tests/sh-04-frontend-cleanup.test.mjs": "site-node",
     "tests/fe-01-design-system.test.mjs": "site-node",
     "tests/fe-01-visual-parity.mjs": "browser",
+    "tests/fe-02-responsive-browser.mjs": "browser",
+    "tests/fe-02-responsive.test.mjs": "site-node",
     "tests/control-focus-browser.mjs": "browser",
     "tests/dev-admin-api-proxy.test.mjs": "site-node",
     "tests/dev-env-01-browser.mjs": "manual",

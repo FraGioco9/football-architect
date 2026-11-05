@@ -1,5 +1,59 @@
 /* NAV-01: initialize static navigation before first paint; no career writes. */
 (()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
+
+/* FE-02: viewport-only geometry of already-open app dropdowns. Never changes
+ * role, selection, ARIA, focus, Escape or translation (FE-04 owns those). */
+(()=>{
+ let pending=false;
+ const position=()=>{
+  pending=false;
+  const viewport=window.visualViewport;
+  const screenTop=viewport?.offsetTop||0;
+  const screenBottom=screenTop+(viewport?.height||window.innerHeight);
+  for(const control of document.querySelectorAll(
+   '.fa-shell-workspace .language-control, .fa-shell-workspace .nav01-filter')){
+   const menu=control.querySelector('.language-menu:not([hidden])');
+   const trigger=control.querySelector('.language-trigger');
+   if(!menu||!trigger||!menu.getClientRects().length)continue;
+   menu.style.removeProperty('max-height');
+   delete menu.dataset.menuPlacement;
+   const bounds=trigger.getBoundingClientRect();
+   const pane=control.closest('.fa-shell-content-scroll')?.getBoundingClientRect();
+   const visibleTop=Math.max(screenTop,pane?.top??screenTop)+8;
+   const visibleBottom=Math.min(screenBottom,pane?.bottom??screenBottom)-8;
+   const below=Math.max(0,visibleBottom-bounds.bottom-6);
+   const above=Math.max(0,bounds.top-visibleTop-6);
+   const limit=parseFloat(getComputedStyle(menu).maxHeight);
+   const natural=Math.min(menu.scrollHeight+menu.offsetHeight-menu.clientHeight,
+    Number.isFinite(limit)?limit:Infinity);
+   const placement=natural>below&&above>below?'above':'below';
+   menu.dataset.menuPlacement=placement;
+   menu.style.maxHeight=Math.max(0,Math.floor(Math.min(natural,placement==='above'?above:below)))+'px';
+   // The browser may shift a scroll-pane after highlighting the first option.
+   // A second measured correction keeps even a short landscape viewport in bounds.
+   const painted=menu.getBoundingClientRect();
+   const overflow=placement==='above'?Math.max(0,visibleTop-painted.top):
+     Math.max(0,painted.bottom-visibleBottom);
+   if(overflow>0.5){
+    const previous=parseFloat(menu.style.maxHeight)||0;
+    menu.style.maxHeight=Math.max(0,Math.floor(previous-overflow-1))+'px';
+   }
+  }
+ };
+ const schedule=()=>{if(!pending){pending=true;requestAnimationFrame(position);}};
+ document.addEventListener('click',()=>{position();schedule();},{passive:true});
+ document.addEventListener('keydown',event=>{
+  if(['Enter',' ','ArrowDown','ArrowUp','Home','End','Escape','Tab'].includes(event.key))schedule();
+ });
+ document.addEventListener('input',event=>{
+  if(event.target.closest?.('.language-control,.nav01-filter'))schedule();
+ },{passive:true});
+ document.addEventListener('scroll',()=>{position();schedule();},true);
+ window.addEventListener('resize',schedule,{passive:true});
+ window.visualViewport?.addEventListener('resize',schedule,{passive:true});
+ window.visualViewport?.addEventListener('scroll',schedule,{passive:true});
+})();
+
 if(nav.dataset.nav01Bound==='true'){
  // The first-paint inline bootstrap has already bound an immediate click handler.
  // Capture user input before it reaches that handler, while preserving its static DOM.
