@@ -13,8 +13,7 @@ import {createProgression,processSportingDay,tieKey,type KnockoutTie} from './kn
 import {rankLeagueTable} from './league-standings.ts';
 import type {TemporaryResult} from './temporary-simulation.ts';
 import type {Fixture} from './initial-schedule.ts';
-interface Receipt {day:number;generation:string;calendar_hash:string;simulation_version:string;outcome_hash:string;outcome_json:string}
-interface Tie {generation:string;competition_id:string;phase_id:string;tie_id:string;plan_hash:string;plan_json:string}
+import {readSeasonDayOutcomes,readSeasonKnockoutTies,readSeasonCalendarHash,countSeasonDayOutcomes,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
 function invalid():never{throw new ApiError(503,'sporting_data_unavailable')}
@@ -66,16 +65,16 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
  if(selectedSeason>world.seasonNumber)return empty('empty','season-not-prepared');
  const viewedWorld=selectedSeason===world.seasonNumber?world:{...world,seasonNumber:selectedSeason,day:56,phase:'closed' as const};
  try{
-  const published=await db.prepare(`SELECT calendar_hash FROM season_calendars WHERE season_number=${selectedSeason}`).first<{calendar_hash:string}>();
+  const published=await readSeasonCalendarHash(db,selectedSeason);
   if(!published){
    // Staged fixtures, participant lists and draw outputs remain private until publication.
-   const leaked=(await db.prepare(`SELECT count(*) n FROM season_day_outcomes WHERE season_number=${selectedSeason}`).first<{n:number}>())?.n;
+   const leaked=await countSeasonDayOutcomes(db,selectedSeason);
    if(leaked||viewedWorld.day>12||viewedWorld.phase==='closed')invalid();
    return await empty('empty','calendar-unpublished');
   }
   const evidence=await loadSeasonSportingEvidence(db,viewedWorld);
-  const receipts=(await db.prepare(`SELECT day,generation,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=${selectedSeason} ORDER BY day`).all<Receipt>()).results;
-  const ties=(await db.prepare(`SELECT generation,competition_id,phase_id,tie_id,plan_hash,plan_json FROM season_knockout_ties WHERE season_number=${selectedSeason} ORDER BY competition_id,phase_id,tie_id`).all<Tie>()).results;
+  const receipts=await readSeasonDayOutcomes(db,selectedSeason);
+  const ties=await readSeasonKnockoutTies(db,selectedSeason);
   if(receipts.length!==viewedWorld.day)invalid();
   const state=createProgression(evidence.snapshot,evidence.schedule),storedResults=new Map<string,TemporaryResult>();
   for(let i=0;i<receipts.length;i++){
@@ -99,8 +98,8 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const resultsHash=await canonicalHash(receipts.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
    const archiveHash=await canonicalHash({schemaVersion:1,season:selectedSeason,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:4082,daysCount:56,tiesCount:54});
    if(archive.results_hash!==resultsHash||archive.knockout_hash!==knockoutHash||archive.archive_hash!==archiveHash)invalid();
-   const summary=await db.prepare('SELECT generation,archive_hash,summary_hash,summary_json FROM season_archive_summaries WHERE season_number=?').bind(selectedSeason).first<{generation:string;archive_hash:string;summary_hash:string;summary_json:string}>();
-   const closure=await db.prepare("SELECT receipt_hash,status FROM season_admin_events WHERE season_number=? AND event_id='season:close' AND kind='close-season'").bind(selectedSeason).first<{receipt_hash:string|null;status:string}>();
+   const summary=await readSeasonArchiveSummary(db,selectedSeason);
+   const closure=await readSeasonCloseReceipt(db,selectedSeason);
    if(!summary||summary.generation!==world.generation||summary.archive_hash!==archiveHash||!closure||closure.status!=='completed'||closure.receipt_hash!==archiveHash)invalid();
    if(await canonicalHash(JSON.parse(summary.summary_json))!==summary.summary_hash)invalid();
   }else if(archive){

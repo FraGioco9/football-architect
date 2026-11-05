@@ -173,6 +173,7 @@
     "backend/tests/cloudflare-runtime.d.ts": "support",
     "backend/tests/command-contract.test.ts": "backend-contract",
     "backend/tests/d1-integration.test.ts": "backend-runtime",
+    "backend/tests/d1-repositories-runtime.test.ts": "backend-runtime",
     "backend/tests/email-identity.test.ts": "backend-contract",
     "backend/tests/fixtures/synthetic-approval.ts": "support",
     "backend/tests/fixtures/test-world.ts": "support",
