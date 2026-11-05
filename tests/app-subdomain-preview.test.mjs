@@ -51,7 +51,8 @@ test('canonical local launcher advertises one consistent site/app URL split',()=
  assert.ok(launcher.includes('Site: http://localhost:2000/'));
  assert.ok(launcher.includes('App: http://app.localhost:2000/dashboard'));
  assert.ok(launcher.includes('Competitions: http://app.localhost:2000/competitions'));
- assert.ok(launcher.includes('History DEV preview: http://app.localhost:2000/competitions/it-1?season=4&view=history'));
+ assert.ok(launcher.includes('History DEV preview: http://app.localhost:2000/competitions/it-1/history?season=4'));
+ assert.ok(readme.includes('node tools/dev.mjs'));
  assert.ok(readme.includes('node tools/dev-app-preview.mjs'));
  assert.ok(readme.includes('http://localhost:2000/'));
  assert.ok(readme.includes('http://app.localhost:2000/competitions'));

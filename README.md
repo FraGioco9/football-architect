@@ -14,13 +14,16 @@ ARCH-CLEAN-02 [#268](https://github.com/FraGioco9/football-architect/issues/268)
 
 ## Local preview
 
-Use **Node.js 22**. From the repository root, run:
+Use **Node.js 22**. Install the local Worker dependencies once, then start the entire local site/app/API environment from the repository root:
 
-```sh
-node tools/dev-app-preview.mjs
+```powershell
+npm --prefix backend ci
+node tools/dev.mjs
 ```
 
-No npm install, Docker, application build or database is required. The launcher binds to loopback only and prints the site/app URLs. Stop it with **Ctrl+C**.
+**Canonical launcher:** `node tools/dev.mjs` starts the loopback frontend on port **2000** and the local Wrangler Worker/D1 on port **8787**. Site and app remain separate hostnames. The same-origin bridge exposes `GET http://app.localhost:2000/api/world` once the Worker is ready. Stop with **Ctrl+C**. No root `package.json`, Docker, application build, hosted Preview/Production account, remote D1 or deploy is required. Local D1 setup/migrations and operator permissions are separate, explicit local-only operations.
+
+For a **frontend-only, no-backend** preview (with no `/api/world` Worker), keep using `node tools/dev-app-preview.mjs`; this is a specialized compatibility launcher, **not** the canonical full-stack command.
 
 | Page | Canonical local URL |
 | --- | --- |
@@ -37,9 +40,9 @@ No npm install, Docker, application build or database is required. The launcher 
 | Clubs | `http://app.localhost:2000/clubs` |
 | Club overview | `http://app.localhost:2000/clubs/it/1/overview` |
 
-Open and refresh the relevant URLs. Site links should use `localhost:2000`, while app links retain `app.localhost:2000`. A plain static file server may not reproduce canonical routing. The launcher still prints a historical query-based History example; use the explicit History route above for current navigation.
+Open and refresh the relevant URLs. Site links should use `localhost:2000`, while app links retain `app.localhost:2000`. A plain static file server may not reproduce canonical routing. The launcher advertises the explicit History route. Browser reloads of deep links require this DEV server; a generic static server cannot reproduce the competition fallback or local APIs.
 
-**Troubleshooting:** check Node.js 22 and the repository working directory. If port 2000 is occupied, stop only the preview process you own. Check path case for a 404. Do not bind the canonical launcher to `0.0.0.0`. For an explicitly requested LAN/iPhone preview, use the separate `node tools/dev-standings-preview.mjs` launcher and the PC's private IPv4 address; `app.localhost` refers to the same device, not a remote PC.
+**Troubleshooting:** run from the repository root with Node.js 22; install dependencies with `npm --prefix backend ci` if Wrangler is missing. A 404 on a competition deep link usually means a generic file server was used: use `node tools/dev.mjs`. If `/api/world` fails, verify the local Worker has started on `127.0.0.1:8787` and inspect its error output; never substitute a hosted endpoint. On Windows, if ports 2000 or 8787 are occupied, use `Get-NetTCPConnection -LocalPort 2000,8787` to identify them and stop only processes you own. If `app.localhost` does not resolve to loopback, verify the local hostname resolution (or use the browser's localhost support); do not bind the canonical launcher to `0.0.0.0`. For an explicitly authorized LAN/iPhone preview, retain the separate `node tools/dev-standings-preview.mjs` launcher; `app.localhost` always refers to the device opening the URL. See [DEV-ENV-01 architecture and smoke checks](docs/architecture/dev-env-01-startup.md).
 
 ### Fictional DEV controls and reset
 
