@@ -106,6 +106,22 @@ try{
    for(const value of sizes)assert.ok(value.height>=43.9,"Calendar touch "+JSON.stringify(value));
    const current=await page.locator("#calendar-current-week").boundingBox();
    if(current)assert.ok(sizes.at(-1).right<=current.x+2,"Week shortcut overlap");
+   // Measure the optional shortcut in its reserved slot, even when the current week is selected.
+   const weekLayout=await page.evaluate(()=>{
+    const button=document.getElementById("calendar-current-week");button.hidden=false;
+    const selector=document.getElementById("calendar-week-trigger").getBoundingClientRect();
+    const current=button.getBoundingClientRect();
+    const prev=document.getElementById("calendar-previous").getBoundingClientRect();
+    const next=document.getElementById("calendar-next").getBoundingClientRect();
+    const controls=document.getElementById("calendar-controls"),root=controls.getBoundingClientRect(),style=getComputedStyle(controls);
+    return {selector:[selector.left,selector.right,selector.top],current:[current.left,current.right,current.top],prev:[prev.left,prev.right],root:[root.left,root.right],free:root.width-parseFloat(style.paddingInlineEnd)-prev.width-next.width-2*parseFloat(style.columnGap)};
+   });
+   assert.ok(weekLayout.selector[1]<=weekLayout.current[0]-2 &&
+     Math.abs(weekLayout.selector[2]-weekLayout.current[2])<=2 &&
+     weekLayout.prev[0]>=weekLayout.root[0]-1 &&
+     weekLayout.current[1]<=weekLayout.root[1]+1 &&
+     weekLayout.selector[1]-weekLayout.selector[0]>=Math.max(0,weekLayout.free-3),
+     "Calendar Week selector must stretch without overlapping Current week: "+JSON.stringify({profile,weekLayout}));
    const columns=async()=>page.evaluate(()=>{
     const tracks=getComputedStyle(document.querySelector(".calendar-week-row")).gridTemplateColumns;
     return tracks.split(/\s+/).filter(Boolean).length;
@@ -159,6 +175,56 @@ try{
    });
    assert.ok(value.below&&value.contained&&value.singleLine,
     "Tablet stadium "+JSON.stringify({width,value}));
+  });
+ }
+
+ // SAF-01/02/03/04: mobile regressions on real loaded routes.
+ for(const width of [320,390]){
+  const profile={width,height:844,language:"it",theme:"dark"};
+  await visit(profile,"/competitions/it-1/fixtures",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const pane=document.querySelector(".fa-shell-content-scroll").getBoundingClientRect();
+    const controls=[".app-fixtures-navigation","#app-fixtures-previous","#app-fixtures-round","#app-fixtures-next"].map(id=>{
+     const r=document.querySelector("#competition-panel-fixtures "+id).getBoundingClientRect();
+     return {left:r.left,right:r.right};
+    });
+    return {pane:{left:pane.left,right:pane.right},controls};
+   });
+   assert.ok(geometry.controls.every(r=>r.left>=geometry.pane.left-2&&r.right<=geometry.pane.right+2),
+    "SAF-01 Fixtures must fit mobile content: "+JSON.stringify({width,geometry}));
+   const actionLayout=await page.evaluate(()=>{
+    const current=document.getElementById("app-fixtures-current");current.hidden=false;
+    const button=current.getBoundingClientRect();
+    const navigation=document.querySelector("#competition-panel-fixtures .app-fixtures-navigation").getBoundingClientRect();
+    const pane=document.querySelector(".fa-shell-content-scroll").getBoundingClientRect();
+    return {button:[button.left,button.right,button.top],navigation:[navigation.left,navigation.right,navigation.top],pane:[pane.left,pane.right]};
+   });
+   assert.ok(Math.abs(actionLayout.button[2]-actionLayout.navigation[2])<=2 &&
+     actionLayout.navigation[1]<=actionLayout.button[0]-2 &&
+     actionLayout.navigation[0]>=actionLayout.pane[0]-2 &&
+     actionLayout.button[1]<=actionLayout.pane[1]+2,
+    "SAF-01 Current matchday must fit on the same row: "+JSON.stringify({width,actionLayout}));
+   // Scroll the actual strip: pagehide persists its real offset on reload.
+   await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
+   await page.reload({waitUntil:"domcontentloaded"});
+   const restored=await page.locator(".app-competition-tabs").evaluate(el=>el.scrollLeft);
+   assert.ok(restored>65,"SAF-02 parser-time tab offset "+width+": "+restored);
+  });
+  await visit(profile,"/clubs/it/1/overview",async page=>{
+   await page.waitForFunction(()=>document.documentElement.dataset.clubReady==="true");
+   await page.locator(".club-tabs").evaluate(el=>{el.scrollLeft=80});
+   await page.locator('.club-tabs a[href*="/fixtures"]').click();
+   const offset=await page.locator(".club-tabs").evaluate(el=>el.scrollLeft);
+   assert.ok(offset>40,"SAF-04 club tab offset must survive view switch: "+offset);
+   const league=page.locator(".club-header-division a[data-club-division-link]");
+   assert.equal(await league.count(),1);
+   await league.click();await page.waitForURL("**/competitions/it-1/standings**");
+  });
+  await visit(profile,"/clubs/it/1/overview",async page=>{
+   await page.waitForFunction(()=>document.documentElement.dataset.clubReady==="true");
+   const league=page.locator(".club-competition-name a[data-club-division-link]");
+   assert.equal(await league.count(),1);
+   await league.click();await page.waitForURL("**/competitions/it-1/standings**");
   });
  }
 }finally{await browser.close()}

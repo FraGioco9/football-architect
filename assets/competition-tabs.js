@@ -124,8 +124,17 @@
   tablist.addEventListener("scroll",()=>{syncTabOverflow();if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}},{passive:true});
   window.addEventListener("pagehide",()=>{if(restoringTabScroll)return;try{sessionStorage.setItem(tabScrollKey,String(tablist.scrollLeft))}catch{}});
   // Keep the selected view visible when viewport size or tab layout changes.
-  window.addEventListener("resize",revealSelectedTab);
-  if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealSelectedTab).observe(tablist);
+  // Refresh and same-width observers retain the exact saved tab-strip offset.
+  // A genuine viewport-width change may reveal the active tab again.
+  let previousTabWidth=tablist.clientWidth;
+  const revealAfterRestoration=()=>{
+    const width=tablist.clientWidth,changed=Math.abs(width-previousTabWidth)>1;
+    previousTabWidth=width;
+    if(changed&&!restoringTabScroll)revealSelectedTab();
+    else syncTabOverflow();
+  };
+  window.addEventListener("resize",revealAfterRestoration);
+  if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealAfterRestoration).observe(tablist);
   // CAL-IMP-04: validated return context; no external or legacy route.
   const rawReturn=new URL(window.location.href).searchParams.get('calendarReturn');
   let calendarReturn=null;
@@ -162,6 +171,7 @@
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
+    const previousView=state?.view;
     state={...next};
     if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season="1";
     const url=new URL(window.location.href);
@@ -186,7 +196,7 @@
       tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available;
     }
     if(focus)tabs[index].focus({preventScroll:true});
-    if(focus||!restoringTabScroll)revealSelectedTab();
+    if(focus||(previousView!==undefined&&previousView!==state.view))revealSelectedTab();
     window.faAppRenderLanguage?.();
     window.faCompetitionContextApi?.selectSeason(Number(state.season));
     for(const listener of listeners)listener({...state});
@@ -274,8 +284,8 @@
     scheduleFrame(()=>{
       restoreTabScroll();
       restoringTabScroll=false;
-      // Keep the route-selected tab visible after restoring the previous strip offset.
-      revealSelectedTab();
+      // A saved scroll offset wins over automatic active-tab visibility on refresh.
+      if(savedTabScroll===null)revealSelectedTab();else syncTabOverflow();
       if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
     });
   });

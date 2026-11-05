@@ -4,6 +4,16 @@
  const model=window.faClubModel,host=document.getElementById('club-page');
  let selected=model.route(location.pathname),competitionSnapshot=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
+ const competitionSeason=()=>{
+  const explicit=new URLSearchParams(location.search).get('season');
+  if(/^[1-9]\d{0,8}$/.test(explicit||''))return Number(explicit);
+  if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false){
+   try{const raw=sessionStorage.getItem('football-architect:standings-dev-season'),n=raw===null?NaN:Number(raw);
+    if(Number.isInteger(n)&&n>=1&&n<=4)return n}catch{}
+  }
+  const current=Number(window.faWorldState?.get?.().current?.season);
+  return Number.isInteger(current)&&current>=1?current:1;
+ };
  try{
   if(!selected)throw Error('Unknown club route');
   const params=new URLSearchParams(location.search);
@@ -31,12 +41,27 @@
     if(old.querySelector('.app-club-crest-image'))incoming.replaceWith(old);
    }
   };
+  // SAF-03: explicit same-origin league navigation for primary Safari taps.
+  // Modified clicks and middle clicks remain native links.
+  const bindDivisionLinks=root=>{
+   for(const link of root.querySelectorAll('a[data-club-division-link]')){
+    link.addEventListener('click',event=>{
+     if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+     const destination=new URL(link.href,location.href);
+     if(destination.origin!==location.origin||
+       !/^\/competitions\/(?:it|eng|es|de|fr|pt|nl|br)-[12]\/standings$/.test(destination.pathname))return;
+     event.preventDefault();
+     location.assign(destination.href);
+    });
+   }
+  };
   const paint=(preserveCrest=false,preserveFocus=false)=>{
    const active=preserveFocus&&host.contains(document.activeElement)?document.activeElement:null;
    const activeHref=active?.getAttribute('href');
    const activeTranslate=active?.hasAttribute('data-translate-club');
    const scrollX=window.scrollX,scrollY=window.scrollY;
-   const markup=model.render(manifest,selected,language(),location.search,competitionSnapshot);
+   const tabScrollLeft=host.querySelector('.club-tabs')?.scrollLeft;
+   const markup=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
    const staging=document.createElement('div');staging.innerHTML=markup;
    // The header is unchanged across tabs, but locale switches need a translated
    // header; in both cases existing loaded crest nodes must survive.
@@ -46,12 +71,27 @@
    reuseCrests(host,staging);
    host.replaceChildren(...staging.childNodes);
    host.dataset.clubBase=selected.base;
+   // SAF-04: preserve the same first-paint scroll position and edge fade after each render.
+   const newTabs=host.querySelector('.club-tabs');
+   if(newTabs){
+    const key='football-architect:club-tabs-scroll:'+selected.base;
+    if(Number.isFinite(tabScrollLeft))newTabs.scrollLeft=tabScrollLeft;
+    else try{const saved=Number(sessionStorage.getItem(key));if(Number.isFinite(saved)&&saved>=0)newTabs.scrollLeft=saved}catch{}
+    const syncTabEdges=()=>{
+     const maximum=Math.max(0,newTabs.scrollWidth-newTabs.clientWidth);
+     newTabs.dataset.canScrollLeft=String(maximum>1&&newTabs.scrollLeft>1);
+     newTabs.dataset.canScrollRight=String(maximum>1&&newTabs.scrollLeft<maximum-1);
+    };
+    syncTabEdges();
+    newTabs.addEventListener('scroll',()=>{syncTabEdges();try{sessionStorage.setItem(key,String(newTabs.scrollLeft))}catch{}},{passive:true});
+   }
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
    }
    document.title=host.querySelector('h1').textContent+' · '+model.copies[language()][selected.view]+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
    for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   bindDivisionLinks(host);
    const translate=host.querySelector('[data-translate-club]');
    if(translate)translate.addEventListener('click',()=>{
     const description=host.querySelector('.club-description');
@@ -107,9 +147,10 @@
    if(JSON.stringify(competitionSnapshot)===previousSnapshot)return;
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
-   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot);
+   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
    const replacement=staging.querySelector('.club-competition');
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   bindDivisionLinks(replacement);
    reuseCrests(panel,replacement);
    panel.replaceWith(replacement);
    if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);

@@ -78,7 +78,9 @@ try{
    assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }
   for(const selector of selectors){
-   const authorizedCalendar=route==="/calendar"&&width<=390&&
+   // The approved Week selector now uses all free inline space at every viewport.
+   // Restrict exceptions to Calendar control geometry; all other styles still match main.
+   const authorizedCalendar=route==="/calendar"&&
     ["#world-calendar #calendar-controls","#calendar-previous","#calendar-next",
      "#calendar-week-trigger","#calendar-current-week"].includes(selector);
    const comparable=items=>items.map(item=>{
@@ -89,7 +91,7 @@ try{
     }
     return result;
    });
-   if(authorizedCalendar)for(const item of comparison[selector]){
+   if(authorizedCalendar&&width<=390)for(const item of comparison[selector]){
     if(selector!=="#world-calendar #calendar-controls"&&item.rect[0]>0&&item.props.display!=="none")
      assert.ok(item.rect[1]>=43.9,"FE-02 Calendar hit height "+selector+" "+width);
    }

@@ -89,6 +89,8 @@ function renderRules(d,neutral,attrs){
  return `<section ${attrs}>${rulesView.renderRules(d,"en")}</section>`;
 }
 const postseasonContent = (d,neutral) => rulesView.renderPostseason(d,neutral);
+// SAF-02: restore tabs while HTML parses, before any visible paint.
+const firstPaintTabScrollScript = "          <script data-fa-competition-tabs-scroll-first-paint>(function(){const tabs=document.querySelector(\".app-competition-tabs\");if(!tabs)return;const key=\"football-architect:competition-tabs-scroll:\"+location.pathname.replace(/\\/(standings|postseason|fixtures|stats|history|rules|awards|overview|teams)\\/?$/,\"\");try{const saved=sessionStorage.getItem(key);if(saved!==null){const offset=Number(saved);if(Number.isFinite(offset)&&offset>=0)tabs.scrollLeft=Math.min(offset,Math.max(0,tabs.scrollWidth-tabs.clientWidth))}}catch{}const maximum=Math.max(0,tabs.scrollWidth-tabs.clientWidth);tabs.dataset.canScrollLeft=String(maximum>1&&tabs.scrollLeft>1);tabs.dataset.canScrollRight=String(maximum>1&&tabs.scrollLeft<maximum-1)})();</script>";
 const competitionTabs = function competitionTabs(d,standings,neutral) {
  const views=model.views.map(view=>view.id==="postseason"&&d.category==="international"
   ?{...view,key:"competitionTabKnockouts",label:"Knockouts"}:view.id==="postseason"&&!neutral
@@ -112,7 +114,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
- return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${panels}\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;
+ return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${firstPaintTabScrollScript}\n${panels}\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;
 };
 const detailContent = function detailContent(d,neutral=false){
  const c=countryById[d.countryId];
