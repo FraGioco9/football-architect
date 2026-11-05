@@ -15,7 +15,7 @@ try{
    const field=page.locator(route==='/clubs'?'.nav01-filters>input':'[name=email]');await field.waitFor();
    if(route!=='/clubs'){
     await page.locator('#email-label').click();
-    assert.equal(await field.evaluate(el=>document.activeElement===el),false,'Label text does not activate its field');
+    assert.equal(await field.evaluate(el=>document.activeElement===el),true,'Native label text activates its associated field');
    }
    const before=await field.boundingBox();await field.fill('Selectable text');await field.selectText();
    const style=await field.evaluate(el=>{const s=getComputedStyle(el);return {selection:el.value.slice(el.selectionStart,el.selectionEnd),select:s.getPropertyValue('user-select')||s.getPropertyValue('-webkit-user-select'),border:s.borderTopColor,shadow:s.boxShadow,}});
@@ -27,10 +27,10 @@ try{
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger',color:expected});
    await dropdown.click();
    assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger');assert.equal(await dropdown.evaluate(el=>document.activeElement===el),false,'Second click removes focus');
+   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger');assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
    await dropdown.focus();await page.keyboard.press('ArrowDown');
    await page.keyboard.press('Escape');
-   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),false,'Escape removes focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Escape restores trigger focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
   }finally{await context.close();}
  }
  console.log('Shared focus and selectable input browser PASS: '+checks+' cases');

@@ -5,7 +5,7 @@
   const SUPPORTED = ["en","de","es","fr","it"];
   const messages = {
     en: {
-      language:"Language",brandHome:"Football Architect home",guideNavigation:"Page navigation",guideSections:"Guide sections",summary:"Explore an alternative football world.",
+      language:"Language",skipMain:"Skip to main content",brandHome:"Football Architect home",guideNavigation:"Page navigation",guideSections:"Guide sections",summary:"Explore an alternative football world.",
       enter:"Explore app preview",guide:"Guide",universe:"Football world",
       countries:"Countries",divisions:"Divisions",clubs:"Documented clubs",
       footer:"Work in progress",
@@ -19,7 +19,7 @@
       guideClubsText2:"Clubs are the teams that take part in divisions. Their identity remains separate from the division in which they compete."
     },
     de: {
-      language:"Sprache",brandHome:"Football Architect – Startseite",guideNavigation:"Seitennavigation",guideSections:"Leitfadenabschnitte",summary:"Entdecke eine alternative Fußballwelt.",
+      language:"Sprache",skipMain:"Zum Hauptinhalt springen",brandHome:"Football Architect – Startseite",guideNavigation:"Seitennavigation",guideSections:"Leitfadenabschnitte",summary:"Entdecke eine alternative Fußballwelt.",
       enter:"App-Vorschau öffnen",guide:"Leitfaden",universe:"Fußballwelt",
       countries:"Länder",divisions:"Ligen",clubs:"Dokumentierte Vereine",
       footer:"In Entwicklung",
@@ -33,7 +33,7 @@
       guideClubsText2:"Vereine nehmen an Ligawettbewerben teil. Ihre Identität bleibt unabhängig von der Liga, in der sie spielen."
     },
     es: {
-      language:"Idioma",brandHome:"Inicio de Football Architect",guideNavigation:"Navegación de la página",guideSections:"Secciones de la guía",summary:"Explora un universo futbolístico alternativo.",
+      language:"Idioma",skipMain:"Saltar al contenido principal",brandHome:"Inicio de Football Architect",guideNavigation:"Navegación de la página",guideSections:"Secciones de la guía",summary:"Explora un universo futbolístico alternativo.",
       enter:"Explorar vista previa de la app",guide:"Guía",universe:"Mundo del fútbol",
       countries:"Países",divisions:"Divisiones",clubs:"Clubes documentados",
       footer:"En desarrollo",
@@ -47,7 +47,7 @@
       guideClubsText2:"Los clubes participan en las divisiones, pero su identidad es independiente de la división en la que compiten."
     },
     fr: {
-      language:"Langue",brandHome:"Accueil de Football Architect",guideNavigation:"Navigation de la page",guideSections:"Sections du guide",summary:"Explorez un univers footballistique alternatif.",
+      language:"Langue",skipMain:"Aller au contenu principal",brandHome:"Accueil de Football Architect",guideNavigation:"Navigation de la page",guideSections:"Sections du guide",summary:"Explorez un univers footballistique alternatif.",
       enter:"Explorer l’aperçu de l’app",guide:"Guide",universe:"Univers du football",
       countries:"Pays",divisions:"Divisions",clubs:"Clubs répertoriés",
       footer:"En développement",
@@ -61,7 +61,7 @@
       guideClubsText2:"Les clubs participent aux divisions, mais leur identité reste indépendante de la division dans laquelle ils évoluent."
     },
     it: {
-      language:"Lingua",brandHome:"Home di Football Architect",guideNavigation:"Navigazione della pagina",guideSections:"Sezioni della guida",summary:"Esplora un universo calcistico alternativo.",
+      language:"Lingua",skipMain:"Vai al contenuto principale",brandHome:"Home di Football Architect",guideNavigation:"Navigazione della pagina",guideSections:"Sezioni della guida",summary:"Esplora un universo calcistico alternativo.",
       enter:"Esplora l’anteprima dell’app",guide:"Guida",universe:"Mondo calcistico",
       countries:"Paesi",divisions:"Divisioni",clubs:"Club documentati",
       footer:"In sviluppo",
@@ -75,6 +75,25 @@
       guideClubsText2:"I club partecipano alle divisioni, ma la loro identità resta indipendente dalla divisione in cui competono."
     }
   };
+  // Insert a keyboard-only bypass before the site/app shell without rewriting generated HTML.
+  const mainContent = document.getElementById("main-content");
+  if (mainContent?.focus && document.body?.insertBefore && !document.getElementById("fa-skip-link")) {
+    const skip = document.createElement("a");
+    skip.id = "fa-skip-link";
+    skip.className = "fa-skip-link";
+    skip.href = "#main-content";
+    skip.dataset.i18n = "skipMain";
+    skip.textContent = "Skip to main content";
+    // Keep the resting geometry identical under both old and new CSS. FE-01
+    // visual parity compares HEAD scripts under two stylesheet baselines.
+    if (skip.style) {
+      skip.style.cssText = "position:fixed;inset-inline-start:12px;top:8px;z-index:2147482000;transform:translateY(-160%);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--fa-radius-control,10px);padding:10px 14px;text-decoration:none;font-size:14px;font-weight:700";
+      skip.addEventListener("focus", () => { skip.style.transform = "none"; });
+      skip.addEventListener("blur", () => { skip.style.transform = "translateY(-160%)"; });
+    }
+    skip.addEventListener("click", event => { event.preventDefault(); mainContent.focus(); });
+    document.body.insertBefore(skip, document.body.firstChild);
+  }
   const languageControl = document.getElementById("language-control");
   const trigger = document.getElementById("site-language");
   const languageValue = document.getElementById("language-value");

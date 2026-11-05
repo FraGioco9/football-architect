@@ -13,15 +13,27 @@
     delete window.faCompetitionContext;
     delete window.faCompetitionDivision;
     delete window.faCompetitionContextApi;
-    const main = document.createElement("main");
-    main.className = "app-main";
-    main.setAttribute("role", "alert");
-    main.textContent = "Competition unavailable. ";
+    // #main-content is already the sole main landmark.
+    const message = document.createElement("p");
+    message.className = "app-competition-status";
+    message.setAttribute("role", "alert");
     const back = document.createElement("a");
-    back.href = "../";
-    back.textContent = "Back to Competitions";
-    main.appendChild(back);
-    status.replaceChildren(main);
+    back.href = "/competitions";
+    const copy = {
+      en: ["Competition unavailable.", "Back to Competitions"],
+      de: ["Wettbewerb nicht verfügbar.", "Zurück zu den Wettbewerben"],
+      es: ["Competición no disponible.", "Volver a Competiciones"],
+      fr: ["Compétition indisponible.", "Retour aux compétitions"],
+      it: ["Competizione non disponibile.", "Torna alle competizioni"]
+    };
+    const paint = () => {
+      const [error, recovery] = copy[document.documentElement.lang] || copy.en;
+      message.textContent = error;
+      back.textContent = recovery;
+    };
+    paint();
+    status.replaceChildren(message, back);
+    if(typeof MutationObserver==="function") new MutationObserver(paint).observe(document.documentElement, {attributes:true, attributeFilter:["lang"]});
   }
   const model=window.faCompetitionModel;
   const formLabels = {

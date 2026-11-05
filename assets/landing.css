@@ -117,3 +117,9 @@ html[data-theme="light"] .cta-secondary:hover{background:#EAF1ED;border-color:#7
 html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),textarea):is(:focus,:focus-visible),html body .language-trigger:is(:focus-visible,[aria-expanded="true"]){outline:none!important;outline-offset:0;box-shadow:inset 0 0 0 1px var(--muted)!important;border-color:var(--muted)!important}
 html body :is(input,textarea){-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}
 html body :is(input,textarea)::selection{background:var(--primary);color:#fff}
+
+/* FE-04: keyboard-only bypass and visible Search Escape return, using FE-01 tokens. */
+.fa-skip-link{position:fixed;inset-inline-start:12px;top:8px;z-index:2147482000;transform:translateY(-160%);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--fa-radius-control,10px);padding:10px 14px;text-decoration:none;font-size:14px;font-weight:700}
+.fa-skip-link:focus-visible{transform:none;outline:2px solid var(--focus);outline-offset:2px}
+html body .app-search-trigger.app-search-escape-return:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.fa-skip-link{transition:none}}

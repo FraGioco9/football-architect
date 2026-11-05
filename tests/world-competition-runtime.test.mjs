@@ -477,7 +477,7 @@ test("SHARED-QA-01: invalid, approved or unavailable data fails closed",async()=
   assert.equal(r.body.children.length,0,"preserve the surrounding shell");
   const error=r.fields.get("main-content").children[0];
   assert.equal(error.attrs.role,"alert");
-  assert.equal(error.children[0].href,"../");
+  assert.equal(r.fields.get("main-content").children[1].href,"/competitions","Fatal-error recovery uses canonical competition route");
  }
 });
 

@@ -54,7 +54,7 @@
     }
     function select(){const option=visible()[active];if(option){choose(option.dataset.menuValue);close(true)}}
     if(config.fitViewport){window.addEventListener('resize',position,{passive:true});window.addEventListener('scroll',position,{passive:true});window.visualViewport?.addEventListener('resize',position,{passive:true});window.visualViewport?.addEventListener('scroll',position,{passive:true});}
-    trigger.addEventListener('click',()=>{if(menu.hidden)open();else{close();trigger.blur();}});
+    trigger.addEventListener('click',()=>{if(menu.hidden)open();else close(true);});
     function keydown(event){
       const key=event.key;
       if(['ArrowDown','ArrowUp','Home','End'].includes(key)&&!(event.target===search&&['Home','End'].includes(key))){
@@ -64,7 +64,7 @@
         highlight();
       }else if(key==='Enter'||(key===' '&&event.target!==search)){
         event.preventDefault();if(trigger.disabled)return;if(menu.hidden)open();else select();
-      }else if(key==='Escape'&&!menu.hidden){event.preventDefault();close();trigger.blur();search?.blur()}
+      }else if(key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}
       else if(key==='Tab')close();
     }
     trigger.addEventListener('keydown',keydown);
@@ -79,9 +79,8 @@
     document.addEventListener('pointerdown',event=>{
       if(control.contains(event.target))return;
       if(!menu.hidden)close();
-      if(document.activeElement===trigger)trigger.blur();
     },true);
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();close();trigger.blur();search?.blur()}});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!menu.hidden){event.preventDefault();close(true)}});
     return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");

@@ -36,14 +36,18 @@ try{
      await page.locator('#account-language-label').hover();
      assert.equal(await page.locator('[data-field-pointer-hover]').count(),0,'Label never highlights the nested dropdown');
     }
+    if(route==='login'){
+      await page.locator('#email-label').click();
+      assert.equal(await page.locator('input[name="email"]').evaluate(el=>document.activeElement===el),true,'Native Email label activates its input');
+    }
     const value=await page.locator('#account-language').inputValue();
     await trigger.click();assert.equal(await trigger.getAttribute('aria-expanded'),'true');
     await page.keyboard.press('Escape');
     assert.equal(await trigger.getAttribute('aria-expanded'),'false');
-    assert.equal(await trigger.evaluate(el=>el===document.activeElement),false,'ESC removes focus');
+    assert.equal(await trigger.evaluate(el=>el===document.activeElement),true,'Escape restores keyboard focus to the trigger');
     assert.equal(await page.locator('#account-language').inputValue(),value);
     await trigger.click();await trigger.click();
-    assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),false);
+    assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
     await trigger.click();await page.locator('#account-language-menu [data-menu-value="'+value+'"]').click();
     await trigger.click();assert.equal(await trigger.getAttribute('aria-expanded'),'true','Reopens after selection');
     await page.keyboard.press('Tab');assert.equal(await trigger.getAttribute('aria-expanded'),'false','Tab closes without trapping focus');
@@ -74,7 +78,7 @@ try{
      assert.ok(Math.abs(bounds.width-menu.width)<1);assert.ok(menu.x>=0&&menu.x+menu.width<=await page.evaluate(()=>innerWidth));
      await page.locator('#nationality-menu [data-menu-value=IT]').click();
      await country.click();await page.keyboard.press('End');await page.keyboard.press('Escape');
-     assert.equal(await page.locator('#nationality').inputValue(),'IT');assert.equal(await country.evaluate(el=>el===document.activeElement),false);
+     assert.equal(await page.locator('#nationality').inputValue(),'IT');assert.equal(await country.evaluate(el=>el===document.activeElement),true);
      await country.click();assert.equal(await page.locator('#nationality-menu [data-active=true]').getAttribute('data-menu-value'),'IT');await page.keyboard.press('Escape');
     }
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);checks++;console.log(engine,language,theme,mobile?'mobile':'desktop',route,'PASS');

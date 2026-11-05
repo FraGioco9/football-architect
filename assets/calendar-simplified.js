@@ -4,11 +4,11 @@
  const root=document.getElementById('world-calendar');
  if(!root)return;
  const locales={
-  en:{season:'Season',week:'Week',currentWeek:'Current week',day:'Day',national:'Domestic round',international:'International round',postseason:'Playoffs / playouts · leg',competitions:'Competitions',pending:'Fixtures and results are not yet available.',preseason:'Preseason',transition:'Season transition',empty:'No official events.'},
-  de:{season:'Saison',week:'Woche',currentWeek:'Aktuelle Woche',day:'Tag',national:'Nationaler Spieltag',international:'Internationale Runde',postseason:'Playoffs / Playdowns · Spiel',competitions:'Wettbewerbe',pending:'Spielplan und Ergebnisse sind noch nicht verfügbar.',preseason:'Vorbereitung',transition:'Saisonübergang',empty:'Keine offiziellen Ereignisse.'},
-  es:{season:'Temporada',week:'Semana',currentWeek:'Semana actual',day:'Día',national:'Jornada nacional',international:'Ronda internacional',postseason:'Playoffs / permanencia · partido',competitions:'Competiciones',pending:'Los partidos y resultados aún no están disponibles.',preseason:'Pretemporada',transition:'Transición de temporada',empty:'Sin eventos oficiales.'},
-  fr:{season:'Saison',week:'Semaine',currentWeek:'Semaine actuelle',day:'Jour',national:'Journée nationale',international:'Tour international',postseason:'Playoffs / barrages · manche',competitions:'Compétitions',pending:'Rencontres et résultats pas encore disponibles.',preseason:'Pré-saison',transition:'Transition de saison',empty:'Aucun événement officiel.'},
-  it:{season:'Stagione',week:'Settimana',currentWeek:'Settimana attuale',day:'Giorno',national:'Giornata nazionale',international:'Turno internazionale',postseason:'Playoff / playout · gara',competitions:'Competizioni',pending:'Calendario partite e risultati non ancora disponibili.',preseason:'Prestagione',transition:'Transizione di stagione',empty:'Nessun evento ufficiale.'}
+  en:{final:'final',season:'Season',week:'Week',currentWeek:'Current week',day:'Day',national:'Domestic round',international:'International round',postseason:'Playoffs / playouts · leg',competitions:'Competitions',pending:'Fixtures and results are not yet available.',preseason:'Preseason',transition:'Season transition',empty:'No official events.'},
+  de:{final:'Finale',season:'Saison',week:'Woche',currentWeek:'Aktuelle Woche',day:'Tag',national:'Nationaler Spieltag',international:'Internationale Runde',postseason:'Playoffs / Playdowns · Spiel',competitions:'Wettbewerbe',pending:'Spielplan und Ergebnisse sind noch nicht verfügbar.',preseason:'Vorbereitung',transition:'Saisonübergang',empty:'Keine offiziellen Ereignisse.'},
+  es:{final:'final',season:'Temporada',week:'Semana',currentWeek:'Semana actual',day:'Día',national:'Jornada nacional',international:'Ronda internacional',postseason:'Playoffs / permanencia · partido',competitions:'Competiciones',pending:'Los partidos y resultados aún no están disponibles.',preseason:'Pretemporada',transition:'Transición de temporada',empty:'Sin eventos oficiales.'},
+  fr:{final:'finale',season:'Saison',week:'Semaine',currentWeek:'Semaine actuelle',day:'Jour',national:'Journée nationale',international:'Tour international',postseason:'Playoffs / barrages · manche',competitions:'Compétitions',pending:'Rencontres et résultats pas encore disponibles.',preseason:'Pré-saison',transition:'Transition de saison',empty:'Aucun événement officiel.'},
+  it:{final:'finale',season:'Stagione',week:'Settimana',currentWeek:'Settimana attuale',day:'Giorno',national:'Giornata nazionale',international:'Turno internazionale',postseason:'Playoff / playout · gara',competitions:'Competizioni',pending:'Calendario partite e risultati non ancora disponibili.',preseason:'Prestagione',transition:'Transizione di stagione',empty:'Nessun evento ufficiale.'}
  };
  const t=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
@@ -142,7 +142,15 @@
  const tooltip=document.createElement('div');tooltip.className='calendar-marker-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','tooltip');document.body.append(tooltip);
  const dayModel=window.faWorldCalendarModel?.createSeason(1).days||[];
  const displayMarker=e=>e.phase==='final'?'F':e.family==='national'&&e.phase==='postseason'?'P'+String(e.round-30).padStart(2,'0'):e.marker;
- const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup final':'Sovereign Cup final'):(names()[e.family]||e.family)+' '+e.round;
+ const namesFor=e=>e.family==='national'&&e.phase==='postseason'?t().postseason+' '+(e.round-30):e.phase==='final'?(e.marker==='FEDERATION-FINAL'?'Federation Cup '+t().final:'Sovereign Cup '+t().final):(names()[e.family]||e.family)+' '+e.round;
+ function refreshMarkerLabels(){
+  for(const marker of root.querySelectorAll('.calendar-event')){
+   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];
+   const event=data?.events.find(e=>e.marker===marker.dataset.calendarMarker);
+   if(event)marker.setAttribute('aria-label',namesFor(event));
+  }
+  tooltip.hidden=true;
+ }
  function showDay(day,focus){
   const n=Number(day.dataset.calendarDay),data=dayModel[n-1];if(!data)return;
   dialog.dataset.authoritativeDay=String(n);
@@ -162,7 +170,7 @@
   window.dispatchEvent(new CustomEvent('fa:calendar-selection-change',{detail:{refresh:true}}));
  }
  window.faCalendarShowDay=day=>showDay(day,day);
- new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ new MutationObserver(()=>{updateSeason();window.faCalendarSyncWeek?.();refreshMarkerLabels()}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  function placeTooltip(element){const bounds=element.getBoundingClientRect();tooltip.hidden=false;const w=tooltip.offsetWidth;tooltip.style.left=Math.max(10,Math.min(innerWidth-w-10,bounds.left+bounds.width/2-w/2))+'px';tooltip.style.top=(bounds.bottom+10+tooltip.offsetHeight<innerHeight?bounds.bottom+8:Math.max(8,bounds.top-tooltip.offsetHeight-8))+'px'}
  for(const marker of root.querySelectorAll('.calendar-event')){
   const day=marker.closest('[data-calendar-day]'),data=dayModel[Number(day?.dataset.calendarDay)-1];

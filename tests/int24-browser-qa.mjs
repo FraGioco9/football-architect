@@ -1,5 +1,6 @@
 import {verifyCanonicalStateBrowser} from './canonical-state-browser.mjs';
 import {chromium} from "playwright";
+import {verifyFe04AccessibilityBrowser} from "./fe-04-accessibility-browser.mjs";
 import {mkdirSync} from "node:fs";
 import assert from "node:assert/strict";
 
@@ -374,5 +375,6 @@ try {
   assert.deepEqual(actual.colors,['#6B8FE3','#8D72C8']);checks++;
  }
  await formPage.close();
+ checks+=await verifyFe04AccessibilityBrowser(browser);
  console.log("INT24 Chromium QA PASS: "+checks+" checks; "+screenshots+" screenshots");
 }finally{await browser.close()}

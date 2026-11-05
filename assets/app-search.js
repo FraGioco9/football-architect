@@ -13,11 +13,11 @@
   if (![trigger,dialog,input,list,status,empty,closeButton,heading,scope].every(Boolean)) return;
 
   const translations = {
-    en: {trigger:"Search the app",placeholder:"Find a page or setting…",close:"Close search",scope:"Search available app pages and sections only.",empty:"No matching pages or sections.",page:"Page",section:"Section",results:"results",suggestions:"suggestions",division:"Division"},
-    de: {trigger:"App durchsuchen",placeholder:"Seite oder Einstellung suchen…",close:"Suche schließen",scope:"Nur verfügbare App-Seiten und Bereiche durchsuchen.",empty:"Keine passenden Seiten oder Bereiche.",page:"Seite",section:"Bereich",results:"Ergebnisse",suggestions:"Vorschläge",division:"Liga"},
-    es: {trigger:"Buscar en la app",placeholder:"Buscar página o ajuste…",close:"Cerrar búsqueda",scope:"Busca solo páginas y secciones disponibles de la app.",empty:"No hay páginas ni secciones coincidentes.",page:"Página",section:"Sección",results:"resultados",suggestions:"sugerencias",division:"División"},
-    fr: {trigger:"Rechercher dans l’app",placeholder:"Chercher une page ou un réglage…",close:"Fermer la recherche",scope:"Recherche limitée aux pages et sections disponibles.",empty:"Aucune page ou section correspondante.",page:"Page",section:"Section",results:"résultats",suggestions:"suggestions",division:"Division"},
-    it: {trigger:"Cerca nell’app",placeholder:"Cerca pagina o impostazione…",close:"Chiudi ricerca",scope:"Cerca solo nelle pagine e sezioni disponibili.",empty:"Nessuna pagina o sezione corrispondente.",page:"Pagina",section:"Sezione",results:"risultati",suggestions:"suggerimenti",division:"Divisione"}
+    en: {trigger:"Search the app",placeholder:"Find a page or setting…",close:"Close search",scope:"Search available app pages and sections only.",empty:"No matching pages or sections.",page:"Page",section:"Section",results:"results",suggestions:"suggestions",resultSingular:"result",suggestionSingular:"suggestion",division:"Division"},
+    de: {trigger:"App durchsuchen",placeholder:"Seite oder Einstellung suchen…",close:"Suche schließen",scope:"Nur verfügbare App-Seiten und Bereiche durchsuchen.",empty:"Keine passenden Seiten oder Bereiche.",page:"Seite",section:"Bereich",results:"Ergebnisse",suggestions:"Vorschläge",resultSingular:"Ergebnis",suggestionSingular:"Vorschlag",division:"Liga"},
+    es: {trigger:"Buscar en la app",placeholder:"Buscar página o ajuste…",close:"Cerrar búsqueda",scope:"Busca solo páginas y secciones disponibles de la app.",empty:"No hay páginas ni secciones coincidentes.",page:"Página",section:"Sección",results:"resultados",suggestions:"sugerencias",resultSingular:"resultado",suggestionSingular:"sugerencia",division:"División"},
+    fr: {trigger:"Rechercher dans l’app",placeholder:"Chercher une page ou un réglage…",close:"Fermer la recherche",scope:"Recherche limitée aux pages et sections disponibles.",empty:"Aucune page ou section correspondante.",page:"Page",section:"Section",results:"résultats",suggestions:"suggestions",resultSingular:"résultat",suggestionSingular:"suggestion",division:"Division"},
+    it: {trigger:"Cerca nell’app",placeholder:"Cerca pagina o impostazione…",close:"Chiudi ricerca",scope:"Cerca solo nelle pagine e sezioni disponibili.",empty:"Nessuna pagina o sezione corrispondente.",page:"Pagina",section:"Sezione",results:"risultati",suggestions:"suggerimenti",resultSingular:"risultato",suggestionSingular:"suggerimento",division:"Divisione"}
   };
   // Exact, real in-app destinations. Expand only when the underlying pages exist.
   const entries = [
@@ -90,7 +90,10 @@
     list.replaceChildren(...nodes);
     list.hidden = !matches.length;
     empty.hidden = !!matches.length;
-    status.textContent = matches.length + " " + (query ? strings.results : strings.suggestions);
+    const noun = query
+      ? (matches.length === 1 ? strings.resultSingular : strings.results)
+      : (matches.length === 1 ? strings.suggestionSingular : strings.suggestions);
+    status.textContent = matches.length + " " + noun;
   }
 
   function translate() {
