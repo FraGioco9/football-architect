@@ -38,3 +38,13 @@ test('pinned Playwright browser jobs use the supported Ubuntu 24.04 image instea
   assert.match(block,/runs-on: ubuntu-24\.04\b/,name);
  }
 });
+
+test('browser FULL runner provisions both Playwright engines once and tolerates slow Ubuntu mirrors',()=>{
+ const browser=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ const block=browser.split('\n  chromium:')[1]?.split(/\n  [a-z][a-z-]*:/)[0];
+ assert.ok(block);
+ assert.match(block,/timeout-minutes: 45/);
+ assert.equal((block.match(/npx playwright install --with-deps chromium webkit/g)||[]).length,1);
+ assert.doesNotMatch(block,/npx playwright install chromium\s*\n/);
+ assert.doesNotMatch(block,/npx playwright install --with-deps webkit\b/);
+});

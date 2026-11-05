@@ -192,6 +192,7 @@
     "backend/tests/league-standings-runtime.test.ts": "backend-runtime",
     "backend/tests/lifecycle-command-runtime.test.ts": "backend-runtime",
     "backend/tests/lifecycle-policy.test.ts": "backend-contract",
+    "backend/tests/terminal-milestone-policy.test.ts": "backend-contract",
     "backend/tests/local-dev-inbox-runtime.test.ts": "backend-runtime",
     "backend/tests/next-season-membership.test.ts": "backend-contract",
     "backend/tests/operator-local.test.mts": "backend-operator",
