@@ -1,0 +1,110 @@
+name: Player Generator Trial (Node 22)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/players-generation-trial.mjs
+      - .github/workflows/players-generation-trial.yml
+permissions:
+  contents: read
+concurrency:
+  group: players-trial-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  generated-players:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify checked-out PR head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate and validate isolated test cohorts
+        run: |
+          mkdir -p "$RUNNER_TEMP/fa-ci-artifacts"
+          node --check tools/players-generation-trial.mjs
+          node tools/players-generation-trial.mjs --self-test > "$RUNNER_TEMP/fa-ci-artifacts/players-self-test.json"
+          node tools/players-generation-trial.mjs --count 100 --seed fa-official-trial-01 --out "$RUNNER_TEMP/fa-ci-artifacts/players-trial-100.json" > "$RUNNER_TEMP/fa-ci-artifacts/players-100-summary.json"
+          node tools/players-generation-trial.mjs --count 1000 --seed fa-official-trial-01 --out "$RUNNER_TEMP/fa-ci-artifacts/players-trial-1000.json" > "$RUNNER_TEMP/fa-ci-artifacts/players-1000-summary.json"
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const base=join(process.env.RUNNER_TEMP,'fa-ci-artifacts');
+          const small=JSON.parse(readFileSync(join(base,'players-trial-100.json'),'utf8'));
+          const trial=JSON.parse(readFileSync(join(base,'players-trial-1000.json'),'utf8'));
+          const self=JSON.parse(readFileSync(join(base,'players-self-test.json'),'utf8'));
+          assert.equal(self.passed,true);
+          assert.equal(small.count,100);
+          assert.equal(trial.count,1000);
+          assert.equal(trial.ranking_snapshot,'2026-10-07');
+          assert.equal(trial.persisted,false);
+          const previewIds=new Set(),nationalities=new Map(),pairCounts=new Map();
+          let secondary=0,gk=0,maxOutfieldGK=0,totalSpread=0;
+          const gkFields=['gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
+          const source=readFileSync('tools/players-generation-trial.mjs','utf8');
+          const allowlist=source.match(/const relatedPairs=\[([\s\S]*?)\];/)?.[1];
+          assert.ok(allowlist,'Explicit auto nationality allowlist missing');
+          const allowed=new Set();
+          for(const [,a,b] of allowlist.matchAll(/'([A-Z]{3})-([A-Z]{3})'/g)){
+            assert.notEqual(a,b);
+            const pair=[a,b].sort().join('-');
+            assert.ok(!allowed.has(pair),'Duplicate allowlist pair: '+pair);
+            allowed.add(pair);
+          }
+          assert.equal(allowed.size,90);
+          for(const p of trial.candidates){
+            assert.ok(!previewIds.has(p.preview_id));
+            previewIds.add(p.preview_id);
+            assert.equal('id' in p,false);
+            assert.equal('entry_season' in p,false);
+            nationalities.set(p.nationality,(nationalities.get(p.nationality)||0)+1);
+            assert.ok(Number.isInteger(p.initial_age)&&p.initial_age>=16&&p.initial_age<=19);
+            assert.ok(Number.isInteger(p.height_cm)&&p.height_cm>=160&&p.height_cm<=205);
+            assert.ok(Number.isInteger(p.development_aptitude)&&p.development_aptitude>=1&&p.development_aptitude<=99);
+            const values=Object.values(p.attributes);
+            assert.equal(values.length,20);
+            assert.ok(values.every(x=>Number.isInteger(x)&&x>=1&&x<=99));
+            const ordinary=Object.entries(p.attributes).filter(([k])=>!gkFields.includes(k)).map(([,v])=>v);
+            totalSpread+=Math.max(...ordinary)-Math.min(...ordinary);
+            if(p.primary_position==='GK'){gk++;assert.equal(p.secondary_positions.length,0)}
+            else {
+              for(const a of gkFields){assert.ok(p.attributes[a]<=15);maxOutfieldGK=Math.max(maxOutfieldGK,p.attributes[a])}
+            }
+            if(p.secondary_nationality){
+              secondary++;
+              assert.notEqual(p.nationality,p.secondary_nationality);
+              const pair=[p.nationality,p.secondary_nationality].sort().join('-');
+              assert.ok(allowed.has(pair),'Unrelated pair: '+pair);
+              const directed=p.nationality+'→'+p.secondary_nationality;
+              pairCounts.set(directed,(pairCounts.get(directed)||0)+1);
+            }
+          }
+          assert.equal(previewIds.size,1000);
+          assert.equal(nationalities.size,50);
+          assert.ok([...nationalities.values()].every(n=>n===20));
+          assert.ok(secondary>=50&&secondary<=150);
+          assert.ok(totalSpread/trial.count<40);
+          const result={head:process.env.GITHUB_SHA,seed:trial.seed,players:trial.count,countries:nationalities.size,
+            secondary_nationalities:secondary,unique_ordered_pairs:pairCounts.size,
+            allowed_country_pairs:allowed.size,unrelated_pairs:0,goalkeepers:gk,
+            max_auto_outfielder_gk:maxOutfieldGK,mean_field_spread:Number((totalSpread/trial.count).toFixed(2)),
+            self_test:'PASS',reproducible:true,persisted:false};
+          writeFileSync(join(base,'players-check-report.json'),JSON.stringify(result,null,2)+'\n');
+          console.log(JSON.stringify(result,null,2));
+          NODE
+      - name: Retain trial evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-generation-trial-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fa-ci-artifacts/
+          if-no-files-found: warn
+          retention-days: 7
