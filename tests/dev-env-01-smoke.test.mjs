@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter, once} from 'node:events';
 import {createServer, request} from 'node:http';
-import {localDevPlan, startLocalDev} from '../tools/dev.mjs';
+import {localDevPlan, startLocalDev, validateLanAddress} from '../tools/dev.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 
 function get(port,path,host,method='GET'){
@@ -29,6 +29,7 @@ test('canonical launcher forces local Worker, dedicated origins and no remote/sh
    assert.equal(item.options.env.FA_ADMIN_API_TARGET,'http://127.0.0.1:8787');
    assert.equal(item.options.env.FA_ADMIN_API_POOL,'');
    assert.equal(item.options.env.FA_DEV_LAN,'');
+   assert.equal(item.options.env.FA_DEV_LAN_HOST,'');
    assert.equal(item.options.env.EXTRA,'retained');
    assert.equal(item.options.stdio,'inherit');
   }
@@ -49,7 +50,40 @@ test('canonical launcher starts both children, stops together and rejects extra 
  proc.emit('SIGINT');
  assert.ok(children.every(child=>child.killed));
  const bad=new EventEmitter();Object.assign(bad,{argv:['node','tools/dev.mjs','--remote']});
- assert.throws(()=>startLocalDev({proc:bad,spawnChild}),/no CLI flags/);
+ assert.throws(()=>startLocalDev({proc:bad,spawnChild}),/only --lan/);
+});
+
+test('explicit Safari QA LAN binds only an owned RFC1918 interface and never exposes backend LAN',()=>{
+ const interfaces={wifi:[{address:'192.168.1.90',family:'IPv4',internal:false}]};
+ assert.equal(validateLanAddress('192.168.1.90',interfaces),'192.168.1.90');
+ for(const address of ['0.0.0.0','127.0.0.1','8.8.8.8','192.168.1.91','192.168.1.090','192.168.1.256','app.192.168.1.90','::1']){
+  assert.throws(()=>validateLanAddress(address,interfaces),/LAN address/);
+ }
+ const [backend,frontend]=localDevPlan({lanAddress:'192.168.1.90',env:{FA_ADMIN_API_TARGET:'https://production.invalid',FA_ADMIN_API_POOL:'dev-preview',FA_DEV_LAN:'1',FA_DEV_LAN_HOST:'10.0.0.2'}});
+ for(const spec of [backend,frontend]){
+  assert.equal(spec.options.env.FA_ADMIN_API_TARGET,'http://127.0.0.1:8787');
+  assert.equal(spec.options.env.FA_ADMIN_API_POOL,'');
+ }
+ assert.equal(backend.options.env.FA_DEV_LAN,'');
+ assert.equal(backend.options.env.FA_DEV_LAN_HOST,'');
+ assert.equal(frontend.options.env.FA_DEV_LAN,'1');
+ assert.equal(frontend.options.env.FA_DEV_LAN_HOST,'192.168.1.90');
+ const out=[],spawned=[];
+ const proc=new EventEmitter();
+ Object.assign(proc,{argv:['node','tools/dev.mjs','--lan','192.168.1.90'],platform:'linux',execPath:'/node',env:{},stdout:{write:s=>out.push(s)},stderr:{write:s=>out.push(s)},exitCode:0});
+ const spawnChild=(command,args,options)=>{
+  const child=new EventEmitter();
+  Object.assign(child,{pid:300+spawned.length,killed:false,kill(){this.killed=true;return true;}});
+  spawned.push({command,args,options,child});
+  return child;
+ };
+ const start=startLocalDev({proc,spawnChild,interfaces:()=>interfaces});
+ assert.equal(start.children.length,2);
+ assert.equal(spawned[0].options.env.FA_DEV_LAN,'');
+ assert.equal(spawned[1].options.env.FA_DEV_LAN_HOST,'192.168.1.90');
+ assert.match(out.join(''),/http:\/\/192\.168\.1\.90:2000\/dashboard/);
+ proc.emit('SIGINT');
+ assert.ok(start.children.every(child=>child.killed));
 });
 
 test('canonical site/app routing, hard refresh, assets and local API bridge remain isolated',async()=>{
