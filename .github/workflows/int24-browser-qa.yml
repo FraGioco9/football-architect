@@ -124,6 +124,7 @@ jobs:
           fi
           node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
           node tools/ci-run.mjs 7-int24-browser-qa -- node tests/page-load-02-club-browser.mjs
+          node tools/ci-run.mjs fe-05-visual -- node tests/fe-05-visual-browser.mjs
           node tools/ci-run.mjs fe-02-chromium -- node tests/fe-02-responsive-browser.mjs
           FA_BROWSER_ENGINE=webkit node tools/ci-run.mjs fe-02-webkit -- node tests/fe-02-responsive-browser.mjs
           if [ "${{ github.event_name }}" = "pull_request" ]; then
