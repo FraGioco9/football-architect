@@ -8,6 +8,7 @@ import {readWorld} from './world-repository.ts';
 import {loadApprovedSeasonTwoAuthority} from './season-two-initial-schedule.ts';
 import {seasonTwoSourceGuards} from './season-snapshot-authority.ts';
 import {proposeLifecycleTransition} from './domain/lifecycle/lifecycle-policy.ts';
+import {canPrepareApprovedNextSeason,type TerminalMilestoneRow} from './domain/calendar/terminal-milestone-policy.ts';
 export async function prepareSeasonTwo(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'prepare_next_unavailable');
@@ -18,13 +19,8 @@ export async function prepareSeasonTwo(db:Database,session:AdminSession,input:Pr
  if(world.seasonNumber!==1||world.phase!=='closed'||world.day!==56)throw new ApiError(409,'qualification_prerequisites');
  const a=await loadApprovedSeasonTwoAuthority(db);
  if(a.world.generation!==world.generation||a.world.revision!==world.revision)throw new ApiError(409,'stale_world');
- const completion=(await db.prepare("SELECT event_id,kind,scope,scheduled_day,event_order,status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id IN ('season:archive','season:close','season:next-prepare')").all<{event_id:string;kind:string;scope:string;scheduled_day:number;event_order:number;status:string;receipt_hash:string|null}>()).results;
- const archive=completion.find(e=>e.event_id==='season:archive'),close=completion.find(e=>e.event_id==='season:close'),next=completion.find(e=>e.event_id==='season:next-prepare');
- if(!archive||!close||!next||archive.kind!=='archive-season'||close.kind!=='close-season'||next.kind!=='prepare-next-season'||
-    completion.some(e=>e.scope!=='season'||e.scheduled_day!==56)||
-    !(archive.event_order<close.event_order&&close.event_order<next.event_order)||
-    archive.status!=='completed'||close.status!=='completed'||next.status!=='scheduled'||
-    archive.receipt_hash!==a.sourceArchiveHash||close.receipt_hash!==a.sourceArchiveHash||next.receipt_hash!==null)
+ const completion=(await db.prepare("SELECT event_id,kind,scope,scheduled_day,event_order,status,receipt_hash FROM season_admin_events WHERE season_number=1 AND event_id IN ('season:archive','season:close','season:next-prepare')").all<TerminalMilestoneRow>()).results;
+ if(!canPrepareApprovedNextSeason(completion,a.sourceArchiveHash))
     throw new ApiError(409,'prepare_next_prerequisites');
  const snapshot=a.snapshot;
  const proposal=proposeLifecycleTransition(world,'prepare-next',{calendarComplete:true,drawsComplete:true,dueActivitiesComplete:true,resultsComplete:true,archiveComplete:true,nextSeasonSnapshotApproved:true});

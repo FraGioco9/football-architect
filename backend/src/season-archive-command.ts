@@ -10,6 +10,7 @@ import {loadSeasonSportingEvidence} from './season-sporting-evidence.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {createProgression,processSportingDay} from './knockout-progression.ts';
 import {seasonArchiveSportingSummary} from './season-archive-summary.ts';
+import {canArchiveAtTerminalMilestone} from './domain/calendar/terminal-milestone-policy.ts';
 interface Day {day:number;outcome_hash:string;outcome_json:string;calendar_hash:string}
 interface Tie {plan_hash:string;plan_json:string}
 export async function archiveSeason(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -43,7 +44,7 @@ export async function archiveSeason(db:Database,session:AdminSession,input:Prepa
  if(new Set(ties.map(t=>t.plan_hash)).size!==54)throw new ApiError(422,'archive_invalid');
  const pending=(await db.prepare("SELECT count(*) n FROM season_admin_events WHERE season_number=? AND status='scheduled' AND scope<>'season'").bind(world.seasonNumber).first<{n:number}>())?.n??0;
  const archiveEvent=await db.prepare("SELECT event_order,status FROM season_admin_events WHERE season_number=? AND event_id='season:archive' AND kind='archive-season' AND scope='season' AND scheduled_day=56").bind(world.seasonNumber).first<{event_order:number;status:string}>();
- if(!archiveEvent||archiveEvent.status!=='scheduled'||archiveEvent.event_order<8000)throw new ApiError(409,'archive_prerequisites');
+ if(!canArchiveAtTerminalMilestone(archiveEvent))throw new ApiError(409,'archive_prerequisites');
  if(pending!==0)throw new ApiError(409,'archive_prerequisites');
  const resultsHash=await canonicalHash(rows.map(r=>r.outcome_hash)),knockoutHash=await canonicalHash(ties.map(t=>t.plan_hash));
  const archiveHash=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,calendarHash:evidence.calendar.calendar_hash,resultsHash,knockoutHash,resultsCount:count,daysCount:56,tiesCount:54});

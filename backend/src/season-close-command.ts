@@ -6,9 +6,9 @@ import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './com
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
+import {canCloseArchivedSeason,type TerminalMilestoneRow} from './domain/calendar/terminal-milestone-policy.ts';
 interface Archive {generation:string;archive_hash:string;calendar_hash:string;results_hash:string;knockout_hash:string;results_count:number;days_count:number;ties_count:number}
 interface Summary {generation:string;archive_hash:string;summary_hash:string;summary_json:string}
-interface EventRow {event_id:string;kind:string;scope:string;scheduled_day:number;event_order:number;status:string;receipt_hash:string|null}
 export async function closeSeason(db:Database,session:AdminSession,input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(keyInput);
  if(!Number.isSafeInteger(now)||now<=0)throw new ApiError(503,'close_unavailable');
@@ -24,11 +24,8 @@ export async function closeSeason(db:Database,session:AdminSession,input:Prepare
  const digest=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,calendarHash:archive.calendar_hash,resultsHash:archive.results_hash,knockoutHash:archive.knockout_hash,resultsCount:4082,daysCount:56,tiesCount:54});
  let parsed:unknown;try{parsed=JSON.parse(summary.summary_json)}catch{throw new ApiError(422,'archive_invalid')}
  if(digest!==archive.archive_hash||await canonicalHash(parsed)!==summary.summary_hash)throw new ApiError(422,'archive_invalid');
- const events=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<EventRow>()).results;
- const archived=events.find(e=>e.event_id==='season:archive'),closing=events.find(e=>e.event_id==='season:close');
- if(!archived||archived.kind!=='archive-season'||archived.scope!=='season'||archived.scheduled_day!==56||archived.status!=='completed'||archived.receipt_hash!==archive.archive_hash||
-    !closing||closing.kind!=='close-season'||closing.scope!=='season'||closing.scheduled_day!==56||closing.status!=='scheduled'||closing.event_order<=archived.event_order||
-    events.some(e=>e.status==='scheduled'&&e.event_id!=='season:close'&&e.event_id!=='season:next-prepare'))throw new ApiError(409,'close_prerequisites');
+ const events=(await db.prepare('SELECT event_id,kind,scope,scheduled_day,event_order,status,receipt_hash FROM season_admin_events WHERE season_number=? ORDER BY scheduled_day,event_order').bind(world.seasonNumber).all<TerminalMilestoneRow>()).results;
+ if(!canCloseArchivedSeason(events,archive.archive_hash))throw new ApiError(409,'close_prerequisites');
  const result:Outcome={operationId:crypto.randomUUID(),world:{...world,phase:'closed',revision:world.revision+1}};
  try{
   await db.batch([
