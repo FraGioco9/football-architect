@@ -19,13 +19,8 @@
         img.setAttribute("src", src.replace(/-(?:dark|light)\.svg$/, "-" + theme + ".svg"));
     }
   }
-  // Keep accessible label associations, but clicking label text does not focus/toggle controls.
-  document.addEventListener('click',event=>{
-    const target=event.target;
-    if(!target?.closest||!target.closest('label'))return;
-    if(target.closest('input,textarea,select,button,a,[role="option"]'))return;
-    event.preventDefault();
-  },true);
+  // Native label activation must reach associated inputs.
+  // Enhanced custom-select buttons preserve their independent handlers.
   // Login returns stay in this tab, never in an account URL or persistent storage.
   const returnKey='football-architect:login-return';
   function safeReturn(raw){

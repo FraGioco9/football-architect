@@ -24,7 +24,7 @@ try{
      assert.ok(['above','below'].includes(await menu.getAttribute('data-menu-placement')));
      assert.equal(await page.evaluate(()=>scrollY),before,'Opening a dropdown does not scroll the page');
      await page.keyboard.press('End');assert.equal(await page.evaluate(()=>scrollY),before,'Keyboard navigation scrolls the menu only');
-     await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),false);
+     await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),true,'Escape restores dropdown trigger focus');
     }
     checks++;
    }

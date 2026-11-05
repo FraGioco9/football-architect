@@ -8,6 +8,10 @@ const pages = ["dashboard/index.html","calendar/index.html","settings/index.html
 const html = Object.fromEntries(pages.map(path => [path,read(path)]));
 const script = read("assets/app-search.js");
 const css = read("assets/app.css");
+const siteCss = read("assets/landing.css");
+test("FE-04 Search Escape focus uses the approved theme focus token",()=>{
+  assert.ok(siteCss.includes("html body .app-search-trigger.app-search-escape-return:focus-visible{outline:2px solid var(--focus);outline-offset:2px}"));
+});
 
 test("SEARCH-01 identical searchable top bar and native dialog on all three static pages",()=>{
   for(const [path,source] of Object.entries(html)){
@@ -342,7 +346,7 @@ test("SEARCH-01 translates the visible desktop search trigger",()=>{
 });
 
 
-test("SEARCH-01 Escape retains trigger focus without its visible focus ring",()=>{
+test("SEARCH-01 Escape returns trigger focus with a visible theme focus ring",()=>{
   const app=simulate();
   app.trigger.emit("click");
   app.input.value="calendar";
@@ -373,7 +377,7 @@ test("SEARCH-01 X and backdrop keep ordinary focus styling; reopening resets Esc
   assert.equal(app.trigger.classList.values.has("app-search-escape-return"),false);
 });
 
-test("SEARCH-01 native cancel suppresses focus highlight just like the first Escape",()=>{
+test("SEARCH-01 native cancel retains the Escape focus-return state",()=>{
   const app=simulate();
   app.trigger.emit("click");
   app.dialog.emit("cancel");

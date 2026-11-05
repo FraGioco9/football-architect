@@ -297,7 +297,7 @@
       for(let i=0;i<next.length;i++)if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
       while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
     }else fields.list.replaceChildren(...matches);
-    fields.summary.replaceChildren(element('span','',selectedLabel.textContent),element('strong','',String(matches.filter(item=>item.dataset.fixtureMatch).length)),word('fixturesMatches','matches'));
+    fields.summary.replaceChildren(element('span','',selectedLabel.textContent),element('strong','',String(matches.filter(item=>item.dataset.fixtureMatch).length)),word('fixturesMatchUnit','matches'));
     // Do not interpret missing or stale season data as an empty schedule.
     const context=window.faCompetitionContext,data=context?.seasonData;
     const matching=data&&String(data.season)===String(context.selectedSeason)&&String(context.selectedSeason)===String(navigation.get().season);
