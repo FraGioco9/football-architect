@@ -4,6 +4,8 @@ import {parseOperatorEmail} from './email-identity.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken} from './session-tokens.ts';
 import {hashText} from './auth.ts';
+import {requireCsrfDigest} from './csrf-policy.ts';
+import {reservePlayerAuthThrottle} from './auth-throttle-policy.ts';
 
 const MAX_AGE=30*86400,IDLE=7*86400;
 const DUMMY='$argon2id$v=19$m=19456,t=2,p=1$MDEyMzQ1Njc4OWFiY2RlZg$'+'A'.repeat(43);
@@ -16,22 +18,12 @@ export function playerSessionValid(row:Session|null,now:number):boolean {
  row.created_at>0&&row.last_seen_at>=row.created_at&&row.last_seen_at<=now&&
  row.expires_at>now&&row.expires_at<=row.created_at+MAX_AGE&&now-row.last_seen_at<IDLE;
 }
-async function throttle(db:Database,email:string,source:string,now:number){
- const sql=`INSERT INTO player_auth_throttles(throttle_key,window_start,attempts,expires_at) VALUES(?,?,1,?)
- ON CONFLICT(throttle_key) DO UPDATE SET attempts=CASE WHEN expires_at<=? THEN 1 ELSE attempts+1 END,
- window_start=CASE WHEN expires_at<=? THEN ? ELSE window_start END,
- expires_at=CASE WHEN expires_at<=? THEN ? ELSE expires_at END RETURNING attempts`;
- const sourceKey='source:'+await hashText(source),accountKey='account:'+await hashText(email);
- const reserve=async(key:string)=>db.prepare(sql).bind(key,now,now+900,now,now,now,now,now+900).first<{attempts:number}>();
- const src=await reserve(sourceKey);if(!src||src.attempts>30)throw new ApiError(429,'login_throttled');
- const acct=await reserve(accountKey);if(!acct||acct.attempts>5)throw new ApiError(429,'login_throttled');
-}
 export async function playerLogin(db:Database,input:unknown,source:string,now:number,previous?:string){
  if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
  const obj=input as Record<string,unknown>;
  if(Object.keys(obj).sort().join(',')!=='email,password'||validatePasswordShape(obj.password)!==null)throw invalid();
  let email:string;try{email=parseOperatorEmail(obj.email)}catch{throw invalid()}
- await throttle(db,email,source,now);
+ await reservePlayerAuthThrottle(db,'login',email,source,now);
  const account=await db.prepare('SELECT id,email_normalized,password_verifier,credential_version,status,email_verified_at FROM player_accounts WHERE email_normalized=?').bind(email).first<Account>();
  const {verifyPassword}=await import('./passwords.ts');
  const good=await verifyPassword(obj.password as string,account?.status==='active'&&account.email_verified_at?account.password_verifier:DUMMY);
@@ -66,8 +58,7 @@ export async function playerAuthenticate(db:Database,token:string,now:number){
  return {actor:{id:row!.account_id,email:row!.email_normalized},digest,csrfDigest:row!.csrf_digest};
 }
 export async function playerRequireCsrf(digest:string,token:string|null){
- let actual='';try{actual=await digestOpaqueToken(token??'')}catch{throw new ApiError(403,'csrf_forbidden')}
- if(actual!==digest)throw new ApiError(403,'csrf_forbidden');
+ await requireCsrfDigest(digest,token);
 }
 
 export const playerCsrfFor=async(token:string)=>hashText('fa-player-csrf-v1:'+token);

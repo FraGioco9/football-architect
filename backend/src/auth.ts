@@ -4,6 +4,7 @@ import {parseOperatorEmail} from './email-identity.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken,getSessionDeadlines} from './session-tokens.ts';
 import {requireActiveSession,type SessionRow} from './session-policy.ts';
+import {requireCsrfDigest} from './csrf-policy.ts';
 
 export interface AdminSession {actor:{id:string;email:string};digest:string;credentialVersion:number;csrfDigest:string;unified?:{playerId:string;sessionDigest:string;csrfDigest:string}}
 interface Account {id:string;email_normalized:string;password_verifier:string;credential_version:number;enabled:number}
@@ -75,6 +76,5 @@ export async function authenticate(db:Database,token:string,now:number):Promise<
  return {actor:{id:row!.account_id,email:row!.email_normalized},digest,credentialVersion:row!.session_credential_version,csrfDigest:row!.csrf_digest};
 }
 export async function requireCsrf(session:AdminSession,value:string|null):Promise<void>{
- let digest='';try{digest=await digestOpaqueToken(value??'')}catch{throw new ApiError(403,'csrf_forbidden')}
- if(digest!==session.csrfDigest)throw new ApiError(403,'csrf_forbidden');
+ await requireCsrfDigest(session.csrfDigest,value);
 }
