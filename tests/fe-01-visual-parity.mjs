@@ -88,7 +88,31 @@ try{
    }finally{await context.close()}
   };
   const a=await measure("before"),b=await measure("after");
-  if(JSON.stringify(a.regular)!==JSON.stringify(b.regular)||JSON.stringify(a.focused)!==JSON.stringify(b.focused)||a.overflow!==b.overflow)
+  // FE-02 (#366) authorizes only mobile hit geometry, not theme, token or
+  // unrelated positioning changes. The FE-02 browser suite tests new sizes.
+  const comparable=(sample,updated)=>{
+   const copy=structuredClone({regular:sample.regular,focused:sample.focused,overflow:sample.overflow});
+   if(profile.width<=390){
+    const ignore=new Set();
+    if(route.path==="/calendar")ignore.add(".calendar-arrow");
+    if(route.path.startsWith("/competitions/")){
+     ignore.add(".app-competition-tab");ignore.add(".app-fixtures-arrow");
+    }
+    if(route.path==="/clubs/it/1/overview")ignore.add(".club-tabs .app-competition-tab");
+    for(const key of ["regular","focused"]){
+     const obj=copy[key];if(!obj)continue;
+     for(const name of ignore){
+      if(updated&&obj[name])for(const el of obj[name])assert.ok(el.rect[3]>=43.9,
+       "FE-02 mobile hit height "+route.path+" "+name);
+      delete obj[name];
+     }
+     if(route.path==="/clubs/it/1/overview"&&obj[".app-panel"])
+      for(const panel of obj[".app-panel"])panel.rect[1]=0;
+    }
+   }
+   return copy;
+  };
+  if(JSON.stringify(comparable(a,false))!==JSON.stringify(comparable(b,true)))
    findings.push({route:route.path,profile,before:{regular:a.regular,focused:a.focused,overflow:a.overflow},after:{regular:b.regular,focused:b.focused,overflow:b.overflow}});
   if(a.screenshot&&b.screenshot){
    const left=PNG.sync.read(a.screenshot),right=PNG.sync.read(b.screenshot);
