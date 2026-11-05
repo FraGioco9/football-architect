@@ -343,8 +343,9 @@ test("COMPETITIONS-ROUTE-02 uses the same inline flag markup on detail routes",(
 });
 
 test("COMPETITION-TABS-UNIFORM-01: all seven tabs have identical widths in five languages",()=>{
- const css=read("assets/app.css"),app=read("assets/app.js");
- assert.ok(css.includes(".app-competition-tab{flex:0 0 112px;box-sizing:border-box;width:112px;min-width:112px;max-width:112px;"));
+ const css=read("assets/app.css"),app=read("assets/app.js"),theme=read("assets/landing.css");
+ assert.ok(theme.includes("--fa-tab-width-regular:112px;"));
+ assert.ok(css.includes(".app-competition-tab{flex:0 0 var(--fa-tab-width-regular);box-sizing:border-box;width:var(--fa-tab-width-regular);min-width:var(--fa-tab-width-regular);max-width:var(--fa-tab-width-regular);"));
  assert.ok(css.includes("overflow:hidden;text-overflow:ellipsis;text-align:center"));
  assert.ok(css.includes(".app-competition-tabs{display:flex;gap:4px;overflow-x:auto"));
  assert.ok(css.includes("@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(92px,calc((100% - 8px)/2.5))}"));

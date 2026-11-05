@@ -15,10 +15,10 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body main.account-wide{max-width:660px}
 .account-go-back{display:inline-block;margin-bottom:14px;font-size:14px;font-weight:400;line-height:normal;text-decoration:underline}
 .account-body h1{margin:0 0 8px;font-size:28px;letter-spacing:-.035em;line-height:1.2}
-.account-body h2{font-size:18px;line-height:1.35}
-.account-body form{display:grid;gap:12px;margin-block:16px 12px}
-.account-body label{display:grid;gap:5px;font-size:14px;font-weight:600}
-.account-body input,.account-body select{font:inherit;width:100%;min-width:0;min-height:44px;padding:10px 12px;background:var(--background);color:var(--text);border:1px solid var(--border);border-radius:10px}
+.account-body h2{font-size:var(--fa-text-panel-heading);line-height:1.35}
+.account-body form{display:grid;gap:var(--fa-space-3);margin-block:16px 12px}
+.account-body label{display:grid;gap:5px;font-size:var(--fa-text-control);font-weight:600}
+.account-body input,.account-body select{font:inherit;width:100%;min-width:0;min-height:var(--fa-control-height-regular);padding:10px 12px;background:var(--background);color:var(--text);border:1px solid var(--border);border-radius:var(--fa-radius-control)}
 .account-body input:focus-visible,.account-body select:focus-visible,.account-body a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .account-body form>.cta{width:100%}
 .account-body .cta:disabled{opacity:.6;cursor:wait}
@@ -44,7 +44,7 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 
 /* Reveal only the fully localized, bound account layout; no native-select flash. */
 html:not([data-account-ready="true"]) .account-body{visibility:hidden}
-.account-body .account-feedback{position:relative;margin-block:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:10px;background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
+.account-body .account-feedback{position:relative;margin-block:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
 .account-body .account-feedback::before{content:"!";position:absolute;left:14px;top:13px;display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:700;color:var(--muted)}
 .account-body .account-feedback[data-kind="error"]{border-inline-start:3px solid #B77878}
 .account-body .account-feedback[data-kind="success"]{border-inline-start:3px solid var(--primary)}
@@ -57,8 +57,8 @@ html:not([data-account-ready="true"]) .account-body{visibility:hidden}
 .account-password-toggle{position:absolute;inset-inline-end:1px;top:1px;display:grid;place-items:center;width:44px;height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
 .account-password-toggle:hover{color:var(--text);background:var(--surface-raised)}
 .account-password-toggle svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.account-body .account-field-error{color:#C68F8F;margin:0;font-weight:400}
-html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
+.account-body .account-field-error{color:var(--fa-field-error-color);margin:0;font-weight:400}
+html[data-theme="light"] .account-body .account-field-error{color:var(--fa-field-error-color)}
 .account-field-error:empty{display:none}
 .account-body [data-met="true"]{color:var(--primary)}
 .account-optional{display:grid;gap:12px;min-width:0;margin:4px 0 0;padding:12px 0 0;border:0;border-top:1px solid var(--line)}
@@ -69,9 +69,7 @@ html[data-theme="light"] .account-body .account-field-error{color:#8A4040}
 .account-body input{font-weight:400}
 
 /* Only editable field surfaces respond to hover; labels, hints and feedback remain static. */
-.account-body{--fa-field-hover-bg:#1a3738;--fa-field-hover-border:#506c64;--fa-field-focus-border:#84b8a4}
-html[data-theme="light"] .account-body{--fa-field-hover-bg:#E5F1E9;--fa-field-hover-border:#67917D;--fa-field-focus-border:#377F60}
-.account-body :is(input,select,textarea,.language-trigger){transition:border-color 160ms ease,box-shadow 180ms ease,background-color 160ms ease}
+.account-body :is(input,select,textarea,.language-trigger){transition:var(--fa-field-transition)}
 /* Remove the inherited landing :hover rule; only direct pointer-hit fields may highlight. */
 .account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}
 html[data-theme="light"] .account-body .language-trigger:hover{background:var(--surface);border-color:var(--border)}

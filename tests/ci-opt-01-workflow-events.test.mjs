@@ -117,8 +117,9 @@ test('push/main runs ordinary Chromium and WebKit without requiring a PR base or
 test('PR CSS parity receives exactly the trusted base SHA',()=>{
  const base='b'.repeat(40);const {result,calls}=browserCommands({css:true,base});
  assert.equal(result.status,0,result.stderr);
- assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
  assert.equal(calls[2].base,base);
+ assert.equal(calls[3].base,base);
 });
 test('PR without CSS retains full browsers and omits screenshot parity',()=>{
  const {result,calls}=browserCommands();assert.equal(result.status,0,result.stderr);
@@ -158,9 +159,9 @@ test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebK
   const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record},encoding:'utf8'});
   assert.equal(result.status,0,result.stderr);return readFileSync(record,'utf8').trim().split('\n');
  };
- assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
  writeFileSync(join(root,'assets/app.css'),'body{color:blue}');git(root,'add','.');git(root,'commit','-qm','app stylesheet');
- assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-css-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs','tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
 }));
 
 for(const engine of ['chromium','webkit'])test('independent account '+engine+' dispatches the original nine suites and preserves failure exit',()=>temporary(root=>{
