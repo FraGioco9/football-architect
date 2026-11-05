@@ -40,3 +40,52 @@ test("FE-02 menu positioning does not acquire FE-04 interaction semantics",()=>{
   "document.activeElement","preventDefault()","history.pushState"])
   assert.ok(!scoped.includes(forbidden),forbidden);
 });
+
+test("SAF-01 Fixtures and Calendar Week keep the current shortcut on the same line",()=>{
+ assert.ok(app.includes("#competition-panel-fixtures .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 44px"));
+ assert.ok(app.includes("#competition-panel-fixtures .app-fixtures-current{position:static;grid-column:2;grid-row:1"));
+ assert.ok(app.includes("#world-calendar #calendar-controls .app-fixtures-select{flex:1 1 0;width:auto"));
+ assert.ok(app.includes("#world-calendar #calendar-controls #calendar-week-menu{width:100%"));
+});
+test("SAF-02/04 both competition and club fades initialize during parsing",()=>{
+ for(const path of ["competitions/it-1/index.html","competitions/int-1/index.html","competitions/_shared/index.html"]){
+  const html=read(path);
+  assert.match(html,/data-fa-competition-tabs-scroll-first-paint/);
+  assert.match(html,/tabs\.dataset\.canScrollLeft=String/);
+  assert.match(html,/tabs\.dataset\.canScrollRight=String/);
+ }
+ const club=read("clubs/_shared/index.html");
+ assert.match(club,/data-fa-club-first-paint/);
+ assert.match(club,/class="app-competition-tabs club-tabs"/);
+ assert.match(club,/club-first-paint-header/);
+ assert.match(club,/tabs\.dataset\.canScrollRight=String/);
+});
+test("Calendar first paint resolves the stored DEV season, including the selected Week",()=>{
+ for(const path of ["tools/render-world-calendar.mjs","calendar/index.html"]){
+  const html=read(path);
+  assert.match(html,/Boolean\(window\.faDevPreviewMode\)&&window\.faDebugEnabled!==false/);
+  assert.match(html,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
+  assert.doesNotMatch(html,/const limit=window\.faDevCalendarClockSnapshot\?\.source\?\.kind==='dev'/);
+ }
+ assert.match(read("assets/calendar-simplified.js"),/selectedSeason=Number\(root\.dataset\.calendarSeason\)\|\|1/);
+});
+
+test("SAF-05 selectors retain centered labels and right-edge chevrons",()=>{
+ assert.match(app,/#competition-panel-fixtures \.app-fixtures-trigger-label\{flex:1 1 auto;justify-content:center;text-align:center\}/);
+ assert.match(app,/#world-calendar #calendar-controls #calendar-week-trigger>\.language-chevron\{position:absolute;inset-inline-end:8px/);
+ assert.match(app,/#world-calendar #calendar-controls #calendar-week-value\{display:block;flex:1 1 auto/);
+});
+test("SAF-05 club first paint reserves layout without decorative skeletons",()=>{
+ const html=read("clubs/_shared/index.html");
+ const club=html.slice(html.indexOf('<div id="club-page"'),html.indexOf("</div><noscript>"));
+ assert.doesNotMatch(club,/app-skeleton-bar/);
+ assert.match(read("assets/club-page.css"),/\.club-first-paint-panel\{min-height:160px;margin-top:14px;visibility:hidden\}/);
+});
+test("SAF-05 competition tab refresh preserves the saved horizontal offset",()=>{
+ const tabs=read("assets/competition-tabs.js");
+ assert.match(tabs,/if\(savedTabScroll===null\)revealSelectedTab\(\);else syncTabOverflow\(\)/);
+ assert.match(tabs,/let previousTabWidth=tablist\.clientWidth/);
+ assert.match(tabs,/if\(changed&&!restoringTabScroll\)revealSelectedTab\(\)/);
+ assert.match(tabs,/previousView!==undefined&&previousView!==state\.view/);
+ assert.doesNotMatch(tabs,/if\(focus\|\|!restoringTabScroll\)revealSelectedTab\(\)/);
+});

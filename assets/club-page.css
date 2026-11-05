@@ -1,4 +1,10 @@
 /* Club pages share shell, panel, typography, theme and tab tokens with competitions. */
+/* PAGE-LOAD: reserve final club geometry without rendering decorative skeletons. */
+.club-first-paint-header .club-crest{visibility:hidden}
+.club-first-paint-header h1{min-height:1.8em}
+.club-first-paint-header .club-location,.club-first-paint-header .club-header-division{min-height:1.5em}
+.club-first-paint-panel{min-height:160px;margin-top:14px;visibility:hidden}
+.club-first-paint-overview[hidden],.club-first-paint-other[hidden]{display:none}
 .club-header{display:flex;align-items:center;gap:28px;min-width:0;margin:0}
 .club-header>div{min-width:0;flex:1}
 .club-header p{margin:0;color:var(--muted);overflow-wrap:anywhere}

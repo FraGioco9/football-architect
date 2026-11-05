@@ -95,7 +95,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
    assert.ok(html.includes(base+'/fixtures?season=2&matchday=7'));
    if(view==='overview'){
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
-    if(c.divisionId)assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));
+    if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,2);}
     else assert.ok(html.includes(model.copies[lang].outside));
    }else assert.ok(html.includes('club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
@@ -328,4 +328,15 @@ test('club competition links open Standings with the displayed season and no fix
  assert.equal(href('?season=2&matchday=7',null),'/competitions/it-1/standings?season=2');
  assert.equal(href('',null),'/competitions/it-1/standings');
  assert.equal(href('?season=bad',null),'/competitions/it-1/standings');
+});
+
+test('SAF-05 club league links open the selected season without an unparameterized stop',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/1/overview');
+ const html=model.render(manifest,selected,'en','',null,3);
+ assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=3"/g)||[]).length,2);
+ const requested=model.render(manifest,selected,'en','?season=2',null,3);
+ assert.equal((requested.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=2"/g)||[]).length,2);
+ assert.match(read('assets/club-page.js'),/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
 });

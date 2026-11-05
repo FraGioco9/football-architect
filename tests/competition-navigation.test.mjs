@@ -9,7 +9,7 @@ import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry){
+function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null){
  const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -36,7 +36,7 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry)
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
- runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
+ runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return key.startsWith('football-architect:competition-tabs-scroll:')&&restoredScroll!==null?String(restoredScroll):null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,contextSeasons,scrollKeys,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
 test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
@@ -139,9 +139,19 @@ test('COMPETITION-TABS-SCROLL: edge hints follow scrolling and selection stays v
  assert.equal(s.tablist.dataset.canScrollLeft,'true');assert.equal(s.tablist.dataset.canScrollRight,'true');
  s.tabs[3].events.click();const rect=s.tabs[3].getBoundingClientRect();
  assert.ok(rect.left>=16&&rect.right<=224,'selected middle tab clears both fades');
- s.tablist.scrollLeft=0;s.events.resize();assert.ok(s.tablist.scrollLeft>0,'resize reveals selected tab');
+ s.tablist.scrollLeft=0;s.events.resize();assert.equal(s.tablist.scrollLeft,0,'same-width observer does not move the strip');
+ s.tablist.clientWidth=200;s.events.resize();assert.ok(s.tablist.scrollLeft>0,'genuine viewport-width change reveals selected tab');
  s.tablist.clientWidth=700;s.tablist.scrollWidth=620;s.tablist.scrollLeft=0;s.tablist.events.scroll();
  assert.equal(s.tablist.dataset.canScrollLeft,'false');assert.equal(s.tablist.dataset.canScrollRight,'false');
+});
+
+test('COMPETITION-TABS-SCROLL: exact saved offset survives reload and same-width resize',()=>{
+ const s=setup('/competitions/it-1?season=1&view=awards',null,routeRegistry,150);
+ assert.equal(s.tablist.scrollLeft,150,'the restored offset must not be overridden by active-tab reveal');
+ assert.equal(s.tablist.dataset.canScrollLeft,'true');
+ assert.equal(s.tablist.dataset.canScrollRight,'true');
+ s.events.resize();assert.equal(s.tablist.scrollLeft,150,'same-width observer preserves restored offset');
+ s.tabs[0].events.click();assert.equal(s.tablist.scrollLeft,0,'explicit user view selection reveals its tab');
 });
 
 test('HISTORY-URL: season links use Standings and preserve browser navigation',()=>{

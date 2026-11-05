@@ -27,3 +27,11 @@ Known exception: constrained 320px Fixtures horizontal hit width 40px, knockout 
 
 ## Workflow
 One branch, one grouped commit, one Draft/HOLD PR. Run targeted Node + generator checks and automatic exact-head Site/Browser/Admin/FULL; run Chromium and WebKit geometry in the existing Browser workflow once each, no manual duplicate runs. Record SHA, PASS/FAIL/UNKNOWN and remaining manual gate. No merge/deploy/DB actions without separate authorization.
+
+## Physical Safari follow-up — 2026-11-05
+Device QA: Clubs/Calendar/Settings 5/5 PASS; Club detail checklist 5/5 PASS with two additional issues (League navigation and view-tab scroll loss); domestic competitions 4/5 PASS plus Fixtures overflow and refresh tab-scroll jump. INT-24/authenticated functions NOT TESTED on frontend-only LAN.
+- SAF-01: mobile Fixtures controls constrained to content column.
+- SAF-02: parser-time generated tab-scroll bootstrap and ResizeObserver guard during restoration.
+- SAF-03: same-origin primary link navigation from club header/card, preserving modified clicks.
+- SAF-04: preserve club tab-strip scroll position on re-render.
+- Test on Chromium/WebKit at 320/390; physical iPhone retest remains mandatory for acceptance.

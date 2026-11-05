@@ -127,8 +127,10 @@ const frontloadCompetitionShell=(source,id)=>{
  const sectionStart=source.indexOf(sectionMarker);
  const tabsStart=source.indexOf('          <div class="app-competition-tabs" role="tablist"',sectionStart);
  const scriptStart=source.indexOf('          <script>(()=>{const view=document.documentElement.dataset.competitionView',tabsStart);
- const scriptEnd=source.indexOf('</script>',scriptStart);
- if([sectionStart,tabsStart,scriptStart,scriptEnd].some(n=>n<0))throw Error('Missing static competition controls: '+id);
+ // SAF-02: move both parser-time scripts with their static tab strip.
+ const initialScrollStart=source.indexOf('          <script data-fa-competition-tabs-scroll-first-paint>',scriptStart);
+ const scriptEnd=source.indexOf('</script>',initialScrollStart);
+ if([sectionStart,tabsStart,scriptStart,initialScrollStart,scriptEnd].some(n=>n<0))throw Error('Missing static competition controls: '+id);
  const tabShell=source.slice(tabsStart,scriptEnd+'</script>'.length);
  let html=source.slice(0,tabsStart)+source.slice(scriptEnd+'</script>'.length);
  const sectionBody=html.indexOf(sectionMarker)+sectionMarker.length;

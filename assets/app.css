@@ -1354,3 +1354,25 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
   max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  }
 }
+
+/* SAF-01: current matchday stays on the same row as the shrinkable navigation. */
+@media(max-width:620px){
+ #competition-panel-fixtures .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 44px;column-gap:8px;align-items:center;justify-items:stretch;padding-bottom:0}
+ #competition-panel-fixtures .app-fixtures-toolbar[hidden]{display:none}
+ #competition-panel-fixtures .app-fixtures-navigation{grid-column:1;grid-row:1;box-sizing:border-box;width:100%;max-width:100%;min-width:0;justify-self:stretch}
+ #competition-panel-fixtures .app-fixtures-select{flex:1 1 0;width:auto;max-width:100%;min-width:0}
+ #competition-panel-fixtures .app-fixtures-current{position:static;grid-column:2;grid-row:1;justify-self:end}
+ #competition-panel-fixtures .app-fixtures-trigger-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media(max-width:360px){#competition-panel-fixtures .app-fixtures-toolbar{grid-template-columns:minmax(0,1fr) 40px;column-gap:4px}}
+/* Calendar Week: arrows and selector stretch across the available row; Current week is reserved. */
+#world-calendar #calendar-controls.app-fixtures-navigation{box-sizing:border-box;width:100%;padding-inline-end:40px;justify-content:stretch!important}
+#world-calendar #calendar-controls .app-fixtures-select{flex:1 1 0;width:auto;min-width:0;max-width:none}
+#world-calendar #calendar-controls #calendar-week-menu{width:100%;min-width:0;max-width:100%}
+@media(max-width:620px){#world-calendar #calendar-controls.app-fixtures-navigation{padding-inline-end:52px}}
+
+/* SAF-05: keep selector labels optically centered, with chevrons at the far right. */
+#competition-panel-fixtures .app-fixtures-trigger-label{flex:1 1 auto;justify-content:center;text-align:center}
+#world-calendar #calendar-controls #calendar-week-trigger{padding-inline:28px}
+#world-calendar #calendar-controls #calendar-week-value{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+#world-calendar #calendar-controls #calendar-week-trigger>.language-chevron{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);margin:0;flex:none}

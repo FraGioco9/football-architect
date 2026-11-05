@@ -404,7 +404,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
-    assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/standings');
+    assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/standings?season=1','Club league links include the selected season without an unparameterized stop');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");

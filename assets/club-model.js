@@ -57,7 +57,7 @@
   indexCache.set(manifest,index);
   return index;
  }
- function render(manifest,selected,language='en',search='',snapshot=null){
+ function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
   const index=getIndex(manifest),c=index.clubs.get(selected.countryId+'-'+selected.clubId);
   if(!c)throw Error('Unknown club identity');
@@ -79,9 +79,9 @@
    Number.isInteger(snapshot.points)&&snapshot.points>=0&&snapshot.points<=90?snapshot:null;
   const params=new URLSearchParams(search);
   const requestedSeason=params.get('season');
-  const competitionSeason=summary?.season||(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null);
+  const competitionSeason=summary?.season||(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null)||(Number.isInteger(activeSeason)&&activeSeason>=1&&activeSeason<=999999999?activeSeason:null);
   const competitionLink=link+(competitionSeason?'?season='+competitionSeason:'');
-  const divisionValue=division?'<a class="app-link" href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
+  const divisionValue=division?'<a class="app-link" data-club-division-link href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
   const next=summary?.nextMatch;
   const homeCandidate=next&&index.clubs.get(c.countryId+'-'+next.homeId);
   const home=homeCandidate&&homeCandidate.divisionId===c.divisionId?homeCandidate:null;

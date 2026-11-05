@@ -28,7 +28,7 @@
  trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():publicSeasonLimit(),selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
  menu.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();trigger.focus()}});
  const readDebugSeason=()=>{try{const raw=sessionStorage.getItem(seasonKey),n=raw===null||raw.trim()===''?NaN:Number(raw);return Number.isInteger(n)&&n>=0&&n<=4?n:1}catch{return 1}};
- let selectedSeason=1,publicDefaultApplied=false;
+ let selectedSeason=Number(root.dataset.calendarSeason)||1,publicDefaultApplied=false;
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?Math.max(1,readDebugSeason()):999999999);
  function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const season=Math.max(1,window.faWorldState?.get?.().current?.season||selectedSeason);const route="/calendar?season="+season+"&calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
