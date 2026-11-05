@@ -96,6 +96,7 @@
     "tests/competition-season-zero-club-links-browser.mjs": "browser",
     "tests/competition-stats-provider.test.mjs": "site-node",
     "tests/competition-stats-view.test.mjs": "site-node",
+    "tests/sh-02-competition-rendering.test.mjs": "site-node",
     "tests/control-focus-browser.mjs": "browser",
     "tests/dev-admin-api-proxy.test.mjs": "site-node",
     "tests/dev-env-01-browser.mjs": "manual",

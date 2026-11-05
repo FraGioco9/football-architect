@@ -35,7 +35,29 @@ try {
     stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
    }));
    assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
-   checks++;
+   // SH-02: traverse all seven real views for all 18 competitions. The
+   // declarative tab/panel/crest identities must outlive same-document routing.
+   await routePage.evaluate(()=>{
+    window.__sh02Tabs=[...document.querySelectorAll(".app-competition-tabs [role=tab]")];
+    window.__sh02Panels=window.__sh02Tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
+    window.__sh02Crest=document.querySelector("#app-standings-body [data-club-crest]");
+   });
+   for(const view of views){
+    await routePage.locator("#competition-tab-"+view).click();
+    const observed=await routePage.evaluate(view=>{
+     const tab=document.getElementById("competition-tab-"+view);
+     const panel=document.getElementById("competition-panel-"+view);
+     const index=window.__sh02Tabs.indexOf(tab);
+     return {route:window.faCompetitionRoute?.get()?.view,selected:tab?.getAttribute("aria-selected"),
+      panelHidden:panel?.hidden,tabStable:index>=0,
+      panelStable:index>=0&&window.__sh02Panels[index]===panel,
+      crestStable:!window.__sh02Crest||window.__sh02Crest.isConnected&&
+       document.querySelector("#app-standings-body [data-club-crest]")===window.__sh02Crest};
+    },view);
+    assert.deepEqual(observed,{route:view,selected:"true",panelHidden:false,tabStable:true,panelStable:true,crestStable:true},slug+"/"+view);
+    assert.equal(await routePage.locator("#competition-panel-"+view).isVisible(),true,slug+"/"+view+" mounted view visible");
+    checks++;
+   }
   }
  }finally{await routePage.close()}
  for(const cup of cups)for(const width of widths){
@@ -47,7 +69,22 @@ try {
    const response=await page.goto(url,{waitUntil:"networkidle"});
    assert.equal(response?.status(),200,url);
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
-   assert.equal(await page.locator("#competition-panel-"+view).isVisible(),true);
+   const visible=await page.locator("#competition-panel-"+view).isVisible();
+   if(!visible){
+    const probe=await page.evaluate(view=>({
+     url:location.href,view,route:window.faCompetitionRoute?.get?.(),
+     context:window.faCompetitionContext?.definition?.id,
+     season:window.faCompetitionContext?.selectedSeason,
+     panelHidden:document.getElementById('competition-panel-'+view)?.hidden,
+     panelDisplay:getComputedStyle(document.getElementById('competition-panel-'+view)).display,
+     bodyVisibility:getComputedStyle(document.body).visibility,
+     prepaint:document.documentElement.dataset.faCompetitionPrepaint,
+     seasonUnavailable:document.documentElement.dataset.competitionSeasonUnavailable,
+     loading:document.documentElement.dataset.faStandingsLoading,
+     bootstrap:!!window.faCompetitionContextApi,domCore:!!window.faCompetitionRenderDOM
+    }),view);
+    throw new Error('Competition panel invisible: '+JSON.stringify(probe)+' pageerrors='+JSON.stringify(errors));
+   }
    assert.equal(await page.locator(".app-competition-header").count(),1);
    assert.equal(await page.locator("#division-detail-name").innerText(),cup==="int-1"?"Sovereign Cup":"Federation Cup");
    assert.equal(await page.locator(".app-competition-tabs [role=tab]").count(),7);
@@ -63,6 +100,8 @@ try {
     assert.equal(await page.locator('[data-rule-kind="promoted"]').count(),0);
    }
    if(view==="awards"){
+    assert.equal(await page.locator('#competition-panel-awards > .fa-awards .fa-awards-card').count(),11,
+      'Rendered awards must be mounted directly, never trapped in the aria-hidden skeleton');
     assert.equal(await page.locator('.fa-awards-card').count(),11);
     assert.equal(await page.locator('.fa-awards-card-promotion,.fa-awards-card-playoff').count(),0);
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);

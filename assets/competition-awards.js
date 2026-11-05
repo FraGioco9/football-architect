@@ -3,6 +3,7 @@
 "use strict";
 const panel=document.getElementById("competition-panel-awards");
 if(!panel)return;
+let lastPresentation=null;
 const definitions=[
  {id:"champion",title:"Champion",key:"awardsChampion",section:"honours"},
  {id:"promotion",title:"Direct Promotion",key:"awardsPromotion",section:"honours"},
@@ -48,6 +49,18 @@ function render(context){
  catch{panel.dataset.faContentState="unknown";panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));return;}
  const byId=new Map(definitions.map(item=>[item.id,item]));
  const visible=ids.map(id=>byId.get(id));
+ // State metadata advances even when the visible award cards are unchanged.
+ const sameSeason=context.seasonData&&String(context.seasonData.season)===String(context.selectedSeason);
+ const allPending=visible.length>0&&visible.every(award=>{
+  const recipients=context.seasonData?.awards?.[award.id]?.recipients;
+  return !Array.isArray(recipients)||recipients.length===0;
+ });
+ panel.dataset.faContentState=sameSeason&&allPending?'empty':sameSeason?'available':'unknown';
+ panel.dataset.faContentSeason=String(context.selectedSeason);
+ panel.dataset.faContentRevision=String(context.revision??'');
+ const presentation=JSON.stringify([ids,visible.map(award=>context.seasonData?.awards?.[award.id]?.recipients??null)]);
+ const current=panel.querySelector?.(":scope > .fa-awards");
+ if(current&&presentation===lastPresentation){window.faAppRenderLanguage?.();return;}
  const wrap=el("div","fa-awards");
  const sectionNames={honours:[null,null],excellence:["Individual Excellence","awardsExcellence"],performance:["Performance & Position Awards","awardsPerformance"],xi:["Team of the Season","awardsXi"]};
  let lastSection=null,grid;
@@ -75,15 +88,9 @@ function render(context){
   grid.append(card);
  }
  // Confirmed pending awards are meaningful content, not winners to load.
- const sameSeason=context.seasonData&&String(context.seasonData.season)===String(context.selectedSeason);
- const allPending=visible.length>0&&visible.every(award=>{
-  const recipients=context.seasonData?.awards?.[award.id]?.recipients;
-  return !Array.isArray(recipients)||recipients.length===0;
- });
- panel.dataset.faContentState=sameSeason&&allPending?'empty':sameSeason?'available':'unknown';
- panel.dataset.faContentSeason=String(context.selectedSeason);
- panel.dataset.faContentRevision=String(context.revision??'');
- panel.replaceChildren(wrap);
+ if(current&&window.faCompetitionRenderDOM?.sync)window.faCompetitionRenderDOM.sync(current,wrap);
+ else panel.replaceChildren(wrap);
+ lastPresentation=presentation;
  window.faAppRenderLanguage?.();
 }
 window.addEventListener("fa:competition-context-change",event=>render(event.detail));

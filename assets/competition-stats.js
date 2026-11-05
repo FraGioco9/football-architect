@@ -116,7 +116,11 @@
    header.append(title,close);const all=create('ol',undefined,'fa-dev-stats-top');records.forEach((record,i)=>all.append(row(record,i,records,key,player)));current.append(header,all);
    window.dispatchEvent(new Event('fa:stats-dialog-open'));document.body.append(current);current.showModal();sync();close.focus();
   }
+  let previousPresentation=null;
   function render(){
+   const presentation=JSON.stringify([view,invalid,stats]);
+   if(previousPresentation===presentation&&content.firstElementChild){sync();return;}
+   previousPresentation=presentation;
    for(let i=0;i<navButtons.length;i++){const active=views[i][0]===view;navButtons[i].setAttribute('aria-pressed',active);navButtons[i].tabIndex=active?0:-1;}
    content.replaceChildren();
    if(view==='overview'){
