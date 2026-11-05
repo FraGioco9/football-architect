@@ -135,6 +135,9 @@ jobs:
           else
             echo "CSS base/HEAD parity is PR-only; retaining push browser tests."
           fi
+          if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- assets/landing.css assets/app.css assets/account.css assets/clubs-directory.css assets/club-page.css assets/competition-awards.css assets/admin-settings.css | grep -q .; then
+            PR_BASE_SHA="${{ github.event.pull_request.base.sha }}" node tools/ci-run.mjs 8-int24-browser-qa -- node tests/fe-01-visual-parity.mjs
+          fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             node tools/ci-run.mjs 5-int24-browser-qa -- node tests/clean-ui-03-network-baseline.mjs
           else

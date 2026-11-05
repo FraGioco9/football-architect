@@ -10,7 +10,7 @@
 .fa-awards-section{min-width:0}
 .fa-awards-section-title{font-size:16px;margin:0 0 14px}
 .fa-awards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.fa-awards-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;border:1px solid var(--award-outline);background:var(--award-ink);color:#eff6f1;border-radius:14px;overflow-wrap:anywhere}
+.fa-awards-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:var(--fa-space-3);padding:20px;border:1px solid var(--award-outline);background:var(--award-ink);color:#eff6f1;border-radius:var(--fa-radius-panel);overflow-wrap:anywhere}
 .fa-awards-medallion{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:1px solid #837147;background:#2d362b;color:var(--award-gold);font-size:25px;line-height:1}
 .fa-awards-card-title{font-size:17px;line-height:1.3;color:#fff;margin:0}
 .fa-awards-card-pending{color:#b6c5be;font-size:13px;margin:0;line-height:1.45}
