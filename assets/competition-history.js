@@ -68,7 +68,7 @@
   }
   const compare=(a,b)=>a.name.localeCompare(b.name,"en",{sensitivity:"base"})||
     key(a.id).localeCompare(key(b.id),"en");
-  let results=null,dialog=null,returnFocus=null,lockedScroll=null,oldOverflow="";
+  let results=null,dialog=null,returnFocus=null,lockedScroll=null,oldOverflow="",previousPresentation=null,previousCards=null;
   function compute(payload){
     if(!payload||payload.source!=="canonical"||payload.competitionId!==competitionId||
       payload.coverage!=="complete"||!payload.provenance?.approved||
@@ -152,7 +152,14 @@
       .filter(Boolean).join(" · ");
   }
   function render(){
-    for(const card of panel.querySelectorAll("[data-history-player-record]")){
+    const context=window.faCompetitionContext;
+    const clubs=context?.seasonData?.participants||(context?.definition?.category==='domestic'?window.faCompetitionDivision?.clubs:[])||[];
+    const presentation=JSON.stringify([document.documentElement.lang,results,clubs.map(c=>[c.countryId,c.clubId,c.primaryName])]);
+    const cards=[...panel.querySelectorAll("[data-history-player-record]")];
+    if(presentation===previousPresentation&&previousCards?.length===cards.length&&
+      previousCards.every((card,index)=>card===cards[index])){window.faAppRenderLanguage?.();return;}
+    previousPresentation=presentation;previousCards=cards;
+    for(const card of cards){
       const metric=card.dataset.historyPlayerRecord;
       const record=results?.[metric]||null;
       const title=card.querySelector("h5");

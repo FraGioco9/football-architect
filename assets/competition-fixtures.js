@@ -233,7 +233,7 @@
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.fixturesChoiceLabel?.(definition,selectedChoice,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
     if(isPostseason)selectedLabel.dataset.competitionFixtureChoice=String(selectedChoice.value);
     window.faFixturesShell?.select(selected);
-    number.replaceChildren(selectedLabel);
+    if(!number.firstElementChild?.isEqualNode?.(selectedLabel))number.replaceChildren(selectedLabel);
     roundMenu.sync(String(selected));
     if(!available)roundMenu.close();
     const choiceIndex=configured.findIndex(c=>c.value===selected);
@@ -272,7 +272,7 @@
       // Club identities are immutable for a given match key; only results change.
       const oldResult=previous.querySelector?.(".app-fixture-result");
       const newResult=item.querySelector?.(".app-fixture-result");
-      if(oldResult&&newResult)oldResult.replaceWith(newResult);
+      if(oldResult&&newResult&&!oldResult.isEqualNode?.(newResult))oldResult.replaceWith(newResult);
       return previous;
     });
     if(international){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
@@ -292,7 +292,8 @@
         usedCrests.add(placeholder);
       }
     }
-    if(typeof fields.list.insertBefore==="function"){
+    if(window.faCompetitionRenderDOM?.reorder)window.faCompetitionRenderDOM.reorder(fields.list,next);
+    else if(typeof fields.list.insertBefore==="function"){
       for(let i=0;i<next.length;i++)if(fields.list.children[i]!==next[i])fields.list.insertBefore(next[i],fields.list.children[i]||null);
       while(fields.list.children.length>next.length)fields.list.lastElementChild.remove();
     }else fields.list.replaceChildren(...matches);
