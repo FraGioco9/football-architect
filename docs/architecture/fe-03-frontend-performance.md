@@ -22,11 +22,11 @@ node tools/fe-03-browser-profile.mjs after --runs=20
 
 Outputs are int24-browser-artifacts/fe-03-before.json and fe-03-after.json. Do not commit generated artifacts. DEV always sends Cache-Control: no-store; the tool uses cold Chromium contexts, so no claim about production CDN caching or warm-cache benefit is possible. Browser metrics and real interaction time have NOT been executed in the GitHub-connector-only environment and are UNKNOWN, not PASS. The profiler is a diagnostic, not a replacement for CI or the FE-05 suite. Results are p50/p75/p95, with HTTP errors recorded rather than hidden.
 
-## P1: preserve pre-rendered standings DOM
+## P1: competition startup — candidate deferred after failed parity tests
 
-Previously both domestic and international competition startup paths read the entire .app-world-standings.outerHTML string, rewrote HTML text to add a mobile list, and replaced the complete mounted subtree through outerHTML assignment. This is unnecessary work because all desktop standings rows and their crest hosts were already generated at first paint.
+An initial experiment replaced two standings outerHTML serialization/parse roundtrips with direct compact-shell insertion. The existing Site suite reported nineteen broken source/harness and competition state contracts during this change, so the experiment was **reverted completely**, rather than widening FE-03 into shared test harness migrations. The original competition initialization is preserved byte-for-byte from the base commit. No unmeasured script parallelism, loading order changes or new network cache policy are introduced.
 
-FE-03 directly assigns the unchanged full-table ID and appends the same compact div/ol shell as a DOM sibling. The initial HTML, parser-time paint, visible geometry, locale/theme values, row identities, crest nodes, and response-validation flow remain unchanged. The prior two outerHTML serialization/parse roundtrips are removed by source-level proof; exact browser QA is still required to establish parity on the final HEAD. No script-order or HTTP-cache changes are made: parallelizing dependent classic scripts without evidence could change error handling and runtime globals.
+A future separate change may revisit bootstrap speed only after before/after browser traces and a supported runtime/harness parity plan. P1's performance improvement is **NOT CLAIMED** in this PR.
 
 ## P2: avoid transient HTML creation when filtering Clubs
 
@@ -38,7 +38,7 @@ Isolated synthetic JavaScript benchmark (not browser DOM timing): V8 isolate wit
 
 ## Validation and risks
 
-The existing SH-02 Node test validates compact DOM insertion, IDs, original full-table identity and duplicate guard. The Club Node test validates cache fast-path/fallback; existing club/browser tests remain the runtime acceptance authority. No workflow, test ownership registry, screenshots, snapshots or other FE-05 infrastructure are modified.
+The existing SH-02 Node test and competition startup remain unchanged from the baseline after the failed P1 experiment. The Club Node test validates the cache fast-path/fallback; existing club/browser tests remain the runtime acceptance authority. No workflow, test ownership registry, screenshots, snapshots or other FE-05 infrastructure are modified.
 
 Required final gate: exact-head Site + Browser + Admin + FULL evidence, all generated-page checks, relevant 320/390/768/1440 responsive and two-theme/five-locale regression suites, keyboard accessibility/focus, crest reuse, competition and club refresh, Back/Forward, Debug/source/season changes and error/slow response behavior. Actual iPhone Safari and before/after browser performance metrics remain UNKNOWN without live runs; avoid claiming PASS for them.
 

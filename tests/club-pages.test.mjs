@@ -344,8 +344,8 @@ test('SAF-05 club league links open the selected season without an unparameteriz
 test('FE-03: directory filters reuse the 320 initial keyed cards without parsing fresh markup',()=>{
  const source=read('assets/clubs-directory.js');
  assert.match(source,/const cardCache=new Map/);
- assert.match(source,/const cacheHits=hits\.map\(c=>cardCache\.get\(/);
- assert.match(source,/const reuseCached=hits\.length>0&&cacheHits\.every\(Boolean\)/);
+ assert.match(source,/const cacheHits=typeof cardCache==='undefined'\?\[\]:hits\.map\(c=>cardCache\.get\(/);
+ assert.match(source,/const reuseCached=hits\.length>0&&cacheHits\.length===hits\.length&&cacheHits\.every\(Boolean\)/);
  assert.match(source,/const staging=reuseCached\?null:/);
  assert.match(source,/if\(staging\)staging\.innerHTML=/,'missing cards and empty results retain the fallback');
  assert.match(source,/const nodes=reuseCached\?cacheHits\.map/);

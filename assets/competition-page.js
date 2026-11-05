@@ -42,22 +42,21 @@
     L:["standingsDemoFormLoss","Loss","standingsDemoLossLetter"]
   };
   const demoFormTriggers = [];
-  // Preserve the parser-created table, links and crest hosts while adding the mobile view.
-  // Re-serializing outerHTML would discard the existing standings subtree at startup.
-  function mountMobileShell(standings) {
-    const full=standings?.querySelector('.app-world-standing-scroll');
-    if(!full||full.parentElement!==standings||standings.querySelector('#app-standings-compact'))
+  // Enhance only the standings region; logos remain in their original declarative shadow roots.
+  function withMobileShell(html) {
+    const open = '<div class="app-world-standings">';
+    const close = '</table>\n            </div>\n          </div>';
+    if (html.split(open).length !== 2 || html.split(close).length !== 2)
       throw Error("Unexpected shared standings markup");
-    full.id='app-standings-full';
-    const compact=document.createElement('div');
-    compact.className='app-world-compact';
-    compact.id='app-standings-compact';
-    compact.hidden=true;
-    const list=document.createElement('ol');
-    list.className='app-world-mobile-list';
-    list.id='app-standings-compact-list';
-    compact.appendChild(list);
-    full.after(compact);
+    const compact = [
+      '<div class="app-world-compact" id="app-standings-compact" hidden>',
+      '<ol class="app-world-mobile-list" id="app-standings-compact-list"></ol>',
+      '</div>'
+    ].join("");
+    return html
+      .replace('<div class="app-world-standing-scroll" role="region"',
+        '<div class="app-world-standing-scroll" id="app-standings-full" role="region"')
+      .replace(close,'</table>\n            </div>'+compact+'\n          </div>');
   }
 
   function createCrestHost(id) {
@@ -947,7 +946,7 @@
     // Only standings are enhanced; the original inline logo DOM is never replaced.
     const standings=document.querySelector(".app-world-standings");
     if(!standings)throw Error("Missing standings");
-    mountMobileShell(standings);
+    standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
     window.faThemeRebind?.(); // Rebind unrelated branding/theme controls.
     const flag = document.getElementById("app-competition-flag");
@@ -1000,7 +999,7 @@
       delete window.faCompetitionDivision;
       const standings=document.querySelector('.app-world-standings');
       if(!standings)throw Error('Missing standings');
-      mountMobileShell(standings);
+      standings.outerHTML=withMobileShell(standings.outerHTML);
       suppliedMobile=createMobileStandings();window.faStandingsMobile=suppliedMobile;
       window.faPostseasonTips=bindPostseasonTips();
       mountedPostseasonGraph=JSON.stringify(definition.rules.phases.filter(p=>p.type==='knockout'));

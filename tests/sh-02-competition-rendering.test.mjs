@@ -93,26 +93,3 @@ test('SH-02: shared consumer boundary changes neither API authority nor phase po
  assert.match(read('assets/competition-history.js'),/previousCards\?\.length===cards\.length/,'a replaced History tree must be hydrated even with unchanged data');
  assert.match(page,/restoreFocus/,'reordered standings preserve active element focus');
 });
-
-test('FE-03: mobile standings shell keeps the original parsed standings subtree',()=>{
- const begin=page.indexOf('  function mountMobileShell(');
- const end=page.indexOf('\n  function createCrestHost',begin);
- assert.ok(begin>=0&&end>begin,'mobile enhancer must be present in the competition controller');
- const createElement=tag=>({tagName:tag.toUpperCase(),children:[],appendChild(node){this.children.push(node)}});
- const mount=runInNewContext(page.slice(begin,end)+';mountMobileShell',{document:{createElement}});
- const full={id:'',sibling:null,after(node){this.sibling=node}};
- const standings={querySelector(selector){
-  if(selector==='.app-world-standing-scroll')return full;
-  if(selector==='#app-standings-compact')return full.sibling;
-  return null;
- }};
- full.parentElement=standings;
- mount(standings);
- assert.equal(full.id,'app-standings-full');
- assert.equal(full.sibling?.id,'app-standings-compact');
- assert.equal(full.sibling?.hidden,true);
- assert.equal(full.sibling?.children?.[0]?.id,'app-standings-compact-list');
- assert.equal(full.sibling?.children?.[0]?.className,'app-world-mobile-list');
- assert.throws(()=>mount(standings),/Unexpected shared standings markup/);
- assert.doesNotMatch(page,/standings\.outerHTML\s*=/,'startup must not reparse the already-mounted standings table');
-});
