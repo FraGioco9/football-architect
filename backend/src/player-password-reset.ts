@@ -4,27 +4,15 @@ import type {Database} from './database.ts';
 import {parseOperatorEmail} from './email-identity.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken} from './session-tokens.ts';
-import {hashText} from './auth.ts';
+import {reservePlayerAuthThrottle} from './auth-throttle-policy.ts';
 import type {VerificationDelivery} from './player-registration.ts';
 
 const response={accepted:true};
 const invalid=()=>new ApiError(400,'invalid_reset_token');
-async function reserve(db:Database,email:string,source:string,now:number){
- const sql=`INSERT INTO player_auth_throttles(throttle_key,window_start,attempts,expires_at) VALUES(?,?,1,?)
- ON CONFLICT(throttle_key) DO UPDATE SET
- attempts=CASE WHEN expires_at<=? THEN 1 ELSE attempts+1 END,
- window_start=CASE WHEN expires_at<=? THEN ? ELSE window_start END,
- expires_at=CASE WHEN expires_at<=? THEN ? ELSE expires_at END RETURNING attempts`;
- const call=(key:string)=>db.prepare(sql).bind(key,now,now+3600,now,now,now,now,now+3600).first<{attempts:number}>();
- const sourceRow=await call('reset-source:'+await hashText(source));
- if(!sourceRow||sourceRow.attempts>10)throw new ApiError(429,'reset_throttled');
- const accountRow=await call('reset-account:'+await hashText(email));
- if(!accountRow||accountRow.attempts>3)throw new ApiError(429,'reset_throttled');
-}
 export async function requestPasswordReset(db:Database,body:unknown,source:string,now:number,deliver:VerificationDelivery,locale='en'){
  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body as object).join(',')!=='email')throw new ApiError(422,'invalid_reset_request');
  let email:string;try{email=parseOperatorEmail((body as {email:unknown}).email)}catch{throw new ApiError(422,'invalid_reset_request')}
- await reserve(db,email,source,now);
+ await reservePlayerAuthThrottle(db,'reset',email,source,now);
  const account=await db.prepare("SELECT id FROM player_accounts WHERE email_normalized=? AND status='active' AND email_verified_at IS NOT NULL").bind(email).first<{id:string}>();
  if(!account)return response;
  const token=createOpaqueToken(),digest=await digestOpaqueToken(token);

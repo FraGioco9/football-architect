@@ -4,7 +4,7 @@ import type {Database} from './database.ts';
 import {parseOperatorEmail} from './email-identity.ts';
 import {validatePasswordShape} from './password-policy.ts';
 import {createOpaqueToken,digestOpaqueToken} from './session-tokens.ts';
-import {hashText} from './auth.ts';
+import {reservePlayerAuthThrottle} from './auth-throttle-policy.ts';
 import {parseRegistrationProfile} from './player-profile.ts';
 
 /** Delivery is injected only by an explicitly configured server-side provider.
@@ -12,18 +12,6 @@ import {parseRegistrationProfile} from './player-profile.ts';
  */
 export type VerificationDelivery=(email:string,token:string,locale?:string)=>Promise<void>;
 const generic={accepted:true,verificationRequired:true};
-async function throttle(db:Database,email:string,source:string,now:number){
- const sql=`INSERT INTO player_auth_throttles(throttle_key,window_start,attempts,expires_at)
- VALUES(?,?,1,?) ON CONFLICT(throttle_key) DO UPDATE SET
- attempts=CASE WHEN expires_at<=? THEN 1 ELSE attempts+1 END,
- window_start=CASE WHEN expires_at<=? THEN ? ELSE window_start END,
- expires_at=CASE WHEN expires_at<=? THEN ? ELSE expires_at END RETURNING attempts`;
- const reserve=async(key:string)=>db.prepare(sql).bind(key,now,now+3600,now,now,now,now,now+3600).first<{attempts:number}>();
- const sourceResult=await reserve('registration-source:'+await hashText(source));
- if(!sourceResult||sourceResult.attempts>10)throw new ApiError(429,'registration_throttled');
- const accountResult=await reserve('registration-account:'+await hashText(email));
- if(!accountResult||accountResult.attempts>3)throw new ApiError(429,'registration_throttled');
-}
 export async function registerPlayer(db:Database,input:unknown,source:string,now:number,deliver:VerificationDelivery,locale='en'){
  if(!input||typeof input!=='object'||Array.isArray(input))throw new ApiError(422,'invalid_registration');
  const fields=input as Record<string,unknown>;
@@ -31,7 +19,7 @@ export async function registerPlayer(db:Database,input:unknown,source:string,now
   throw new ApiError(422,'invalid_registration');
  const profile=parseRegistrationProfile(fields);
  let email:string;try{email=parseOperatorEmail(fields.email)}catch{throw new ApiError(422,'invalid_registration')}
- await throttle(db,email,source,now);
+ await reservePlayerAuthThrottle(db,'registration',email,source,now);
  // Username availability is public, but must never depend on email existence.
  const taken=await db.prepare('SELECT id FROM player_accounts WHERE username=? COLLATE NOCASE').bind(profile.username).first();
  if(taken)throw new ApiError(409,'username_unavailable');
