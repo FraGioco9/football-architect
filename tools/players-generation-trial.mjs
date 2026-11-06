@@ -132,6 +132,8 @@ const GENERATION_PROFILES=Object.freeze({
  versatile:Object.freeze({primary:.50,secondary:.50})
 });
 const correlations=[['speed','agility',.30],['passing','vision',.35],['tackling','marking',.30],['dribbling','technique',.40],['shooting','composure',.25]];
+const diminutives={BRA:{João:'Joãozinho',Rafael:'Rafinha',Pedro:'Pedrinho'},POR:{João:'Joãozinho',Francisco:'Chiquinho',António:'Toninho'},ESP:{Francisco:'Paco',José:'Pepe',Álvaro:'Alvarito'}};
+const knownAsRates={BRA:.50,POR:.20,ESP:.15,CVP:.10}; // CVP is a future exception, outside the initial top 50.
 // Explicit conservative automatic pair allowlist; every unlisted pair has 0% probability.
 // The V6 trial includes high-confidence diaspora/migration links supported by
 // official statistics (Istat, Destatis, ONS, Italian Ministry of Labour).
@@ -468,10 +470,13 @@ function generateCandidate(rng,index,options,trialSeed){
  const actualPrimarySuitability=useSuitabilityTarget?
   conditionAttributesToPrimarySuitability(attributes,position,
    primarySuitabilityTarget,options.attributes):null;
+ const rate=knownAsRates[country]||0;
+ const knownAs=options.knownAs==='none'?null:(typeof options.knownAs==='string'&&options.knownAs!=='automatic'?options.knownAs:(rng()<rate?(diminutives[country]?.[first]??null):null));
+ if(knownAs!==null&&knownAs===`${first} ${last}`)throw Error('known_as must not repeat full name');
  return {
   preview_id:`trial-${String(index+1).padStart(4,'0')}`,
   // Permanent id and authoritative entry_season exist only after final confirmation; this tool never persists.
-  first_name:first,last_name:last,display_name:`${first} ${last}`,
+  first_name:first,last_name:last,known_as:knownAs,display_name:knownAs||`${first} ${last}`,
   initial_age:age,nationality:country,secondary_nationality:secondaryNationality(country,rng,options),
   height_cm:height,preferred_foot:foot,primary_position:position,secondary_positions:secondaries,
   ...(legacy?{}:{trial_role_profile:profile}), // trial metadata, never a persisted field
@@ -530,12 +535,12 @@ export function generateTrial(options={}){
    surnames:nationalNamePools.surnameSource},candidates};
 }
 export function summarize(trial){
- const groups={countries:{},positions:{},ages:{},secondaryCounts:{},secondNationalities:0};
+ const groups={countries:{},positions:{},ages:{},secondaryCounts:{},knownAs:0,secondNationalities:0};
  for(const p of trial.candidates){
   for(const [key,value] of [['countries',p.nationality],['positions',p.primary_position],['ages',p.initial_age],['secondaryCounts',p.secondary_positions.length]])groups[key][value]=(groups[key][value]||0)+1;
-  if(p.secondary_nationality)groups.secondNationalities++;
+  if(p.known_as)groups.knownAs++;if(p.secondary_nationality)groups.secondNationalities++;
  }
- return {count:trial.count,seed:trial.seed,snapshot:trial.ranking_snapshot,distinct_countries:Object.keys(groups.countries).length,secondary_nationalities:groups.secondNationalities,countries:groups.countries,positions:groups.positions,ages:groups.ages,secondary_counts:groups.secondaryCounts};
+ return {count:trial.count,seed:trial.seed,snapshot:trial.ranking_snapshot,distinct_countries:Object.keys(groups.countries).length,known_as:groups.knownAs,secondary_nationalities:groups.secondNationalities,countries:groups.countries,positions:groups.positions,ages:groups.ages,secondary_counts:groups.secondaryCounts};
 }
 function spearman(xs,ys){
  const rank=a=>{const indexed=a.map((v,i)=>[v,i]).sort((a,b)=>a[0]-b[0]),r=[];let i=0;while(i<indexed.length){let j=i+1;while(j<indexed.length&&indexed[j][0]===indexed[i][0])j++;const mid=(i+j+1)/2;for(let k=i;k<j;k++)r[indexed[k][1]]=mid;i=j;}return r;};
@@ -739,6 +744,7 @@ export function selfTest(){
    assert.ok(related.has(`${p.nationality}:${p.secondary_nationality}`),
     'Automatic secondary nationality must use an eligible country pair');
   }
+  if(p.known_as){assert.ok(['BRA','POR','ESP'].includes(p.nationality));assert.notEqual(p.known_as,`${p.first_name} ${p.last_name}`);}
  }
  assert.throws(()=>generateTrial({count:1001}),/1 to 1000/);
  assert.throws(()=>generateTrial({count:0}),/1 to 1000/);
@@ -767,11 +773,11 @@ export function selfTest(){
     assert.ok(related.has(`${primaryNationality}:${candidate.secondary_nationality}`),
      'Unexpected unrelated secondary country');
  }
- const manual=generateTrial({count:1,primaryNationality:'BRA',primaryPosition:'LB',preferredFoot:'right',secondaryPositions:['RB'],age:19,height:[160,160],developmentAptitude:[99,99],attributes:{shooting:[70,72]}}).candidates[0];
- assert.deepEqual(manual.secondary_positions,['RB']);assert.equal(manual.height_cm,160);assert.equal(manual.development_aptitude,99);assert.ok(manual.attributes.shooting>=70&&manual.attributes.shooting<=72);
+ const manual=generateTrial({count:1,primaryNationality:'BRA',primaryPosition:'LB',preferredFoot:'right',secondaryPositions:['RB'],age:19,height:[160,160],developmentAptitude:[99,99],knownAs:'none',attributes:{shooting:[70,72]}}).candidates[0];
+ assert.deepEqual(manual.secondary_positions,['RB']);assert.equal(manual.height_cm,160);assert.equal(manual.development_aptitude,99);assert.equal(manual.known_as,null);assert.ok(manual.attributes.shooting>=70&&manual.attributes.shooting<=72);
  const highManualGK=generateTrial({count:1,primaryPosition:'ST',attributes:{gk_reflexes:95}}).candidates[0];
  assert.equal(highManualGK.attributes.gk_reflexes,95,'Manual exact goalkeeper attribute must be preserved');
- const heightTrial={count:1,seed:'heading-height-smoke',primaryPosition:'ST'};
+ const heightTrial={count:1,seed:'heading-height-smoke',primaryPosition:'ST',knownAs:'none'};
  const lowHeight=generateTrial({...heightTrial,height:160}).candidates[0];
  const highHeight=generateTrial({...heightTrial,height:205}).candidates[0];
  assert.ok(highHeight.attributes.heading>lowHeight.attributes.heading,'Taller striker should have higher automatically generated heading under matched seed');
@@ -779,7 +785,7 @@ export function selfTest(){
  assert.equal(manualHeading.attributes.heading,42,'Explicit manual heading must override height adjustment');
  const rangedHeading=generateTrial({...heightTrial,height:205,attributes:{heading:[40,41]}}).candidates[0];
  assert.ok(rangedHeading.attributes.heading>=40&&rangedHeading.attributes.heading<=41,'Manual heading range must override height adjustment');
- const keeperHeightTrial={count:1,seed:'keeper-heading-height-smoke',primaryPosition:'GK'};
+ const keeperHeightTrial={count:1,seed:'keeper-heading-height-smoke',primaryPosition:'GK',knownAs:'none'};
  const shortKeeper=generateTrial({...keeperHeightTrial,height:160}).candidates[0];
  const tallKeeper=generateTrial({...keeperHeightTrial,height:205}).candidates[0];
  assert.equal(shortKeeper.attributes.heading,tallKeeper.attributes.heading,'GK heading must not change based on height');

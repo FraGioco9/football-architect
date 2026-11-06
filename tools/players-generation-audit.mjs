@@ -474,11 +474,8 @@ function selfTest(){
  assert.equal(Object.keys(result.core_floor.by_role).length,14);
  assert.ok(Object.values(result.core_floor.by_role).every(x=>x.players_changed>0));
  assert.ok(result.core_floor.corrected_attributes>0);
- // Removing alias-name draws changes the deterministic sample sequence.
- // Keep the invariant: role core-floor balancing never lowers shooting.
- const shot=result.comparison.trial_0143_before_after;
- assert.ok(Number.isInteger(shot.shooting_before)&&shot.shooting_before>=1&&shot.shooting_before<=99);
- assert.ok(Number.isInteger(shot.shooting_after)&&shot.shooting_after>=shot.shooting_before&&shot.shooting_after<=99);
+ assert.equal(result.comparison.trial_0143_before_after.shooting_before,48);
+ assert.ok(result.comparison.trial_0143_before_after.shooting_after>=62);
  assert.ok(result.pooled.contrasts.ST__CB__shooting.pairwise_win_probability<1);
  assert.throws(()=>audit(1001),/Count must be/);
  return {passed:true,count_per_scenario:2000,seed_count:2,

@@ -6,6 +6,8 @@
 
 **Verified snapshot: 139,020 actual surnames in 50/50 national JSONs; 0 missing versus each national target; 24,020 valid entries retained beyond country quotas.** Thus **30 `complete` / 20 `over_target` / 0 `partial` / 0 `pending` / 0 `blocked`**. This is **not** final numerical quota compliance: 20 above-target banks require an explicit owner decision; no trimming, random deletion or silent deduplication.
 
+The catalog uses `kind: "surnames"` and `selection_policy: "uniform"`, matching the existing main-branch local player-name pool reader; no first-name or player generator code is changed by this PR.
+
 Each country has `rank`, `target_count`, `actual_count`, `missing_count=max(0,target-actual)`, `excess_count=max(0,actual-target)` and `status`. `over_target` carries `over_target_review_required:true`. `production_ready:false` on every bank, including complete banks. All selection is `uniform`, never based on national rank, source incidence or any weight.
 
 Each surname is stored only in its national `countries/<CODE>.json` as `{ "value": "Cognome" }`. The catalog does not duplicate surname arrays. Accept only NFC, Latin-script base letters with authentic accents/Latin combining marks, case-insensitive unique values within country, and documented compounds with separators. Latin transliteration is required for original non-Latin scripts.

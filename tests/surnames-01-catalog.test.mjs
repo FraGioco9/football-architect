@@ -28,7 +28,7 @@ test('exact fixed ranking, 4 tiers and 115,000 aggregate target',()=>{
  assert.deepEqual(catalog.countries.map(x=>x.code),codes);
  assert.equal(new Set(codes).size,50);
  assert.equal(catalog.schema_version,1);
- assert.equal(catalog.kind,'surnames_catalog');
+ assert.equal(catalog.kind,'surnames'); // match main's player-name adapter contract without changing PLAYERS-03
  assert.equal(catalog.ranking_policy,'fixed_50_country_rank');
  assert.deepEqual(catalog.ranking_tiers,tiers);
  assert.equal(tiers.reduce((n,t)=>n+(t.end_rank-t.start_rank+1)*t.target_count,0),115000);

@@ -7,10 +7,6 @@ on:
       - 'tests/surnames-01-catalog.test.mjs'
       - 'tools/ci-test-ownership.json'
       - '.github/workflows/surnames-01.yml'
-      - 'tools/players-generation-trial.mjs'
-      - 'tools/players-generation-audit.mjs'
-      - 'tools/players-name-pools.mjs'
-      - 'tests/players-name-pools.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -29,7 +25,7 @@ jobs:
         shell: bash
         run: |
           git diff --name-only origin/main...HEAD > /tmp/surnames-01-changed.txt
-          if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|tests/players-name-pools\.test\.mjs|tools/players-generation-trial\.mjs|tools/players-generation-audit\.mjs|tools/players-name-pools\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
+          if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
             echo 'Out-of-scope changes in SURNAMES-01 PR' >&2
             exit 1
           fi

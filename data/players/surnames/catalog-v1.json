@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "kind": "surnames_catalog",
+  "kind": "surnames",
   "selection_policy": "uniform",
   "production_ready": false,
   "countries": [
