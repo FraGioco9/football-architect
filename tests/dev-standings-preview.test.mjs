@@ -342,6 +342,10 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     assert.equal(theme.status,200,"DEV loopback must serve required public runtime");
     assert.match(theme.headers["content-type"],/javascript/);
     assert.equal(theme.headers["cache-control"],"no-store");
+    const favicon=await get("/favicon.ico");
+    assert.equal(favicon.status,200);
+    assert.equal(favicon.headers["cache-control"],"public, max-age=86400",
+      "static favicon can be cached across same-origin tabs");
     assert.ok(theme.body.includes("football-architect:theme"));
     assert.ok(theme.body.includes("data-theme"));
     assert.ok(!theme.body.includes("__fa_dev__"));

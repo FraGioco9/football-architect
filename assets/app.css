@@ -1206,6 +1206,10 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
  .app-standings-skeleton .app-world-mobile-name{width:148px;max-width:100%;margin-left:0}
  .app-standings-skeleton .app-world-mobile-points{width:24px;min-height:30px;padding:0}
  .app-standings-skeleton .app-world-mobile-form{width:60px;margin-left:48px}
+ /* Pending, unplayed and populated standings use the same row height. */
+ #competition-panel-standings .app-world-mobile-summary{
+  height:84px;min-height:84px;box-sizing:border-box;
+ }
 }
 /* DEV hides the canonical table until commit; the decorative table remains visible. */
 #competition-panel-standings>.app-standings-skeleton .app-world-standing-table{visibility:visible}

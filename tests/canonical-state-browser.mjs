@@ -147,6 +147,24 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().source==='authoritative'&&window.faWorldState.get().current?.season===2);
   await page.evaluate(()=>window.faCompetitionRoute.set({season:'2'}));
   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative');
+  // Debug OFF must render the real partial-season table, including recent form.
+  await page.waitForFunction(()=>document.querySelector('#app-standings-body tr')?.children[9]?.textContent?.trim()!=='—'&&
+    document.querySelector('#app-standings-compact-list .app-world-mobile-position')?.textContent?.trim()!=='—');
+  assert.equal(await page.locator('#app-standings-body tr').count(),16);
+  assert.equal(await page.locator('#app-standings-compact-list li').count(),16);
+  assert.ok(await page.locator('#app-standings-body tr .app-world-form-strip').count()>0,'published recent form');
+  const viewportBefore=page.viewportSize();
+  await page.setViewportSize({width:390,height:844});
+  const heights=await page.evaluate(()=>{
+    const loaded=document.querySelector('#app-standings-compact-list .app-world-mobile-summary');
+    const pending=document.querySelector('.app-standings-skeleton .app-world-mobile-summary');
+    const skeleton=pending.closest('.app-standings-skeleton');
+    skeleton.style.display='block';
+    const result=[loaded.getBoundingClientRect().height,pending.getBoundingClientRect().height];
+    skeleton.style.removeProperty('display');return result;
+  });
+  assert.deepEqual(heights,[84,84],'mobile pending/loaded geometry must match');
+  await page.setViewportSize(viewportBefore);
   await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('focus'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');

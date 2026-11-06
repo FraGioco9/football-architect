@@ -109,12 +109,19 @@ export function adaptAuthoritativeSeason(source,context,manifest){
   results.push({id:f.tieId,tieId:f.tieId,winnerId:games.at(-1).result?.winnerClubId??null,
    legs:games.map(g=>g.result?{...fixtures[d.fixtures.indexOf(g)],homeId:g.homeClubId,awayId:g.awayClubId}:null)});
  }
- const recent=(id,all=false)=>d.fixtures.filter(f=>(all||f.phaseId==='league')&&f.result!==null&&[f.homeClubId,f.awayClubId].includes(id)).sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id)).map(f=>{
+ const completedMatches=(id,all=false)=>d.fixtures.filter(f=>(all||f.phaseId==='league')&&f.result!==null&&[f.homeClubId,f.awayClubId].includes(id)).sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id));
+ const resultFor=(id,f)=>{
   const home=f.homeClubId===id,own=home?f.result.homeGoals:f.result.awayGoals,other=home?f.result.awayGoals:f.result.homeGoals;
   return own>other?'W':own<other?'L':'D';
- });
+ };
+ // Chronological form letters serve the team leaderboard. The compact table
+ // needs verified fixture metadata, most recent match first.
+ const recent=(id,all=false)=>completedMatches(id,all).map(f=>resultFor(id,f));
+ const recentDetails=id=>completedMatches(id).slice(-5).reverse().map(f=>({
+  result:resultFor(id,f),round:f.round,homeId:club(f.homeClubId),awayId:club(f.awayClubId)
+ }));
  const statistics={overview:{matchesPlayed:d.statistics.matchesPlayed,totalGoals:d.statistics.totalGoals,goalsPerMatch:d.statistics.goalsPerMatch},
-  standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recent(r.clubId).slice(-5)})),
+  standings:d.standings.rows.map(r=>({club:catalog.get(r.clubId),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,gf:r.goalsFor,ga:r.goalsAgainst,gd:r.goalDifference,pts:r.points,recent:recentDetails(r.clubId)})),
   teams:d.statistics.teams.map(t=>{const form=recent(t.clubId,true),lastLoss=form.lastIndexOf('L');return {clubKey:t.clubId,clubName:catalog.get(t.clubId).primaryName,mp:t.played,gf:t.goalsFor,ga:t.goalsAgainst,w:t.won,cs:t.cleanSheets,ppg:t.played?(3*t.won+t.drawn)/t.played:0,gd:t.goalDifference,unbeatenStreak:form.length-lastLoss-1}}),players:[]};
  const currentChoice=viewedSeasonState(source)?.phase==='active'&&source.world.seasonNumber===d.season?
   globalThis.faCompetitionRules.currentFixtureChoice(definition,globalThis.faWorldCalendarModel.projectCompetition(d.season,definition.id),{current:{season:source.world.seasonNumber,day:source.world.day}}):null;

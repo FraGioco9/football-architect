@@ -59,6 +59,26 @@ test('adapts a complete published schedule into existing domestic fixture and ta
  assert.equal(data.provenance.kind,'authoritative');assert.equal(data.currentMatchday,1);
  assert.ok(Object.isFrozen(data));
 });
+test('published recent form keeps newest-first verified fixture metadata',()=>{
+ const raw=source(),id=raw.data.participants[0];
+ const matches=raw.data.fixtures.filter(f=>f.phaseId==='league'&&f.round<=3&&[f.homeClubId,f.awayClubId].includes(id))
+  .sort((a,b)=>a.round-b.round).slice(0,3);
+ assert.equal(matches.length,3);
+ raw.world={...world,day:15};
+ for(const [i,f] of matches.entries()){
+  const home=f.homeClubId===id,own=i===0?2:i===1?1:0,opponent=i===0?0:i===1?1:2;
+  f.result={homeGoals:home?own:opponent,awayGoals:home?opponent:own,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:i===1?null:i===0?id:home?f.awayClubId:f.homeClubId};
+ }
+ const data=adaptAuthoritativeSeason(raw,ctx(),manifest);
+ const row=data.statistics.standings.find(item=>item.club.countryId+'-'+item.club.clubId===id);
+ assert.deepEqual(row.recent.map(item=>item.result),['L','D','W']);
+ assert.deepEqual(row.recent.map(item=>item.round),[3,2,1]);
+ assert.ok(row.recent.every(item=>Number.isInteger(item.homeId)&&Number.isInteger(item.awayId)&&item.homeId!==item.awayId));
+ assert.ok(row.recent.every(item=>!Object.hasOwn(item,'homeGoals')&&!Object.hasOwn(item,'awayGoals')));
+ assert.equal(data.statistics.teams.length,16,'team leaderboards preserve chronological form');
+ assert.deepEqual(adaptAuthoritativeSeason(source(),ctx(),manifest).statistics.standings[0].recent,[]);
+});
+
 test('rejects future scores, wrong rules, standings totals, identities and fabricated player statistics',()=>{
  const changes=[
   r=>{r.data.fixtures[0].result={homeGoals:0,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:null}},
