@@ -15,7 +15,6 @@ export interface InternalFootballer {
   height_cm?: number;
   preferred_foot?: string;
   career_status?: string;
-  [internalField: string]: unknown;
 }
 export interface FootballerPublicContext {
   /** Authoritative persistent identifier (never a preview_id). */

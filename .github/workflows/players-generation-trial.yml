@@ -135,10 +135,13 @@ jobs:
            assert.equal(trial.count,3);
            assert.equal(trial.persisted,false);
            for(const p of trial.candidates){
-            assert.ok(p.trial_primary_suitability_target>=low&&
-             p.trial_primary_suitability_target<=high);
+            // Only real player attributes appear in exported JSON. Generator
+            // target/profile QA properties are deliberately non-serializable.
+            for(const hidden of ['trial_role_profile','trial_primary_suitability_target',
+             'trial_primary_suitability_actual'])assert.equal(hidden in p,false);
             const actual=calculatePositionSuitability(p.attributes,p.primary_position);
-            assert.ok(Math.abs(actual-p.trial_primary_suitability_target)<=.500001);
+            assert.ok(actual>=low-.500001&&actual<=high+.500001,
+             'Rendered player abilities must match the requested target window');
             assert.equal(Object.keys(p.attributes).length,20);
            }
           }
