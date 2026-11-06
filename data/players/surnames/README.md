@@ -2,7 +2,7 @@
 
 ## Status and usage boundaries
 
-- **50 country files are present**, with **24,855 surnames**: 49 pools of 500 and Portugal (POR) at **355/500**; **145 documented surnames are still missing**. The catalog uses `complete` for a structurally validated 500-entry pool and `partial` for POR. Neither means production or legal certification.
+- **50 country files are present**, with **25,000 surnames**: all **50 national pools contain 500 entries**. The catalog uses `complete` for structurally validated 500-entry pools. This does **not** mean person-level attestation or production/legal certification; each bank remains research-only.
 - Every surname has **equal selection probability within its country pool**. The JSON entry schema is only `{ "value": "..." }`; **no weight, probability, rank or frequency field is permitted**. Country incidence/rank data are cited as evidence of a surname's occurrence **only**. There is no generator integration in this PR.
 - All files have `production_ready: false`; country attestation, exact original spellings, romanization equivalence and upstream source/licensing rights require separate manual review before release.
 - Codes are the same 50 national codes, in the same order, as PLAYERS-03 PR #407's catalog as verified at `5eaff1081d6c04edae858bd0999c95b09880c1ad`. **PLAYERS-03 files and PR #407 are untouched**.
@@ -12,7 +12,7 @@
 
 | Batch | Countries | Source PR (Draft/HOLD) | Source HEAD pinned | Surnames |
 | --- | --- | --- | --- | ---: |
-| A | ENG, WAL, POR, BRA | [#433](https://github.com/FraGioco9/football-architect/pull/433) | [422ce60e75e5](https://github.com/FraGioco9/football-architect/commit/422ce60e75e546b23ab5680baa41a5d26ab62939) | 1855 |
+| A | ENG, WAL, POR, BRA | [#433](https://github.com/FraGioco9/football-architect/pull/433) | [730d3ddff2b9](https://github.com/FraGioco9/football-architect/commit/730d3ddff2b9174578b9b2d4088fff8dbe6663c0) | 2000 |
 | B | GER, AUT, SUI, BEL | [#429](https://github.com/FraGioco9/football-architect/pull/429) | [9320b6dae742](https://github.com/FraGioco9/football-architect/commit/9320b6dae74206f56a332fc7d6cd3d6870be21c8) | 2000 |
 | C | NED, DEN, NOR, SWE | [#426](https://github.com/FraGioco9/football-architect/pull/426) | [1ad95c65aa30](https://github.com/FraGioco9/football-architect/commit/1ad95c65aa30c92fcb809377cdc3f11289be119f) | 2000 |
 | D | ARG, MEX, COL, CHI | [#437](https://github.com/FraGioco9/football-architect/pull/437) | [7c479fbc6cb6](https://github.com/FraGioco9/football-architect/commit/7c479fbc6cb671822637bea95e48b8343eb5c6df) | 2000 |
@@ -32,7 +32,7 @@ All 13 independent batch PRs remain open and untouched; do not merge or close th
 
 The **national JSON `sources` arrays are the authoritative per-country citations** (source URLs, geography, periods, corpus/publisher, romanization conventions and caveats). Their existence does **not** constitute independent verification of each resident's surname or permission to redistribute the original data.
 
-- **A**: England and Wales documented separately; Portugal's published Forebears table yielded only **355** eligible distinct spellings after filtering; Brazil excludes apparent artificial multi-surname concatenations. Forebears is third-party modeled incidence.
+- **A**: England and Wales documented separately; Portugal's Forebears list yielded **355** eligible entries, supplemented by **145 additional Portugal-indexed surname spellings** drawn from six alphabetical lists on `sobrenome.info/portugal/{b,c,d,p,f,m}` (30 + 30 + 25 + 30 + 15 + 15). The original 355 entries are preserved in order; total **500**. Forebears and the supplemental lists are **secondary estimates**, not official resident registers; individual attestation and redistribution terms remain unverified. Brazil excludes apparent artificial multi-surname concatenations.
 - **B**: Germany and Austria use source-backed lexicons/locale corpora; Switzerland combines country/regional evidence; Belgium includes Wallonia-specific source material, not nationwide frequencies. Licensing and population coverage need review.
 - **C**: Netherlands uses a 2007 CBG/Meertens derivative; Denmark has an older ASCII-restricted teaching extract plus attested Danish orthographies; Norway and Sweden use statistical derivatives/mirrors with incomplete temporal/provenance guarantees.
 - **D**: Argentina, Mexico, Colombia and Chile use country-tagged lists and secondary directory evidence; these do not establish unbiased nationwide frequency or independent person-level verification for every item.

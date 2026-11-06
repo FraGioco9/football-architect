@@ -95,9 +95,10 @@ for (const country of catalog.countries) {
   });
 }
 
-test('total count and known attestation gap are represented without filling', () => {
-  assert.equal(catalog.countries.reduce((sum, country) => sum + country.count, 0), 24855);
-  assert.deepEqual(catalog.countries.filter(x => x.status === 'partial').map(x => [x.code, x.count]), [['POR', 355]]);
+test('50 complete country pools each have 500 documented entries (25,000 total)', () => {
+  assert.equal(catalog.countries.reduce((sum, country) => sum + country.count, 0), 25000);
+  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 50);
+  assert.deepEqual(catalog.countries.filter(x => x.status !== 'complete'), []);
 });
 
 test('adversarial Unicode and compound surname grammar', () => {

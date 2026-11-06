@@ -53,21 +53,21 @@
       "source_batch": "A",
       "source_pr": 433,
       "source_branch": "research/surnames-01-batch-a",
-      "source_head_sha": "422ce60e75e546b23ab5680baa41a5d26ab62939",
+      "source_head_sha": "730d3ddff2b9174578b9b2d4088fff8dbe6663c0",
       "source_blob_sha": "ca1669c447ce1785177e84dc146e8e79d89adeb7",
       "production_ready": false
     },
     {
       "code": "POR",
       "path": "data/players/surnames/countries/POR.json",
-      "count": 355,
-      "status": "partial",
+      "count": 500,
+      "status": "complete",
       "sources_available": true,
       "source_batch": "A",
       "source_pr": 433,
       "source_branch": "research/surnames-01-batch-a",
-      "source_head_sha": "422ce60e75e546b23ab5680baa41a5d26ab62939",
-      "source_blob_sha": "3d63f702cd2494f54f49063d7e88b19c28d8fe9f",
+      "source_head_sha": "730d3ddff2b9174578b9b2d4088fff8dbe6663c0",
+      "source_blob_sha": "e33069eb74a3df7fa82724526d39ff629c3f28b8",
       "production_ready": false
     },
     {
@@ -79,7 +79,7 @@
       "source_batch": "A",
       "source_pr": 433,
       "source_branch": "research/surnames-01-batch-a",
-      "source_head_sha": "422ce60e75e546b23ab5680baa41a5d26ab62939",
+      "source_head_sha": "730d3ddff2b9174578b9b2d4088fff8dbe6663c0",
       "source_blob_sha": "6fcde76d797489a8db850cc26b0fda4f8ec58f4f",
       "production_ready": false
     },
@@ -508,7 +508,7 @@
       "source_batch": "A",
       "source_pr": 433,
       "source_branch": "research/surnames-01-batch-a",
-      "source_head_sha": "422ce60e75e546b23ab5680baa41a5d26ab62939",
+      "source_head_sha": "730d3ddff2b9174578b9b2d4088fff8dbe6663c0",
       "source_blob_sha": "c0e8b191b86a02d6153285306fe643ada8bb5692",
       "production_ready": false
     },

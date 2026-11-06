@@ -10,8 +10,62 @@
       "url": "https://forebears.io/portugal/surnames",
       "territory": "Portugal (POR), national territorial page, not Brazil",
       "period": "2014 distribution snapshot",
-      "scope": "Visible country-specific ranks 1–362; entries individually present in the published Portugal surname table; deduplicated spelling and accent equivalents",
-      "limitations": "Only 362 ranked source rows are publicly visible. Removed equivalent variants and suspect near-duplicates; not enough independently supported entries for 500. Source is third-party estimated incidence, not census register; given-name-shaped strings appear as attested surnames in source; redistribution/license must be reviewed before release."
+      "scope": "Initial 355 distinct surname values from 362 visible rows on the Portugal-only 2014 Forebears ranking. The 145 further values are documented by six additional Portugal-indexed alphabetic surname lists.",
+      "limitations": "Forebears source provides modelled surname incidence, not Portugal administrative records; its published display covers only ranks 1–362, with spelling variants/duplicates removed. Supplementary lists are secondary estimates and may derive from Forebears. No numeric estimates are used as weights; licensing and item-level corroboration are pending."
+    },
+    {
+      "id": "sobrenome-info-portugal-b-2026",
+      "title": "Apelidos Português com b — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/b",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 30 country-indexed surname spellings from letter B list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
+    },
+    {
+      "id": "sobrenome-info-portugal-c-2026",
+      "title": "Apelidos Português com c — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/c",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 30 country-indexed surname spellings from letter C list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
+    },
+    {
+      "id": "sobrenome-info-portugal-d-2026",
+      "title": "Apelidos Português com d — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/d",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 25 country-indexed surname spellings from letter D list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
+    },
+    {
+      "id": "sobrenome-info-portugal-p-2026",
+      "title": "Apelidos Português com p — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/p",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 30 country-indexed surname spellings from letter P list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
+    },
+    {
+      "id": "sobrenome-info-portugal-f-2026",
+      "title": "Apelidos Português com f — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/f",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 15 country-indexed surname spellings from letter F list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
+    },
+    {
+      "id": "sobrenome-info-portugal-m-2026",
+      "title": "Apelidos Português com m — Portugal alphabetical surname index",
+      "url": "https://sobrenome.info/portugal/m",
+      "territory": "Portugal only (POR); not Brazil",
+      "period": "Underlying estimates' collection date not specified on page; website accessed 2026-11-06",
+      "scope": "Additional 15 country-indexed surname spellings from letter M list. Listed as surnames with positive occurrence estimate; numbers omitted from JSON.",
+      "limitations": "Secondary commercial surname listing, not an official population register; provenance of occurrence estimates and redistribution terms unverified; individual onomastic/record audit still needed before production."
     }
   ],
   "surnames": [
@@ -1079,6 +1133,441 @@
     },
     {
       "value": "Capela"
+    },
+    {
+      "value": "Bravo"
+    },
+    {
+      "value": "Bras"
+    },
+    {
+      "value": "Basto"
+    },
+    {
+      "value": "Basílio"
+    },
+    {
+      "value": "Belchior"
+    },
+    {
+      "value": "Bragança"
+    },
+    {
+      "value": "Branquinho"
+    },
+    {
+      "value": "Bispo"
+    },
+    {
+      "value": "Beja"
+    },
+    {
+      "value": "Borralho"
+    },
+    {
+      "value": "Boavida"
+    },
+    {
+      "value": "Bicho"
+    },
+    {
+      "value": "Barreiro"
+    },
+    {
+      "value": "Baeta"
+    },
+    {
+      "value": "Bonito"
+    },
+    {
+      "value": "Bacelar"
+    },
+    {
+      "value": "Bizarro"
+    },
+    {
+      "value": "Botas"
+    },
+    {
+      "value": "Baio"
+    },
+    {
+      "value": "Barcelos"
+    },
+    {
+      "value": "Beato"
+    },
+    {
+      "value": "Babo"
+    },
+    {
+      "value": "Boto"
+    },
+    {
+      "value": "Bentes"
+    },
+    {
+      "value": "Bica"
+    },
+    {
+      "value": "Beleza"
+    },
+    {
+      "value": "Borrego"
+    },
+    {
+      "value": "Barroca"
+    },
+    {
+      "value": "Barrocas"
+    },
+    {
+      "value": "Branca"
+    },
+    {
+      "value": "Cortez"
+    },
+    {
+      "value": "Cavaleiro"
+    },
+    {
+      "value": "Craveiro"
+    },
+    {
+      "value": "Cravo"
+    },
+    {
+      "value": "Canelas"
+    },
+    {
+      "value": "Carreiro"
+    },
+    {
+      "value": "Caseiro"
+    },
+    {
+      "value": "Calheiros"
+    },
+    {
+      "value": "Castilho"
+    },
+    {
+      "value": "Colaço"
+    },
+    {
+      "value": "Casanova"
+    },
+    {
+      "value": "Casaca"
+    },
+    {
+      "value": "Capelo"
+    },
+    {
+      "value": "Curado"
+    },
+    {
+      "value": "Cotrim"
+    },
+    {
+      "value": "Caires"
+    },
+    {
+      "value": "Castanho"
+    },
+    {
+      "value": "Cadete"
+    },
+    {
+      "value": "Chagas"
+    },
+    {
+      "value": "Calisto"
+    },
+    {
+      "value": "Canas"
+    },
+    {
+      "value": "Carmona"
+    },
+    {
+      "value": "Couceiro"
+    },
+    {
+      "value": "Cerdeira"
+    },
+    {
+      "value": "Carapinha"
+    },
+    {
+      "value": "Cavalheiro"
+    },
+    {
+      "value": "Cancela"
+    },
+    {
+      "value": "Caiado"
+    },
+    {
+      "value": "Carvalhal"
+    },
+    {
+      "value": "Canhoto"
+    },
+    {
+      "value": "Duque"
+    },
+    {
+      "value": "Durão"
+    },
+    {
+      "value": "Dourado"
+    },
+    {
+      "value": "Dionisio"
+    },
+    {
+      "value": "Damas"
+    },
+    {
+      "value": "Dores"
+    },
+    {
+      "value": "Deus"
+    },
+    {
+      "value": "Damião"
+    },
+    {
+      "value": "Dutra"
+    },
+    {
+      "value": "Drumond"
+    },
+    {
+      "value": "Diaz"
+    },
+    {
+      "value": "Damaso"
+    },
+    {
+      "value": "Diz"
+    },
+    {
+      "value": "Dominguez"
+    },
+    {
+      "value": "Direito"
+    },
+    {
+      "value": "Diegues"
+    },
+    {
+      "value": "Damasceno"
+    },
+    {
+      "value": "Devesa"
+    },
+    {
+      "value": "Delfim"
+    },
+    {
+      "value": "Delicado"
+    },
+    {
+      "value": "Dordio"
+    },
+    {
+      "value": "Djalo"
+    },
+    {
+      "value": "Deodato"
+    },
+    {
+      "value": "Delfino"
+    },
+    {
+      "value": "Drago"
+    },
+    {
+      "value": "Pita"
+    },
+    {
+      "value": "Porto"
+    },
+    {
+      "value": "Piedade"
+    },
+    {
+      "value": "Pombo"
+    },
+    {
+      "value": "Pardal"
+    },
+    {
+      "value": "Prates"
+    },
+    {
+      "value": "Prazeres"
+    },
+    {
+      "value": "Peralta"
+    },
+    {
+      "value": "Paz"
+    },
+    {
+      "value": "Pena"
+    },
+    {
+      "value": "Preto"
+    },
+    {
+      "value": "Piteira"
+    },
+    {
+      "value": "Pato"
+    },
+    {
+      "value": "Paredes"
+    },
+    {
+      "value": "Perestrelo"
+    },
+    {
+      "value": "Pinhal"
+    },
+    {
+      "value": "Pisco"
+    },
+    {
+      "value": "Penedo"
+    },
+    {
+      "value": "Pessanha"
+    },
+    {
+      "value": "Palha"
+    },
+    {
+      "value": "Paes"
+    },
+    {
+      "value": "Palmeiro"
+    },
+    {
+      "value": "Pedras"
+    },
+    {
+      "value": "Palmeira"
+    },
+    {
+      "value": "Peixe"
+    },
+    {
+      "value": "Poças"
+    },
+    {
+      "value": "Peixinho"
+    },
+    {
+      "value": "Prado"
+    },
+    {
+      "value": "Penha"
+    },
+    {
+      "value": "Parada"
+    },
+    {
+      "value": "Fortes"
+    },
+    {
+      "value": "Flores"
+    },
+    {
+      "value": "Falco"
+    },
+    {
+      "value": "Fortunato"
+    },
+    {
+      "value": "Frias"
+    },
+    {
+      "value": "Fonte"
+    },
+    {
+      "value": "Felgueiras"
+    },
+    {
+      "value": "Forte"
+    },
+    {
+      "value": "Farias"
+    },
+    {
+      "value": "Figueiras"
+    },
+    {
+      "value": "Fortuna"
+    },
+    {
+      "value": "Feio"
+    },
+    {
+      "value": "Falcão"
+    },
+    {
+      "value": "Faro"
+    },
+    {
+      "value": "Fontoura"
+    },
+    {
+      "value": "Moreno"
+    },
+    {
+      "value": "Mariano"
+    },
+    {
+      "value": "Marçal"
+    },
+    {
+      "value": "Mouro"
+    },
+    {
+      "value": "Marreiros"
+    },
+    {
+      "value": "Maio"
+    },
+    {
+      "value": "Mello"
+    },
+    {
+      "value": "Mano"
+    },
+    {
+      "value": "Mourato"
+    },
+    {
+      "value": "Milheiro"
+    },
+    {
+      "value": "Montenegro"
+    },
+    {
+      "value": "Malta"
+    },
+    {
+      "value": "Margarido"
+    },
+    {
+      "value": "Mimoso"
+    },
+    {
+      "value": "Medina"
     }
   ],
   "production_ready": false
