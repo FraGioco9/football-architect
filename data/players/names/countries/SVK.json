@@ -1,0 +1,1219 @@
+{
+  "schema_version": 2,
+  "code": "SVK",
+  "cohort": "source-reported estimated male name bearers (all ages, year unspecified)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "forebears-slovakia-male-firstname-incidence",
+    "provider": "Forebears, country forenames, source gender >=95% male",
+    "source_url": "https://forebears.io/slovakia/forenames",
+    "metric": "Source-estimated incidence of male first-name bearers, all ages and unspecified period; NOT exact population register counts or newborn registrations",
+    "license": "Open redistribution licence not verified; licensing review required before commercial publication"
+  },
+  "selection_policy": "Top 300 unique source-published single male forenames from incidence table, gender >=95%; Latin Unicode letters, original accents retained without guessed corrections; no compounds, punctuation or surnames",
+  "given_names": [
+    {
+      "value": "Ján",
+      "weight": 281105
+    },
+    {
+      "value": "Jozef",
+      "weight": 261908
+    },
+    {
+      "value": "Štefan",
+      "weight": 129872
+    },
+    {
+      "value": "Peter",
+      "weight": 129632
+    },
+    {
+      "value": "Michal",
+      "weight": 88479
+    },
+    {
+      "value": "Milan",
+      "weight": 83832
+    },
+    {
+      "value": "Pavol",
+      "weight": 79544
+    },
+    {
+      "value": "František",
+      "weight": 77446
+    },
+    {
+      "value": "Ladislav",
+      "weight": 68303
+    },
+    {
+      "value": "Juraj",
+      "weight": 67128
+    },
+    {
+      "value": "Miroslav",
+      "weight": 66198
+    },
+    {
+      "value": "Vladimír",
+      "weight": 56956
+    },
+    {
+      "value": "Martin",
+      "weight": 51171
+    },
+    {
+      "value": "Ondrej",
+      "weight": 45442
+    },
+    {
+      "value": "Jaroslav",
+      "weight": 43741
+    },
+    {
+      "value": "Anton",
+      "weight": 41559
+    },
+    {
+      "value": "Andrej",
+      "weight": 38500
+    },
+    {
+      "value": "Dušan",
+      "weight": 35300
+    },
+    {
+      "value": "Ivan",
+      "weight": 34430
+    },
+    {
+      "value": "Pavel",
+      "weight": 34009
+    },
+    {
+      "value": "Stanislav",
+      "weight": 32962
+    },
+    {
+      "value": "Ľubomír",
+      "weight": 28677
+    },
+    {
+      "value": "Rudolf",
+      "weight": 27246
+    },
+    {
+      "value": "Imrich",
+      "weight": 22401
+    },
+    {
+      "value": "Július",
+      "weight": 22250
+    },
+    {
+      "value": "Tibor",
+      "weight": 22235
+    },
+    {
+      "value": "Ľudovít",
+      "weight": 21727
+    },
+    {
+      "value": "Tomáš",
+      "weight": 21531
+    },
+    {
+      "value": "Jan",
+      "weight": 20535
+    },
+    {
+      "value": "Alexander",
+      "weight": 20038
+    },
+    {
+      "value": "Marek",
+      "weight": 19879
+    },
+    {
+      "value": "Vojtech",
+      "weight": 17820
+    },
+    {
+      "value": "Emil",
+      "weight": 17011
+    },
+    {
+      "value": "Viliam",
+      "weight": 16518
+    },
+    {
+      "value": "Roman",
+      "weight": 15955
+    },
+    {
+      "value": "Róbert",
+      "weight": 15761
+    },
+    {
+      "value": "Igor",
+      "weight": 15335
+    },
+    {
+      "value": "Vincent",
+      "weight": 13583
+    },
+    {
+      "value": "Daniel",
+      "weight": 13503
+    },
+    {
+      "value": "Gabriel",
+      "weight": 12078
+    },
+    {
+      "value": "Mikuláš",
+      "weight": 11894
+    },
+    {
+      "value": "Zoltán",
+      "weight": 11784
+    },
+    {
+      "value": "Miloš",
+      "weight": 11430
+    },
+    {
+      "value": "Rastislav",
+      "weight": 11210
+    },
+    {
+      "value": "Matej",
+      "weight": 10386
+    },
+    {
+      "value": "Ľuboš",
+      "weight": 9819
+    },
+    {
+      "value": "Alojz",
+      "weight": 9600
+    },
+    {
+      "value": "Stefan",
+      "weight": 9329
+    },
+    {
+      "value": "Branislav",
+      "weight": 8868
+    },
+    {
+      "value": "Viktor",
+      "weight": 8794
+    },
+    {
+      "value": "Eduard",
+      "weight": 8344
+    },
+    {
+      "value": "Frantisek",
+      "weight": 7061
+    },
+    {
+      "value": "Slavomír",
+      "weight": 6278
+    },
+    {
+      "value": "Richard",
+      "weight": 5971
+    },
+    {
+      "value": "Gejza",
+      "weight": 5795
+    },
+    {
+      "value": "Robert",
+      "weight": 5729
+    },
+    {
+      "value": "Matúš",
+      "weight": 5684
+    },
+    {
+      "value": "Marcel",
+      "weight": 5580
+    },
+    {
+      "value": "Radoslav",
+      "weight": 5570
+    },
+    {
+      "value": "Adam",
+      "weight": 5453
+    },
+    {
+      "value": "Ferdinand",
+      "weight": 5325
+    },
+    {
+      "value": "Ernest",
+      "weight": 5240
+    },
+    {
+      "value": "Patrik",
+      "weight": 4995
+    },
+    {
+      "value": "Dezider",
+      "weight": 4650
+    },
+    {
+      "value": "Cyril",
+      "weight": 4639
+    },
+    {
+      "value": "Eugen",
+      "weight": 4588
+    },
+    {
+      "value": "Lukáš",
+      "weight": 4530
+    },
+    {
+      "value": "Koloman",
+      "weight": 4468
+    },
+    {
+      "value": "Augustín",
+      "weight": 4359
+    },
+    {
+      "value": "Vladimir",
+      "weight": 4240
+    },
+    {
+      "value": "Jakub",
+      "weight": 4168
+    },
+    {
+      "value": "Ignác",
+      "weight": 4157
+    },
+    {
+      "value": "Kamil",
+      "weight": 4153
+    },
+    {
+      "value": "Zdenko",
+      "weight": 4043
+    },
+    {
+      "value": "Dominik",
+      "weight": 3743
+    },
+    {
+      "value": "Attila",
+      "weight": 3684
+    },
+    {
+      "value": "Bartolomej",
+      "weight": 3675
+    },
+    {
+      "value": "Miloslav",
+      "weight": 3650
+    },
+    {
+      "value": "Radovan",
+      "weight": 3473
+    },
+    {
+      "value": "Norbert",
+      "weight": 3458
+    },
+    {
+      "value": "Filip",
+      "weight": 3197
+    },
+    {
+      "value": "Boris",
+      "weight": 3055
+    },
+    {
+      "value": "Arpád",
+      "weight": 3000
+    },
+    {
+      "value": "Samuel",
+      "weight": 2937
+    },
+    {
+      "value": "Vendelín",
+      "weight": 2930
+    },
+    {
+      "value": "Gustáv",
+      "weight": 2871
+    },
+    {
+      "value": "Erik",
+      "weight": 2811
+    },
+    {
+      "value": "Vladislav",
+      "weight": 2771
+    },
+    {
+      "value": "Oto",
+      "weight": 2693
+    },
+    {
+      "value": "Julius",
+      "weight": 2664
+    },
+    {
+      "value": "Vasiľ",
+      "weight": 2652
+    },
+    {
+      "value": "Valent",
+      "weight": 2651
+    },
+    {
+      "value": "Mário",
+      "weight": 2594
+    },
+    {
+      "value": "Silvester",
+      "weight": 2553
+    },
+    {
+      "value": "Albert",
+      "weight": 2501
+    },
+    {
+      "value": "Václav",
+      "weight": 2412
+    },
+    {
+      "value": "Bohumil",
+      "weight": 2347
+    },
+    {
+      "value": "Šimon",
+      "weight": 2296
+    },
+    {
+      "value": "Ludovit",
+      "weight": 2165
+    },
+    {
+      "value": "Dusan",
+      "weight": 2087
+    },
+    {
+      "value": "Bohuslav",
+      "weight": 1940
+    },
+    {
+      "value": "Otto",
+      "weight": 1899
+    },
+    {
+      "value": "Blažej",
+      "weight": 1879
+    },
+    {
+      "value": "Zsolt",
+      "weight": 1793
+    },
+    {
+      "value": "Lubomir",
+      "weight": 1740
+    },
+    {
+      "value": "Csaba",
+      "weight": 1724
+    },
+    {
+      "value": "Gašpar",
+      "weight": 1711
+    },
+    {
+      "value": "Albín",
+      "weight": 1681
+    },
+    {
+      "value": "Roland",
+      "weight": 1551
+    },
+    {
+      "value": "Dávid",
+      "weight": 1498
+    },
+    {
+      "value": "Vasil",
+      "weight": 1486
+    },
+    {
+      "value": "Zdeno",
+      "weight": 1457
+    },
+    {
+      "value": "Adrián",
+      "weight": 1448
+    },
+    {
+      "value": "Tomas",
+      "weight": 1400
+    },
+    {
+      "value": "Jaromír",
+      "weight": 1379
+    },
+    {
+      "value": "Libor",
+      "weight": 1373
+    },
+    {
+      "value": "Dalibor",
+      "weight": 1368
+    },
+    {
+      "value": "Valentín",
+      "weight": 1347
+    },
+    {
+      "value": "Florián",
+      "weight": 1306
+    },
+    {
+      "value": "Teodor",
+      "weight": 1304
+    },
+    {
+      "value": "Ľuboslav",
+      "weight": 1296
+    },
+    {
+      "value": "Barnabáš",
+      "weight": 1245
+    },
+    {
+      "value": "Vlastimil",
+      "weight": 1203
+    },
+    {
+      "value": "Jiří",
+      "weight": 1171
+    },
+    {
+      "value": "Oliver",
+      "weight": 1164
+    },
+    {
+      "value": "Zdenek",
+      "weight": 1155
+    },
+    {
+      "value": "Bohuš",
+      "weight": 1138
+    },
+    {
+      "value": "Fedor",
+      "weight": 1091
+    },
+    {
+      "value": "Henrich",
+      "weight": 1075
+    },
+    {
+      "value": "Gregor",
+      "weight": 1040
+    },
+    {
+      "value": "Adolf",
+      "weight": 1027
+    },
+    {
+      "value": "Alfonz",
+      "weight": 999
+    },
+    {
+      "value": "Aladár",
+      "weight": 994
+    },
+    {
+      "value": "Lukáč",
+      "weight": 986
+    },
+    {
+      "value": "Zoltan",
+      "weight": 983
+    },
+    {
+      "value": "Antonín",
+      "weight": 957
+    },
+    {
+      "value": "Kristián",
+      "weight": 956
+    },
+    {
+      "value": "Bernard",
+      "weight": 951
+    },
+    {
+      "value": "Ervín",
+      "weight": 920
+    },
+    {
+      "value": "Emanuel",
+      "weight": 907
+    },
+    {
+      "value": "Mikulas",
+      "weight": 883
+    },
+    {
+      "value": "Dionýz",
+      "weight": 832
+    },
+    {
+      "value": "Petr",
+      "weight": 817
+    },
+    {
+      "value": "Justín",
+      "weight": 810
+    },
+    {
+      "value": "Ľudovit",
+      "weight": 806
+    },
+    {
+      "value": "Leopold",
+      "weight": 803
+    },
+    {
+      "value": "Ľudevít",
+      "weight": 802
+    },
+    {
+      "value": "Zdeněk",
+      "weight": 798
+    },
+    {
+      "value": "Elemír",
+      "weight": 797
+    },
+    {
+      "value": "Fridrich",
+      "weight": 773
+    },
+    {
+      "value": "Ľubor",
+      "weight": 758
+    },
+    {
+      "value": "Florian",
+      "weight": 753
+    },
+    {
+      "value": "Klement",
+      "weight": 753
+    },
+    {
+      "value": "Alfréd",
+      "weight": 729
+    },
+    {
+      "value": "Vít",
+      "weight": 728
+    },
+    {
+      "value": "Žigmund",
+      "weight": 722
+    },
+    {
+      "value": "Demeter",
+      "weight": 710
+    },
+    {
+      "value": "Erich",
+      "weight": 703
+    },
+    {
+      "value": "Marko",
+      "weight": 700
+    },
+    {
+      "value": "Drahomír",
+      "weight": 679
+    },
+    {
+      "value": "Adrian",
+      "weight": 677
+    },
+    {
+      "value": "Milos",
+      "weight": 645
+    },
+    {
+      "value": "Ambróz",
+      "weight": 639
+    },
+    {
+      "value": "Izidor",
+      "weight": 637
+    },
+    {
+      "value": "Leonard",
+      "weight": 628
+    },
+    {
+      "value": "Vavrinec",
+      "weight": 611
+    },
+    {
+      "value": "Árpád",
+      "weight": 603
+    },
+    {
+      "value": "Benedikt",
+      "weight": 595
+    },
+    {
+      "value": "Gustav",
+      "weight": 595
+    },
+    {
+      "value": "Baltazár",
+      "weight": 594
+    },
+    {
+      "value": "David",
+      "weight": 576
+    },
+    {
+      "value": "Lubos",
+      "weight": 558
+    },
+    {
+      "value": "Jarolím",
+      "weight": 555
+    },
+    {
+      "value": "Benjamín",
+      "weight": 541
+    },
+    {
+      "value": "Kornel",
+      "weight": 537
+    },
+    {
+      "value": "Radomír",
+      "weight": 523
+    },
+    {
+      "value": "Arnold",
+      "weight": 519
+    },
+    {
+      "value": "István",
+      "weight": 509
+    },
+    {
+      "value": "Ervin",
+      "weight": 504
+    },
+    {
+      "value": "Oskar",
+      "weight": 498
+    },
+    {
+      "value": "Urban",
+      "weight": 497
+    },
+    {
+      "value": "Gábor",
+      "weight": 494
+    },
+    {
+      "value": "László",
+      "weight": 485
+    },
+    {
+      "value": "Josef",
+      "weight": 483
+    },
+    {
+      "value": "Augustin",
+      "weight": 482
+    },
+    {
+      "value": "Alexej",
+      "weight": 480
+    },
+    {
+      "value": "Edmund",
+      "weight": 479
+    },
+    {
+      "value": "Bohumír",
+      "weight": 468
+    },
+    {
+      "value": "Rafael",
+      "weight": 463
+    },
+    {
+      "value": "Ivo",
+      "weight": 451
+    },
+    {
+      "value": "Karel",
+      "weight": 445
+    },
+    {
+      "value": "Felix",
+      "weight": 438
+    },
+    {
+      "value": "Eliáš",
+      "weight": 436
+    },
+    {
+      "value": "Metod",
+      "weight": 434
+    },
+    {
+      "value": "Atila",
+      "weight": 420
+    },
+    {
+      "value": "Luboš",
+      "weight": 412
+    },
+    {
+      "value": "Oskár",
+      "weight": 400
+    },
+    {
+      "value": "Arpad",
+      "weight": 384
+    },
+    {
+      "value": "Teofil",
+      "weight": 371
+    },
+    {
+      "value": "Tamás",
+      "weight": 341
+    },
+    {
+      "value": "Lukas",
+      "weight": 337
+    },
+    {
+      "value": "Slavko",
+      "weight": 336
+    },
+    {
+      "value": "Vendel",
+      "weight": 336
+    },
+    {
+      "value": "Konštantín",
+      "weight": 333
+    },
+    {
+      "value": "Timotej",
+      "weight": 323
+    },
+    {
+      "value": "János",
+      "weight": 320
+    },
+    {
+      "value": "Cyprián",
+      "weight": 318
+    },
+    {
+      "value": "Slavomir",
+      "weight": 318
+    },
+    {
+      "value": "Denis",
+      "weight": 316
+    },
+    {
+      "value": "Drahoslav",
+      "weight": 309
+    },
+    {
+      "value": "Kazimír",
+      "weight": 301
+    },
+    {
+      "value": "Mirko",
+      "weight": 301
+    },
+    {
+      "value": "Miron",
+      "weight": 300
+    },
+    {
+      "value": "Kvetoslav",
+      "weight": 299
+    },
+    {
+      "value": "Matus",
+      "weight": 298
+    },
+    {
+      "value": "Mario",
+      "weight": 293
+    },
+    {
+      "value": "Ĺubomír",
+      "weight": 287
+    },
+    {
+      "value": "Ignac",
+      "weight": 286
+    },
+    {
+      "value": "Lubomír",
+      "weight": 279
+    },
+    {
+      "value": "Benjamin",
+      "weight": 271
+    },
+    {
+      "value": "Michael",
+      "weight": 271
+    },
+    {
+      "value": "Ferenc",
+      "weight": 269
+    },
+    {
+      "value": "Antal",
+      "weight": 264
+    },
+    {
+      "value": "Aurel",
+      "weight": 263
+    },
+    {
+      "value": "Bystrík",
+      "weight": 262
+    },
+    {
+      "value": "Svetozár",
+      "weight": 262
+    },
+    {
+      "value": "Vaclav",
+      "weight": 262
+    },
+    {
+      "value": "Radko",
+      "weight": 261
+    },
+    {
+      "value": "Szabolcs",
+      "weight": 261
+    },
+    {
+      "value": "Ctibor",
+      "weight": 256
+    },
+    {
+      "value": "Serafín",
+      "weight": 255
+    },
+    {
+      "value": "Simon",
+      "weight": 254
+    },
+    {
+      "value": "Ambroz",
+      "weight": 252
+    },
+    {
+      "value": "Johann",
+      "weight": 247
+    },
+    {
+      "value": "Mojmír",
+      "weight": 246
+    },
+    {
+      "value": "Szilárd",
+      "weight": 244
+    },
+    {
+      "value": "Valter",
+      "weight": 240
+    },
+    {
+      "value": "Ludovít",
+      "weight": 236
+    },
+    {
+      "value": "Branko",
+      "weight": 230
+    },
+    {
+      "value": "Tichomír",
+      "weight": 227
+    },
+    {
+      "value": "Hubert",
+      "weight": 222
+    },
+    {
+      "value": "Severín",
+      "weight": 222
+    },
+    {
+      "value": "Tivadar",
+      "weight": 222
+    },
+    {
+      "value": "Hrehor",
+      "weight": 220
+    },
+    {
+      "value": "Móric",
+      "weight": 220
+    },
+    {
+      "value": "Valér",
+      "weight": 218
+    },
+    {
+      "value": "Ĺudovít",
+      "weight": 218
+    },
+    {
+      "value": "Titus",
+      "weight": 217
+    },
+    {
+      "value": "Kristian",
+      "weight": 214
+    },
+    {
+      "value": "Ludevít",
+      "weight": 212
+    },
+    {
+      "value": "Úrad",
+      "weight": 211
+    },
+    {
+      "value": "Vendelin",
+      "weight": 207
+    },
+    {
+      "value": "Béla",
+      "weight": 205
+    },
+    {
+      "value": "Maximilián",
+      "weight": 205
+    },
+    {
+      "value": "Bálint",
+      "weight": 203
+    },
+    {
+      "value": "Albin",
+      "weight": 202
+    },
+    {
+      "value": "Melichar",
+      "weight": 202
+    },
+    {
+      "value": "Lajos",
+      "weight": 200
+    },
+    {
+      "value": "Ludevit",
+      "weight": 200
+    },
+    {
+      "value": "Elemér",
+      "weight": 199
+    },
+    {
+      "value": "Belo",
+      "weight": 198
+    },
+    {
+      "value": "Otakar",
+      "weight": 197
+    },
+    {
+      "value": "Oldřich",
+      "weight": 193
+    },
+    {
+      "value": "Herman",
+      "weight": 192
+    },
+    {
+      "value": "András",
+      "weight": 191
+    },
+    {
+      "value": "Ludvik",
+      "weight": 188
+    },
+    {
+      "value": "Arnošt",
+      "weight": 182
+    },
+    {
+      "value": "Vidor",
+      "weight": 180
+    },
+    {
+      "value": "Laurinec",
+      "weight": 179
+    },
+    {
+      "value": "Ronald",
+      "weight": 179
+    },
+    {
+      "value": "Bohdan",
+      "weight": 176
+    },
+    {
+      "value": "Antón",
+      "weight": 175
+    },
+    {
+      "value": "József",
+      "weight": 174
+    },
+    {
+      "value": "Elek",
+      "weight": 171
+    },
+    {
+      "value": "Vlado",
+      "weight": 171
+    },
+    {
+      "value": "Sergej",
+      "weight": 170
+    },
+    {
+      "value": "Vratislav",
+      "weight": 169
+    },
+    {
+      "value": "Balázs",
+      "weight": 165
+    },
+    {
+      "value": "Bedrich",
+      "weight": 165
+    },
+    {
+      "value": "Miro",
+      "weight": 164
+    },
+    {
+      "value": "Walter",
+      "weight": 163
+    },
+    {
+      "value": "Sebastián",
+      "weight": 160
+    },
+    {
+      "value": "Félix",
+      "weight": 159
+    },
+    {
+      "value": "Blazej",
+      "weight": 158
+    },
+    {
+      "value": "Víťazoslav",
+      "weight": 157
+    },
+    {
+      "value": "Ludvík",
+      "weight": 155
+    },
+    {
+      "value": "Adalbert",
+      "weight": 153
+    },
+    {
+      "value": "Artúr",
+      "weight": 153
+    },
+    {
+      "value": "Zigmund",
+      "weight": 151
+    },
+    {
+      "value": "Cyprian",
+      "weight": 150
+    },
+    {
+      "value": "Radek",
+      "weight": 150
+    },
+    {
+      "value": "Valerián",
+      "weight": 150
+    },
+    {
+      "value": "Gergely",
+      "weight": 146
+    },
+    {
+      "value": "Pál",
+      "weight": 145
+    },
+    {
+      "value": "Bruno",
+      "weight": 142
+    },
+    {
+      "value": "Gaspar",
+      "weight": 142
+    },
+    {
+      "value": "Valentin",
+      "weight": 140
+    },
+    {
+      "value": "Bernát",
+      "weight": 137
+    },
+    {
+      "value": "Imre",
+      "weight": 137
+    },
+    {
+      "value": "Leo",
+      "weight": 137
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

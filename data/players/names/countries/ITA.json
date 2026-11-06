@@ -1,0 +1,1220 @@
+{
+  "schema_version": 2,
+  "code": "ITA",
+  "cohort": "observed male first names from source; no etymological-origin restriction",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "it-admin-register-male-names",
+    "provider": "mrblasco/genderNamesITA — local administrator registry in Italy, 1985–2014",
+    "source_url": "https://github.com/mrblasco/genderNamesITA/blob/af92b06158355beca12e020a8c19f0fe52381bed/gender_firstnames_ITA.csv",
+    "source_commit": "af92b06158355beca12e020a8c19f0fe52381bed",
+    "metric": "observed male matches among Italian local administrators, NOT national birth counts or a 2000–2025 birth cohort",
+    "license": "upstream distribution license not specified; review before redistribution of the statistical count dataset"
+  },
+  "selection_policy": "top 300 unique Unicode single-word male first names sorted by descending observed frequency; only letters and combining marks, no compounds",
+  "given_names": [
+    {
+      "value": "Giuseppe",
+      "weight": 191140
+    },
+    {
+      "value": "Antonio",
+      "weight": 136765
+    },
+    {
+      "value": "Giovanni",
+      "weight": 128950
+    },
+    {
+      "value": "Francesco",
+      "weight": 108184
+    },
+    {
+      "value": "Luigi",
+      "weight": 85742
+    },
+    {
+      "value": "Mario",
+      "weight": 84733
+    },
+    {
+      "value": "Roberto",
+      "weight": 70832
+    },
+    {
+      "value": "Paolo",
+      "weight": 66776
+    },
+    {
+      "value": "Angelo",
+      "weight": 61188
+    },
+    {
+      "value": "Franco",
+      "weight": 56896
+    },
+    {
+      "value": "Marco",
+      "weight": 56086
+    },
+    {
+      "value": "Vincenzo",
+      "weight": 55577
+    },
+    {
+      "value": "Domenico",
+      "weight": 54684
+    },
+    {
+      "value": "Salvatore",
+      "weight": 52292
+    },
+    {
+      "value": "Pietro",
+      "weight": 49615
+    },
+    {
+      "value": "Carlo",
+      "weight": 48911
+    },
+    {
+      "value": "Michele",
+      "weight": 46508
+    },
+    {
+      "value": "Claudio",
+      "weight": 45228
+    },
+    {
+      "value": "Giorgio",
+      "weight": 42945
+    },
+    {
+      "value": "Andrea",
+      "weight": 42281
+    },
+    {
+      "value": "Alessandro",
+      "weight": 40487
+    },
+    {
+      "value": "Massimo",
+      "weight": 40213
+    },
+    {
+      "value": "Sergio",
+      "weight": 39801
+    },
+    {
+      "value": "Stefano",
+      "weight": 39362
+    },
+    {
+      "value": "Bruno",
+      "weight": 38189
+    },
+    {
+      "value": "Mauro",
+      "weight": 37924
+    },
+    {
+      "value": "Luciano",
+      "weight": 37033
+    },
+    {
+      "value": "Maurizio",
+      "weight": 36481
+    },
+    {
+      "value": "Alberto",
+      "weight": 34581
+    },
+    {
+      "value": "Nicola",
+      "weight": 32807
+    },
+    {
+      "value": "Giancarlo",
+      "weight": 30342
+    },
+    {
+      "value": "Enrico",
+      "weight": 28382
+    },
+    {
+      "value": "Pasquale",
+      "weight": 26569
+    },
+    {
+      "value": "Fabio",
+      "weight": 25379
+    },
+    {
+      "value": "Renato",
+      "weight": 24129
+    },
+    {
+      "value": "Gianfranco",
+      "weight": 23904
+    },
+    {
+      "value": "Luca",
+      "weight": 23701
+    },
+    {
+      "value": "Lorenzo",
+      "weight": 23407
+    },
+    {
+      "value": "Aldo",
+      "weight": 23378
+    },
+    {
+      "value": "Daniele",
+      "weight": 21154
+    },
+    {
+      "value": "Antonino",
+      "weight": 20716
+    },
+    {
+      "value": "Giacomo",
+      "weight": 19974
+    },
+    {
+      "value": "Raffaele",
+      "weight": 19907
+    },
+    {
+      "value": "Fabrizio",
+      "weight": 19825
+    },
+    {
+      "value": "Vittorio",
+      "weight": 19750
+    },
+    {
+      "value": "Renzo",
+      "weight": 17231
+    },
+    {
+      "value": "Gabriele",
+      "weight": 16469
+    },
+    {
+      "value": "Adriano",
+      "weight": 16163
+    },
+    {
+      "value": "Enzo",
+      "weight": 16125
+    },
+    {
+      "value": "Guido",
+      "weight": 16046
+    },
+    {
+      "value": "Giuliano",
+      "weight": 15778
+    },
+    {
+      "value": "Riccardo",
+      "weight": 15762
+    },
+    {
+      "value": "Gaetano",
+      "weight": 14905
+    },
+    {
+      "value": "Gianni",
+      "weight": 14831
+    },
+    {
+      "value": "Dario",
+      "weight": 14443
+    },
+    {
+      "value": "Davide",
+      "weight": 14415
+    },
+    {
+      "value": "Silvano",
+      "weight": 14074
+    },
+    {
+      "value": "Emilio",
+      "weight": 13903
+    },
+    {
+      "value": "Marcello",
+      "weight": 13800
+    },
+    {
+      "value": "Filippo",
+      "weight": 13754
+    },
+    {
+      "value": "Matteo",
+      "weight": 13347
+    },
+    {
+      "value": "Piero",
+      "weight": 12902
+    },
+    {
+      "value": "Sandro",
+      "weight": 12797
+    },
+    {
+      "value": "Rocco",
+      "weight": 12771
+    },
+    {
+      "value": "Carmine",
+      "weight": 12715
+    },
+    {
+      "value": "Giulio",
+      "weight": 12582
+    },
+    {
+      "value": "Umberto",
+      "weight": 12344
+    },
+    {
+      "value": "Cesare",
+      "weight": 12235
+    },
+    {
+      "value": "Alfredo",
+      "weight": 11790
+    },
+    {
+      "value": "Vito",
+      "weight": 11615
+    },
+    {
+      "value": "Leonardo",
+      "weight": 11555
+    },
+    {
+      "value": "Carmelo",
+      "weight": 11135
+    },
+    {
+      "value": "Walter",
+      "weight": 11085
+    },
+    {
+      "value": "Flavio",
+      "weight": 10979
+    },
+    {
+      "value": "Fausto",
+      "weight": 10926
+    },
+    {
+      "value": "Armando",
+      "weight": 10843
+    },
+    {
+      "value": "Elio",
+      "weight": 10608
+    },
+    {
+      "value": "Silvio",
+      "weight": 10511
+    },
+    {
+      "value": "Eugenio",
+      "weight": 10364
+    },
+    {
+      "value": "Gino",
+      "weight": 9973
+    },
+    {
+      "value": "Diego",
+      "weight": 9835
+    },
+    {
+      "value": "Federico",
+      "weight": 9793
+    },
+    {
+      "value": "Ezio",
+      "weight": 9631
+    },
+    {
+      "value": "Ugo",
+      "weight": 9612
+    },
+    {
+      "value": "Agostino",
+      "weight": 9556
+    },
+    {
+      "value": "Ernesto",
+      "weight": 9475
+    },
+    {
+      "value": "Donato",
+      "weight": 9405
+    },
+    {
+      "value": "Simone",
+      "weight": 9170
+    },
+    {
+      "value": "Graziano",
+      "weight": 9153
+    },
+    {
+      "value": "Danilo",
+      "weight": 9098
+    },
+    {
+      "value": "Alfonso",
+      "weight": 8925
+    },
+    {
+      "value": "Massimiliano",
+      "weight": 8908
+    },
+    {
+      "value": "Sebastiano",
+      "weight": 8834
+    },
+    {
+      "value": "Valter",
+      "weight": 8834
+    },
+    {
+      "value": "Pierluigi",
+      "weight": 8823
+    },
+    {
+      "value": "Felice",
+      "weight": 8619
+    },
+    {
+      "value": "Gianluca",
+      "weight": 8595
+    },
+    {
+      "value": "Fernando",
+      "weight": 8531
+    },
+    {
+      "value": "Corrado",
+      "weight": 8454
+    },
+    {
+      "value": "Valerio",
+      "weight": 8329
+    },
+    {
+      "value": "Rosario",
+      "weight": 8128
+    },
+    {
+      "value": "Emanuele",
+      "weight": 8076
+    },
+    {
+      "value": "Dino",
+      "weight": 7903
+    },
+    {
+      "value": "Tommaso",
+      "weight": 7861
+    },
+    {
+      "value": "Attilio",
+      "weight": 7806
+    },
+    {
+      "value": "Lino",
+      "weight": 7680
+    },
+    {
+      "value": "Marino",
+      "weight": 7632
+    },
+    {
+      "value": "Lucio",
+      "weight": 7414
+    },
+    {
+      "value": "Romano",
+      "weight": 7377
+    },
+    {
+      "value": "Livio",
+      "weight": 7308
+    },
+    {
+      "value": "Gerardo",
+      "weight": 7197
+    },
+    {
+      "value": "Italo",
+      "weight": 6965
+    },
+    {
+      "value": "Augusto",
+      "weight": 6933
+    },
+    {
+      "value": "Ferdinando",
+      "weight": 6851
+    },
+    {
+      "value": "Ettore",
+      "weight": 6822
+    },
+    {
+      "value": "Tiziano",
+      "weight": 6717
+    },
+    {
+      "value": "Remo",
+      "weight": 6693
+    },
+    {
+      "value": "Ivano",
+      "weight": 6289
+    },
+    {
+      "value": "Fulvio",
+      "weight": 6170
+    },
+    {
+      "value": "Cosimo",
+      "weight": 6131
+    },
+    {
+      "value": "Gennaro",
+      "weight": 5983
+    },
+    {
+      "value": "Mariano",
+      "weight": 5979
+    },
+    {
+      "value": "Gianluigi",
+      "weight": 5818
+    },
+    {
+      "value": "Egidio",
+      "weight": 5790
+    },
+    {
+      "value": "Valentino",
+      "weight": 5714
+    },
+    {
+      "value": "Giampiero",
+      "weight": 5405
+    },
+    {
+      "value": "Biagio",
+      "weight": 5308
+    },
+    {
+      "value": "Ivo",
+      "weight": 5286
+    },
+    {
+      "value": "Dante",
+      "weight": 5260
+    },
+    {
+      "value": "Saverio",
+      "weight": 5208
+    },
+    {
+      "value": "Ermanno",
+      "weight": 5104
+    },
+    {
+      "value": "Luigino",
+      "weight": 5068
+    },
+    {
+      "value": "Ferruccio",
+      "weight": 4955
+    },
+    {
+      "value": "Osvaldo",
+      "weight": 4916
+    },
+    {
+      "value": "Edoardo",
+      "weight": 4874
+    },
+    {
+      "value": "Pierino",
+      "weight": 4859
+    },
+    {
+      "value": "Alessio",
+      "weight": 4786
+    },
+    {
+      "value": "Rino",
+      "weight": 4723
+    },
+    {
+      "value": "Fiorenzo",
+      "weight": 4709
+    },
+    {
+      "value": "Aurelio",
+      "weight": 4690
+    },
+    {
+      "value": "Pierangelo",
+      "weight": 4673
+    },
+    {
+      "value": "Ivan",
+      "weight": 4638
+    },
+    {
+      "value": "Giampaolo",
+      "weight": 4635
+    },
+    {
+      "value": "Ignazio",
+      "weight": 4634
+    },
+    {
+      "value": "Josef",
+      "weight": 4572
+    },
+    {
+      "value": "Ennio",
+      "weight": 4505
+    },
+    {
+      "value": "Natale",
+      "weight": 4442
+    },
+    {
+      "value": "Arturo",
+      "weight": 4316
+    },
+    {
+      "value": "Calogero",
+      "weight": 4291
+    },
+    {
+      "value": "Rodolfo",
+      "weight": 4276
+    },
+    {
+      "value": "Antonello",
+      "weight": 4270
+    },
+    {
+      "value": "Loris",
+      "weight": 4212
+    },
+    {
+      "value": "Santo",
+      "weight": 4153
+    },
+    {
+      "value": "Moreno",
+      "weight": 4095
+    },
+    {
+      "value": "Rinaldo",
+      "weight": 4084
+    },
+    {
+      "value": "Costantino",
+      "weight": 4069
+    },
+    {
+      "value": "Gilberto",
+      "weight": 3983
+    },
+    {
+      "value": "Alfio",
+      "weight": 3980
+    },
+    {
+      "value": "Achille",
+      "weight": 3825
+    },
+    {
+      "value": "Piergiorgio",
+      "weight": 3811
+    },
+    {
+      "value": "Amedeo",
+      "weight": 3765
+    },
+    {
+      "value": "Germano",
+      "weight": 3719
+    },
+    {
+      "value": "Guglielmo",
+      "weight": 3592
+    },
+    {
+      "value": "Gianpaolo",
+      "weight": 3548
+    },
+    {
+      "value": "Camillo",
+      "weight": 3518
+    },
+    {
+      "value": "Ruggero",
+      "weight": 3516
+    },
+    {
+      "value": "Martino",
+      "weight": 3450
+    },
+    {
+      "value": "Severino",
+      "weight": 3443
+    },
+    {
+      "value": "Tullio",
+      "weight": 3385
+    },
+    {
+      "value": "Damiano",
+      "weight": 3369
+    },
+    {
+      "value": "Ciro",
+      "weight": 3352
+    },
+    {
+      "value": "Oreste",
+      "weight": 3320
+    },
+    {
+      "value": "Orazio",
+      "weight": 3297
+    },
+    {
+      "value": "Mirco",
+      "weight": 3263
+    },
+    {
+      "value": "Benedetto",
+      "weight": 3254
+    },
+    {
+      "value": "Oscar",
+      "weight": 3223
+    },
+    {
+      "value": "Arnaldo",
+      "weight": 3159
+    },
+    {
+      "value": "Giordano",
+      "weight": 3137
+    },
+    {
+      "value": "Albino",
+      "weight": 3112
+    },
+    {
+      "value": "Bartolomeo",
+      "weight": 3088
+    },
+    {
+      "value": "Patrizio",
+      "weight": 3034
+    },
+    {
+      "value": "Battista",
+      "weight": 3003
+    },
+    {
+      "value": "Adolfo",
+      "weight": 2975
+    },
+    {
+      "value": "Cristian",
+      "weight": 2934
+    },
+    {
+      "value": "Benito",
+      "weight": 2931
+    },
+    {
+      "value": "Romeo",
+      "weight": 2929
+    },
+    {
+      "value": "Michelangelo",
+      "weight": 2891
+    },
+    {
+      "value": "Gianpiero",
+      "weight": 2886
+    },
+    {
+      "value": "Cristiano",
+      "weight": 2876
+    },
+    {
+      "value": "Pasqualino",
+      "weight": 2843
+    },
+    {
+      "value": "Nunzio",
+      "weight": 2780
+    },
+    {
+      "value": "Ilario",
+      "weight": 2732
+    },
+    {
+      "value": "Tonino",
+      "weight": 2732
+    },
+    {
+      "value": "Mirko",
+      "weight": 2724
+    },
+    {
+      "value": "Serafino",
+      "weight": 2657
+    },
+    {
+      "value": "Johann",
+      "weight": 2647
+    },
+    {
+      "value": "Emiliano",
+      "weight": 2633
+    },
+    {
+      "value": "Erminio",
+      "weight": 2627
+    },
+    {
+      "value": "Primo",
+      "weight": 2624
+    },
+    {
+      "value": "Ottavio",
+      "weight": 2619
+    },
+    {
+      "value": "Nazzareno",
+      "weight": 2605
+    },
+    {
+      "value": "Aniello",
+      "weight": 2599
+    },
+    {
+      "value": "Orlando",
+      "weight": 2599
+    },
+    {
+      "value": "Sante",
+      "weight": 2596
+    },
+    {
+      "value": "Celestino",
+      "weight": 2544
+    },
+    {
+      "value": "Giampietro",
+      "weight": 2523
+    },
+    {
+      "value": "Virgilio",
+      "weight": 2502
+    },
+    {
+      "value": "Tarcisio",
+      "weight": 2487
+    },
+    {
+      "value": "Bernardo",
+      "weight": 2419
+    },
+    {
+      "value": "Nicolino",
+      "weight": 2402
+    },
+    {
+      "value": "Gianpietro",
+      "weight": 2399
+    },
+    {
+      "value": "Beniamino",
+      "weight": 2371
+    },
+    {
+      "value": "Nello",
+      "weight": 2365
+    },
+    {
+      "value": "Rolando",
+      "weight": 2365
+    },
+    {
+      "value": "Sauro",
+      "weight": 2325
+    },
+    {
+      "value": "Christian",
+      "weight": 2289
+    },
+    {
+      "value": "Gioacchino",
+      "weight": 2272
+    },
+    {
+      "value": "Raimondo",
+      "weight": 2270
+    },
+    {
+      "value": "Gregorio",
+      "weight": 2261
+    },
+    {
+      "value": "Fortunato",
+      "weight": 2229
+    },
+    {
+      "value": "Ambrogio",
+      "weight": 2175
+    },
+    {
+      "value": "Franz",
+      "weight": 2155
+    },
+    {
+      "value": "Bernardino",
+      "weight": 2134
+    },
+    {
+      "value": "Giambattista",
+      "weight": 2110
+    },
+    {
+      "value": "Virginio",
+      "weight": 2091
+    },
+    {
+      "value": "Giacinto",
+      "weight": 2057
+    },
+    {
+      "value": "Arcangelo",
+      "weight": 2032
+    },
+    {
+      "value": "Girolamo",
+      "weight": 2028
+    },
+    {
+      "value": "Ercole",
+      "weight": 2000
+    },
+    {
+      "value": "Santino",
+      "weight": 1984
+    },
+    {
+      "value": "Ubaldo",
+      "weight": 1970
+    },
+    {
+      "value": "Clemente",
+      "weight": 1914
+    },
+    {
+      "value": "Natalino",
+      "weight": 1901
+    },
+    {
+      "value": "Gianmario",
+      "weight": 1823
+    },
+    {
+      "value": "Alvaro",
+      "weight": 1819
+    },
+    {
+      "value": "Rossano",
+      "weight": 1790
+    },
+    {
+      "value": "Alois",
+      "weight": 1779
+    },
+    {
+      "value": "Elvio",
+      "weight": 1776
+    },
+    {
+      "value": "Pierpaolo",
+      "weight": 1750
+    },
+    {
+      "value": "Anselmo",
+      "weight": 1743
+    },
+    {
+      "value": "Nino",
+      "weight": 1737
+    },
+    {
+      "value": "Leo",
+      "weight": 1708
+    },
+    {
+      "value": "Vittorino",
+      "weight": 1708
+    },
+    {
+      "value": "Paolino",
+      "weight": 1703
+    },
+    {
+      "value": "Mattia",
+      "weight": 1696
+    },
+    {
+      "value": "Pio",
+      "weight": 1664
+    },
+    {
+      "value": "Karl",
+      "weight": 1635
+    },
+    {
+      "value": "Romolo",
+      "weight": 1613
+    },
+    {
+      "value": "Gaspare",
+      "weight": 1600
+    },
+    {
+      "value": "Leopoldo",
+      "weight": 1566
+    },
+    {
+      "value": "David",
+      "weight": 1551
+    },
+    {
+      "value": "Annibale",
+      "weight": 1524
+    },
+    {
+      "value": "Secondo",
+      "weight": 1520
+    },
+    {
+      "value": "Emidio",
+      "weight": 1515
+    },
+    {
+      "value": "Teresio",
+      "weight": 1500
+    },
+    {
+      "value": "Denis",
+      "weight": 1459
+    },
+    {
+      "value": "Lamberto",
+      "weight": 1456
+    },
+    {
+      "value": "Guerrino",
+      "weight": 1448
+    },
+    {
+      "value": "Manuel",
+      "weight": 1437
+    },
+    {
+      "value": "Teodoro",
+      "weight": 1430
+    },
+    {
+      "value": "Lodovico",
+      "weight": 1423
+    },
+    {
+      "value": "Peter",
+      "weight": 1393
+    },
+    {
+      "value": "Silvestro",
+      "weight": 1391
+    },
+    {
+      "value": "Samuele",
+      "weight": 1363
+    },
+    {
+      "value": "Ottorino",
+      "weight": 1336
+    },
+    {
+      "value": "Doriano",
+      "weight": 1330
+    },
+    {
+      "value": "Isidoro",
+      "weight": 1321
+    },
+    {
+      "value": "Leandro",
+      "weight": 1310
+    },
+    {
+      "value": "Cataldo",
+      "weight": 1291
+    },
+    {
+      "value": "Giacomino",
+      "weight": 1281
+    },
+    {
+      "value": "Eligio",
+      "weight": 1279
+    },
+    {
+      "value": "Gualtiero",
+      "weight": 1273
+    },
+    {
+      "value": "Basilio",
+      "weight": 1269
+    },
+    {
+      "value": "Adelio",
+      "weight": 1268
+    },
+    {
+      "value": "Michelino",
+      "weight": 1267
+    },
+    {
+      "value": "Anton",
+      "weight": 1261
+    },
+    {
+      "value": "Angiolino",
+      "weight": 1258
+    },
+    {
+      "value": "Vinicio",
+      "weight": 1256
+    },
+    {
+      "value": "Remigio",
+      "weight": 1248
+    },
+    {
+      "value": "Marzio",
+      "weight": 1247
+    },
+    {
+      "value": "Duilio",
+      "weight": 1242
+    },
+    {
+      "value": "Giuseppino",
+      "weight": 1242
+    },
+    {
+      "value": "Raffaello",
+      "weight": 1242
+    },
+    {
+      "value": "Arrigo",
+      "weight": 1235
+    },
+    {
+      "value": "Vanni",
+      "weight": 1218
+    },
+    {
+      "value": "Oliviero",
+      "weight": 1213
+    },
+    {
+      "value": "Eraldo",
+      "weight": 1210
+    },
+    {
+      "value": "Onofrio",
+      "weight": 1192
+    },
+    {
+      "value": "Fabiano",
+      "weight": 1165
+    },
+    {
+      "value": "Igino",
+      "weight": 1162
+    },
+    {
+      "value": "Gavino",
+      "weight": 1152
+    },
+    {
+      "value": "Ermes",
+      "weight": 1148
+    },
+    {
+      "value": "Thomas",
+      "weight": 1129
+    },
+    {
+      "value": "Giannino",
+      "weight": 1128
+    },
+    {
+      "value": "Pierantonio",
+      "weight": 1115
+    },
+    {
+      "value": "Manlio",
+      "weight": 1103
+    },
+    {
+      "value": "Martin",
+      "weight": 1098
+    },
+    {
+      "value": "Giovannino",
+      "weight": 1097
+    },
+    {
+      "value": "Omar",
+      "weight": 1090
+    },
+    {
+      "value": "Lauro",
+      "weight": 1084
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

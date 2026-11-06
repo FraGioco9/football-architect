@@ -1,0 +1,1220 @@
+{
+  "schema_version": 2,
+  "code": "NED",
+  "cohort": "registered male first names of newborns in the Netherlands, 2025",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "nl-svb-boys-birth-names-2025",
+    "provider": "Sociale Verzekeringsbank (SVB), national boys' names registered for child benefit in 2025; ranked transcription by BijSlingers",
+    "source_url": "https://www.svb.nl/nl/kindernamen",
+    "transcription_url": "https://bijslingers.nl/blog/jongensnamen-top-500/",
+    "metric": "published counts of registered boys given each spelling of a first name in 2025; names below 10 registrations unpublished",
+    "license": "SVB public name statistics; verify specific reuse terms before republishing numerical counts; secondary site transcription dated 2026-10-17"
+  },
+  "selection_policy": "300 highest-frequency distinct NFC Unicode single-token male first names among SVB 2025 registered births, source order used for count ties; no etymological origin restriction",
+  "given_names": [
+    {
+      "value": "Noah",
+      "weight": 883
+    },
+    {
+      "value": "Liam",
+      "weight": 723
+    },
+    {
+      "value": "Luca",
+      "weight": 702
+    },
+    {
+      "value": "Sem",
+      "weight": 674
+    },
+    {
+      "value": "Mees",
+      "weight": 664
+    },
+    {
+      "value": "James",
+      "weight": 652
+    },
+    {
+      "value": "Lucas",
+      "weight": 625
+    },
+    {
+      "value": "Sam",
+      "weight": 605
+    },
+    {
+      "value": "Finn",
+      "weight": 595
+    },
+    {
+      "value": "Levi",
+      "weight": 588
+    },
+    {
+      "value": "Noud",
+      "weight": 572
+    },
+    {
+      "value": "Adam",
+      "weight": 544
+    },
+    {
+      "value": "Milan",
+      "weight": 519
+    },
+    {
+      "value": "Daan",
+      "weight": 492
+    },
+    {
+      "value": "Mats",
+      "weight": 469
+    },
+    {
+      "value": "Zayn",
+      "weight": 453
+    },
+    {
+      "value": "Mason",
+      "weight": 451
+    },
+    {
+      "value": "Luuk",
+      "weight": 433
+    },
+    {
+      "value": "Guus",
+      "weight": 408
+    },
+    {
+      "value": "Bram",
+      "weight": 380
+    },
+    {
+      "value": "Olivier",
+      "weight": 380
+    },
+    {
+      "value": "Otis",
+      "weight": 378
+    },
+    {
+      "value": "Siem",
+      "weight": 374
+    },
+    {
+      "value": "Floris",
+      "weight": 369
+    },
+    {
+      "value": "Oliver",
+      "weight": 358
+    },
+    {
+      "value": "Teun",
+      "weight": 344
+    },
+    {
+      "value": "Tobias",
+      "weight": 334
+    },
+    {
+      "value": "Gijs",
+      "weight": 332
+    },
+    {
+      "value": "Morris",
+      "weight": 332
+    },
+    {
+      "value": "Benjamin",
+      "weight": 331
+    },
+    {
+      "value": "Moos",
+      "weight": 329
+    },
+    {
+      "value": "Elias",
+      "weight": 326
+    },
+    {
+      "value": "Owen",
+      "weight": 325
+    },
+    {
+      "value": "Boaz",
+      "weight": 320
+    },
+    {
+      "value": "Thomas",
+      "weight": 310
+    },
+    {
+      "value": "Joep",
+      "weight": 300
+    },
+    {
+      "value": "Julian",
+      "weight": 296
+    },
+    {
+      "value": "Jesse",
+      "weight": 291
+    },
+    {
+      "value": "Kai",
+      "weight": 290
+    },
+    {
+      "value": "Abel",
+      "weight": 281
+    },
+    {
+      "value": "Max",
+      "weight": 281
+    },
+    {
+      "value": "Hugo",
+      "weight": 278
+    },
+    {
+      "value": "Jens",
+      "weight": 275
+    },
+    {
+      "value": "Lio",
+      "weight": 272
+    },
+    {
+      "value": "Ted",
+      "weight": 272
+    },
+    {
+      "value": "Ties",
+      "weight": 270
+    },
+    {
+      "value": "Milo",
+      "weight": 266
+    },
+    {
+      "value": "David",
+      "weight": 258
+    },
+    {
+      "value": "Jan",
+      "weight": 258
+    },
+    {
+      "value": "Mohammed",
+      "weight": 258
+    },
+    {
+      "value": "Jake",
+      "weight": 250
+    },
+    {
+      "value": "Jack",
+      "weight": 244
+    },
+    {
+      "value": "Jip",
+      "weight": 240
+    },
+    {
+      "value": "Dean",
+      "weight": 238
+    },
+    {
+      "value": "Mick",
+      "weight": 238
+    },
+    {
+      "value": "Fedde",
+      "weight": 237
+    },
+    {
+      "value": "Jurre",
+      "weight": 237
+    },
+    {
+      "value": "Nolan",
+      "weight": 228
+    },
+    {
+      "value": "Willem",
+      "weight": 227
+    },
+    {
+      "value": "Samuel",
+      "weight": 221
+    },
+    {
+      "value": "Melle",
+      "weight": 215
+    },
+    {
+      "value": "Rayan",
+      "weight": 207
+    },
+    {
+      "value": "Amir",
+      "weight": 206
+    },
+    {
+      "value": "Lars",
+      "weight": 203
+    },
+    {
+      "value": "Joah",
+      "weight": 202
+    },
+    {
+      "value": "Jace",
+      "weight": 201
+    },
+    {
+      "value": "Alexander",
+      "weight": 199
+    },
+    {
+      "value": "Loek",
+      "weight": 199
+    },
+    {
+      "value": "Lowen",
+      "weight": 197
+    },
+    {
+      "value": "Thijs",
+      "weight": 197
+    },
+    {
+      "value": "Tijn",
+      "weight": 197
+    },
+    {
+      "value": "Louis",
+      "weight": 196
+    },
+    {
+      "value": "Cas",
+      "weight": 195
+    },
+    {
+      "value": "Hidde",
+      "weight": 195
+    },
+    {
+      "value": "Matteo",
+      "weight": 191
+    },
+    {
+      "value": "Nathan",
+      "weight": 189
+    },
+    {
+      "value": "Musa",
+      "weight": 188
+    },
+    {
+      "value": "Vince",
+      "weight": 186
+    },
+    {
+      "value": "Lenn",
+      "weight": 183
+    },
+    {
+      "value": "Scott",
+      "weight": 182
+    },
+    {
+      "value": "Arthur",
+      "weight": 181
+    },
+    {
+      "value": "Boris",
+      "weight": 181
+    },
+    {
+      "value": "Ezra",
+      "weight": 180
+    },
+    {
+      "value": "Sef",
+      "weight": 180
+    },
+    {
+      "value": "Daniël",
+      "weight": 179
+    },
+    {
+      "value": "Sepp",
+      "weight": 179
+    },
+    {
+      "value": "Aiden",
+      "weight": 177
+    },
+    {
+      "value": "Mohamed",
+      "weight": 177
+    },
+    {
+      "value": "Frenkie",
+      "weight": 175
+    },
+    {
+      "value": "Oscar",
+      "weight": 172
+    },
+    {
+      "value": "Pepijn",
+      "weight": 169
+    },
+    {
+      "value": "Stijn",
+      "weight": 169
+    },
+    {
+      "value": "Leo",
+      "weight": 168
+    },
+    {
+      "value": "Joes",
+      "weight": 167
+    },
+    {
+      "value": "Sven",
+      "weight": 167
+    },
+    {
+      "value": "Wout",
+      "weight": 167
+    },
+    {
+      "value": "Felix",
+      "weight": 163
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 163
+    },
+    {
+      "value": "Niek",
+      "weight": 162
+    },
+    {
+      "value": "Luka",
+      "weight": 160
+    },
+    {
+      "value": "Hamza",
+      "weight": 159
+    },
+    {
+      "value": "Mateo",
+      "weight": 158
+    },
+    {
+      "value": "Omar",
+      "weight": 158
+    },
+    {
+      "value": "Lewis",
+      "weight": 157
+    },
+    {
+      "value": "Senn",
+      "weight": 157
+    },
+    {
+      "value": "Oos",
+      "weight": 156
+    },
+    {
+      "value": "Louay",
+      "weight": 154
+    },
+    {
+      "value": "Zayd",
+      "weight": 154
+    },
+    {
+      "value": "Jayden",
+      "weight": 153
+    },
+    {
+      "value": "Ryan",
+      "weight": 153
+    },
+    {
+      "value": "Ruben",
+      "weight": 152
+    },
+    {
+      "value": "Dex",
+      "weight": 150
+    },
+    {
+      "value": "Xavi",
+      "weight": 150
+    },
+    {
+      "value": "Pim",
+      "weight": 147
+    },
+    {
+      "value": "Dani",
+      "weight": 146
+    },
+    {
+      "value": "Quinn",
+      "weight": 146
+    },
+    {
+      "value": "Leon",
+      "weight": 144
+    },
+    {
+      "value": "Jules",
+      "weight": 143
+    },
+    {
+      "value": "Mace",
+      "weight": 141
+    },
+    {
+      "value": "Sev",
+      "weight": 141
+    },
+    {
+      "value": "Charlie",
+      "weight": 140
+    },
+    {
+      "value": "Cody",
+      "weight": 139
+    },
+    {
+      "value": "Laurens",
+      "weight": 137
+    },
+    {
+      "value": "Job",
+      "weight": 134
+    },
+    {
+      "value": "Kian",
+      "weight": 133
+    },
+    {
+      "value": "Tom",
+      "weight": 133
+    },
+    {
+      "value": "Elijah",
+      "weight": 131
+    },
+    {
+      "value": "Sep",
+      "weight": 130
+    },
+    {
+      "value": "Jaxx",
+      "weight": 129
+    },
+    {
+      "value": "Julius",
+      "weight": 129
+    },
+    {
+      "value": "Noël",
+      "weight": 127
+    },
+    {
+      "value": "Jonah",
+      "weight": 125
+    },
+    {
+      "value": "Miles",
+      "weight": 123
+    },
+    {
+      "value": "Simon",
+      "weight": 123
+    },
+    {
+      "value": "Joshua",
+      "weight": 122
+    },
+    {
+      "value": "Lukas",
+      "weight": 122
+    },
+    {
+      "value": "Roan",
+      "weight": 122
+    },
+    {
+      "value": "Florian",
+      "weight": 119
+    },
+    {
+      "value": "Jason",
+      "weight": 119
+    },
+    {
+      "value": "Mika",
+      "weight": 119
+    },
+    {
+      "value": "Joas",
+      "weight": 118
+    },
+    {
+      "value": "Johannes",
+      "weight": 117
+    },
+    {
+      "value": "Lío",
+      "weight": 117
+    },
+    {
+      "value": "Daniel",
+      "weight": 116
+    },
+    {
+      "value": "Jonas",
+      "weight": 116
+    },
+    {
+      "value": "Odin",
+      "weight": 116
+    },
+    {
+      "value": "Aaron",
+      "weight": 113
+    },
+    {
+      "value": "Duuk",
+      "weight": 113
+    },
+    {
+      "value": "Joël",
+      "weight": 113
+    },
+    {
+      "value": "Pieter",
+      "weight": 112
+    },
+    {
+      "value": "Emir",
+      "weight": 109
+    },
+    {
+      "value": "Kees",
+      "weight": 109
+    },
+    {
+      "value": "Tim",
+      "weight": 109
+    },
+    {
+      "value": "Moussa",
+      "weight": 107
+    },
+    {
+      "value": "Lev",
+      "weight": 106
+    },
+    {
+      "value": "Logan",
+      "weight": 106
+    },
+    {
+      "value": "Miran",
+      "weight": 106
+    },
+    {
+      "value": "Yusuf",
+      "weight": 106
+    },
+    {
+      "value": "Hendrik",
+      "weight": 105
+    },
+    {
+      "value": "Joris",
+      "weight": 104
+    },
+    {
+      "value": "Manuel",
+      "weight": 104
+    },
+    {
+      "value": "Ravi",
+      "weight": 104
+    },
+    {
+      "value": "Rens",
+      "weight": 102
+    },
+    {
+      "value": "Aron",
+      "weight": 101
+    },
+    {
+      "value": "Lou",
+      "weight": 101
+    },
+    {
+      "value": "Alex",
+      "weight": 100
+    },
+    {
+      "value": "Ayden",
+      "weight": 100
+    },
+    {
+      "value": "Jacob",
+      "weight": 100
+    },
+    {
+      "value": "Philip",
+      "weight": 100
+    },
+    {
+      "value": "Stan",
+      "weight": 100
+    },
+    {
+      "value": "Bodhi",
+      "weight": 99
+    },
+    {
+      "value": "Casper",
+      "weight": 99
+    },
+    {
+      "value": "Imran",
+      "weight": 98
+    },
+    {
+      "value": "Jonathan",
+      "weight": 98
+    },
+    {
+      "value": "Ali",
+      "weight": 95
+    },
+    {
+      "value": "Beau",
+      "weight": 94
+    },
+    {
+      "value": "Aras",
+      "weight": 93
+    },
+    {
+      "value": "Mayson",
+      "weight": 93
+    },
+    {
+      "value": "Jim",
+      "weight": 92
+    },
+    {
+      "value": "Muhammed",
+      "weight": 92
+    },
+    {
+      "value": "Raf",
+      "weight": 92
+    },
+    {
+      "value": "Thijmen",
+      "weight": 92
+    },
+    {
+      "value": "Sami",
+      "weight": 91
+    },
+    {
+      "value": "Sil",
+      "weight": 91
+    },
+    {
+      "value": "Yahya",
+      "weight": 91
+    },
+    {
+      "value": "Harvey",
+      "weight": 90
+    },
+    {
+      "value": "Seth",
+      "weight": 90
+    },
+    {
+      "value": "Toon",
+      "weight": 90
+    },
+    {
+      "value": "Muhammad",
+      "weight": 89
+    },
+    {
+      "value": "Louie",
+      "weight": 88
+    },
+    {
+      "value": "Kyan",
+      "weight": 87
+    },
+    {
+      "value": "Victor",
+      "weight": 87
+    },
+    {
+      "value": "Jelte",
+      "weight": 86
+    },
+    {
+      "value": "Stef",
+      "weight": 86
+    },
+    {
+      "value": "Jelle",
+      "weight": 85
+    },
+    {
+      "value": "Malik",
+      "weight": 84
+    },
+    {
+      "value": "Tobi",
+      "weight": 84
+    },
+    {
+      "value": "Ayaz",
+      "weight": 83
+    },
+    {
+      "value": "Bodi",
+      "weight": 83
+    },
+    {
+      "value": "Loet",
+      "weight": 83
+    },
+    {
+      "value": "Ace",
+      "weight": 82
+    },
+    {
+      "value": "George",
+      "weight": 82
+    },
+    {
+      "value": "Ilyas",
+      "weight": 82
+    },
+    {
+      "value": "Luke",
+      "weight": 82
+    },
+    {
+      "value": "Micha",
+      "weight": 82
+    },
+    {
+      "value": "Dante",
+      "weight": 81
+    },
+    {
+      "value": "Faas",
+      "weight": 81
+    },
+    {
+      "value": "Jayce",
+      "weight": 81
+    },
+    {
+      "value": "Zakaria",
+      "weight": 81
+    },
+    {
+      "value": "Cornelis",
+      "weight": 80
+    },
+    {
+      "value": "Youssef",
+      "weight": 80
+    },
+    {
+      "value": "Isaiah",
+      "weight": 79
+    },
+    {
+      "value": "Mylo",
+      "weight": 79
+    },
+    {
+      "value": "Jax",
+      "weight": 78
+    },
+    {
+      "value": "Maxim",
+      "weight": 78
+    },
+    {
+      "value": "Ian",
+      "weight": 77
+    },
+    {
+      "value": "Idris",
+      "weight": 77
+    },
+    {
+      "value": "Joey",
+      "weight": 77
+    },
+    {
+      "value": "Rafael",
+      "weight": 77
+    },
+    {
+      "value": "Robin",
+      "weight": 77
+    },
+    {
+      "value": "Bob",
+      "weight": 76
+    },
+    {
+      "value": "Manu",
+      "weight": 75
+    },
+    {
+      "value": "Gerrit",
+      "weight": 74
+    },
+    {
+      "value": "Mark",
+      "weight": 74
+    },
+    {
+      "value": "Rein",
+      "weight": 74
+    },
+    {
+      "value": "Zeyd",
+      "weight": 74
+    },
+    {
+      "value": "Eden",
+      "weight": 72
+    },
+    {
+      "value": "Juda",
+      "weight": 72
+    },
+    {
+      "value": "Lex",
+      "weight": 72
+    },
+    {
+      "value": "Otto",
+      "weight": 72
+    },
+    {
+      "value": "Kay",
+      "weight": 71
+    },
+    {
+      "value": "Novan",
+      "weight": 71
+    },
+    {
+      "value": "Theo",
+      "weight": 71
+    },
+    {
+      "value": "Timo",
+      "weight": 71
+    },
+    {
+      "value": "Vigo",
+      "weight": 71
+    },
+    {
+      "value": "Riv",
+      "weight": 70
+    },
+    {
+      "value": "Isa",
+      "weight": 69
+    },
+    {
+      "value": "Luc",
+      "weight": 69
+    },
+    {
+      "value": "Jamie",
+      "weight": 68
+    },
+    {
+      "value": "Toby",
+      "weight": 68
+    },
+    {
+      "value": "Tommy",
+      "weight": 68
+    },
+    {
+      "value": "Tygo",
+      "weight": 68
+    },
+    {
+      "value": "Zion",
+      "weight": 68
+    },
+    {
+      "value": "Huub",
+      "weight": 67
+    },
+    {
+      "value": "Maurits",
+      "weight": 67
+    },
+    {
+      "value": "Fabian",
+      "weight": 65
+    },
+    {
+      "value": "Mohammad",
+      "weight": 65
+    },
+    {
+      "value": "Gabriel",
+      "weight": 64
+    },
+    {
+      "value": "Ben",
+      "weight": 63
+    },
+    {
+      "value": "Boet",
+      "weight": 63
+    },
+    {
+      "value": "Lux",
+      "weight": 63
+    },
+    {
+      "value": "Ivan",
+      "weight": 62
+    },
+    {
+      "value": "Maas",
+      "weight": 62
+    },
+    {
+      "value": "Yves",
+      "weight": 62
+    },
+    {
+      "value": "Filip",
+      "weight": 61
+    },
+    {
+      "value": "Gabriël",
+      "weight": 61
+    },
+    {
+      "value": "Jort",
+      "weight": 61
+    },
+    {
+      "value": "Senne",
+      "weight": 61
+    },
+    {
+      "value": "Twan",
+      "weight": 61
+    },
+    {
+      "value": "Bowie",
+      "weight": 60
+    },
+    {
+      "value": "Jona",
+      "weight": 60
+    },
+    {
+      "value": "Mart",
+      "weight": 60
+    },
+    {
+      "value": "Olaf",
+      "weight": 60
+    },
+    {
+      "value": "Berend",
+      "weight": 59
+    },
+    {
+      "value": "Luan",
+      "weight": 59
+    },
+    {
+      "value": "Bas",
+      "weight": 58
+    },
+    {
+      "value": "Duco",
+      "weight": 58
+    },
+    {
+      "value": "Dylan",
+      "weight": 58
+    },
+    {
+      "value": "Jari",
+      "weight": 58
+    },
+    {
+      "value": "Jeppe",
+      "weight": 58
+    },
+    {
+      "value": "Marcus",
+      "weight": 58
+    },
+    {
+      "value": "Matthias",
+      "weight": 58
+    },
+    {
+      "value": "Matthijs",
+      "weight": 58
+    },
+    {
+      "value": "Mert",
+      "weight": 58
+    },
+    {
+      "value": "Oskar",
+      "weight": 58
+    },
+    {
+      "value": "Tyler",
+      "weight": 58
+    },
+    {
+      "value": "Vic",
+      "weight": 58
+    },
+    {
+      "value": "Amin",
+      "weight": 57
+    },
+    {
+      "value": "Jasper",
+      "weight": 57
+    },
+    {
+      "value": "Joe",
+      "weight": 57
+    },
+    {
+      "value": "Noan",
+      "weight": 57
+    },
+    {
+      "value": "Elio",
+      "weight": 56
+    },
+    {
+      "value": "Mahir",
+      "weight": 56
+    },
+    {
+      "value": "Benja",
+      "weight": 55
+    },
+    {
+      "value": "Evan",
+      "weight": 55
+    },
+    {
+      "value": "Joa",
+      "weight": 55
+    },
+    {
+      "value": "Kaj",
+      "weight": 55
+    },
+    {
+      "value": "Ole",
+      "weight": 55
+    },
+    {
+      "value": "Revi",
+      "weight": 55
+    },
+    {
+      "value": "Riley",
+      "weight": 55
+    },
+    {
+      "value": "Damian",
+      "weight": 54
+    },
+    {
+      "value": "Dirk",
+      "weight": 54
+    },
+    {
+      "value": "Eli",
+      "weight": 54
+    },
+    {
+      "value": "Jordan",
+      "weight": 54
+    },
+    {
+      "value": "Mustafa",
+      "weight": 54
+    },
+    {
+      "value": "Nouri",
+      "weight": 54
+    },
+    {
+      "value": "Younes",
+      "weight": 54
+    },
+    {
+      "value": "Zakariya",
+      "weight": 54
+    },
+    {
+      "value": "Brent",
+      "weight": 53
+    },
+    {
+      "value": "Ethan",
+      "weight": 53
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

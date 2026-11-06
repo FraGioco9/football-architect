@@ -1,0 +1,1240 @@
+{
+  "schema_version": 2,
+  "code": "KOR",
+  "cohort": "male registered births in South Korea, 2020 (one calendar year, full male name ranking)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "kr-namechart-male-births-2020",
+    "provider": "NAMEChart (namechart.kr), Korean Supreme Court Electronic Family Registration statistical data, male registrations in 2020",
+    "source_url": "https://www.namechart.kr/chart/2020?gender=m&page=1",
+    "source_page_urls": [
+      "https://www.namechart.kr/chart/2020?gender=m&page=1",
+      "https://www.namechart.kr/chart/2020?gender=m&page=2",
+      "https://www.namechart.kr/chart/2020?gender=m&page=3",
+      "https://www.namechart.kr/chart/2020?gender=m&page=4",
+      "https://www.namechart.kr/chart/2020?gender=m&page=5",
+      "https://www.namechart.kr/chart/2020?gender=m&page=6",
+      "https://www.namechart.kr/chart/2020?gender=m&page=7"
+    ],
+    "romanization_standard": "Revised Romanization of Korean (National Institute of Korean Language; given-name syllables joined without spaces/hyphens)",
+    "romanization_reference_url": "https://www.korean.go.kr/front_eng/roman/roman_01.do",
+    "metric": "observed count of 2020 male birth registrations per name as published by NAMEChart (source romanization performed systematically, source counts unchanged)",
+    "license": "Korean Supreme Court statistical origin; NAMEChart secondary display and redistribution terms not verified: review required before commercial publication"
+  },
+  "selection_policy": "Top 300 distinct Romanized single male given names from NAMEChart 2020 published observed births, sorted by source count; romanization follows NIKL Revised Romanization with no syllable separator; no origins inferred",
+  "given_names": [
+    {
+      "value": "Doyun",
+      "weight": 2434
+    },
+    {
+      "value": "Seojun",
+      "weight": 2407
+    },
+    {
+      "value": "Hajun",
+      "weight": 2018
+    },
+    {
+      "value": "Eunu",
+      "weight": 1960
+    },
+    {
+      "value": "Siu",
+      "weight": 1929
+    },
+    {
+      "value": "Ijun",
+      "weight": 1805
+    },
+    {
+      "value": "Jiho",
+      "weight": 1670
+    },
+    {
+      "value": "Yejun",
+      "weight": 1470
+    },
+    {
+      "value": "Yujun",
+      "weight": 1399
+    },
+    {
+      "value": "Juwon",
+      "weight": 1279
+    },
+    {
+      "value": "Geonu",
+      "weight": 1275
+    },
+    {
+      "value": "Yeonu",
+      "weight": 1271
+    },
+    {
+      "value": "Dohyeon",
+      "weight": 1270
+    },
+    {
+      "value": "Suho",
+      "weight": 1258
+    },
+    {
+      "value": "Minjun",
+      "weight": 1257
+    },
+    {
+      "value": "Seonu",
+      "weight": 1175
+    },
+    {
+      "value": "Ian",
+      "weight": 1161
+    },
+    {
+      "value": "Ujin",
+      "weight": 1158
+    },
+    {
+      "value": "Junu",
+      "weight": 1151
+    },
+    {
+      "value": "Seojin",
+      "weight": 1096
+    },
+    {
+      "value": "Siyun",
+      "weight": 1051
+    },
+    {
+      "value": "Yunu",
+      "weight": 1042
+    },
+    {
+      "value": "Jihu",
+      "weight": 1011
+    },
+    {
+      "value": "Roun",
+      "weight": 1001
+    },
+    {
+      "value": "Uju",
+      "weight": 954
+    },
+    {
+      "value": "Jian",
+      "weight": 810
+    },
+    {
+      "value": "Hyeonu",
+      "weight": 794
+    },
+    {
+      "value": "Doha",
+      "weight": 769
+    },
+    {
+      "value": "Seou",
+      "weight": 748
+    },
+    {
+      "value": "Junseo",
+      "weight": 739
+    },
+    {
+      "value": "Ideun",
+      "weight": 735
+    },
+    {
+      "value": "Jihun",
+      "weight": 728
+    },
+    {
+      "value": "Jihan",
+      "weight": 685
+    },
+    {
+      "value": "Ihyeon",
+      "weight": 653
+    },
+    {
+      "value": "Eunho",
+      "weight": 647
+    },
+    {
+      "value": "Daon",
+      "weight": 645
+    },
+    {
+      "value": "Jeongu",
+      "weight": 629
+    },
+    {
+      "value": "Yuchan",
+      "weight": 619
+    },
+    {
+      "value": "Hajin",
+      "weight": 598
+    },
+    {
+      "value": "Sion",
+      "weight": 595
+    },
+    {
+      "value": "Jiu",
+      "weight": 594
+    },
+    {
+      "value": "Haon",
+      "weight": 593
+    },
+    {
+      "value": "Sian",
+      "weight": 588
+    },
+    {
+      "value": "Hamin",
+      "weight": 581
+    },
+    {
+      "value": "Juan",
+      "weight": 567
+    },
+    {
+      "value": "Seungu",
+      "weight": 547
+    },
+    {
+      "value": "Sihyeon",
+      "weight": 545
+    },
+    {
+      "value": "Hangyeol",
+      "weight": 541
+    },
+    {
+      "value": "Sihu",
+      "weight": 538
+    },
+    {
+      "value": "Doyul",
+      "weight": 523
+    },
+    {
+      "value": "Minjae",
+      "weight": 513
+    },
+    {
+      "value": "Yul",
+      "weight": 512
+    },
+    {
+      "value": "Jaeyun",
+      "weight": 475
+    },
+    {
+      "value": "Taeyun",
+      "weight": 465
+    },
+    {
+      "value": "Jio",
+      "weight": 462
+    },
+    {
+      "value": "Hayul",
+      "weight": 461
+    },
+    {
+      "value": "Taeo",
+      "weight": 460
+    },
+    {
+      "value": "Jihwan",
+      "weight": 459
+    },
+    {
+      "value": "Dogyeom",
+      "weight": 456
+    },
+    {
+      "value": "Yunho",
+      "weight": 453
+    },
+    {
+      "value": "Suhyeon",
+      "weight": 453
+    },
+    {
+      "value": "Raon",
+      "weight": 453
+    },
+    {
+      "value": "Danu",
+      "weight": 447
+    },
+    {
+      "value": "Roi",
+      "weight": 430
+    },
+    {
+      "value": "Jinu",
+      "weight": 427
+    },
+    {
+      "value": "Ubin",
+      "weight": 425
+    },
+    {
+      "value": "Dogyeong",
+      "weight": 419
+    },
+    {
+      "value": "Jun",
+      "weight": 418
+    },
+    {
+      "value": "Yunjae",
+      "weight": 417
+    },
+    {
+      "value": "Yuan",
+      "weight": 414
+    },
+    {
+      "value": "Jiyul",
+      "weight": 414
+    },
+    {
+      "value": "Haram",
+      "weight": 407
+    },
+    {
+      "value": "Siwon",
+      "weight": 393
+    },
+    {
+      "value": "Hyeonjun",
+      "weight": 387
+    },
+    {
+      "value": "Seohu",
+      "weight": 384
+    },
+    {
+      "value": "Siyul",
+      "weight": 371
+    },
+    {
+      "value": "Dojun",
+      "weight": 369
+    },
+    {
+      "value": "Jiwon",
+      "weight": 365
+    },
+    {
+      "value": "Haneul",
+      "weight": 358
+    },
+    {
+      "value": "Taeyang",
+      "weight": 356
+    },
+    {
+      "value": "Harang",
+      "weight": 355
+    },
+    {
+      "value": "Dohun",
+      "weight": 353
+    },
+    {
+      "value": "Eunchan",
+      "weight": 350
+    },
+    {
+      "value": "Jimin",
+      "weight": 347
+    },
+    {
+      "value": "Siwan",
+      "weight": 345
+    },
+    {
+      "value": "Juho",
+      "weight": 344
+    },
+    {
+      "value": "Jaei",
+      "weight": 333
+    },
+    {
+      "value": "Ihan",
+      "weight": 332
+    },
+    {
+      "value": "Minho",
+      "weight": 314
+    },
+    {
+      "value": "Seunghyeon",
+      "weight": 314
+    },
+    {
+      "value": "Jaeha",
+      "weight": 313
+    },
+    {
+      "value": "Dowon",
+      "weight": 297
+    },
+    {
+      "value": "Geon",
+      "weight": 295
+    },
+    {
+      "value": "Ain",
+      "weight": 293
+    },
+    {
+      "value": "Minu",
+      "weight": 290
+    },
+    {
+      "value": "Jeonghu",
+      "weight": 287
+    },
+    {
+      "value": "Junhyeok",
+      "weight": 285
+    },
+    {
+      "value": "Minchan",
+      "weight": 281
+    },
+    {
+      "value": "Seoho",
+      "weight": 280
+    },
+    {
+      "value": "Sihwan",
+      "weight": 279
+    },
+    {
+      "value": "Yun",
+      "weight": 278
+    },
+    {
+      "value": "Doyeong",
+      "weight": 278
+    },
+    {
+      "value": "Jaewon",
+      "weight": 276
+    },
+    {
+      "value": "Sihun",
+      "weight": 273
+    },
+    {
+      "value": "Seoyul",
+      "weight": 271
+    },
+    {
+      "value": "Onyu",
+      "weight": 270
+    },
+    {
+      "value": "Yeseong",
+      "weight": 266
+    },
+    {
+      "value": "Eunseong",
+      "weight": 260
+    },
+    {
+      "value": "Junhui",
+      "weight": 258
+    },
+    {
+      "value": "Seungmin",
+      "weight": 257
+    },
+    {
+      "value": "Geonhu",
+      "weight": 254
+    },
+    {
+      "value": "Taejun",
+      "weight": 252
+    },
+    {
+      "value": "Rian",
+      "weight": 252
+    },
+    {
+      "value": "Hyeon",
+      "weight": 249
+    },
+    {
+      "value": "Jiwan",
+      "weight": 249
+    },
+    {
+      "value": "Yugeon",
+      "weight": 248
+    },
+    {
+      "value": "Taemin",
+      "weight": 245
+    },
+    {
+      "value": "Gangmin",
+      "weight": 244
+    },
+    {
+      "value": "Jaehyeon",
+      "weight": 243
+    },
+    {
+      "value": "Seowon",
+      "weight": 243
+    },
+    {
+      "value": "Taeha",
+      "weight": 241
+    },
+    {
+      "value": "Gyumin",
+      "weight": 241
+    },
+    {
+      "value": "Yechan",
+      "weight": 228
+    },
+    {
+      "value": "Jaeyul",
+      "weight": 226
+    },
+    {
+      "value": "Haejun",
+      "weight": 226
+    },
+    {
+      "value": "Jiseong",
+      "weight": 226
+    },
+    {
+      "value": "Yunseong",
+      "weight": 224
+    },
+    {
+      "value": "Jaemin",
+      "weight": 223
+    },
+    {
+      "value": "Minseong",
+      "weight": 221
+    },
+    {
+      "value": "Yeonjun",
+      "weight": 221
+    },
+    {
+      "value": "Dawon",
+      "weight": 220
+    },
+    {
+      "value": "Yudam",
+      "weight": 220
+    },
+    {
+      "value": "Taeyul",
+      "weight": 218
+    },
+    {
+      "value": "Dojin",
+      "weight": 217
+    },
+    {
+      "value": "Ajun",
+      "weight": 214
+    },
+    {
+      "value": "Haseong",
+      "weight": 211
+    },
+    {
+      "value": "Mingyu",
+      "weight": 211
+    },
+    {
+      "value": "Roha",
+      "weight": 210
+    },
+    {
+      "value": "Chan",
+      "weight": 208
+    },
+    {
+      "value": "Jion",
+      "weight": 207
+    },
+    {
+      "value": "Taein",
+      "weight": 207
+    },
+    {
+      "value": "Taehyeon",
+      "weight": 205
+    },
+    {
+      "value": "Jeongwon",
+      "weight": 204
+    },
+    {
+      "value": "Gaon",
+      "weight": 204
+    },
+    {
+      "value": "Yujin",
+      "weight": 203
+    },
+    {
+      "value": "Junho",
+      "weight": 201
+    },
+    {
+      "value": "Siho",
+      "weight": 199
+    },
+    {
+      "value": "Ujun",
+      "weight": 197
+    },
+    {
+      "value": "Seungjun",
+      "weight": 195
+    },
+    {
+      "value": "Rogeon",
+      "weight": 192
+    },
+    {
+      "value": "Seonho",
+      "weight": 190
+    },
+    {
+      "value": "Seungjae",
+      "weight": 190
+    },
+    {
+      "value": "Dongyun",
+      "weight": 187
+    },
+    {
+      "value": "Yuhyeon",
+      "weight": 187
+    },
+    {
+      "value": "Gangu",
+      "weight": 187
+    },
+    {
+      "value": "Haein",
+      "weight": 184
+    },
+    {
+      "value": "Dogeon",
+      "weight": 181
+    },
+    {
+      "value": "Dongha",
+      "weight": 181
+    },
+    {
+      "value": "Gyubin",
+      "weight": 180
+    },
+    {
+      "value": "Inu",
+      "weight": 180
+    },
+    {
+      "value": "Haru",
+      "weight": 179
+    },
+    {
+      "value": "Jaehui",
+      "weight": 177
+    },
+    {
+      "value": "Geonyul",
+      "weight": 175
+    },
+    {
+      "value": "Taei",
+      "weight": 173
+    },
+    {
+      "value": "Seongjun",
+      "weight": 173
+    },
+    {
+      "value": "Uhyeon",
+      "weight": 173
+    },
+    {
+      "value": "Junyeong",
+      "weight": 172
+    },
+    {
+      "value": "Jihyeok",
+      "weight": 172
+    },
+    {
+      "value": "Juhwan",
+      "weight": 171
+    },
+    {
+      "value": "Noa",
+      "weight": 171
+    },
+    {
+      "value": "Minhyeok",
+      "weight": 170
+    },
+    {
+      "value": "Uchan",
+      "weight": 169
+    },
+    {
+      "value": "Hyeonseo",
+      "weight": 169
+    },
+    {
+      "value": "Yunhu",
+      "weight": 168
+    },
+    {
+      "value": "Siheon",
+      "weight": 168
+    },
+    {
+      "value": "Yeonho",
+      "weight": 167
+    },
+    {
+      "value": "Hayun",
+      "weight": 166
+    },
+    {
+      "value": "Eunyul",
+      "weight": 166
+    },
+    {
+      "value": "Seungho",
+      "weight": 165
+    },
+    {
+      "value": "Seungbin",
+      "weight": 165
+    },
+    {
+      "value": "Donghyeon",
+      "weight": 165
+    },
+    {
+      "value": "Junsu",
+      "weight": 163
+    },
+    {
+      "value": "Hojun",
+      "weight": 163
+    },
+    {
+      "value": "Seongbin",
+      "weight": 161
+    },
+    {
+      "value": "Sejun",
+      "weight": 161
+    },
+    {
+      "value": "Junhu",
+      "weight": 159
+    },
+    {
+      "value": "Seungyun",
+      "weight": 159
+    },
+    {
+      "value": "Chanyeong",
+      "weight": 158
+    },
+    {
+      "value": "Mingeon",
+      "weight": 158
+    },
+    {
+      "value": "Wonu",
+      "weight": 154
+    },
+    {
+      "value": "Haesol",
+      "weight": 154
+    },
+    {
+      "value": "Geonhui",
+      "weight": 153
+    },
+    {
+      "value": "Doun",
+      "weight": 152
+    },
+    {
+      "value": "Yunchan",
+      "weight": 150
+    },
+    {
+      "value": "Ujae",
+      "weight": 149
+    },
+    {
+      "value": "Seoan",
+      "weight": 148
+    },
+    {
+      "value": "Juhan",
+      "weight": 148
+    },
+    {
+      "value": "Riu",
+      "weight": 146
+    },
+    {
+      "value": "Seunghu",
+      "weight": 146
+    },
+    {
+      "value": "Jeongmin",
+      "weight": 146
+    },
+    {
+      "value": "Jaejun",
+      "weight": 146
+    },
+    {
+      "value": "Sinu",
+      "weight": 145
+    },
+    {
+      "value": "Ido",
+      "weight": 144
+    },
+    {
+      "value": "Ichan",
+      "weight": 144
+    },
+    {
+      "value": "Jiun",
+      "weight": 143
+    },
+    {
+      "value": "Seonghyeon",
+      "weight": 142
+    },
+    {
+      "value": "Rihan",
+      "weight": 141
+    },
+    {
+      "value": "San",
+      "weight": 141
+    },
+    {
+      "value": "Ganghyeon",
+      "weight": 141
+    },
+    {
+      "value": "Suhyeok",
+      "weight": 139
+    },
+    {
+      "value": "Geonho",
+      "weight": 139
+    },
+    {
+      "value": "Seungwon",
+      "weight": 138
+    },
+    {
+      "value": "Sijun",
+      "weight": 138
+    },
+    {
+      "value": "Eunjun",
+      "weight": 137
+    },
+    {
+      "value": "Hanul",
+      "weight": 136
+    },
+    {
+      "value": "Seonyul",
+      "weight": 136
+    },
+    {
+      "value": "Iseo",
+      "weight": 135
+    },
+    {
+      "value": "Chanhui",
+      "weight": 135
+    },
+    {
+      "value": "Useong",
+      "weight": 133
+    },
+    {
+      "value": "Seongyun",
+      "weight": 133
+    },
+    {
+      "value": "Isu",
+      "weight": 132
+    },
+    {
+      "value": "Jeonghyeon",
+      "weight": 131
+    },
+    {
+      "value": "Habin",
+      "weight": 129
+    },
+    {
+      "value": "Doyeon",
+      "weight": 128
+    },
+    {
+      "value": "Seongmin",
+      "weight": 128
+    },
+    {
+      "value": "Taeho",
+      "weight": 127
+    },
+    {
+      "value": "Uyeong",
+      "weight": 127
+    },
+    {
+      "value": "Gyeol",
+      "weight": 127
+    },
+    {
+      "value": "Siha",
+      "weight": 126
+    },
+    {
+      "value": "Yumin",
+      "weight": 126
+    },
+    {
+      "value": "Seoyun",
+      "weight": 125
+    },
+    {
+      "value": "Idam",
+      "weight": 125
+    },
+    {
+      "value": "Seoha",
+      "weight": 125
+    },
+    {
+      "value": "Sangyun",
+      "weight": 124
+    },
+    {
+      "value": "Sehyeon",
+      "weight": 122
+    },
+    {
+      "value": "Juyeong",
+      "weight": 122
+    },
+    {
+      "value": "Seobin",
+      "weight": 121
+    },
+    {
+      "value": "Chanu",
+      "weight": 120
+    },
+    {
+      "value": "Minseo",
+      "weight": 118
+    },
+    {
+      "value": "Chanyul",
+      "weight": 118
+    },
+    {
+      "value": "Won",
+      "weight": 118
+    },
+    {
+      "value": "Dobin",
+      "weight": 117
+    },
+    {
+      "value": "Hanyul",
+      "weight": 117
+    },
+    {
+      "value": "Taeu",
+      "weight": 117
+    },
+    {
+      "value": "Riho",
+      "weight": 116
+    },
+    {
+      "value": "Hyojun",
+      "weight": 114
+    },
+    {
+      "value": "Taegeon",
+      "weight": 114
+    },
+    {
+      "value": "Yubin",
+      "weight": 113
+    },
+    {
+      "value": "Wonjun",
+      "weight": 113
+    },
+    {
+      "value": "Jaeyeong",
+      "weight": 112
+    },
+    {
+      "value": "Dongu",
+      "weight": 111
+    },
+    {
+      "value": "Taehun",
+      "weight": 110
+    },
+    {
+      "value": "Eunjae",
+      "weight": 110
+    },
+    {
+      "value": "Hyeonseung",
+      "weight": 110
+    },
+    {
+      "value": "Donggeon",
+      "weight": 109
+    },
+    {
+      "value": "Jiyong",
+      "weight": 109
+    },
+    {
+      "value": "Hagyeom",
+      "weight": 108
+    },
+    {
+      "value": "Yeojun",
+      "weight": 108
+    },
+    {
+      "value": "Dagyeom",
+      "weight": 108
+    },
+    {
+      "value": "Eunhu",
+      "weight": 107
+    },
+    {
+      "value": "Jaeu",
+      "weight": 107
+    },
+    {
+      "value": "Taeyeong",
+      "weight": 106
+    },
+    {
+      "value": "Yungeon",
+      "weight": 105
+    },
+    {
+      "value": "Minseok",
+      "weight": 105
+    },
+    {
+      "value": "Jeonghun",
+      "weight": 104
+    },
+    {
+      "value": "Yegeon",
+      "weight": 102
+    },
+    {
+      "value": "Dayul",
+      "weight": 101
+    },
+    {
+      "value": "Yeonhu",
+      "weight": 101
+    },
+    {
+      "value": "Robin",
+      "weight": 100
+    },
+    {
+      "value": "Hyeonsu",
+      "weight": 100
+    },
+    {
+      "value": "Jinho",
+      "weight": 100
+    },
+    {
+      "value": "Bogyeom",
+      "weight": 100
+    },
+    {
+      "value": "Gangjun",
+      "weight": 100
+    },
+    {
+      "value": "Juhyeok",
+      "weight": 99
+    },
+    {
+      "value": "Juha",
+      "weight": 99
+    },
+    {
+      "value": "Min",
+      "weight": 99
+    },
+    {
+      "value": "Yedam",
+      "weight": 99
+    },
+    {
+      "value": "Garam",
+      "weight": 98
+    },
+    {
+      "value": "Yugyeom",
+      "weight": 98
+    },
+    {
+      "value": "Rohan",
+      "weight": 97
+    },
+    {
+      "value": "Jaehun",
+      "weight": 96
+    },
+    {
+      "value": "Junseong",
+      "weight": 96
+    },
+    {
+      "value": "Seungchan",
+      "weight": 96
+    },
+    {
+      "value": "Sol",
+      "weight": 95
+    },
+    {
+      "value": "Chaeu",
+      "weight": 94
+    },
+    {
+      "value": "Mingi",
+      "weight": 94
+    },
+    {
+      "value": "Beomjun",
+      "weight": 93
+    },
+    {
+      "value": "Hyeonmin",
+      "weight": 93
+    },
+    {
+      "value": "Minyul",
+      "weight": 93
+    },
+    {
+      "value": "Yeongjun",
+      "weight": 93
+    },
+    {
+      "value": "Gyeongmin",
+      "weight": 93
+    },
+    {
+      "value": "Hyeonseong",
+      "weight": 93
+    },
+    {
+      "value": "Hyeonjin",
+      "weight": 93
+    },
+    {
+      "value": "Dodam",
+      "weight": 92
+    },
+    {
+      "value": "Seonghun",
+      "weight": 92
+    },
+    {
+      "value": "Hyeonbin",
+      "weight": 92
+    },
+    {
+      "value": "Hyeonho",
+      "weight": 91
+    },
+    {
+      "value": "Geonha",
+      "weight": 91
+    },
+    {
+      "value": "Hyeseong",
+      "weight": 91
+    },
+    {
+      "value": "Hanbyeol",
+      "weight": 91
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "romanization_review": "systematic RR of Hangul syllables from 2020 NAMEChart rankings, original Hangul omitted from value as requested, possible pronunciation-specific variation cannot be resolved from source",
+  "name_script": "Latin",
+  "script_policy": {
+    "allowed_letter_script": "Unicode Script=Latin only",
+    "allowed_combining_marks": "Unicode General_Category=Mark AND Script_Extensions=Latin, following a Latin letter",
+    "normalization": "NFC",
+    "name_form": "one single male given name, no spaces, hyphens, apostrophes, punctuation, compounds or surnames",
+    "romanization": "documented and coherent per source where non-Latin source script is used; merge or reject equivalent Latin spellings; no invented romanizations",
+    "frequencies": "source-observed weights unchanged"
+  }
+}

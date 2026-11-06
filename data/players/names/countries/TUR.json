@@ -1,0 +1,1230 @@
+{
+  "schema_version": 2,
+  "code": "TUR",
+  "cohort": "recorded male first-name frequencies in an undated TurkishNameBase compilation; not an official census",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "tr-turkishnamebase-male-frequencies",
+    "provider": "cemal-nadir/TurkishNameBase, TR_Man_Name.csv (third-party source, population/provenance unspecified)",
+    "source_url": "https://github.com/cemal-nadir/TurkishNameBase/blob/45433156021381ab386e33e3be14c855a1c1438e/TR_Man_Name.csv",
+    "source_commit": "45433156021381ab386e33e3be14c855a1c1438e",
+    "romanization": "not applicable; original Turkish Unicode letter forms retained; Turkish locale casing",
+    "metric": "source-published recorded male first-name Frequency counts; original sample period and denominator UNDISCLOSED; NOT TÜİK resident or birth counts",
+    "license": "Source repository GPL-3.0; data provenance and suitability for downstream redistribution not independently verified (HOLD)"
+  },
+  "selection_policy": "Top 300 letter-only single male first-name entries ranked by source-observed frequency; compound names rejected; Turkish Unicode preserved; no inflation to official population statistics",
+  "given_names": [
+    {
+      "value": "Mehmet",
+      "weight": 798162
+    },
+    {
+      "value": "Mustafa",
+      "weight": 540661
+    },
+    {
+      "value": "Ahmet",
+      "weight": 467473
+    },
+    {
+      "value": "Ali",
+      "weight": 461266
+    },
+    {
+      "value": "Hasan",
+      "weight": 361397
+    },
+    {
+      "value": "Hüseyin",
+      "weight": 361156
+    },
+    {
+      "value": "İbrahim",
+      "weight": 254168
+    },
+    {
+      "value": "İsmail",
+      "weight": 236655
+    },
+    {
+      "value": "Osman",
+      "weight": 205263
+    },
+    {
+      "value": "Halil",
+      "weight": 150511
+    },
+    {
+      "value": "Yusuf",
+      "weight": 147493
+    },
+    {
+      "value": "Ömer",
+      "weight": 145539
+    },
+    {
+      "value": "Süleyman",
+      "weight": 141271
+    },
+    {
+      "value": "Abdullah",
+      "weight": 132578
+    },
+    {
+      "value": "Ramazan",
+      "weight": 132194
+    },
+    {
+      "value": "Murat",
+      "weight": 112011
+    },
+    {
+      "value": "Mahmut",
+      "weight": 105903
+    },
+    {
+      "value": "Salih",
+      "weight": 87724
+    },
+    {
+      "value": "Kemal",
+      "weight": 77704
+    },
+    {
+      "value": "Recep",
+      "weight": 76044
+    },
+    {
+      "value": "Yaşar",
+      "weight": 69655
+    },
+    {
+      "value": "Bekir",
+      "weight": 65533
+    },
+    {
+      "value": "Kadir",
+      "weight": 60905
+    },
+    {
+      "value": "Musa",
+      "weight": 58248
+    },
+    {
+      "value": "Şükrü",
+      "weight": 56333
+    },
+    {
+      "value": "Bayram",
+      "weight": 55656
+    },
+    {
+      "value": "Cemal",
+      "weight": 54535
+    },
+    {
+      "value": "Adem",
+      "weight": 51565
+    },
+    {
+      "value": "Memet",
+      "weight": 46895
+    },
+    {
+      "value": "Abdurrahman",
+      "weight": 46595
+    },
+    {
+      "value": "Dursun",
+      "weight": 45505
+    },
+    {
+      "value": "Metin",
+      "weight": 45177
+    },
+    {
+      "value": "Orhan",
+      "weight": 44652
+    },
+    {
+      "value": "Şaban",
+      "weight": 44004
+    },
+    {
+      "value": "İsmet",
+      "weight": 43375
+    },
+    {
+      "value": "Arif",
+      "weight": 43191
+    },
+    {
+      "value": "Emin",
+      "weight": 41404
+    },
+    {
+      "value": "Kamil",
+      "weight": 40000
+    },
+    {
+      "value": "Celal",
+      "weight": 39653
+    },
+    {
+      "value": "Veli",
+      "weight": 39335
+    },
+    {
+      "value": "Mevlüt",
+      "weight": 38590
+    },
+    {
+      "value": "Selahattin",
+      "weight": 38190
+    },
+    {
+      "value": "Nuri",
+      "weight": 37918
+    },
+    {
+      "value": "Yılmaz",
+      "weight": 37543
+    },
+    {
+      "value": "Sabri",
+      "weight": 37350
+    },
+    {
+      "value": "Yakup",
+      "weight": 36505
+    },
+    {
+      "value": "Halit",
+      "weight": 35555
+    },
+    {
+      "value": "Muzaffer",
+      "weight": 35004
+    },
+    {
+      "value": "Zeki",
+      "weight": 34427
+    },
+    {
+      "value": "Nurettin",
+      "weight": 34154
+    },
+    {
+      "value": "İsa",
+      "weight": 33271
+    },
+    {
+      "value": "Cemil",
+      "weight": 32403
+    },
+    {
+      "value": "Muharrem",
+      "weight": 32209
+    },
+    {
+      "value": "Fatih",
+      "weight": 32036
+    },
+    {
+      "value": "İhsan",
+      "weight": 31554
+    },
+    {
+      "value": "Kazım",
+      "weight": 31467
+    },
+    {
+      "value": "Hakan",
+      "weight": 31127
+    },
+    {
+      "value": "Erol",
+      "weight": 31063
+    },
+    {
+      "value": "Aziz",
+      "weight": 30978
+    },
+    {
+      "value": "Ekrem",
+      "weight": 30810
+    },
+    {
+      "value": "Sadık",
+      "weight": 30457
+    },
+    {
+      "value": "Necati",
+      "weight": 29875
+    },
+    {
+      "value": "Ayhan",
+      "weight": 29607
+    },
+    {
+      "value": "Durmuş",
+      "weight": 29062
+    },
+    {
+      "value": "Hakkı",
+      "weight": 29032
+    },
+    {
+      "value": "Haydar",
+      "weight": 28799
+    },
+    {
+      "value": "Bilal",
+      "weight": 27516
+    },
+    {
+      "value": "Hamit",
+      "weight": 27407
+    },
+    {
+      "value": "İlyas",
+      "weight": 26955
+    },
+    {
+      "value": "Kenan",
+      "weight": 26797
+    },
+    {
+      "value": "Nihat",
+      "weight": 26013
+    },
+    {
+      "value": "Cengiz",
+      "weight": 25988
+    },
+    {
+      "value": "Rıza",
+      "weight": 25675
+    },
+    {
+      "value": "Abdulkadir",
+      "weight": 25631
+    },
+    {
+      "value": "Şevket",
+      "weight": 25376
+    },
+    {
+      "value": "Niyazi",
+      "weight": 25330
+    },
+    {
+      "value": "Tahir",
+      "weight": 25302
+    },
+    {
+      "value": "Aydın",
+      "weight": 25301
+    },
+    {
+      "value": "Sait",
+      "weight": 25232
+    },
+    {
+      "value": "Yunus",
+      "weight": 24560
+    },
+    {
+      "value": "Hamza",
+      "weight": 24243
+    },
+    {
+      "value": "Hikmet",
+      "weight": 24192
+    },
+    {
+      "value": "Remzi",
+      "weight": 24180
+    },
+    {
+      "value": "Cuma",
+      "weight": 24096
+    },
+    {
+      "value": "Hamdi",
+      "weight": 23655
+    },
+    {
+      "value": "Hacı",
+      "weight": 23426
+    },
+    {
+      "value": "Erdal",
+      "weight": 23375
+    },
+    {
+      "value": "İzzet",
+      "weight": 23147
+    },
+    {
+      "value": "Ercan",
+      "weight": 22671
+    },
+    {
+      "value": "Cafer",
+      "weight": 22648
+    },
+    {
+      "value": "Selim",
+      "weight": 21918
+    },
+    {
+      "value": "İrfan",
+      "weight": 21837
+    },
+    {
+      "value": "Mesut",
+      "weight": 21805
+    },
+    {
+      "value": "Şakir",
+      "weight": 21804
+    },
+    {
+      "value": "Fevzi",
+      "weight": 21801
+    },
+    {
+      "value": "Tahsin",
+      "weight": 21496
+    },
+    {
+      "value": "Erkan",
+      "weight": 21385
+    },
+    {
+      "value": "Adnan",
+      "weight": 21299
+    },
+    {
+      "value": "Enver",
+      "weight": 21283
+    },
+    {
+      "value": "Veysel",
+      "weight": 21216
+    },
+    {
+      "value": "Gökhan",
+      "weight": 20778
+    },
+    {
+      "value": "İdris",
+      "weight": 20607
+    },
+    {
+      "value": "Nevzat",
+      "weight": 20222
+    },
+    {
+      "value": "Şahin",
+      "weight": 20142
+    },
+    {
+      "value": "Bülent",
+      "weight": 20043
+    },
+    {
+      "value": "Erdoğan",
+      "weight": 20033
+    },
+    {
+      "value": "Sinan",
+      "weight": 20025
+    },
+    {
+      "value": "Adil",
+      "weight": 19817
+    },
+    {
+      "value": "Harun",
+      "weight": 19803
+    },
+    {
+      "value": "Muhammet",
+      "weight": 19741
+    },
+    {
+      "value": "Kasım",
+      "weight": 19652
+    },
+    {
+      "value": "Serkan",
+      "weight": 19415
+    },
+    {
+      "value": "Faruk",
+      "weight": 19289
+    },
+    {
+      "value": "Sami",
+      "weight": 19266
+    },
+    {
+      "value": "Davut",
+      "weight": 19039
+    },
+    {
+      "value": "Fikret",
+      "weight": 18989
+    },
+    {
+      "value": "Yüksel",
+      "weight": 18934
+    },
+    {
+      "value": "Turan",
+      "weight": 18767
+    },
+    {
+      "value": "Salim",
+      "weight": 18756
+    },
+    {
+      "value": "Muammer",
+      "weight": 18687
+    },
+    {
+      "value": "İlhan",
+      "weight": 18665
+    },
+    {
+      "value": "Hayrettin",
+      "weight": 18633
+    },
+    {
+      "value": "Burhan",
+      "weight": 18542
+    },
+    {
+      "value": "Ziya",
+      "weight": 18504
+    },
+    {
+      "value": "Tevfik",
+      "weight": 18399
+    },
+    {
+      "value": "Fahrettin",
+      "weight": 18340
+    },
+    {
+      "value": "Yasin",
+      "weight": 18083
+    },
+    {
+      "value": "Şerif",
+      "weight": 17973
+    },
+    {
+      "value": "Ferhat",
+      "weight": 17931
+    },
+    {
+      "value": "Hüsnü",
+      "weight": 17767
+    },
+    {
+      "value": "Sedat",
+      "weight": 17662
+    },
+    {
+      "value": "Muhittin",
+      "weight": 16819
+    },
+    {
+      "value": "Fahri",
+      "weight": 16722
+    },
+    {
+      "value": "Uğur",
+      "weight": 16381
+    },
+    {
+      "value": "Rasim",
+      "weight": 16173
+    },
+    {
+      "value": "Satılmış",
+      "weight": 16127
+    },
+    {
+      "value": "Duran",
+      "weight": 15981
+    },
+    {
+      "value": "Yahya",
+      "weight": 15628
+    },
+    {
+      "value": "Halis",
+      "weight": 15392
+    },
+    {
+      "value": "Reşit",
+      "weight": 15383
+    },
+    {
+      "value": "Zekeriya",
+      "weight": 15306
+    },
+    {
+      "value": "Engin",
+      "weight": 15201
+    },
+    {
+      "value": "Eyüp",
+      "weight": 14719
+    },
+    {
+      "value": "Necmettin",
+      "weight": 14518
+    },
+    {
+      "value": "Cevdet",
+      "weight": 14475
+    },
+    {
+      "value": "Sefer",
+      "weight": 14446
+    },
+    {
+      "value": "Bahri",
+      "weight": 14441
+    },
+    {
+      "value": "Resul",
+      "weight": 14207
+    },
+    {
+      "value": "Hilmi",
+      "weight": 14074
+    },
+    {
+      "value": "Erhan",
+      "weight": 13732
+    },
+    {
+      "value": "Seyfettin",
+      "weight": 13553
+    },
+    {
+      "value": "Bahattin",
+      "weight": 13399
+    },
+    {
+      "value": "Kerim",
+      "weight": 13352
+    },
+    {
+      "value": "Fehmi",
+      "weight": 13350
+    },
+    {
+      "value": "Ümit",
+      "weight": 13328
+    },
+    {
+      "value": "Haci",
+      "weight": 13249
+    },
+    {
+      "value": "Şerafettin",
+      "weight": 13113
+    },
+    {
+      "value": "Faik",
+      "weight": 13057
+    },
+    {
+      "value": "Vedat",
+      "weight": 13039
+    },
+    {
+      "value": "Müslüm",
+      "weight": 12946
+    },
+    {
+      "value": "Çetin",
+      "weight": 12910
+    },
+    {
+      "value": "Emrah",
+      "weight": 12693
+    },
+    {
+      "value": "Serdar",
+      "weight": 12670
+    },
+    {
+      "value": "Doğan",
+      "weight": 12597
+    },
+    {
+      "value": "Fuat",
+      "weight": 12554
+    },
+    {
+      "value": "Zafer",
+      "weight": 12312
+    },
+    {
+      "value": "Kazim",
+      "weight": 12233
+    },
+    {
+      "value": "Fikri",
+      "weight": 12157
+    },
+    {
+      "value": "Hayri",
+      "weight": 11874
+    },
+    {
+      "value": "Hıdır",
+      "weight": 11728
+    },
+    {
+      "value": "Yavuz",
+      "weight": 11629
+    },
+    {
+      "value": "Nazım",
+      "weight": 11593
+    },
+    {
+      "value": "Eşref",
+      "weight": 11498
+    },
+    {
+      "value": "Özcan",
+      "weight": 11479
+    },
+    {
+      "value": "Turgut",
+      "weight": 11279
+    },
+    {
+      "value": "Tuncay",
+      "weight": 11247
+    },
+    {
+      "value": "Şeyhmus",
+      "weight": 11035
+    },
+    {
+      "value": "Nazmi",
+      "weight": 10992
+    },
+    {
+      "value": "Servet",
+      "weight": 10992
+    },
+    {
+      "value": "Sebahattin",
+      "weight": 10810
+    },
+    {
+      "value": "Şevki",
+      "weight": 10701
+    },
+    {
+      "value": "Abdulkerim",
+      "weight": 10682
+    },
+    {
+      "value": "Muhsin",
+      "weight": 10567
+    },
+    {
+      "value": "Haşim",
+      "weight": 10550
+    },
+    {
+      "value": "Mecit",
+      "weight": 10414
+    },
+    {
+      "value": "Lütfi",
+      "weight": 10408
+    },
+    {
+      "value": "Rifat",
+      "weight": 10360
+    },
+    {
+      "value": "Rahmi",
+      "weight": 10299
+    },
+    {
+      "value": "Abuzer",
+      "weight": 10296
+    },
+    {
+      "value": "Necip",
+      "weight": 10279
+    },
+    {
+      "value": "Şeref",
+      "weight": 10270
+    },
+    {
+      "value": "Derviş",
+      "weight": 10145
+    },
+    {
+      "value": "Akif",
+      "weight": 10041
+    },
+    {
+      "value": "Necdet",
+      "weight": 9985
+    },
+    {
+      "value": "Suat",
+      "weight": 9928
+    },
+    {
+      "value": "Abbas",
+      "weight": 9910
+    },
+    {
+      "value": "Sadettin",
+      "weight": 9907
+    },
+    {
+      "value": "Nizamettin",
+      "weight": 9792
+    },
+    {
+      "value": "Şemsettin",
+      "weight": 9671
+    },
+    {
+      "value": "Ersin",
+      "weight": 9639
+    },
+    {
+      "value": "Raşit",
+      "weight": 9512
+    },
+    {
+      "value": "Şenol",
+      "weight": 9511
+    },
+    {
+      "value": "Selami",
+      "weight": 9381
+    },
+    {
+      "value": "Levent",
+      "weight": 9349
+    },
+    {
+      "value": "Cevat",
+      "weight": 9285
+    },
+    {
+      "value": "Hanifi",
+      "weight": 9095
+    },
+    {
+      "value": "Ünal",
+      "weight": 9051
+    },
+    {
+      "value": "Yalçın",
+      "weight": 9045
+    },
+    {
+      "value": "Hidayet",
+      "weight": 9023
+    },
+    {
+      "value": "Nedim",
+      "weight": 9016
+    },
+    {
+      "value": "Temel",
+      "weight": 8896
+    },
+    {
+      "value": "Halim",
+      "weight": 8863
+    },
+    {
+      "value": "Kerem",
+      "weight": 8833
+    },
+    {
+      "value": "Arslan",
+      "weight": 8752
+    },
+    {
+      "value": "Selçuk",
+      "weight": 8674
+    },
+    {
+      "value": "Naci",
+      "weight": 8636
+    },
+    {
+      "value": "Özkan",
+      "weight": 8584
+    },
+    {
+      "value": "Cahit",
+      "weight": 8547
+    },
+    {
+      "value": "Oktay",
+      "weight": 8392
+    },
+    {
+      "value": "Refik",
+      "weight": 8313
+    },
+    {
+      "value": "Rıdvan",
+      "weight": 8261
+    },
+    {
+      "value": "Fazlı",
+      "weight": 8257
+    },
+    {
+      "value": "Özgür",
+      "weight": 8210
+    },
+    {
+      "value": "Mahir",
+      "weight": 8204
+    },
+    {
+      "value": "Talip",
+      "weight": 8202
+    },
+    {
+      "value": "Emrullah",
+      "weight": 8173
+    },
+    {
+      "value": "Rafet",
+      "weight": 8044
+    },
+    {
+      "value": "Seyit",
+      "weight": 8034
+    },
+    {
+      "value": "Emre",
+      "weight": 8019
+    },
+    {
+      "value": "Fethi",
+      "weight": 8013
+    },
+    {
+      "value": "Ferit",
+      "weight": 7988
+    },
+    {
+      "value": "Hüsamettin",
+      "weight": 7945
+    },
+    {
+      "value": "Cemalettin",
+      "weight": 7908
+    },
+    {
+      "value": "Rüstem",
+      "weight": 7862
+    },
+    {
+      "value": "Gazi",
+      "weight": 7731
+    },
+    {
+      "value": "Yücel",
+      "weight": 7705
+    },
+    {
+      "value": "Asım",
+      "weight": 7702
+    },
+    {
+      "value": "Esat",
+      "weight": 7669
+    },
+    {
+      "value": "Eyyüp",
+      "weight": 7610
+    },
+    {
+      "value": "Feyzullah",
+      "weight": 7574
+    },
+    {
+      "value": "Sıddık",
+      "weight": 7525
+    },
+    {
+      "value": "Ethem",
+      "weight": 7460
+    },
+    {
+      "value": "Veysi",
+      "weight": 7449
+    },
+    {
+      "value": "Hayati",
+      "weight": 7446
+    },
+    {
+      "value": "Sabahattin",
+      "weight": 7386
+    },
+    {
+      "value": "İlhami",
+      "weight": 7378
+    },
+    {
+      "value": "Galip",
+      "weight": 7365
+    },
+    {
+      "value": "Cumali",
+      "weight": 7345
+    },
+    {
+      "value": "Abdulaziz",
+      "weight": 7294
+    },
+    {
+      "value": "Abidin",
+      "weight": 7292
+    },
+    {
+      "value": "Cihan",
+      "weight": 7177
+    },
+    {
+      "value": "Ergün",
+      "weight": 7165
+    },
+    {
+      "value": "Nusret",
+      "weight": 7162
+    },
+    {
+      "value": "Alaattin",
+      "weight": 7137
+    },
+    {
+      "value": "Reşat",
+      "weight": 7110
+    },
+    {
+      "value": "Nazif",
+      "weight": 7042
+    },
+    {
+      "value": "Kadri",
+      "weight": 6977
+    },
+    {
+      "value": "Feyzi",
+      "weight": 6927
+    },
+    {
+      "value": "Şefik",
+      "weight": 6925
+    },
+    {
+      "value": "Memiş",
+      "weight": 6919
+    },
+    {
+      "value": "Aslan",
+      "weight": 6887
+    },
+    {
+      "value": "Abdulbaki",
+      "weight": 6880
+    },
+    {
+      "value": "Nail",
+      "weight": 6813
+    },
+    {
+      "value": "Zeynel",
+      "weight": 6811
+    },
+    {
+      "value": "Barış",
+      "weight": 6696
+    },
+    {
+      "value": "Nurullah",
+      "weight": 6696
+    },
+    {
+      "value": "Mümin",
+      "weight": 6689
+    },
+    {
+      "value": "Abdurrahim",
+      "weight": 6671
+    },
+    {
+      "value": "Himmet",
+      "weight": 6659
+    },
+    {
+      "value": "Savaş",
+      "weight": 6614
+    },
+    {
+      "value": "Baki",
+      "weight": 6583
+    },
+    {
+      "value": "Coşkun",
+      "weight": 6566
+    },
+    {
+      "value": "Turgay",
+      "weight": 6530
+    },
+    {
+      "value": "Nadir",
+      "weight": 6513
+    },
+    {
+      "value": "Bektaş",
+      "weight": 6495
+    },
+    {
+      "value": "Rıfat",
+      "weight": 6438
+    },
+    {
+      "value": "Necmi",
+      "weight": 6412
+    },
+    {
+      "value": "Taner",
+      "weight": 6326
+    },
+    {
+      "value": "Soner",
+      "weight": 6250
+    },
+    {
+      "value": "İzzettin",
+      "weight": 6245
+    },
+    {
+      "value": "Bünyamin",
+      "weight": 6219
+    },
+    {
+      "value": "Birol",
+      "weight": 6197
+    },
+    {
+      "value": "Volkan",
+      "weight": 6187
+    },
+    {
+      "value": "Latif",
+      "weight": 6127
+    },
+    {
+      "value": "Abdi",
+      "weight": 6059
+    },
+    {
+      "value": "Sezai",
+      "weight": 6034
+    },
+    {
+      "value": "Üzeyir",
+      "weight": 5942
+    },
+    {
+      "value": "Cavit",
+      "weight": 5935
+    },
+    {
+      "value": "Mürsel",
+      "weight": 5926
+    },
+    {
+      "value": "Ertuğrul",
+      "weight": 5891
+    },
+    {
+      "value": "Erdem",
+      "weight": 5882
+    },
+    {
+      "value": "Beşir",
+      "weight": 5845
+    },
+    {
+      "value": "Kaya",
+      "weight": 5839
+    },
+    {
+      "value": "Mikail",
+      "weight": 5726
+    },
+    {
+      "value": "Vahit",
+      "weight": 5708
+    },
+    {
+      "value": "İshak",
+      "weight": 5707
+    },
+    {
+      "value": "Avni",
+      "weight": 5691
+    },
+    {
+      "value": "Ökkeş",
+      "weight": 5627
+    },
+    {
+      "value": "Alaettin",
+      "weight": 5585
+    },
+    {
+      "value": "Atilla",
+      "weight": 5570
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "name_script": "Latin",
+  "script_policy": {
+    "allowed_letter_script": "Unicode Script=Latin only",
+    "allowed_combining_marks": "Unicode General_Category=Mark AND Script_Extensions=Latin, following a Latin letter",
+    "normalization": "NFC",
+    "name_form": "one single male given name, no spaces, hyphens, apostrophes, punctuation, compounds or surnames",
+    "romanization": "documented and coherent per source where non-Latin source script is used; merge or reject equivalent Latin spellings; no invented romanizations",
+    "frequencies": "source-observed weights unchanged"
+  }
+}
