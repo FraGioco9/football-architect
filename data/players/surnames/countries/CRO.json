@@ -1,0 +1,1524 @@
+{
+  "schema_version": 1,
+  "code": "CRO",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "datafaker-hr-2026",
+      "url": "https://github.com/datafaker-net/datafaker/blob/b9f0905907784140fe57d49c5054a693c899b236/src/main/resources/hr.yml",
+      "scope": "Croatian locale surname list, first 200; secondary check against national Forebears surname incidence table",
+      "transliteration": "Native Croatian Latin orthography retained; diacritics preserved"
+    },
+    {
+      "id": "forebears-croatia",
+      "url": "https://forebears.io/croatia/surnames",
+      "scope": "Country-specific Croatian incidence list, source ranks 201 through 575 used to supplement; incidence not used for weighting",
+      "transliteration": "Native Croatian Latin orthography retained",
+      "limitations": "Third-party estimated incidence; redistribution rights need review"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Knežević"
+    },
+    {
+      "value": "Horvat"
+    },
+    {
+      "value": "Kovačević"
+    },
+    {
+      "value": "Pavlović"
+    },
+    {
+      "value": "Blažević"
+    },
+    {
+      "value": "Božić"
+    },
+    {
+      "value": "Lovrić"
+    },
+    {
+      "value": "Babić"
+    },
+    {
+      "value": "Marković"
+    },
+    {
+      "value": "Bošnjak"
+    },
+    {
+      "value": "Grgić"
+    },
+    {
+      "value": "Brkić"
+    },
+    {
+      "value": "Filipović"
+    },
+    {
+      "value": "Vidović"
+    },
+    {
+      "value": "Kovačić"
+    },
+    {
+      "value": "Jukić"
+    },
+    {
+      "value": "Novak"
+    },
+    {
+      "value": "Martinović"
+    },
+    {
+      "value": "Petrović"
+    },
+    {
+      "value": "Mandić"
+    },
+    {
+      "value": "Šimunović"
+    },
+    {
+      "value": "Tomić"
+    },
+    {
+      "value": "Nikolić"
+    },
+    {
+      "value": "Jurković"
+    },
+    {
+      "value": "Lončar"
+    },
+    {
+      "value": "Barišić"
+    },
+    {
+      "value": "Živković"
+    },
+    {
+      "value": "Šimić"
+    },
+    {
+      "value": "Jurić"
+    },
+    {
+      "value": "Rukavina"
+    },
+    {
+      "value": "Perković"
+    },
+    {
+      "value": "Vučković"
+    },
+    {
+      "value": "Lukić"
+    },
+    {
+      "value": "Matijević"
+    },
+    {
+      "value": "Novosel"
+    },
+    {
+      "value": "Klarić"
+    },
+    {
+      "value": "Pavić"
+    },
+    {
+      "value": "Matković"
+    },
+    {
+      "value": "Bašić"
+    },
+    {
+      "value": "Antunović"
+    },
+    {
+      "value": "Marušić"
+    },
+    {
+      "value": "Ćosić"
+    },
+    {
+      "value": "Kovač"
+    },
+    {
+      "value": "Matić"
+    },
+    {
+      "value": "Miletić"
+    },
+    {
+      "value": "Posavec"
+    },
+    {
+      "value": "Kralj"
+    },
+    {
+      "value": "Vuković"
+    },
+    {
+      "value": "Varga"
+    },
+    {
+      "value": "Marjanović"
+    },
+    {
+      "value": "Popović"
+    },
+    {
+      "value": "Cindrić"
+    },
+    {
+      "value": "Grubišić"
+    },
+    {
+      "value": "Jakovljević"
+    },
+    {
+      "value": "Dujmović"
+    },
+    {
+      "value": "Novaković"
+    },
+    {
+      "value": "Jurišić"
+    },
+    {
+      "value": "Brajković"
+    },
+    {
+      "value": "Ivančić"
+    },
+    {
+      "value": "Perić"
+    },
+    {
+      "value": "Galić"
+    },
+    {
+      "value": "Ivanković"
+    },
+    {
+      "value": "Bilić"
+    },
+    {
+      "value": "Šimunić"
+    },
+    {
+      "value": "Jozić"
+    },
+    {
+      "value": "Crnković"
+    },
+    {
+      "value": "Marić"
+    },
+    {
+      "value": "Janković"
+    },
+    {
+      "value": "Burić"
+    },
+    {
+      "value": "Vrdoljak"
+    },
+    {
+      "value": "Kolarić"
+    },
+    {
+      "value": "Mitrović"
+    },
+    {
+      "value": "Mikulić"
+    },
+    {
+      "value": "Radić"
+    },
+    {
+      "value": "Dragičević"
+    },
+    {
+      "value": "Lučić"
+    },
+    {
+      "value": "Vukelić"
+    },
+    {
+      "value": "Đurđević"
+    },
+    {
+      "value": "Jovanović"
+    },
+    {
+      "value": "Grgurić"
+    },
+    {
+      "value": "Jurčević"
+    },
+    {
+      "value": "Vidaković"
+    },
+    {
+      "value": "Petković"
+    },
+    {
+      "value": "Ružić"
+    },
+    {
+      "value": "Herceg"
+    },
+    {
+      "value": "Abramović"
+    },
+    {
+      "value": "Šarić"
+    },
+    {
+      "value": "Đurić"
+    },
+    {
+      "value": "Pavlić"
+    },
+    {
+      "value": "Lončarić"
+    },
+    {
+      "value": "Stanić"
+    },
+    {
+      "value": "Cvitković"
+    },
+    {
+      "value": "Butković"
+    },
+    {
+      "value": "Katić"
+    },
+    {
+      "value": "Josipović"
+    },
+    {
+      "value": "Krznarić"
+    },
+    {
+      "value": "Ivanović"
+    },
+    {
+      "value": "Golubić"
+    },
+    {
+      "value": "Jelić"
+    },
+    {
+      "value": "Sever"
+    },
+    {
+      "value": "Krizmanić"
+    },
+    {
+      "value": "Štimac"
+    },
+    {
+      "value": "Mihaljević"
+    },
+    {
+      "value": "Jerković"
+    },
+    {
+      "value": "Tadić"
+    },
+    {
+      "value": "Radošević"
+    },
+    {
+      "value": "Valentić"
+    },
+    {
+      "value": "Bogdanović"
+    },
+    {
+      "value": "Jakšić"
+    },
+    {
+      "value": "Kolar"
+    },
+    {
+      "value": "Ivanišević"
+    },
+    {
+      "value": "Barić"
+    },
+    {
+      "value": "Ljubić"
+    },
+    {
+      "value": "Ljubičić"
+    },
+    {
+      "value": "Pintarić"
+    },
+    {
+      "value": "Milošević"
+    },
+    {
+      "value": "Ivković"
+    },
+    {
+      "value": "Mlinarić"
+    },
+    {
+      "value": "Bačić"
+    },
+    {
+      "value": "Erceg"
+    },
+    {
+      "value": "Poljak"
+    },
+    {
+      "value": "Andrić"
+    },
+    {
+      "value": "Pejić"
+    },
+    {
+      "value": "Vlahović"
+    },
+    {
+      "value": "Špoljarić"
+    },
+    {
+      "value": "Petrić"
+    },
+    {
+      "value": "Turkalj"
+    },
+    {
+      "value": "Pavelić"
+    },
+    {
+      "value": "Tomašić"
+    },
+    {
+      "value": "Jurjević"
+    },
+    {
+      "value": "Dukić"
+    },
+    {
+      "value": "Gregurić"
+    },
+    {
+      "value": "Starčević"
+    },
+    {
+      "value": "Mijatović"
+    },
+    {
+      "value": "Glavaš"
+    },
+    {
+      "value": "Stipić"
+    },
+    {
+      "value": "Cvetković"
+    },
+    {
+      "value": "Pavičić"
+    },
+    {
+      "value": "Sekulić"
+    },
+    {
+      "value": "Đukić"
+    },
+    {
+      "value": "Ilić"
+    },
+    {
+      "value": "Samardžić"
+    },
+    {
+      "value": "Duvnjak"
+    },
+    {
+      "value": "Budimir"
+    },
+    {
+      "value": "Damjanović"
+    },
+    {
+      "value": "Vlašić"
+    },
+    {
+      "value": "Bartulović"
+    },
+    {
+      "value": "Stojanović"
+    },
+    {
+      "value": "Puškarić"
+    },
+    {
+      "value": "Horvatić"
+    },
+    {
+      "value": "Sertić"
+    },
+    {
+      "value": "Bošković"
+    },
+    {
+      "value": "Delić"
+    },
+    {
+      "value": "Kordić"
+    },
+    {
+      "value": "Majstorović"
+    },
+    {
+      "value": "Bogdan"
+    },
+    {
+      "value": "Tomašević"
+    },
+    {
+      "value": "Kraljević"
+    },
+    {
+      "value": "Rendulić"
+    },
+    {
+      "value": "Vojnović"
+    },
+    {
+      "value": "Zorić"
+    },
+    {
+      "value": "Matanović"
+    },
+    {
+      "value": "Ostojić"
+    },
+    {
+      "value": "Rajković"
+    },
+    {
+      "value": "Sabljak"
+    },
+    {
+      "value": "Brčić"
+    },
+    {
+      "value": "Jurčić"
+    },
+    {
+      "value": "Meštrović"
+    },
+    {
+      "value": "Kujundžić"
+    },
+    {
+      "value": "Antolović"
+    },
+    {
+      "value": "Knezović"
+    },
+    {
+      "value": "Pavković"
+    },
+    {
+      "value": "Petričević"
+    },
+    {
+      "value": "Mišković"
+    },
+    {
+      "value": "Pranjić"
+    },
+    {
+      "value": "Devčić"
+    },
+    {
+      "value": "Medved"
+    },
+    {
+      "value": "Kos"
+    },
+    {
+      "value": "Barbarić"
+    },
+    {
+      "value": "Marinović"
+    },
+    {
+      "value": "Vinković"
+    },
+    {
+      "value": "Stanković"
+    },
+    {
+      "value": "Kozina"
+    },
+    {
+      "value": "Matijašević"
+    },
+    {
+      "value": "Benković"
+    },
+    {
+      "value": "Matošević"
+    },
+    {
+      "value": "Mustapić"
+    },
+    {
+      "value": "Turković"
+    },
+    {
+      "value": "Golub"
+    },
+    {
+      "value": "Bogović"
+    },
+    {
+      "value": "Gudelj"
+    },
+    {
+      "value": "Karlović"
+    },
+    {
+      "value": "Franjić"
+    },
+    {
+      "value": "Martić"
+    },
+    {
+      "value": "Benčić"
+    },
+    {
+      "value": "Hrženjak"
+    },
+    {
+      "value": "Kurtović"
+    },
+    {
+      "value": "Balić"
+    },
+    {
+      "value": "Savić"
+    },
+    {
+      "value": "Radočaj"
+    },
+    {
+      "value": "Orešković"
+    },
+    {
+      "value": "Butorac"
+    },
+    {
+      "value": "Kranjčec"
+    },
+    {
+      "value": "Zadravec"
+    },
+    {
+      "value": "Stjepanović"
+    },
+    {
+      "value": "Salopek"
+    },
+    {
+      "value": "Cvitanović"
+    },
+    {
+      "value": "Papić"
+    },
+    {
+      "value": "Hodak"
+    },
+    {
+      "value": "Boban"
+    },
+    {
+      "value": "Samardžija"
+    },
+    {
+      "value": "Baričević"
+    },
+    {
+      "value": "Vučetić"
+    },
+    {
+      "value": "Luketić"
+    },
+    {
+      "value": "Buljan"
+    },
+    {
+      "value": "Majić"
+    },
+    {
+      "value": "Topić"
+    },
+    {
+      "value": "Bušić"
+    },
+    {
+      "value": "Kraljić"
+    },
+    {
+      "value": "Bajić"
+    },
+    {
+      "value": "Magdić"
+    },
+    {
+      "value": "Marinković"
+    },
+    {
+      "value": "Borić"
+    },
+    {
+      "value": "Brozović"
+    },
+    {
+      "value": "Matešić"
+    },
+    {
+      "value": "Čuljak"
+    },
+    {
+      "value": "Kožul"
+    },
+    {
+      "value": "Anđelić"
+    },
+    {
+      "value": "Vukušić"
+    },
+    {
+      "value": "Ćurković"
+    },
+    {
+      "value": "Mirković"
+    },
+    {
+      "value": "Franić"
+    },
+    {
+      "value": "Terzić"
+    },
+    {
+      "value": "Marasović"
+    },
+    {
+      "value": "Kardum"
+    },
+    {
+      "value": "Nekić"
+    },
+    {
+      "value": "Kuzmić"
+    },
+    {
+      "value": "Gašparić"
+    },
+    {
+      "value": "Kolić"
+    },
+    {
+      "value": "Primorac"
+    },
+    {
+      "value": "Gašpar"
+    },
+    {
+      "value": "Bartolić"
+    },
+    {
+      "value": "Krpan"
+    },
+    {
+      "value": "Gašparović"
+    },
+    {
+      "value": "Škvorc"
+    },
+    {
+      "value": "Antić"
+    },
+    {
+      "value": "Radoš"
+    },
+    {
+      "value": "Vukić"
+    },
+    {
+      "value": "Maras"
+    },
+    {
+      "value": "Rogić"
+    },
+    {
+      "value": "Sabolić"
+    },
+    {
+      "value": "Turk"
+    },
+    {
+      "value": "Bešlić"
+    },
+    {
+      "value": "Božičević"
+    },
+    {
+      "value": "Benić"
+    },
+    {
+      "value": "Slunjski"
+    },
+    {
+      "value": "Vuletić"
+    },
+    {
+      "value": "Domazet"
+    },
+    {
+      "value": "Mišić"
+    },
+    {
+      "value": "Lucić"
+    },
+    {
+      "value": "Vincek"
+    },
+    {
+      "value": "Vrban"
+    },
+    {
+      "value": "Vugrinec"
+    },
+    {
+      "value": "Obradović"
+    },
+    {
+      "value": "Uzelac"
+    },
+    {
+      "value": "Galović"
+    },
+    {
+      "value": "Koprivnjak"
+    },
+    {
+      "value": "Kocijan"
+    },
+    {
+      "value": "Požgaj"
+    },
+    {
+      "value": "Grabovac"
+    },
+    {
+      "value": "Ivančević"
+    },
+    {
+      "value": "Zovko"
+    },
+    {
+      "value": "Bulić"
+    },
+    {
+      "value": "Puljić"
+    },
+    {
+      "value": "Vrbanić"
+    },
+    {
+      "value": "Krznar"
+    },
+    {
+      "value": "Biondić"
+    },
+    {
+      "value": "Dodig"
+    },
+    {
+      "value": "Šikić"
+    },
+    {
+      "value": "Hanžek"
+    },
+    {
+      "value": "Bralić"
+    },
+    {
+      "value": "Lovreković"
+    },
+    {
+      "value": "Špehar"
+    },
+    {
+      "value": "Žagar"
+    },
+    {
+      "value": "Modrić"
+    },
+    {
+      "value": "Ćurić"
+    },
+    {
+      "value": "Špoljar"
+    },
+    {
+      "value": "Pintar"
+    },
+    {
+      "value": "Grubić"
+    },
+    {
+      "value": "Vukoja"
+    },
+    {
+      "value": "Grbić"
+    },
+    {
+      "value": "Smolčić"
+    },
+    {
+      "value": "Cvetko"
+    },
+    {
+      "value": "Milanović"
+    },
+    {
+      "value": "Došen"
+    },
+    {
+      "value": "Begović"
+    },
+    {
+      "value": "Kruljac"
+    },
+    {
+      "value": "Ratković"
+    },
+    {
+      "value": "Štefanac"
+    },
+    {
+      "value": "Batinić"
+    },
+    {
+      "value": "Rakić"
+    },
+    {
+      "value": "Simić"
+    },
+    {
+      "value": "Pavletić"
+    },
+    {
+      "value": "Kranjec"
+    },
+    {
+      "value": "Anušić"
+    },
+    {
+      "value": "Grahovac"
+    },
+    {
+      "value": "Bunčić"
+    },
+    {
+      "value": "Kramarić"
+    },
+    {
+      "value": "Ivić"
+    },
+    {
+      "value": "Katalinić"
+    },
+    {
+      "value": "Dragojević"
+    },
+    {
+      "value": "Farkaš"
+    },
+    {
+      "value": "Draženović"
+    },
+    {
+      "value": "Župan"
+    },
+    {
+      "value": "Šestan"
+    },
+    {
+      "value": "Leskovar"
+    },
+    {
+      "value": "Medić"
+    },
+    {
+      "value": "Bukovac"
+    },
+    {
+      "value": "Rašić"
+    },
+    {
+      "value": "Komljenović"
+    },
+    {
+      "value": "Vukasović"
+    },
+    {
+      "value": "Krajačić"
+    },
+    {
+      "value": "Vidić"
+    },
+    {
+      "value": "Barbir"
+    },
+    {
+      "value": "Mrkonjić"
+    },
+    {
+      "value": "Novoselec"
+    },
+    {
+      "value": "Begić"
+    },
+    {
+      "value": "Lovrenčić"
+    },
+    {
+      "value": "Kljajić"
+    },
+    {
+      "value": "Ćorić"
+    },
+    {
+      "value": "Mamić"
+    },
+    {
+      "value": "Ravlić"
+    },
+    {
+      "value": "Ban"
+    },
+    {
+      "value": "Raguž"
+    },
+    {
+      "value": "Manojlović"
+    },
+    {
+      "value": "Milković"
+    },
+    {
+      "value": "Dujić"
+    },
+    {
+      "value": "Dumančić"
+    },
+    {
+      "value": "Jakić"
+    },
+    {
+      "value": "Grčić"
+    },
+    {
+      "value": "Maretić"
+    },
+    {
+      "value": "Sedlar"
+    },
+    {
+      "value": "Tomljenović"
+    },
+    {
+      "value": "Rešetar"
+    },
+    {
+      "value": "Miličević"
+    },
+    {
+      "value": "Knez"
+    },
+    {
+      "value": "Klobučar"
+    },
+    {
+      "value": "Jović"
+    },
+    {
+      "value": "Mesarić"
+    },
+    {
+      "value": "Vujnović"
+    },
+    {
+      "value": "Dražić"
+    },
+    {
+      "value": "Antolić"
+    },
+    {
+      "value": "Tkalec"
+    },
+    {
+      "value": "Nikšić"
+    },
+    {
+      "value": "Stipetić"
+    },
+    {
+      "value": "Anić"
+    },
+    {
+      "value": "Huzjak"
+    },
+    {
+      "value": "Miškulin"
+    },
+    {
+      "value": "Radman"
+    },
+    {
+      "value": "Stipanović"
+    },
+    {
+      "value": "Dadić"
+    },
+    {
+      "value": "Bijelić"
+    },
+    {
+      "value": "Sabo"
+    },
+    {
+      "value": "Juras"
+    },
+    {
+      "value": "Marinić"
+    },
+    {
+      "value": "Brekalo"
+    },
+    {
+      "value": "Drašković"
+    },
+    {
+      "value": "Čupić"
+    },
+    {
+      "value": "Radović"
+    },
+    {
+      "value": "Kosanović"
+    },
+    {
+      "value": "Belošević"
+    },
+    {
+      "value": "Banović"
+    },
+    {
+      "value": "Tomas"
+    },
+    {
+      "value": "Banić"
+    },
+    {
+      "value": "Brkljačić"
+    },
+    {
+      "value": "Bojić"
+    },
+    {
+      "value": "Filipčić"
+    },
+    {
+      "value": "Košutić"
+    },
+    {
+      "value": "Marijanović"
+    },
+    {
+      "value": "Rajić"
+    },
+    {
+      "value": "Mihalić"
+    },
+    {
+      "value": "Tomljanović"
+    },
+    {
+      "value": "Barešić"
+    },
+    {
+      "value": "Ivošević"
+    },
+    {
+      "value": "Markulin"
+    },
+    {
+      "value": "Bubalo"
+    },
+    {
+      "value": "Blašković"
+    },
+    {
+      "value": "Dundović"
+    },
+    {
+      "value": "Lukač"
+    },
+    {
+      "value": "Radulović"
+    },
+    {
+      "value": "Vojvodić"
+    },
+    {
+      "value": "Brdar"
+    },
+    {
+      "value": "Vučić"
+    },
+    {
+      "value": "Vrabec"
+    },
+    {
+      "value": "Ribić"
+    },
+    {
+      "value": "Šoštarić"
+    },
+    {
+      "value": "Petek"
+    },
+    {
+      "value": "Čolić"
+    },
+    {
+      "value": "Čulina"
+    },
+    {
+      "value": "Škorić"
+    },
+    {
+      "value": "Pleša"
+    },
+    {
+      "value": "Mijić"
+    },
+    {
+      "value": "Lazić"
+    },
+    {
+      "value": "Rožić"
+    },
+    {
+      "value": "Romić"
+    },
+    {
+      "value": "Lipovac"
+    },
+    {
+      "value": "Bartolović"
+    },
+    {
+      "value": "Grbavac"
+    },
+    {
+      "value": "Juretić"
+    },
+    {
+      "value": "Lalić"
+    },
+    {
+      "value": "Tolić"
+    },
+    {
+      "value": "Tomac"
+    },
+    {
+      "value": "Ivezić"
+    },
+    {
+      "value": "Roguljić"
+    },
+    {
+      "value": "Baković"
+    },
+    {
+      "value": "Kuhar"
+    },
+    {
+      "value": "Gavran"
+    },
+    {
+      "value": "Zubak"
+    },
+    {
+      "value": "Rončević"
+    },
+    {
+      "value": "Tušek"
+    },
+    {
+      "value": "Đaković"
+    },
+    {
+      "value": "Margetić"
+    },
+    {
+      "value": "Lozančić"
+    },
+    {
+      "value": "Pribanić"
+    },
+    {
+      "value": "Ramljak"
+    },
+    {
+      "value": "Katušić"
+    },
+    {
+      "value": "Bekavac"
+    },
+    {
+      "value": "Puljiz"
+    },
+    {
+      "value": "Čačić"
+    },
+    {
+      "value": "Blažeković"
+    },
+    {
+      "value": "Vodopija"
+    },
+    {
+      "value": "Kristić"
+    },
+    {
+      "value": "Žeželj"
+    },
+    {
+      "value": "Jakopović"
+    },
+    {
+      "value": "Husnjak"
+    },
+    {
+      "value": "Rebić"
+    },
+    {
+      "value": "Zelić"
+    },
+    {
+      "value": "Bilandžija"
+    },
+    {
+      "value": "Vasiljević"
+    },
+    {
+      "value": "Prpić"
+    },
+    {
+      "value": "Domitrović"
+    },
+    {
+      "value": "Milić"
+    },
+    {
+      "value": "Katavić"
+    },
+    {
+      "value": "Olujić"
+    },
+    {
+      "value": "Biškup"
+    },
+    {
+      "value": "Buljubašić"
+    },
+    {
+      "value": "Kolak"
+    },
+    {
+      "value": "Matas"
+    },
+    {
+      "value": "Vranješ"
+    },
+    {
+      "value": "Aleksić"
+    },
+    {
+      "value": "Lacković"
+    },
+    {
+      "value": "Štefančić"
+    },
+    {
+      "value": "Čović"
+    },
+    {
+      "value": "Molnar"
+    },
+    {
+      "value": "Bistrović"
+    },
+    {
+      "value": "Grgurević"
+    },
+    {
+      "value": "Županić"
+    },
+    {
+      "value": "Krmpotić"
+    },
+    {
+      "value": "Mesić"
+    },
+    {
+      "value": "Sabljić"
+    },
+    {
+      "value": "Augustinović"
+    },
+    {
+      "value": "Mikić"
+    },
+    {
+      "value": "Lukšić"
+    },
+    {
+      "value": "Glasnović"
+    },
+    {
+      "value": "Zubčić"
+    },
+    {
+      "value": "Uremović"
+    },
+    {
+      "value": "Arambašić"
+    },
+    {
+      "value": "Car"
+    },
+    {
+      "value": "Koren"
+    },
+    {
+      "value": "Dedić"
+    },
+    {
+      "value": "Krsnik"
+    },
+    {
+      "value": "Todorović"
+    },
+    {
+      "value": "Tokić"
+    },
+    {
+      "value": "Markić"
+    },
+    {
+      "value": "Bezjak"
+    },
+    {
+      "value": "Borovac"
+    },
+    {
+      "value": "Križanec"
+    },
+    {
+      "value": "Smiljanić"
+    },
+    {
+      "value": "Štajduhar"
+    },
+    {
+      "value": "Bakić"
+    },
+    {
+      "value": "Kukec"
+    },
+    {
+      "value": "Čavlović"
+    },
+    {
+      "value": "Nakić"
+    },
+    {
+      "value": "Levak"
+    },
+    {
+      "value": "Bošnjaković"
+    },
+    {
+      "value": "Rupčić"
+    },
+    {
+      "value": "Bogdanić"
+    },
+    {
+      "value": "Vranić"
+    },
+    {
+      "value": "Bagarić"
+    },
+    {
+      "value": "Križan"
+    },
+    {
+      "value": "Zajec"
+    },
+    {
+      "value": "Vukšić"
+    },
+    {
+      "value": "Šunjić"
+    },
+    {
+      "value": "Carević"
+    },
+    {
+      "value": "Lukačević"
+    },
+    {
+      "value": "Soldo"
+    },
+    {
+      "value": "Lončarević"
+    },
+    {
+      "value": "Martinčević"
+    },
+    {
+      "value": "Draganić"
+    },
+    {
+      "value": "Jokić"
+    }
+  ],
+  "production_ready": false
+}
