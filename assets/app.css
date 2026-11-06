@@ -744,6 +744,7 @@ html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB
 .app-club-crest-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;visibility:hidden}
 html .app-world-club-crest-placeholder[data-club-crest-pending="true"],
 html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-color:transparent;background:transparent}
+.app-world-club-crest-placeholder[data-club-crest-pending="true"]::before,
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
 /* Respect hidden standings while DEV prepares the reordered rows on refresh. */
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:inherit}
@@ -1377,6 +1378,6 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 #world-calendar #calendar-controls #calendar-week-value{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 #world-calendar #calendar-controls #calendar-week-trigger>.language-chevron{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);margin:0;flex:none}
 
-/* UI-409: optional first-paint fixture and Stats skeletons use the shared borderless shield. */
+/* UI-409: unidentified fixture/Stats first-paint slots reserve geometry without showing a crest. */
 :is(.app-fixtures-skeleton-crest,.app-view-skeleton-crest-slot){box-sizing:border-box;border:0;background:transparent}
-:is(.app-fixtures-skeleton-crest,.app-view-skeleton-crest-slot)::before{content:"";display:block;position:relative;top:50%;transform:translateY(-50%);width:85%;height:90%;margin:0 auto;background:var(--fa-crest-shield-fill);clip-path:var(--fa-crest-shield-shape);opacity:.78}
+

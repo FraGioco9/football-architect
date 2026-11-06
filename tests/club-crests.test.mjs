@@ -137,18 +137,20 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
 });
 
 // UI-409 is presentation-only; public identity URLs and loaded crest nodes must be unchanged.
-test('UI-409: shared borderless shield is visible while loading and hidden only after successful load',()=>{
+test('UI-409: known crests load into a blank slot and missing or failed crests show borderless shields',()=>{
  const app=read('assets/app.css'),detail=read('assets/club-page.css'),directory=read('assets/clubs-directory.css');
  assert.match(app,/--fa-crest-shield-shape:polygon\(/);
  assert.match(app,/html\[data-theme="light"\]\{--fa-crest-shield-fill:/);
  assert.match(app,/\.app-world-club-crest-placeholder\{[^}]*border:0;border-radius:0;background:transparent/);
  assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
- assert.doesNotMatch(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before\s*,/);
+ assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before,\s*\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(detail,/\.club-first-paint-header \.club-crest\{visibility:visible\}/);
- assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+ assert.match(detail,/\.club-first-paint-header \.club-crest:not\(\[data-club-crest\]\)::before\{display:none\}/);
+ assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\)::before,\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(directory,/\.nav01-crest-image\{position:absolute;inset:0;[^}]*object-fit:contain/);
  for(const selector of ['app-fixtures-skeleton-crest','app-view-skeleton-crest-slot'])
-  assert.ok(app.includes(selector),'first-paint shared crest slot '+selector);
+  assert.ok(app.includes(selector),'first-paint reserved crest slot '+selector);
+ assert.doesNotMatch(app,/:is\(\.app-fixtures-skeleton-crest,\.app-view-skeleton-crest-slot\)::before\{/,'identity-free skeleton slots must remain blank');
 });
 
 test('UI-409: directory image state is idempotent and failed requests retain the shield',()=>{
@@ -160,9 +162,9 @@ test('UI-409: directory image state is idempotent and failed requests retain the
  const image={parentElement:slot,complete:false,naturalWidth:0,matches:selector=>selector==='img.nav01-crest-image',
   removed:0,remove(){this.removed++}};
  settle(image);
- assert.equal(slot.dataset.clubCrestLoaded,undefined,'pending image shows CSS shield');
+ assert.equal(slot.dataset.clubCrestLoaded,undefined,'pending image keeps a blank reserved slot');
  image.complete=true;image.naturalWidth=70;settle(image);
- assert.equal(slot.dataset.clubCrestLoaded,'true','loaded image hides CSS shield');
+ assert.equal(slot.dataset.clubCrestLoaded,'true','loaded image keeps the shield hidden');
  settle(image);
  assert.equal(image.removed,0,'cache hit must not discard loaded node');
  const failed={...image,naturalWidth:0,removed:0,remove(){this.removed++}};
