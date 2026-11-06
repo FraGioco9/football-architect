@@ -1,5 +1,13 @@
 # BE-03 — D1 repository and transaction inventory
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current D1 persistence and transaction authority
+
+`backend/wrangler.toml` is **local-only**, with reserved local DB binding; `backend/migrations/` contains the schema sequence (18 SQL migrations at this review). `world-repository.ts` and related read repositories preserve world state, sporting data, revisions, archives, sessions and idempotency receipts. Pure sporting policy and write transaction guards remain distinct. **Read-side multi-statement queries do not automatically become snapshot-isolated transactions**; preserve the recorded concurrency limitations. Never rewrite historical migrations, original SQL identifiers, receipt hashes or archived snapshots for documentation clarity. Migration/recovery commands against *remote* D1 require independent authorization. [Lifecycle](docs-season-lifecycle-be-04.md), [Auth](docs-auth-security-be-05.md), [HTTP](docs-http-contracts-be-02.md). Historical BE-03 review SHAs and prior CI evidence below are dated, not exact-head proof for the current commit.
+
+## Historical implementation audit (retained)
+
 Baseline: `9a0d440a90845d899fd812b105fc16d010cd5317` (2026-11-05). Scope: read-side persistence consolidation; no sporting rules, lifecycle commands, remote data, secrets or historical migration edits.
 
 ## Dependency / ownership

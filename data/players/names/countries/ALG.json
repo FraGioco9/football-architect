@@ -1,0 +1,1225 @@
+{
+  "schema_version": 2,
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "code": "ALG",
+  "cohort": "male first-name records from Algerian administrative/student registry corpus, mixed parent/child generations; NOT newborn national statistics",
+  "source": {
+    "id": "dz-aldjia-algerian-male-first-name-registry",
+    "provider": "Aldjia / Dr Taha Zerrouki, Algerian Name Transcription Corpus",
+    "source_url": "https://github.com/linuxscout/algerian-name-transcription-corpus",
+    "source_csv_url": "https://raw.githubusercontent.com/linuxscout/algerian-name-transcription-corpus/dc89312451599abee3eb6a6c96710c0c3b1af3bb/data/treated/checked-merged-first.csv",
+    "source_git_commit": "dc89312451599abee3eb6a6c96710c0c3b1af3bb",
+    "source_csv_sha256": "4b4d9d8593c512774c8e3eb5c75347dad1ad2efca53a7fad2e5f4e72dfc3755d",
+    "metric": "number of source masculine FIRST-NAME registry rows for a given Arabic spelling group; aggregate real observed rows across equivalent transcriptions; minimum 2 observed rows",
+    "license": "CC0 1.0 Universal per repository LICENSE (README incorrectly states MIT); source corpus transcriptions",
+    "sampling_limitations": "Not a national birth register, contains older generations and possible source misclassifications; no unseen frequencies filled",
+    "romanization": "Use attested Latin French firstname_fr, group Arabic variants after alef-hamza and final-ya normalization; choose most common Latin transcription, merge Ibrahim/Brahim and Kousaila/Kouceila variants; aggregate actual source record occurrences. No independent algorithmic transliteration."
+  },
+  "selection_policy": "Top 300 clean masculine first-name records with Latin-only single token, Arabic variant equivalence, family-name cross-check to exclude suspected surnames, 1+ actual observed record per retained name.",
+  "given_names": [
+    {
+      "value": "Mohamed",
+      "weight": 56
+    },
+    {
+      "value": "Amar",
+      "weight": 49
+    },
+    {
+      "value": "Messaoud",
+      "weight": 24
+    },
+    {
+      "value": "Said",
+      "weight": 24
+    },
+    {
+      "value": "Brahim",
+      "weight": 23
+    },
+    {
+      "value": "Ahmed",
+      "weight": 22
+    },
+    {
+      "value": "Hacene",
+      "weight": 21
+    },
+    {
+      "value": "Belkacem",
+      "weight": 19
+    },
+    {
+      "value": "Mustapha",
+      "weight": 19
+    },
+    {
+      "value": "Ahcen",
+      "weight": 18
+    },
+    {
+      "value": "Ali",
+      "weight": 17
+    },
+    {
+      "value": "Hocine",
+      "weight": 17
+    },
+    {
+      "value": "Ramdane",
+      "weight": 17
+    },
+    {
+      "value": "Boualem",
+      "weight": 16
+    },
+    {
+      "value": "Salah",
+      "weight": 16
+    },
+    {
+      "value": "Tayeb",
+      "weight": 16
+    },
+    {
+      "value": "Yahia",
+      "weight": 16
+    },
+    {
+      "value": "Atmane",
+      "weight": 15
+    },
+    {
+      "value": "Essaid",
+      "weight": 14
+    },
+    {
+      "value": "Lakhdar",
+      "weight": 14
+    },
+    {
+      "value": "Slimane",
+      "weight": 14
+    },
+    {
+      "value": "Azeddine",
+      "weight": 13
+    },
+    {
+      "value": "Djamel",
+      "weight": 13
+    },
+    {
+      "value": "Lounes",
+      "weight": 13
+    },
+    {
+      "value": "Noureddine",
+      "weight": 13
+    },
+    {
+      "value": "Tahar",
+      "weight": 13
+    },
+    {
+      "value": "Aissa",
+      "weight": 12
+    },
+    {
+      "value": "Boudjemaa",
+      "weight": 12
+    },
+    {
+      "value": "Faical",
+      "weight": 12
+    },
+    {
+      "value": "Ismail",
+      "weight": 12
+    },
+    {
+      "value": "Lyes",
+      "weight": 12
+    },
+    {
+      "value": "Nacer",
+      "weight": 12
+    },
+    {
+      "value": "Amer",
+      "weight": 11
+    },
+    {
+      "value": "Chaabane",
+      "weight": 11
+    },
+    {
+      "value": "Moussa",
+      "weight": 11
+    },
+    {
+      "value": "Rachid",
+      "weight": 11
+    },
+    {
+      "value": "Saad",
+      "weight": 11
+    },
+    {
+      "value": "Aimane",
+      "weight": 10
+    },
+    {
+      "value": "Allal",
+      "weight": 10
+    },
+    {
+      "value": "Ammar",
+      "weight": 10
+    },
+    {
+      "value": "Arezki",
+      "weight": 10
+    },
+    {
+      "value": "Bachir",
+      "weight": 10
+    },
+    {
+      "value": "Oussama",
+      "weight": 10
+    },
+    {
+      "value": "Rabah",
+      "weight": 10
+    },
+    {
+      "value": "Radouane",
+      "weight": 10
+    },
+    {
+      "value": "Dahmane",
+      "weight": 9
+    },
+    {
+      "value": "Djelloul",
+      "weight": 9
+    },
+    {
+      "value": "Laid",
+      "weight": 9
+    },
+    {
+      "value": "Mahfoud",
+      "weight": 9
+    },
+    {
+      "value": "Mebarek",
+      "weight": 9
+    },
+    {
+      "value": "Miloud",
+      "weight": 9
+    },
+    {
+      "value": "Oulaid",
+      "weight": 9
+    },
+    {
+      "value": "Rabia",
+      "weight": 9
+    },
+    {
+      "value": "Youcef",
+      "weight": 9
+    },
+    {
+      "value": "Zohier",
+      "weight": 9
+    },
+    {
+      "value": "Abderrahmane",
+      "weight": 8
+    },
+    {
+      "value": "Akli",
+      "weight": 8
+    },
+    {
+      "value": "Fatah",
+      "weight": 8
+    },
+    {
+      "value": "Idir",
+      "weight": 8
+    },
+    {
+      "value": "Kaddour",
+      "weight": 8
+    },
+    {
+      "value": "Kamal",
+      "weight": 8
+    },
+    {
+      "value": "Makhlouf",
+      "weight": 8
+    },
+    {
+      "value": "Mouloud",
+      "weight": 8
+    },
+    {
+      "value": "Mourad",
+      "weight": 8
+    },
+    {
+      "value": "Nadir",
+      "weight": 8
+    },
+    {
+      "value": "Toufik",
+      "weight": 8
+    },
+    {
+      "value": "Yacine",
+      "weight": 8
+    },
+    {
+      "value": "Ayache",
+      "weight": 7
+    },
+    {
+      "value": "Boubaker",
+      "weight": 7
+    },
+    {
+      "value": "Cherif",
+      "weight": 7
+    },
+    {
+      "value": "Djafar",
+      "weight": 7
+    },
+    {
+      "value": "Djilali",
+      "weight": 7
+    },
+    {
+      "value": "Farhat",
+      "weight": 7
+    },
+    {
+      "value": "Hamza",
+      "weight": 7
+    },
+    {
+      "value": "Kouider",
+      "weight": 7
+    },
+    {
+      "value": "Larbi",
+      "weight": 7
+    },
+    {
+      "value": "Mhamed",
+      "weight": 7
+    },
+    {
+      "value": "Mohand",
+      "weight": 7
+    },
+    {
+      "value": "Redha",
+      "weight": 7
+    },
+    {
+      "value": "Sadek",
+      "weight": 7
+    },
+    {
+      "value": "Salem",
+      "weight": 7
+    },
+    {
+      "value": "Smail",
+      "weight": 7
+    },
+    {
+      "value": "Sofiane",
+      "weight": 7
+    },
+    {
+      "value": "Yazid",
+      "weight": 7
+    },
+    {
+      "value": "Zoubir",
+      "weight": 7
+    },
+    {
+      "value": "Allaoua",
+      "weight": 6
+    },
+    {
+      "value": "Ameur",
+      "weight": 6
+    },
+    {
+      "value": "Arab",
+      "weight": 6
+    },
+    {
+      "value": "Aziz",
+      "weight": 6
+    },
+    {
+      "value": "Belaid",
+      "weight": 6
+    },
+    {
+      "value": "Billel",
+      "weight": 6
+    },
+    {
+      "value": "Elhadi",
+      "weight": 6
+    },
+    {
+      "value": "Elhadj",
+      "weight": 6
+    },
+    {
+      "value": "Hadj",
+      "weight": 6
+    },
+    {
+      "value": "Hamid",
+      "weight": 6
+    },
+    {
+      "value": "Hammouche",
+      "weight": 6
+    },
+    {
+      "value": "Hamou",
+      "weight": 6
+    },
+    {
+      "value": "Islam",
+      "weight": 6
+    },
+    {
+      "value": "Laifa",
+      "weight": 6
+    },
+    {
+      "value": "Madjid",
+      "weight": 6
+    },
+    {
+      "value": "Menad",
+      "weight": 6
+    },
+    {
+      "value": "Saadi",
+      "weight": 6
+    },
+    {
+      "value": "Abbas",
+      "weight": 5
+    },
+    {
+      "value": "Abdellah",
+      "weight": 5
+    },
+    {
+      "value": "Achour",
+      "weight": 5
+    },
+    {
+      "value": "Adem",
+      "weight": 5
+    },
+    {
+      "value": "Boukhalfa",
+      "weight": 5
+    },
+    {
+      "value": "Bouzid",
+      "weight": 5
+    },
+    {
+      "value": "Faouzi",
+      "weight": 5
+    },
+    {
+      "value": "Foudil",
+      "weight": 5
+    },
+    {
+      "value": "Hakim",
+      "weight": 5
+    },
+    {
+      "value": "Idriss",
+      "weight": 5
+    },
+    {
+      "value": "Jugurta",
+      "weight": 5
+    },
+    {
+      "value": "Kaci",
+      "weight": 5
+    },
+    {
+      "value": "Karim",
+      "weight": 5
+    },
+    {
+      "value": "Khaled",
+      "weight": 5
+    },
+    {
+      "value": "Khmissi",
+      "weight": 5
+    },
+    {
+      "value": "Lamouri",
+      "weight": 5
+    },
+    {
+      "value": "Lazazi",
+      "weight": 5
+    },
+    {
+      "value": "Madani",
+      "weight": 5
+    },
+    {
+      "value": "Malek",
+      "weight": 5
+    },
+    {
+      "value": "Menouar",
+      "weight": 5
+    },
+    {
+      "value": "Merzak",
+      "weight": 5
+    },
+    {
+      "value": "Meziane",
+      "weight": 5
+    },
+    {
+      "value": "Mokhtar",
+      "weight": 5
+    },
+    {
+      "value": "Nabil",
+      "weight": 5
+    },
+    {
+      "value": "Raidh",
+      "weight": 5
+    },
+    {
+      "value": "Seddik",
+      "weight": 5
+    },
+    {
+      "value": "Tarek",
+      "weight": 5
+    },
+    {
+      "value": "Yagoub",
+      "weight": 5
+    },
+    {
+      "value": "Abdelkader",
+      "weight": 4
+    },
+    {
+      "value": "Abdelrazak",
+      "weight": 4
+    },
+    {
+      "value": "Amrane",
+      "weight": 4
+    },
+    {
+      "value": "Anouar",
+      "weight": 4
+    },
+    {
+      "value": "Belkhir",
+      "weight": 4
+    },
+    {
+      "value": "Djemaa",
+      "weight": 4
+    },
+    {
+      "value": "Elhocine",
+      "weight": 4
+    },
+    {
+      "value": "Farid",
+      "weight": 4
+    },
+    {
+      "value": "Hamoud",
+      "weight": 4
+    },
+    {
+      "value": "Houssam",
+      "weight": 4
+    },
+    {
+      "value": "Khelifa",
+      "weight": 4
+    },
+    {
+      "value": "Koucaila",
+      "weight": 4
+    },
+    {
+      "value": "Kouceïla",
+      "weight": 4
+    },
+    {
+      "value": "Lahcene",
+      "weight": 4
+    },
+    {
+      "value": "Lamri",
+      "weight": 4
+    },
+    {
+      "value": "Loucif",
+      "weight": 4
+    },
+    {
+      "value": "Mabrouk",
+      "weight": 4
+    },
+    {
+      "value": "Mahdi",
+      "weight": 4
+    },
+    {
+      "value": "Mahmoud",
+      "weight": 4
+    },
+    {
+      "value": "Malik",
+      "weight": 4
+    },
+    {
+      "value": "Massinissa",
+      "weight": 4
+    },
+    {
+      "value": "Nouar",
+      "weight": 4
+    },
+    {
+      "value": "Ouassim",
+      "weight": 4
+    },
+    {
+      "value": "Rafik",
+      "weight": 4
+    },
+    {
+      "value": "Rayan",
+      "weight": 4
+    },
+    {
+      "value": "Rezki",
+      "weight": 4
+    },
+    {
+      "value": "Saoud",
+      "weight": 4
+    },
+    {
+      "value": "Smain",
+      "weight": 4
+    },
+    {
+      "value": "Sohaib",
+      "weight": 4
+    },
+    {
+      "value": "Ziane",
+      "weight": 4
+    },
+    {
+      "value": "Aboubakeur",
+      "weight": 3
+    },
+    {
+      "value": "Adel",
+      "weight": 3
+    },
+    {
+      "value": "Aghiles",
+      "weight": 3
+    },
+    {
+      "value": "Aissam",
+      "weight": 3
+    },
+    {
+      "value": "Amara",
+      "weight": 3
+    },
+    {
+      "value": "Amarouche",
+      "weight": 3
+    },
+    {
+      "value": "Amine",
+      "weight": 3
+    },
+    {
+      "value": "Amirouche",
+      "weight": 3
+    },
+    {
+      "value": "Anes",
+      "weight": 3
+    },
+    {
+      "value": "Anis",
+      "weight": 3
+    },
+    {
+      "value": "Ayoub",
+      "weight": 3
+    },
+    {
+      "value": "Belabas",
+      "weight": 3
+    },
+    {
+      "value": "Boulanouar",
+      "weight": 3
+    },
+    {
+      "value": "Boussad",
+      "weight": 3
+    },
+    {
+      "value": "Bouteldja",
+      "weight": 3
+    },
+    {
+      "value": "Chafaa",
+      "weight": 3
+    },
+    {
+      "value": "Daoud",
+      "weight": 3
+    },
+    {
+      "value": "Djedid",
+      "weight": 3
+    },
+    {
+      "value": "Djemai",
+      "weight": 3
+    },
+    {
+      "value": "Farouk",
+      "weight": 3
+    },
+    {
+      "value": "Haithem",
+      "weight": 3
+    },
+    {
+      "value": "Halim",
+      "weight": 3
+    },
+    {
+      "value": "Hamani",
+      "weight": 3
+    },
+    {
+      "value": "Hamidou",
+      "weight": 3
+    },
+    {
+      "value": "Hamimi",
+      "weight": 3
+    },
+    {
+      "value": "Haroun",
+      "weight": 3
+    },
+    {
+      "value": "Hichem",
+      "weight": 3
+    },
+    {
+      "value": "Ishak",
+      "weight": 3
+    },
+    {
+      "value": "Juba",
+      "weight": 3
+    },
+    {
+      "value": "Kada",
+      "weight": 3
+    },
+    {
+      "value": "Khelaf",
+      "weight": 3
+    },
+    {
+      "value": "Khelif",
+      "weight": 3
+    },
+    {
+      "value": "Kheribeche",
+      "weight": 3
+    },
+    {
+      "value": "Khider",
+      "weight": 3
+    },
+    {
+      "value": "Lamine",
+      "weight": 3
+    },
+    {
+      "value": "Latrach",
+      "weight": 3
+    },
+    {
+      "value": "Lounis",
+      "weight": 3
+    },
+    {
+      "value": "Manouar",
+      "weight": 3
+    },
+    {
+      "value": "Marouane",
+      "weight": 3
+    },
+    {
+      "value": "Mayouf",
+      "weight": 3
+    },
+    {
+      "value": "Meftah",
+      "weight": 3
+    },
+    {
+      "value": "Mekki",
+      "weight": 3
+    },
+    {
+      "value": "Merzoug",
+      "weight": 3
+    },
+    {
+      "value": "Moghdad",
+      "weight": 3
+    },
+    {
+      "value": "Mokrane",
+      "weight": 3
+    },
+    {
+      "value": "Nadji",
+      "weight": 3
+    },
+    {
+      "value": "Ouail",
+      "weight": 3
+    },
+    {
+      "value": "Rabouh",
+      "weight": 3
+    },
+    {
+      "value": "Salim",
+      "weight": 3
+    },
+    {
+      "value": "Samir",
+      "weight": 3
+    },
+    {
+      "value": "Sidali",
+      "weight": 3
+    },
+    {
+      "value": "Zakaria",
+      "weight": 3
+    },
+    {
+      "value": "Abada",
+      "weight": 2
+    },
+    {
+      "value": "Abdelkrim",
+      "weight": 2
+    },
+    {
+      "value": "Abdelnasser",
+      "weight": 2
+    },
+    {
+      "value": "Abdennour",
+      "weight": 2
+    },
+    {
+      "value": "Abderraouf",
+      "weight": 2
+    },
+    {
+      "value": "Abdeslame",
+      "weight": 2
+    },
+    {
+      "value": "Ahmida",
+      "weight": 2
+    },
+    {
+      "value": "Akram",
+      "weight": 2
+    },
+    {
+      "value": "Aliout",
+      "weight": 2
+    },
+    {
+      "value": "Amazigh",
+      "weight": 2
+    },
+    {
+      "value": "Amir",
+      "weight": 2
+    },
+    {
+      "value": "Antar",
+      "weight": 2
+    },
+    {
+      "value": "Assirem",
+      "weight": 2
+    },
+    {
+      "value": "Azouaou",
+      "weight": 2
+    },
+    {
+      "value": "Azzedine",
+      "weight": 2
+    },
+    {
+      "value": "Belgacem",
+      "weight": 2
+    },
+    {
+      "value": "Bouazza",
+      "weight": 2
+    },
+    {
+      "value": "Bourahla",
+      "weight": 2
+    },
+    {
+      "value": "Chaayeb",
+      "weight": 2
+    },
+    {
+      "value": "Chafik",
+      "weight": 2
+    },
+    {
+      "value": "Chaouch",
+      "weight": 2
+    },
+    {
+      "value": "Chaouki",
+      "weight": 2
+    },
+    {
+      "value": "Daou",
+      "weight": 2
+    },
+    {
+      "value": "Daris",
+      "weight": 2
+    },
+    {
+      "value": "Dif",
+      "weight": 2
+    },
+    {
+      "value": "Djalal",
+      "weight": 2
+    },
+    {
+      "value": "Elhachimi",
+      "weight": 2
+    },
+    {
+      "value": "Elkheir",
+      "weight": 2
+    },
+    {
+      "value": "Elnadir",
+      "weight": 2
+    },
+    {
+      "value": "Elyazid",
+      "weight": 2
+    },
+    {
+      "value": "Fares",
+      "weight": 2
+    },
+    {
+      "value": "Fethi",
+      "weight": 2
+    },
+    {
+      "value": "Fouaad",
+      "weight": 2
+    },
+    {
+      "value": "Ghilas",
+      "weight": 2
+    },
+    {
+      "value": "Hachemi",
+      "weight": 2
+    },
+    {
+      "value": "Haddi",
+      "weight": 2
+    },
+    {
+      "value": "Hafid",
+      "weight": 2
+    },
+    {
+      "value": "Hamdane",
+      "weight": 2
+    },
+    {
+      "value": "Hamitouch",
+      "weight": 2
+    },
+    {
+      "value": "Hamouda",
+      "weight": 2
+    },
+    {
+      "value": "Hanachi",
+      "weight": 2
+    },
+    {
+      "value": "Hicham",
+      "weight": 2
+    },
+    {
+      "value": "Hilal",
+      "weight": 2
+    },
+    {
+      "value": "Ihab",
+      "weight": 2
+    },
+    {
+      "value": "Imad",
+      "weight": 2
+    },
+    {
+      "value": "Khair",
+      "weight": 2
+    },
+    {
+      "value": "Khalef",
+      "weight": 2
+    },
+    {
+      "value": "Khathir",
+      "weight": 2
+    },
+    {
+      "value": "Lahlou",
+      "weight": 2
+    },
+    {
+      "value": "Lakhel",
+      "weight": 2
+    },
+    {
+      "value": "Lamin",
+      "weight": 2
+    },
+    {
+      "value": "Lamori",
+      "weight": 2
+    },
+    {
+      "value": "Louakal",
+      "weight": 2
+    },
+    {
+      "value": "Mansour",
+      "weight": 2
+    },
+    {
+      "value": "Mazigh",
+      "weight": 2
+    },
+    {
+      "value": "Mihoub",
+      "weight": 2
+    },
+    {
+      "value": "Missoum",
+      "weight": 2
+    },
+    {
+      "value": "Monir",
+      "weight": 2
+    },
+    {
+      "value": "Nacereddine",
+      "weight": 2
+    },
+    {
+      "value": "Nail",
+      "weight": 2
+    },
+    {
+      "value": "Nouari",
+      "weight": 2
+    },
+    {
+      "value": "Omar",
+      "weight": 2
+    },
+    {
+      "value": "Racim",
+      "weight": 2
+    },
+    {
+      "value": "Ramzi",
+      "weight": 2
+    },
+    {
+      "value": "Saber",
+      "weight": 2
+    },
+    {
+      "value": "Saci",
+      "weight": 2
+    },
+    {
+      "value": "Sadam",
+      "weight": 2
+    },
+    {
+      "value": "Sami",
+      "weight": 2
+    },
+    {
+      "value": "Sifax",
+      "weight": 2
+    },
+    {
+      "value": "Sliman",
+      "weight": 2
+    },
+    {
+      "value": "Souhaib",
+      "weight": 2
+    },
+    {
+      "value": "Thamer",
+      "weight": 2
+    },
+    {
+      "value": "Touhami",
+      "weight": 2
+    },
+    {
+      "value": "Toumi",
+      "weight": 2
+    },
+    {
+      "value": "Wahid",
+      "weight": 2
+    },
+    {
+      "value": "Yamine",
+      "weight": 2
+    },
+    {
+      "value": "Yanis",
+      "weight": 2
+    },
+    {
+      "value": "Younes",
+      "weight": 2
+    },
+    {
+      "value": "Zaidi",
+      "weight": 2
+    },
+    {
+      "value": "Zarrouk",
+      "weight": 2
+    },
+    {
+      "value": "Ziad",
+      "weight": 2
+    },
+    {
+      "value": "Zine",
+      "weight": 2
+    },
+    {
+      "value": "Abdelaziz",
+      "weight": 1
+    },
+    {
+      "value": "Abdelbasset",
+      "weight": 1
+    },
+    {
+      "value": "Abdelghani",
+      "weight": 1
+    },
+    {
+      "value": "Abdelhak",
+      "weight": 1
+    },
+    {
+      "value": "Abdelhakim",
+      "weight": 1
+    },
+    {
+      "value": "Abdelhamid",
+      "weight": 1
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "collection_status": "collected_300"
+}

@@ -5,7 +5,8 @@
  * Keep source order: later refinements intentionally override earlier rules.
  * Compact declarations and media bodies retain existing source contracts.
  */
-:root{--fa-flag-width:25px;--fa-flag-height:20px}
+:root{--fa-flag-width:25px;--fa-flag-height:20px;--fa-crest-shield-shape:polygon(50% 1%,91% 16%,90% 59%,79% 80%,50% 99%,21% 80%,10% 59%,9% 16%);--fa-crest-shield-fill:#7F9F96}
+html[data-theme="light"]{--fa-crest-shield-fill:#789688}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
 .app-body{height:100vh;height:100svh;height:100dvh;overflow:hidden;--fa-shell-border:#294a49;--fa-shell-accent:#64cba9;--app-page-pad-inline:clamp(16px,2vw,28px);--app-page-pad-top:clamp(16px,2vw,28px);--app-page-pad-bottom:40px;--app-page-section-gap:28px;--app-page-title-size:clamp(28px,3vw,40px);min-width:0}
@@ -333,12 +334,12 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-standing-table thead tr>*:nth-child(10){background:#305c4c;color:#effff4}
 .app-world-standing-table tr>*:last-child{width:140px;min-width:140px;max-width:140px}
 .app-world-club-identity{display:flex;align-items:center;gap:8px;min-width:0}
-.app-world-club-crest-placeholder{display:grid;place-items:center;position:relative;flex:0 0 48px;width:48px;height:48px;border:1px dashed #567970;border-radius:7px;background:rgba(100,203,169,.05);color:#83a79b}
-.app-world-club-crest-placeholder::before{content:"";display:block;width:13px;height:16px;background:currentColor;clip-path:polygon(50% 0%,90% 13%,87% 70%,50% 98%,13% 70%,10% 13%);opacity:.6}
+.app-world-club-crest-placeholder{display:grid;place-items:center;position:relative;flex:0 0 48px;width:48px;height:48px;box-sizing:border-box;border:0;border-radius:0;background:transparent}
+.app-world-club-crest-placeholder::before{content:"";display:block;width:85%;height:90%;background:var(--fa-crest-shield-fill);clip-path:var(--fa-crest-shield-shape);opacity:.78}
 .app-world-club-name{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;font-weight:650;line-height:1.35}
 .app-world-stat-unknown{color:var(--muted)}
 @media(max-width:1024px){.app-world-countries{grid-template-columns:1fr}}
-@media(max-width:620px){.app-competition-header{gap:10px;--app-competition-heading-size:clamp(20px,6vw,26px)}.app-competition-logo-placeholder-large{font-size:12px}.app-competition-identity{flex:1 1 calc(100% - var(--app-competition-logo-size) - 10px)}.app-competition-return{display:none}.app-world-country{padding:12px}.app-division-card{padding:3px 8px;gap:8px}.app-world-grid .app-competition-logo-placeholder{width:40px;height:40px;font-size:9px}.app-world-standing-table{min-width:696px}.app-world-standing-table tr>*{padding:3px 4px}.app-world-standing-table tbody tr>*{height:64px}.app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}.app-world-standing-table tr>*:first-child{width:30px;min-width:30px;max-width:30px}.app-world-standing-table tr>*:nth-child(2){left:30px;min-width:126px}.app-world-club-identity{gap:7px}.app-world-club-crest-placeholder{flex-basis:40px;width:40px;height:40px}.app-world-club-crest-placeholder::before{width:12px;height:15px}.app-world-club-name{font-size:10.5px}}
+@media(max-width:620px){.app-competition-header{gap:10px;--app-competition-heading-size:clamp(20px,6vw,26px)}.app-competition-logo-placeholder-large{font-size:12px}.app-competition-identity{flex:1 1 calc(100% - var(--app-competition-logo-size) - 10px)}.app-competition-return{display:none}.app-world-country{padding:12px}.app-division-card{padding:3px 8px;gap:8px}.app-world-grid .app-competition-logo-placeholder{width:40px;height:40px;font-size:9px}.app-world-standing-table{min-width:696px}.app-world-standing-table tr>*{padding:3px 4px}.app-world-standing-table tbody tr>*{height:64px}.app-world-standing-table tr>*:nth-child(n+3):nth-child(-n+10){width:50px;min-width:50px;max-width:50px}.app-world-standing-table tr>*:first-child{width:30px;min-width:30px;max-width:30px}.app-world-standing-table tr>*:nth-child(2){left:30px;min-width:126px}.app-world-club-identity{gap:7px}.app-world-club-crest-placeholder{flex-basis:40px;width:40px;height:40px}.app-world-club-name{font-size:10.5px}}
 
 @media(max-width:360px){.app-world-standing-table{min-width:686px}.app-world-standing-table tr>*:nth-child(2){min-width:116px}.app-world-club-identity{gap:7px}}
 
@@ -474,7 +475,7 @@ html[data-theme="light"] .app-world-standing-table tbody tr:nth-child(even)>*:no
 html[data-theme="light"] .app-world-standing-table tbody tr:hover>*:not(:nth-child(10)){background:#E7F4EB}
 html[data-theme="light"] .app-world-standing-table tr>*:nth-child(10){background:#D4EBDD;color:#174936;box-shadow:inset 1px 0 #A5CCB2,inset -1px 0 #A5CCB2}
 html[data-theme="light"] .app-world-standing-table thead tr>*:nth-child(10){background:#B7DCC7;color:#173F30}
-html[data-theme="light"] .app-world-club-crest-placeholder{border-color:#9BB9AA;background:#EAF4EE;color:#507F67}
+html[data-theme="light"] .app-world-club-crest-placeholder{border:0;background:transparent}
 html[data-theme="light"] .app-competition-tab:hover{background:#EAF4EE}
 html[data-theme="light"]:not([data-competition-view]) .app-competition-tab.is-active,
 html[data-theme="light"][data-competition-view="standings"] #competition-tab-standings,
@@ -1179,12 +1180,24 @@ svg.site-chevron>path{translate:0 .5px}
 .app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
 /* Club placeholder starts at the crest, not after it, and stays compact on wide tables. */
 .app-standings-skeleton tr>:nth-child(2) .app-skeleton-bar{width:148px;max-width:100%;margin-inline:0 auto}
+/* Never project provisional Season 1 clubs into an unknown or later season. */
+.app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
+html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]{display:flex}
+html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity-placeholder]{display:none}
+.app-standings-skeleton [data-skeleton-identity] .app-world-club-name{min-width:0}
+/* Published SVGs start loading in parser time: no shield flash for supported crests. */
+.app-standings-skeleton [data-club-crest-pending="true"]>.app-club-crest-image{visibility:visible}
+@media(max-width:620px){
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity]{width:auto;max-width:100%;margin-left:0;min-height:40px}
+ .app-standings-skeleton .app-world-mobile-name .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px}
+}
 #competition-panel-standings{position:relative}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-standings-skeleton{display:block}
-/* Only points are bold, including headings and the mobile projection. */
+/* Club names and points lead the standings hierarchy; other statistics stay normal. */
 #competition-panel-standings .app-world-standing-table :is(th,td),
-#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd){font-weight:400}
+#competition-panel-standings :is(.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd){font-weight:400}
+#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-club-name){font-weight:700}
 #competition-panel-standings .app-world-standing-table tr>:nth-child(10),
 #competition-panel-standings .app-world-mobile-points{font-weight:800}
 @media(max-width:620px){
@@ -1376,3 +1389,7 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 #world-calendar #calendar-controls #calendar-week-trigger{padding-inline:28px}
 #world-calendar #calendar-controls #calendar-week-value{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 #world-calendar #calendar-controls #calendar-week-trigger>.language-chevron{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);margin:0;flex:none}
+
+/* UI-409: unidentified fixture/Stats first-paint slots reserve geometry without showing a crest. */
+:is(.app-fixtures-skeleton-crest,.app-view-skeleton-crest-slot){box-sizing:border-box;border:0;background:transparent}
+

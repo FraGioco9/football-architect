@@ -1,5 +1,8 @@
 # FE-02 — Responsive & Mobile UX (#366)
 
+> **Merged implementation / historical acceptance record — REPO-04 #358, 2026-11-06.** #366 was squash-merged in PR #395 and physical Safari follow-up PR #398 was separately integrated. The original UNKNOWN checklist is a historical snapshot, **not** a blanket current Safari or VoiceOver certification. See the [current CI/QA operating guide](../ci/README.md). Baseline SHAs, old open-PR wording and test run receipts below remain dated evidence; they are not current merge/deploy authorization.
+
+
 ## Baseline and ownership
 - Implementation authorized 2026-11-05 from exact `main@eef67365dbcd5445a7121a0dfe5351dbfa4b5232`, after FE-01 #365 squash PR #393. Separate merge/deploy/remote DB authorization required.
 - All FE-01 design tokens and colors remain unchanged. Domestic/int-24 sporting contracts, routing, crests, static first paint, and the 7-view competition structure remain unchanged.

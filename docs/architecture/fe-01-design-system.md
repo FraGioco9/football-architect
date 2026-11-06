@@ -1,5 +1,8 @@
 # FE-01 — Design-system contract and visual equivalence (#365)
 
+> **Merged implementation / historical acceptance record — REPO-04 #358, 2026-11-06.** #365 was squash-merged in PR #393. The color/token and visual equivalence evidence is preserved; old PR Draft/HOLD is no longer current. See the [current CI/QA operating guide](../ci/README.md). Baseline SHAs, old open-PR wording and test run receipts below remain dated evidence; they are not current merge/deploy authorization.
+
+
 ## Baseline and boundaries
 - Exact main start: `4b28fd3d47f05c7bd8ccf4f04fcfc99a179fc133`, including owner-approved #352 security (`ed49e805dfbbd13605dbd01eb284766778ab9f0e`) and #356 frontend cleanup (`4b28fd3d47f05c7bd8ccf4f04fcfc99a179fc133`). #354 competition renderer and #359 first-paint contracts remain canonical.
 - Single Draft/HOLD PR; code is CSS aliases + tests/CI ownership + this document only. No changes to generated HTML, templates, generator, routes, assets, images, i18n, JS runtime, backend, security, D1, publication policy or deployment.

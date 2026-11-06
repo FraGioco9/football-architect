@@ -1,6 +1,10 @@
 /* Club pages share shell, panel, typography, theme and tab tokens with competitions. */
 /* PAGE-LOAD: reserve final club geometry without rendering decorative skeletons. */
-.club-first-paint-header .club-crest{visibility:hidden}
+.club-first-paint-header .club-crest{visibility:visible}
+/* Static shell has no identity until bootstrap; its fixed crest box remains blank. */
+.club-first-paint-header .club-crest:not([data-club-crest])::before{display:none}
+.club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:fill;flex:none}
 .club-first-paint-header h1{min-height:1.8em}
 .club-first-paint-header .club-location,.club-first-paint-header .club-header-division{min-height:1.5em}
 .club-first-paint-panel{min-height:160px;margin-top:14px;visibility:hidden}
@@ -11,7 +15,7 @@
 .club-header h1{overflow-wrap:anywhere;font-size:clamp(1.65rem,2.7vw,2.35rem);line-height:1.15;letter-spacing:-.025em;margin:0 0 4px}
 .app-world-club-crest-placeholder.club-crest{width:160px;height:181px;flex:0 0 160px;position:relative}
 .club-crest:not([data-club-crest-fallback]){border-color:transparent;background:transparent}
-.club-crest:not([data-club-crest-fallback])::before{display:none}
+/* Known crests load in an empty reserved slot; absent and failed crests display the shield. */
 
 .club-location{display:flex;align-items:center;gap:8px;font-size:1rem;margin:0!important;color:var(--text)!important}.club-country-flag{width:var(--fa-flag-width);height:var(--fa-flag-height);object-fit:contain;flex:none}.club-header-division{display:flex;align-items:center;justify-content:flex-start;gap:7px;margin:0!important;font-size:.95rem}.club-division-marker{width:15px;height:15px;border:2px solid var(--muted);border-radius:50%;box-sizing:border-box;flex:none}.club-header-division>a.app-link{display:inline!important;flex:0 0 auto;width:max-content!important;min-width:0;min-height:0;padding:0!important;align-self:auto;line-height:inherit;text-decoration:none}.club-header-division .app-link:hover,.club-header-division .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .club-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:4px;margin-top:4px;padding-bottom:4px}

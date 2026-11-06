@@ -1,5 +1,13 @@
 # Selective CI and failure diagnostics
 
+> **Living operational boundary — REPO-04 #358 (2026-11-06).** Current behavior is summarized first. The original implementation-phase notes, dates, approvals and status labels below are preserved as historical evidence; do not infer deployed remote state.
+
+## Current CI entry point
+
+Use the [current CI/QA guide](README.md) for FAST/TARGETED/FULL selection, exact-head checks, PowerShell and test coverage. This file retains **dated** CI-OPT-04/05 design, benchmark, runner-failure evidence and operator-review details, which must not be confused with the present exact commit's PASS state. Workflow YAML, the impact classifier and `tools/ci-test-ownership.json` remain executable authorities; no CI logic is modified by REPO-04.
+
+## Original implementation record (historical)
+
 Refs #360 and #371. Baseline is squash commit `75a672591085fbe4099deb7aee619e88c7a6b12a` from merged PR #364. Historical branch implementations were not reused. The owner authorized unified implementation on 2026-11-03; the prior planning-only/closed status of #360 is superseded by that authorization.
 
 ## Execution and coverage

@@ -1,0 +1,1231 @@
+{
+  "schema_version": 2,
+  "code": "AUS",
+  "cohort": "New South Wales (NSW) male registered births 1960–2024, annual top-100 published names only; NSW state-level proxy, NOT a total-Australia birth statistic",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "au-nsw-bdm-male-births-top100-1960-2024",
+    "provider": "NSW Registry of Births Deaths and Marriages, mirrored by Rob J Hyndman / ozbabynames",
+    "source_url": "https://data.nsw.gov.au/data/dataset/popular-baby-names-from-1952",
+    "source_mirror_url": "https://github.com/robjhyndman/ozbabynames/blob/dad7314f1f774b3e8cfd57df0be9f40ade4639ce/data-raw/nsw/nsw_babynames.csv",
+    "source_commit": "dad7314f1f774b3e8cfd57df0be9f40ade4639ce",
+    "source_blob_sha": "0704a824ffc9adf027b589480e6c9b8d7826de74",
+    "metric": "sum of source-published NSW boy birth counts over annual Top-100 name rows, calendar years 1960–2024 inclusive; suppressed/outside-Top-100 name counts are UNKNOWN and not imputed",
+    "license": "NSW Government open data, Creative Commons Attribution (CC BY); credit NSW Registry of Births Deaths and Marriages"
+  },
+  "selection_policy": "Top 300 single Latin-script NFC names ranked by observed sum of published NSW male Top-100 annual birth counts from 1960–2024; earlier decades required to produce 300 source-documented names; source is a state-only proxy, not national Australian frequencies",
+  "coverage": {
+    "target_names": 300,
+    "selected_names": 300,
+    "missing_names": 0,
+    "status": "complete_with_regional_and_older_cohort_caveats",
+    "eligible_source_names": 309,
+    "eligible_seen_2000_or_later": 191,
+    "limitations": "NSW-only historical birth registrations. Annual source Top-100 is truncated and counts are observed lower bounds, not complete frequencies. 1960–1999 records supplement modern cohorts; not suitable for claiming a 2000+ Australian national birth cohort."
+  },
+  "given_names": [
+    {
+      "value": "Michael",
+      "weight": 59297
+    },
+    {
+      "value": "David",
+      "weight": 54700
+    },
+    {
+      "value": "Matthew",
+      "weight": 49114
+    },
+    {
+      "value": "Daniel",
+      "weight": 43911
+    },
+    {
+      "value": "James",
+      "weight": 41772
+    },
+    {
+      "value": "Andrew",
+      "weight": 41566
+    },
+    {
+      "value": "Christopher",
+      "weight": 37155
+    },
+    {
+      "value": "Peter",
+      "weight": 35507
+    },
+    {
+      "value": "Mark",
+      "weight": 34875
+    },
+    {
+      "value": "Benjamin",
+      "weight": 33566
+    },
+    {
+      "value": "Joshua",
+      "weight": 33417
+    },
+    {
+      "value": "John",
+      "weight": 31451
+    },
+    {
+      "value": "Paul",
+      "weight": 29470
+    },
+    {
+      "value": "Adam",
+      "weight": 27921
+    },
+    {
+      "value": "Thomas",
+      "weight": 27696
+    },
+    {
+      "value": "William",
+      "weight": 27673
+    },
+    {
+      "value": "Anthony",
+      "weight": 27496
+    },
+    {
+      "value": "Robert",
+      "weight": 26913
+    },
+    {
+      "value": "Luke",
+      "weight": 25635
+    },
+    {
+      "value": "Jason",
+      "weight": 24333
+    },
+    {
+      "value": "Nicholas",
+      "weight": 23531
+    },
+    {
+      "value": "Jack",
+      "weight": 23009
+    },
+    {
+      "value": "Scott",
+      "weight": 22234
+    },
+    {
+      "value": "Stephen",
+      "weight": 21575
+    },
+    {
+      "value": "Nathan",
+      "weight": 21439
+    },
+    {
+      "value": "Alexander",
+      "weight": 20019
+    },
+    {
+      "value": "Timothy",
+      "weight": 19173
+    },
+    {
+      "value": "Ryan",
+      "weight": 19055
+    },
+    {
+      "value": "Samuel",
+      "weight": 18890
+    },
+    {
+      "value": "Steven",
+      "weight": 18476
+    },
+    {
+      "value": "Lachlan",
+      "weight": 18167
+    },
+    {
+      "value": "Craig",
+      "weight": 17649
+    },
+    {
+      "value": "Jacob",
+      "weight": 15539
+    },
+    {
+      "value": "Liam",
+      "weight": 14725
+    },
+    {
+      "value": "Bradley",
+      "weight": 14402
+    },
+    {
+      "value": "Gregory",
+      "weight": 14372
+    },
+    {
+      "value": "Oliver",
+      "weight": 14235
+    },
+    {
+      "value": "Mitchell",
+      "weight": 14060
+    },
+    {
+      "value": "Joseph",
+      "weight": 13404
+    },
+    {
+      "value": "Shane",
+      "weight": 13362
+    },
+    {
+      "value": "Aaron",
+      "weight": 13359
+    },
+    {
+      "value": "Ethan",
+      "weight": 12680
+    },
+    {
+      "value": "Patrick",
+      "weight": 12516
+    },
+    {
+      "value": "Brett",
+      "weight": 12468
+    },
+    {
+      "value": "Noah",
+      "weight": 12246
+    },
+    {
+      "value": "Richard",
+      "weight": 11894
+    },
+    {
+      "value": "Darren",
+      "weight": 11654
+    },
+    {
+      "value": "Dylan",
+      "weight": 11355
+    },
+    {
+      "value": "Jake",
+      "weight": 11185
+    },
+    {
+      "value": "George",
+      "weight": 11135
+    },
+    {
+      "value": "Simon",
+      "weight": 10564
+    },
+    {
+      "value": "Justin",
+      "weight": 10425
+    },
+    {
+      "value": "Cameron",
+      "weight": 10350
+    },
+    {
+      "value": "Jordan",
+      "weight": 10141
+    },
+    {
+      "value": "Lucas",
+      "weight": 9951
+    },
+    {
+      "value": "Wayne",
+      "weight": 9312
+    },
+    {
+      "value": "Harrison",
+      "weight": 9302
+    },
+    {
+      "value": "Dean",
+      "weight": 9140
+    },
+    {
+      "value": "Cooper",
+      "weight": 9027
+    },
+    {
+      "value": "Ian",
+      "weight": 9010
+    },
+    {
+      "value": "Jayden",
+      "weight": 8877
+    },
+    {
+      "value": "Blake",
+      "weight": 8806
+    },
+    {
+      "value": "Isaac",
+      "weight": 8648
+    },
+    {
+      "value": "Sean",
+      "weight": 8215
+    },
+    {
+      "value": "Max",
+      "weight": 8016
+    },
+    {
+      "value": "Brendan",
+      "weight": 7941
+    },
+    {
+      "value": "Phillip",
+      "weight": 7927
+    },
+    {
+      "value": "Joel",
+      "weight": 7836
+    },
+    {
+      "value": "Jackson",
+      "weight": 7765
+    },
+    {
+      "value": "Riley",
+      "weight": 7686
+    },
+    {
+      "value": "Jonathan",
+      "weight": 7591
+    },
+    {
+      "value": "Zachary",
+      "weight": 7481
+    },
+    {
+      "value": "Mathew",
+      "weight": 7436
+    },
+    {
+      "value": "Kevin",
+      "weight": 7317
+    },
+    {
+      "value": "Edward",
+      "weight": 7186
+    },
+    {
+      "value": "Rodney",
+      "weight": 7150
+    },
+    {
+      "value": "Glenn",
+      "weight": 7137
+    },
+    {
+      "value": "Henry",
+      "weight": 7101
+    },
+    {
+      "value": "Harry",
+      "weight": 6980
+    },
+    {
+      "value": "Jamie",
+      "weight": 6973
+    },
+    {
+      "value": "Charlie",
+      "weight": 6889
+    },
+    {
+      "value": "Troy",
+      "weight": 6646
+    },
+    {
+      "value": "Adrian",
+      "weight": 6447
+    },
+    {
+      "value": "Grant",
+      "weight": 6199
+    },
+    {
+      "value": "Connor",
+      "weight": 5877
+    },
+    {
+      "value": "Oscar",
+      "weight": 5849
+    },
+    {
+      "value": "Stuart",
+      "weight": 5813
+    },
+    {
+      "value": "Christian",
+      "weight": 5798
+    },
+    {
+      "value": "Jeremy",
+      "weight": 5685
+    },
+    {
+      "value": "Hayden",
+      "weight": 5615
+    },
+    {
+      "value": "Tyler",
+      "weight": 5504
+    },
+    {
+      "value": "Angus",
+      "weight": 5454
+    },
+    {
+      "value": "Geoffrey",
+      "weight": 5358
+    },
+    {
+      "value": "Jesse",
+      "weight": 5351
+    },
+    {
+      "value": "Brian",
+      "weight": 5165
+    },
+    {
+      "value": "Martin",
+      "weight": 5072
+    },
+    {
+      "value": "Gary",
+      "weight": 5057
+    },
+    {
+      "value": "Leo",
+      "weight": 4939
+    },
+    {
+      "value": "Elijah",
+      "weight": 4937
+    },
+    {
+      "value": "Levi",
+      "weight": 4921
+    },
+    {
+      "value": "Sebastian",
+      "weight": 4875
+    },
+    {
+      "value": "Logan",
+      "weight": 4847
+    },
+    {
+      "value": "Charles",
+      "weight": 4815
+    },
+    {
+      "value": "Glen",
+      "weight": 4804
+    },
+    {
+      "value": "Jeffrey",
+      "weight": 4685
+    },
+    {
+      "value": "Mason",
+      "weight": 4608
+    },
+    {
+      "value": "Xavier",
+      "weight": 4607
+    },
+    {
+      "value": "Shaun",
+      "weight": 4542
+    },
+    {
+      "value": "Kyle",
+      "weight": 4457
+    },
+    {
+      "value": "Hunter",
+      "weight": 4372
+    },
+    {
+      "value": "Bailey",
+      "weight": 4341
+    },
+    {
+      "value": "Colin",
+      "weight": 4332
+    },
+    {
+      "value": "Philip",
+      "weight": 4309
+    },
+    {
+      "value": "Aiden",
+      "weight": 4215
+    },
+    {
+      "value": "Archie",
+      "weight": 4197
+    },
+    {
+      "value": "Raymond",
+      "weight": 4173
+    },
+    {
+      "value": "Luca",
+      "weight": 4081
+    },
+    {
+      "value": "Alex",
+      "weight": 3982
+    },
+    {
+      "value": "Beau",
+      "weight": 3957
+    },
+    {
+      "value": "Corey",
+      "weight": 3868
+    },
+    {
+      "value": "Todd",
+      "weight": 3833
+    },
+    {
+      "value": "Damien",
+      "weight": 3775
+    },
+    {
+      "value": "Gavin",
+      "weight": 3745
+    },
+    {
+      "value": "Kai",
+      "weight": 3587
+    },
+    {
+      "value": "Caleb",
+      "weight": 3545
+    },
+    {
+      "value": "Ben",
+      "weight": 3531
+    },
+    {
+      "value": "Graham",
+      "weight": 3519
+    },
+    {
+      "value": "Trent",
+      "weight": 3499
+    },
+    {
+      "value": "Hudson",
+      "weight": 3486
+    },
+    {
+      "value": "Marcus",
+      "weight": 3442
+    },
+    {
+      "value": "Tony",
+      "weight": 3428
+    },
+    {
+      "value": "Alan",
+      "weight": 3318
+    },
+    {
+      "value": "Warren",
+      "weight": 3318
+    },
+    {
+      "value": "Neil",
+      "weight": 3274
+    },
+    {
+      "value": "Ali",
+      "weight": 3210
+    },
+    {
+      "value": "Callum",
+      "weight": 3101
+    },
+    {
+      "value": "Trevor",
+      "weight": 3081
+    },
+    {
+      "value": "Theodore",
+      "weight": 3030
+    },
+    {
+      "value": "Dominic",
+      "weight": 3015
+    },
+    {
+      "value": "Finn",
+      "weight": 3010
+    },
+    {
+      "value": "Ashton",
+      "weight": 2961
+    },
+    {
+      "value": "Kenneth",
+      "weight": 2941
+    },
+    {
+      "value": "Hugo",
+      "weight": 2933
+    },
+    {
+      "value": "Brandon",
+      "weight": 2928
+    },
+    {
+      "value": "Garry",
+      "weight": 2863
+    },
+    {
+      "value": "Rhys",
+      "weight": 2833
+    },
+    {
+      "value": "Allan",
+      "weight": 2829
+    },
+    {
+      "value": "Flynn",
+      "weight": 2798
+    },
+    {
+      "value": "Aidan",
+      "weight": 2782
+    },
+    {
+      "value": "Bruce",
+      "weight": 2752
+    },
+    {
+      "value": "Gabriel",
+      "weight": 2704
+    },
+    {
+      "value": "Cody",
+      "weight": 2646
+    },
+    {
+      "value": "Ross",
+      "weight": 2627
+    },
+    {
+      "value": "Hamish",
+      "weight": 2593
+    },
+    {
+      "value": "Sam",
+      "weight": 2586
+    },
+    {
+      "value": "Eli",
+      "weight": 2514
+    },
+    {
+      "value": "Ashley",
+      "weight": 2451
+    },
+    {
+      "value": "Russell",
+      "weight": 2419
+    },
+    {
+      "value": "Shannon",
+      "weight": 2321
+    },
+    {
+      "value": "Archer",
+      "weight": 2312
+    },
+    {
+      "value": "Toby",
+      "weight": 2311
+    },
+    {
+      "value": "Lincoln",
+      "weight": 2232
+    },
+    {
+      "value": "Graeme",
+      "weight": 2166
+    },
+    {
+      "value": "Ronald",
+      "weight": 2162
+    },
+    {
+      "value": "Jasper",
+      "weight": 2145
+    },
+    {
+      "value": "Muhammad",
+      "weight": 2116
+    },
+    {
+      "value": "Austin",
+      "weight": 2095
+    },
+    {
+      "value": "Harvey",
+      "weight": 2048
+    },
+    {
+      "value": "Malcolm",
+      "weight": 1962
+    },
+    {
+      "value": "Barry",
+      "weight": 1961
+    },
+    {
+      "value": "Jarrod",
+      "weight": 1959
+    },
+    {
+      "value": "Owen",
+      "weight": 1949
+    },
+    {
+      "value": "Dale",
+      "weight": 1941
+    },
+    {
+      "value": "Lee",
+      "weight": 1879
+    },
+    {
+      "value": "Darcy",
+      "weight": 1872
+    },
+    {
+      "value": "Zac",
+      "weight": 1843
+    },
+    {
+      "value": "Louis",
+      "weight": 1820
+    },
+    {
+      "value": "Arlo",
+      "weight": 1818
+    },
+    {
+      "value": "Jaxon",
+      "weight": 1759
+    },
+    {
+      "value": "Nate",
+      "weight": 1677
+    },
+    {
+      "value": "Jay",
+      "weight": 1674
+    },
+    {
+      "value": "Douglas",
+      "weight": 1516
+    },
+    {
+      "value": "Arthur",
+      "weight": 1499
+    },
+    {
+      "value": "Brent",
+      "weight": 1470
+    },
+    {
+      "value": "Damian",
+      "weight": 1385
+    },
+    {
+      "value": "Tristan",
+      "weight": 1320
+    },
+    {
+      "value": "Reece",
+      "weight": 1317
+    },
+    {
+      "value": "Felix",
+      "weight": 1309
+    },
+    {
+      "value": "Brendon",
+      "weight": 1302
+    },
+    {
+      "value": "Nigel",
+      "weight": 1287
+    },
+    {
+      "value": "Brodie",
+      "weight": 1263
+    },
+    {
+      "value": "Carter",
+      "weight": 1258
+    },
+    {
+      "value": "Kurt",
+      "weight": 1238
+    },
+    {
+      "value": "Brayden",
+      "weight": 1211
+    },
+    {
+      "value": "Danny",
+      "weight": 1201
+    },
+    {
+      "value": "Terry",
+      "weight": 1199
+    },
+    {
+      "value": "Jonathon",
+      "weight": 1153
+    },
+    {
+      "value": "Leon",
+      "weight": 1137
+    },
+    {
+      "value": "Brock",
+      "weight": 1126
+    },
+    {
+      "value": "Dane",
+      "weight": 1115
+    },
+    {
+      "value": "Bryce",
+      "weight": 1058
+    },
+    {
+      "value": "Murray",
+      "weight": 1057
+    },
+    {
+      "value": "Sonny",
+      "weight": 1035
+    },
+    {
+      "value": "Ricky",
+      "weight": 998
+    },
+    {
+      "value": "Darryl",
+      "weight": 996
+    },
+    {
+      "value": "Keith",
+      "weight": 981
+    },
+    {
+      "value": "Donald",
+      "weight": 977
+    },
+    {
+      "value": "Dennis",
+      "weight": 956
+    },
+    {
+      "value": "Chase",
+      "weight": 953
+    },
+    {
+      "value": "Leslie",
+      "weight": 924
+    },
+    {
+      "value": "Chad",
+      "weight": 922
+    },
+    {
+      "value": "Jude",
+      "weight": 908
+    },
+    {
+      "value": "Jared",
+      "weight": 882
+    },
+    {
+      "value": "Micheal",
+      "weight": 881
+    },
+    {
+      "value": "Declan",
+      "weight": 874
+    },
+    {
+      "value": "Bodhi",
+      "weight": 839
+    },
+    {
+      "value": "Jett",
+      "weight": 828
+    },
+    {
+      "value": "Theo",
+      "weight": 827
+    },
+    {
+      "value": "Roger",
+      "weight": 817
+    },
+    {
+      "value": "Braxton",
+      "weight": 795
+    },
+    {
+      "value": "Clinton",
+      "weight": 790
+    },
+    {
+      "value": "Harley",
+      "weight": 759
+    },
+    {
+      "value": "Seth",
+      "weight": 759
+    },
+    {
+      "value": "Luka",
+      "weight": 744
+    },
+    {
+      "value": "Asher",
+      "weight": 742
+    },
+    {
+      "value": "Leonardo",
+      "weight": 734
+    },
+    {
+      "value": "Nathaniel",
+      "weight": 729
+    },
+    {
+      "value": "Spencer",
+      "weight": 727
+    },
+    {
+      "value": "Unnamed",
+      "weight": 721
+    },
+    {
+      "value": "Jai",
+      "weight": 719
+    },
+    {
+      "value": "Kieran",
+      "weight": 700
+    },
+    {
+      "value": "Vincent",
+      "weight": 639
+    },
+    {
+      "value": "Darrin",
+      "weight": 637
+    },
+    {
+      "value": "Elias",
+      "weight": 637
+    },
+    {
+      "value": "Gordon",
+      "weight": 616
+    },
+    {
+      "value": "Isaiah",
+      "weight": 612
+    },
+    {
+      "value": "Zane",
+      "weight": 606
+    },
+    {
+      "value": "Frank",
+      "weight": 605
+    },
+    {
+      "value": "Julian",
+      "weight": 582
+    },
+    {
+      "value": "Ezra",
+      "weight": 560
+    },
+    {
+      "value": "Bernard",
+      "weight": 558
+    },
+    {
+      "value": "Eric",
+      "weight": 548
+    },
+    {
+      "value": "Ryder",
+      "weight": 542
+    },
+    {
+      "value": "Lennox",
+      "weight": 526
+    },
+    {
+      "value": "Roman",
+      "weight": 484
+    },
+    {
+      "value": "Daryl",
+      "weight": 478
+    },
+    {
+      "value": "Giuseppe",
+      "weight": 476
+    },
+    {
+      "value": "Tyson",
+      "weight": 476
+    },
+    {
+      "value": "Billy",
+      "weight": 462
+    },
+    {
+      "value": "Antonio",
+      "weight": 452
+    },
+    {
+      "value": "Terrence",
+      "weight": 418
+    },
+    {
+      "value": "Noel",
+      "weight": 414
+    },
+    {
+      "value": "Phoenix",
+      "weight": 409
+    },
+    {
+      "value": "Koa",
+      "weight": 400
+    },
+    {
+      "value": "Ari",
+      "weight": 391
+    },
+    {
+      "value": "Maxwell",
+      "weight": 387
+    },
+    {
+      "value": "Travis",
+      "weight": 378
+    },
+    {
+      "value": "Gerard",
+      "weight": 374
+    },
+    {
+      "value": "Terence",
+      "weight": 350
+    },
+    {
+      "value": "River",
+      "weight": 345
+    },
+    {
+      "value": "Stewart",
+      "weight": 339
+    },
+    {
+      "value": "Koby",
+      "weight": 336
+    },
+    {
+      "value": "Reuben",
+      "weight": 307
+    },
+    {
+      "value": "Alfie",
+      "weight": 298
+    },
+    {
+      "value": "Wade",
+      "weight": 293
+    },
+    {
+      "value": "Neville",
+      "weight": 287
+    },
+    {
+      "value": "Zayn",
+      "weight": 284
+    },
+    {
+      "value": "Taylor",
+      "weight": 277
+    },
+    {
+      "value": "Evan",
+      "weight": 276
+    },
+    {
+      "value": "Warwick",
+      "weight": 274
+    },
+    {
+      "value": "Clint",
+      "weight": 255
+    },
+    {
+      "value": "Heath",
+      "weight": 239
+    },
+    {
+      "value": "Kane",
+      "weight": 237
+    },
+    {
+      "value": "Miles",
+      "weight": 235
+    },
+    {
+      "value": "Marc",
+      "weight": 229
+    },
+    {
+      "value": "Brad",
+      "weight": 225
+    },
+    {
+      "value": "Taj",
+      "weight": 225
+    },
+    {
+      "value": "Remy",
+      "weight": 203
+    },
+    {
+      "value": "Jeffery",
+      "weight": 202
+    },
+    {
+      "value": "Norman",
+      "weight": 197
+    },
+    {
+      "value": "Kye",
+      "weight": 196
+    },
+    {
+      "value": "Guy",
+      "weight": 195
+    },
+    {
+      "value": "Brenton",
+      "weight": 193
+    },
+    {
+      "value": "Kelvin",
+      "weight": 184
+    },
+    {
+      "value": "Parker",
+      "weight": 170
+    },
+    {
+      "value": "Leigh",
+      "weight": 156
+    },
+    {
+      "value": "Francis",
+      "weight": 141
+    },
+    {
+      "value": "Bryan",
+      "weight": 135
+    },
+    {
+      "value": "Louie",
+      "weight": 109
+    },
+    {
+      "value": "Axel",
+      "weight": 103
+    },
+    {
+      "value": "Tommy",
+      "weight": 95
+    },
+    {
+      "value": "Nixon",
+      "weight": 93
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 92
+    },
+    {
+      "value": "Mateo",
+      "weight": 89
+    },
+    {
+      "value": "Grayson",
+      "weight": 88
+    },
+    {
+      "value": "Jye",
+      "weight": 88
+    },
+    {
+      "value": "Myles",
+      "weight": 88
+    },
+    {
+      "value": "Matteo",
+      "weight": 87
+    },
+    {
+      "value": "Shayne",
+      "weight": 82
+    },
+    {
+      "value": "Wesley",
+      "weight": 82
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

@@ -1,5 +1,8 @@
 # CI-OPT-04/05 implementation and audit
 
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** The planning predecessor of the integrated CI-OPT-04/05 implementation; its to-do items are historical, not current runner obligations. Use the [current contract](README.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
+
 Baseline: `75a672591085fbe4099deb7aee619e88c7a6b12a`, the single-parent squash of PR #364. No historical implementation branch is a source.
 
 ## Design and execution plan

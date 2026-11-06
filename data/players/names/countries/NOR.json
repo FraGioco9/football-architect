@@ -1,0 +1,1222 @@
+{
+  "schema_version": 2,
+  "code": "NOR",
+  "cohort": "male first-name counts among Norwegian residents, archival Statistics Norway data accessed in October 2021; NOT births",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "no-ssb-male-resident-names-2021-archived",
+    "provider": "Statistics Norway (SSB), Statbank male given names in resident population",
+    "source_url": "https://www.ssb.no/en/befolkning/navn/statistikk/navn",
+    "dataset_url": "https://github.com/davidam/damegender/blob/master/src/damegender/files/names/names_no/nomales.csv",
+    "metric": "male residents observed with each given name in SSB archive retrieved October 2021; excluded unpublished/suppressed entries",
+    "license": "Statistics Norway Open Data Licence (NLOD); archived mirror GPLv3, check terms for reuse",
+    "upstream_repository": "davidam/damegender",
+    "upstream_source_blob_sha": "a017d7db55d8870d9b764e623aa81ebdfd4304f1"
+  },
+  "selection_policy": "300 highest positive counts of distinct Unicode single-token first names in the Norwegian male resident source; no etymological origin restriction",
+  "given_names": [
+    {
+      "value": "Jan",
+      "weight": 46548
+    },
+    {
+      "value": "Bjørn",
+      "weight": 36181
+    },
+    {
+      "value": "Per",
+      "weight": 35726
+    },
+    {
+      "value": "Ole",
+      "weight": 30658
+    },
+    {
+      "value": "Lars",
+      "weight": 29570
+    },
+    {
+      "value": "Kjell",
+      "weight": 24991
+    },
+    {
+      "value": "Thomas",
+      "weight": 24391
+    },
+    {
+      "value": "Svein",
+      "weight": 23547
+    },
+    {
+      "value": "Knut",
+      "weight": 23460
+    },
+    {
+      "value": "Martin",
+      "weight": 21915
+    },
+    {
+      "value": "Geir",
+      "weight": 21806
+    },
+    {
+      "value": "Morten",
+      "weight": 21761
+    },
+    {
+      "value": "Arne",
+      "weight": 21329
+    },
+    {
+      "value": "Andreas",
+      "weight": 21185
+    },
+    {
+      "value": "Erik",
+      "weight": 20974
+    },
+    {
+      "value": "Tor",
+      "weight": 20838
+    },
+    {
+      "value": "Hans",
+      "weight": 20548
+    },
+    {
+      "value": "Terje",
+      "weight": 20248
+    },
+    {
+      "value": "Anders",
+      "weight": 19237
+    },
+    {
+      "value": "Daniel",
+      "weight": 18920
+    },
+    {
+      "value": "Rune",
+      "weight": 18761
+    },
+    {
+      "value": "John",
+      "weight": 18260
+    },
+    {
+      "value": "Odd",
+      "weight": 18188
+    },
+    {
+      "value": "Magnus",
+      "weight": 16950
+    },
+    {
+      "value": "Trond",
+      "weight": 16793
+    },
+    {
+      "value": "Marius",
+      "weight": 16669
+    },
+    {
+      "value": "Kristian",
+      "weight": 16454
+    },
+    {
+      "value": "Henrik",
+      "weight": 16210
+    },
+    {
+      "value": "Jon",
+      "weight": 15369
+    },
+    {
+      "value": "Tore",
+      "weight": 15339
+    },
+    {
+      "value": "Stian",
+      "weight": 15284
+    },
+    {
+      "value": "Jonas",
+      "weight": 15226
+    },
+    {
+      "value": "Tom",
+      "weight": 14923
+    },
+    {
+      "value": "Olav",
+      "weight": 14782
+    },
+    {
+      "value": "Fredrik",
+      "weight": 14546
+    },
+    {
+      "value": "Christian",
+      "weight": 14154
+    },
+    {
+      "value": "Espen",
+      "weight": 14115
+    },
+    {
+      "value": "Eirik",
+      "weight": 13955
+    },
+    {
+      "value": "Øyvind",
+      "weight": 13801
+    },
+    {
+      "value": "Harald",
+      "weight": 13468
+    },
+    {
+      "value": "Håkon",
+      "weight": 13170
+    },
+    {
+      "value": "Nils",
+      "weight": 12332
+    },
+    {
+      "value": "Gunnar",
+      "weight": 12042
+    },
+    {
+      "value": "Rolf",
+      "weight": 11955
+    },
+    {
+      "value": "Mathias",
+      "weight": 11922
+    },
+    {
+      "value": "Emil",
+      "weight": 11843
+    },
+    {
+      "value": "Alexander",
+      "weight": 11820
+    },
+    {
+      "value": "Leif",
+      "weight": 11652
+    },
+    {
+      "value": "Helge",
+      "weight": 11497
+    },
+    {
+      "value": "Frode",
+      "weight": 11024
+    },
+    {
+      "value": "Jørgen",
+      "weight": 10967
+    },
+    {
+      "value": "Øystein",
+      "weight": 10783
+    },
+    {
+      "value": "Steinar",
+      "weight": 10739
+    },
+    {
+      "value": "Einar",
+      "weight": 10569
+    },
+    {
+      "value": "Petter",
+      "weight": 10264
+    },
+    {
+      "value": "Kjetil",
+      "weight": 10263
+    },
+    {
+      "value": "Kristoffer",
+      "weight": 10140
+    },
+    {
+      "value": "Adrian",
+      "weight": 10039
+    },
+    {
+      "value": "Arild",
+      "weight": 9798
+    },
+    {
+      "value": "Sebastian",
+      "weight": 9769
+    },
+    {
+      "value": "Johan",
+      "weight": 9679
+    },
+    {
+      "value": "Tobias",
+      "weight": 9675
+    },
+    {
+      "value": "Sander",
+      "weight": 9599
+    },
+    {
+      "value": "Frank",
+      "weight": 9530
+    },
+    {
+      "value": "Stein",
+      "weight": 9499
+    },
+    {
+      "value": "Kenneth",
+      "weight": 9405
+    },
+    {
+      "value": "Sondre",
+      "weight": 9386
+    },
+    {
+      "value": "Ola",
+      "weight": 9328
+    },
+    {
+      "value": "Dag",
+      "weight": 9296
+    },
+    {
+      "value": "Stig",
+      "weight": 9282
+    },
+    {
+      "value": "Håvard",
+      "weight": 9204
+    },
+    {
+      "value": "Tommy",
+      "weight": 9186
+    },
+    {
+      "value": "Vidar",
+      "weight": 9109
+    },
+    {
+      "value": "Pål",
+      "weight": 9099
+    },
+    {
+      "value": "William",
+      "weight": 8815
+    },
+    {
+      "value": "Johannes",
+      "weight": 8699
+    },
+    {
+      "value": "Roger",
+      "weight": 8685
+    },
+    {
+      "value": "Simen",
+      "weight": 8664
+    },
+    {
+      "value": "Sverre",
+      "weight": 8607
+    },
+    {
+      "value": "Eivind",
+      "weight": 8361
+    },
+    {
+      "value": "Ivar",
+      "weight": 8343
+    },
+    {
+      "value": "Robert",
+      "weight": 8300
+    },
+    {
+      "value": "Benjamin",
+      "weight": 8259
+    },
+    {
+      "value": "Vegard",
+      "weight": 8255
+    },
+    {
+      "value": "Karl",
+      "weight": 8168
+    },
+    {
+      "value": "Markus",
+      "weight": 8152
+    },
+    {
+      "value": "Kim",
+      "weight": 8044
+    },
+    {
+      "value": "Jens",
+      "weight": 7988
+    },
+    {
+      "value": "Magne",
+      "weight": 7977
+    },
+    {
+      "value": "Elias",
+      "weight": 7910
+    },
+    {
+      "value": "Kåre",
+      "weight": 7900
+    },
+    {
+      "value": "Oliver",
+      "weight": 7789
+    },
+    {
+      "value": "Sindre",
+      "weight": 7646
+    },
+    {
+      "value": "Even",
+      "weight": 7583
+    },
+    {
+      "value": "Aleksander",
+      "weight": 7365
+    },
+    {
+      "value": "Sigurd",
+      "weight": 7339
+    },
+    {
+      "value": "Egil",
+      "weight": 7280
+    },
+    {
+      "value": "Roy",
+      "weight": 7254
+    },
+    {
+      "value": "Thor",
+      "weight": 7245
+    },
+    {
+      "value": "David",
+      "weight": 7096
+    },
+    {
+      "value": "Mats",
+      "weight": 7030
+    },
+    {
+      "value": "Joakim",
+      "weight": 7008
+    },
+    {
+      "value": "Alf",
+      "weight": 7001
+    },
+    {
+      "value": "Erlend",
+      "weight": 6823
+    },
+    {
+      "value": "Torbjørn",
+      "weight": 6727
+    },
+    {
+      "value": "Roar",
+      "weight": 6656
+    },
+    {
+      "value": "Jakob",
+      "weight": 6543
+    },
+    {
+      "value": "Andre",
+      "weight": 6506
+    },
+    {
+      "value": "Jarle",
+      "weight": 6284
+    },
+    {
+      "value": "Finn",
+      "weight": 6227
+    },
+    {
+      "value": "Noah",
+      "weight": 5936
+    },
+    {
+      "value": "Erling",
+      "weight": 5935
+    },
+    {
+      "value": "Jostein",
+      "weight": 5898
+    },
+    {
+      "value": "Isak",
+      "weight": 5897
+    },
+    {
+      "value": "Asbjørn",
+      "weight": 5881
+    },
+    {
+      "value": "Jørn",
+      "weight": 5807
+    },
+    {
+      "value": "Marcus",
+      "weight": 5706
+    },
+    {
+      "value": "Ove",
+      "weight": 5696
+    },
+    {
+      "value": "Ronny",
+      "weight": 5642
+    },
+    {
+      "value": "Atle",
+      "weight": 5573
+    },
+    {
+      "value": "Simon",
+      "weight": 5549
+    },
+    {
+      "value": "Lasse",
+      "weight": 5484
+    },
+    {
+      "value": "Reidar",
+      "weight": 5425
+    },
+    {
+      "value": "Aksel",
+      "weight": 5343
+    },
+    {
+      "value": "Henning",
+      "weight": 5287
+    },
+    {
+      "value": "Mohammad",
+      "weight": 5160
+    },
+    {
+      "value": "Oskar",
+      "weight": 5123
+    },
+    {
+      "value": "Robin",
+      "weight": 5033
+    },
+    {
+      "value": "Trygve",
+      "weight": 5005
+    },
+    {
+      "value": "Arvid",
+      "weight": 4997
+    },
+    {
+      "value": "Michael",
+      "weight": 4986
+    },
+    {
+      "value": "Christoffer",
+      "weight": 4944
+    },
+    {
+      "value": "Peter",
+      "weight": 4836
+    },
+    {
+      "value": "Bjørnar",
+      "weight": 4829
+    },
+    {
+      "value": "Kai",
+      "weight": 4803
+    },
+    {
+      "value": "Herman",
+      "weight": 4779
+    },
+    {
+      "value": "Inge",
+      "weight": 4693
+    },
+    {
+      "value": "Bjarne",
+      "weight": 4574
+    },
+    {
+      "value": "Paul",
+      "weight": 4443
+    },
+    {
+      "value": "Filip",
+      "weight": 4433
+    },
+    {
+      "value": "Johnny",
+      "weight": 4417
+    },
+    {
+      "value": "Lucas",
+      "weight": 4412
+    },
+    {
+      "value": "Adam",
+      "weight": 4351
+    },
+    {
+      "value": "Mads",
+      "weight": 4339
+    },
+    {
+      "value": "Kevin",
+      "weight": 4313
+    },
+    {
+      "value": "Oddvar",
+      "weight": 4313
+    },
+    {
+      "value": "Nikolai",
+      "weight": 4267
+    },
+    {
+      "value": "Arve",
+      "weight": 4193
+    },
+    {
+      "value": "Ragnar",
+      "weight": 4173
+    },
+    {
+      "value": "Leon",
+      "weight": 4165
+    },
+    {
+      "value": "Theodor",
+      "weight": 4076
+    },
+    {
+      "value": "Jonathan",
+      "weight": 4070
+    },
+    {
+      "value": "Kasper",
+      "weight": 4042
+    },
+    {
+      "value": "Mikkel",
+      "weight": 4023
+    },
+    {
+      "value": "Lukas",
+      "weight": 3948
+    },
+    {
+      "value": "Ali",
+      "weight": 3907
+    },
+    {
+      "value": "Liam",
+      "weight": 3897
+    },
+    {
+      "value": "Julian",
+      "weight": 3892
+    },
+    {
+      "value": "Torstein",
+      "weight": 3891
+    },
+    {
+      "value": "Carl",
+      "weight": 3885
+    },
+    {
+      "value": "Peder",
+      "weight": 3872
+    },
+    {
+      "value": "Oscar",
+      "weight": 3860
+    },
+    {
+      "value": "Sven",
+      "weight": 3851
+    },
+    {
+      "value": "Vetle",
+      "weight": 3821
+    },
+    {
+      "value": "Audun",
+      "weight": 3816
+    },
+    {
+      "value": "Glenn",
+      "weight": 3814
+    },
+    {
+      "value": "Joachim",
+      "weight": 3792
+    },
+    {
+      "value": "Steffen",
+      "weight": 3776
+    },
+    {
+      "value": "Åge",
+      "weight": 3734
+    },
+    {
+      "value": "Bård",
+      "weight": 3717
+    },
+    {
+      "value": "Jacob",
+      "weight": 3694
+    },
+    {
+      "value": "Ståle",
+      "weight": 3634
+    },
+    {
+      "value": "Ørjan",
+      "weight": 3603
+    },
+    {
+      "value": "Mohamed",
+      "weight": 3526
+    },
+    {
+      "value": "Gabriel",
+      "weight": 3499
+    },
+    {
+      "value": "Øivind",
+      "weight": 3499
+    },
+    {
+      "value": "Trym",
+      "weight": 3470
+    },
+    {
+      "value": "Kurt",
+      "weight": 3373
+    },
+    {
+      "value": "Runar",
+      "weight": 3372
+    },
+    {
+      "value": "Iver",
+      "weight": 3356
+    },
+    {
+      "value": "Odin",
+      "weight": 3329
+    },
+    {
+      "value": "Torgeir",
+      "weight": 3287
+    },
+    {
+      "value": "Jesper",
+      "weight": 3234
+    },
+    {
+      "value": "Ruben",
+      "weight": 3179
+    },
+    {
+      "value": "Brage",
+      "weight": 3147
+    },
+    {
+      "value": "Richard",
+      "weight": 3147
+    },
+    {
+      "value": "Tomas",
+      "weight": 3120
+    },
+    {
+      "value": "Edvard",
+      "weight": 3114
+    },
+    {
+      "value": "Patrick",
+      "weight": 3105
+    },
+    {
+      "value": "Truls",
+      "weight": 3104
+    },
+    {
+      "value": "Philip",
+      "weight": 3076
+    },
+    {
+      "value": "Piotr",
+      "weight": 3070
+    },
+    {
+      "value": "Ulrik",
+      "weight": 3044
+    },
+    {
+      "value": "Christopher",
+      "weight": 3020
+    },
+    {
+      "value": "Arnt",
+      "weight": 3015
+    },
+    {
+      "value": "Halvor",
+      "weight": 2994
+    },
+    {
+      "value": "Raymond",
+      "weight": 2953
+    },
+    {
+      "value": "Mohammed",
+      "weight": 2939
+    },
+    {
+      "value": "Mikael",
+      "weight": 2934
+    },
+    {
+      "value": "Nicolai",
+      "weight": 2926
+    },
+    {
+      "value": "Sivert",
+      "weight": 2925
+    },
+    {
+      "value": "Christer",
+      "weight": 2917
+    },
+    {
+      "value": "Krzysztof",
+      "weight": 2892
+    },
+    {
+      "value": "Endre",
+      "weight": 2889
+    },
+    {
+      "value": "Dennis",
+      "weight": 2884
+    },
+    {
+      "value": "Victor",
+      "weight": 2884
+    },
+    {
+      "value": "Tomasz",
+      "weight": 2867
+    },
+    {
+      "value": "Felix",
+      "weight": 2861
+    },
+    {
+      "value": "Tormod",
+      "weight": 2856
+    },
+    {
+      "value": "Sigmund",
+      "weight": 2827
+    },
+    {
+      "value": "Ahmed",
+      "weight": 2826
+    },
+    {
+      "value": "Samuel",
+      "weight": 2826
+    },
+    {
+      "value": "Bernt",
+      "weight": 2815
+    },
+    {
+      "value": "Roald",
+      "weight": 2806
+    },
+    {
+      "value": "Haakon",
+      "weight": 2775
+    },
+    {
+      "value": "Theo",
+      "weight": 2719
+    },
+    {
+      "value": "Amund",
+      "weight": 2710
+    },
+    {
+      "value": "Leo",
+      "weight": 2673
+    },
+    {
+      "value": "Matheo",
+      "weight": 2641
+    },
+    {
+      "value": "Viktor",
+      "weight": 2630
+    },
+    {
+      "value": "Jonny",
+      "weight": 2581
+    },
+    {
+      "value": "Gustav",
+      "weight": 2573
+    },
+    {
+      "value": "Alfred",
+      "weight": 2568
+    },
+    {
+      "value": "Cato",
+      "weight": 2563
+    },
+    {
+      "value": "Ludvig",
+      "weight": 2556
+    },
+    {
+      "value": "Birger",
+      "weight": 2511
+    },
+    {
+      "value": "Ketil",
+      "weight": 2488
+    },
+    {
+      "value": "Arnfinn",
+      "weight": 2485
+    },
+    {
+      "value": "Kent",
+      "weight": 2435
+    },
+    {
+      "value": "Oddbjørn",
+      "weight": 2410
+    },
+    {
+      "value": "Dagfinn",
+      "weight": 2407
+    },
+    {
+      "value": "Willy",
+      "weight": 2402
+    },
+    {
+      "value": "Anton",
+      "weight": 2395
+    },
+    {
+      "value": "Pawel",
+      "weight": 2387
+    },
+    {
+      "value": "Aron",
+      "weight": 2379
+    },
+    {
+      "value": "Eskil",
+      "weight": 2359
+    },
+    {
+      "value": "Leander",
+      "weight": 2348
+    },
+    {
+      "value": "Georg",
+      "weight": 2331
+    },
+    {
+      "value": "Magnar",
+      "weight": 2326
+    },
+    {
+      "value": "Marcin",
+      "weight": 2322
+    },
+    {
+      "value": "Casper",
+      "weight": 2321
+    },
+    {
+      "value": "Are",
+      "weight": 2316
+    },
+    {
+      "value": "Yngve",
+      "weight": 2257
+    },
+    {
+      "value": "Max",
+      "weight": 2247
+    },
+    {
+      "value": "Jo",
+      "weight": 2246
+    },
+    {
+      "value": "Dan",
+      "weight": 2245
+    },
+    {
+      "value": "Muhammad",
+      "weight": 2224
+    },
+    {
+      "value": "Niklas",
+      "weight": 2220
+    },
+    {
+      "value": "Henry",
+      "weight": 2217
+    },
+    {
+      "value": "Ulf",
+      "weight": 2196
+    },
+    {
+      "value": "Stefan",
+      "weight": 2163
+    },
+    {
+      "value": "Bent",
+      "weight": 2147
+    },
+    {
+      "value": "Preben",
+      "weight": 2137
+    },
+    {
+      "value": "Bendik",
+      "weight": 2128
+    },
+    {
+      "value": "Åsmund",
+      "weight": 2060
+    },
+    {
+      "value": "Michal",
+      "weight": 2057
+    },
+    {
+      "value": "Ahmad",
+      "weight": 2042
+    },
+    {
+      "value": "August",
+      "weight": 2030
+    },
+    {
+      "value": "Bjarte",
+      "weight": 2028
+    },
+    {
+      "value": "Gaute",
+      "weight": 2027
+    },
+    {
+      "value": "Harry",
+      "weight": 2014
+    },
+    {
+      "value": "Olaf",
+      "weight": 2012
+    },
+    {
+      "value": "Albert",
+      "weight": 1966
+    },
+    {
+      "value": "Axel",
+      "weight": 1953
+    },
+    {
+      "value": "Lukasz",
+      "weight": 1925
+    },
+    {
+      "value": "Sigbjørn",
+      "weight": 1878
+    },
+    {
+      "value": "Edvin",
+      "weight": 1873
+    },
+    {
+      "value": "Vebjørn",
+      "weight": 1862
+    },
+    {
+      "value": "Linus",
+      "weight": 1848
+    },
+    {
+      "value": "Grzegorz",
+      "weight": 1843
+    },
+    {
+      "value": "Ivan",
+      "weight": 1837
+    },
+    {
+      "value": "Børge",
+      "weight": 1814
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 1804
+    },
+    {
+      "value": "Andrzej",
+      "weight": 1799
+    },
+    {
+      "value": "Asle",
+      "weight": 1753
+    },
+    {
+      "value": "Tony",
+      "weight": 1753
+    },
+    {
+      "value": "Marek",
+      "weight": 1742
+    },
+    {
+      "value": "Karsten",
+      "weight": 1732
+    },
+    {
+      "value": "Ingar",
+      "weight": 1720
+    },
+    {
+      "value": "Birk",
+      "weight": 1717
+    },
+    {
+      "value": "Otto",
+      "weight": 1715
+    },
+    {
+      "value": "Snorre",
+      "weight": 1712
+    },
+    {
+      "value": "Omar",
+      "weight": 1699
+    },
+    {
+      "value": "Fred",
+      "weight": 1697
+    },
+    {
+      "value": "Sigve",
+      "weight": 1678
+    },
+    {
+      "value": "Rasmus",
+      "weight": 1666
+    },
+    {
+      "value": "Sveinung",
+      "weight": 1663
+    },
+    {
+      "value": "Bengt",
+      "weight": 1642
+    },
+    {
+      "value": "Tord",
+      "weight": 1632
+    },
+    {
+      "value": "Mariusz",
+      "weight": 1616
+    },
+    {
+      "value": "Storm",
+      "weight": 1604
+    },
+    {
+      "value": "Jim",
+      "weight": 1552
+    },
+    {
+      "value": "Chris",
+      "weight": 1547
+    },
+    {
+      "value": "Ken",
+      "weight": 1544
+    },
+    {
+      "value": "Ottar",
+      "weight": 1542
+    },
+    {
+      "value": "Sten",
+      "weight": 1542
+    },
+    {
+      "value": "Jarl",
+      "weight": 1541
+    },
+    {
+      "value": "Hugo",
+      "weight": 1524
+    },
+    {
+      "value": "Vegar",
+      "weight": 1519
+    },
+    {
+      "value": "Hallvard",
+      "weight": 1517
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

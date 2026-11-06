@@ -1,5 +1,8 @@
 # A04 provider contract foundation
 
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** The A04 adapter staging and old statuses are historic; authoritative API/Debug source selection must use the current global-state contract. Use the [current contract](../state/sh-03.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
+
 Tracking: #268. Baseline: `68e2429a5c17430b7db25c4465f839edb3869ae3`.
 The approved A04-02 and formalized A04-03/04 specifications are recorded in
 the authoritative issue. This lot implements pure primitives only, with no

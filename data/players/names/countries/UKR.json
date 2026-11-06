@@ -1,0 +1,1222 @@
+{
+  "schema_version": 2,
+  "code": "UKR",
+  "cohort": "Ukrainian male given-name lexicon in language corpus, years unspecified",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "ua-languk-ubertext-firstnames-male-lemma",
+    "provider": "lang-uk/name_freq_dict_uk: male given-name lexicon frequency in Ukrainian UberText corpus",
+    "source_url": "https://github.com/lang-uk/name_freq_dict_uk/blob/main/generated/male_fname_freq_dict.csv",
+    "method_url": "https://github.com/lang-uk/name_freq_dict_uk/blob/main/generate_names_freq_dict.py",
+    "transliteration_standard_url": "https://zakon.rada.gov.ua/laws/show/55-2010-%D0%BF",
+    "metric": "Ukrainian UberText language-corpus lemma token frequencies, reconstructed from exact discrete source unit; NOT official census/birth counts nor male bearer incidence",
+    "license": "Upstream repository GPL-3.0; review corpus-specific license and commercial data reuse"
+  },
+  "selection_policy": "Top source-frequency lexicon entries excluding conspicuous surnames/toponyms/ordinary words; at least two recoverable corpus tokens; Ukrainian source script converted with Cabinet of Ministers Resolution 55/2010, no Cyrillic, distinct NFC Latin spellings; no compound first names",
+  "given_names": [
+    {
+      "value": "Volodymyr",
+      "weight": 832026
+    },
+    {
+      "value": "Oleksandr",
+      "weight": 726078
+    },
+    {
+      "value": "Viktor",
+      "weight": 602763
+    },
+    {
+      "value": "Serhii",
+      "weight": 599099
+    },
+    {
+      "value": "Andrii",
+      "weight": 486652
+    },
+    {
+      "value": "Mykola",
+      "weight": 406908
+    },
+    {
+      "value": "Petro",
+      "weight": 401468
+    },
+    {
+      "value": "Yurii",
+      "weight": 400978
+    },
+    {
+      "value": "Ivan",
+      "weight": 350736
+    },
+    {
+      "value": "Ihor",
+      "weight": 336419
+    },
+    {
+      "value": "Dmytro",
+      "weight": 326784
+    },
+    {
+      "value": "Oleh",
+      "weight": 286234
+    },
+    {
+      "value": "Mykhailo",
+      "weight": 272846
+    },
+    {
+      "value": "Vasyl",
+      "weight": 236582
+    },
+    {
+      "value": "Oleksii",
+      "weight": 228896
+    },
+    {
+      "value": "Pavlo",
+      "weight": 214755
+    },
+    {
+      "value": "Vitalii",
+      "weight": 188336
+    },
+    {
+      "value": "Yevhen",
+      "weight": 171039
+    },
+    {
+      "value": "Anatolii",
+      "weight": 163162
+    },
+    {
+      "value": "Roman",
+      "weight": 147646
+    },
+    {
+      "value": "Borys",
+      "weight": 138068
+    },
+    {
+      "value": "Taras",
+      "weight": 133900
+    },
+    {
+      "value": "Bohdan",
+      "weight": 129838
+    },
+    {
+      "value": "Leonid",
+      "weight": 129780
+    },
+    {
+      "value": "Maksym",
+      "weight": 122401
+    },
+    {
+      "value": "Valerii",
+      "weight": 117335
+    },
+    {
+      "value": "Hennadii",
+      "weight": 85290
+    },
+    {
+      "value": "Kostiantyn",
+      "weight": 85169
+    },
+    {
+      "value": "Denys",
+      "weight": 83765
+    },
+    {
+      "value": "Yaroslav",
+      "weight": 83728
+    },
+    {
+      "value": "Vadym",
+      "weight": 83584
+    },
+    {
+      "value": "Hryhorii",
+      "weight": 82127
+    },
+    {
+      "value": "Stepan",
+      "weight": 78973
+    },
+    {
+      "value": "Vladyslav",
+      "weight": 72609
+    },
+    {
+      "value": "Yulii",
+      "weight": 70398
+    },
+    {
+      "value": "Ruslan",
+      "weight": 67339
+    },
+    {
+      "value": "Artem",
+      "weight": 66119
+    },
+    {
+      "value": "Valentyn",
+      "weight": 66044
+    },
+    {
+      "value": "Heorhii",
+      "weight": 65633
+    },
+    {
+      "value": "Anton",
+      "weight": 64087
+    },
+    {
+      "value": "Arsen",
+      "weight": 50295
+    },
+    {
+      "value": "Yan",
+      "weight": 48282
+    },
+    {
+      "value": "Kyrylo",
+      "weight": 46738
+    },
+    {
+      "value": "Illia",
+      "weight": 41432
+    },
+    {
+      "value": "Fedir",
+      "weight": 40768
+    },
+    {
+      "value": "Danylo",
+      "weight": 39062
+    },
+    {
+      "value": "Davyd",
+      "weight": 38242
+    },
+    {
+      "value": "Artur",
+      "weight": 37744
+    },
+    {
+      "value": "Sviatoslav",
+      "weight": 36663
+    },
+    {
+      "value": "Adam",
+      "weight": 36111
+    },
+    {
+      "value": "Semen",
+      "weight": 34158
+    },
+    {
+      "value": "Yakiv",
+      "weight": 32760
+    },
+    {
+      "value": "Oles",
+      "weight": 26216
+    },
+    {
+      "value": "Mykyta",
+      "weight": 25489
+    },
+    {
+      "value": "Marko",
+      "weight": 23492
+    },
+    {
+      "value": "Lev",
+      "weight": 22924
+    },
+    {
+      "value": "Omelian",
+      "weight": 21090
+    },
+    {
+      "value": "Myroslav",
+      "weight": 20709
+    },
+    {
+      "value": "Ostap",
+      "weight": 19290
+    },
+    {
+      "value": "Yevhenii",
+      "weight": 18796
+    },
+    {
+      "value": "Albert",
+      "weight": 18452
+    },
+    {
+      "value": "Nestor",
+      "weight": 18331
+    },
+    {
+      "value": "Arkadii",
+      "weight": 18063
+    },
+    {
+      "value": "Yehor",
+      "weight": 17424
+    },
+    {
+      "value": "Volodar",
+      "weight": 15374
+    },
+    {
+      "value": "Ioann",
+      "weight": 14887
+    },
+    {
+      "value": "Myron",
+      "weight": 14329
+    },
+    {
+      "value": "Oleksa",
+      "weight": 13351
+    },
+    {
+      "value": "Matvii",
+      "weight": 13116
+    },
+    {
+      "value": "Rostyslav",
+      "weight": 12892
+    },
+    {
+      "value": "Vlad",
+      "weight": 12455
+    },
+    {
+      "value": "Pylyp",
+      "weight": 12294
+    },
+    {
+      "value": "Varfolomii",
+      "weight": 11952
+    },
+    {
+      "value": "Vsevolod",
+      "weight": 11596
+    },
+    {
+      "value": "Hnat",
+      "weight": 11415
+    },
+    {
+      "value": "Liubomyr",
+      "weight": 11191
+    },
+    {
+      "value": "Tymofii",
+      "weight": 11011
+    },
+    {
+      "value": "Luka",
+      "weight": 10936
+    },
+    {
+      "value": "Boryslav",
+      "weight": 10275
+    },
+    {
+      "value": "Orest",
+      "weight": 10203
+    },
+    {
+      "value": "Teodor",
+      "weight": 10140
+    },
+    {
+      "value": "Hlib",
+      "weight": 10021
+    },
+    {
+      "value": "Dominik",
+      "weight": 9617
+    },
+    {
+      "value": "Kuzma",
+      "weight": 9526
+    },
+    {
+      "value": "Makar",
+      "weight": 9178
+    },
+    {
+      "value": "Markiian",
+      "weight": 8356
+    },
+    {
+      "value": "Yukhym",
+      "weight": 8166
+    },
+    {
+      "value": "Levko",
+      "weight": 7942
+    },
+    {
+      "value": "Yulian",
+      "weight": 7860
+    },
+    {
+      "value": "Panas",
+      "weight": 7776
+    },
+    {
+      "value": "Rodion",
+      "weight": 7717
+    },
+    {
+      "value": "Tymur",
+      "weight": 7642
+    },
+    {
+      "value": "Martyn",
+      "weight": 7182
+    },
+    {
+      "value": "Potap",
+      "weight": 6051
+    },
+    {
+      "value": "Onufrii",
+      "weight": 5818
+    },
+    {
+      "value": "Zakhar",
+      "weight": 5408
+    },
+    {
+      "value": "Mstyslav",
+      "weight": 4913
+    },
+    {
+      "value": "Bazhan",
+      "weight": 4768
+    },
+    {
+      "value": "Zorian",
+      "weight": 4688
+    },
+    {
+      "value": "Panteleimon",
+      "weight": 4532
+    },
+    {
+      "value": "Iziaslav",
+      "weight": 4469
+    },
+    {
+      "value": "Ilarion",
+      "weight": 4444
+    },
+    {
+      "value": "Boleslav",
+      "weight": 4437
+    },
+    {
+      "value": "Havrylo",
+      "weight": 4350
+    },
+    {
+      "value": "Troian",
+      "weight": 4198
+    },
+    {
+      "value": "Nykyfor",
+      "weight": 3925
+    },
+    {
+      "value": "Severyn",
+      "weight": 3911
+    },
+    {
+      "value": "Musii",
+      "weight": 3890
+    },
+    {
+      "value": "Hordii",
+      "weight": 3802
+    },
+    {
+      "value": "Darii",
+      "weight": 3786
+    },
+    {
+      "value": "Bohuslav",
+      "weight": 3664
+    },
+    {
+      "value": "Faust",
+      "weight": 3560
+    },
+    {
+      "value": "Khrystofor",
+      "weight": 3445
+    },
+    {
+      "value": "Nazarii",
+      "weight": 3356
+    },
+    {
+      "value": "Radoslav",
+      "weight": 3318
+    },
+    {
+      "value": "Avhustyn",
+      "weight": 3295
+    },
+    {
+      "value": "Mavrykii",
+      "weight": 3181
+    },
+    {
+      "value": "Lavrin",
+      "weight": 3123
+    },
+    {
+      "value": "Kyi",
+      "weight": 3084
+    },
+    {
+      "value": "Azar",
+      "weight": 2966
+    },
+    {
+      "value": "Kindrat",
+      "weight": 2951
+    },
+    {
+      "value": "Sviatopolk",
+      "weight": 2892
+    },
+    {
+      "value": "Tykhon",
+      "weight": 2855
+    },
+    {
+      "value": "Kornii",
+      "weight": 2800
+    },
+    {
+      "value": "Yarosh",
+      "weight": 2712
+    },
+    {
+      "value": "Stoian",
+      "weight": 2416
+    },
+    {
+      "value": "Cheslav",
+      "weight": 2388
+    },
+    {
+      "value": "Drahan",
+      "weight": 2372
+    },
+    {
+      "value": "Serafym",
+      "weight": 2360
+    },
+    {
+      "value": "Dan",
+      "weight": 2310
+    },
+    {
+      "value": "Herasym",
+      "weight": 2254
+    },
+    {
+      "value": "Danko",
+      "weight": 2183
+    },
+    {
+      "value": "Veremii",
+      "weight": 2175
+    },
+    {
+      "value": "Ulas",
+      "weight": 2141
+    },
+    {
+      "value": "Bozhko",
+      "weight": 2088
+    },
+    {
+      "value": "Zynovii",
+      "weight": 2032
+    },
+    {
+      "value": "Nykodym",
+      "weight": 2019
+    },
+    {
+      "value": "Avrelii",
+      "weight": 2012
+    },
+    {
+      "value": "Askold",
+      "weight": 1974
+    },
+    {
+      "value": "Zhdan",
+      "weight": 1876
+    },
+    {
+      "value": "Svyryd",
+      "weight": 1847
+    },
+    {
+      "value": "Amvrosii",
+      "weight": 1815
+    },
+    {
+      "value": "Mechyslav",
+      "weight": 1737
+    },
+    {
+      "value": "Zakharii",
+      "weight": 1618
+    },
+    {
+      "value": "Terentii",
+      "weight": 1599
+    },
+    {
+      "value": "Demyd",
+      "weight": 1525
+    },
+    {
+      "value": "Flor",
+      "weight": 1493
+    },
+    {
+      "value": "Ustym",
+      "weight": 1463
+    },
+    {
+      "value": "Boian",
+      "weight": 1413
+    },
+    {
+      "value": "Voislav",
+      "weight": 1404
+    },
+    {
+      "value": "Kurylo",
+      "weight": 1337
+    },
+    {
+      "value": "Rafail",
+      "weight": 1295
+    },
+    {
+      "value": "Kyian",
+      "weight": 1281
+    },
+    {
+      "value": "Arkhyp",
+      "weight": 1257
+    },
+    {
+      "value": "Malyk",
+      "weight": 1125
+    },
+    {
+      "value": "Okhrim",
+      "weight": 1110
+    },
+    {
+      "value": "Kalenyk",
+      "weight": 969
+    },
+    {
+      "value": "Nemyr",
+      "weight": 894
+    },
+    {
+      "value": "Ratybor",
+      "weight": 851
+    },
+    {
+      "value": "Radomyr",
+      "weight": 842
+    },
+    {
+      "value": "Zinovii",
+      "weight": 838
+    },
+    {
+      "value": "Radovan",
+      "weight": 771
+    },
+    {
+      "value": "Volodyslav",
+      "weight": 767
+    },
+    {
+      "value": "Anastas",
+      "weight": 741
+    },
+    {
+      "value": "Avram",
+      "weight": 736
+    },
+    {
+      "value": "Sviatohor",
+      "weight": 731
+    },
+    {
+      "value": "Osmomysl",
+      "weight": 721
+    },
+    {
+      "value": "Slavomyr",
+      "weight": 706
+    },
+    {
+      "value": "Hervasii",
+      "weight": 695
+    },
+    {
+      "value": "Odynets",
+      "weight": 661
+    },
+    {
+      "value": "Todos",
+      "weight": 636
+    },
+    {
+      "value": "Adriian",
+      "weight": 631
+    },
+    {
+      "value": "Yevstafii",
+      "weight": 595
+    },
+    {
+      "value": "Vseslav",
+      "weight": 550
+    },
+    {
+      "value": "Yaropolk",
+      "weight": 538
+    },
+    {
+      "value": "Yaromyr",
+      "weight": 497
+    },
+    {
+      "value": "Horun",
+      "weight": 491
+    },
+    {
+      "value": "Svitozar",
+      "weight": 481
+    },
+    {
+      "value": "Andron",
+      "weight": 475
+    },
+    {
+      "value": "Atanas",
+      "weight": 472
+    },
+    {
+      "value": "Konon",
+      "weight": 424
+    },
+    {
+      "value": "Dobroslav",
+      "weight": 413
+    },
+    {
+      "value": "Porfyr",
+      "weight": 409
+    },
+    {
+      "value": "Zoreslav",
+      "weight": 394
+    },
+    {
+      "value": "Sobibor",
+      "weight": 393
+    },
+    {
+      "value": "Ladyslav",
+      "weight": 388
+    },
+    {
+      "value": "Stanyslav",
+      "weight": 332
+    },
+    {
+      "value": "Teodozii",
+      "weight": 332
+    },
+    {
+      "value": "Bratko",
+      "weight": 310
+    },
+    {
+      "value": "Pymen",
+      "weight": 300
+    },
+    {
+      "value": "Yasen",
+      "weight": 295
+    },
+    {
+      "value": "Yarema",
+      "weight": 272
+    },
+    {
+      "value": "Avksentii",
+      "weight": 252
+    },
+    {
+      "value": "Zvenyhor",
+      "weight": 249
+    },
+    {
+      "value": "Rohvolod",
+      "weight": 249
+    },
+    {
+      "value": "Rudan",
+      "weight": 244
+    },
+    {
+      "value": "Svitovyd",
+      "weight": 239
+    },
+    {
+      "value": "Olelko",
+      "weight": 192
+    },
+    {
+      "value": "Avtonom",
+      "weight": 179
+    },
+    {
+      "value": "Tykhomyr",
+      "weight": 173
+    },
+    {
+      "value": "Stanymyr",
+      "weight": 169
+    },
+    {
+      "value": "Budymyr",
+      "weight": 163
+    },
+    {
+      "value": "Rodan",
+      "weight": 159
+    },
+    {
+      "value": "Dobromyr",
+      "weight": 158
+    },
+    {
+      "value": "Briachyslav",
+      "weight": 157
+    },
+    {
+      "value": "Avakum",
+      "weight": 154
+    },
+    {
+      "value": "Radym",
+      "weight": 134
+    },
+    {
+      "value": "Vratyslav",
+      "weight": 130
+    },
+    {
+      "value": "Drahomyr",
+      "weight": 128
+    },
+    {
+      "value": "Radko",
+      "weight": 122
+    },
+    {
+      "value": "Ladymyr",
+      "weight": 117
+    },
+    {
+      "value": "Dorofii",
+      "weight": 114
+    },
+    {
+      "value": "Khotymyr",
+      "weight": 114
+    },
+    {
+      "value": "Dalibor",
+      "weight": 112
+    },
+    {
+      "value": "Myloslav",
+      "weight": 110
+    },
+    {
+      "value": "Vysheslav",
+      "weight": 104
+    },
+    {
+      "value": "Ladomyr",
+      "weight": 102
+    },
+    {
+      "value": "Yevlampii",
+      "weight": 101
+    },
+    {
+      "value": "Sudyslav",
+      "weight": 98
+    },
+    {
+      "value": "Sobislav",
+      "weight": 95
+    },
+    {
+      "value": "Vyshata",
+      "weight": 92
+    },
+    {
+      "value": "Naiden",
+      "weight": 91
+    },
+    {
+      "value": "Ratyslav",
+      "weight": 86
+    },
+    {
+      "value": "Atrei",
+      "weight": 84
+    },
+    {
+      "value": "Tatomyr",
+      "weight": 83
+    },
+    {
+      "value": "Polel",
+      "weight": 80
+    },
+    {
+      "value": "Bozhedar",
+      "weight": 79
+    },
+    {
+      "value": "Rodoslav",
+      "weight": 78
+    },
+    {
+      "value": "Bratyslav",
+      "weight": 71
+    },
+    {
+      "value": "Malomyr",
+      "weight": 69
+    },
+    {
+      "value": "Yarovyt",
+      "weight": 69
+    },
+    {
+      "value": "Horyslav",
+      "weight": 66
+    },
+    {
+      "value": "Hostomysl",
+      "weight": 66
+    },
+    {
+      "value": "Mezhamyr",
+      "weight": 66
+    },
+    {
+      "value": "Ostromyr",
+      "weight": 65
+    },
+    {
+      "value": "Mylovan",
+      "weight": 64
+    },
+    {
+      "value": "Tsvitan",
+      "weight": 62
+    },
+    {
+      "value": "Liuboslav",
+      "weight": 59
+    },
+    {
+      "value": "Vohnedar",
+      "weight": 53
+    },
+    {
+      "value": "Peresvit",
+      "weight": 53
+    },
+    {
+      "value": "Vorotyslav",
+      "weight": 51
+    },
+    {
+      "value": "Kvitan",
+      "weight": 51
+    },
+    {
+      "value": "Dobryk",
+      "weight": 47
+    },
+    {
+      "value": "Dobrynia",
+      "weight": 47
+    },
+    {
+      "value": "Pereliub",
+      "weight": 40
+    },
+    {
+      "value": "Tverdyslav",
+      "weight": 40
+    },
+    {
+      "value": "Buimyr",
+      "weight": 38
+    },
+    {
+      "value": "Dobromysl",
+      "weight": 38
+    },
+    {
+      "value": "Zhyvosyl",
+      "weight": 37
+    },
+    {
+      "value": "Peremysl",
+      "weight": 35
+    },
+    {
+      "value": "Zvenyslav",
+      "weight": 30
+    },
+    {
+      "value": "Tymish",
+      "weight": 30
+    },
+    {
+      "value": "Ostrozor",
+      "weight": 29
+    },
+    {
+      "value": "Hordoslav",
+      "weight": 28
+    },
+    {
+      "value": "Radomysl",
+      "weight": 28
+    },
+    {
+      "value": "Ratymyr",
+      "weight": 28
+    },
+    {
+      "value": "Buitur",
+      "weight": 25
+    },
+    {
+      "value": "Dorohochyn",
+      "weight": 25
+    },
+    {
+      "value": "Anisii",
+      "weight": 24
+    },
+    {
+      "value": "Myroliub",
+      "weight": 24
+    },
+    {
+      "value": "Khudan",
+      "weight": 22
+    },
+    {
+      "value": "Bilian",
+      "weight": 20
+    },
+    {
+      "value": "Velemyr",
+      "weight": 20
+    },
+    {
+      "value": "Verban",
+      "weight": 20
+    },
+    {
+      "value": "Viroslav",
+      "weight": 20
+    },
+    {
+      "value": "Vsevlad",
+      "weight": 20
+    },
+    {
+      "value": "Daromyr",
+      "weight": 20
+    },
+    {
+      "value": "Bozhan",
+      "weight": 16
+    },
+    {
+      "value": "Vitan",
+      "weight": 16
+    },
+    {
+      "value": "Dobrohost",
+      "weight": 16
+    },
+    {
+      "value": "Blahodar",
+      "weight": 13
+    },
+    {
+      "value": "Borymysl",
+      "weight": 13
+    },
+    {
+      "value": "Sviatovyd",
+      "weight": 13
+    },
+    {
+      "value": "Yasnovyd",
+      "weight": 13
+    },
+    {
+      "value": "Dorohomyr",
+      "weight": 12
+    },
+    {
+      "value": "Liubym",
+      "weight": 12
+    },
+    {
+      "value": "Khotian",
+      "weight": 12
+    },
+    {
+      "value": "Hradymyr",
+      "weight": 11
+    },
+    {
+      "value": "Hrozan",
+      "weight": 11
+    },
+    {
+      "value": "Vir",
+      "weight": 10
+    },
+    {
+      "value": "Krasun",
+      "weight": 10
+    },
+    {
+      "value": "Yasnohor",
+      "weight": 10
+    },
+    {
+      "value": "Borymyr",
+      "weight": 9
+    },
+    {
+      "value": "Hordyslav",
+      "weight": 9
+    },
+    {
+      "value": "Hremyslav",
+      "weight": 9
+    },
+    {
+      "value": "Khodota",
+      "weight": 9
+    },
+    {
+      "value": "Vistan",
+      "weight": 8
+    },
+    {
+      "value": "Vohnian",
+      "weight": 8
+    },
+    {
+      "value": "Vukol",
+      "weight": 8
+    },
+    {
+      "value": "Nedan",
+      "weight": 8
+    },
+    {
+      "value": "Svitohor",
+      "weight": 8
+    },
+    {
+      "value": "Sontsedar",
+      "weight": 8
+    },
+    {
+      "value": "Tvorymyr",
+      "weight": 8
+    },
+    {
+      "value": "Horymyr",
+      "weight": 7
+    },
+    {
+      "value": "Hradyslav",
+      "weight": 7
+    },
+    {
+      "value": "Bilotur",
+      "weight": 6
+    },
+    {
+      "value": "Vitomyr",
+      "weight": 6
+    },
+    {
+      "value": "Mylan",
+      "weight": 6
+    },
+    {
+      "value": "Mylodukh",
+      "weight": 6
+    },
+    {
+      "value": "Naslav",
+      "weight": 6
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "transliteration": "Ukraine Cabinet of Ministers Resolution No. 55 (27 January 2010)"
+}

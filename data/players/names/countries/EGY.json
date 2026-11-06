@@ -1,0 +1,1227 @@
+{
+  "schema_version": 2,
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "code": "EGY",
+  "cohort": "Egyptian male-given-name tokens in contemporary/historical patronymic exam and registry name chains; NOT first-name birth counts",
+  "source": {
+    "id": "eg-afify-male-given-token-frequency",
+    "provider": "Abdullah Afify, Egyptian Names & Onomastic Intelligence Dataset (2026), Hugging Face",
+    "source_url": "https://huggingface.co/datasets/Abdullah-afify/egyptian-names",
+    "source_hf_git_commit": "2a9cf6419177935e38821f3db7b085606d945618",
+    "source_frequency_url": "https://huggingface.co/datasets/Abdullah-afify/egyptian-names/resolve/2a9cf6419177935e38821f3db7b085606d945618/data/phase2_token_frequencies.parquet",
+    "source_lexicon_url": "https://huggingface.co/datasets/Abdullah-afify/egyptian-names/resolve/2a9cf6419177935e38821f3db7b085606d945618/data/final_canonical_names.parquet",
+    "source_frequency_sha256": "992b0e9da2a6621d7f8ca63e1d29ecefdd3980b0d560ce39fbfddff393fae786",
+    "source_lexicon_sha256": "3673f809f8e9a9c355bd51ec2b765096ff3997e771ae9d53203ae66b5adbc9a7",
+    "metric": "sum of real observed phase2 name_token occurrence_count across Arabic aliases uniquely mapped to verified canonical male personal given name; source patronymic chains may include father/grandfather occurrences",
+    "license": "Dataset MIT",
+    "sampling_limitations": "Frequencies are observed historical/contemporary name-chain tokens, not male newborns or unique bearers. Gender and given-role are annotated in canonical lexicon.",
+    "romanization": "Use only dataset publisher name_en canonical Egyptian English transliteration, do not independently convert Arabic. Use published ar_variants for alias equivalence, discard ambiguous alias collisions and merge case-insensitive identical Latin forms; no Arabic/Persian script in JSON."
+  },
+  "selection_policy": "Top up to 300 source-attested male given personal-name lexicon rows with positive phase2 observed token occurrences, Latin-only single-word publisher Roman forms; ambiguous Arabic aliases skipped.",
+  "given_names": [
+    {
+      "value": "Mohamed",
+      "weight": 873333
+    },
+    {
+      "value": "Ahmed",
+      "weight": 430387
+    },
+    {
+      "value": "Ali",
+      "weight": 194502
+    },
+    {
+      "value": "Mahmoud",
+      "weight": 192591
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 178916
+    },
+    {
+      "value": "Elsayed",
+      "weight": 152273
+    },
+    {
+      "value": "Hassan",
+      "weight": 117367
+    },
+    {
+      "value": "Mostafa",
+      "weight": 100219
+    },
+    {
+      "value": "Youssef",
+      "weight": 83350
+    },
+    {
+      "value": "Sayed",
+      "weight": 60307
+    },
+    {
+      "value": "Hussein",
+      "weight": 58137
+    },
+    {
+      "value": "Abdullah",
+      "weight": 48601
+    },
+    {
+      "value": "Abdelrahman",
+      "weight": 45237
+    },
+    {
+      "value": "Omar",
+      "weight": 43702
+    },
+    {
+      "value": "Ismail",
+      "weight": 39777
+    },
+    {
+      "value": "Khaled",
+      "weight": 38294
+    },
+    {
+      "value": "Saeed",
+      "weight": 37356
+    },
+    {
+      "value": "Saad",
+      "weight": 31523
+    },
+    {
+      "value": "Ramadan",
+      "weight": 31362
+    },
+    {
+      "value": "Ashraf",
+      "weight": 31195
+    },
+    {
+      "value": "Abdelhamid",
+      "weight": 30452
+    },
+    {
+      "value": "Soliman",
+      "weight": 30318
+    },
+    {
+      "value": "Fathy",
+      "weight": 28902
+    },
+    {
+      "value": "Abdelaziz",
+      "weight": 27825
+    },
+    {
+      "value": "Attia",
+      "weight": 25362
+    },
+    {
+      "value": "Ayman",
+      "weight": 24780
+    },
+    {
+      "value": "Adel",
+      "weight": 23318
+    },
+    {
+      "value": "Hany",
+      "weight": 23242
+    },
+    {
+      "value": "Abdo",
+      "weight": 22244
+    },
+    {
+      "value": "Salah",
+      "weight": 22141
+    },
+    {
+      "value": "Hamed",
+      "weight": 22118
+    },
+    {
+      "value": "Gamal",
+      "weight": 21756
+    },
+    {
+      "value": "Yasser",
+      "weight": 21724
+    },
+    {
+      "value": "Amr",
+      "weight": 21497
+    },
+    {
+      "value": "Salem",
+      "weight": 21079
+    },
+    {
+      "value": "Abdelfattah",
+      "weight": 20669
+    },
+    {
+      "value": "Shaaban",
+      "weight": 19994
+    },
+    {
+      "value": "Walid",
+      "weight": 19502
+    },
+    {
+      "value": "Ziad",
+      "weight": 19420
+    },
+    {
+      "value": "Osama",
+      "weight": 19100
+    },
+    {
+      "value": "Hamdy",
+      "weight": 18804
+    },
+    {
+      "value": "Saleh",
+      "weight": 18650
+    },
+    {
+      "value": "Khalil",
+      "weight": 18338
+    },
+    {
+      "value": "Reda",
+      "weight": 18102
+    },
+    {
+      "value": "Ragab",
+      "weight": 18084
+    },
+    {
+      "value": "Kamel",
+      "weight": 17750
+    },
+    {
+      "value": "Eid",
+      "weight": 17691
+    },
+    {
+      "value": "Osman",
+      "weight": 17201
+    },
+    {
+      "value": "Taha",
+      "weight": 17101
+    },
+    {
+      "value": "Awad",
+      "weight": 16897
+    },
+    {
+      "value": "Emad",
+      "weight": 16455
+    },
+    {
+      "value": "Amin",
+      "weight": 16270
+    },
+    {
+      "value": "Samir",
+      "weight": 16221
+    },
+    {
+      "value": "Kamal",
+      "weight": 16180
+    },
+    {
+      "value": "Mousa",
+      "weight": 15965
+    },
+    {
+      "value": "Gomaa",
+      "weight": 15939
+    },
+    {
+      "value": "Tarek",
+      "weight": 15926
+    },
+    {
+      "value": "Mansour",
+      "weight": 15597
+    },
+    {
+      "value": "Abdelmoneim",
+      "weight": 15051
+    },
+    {
+      "value": "Farag",
+      "weight": 14833
+    },
+    {
+      "value": "Essam",
+      "weight": 14517
+    },
+    {
+      "value": "Shehata",
+      "weight": 14440
+    },
+    {
+      "value": "Elsaeed",
+      "weight": 14023
+    },
+    {
+      "value": "Saber",
+      "weight": 13897
+    },
+    {
+      "value": "Magdy",
+      "weight": 13807
+    },
+    {
+      "value": "Sherif",
+      "weight": 13724
+    },
+    {
+      "value": "Zaky",
+      "weight": 13460
+    },
+    {
+      "value": "Fawzy",
+      "weight": 13248
+    },
+    {
+      "value": "Wael",
+      "weight": 13189
+    },
+    {
+      "value": "Salama",
+      "weight": 12968
+    },
+    {
+      "value": "Alaa",
+      "weight": 12750
+    },
+    {
+      "value": "Hesham",
+      "weight": 12667
+    },
+    {
+      "value": "Hassanein",
+      "weight": 12637
+    },
+    {
+      "value": "Abbas",
+      "weight": 12467
+    },
+    {
+      "value": "Yehia",
+      "weight": 12432
+    },
+    {
+      "value": "Karim",
+      "weight": 12412
+    },
+    {
+      "value": "Abdelsalam",
+      "weight": 12145
+    },
+    {
+      "value": "Atef",
+      "weight": 12109
+    },
+    {
+      "value": "Metwally",
+      "weight": 11796
+    },
+    {
+      "value": "Sami",
+      "weight": 11682
+    },
+    {
+      "value": "Morsi",
+      "weight": 11226
+    },
+    {
+      "value": "Fouad",
+      "weight": 11174
+    },
+    {
+      "value": "Abdellatif",
+      "weight": 11047
+    },
+    {
+      "value": "Tawfik",
+      "weight": 10873
+    },
+    {
+      "value": "Abdelaal",
+      "weight": 10817
+    },
+    {
+      "value": "Ehab",
+      "weight": 10656
+    },
+    {
+      "value": "Sameh",
+      "weight": 10618
+    },
+    {
+      "value": "Gaber",
+      "weight": 10573
+    },
+    {
+      "value": "Tamer",
+      "weight": 10029
+    },
+    {
+      "value": "Islam",
+      "weight": 9974
+    },
+    {
+      "value": "Rabie",
+      "weight": 9960
+    },
+    {
+      "value": "Nasser",
+      "weight": 9943
+    },
+    {
+      "value": "Farouk",
+      "weight": 9922
+    },
+    {
+      "value": "Rezk",
+      "weight": 9847
+    },
+    {
+      "value": "Hossam",
+      "weight": 9695
+    },
+    {
+      "value": "Sobhy",
+      "weight": 9620
+    },
+    {
+      "value": "Abdelazim",
+      "weight": 9610
+    },
+    {
+      "value": "Issa",
+      "weight": 9333
+    },
+    {
+      "value": "Nasr",
+      "weight": 9295
+    },
+    {
+      "value": "Sabry",
+      "weight": 9218
+    },
+    {
+      "value": "Abdelhalim",
+      "weight": 9154
+    },
+    {
+      "value": "Abdelwahab",
+      "weight": 9105
+    },
+    {
+      "value": "Selim",
+      "weight": 8945
+    },
+    {
+      "value": "Nabil",
+      "weight": 8941
+    },
+    {
+      "value": "Abdelmeguid",
+      "weight": 8910
+    },
+    {
+      "value": "Hamada",
+      "weight": 8910
+    },
+    {
+      "value": "Anwar",
+      "weight": 8815
+    },
+    {
+      "value": "Khalifa",
+      "weight": 8800
+    },
+    {
+      "value": "Abdelrahim",
+      "weight": 8676
+    },
+    {
+      "value": "Abdelkader",
+      "weight": 8573
+    },
+    {
+      "value": "Helmy",
+      "weight": 8545
+    },
+    {
+      "value": "Fahmy",
+      "weight": 8529
+    },
+    {
+      "value": "Mamdouh",
+      "weight": 8520
+    },
+    {
+      "value": "Hosny",
+      "weight": 8403
+    },
+    {
+      "value": "Ezzat",
+      "weight": 8389
+    },
+    {
+      "value": "Abdelghany",
+      "weight": 8073
+    },
+    {
+      "value": "Gad",
+      "weight": 8065
+    },
+    {
+      "value": "Maher",
+      "weight": 7921
+    },
+    {
+      "value": "Amer",
+      "weight": 7874
+    },
+    {
+      "value": "Yassin",
+      "weight": 7759
+    },
+    {
+      "value": "Mesaad",
+      "weight": 7634
+    },
+    {
+      "value": "Hafez",
+      "weight": 7183
+    },
+    {
+      "value": "Abdelrazek",
+      "weight": 7102
+    },
+    {
+      "value": "Galal",
+      "weight": 7095
+    },
+    {
+      "value": "Fares",
+      "weight": 7032
+    },
+    {
+      "value": "Marwan",
+      "weight": 7014
+    },
+    {
+      "value": "Hashem",
+      "weight": 6906
+    },
+    {
+      "value": "Emam",
+      "weight": 6896
+    },
+    {
+      "value": "Abdelgawad",
+      "weight": 6823
+    },
+    {
+      "value": "Abdelhady",
+      "weight": 6768
+    },
+    {
+      "value": "Younes",
+      "weight": 6742
+    },
+    {
+      "value": "Gerges",
+      "weight": 6707
+    },
+    {
+      "value": "Shawky",
+      "weight": 6700
+    },
+    {
+      "value": "Abdelnaby",
+      "weight": 6669
+    },
+    {
+      "value": "Khalaf",
+      "weight": 6655
+    },
+    {
+      "value": "Zakaria",
+      "weight": 6614
+    },
+    {
+      "value": "Adham",
+      "weight": 6448
+    },
+    {
+      "value": "Khamis",
+      "weight": 6428
+    },
+    {
+      "value": "Ammar",
+      "weight": 6280
+    },
+    {
+      "value": "Badr",
+      "weight": 6204
+    },
+    {
+      "value": "Mohsen",
+      "weight": 6149
+    },
+    {
+      "value": "Hazem",
+      "weight": 5969
+    },
+    {
+      "value": "Mazen",
+      "weight": 5966
+    },
+    {
+      "value": "Mokhtar",
+      "weight": 5953
+    },
+    {
+      "value": "Radwan",
+      "weight": 5934
+    },
+    {
+      "value": "Mahrous",
+      "weight": 5743
+    },
+    {
+      "value": "Rashad",
+      "weight": 5684
+    },
+    {
+      "value": "Gouda",
+      "weight": 5574
+    },
+    {
+      "value": "Abdelaty",
+      "weight": 5474
+    },
+    {
+      "value": "Seif",
+      "weight": 5465
+    },
+    {
+      "value": "Abdelkarim",
+      "weight": 5379
+    },
+    {
+      "value": "Refaat",
+      "weight": 5328
+    },
+    {
+      "value": "Hamza",
+      "weight": 5320
+    },
+    {
+      "value": "Lotfy",
+      "weight": 5290
+    },
+    {
+      "value": "Abdelmaksoud",
+      "weight": 5208
+    },
+    {
+      "value": "Mabrouk",
+      "weight": 5181
+    },
+    {
+      "value": "Kotb",
+      "weight": 5153
+    },
+    {
+      "value": "Moawad",
+      "weight": 5088
+    },
+    {
+      "value": "Medhat",
+      "weight": 5067
+    },
+    {
+      "value": "Talaat",
+      "weight": 4938
+    },
+    {
+      "value": "Kassem",
+      "weight": 4932
+    },
+    {
+      "value": "Sadek",
+      "weight": 4793
+    },
+    {
+      "value": "Gharib",
+      "weight": 4763
+    },
+    {
+      "value": "Kirollos",
+      "weight": 4761
+    },
+    {
+      "value": "Raafat",
+      "weight": 4714
+    },
+    {
+      "value": "Abdeltawab",
+      "weight": 4695
+    },
+    {
+      "value": "Moaz",
+      "weight": 4647
+    },
+    {
+      "value": "Abdelkhalek",
+      "weight": 4564
+    },
+    {
+      "value": "Moamen",
+      "weight": 4564
+    },
+    {
+      "value": "Masoud",
+      "weight": 4547
+    },
+    {
+      "value": "Darwish",
+      "weight": 4468
+    },
+    {
+      "value": "Nagy",
+      "weight": 4446
+    },
+    {
+      "value": "Hatem",
+      "weight": 4432
+    },
+    {
+      "value": "Elmetwally",
+      "weight": 4421
+    },
+    {
+      "value": "Seddik",
+      "weight": 4421
+    },
+    {
+      "value": "Mahdy",
+      "weight": 4413
+    },
+    {
+      "value": "Helal",
+      "weight": 4385
+    },
+    {
+      "value": "Farid",
+      "weight": 4295
+    },
+    {
+      "value": "Abdelalim",
+      "weight": 4248
+    },
+    {
+      "value": "Bilal",
+      "weight": 4187
+    },
+    {
+      "value": "Hanna",
+      "weight": 4147
+    },
+    {
+      "value": "Atta",
+      "weight": 4145
+    },
+    {
+      "value": "Thabet",
+      "weight": 4119
+    },
+    {
+      "value": "Hammad",
+      "weight": 4099
+    },
+    {
+      "value": "Bakhit",
+      "weight": 4080
+    },
+    {
+      "value": "Yousry",
+      "weight": 4070
+    },
+    {
+      "value": "Riad",
+      "weight": 4031
+    },
+    {
+      "value": "Abdelsattar",
+      "weight": 3959
+    },
+    {
+      "value": "Amir",
+      "weight": 3943
+    },
+    {
+      "value": "Maged",
+      "weight": 3841
+    },
+    {
+      "value": "Mina",
+      "weight": 3835
+    },
+    {
+      "value": "Haitham",
+      "weight": 3822
+    },
+    {
+      "value": "Arafa",
+      "weight": 3797
+    },
+    {
+      "value": "Shaker",
+      "weight": 3777
+    },
+    {
+      "value": "Ashour",
+      "weight": 3766
+    },
+    {
+      "value": "Farrag",
+      "weight": 3746
+    },
+    {
+      "value": "Abdelsamie",
+      "weight": 3729
+    },
+    {
+      "value": "Fikry",
+      "weight": 3666
+    },
+    {
+      "value": "Bakr",
+      "weight": 3651
+    },
+    {
+      "value": "Abdelghaffar",
+      "weight": 3629
+    },
+    {
+      "value": "Naguib",
+      "weight": 3623
+    },
+    {
+      "value": "Abdelhakim",
+      "weight": 3601
+    },
+    {
+      "value": "Hassaan",
+      "weight": 3594
+    },
+    {
+      "value": "Dawoud",
+      "weight": 3580
+    },
+    {
+      "value": "Mikhael",
+      "weight": 3575
+    },
+    {
+      "value": "Gamil",
+      "weight": 3538
+    },
+    {
+      "value": "Fayez",
+      "weight": 3459
+    },
+    {
+      "value": "Karam",
+      "weight": 3452
+    },
+    {
+      "value": "Mounir",
+      "weight": 3436
+    },
+    {
+      "value": "Khedr",
+      "weight": 3427
+    },
+    {
+      "value": "Abdelwahed",
+      "weight": 3419
+    },
+    {
+      "value": "Adam",
+      "weight": 3415
+    },
+    {
+      "value": "Allam",
+      "weight": 3409
+    },
+    {
+      "value": "Abubakr",
+      "weight": 3394
+    },
+    {
+      "value": "Khairy",
+      "weight": 3379
+    },
+    {
+      "value": "Aziz",
+      "weight": 3361
+    },
+    {
+      "value": "Diab",
+      "weight": 3338
+    },
+    {
+      "value": "Habib",
+      "weight": 3330
+    },
+    {
+      "value": "Oweis",
+      "weight": 3317
+    },
+    {
+      "value": "Ebeid",
+      "weight": 3289
+    },
+    {
+      "value": "Abdelnasser",
+      "weight": 3277
+    },
+    {
+      "value": "Abdelmohsen",
+      "weight": 3275
+    },
+    {
+      "value": "Shaheen",
+      "weight": 3264
+    },
+    {
+      "value": "Fahim",
+      "weight": 3263
+    },
+    {
+      "value": "Bassem",
+      "weight": 3262
+    },
+    {
+      "value": "Hammouda",
+      "weight": 3262
+    },
+    {
+      "value": "Zidan",
+      "weight": 3240
+    },
+    {
+      "value": "Farahat",
+      "weight": 3176
+    },
+    {
+      "value": "Rashed",
+      "weight": 3171
+    },
+    {
+      "value": "Roshdy",
+      "weight": 3113
+    },
+    {
+      "value": "Rady",
+      "weight": 3108
+    },
+    {
+      "value": "Tolba",
+      "weight": 3106
+    },
+    {
+      "value": "Ghonim",
+      "weight": 3091
+    },
+    {
+      "value": "Barakat",
+      "weight": 3083
+    },
+    {
+      "value": "Refaei",
+      "weight": 3056
+    },
+    {
+      "value": "Megahed",
+      "weight": 3055
+    },
+    {
+      "value": "Taher",
+      "weight": 3048
+    },
+    {
+      "value": "Awwad",
+      "weight": 2980
+    },
+    {
+      "value": "Abdelraouf",
+      "weight": 2977
+    },
+    {
+      "value": "Anas",
+      "weight": 2908
+    },
+    {
+      "value": "Abdelgalil",
+      "weight": 2905
+    },
+    {
+      "value": "Abdelmoaty",
+      "weight": 2897
+    },
+    {
+      "value": "Marzouk",
+      "weight": 2894
+    },
+    {
+      "value": "Abdelhafiz",
+      "weight": 2841
+    },
+    {
+      "value": "Nady",
+      "weight": 2821
+    },
+    {
+      "value": "Nader",
+      "weight": 2792
+    },
+    {
+      "value": "Mourad",
+      "weight": 2771
+    },
+    {
+      "value": "Labib",
+      "weight": 2770
+    },
+    {
+      "value": "Ayyad",
+      "weight": 2762
+    },
+    {
+      "value": "Sultan",
+      "weight": 2762
+    },
+    {
+      "value": "Wahid",
+      "weight": 2758
+    },
+    {
+      "value": "Eyad",
+      "weight": 2746
+    },
+    {
+      "value": "Abdelbaqi",
+      "weight": 2729
+    },
+    {
+      "value": "Wahba",
+      "weight": 2645
+    },
+    {
+      "value": "Adly",
+      "weight": 2617
+    },
+    {
+      "value": "Ghanem",
+      "weight": 2569
+    },
+    {
+      "value": "Antar",
+      "weight": 2566
+    },
+    {
+      "value": "Hamdan",
+      "weight": 2566
+    },
+    {
+      "value": "Mohannad",
+      "weight": 2559
+    },
+    {
+      "value": "Moataz",
+      "weight": 2552
+    },
+    {
+      "value": "Salam",
+      "weight": 2530
+    },
+    {
+      "value": "Abdrabbo",
+      "weight": 2522
+    },
+    {
+      "value": "Gabr",
+      "weight": 2508
+    },
+    {
+      "value": "Shafik",
+      "weight": 2503
+    },
+    {
+      "value": "Wagih",
+      "weight": 2500
+    },
+    {
+      "value": "Khattab",
+      "weight": 2472
+    },
+    {
+      "value": "Haggag",
+      "weight": 2468
+    },
+    {
+      "value": "Ishaq",
+      "weight": 2454
+    },
+    {
+      "value": "Safwat",
+      "weight": 2430
+    },
+    {
+      "value": "Mahfouz",
+      "weight": 2422
+    },
+    {
+      "value": "Ghazy",
+      "weight": 2404
+    },
+    {
+      "value": "Abdelbaset",
+      "weight": 2390
+    },
+    {
+      "value": "Emara",
+      "weight": 2388
+    },
+    {
+      "value": "Shoukry",
+      "weight": 2381
+    },
+    {
+      "value": "Tharwat",
+      "weight": 2380
+    },
+    {
+      "value": "Bakry",
+      "weight": 2371
+    },
+    {
+      "value": "Nassar",
+      "weight": 2352
+    },
+    {
+      "value": "Noureldin",
+      "weight": 2327
+    },
+    {
+      "value": "Saqr",
+      "weight": 2327
+    },
+    {
+      "value": "Omran",
+      "weight": 2298
+    },
+    {
+      "value": "Shahat",
+      "weight": 2274
+    },
+    {
+      "value": "Abdelmottaleb",
+      "weight": 2249
+    },
+    {
+      "value": "Fotouh",
+      "weight": 2237
+    },
+    {
+      "value": "Kandil",
+      "weight": 2234
+    },
+    {
+      "value": "Ramy",
+      "weight": 2221
+    },
+    {
+      "value": "Zaghloul",
+      "weight": 2218
+    },
+    {
+      "value": "Zayed",
+      "weight": 2202
+    },
+    {
+      "value": "Eliwa",
+      "weight": 2158
+    },
+    {
+      "value": "George",
+      "weight": 2128
+    },
+    {
+      "value": "Asem",
+      "weight": 2123
+    },
+    {
+      "value": "Marei",
+      "weight": 2104
+    },
+    {
+      "value": "Naeem",
+      "weight": 2096
+    },
+    {
+      "value": "Muslim",
+      "weight": 2088
+    },
+    {
+      "value": "Asaad",
+      "weight": 2080
+    },
+    {
+      "value": "Mubarak",
+      "weight": 2065
+    },
+    {
+      "value": "Ayoub",
+      "weight": 2060
+    },
+    {
+      "value": "Salman",
+      "weight": 2051
+    },
+    {
+      "value": "Abdelkawy",
+      "weight": 2029
+    },
+    {
+      "value": "Milad",
+      "weight": 1983
+    },
+    {
+      "value": "Shady",
+      "weight": 1965
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "collection_status": "collected_300"
+}

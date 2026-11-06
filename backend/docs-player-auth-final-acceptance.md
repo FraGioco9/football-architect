@@ -1,5 +1,11 @@
 # PLAYER-AUTH-01 — final acceptance status (30 October 2026)
 
+> **Archived status — REPO-04 #358 (2026-11-06).** This document preserves the original proposal/acceptance record; its old status and activation statements do not supersede verified source, merge history or present independent provider checks.
+
+**Historical acceptance snapshot (30–31 October 2026).** The original 13/15 and PR #329 Draft/HOLD wording below is superseded by the actual merged [PR #329](https://github.com/FraGioco9/football-architect/pull/329) and closed #170 implementation/Preview technical acceptance. Preserve its previous HEAD/run evidence, but **do not claim the account feature is still unmerged**. Production activation, external delivery and operator cutover require their own approvals. [Current Auth/security](docs-auth-security-be-05.md).
+
+## Original implementation record (historical)
+
 **OPEN — PR #329 Draft/HOLD. Issue #170 remains 13/15 (86.7%).**
 
 Latest restoration batch: 31 October 2026. Prior exact-head CI on `698b5ba` was green (Site 756/756, Worker 220/220); those results do not transfer to the new commit. The restored scenario and controller checks require a fresh final exact-head gate.

@@ -1,5 +1,15 @@
 # BE-05 — Backend authentication/security audit and compatibility guarantees
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current implemented security and release boundary
+
+`backend/src/http-player.ts` provides verified Player sessions, registration, verification, login and recovery. `http-admin.ts` authorizes Admin requests only with the **current verified Player session plus explicitly enabled linked audit operator and D1 permission grants**; self-registration does not grant Admin. Argon2id, rate-limit reservation, CSRF, trusted origin/source, cookie and operation idempotency checks remain server-owned. Local loopback and HTTPS Preview/Production use distinct security and cookie configurations. [API routes](docs-http-contracts-be-02.md), [local DEV](../docs/architecture/dev-env-01-startup.md), [nonproduction pool](docs-shared-nonproduction.md).
+
+Merged [PR #329](https://github.com/FraGioco9/football-architect/pull/329) and the closed technical acceptance #170 establish implementation; they do **not** certify Production release, live email deliverability, DNS, remote D1, secrets, or operator cutover. The old BE-05 Draft/HOLD wording below is a dated implementation gate, **not** an assertion that code remains unmerged. All remote provisioning still needs separate owner approval.
+
+## Historical implementation audit (retained)
+
 Issue #352. Starting point: `main@2b7a671aad738a7ac0b8645b39fb32d0761514b1`; squash merges #380/#354/#351/#350 and earlier #348/#349 verified. Discarded pre-#347 branches are not implementation inputs. Draft/HOLD, no auth cutover, remote D1, deploy or secret changes.
 
 ## Threat boundaries and endpoint permission matrix

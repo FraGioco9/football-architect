@@ -4,6 +4,7 @@ import {runInNewContext as vmRunInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {gzipSync,brotliCompressSync} from 'node:zlib';
 import {execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {request} from 'node:http';
@@ -22,6 +23,32 @@ test('CLUB-01 all 320 identities and 1600 subpages resolve to one public templat
  for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/01/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
   assert.equal(isAllowlistedPublicPath(publicRequestFile(path)),false,path);
 });
+test('PAGE-LOAD-03A P17/P18: complete canonical identities and five tabs are in the synchronous shell',()=>{
+ const html=read('clubs/_shared/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const script=html.match(/<script data-fa-club-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script,'synchronous first-paint bootstrap');
+ for(const token of ['<header class="club-header club-first-paint-header"','<h1 id="club-title"','<span class="club-first-paint-flag"','clubIdentityReady','([1-9]|[1-3][0-9]|40)'])
+  assert.ok((token.startsWith('<')?html:script).includes(token),token);
+ for(const view of clubViews)assert.ok(html.includes('data-club-first-paint-tab="'+view+'"'),view);
+ assert.equal((html.match(/data-club-first-paint-tab="/g)||[]).length,5);
+ for(const club of manifest.clubs){
+  const key=club.countryId.toLowerCase()+'/'+club.clubId;
+  assert.ok(script.includes(JSON.stringify(key)+':['+JSON.stringify(club.fullName)+','),key);
+ }
+ assert.equal(manifest.clubs.length,320);
+ const countryFlags={it:'it',eng:'gb-eng',es:'es',de:'de',fr:'fr',pt:'pt',nl:'nl',br:'br'};
+ for(const [country,asset] of Object.entries(countryFlags)){
+  assert.ok(script.includes(country+":'"+asset+"'"),'flag mapping for '+country);
+  const flagPath='assets/flags/'+asset+'.svg';
+  assert.equal(isAllowlistedPublicPath(flagPath),true,flagPath);
+  assert.match(read(flagPath),/<svg\b/,flagPath);
+ }
+ assert.ok(script.includes("'/assets/flags/'"),'only the visited country SVG is requested at first paint');
+ assert.doesNotMatch(script,/fa-competition-flag-/,'never serialize all eight large inline SVG drawings');
+ assert.ok(script.length<40000,'guard against re-embedding the entire flag catalog');
+ console.log('PAGE-LOAD-03A HTML payload bytes: raw='+Buffer.byteLength(html)+' gzip='+gzipSync(html).length+' brotli='+brotliCompressSync(html).length);
+});
+
 test('CLUB-01 derived manifest preserves canonical fields and provisional placement',()=>{
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const descriptions=JSON.parse(read('data/club-descriptions.i18n.json'));
@@ -350,4 +377,17 @@ test('FE-03: directory filters reuse the 320 initial keyed cards without parsing
  assert.match(source,/if\(staging\)staging\.innerHTML=/,'missing cards and empty results retain the fallback');
  assert.match(source,/const nodes=reuseCached\?cacheHits\.map/);
  assert.match(source,/out\.insertBefore/,'card identity must survive filtering and reorder');
+});
+
+test('UI-409: all 320 first-paint directory crest slots reserve one borderless image footprint',()=>{
+ const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const slots=[...html.matchAll(/<span class="nav01-crest" aria-hidden="true">((?:<img[^>]+>)?)<\/span>/g)];
+ assert.equal(slots.length,320,'every static club card has a shield slot');
+ assert.equal((html.match(/<img class="nav01-crest-image"/g)||[]).length,Object.keys(manifest.clubCrests).length);
+ assert.doesNotMatch(html,/<img class="nav01-crest"\b/,'real images are children of reserved shield slots');
+ for(const [identity,path] of Object.entries(manifest.clubCrests)){
+  assert.ok(html.includes('<img class="nav01-crest-image" src="/'+path+'" alt="" loading="lazy" decoding="async">'),identity);
+ }
+ assert.match(read('tools/generate-app-pages.mjs'),/class="nav01-crest-image"/);
+ assert.match(read('assets/clubs-directory.js'),/class="nav01-crest-image"/);
 });
