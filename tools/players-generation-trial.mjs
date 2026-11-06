@@ -8,67 +8,71 @@
 // Source: https://inside.fifa.com/fifa-rankings/world-ranking/men?dateId=id121
 // This temporary coverage fixture is NOT a production nationality probability distribution.
 import {writeFileSync} from 'node:fs';
+import {loadPlayerNamePools,sampleGivenName,sampleSurname} from './players-name-pools.mjs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
 
 const rawCountries = `
-ESP|Spain|Francisco,José,Álvaro|García,Ruiz,Fernández
-ARG|Argentina|Mateo,Nicolás,Tomás|Fernández,Rodríguez,González
-FRA|France|Lucas,Antoine,Théo|Laurent,Moreau,Dubois
-ENG|England|Oliver,Jack,George|Smith,Walker,Hughes
-POR|Portugal|João,Francisco,António|Silva,Costa,Ferreira
-BRA|Brazil|João,Rafael,Pedro|Souza,Santos,Oliveira
-MAR|Morocco|Youssef,Amine,Achraf|El Amrani,Benali,Idrissi
-BEL|Belgium|Louis,Arthur,Thomas|Peeters,Janssens,De Smet
-NED|Netherlands|Daan,Lars,Bram|De Vries,Van Dijk,Bakker
-MEX|Mexico|Diego,Santiago,Luis|Hernández,Martínez,Ramírez
-COL|Colombia|Juan,Santiago,Andrés|Rodríguez,Restrepo,Gómez
-SUI|Switzerland|Luca,Noah,Marco|Müller,Keller,Meier
-GER|Germany|Leon,Maximilian,Felix|Müller,Schmidt,Weber
-CRO|Croatia|Luka,Ivan,Marko|Kovačić,Horvat,Babić
-ITA|Italy|Lorenzo,Matteo,Riccardo|Rossi,Esposito,Conti
-USA|United States|Ethan,Noah,Logan|Johnson,Miller,Davis
-JPN|Japan|Haruto,Ren,Yuto|Sato,Tanaka,Kobayashi
-SEN|Senegal|Mamadou,Ibrahima,Cheikh|Ndiaye,Diop,Sarr
-NOR|Norway|Erik,Oskar,Magnus|Hansen,Berg,Nilsen
-URU|Uruguay|Facundo,Matías,Joaquín|Pereira,Silva,Olivera
-DEN|Denmark|Mikkel,Anders,Emil|Nielsen,Jensen,Andersen
-AUT|Austria|Lukas,Jakob,Florian|Gruber,Huber,Bauer
-IRN|Iran|Amir,Mehdi,Ali|Hosseini,Rezaei,Mohammadi
-ECU|Ecuador|Jhon,Kevin,Andrés|Caicedo,Quintero,Valencia
-EGY|Egypt|Omar,Ahmed,Mohamed|Hassan,Mahmoud,Ibrahim
-AUS|Australia|Liam,Joshua,Jack|Brown,Wilson,Taylor
-CAN|Canada|Liam,Noah,William|Tremblay,Martin,Wong
-ALG|Algeria|Yacine,Amine,Riyad|Benali,Boumediene,Mansouri
-CIV|Côte d'Ivoire|Jean,Kouadio,Serge|Koné,Traoré,Kouassi
-NGA|Nigeria|Chinedu,Emeka,Tunde|Okafor,Adeyemi,Obi
-TUR|Türkiye|Arda,Emre,Kerem|Yılmaz,Demir,Çelik
-KOR|South Korea|Min-jun,Ji-hoon,Seung-woo|Kim,Lee,Park
-PAR|Paraguay|Miguel,Derlis,Ángel|González,Rojas,Benítez
-SWE|Sweden|Erik,Axel,Viktor|Andersson,Lindberg,Eriksson
-RUS|Russia|Ivan,Artem,Dmitri|Ivanov,Smirnov,Petrov
-UKR|Ukraine|Andriy,Oleksandr,Mykola|Shevchenko,Kovalenko,Bondarenko
-POL|Poland|Jakub,Jan,Piotr|Kowalski,Nowak,Zieliński
-HUN|Hungary|Bence,Ádám,Dániel|Nagy,Kovács,Szabó
-WAL|Wales|Rhys,Dylan,Gareth|Jones,Thomas,Davies
-COD|DR Congo|Jean,Patrick,Cédric|Mbuyi,Kabongo,Ilunga
-GRE|Greece|Giorgos,Nikos,Dimitris|Papadopoulos,Nikolaou,Georgiou
-CMR|Cameroon|Jean,Christian,André|N'Koulou,Nkam,Aboubakar
-SCO|Scotland|Callum,Scott,Finlay|MacDonald,McGregor,Robertson
-SRB|Serbia|Nikola,Marko,Stefan|Petrović,Jovanović,Marković
-SVK|Slovakia|Martin,Jakub,Tomáš|Novák,Kováč,Horváth
-PAN|Panama|José,Ricardo,Luis|Rodríguez,Pérez,Castillo
-MLI|Mali|Moussa,Amadou,Boubacar|Traoré,Coulibaly,Keita
-RSA|South Africa|Sipho,Thabo,Siyabonga|Mokoena,Ndlovu,Khumalo
-VEN|Venezuela|José,Andrés,Miguel|González,Rodríguez,Hernández
-CHI|Chile|Benjamín,Matías,Vicente|González,Rojas,Muñoz`;
+ESP|Spain|García,Ruiz,Fernández
+ARG|Argentina|Fernández,Rodríguez,González
+FRA|France|Laurent,Moreau,Dubois
+ENG|England|Smith,Walker,Hughes
+POR|Portugal|Silva,Costa,Ferreira
+BRA|Brazil|Souza,Santos,Oliveira
+MAR|Morocco|El Amrani,Benali,Idrissi
+BEL|Belgium|Peeters,Janssens,De Smet
+NED|Netherlands|De Vries,Van Dijk,Bakker
+MEX|Mexico|Hernández,Martínez,Ramírez
+COL|Colombia|Rodríguez,Restrepo,Gómez
+SUI|Switzerland|Müller,Keller,Meier
+GER|Germany|Müller,Schmidt,Weber
+CRO|Croatia|Kovačić,Horvat,Babić
+ITA|Italy|Rossi,Esposito,Conti
+USA|United States|Johnson,Miller,Davis
+JPN|Japan|Sato,Tanaka,Kobayashi
+SEN|Senegal|Ndiaye,Diop,Sarr
+NOR|Norway|Hansen,Berg,Nilsen
+URU|Uruguay|Pereira,Silva,Olivera
+DEN|Denmark|Nielsen,Jensen,Andersen
+AUT|Austria|Gruber,Huber,Bauer
+IRN|Iran|Hosseini,Rezaei,Mohammadi
+ECU|Ecuador|Caicedo,Quintero,Valencia
+EGY|Egypt|Hassan,Mahmoud,Ibrahim
+AUS|Australia|Brown,Wilson,Taylor
+CAN|Canada|Tremblay,Martin,Wong
+ALG|Algeria|Benali,Boumediene,Mansouri
+CIV|Côte d'Ivoire|Koné,Traoré,Kouassi
+NGA|Nigeria|Okafor,Adeyemi,Obi
+TUR|Türkiye|Yılmaz,Demir,Çelik
+KOR|South Korea|Kim,Lee,Park
+PAR|Paraguay|González,Rojas,Benítez
+SWE|Sweden|Andersson,Lindberg,Eriksson
+RUS|Russia|Ivanov,Smirnov,Petrov
+UKR|Ukraine|Shevchenko,Kovalenko,Bondarenko
+POL|Poland|Kowalski,Nowak,Zieliński
+HUN|Hungary|Nagy,Kovács,Szabó
+WAL|Wales|Jones,Thomas,Davies
+COD|DR Congo|Mbuyi,Kabongo,Ilunga
+GRE|Greece|Papadopoulos,Nikolaou,Georgiou
+CMR|Cameroon|N'Koulou,Nkam,Aboubakar
+SCO|Scotland|MacDonald,McGregor,Robertson
+SRB|Serbia|Petrović,Jovanović,Marković
+SVK|Slovakia|Novák,Kováč,Horváth
+PAN|Panama|Rodríguez,Pérez,Castillo
+MLI|Mali|Traoré,Coulibaly,Keita
+RSA|South Africa|Mokoena,Ndlovu,Khumalo
+VEN|Venezuela|González,Rodríguez,Hernández
+CHI|Chile|González,Rojas,Muñoz`;
 export const FIFA_SNAPSHOT = '2026-10-07';
 export const COUNTRIES = Object.freeze(rawCountries.trim().split('\n').map((line,i)=>{
-  const [code,name,first,last] = line.trim().split('|');
-  return Object.freeze({rank:i+1,code,name,first:Object.freeze(first.split(',')),last:Object.freeze(last.split(','))});
+  const [code,name,demoLast] = line.trim().split('|');
+  return Object.freeze({rank:i+1,code,name,demoLast:Object.freeze(demoLast.split(','))});
 }));
 const byCountry = new Map(COUNTRIES.map(c=>[c.code,c]));
+// PLAYERS-03 is in main; SURNAMES-01 is loaded only if its catalog exists in this checkout.
+// This module runs local research previews only, with no production-data writes.
+const nationalNamePools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
 const POSITIONS = 'GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' ');
 export const ATTRIBUTES = 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' ');
 const keeperAttributes = ATTRIBUTES.slice(16);
@@ -421,7 +425,10 @@ function generateCandidate(rng,index,options,trialSeed){
  const country=options.primaryNationality??COUNTRIES[index%COUNTRIES.length].code;
  if(!byCountry.has(country))throw Error('Primary nationality outside test top 50');
  const bank=byCountry.get(country);
- const first=options.firstName??pick(bank.first,rng),last=options.lastName??pick(bank.last,rng);
+ // Each automatic selection consumes exactly one legacy RNG draw, preserving
+ // height, aptitude, positions, attributes and seeded calibration comparisons.
+ const first=options.firstName??sampleGivenName(nationalNamePools,country,rng);
+ const last=options.lastName??sampleSurname(nationalNamePools,country,rng,bank.demoLast);
  if(!first||!last||typeof first!=='string'||typeof last!=='string')throw Error('First and last names required');
  const [ageLo,ageHi]=validRange(options.age,16,19);
  const age=discrete(rng,ageLo,ageHi,[30,35,20,15].slice(ageLo-16,ageHi-15));
@@ -523,7 +530,9 @@ export function generateTrial(options={}){
  }
  const rng=seededRandom(seed),candidates=[];
  for(let i=0;i<count;i++)candidates.push(generateCandidate(rng,i,options,seed));
- return {trial_only:true,persisted:false,ranking_snapshot:FIFA_SNAPSHOT,seed,count,candidates};
+ return {trial_only:true,persisted:false,ranking_snapshot:FIFA_SNAPSHOT,seed,count,
+  identity_sources:{given_names:'PLAYERS-03 weighted catalog',
+   surnames:nationalNamePools.surnameSource},candidates};
 }
 export function summarize(trial){
  const groups={countries:{},positions:{},ages:{},secondaryCounts:{},knownAs:0,secondNationalities:0};

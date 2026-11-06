@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - tools/players-generation-trial.mjs
+      - tools/players-name-pools.mjs
+      - tests/players-name-pools.test.mjs
+      - data/players/names/**
+      - data/players/surnames/**
       - tools/players-generation-audit.mjs
       - tools/players-suitability-extremes-qa.mjs
       - .github/workflows/players-generation-trial.yml
@@ -31,6 +35,8 @@ jobs:
       - name: Generate and validate isolated test cohorts
         run: |
           mkdir -p "$RUNNER_TEMP/fa-ci-artifacts"
+          node --check tools/players-name-pools.mjs
+          node --test tests/players-name-pools.test.mjs
           node --check tools/players-generation-trial.mjs
           node --check tools/players-generation-audit.mjs
           node tools/players-generation-audit.mjs --self-test > "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-self-test.json"
