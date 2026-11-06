@@ -30,6 +30,14 @@
       "country": "ECU",
       "type": "Wikidata CC0 biographical observations: P27 country of citizenship and separate P734 family-name property on the same person",
       "note": "Only directly named family-name Wikidata items borne by people with the specified citizenship, using published Spanish/English labels; no splitting full names, guessing from occupation, combining surnames or invented variants. Not a statistically representative population survey; records may be imperfect. Rankings and frequency are absent and each retained surname has equal probability."
+    },
+    {
+      "id": "inec-ecuador-official-rare-surname-notices",
+      "url": "https://www.ecuadorencifras.gob.ec/institucional/jose-y-maria-mantienen-el-record-con-los-nombres-mas-populares-en-ecuador/",
+      "supplemental_url": "https://www.ecuadorencifras.gob.ec/institucional/inec-presenta-la-version-2025-del-visualizador-de-nombres-y-apellidos-una-mirada-profunda-a-nuestra-identidad/",
+      "country": "Ecuador",
+      "type": "Ecuador INEC official press releases naming resident surnames",
+      "note": "Astolfi, Balint, Callupi and Feril documented by INEC as rare recorded surnames; Brunner documented as a resident surname in INEC's 2025 visualizer notice. These are separate attested family names, not guessed or recombined. No statistics or weights stored."
     }
   ],
   "surnames": [
@@ -4571,6 +4579,21 @@
     },
     {
       "value": "Zura"
+    },
+    {
+      "value": "Astolfi"
+    },
+    {
+      "value": "Balint"
+    },
+    {
+      "value": "Callupi"
+    },
+    {
+      "value": "Feril"
+    },
+    {
+      "value": "Brunner"
     }
   ],
   "production_ready": false
