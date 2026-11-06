@@ -68,6 +68,18 @@
       "id": "be-statbel-male-births-2000-2025",
       "external_file": "countries/BEL.json",
       "description": "Statbel Belgian national male registered births 2000–2025 (Belgium columns, no regional double counting)"
+    },
+    {
+      "code": "POR",
+      "id": "pt-registered-male-first-names-2014",
+      "external_file": "countries/POR.json",
+      "description": "Portugal 2014 male first-name birth registrations, reported by Público/IRN via Central de Dados; single-token entries only"
+    },
+    {
+      "code": "BRA",
+      "id": "br-ibge-census-2022-male-first-names",
+      "external_file": "countries/BRA.json",
+      "description": "Brazil IBGE 2022 Census male residents (all ages), observed male first names; not newborn birth registrations"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -81,7 +93,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 3300,
+    "current_collected_given_names": 3900,
     "first_name_format": "exactly one first name per entry: Unicode letters and combining marks only; no whitespace, hyphens, apostrophes, punctuation or double given names",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -145,22 +157,30 @@
       "rank": 5,
       "label": "Portugal",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "pt-registered-male-first-names-2014"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "not_started",
+      "external_file": "countries/POR.json",
+      "name_format": "single_first_name_only"
     },
     {
       "code": "BRA",
       "rank": 6,
       "label": "Brazil",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "br-ibge-census-2022-male-first-names"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "not_started",
+      "external_file": "countries/BRA.json",
+      "name_format": "single_first_name_only"
     },
     {
       "code": "MAR",

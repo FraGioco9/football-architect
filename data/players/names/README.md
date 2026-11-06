@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**3,300 / 15,000** single first-name slots saved in **11 / 50 countries**. **39 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**3,900 / 15,000** single first-name slots saved in **13 / 50 countries**. **37 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -21,6 +21,9 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Austria (AUT) | `countries/AUT.json` | 300 | Statistik Austria, national registered male first names at birth, 2010–2025 |
 | Switzerland (SUI) | `countries/SUI.json` | 300 | Swiss FSO, national male residents in 2025 born 2000–2025; **not births in Switzerland** |
 | Belgium (BEL) | `countries/BEL.json` | 300 | Statbel, Belgium-wide male birth first names, 2000–2025; Flemish/French/Brussels regions included |
+
+| Portugal (POR) | `countries/POR.json` | 300 | Portuguese male birth-name registrations in **2014** (Central de Dados from Público/IRN) |
+| Brazil (BRA) | `countries/BRA.json` | 300 | IBGE 2022 Census, male first names among **residents of all ages**; **not newborn births** |
 
 ### Source integrity, scope and limitations
 
@@ -42,8 +45,14 @@ Batch B [targeted Node 22 source-extraction QA: PASS](https://github.com/FraGioc
 
 The selected four are country-specific (no indiscriminate England/Wales shared pool), and national origins may be mixed as authorized. The different source periods are documented. Earlier Onomaverse research, surname candidates and PLAYERS-01 prototype identities were not reused as data for these new lists.
 
+**Batch A (PR #417, POR/BRA; integrated into #407):**
+- **POR:** [Central de Dados — Portuguese male name registrations, 2014](https://github.com/centraldedados/nomes_proprios) derived from Público/IRN, using **only the 2014 male single-token name entries** and their published counts. Source commit `da89803b1a81065d41838883ebeceac9ecbd3619`, `nomes-registados-2014.csv` SHA-256 `b14ac2d593a95955946af6df6d35befc905ee2ec6708219a6e4e38fd9131cd85`. 300 selected from 1,873 distinct eligible male names; selected rank 300 has **4 observed registrations**. **Licence review:** upstream README specifies ODbL, datapackage metadata says PDDL-1.0; confirm redistribution obligations before commercial use.
+- **BRA:** [IBGE 2022 Census first names](https://censo2022.ibge.gov.br/nomes/) reflected by [olob0 census mirror](https://huggingface.co/datasets/olob0/ibge-nomes-no-brasil-2022), `name_detail.parquet` SHA-256 `91518f2d0d1da8e438ab9f557127da06633e186914aecb717f1bbf7bfb6b2943`. Choose `name_type=given` and positive `male_count`: 300 selected from 60,954 male-name entries. Counts refer to **male residents of all ages in the 2022 census**, not births or birth-year trends. Names keep source orthography/casing; no unverified accent corrections. Mirror publishes CC BY 4.0.
+- **ENG / WAL:** not complete; ONS 2000–2025 **country-specific** annual Top-100 boys data (geography `E92000001` versus `W92000004`) yields only **187** distinct single names for England and **223** for Wales. The combined England & Wales records `K04000001` are not attributed to either nation. Source: [ONS boys' names](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/babynamesenglandandwalesbabynamesstatisticsboys), [rossbowen/babynames](https://github.com/rossbowen/babynames) mirror at commit `582523ce1889445a03b83d1827c73b0ffa91c1af`, mirror SHA-256 `1dad2fed1684dd11e9123d3ea42584445cb4878aa8eb7f2fd2379d48b35bccb1`. Unpublished counts outside each year's Top-100 are unknown, not zeros. No ENG/WAL JSON added; **113/77 names remain unsupported** respectively.
+- [Batch A source extraction and Node 22 QA run 42242188765](https://github.com/FraGioco9/football-architect/actions/runs/42242188765) **PASS** for POR/BRA; the two JSON blobs were transferred byte-for-byte from #417. Frequencies are source-observed and **not numerically comparable** between POR births, BRA census residents, or other countries. All remain `production_ready:false`.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 11 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 39 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 13 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 37 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.
