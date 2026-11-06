@@ -61,6 +61,164 @@ try {
    }
   }
  }finally{await routePage.close()}
+
+ // PAGE-LOAD-03B: independent cold pre-provider evidence for domestic P04/P05.
+ for(const [slug,view,width,lang,season='1'] of [
+  ['it-1','standings',320,'en'],['it-1','standings',390,'it'],
+  ['it-1','standings',390,'it','2'],['it-2','fixtures',320,'en'],
+  ['eng-1','fixtures',768,'de'],['de-1','standings',1440,'fr'],
+  ['es-1','fixtures',390,'es']
+ ]){
+  const page=await browser.newPage({viewport:{width,height:900}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(lang=>localStorage.setItem('football-architect:language',lang),lang);
+  let release;const gate=new Promise(resolve=>release=resolve);
+  const blocked=async route=>{await gate;try{await route.continue()}catch{}};
+  await page.route('**/competitions/_shared/manifest.json',blocked);
+  const route='/competitions/'+slug+'/'+view+'?season='+season+(view==='fixtures'?'&matchday=12':'');
+  try{
+   const response=await page.goto(base+route,{waitUntil:'domcontentloaded'});
+   assert.equal(response?.status(),200,route);
+   await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='true');
+   const pending=await page.evaluate(view=>{
+    const visible=n=>!!n&&!n.hidden&&n.getClientRects().length>0&&getComputedStyle(n).visibility!=='hidden'&&getComputedStyle(n).display!=='none';
+    const header=document.querySelector('.app-competition-header'),tabs=document.querySelector('.app-competition-tabs');
+    const panel=document.getElementById('competition-panel-'+view),season=document.getElementById('app-competition-season');
+    window.__fa03bNodes={header,tabs,panel,season};
+    return {
+     header:visible(header),title:document.getElementById('division-detail-name')?.textContent?.trim(),
+     tabs:tabs.querySelectorAll('[role=tab]').length,
+     selected:[...tabs.querySelectorAll('[aria-selected="true"]')].map(n=>n.id),
+     panel:visible(panel),season:!!season,
+     rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
+     fixtureSlots:document.querySelectorAll('#app-fixtures-skeleton [data-skeleton-fixture]').length,
+     round:document.getElementById('app-fixtures-round-number')?.textContent?.trim(),
+     falseEmpty:view==='fixtures'&&visible(document.getElementById('app-fixtures-empty')),
+     visibleNames:[...document.querySelectorAll(innerWidth<=620?
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
+      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name')].filter(visible).length,
+     staticIdentity:document.documentElement.dataset.faStandingsKnownIdentity,
+     sportVisible:visible(document.querySelector('#competition-panel-standings > .app-world-standings #app-standings-body tr td:nth-child(10)')),
+     firstNameLeft:(()=>{const n=document.querySelector(innerWidth<=620?
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
+      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name');return n?.getBoundingClientRect().left??null})(),
+     firstNameWeight:(()=>{const n=document.querySelector(innerWidth<=620?
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
+      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name');return n?getComputedStyle(n).fontWeight:null})(),
+     crestProbe:(()=>{
+      const host=document.querySelector('.app-standings-skeleton [data-club-crest-pending="true"]');
+      if(!host)return null;
+      const icon=host.querySelector('img.app-club-crest-image');
+      return {src:icon?.getAttribute('src'),shield:getComputedStyle(host,'::before').display,visible:icon&&getComputedStyle(icon).visibility};
+     })(),
+     contextReady:!!window.faCompetitionContext,
+     bodyVisible:getComputedStyle(document.body).visibility!=='hidden'
+    };
+   },view);
+   assert.ok(pending.title,'static competition identity '+route);
+   assert.equal(pending.header,true,'visible title header '+route);
+   assert.equal(pending.bodyVisible,true,'visible body before manifest '+route);
+   assert.equal(pending.tabs,7,'seven native tabs '+route);
+   assert.deepEqual(pending.selected,['competition-tab-'+view],'correct active view '+route);
+   assert.equal(pending.panel,true,'selected panel shown before manifest '+route);
+   assert.equal(pending.season,true,'season control from first paint '+route);
+   assert.equal(pending.rows,16,'16 known club identities in DOM '+route);
+   assert.equal(pending.fixtureSlots,8,'eight reserved fixture slots '+route);
+   assert.equal(pending.contextReady,false,'manifest genuinely held '+route);
+   if(view==='standings'){
+    assert.equal(pending.staticIdentity,season==='1'?'true':'false','correct viewed-season first-paint gate '+route);
+    assert.equal(pending.visibleNames,season==='1'?16:0,'all and only known Season 1 identities visible before provider '+route);
+    assert.equal(pending.sportVisible,false,'no previous/statistic sporting values visible while pending '+route);
+    if(season==='1'){
+     assert.ok(pending.firstNameLeft>0,'known first-paint name has nonzero horizontal position '+route);
+     assert.equal(pending.firstNameWeight,'700','known team name bold on first paint '+route);
+    }
+    if(['it-1','de-1'].includes(slug)&&season==='1'){
+     assert.ok(pending.crestProbe?.src?.startsWith('/assets/clubs/'),'prepaint SVG asset source '+route);
+     assert.equal(pending.crestProbe.shield,'none','published crest must not show shield placeholder '+route);
+     assert.equal(pending.crestProbe.visible,'visible','published crest image participates in first paint '+route);
+     await page.waitForFunction(()=>[...document.querySelectorAll('.app-standings-skeleton [data-club-crest-pending="true"] img.app-club-crest-image')].every(img=>img.complete&&img.naturalWidth>0));
+
+    }
+   }
+   if(view==='fixtures'){
+    assert.equal(pending.round,'12','selected matchday at first paint '+route);
+    assert.equal(pending.falseEmpty,false,'pending fixtures cannot show confirmed-empty '+route);
+   }
+   console.log('PAGE-LOAD-03B KNOWN-IDENTITY PREPAINT '+JSON.stringify({slug,view,width,lang,season,visibleNames:pending.visibleNames}));
+   release();
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id?.toLowerCase()===id&&!!window.faCompetitionRoute?.get,slug);
+   const after=await page.evaluate(()=>({
+    header:window.__fa03bNodes.header===document.querySelector('.app-competition-header'),
+    tabs:window.__fa03bNodes.tabs===document.querySelector('.app-competition-tabs'),
+    season:window.__fa03bNodes.season===document.getElementById('app-competition-season'),
+    panel:window.__fa03bNodes.panel===document.getElementById('competition-panel-'+window.faCompetitionRoute.get().view)
+   }));
+   assert.deepEqual(after,{header:true,tabs:true,season:true,panel:true},'stable DOM after hydration '+route);
+   if(view==='standings'&&season==='1'){
+    await page.waitForFunction(()=>!!document.querySelector(innerWidth<=620?
+      '#app-standings-compact-list .app-world-mobile-club-name':
+      '#app-standings-body .app-world-club-name'));
+    const loadedLeft=await page.evaluate(()=>{
+     const n=document.querySelector(innerWidth<=620?
+      '#app-standings-compact-list .app-world-mobile-club-name':
+      '#app-standings-body .app-world-club-name');
+     return n?.getBoundingClientRect().left??null;
+    });
+    assert.ok(loadedLeft!==null&&Math.abs(loadedLeft-pending.firstNameLeft)<=2,
+      'club name x alignment between prepaint and hydrated standings within 2px '+route+
+      ': first='+pending.firstNameLeft+', loaded='+loadedLeft);
+    const loadedWeight=await page.evaluate(()=>{
+     const n=document.querySelector(innerWidth<=620?
+      '#app-standings-compact-list .app-world-mobile-club-name':
+      '#app-standings-body .app-world-club-name');
+     return n?getComputedStyle(n).fontWeight:null;
+    });
+    assert.equal(loadedWeight,'700','loaded team names remain bold '+route);
+   }
+   if(view==='standings'&&slug==='it-1'&&season==='1'&&width===390){
+    // Public URL navigation can reject a future season when the QA world is in Season 1.
+    // Exercise the same canonical coordinator transition without inventing availability.
+    assert.equal(await page.evaluate(()=>window.faCompetitionContextApi.selectSeason(2)),true);
+    await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
+    await page.evaluate(()=>window.faStandingsLoading.set('page-load-03b-transition',true));
+    const stale=await page.evaluate(()=>{
+     const candidate=document.querySelector('.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name');
+     const shown=!!candidate&&candidate.getClientRects().length>0&&getComputedStyle(candidate).visibility!=='hidden';
+     const results=document.querySelector('#competition-panel-standings>.app-world-standings');
+     return {season:document.documentElement.dataset.faStandingsKnownIdentity,oldNameShown:shown,sportShown:getComputedStyle(results).visibility!=='hidden'};
+    });
+    assert.deepEqual(stale,{season:'false',oldNameShown:false,sportShown:false},'no Season 1 identity/sport leakage in Season 2 pending frame');
+    await page.evaluate(()=>window.faStandingsLoading.set('page-load-03b-transition',false));
+   }
+   assert.deepEqual(errors,[],'no page exceptions '+route);
+   checks++;
+  }finally{release();await page.unroute('**/competitions/_shared/manifest.json',blocked);await page.close()}
+ }
+ // Manifest 503 and invalid JSON must retain permanent identity/navigation and
+ // display an honest confirmed error; a hard refresh with a valid manifest recovers.
+ for(const [kind,status,body] of [['503',503,'{}'],['invalid-json',200,'invalid json']]){
+  const page=await browser.newPage({viewport:{width:390,height:900}});
+  const broken=route=>route.fulfill({status,contentType:'application/json',body});
+  await page.route('**/competitions/_shared/manifest.json',broken);
+  try{
+   await page.goto(base+'/competitions/it-1/fixtures?season=1&matchday=12',{waitUntil:'networkidle'});
+   await page.locator('[data-competition-load-error] [role=alert]').waitFor();
+   const state=await page.evaluate(()=>({
+    shell:!!document.getElementById('app-divisions'),
+    title:!!document.getElementById('division-detail-name')?.textContent?.trim(),
+    tabs:document.querySelectorAll('.app-competition-tabs [role=tab]').length,
+    rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
+    falseEmpty:!document.getElementById('app-fixtures-empty')?.hidden
+   }));
+   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:16,falseEmpty:false},'confirmed failure '+kind);
+   await page.unroute('**/competitions/_shared/manifest.json',broken);
+   await page.reload({waitUntil:'networkidle'});
+   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
+   assert.equal(await page.locator('[data-competition-load-error]').count(),0,'recover on hard refresh '+kind);
+   checks++;
+  }finally{await page.unroute('**/competitions/_shared/manifest.json',broken);await page.close()}
+ }
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
