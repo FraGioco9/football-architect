@@ -1,5 +1,25 @@
 # BE-02 — Backend HTTP wire-contract consolidation
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current public, Player and Admin HTTP contract
+
+`backend/src/index.ts` dispatches public routes; `http-player.ts`, `http-admin.ts` and `http-contract.ts` own methods, envelopes, errors, auth and origin rules. This is a **source-implemented endpoint inventory**, not permission to call hosted endpoints.
+
+| Access | Implemented routes | Boundary |
+| --- | --- | --- |
+| Anonymous world | `GET /api/world` | Validated global projection; never fictional DEV data |
+| Anonymous sporting | `GET /api/competitions/{IT,ENG,ES,DE,FR,PT,NL,BR}-{1,2}/seasons/{n}`; `GET /api/competitions/int-{1,2}/seasons/{n}` | Verified season data, no inferred future scores |
+| Anonymous calendar | `GET /api/calendar/seasons/{n}/days/{1..56}` | Read-only day projection |
+| Nonproduction handshake | `GET /api/environment` | Explicit configured `dev-preview` pool only; fail closed elsewhere |
+| Private local inbox | `/api/local-dev/inbox` | Local loopback-only, never public or hosted |
+| Player account | `/api/player/*` | Registration, verification, login, recovery, permissions and account actions; exact method table in `http-player.ts` |
+| Admin operations | `/api/admin/*` | Verified Player session **and** linked enabled Admin grants, CSRF/Origin, idempotency and transaction checks |
+
+Input validation, `409 stale_world`, `422` invalid request and `503` unavailable responses follow actual implementation. The intentional method/Allow differences must not be flattened. [Auth policy](docs-auth-security-be-05.md), [Debug/state](../docs/state/sh-03.md), [lifecycle](docs-season-lifecycle-be-04.md). API paths/public identifiers are **not** part of #370 private renames.
+
+## Historical implementation audit (retained)
+
 Baseline: `main` `08c04e7363c19cc227264e0c170760317512cbb5` (squash of #373).
 Issue: #349. Historical #346 was closed unmerged; no files were copied from that branch.
 

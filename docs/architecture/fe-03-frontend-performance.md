@@ -1,5 +1,8 @@
 # FE-03 — Frontend Performance Optimization (#367)
 
+> **Merged implementation / historical acceptance record — REPO-04 #358, 2026-11-06.** #367 was squash-merged in PR #402. Its optional lab profiler and synthetic 320-club microbenchmark are **not** evidence of Production CDN improvements or physical-device performance. See the [current CI/QA operating guide](../ci/README.md). Baseline SHAs, old open-PR wording and test run receipts below remain dated evidence; they are not current merge/deploy authorization.
+
+
 ## Baseline and boundaries
 
 Implementation authorized by the owner on 2026-11-05. Started from verified main SHA 4af8fb11fd29aff60a1306407ce04dd0426f06d6, after squash integration of FE-01 #365 (PR #393), FE-02 #366 (PR #395, plus Safari follow-up PR #398), FE-04 #368 (PR #394), and SH-02 #354. FE-05 #369 owns new visual regression infrastructure, workflow changes and snapshots; FE-03 does not edit those surfaces. Open players generator PR #400 is unrelated.

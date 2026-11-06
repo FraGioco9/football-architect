@@ -1,5 +1,13 @@
 # Shared Dev/Preview backend
 
+> **Living operational boundary — REPO-04 #358 (2026-11-06).** Current behavior is summarized first. The original implementation-phase notes, dates, approvals and status labels below are preserved as historical evidence; do not infer deployed remote state.
+
+## Current local versus shared Dev/Preview topology
+
+The **default** `node tools/dev.mjs` is isolated local Worker/D1 and clears inherited remote/shared-pool environment variables. An **explicitly configured** Dev bridge and hosted Preview can share one `dev-preview` nonproduction Worker/D1/accounts/world with exact origin, pool-marker and separate login checks; this cannot be confused with Production (a distinct Worker/D1/accounts). This document's historic line saying no hosted resources had been changed is a dated implementation checkpoint, **not current live-cloud evidence**. Confirm external deployment state independently before touching any remote backend. [Local DEV](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md), [architecture](../docs/architecture/overview.md).
+
+## Original implementation record (historical)
+
 Owner decision (31 October 2026): Dev and Preview share accounts **and the entire nonproduction world**, including competitions, seasons, calendar, matches and results. Production has its own Worker/D1 and accounts. Each frontend requires a separate sign-in. This is implemented as opt-in code; no hosted resources or live data have been changed.
 
 ## Topology and safety

@@ -1,5 +1,8 @@
 # ARCH-CLEAN-02 — PR-03 Rules Registry (A02)
 
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** A02's approved scope and old SHA describe previous integration; versioned rules/snapshots remain protected source contracts. Use the [current contract](sh-01-sporting-contracts.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
+
 Status: **Draft / HOLD**. Parent: issue #268. Frozen base: `c4d2482c0d32b4e503b7d337f40a1744679a6c49`.
 
 ## Approved six-file perimeter

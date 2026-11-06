@@ -1,4 +1,13 @@
 # ARCH-CLEAN-02 — A03 PR-04A Compatibility Freeze
+
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current routing contract
+
+The authoritative public path identity lives in `assets/routes-registry.js`; `vercel.json` separately owns hosting redirects and rewrites. Domestic details use `/competitions/<id>/<view>`, clubs `/clubs/<country>/<clubId>/<view>`. Root aliases and trailing/index normalization follow the implemented registry/hosting compatibility tests. International cups `int-1` and `int-2` use explicit supported views; **do not invent international Overview** or restore removed `/app` paths. Viewed `season`/round is UI selection, never backend global time. Rules and History have special query/historical constraints. The frozen A03 blob hash, phased PR-04A–04E plan and old HOLD gates below are retained as **historical migration evidence**, not current pending work. [Architecture](overview.md), [Debug/state](../state/sh-03.md), [README](../../README.md).
+
+## Historical implementation audit (retained)
+
 Baseline: `c49e67cc6052ad4ff7d89f37075fb4d287f1b5c8`. Draft/HOLD: no merge, deploy, database, or runtime migration.
 ## Frozen hosting oracle
 `vercel.json` Git blob SHA-1 `b8afd0babb019680223c39be48e659f92aae39a5`, 29 ordered redirects and 7 ordered rewrites. `tests/routes-compatibility.test.mjs` embeds every rule verbatim as JSON and checks byte hash and deep structure, including conditions and ordering.

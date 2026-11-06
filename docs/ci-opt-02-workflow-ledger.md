@@ -1,5 +1,8 @@
 # CI-OPT-02 — workflow cost and verification ledger
 
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** Old CI timings, PR examples and Draft/HOLD statuses are dated experiments, not evidence for current test runs. Use the [current contract](ci/README.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
+
 Status: Draft/HOLD, not yet benchmarked. Owner wants full exact-head CI only at the final acceptance. #170 / PR #329 is separate.
 
 ## Confirmed workflow inventory (main at issue creation)

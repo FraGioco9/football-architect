@@ -1,5 +1,11 @@
 # Football Architect — Cloudflare environments and email activation blueprint
 
+> **Archived status — REPO-04 #358 (2026-11-06).** This document preserves the original proposal/acceptance record; its old status and activation statements do not supersede verified source, merge history or present independent provider checks.
+
+**Historical blueprint / review-only config, not deployed state.** `backend/wrangler.toml` is local-only and now explicitly supports a private local inbox when opted in; the old statement below that every local registration/recovery must fail with no email transport is **not the current local inbox contract**. Example Preview/Production IDs, origins, DNS and email settings are not proof of current hosted resources. No remote provisioning, secret or provider activation is authorized by this document. [DEV](../docs/architecture/dev-env-01-startup.md) and [current security](docs-auth-security-be-05.md).
+
+## Original implementation record (historical)
+
 **Status: DRAFT / HOLD.** These are review-only configuration examples, not active Wrangler files. No Cloudflare account, resource, domain, secret, DNS, email or deployment is created. The current `backend/wrangler.toml` remains **local only** and unchanged.
 
 ## Local

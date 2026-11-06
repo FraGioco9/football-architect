@@ -1,5 +1,13 @@
 # DEV-ENV-01 — Canonical local startup and ownership map (#380)
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Canonical DEV command and boundary (current)
+
+PowerShell from repository root, Node 22: `npm --prefix backend ci` once, then `node tools/dev.mjs`. Local site `http://localhost:2000/`, app `http://app.localhost:2000/dashboard`, local Wrangler Worker/D1 `http://127.0.0.1:8787`. `tools/dev.mjs` explicitly clears inherited shared-pool target variables and uses `backend/wrangler.toml` with `wrangler dev --local`; it never auto-applies migrations, grants permissions, sends real external email or touches remote D1. Use `node tools/dev.mjs --lan <PC-owned-private-IPv4>` only on trusted Wi-Fi for a separate **frontend-only** listener; `/api/*` is blocked for LAN clients. Keep first-run database initialization and owner permission grants separate. [Architecture](overview.md), [local auth](../../backend/docs-player-local-dev.md), [README](../../README.md).
+
+## Historical implementation audit (retained)
+
 ## Decision and boundary
 
 - **One canonical full-stack command:** `node tools/dev.mjs` (from the repository root after `npm --prefix backend ci`; Node 22). It starts the local Wrangler Worker/D1 using `npm run dev --prefix backend` and the existing site/app DEV server using `node tools/dev-app-preview.mjs`. The backend script explicitly uses `wrangler dev --local`.

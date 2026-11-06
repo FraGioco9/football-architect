@@ -1,5 +1,11 @@
 # Gmail sender for hosted Preview — Draft/HOLD
 
+> **Archived status — REPO-04 #358 (2026-11-06).** This document preserves the original proposal/acceptance record; its old status and activation statements do not supersede verified source, merge history or present independent provider checks.
+
+**Historical Preview outbound-email setup record.** The source implements an opted-in Gmail Preview adapter; old "not active yet" / hostname statements are dated deployment snapshots, **not proof of the live provider configuration**. Do not send messages, alter credentials or imply Production delivery reliability from this design. A separately authorized, current-state check is required for actual remote email. [Current security](docs-auth-security-be-05.md).
+
+## Original implementation record (historical)
+
 Owner selected `footballarchitect.notifications@gmail.com` on 1 November 2026. This selects the proposed Gmail sender; it does not authorize any Google account change, credentials upload, deployment, real email, remote D1 write or Admin grant. The published Preview still runs the earlier approved package without this adapter or email activation.
 
 ## Prepared behavior

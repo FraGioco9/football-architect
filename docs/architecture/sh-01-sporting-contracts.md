@@ -1,5 +1,13 @@
 # SH-01 — Canonical sporting identities and boundary audit
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current sporting identities and approval boundary
+
+Eight country identities, 16 domestic divisions and international `int-1` Sovereign / `int-2` Federation cups are canonical; 320 club identities do not imply that all are active domestic participants. `assets/sporting-contract.js` and validated versioned rule definitions govern ID/version semantics; official results, historical rules and participation require approved snapshots/provenance. The sporting/transition calendar covers **56 days**, with distinct terminal receipts; projected Debug fixtures, provisional allocations and URL selections do not become approved sporting facts. The original SH-01 premerge baseline and parity ledger below are preserved as **historical evidence**, not the current Draft/HOLD status. [Architecture](overview.md), [world state](../state/sh-03.md), [lifecycle](../../backend/docs-season-lifecycle-be-04.md).
+
+## Historical implementation audit (retained)
+
 Baseline: main `08c04e7363c19cc227264e0c170760317512cbb5` (squash of SH-03 #373). Draft/HOLD, no merge, deployment or remote D1.
 
 ## Ownership table
