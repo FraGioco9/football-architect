@@ -88,10 +88,11 @@ export function loadPlayerNamePools({
    throw new Error('SURNAMES-01 catalog must use uniform selection');
   validateCountries(catalog.countries,expectedCodes,'SURNAMES-01');
   for(const row of catalog.countries){
-   const full=countryFile(surnameCatalogPath,relative(dirname(surnameCatalogPath),resolve(REPO_ROOT,row.path)),'Surname source');
-   // The catalog stores full repo-relative paths; require the expected nation.
+   // A 439 row has a repository-relative path. Read the nation file relative
+   // to the selected local catalog root (including isolated test fixtures).
    if(row.path!=='data/players/surnames/countries/'+row.code+'.json')
     throw new Error('Surname catalog path mismatch: '+row.code);
+   const full=countryFile(surnameCatalogPath,'countries/'+row.code+'.json','Surname source');
    const bank=readJson(full,'surname bank '+row.code);
    if(row.actual_count!==bank.surnames?.length)
     throw new Error('Surname catalog count mismatch: '+row.code);
