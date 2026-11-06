@@ -31,9 +31,8 @@
       let current=panel.querySelector('[data-competition-skeleton-root]');
       if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
       const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
-      const season=Number(root.document.documentElement.dataset.faDevCurrentSeason??root.faFixturesInitialProgress?.currentSeason??1);
-      if(view==='history'&&root.document.documentElement.dataset.faDevSeasons!==undefined&&
-        (season===0||root.faDebugEnabled===false)){
+      const season=Number((preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??root.faFixturesInitialProgress?.currentSeason??1);
+      if(view==='history'&&preview&&season===0){
         current?.remove();
         panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
         return;
@@ -45,19 +44,19 @@
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
       if(view==='history'&&current?.querySelectorAll){
-        const progress=root.faFixturesInitialProgress||{},season=Number(root.document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
+        const progress=root.faFixturesInitialProgress||{},knownSeason=(preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??progress.currentSeason,season=Number(knownSeason??1);
         const day=root.faDevWorldClockSnapshot?.current?.day??progress.day,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));
         const archive=current.querySelector('.app-history-dev-archive');
         if(archive){
-          if(completed===0){
+          if(completed===0&&knownSeason!==undefined){
             const shell=archive.closest('.app-view-skeleton-history-archive');
             if(shell){
               shell.innerHTML='<p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p>';
               root.faAppRenderLanguage?.();
             }
           }else{
-          const needed=Math.max(1,completed);
+          const needed=knownSeason===undefined?Math.max(4,archive.querySelectorAll('[data-skeleton-archive-row]').length):Math.max(1,completed);
           const sample=archive.querySelector('[data-skeleton-archive-row]');
           // Recreated templates always start with four rows; extend when required.
           // This must run on every loading refresh, not only during first paint.
