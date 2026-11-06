@@ -1,0 +1,1472 @@
+{
+  "schema_version": 2,
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "code": "MAR",
+  "cohort": "male Wikidata biographical subjects with citizenship Morocco and explicit P735 given-name statements; all recorded life years, data snapshot 2026-11-06; NOT national births/residents",
+  "source": {
+    "id": "ma-wikidata-male-citizens-explicit-given-name-p735-2026",
+    "provider": "Wikidata project contributors (CC0), query executed via QLever Wikidata endpoint",
+    "source_url": "https://www.wikidata.org/wiki/Wikidata:Main_Page",
+    "source_query_url": "https://qlever.cs.uni-freiburg.de/api/wikidata",
+    "source_query_sha256": "3198de1e1f603ca42b5db978c427fbe514b470a06c81235fb7f5d845041aa58f",
+    "source_query_sparql": "PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> SELECT ?given (COUNT(DISTINCT ?person) AS ?num) WHERE { ?person wdt:P31 wd:Q5; wdt:P27 wd:Q1028; wdt:P21 wd:Q6581097; wdt:P735 ?given. } GROUP BY ?given ORDER BY DESC(?num) LIMIT 10000",
+    "romanization_equivalence_groups": [
+      [
+        "Mohamed",
+        "Mohammed",
+        "Mohammad",
+        "Muhammad",
+        "Muhammed",
+        "Muhamad",
+        "Mohamad"
+      ],
+      [
+        "Ahmed",
+        "Ahmad",
+        "Achmed"
+      ],
+      [
+        "Hassan",
+        "Hasan",
+        "Hassane"
+      ],
+      [
+        "Ibrahim",
+        "Brahim",
+        "Ebrahim"
+      ],
+      [
+        "Youssef",
+        "Yousef",
+        "Yusuf",
+        "Yousuf",
+        "Yusef",
+        "Youssouf"
+      ],
+      [
+        "Abdallah",
+        "Abdellah",
+        "Abdullah"
+      ],
+      [
+        "Mustapha",
+        "Mustafa",
+        "Moustapha",
+        "Mostafa",
+        "Mostapha"
+      ],
+      [
+        "Omar",
+        "Umar",
+        "Aomar"
+      ],
+      [
+        "Rachid",
+        "Rashid"
+      ],
+      [
+        "Hamza",
+        "Hamzah"
+      ],
+      [
+        "Yassine",
+        "Yassin",
+        "Yacine"
+      ],
+      [
+        "Ali",
+        "Aly"
+      ],
+      [
+        "Zakaria",
+        "Zakariya",
+        "Zakariyyā"
+      ],
+      [
+        "Driss",
+        "Idriss"
+      ],
+      [
+        "Mehdi",
+        "Mahdi"
+      ],
+      [
+        "Abdelatif",
+        "Abdellatif"
+      ],
+      [
+        "Tarik",
+        "Tariq",
+        "Tarek"
+      ],
+      [
+        "Jaouad",
+        "Jawad"
+      ],
+      [
+        "Saeed",
+        "Said"
+      ],
+      [
+        "Younes",
+        "Youness"
+      ],
+      [
+        "Ilyas",
+        "Ilias",
+        "Elias"
+      ],
+      [
+        "Ismail",
+        "Ismael"
+      ],
+      [
+        "Othman",
+        "Othmane",
+        "Otmane"
+      ],
+      [
+        "Ayoub",
+        "Ayub",
+        "Ayyub"
+      ],
+      [
+        "Adil",
+        "Adel"
+      ],
+      [
+        "Ayman",
+        "Aymen",
+        "Aymean"
+      ],
+      [
+        "Azeddine",
+        "Azzedine"
+      ],
+      [
+        "Anwar",
+        "Anouar",
+        "Anuar"
+      ],
+      [
+        "Hicham",
+        "Hisham"
+      ],
+      [
+        "Noureddine",
+        "Nordine",
+        "Nordin"
+      ],
+      [
+        "Jamal",
+        "Jamel"
+      ],
+      [
+        "Mourad",
+        "Morad"
+      ],
+      [
+        "Khalid",
+        "Khaled",
+        "Chalid"
+      ],
+      [
+        "Abderrahmane",
+        "Abderrahman"
+      ],
+      [
+        "Abderrahim",
+        "Abderrahime"
+      ],
+      [
+        "Abderrazak",
+        "Abderrazzak"
+      ],
+      [
+        "Haim",
+        "Chaim"
+      ],
+      [
+        "Aharon",
+        "Aaron"
+      ],
+      [
+        "Abraham",
+        "Avraham"
+      ],
+      [
+        "Aryé",
+        "Arié"
+      ],
+      [
+        "Abbás",
+        "Abbès",
+        "Abbas"
+      ],
+      [
+        "Sami",
+        "Samy"
+      ],
+      [
+        "Soufiane",
+        "Sofiane",
+        "Soufian"
+      ],
+      [
+        "Bachir",
+        "Béchir"
+      ],
+      [
+        "Fouad",
+        "Fuad"
+      ],
+      [
+        "Faouzi",
+        "Fawzi"
+      ],
+      [
+        "Zouhair",
+        "Zuhair"
+      ],
+      [
+        "Alaa",
+        "Alae"
+      ],
+      [
+        "Abdelhafid",
+        "Adelhafid"
+      ],
+      [
+        "Kacem",
+        "Kassem",
+        "Qassem"
+      ]
+    ],
+    "excluded_fragment_and_title_forms": [
+      "abdel",
+      "abu",
+      "ait",
+      "al",
+      "eddine",
+      "mulay"
+    ],
+    "source_query_response_sha256": "b8531f6637b9c664021cb34183a95e704553353d5ce67ecfede9806144e8f89e",
+    "source_english_french_label_responses_sha256": "2073e5238ee0f0ba78d9cd0efa3ec0d8dd4a0b6b218a416b5239e60eeaeeb536",
+    "metric": "COUNT(DISTINCT Wikidata human person QIDs) with P31=human, P21=male, P27=country citizenship, explicit P735=given-name QID; published labels for given-name QID. When equivalent QIDs/romanizations merge, retain the highest actual counted frequency, never sum potentially overlapping counts.",
+    "license": "Wikidata database statements CC0 1.0; original third-party citations/licensing may differ",
+    "sampling_limitations": "Counts cover only Wikidata male biography entries with explicit P735 and nationality; strongly biased toward notable people (especially athletes), not a population census, not newborn first names, all eras; no representativeness claims.",
+    "romanization": "Use published Wikidata French (then English) Latin given-name entity labels for Morocco, with documented diacritic and common romanization-equivalence grouping; exclude non-Latin, compounds, fragment prefixes and honorifics. Never algorithmically transliterate Persian or Arabic. When variants merge, retain the highest true QID count without summing overlapping people.",
+    "record_scope": "Wikidata RDF statements wdt:P31 human, wdt:P27 country, wdt:P21 wd:Q6581097, wdt:P735 given_name, gender-verified person records",
+    "source_retrieved_on": "2026-11-06",
+    "eligible_qid_count": 565,
+    "eligible_single_latin_label_count": 521,
+    "eligible_distinct_name_after_romanization_count": 419
+  },
+  "selection_policy": "Top 300 attested Latin single-token given-name entity labels among source male Moroccan-citizen biographical records by observed distinct-person occurrences, with deduplicated equivalent romanizations and no invented weights; lower-ranked source candidates not selected.",
+  "given_names": [
+    {
+      "value": "Mohamed",
+      "weight": 430
+    },
+    {
+      "value": "Ahmed",
+      "weight": 173
+    },
+    {
+      "value": "Rachid",
+      "weight": 85
+    },
+    {
+      "value": "Driss",
+      "weight": 78
+    },
+    {
+      "value": "Hassan",
+      "weight": 66
+    },
+    {
+      "value": "Omar",
+      "weight": 54
+    },
+    {
+      "value": "Youssef",
+      "weight": 54
+    },
+    {
+      "value": "Mehdi",
+      "weight": 50
+    },
+    {
+      "value": "Ali",
+      "weight": 45
+    },
+    {
+      "value": "Hicham",
+      "weight": 45
+    },
+    {
+      "value": "Mustapha",
+      "weight": 44
+    },
+    {
+      "value": "Abdelaziz",
+      "weight": 41
+    },
+    {
+      "value": "Karim",
+      "weight": 41
+    },
+    {
+      "value": "Khalid",
+      "weight": 41
+    },
+    {
+      "value": "Amine",
+      "weight": 40
+    },
+    {
+      "value": "Aziz",
+      "weight": 38
+    },
+    {
+      "value": "Brahim",
+      "weight": 38
+    },
+    {
+      "value": "Abdullah",
+      "weight": 36
+    },
+    {
+      "value": "Yassine",
+      "weight": 33
+    },
+    {
+      "value": "Abdelkader",
+      "weight": 32
+    },
+    {
+      "value": "Said",
+      "weight": 32
+    },
+    {
+      "value": "Adil",
+      "weight": 30
+    },
+    {
+      "value": "Abdelatif",
+      "weight": 27
+    },
+    {
+      "value": "Abderrahim",
+      "weight": 27
+    },
+    {
+      "value": "Hamza",
+      "weight": 26
+    },
+    {
+      "value": "Noureddine",
+      "weight": 26
+    },
+    {
+      "value": "Zakaria",
+      "weight": 26
+    },
+    {
+      "value": "Abderrahmane",
+      "weight": 25
+    },
+    {
+      "value": "Nabil",
+      "weight": 25
+    },
+    {
+      "value": "Abdelkarim",
+      "weight": 24
+    },
+    {
+      "value": "Fouad",
+      "weight": 23
+    },
+    {
+      "value": "Larbi",
+      "weight": 21
+    },
+    {
+      "value": "Jamal",
+      "weight": 19
+    },
+    {
+      "value": "Mounir",
+      "weight": 19
+    },
+    {
+      "value": "Samir",
+      "weight": 19
+    },
+    {
+      "value": "Soufiane",
+      "weight": 19
+    },
+    {
+      "value": "Hamid",
+      "weight": 18
+    },
+    {
+      "value": "Redouane",
+      "weight": 17
+    },
+    {
+      "value": "Tarik",
+      "weight": 17
+    },
+    {
+      "value": "Bilal",
+      "weight": 16
+    },
+    {
+      "value": "Mourad",
+      "weight": 16
+    },
+    {
+      "value": "Reda",
+      "weight": 16
+    },
+    {
+      "value": "Younes",
+      "weight": 16
+    },
+    {
+      "value": "Achraf",
+      "weight": 14
+    },
+    {
+      "value": "Lahcen",
+      "weight": 14
+    },
+    {
+      "value": "Adam",
+      "weight": 13
+    },
+    {
+      "value": "Jaouad",
+      "weight": 13
+    },
+    {
+      "value": "Abdelhak",
+      "weight": 12
+    },
+    {
+      "value": "Ayoub",
+      "weight": 12
+    },
+    {
+      "value": "David",
+      "weight": 12
+    },
+    {
+      "value": "Farid",
+      "weight": 12
+    },
+    {
+      "value": "Oussama",
+      "weight": 12
+    },
+    {
+      "value": "Abdelilah",
+      "weight": 11
+    },
+    {
+      "value": "Anas",
+      "weight": 11
+    },
+    {
+      "value": "Kamal",
+      "weight": 11
+    },
+    {
+      "value": "Badr",
+      "weight": 10
+    },
+    {
+      "value": "Faouzi",
+      "weight": 10
+    },
+    {
+      "value": "Hakim",
+      "weight": 10
+    },
+    {
+      "value": "Ismail",
+      "weight": 10
+    },
+    {
+      "value": "Ben",
+      "weight": 9
+    },
+    {
+      "value": "Saad",
+      "weight": 9
+    },
+    {
+      "value": "Yahya",
+      "weight": 9
+    },
+    {
+      "value": "Abdelali",
+      "weight": 8
+    },
+    {
+      "value": "Abdelhadi",
+      "weight": 8
+    },
+    {
+      "value": "Issam",
+      "weight": 8
+    },
+    {
+      "value": "Sami",
+      "weight": 8
+    },
+    {
+      "value": "Abdelhamid",
+      "weight": 7
+    },
+    {
+      "value": "Abdelmalek",
+      "weight": 7
+    },
+    {
+      "value": "Abderrazak",
+      "weight": 7
+    },
+    {
+      "value": "Abdulmadschid",
+      "weight": 7
+    },
+    {
+      "value": "Hafid",
+      "weight": 7
+    },
+    {
+      "value": "Ilyas",
+      "weight": 7
+    },
+    {
+      "value": "Khalil",
+      "weight": 7
+    },
+    {
+      "value": "Miloud",
+      "weight": 7
+    },
+    {
+      "value": "Abraham",
+      "weight": 6
+    },
+    {
+      "value": "Hussein",
+      "weight": 6
+    },
+    {
+      "value": "Lotfi",
+      "weight": 6
+    },
+    {
+      "value": "Nizar",
+      "weight": 6
+    },
+    {
+      "value": "Othman",
+      "weight": 6
+    },
+    {
+      "value": "Salah",
+      "weight": 6
+    },
+    {
+      "value": "Abbás",
+      "weight": 5
+    },
+    {
+      "value": "Abdessamad",
+      "weight": 5
+    },
+    {
+      "value": "Ayman",
+      "weight": 5
+    },
+    {
+      "value": "Bachir",
+      "weight": 5
+    },
+    {
+      "value": "Chakib",
+      "weight": 5
+    },
+    {
+      "value": "Giánnis",
+      "weight": 5
+    },
+    {
+      "value": "Imad",
+      "weight": 5
+    },
+    {
+      "value": "Jalal",
+      "weight": 5
+    },
+    {
+      "value": "Moncef",
+      "weight": 5
+    },
+    {
+      "value": "Nassim",
+      "weight": 5
+    },
+    {
+      "value": "Taha",
+      "weight": 5
+    },
+    {
+      "value": "Abdeljalil",
+      "weight": 4
+    },
+    {
+      "value": "Amin",
+      "weight": 4
+    },
+    {
+      "value": "Anis",
+      "weight": 4
+    },
+    {
+      "value": "Anwar",
+      "weight": 4
+    },
+    {
+      "value": "Azzedine",
+      "weight": 4
+    },
+    {
+      "value": "Fayçal",
+      "weight": 4
+    },
+    {
+      "value": "Habib",
+      "weight": 4
+    },
+    {
+      "value": "Haim",
+      "weight": 4
+    },
+    {
+      "value": "Joseph",
+      "weight": 4
+    },
+    {
+      "value": "Marc",
+      "weight": 4
+    },
+    {
+      "value": "Michel",
+      "weight": 4
+    },
+    {
+      "value": "Mohcine",
+      "weight": 4
+    },
+    {
+      "value": "Nacer",
+      "weight": 4
+    },
+    {
+      "value": "Najib",
+      "weight": 4
+    },
+    {
+      "value": "Nasser",
+      "weight": 4
+    },
+    {
+      "value": "Salim",
+      "weight": 4
+    },
+    {
+      "value": "Tahar",
+      "weight": 4
+    },
+    {
+      "value": "Yasser",
+      "weight": 4
+    },
+    {
+      "value": "Abdelhafid",
+      "weight": 3
+    },
+    {
+      "value": "Abdeljabbar",
+      "weight": 3
+    },
+    {
+      "value": "Abdelwahab",
+      "weight": 3
+    },
+    {
+      "value": "Abdeslam",
+      "weight": 3
+    },
+    {
+      "value": "Abdulhamid",
+      "weight": 3
+    },
+    {
+      "value": "Amir",
+      "weight": 3
+    },
+    {
+      "value": "Amram",
+      "weight": 3
+    },
+    {
+      "value": "Anass",
+      "weight": 3
+    },
+    {
+      "value": "Charles",
+      "weight": 3
+    },
+    {
+      "value": "Daoud",
+      "weight": 3
+    },
+    {
+      "value": "Gérard",
+      "weight": 3
+    },
+    {
+      "value": "Houcine",
+      "weight": 3
+    },
+    {
+      "value": "Kacem",
+      "weight": 3
+    },
+    {
+      "value": "Mahmoud",
+      "weight": 3
+    },
+    {
+      "value": "Malik",
+      "weight": 3
+    },
+    {
+      "value": "Marouane",
+      "weight": 3
+    },
+    {
+      "value": "Mimoun",
+      "weight": 3
+    },
+    {
+      "value": "Mokhtar",
+      "weight": 3
+    },
+    {
+      "value": "Moshe",
+      "weight": 3
+    },
+    {
+      "value": "Mouad",
+      "weight": 3
+    },
+    {
+      "value": "Mouloud",
+      "weight": 3
+    },
+    {
+      "value": "Noah",
+      "weight": 3
+    },
+    {
+      "value": "Oualid",
+      "weight": 3
+    },
+    {
+      "value": "Rafik",
+      "weight": 3
+    },
+    {
+      "value": "Rayan",
+      "weight": 3
+    },
+    {
+      "value": "Rayane",
+      "weight": 3
+    },
+    {
+      "value": "Richard",
+      "weight": 3
+    },
+    {
+      "value": "Safouane",
+      "weight": 3
+    },
+    {
+      "value": "Salih",
+      "weight": 3
+    },
+    {
+      "value": "Samuel",
+      "weight": 3
+    },
+    {
+      "value": "Simon",
+      "weight": 3
+    },
+    {
+      "value": "Taïeb",
+      "weight": 3
+    },
+    {
+      "value": "Abdou",
+      "weight": 2
+    },
+    {
+      "value": "André",
+      "weight": 2
+    },
+    {
+      "value": "Aïssa",
+      "weight": 2
+    },
+    {
+      "value": "Benjamin",
+      "weight": 2
+    },
+    {
+      "value": "Bilel",
+      "weight": 2
+    },
+    {
+      "value": "Chouaib",
+      "weight": 2
+    },
+    {
+      "value": "Fadel",
+      "weight": 2
+    },
+    {
+      "value": "Fahd",
+      "weight": 2
+    },
+    {
+      "value": "Fathi",
+      "weight": 2
+    },
+    {
+      "value": "Fethullah",
+      "weight": 2
+    },
+    {
+      "value": "Gabriel",
+      "weight": 2
+    },
+    {
+      "value": "Hamadi",
+      "weight": 2
+    },
+    {
+      "value": "Hamdi",
+      "weight": 2
+    },
+    {
+      "value": "Hamidou",
+      "weight": 2
+    },
+    {
+      "value": "Henry",
+      "weight": 2
+    },
+    {
+      "value": "Hugo",
+      "weight": 2
+    },
+    {
+      "value": "Husayn",
+      "weight": 2
+    },
+    {
+      "value": "Isaac",
+      "weight": 2
+    },
+    {
+      "value": "Israel",
+      "weight": 2
+    },
+    {
+      "value": "Issa",
+      "weight": 2
+    },
+    {
+      "value": "Jacob",
+      "weight": 2
+    },
+    {
+      "value": "Jacques",
+      "weight": 2
+    },
+    {
+      "value": "Jalil",
+      "weight": 2
+    },
+    {
+      "value": "Kamel",
+      "weight": 2
+    },
+    {
+      "value": "Lahoucine",
+      "weight": 2
+    },
+    {
+      "value": "Majid",
+      "weight": 2
+    },
+    {
+      "value": "Michael",
+      "weight": 2
+    },
+    {
+      "value": "Mohand",
+      "weight": 2
+    },
+    {
+      "value": "Mohsen",
+      "weight": 2
+    },
+    {
+      "value": "Moussa",
+      "weight": 2
+    },
+    {
+      "value": "Mufaḍḍal",
+      "weight": 2
+    },
+    {
+      "value": "Nadir",
+      "weight": 2
+    },
+    {
+      "value": "Nicolas",
+      "weight": 2
+    },
+    {
+      "value": "Patrick",
+      "weight": 2
+    },
+    {
+      "value": "Paul",
+      "weight": 2
+    },
+    {
+      "value": "Philippe",
+      "weight": 2
+    },
+    {
+      "value": "Pinchas",
+      "weight": 2
+    },
+    {
+      "value": "Raphaël",
+      "weight": 2
+    },
+    {
+      "value": "René",
+      "weight": 2
+    },
+    {
+      "value": "Sam",
+      "weight": 2
+    },
+    {
+      "value": "Serge",
+      "weight": 2
+    },
+    {
+      "value": "Shalom",
+      "weight": 2
+    },
+    {
+      "value": "Shlomo",
+      "weight": 2
+    },
+    {
+      "value": "Simo",
+      "weight": 2
+    },
+    {
+      "value": "Suleiman",
+      "weight": 2
+    },
+    {
+      "value": "Toufic",
+      "weight": 2
+    },
+    {
+      "value": "Walid",
+      "weight": 2
+    },
+    {
+      "value": "Yaakov",
+      "weight": 2
+    },
+    {
+      "value": "Zaid",
+      "weight": 2
+    },
+    {
+      "value": "Zinedine",
+      "weight": 2
+    },
+    {
+      "value": "Zouhair",
+      "weight": 2
+    },
+    {
+      "value": "Aaron",
+      "weight": 1
+    },
+    {
+      "value": "Abdelahad",
+      "weight": 1
+    },
+    {
+      "value": "Abdeljelil",
+      "weight": 1
+    },
+    {
+      "value": "Abdelkhalek",
+      "weight": 1
+    },
+    {
+      "value": "Abdulbasit",
+      "weight": 1
+    },
+    {
+      "value": "Abid",
+      "weight": 1
+    },
+    {
+      "value": "Adama",
+      "weight": 1
+    },
+    {
+      "value": "Addi",
+      "weight": 1
+    },
+    {
+      "value": "Adnan",
+      "weight": 1
+    },
+    {
+      "value": "Adnane",
+      "weight": 1
+    },
+    {
+      "value": "Adrien",
+      "weight": 1
+    },
+    {
+      "value": "Akram",
+      "weight": 1
+    },
+    {
+      "value": "Alaa",
+      "weight": 1
+    },
+    {
+      "value": "Albert",
+      "weight": 1
+    },
+    {
+      "value": "Aldo",
+      "weight": 1
+    },
+    {
+      "value": "Alexandre",
+      "weight": 1
+    },
+    {
+      "value": "Allal",
+      "weight": 1
+    },
+    {
+      "value": "Amal",
+      "weight": 1
+    },
+    {
+      "value": "Amar",
+      "weight": 1
+    },
+    {
+      "value": "Amer",
+      "weight": 1
+    },
+    {
+      "value": "Amjhad",
+      "weight": 1
+    },
+    {
+      "value": "Ariel",
+      "weight": 1
+    },
+    {
+      "value": "Arié",
+      "weight": 1
+    },
+    {
+      "value": "Armand",
+      "weight": 1
+    },
+    {
+      "value": "Assaad",
+      "weight": 1
+    },
+    {
+      "value": "Auguste",
+      "weight": 1
+    },
+    {
+      "value": "Ayad",
+      "weight": 1
+    },
+    {
+      "value": "Baba",
+      "weight": 1
+    },
+    {
+      "value": "Badou",
+      "weight": 1
+    },
+    {
+      "value": "Bakir",
+      "weight": 1
+    },
+    {
+      "value": "Belaïd",
+      "weight": 1
+    },
+    {
+      "value": "Belkassem",
+      "weight": 1
+    },
+    {
+      "value": "Benaissa",
+      "weight": 1
+    },
+    {
+      "value": "Bernard",
+      "weight": 1
+    },
+    {
+      "value": "Boubakr",
+      "weight": 1
+    },
+    {
+      "value": "Bruno",
+      "weight": 1
+    },
+    {
+      "value": "Camil",
+      "weight": 1
+    },
+    {
+      "value": "Carlos",
+      "weight": 1
+    },
+    {
+      "value": "Chadi",
+      "weight": 1
+    },
+    {
+      "value": "Chakir",
+      "weight": 1
+    },
+    {
+      "value": "Charlemagne",
+      "weight": 1
+    },
+    {
+      "value": "Charlie",
+      "weight": 1
+    },
+    {
+      "value": "Charly",
+      "weight": 1
+    },
+    {
+      "value": "Chawqi",
+      "weight": 1
+    },
+    {
+      "value": "Cherqui",
+      "weight": 1
+    },
+    {
+      "value": "Christopher",
+      "weight": 1
+    },
+    {
+      "value": "Chérif",
+      "weight": 1
+    },
+    {
+      "value": "Daniel",
+      "weight": 1
+    },
+    {
+      "value": "Diego",
+      "weight": 1
+    },
+    {
+      "value": "Djelloul",
+      "weight": 1
+    },
+    {
+      "value": "Edan",
+      "weight": 1
+    },
+    {
+      "value": "Edmond",
+      "weight": 1
+    },
+    {
+      "value": "Edouard",
+      "weight": 1
+    },
+    {
+      "value": "El",
+      "weight": 1
+    },
+    {
+      "value": "Eleazar",
+      "weight": 1
+    },
+    {
+      "value": "Eliesse",
+      "weight": 1
+    },
+    {
+      "value": "Eliezer",
+      "weight": 1
+    },
+    {
+      "value": "Elyes",
+      "weight": 1
+    },
+    {
+      "value": "Elyess",
+      "weight": 1
+    },
+    {
+      "value": "Emilian",
+      "weight": 1
+    },
+    {
+      "value": "Enzo",
+      "weight": 1
+    },
+    {
+      "value": "Eugen",
+      "weight": 1
+    },
+    {
+      "value": "Faissal",
+      "weight": 1
+    },
+    {
+      "value": "Farouk",
+      "weight": 1
+    },
+    {
+      "value": "Faysal",
+      "weight": 1
+    },
+    {
+      "value": "Fikri",
+      "weight": 1
+    },
+    {
+      "value": "Gad",
+      "weight": 1
+    },
+    {
+      "value": "Garry",
+      "weight": 1
+    },
+    {
+      "value": "Germain",
+      "weight": 1
+    },
+    {
+      "value": "Hadi",
+      "weight": 1
+    },
+    {
+      "value": "Halim",
+      "weight": 1
+    },
+    {
+      "value": "Hamed",
+      "weight": 1
+    },
+    {
+      "value": "Hammad",
+      "weight": 1
+    },
+    {
+      "value": "Hammadi",
+      "weight": 1
+    },
+    {
+      "value": "Hatem",
+      "weight": 1
+    },
+    {
+      "value": "Hedi",
+      "weight": 1
+    },
+    {
+      "value": "Heliodoro",
+      "weight": 1
+    },
+    {
+      "value": "Henri",
+      "weight": 1
+    },
+    {
+      "value": "Hocine",
+      "weight": 1
+    },
+    {
+      "value": "Hossam",
+      "weight": 1
+    },
+    {
+      "value": "Houmani",
+      "weight": 1
+    },
+    {
+      "value": "Houssam",
+      "weight": 1
+    },
+    {
+      "value": "Idris",
+      "weight": 1
+    },
+    {
+      "value": "Ihab",
+      "weight": 1
+    },
+    {
+      "value": "Ilyes",
+      "weight": 1
+    },
+    {
+      "value": "Imran",
+      "weight": 1
+    },
+    {
+      "value": "Isaak",
+      "weight": 1
+    },
+    {
+      "value": "Izzedine",
+      "weight": 1
+    },
+    {
+      "value": "Jack",
+      "weight": 1
+    },
+    {
+      "value": "Jaime",
+      "weight": 1
+    },
+    {
+      "value": "Jamaâ",
+      "weight": 1
+    },
+    {
+      "value": "Jamil",
+      "weight": 1
+    },
+    {
+      "value": "Jasin",
+      "weight": 1
+    },
+    {
+      "value": "Jean",
+      "weight": 1
+    },
+    {
+      "value": "John",
+      "weight": 1
+    },
+    {
+      "value": "Jonas",
+      "weight": 1
+    },
+    {
+      "value": "Jones",
+      "weight": 1
+    },
+    {
+      "value": "Joshua",
+      "weight": 1
+    },
+    {
+      "value": "Juan",
+      "weight": 1
+    },
+    {
+      "value": "Juda",
+      "weight": 1
+    },
+    {
+      "value": "Julian",
+      "weight": 1
+    },
+    {
+      "value": "Julien",
+      "weight": 1
+    },
+    {
+      "value": "Junior",
+      "weight": 1
+    },
+    {
+      "value": "Junis",
+      "weight": 1
+    },
+    {
+      "value": "Jusuf",
+      "weight": 1
+    },
+    {
+      "value": "Kaddour",
+      "weight": 1
+    },
+    {
+      "value": "Kader",
+      "weight": 1
+    },
+    {
+      "value": "Kevin",
+      "weight": 1
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "collection_status": "collected_300"
+}

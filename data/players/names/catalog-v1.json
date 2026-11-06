@@ -194,6 +194,30 @@
       "id": "cl-registro-civil-male-birth-names-2000-2021-guaguas",
       "external_file": "countries/CHI.json",
       "description": "Chile Registro Civil registered male first names at birth, 2000–2021"
+    },
+    {
+      "code": "MAR",
+      "id": "ma-wikidata-male-citizens-explicit-given-name-p735-2026",
+      "external_file": "countries/MAR.json",
+      "description": "Wikidata male Moroccan citizen biographies (P31 human, P21 male, P27 Morocco, P735 given-name), 2026 research snapshot; not national births or residents"
+    },
+    {
+      "code": "ALG",
+      "id": "dz-aldjia-algerian-male-first-name-registry",
+      "external_file": "countries/ALG.json",
+      "description": "Aldjia Algerian male first-name administrative/student corpus; observed first-name field rows across generations, not national births"
+    },
+    {
+      "code": "EGY",
+      "id": "eg-afify-male-given-token-frequency",
+      "external_file": "countries/EGY.json",
+      "description": "Afify Egyptian male given-name lexicon plus historical/contemporary patronymic name-chain token occurrences; not registered births"
+    },
+    {
+      "code": "IRN",
+      "id": "ir-wikidata-male-citizens-explicit-given-name-p735-2026",
+      "external_file": "countries/IRN.json",
+      "description": "Wikidata male Iranian citizen biographies (P31 human, P21 male, P27 Iran, P735 given-name), 2026 research snapshot; not national births or residents"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -207,7 +231,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 9600,
+    "current_collected_given_names": 10800,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -306,11 +330,16 @@
       "rank": 7,
       "label": "Morocco",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ma-wikidata-male-citizens-explicit-given-name-p735-2026"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/MAR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "BEL",
@@ -547,11 +576,16 @@
       "rank": 23,
       "label": "Iran",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ir-wikidata-male-citizens-explicit-given-name-p735-2026"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/IRN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "ECU",
@@ -574,11 +608,16 @@
       "rank": 25,
       "label": "Egypt",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "eg-afify-male-given-token-frequency"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/EGY.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "AUS",
@@ -612,11 +651,16 @@
       "rank": 28,
       "label": "Algeria",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "dz-aldjia-algerian-male-first-name-registry"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/ALG.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "CIV",
