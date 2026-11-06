@@ -195,6 +195,87 @@ try {
    checks++;
   }finally{release();await page.unroute('**/competitions/_shared/manifest.json',blocked);await page.close()}
  }
+
+ // PAGE-LOAD-03C: cold Rules and deferred-view shells before the shared manifest.
+ // These are focused P06-P13 subchecks, not complete six-axis acceptance.
+ for(const [slug,view,width,lang] of [
+  ['it-1','rules',390,'it'],['it-2','awards',320,'en'],
+  ['de-1','stats',1440,'de'],['nl-2','history',390,'fr'],
+  ['int-1','rules',768,'es'],['int-2','awards',390,'it'],
+  ['int-1','history',320,'en']
+ ]){
+  const page=await browser.newPage({viewport:{width,height:900}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(language=>localStorage.setItem('football-architect:language',language),lang);
+  let release;const gate=new Promise(resolve=>release=resolve);
+  const intercepted=async route=>{await gate;try{await route.continue()}catch{}};
+  await page.route('**/competitions/_shared/manifest.json',intercepted);
+  const path='/competitions/'+slug+'/'+view+'?season=1';
+  try{
+   const response=await page.goto(base+path,{waitUntil:'domcontentloaded'});
+   assert.equal(response?.status(),200,path);
+   await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='true');
+   const initial=await page.evaluate(view=>{
+    const visible=node=>!!node&&!node.hidden&&node.getClientRects().length>0&&getComputedStyle(node).visibility!=='hidden'&&getComputedStyle(node).display!=='none';
+    const header=document.querySelector('.app-competition-header'),tabs=document.querySelector('.app-competition-tabs');
+    const season=document.getElementById('app-competition-season'),panel=document.getElementById('competition-panel-'+view);
+    window.__fa03cNodes={header,tabs,season,panel};
+    const shell=panel?.querySelector('[data-competition-skeleton-root]'),rules=panel?.querySelector('.app-rules-content');
+    return {title:document.getElementById('division-detail-name')?.textContent?.trim(),
+      header:visible(header),tabs:tabs?.querySelectorAll('[role=tab]').length,
+      active:[...tabs.querySelectorAll('[aria-selected="true"]')].map(n=>n.id),
+      panel:visible(panel),season:!!season,context:!!window.faCompetitionContext,
+      rules:!!rules&&rules.querySelectorAll('.app-rules-section').length>0,
+      skeleton:!!shell&&visible(shell)&&shell.querySelectorAll('.app-skeleton-bar').length>0,
+      route:document.documentElement.dataset.competitionView===view};
+   },view);
+   assert.ok(initial.title,'known competition title before manifest '+path);
+   assert.equal(initial.header,true,'static header '+path);
+   assert.equal(initial.tabs,7,'seven native tabs '+path);
+   assert.deepEqual(initial.active,['competition-tab-'+view],'correct parser-time selection '+path);
+   assert.equal(initial.panel,true,'visible selected panel '+path);
+   assert.equal(initial.season,true,'permanent season selector '+path);
+   assert.equal(initial.context,false,'manifest truly intercepted '+path);
+   assert.equal(initial.route,true,'route view set before provider '+path);
+   if(view==='rules')assert.equal(initial.rules,true,'full static Rules before manifest '+path);
+   else assert.equal(initial.skeleton,true,'reserved layout instead of blank view '+path);
+   release();
+   await page.waitForFunction(slug=>window.faCompetitionContext?.definition?.id?.toLowerCase()===slug&&!!window.faCompetitionRoute?.get,slug);
+   const hydrated=await page.evaluate(view=>({
+    header:window.__fa03cNodes.header===document.querySelector('.app-competition-header'),
+    tabs:window.__fa03cNodes.tabs===document.querySelector('.app-competition-tabs'),
+    season:window.__fa03cNodes.season===document.getElementById('app-competition-season'),
+    panel:window.__fa03cNodes.panel===document.getElementById('competition-panel-'+view),
+    selected:document.getElementById('competition-tab-'+view)?.getAttribute('aria-selected'),
+    rules:view!=='rules'||document.querySelector('#competition-panel-rules [data-rule-definition]')!==null
+   }),view);
+   assert.deepEqual(hydrated,{header:true,tabs:true,season:true,panel:true,selected:'true',rules:true},'permanent DOM survives hydration '+path);
+   assert.deepEqual(errors,[],'no first-paint exceptions '+path);
+   console.log('PAGE-LOAD-03C PREPAINT '+JSON.stringify({slug,view,width,lang,fullStaticRules:initial.rules,reservedView:initial.skeleton}));
+   checks++;
+  }finally{release();await page.unroute('**/competitions/_shared/manifest.json',intercepted);await page.close()}
+ }
+ // Confirmed failure may show a localized error, not destroy Rules or tabs.
+ for(const view of ['rules','history']){
+  const page=await browser.newPage({viewport:{width:390,height:900}});
+  const failure=route=>route.fulfill({status:503,contentType:'application/json',body:'{}'});
+  await page.route('**/competitions/_shared/manifest.json',failure);
+  const path='/competitions/it-1/'+view+'?season=1';
+  try{
+   await page.goto(base+path,{waitUntil:'domcontentloaded'});
+   await page.locator('[data-competition-load-error] [role=alert]').waitFor();
+   assert.equal(await page.locator('.app-competition-tabs [role=tab]').count(),7,'failed manifest retains seven tabs '+path);
+   assert.equal(await page.locator('#competition-tab-'+view).getAttribute('aria-selected'),'true','failed manifest retains active tab '+path);
+   assert.equal(await page.locator('#competition-panel-'+view).count(),1,'failed manifest retains selected panel '+path);
+   if(view==='rules')assert.ok(await page.locator('#competition-panel-rules [data-rule-definition]').count()>0,'canonical Rules survive manifest failure');
+   await page.unroute('**/competitions/_shared/manifest.json',failure);
+   await page.reload({waitUntil:'networkidle'});
+   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
+   assert.equal(await page.locator('[data-competition-load-error]').count(),0,'hard refresh recovers '+path);
+   checks++;
+  }finally{await page.unroute('**/competitions/_shared/manifest.json',failure);await page.close()}
+ }
+
  // Manifest 503 and invalid JSON must retain permanent identity/navigation and
  // display an honest confirmed error; a hard refresh with a valid manifest recovers.
  for(const [kind,status,body] of [['503',503,'{}'],['invalid-json',200,'invalid json']]){

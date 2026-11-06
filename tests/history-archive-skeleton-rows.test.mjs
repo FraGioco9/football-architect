@@ -18,7 +18,7 @@ function fakeArchive(){
 for(const [season,completed,expected] of [[2,1,1],[3,2,2],[4,3,3],[6,5,5],[7,6,6]]){
  test('archive loading rows match '+completed+' completed seasons',()=>{
   const archive=fakeArchive(),current={querySelector(){return archive}};
-  runInNewContext('const current=ctx.current,completed=ctx.completed;'+resize,{ctx:{current,completed}});
+  runInNewContext('const current=ctx.current,completed=ctx.completed,knownSeason=ctx.knownSeason;'+resize,{ctx:{current,completed,knownSeason:completed+1}});
   assert.equal(archive.rows.filter(row=>!row.hidden).length,expected);
   assert.equal(archive.rows.length,Math.max(4,completed));
   assert.deepEqual(archive.rows.map(row=>Number(row.dataset.skeletonArchiveRow)),Array.from({length:archive.rows.length},(_,i)=>i));
@@ -26,19 +26,27 @@ for(const [season,completed,expected] of [[2,1,1],[3,2,2],[4,3,3],[6,5,5],[7,6,6
 }
 test('archive loading rows contract after a later season regression',()=>{
  const archive=fakeArchive(),current={querySelector(){return archive}};
- const reconcile=completed=>runInNewContext('const current=ctx.current,completed=ctx.completed;'+resize,{ctx:{current,completed}});
+ const reconcile=completed=>runInNewContext('const current=ctx.current,completed=ctx.completed,knownSeason=ctx.knownSeason;'+resize,{ctx:{current,completed,knownSeason:completed+1}});
  reconcile(5);reconcile(2);
  assert.equal(archive.rows.length,5);
  assert.equal(archive.rows.filter(row=>!row.hidden).length,2);
 });
 
+test('unresolved public season preserves four archive slots instead of confirming empty',()=>{
+ const archive=fakeArchive(),current={querySelector(){return archive}};
+ runInNewContext('const current=ctx.current,completed=ctx.completed,knownSeason=undefined;'+resize,{ctx:{current,completed:0}});
+ assert.equal(archive.rows.length,4);
+ assert.equal(archive.rows.filter(row=>!row.hidden).length,4);
+});
+
 test('Season 0 uses the empty archive message instead of fabricated podium rows',()=>{
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
  const firstPaint=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
- assert.match(loading,/season=Number\(root\.document\.documentElement\.dataset\.faDevCurrentSeason\?\?progress\.currentSeason\?\?1\)/);
- assert.match(loading,/if\(completed===0\)/);
+ assert.match(loading,/knownSeason=\(preview\?/);
+ assert.match(loading,/season=Number\(knownSeason\?\?1\)/);
+ assert.match(loading,/if\(completed===0&&knownSeason!==undefined\)/);
  assert.match(firstPaint,/const completed=Math\.max\(0,/);
- assert.match(firstPaint,/if\(completed===0\)/);
+ assert.match(firstPaint,/if\(completed===0&&knownSeason!==undefined\)/);
  assert.match(firstPaint,/competitionHistoryEmpty/);
 });
 
@@ -49,7 +57,7 @@ test('Season 0 uses the DEV archive shell rather than published Hall of Champion
  assert.match(loading,/history-preview/);
  assert.doesNotMatch(loading,/view==='history'&&preview&&season===0\)\{current\?\.remove\(\)/);
  assert.match(firstPaint,/if\(template&&skeleton\)skeleton\.replaceWith\(template\.content\.cloneNode\(true\)\)/);
- assert.match(firstPaint,/if\(completed===0\)/);
+ assert.match(firstPaint,/if\(completed===0&&knownSeason!==undefined\)/);
 });
 
 test('Static Season 0 History uses the same archive wrapper and panel spacing as other seasons',()=>{
