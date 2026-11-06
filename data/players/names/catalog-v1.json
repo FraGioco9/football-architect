@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-21-country",
-  "state": "21_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-25-country",
+  "state": "25_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -128,6 +128,30 @@
       "id": "ru-sorokinpf-russian-male-names-pinned",
       "external_file": "countries/RUS.json",
       "description": "Pinned Russian male-name occurrence dataset; original Cyrillic romanized in Latin with simplified BGN/PCGN; third-party records, not official birth frequencies"
+    },
+    {
+      "code": "URU",
+      "id": "uy-montevideo-registered-birth-male-names-1940-2012",
+      "external_file": "countries/URU.json",
+      "description": "Montevideo male birth registrations 1940–2012, regional historical counts; Damegender official-civil-registry mirror"
+    },
+    {
+      "code": "PAR",
+      "id": "py-damegender-wikidata-male-given-name-sample",
+      "external_file": "countries/PAR.json",
+      "description": "Paraguay Wikidata male biography sample name counts; not representative national births/residents"
+    },
+    {
+      "code": "ECU",
+      "id": "ec-damegender-wikidata-male-given-name-sample",
+      "external_file": "countries/ECU.json",
+      "description": "Ecuador Wikidata male biography sample name counts; not representative national births/residents"
+    },
+    {
+      "code": "VEN",
+      "id": "ve-damegender-wikidata-male-given-name-sample",
+      "external_file": "countries/VEN.json",
+      "description": "Venezuela Wikidata male biography sample name counts; not representative national births/residents"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -141,7 +165,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 6300,
+    "current_collected_given_names": 7500,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -418,11 +442,16 @@
       "rank": 20,
       "label": "Uruguay",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "uy-montevideo-registered-birth-male-names-1940-2012"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/URU.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "DEN",
@@ -472,11 +501,16 @@
       "rank": 24,
       "label": "Ecuador",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ec-damegender-wikidata-male-given-name-sample"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/ECU.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "EGY",
@@ -576,11 +610,16 @@
       "rank": 33,
       "label": "Paraguay",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "py-damegender-wikidata-male-given-name-sample"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/PAR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "SWE",
@@ -782,11 +821,16 @@
       "rank": 49,
       "label": "Venezuela",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ve-damegender-wikidata-male-given-name-sample"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/VEN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "CHI",

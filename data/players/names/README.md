@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**6,300 / 15,000** single first-name slots saved in **21 / 50 countries**. **29 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**7,500 / 15,000** single first-name slots saved in **25 / 50 countries**. **25 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -32,6 +32,10 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Serbia (SRB) | `countries/SRB.json` | 300 | Forebears, male first-name bearer **incidence estimates**, Latin-script source names |
 | Hungary (HUN) | `countries/HUN.json` | 300 | Forebears, male first-name bearer **incidence estimates**; published official annual top 100 insufficient |
 | Russia (RUS) | `countries/RUS.json` | 300 | Pinned Russian male-name frequency wordlist, source Cyrillic converted to Latin; unofficial occurrences |
+| Uruguay (URU) | `countries/URU.json` | 300 | Montevideo registered male births, 1940–2012 (**regional, not national**) |
+| Paraguay (PAR) | `countries/PAR.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
+| Ecuador (ECU) | `countries/ECU.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
+| Venezuela (VEN) | `countries/VEN.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
 
 ### Source integrity, scope and limitations
 
@@ -74,8 +78,15 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **Preservation:** The 17 pre-existing national JSON files, their given names and source weights are unchanged by this integration. The four transferred name/weight arrays are identical to those in Batch F PR #416; schema-only metadata (`origin_review`, `surnames:[]`, `production_ready:false`) is added to align with catalog contracts.
 - **Unicode policy:** For **all countries** (not just non-Latin source countries), `given_names[].value` must have Unicode NFC and exclusively `Script=Latin` base letters plus Latin-compatible `Script_Extensions=Latin` combining marks. Reject Cyrillic/Greek/Arabic/Japanese/Korean characters, mixed scripts, spaces, apostrophes, hyphens, surnames and multiple-token given names. Romanization must be documented, with source counts retained and duplicates resolved.
 
+**Batch J (PR #421 → #407; URU/PAR/ECU/VEN):**
+- **URU:** Montevideo civil birth registry male-coded first names **1940–2012**, a **regional historical** dataset, not national births nor a 2000+ birth cohort. [Source portal](https://catalogodatos.gub.uy/dataset/partidas-de-registro-civil-de-montevideo); [Damegender mirror](https://github.com/davidam/damegender/blob/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_uy/uymales.csv), blob `5e9a37896be5e4e96fe263eba89fd8be165d8856`. 300 male single names chosen from 13,264 eligible entries. Compound rows excluded; ambiguous male-coded `MARIA` excluded; no invented or redistributed counts.
+- **PAR:** [Wikidata/Damegender Paraguay male biographies](https://github.com/davidam/damegender/blob/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_py/pymales.csv), blob `4d085b8ea56a90e1eddb1fee43eebfdadc509451`. 300 of 436 unique eligible single names. Weights are **biographical-sample occurrence counts**, not national birth or resident frequencies.
+- **ECU:** [Wikidata/Damegender Ecuador male biographies](https://github.com/davidam/damegender/blob/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_ec/ecmales.csv), blob `3a35c429bcc40039d097bfee23223896bb91a1d2`. 300 of 477 eligible unique single names; exact repeated labels deduplicated without summing. Weights are **biographical-sample occurrence counts**, not national birth or resident frequencies.
+- **VEN:** [Wikidata/Damegender Venezuela male biographies](https://github.com/davidam/damegender/blob/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_ve/vemales.csv), blob `46c389a636e54ab89612f5ad4da899f490b05ee0`. 300 of 770 eligible single names; weights are **biographical-sample occurrence counts**, not national birth or resident frequencies.
+- **Source caveat:** Damegender warns that its Wikidata-derived frequencies are exploratory and **not representative population statistics**. PAR/ECU/VEN cannot be considered frequency-calibrated national pools without replacement with reliable population data. Source data were not invented or inflated. Source Git blobs are pinned in country JSON; upstream Wikidata CC0 / Damegender GPL-3.0 mirroring obligations and Uruguay open-data reuse terms require review before commercial redistribution. Four country files remain `production_ready:false`; no generator/DB changes. Independent Batch J PR #421 remains Draft/HOLD and is not merged to main.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 29 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 25 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

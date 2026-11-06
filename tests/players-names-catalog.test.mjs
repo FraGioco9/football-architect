@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -40,22 +40,26 @@ const sourceIds={
  CRO:'forebears-croatia-male-forenames-incidence',
  SRB:'forebears-serbia-male-forenames-incidence',
  HUN:'forebears-hungary-male-forenames-incidence',
- RUS:'ru-sorokinpf-russian-male-names-pinned'
+ RUS:'ru-sorokinpf-russian-male-names-pinned',
+ URU:'uy-montevideo-registered-birth-male-names-1940-2012',
+ PAR:'py-damegender-wikidata-male-given-name-sample',
+ ECU:'ec-damegender-wikidata-male-given-name-sample',
+ VEN:'ve-damegender-wikidata-male-given-name-sample'
 };
 
-test('frozen 50 FIFA codes, exactly 21 saved banks of 300 and 29 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 25 saved banks of 300 and 25 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,6300);
+ assert.equal(master.policy.current_collected_given_names,7500);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,21);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,29);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,25);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,25);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -71,7 +75,7 @@ test('frozen 50 FIFA codes, exactly 21 saved banks of 300 and 29 empty banks',()
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,21);
+ assert.equal(new Set(ids).size,25);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -79,7 +83,7 @@ test('frozen 50 FIFA codes, exactly 21 saved banks of 300 and 29 empty banks',()
  }
 });
 
-test('each of 21 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 25 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -166,4 +170,24 @@ test('known formerly invalid compound forms cannot return; accents and unrestric
  assert.equal(banks.DEN.source.upstream_source_blob_sha,'5a9bf5624a13e77bef9ffad5cd25566ed7190e97');
  assert.equal(banks.NOR.source.upstream_source_blob_sha,'a017d7db55d8870d9b764e623aa81ebdfd4304f1');
  assert.equal(banks.SWE.source.upstream_source_blob_sha,'b5538dee93afc1e0e0d1901f17dfe3258162a5f2');
+});
+
+test('Batch J country records preserve source identity and research-only limitations',()=>{
+ const originalBlobs={URU:'5e9a37896be5e4e96fe263eba89fd8be165d8856',PAR:'4d085b8ea56a90e1eddb1fee43eebfdadc509451',ECU:'3a35c429bcc40039d097bfee23223896bb91a1d2',VEN:'46c389a636e54ab89612f5ad4da899f490b05ee0'};
+ for(const code of ['URU','PAR','ECU','VEN']){
+  const bank=banks[code];
+  assert.equal(bank.source.upstream_commit,'65ee149ce9da0be2c388b7c3ea62f79709e5336b');
+  assert.equal(bank.source.upstream_blob_sha,originalBlobs[code]);
+  assert.ok(bank.source.source_mirror_url.includes('65ee149c'));
+  assert.equal(bank.given_names.length,300);
+  assert.equal(bank.production_ready,false);
+ }
+ assert.match(banks.URU.source.metric,/1940-2012/);
+ assert.match(banks.URU.source.geographic_scope,/Montevideo/);
+ assert.ok(!banks.URU.given_names.some(x=>x.value.toLowerCase()==='maria'));
+ for(const code of ['PAR','ECU','VEN']){
+  assert.match(banks[code].source.metric,/not population or births/);
+  assert.match(banks[code].source.quality_warning,/not be trusted as representative statistics/);
+  assert.match(banks[code].cohort,/biographical sample/);
+ }
 });
