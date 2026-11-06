@@ -1,12 +1,12 @@
 # PLAYERS-03 — Male first-name banks
 
-**Active rule:** Collect **300 distinct single male given names** for each of Football Architect's 50 trial FIFA nationalities. A first name is a single Unicode word made from letters/combining marks: **no spaces, apostrophes, hyphens, punctuation or compound names**. Accents are allowed. The name's etymological/national origin is **not restricted**; resident or birth records with a male classification are valid input.
+**Active rule:** Collect **300 distinct single male given names** for each of Football Architect's 50 trial FIFA nationalities. A first name contains **only Unicode NFC Latin-script letters and their Latin-compatible combining marks** (not a generic `\\p{L}` expression): **no spaces, apostrophes, hyphens, punctuation or compound names**. Accents are allowed. The name's etymological/national origin is **not restricted**; resident or birth records with a male classification are valid input.
 
 All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_count }` objects. Counts are **from real sources**, never invented or padded. Weights are meaningful *within* the corresponding source population, not numerically comparable across countries. The file includes provenance. **No surnames**, second-nationality name selection, persistent player writes or runtime name-sampler integration are added.
 
 ## Collection progress
 
-**5,100 / 15,000** single first-name slots saved in **17 / 50 countries**. **33 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**6,300 / 15,000** single first-name slots saved in **21 / 50 countries**. **29 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -28,6 +28,10 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Denmark (DEN) | `countries/DEN.json` | 300 | Statistics Denmark **male residents**, undated archival snapshot; **not births** |
 | Norway (NOR) | `countries/NOR.json` | 300 | Statistics Norway SSB **male residents**, 2021 archive; **not births** |
 | Sweden (SWE) | `countries/SWE.json` | 300 | Statistics Sweden SCB male newborn usual first names, **2000–2020**; published counts only |
+| Croatia (CRO) | `countries/CRO.json` | 300 | Forebears, male first-name bearer **incidence estimates**, all ages; not official birth/census counts |
+| Serbia (SRB) | `countries/SRB.json` | 300 | Forebears, male first-name bearer **incidence estimates**, Latin-script source names |
+| Hungary (HUN) | `countries/HUN.json` | 300 | Forebears, male first-name bearer **incidence estimates**; published official annual top 100 insufficient |
+| Russia (RUS) | `countries/RUS.json` | 300 | Pinned Russian male-name frequency wordlist, source Cyrillic converted to Latin; unofficial occurrences |
 
 ### Source integrity, scope and limitations
 
@@ -62,8 +66,16 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **SWE:** [Statistics Sweden SCB boys' usual birth names](https://www.scb.se/en/finding-statistics/statistics-by-subject-area/population/general-statistics/name-statistics/pong/tables-and-graphs/newborn--given-names-alphabetical-overview/boys-names/), summed published annual male registrations **2000–2020** in [SCB archived csv](https://github.com/davidam/damegender/blob/master/src/damegender/files/names/names_se/be0001namntab12-2020.csv), blob `b5538dee93afc1e0e0d1901f17dfe3258162a5f2`. Suppressed counts for individual years (under ten) **omitted**, not guessed or zero-filled; sums are **lower bounds**.
 - All **1,200** names and observed weights were transferred unchanged from independent [Draft PR #415](https://github.com/FraGioco9/football-architect/pull/415). Only schema metadata `origin_review`, `surnames:[]`, `production_ready:false` added to align with the #407 tests. Counts are country-specific and incomparable across statistical populations. **No generation, database or API changes.**
 
+**Batch F (PR #416, CRO/SRB/HUN/RUS; integrated into #407):**
+- **CRO:** [Forebears Croatia forenames](https://forebears.io/croatia/forenames), 300 source-published male-name **incidence estimates**, filtered to at least 95% male according to source gender estimates. Croatian Latin diacritics preserved; accent spelling equivalents deduplicated. Estimates are **not official census or birth registration counts**; source redistribution license is unverified.
+- **SRB:** [Forebears Serbia forenames](https://forebears.io/serbia/forenames), 300 published male-name **incidence estimates**, gender at least 95% male according to source. Values use the Latin source spellings; accents and diacritic/no-diacritic variants (including đ/dj) screened for duplicate values. These are **not official counts**; source redistribution license is unverified.
+- **HUN:** [Forebears Hungary forenames](https://forebears.io/hungary/forenames), 300 male forenames with source-published **incidence estimates**, all ages. Native diacritics retained where reported, without inventing accent corrections. Hungarian government official 2010–2025 annual top-100 male births yield only 139 distinct first names, too few to create a fully government-sourced 300-name list; the 2026 male resident table also reports just top-100. Source license unverified; these estimates are **not official births**.
+- **RUS:** [Pinned Russian male-name wordlist](https://github.com/sorokinpf/russian_names/blob/b23cda8a6011012a30d35f6676521c1a66965f3a/russian_male_names.csv), source Git blob `6287fea8e12814bedb3d7dff8d0fb4fba119f587`. 300 source-reported positive male-name occurrences, **not official Russian births or national population totals**. Original Cyrillic strings romanized by a documented punctuation-free simplified BGN/PCGN convention to **Latin ASCII**; three Latin spelling collisions were dropped and replaced by the next source-ranked names (`Akram` 105, `Takhir` 104, `Feodosiy` 104). Source counts were neither invented nor added across variants. Third-party redistribution rights require review.
+- **Preservation:** The 17 pre-existing national JSON files, their given names and source weights are unchanged by this integration. The four transferred name/weight arrays are identical to those in Batch F PR #416; schema-only metadata (`origin_review`, `surnames:[]`, `production_ready:false`) is added to align with catalog contracts.
+- **Unicode policy:** For **all countries** (not just non-Latin source countries), `given_names[].value` must have Unicode NFC and exclusively `Script=Latin` base letters plus Latin-compatible `Script_Extensions=Latin` combining marks. Reject Cyrillic/Greek/Arabic/Japanese/Korean characters, mixed scripts, spaces, apostrophes, hyphens, surnames and multiple-token given names. Romanization must be documented, with source counts retained and duplicates resolved.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 33 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 29 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

@@ -1,0 +1,1219 @@
+{
+  "schema_version": 2,
+  "code": "CRO",
+  "cohort": "male given-name bearers in Croatia, source-reported nationwide incidence estimates (all ages; period not specified)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "forebears-croatia-male-forenames-incidence",
+    "provider": "Forebears, Croatia forenames; gender attributed at least 95% male on the public table",
+    "source_url": "https://forebears.io/croatia/forenames",
+    "metric": "source-reported number of name bearers (incidence ESTIMATES, not official census/birth counts); first-name gender at least 95% male",
+    "license": "Source has no verified open redistribution license; source-level reuse/licensing review required before publication"
+  },
+  "selection_policy": "Top 300 valid single-word male forenames from Croatia table (published estimates); 95%+ male,; Unicode NFC, no compounds; Latin spelling and local accents as published preserved; REQUIRED: Unicode Script=Latin letters and associated Latin Script_Extensions combining marks only, NFC, exactly one male given name per value, no punctuation/spaces/mixed scripts",
+  "given_names": [
+    {
+      "value": "Ivan",
+      "weight": 94926
+    },
+    {
+      "value": "Josip",
+      "weight": 68005
+    },
+    {
+      "value": "Stjepan",
+      "weight": 47389
+    },
+    {
+      "value": "Željko",
+      "weight": 46123
+    },
+    {
+      "value": "Ivica",
+      "weight": 39876
+    },
+    {
+      "value": "Tomislav",
+      "weight": 35059
+    },
+    {
+      "value": "Marko",
+      "weight": 33901
+    },
+    {
+      "value": "Damir",
+      "weight": 31733
+    },
+    {
+      "value": "Branko",
+      "weight": 31318
+    },
+    {
+      "value": "Nikola",
+      "weight": 29711
+    },
+    {
+      "value": "Mario",
+      "weight": 28582
+    },
+    {
+      "value": "Milan",
+      "weight": 28522
+    },
+    {
+      "value": "Marijan",
+      "weight": 26852
+    },
+    {
+      "value": "Franjo",
+      "weight": 26701
+    },
+    {
+      "value": "Vladimir",
+      "weight": 25884
+    },
+    {
+      "value": "Mladen",
+      "weight": 25770
+    },
+    {
+      "value": "Darko",
+      "weight": 24739
+    },
+    {
+      "value": "Ante",
+      "weight": 24501
+    },
+    {
+      "value": "Zlatko",
+      "weight": 24196
+    },
+    {
+      "value": "Petar",
+      "weight": 24107
+    },
+    {
+      "value": "Goran",
+      "weight": 23488
+    },
+    {
+      "value": "Mirko",
+      "weight": 22740
+    },
+    {
+      "value": "Antun",
+      "weight": 20462
+    },
+    {
+      "value": "Zdravko",
+      "weight": 20425
+    },
+    {
+      "value": "Miroslav",
+      "weight": 20069
+    },
+    {
+      "value": "Zoran",
+      "weight": 19699
+    },
+    {
+      "value": "Slavko",
+      "weight": 18970
+    },
+    {
+      "value": "Davor",
+      "weight": 18901
+    },
+    {
+      "value": "Dragutin",
+      "weight": 18881
+    },
+    {
+      "value": "Boris",
+      "weight": 17113
+    },
+    {
+      "value": "Igor",
+      "weight": 16863
+    },
+    {
+      "value": "Dražen",
+      "weight": 16588
+    },
+    {
+      "value": "Vlado",
+      "weight": 16257
+    },
+    {
+      "value": "Robert",
+      "weight": 15440
+    },
+    {
+      "value": "Zvonko",
+      "weight": 14896
+    },
+    {
+      "value": "Dragan",
+      "weight": 14656
+    },
+    {
+      "value": "Ivo",
+      "weight": 14583
+    },
+    {
+      "value": "Drago",
+      "weight": 13733
+    },
+    {
+      "value": "Mato",
+      "weight": 13678
+    },
+    {
+      "value": "Nenad",
+      "weight": 12806
+    },
+    {
+      "value": "Danijel",
+      "weight": 12529
+    },
+    {
+      "value": "Zvonimir",
+      "weight": 12498
+    },
+    {
+      "value": "Luka",
+      "weight": 12321
+    },
+    {
+      "value": "Đuro",
+      "weight": 11968
+    },
+    {
+      "value": "Vinko",
+      "weight": 11958
+    },
+    {
+      "value": "Hrvoje",
+      "weight": 11679
+    },
+    {
+      "value": "Mijo",
+      "weight": 11374
+    },
+    {
+      "value": "Krešimir",
+      "weight": 11301
+    },
+    {
+      "value": "Božidar",
+      "weight": 10362
+    },
+    {
+      "value": "Zdenko",
+      "weight": 10279
+    },
+    {
+      "value": "Matija",
+      "weight": 10104
+    },
+    {
+      "value": "Siniša",
+      "weight": 9704
+    },
+    {
+      "value": "Ilija",
+      "weight": 9685
+    },
+    {
+      "value": "Dario",
+      "weight": 9538
+    },
+    {
+      "value": "Andrija",
+      "weight": 9277
+    },
+    {
+      "value": "Jozo",
+      "weight": 9188
+    },
+    {
+      "value": "Tihomir",
+      "weight": 8941
+    },
+    {
+      "value": "Alen",
+      "weight": 8657
+    },
+    {
+      "value": "Marin",
+      "weight": 8402
+    },
+    {
+      "value": "Mate",
+      "weight": 8365
+    },
+    {
+      "value": "Dalibor",
+      "weight": 8359
+    },
+    {
+      "value": "Mile",
+      "weight": 8096
+    },
+    {
+      "value": "Vjekoslav",
+      "weight": 7831
+    },
+    {
+      "value": "Pero",
+      "weight": 7760
+    },
+    {
+      "value": "Miljenko",
+      "weight": 7588
+    },
+    {
+      "value": "Božo",
+      "weight": 7572
+    },
+    {
+      "value": "Dušan",
+      "weight": 7400
+    },
+    {
+      "value": "Stanko",
+      "weight": 7269
+    },
+    {
+      "value": "Krunoslav",
+      "weight": 7201
+    },
+    {
+      "value": "Tomo",
+      "weight": 7180
+    },
+    {
+      "value": "Marinko",
+      "weight": 7140
+    },
+    {
+      "value": "Vedran",
+      "weight": 7119
+    },
+    {
+      "value": "Kristijan",
+      "weight": 7003
+    },
+    {
+      "value": "Martin",
+      "weight": 6901
+    },
+    {
+      "value": "Anto",
+      "weight": 6868
+    },
+    {
+      "value": "Juraj",
+      "weight": 6720
+    },
+    {
+      "value": "Filip",
+      "weight": 6704
+    },
+    {
+      "value": "Dejan",
+      "weight": 6554
+    },
+    {
+      "value": "Dubravko",
+      "weight": 6299
+    },
+    {
+      "value": "Anđelko",
+      "weight": 5923
+    },
+    {
+      "value": "Anton",
+      "weight": 5739
+    },
+    {
+      "value": "Antonio",
+      "weight": 5736
+    },
+    {
+      "value": "Bruno",
+      "weight": 5711
+    },
+    {
+      "value": "Stipe",
+      "weight": 5638
+    },
+    {
+      "value": "Branimir",
+      "weight": 5342
+    },
+    {
+      "value": "Neven",
+      "weight": 5284
+    },
+    {
+      "value": "Rudolf",
+      "weight": 5227
+    },
+    {
+      "value": "Domagoj",
+      "weight": 5098
+    },
+    {
+      "value": "Miro",
+      "weight": 5007
+    },
+    {
+      "value": "Jakov",
+      "weight": 4977
+    },
+    {
+      "value": "Predrag",
+      "weight": 4749
+    },
+    {
+      "value": "Slobodan",
+      "weight": 4704
+    },
+    {
+      "value": "Aleksandar",
+      "weight": 4675
+    },
+    {
+      "value": "Srećko",
+      "weight": 4629
+    },
+    {
+      "value": "Pavao",
+      "weight": 4621
+    },
+    {
+      "value": "Karlo",
+      "weight": 4541
+    },
+    {
+      "value": "Milivoj",
+      "weight": 4386
+    },
+    {
+      "value": "Marijo",
+      "weight": 4368
+    },
+    {
+      "value": "Dinko",
+      "weight": 4207
+    },
+    {
+      "value": "Stevo",
+      "weight": 4131
+    },
+    {
+      "value": "Žarko",
+      "weight": 4127
+    },
+    {
+      "value": "Renato",
+      "weight": 3956
+    },
+    {
+      "value": "Bojan",
+      "weight": 3912
+    },
+    {
+      "value": "Milenko",
+      "weight": 3891
+    },
+    {
+      "value": "Janko",
+      "weight": 3885
+    },
+    {
+      "value": "Niko",
+      "weight": 3859
+    },
+    {
+      "value": "Ljubomir",
+      "weight": 3802
+    },
+    {
+      "value": "Andreja",
+      "weight": 3784
+    },
+    {
+      "value": "Šime",
+      "weight": 3763
+    },
+    {
+      "value": "Dino",
+      "weight": 3696
+    },
+    {
+      "value": "Viktor",
+      "weight": 3644
+    },
+    {
+      "value": "Toni",
+      "weight": 3573
+    },
+    {
+      "value": "Velimir",
+      "weight": 3567
+    },
+    {
+      "value": "Stanislav",
+      "weight": 3543
+    },
+    {
+      "value": "Daniel",
+      "weight": 3347
+    },
+    {
+      "value": "Joško",
+      "weight": 3338
+    },
+    {
+      "value": "Joso",
+      "weight": 3320
+    },
+    {
+      "value": "Frane",
+      "weight": 3307
+    },
+    {
+      "value": "Emil",
+      "weight": 3200
+    },
+    {
+      "value": "Stipo",
+      "weight": 3185
+    },
+    {
+      "value": "Milorad",
+      "weight": 3120
+    },
+    {
+      "value": "Rajko",
+      "weight": 3072
+    },
+    {
+      "value": "Berislav",
+      "weight": 2893
+    },
+    {
+      "value": "Borislav",
+      "weight": 2880
+    },
+    {
+      "value": "Matej",
+      "weight": 2874
+    },
+    {
+      "value": "Ratko",
+      "weight": 2864
+    },
+    {
+      "value": "Gordan",
+      "weight": 2849
+    },
+    {
+      "value": "Nediljko",
+      "weight": 2822
+    },
+    {
+      "value": "Veljko",
+      "weight": 2821
+    },
+    {
+      "value": "Dean",
+      "weight": 2766
+    },
+    {
+      "value": "Rade",
+      "weight": 2758
+    },
+    {
+      "value": "Boško",
+      "weight": 2756
+    },
+    {
+      "value": "Frano",
+      "weight": 2751
+    },
+    {
+      "value": "Alojz",
+      "weight": 2687
+    },
+    {
+      "value": "Pavo",
+      "weight": 2685
+    },
+    {
+      "value": "Nedeljko",
+      "weight": 2658
+    },
+    {
+      "value": "Ranko",
+      "weight": 2634
+    },
+    {
+      "value": "Nedjeljko",
+      "weight": 2631
+    },
+    {
+      "value": "Jerko",
+      "weight": 2613
+    },
+    {
+      "value": "Mihael",
+      "weight": 2535
+    },
+    {
+      "value": "Radovan",
+      "weight": 2505
+    },
+    {
+      "value": "Duško",
+      "weight": 2483
+    },
+    {
+      "value": "Andrej",
+      "weight": 2412
+    },
+    {
+      "value": "Davorin",
+      "weight": 2387
+    },
+    {
+      "value": "Stipan",
+      "weight": 2375
+    },
+    {
+      "value": "Miloš",
+      "weight": 2365
+    },
+    {
+      "value": "Želimir",
+      "weight": 2339
+    },
+    {
+      "value": "Dominik",
+      "weight": 2302
+    },
+    {
+      "value": "Nikša",
+      "weight": 2295
+    },
+    {
+      "value": "Živko",
+      "weight": 2247
+    },
+    {
+      "value": "Marino",
+      "weight": 2239
+    },
+    {
+      "value": "Jovan",
+      "weight": 2206
+    },
+    {
+      "value": "Blaž",
+      "weight": 2147
+    },
+    {
+      "value": "Branislav",
+      "weight": 2137
+    },
+    {
+      "value": "Đorđe",
+      "weight": 2077
+    },
+    {
+      "value": "Gojko",
+      "weight": 2066
+    },
+    {
+      "value": "Krešo",
+      "weight": 2056
+    },
+    {
+      "value": "Luca",
+      "weight": 2017
+    },
+    {
+      "value": "David",
+      "weight": 2005
+    },
+    {
+      "value": "Ljubo",
+      "weight": 1941
+    },
+    {
+      "value": "Matko",
+      "weight": 1869
+    },
+    {
+      "value": "Srđan",
+      "weight": 1848
+    },
+    {
+      "value": "Stevan",
+      "weight": 1834
+    },
+    {
+      "value": "Danko",
+      "weight": 1824
+    },
+    {
+      "value": "Nino",
+      "weight": 1804
+    },
+    {
+      "value": "Adam",
+      "weight": 1802
+    },
+    {
+      "value": "Mislav",
+      "weight": 1729
+    },
+    {
+      "value": "Marjan",
+      "weight": 1684
+    },
+    {
+      "value": "Eduard",
+      "weight": 1674
+    },
+    {
+      "value": "Elvis",
+      "weight": 1659
+    },
+    {
+      "value": "Miodrag",
+      "weight": 1656
+    },
+    {
+      "value": "Kruno",
+      "weight": 1642
+    },
+    {
+      "value": "Jadranko",
+      "weight": 1612
+    },
+    {
+      "value": "Radoslav",
+      "weight": 1599
+    },
+    {
+      "value": "Ladislav",
+      "weight": 1591
+    },
+    {
+      "value": "Dane",
+      "weight": 1576
+    },
+    {
+      "value": "Valent",
+      "weight": 1567
+    },
+    {
+      "value": "Roko",
+      "weight": 1550
+    },
+    {
+      "value": "Silvio",
+      "weight": 1532
+    },
+    {
+      "value": "Franko",
+      "weight": 1523
+    },
+    {
+      "value": "Vilim",
+      "weight": 1511
+    },
+    {
+      "value": "Dragomir",
+      "weight": 1469
+    },
+    {
+      "value": "Alan",
+      "weight": 1448
+    },
+    {
+      "value": "Vitomir",
+      "weight": 1438
+    },
+    {
+      "value": "Valter",
+      "weight": 1436
+    },
+    {
+      "value": "Šimun",
+      "weight": 1413
+    },
+    {
+      "value": "Mihajlo",
+      "weight": 1389
+    },
+    {
+      "value": "Bogdan",
+      "weight": 1378
+    },
+    {
+      "value": "Juro",
+      "weight": 1358
+    },
+    {
+      "value": "Edi",
+      "weight": 1352
+    },
+    {
+      "value": "Lovro",
+      "weight": 1351
+    },
+    {
+      "value": "Nebojša",
+      "weight": 1327
+    },
+    {
+      "value": "Oliver",
+      "weight": 1304
+    },
+    {
+      "value": "Stojan",
+      "weight": 1281
+    },
+    {
+      "value": "Mateo",
+      "weight": 1280
+    },
+    {
+      "value": "Mihovil",
+      "weight": 1278
+    },
+    {
+      "value": "Ljudevit",
+      "weight": 1275
+    },
+    {
+      "value": "Pavle",
+      "weight": 1257
+    },
+    {
+      "value": "Aldo",
+      "weight": 1250
+    },
+    {
+      "value": "Bernard",
+      "weight": 1249
+    },
+    {
+      "value": "Roman",
+      "weight": 1232
+    },
+    {
+      "value": "Roberto",
+      "weight": 1228
+    },
+    {
+      "value": "Edo",
+      "weight": 1217
+    },
+    {
+      "value": "Jovo",
+      "weight": 1194
+    },
+    {
+      "value": "Kristian",
+      "weight": 1188
+    },
+    {
+      "value": "Pejo",
+      "weight": 1185
+    },
+    {
+      "value": "Boro",
+      "weight": 1175
+    },
+    {
+      "value": "Čedomir",
+      "weight": 1174
+    },
+    {
+      "value": "Romano",
+      "weight": 1160
+    },
+    {
+      "value": "Sanjin",
+      "weight": 1131
+    },
+    {
+      "value": "Zlatan",
+      "weight": 1114
+    },
+    {
+      "value": "Grgo",
+      "weight": 1087
+    },
+    {
+      "value": "Sandro",
+      "weight": 1068
+    },
+    {
+      "value": "Leo",
+      "weight": 1067
+    },
+    {
+      "value": "Vid",
+      "weight": 1062
+    },
+    {
+      "value": "Darijo",
+      "weight": 1061
+    },
+    {
+      "value": "Klaudio",
+      "weight": 1048
+    },
+    {
+      "value": "Gabrijel",
+      "weight": 1047
+    },
+    {
+      "value": "Valentin",
+      "weight": 1040
+    },
+    {
+      "value": "Ozren",
+      "weight": 1034
+    },
+    {
+      "value": "Mišo",
+      "weight": 1029
+    },
+    {
+      "value": "Toma",
+      "weight": 1027
+    },
+    {
+      "value": "Paško",
+      "weight": 1023
+    },
+    {
+      "value": "Ignac",
+      "weight": 1017
+    },
+    {
+      "value": "Tadija",
+      "weight": 999
+    },
+    {
+      "value": "Bože",
+      "weight": 997
+    },
+    {
+      "value": "Duje",
+      "weight": 972
+    },
+    {
+      "value": "Eugen",
+      "weight": 969
+    },
+    {
+      "value": "Teo",
+      "weight": 960
+    },
+    {
+      "value": "Silvano",
+      "weight": 950
+    },
+    {
+      "value": "Milovan",
+      "weight": 945
+    },
+    {
+      "value": "Jakob",
+      "weight": 944
+    },
+    {
+      "value": "Fabijan",
+      "weight": 925
+    },
+    {
+      "value": "Leon",
+      "weight": 882
+    },
+    {
+      "value": "Andro",
+      "weight": 877
+    },
+    {
+      "value": "Savo",
+      "weight": 866
+    },
+    {
+      "value": "Radomir",
+      "weight": 864
+    },
+    {
+      "value": "Albert",
+      "weight": 852
+    },
+    {
+      "value": "Miho",
+      "weight": 852
+    },
+    {
+      "value": "Samir",
+      "weight": 838
+    },
+    {
+      "value": "Valentino",
+      "weight": 837
+    },
+    {
+      "value": "Šimo",
+      "weight": 834
+    },
+    {
+      "value": "Vicko",
+      "weight": 818
+    },
+    {
+      "value": "Ninoslav",
+      "weight": 813
+    },
+    {
+      "value": "Damjan",
+      "weight": 788
+    },
+    {
+      "value": "Senad",
+      "weight": 784
+    },
+    {
+      "value": "August",
+      "weight": 768
+    },
+    {
+      "value": "Vojislav",
+      "weight": 767
+    },
+    {
+      "value": "Sven",
+      "weight": 764
+    },
+    {
+      "value": "Augustin",
+      "weight": 762
+    },
+    {
+      "value": "Mirsad",
+      "weight": 752
+    },
+    {
+      "value": "Danilo",
+      "weight": 746
+    },
+    {
+      "value": "Vlaho",
+      "weight": 736
+    },
+    {
+      "value": "Anđelo",
+      "weight": 729
+    },
+    {
+      "value": "Ervin",
+      "weight": 712
+    },
+    {
+      "value": "Ernest",
+      "weight": 711
+    },
+    {
+      "value": "Romeo",
+      "weight": 711
+    },
+    {
+      "value": "Nevenko",
+      "weight": 710
+    },
+    {
+      "value": "Lovre",
+      "weight": 683
+    },
+    {
+      "value": "Dujo",
+      "weight": 675
+    },
+    {
+      "value": "Kazimir",
+      "weight": 665
+    },
+    {
+      "value": "Špiro",
+      "weight": 665
+    },
+    {
+      "value": "Dragoljub",
+      "weight": 662
+    },
+    {
+      "value": "Arsen",
+      "weight": 657
+    },
+    {
+      "value": "Ljuban",
+      "weight": 657
+    },
+    {
+      "value": "Mićo",
+      "weight": 654
+    },
+    {
+      "value": "Vilko",
+      "weight": 647
+    },
+    {
+      "value": "Vjeran",
+      "weight": 635
+    },
+    {
+      "value": "Jadran",
+      "weight": 632
+    },
+    {
+      "value": "Jere",
+      "weight": 630
+    },
+    {
+      "value": "Tibor",
+      "weight": 622
+    },
+    {
+      "value": "Čedo",
+      "weight": 615
+    },
+    {
+      "value": "Milutin",
+      "weight": 614
+    },
+    {
+      "value": "Miran",
+      "weight": 604
+    },
+    {
+      "value": "Edin",
+      "weight": 586
+    },
+    {
+      "value": "Emir",
+      "weight": 586
+    },
+    {
+      "value": "Izidor",
+      "weight": 584
+    },
+    {
+      "value": "Tonko",
+      "weight": 584
+    },
+    {
+      "value": "Draško",
+      "weight": 581
+    },
+    {
+      "value": "Sergio",
+      "weight": 577
+    },
+    {
+      "value": "Sebastijan",
+      "weight": 573
+    },
+    {
+      "value": "Ognjen",
+      "weight": 572
+    },
+    {
+      "value": "Leonardo",
+      "weight": 560
+    },
+    {
+      "value": "Momčilo",
+      "weight": 559
+    },
+    {
+      "value": "Livio",
+      "weight": 557
+    },
+    {
+      "value": "Krsto",
+      "weight": 555
+    },
+    {
+      "value": "Rino",
+      "weight": 554
+    },
+    {
+      "value": "Ferdo",
+      "weight": 546
+    },
+    {
+      "value": "Veselko",
+      "weight": 545
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 544
+    },
+    {
+      "value": "Borivoj",
+      "weight": 537
+    },
+    {
+      "value": "Jovica",
+      "weight": 537
+    },
+    {
+      "value": "Blaženko",
+      "weight": 530
+    },
+    {
+      "value": "Nevio",
+      "weight": 529
+    },
+    {
+      "value": "Deni",
+      "weight": 528
+    },
+    {
+      "value": "Silvestar",
+      "weight": 528
+    },
+    {
+      "value": "Sead",
+      "weight": 527
+    },
+    {
+      "value": "Đino",
+      "weight": 526
+    },
+    {
+      "value": "Lino",
+      "weight": 525
+    },
+    {
+      "value": "Franc",
+      "weight": 523
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-17-country",
-  "state": "17_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-21-country",
+  "state": "21_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -104,6 +104,30 @@
       "id": "se-scb-boys-birth-usual-names-2000-2020",
       "external_file": "countries/SWE.json",
       "description": "Statistics Sweden SCB male newborn usual first-name totals 2000–2020, published-only frequencies; suppressed cells excluded"
+    },
+    {
+      "code": "CRO",
+      "id": "forebears-croatia-male-forenames-incidence",
+      "external_file": "countries/CRO.json",
+      "description": "Forebears Croatia male first-name bearer incidence estimates, all ages; not official registered births/census"
+    },
+    {
+      "code": "SRB",
+      "id": "forebears-serbia-male-forenames-incidence",
+      "external_file": "countries/SRB.json",
+      "description": "Forebears Serbia male first-name bearer incidence estimates, all ages; Latin source spellings (not generated transliteration)"
+    },
+    {
+      "code": "HUN",
+      "id": "forebears-hungary-male-forenames-incidence",
+      "external_file": "countries/HUN.json",
+      "description": "Forebears Hungary male first-name bearer incidence estimates, all ages; not official newborn counts"
+    },
+    {
+      "code": "RUS",
+      "id": "ru-sorokinpf-russian-male-names-pinned",
+      "external_file": "countries/RUS.json",
+      "description": "Pinned Russian male-name occurrence dataset; original Cyrillic romanized in Latin with simplified BGN/PCGN; third-party records, not official birth frequencies"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -113,12 +137,12 @@
     "current_approved_given_names": 0,
     "surnames": "no surname pools; first names only",
     "allowed_source_names": "newly acquired observed male-name sources (no cultural-origin restriction)",
-    "source_name_weights": "non-fabricated observed male counts, specific and non-comparable per country",
+    "source_name_weights": "source-published original male name occurrence counts or explicitly labeled published incidence estimates; never invent or aggregate transliteration collisions; weights country-specific and non-comparable",
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 5100,
-    "first_name_format": "exactly one first name per entry: Unicode letters and combining marks only; no whitespace, hyphens, apostrophes, punctuation or double given names",
+    "current_collected_given_names": 6300,
+    "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
   "countries": [
@@ -308,11 +332,16 @@
       "rank": 14,
       "label": "Croatia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-croatia-male-forenames-incidence"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/CRO.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode Latin-script NFC male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, surnames or compounds"
     },
     {
       "code": "ITA",
@@ -574,11 +603,16 @@
       "rank": 35,
       "label": "Russia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ru-sorokinpf-russian-male-names-pinned"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/RUS.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode Latin-script NFC male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, surnames or compounds"
     },
     {
       "code": "UKR",
@@ -612,11 +646,16 @@
       "rank": 38,
       "label": "Hungary",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-hungary-male-forenames-incidence"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/HUN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode Latin-script NFC male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, surnames or compounds"
     },
     {
       "code": "WAL",
@@ -683,11 +722,16 @@
       "rank": 44,
       "label": "Serbia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-serbia-male-forenames-incidence"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SRB.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode Latin-script NFC male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, surnames or compounds"
     },
     {
       "code": "SVK",

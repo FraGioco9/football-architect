@@ -4,9 +4,21 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
-const strict=/^[\p{L}\p{M}]+$/u;
+const latinLetter=/^\p{Script=Latin}$/u;
+const unicodeMark=/^\p{M}$/u;
+const latinMarkExtension=/^\p{Script_Extensions=Latin}$/u;
+function isSingleLatinGivenName(name){
+ if(typeof name!=='string'||!name||name!==name.normalize('NFC'))return false;
+ let seenLatinBase=false;
+ for(const char of name){
+  if(latinLetter.test(char)){seenLatinBase=true;continue;}
+  if(seenLatinBase&&unicodeMark.test(char)&&latinMarkExtension.test(char))continue;
+  return false;
+ }
+ return seenLatinBase;
+}
 const sourceIds={
  ITA:'it-admin-register-male-names',
  ESP:'es-ine-residents-male-names',
@@ -24,21 +36,25 @@ const sourceIds={
  NED:'nl-svb-boys-birth-names-2025',
  DEN:'dk-statistics-denmark-male-residents-archived',
  NOR:'no-ssb-male-resident-names-2021-archived',
- SWE:'se-scb-boys-birth-usual-names-2000-2020'
+ SWE:'se-scb-boys-birth-usual-names-2000-2020',
+ CRO:'forebears-croatia-male-forenames-incidence',
+ SRB:'forebears-serbia-male-forenames-incidence',
+ HUN:'forebears-hungary-male-forenames-incidence',
+ RUS:'ru-sorokinpf-russian-male-names-pinned'
 };
 
-test('frozen 50 FIFA codes, exactly 17 saved banks of 300 and 33 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 21 saved banks of 300 and 29 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,5100);
+ assert.equal(master.policy.current_collected_given_names,6300);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one first name/i);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,17);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,33);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,21);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,29);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -54,7 +70,7 @@ test('frozen 50 FIFA codes, exactly 17 saved banks of 300 and 33 empty banks',()
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,17);
+ assert.equal(new Set(ids).size,21);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -62,7 +78,7 @@ test('frozen 50 FIFA codes, exactly 17 saved banks of 300 and 33 empty banks',()
  }
 });
 
-test('each of 17 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 21 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -81,7 +97,7 @@ test('each of 17 country files contains exactly 300 distinct SINGLE-word male na
    assert.equal(typeof n.value,'string');
    assert.equal(n.value,n.value.trim());
    assert.equal(n.value,n.value.normalize('NFC'));
-   assert.match(n.value,strict,code+' compound or punctuation: '+n.value);
+   assert.ok(isSingleLatinGivenName(n.value),code+' non-Latin, compound, or punctuation: '+n.value);
    assert.ok(Number.isSafeInteger(n.weight)&&n.weight>0,code+' non-positive source weight');
    if(i)assert.ok(n.weight<=bank.given_names[i-1].weight,code+' ranking disorder');
    const key=n.value.toLocaleLowerCase('und');
@@ -90,6 +106,33 @@ test('each of 17 country files contains exactly 300 distinct SINGLE-word male na
   }
   assert.equal(seen.size,300);
  }
+});
+
+test('Unicode Latin-only validator rejects mixed scripts, unsupported marks and compound names',()=>{
+ for(const name of ['à','é','ü','ñ','ç','ğ','ı','ł','č','š','ž','João','Bjørn','László','İsmail','Aleksandr']){
+  assert.ok(isSingleLatinGivenName(name),'valid Latin name rejected: '+name);
+ }
+ for(const name of ['Александр','Νίκος','محمد','太郎','민준','Ivаn','JohnΑ','Jean-Pierre','José Luis',"D'Angelo",'','42','A\u0483','A\u3099','A\u20DD','A\u0301']){
+  assert.equal(isSingleLatinGivenName(name),false,'non-Latin/invalid accepted: '+JSON.stringify(name));
+ }
+});
+
+test('Batch F sources preserve 300 Latin male given names and documented non-official source limitations',()=>{
+ for(const code of ['CRO','SRB','HUN']){
+  assert.match(banks[code].source.id,/^forebears-/);
+  assert.match(banks[code].source.metric,/ESTIMATES/);
+  assert.match(banks[code].source.license,/review/i);
+ }
+ assert.equal(banks.RUS.source.source_csv_git_blob_sha,'6287fea8e12814bedb3d7dff8d0fb4fba119f587');
+ assert.match(banks.RUS.source.romanization_convention,/BGN\/PCGN/);
+ assert.equal(banks.RUS.source.output_script,'Latin (ASCII A-Z)');
+ assert.ok(banks.RUS.given_names.every(e=>/^[A-Za-z]+$/.test(e.value)));
+ for(const [value,weight] of [['Akram',105],['Takhir',104],['Feodosiy',104]]){
+  assert.ok(banks.RUS.given_names.some(e=>e.value===value&&e.weight===weight));
+ }
+ assert.ok(banks.CRO.given_names.some(e=>e.value==='Željko'));
+ assert.ok(banks.SRB.given_names.some(e=>e.value==='Dušan'));
+ assert.ok(banks.HUN.given_names.some(e=>e.value==='László'));
 });
 
 test('known formerly invalid compound forms cannot return; accents and unrestricted origins remain accepted',()=>{
