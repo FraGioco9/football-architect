@@ -23,6 +23,13 @@
       "url": "https://forebears.io/ecuador/surnames",
       "type": "national country surname ranking, additional attested spellings",
       "note": "Additional country-specific Ecuador surname ranking rows (approximately ranks 519–1000), with duplicate or equivalent Latin renderings excluded. Includes only individually source-attested published surname strings, retaining verified compounds; no statistical weighting. Research only, redistribution rights unresolved."
+    },
+    {
+      "id": "wikidata-nationality-p734-batch-j-2026-11-06",
+      "url": "https://query.wikidata.org/sparql?query=SELECT%20DISTINCT%20%3Fcountry%20%3Fsurname%20%3Flabel%20WHERE%20%7B%20VALUES%20%28%3Fcountry%20%3Fcitizenship%29%20%7B%20%28%22URU%22%20wd%3AQ77%29%20%28%22PAR%22%20wd%3AQ733%29%20%28%22ECU%22%20wd%3AQ736%29%20%7D%20%3Fperson%20wdt%3AP27%20%3Fcitizenship%20%3B%20wdt%3AP734%20%3Fsurname.%20%3Fsurname%20rdfs%3Alabel%20%3Flabel.%20FILTER%28LANG%28%3Flabel%29%20IN%20%28%22es%22%2C%22en%22%29%29%20%7D",
+      "country": "ECU",
+      "type": "Wikidata CC0 biographical observations: P27 country of citizenship and separate P734 family-name property on the same person",
+      "note": "Only directly named family-name Wikidata items borne by people with the specified citizenship, using published Spanish/English labels; no splitting full names, guessing from occupation, combining surnames or invented variants. Not a statistically representative population survey; records may be imperfect. Rankings and frequency are absent and each retained surname has equal probability."
     }
   ],
   "surnames": [
@@ -2692,6 +2699,1878 @@
     },
     {
       "value": "Quelal"
+    },
+    {
+      "value": "Acero"
+    },
+    {
+      "value": "Achi"
+    },
+    {
+      "value": "Achilier"
+    },
+    {
+      "value": "Acuña"
+    },
+    {
+      "value": "Adoum"
+    },
+    {
+      "value": "Aguiar"
+    },
+    {
+      "value": "Aguinaga"
+    },
+    {
+      "value": "Alarcon"
+    },
+    {
+      "value": "Alay"
+    },
+    {
+      "value": "Albornoz"
+    },
+    {
+      "value": "Alcázar"
+    },
+    {
+      "value": "Alder"
+    },
+    {
+      "value": "Aleaga"
+    },
+    {
+      "value": "Aleman"
+    },
+    {
+      "value": "Alfaro"
+    },
+    {
+      "value": "Alman"
+    },
+    {
+      "value": "Amaguaña"
+    },
+    {
+      "value": "Ambrosi"
+    },
+    {
+      "value": "Amoroso"
+    },
+    {
+      "value": "Anchundia"
+    },
+    {
+      "value": "Anderson"
+    },
+    {
+      "value": "Anhalzer"
+    },
+    {
+      "value": "Ansaldo"
+    },
+    {
+      "value": "Antes"
+    },
+    {
+      "value": "Antich"
+    },
+    {
+      "value": "Antón"
+    },
+    {
+      "value": "Añazco"
+    },
+    {
+      "value": "Aparicio"
+    },
+    {
+      "value": "Aquino"
+    },
+    {
+      "value": "Aragón"
+    },
+    {
+      "value": "Araya"
+    },
+    {
+      "value": "Arboleda"
+    },
+    {
+      "value": "Arcila"
+    },
+    {
+      "value": "Arenas"
+    },
+    {
+      "value": "Arevalo"
+    },
+    {
+      "value": "Argüello"
+    },
+    {
+      "value": "Armas"
+    },
+    {
+      "value": "Arosemena"
+    },
+    {
+      "value": "Arroyave"
+    },
+    {
+      "value": "Arteaga"
+    },
+    {
+      "value": "Arteta"
+    },
+    {
+      "value": "Artola"
+    },
+    {
+      "value": "Ascázubi"
+    },
+    {
+      "value": "Asprilla"
+    },
+    {
+      "value": "Astorga"
+    },
+    {
+      "value": "Aulestia"
+    },
+    {
+      "value": "Avegno"
+    },
+    {
+      "value": "Avellan"
+    },
+    {
+      "value": "Avilés"
+    },
+    {
+      "value": "Ayerve"
+    },
+    {
+      "value": "Ayora"
+    },
+    {
+      "value": "Azín"
+    },
+    {
+      "value": "Azrube"
+    },
+    {
+      "value": "Baca"
+    },
+    {
+      "value": "Badillo"
+    },
+    {
+      "value": "Bagüí"
+    },
+    {
+      "value": "Baki"
+    },
+    {
+      "value": "Balda"
+    },
+    {
+      "value": "Baltazar"
+    },
+    {
+      "value": "Banguera"
+    },
+    {
+      "value": "Barberis"
+    },
+    {
+      "value": "Barboza"
+    },
+    {
+      "value": "Barcos"
+    },
+    {
+      "value": "Baren"
+    },
+    {
+      "value": "Barker"
+    },
+    {
+      "value": "Baroja"
+    },
+    {
+      "value": "Barquet"
+    },
+    {
+      "value": "Barreras"
+    },
+    {
+      "value": "Basabe"
+    },
+    {
+      "value": "Batalla"
+    },
+    {
+      "value": "Batioja"
+    },
+    {
+      "value": "Baumann"
+    },
+    {
+      "value": "Bayona"
+    },
+    {
+      "value": "Behr"
+    },
+    {
+      "value": "Béjar"
+    },
+    {
+      "value": "Bellettini"
+    },
+    {
+      "value": "Benalcázar"
+    },
+    {
+      "value": "Benavides"
+    },
+    {
+      "value": "Bergmann"
+    },
+    {
+      "value": "Bermeo"
+    },
+    {
+      "value": "Bermudez"
+    },
+    {
+      "value": "Berrú"
+    },
+    {
+      "value": "Better"
+    },
+    {
+      "value": "Bilbao"
+    },
+    {
+      "value": "Biojó"
+    },
+    {
+      "value": "Bitar"
+    },
+    {
+      "value": "Blanco"
+    },
+    {
+      "value": "Blasco"
+    },
+    {
+      "value": "Blum"
+    },
+    {
+      "value": "Bolaños"
+    },
+    {
+      "value": "Bolívar"
+    },
+    {
+      "value": "Bonaccorso"
+    },
+    {
+      "value": "Bonelli"
+    },
+    {
+      "value": "Bonifaz"
+    },
+    {
+      "value": "Bonilla"
+    },
+    {
+      "value": "Bonnard"
+    },
+    {
+      "value": "Borchart"
+    },
+    {
+      "value": "Borges"
+    },
+    {
+      "value": "Borja"
+    },
+    {
+      "value": "Borrero"
+    },
+    {
+      "value": "Boscán"
+    },
+    {
+      "value": "Bossano"
+    },
+    {
+      "value": "Brauer"
+    },
+    {
+      "value": "Brown"
+    },
+    {
+      "value": "Bruno"
+    },
+    {
+      "value": "Bucaram"
+    },
+    {
+      "value": "Buenaño"
+    },
+    {
+      "value": "Buendía"
+    },
+    {
+      "value": "Buitrón"
+    },
+    {
+      "value": "Burch"
+    },
+    {
+      "value": "Burgos"
+    },
+    {
+      "value": "Burneo"
+    },
+    {
+      "value": "Burov"
+    },
+    {
+      "value": "Bustamante"
+    },
+    {
+      "value": "Cáceres"
+    },
+    {
+      "value": "Cadena"
+    },
+    {
+      "value": "Cajamarca"
+    },
+    {
+      "value": "Cajas"
+    },
+    {
+      "value": "Cajiao"
+    },
+    {
+      "value": "Calisto"
+    },
+    {
+      "value": "Calixto"
+    },
+    {
+      "value": "Camacho"
+    },
+    {
+      "value": "Camargo"
+    },
+    {
+      "value": "Caminer"
+    },
+    {
+      "value": "Campana"
+    },
+    {
+      "value": "Campo"
+    },
+    {
+      "value": "Canales"
+    },
+    {
+      "value": "Canarte"
+    },
+    {
+      "value": "Canga"
+    },
+    {
+      "value": "Cañizares"
+    },
+    {
+      "value": "Capurro"
+    },
+    {
+      "value": "Carabajo"
+    },
+    {
+      "value": "Carabalí"
+    },
+    {
+      "value": "Carapaz"
+    },
+    {
+      "value": "Carcelén"
+    },
+    {
+      "value": "Carnero"
+    },
+    {
+      "value": "Carpenter"
+    },
+    {
+      "value": "Carranco"
+    },
+    {
+      "value": "Carrera"
+    },
+    {
+      "value": "Carreras"
+    },
+    {
+      "value": "Carrillo"
+    },
+    {
+      "value": "Carrion"
+    },
+    {
+      "value": "Cartagena"
+    },
+    {
+      "value": "Cartwright"
+    },
+    {
+      "value": "Casares"
+    },
+    {
+      "value": "Cascante"
+    },
+    {
+      "value": "Cassanello"
+    },
+    {
+      "value": "Castaneda"
+    },
+    {
+      "value": "Cazares"
+    },
+    {
+      "value": "Cazorla"
+    },
+    {
+      "value": "Cedeño"
+    },
+    {
+      "value": "Celi"
+    },
+    {
+      "value": "Cely"
+    },
+    {
+      "value": "Cerasuolo"
+    },
+    {
+      "value": "Chala"
+    },
+    {
+      "value": "Chalacama"
+    },
+    {
+      "value": "Chaves"
+    },
+    {
+      "value": "Chocho"
+    },
+    {
+      "value": "Cipriani"
+    },
+    {
+      "value": "Cobeña"
+    },
+    {
+      "value": "Coello"
+    },
+    {
+      "value": "Colón"
+    },
+    {
+      "value": "Colorado"
+    },
+    {
+      "value": "Concha"
+    },
+    {
+      "value": "Conejo"
+    },
+    {
+      "value": "Congo"
+    },
+    {
+      "value": "Conrado"
+    },
+    {
+      "value": "Contreras"
+    },
+    {
+      "value": "Córdoba"
+    },
+    {
+      "value": "Cordovez"
+    },
+    {
+      "value": "Corella"
+    },
+    {
+      "value": "Coronel"
+    },
+    {
+      "value": "Correa"
+    },
+    {
+      "value": "Cortázar"
+    },
+    {
+      "value": "Cortez"
+    },
+    {
+      "value": "Cotacachi"
+    },
+    {
+      "value": "Crawford"
+    },
+    {
+      "value": "Creamer"
+    },
+    {
+      "value": "Cuadra"
+    },
+    {
+      "value": "Cuaspud"
+    },
+    {
+      "value": "Cucalon"
+    },
+    {
+      "value": "Cudjoe"
+    },
+    {
+      "value": "Cueva"
+    },
+    {
+      "value": "Culebras"
+    },
+    {
+      "value": "Dacosta"
+    },
+    {
+      "value": "de Icaza"
+    },
+    {
+      "value": "de Jesús"
+    },
+    {
+      "value": "de la Cadena"
+    },
+    {
+      "value": "de la Gasca"
+    },
+    {
+      "value": "De Legarda"
+    },
+    {
+      "value": "de los Reyes"
+    },
+    {
+      "value": "de Moreno"
+    },
+    {
+      "value": "de Salas"
+    },
+    {
+      "value": "del Alcázar"
+    },
+    {
+      "value": "del Pino"
+    },
+    {
+      "value": "Descalzi"
+    },
+    {
+      "value": "Devoto"
+    },
+    {
+      "value": "Dick"
+    },
+    {
+      "value": "Domínguez"
+    },
+    {
+      "value": "Dotti"
+    },
+    {
+      "value": "Dumet"
+    },
+    {
+      "value": "Dunn"
+    },
+    {
+      "value": "Durango"
+    },
+    {
+      "value": "Echever"
+    },
+    {
+      "value": "Egloff"
+    },
+    {
+      "value": "Egüez"
+    },
+    {
+      "value": "Eguiguren"
+    },
+    {
+      "value": "Ehlers"
+    },
+    {
+      "value": "Elias"
+    },
+    {
+      "value": "Enderica"
+    },
+    {
+      "value": "Enrique Méndez"
+    },
+    {
+      "value": "Erazo"
+    },
+    {
+      "value": "Erbs"
+    },
+    {
+      "value": "Erraez"
+    },
+    {
+      "value": "Escalada"
+    },
+    {
+      "value": "España"
+    },
+    {
+      "value": "Espejo"
+    },
+    {
+      "value": "Espinosa"
+    },
+    {
+      "value": "Espinosa de los Monteros"
+    },
+    {
+      "value": "Esquetini"
+    },
+    {
+      "value": "Esterilla"
+    },
+    {
+      "value": "Esteves"
+    },
+    {
+      "value": "Estupiñán"
+    },
+    {
+      "value": "Fabre"
+    },
+    {
+      "value": "Falla"
+    },
+    {
+      "value": "Falquez"
+    },
+    {
+      "value": "Farina"
+    },
+    {
+      "value": "Febres"
+    },
+    {
+      "value": "Febres-Cordero"
+    },
+    {
+      "value": "Fegan"
+    },
+    {
+      "value": "Felicísimo"
+    },
+    {
+      "value": "Felix"
+    },
+    {
+      "value": "Fernanda"
+    },
+    {
+      "value": "Fernández de Córdova"
+    },
+    {
+      "value": "Ferri"
+    },
+    {
+      "value": "Fisch"
+    },
+    {
+      "value": "Fish"
+    },
+    {
+      "value": "Fontaine"
+    },
+    {
+      "value": "Fraga"
+    },
+    {
+      "value": "Fragozo"
+    },
+    {
+      "value": "Francis"
+    },
+    {
+      "value": "Gabbert"
+    },
+    {
+      "value": "Gabela"
+    },
+    {
+      "value": "Gachet"
+    },
+    {
+      "value": "Galarza"
+    },
+    {
+      "value": "Galecio"
+    },
+    {
+      "value": "Galiano"
+    },
+    {
+      "value": "Galíndez"
+    },
+    {
+      "value": "Galván"
+    },
+    {
+      "value": "Gangotena"
+    },
+    {
+      "value": "Garay"
+    },
+    {
+      "value": "Gatti"
+    },
+    {
+      "value": "Gaviria"
+    },
+    {
+      "value": "Gellibert"
+    },
+    {
+      "value": "Gende"
+    },
+    {
+      "value": "George"
+    },
+    {
+      "value": "Gil"
+    },
+    {
+      "value": "Gilbert"
+    },
+    {
+      "value": "Glas"
+    },
+    {
+      "value": "Gómez de la Torre"
+    },
+    {
+      "value": "Góngora"
+    },
+    {
+      "value": "Gonzenbach"
+    },
+    {
+      "value": "Govea"
+    },
+    {
+      "value": "Granda"
+    },
+    {
+      "value": "Grassi"
+    },
+    {
+      "value": "Graziani"
+    },
+    {
+      "value": "Greene"
+    },
+    {
+      "value": "Grey"
+    },
+    {
+      "value": "Grønneberg"
+    },
+    {
+      "value": "Gruezo"
+    },
+    {
+      "value": "Guallpa"
+    },
+    {
+      "value": "Guarderas"
+    },
+    {
+      "value": "Guayasamín"
+    },
+    {
+      "value": "Guerra"
+    },
+    {
+      "value": "Guillem"
+    },
+    {
+      "value": "Guillén"
+    },
+    {
+      "value": "Guzman"
+    },
+    {
+      "value": "Haboud"
+    },
+    {
+      "value": "Harb"
+    },
+    {
+      "value": "Hermida"
+    },
+    {
+      "value": "Hermosa"
+    },
+    {
+      "value": "Herreria"
+    },
+    {
+      "value": "Heymann"
+    },
+    {
+      "value": "Hidrovo"
+    },
+    {
+      "value": "Higgins"
+    },
+    {
+      "value": "Hinostroza"
+    },
+    {
+      "value": "Hirtz"
+    },
+    {
+      "value": "Hoffman"
+    },
+    {
+      "value": "Holgin"
+    },
+    {
+      "value": "Holguín"
+    },
+    {
+      "value": "Holst"
+    },
+    {
+      "value": "Huebla"
+    },
+    {
+      "value": "Huerta"
+    },
+    {
+      "value": "Hurtado"
+    },
+    {
+      "value": "Ibáñez"
+    },
+    {
+      "value": "Idrobo"
+    },
+    {
+      "value": "Illingworth"
+    },
+    {
+      "value": "Inclán"
+    },
+    {
+      "value": "Irua"
+    },
+    {
+      "value": "Isch"
+    },
+    {
+      "value": "Izquieta"
+    },
+    {
+      "value": "Jacome"
+    },
+    {
+      "value": "Jalil"
+    },
+    {
+      "value": "Jalkh"
+    },
+    {
+      "value": "Jara"
+    },
+    {
+      "value": "Jauch"
+    },
+    {
+      "value": "Jaume"
+    },
+    {
+      "value": "Johnson"
+    },
+    {
+      "value": "Joseph"
+    },
+    {
+      "value": "Josua"
+    },
+    {
+      "value": "Jové"
+    },
+    {
+      "value": "Juca"
+    },
+    {
+      "value": "Judge"
+    },
+    {
+      "value": "Julio"
+    },
+    {
+      "value": "Jungbluth"
+    },
+    {
+      "value": "Justicia"
+    },
+    {
+      "value": "Kaiser"
+    },
+    {
+      "value": "Kakabadze"
+    },
+    {
+      "value": "Kely"
+    },
+    {
+      "value": "King"
+    },
+    {
+      "value": "Kingman"
+    },
+    {
+      "value": "Klein"
+    },
+    {
+      "value": "Klinger"
+    },
+    {
+      "value": "Kronfle"
+    },
+    {
+      "value": "Labanda"
+    },
+    {
+      "value": "Lalama"
+    },
+    {
+      "value": "Lalvay"
+    },
+    {
+      "value": "Landaverde"
+    },
+    {
+      "value": "Landi"
+    },
+    {
+      "value": "Landívar"
+    },
+    {
+      "value": "Lange"
+    },
+    {
+      "value": "Laniado-Romero"
+    },
+    {
+      "value": "Lanza"
+    },
+    {
+      "value": "Lapentti"
+    },
+    {
+      "value": "Largo"
+    },
+    {
+      "value": "Larriva"
+    },
+    {
+      "value": "Laso"
+    },
+    {
+      "value": "Lasso de la Vega"
+    },
+    {
+      "value": "Lastra"
+    },
+    {
+      "value": "Latorre"
+    },
+    {
+      "value": "Lattanzio"
+    },
+    {
+      "value": "Legarda"
+    },
+    {
+      "value": "Legendre"
+    },
+    {
+      "value": "Lescano"
+    },
+    {
+      "value": "Levi"
+    },
+    {
+      "value": "Levy"
+    },
+    {
+      "value": "Leyton"
+    },
+    {
+      "value": "Lindenberg"
+    },
+    {
+      "value": "Linke"
+    },
+    {
+      "value": "Lizarazo"
+    },
+    {
+      "value": "Llona"
+    },
+    {
+      "value": "Llorente"
+    },
+    {
+      "value": "Lloret"
+    },
+    {
+      "value": "Llori"
+    },
+    {
+      "value": "Lobatón"
+    },
+    {
+      "value": "Lodeiro"
+    },
+    {
+      "value": "Loffredo"
+    },
+    {
+      "value": "Long"
+    },
+    {
+      "value": "Lopezdominguez"
+    },
+    {
+      "value": "Lucas"
+    },
+    {
+      "value": "Luna"
+    },
+    {
+      "value": "Luque"
+    },
+    {
+      "value": "MacKay"
+    },
+    {
+      "value": "Mafla"
+    },
+    {
+      "value": "Maino"
+    },
+    {
+      "value": "Malo"
+    },
+    {
+      "value": "Manjarres"
+    },
+    {
+      "value": "Mantilla"
+    },
+    {
+      "value": "Maquilón"
+    },
+    {
+      "value": "Marcatoma"
+    },
+    {
+      "value": "Marcial"
+    },
+    {
+      "value": "Mardones"
+    },
+    {
+      "value": "Marroquín"
+    },
+    {
+      "value": "Mascote"
+    },
+    {
+      "value": "Mata"
+    },
+    {
+      "value": "Matheus"
+    },
+    {
+      "value": "Matute"
+    },
+    {
+      "value": "Maya"
+    },
+    {
+      "value": "Mayea"
+    },
+    {
+      "value": "Mayer"
+    },
+    {
+      "value": "Mayo"
+    },
+    {
+      "value": "McCabe"
+    },
+    {
+      "value": "Mecias"
+    },
+    {
+      "value": "Melendres"
+    },
+    {
+      "value": "Mendes"
+    },
+    {
+      "value": "Mercado"
+    },
+    {
+      "value": "Merchan"
+    },
+    {
+      "value": "Merlo"
+    },
+    {
+      "value": "Mesías"
+    },
+    {
+      "value": "Michelena"
+    },
+    {
+      "value": "Micolta"
+    },
+    {
+      "value": "Mieles"
+    },
+    {
+      "value": "Miller"
+    },
+    {
+      "value": "Mina"
+    },
+    {
+      "value": "Miño"
+    },
+    {
+      "value": "Miraglia"
+    },
+    {
+      "value": "Molinari"
+    },
+    {
+      "value": "Monroy"
+    },
+    {
+      "value": "Montaño"
+    },
+    {
+      "value": "Monteverde"
+    },
+    {
+      "value": "Montúfar"
+    },
+    {
+      "value": "Moré"
+    },
+    {
+      "value": "Moretta"
+    },
+    {
+      "value": "Moritz"
+    },
+    {
+      "value": "Moscoso"
+    },
+    {
+      "value": "Napoli"
+    },
+    {
+      "value": "Navas"
+    },
+    {
+      "value": "Nebot"
+    },
+    {
+      "value": "Nicholls"
+    },
+    {
+      "value": "Nilsson"
+    },
+    {
+      "value": "Novoa"
+    },
+    {
+      "value": "Núñez del Arco"
+    },
+    {
+      "value": "Obregón"
+    },
+    {
+      "value": "Olivares"
+    },
+    {
+      "value": "Olmedo"
+    },
+    {
+      "value": "Olmos"
+    },
+    {
+      "value": "Olsen"
+    },
+    {
+      "value": "Orbe"
+    },
+    {
+      "value": "Orejuela"
+    },
+    {
+      "value": "Orlandini"
+    },
+    {
+      "value": "Ortuño"
+    },
+    {
+      "value": "Ospina"
+    },
+    {
+      "value": "Pabón"
+    },
+    {
+      "value": "Pacho"
+    },
+    {
+      "value": "Padilla"
+    },
+    {
+      "value": "Padrón"
+    },
+    {
+      "value": "Paes"
+    },
+    {
+      "value": "Paez"
+    },
+    {
+      "value": "Palacio"
+    },
+    {
+      "value": "Paladines"
+    },
+    {
+      "value": "Palencia"
+    },
+    {
+      "value": "Pallares"
+    },
+    {
+      "value": "Palmieri"
+    },
+    {
+      "value": "Parodi"
+    },
+    {
+      "value": "Parra"
+    },
+    {
+      "value": "Parraga"
+    },
+    {
+      "value": "Parrales"
+    },
+    {
+      "value": "Pastrana"
+    },
+    {
+      "value": "Patiño"
+    },
+    {
+      "value": "Patta"
+    },
+    {
+      "value": "Paulsen"
+    },
+    {
+      "value": "Pavón"
+    },
+    {
+      "value": "Payne"
+    },
+    {
+      "value": "Peet"
+    },
+    {
+      "value": "Pelayo"
+    },
+    {
+      "value": "Pellacini"
+    },
+    {
+      "value": "Pendola"
+    },
+    {
+      "value": "Penilla"
+    },
+    {
+      "value": "Peñaherrera"
+    },
+    {
+      "value": "Peñarrieta"
+    },
+    {
+      "value": "Peralta"
+    },
+    {
+      "value": "Perlaza"
+    },
+    {
+      "value": "Piccioli"
+    },
+    {
+      "value": "Picq"
+    },
+    {
+      "value": "Piedra"
+    },
+    {
+      "value": "Piedrahíta"
+    },
+    {
+      "value": "Pila"
+    },
+    {
+      "value": "Pimentel"
+    },
+    {
+      "value": "Pincay"
+    },
+    {
+      "value": "Pineida"
+    },
+    {
+      "value": "Piñeyro"
+    },
+    {
+      "value": "Piza"
+    },
+    {
+      "value": "Plata"
+    },
+    {
+      "value": "Poggi"
+    },
+    {
+      "value": "Polanco"
+    },
+    {
+      "value": "Polit"
+    },
+    {
+      "value": "Polo"
+    },
+    {
+      "value": "Pomaquiza"
+    },
+    {
+      "value": "Pons"
+    },
+    {
+      "value": "Ponte"
+    },
+    {
+      "value": "Ponton"
+    },
+    {
+      "value": "Porozo"
+    },
+    {
+      "value": "Portaluppi"
+    },
+    {
+      "value": "Posse"
+    },
+    {
+      "value": "Pozo"
+    },
+    {
+      "value": "Preti"
+    },
+    {
+      "value": "Provenzano"
+    },
+    {
+      "value": "Ptacek"
+    },
+    {
+      "value": "Puentestar"
+    },
+    {
+      "value": "Puga"
+    },
+    {
+      "value": "Purtschert"
+    },
+    {
+      "value": "Quezada"
+    },
+    {
+      "value": "Quijano"
+    },
+    {
+      "value": "Quintanilla"
+    },
+    {
+      "value": "Quinto"
+    },
+    {
+      "value": "Quishpe"
+    },
+    {
+      "value": "Quistial"
+    },
+    {
+      "value": "Raffo"
+    },
+    {
+      "value": "Raymondi"
+    },
+    {
+      "value": "Rayo"
+    },
+    {
+      "value": "Reasco"
+    },
+    {
+      "value": "Recalde"
+    },
+    {
+      "value": "Reeves"
+    },
+    {
+      "value": "Reimers"
+    },
+    {
+      "value": "Reino"
+    },
+    {
+      "value": "Rentería"
+    },
+    {
+      "value": "Requena"
+    },
+    {
+      "value": "Revelo"
+    },
+    {
+      "value": "Ribadeneira"
+    },
+    {
+      "value": "Rivadeneira"
+    },
+    {
+      "value": "Rivas"
+    },
+    {
+      "value": "Rizzi"
+    },
+    {
+      "value": "Roldan"
+    },
+    {
+      "value": "Römer"
+    },
+    {
+      "value": "Ron"
+    },
+    {
+      "value": "Rovira"
+    },
+    {
+      "value": "Rubira"
+    },
+    {
+      "value": "Ruete"
+    },
+    {
+      "value": "Ruilova"
+    },
+    {
+      "value": "Saa"
+    },
+    {
+      "value": "Saab"
+    },
+    {
+      "value": "Sacoto"
+    },
+    {
+      "value": "Safadi"
+    },
+    {
+      "value": "Salvatore"
+    },
+    {
+      "value": "Samper"
+    },
+    {
+      "value": "San Miguel"
+    },
+    {
+      "value": "Sandiford"
+    },
+    {
+      "value": "Santana"
+    },
+    {
+      "value": "Santi"
+    },
+    {
+      "value": "Santín"
+    },
+    {
+      "value": "Santos"
+    },
+    {
+      "value": "Saporiti"
+    },
+    {
+      "value": "Saquipay"
+    },
+    {
+      "value": "Sarasti"
+    },
+    {
+      "value": "Scacco"
+    },
+    {
+      "value": "Scantlebury"
+    },
+    {
+      "value": "Schettini"
+    },
+    {
+      "value": "Seminario"
+    },
+    {
+      "value": "Seni"
+    },
+    {
+      "value": "Sensi"
+    },
+    {
+      "value": "Serra"
+    },
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Solari"
+    },
+    {
+      "value": "Solis"
+    },
+    {
+      "value": "Sommerfeld"
+    },
+    {
+      "value": "Sorroza"
+    },
+    {
+      "value": "Spencer"
+    },
+    {
+      "value": "Spinosa"
+    },
+    {
+      "value": "Spotorno"
+    },
+    {
+      "value": "Stacey"
+    },
+    {
+      "value": "Stoffers"
+    },
+    {
+      "value": "Stornaiolo"
+    },
+    {
+      "value": "Strenge"
+    },
+    {
+      "value": "Subia"
+    },
+    {
+      "value": "Sucre"
+    },
+    {
+      "value": "Tabacchi"
+    },
+    {
+      "value": "Tafur"
+    },
+    {
+      "value": "Taiano"
+    },
+    {
+      "value": "Tama"
+    },
+    {
+      "value": "Tamariz"
+    },
+    {
+      "value": "Taranto"
+    },
+    {
+      "value": "Tatamuez"
+    },
+    {
+      "value": "Teran"
+    },
+    {
+      "value": "Thompson"
+    },
+    {
+      "value": "Thullen"
+    },
+    {
+      "value": "Tigreros"
+    },
+    {
+      "value": "Tinajero"
+    },
+    {
+      "value": "Tito"
+    },
+    {
+      "value": "Tola"
+    },
+    {
+      "value": "Torres-Carvajal"
+    },
+    {
+      "value": "Triviño"
+    },
+    {
+      "value": "Troncoso"
+    },
+    {
+      "value": "Ubidia"
+    },
+    {
+      "value": "Ugarte"
+    },
+    {
+      "value": "Unamuno"
+    },
+    {
+      "value": "Uquillas"
+    },
+    {
+      "value": "Uraga"
+    },
+    {
+      "value": "Uribe"
+    },
+    {
+      "value": "Urrutia"
+    },
+    {
+      "value": "Uruchima"
+    },
+    {
+      "value": "Urvina"
+    },
+    {
+      "value": "Ushiña"
+    },
+    {
+      "value": "Uzcátegui"
+    },
+    {
+      "value": "Valdes"
+    },
+    {
+      "value": "Valdivieso"
+    },
+    {
+      "value": "Valdiviezo"
+    },
+    {
+      "value": "Valeriano"
+    },
+    {
+      "value": "Vallarino"
+    },
+    {
+      "value": "Vallecilla"
+    },
+    {
+      "value": "Vallejo"
+    },
+    {
+      "value": "Valles"
+    },
+    {
+      "value": "Vance"
+    },
+    {
+      "value": "Varea"
+    },
+    {
+      "value": "Varhola"
+    },
+    {
+      "value": "Vasconcellos"
+    },
+    {
+      "value": "Vascones"
+    },
+    {
+      "value": "Velarde"
+    },
+    {
+      "value": "Velasco"
+    },
+    {
+      "value": "Velásquez"
+    },
+    {
+      "value": "Velastegui"
+    },
+    {
+      "value": "Vernaza"
+    },
+    {
+      "value": "Vicuña"
+    },
+    {
+      "value": "Viescas"
+    },
+    {
+      "value": "Villacis"
+    },
+    {
+      "value": "Villalobos"
+    },
+    {
+      "value": "Villamil"
+    },
+    {
+      "value": "Villanueva"
+    },
+    {
+      "value": "Villareal"
+    },
+    {
+      "value": "Villavicencio"
+    },
+    {
+      "value": "Villón"
+    },
+    {
+      "value": "Vinces"
+    },
+    {
+      "value": "Viscarra"
+    },
+    {
+      "value": "Vivanco"
+    },
+    {
+      "value": "Viver"
+    },
+    {
+      "value": "Viveros"
+    },
+    {
+      "value": "Wagner"
+    },
+    {
+      "value": "Weber"
+    },
+    {
+      "value": "West"
+    },
+    {
+      "value": "Wild"
+    },
+    {
+      "value": "Wright"
+    },
+    {
+      "value": "Yánez"
+    },
+    {
+      "value": "Ycaza"
+    },
+    {
+      "value": "Yeboah"
+    },
+    {
+      "value": "Yepez"
+    },
+    {
+      "value": "Yerovi"
+    },
+    {
+      "value": "Zaldívar"
+    },
+    {
+      "value": "Zaldumbide"
+    },
+    {
+      "value": "Zamora"
+    },
+    {
+      "value": "Zárate"
+    },
+    {
+      "value": "Zea"
+    },
+    {
+      "value": "Zevallos"
+    },
+    {
+      "value": "Zuleta"
+    },
+    {
+      "value": "Zuloaga"
+    },
+    {
+      "value": "Zura"
     }
   ],
   "production_ready": false
