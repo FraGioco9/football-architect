@@ -1,0 +1,29 @@
+name: SURNAMES-01 Batch D (Node 22)
+on:
+  push:
+    branches:
+      - research/surnames-01-batch-d
+  pull_request:
+    paths:
+      - data/players/surnames/countries/ARG.json
+      - data/players/surnames/countries/MEX.json
+      - data/players/surnames/countries/COL.json
+      - data/players/surnames/countries/CHI.json
+      - data/players/surnames/batches/batch-d.test.mjs
+      - .github/workflows/surnames-batch-d-qa.yml
+
+permissions:
+  contents: read
+
+jobs:
+  batch-d:
+    name: Check four research surname banks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate 4 x 500 strict Latin NFC surnames
+        run: node --version && node --test data/players/surnames/batches/batch-d.test.mjs
