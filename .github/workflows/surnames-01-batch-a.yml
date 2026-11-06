@@ -1,0 +1,25 @@
+name: SURNAMES-01 Batch A — Node 22 targeted QA
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/players/surnames/countries/ENG.json'
+      - 'data/players/surnames/countries/WAL.json'
+      - 'data/players/surnames/countries/POR.json'
+      - 'data/players/surnames/countries/BRA.json'
+      - 'tools/surnames-01-batch-a.qa.mjs'
+      - '.github/workflows/surnames-01-batch-a.yml'
+permissions:
+  contents: read
+jobs:
+  surnames-01-batch-a:
+    name: Node 22 strict surname pool validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run batch A surnames QA
+        run: node --test tools/surnames-01-batch-a.qa.mjs
