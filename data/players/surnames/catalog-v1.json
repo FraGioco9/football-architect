@@ -340,7 +340,7 @@
     {
       "code": "ECU",
       "path": "data/players/surnames/countries/ECU.json",
-      "count": 500,
+      "count": 889,
       "status": "partial",
       "sources_available": true,
       "source_batch": "J",
@@ -348,7 +348,10 @@
       "source_branch": "research/surnames-01-batch-j",
       "source_head_sha": "249bc36ac78031fbd9ea7340784387c29e5c5fb3",
       "source_blob_sha": "69b31fa170a6b8cb163f7ea05ed5c7ccdd4db135",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-j",
+      "expansion_head_sha": "f77e603ca835571fcd7fe710488bfde60e336943",
+      "expansion_blob_sha": "f687c033579812037bb551d6ac18ad9a443cc8f8"
     },
     {
       "code": "EGY",
@@ -726,5 +729,5 @@
     }
   ],
   "target_total_surnames": 150000,
-  "total_surnames": 72427
+  "total_surnames": 72816
 }

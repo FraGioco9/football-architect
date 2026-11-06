@@ -125,6 +125,8 @@ test('cumulative counts match real pools and the 150,000 target, without padding
   const mali = catalog.countries.find(x => x.code === 'MLI');
   assert.equal(mali.count, 927);
   assert.equal(mali.status, 'partial');
+  assert.equal(catalog.countries.find(x => x.code === 'ECU').count, 889);
+  assert.equal(catalog.countries.find(x => x.code === 'ECU').status, 'partial');
   for (const [code, count] of [['COD', 1001], ['CMR', 1000], ['RSA', 1000], ['AUS', 999]]) {
     const bank = catalog.countries.find(x => x.code === code);
     assert.equal(bank.count, count);

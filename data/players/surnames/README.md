@@ -2,7 +2,7 @@
 
 ## Status and usage boundaries
 
-- **New cumulative target: 50 × 3,000 = 150,000 national surname entries.** Current verified snapshot: **72,427 / 150,000** across 50 files: **18 `complete` (3,000 each)** and **32 `partial`** (27 at 500, Mali/MLI at 927, and COD/CMR/RSA/AUS at 1,001/1,000/1,000/999). No 500-entry bank is `complete` under this target. All 25,000 original entries are preserved. Status is a numerical completeness label, **not** independent population/source/licensing or production certification.
+- **New cumulative target: 50 × 3,000 = 150,000 national surname entries.** Current verified snapshot: **72,816 / 150,000** across 50 files: **18 `complete` (3,000 each)** and **32 `partial`** (26 at 500, Mali/MLI at 927, COD/CMR/RSA/AUS at 1,001/1,000/1,000/999, and ECU at 889). No 500-entry bank is `complete` under this target. All 25,000 original entries are preserved. Status is a numerical completeness label, **not** independent population/source/licensing or production certification.
 - Every surname has **equal selection probability within its country pool**. The JSON entry schema is only `{ "value": "..." }`; **no weight, probability, rank or frequency field is permitted**. Country incidence/rank data are cited as evidence of a surname's occurrence **only**. There is no generator integration in this PR.
 - All files have `production_ready: false`; country attestation, exact original spellings, romanization equivalence and upstream source/licensing rights require separate manual review before release.
 - Codes are the same 50 national codes, in the same order, as PLAYERS-03 PR #407's catalog as verified at `5eaff1081d6c04edae858bd0999c95b09880c1ad`. **PLAYERS-03 files and PR #407 are untouched**.
@@ -48,7 +48,7 @@ The **national JSON `sources` arrays are the authoritative per-country citations
 
 ## Expansion to 3,000 — latest verified snapshot
 
-**Target: 150,000** entries; **actual: 72,427** (18 complete at 3,000, 32 partial). No synthesized filler. **All original 50 × 500 values remain preserved**, with the original Git blob SHA and associated historical source PR retained per country. At each refresh compare source branch HEADs, each updated blob, original 500-name prefix, strict Unicode and the catalog before importing.
+**Target: 150,000** entries; **actual: 72,816** (18 complete at 3,000, 32 partial). No synthesized filler. **All original 50 × 500 values remain preserved**, with the original Git blob SHA and associated historical source PR retained per country. At each refresh compare source branch HEADs, each updated blob, original 500-name prefix, strict Unicode and the catalog before importing.
 
 | Batch | Expanded branch snapshot (no source PR required) | Country counts currently integrated | Status |
 | --- | --- | --- | --- |
@@ -61,12 +61,12 @@ The **national JSON `sources` arrays are the authoritative per-country citations
 | G | `research/surnames-3000-batch-g` | Original 500 per nation retained | PENDING expanded JSON |
 | H | [b44e3c9ed63e](https://github.com/FraGioco9/football-architect/commit/b44e3c9ed63e411cd9b644427023aa847db54a1a) · `research/surnames-3000-batch-h` | SEN 3000; CIV 3000; NGA 3000; MLI 927 | partial: MLI 927 |
 | I | [770079a8c4b6](https://github.com/FraGioco9/football-architect/commit/770079a8c4b6825e9e89e5441fe8c3374568c1f3) · `research/surnames-3000-batch-i` | COD 1001; CMR 1000; RSA 1000; AUS 999 | partial |
-| J | `research/surnames-3000-batch-j` | Original 500 per nation retained | PENDING expanded JSON |
+| J | [f77e603ca835](https://github.com/FraGioco9/football-architect/commit/f77e603ca835571fcd7fe710488bfde60e336943) · `research/surnames-3000-batch-j` | ECU 889 imported; URU/PAR/VEN unchanged at 500 | PARTIAL / 3 preservation conflicts |
 | K | `research/surnames-3000-batch-k` | Original 500 per nation retained | PENDING expanded JSON |
 | L | `research/surnames-3000-batch-l` | Original 500 per nation retained | PENDING expanded JSON |
 | M | [67343d344909](https://github.com/FraGioco9/football-architect/commit/67343d3449090632737d70ee168385be49592b41) · `research/surnames-3000-batch-m` | SCO 3000; CAN 3000; POL 3000 | complete |
 
-**Mali**: the expanded H source currently documents **927** distinct surname entries (500 originals + 427 additional); it is **2,073 below 3,000** and must remain `partial`. The other H countries (SEN, CIV, NGA) are each at 3,000. Batch C is now integrated for all four nations. Batch I is integrated **only at the actual counts shown**, without manufacturing the remaining entries. Other absent or still-uncommitted expansions remain unintegrated rather than inferred.
+**Mali**: the expanded H source currently documents **927** distinct surname entries (500 originals + 427 additional); it is **2,073 below 3,000** and must remain `partial`. The other H countries (SEN, CIV, NGA) are each at 3,000. Batch C is now integrated for all four nations. Batch I is integrated **only at the actual counts shown**, without manufacturing the remaining entries. Batch J ECU preserves its original 500 names and is integrated at 889; **do not import the other J files yet** because three source JSONs drop a previously integrated surname: URU omits `Pena`, PAR omits `Santa Cruz`, and VEN omits `Lacruz`. The source branch must retain each baseline surname before import. Other absent or still-uncommitted expansions remain unintegrated rather than inferred.
 
 **Dutch surname grammar:** authentic Dutch particles such as `van 't Hof`, `in 't Veld`, and `'s Graeuwen` are accepted via a narrow syntax exception for the **`'s` / `'t`** particle at the beginning of a word; all other invalid leading/repeated separators continue to be rejected.
 
