@@ -32,7 +32,7 @@ export interface PublicFootballerCard {
   career_status?: string;
 }
 export interface PublicFootballerProfile extends PublicFootballerCard {
-  secondary_positions: string[];
+  secondary_positions: readonly string[];
   height_cm?: number;
   preferred_foot?: 'left' | 'right';
 }
@@ -63,9 +63,10 @@ function publicFields(value: unknown, context: FootballerPublicContext): PublicF
   const id=optionalText(ctx.publicId,'id');
   if(id!==undefined)out.id=id;
   if(ctx.currentAge!==undefined){
-    if(!Number.isSafeInteger(ctx.currentAge)||ctx.currentAge<0)
+    const age=ctx.currentAge;
+    if(typeof age!=='number'||!Number.isSafeInteger(age)||age<0)
       throw new TypeError('invalid_footballer_age');
-    out.age=ctx.currentAge as number;
+    out.age=age;
   }
   const career=optionalText(p.career_status,'career_status');
   if(career!==undefined)out.career_status=career;
