@@ -1,0 +1,99 @@
+name: SURNAMES-3000 — Batch J (Node 22)
+
+on:
+  push:
+    branches:
+      - research/surnames-3000-batch-j
+    paths:
+      - "data/players/surnames/countries/URU.json"
+      - "data/players/surnames/countries/PAR.json"
+      - "data/players/surnames/countries/ECU.json"
+      - "data/players/surnames/countries/VEN.json"
+      - ".github/workflows/surnames-3000-batch-j.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  qa-batch-j:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Latin NFC, no equivalents, strict schema and uniform policies
+        shell: bash
+        run: |
+          node <<'NODE'
+          'use strict';
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+          const expectedMinimum = { URU: 922, PAR: 504, ECU: 889, VEN: 861 };
+          const latin = /^(?:\p{Script=Latin}\p{M}*)+(?:[ '-](?:\p{Script=Latin}\p{M}*)+)*$/u;
+          const latinMark = /\p{Script_Extensions=Latin}/u;
+          function acceptable(value) {
+            return typeof value === 'string' && value.length > 0 &&
+              value === value.normalize('NFC') &&
+              latin.test(value) &&
+              [...value.matchAll(/\p{M}/gu)].every(([mark]) => latinMark.test(mark));
+          }
+          for (const good of ['García', 'Peña', 'Gonçalves', 'Müller', 'O\u0027Brien', 'de La Rosa', 'Montes de Oca']) {
+            assert.ok(acceptable(good), 'valid Latin surname rejected: ' + good);
+          }
+          for (const bad of ['', ' García', 'García ', 'A\u0301', 'García--Sánchez', 'García  Pérez',
+            'García/Pérez', 'García_Pérez', 'Perez9', 'Pеrez', 'Σantos', 'محمد', '张', '🙃']) {
+            assert.ok(!acceptable(bad), 'invalid surname accepted: ' + bad);
+          }
+          const canonicalKey = (value) => value.normalize('NFD')
+            .replace(/\p{M}/gu, '').toLocaleLowerCase('und').replace(/[ '-]/g, '');
+          function noWeights(obj) {
+            if (!obj || typeof obj !== 'object') return;
+            for (const [key, value] of Object.entries(obj)) {
+              assert.notEqual(key.toLowerCase(), 'weight', 'weight field prohibited');
+              assert.notEqual(key.toLowerCase(), 'probability', 'probability field prohibited');
+              noWeights(value);
+            }
+          }
+          let total = 0;
+          for (const [country, min] of Object.entries(expectedMinimum)) {
+            const path = 'data/players/surnames/countries/' + country + '.json';
+            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+            assert.deepEqual(Object.keys(data).sort(),
+              ['schema_version', 'code', 'kind', 'selection_policy',
+                'sources', 'surnames', 'production_ready'].sort(), country + ': schema');
+            assert.equal(data.schema_version, 1);
+            assert.equal(data.code, country);
+            assert.equal(data.kind, 'surnames');
+            assert.equal(data.selection_policy, 'uniform');
+            assert.equal(data.production_ready, false);
+            assert.ok(Array.isArray(data.sources) && data.sources.length > 0, country + ': sources');
+            for (const source of data.sources) {
+              assert.ok(typeof source.url === 'string' &&
+                source.url.startsWith('https://'), country + ': invalid source');
+            }
+            assert.ok(Array.isArray(data.surnames), country + ': surname array');
+            assert.ok(data.surnames.length >= min && data.surnames.length <= 3000,
+              country + ': outside validated partial-to-target count');
+            const exact = new Set();
+            const folded = new Map();
+            for (const [index, surname] of data.surnames.entries()) {
+              assert.deepEqual(Object.keys(surname), ['value'], country + ': value-only entry ' + index);
+              const value = surname.value;
+              assert.ok(acceptable(value), country + ': invalid Latin/NFC/separator ' + index + ' ' + value);
+              const low = value.toLocaleLowerCase('und');
+              assert.ok(!exact.has(low), country + ': duplicate ' + value);
+              exact.add(low);
+              const canonical = canonicalKey(value);
+              assert.ok(!folded.has(canonical), country + ': likely equivalent ' +
+                folded.get(canonical) + ' / ' + value);
+              folded.set(canonical, value);
+            }
+            noWeights(data);
+            total += data.surnames.length;
+            const remaining = 3000 - data.surnames.length;
+            console.log(country + ': PASS — ' + data.surnames.length +
+              '/3000 surnames; missing ' + remaining + '; research-only');
+          }
+          console.log('Batch J PASS: ' + total + '/12000 total. Partial pools remain HOLD.');
+          NODE

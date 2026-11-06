@@ -1,0 +1,2698 @@
+{
+  "schema_version": 1,
+  "code": "ECU",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-ecu-2014",
+      "url": "https://forebears.io/ecuador/surnames",
+      "country": "Ecuador",
+      "type": "country-specific secondary surname-incidence estimates",
+      "note": "Ecuador-only ranking. Source spellings retained including attested particles and indigenous-language surnames. Published incidences are not redistributed as weights; not an official census. Individual ranks used are noncontiguous because only accessible records were transcribed."
+    },
+    {
+      "id": "inec-ecu-2025",
+      "url": "https://www.ecuadorencifras.gob.ec/institucional/inec-presenta-la-version-2025-del-visualizador-de-nombres-y-apellidos-una-mirada-profunda-a-nuestra-identidad/",
+      "country": "Ecuador",
+      "type": "national statistical agency's visualizer provenance reference",
+      "note": "INEC confirms a national civil-registration-based visualizer exists (records 1900–2024); the 500-entry list in this JSON is drawn from the cited Forebears country ranking, not bulk-downloaded from INEC."
+    },
+    {
+      "id": "forebears-ecu-extended",
+      "url": "https://forebears.io/ecuador/surnames",
+      "type": "national country surname ranking, additional attested spellings",
+      "note": "Additional country-specific Ecuador surname ranking rows (approximately ranks 519–1000), with duplicate or equivalent Latin renderings excluded. Includes only individually source-attested published surname strings, retaining verified compounds; no statistical weighting. Research only, redistribution rights unresolved."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Garcia"
+    },
+    {
+      "value": "Sanchez"
+    },
+    {
+      "value": "Zambrano"
+    },
+    {
+      "value": "Lopez"
+    },
+    {
+      "value": "Rodriguez"
+    },
+    {
+      "value": "Vera"
+    },
+    {
+      "value": "Gonzalez"
+    },
+    {
+      "value": "Torres"
+    },
+    {
+      "value": "Mendoza"
+    },
+    {
+      "value": "Castro"
+    },
+    {
+      "value": "Perez"
+    },
+    {
+      "value": "Jimenez"
+    },
+    {
+      "value": "Flores"
+    },
+    {
+      "value": "Delgado"
+    },
+    {
+      "value": "Macias"
+    },
+    {
+      "value": "Romero"
+    },
+    {
+      "value": "Espinoza"
+    },
+    {
+      "value": "Gomez"
+    },
+    {
+      "value": "Salazar"
+    },
+    {
+      "value": "Martinez"
+    },
+    {
+      "value": "Leon"
+    },
+    {
+      "value": "Andrade"
+    },
+    {
+      "value": "Castillo"
+    },
+    {
+      "value": "Ortiz"
+    },
+    {
+      "value": "Loor"
+    },
+    {
+      "value": "Moreira"
+    },
+    {
+      "value": "Ramirez"
+    },
+    {
+      "value": "Alvarado"
+    },
+    {
+      "value": "Bravo"
+    },
+    {
+      "value": "Morales"
+    },
+    {
+      "value": "Cevallos"
+    },
+    {
+      "value": "Reyes"
+    },
+    {
+      "value": "Ruiz"
+    },
+    {
+      "value": "Suarez"
+    },
+    {
+      "value": "Diaz"
+    },
+    {
+      "value": "Alvarez"
+    },
+    {
+      "value": "Vargas"
+    },
+    {
+      "value": "Herrera"
+    },
+    {
+      "value": "Velez"
+    },
+    {
+      "value": "Guerrero"
+    },
+    {
+      "value": "Guaman"
+    },
+    {
+      "value": "Chavez"
+    },
+    {
+      "value": "Mora"
+    },
+    {
+      "value": "Cabrera"
+    },
+    {
+      "value": "Jaramillo"
+    },
+    {
+      "value": "Paredes"
+    },
+    {
+      "value": "Molina"
+    },
+    {
+      "value": "Rivera"
+    },
+    {
+      "value": "Moran"
+    },
+    {
+      "value": "Cruz"
+    },
+    {
+      "value": "Moreno"
+    },
+    {
+      "value": "Ortega"
+    },
+    {
+      "value": "Vasquez"
+    },
+    {
+      "value": "Alcivar"
+    },
+    {
+      "value": "Medina"
+    },
+    {
+      "value": "Fernandez"
+    },
+    {
+      "value": "Arias"
+    },
+    {
+      "value": "Vega"
+    },
+    {
+      "value": "Valencia"
+    },
+    {
+      "value": "Silva"
+    },
+    {
+      "value": "Aguilar"
+    },
+    {
+      "value": "Mejia"
+    },
+    {
+      "value": "Morocho"
+    },
+    {
+      "value": "Calderon"
+    },
+    {
+      "value": "Maldonado"
+    },
+    {
+      "value": "Hidalgo"
+    },
+    {
+      "value": "Solorzano"
+    },
+    {
+      "value": "Ponce"
+    },
+    {
+      "value": "Cordova"
+    },
+    {
+      "value": "Ramos"
+    },
+    {
+      "value": "Aguirre"
+    },
+    {
+      "value": "Cardenas"
+    },
+    {
+      "value": "Intriago"
+    },
+    {
+      "value": "Palacios"
+    },
+    {
+      "value": "Tapia"
+    },
+    {
+      "value": "Mera"
+    },
+    {
+      "value": "Hernandez"
+    },
+    {
+      "value": "Naranjo"
+    },
+    {
+      "value": "Murillo"
+    },
+    {
+      "value": "Franco"
+    },
+    {
+      "value": "Rojas"
+    },
+    {
+      "value": "Ochoa"
+    },
+    {
+      "value": "Acosta"
+    },
+    {
+      "value": "Briones"
+    },
+    {
+      "value": "Narvaez"
+    },
+    {
+      "value": "Avila"
+    },
+    {
+      "value": "Pacheco"
+    },
+    {
+      "value": "Mero"
+    },
+    {
+      "value": "Freire"
+    },
+    {
+      "value": "Chicaiza"
+    },
+    {
+      "value": "Orellana"
+    },
+    {
+      "value": "Palma"
+    },
+    {
+      "value": "Lema"
+    },
+    {
+      "value": "Campoverde"
+    },
+    {
+      "value": "Almeida"
+    },
+    {
+      "value": "Armijos"
+    },
+    {
+      "value": "Rosero"
+    },
+    {
+      "value": "Mosquera"
+    },
+    {
+      "value": "Vaca"
+    },
+    {
+      "value": "Caicedo"
+    },
+    {
+      "value": "Miranda"
+    },
+    {
+      "value": "Guevara"
+    },
+    {
+      "value": "Figueroa"
+    },
+    {
+      "value": "Mendez"
+    },
+    {
+      "value": "Escobar"
+    },
+    {
+      "value": "Navarrete"
+    },
+    {
+      "value": "Toapanta"
+    },
+    {
+      "value": "Ayala"
+    },
+    {
+      "value": "Saltos"
+    },
+    {
+      "value": "Lara"
+    },
+    {
+      "value": "Gutierrez"
+    },
+    {
+      "value": "Alava"
+    },
+    {
+      "value": "Calle"
+    },
+    {
+      "value": "Enriquez"
+    },
+    {
+      "value": "Fajardo"
+    },
+    {
+      "value": "Sarmiento"
+    },
+    {
+      "value": "Carvajal"
+    },
+    {
+      "value": "Angulo"
+    },
+    {
+      "value": "Criollo"
+    },
+    {
+      "value": "Davila"
+    },
+    {
+      "value": "Serrano"
+    },
+    {
+      "value": "Cabezas"
+    },
+    {
+      "value": "Ibarra"
+    },
+    {
+      "value": "Viteri"
+    },
+    {
+      "value": "Yagual"
+    },
+    {
+      "value": "Meza"
+    },
+    {
+      "value": "Astudillo"
+    },
+    {
+      "value": "Vergara"
+    },
+    {
+      "value": "Choez"
+    },
+    {
+      "value": "Baque"
+    },
+    {
+      "value": "Robles"
+    },
+    {
+      "value": "Moncayo"
+    },
+    {
+      "value": "Villegas"
+    },
+    {
+      "value": "Cando"
+    },
+    {
+      "value": "Carpio"
+    },
+    {
+      "value": "Zurita"
+    },
+    {
+      "value": "Zapata"
+    },
+    {
+      "value": "Pinargote"
+    },
+    {
+      "value": "Sandoval"
+    },
+    {
+      "value": "Montenegro"
+    },
+    {
+      "value": "Sarango"
+    },
+    {
+      "value": "Garces"
+    },
+    {
+      "value": "Quijije"
+    },
+    {
+      "value": "Bastidas"
+    },
+    {
+      "value": "Garzon"
+    },
+    {
+      "value": "Rosado"
+    },
+    {
+      "value": "Mena"
+    },
+    {
+      "value": "Lozano"
+    },
+    {
+      "value": "Alban"
+    },
+    {
+      "value": "Fuentes"
+    },
+    {
+      "value": "Vinueza"
+    },
+    {
+      "value": "Grefa"
+    },
+    {
+      "value": "Samaniego"
+    },
+    {
+      "value": "de La Cruz"
+    },
+    {
+      "value": "Roman"
+    },
+    {
+      "value": "Valverde"
+    },
+    {
+      "value": "Gavilanes"
+    },
+    {
+      "value": "Rosales"
+    },
+    {
+      "value": "Ronquillo"
+    },
+    {
+      "value": "Valarezo"
+    },
+    {
+      "value": "Marcillo"
+    },
+    {
+      "value": "Macas"
+    },
+    {
+      "value": "Beltran"
+    },
+    {
+      "value": "Abad"
+    },
+    {
+      "value": "Carrasco"
+    },
+    {
+      "value": "Chica"
+    },
+    {
+      "value": "Pico"
+    },
+    {
+      "value": "Espin"
+    },
+    {
+      "value": "Reinoso"
+    },
+    {
+      "value": "Paucar"
+    },
+    {
+      "value": "Montero"
+    },
+    {
+      "value": "Rios"
+    },
+    {
+      "value": "Ramon"
+    },
+    {
+      "value": "Brito"
+    },
+    {
+      "value": "Altamirano"
+    },
+    {
+      "value": "Haro"
+    },
+    {
+      "value": "Santillan"
+    },
+    {
+      "value": "Solano"
+    },
+    {
+      "value": "Chamba"
+    },
+    {
+      "value": "Marquez"
+    },
+    {
+      "value": "Gallegos"
+    },
+    {
+      "value": "Barrera"
+    },
+    {
+      "value": "Pineda"
+    },
+    {
+      "value": "Benitez"
+    },
+    {
+      "value": "Cepeda"
+    },
+    {
+      "value": "Crespo"
+    },
+    {
+      "value": "Toala"
+    },
+    {
+      "value": "Pesantez"
+    },
+    {
+      "value": "Estrada"
+    },
+    {
+      "value": "Marin"
+    },
+    {
+      "value": "Villa"
+    },
+    {
+      "value": "Trujillo"
+    },
+    {
+      "value": "Giler"
+    },
+    {
+      "value": "Gaibor"
+    },
+    {
+      "value": "Soto"
+    },
+    {
+      "value": "Cisneros"
+    },
+    {
+      "value": "Pluas"
+    },
+    {
+      "value": "Valdez"
+    },
+    {
+      "value": "Heredia"
+    },
+    {
+      "value": "Montoya"
+    },
+    {
+      "value": "Sabando"
+    },
+    {
+      "value": "Gallardo"
+    },
+    {
+      "value": "Tamayo"
+    },
+    {
+      "value": "Iza"
+    },
+    {
+      "value": "Obando"
+    },
+    {
+      "value": "Arroyo"
+    },
+    {
+      "value": "Echeverria"
+    },
+    {
+      "value": "Plaza"
+    },
+    {
+      "value": "Cornejo"
+    },
+    {
+      "value": "Cordero"
+    },
+    {
+      "value": "Tipan"
+    },
+    {
+      "value": "Ulloa"
+    },
+    {
+      "value": "Estrella"
+    },
+    {
+      "value": "Jurado"
+    },
+    {
+      "value": "Nieto"
+    },
+    {
+      "value": "Encalada"
+    },
+    {
+      "value": "Barahona"
+    },
+    {
+      "value": "Chiriboga"
+    },
+    {
+      "value": "Mayorga"
+    },
+    {
+      "value": "Salas"
+    },
+    {
+      "value": "Chimbo"
+    },
+    {
+      "value": "Pinto"
+    },
+    {
+      "value": "Borbor"
+    },
+    {
+      "value": "Cantos"
+    },
+    {
+      "value": "Orozco"
+    },
+    {
+      "value": "Carranza"
+    },
+    {
+      "value": "Chango"
+    },
+    {
+      "value": "Villacres"
+    },
+    {
+      "value": "Basurto"
+    },
+    {
+      "value": "Naula"
+    },
+    {
+      "value": "Vasconez"
+    },
+    {
+      "value": "Ojeda"
+    },
+    {
+      "value": "Loja"
+    },
+    {
+      "value": "Llerena"
+    },
+    {
+      "value": "Menendez"
+    },
+    {
+      "value": "Mendieta"
+    },
+    {
+      "value": "Merino"
+    },
+    {
+      "value": "Barzola"
+    },
+    {
+      "value": "Arellano"
+    },
+    {
+      "value": "Veloz"
+    },
+    {
+      "value": "Jumbo"
+    },
+    {
+      "value": "Barragan"
+    },
+    {
+      "value": "Moya"
+    },
+    {
+      "value": "Quintero"
+    },
+    {
+      "value": "Tello"
+    },
+    {
+      "value": "Montesdeoca"
+    },
+    {
+      "value": "Pilco"
+    },
+    {
+      "value": "Montalvo"
+    },
+    {
+      "value": "Valle"
+    },
+    {
+      "value": "Duran"
+    },
+    {
+      "value": "Soria"
+    },
+    {
+      "value": "Robalino"
+    },
+    {
+      "value": "Barros"
+    },
+    {
+      "value": "Segura"
+    },
+    {
+      "value": "Troya"
+    },
+    {
+      "value": "Arreaga"
+    },
+    {
+      "value": "Campos"
+    },
+    {
+      "value": "Lucero"
+    },
+    {
+      "value": "Quinde"
+    },
+    {
+      "value": "Farias"
+    },
+    {
+      "value": "Bautista"
+    },
+    {
+      "value": "Ordonez"
+    },
+    {
+      "value": "Chacon"
+    },
+    {
+      "value": "Tobar"
+    },
+    {
+      "value": "Toledo"
+    },
+    {
+      "value": "Burbano"
+    },
+    {
+      "value": "Prado"
+    },
+    {
+      "value": "Chamorro"
+    },
+    {
+      "value": "Arcos"
+    },
+    {
+      "value": "Calero"
+    },
+    {
+      "value": "Villafuerte"
+    },
+    {
+      "value": "Gavilanez"
+    },
+    {
+      "value": "Araujo"
+    },
+    {
+      "value": "Toaquiza"
+    },
+    {
+      "value": "Tacuri"
+    },
+    {
+      "value": "Tumbaco"
+    },
+    {
+      "value": "Zavala"
+    },
+    {
+      "value": "Rodas"
+    },
+    {
+      "value": "Segovia"
+    },
+    {
+      "value": "Villarreal"
+    },
+    {
+      "value": "Noboa"
+    },
+    {
+      "value": "Orrala"
+    },
+    {
+      "value": "Paz"
+    },
+    {
+      "value": "Saavedra"
+    },
+    {
+      "value": "Alvear"
+    },
+    {
+      "value": "Pazmino"
+    },
+    {
+      "value": "Verdezoto"
+    },
+    {
+      "value": "Navarro"
+    },
+    {
+      "value": "Barreto"
+    },
+    {
+      "value": "Rea"
+    },
+    {
+      "value": "Idrovo"
+    },
+    {
+      "value": "Cobos"
+    },
+    {
+      "value": "Rubio"
+    },
+    {
+      "value": "Salvatierra"
+    },
+    {
+      "value": "Riera"
+    },
+    {
+      "value": "Quintana"
+    },
+    {
+      "value": "Loaiza"
+    },
+    {
+      "value": "Sornoza"
+    },
+    {
+      "value": "Apolo"
+    },
+    {
+      "value": "Rueda"
+    },
+    {
+      "value": "Calva"
+    },
+    {
+      "value": "Bayas"
+    },
+    {
+      "value": "Montes"
+    },
+    {
+      "value": "Soriano"
+    },
+    {
+      "value": "Barcia"
+    },
+    {
+      "value": "Jarrin"
+    },
+    {
+      "value": "Tenorio"
+    },
+    {
+      "value": "de La Torre"
+    },
+    {
+      "value": "Betancourt"
+    },
+    {
+      "value": "Bohorquez"
+    },
+    {
+      "value": "Bailon"
+    },
+    {
+      "value": "Rendon"
+    },
+    {
+      "value": "Campuzano"
+    },
+    {
+      "value": "Pin"
+    },
+    {
+      "value": "Collaguazo"
+    },
+    {
+      "value": "Ganchozo"
+    },
+    {
+      "value": "Lozada"
+    },
+    {
+      "value": "Tuarez"
+    },
+    {
+      "value": "Maza"
+    },
+    {
+      "value": "Urgiles"
+    },
+    {
+      "value": "Baquerizo"
+    },
+    {
+      "value": "Olvera"
+    },
+    {
+      "value": "Tenesaca"
+    },
+    {
+      "value": "Soledispa"
+    },
+    {
+      "value": "Bueno"
+    },
+    {
+      "value": "Bone"
+    },
+    {
+      "value": "Quimis"
+    },
+    {
+      "value": "Toro"
+    },
+    {
+      "value": "Andrango"
+    },
+    {
+      "value": "Bustos"
+    },
+    {
+      "value": "Lindao"
+    },
+    {
+      "value": "Bernal"
+    },
+    {
+      "value": "Carriel"
+    },
+    {
+      "value": "Lascano"
+    },
+    {
+      "value": "Poveda"
+    },
+    {
+      "value": "Quevedo"
+    },
+    {
+      "value": "Gonzabay"
+    },
+    {
+      "value": "Lino"
+    },
+    {
+      "value": "Sotomayor"
+    },
+    {
+      "value": "Arana"
+    },
+    {
+      "value": "Becerra"
+    },
+    {
+      "value": "Salcedo"
+    },
+    {
+      "value": "Aguilera"
+    },
+    {
+      "value": "Abril"
+    },
+    {
+      "value": "Panchana"
+    },
+    {
+      "value": "Cedillo"
+    },
+    {
+      "value": "Manobanda"
+    },
+    {
+      "value": "Balseca"
+    },
+    {
+      "value": "Chacha"
+    },
+    {
+      "value": "Duque"
+    },
+    {
+      "value": "Sanmartin"
+    },
+    {
+      "value": "Pardo"
+    },
+    {
+      "value": "Gaona"
+    },
+    {
+      "value": "Morejon"
+    },
+    {
+      "value": "Shiguango"
+    },
+    {
+      "value": "Nunez"
+    },
+    {
+      "value": "Veintimilla"
+    },
+    {
+      "value": "Montalvan"
+    },
+    {
+      "value": "Fiallos"
+    },
+    {
+      "value": "Centeno"
+    },
+    {
+      "value": "Osorio"
+    },
+    {
+      "value": "Basantes"
+    },
+    {
+      "value": "Luzuriaga"
+    },
+    {
+      "value": "Sosa"
+    },
+    {
+      "value": "Valenzuela"
+    },
+    {
+      "value": "Cagua"
+    },
+    {
+      "value": "Larrea"
+    },
+    {
+      "value": "Aveiga"
+    },
+    {
+      "value": "Proano"
+    },
+    {
+      "value": "Aldaz"
+    },
+    {
+      "value": "Salgado"
+    },
+    {
+      "value": "Zumba"
+    },
+    {
+      "value": "Elizalde"
+    },
+    {
+      "value": "Posligua"
+    },
+    {
+      "value": "Martillo"
+    },
+    {
+      "value": "Cusme"
+    },
+    {
+      "value": "Mite"
+    },
+    {
+      "value": "Cabascango"
+    },
+    {
+      "value": "Arce"
+    },
+    {
+      "value": "Conforme"
+    },
+    {
+      "value": "Pinos"
+    },
+    {
+      "value": "Meneses"
+    },
+    {
+      "value": "Morillo"
+    },
+    {
+      "value": "Loayza"
+    },
+    {
+      "value": "Quinatoa"
+    },
+    {
+      "value": "Gamboa"
+    },
+    {
+      "value": "Fierro"
+    },
+    {
+      "value": "Ocampo"
+    },
+    {
+      "value": "Piguave"
+    },
+    {
+      "value": "Godoy"
+    },
+    {
+      "value": "Villalba"
+    },
+    {
+      "value": "Lainez"
+    },
+    {
+      "value": "Reina"
+    },
+    {
+      "value": "Villalva"
+    },
+    {
+      "value": "Donoso"
+    },
+    {
+      "value": "Pita"
+    },
+    {
+      "value": "Tandazo"
+    },
+    {
+      "value": "Jordan"
+    },
+    {
+      "value": "Constante"
+    },
+    {
+      "value": "Quispe"
+    },
+    {
+      "value": "Feijoo"
+    },
+    {
+      "value": "Medranda"
+    },
+    {
+      "value": "Chila"
+    },
+    {
+      "value": "Villao"
+    },
+    {
+      "value": "Aguayo"
+    },
+    {
+      "value": "Hinojosa"
+    },
+    {
+      "value": "Monserrate"
+    },
+    {
+      "value": "Coloma"
+    },
+    {
+      "value": "Varela"
+    },
+    {
+      "value": "Illescas"
+    },
+    {
+      "value": "Segarra"
+    },
+    {
+      "value": "Asencio"
+    },
+    {
+      "value": "Demera"
+    },
+    {
+      "value": "Grijalva"
+    },
+    {
+      "value": "Vivas"
+    },
+    {
+      "value": "Granizo"
+    },
+    {
+      "value": "Muñoz"
+    },
+    {
+      "value": "Jaime"
+    },
+    {
+      "value": "Garrido"
+    },
+    {
+      "value": "Guachamin"
+    },
+    {
+      "value": "Daquilema"
+    },
+    {
+      "value": "Acurio"
+    },
+    {
+      "value": "Pena"
+    },
+    {
+      "value": "Saldarriaga"
+    },
+    {
+      "value": "Males"
+    },
+    {
+      "value": "Morante"
+    },
+    {
+      "value": "Plua"
+    },
+    {
+      "value": "Vanegas"
+    },
+    {
+      "value": "Pintado"
+    },
+    {
+      "value": "Barrionuevo"
+    },
+    {
+      "value": "Arauz"
+    },
+    {
+      "value": "Pereira"
+    },
+    {
+      "value": "Vivar"
+    },
+    {
+      "value": "Barriga"
+    },
+    {
+      "value": "Vizuete"
+    },
+    {
+      "value": "Bedoya"
+    },
+    {
+      "value": "Chiquito"
+    },
+    {
+      "value": "Mullo"
+    },
+    {
+      "value": "Villamarin"
+    },
+    {
+      "value": "Chasi"
+    },
+    {
+      "value": "Galvez"
+    },
+    {
+      "value": "Balarezo"
+    },
+    {
+      "value": "Puente"
+    },
+    {
+      "value": "Perugachi"
+    },
+    {
+      "value": "Villarroel"
+    },
+    {
+      "value": "Montiel"
+    },
+    {
+      "value": "Pizarro"
+    },
+    {
+      "value": "Pilataxi"
+    },
+    {
+      "value": "Reyna"
+    },
+    {
+      "value": "Pantoja"
+    },
+    {
+      "value": "Aguinda"
+    },
+    {
+      "value": "Vela"
+    },
+    {
+      "value": "Sierra"
+    },
+    {
+      "value": "Pilamunga"
+    },
+    {
+      "value": "Caguana"
+    },
+    {
+      "value": "Chalen"
+    },
+    {
+      "value": "Cunalata"
+    },
+    {
+      "value": "del Pezo"
+    },
+    {
+      "value": "Valero"
+    },
+    {
+      "value": "Llanos"
+    },
+    {
+      "value": "Bejarano"
+    },
+    {
+      "value": "Sevilla"
+    },
+    {
+      "value": "Yumbo"
+    },
+    {
+      "value": "Bermello"
+    },
+    {
+      "value": "Cercado"
+    },
+    {
+      "value": "Carchi"
+    },
+    {
+      "value": "Valladares"
+    },
+    {
+      "value": "Angamarca"
+    },
+    {
+      "value": "Cifuentes"
+    },
+    {
+      "value": "Quizhpi"
+    },
+    {
+      "value": "Egas"
+    },
+    {
+      "value": "Landazuri"
+    },
+    {
+      "value": "Rogel"
+    },
+    {
+      "value": "Lucio"
+    },
+    {
+      "value": "Farfan"
+    },
+    {
+      "value": "Lasso"
+    },
+    {
+      "value": "Lazo"
+    },
+    {
+      "value": "Chavarria"
+    },
+    {
+      "value": "Casanova"
+    },
+    {
+      "value": "Pino"
+    },
+    {
+      "value": "Pisco"
+    },
+    {
+      "value": "Pilligua"
+    },
+    {
+      "value": "Vite"
+    },
+    {
+      "value": "Verduga"
+    },
+    {
+      "value": "Ceron"
+    },
+    {
+      "value": "Magallanes"
+    },
+    {
+      "value": "Lituma"
+    },
+    {
+      "value": "Robayo"
+    },
+    {
+      "value": "Chimborazo"
+    },
+    {
+      "value": "Iturralde"
+    },
+    {
+      "value": "Tutiven"
+    },
+    {
+      "value": "Barberan"
+    },
+    {
+      "value": "Zaruma"
+    },
+    {
+      "value": "Bedon"
+    },
+    {
+      "value": "Procel"
+    },
+    {
+      "value": "Yambay"
+    },
+    {
+      "value": "Nicolalde"
+    },
+    {
+      "value": "Coba"
+    },
+    {
+      "value": "Pareja"
+    },
+    {
+      "value": "Toaza"
+    },
+    {
+      "value": "Chimbolema"
+    },
+    {
+      "value": "Estacio"
+    },
+    {
+      "value": "Blacio"
+    },
+    {
+      "value": "Guerron"
+    },
+    {
+      "value": "Lapo"
+    },
+    {
+      "value": "Vasco"
+    },
+    {
+      "value": "Quilumba"
+    },
+    {
+      "value": "Viera"
+    },
+    {
+      "value": "Limones"
+    },
+    {
+      "value": "Sinchi"
+    },
+    {
+      "value": "Suntaxi"
+    },
+    {
+      "value": "Almache"
+    },
+    {
+      "value": "Chuqui"
+    },
+    {
+      "value": "Tejada"
+    },
+    {
+      "value": "Lavayen"
+    },
+    {
+      "value": "Gracia"
+    },
+    {
+      "value": "Manrique"
+    },
+    {
+      "value": "Calvache"
+    },
+    {
+      "value": "Lombeida"
+    },
+    {
+      "value": "Alonzo"
+    },
+    {
+      "value": "Sevillano"
+    },
+    {
+      "value": "Llamuca"
+    },
+    {
+      "value": "Conde"
+    },
+    {
+      "value": "Madrid"
+    },
+    {
+      "value": "Puma"
+    },
+    {
+      "value": "Chafla"
+    },
+    {
+      "value": "Sinche"
+    },
+    {
+      "value": "Corral"
+    },
+    {
+      "value": "Pinzon"
+    },
+    {
+      "value": "Apolinario"
+    },
+    {
+      "value": "Landeta"
+    },
+    {
+      "value": "Ballesteros"
+    },
+    {
+      "value": "Boada"
+    },
+    {
+      "value": "Oleas"
+    },
+    {
+      "value": "Tigasi"
+    },
+    {
+      "value": "Masapanta"
+    },
+    {
+      "value": "Tigua"
+    },
+    {
+      "value": "Sarabia"
+    },
+    {
+      "value": "Huatatoca"
+    },
+    {
+      "value": "Guano"
+    },
+    {
+      "value": "Siguenza"
+    },
+    {
+      "value": "Fuertes"
+    },
+    {
+      "value": "Sisalima"
+    },
+    {
+      "value": "Galarraga"
+    },
+    {
+      "value": "Perero"
+    },
+    {
+      "value": "Vizcaino"
+    },
+    {
+      "value": "Chico"
+    },
+    {
+      "value": "Uyaguari"
+    },
+    {
+      "value": "Sacon"
+    },
+    {
+      "value": "Lomas"
+    },
+    {
+      "value": "Tigre"
+    },
+    {
+      "value": "Checa"
+    },
+    {
+      "value": "Jacho"
+    },
+    {
+      "value": "Melo"
+    },
+    {
+      "value": "Pinela"
+    },
+    {
+      "value": "Guale"
+    },
+    {
+      "value": "Jativa"
+    },
+    {
+      "value": "Lojano"
+    },
+    {
+      "value": "Tovar"
+    },
+    {
+      "value": "Gilces"
+    },
+    {
+      "value": "Minga"
+    },
+    {
+      "value": "Allauca"
+    },
+    {
+      "value": "Ullauri"
+    },
+    {
+      "value": "de La Rosa"
+    },
+    {
+      "value": "Duchi"
+    },
+    {
+      "value": "Tubay"
+    },
+    {
+      "value": "Medrano"
+    },
+    {
+      "value": "Sailema"
+    },
+    {
+      "value": "Infante"
+    },
+    {
+      "value": "Bowen"
+    },
+    {
+      "value": "Iglesias"
+    },
+    {
+      "value": "Navia"
+    },
+    {
+      "value": "Espinales"
+    },
+    {
+      "value": "Cocha"
+    },
+    {
+      "value": "Realpe"
+    },
+    {
+      "value": "Caballero"
+    },
+    {
+      "value": "Chuchuca"
+    },
+    {
+      "value": "Rezabala"
+    },
+    {
+      "value": "Chiluiza"
+    },
+    {
+      "value": "Piloso"
+    },
+    {
+      "value": "Dutan"
+    },
+    {
+      "value": "Cango"
+    },
+    {
+      "value": "Coque"
+    },
+    {
+      "value": "Agila"
+    },
+    {
+      "value": "Vacacela"
+    },
+    {
+      "value": "Malan"
+    },
+    {
+      "value": "Palomino"
+    },
+    {
+      "value": "Zhunio"
+    },
+    {
+      "value": "Camino"
+    },
+    {
+      "value": "Jerez"
+    },
+    {
+      "value": "Mancero"
+    },
+    {
+      "value": "Barona"
+    },
+    {
+      "value": "Sancan"
+    },
+    {
+      "value": "Ipiales"
+    },
+    {
+      "value": "Caisaguano"
+    },
+    {
+      "value": "Sigcho"
+    },
+    {
+      "value": "Sampedro"
+    },
+    {
+      "value": "Ostaiza"
+    },
+    {
+      "value": "Chalan"
+    },
+    {
+      "value": "Bucheli"
+    },
+    {
+      "value": "Loyola"
+    },
+    {
+      "value": "Aguas"
+    },
+    {
+      "value": "Avilez"
+    },
+    {
+      "value": "Galan"
+    },
+    {
+      "value": "Quinche"
+    },
+    {
+      "value": "Campozano"
+    },
+    {
+      "value": "Panta"
+    },
+    {
+      "value": "Flor"
+    },
+    {
+      "value": "Aragundi"
+    },
+    {
+      "value": "Olalla"
+    },
+    {
+      "value": "Alomoto"
+    },
+    {
+      "value": "Perea"
+    },
+    {
+      "value": "Miraba"
+    },
+    {
+      "value": "Ayovi"
+    },
+    {
+      "value": "Saraguro"
+    },
+    {
+      "value": "Espinal"
+    },
+    {
+      "value": "Tierra"
+    },
+    {
+      "value": "Ulcuango"
+    },
+    {
+      "value": "Wong"
+    },
+    {
+      "value": "Auquilla"
+    },
+    {
+      "value": "Ona"
+    },
+    {
+      "value": "Catagua"
+    },
+    {
+      "value": "Pasquel"
+    },
+    {
+      "value": "Pinta"
+    },
+    {
+      "value": "Menoscal"
+    },
+    {
+      "value": "Quiroga"
+    },
+    {
+      "value": "Mazon"
+    },
+    {
+      "value": "Candelario"
+    },
+    {
+      "value": "Alulema"
+    },
+    {
+      "value": "Castellanos"
+    },
+    {
+      "value": "Chalco"
+    },
+    {
+      "value": "Cuascota"
+    },
+    {
+      "value": "Masache"
+    },
+    {
+      "value": "Arroba"
+    },
+    {
+      "value": "Aucancela"
+    },
+    {
+      "value": "Hoyos"
+    },
+    {
+      "value": "Urquizo"
+    },
+    {
+      "value": "Sandoya"
+    },
+    {
+      "value": "Tamay"
+    },
+    {
+      "value": "Gorozabel"
+    },
+    {
+      "value": "Marmol"
+    },
+    {
+      "value": "Simba"
+    },
+    {
+      "value": "Esmeraldas"
+    },
+    {
+      "value": "Minchala"
+    },
+    {
+      "value": "Moreano"
+    },
+    {
+      "value": "Falcones"
+    },
+    {
+      "value": "Santamaria"
+    },
+    {
+      "value": "Izquierdo"
+    },
+    {
+      "value": "Nazareno"
+    },
+    {
+      "value": "Imbaquingo"
+    },
+    {
+      "value": "Tigrero"
+    },
+    {
+      "value": "Oviedo"
+    },
+    {
+      "value": "Manzaba"
+    },
+    {
+      "value": "Taipe"
+    },
+    {
+      "value": "Granja"
+    },
+    {
+      "value": "Albuja"
+    },
+    {
+      "value": "Chiluisa"
+    },
+    {
+      "value": "Cerda"
+    },
+    {
+      "value": "Villagomez"
+    },
+    {
+      "value": "Vintimilla"
+    },
+    {
+      "value": "Duarte"
+    },
+    {
+      "value": "Santacruz"
+    },
+    {
+      "value": "Barre"
+    },
+    {
+      "value": "Ormaza"
+    },
+    {
+      "value": "Cervantes"
+    },
+    {
+      "value": "Rugel"
+    },
+    {
+      "value": "Fonseca"
+    },
+    {
+      "value": "Matamoros"
+    },
+    {
+      "value": "Barreiro"
+    },
+    {
+      "value": "Moyano"
+    },
+    {
+      "value": "Gallo"
+    },
+    {
+      "value": "Preciado"
+    },
+    {
+      "value": "Manzano"
+    },
+    {
+      "value": "Ruales"
+    },
+    {
+      "value": "Villalta"
+    },
+    {
+      "value": "Pallo"
+    },
+    {
+      "value": "Ledesma"
+    },
+    {
+      "value": "Escalante"
+    },
+    {
+      "value": "Tanguila"
+    },
+    {
+      "value": "Arcentales"
+    },
+    {
+      "value": "Pesantes"
+    },
+    {
+      "value": "Balcazar"
+    },
+    {
+      "value": "Clavijo"
+    },
+    {
+      "value": "Endara"
+    },
+    {
+      "value": "Penafiel"
+    },
+    {
+      "value": "Mantuano"
+    },
+    {
+      "value": "Llumiquinga"
+    },
+    {
+      "value": "Heras"
+    },
+    {
+      "value": "Olivo"
+    },
+    {
+      "value": "Moncada"
+    },
+    {
+      "value": "Tapuy"
+    },
+    {
+      "value": "Balladares"
+    },
+    {
+      "value": "Alejandro"
+    },
+    {
+      "value": "Andino"
+    },
+    {
+      "value": "Condor"
+    },
+    {
+      "value": "Vazquez"
+    },
+    {
+      "value": "Izurieta"
+    },
+    {
+      "value": "Cuesta"
+    },
+    {
+      "value": "Zuniga"
+    },
+    {
+      "value": "Yunga"
+    },
+    {
+      "value": "Chang"
+    },
+    {
+      "value": "Quinteros"
+    },
+    {
+      "value": "Barba"
+    },
+    {
+      "value": "Lima"
+    },
+    {
+      "value": "Monar"
+    },
+    {
+      "value": "Falconi"
+    },
+    {
+      "value": "Litardo"
+    },
+    {
+      "value": "Gonzales"
+    },
+    {
+      "value": "Quizhpe"
+    },
+    {
+      "value": "Guanoluisa"
+    },
+    {
+      "value": "Villacreses"
+    },
+    {
+      "value": "Vidal"
+    },
+    {
+      "value": "Salvador"
+    },
+    {
+      "value": "Pilay"
+    },
+    {
+      "value": "Rizzo"
+    },
+    {
+      "value": "Barreno"
+    },
+    {
+      "value": "Toscano"
+    },
+    {
+      "value": "Carbo"
+    },
+    {
+      "value": "Banchon"
+    },
+    {
+      "value": "Saenz"
+    },
+    {
+      "value": "Tinoco"
+    },
+    {
+      "value": "Salguero"
+    },
+    {
+      "value": "Cuzco"
+    },
+    {
+      "value": "Gualan"
+    },
+    {
+      "value": "Chiliquinga"
+    },
+    {
+      "value": "Chilan"
+    },
+    {
+      "value": "Taco"
+    },
+    {
+      "value": "Chancay"
+    },
+    {
+      "value": "Malla"
+    },
+    {
+      "value": "Cano"
+    },
+    {
+      "value": "Rocha"
+    },
+    {
+      "value": "Yuquilema"
+    },
+    {
+      "value": "Pilozo"
+    },
+    {
+      "value": "Machuca"
+    },
+    {
+      "value": "Porras"
+    },
+    {
+      "value": "Quinonez"
+    },
+    {
+      "value": "Analuisa"
+    },
+    {
+      "value": "Yaguana"
+    },
+    {
+      "value": "Punina"
+    },
+    {
+      "value": "Changoluisa"
+    },
+    {
+      "value": "Romo"
+    },
+    {
+      "value": "Benites"
+    },
+    {
+      "value": "Guacho"
+    },
+    {
+      "value": "Zabala"
+    },
+    {
+      "value": "Condo"
+    },
+    {
+      "value": "Coral"
+    },
+    {
+      "value": "Regalado"
+    },
+    {
+      "value": "Farez"
+    },
+    {
+      "value": "Mancheno"
+    },
+    {
+      "value": "Venegas"
+    },
+    {
+      "value": "Gonzaga"
+    },
+    {
+      "value": "Baez"
+    },
+    {
+      "value": "Cacuango"
+    },
+    {
+      "value": "Moposita"
+    },
+    {
+      "value": "Espinel"
+    },
+    {
+      "value": "Merizalde"
+    },
+    {
+      "value": "Andi"
+    },
+    {
+      "value": "Bajana"
+    },
+    {
+      "value": "Baquero"
+    },
+    {
+      "value": "Ferrin"
+    },
+    {
+      "value": "Guaraca"
+    },
+    {
+      "value": "Sumba"
+    },
+    {
+      "value": "Casa"
+    },
+    {
+      "value": "Manosalvas"
+    },
+    {
+      "value": "Tenelema"
+    },
+    {
+      "value": "Yugcha"
+    },
+    {
+      "value": "Jama"
+    },
+    {
+      "value": "Davalos"
+    },
+    {
+      "value": "Galeas"
+    },
+    {
+      "value": "Asanza"
+    },
+    {
+      "value": "Machado"
+    },
+    {
+      "value": "Onofre"
+    },
+    {
+      "value": "Aspiazu"
+    },
+    {
+      "value": "Barzallo"
+    },
+    {
+      "value": "Santander"
+    },
+    {
+      "value": "Berrezueta"
+    },
+    {
+      "value": "Poma"
+    },
+    {
+      "value": "Yanza"
+    },
+    {
+      "value": "Prieto"
+    },
+    {
+      "value": "Siguencia"
+    },
+    {
+      "value": "Gordon"
+    },
+    {
+      "value": "Pucha"
+    },
+    {
+      "value": "Esparza"
+    },
+    {
+      "value": "Chuquimarca"
+    },
+    {
+      "value": "Pauta"
+    },
+    {
+      "value": "Cerezo"
+    },
+    {
+      "value": "Masabanda"
+    },
+    {
+      "value": "Balon"
+    },
+    {
+      "value": "Monge"
+    },
+    {
+      "value": "Tenezaca"
+    },
+    {
+      "value": "Garofalo"
+    },
+    {
+      "value": "Pilatasig"
+    },
+    {
+      "value": "Pulla"
+    },
+    {
+      "value": "Colcha"
+    },
+    {
+      "value": "Tonato"
+    },
+    {
+      "value": "Corrales"
+    },
+    {
+      "value": "Loza"
+    },
+    {
+      "value": "Cuero"
+    },
+    {
+      "value": "Goyes"
+    },
+    {
+      "value": "Amores"
+    },
+    {
+      "value": "Guaranda"
+    },
+    {
+      "value": "Panchi"
+    },
+    {
+      "value": "Ajila"
+    },
+    {
+      "value": "Guadamud"
+    },
+    {
+      "value": "Olaya"
+    },
+    {
+      "value": "Vilela"
+    },
+    {
+      "value": "Simbana"
+    },
+    {
+      "value": "Corozo"
+    },
+    {
+      "value": "Amaya"
+    },
+    {
+      "value": "Masaquiza"
+    },
+    {
+      "value": "Sigcha"
+    },
+    {
+      "value": "Maigua"
+    },
+    {
+      "value": "Alvia"
+    },
+    {
+      "value": "Verdugo"
+    },
+    {
+      "value": "Chiriguaya"
+    },
+    {
+      "value": "Jimbo"
+    },
+    {
+      "value": "Inga"
+    },
+    {
+      "value": "Aldas"
+    },
+    {
+      "value": "Abarca"
+    },
+    {
+      "value": "Malave"
+    },
+    {
+      "value": "Quichimbo"
+    },
+    {
+      "value": "Ricaurte"
+    },
+    {
+      "value": "Chiguano"
+    },
+    {
+      "value": "Escudero"
+    },
+    {
+      "value": "Estevez"
+    },
+    {
+      "value": "Toalombo"
+    },
+    {
+      "value": "Barco"
+    },
+    {
+      "value": "Rengifo"
+    },
+    {
+      "value": "Crespin"
+    },
+    {
+      "value": "Salavarria"
+    },
+    {
+      "value": "Minda"
+    },
+    {
+      "value": "Palomeque"
+    },
+    {
+      "value": "Cuji"
+    },
+    {
+      "value": "Anrango"
+    },
+    {
+      "value": "Negrete"
+    },
+    {
+      "value": "Triana"
+    },
+    {
+      "value": "Sellan"
+    },
+    {
+      "value": "Jaya"
+    },
+    {
+      "value": "Arriaga"
+    },
+    {
+      "value": "Bosquez"
+    },
+    {
+      "value": "Noriega"
+    },
+    {
+      "value": "Roca"
+    },
+    {
+      "value": "Anzules"
+    },
+    {
+      "value": "Catota"
+    },
+    {
+      "value": "Quishpi"
+    },
+    {
+      "value": "Ruano"
+    },
+    {
+      "value": "Nevarez"
+    },
+    {
+      "value": "Bazan"
+    },
+    {
+      "value": "Argudo"
+    },
+    {
+      "value": "Pachay"
+    },
+    {
+      "value": "Villota"
+    },
+    {
+      "value": "Defaz"
+    },
+    {
+      "value": "Muentes"
+    },
+    {
+      "value": "Icaza"
+    },
+    {
+      "value": "Barrezueta"
+    },
+    {
+      "value": "Cujilema"
+    },
+    {
+      "value": "Encarnacion"
+    },
+    {
+      "value": "Pelaez"
+    },
+    {
+      "value": "Mogrovejo"
+    },
+    {
+      "value": "Baldeon"
+    },
+    {
+      "value": "Cortes"
+    },
+    {
+      "value": "Pachacama"
+    },
+    {
+      "value": "Trejo"
+    },
+    {
+      "value": "Guadalupe"
+    },
+    {
+      "value": "Toral"
+    },
+    {
+      "value": "Ontaneda"
+    },
+    {
+      "value": "Cobo"
+    },
+    {
+      "value": "Quinga"
+    },
+    {
+      "value": "Cayambe"
+    },
+    {
+      "value": "Novillo"
+    },
+    {
+      "value": "Andy"
+    },
+    {
+      "value": "Rosas"
+    },
+    {
+      "value": "Ureta"
+    },
+    {
+      "value": "Tene"
+    },
+    {
+      "value": "Almachi"
+    },
+    {
+      "value": "Nieves"
+    },
+    {
+      "value": "Varas"
+    },
+    {
+      "value": "Aroca"
+    },
+    {
+      "value": "Lalangui"
+    },
+    {
+      "value": "Avalos"
+    },
+    {
+      "value": "Eras"
+    },
+    {
+      "value": "Verdesoto"
+    },
+    {
+      "value": "Gualpa"
+    },
+    {
+      "value": "Loachamin"
+    },
+    {
+      "value": "Paspuel"
+    },
+    {
+      "value": "Arizaga"
+    },
+    {
+      "value": "Galindo"
+    },
+    {
+      "value": "Chauca"
+    },
+    {
+      "value": "Quelal"
+    }
+  ],
+  "production_ready": false
+}
