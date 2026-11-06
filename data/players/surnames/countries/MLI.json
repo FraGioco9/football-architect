@@ -25,6 +25,14 @@
       "territory": "Mali",
       "coverage": "Mali-specific ranking, supplementary published last-name entries, ranks 196 through approximately 655",
       "limitations": "Estimated/private data, not a civil registry; methodology and licence unverified; names also used as given names are retained only where this source labels them as surnames; no numeric frequencies used."
+    },
+    {
+      "id": "locatefamily-geographic-2019",
+      "url": "https://github.com/SajjadPourali/Surnames/blob/183d75a675dcd45973a6422b34ee6bb302cc27b0/withoutStatistics/ml.txt",
+      "territory": "Mali",
+      "source_blob_sha": "1f12300be7e7a0205cea167e3ab8d94177dd6f66",
+      "coverage": "Country-specific last-name column indexed from 2019 locatefamily.com geographic listings and published by SajjadPourali/Surnames; does not claim national coverage.",
+      "limitations": "Sparse secondary Mali-geographic sample, includes non-surname business strings, given-name ambiguity and errors. Clear non-name entries removed, but the remaining values are not individually independently corroborated. This does NOT support filling 3000 without invention. Upstream data rights unclear despite the mirror's MIT license. Research only."
     }
   ],
   "surnames": [
@@ -1527,6 +1535,1287 @@
     },
     {
       "value": "Bocar"
+    },
+    {
+      "value": "Zomahoun"
+    },
+    {
+      "value": "Ousmane"
+    },
+    {
+      "value": "Badra"
+    },
+    {
+      "value": "Gondo"
+    },
+    {
+      "value": "Sekou"
+    },
+    {
+      "value": "Moulekafou"
+    },
+    {
+      "value": "Koureissi"
+    },
+    {
+      "value": "Sa"
+    },
+    {
+      "value": "Soungalo"
+    },
+    {
+      "value": "Attisso"
+    },
+    {
+      "value": "Fousseyni"
+    },
+    {
+      "value": "Hmam"
+    },
+    {
+      "value": "Menta"
+    },
+    {
+      "value": "Cheick"
+    },
+    {
+      "value": "Becamo"
+    },
+    {
+      "value": "Biro"
+    },
+    {
+      "value": "Yacoubou"
+    },
+    {
+      "value": "Touko"
+    },
+    {
+      "value": "Stevance"
+    },
+    {
+      "value": "Sakaly"
+    },
+    {
+      "value": "Samuel"
+    },
+    {
+      "value": "Alidou"
+    },
+    {
+      "value": "Awougno"
+    },
+    {
+      "value": "Abdrahamane"
+    },
+    {
+      "value": "Fares"
+    },
+    {
+      "value": "Haneefa"
+    },
+    {
+      "value": "Hane"
+    },
+    {
+      "value": "Modibo"
+    },
+    {
+      "value": "Djeneba"
+    },
+    {
+      "value": "Edmon"
+    },
+    {
+      "value": "Bintou"
+    },
+    {
+      "value": "Bankineza"
+    },
+    {
+      "value": "Lassana"
+    },
+    {
+      "value": "Yaressi"
+    },
+    {
+      "value": "Renouveau"
+    },
+    {
+      "value": "Rabadan"
+    },
+    {
+      "value": "Rida"
+    },
+    {
+      "value": "Ismael"
+    },
+    {
+      "value": "Ismail"
+    },
+    {
+      "value": "Gie"
+    },
+    {
+      "value": "Gesam"
+    },
+    {
+      "value": "Zeinaba"
+    },
+    {
+      "value": "Toumi"
+    },
+    {
+      "value": "Tudos"
+    },
+    {
+      "value": "Tapo"
+    },
+    {
+      "value": "Seuyong"
+    },
+    {
+      "value": "Salikou"
+    },
+    {
+      "value": "Sud"
+    },
+    {
+      "value": "Seybou"
+    },
+    {
+      "value": "Siaka"
+    },
+    {
+      "value": "Askofare"
+    },
+    {
+      "value": "Abdoul"
+    },
+    {
+      "value": "Abdoulatif"
+    },
+    {
+      "value": "Abbas"
+    },
+    {
+      "value": "Akouete"
+    },
+    {
+      "value": "Ayach"
+    },
+    {
+      "value": "Abdramane"
+    },
+    {
+      "value": "Abba"
+    },
+    {
+      "value": "Alpha"
+    },
+    {
+      "value": "Antoine"
+    },
+    {
+      "value": "Frantz"
+    },
+    {
+      "value": "Osman"
+    },
+    {
+      "value": "Ovchinnikov"
+    },
+    {
+      "value": "Mendoza"
+    },
+    {
+      "value": "Malitique"
+    },
+    {
+      "value": "Mouctar"
+    },
+    {
+      "value": "Michael"
+    },
+    {
+      "value": "Couriba"
+    },
+    {
+      "value": "Curie"
+    },
+    {
+      "value": "Czaplinski"
+    },
+    {
+      "value": "Voyage"
+    },
+    {
+      "value": "Bakouan"
+    },
+    {
+      "value": "Baye"
+    },
+    {
+      "value": "Bartolo"
+    },
+    {
+      "value": "Bona"
+    },
+    {
+      "value": "Buzz"
+    },
+    {
+      "value": "Boubacarbiro"
+    },
+    {
+      "value": "Konlambigue"
+    },
+    {
+      "value": "Lacina"
+    },
+    {
+      "value": "Lawubah"
+    },
+    {
+      "value": "Liang"
+    },
+    {
+      "value": "Yahya"
+    },
+    {
+      "value": "Yap"
+    },
+    {
+      "value": "Plastique"
+    },
+    {
+      "value": "Rich"
+    },
+    {
+      "value": "Rieussec"
+    },
+    {
+      "value": "Ressources"
+    },
+    {
+      "value": "Richard"
+    },
+    {
+      "value": "Radio"
+    },
+    {
+      "value": "Roach"
+    },
+    {
+      "value": "Rosa"
+    },
+    {
+      "value": "Raoul"
+    },
+    {
+      "value": "Rene"
+    },
+    {
+      "value": "Investissement"
+    },
+    {
+      "value": "Info"
+    },
+    {
+      "value": "Ismaila"
+    },
+    {
+      "value": "Intelis"
+    },
+    {
+      "value": "Idris"
+    },
+    {
+      "value": "Idriss"
+    },
+    {
+      "value": "Ito"
+    },
+    {
+      "value": "Ibstelix"
+    },
+    {
+      "value": "Nienou"
+    },
+    {
+      "value": "Nafanga"
+    },
+    {
+      "value": "Na"
+    },
+    {
+      "value": "Nicolas"
+    },
+    {
+      "value": "Neimatou"
+    },
+    {
+      "value": "N-daw"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Ndoye"
+    },
+    {
+      "value": "Ngom"
+    },
+    {
+      "value": "Nguiro"
+    },
+    {
+      "value": "Nouhoum"
+    },
+    {
+      "value": "Nouhoun"
+    },
+    {
+      "value": "Ndindayino"
+    },
+    {
+      "value": "Galedou"
+    },
+    {
+      "value": "Gouro"
+    },
+    {
+      "value": "George"
+    },
+    {
+      "value": "Gbadoe"
+    },
+    {
+      "value": "Guisso"
+    },
+    {
+      "value": "Ghammache"
+    },
+    {
+      "value": "Gill"
+    },
+    {
+      "value": "Gaye"
+    },
+    {
+      "value": "Gold"
+    },
+    {
+      "value": "Gaoussou"
+    },
+    {
+      "value": "Gacko"
+    },
+    {
+      "value": "Gillis"
+    },
+    {
+      "value": "Gaudin"
+    },
+    {
+      "value": "Zhang"
+    },
+    {
+      "value": "Zafar"
+    },
+    {
+      "value": "Zamai"
+    },
+    {
+      "value": "Toussaint"
+    },
+    {
+      "value": "Tezgel"
+    },
+    {
+      "value": "Technolab"
+    },
+    {
+      "value": "Tabalaba"
+    },
+    {
+      "value": "Travis"
+    },
+    {
+      "value": "Tomota"
+    },
+    {
+      "value": "Traorae"
+    },
+    {
+      "value": "Tidiane"
+    },
+    {
+      "value": "Tidiani"
+    },
+    {
+      "value": "Tic"
+    },
+    {
+      "value": "Tchetchebleko"
+    },
+    {
+      "value": "Thompson"
+    },
+    {
+      "value": "Tiemoko"
+    },
+    {
+      "value": "Tawati"
+    },
+    {
+      "value": "Tinkele"
+    },
+    {
+      "value": "Triai"
+    },
+    {
+      "value": "Thibault"
+    },
+    {
+      "value": "Tan"
+    },
+    {
+      "value": "Traveltours"
+    },
+    {
+      "value": "Tamou"
+    },
+    {
+      "value": "Toualy"
+    },
+    {
+      "value": "Tiefolo"
+    },
+    {
+      "value": "Sofware"
+    },
+    {
+      "value": "Sherba"
+    },
+    {
+      "value": "Sankhare"
+    },
+    {
+      "value": "Serigne"
+    },
+    {
+      "value": "Sanvee"
+    },
+    {
+      "value": "Sallemi"
+    },
+    {
+      "value": "Saad"
+    },
+    {
+      "value": "Saham"
+    },
+    {
+      "value": "Sinenta"
+    },
+    {
+      "value": "Surl"
+    },
+    {
+      "value": "Seidi"
+    },
+    {
+      "value": "Sallah"
+    },
+    {
+      "value": "Seydina"
+    },
+    {
+      "value": "Selim"
+    },
+    {
+      "value": "Sankorelabs"
+    },
+    {
+      "value": "Sas"
+    },
+    {
+      "value": "Site"
+    },
+    {
+      "value": "Sawaya"
+    },
+    {
+      "value": "Saamiu"
+    },
+    {
+      "value": "Segala"
+    },
+    {
+      "value": "Sebastian"
+    },
+    {
+      "value": "Statix"
+    },
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Soumountera"
+    },
+    {
+      "value": "Shahid"
+    },
+    {
+      "value": "Shop"
+    },
+    {
+      "value": "Sani"
+    },
+    {
+      "value": "Sh"
+    },
+    {
+      "value": "Simplice"
+    },
+    {
+      "value": "Samaka"
+    },
+    {
+      "value": "Salami"
+    },
+    {
+      "value": "Sl"
+    },
+    {
+      "value": "Seya"
+    },
+    {
+      "value": "Salmon"
+    },
+    {
+      "value": "Sharingprogram"
+    },
+    {
+      "value": "Shaarani"
+    },
+    {
+      "value": "Saleh"
+    },
+    {
+      "value": "Abdallah"
+    },
+    {
+      "value": "Amonce"
+    },
+    {
+      "value": "Abdullah"
+    },
+    {
+      "value": "Akesushimaliyafukeyiyuan"
+    },
+    {
+      "value": "Abdel"
+    },
+    {
+      "value": "Abramia"
+    },
+    {
+      "value": "Aurelekouame"
+    },
+    {
+      "value": "Amine"
+    },
+    {
+      "value": "Audeoud"
+    },
+    {
+      "value": "Abayithera"
+    },
+    {
+      "value": "Ayubi"
+    },
+    {
+      "value": "Ani"
+    },
+    {
+      "value": "Alhakimou"
+    },
+    {
+      "value": "Abdu"
+    },
+    {
+      "value": "Acti"
+    },
+    {
+      "value": "Alou"
+    },
+    {
+      "value": "Asso"
+    },
+    {
+      "value": "Adam"
+    },
+    {
+      "value": "Ades"
+    },
+    {
+      "value": "Akinocho"
+    },
+    {
+      "value": "Akimy"
+    },
+    {
+      "value": "Aboul"
+    },
+    {
+      "value": "Ayi"
+    },
+    {
+      "value": "Alhousseyne"
+    },
+    {
+      "value": "Arbi"
+    },
+    {
+      "value": "Adoun"
+    },
+    {
+      "value": "Frls"
+    },
+    {
+      "value": "Faguibine"
+    },
+    {
+      "value": "Faskoye"
+    },
+    {
+      "value": "Fawe"
+    },
+    {
+      "value": "Femme"
+    },
+    {
+      "value": "Fouseyni"
+    },
+    {
+      "value": "Formation"
+    },
+    {
+      "value": "Fodie"
+    },
+    {
+      "value": "Franklin"
+    },
+    {
+      "value": "Faiza"
+    },
+    {
+      "value": "Flantie"
+    },
+    {
+      "value": "Fofan"
+    },
+    {
+      "value": "Fakhry"
+    },
+    {
+      "value": "Federation"
+    },
+    {
+      "value": "Fanta"
+    },
+    {
+      "value": "Freres"
+    },
+    {
+      "value": "Fakoly"
+    },
+    {
+      "value": "Fatima"
+    },
+    {
+      "value": "Fatimetou"
+    },
+    {
+      "value": "Far"
+    },
+    {
+      "value": "Ocana"
+    },
+    {
+      "value": "Olga"
+    },
+    {
+      "value": "Orabank"
+    },
+    {
+      "value": "Olivier"
+    },
+    {
+      "value": "Org"
+    },
+    {
+      "value": "Ong"
+    },
+    {
+      "value": "Ozturk"
+    },
+    {
+      "value": "Orange"
+    },
+    {
+      "value": "Onwuka"
+    },
+    {
+      "value": "Hamadoun"
+    },
+    {
+      "value": "Habib"
+    },
+    {
+      "value": "Horner"
+    },
+    {
+      "value": "Horne"
+    },
+    {
+      "value": "Hawa"
+    },
+    {
+      "value": "Hammou"
+    },
+    {
+      "value": "Hounake"
+    },
+    {
+      "value": "Hardley"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Malissa"
+    },
+    {
+      "value": "Madani"
+    },
+    {
+      "value": "Manzi"
+    },
+    {
+      "value": "Macoura"
+    },
+    {
+      "value": "Mahazou"
+    },
+    {
+      "value": "Mica"
+    },
+    {
+      "value": "Marshal"
+    },
+    {
+      "value": "Maguiraga"
+    },
+    {
+      "value": "My"
+    },
+    {
+      "value": "Malik"
+    },
+    {
+      "value": "Moss"
+    },
+    {
+      "value": "Moubarak"
+    },
+    {
+      "value": "Mope"
+    },
+    {
+      "value": "Mizero"
+    },
+    {
+      "value": "Moise"
+    },
+    {
+      "value": "Mariane"
+    },
+    {
+      "value": "Mardochee"
+    },
+    {
+      "value": "Malili"
+    },
+    {
+      "value": "Melama"
+    },
+    {
+      "value": "Mamoutou"
+    },
+    {
+      "value": "Malicom"
+    },
+    {
+      "value": "Margolis"
+    },
+    {
+      "value": "M-bo"
+    },
+    {
+      "value": "Midiomba"
+    },
+    {
+      "value": "Mansour"
+    },
+    {
+      "value": "Malfait"
+    },
+    {
+      "value": "Metowanou"
+    },
+    {
+      "value": "Minga"
+    },
+    {
+      "value": "Mbarakou"
+    },
+    {
+      "value": "Mady"
+    },
+    {
+      "value": "Massire"
+    },
+    {
+      "value": "Mining"
+    },
+    {
+      "value": "Moustaph"
+    },
+    {
+      "value": "Mougnard"
+    },
+    {
+      "value": "Moctardicko"
+    },
+    {
+      "value": "Mbaya"
+    },
+    {
+      "value": "Maria"
+    },
+    {
+      "value": "Mansa"
+    },
+    {
+      "value": "Meite"
+    },
+    {
+      "value": "Maliorangemali"
+    },
+    {
+      "value": "Malirap"
+    },
+    {
+      "value": "Master"
+    },
+    {
+      "value": "Mazzella"
+    },
+    {
+      "value": "Jacqueline"
+    },
+    {
+      "value": "Julian"
+    },
+    {
+      "value": "Johanes"
+    },
+    {
+      "value": "Jacquemin"
+    },
+    {
+      "value": "Jean"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "John"
+    },
+    {
+      "value": "Jamieson"
+    },
+    {
+      "value": "Crash"
+    },
+    {
+      "value": "Cheickahmedtidianikane"
+    },
+    {
+      "value": "Cheickne"
+    },
+    {
+      "value": "Coulidiaty"
+    },
+    {
+      "value": "Cru"
+    },
+    {
+      "value": "Clean"
+    },
+    {
+      "value": "Chollet"
+    },
+    {
+      "value": "Chouaibou"
+    },
+    {
+      "value": "Chen"
+    },
+    {
+      "value": "Castronoda"
+    },
+    {
+      "value": "Comlan"
+    },
+    {
+      "value": "Cecile"
+    },
+    {
+      "value": "Crdi"
+    },
+    {
+      "value": "Castillo"
+    },
+    {
+      "value": "Claude"
+    },
+    {
+      "value": "Charles"
+    },
+    {
+      "value": "Cazor"
+    },
+    {
+      "value": "Chua"
+    },
+    {
+      "value": "Daniel"
+    },
+    {
+      "value": "Dala"
+    },
+    {
+      "value": "Djiro"
+    },
+    {
+      "value": "Dramane"
+    },
+    {
+      "value": "Diariatou"
+    },
+    {
+      "value": "Dyogou"
+    },
+    {
+      "value": "Diadie"
+    },
+    {
+      "value": "Dapa"
+    },
+    {
+      "value": "Djegui"
+    },
+    {
+      "value": "Djibril"
+    },
+    {
+      "value": "Diabagate"
+    },
+    {
+      "value": "Dogbovi"
+    },
+    {
+      "value": "Democrate"
+    },
+    {
+      "value": "Diarrah"
+    },
+    {
+      "value": "Drtyg"
+    },
+    {
+      "value": "Diplomatic"
+    },
+    {
+      "value": "Drissa"
+    },
+    {
+      "value": "Dahl"
+    },
+    {
+      "value": "Deby"
+    },
+    {
+      "value": "Duret"
+    },
+    {
+      "value": "Debey"
+    },
+    {
+      "value": "Vant"
+    },
+    {
+      "value": "Viossi"
+    },
+    {
+      "value": "Vilcu"
+    },
+    {
+      "value": "Viswanathan"
+    },
+    {
+      "value": "Qimi"
+    },
+    {
+      "value": "Xivna"
+    },
+    {
+      "value": "Extream"
+    },
+    {
+      "value": "Esaie"
+    },
+    {
+      "value": "Erman"
+    },
+    {
+      "value": "Ekpeh"
+    },
+    {
+      "value": "Ere"
+    },
+    {
+      "value": "Eureka"
+    },
+    {
+      "value": "Expertise"
+    },
+    {
+      "value": "Emmanuel"
+    },
+    {
+      "value": "Elhadj"
+    },
+    {
+      "value": "Escort"
+    },
+    {
+      "value": "Espace"
+    },
+    {
+      "value": "Bnk"
+    },
+    {
+      "value": "Bouzou"
+    },
+    {
+      "value": "Berthier"
+    },
+    {
+      "value": "Bly"
+    },
+    {
+      "value": "Bliard"
+    },
+    {
+      "value": "Bodon"
+    },
+    {
+      "value": "Balosk"
+    },
+    {
+      "value": "Bhai"
+    },
+    {
+      "value": "Bakary"
+    },
+    {
+      "value": "Buro"
+    },
+    {
+      "value": "Ben"
+    },
+    {
+      "value": "Boureima"
+    },
+    {
+      "value": "Boiry"
+    },
+    {
+      "value": "Beidi"
+    },
+    {
+      "value": "Barges"
+    },
+    {
+      "value": "Bamako-coura"
+    },
+    {
+      "value": "Bouba"
+    },
+    {
+      "value": "Boubeye"
+    },
+    {
+      "value": "Babi"
+    },
+    {
+      "value": "Kocevar"
+    },
+    {
+      "value": "Krishnan"
+    },
+    {
+      "value": "Kipret"
+    },
+    {
+      "value": "Kola"
+    },
+    {
+      "value": "Kassambra"
+    },
+    {
+      "value": "Kintonou"
+    },
+    {
+      "value": "Koureich"
+    },
+    {
+      "value": "Khairy"
+    },
+    {
+      "value": "Kanakomo"
+    },
+    {
+      "value": "Kaja"
+    },
+    {
+      "value": "Kady"
+    },
+    {
+      "value": "Kamgaing"
+    },
+    {
+      "value": "Kalilou"
+    },
+    {
+      "value": "Kokouvi"
+    },
+    {
+      "value": "Katie"
+    },
+    {
+      "value": "Kalakodio"
+    },
+    {
+      "value": "Khadi"
+    },
+    {
+      "value": "Khadidjatou"
+    },
+    {
+      "value": "King"
+    },
+    {
+      "value": "Kevin"
+    },
+    {
+      "value": "Kalifa"
+    },
+    {
+      "value": "Kadi"
+    },
+    {
+      "value": "Kanne"
+    },
+    {
+      "value": "Karim"
+    },
+    {
+      "value": "Laforgues"
+    },
+    {
+      "value": "Liberti"
+    },
+    {
+      "value": "Latif"
+    },
+    {
+      "value": "Laborex"
+    },
+    {
+      "value": "Levy"
+    },
+    {
+      "value": "Leon"
+    },
+    {
+      "value": "Light"
+    },
+    {
+      "value": "Lompo"
+    },
+    {
+      "value": "Lompogarba"
+    },
+    {
+      "value": "Loum"
+    },
+    {
+      "value": "Logistics"
+    },
+    {
+      "value": "Lin"
+    },
+    {
+      "value": "Laminediarra"
+    },
+    {
+      "value": "Laminekaba"
+    },
+    {
+      "value": "Yuan"
+    },
+    {
+      "value": "Pacepep"
+    },
+    {
+      "value": "Pati"
+    },
+    {
+      "value": "Papa"
+    },
+    {
+      "value": "Papou"
+    },
+    {
+      "value": "Pickles"
+    },
+    {
+      "value": "Paul"
+    },
+    {
+      "value": "Palliere"
+    },
+    {
+      "value": "Wahab"
+    },
+    {
+      "value": "Wodji"
     }
   ],
   "production_ready": false

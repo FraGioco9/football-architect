@@ -45,7 +45,9 @@ test('catalog is uniform, nonproduction and has valid per-country metadata', () 
   assert.equal(catalog.schema_version, 1);
   assert.equal(catalog.kind, 'surnames_catalog');
   assert.equal(catalog.selection_policy, 'uniform');
-  assert.equal(catalog.target_per_country, 500);
+  assert.equal(catalog.target_per_country, 3000);
+  assert.equal(catalog.target_total_surnames, 150000);
+  assert.equal(catalog.total_surnames, catalog.countries.reduce((sum, x) => sum + x.count, 0));
   assert.equal(catalog.production_ready, false);
   checkForbiddenKeys(catalog);
   for (const country of catalog.countries) {
@@ -56,6 +58,12 @@ test('catalog is uniform, nonproduction and has valid per-country metadata', () 
     assert.match(country.source_head_sha, /^[a-f0-9]{40}$/);
     assert.match(country.source_blob_sha, /^[a-f0-9]{40}$/);
     assert.match(country.source_branch, /^research\/surnames-01-batch-[a-m]$/);
+    assert.ok(country.count >= 500 && country.count <= 3000);
+    if (country.expansion_blob_sha) {
+      assert.match(country.expansion_blob_sha, /^[a-f0-9]{40}$/);
+      assert.match(country.expansion_branch, /^research\/surnames-3000-batch-[a-m]$/);
+      assert.match(country.expansion_head_sha, /^[a-f0-9]{40}$/);
+    }
     assert.ok(Number.isInteger(country.source_pr) && country.source_pr > 0);
   }
 });
@@ -64,7 +72,7 @@ for (const country of catalog.countries) {
   test(country.code + ': exact source blob, strict surname contract and actual count', () => {
     const path = join(root, country.path);
     const sourceSha = execFileSync('git', ['hash-object', path], { cwd: root, encoding: 'utf8' }).trim();
-    assert.equal(sourceSha, country.source_blob_sha, 'original source Git blob must be preserved');
+    assert.equal(sourceSha, country.expansion_blob_sha ?? country.source_blob_sha, 'exact original or expanded source Git blob must be preserved');
     const bank = JSON.parse(readFileSync(path, 'utf8'));
     assert.deepEqual(Object.keys(bank).sort(), [
       'code', 'kind', 'production_ready', 'schema_version',
@@ -80,9 +88,19 @@ for (const country of catalog.countries) {
     assert.equal(country.sources_available, true);
     assert.ok(Array.isArray(bank.surnames));
     assert.equal(bank.surnames.length, country.count);
-    assert.equal(country.status, bank.surnames.length === 500 ? 'complete' : 'partial');
-    if (country.status === 'complete') assert.equal(bank.surnames.length, 500);
-    if (country.status === 'partial') assert.ok(bank.surnames.length < 500);
+    assert.equal(country.status, bank.surnames.length === 3000 ? 'complete' : 'partial');
+    if (country.status === 'complete') assert.equal(bank.surnames.length, 3000);
+    if (country.status === 'partial') assert.ok(bank.surnames.length >= 500 && bank.surnames.length < 3000);
+    if (country.expansion_blob_sha) {
+      // The 500-name original was committed in the integration branch history.
+      // Verify the exact original blob and preserve its sequence, not only its cardinality.
+      const previous = JSON.parse(execFileSync('git', ['cat-file', 'blob', country.source_blob_sha], {
+        cwd: root, encoding: 'utf8', maxBuffer: 2 * 1024 * 1024
+      }));
+      assert.equal(previous.code, bank.code);
+      assert.equal(previous.surnames.length, 500);
+      assert.deepEqual(bank.surnames.slice(0, 500), previous.surnames, country.code + ' original 500 surnames must remain byte-for-byte equivalent at entry level');
+    }
     const seen = new Set();
     checkForbiddenKeys(bank);
     for (const [index, item] of bank.surnames.entries()) {
@@ -95,10 +113,15 @@ for (const country of catalog.countries) {
   });
 }
 
-test('50 complete country pools each have 500 documented entries (25,000 total)', () => {
-  assert.equal(catalog.countries.reduce((sum, country) => sum + country.count, 0), 25000);
-  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 50);
-  assert.deepEqual(catalog.countries.filter(x => x.status !== 'complete'), []);
+test('cumulative counts match real pools and the 150,000 target, without padding', () => {
+  const entries = catalog.countries.reduce((sum, country) => sum + country.count, 0);
+  assert.equal(entries, catalog.total_surnames);
+  assert.ok(entries >= 25000 && entries <= 150000);
+  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 14);
+  assert.equal(catalog.countries.filter(x => x.status === 'partial').length, 36);
+  const mali = catalog.countries.find(x => x.code === 'MLI');
+  assert.equal(mali.count, 927);
+  assert.equal(mali.status, 'partial');
 });
 
 test('adversarial Unicode and compound surname grammar', () => {

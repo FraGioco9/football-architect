@@ -2,11 +2,11 @@
 
 ## Status and usage boundaries
 
-- **50 country files are present**, with **25,000 surnames**: all **50 national pools contain 500 entries**. The catalog uses `complete` for structurally validated 500-entry pools. This does **not** mean person-level attestation or production/legal certification; each bank remains research-only.
+- **New cumulative target: 50 × 3,000 = 150,000 national surname entries.** Current verified snapshot: **60,427 / 150,000** across 50 files: **14 `complete` (3,000 each)** and **36 `partial`** (35 at 500 and Mali/MLI at 927). No 500-entry bank is `complete` under this target. All 25,000 original entries are preserved. Status is a numerical completeness label, **not** independent population/source/licensing or production certification.
 - Every surname has **equal selection probability within its country pool**. The JSON entry schema is only `{ "value": "..." }`; **no weight, probability, rank or frequency field is permitted**. Country incidence/rank data are cited as evidence of a surname's occurrence **only**. There is no generator integration in this PR.
 - All files have `production_ready: false`; country attestation, exact original spellings, romanization equivalence and upstream source/licensing rights require separate manual review before release.
 - Codes are the same 50 national codes, in the same order, as PLAYERS-03 PR #407's catalog as verified at `5eaff1081d6c04edae858bd0999c95b09880c1ad`. **PLAYERS-03 files and PR #407 are untouched**.
-- The country JSON files are imported **byte-for-byte** from the source Git blobs, without batch-local tests/workflows or unrelated changes. The catalog records **source PR, branch, exact source head and Git blob SHA per country** for conflict-safe future updates.
+- The catalog preserves **original SURNAMES-01 batch source PR, branch, exact HEAD and original 500-entry Git blob SHA** for every nation. For 3,000-target expansions it separately records **expansion branch, exact HEAD and integrated blob SHA**. Every expanded bank retains its 500 original surname values **in the same order**. Files are imported byte-for-byte from expansion branches; no batch-local workflows/tests or unrelated changes are imported.
 
 ## Source batch manifest
 
@@ -46,9 +46,35 @@ The **national JSON `sources` arrays are the authoritative per-country citations
 - **L**: Italy includes a third-party wordlist; Spain, France and USA reference INE, INSEE and US Census respectively, with differing population periods. National surname occurrence is separate from an equal-probability generator.
 - **M**: Scotland and Canada use their own territorial sources (including multiple Canadian language communities); Poland preserves Polish Latin diacritics and includes source spelling cross-checks. Third-party incidence estimates need licensing and spelling audits.
 
+## Expansion to 3,000 — latest verified snapshot
+
+**Target: 150,000** entries; **actual: 60,427** (14 complete at 3,000, 36 partial). No synthesized filler. **All original 50 × 500 values remain preserved**, with the original Git blob SHA and associated historical source PR retained per country. At each refresh compare source branch HEADs, each updated blob, original 500-name prefix, strict Unicode and the catalog before importing.
+
+| Batch | Expanded branch snapshot (no source PR required) | Country counts currently integrated | Status |
+| --- | --- | --- | --- |
+| A | [78b6ed4e166e](https://github.com/FraGioco9/football-architect/commit/78b6ed4e166e7a5f64b2f9969520f710c38ab135) · `research/surnames-3000-batch-a` | ENG 3000; WAL 3000; POR 3000; BRA 3000 | complete |
+| B | [4186616986aa](https://github.com/FraGioco9/football-architect/commit/4186616986aa2d03773d5c3527f2010bab87e26c) · `research/surnames-3000-batch-b` | GER 3000; AUT 3000; SUI 3000; BEL 3000 | complete |
+| C | `research/surnames-3000-batch-c` | Original 500 per nation retained | PENDING expanded JSON |
+| D | `research/surnames-3000-batch-d` | Original 500 per nation retained | PENDING expanded JSON |
+| E | `research/surnames-3000-batch-e` | Original 500 per nation retained | PENDING expanded JSON |
+| F | `research/surnames-3000-batch-f` | Original 500 per nation retained | PENDING expanded JSON |
+| G | `research/surnames-3000-batch-g` | Original 500 per nation retained | PENDING expanded JSON |
+| H | [b44e3c9ed63e](https://github.com/FraGioco9/football-architect/commit/b44e3c9ed63e411cd9b644427023aa847db54a1a) · `research/surnames-3000-batch-h` | SEN 3000; CIV 3000; NGA 3000; MLI 927 | partial: MLI 927 |
+| I | `research/surnames-3000-batch-i` | Original 500 per nation retained | PENDING expanded JSON |
+| J | `research/surnames-3000-batch-j` | Original 500 per nation retained | PENDING expanded JSON |
+| K | `research/surnames-3000-batch-k` | Original 500 per nation retained | PENDING expanded JSON |
+| L | `research/surnames-3000-batch-l` | Original 500 per nation retained | PENDING expanded JSON |
+| M | [67343d344909](https://github.com/FraGioco9/football-architect/commit/67343d3449090632737d70ee168385be49592b41) · `research/surnames-3000-batch-m` | SCO 3000; CAN 3000; POL 3000 | complete |
+
+**Mali**: the expanded H source currently documents **927** distinct surname entries (500 originals + 427 additional); it is **2,073 below 3,000** and must remain `partial`. The other H countries (SEN, CIV, NGA) are each at 3,000. Branch C exists but was still at the unmodified `main` HEAD when checked; no new JSON available. Other absent expansions remain unintegrated rather than inferred.
+
+**Country source evidence:** the exact expanded JSON `sources` arrays retain publisher URLs, territorial scope and data limits. These sources have varying national reliability. A published country-tagged list, secondary incidence estimate or locale name corpus is not by itself person-by-person residency verification. Preserve `production_ready:false` until separate documentary and license checks.
+
+**Sampling**: uniform among all currently available surnames **within** a national pool, no `weight`/`frequency_weight`/`probability`/`selection_weight`. The order of source rankings does not create sampling weights. Future generator work is out of scope.
+
 ## Validation
 
-`node --test tests/surnames-01-catalog.test.mjs` on **Node 22** checks the complete 50-code contract, file-to-catalog consistency, counts, NFC and `Script=Latin`, Latin-compatible combining marks, legal authentic separators, within-country uniqueness, strict `{value}` entries, no probability/weight keys, required sources, `selection_policy: uniform`, `production_ready: false`, source blob hashes and adversarial controls.
+`node --test tests/surnames-01-catalog.test.mjs` on **Node 22** checks the complete 50-code contract, **3,000 per complete country**, actual counts for partial pools, original 500-surname prefix preservation, file-to-catalog consistency, counts, NFC and `Script=Latin`, Latin-compatible combining marks, legal authentic separators, within-country uniqueness, strict `{value}` entries, no probability/weight keys, required sources, `selection_policy: uniform`, `production_ready: false`, source blob hashes and adversarial controls.
 
 The targeted `.github/workflows/surnames-01.yml` runs automatically on pertinent PR changes only (no `workflow_dispatch`), with a separate diff guard prohibiting changes to `data/players/names/` and any unrelated paths. CI does not establish person-level national attestation or source redistribution rights.
 
