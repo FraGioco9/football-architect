@@ -1,0 +1,1527 @@
+{
+  "schema_version": 1,
+  "code": "SVK",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "globalsurnames-slovakia",
+      "name": "GlobalSurnames — Most Common Slovak Surnames (Slovakia)",
+      "url": "https://globalsurnames.com/en/sk",
+      "population": "Slovakia, surname incidence estimates; no official annual register claimed",
+      "method": "Country-coded surname attestations (source ranks used only to find a research sample, not weights). Selected entries case-normalized and de-duplicated for accent-insensitive equivalents; all preserved forms attested.",
+      "license": "Source data redistribution/license not confirmed; research-only pending approval",
+      "limitations": "The online compiled ranking has some omissions and intersperses feminine -ová forms, both allowed as registered surnames."
+    },
+    {
+      "id": "forebears-slovakia",
+      "name": "Forebears — Most Common Surnames in Slovakia (2014)",
+      "url": "https://forebears.io/slovakia/surnames",
+      "population": "Slovakia, 2014 surname-incidence estimates",
+      "method": "Cross-check national presence and add Kováč and Lukáč independently attested there; no rank/frequency retained"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Kováč"
+    },
+    {
+      "value": "Lukáč"
+    },
+    {
+      "value": "Varga"
+    },
+    {
+      "value": "Kováčová"
+    },
+    {
+      "value": "Vargová"
+    },
+    {
+      "value": "Nagy"
+    },
+    {
+      "value": "Tóth"
+    },
+    {
+      "value": "Nagyová"
+    },
+    {
+      "value": "Tóthová"
+    },
+    {
+      "value": "Horváth"
+    },
+    {
+      "value": "Horváthová"
+    },
+    {
+      "value": "Molnár"
+    },
+    {
+      "value": "Szabó"
+    },
+    {
+      "value": "Molnárová"
+    },
+    {
+      "value": "Baláž"
+    },
+    {
+      "value": "Balážová"
+    },
+    {
+      "value": "Hudák"
+    },
+    {
+      "value": "Novák"
+    },
+    {
+      "value": "Nováková"
+    },
+    {
+      "value": "Kollár"
+    },
+    {
+      "value": "Hudáková"
+    },
+    {
+      "value": "Kovács"
+    },
+    {
+      "value": "Kollárová"
+    },
+    {
+      "value": "Oravec"
+    },
+    {
+      "value": "Polák"
+    },
+    {
+      "value": "Poláková"
+    },
+    {
+      "value": "Gajdoš"
+    },
+    {
+      "value": "Szabóová"
+    },
+    {
+      "value": "Kovácsová"
+    },
+    {
+      "value": "Gajdošová"
+    },
+    {
+      "value": "Šimková"
+    },
+    {
+      "value": "Szabová"
+    },
+    {
+      "value": "Németh"
+    },
+    {
+      "value": "Šimko"
+    },
+    {
+      "value": "Urban"
+    },
+    {
+      "value": "Némethová"
+    },
+    {
+      "value": "Oravcová"
+    },
+    {
+      "value": "Hudec"
+    },
+    {
+      "value": "Lacko"
+    },
+    {
+      "value": "Urbanová"
+    },
+    {
+      "value": "Mikula"
+    },
+    {
+      "value": "Hudecová"
+    },
+    {
+      "value": "Kiss"
+    },
+    {
+      "value": "Fekete"
+    },
+    {
+      "value": "Marko"
+    },
+    {
+      "value": "Sabol"
+    },
+    {
+      "value": "Sedlák"
+    },
+    {
+      "value": "Beňová"
+    },
+    {
+      "value": "Sedláková"
+    },
+    {
+      "value": "Lacková"
+    },
+    {
+      "value": "Marková"
+    },
+    {
+      "value": "Macko"
+    },
+    {
+      "value": "Zeman"
+    },
+    {
+      "value": "Mikulová"
+    },
+    {
+      "value": "Farkašová"
+    },
+    {
+      "value": "Balog"
+    },
+    {
+      "value": "Sabo"
+    },
+    {
+      "value": "Balogová"
+    },
+    {
+      "value": "Švec"
+    },
+    {
+      "value": "Mészáros"
+    },
+    {
+      "value": "Macková"
+    },
+    {
+      "value": "Rusnák"
+    },
+    {
+      "value": "Farkaš"
+    },
+    {
+      "value": "Kissová"
+    },
+    {
+      "value": "Králik"
+    },
+    {
+      "value": "Leško"
+    },
+    {
+      "value": "Straková"
+    },
+    {
+      "value": "Králiková"
+    },
+    {
+      "value": "Beňo"
+    },
+    {
+      "value": "Hric"
+    },
+    {
+      "value": "Švecová"
+    },
+    {
+      "value": "Sabolová"
+    },
+    {
+      "value": "Benko"
+    },
+    {
+      "value": "Straka"
+    },
+    {
+      "value": "Bartoš"
+    },
+    {
+      "value": "Chovanec"
+    },
+    {
+      "value": "Lipták"
+    },
+    {
+      "value": "Sýkora"
+    },
+    {
+      "value": "Baran"
+    },
+    {
+      "value": "Vašková"
+    },
+    {
+      "value": "Lengyel"
+    },
+    {
+      "value": "Takács"
+    },
+    {
+      "value": "Lešková"
+    },
+    {
+      "value": "Benková"
+    },
+    {
+      "value": "Rusnáková"
+    },
+    {
+      "value": "Veselovský"
+    },
+    {
+      "value": "Novotná"
+    },
+    {
+      "value": "Bednár"
+    },
+    {
+      "value": "Nemec"
+    },
+    {
+      "value": "Horňák"
+    },
+    {
+      "value": "Sýkorová"
+    },
+    {
+      "value": "Danko"
+    },
+    {
+      "value": "Mészárosová"
+    },
+    {
+      "value": "Kmeťová"
+    },
+    {
+      "value": "Baranová"
+    },
+    {
+      "value": "Bodnár"
+    },
+    {
+      "value": "Ivan"
+    },
+    {
+      "value": "Kolesár"
+    },
+    {
+      "value": "Bodnárová"
+    },
+    {
+      "value": "Mráz"
+    },
+    {
+      "value": "Kmeť"
+    },
+    {
+      "value": "Sabová"
+    },
+    {
+      "value": "Horňáková"
+    },
+    {
+      "value": "Vaško"
+    },
+    {
+      "value": "Balogh"
+    },
+    {
+      "value": "Ivanová"
+    },
+    {
+      "value": "Liptáková"
+    },
+    {
+      "value": "Nemcová"
+    },
+    {
+      "value": "Rybár"
+    },
+    {
+      "value": "Wolf"
+    },
+    {
+      "value": "Hricová"
+    },
+    {
+      "value": "Mrázová"
+    },
+    {
+      "value": "Chovancová"
+    },
+    {
+      "value": "Tomková"
+    },
+    {
+      "value": "Bielik"
+    },
+    {
+      "value": "Vrábel"
+    },
+    {
+      "value": "Bednárová"
+    },
+    {
+      "value": "Dudáš"
+    },
+    {
+      "value": "Mikuš"
+    },
+    {
+      "value": "Bieliková"
+    },
+    {
+      "value": "Novotný"
+    },
+    {
+      "value": "Bartošová"
+    },
+    {
+      "value": "Vida"
+    },
+    {
+      "value": "Klein"
+    },
+    {
+      "value": "Takácsová"
+    },
+    {
+      "value": "Kohút"
+    },
+    {
+      "value": "Veselovská"
+    },
+    {
+      "value": "Moravčíková"
+    },
+    {
+      "value": "Fedor"
+    },
+    {
+      "value": "Jakab"
+    },
+    {
+      "value": "Tomko"
+    },
+    {
+      "value": "Zemanová"
+    },
+    {
+      "value": "Danková"
+    },
+    {
+      "value": "Poliak"
+    },
+    {
+      "value": "Lupták"
+    },
+    {
+      "value": "Masár"
+    },
+    {
+      "value": "Blaško"
+    },
+    {
+      "value": "Feketeová"
+    },
+    {
+      "value": "Antalová"
+    },
+    {
+      "value": "Moravčík"
+    },
+    {
+      "value": "Gálová"
+    },
+    {
+      "value": "Jesenský"
+    },
+    {
+      "value": "Antal"
+    },
+    {
+      "value": "Seman"
+    },
+    {
+      "value": "Majer"
+    },
+    {
+      "value": "Bezák"
+    },
+    {
+      "value": "Fedorová"
+    },
+    {
+      "value": "Valach"
+    },
+    {
+      "value": "Balko"
+    },
+    {
+      "value": "Šimová"
+    },
+    {
+      "value": "Kohútová"
+    },
+    {
+      "value": "Sokol"
+    },
+    {
+      "value": "Luptáková"
+    },
+    {
+      "value": "Baloghová"
+    },
+    {
+      "value": "Timko"
+    },
+    {
+      "value": "Mikušová"
+    },
+    {
+      "value": "Rybárová"
+    },
+    {
+      "value": "Križan"
+    },
+    {
+      "value": "Blašková"
+    },
+    {
+      "value": "Gál"
+    },
+    {
+      "value": "Semanová"
+    },
+    {
+      "value": "Staňo"
+    },
+    {
+      "value": "Kolesárová"
+    },
+    {
+      "value": "Dudášová"
+    },
+    {
+      "value": "Križanová"
+    },
+    {
+      "value": "Blaho"
+    },
+    {
+      "value": "Petrášová"
+    },
+    {
+      "value": "Zaťko"
+    },
+    {
+      "value": "Vidová"
+    },
+    {
+      "value": "Blahová"
+    },
+    {
+      "value": "Homola"
+    },
+    {
+      "value": "Zaťková"
+    },
+    {
+      "value": "Vojtek"
+    },
+    {
+      "value": "Petráš"
+    },
+    {
+      "value": "Balková"
+    },
+    {
+      "value": "Kuruc"
+    },
+    {
+      "value": "Poliaková"
+    },
+    {
+      "value": "Ondrejka"
+    },
+    {
+      "value": "Ondrejková"
+    },
+    {
+      "value": "Petrová"
+    },
+    {
+      "value": "Minárik"
+    },
+    {
+      "value": "Mihálik"
+    },
+    {
+      "value": "Vajda"
+    },
+    {
+      "value": "Majerová"
+    },
+    {
+      "value": "Šoltés"
+    },
+    {
+      "value": "Krnáč"
+    },
+    {
+      "value": "Masárová"
+    },
+    {
+      "value": "Zajacová"
+    },
+    {
+      "value": "Zajac"
+    },
+    {
+      "value": "Jánošík"
+    },
+    {
+      "value": "Valachová"
+    },
+    {
+      "value": "Ondruš"
+    },
+    {
+      "value": "Franková"
+    },
+    {
+      "value": "Kleinová"
+    },
+    {
+      "value": "Sopko"
+    },
+    {
+      "value": "Slávik"
+    },
+    {
+      "value": "Petro"
+    },
+    {
+      "value": "Kurucová"
+    },
+    {
+      "value": "Zacharová"
+    },
+    {
+      "value": "Hruška"
+    },
+    {
+      "value": "Uhrin"
+    },
+    {
+      "value": "Homolová"
+    },
+    {
+      "value": "Krištof"
+    },
+    {
+      "value": "Juhász"
+    },
+    {
+      "value": "Bartko"
+    },
+    {
+      "value": "Fabian"
+    },
+    {
+      "value": "Zachar"
+    },
+    {
+      "value": "Danišová"
+    },
+    {
+      "value": "Mináriková"
+    },
+    {
+      "value": "Slezák"
+    },
+    {
+      "value": "Valentová"
+    },
+    {
+      "value": "Jakubec"
+    },
+    {
+      "value": "Lengyelová"
+    },
+    {
+      "value": "Kozák"
+    },
+    {
+      "value": "Adamec"
+    },
+    {
+      "value": "Timková"
+    },
+    {
+      "value": "Miková"
+    },
+    {
+      "value": "Sokolová"
+    },
+    {
+      "value": "Kozáková"
+    },
+    {
+      "value": "Tomáš"
+    },
+    {
+      "value": "Gregor"
+    },
+    {
+      "value": "Šoltésová"
+    },
+    {
+      "value": "Husárová"
+    },
+    {
+      "value": "Gábor"
+    },
+    {
+      "value": "Vajdová"
+    },
+    {
+      "value": "Papp"
+    },
+    {
+      "value": "Krajňák"
+    },
+    {
+      "value": "Hlavatá"
+    },
+    {
+      "value": "Suchý"
+    },
+    {
+      "value": "Chudý"
+    },
+    {
+      "value": "Sloboda"
+    },
+    {
+      "value": "Kmec"
+    },
+    {
+      "value": "Gallová"
+    },
+    {
+      "value": "Slezáková"
+    },
+    {
+      "value": "Juhás"
+    },
+    {
+      "value": "Hrušková"
+    },
+    {
+      "value": "Oláh"
+    },
+    {
+      "value": "Múdry"
+    },
+    {
+      "value": "Slobodová"
+    },
+    {
+      "value": "Šišková"
+    },
+    {
+      "value": "Daniš"
+    },
+    {
+      "value": "Michalec"
+    },
+    {
+      "value": "Repková"
+    },
+    {
+      "value": "Gáborová"
+    },
+    {
+      "value": "Sláviková"
+    },
+    {
+      "value": "Husár"
+    },
+    {
+      "value": "Gregušová"
+    },
+    {
+      "value": "Žáková"
+    },
+    {
+      "value": "Gašpar"
+    },
+    {
+      "value": "Krištofová"
+    },
+    {
+      "value": "Ferenc"
+    },
+    {
+      "value": "Fábry"
+    },
+    {
+      "value": "Mucha"
+    },
+    {
+      "value": "Juhászová"
+    },
+    {
+      "value": "Oláhová"
+    },
+    {
+      "value": "Miháliková"
+    },
+    {
+      "value": "Spišák"
+    },
+    {
+      "value": "Staňová"
+    },
+    {
+      "value": "Kmecová"
+    },
+    {
+      "value": "Bezáková"
+    },
+    {
+      "value": "Gregorová"
+    },
+    {
+      "value": "Jesenská"
+    },
+    {
+      "value": "Bugár"
+    },
+    {
+      "value": "Šimon"
+    },
+    {
+      "value": "Béreš"
+    },
+    {
+      "value": "Slivková"
+    },
+    {
+      "value": "Greguš"
+    },
+    {
+      "value": "Vereš"
+    },
+    {
+      "value": "Harvan"
+    },
+    {
+      "value": "Martinková"
+    },
+    {
+      "value": "Tokár"
+    },
+    {
+      "value": "Borovský"
+    },
+    {
+      "value": "Bartková"
+    },
+    {
+      "value": "Vojteková"
+    },
+    {
+      "value": "Ondrušová"
+    },
+    {
+      "value": "Kubala"
+    },
+    {
+      "value": "Marek"
+    },
+    {
+      "value": "Palko"
+    },
+    {
+      "value": "Spišáková"
+    },
+    {
+      "value": "Michalcová"
+    },
+    {
+      "value": "Stanko"
+    },
+    {
+      "value": "Tresa"
+    },
+    {
+      "value": "Hlavatý"
+    },
+    {
+      "value": "Chudá"
+    },
+    {
+      "value": "Bernát"
+    },
+    {
+      "value": "Gašparová"
+    },
+    {
+      "value": "Gondová"
+    },
+    {
+      "value": "Belica"
+    },
+    {
+      "value": "Šestáková"
+    },
+    {
+      "value": "Gonda"
+    },
+    {
+      "value": "Pappová"
+    },
+    {
+      "value": "Slivka"
+    },
+    {
+      "value": "Šiška"
+    },
+    {
+      "value": "Žák"
+    },
+    {
+      "value": "Jacková"
+    },
+    {
+      "value": "Hollý"
+    },
+    {
+      "value": "Fabianová"
+    },
+    {
+      "value": "Hollá"
+    },
+    {
+      "value": "Vaňová"
+    },
+    {
+      "value": "Oros"
+    },
+    {
+      "value": "Uhrinová"
+    },
+    {
+      "value": "Jakabová"
+    },
+    {
+      "value": "Valent"
+    },
+    {
+      "value": "Bálint"
+    },
+    {
+      "value": "Eliáš"
+    },
+    {
+      "value": "Adamová"
+    },
+    {
+      "value": "Sopková"
+    },
+    {
+      "value": "Mária"
+    },
+    {
+      "value": "Verešová"
+    },
+    {
+      "value": "Trnka"
+    },
+    {
+      "value": "Suchá"
+    },
+    {
+      "value": "Ferencová"
+    },
+    {
+      "value": "Palková"
+    },
+    {
+      "value": "Vojtko"
+    },
+    {
+      "value": "Toman"
+    },
+    {
+      "value": "Schmidt"
+    },
+    {
+      "value": "Bella"
+    },
+    {
+      "value": "Slováková"
+    },
+    {
+      "value": "Balla"
+    },
+    {
+      "value": "Vojtková"
+    },
+    {
+      "value": "Stanková"
+    },
+    {
+      "value": "Ferko"
+    },
+    {
+      "value": "Hatala"
+    },
+    {
+      "value": "Adamcová"
+    },
+    {
+      "value": "Vanko"
+    },
+    {
+      "value": "Repka"
+    },
+    {
+      "value": "Vaňo"
+    },
+    {
+      "value": "Bernátová"
+    },
+    {
+      "value": "Šesták"
+    },
+    {
+      "value": "Juhásová"
+    },
+    {
+      "value": "Kapusta"
+    },
+    {
+      "value": "Jančovič"
+    },
+    {
+      "value": "Šimo"
+    },
+    {
+      "value": "Chovan"
+    },
+    {
+      "value": "Adam"
+    },
+    {
+      "value": "Šimonová"
+    },
+    {
+      "value": "Pekár"
+    },
+    {
+      "value": "Michalková"
+    },
+    {
+      "value": "Fábryová"
+    },
+    {
+      "value": "Tomášová"
+    },
+    {
+      "value": "Wolfová"
+    },
+    {
+      "value": "Chovanová"
+    },
+    {
+      "value": "Kupec"
+    },
+    {
+      "value": "Karas"
+    },
+    {
+      "value": "Macák"
+    },
+    {
+      "value": "Jacko"
+    },
+    {
+      "value": "Fodorová"
+    },
+    {
+      "value": "Šolc"
+    },
+    {
+      "value": "Orosová"
+    },
+    {
+      "value": "Žiak"
+    },
+    {
+      "value": "Liška"
+    },
+    {
+      "value": "Bartek"
+    },
+    {
+      "value": "Slovák"
+    },
+    {
+      "value": "Mikloš"
+    },
+    {
+      "value": "Belicová"
+    },
+    {
+      "value": "Matejová"
+    },
+    {
+      "value": "Gallo"
+    },
+    {
+      "value": "Černá"
+    },
+    {
+      "value": "Baková"
+    },
+    {
+      "value": "Lišková"
+    },
+    {
+      "value": "Pásztor"
+    },
+    {
+      "value": "Fodor"
+    },
+    {
+      "value": "Brath"
+    },
+    {
+      "value": "Žiaková"
+    },
+    {
+      "value": "Muchová"
+    },
+    {
+      "value": "Machová"
+    },
+    {
+      "value": "Gáliková"
+    },
+    {
+      "value": "Mitro"
+    },
+    {
+      "value": "Miklošová"
+    },
+    {
+      "value": "Bobok"
+    },
+    {
+      "value": "Matula"
+    },
+    {
+      "value": "Pastorek"
+    },
+    {
+      "value": "Sivák"
+    },
+    {
+      "value": "Mikuláš"
+    },
+    {
+      "value": "Szalay"
+    },
+    {
+      "value": "Dvorská"
+    },
+    {
+      "value": "Šimek"
+    },
+    {
+      "value": "Jusko"
+    },
+    {
+      "value": "Koreň"
+    },
+    {
+      "value": "Jakubcová"
+    },
+    {
+      "value": "Tomanová"
+    },
+    {
+      "value": "Repa"
+    },
+    {
+      "value": "Kubišová"
+    },
+    {
+      "value": "Lehotský"
+    },
+    {
+      "value": "Krajňáková"
+    },
+    {
+      "value": "Lakatoš"
+    },
+    {
+      "value": "Halásová"
+    },
+    {
+      "value": "Vanková"
+    },
+    {
+      "value": "Pollák"
+    },
+    {
+      "value": "Schmidtová"
+    },
+    {
+      "value": "Smatana"
+    },
+    {
+      "value": "Vráblová"
+    },
+    {
+      "value": "Vörös"
+    },
+    {
+      "value": "Labuda"
+    },
+    {
+      "value": "Valko"
+    },
+    {
+      "value": "Filip"
+    },
+    {
+      "value": "Králová"
+    },
+    {
+      "value": "Smolková"
+    },
+    {
+      "value": "Čonka"
+    },
+    {
+      "value": "Filo"
+    },
+    {
+      "value": "Vavro"
+    },
+    {
+      "value": "Belko"
+    },
+    {
+      "value": "Filipová"
+    },
+    {
+      "value": "Šedivý"
+    },
+    {
+      "value": "Kubiš"
+    },
+    {
+      "value": "Lauko"
+    },
+    {
+      "value": "Bérešová"
+    },
+    {
+      "value": "Kubalová"
+    },
+    {
+      "value": "Panák"
+    },
+    {
+      "value": "Bednáriková"
+    },
+    {
+      "value": "Rehák"
+    },
+    {
+      "value": "Katona"
+    },
+    {
+      "value": "Trnková"
+    },
+    {
+      "value": "Koreňová"
+    },
+    {
+      "value": "Kapustová"
+    },
+    {
+      "value": "Bognár"
+    },
+    {
+      "value": "Michálek"
+    },
+    {
+      "value": "Ilenin"
+    },
+    {
+      "value": "Matúš"
+    },
+    {
+      "value": "Franko"
+    },
+    {
+      "value": "Vančo"
+    },
+    {
+      "value": "Mojžišová"
+    },
+    {
+      "value": "Múdra"
+    },
+    {
+      "value": "Tokárová"
+    },
+    {
+      "value": "Rácz"
+    },
+    {
+      "value": "Žigová"
+    },
+    {
+      "value": "Dvorský"
+    },
+    {
+      "value": "Vozárová"
+    },
+    {
+      "value": "Jankovich"
+    },
+    {
+      "value": "Siváková"
+    },
+    {
+      "value": "Vozár"
+    },
+    {
+      "value": "Bálintová"
+    },
+    {
+      "value": "Ferková"
+    },
+    {
+      "value": "Haluška"
+    },
+    {
+      "value": "Polláková"
+    },
+    {
+      "value": "Štrbová"
+    },
+    {
+      "value": "Roth"
+    },
+    {
+      "value": "Karasová"
+    },
+    {
+      "value": "Debnárová"
+    },
+    {
+      "value": "Franek"
+    },
+    {
+      "value": "Chrenková"
+    },
+    {
+      "value": "Prekop"
+    },
+    {
+      "value": "Meliš"
+    },
+    {
+      "value": "Bednárik"
+    },
+    {
+      "value": "Nigut"
+    },
+    {
+      "value": "Gálik"
+    },
+    {
+      "value": "Miko"
+    },
+    {
+      "value": "Filová"
+    },
+    {
+      "value": "Demeterová"
+    },
+    {
+      "value": "Neupauer"
+    },
+    {
+      "value": "Müllerová"
+    },
+    {
+      "value": "Šuleková"
+    },
+    {
+      "value": "Soták"
+    },
+    {
+      "value": "Mikulášová"
+    },
+    {
+      "value": "Olejár"
+    },
+    {
+      "value": "Masaryková"
+    },
+    {
+      "value": "Hanzel"
+    },
+    {
+      "value": "Hlinka"
+    },
+    {
+      "value": "Garajová"
+    },
+    {
+      "value": "Bartová"
+    },
+    {
+      "value": "Veselý"
+    },
+    {
+      "value": "Mihok"
+    },
+    {
+      "value": "Šebo"
+    },
+    {
+      "value": "Török"
+    },
+    {
+      "value": "Gažo"
+    },
+    {
+      "value": "Valková"
+    },
+    {
+      "value": "Bugárová"
+    },
+    {
+      "value": "Kelemen"
+    },
+    {
+      "value": "Borovská"
+    },
+    {
+      "value": "Kačmár"
+    },
+    {
+      "value": "Gregová"
+    },
+    {
+      "value": "Krupa"
+    },
+    {
+      "value": "Krajči"
+    },
+    {
+      "value": "Barteková"
+    },
+    {
+      "value": "Král"
+    },
+    {
+      "value": "Grega"
+    },
+    {
+      "value": "Veselá"
+    },
+    {
+      "value": "Macáková"
+    },
+    {
+      "value": "Reháková"
+    },
+    {
+      "value": "Hronec"
+    },
+    {
+      "value": "Barta"
+    },
+    {
+      "value": "Ondrušková"
+    },
+    {
+      "value": "Kušnír"
+    },
+    {
+      "value": "Marcin"
+    },
+    {
+      "value": "Stachová"
+    },
+    {
+      "value": "Daňo"
+    },
+    {
+      "value": "Kubicová"
+    },
+    {
+      "value": "Matis"
+    },
+    {
+      "value": "Masaryk"
+    },
+    {
+      "value": "Lehocký"
+    },
+    {
+      "value": "Marcinová"
+    },
+    {
+      "value": "Košťálová"
+    },
+    {
+      "value": "Forrai"
+    },
+    {
+      "value": "Ballová"
+    },
+    {
+      "value": "Kuchta"
+    },
+    {
+      "value": "Šulek"
+    },
+    {
+      "value": "Tichá"
+    },
+    {
+      "value": "Šipošová"
+    },
+    {
+      "value": "Véghová"
+    },
+    {
+      "value": "Popovič"
+    }
+  ],
+  "production_ready": false
+}
