@@ -1,4 +1,4 @@
-name: SURNAMES-01 Batch J ranked targets — Node 22
+name: SURNAMES-01 Batch J — ranked targets complete (Node 22)
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           'use strict';
           const fs = require('node:fs');
           const assert = require('node:assert/strict');
-          const expectedMinimum = { URU: 3000, PAR: 1310, ECU: 1518, VEN: 3000 };
+          const expectedMinimum = { URU: 3000, PAR: 2000, ECU: 3000, VEN: 3000 };
           const targets = { URU: 3000, PAR: 2000, ECU: 3000, VEN: 1000 };
           const latin = /^(?:\p{Script=Latin}\p{M}*)+(?:[ '-](?:\p{Script=Latin}\p{M}*)+)*$/u;
           const latinMark = /\p{Script_Extensions=Latin}/u;
@@ -75,7 +75,7 @@ jobs:
             }
             assert.ok(Array.isArray(data.surnames), country + ': surname array');
             assert.ok(data.surnames.length >= min && data.surnames.length <= 3000,
-              country + ': outside validated partial-to-target count');
+              country + ': below completed country quota or outside maximum 3000');
             const exact = new Set();
             const folded = new Map();
             for (const [index, surname] of data.surnames.entries()) {
@@ -97,5 +97,6 @@ jobs:
               ' surnames; target ' + targets[country] + '; missing ' + remaining +
               '; valid surplus ' + Math.max(0, data.surnames.length - targets[country]) + '; HOLD');
           }
-          console.log('Batch J structural QA PASS: ' + total + ' stored surname values. Nominal target 9000; country deficits and valid VEN surplus remain independent. All pools research-only HOLD.');
+          assert.ok(total >= 11000, 'Batch J: missing verified country-name inventory');
+          console.log('Batch J COMPLETE structural QA PASS: ' + total + ' retained country surnames. Nominal target 9000 (URU 3000, PAR 2000, ECU 3000, VEN 1000); existing VEN surplus 2000 preserved. Research-only HOLD: attestation/licence review pending.');
           NODE

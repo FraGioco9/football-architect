@@ -44,6 +44,37 @@
       "country": "Paraguay",
       "type": "Public Paraguay-specific surname-incidence estimate ranking, top 1,000",
       "note": "448 additional strings selected from individually listed Paraguay surname rows with at least 200 estimated bearers and deduplicated against existing strings. This is a secondary country-ranking compilation with possible overlap with Forebears; rank and incidence are not stored or used as sampling probabilities. Redistribution rights and individual attestation remain for review."
+    },
+    {
+      "id": "ine-es-nationality-par-census2025",
+      "url": "https://www.ine.es/apellidos/formGeneral.do?L=0&vista=4",
+      "query_url": "https://www.ine.es/apellidos/formGeneralresult.do?L=0&vista=4",
+      "country": "PAR",
+      "type": "Spain National Statistics Institute (INE), 2025 census nationality-filtered surname incidence",
+      "note": "Nationality selection Paraguay (INE code 347); directly extracted the published surname column, without splitting full names, no synthetic compounds. These people are nationals residing in Spain, not evidence of current residence in the nationality country. INE normalizes accents; source spelling was preserved without inventing diacritics. Nationality-based attestation only; data reuse rights and quality need review before production."
+    },
+    {
+      "id": "wikidata-paraguay-birthplace-p19-p17-p734-2026",
+      "url": "https://query.wikidata.org/sparql",
+      "query": "?person wdt:P734 ?surname; wdt:P19 ?birth. ?birth wdt:P17 wd:Q733. ?surname rdfs:label ?label.",
+      "country": "Paraguay",
+      "type": "Wikidata CC0 explicit family-name property on biographically documented people born in Paraguay",
+      "note": "Independent of nationality P27: only P734 entity labels attached to a person whose P19 birthplace is recorded as lying in Paraguay through P17; no splitting full names or artificial compound creation. Evidence of Paraguayan birthplace, not a population frequency claim. Recorded labels may contain errors; research-only."
+    },
+    {
+      "id": "paraguay-migraciones-sicca-sep-2026",
+      "url": "https://migraciones.gov.py/ley-n5189-nomina-completa-de-los-funcionarios-permanentes-contratados-y-de-eleccion-popular/",
+      "file_url": "https://migraciones.gov.py/wp-content/uploads/2026/10/01-SICCA-PERMANENTE-SETIEMBRE-2026.xlsx",
+      "country": "Paraguay",
+      "type": "Government transparency register with separate NOMBRES/APELLIDOS columns; 2026 Ministry of Migration public employees",
+      "note": "Only standalone individual surname tokens from explicitly labelled APPELLIDOS column; where two ordinary independent tokens, each is one attested surname, not a combined surname; ambiguous multi-part and prepositional surnames are excluded. No individual-level records or identifiers retained. Historical government employment attests local usage, not Paraguayan citizenship. Public transparency access, data reuse rights to review."
+    },
+    {
+      "id": "paraguay-mdp-sicca-sep-2026",
+      "url": "https://www.mdp.gov.py/wp-content/uploads/2026/10/Icono-e.pdf",
+      "country": "Paraguay",
+      "type": "Ministry of Public Defense monthly transparency PDF with separate NOMBRES/APELLIDOS columns",
+      "note": "Native PDF vector/text positional column extraction; only standalone surname tokens (one or two independent simple tokens) extracted from separately labelled APPELLIDOS column. No full names, ID numbers, salary data or personal records retained. Ambiguous compounds discarded. Employment in Paraguay is not citizenship proof. Public reuse/license review pending."
     }
   ],
   "surnames": [
@@ -3976,6 +4007,2076 @@
     },
     {
       "value": "Calastra"
+    },
+    {
+      "value": "Ruiz Diaz"
+    },
+    {
+      "value": "Girett"
+    },
+    {
+      "value": "Guayuan"
+    },
+    {
+      "value": "Aricaye"
+    },
+    {
+      "value": "Lomaquis"
+    },
+    {
+      "value": "Paoli"
+    },
+    {
+      "value": "Ranoni"
+    },
+    {
+      "value": "Mazacote"
+    },
+    {
+      "value": "Gregor"
+    },
+    {
+      "value": "Lomaquiz"
+    },
+    {
+      "value": "Insauralde"
+    },
+    {
+      "value": "Abrahan"
+    },
+    {
+      "value": "Machoqui"
+    },
+    {
+      "value": "Conteiro"
+    },
+    {
+      "value": "Libardi"
+    },
+    {
+      "value": "Sotoa"
+    },
+    {
+      "value": "Dotto"
+    },
+    {
+      "value": "Carracela"
+    },
+    {
+      "value": "Gamez"
+    },
+    {
+      "value": "Rivaldi"
+    },
+    {
+      "value": "Aristiqui"
+    },
+    {
+      "value": "Detez"
+    },
+    {
+      "value": "Lenguaza"
+    },
+    {
+      "value": "Vanni"
+    },
+    {
+      "value": "Villaba"
+    },
+    {
+      "value": "Orzuza"
+    },
+    {
+      "value": "Cuello"
+    },
+    {
+      "value": "Espinosa"
+    },
+    {
+      "value": "Portilla"
+    },
+    {
+      "value": "Montes"
+    },
+    {
+      "value": "Andrade"
+    },
+    {
+      "value": "Armele"
+    },
+    {
+      "value": "Cortessi"
+    },
+    {
+      "value": "Flechas"
+    },
+    {
+      "value": "Kauderer"
+    },
+    {
+      "value": "Minella"
+    },
+    {
+      "value": "Montefrit"
+    },
+    {
+      "value": "Moser"
+    },
+    {
+      "value": "Orlando"
+    },
+    {
+      "value": "Rizzi"
+    },
+    {
+      "value": "Urrutia"
+    },
+    {
+      "value": "Yrala"
+    },
+    {
+      "value": "Avezada"
+    },
+    {
+      "value": "Limenza"
+    },
+    {
+      "value": "Arrechea"
+    },
+    {
+      "value": "Cerdan"
+    },
+    {
+      "value": "Nequi"
+    },
+    {
+      "value": "Robertti"
+    },
+    {
+      "value": "Urizar"
+    },
+    {
+      "value": "Villalva"
+    },
+    {
+      "value": "Goiris"
+    },
+    {
+      "value": "Almonte"
+    },
+    {
+      "value": "Alvizo"
+    },
+    {
+      "value": "Bacili"
+    },
+    {
+      "value": "Brassel"
+    },
+    {
+      "value": "Brusich"
+    },
+    {
+      "value": "Burgo"
+    },
+    {
+      "value": "Chileno"
+    },
+    {
+      "value": "Conge"
+    },
+    {
+      "value": "De La Sierra"
+    },
+    {
+      "value": "Divitto"
+    },
+    {
+      "value": "Fossatti"
+    },
+    {
+      "value": "Gil"
+    },
+    {
+      "value": "Guanez"
+    },
+    {
+      "value": "Karajallo"
+    },
+    {
+      "value": "Krause"
+    },
+    {
+      "value": "Lazaro"
+    },
+    {
+      "value": "Meden"
+    },
+    {
+      "value": "Merzario"
+    },
+    {
+      "value": "Navarrete"
+    },
+    {
+      "value": "Paranderi"
+    },
+    {
+      "value": "Parquet"
+    },
+    {
+      "value": "Ruggeri"
+    },
+    {
+      "value": "Tottil"
+    },
+    {
+      "value": "Venegas"
+    },
+    {
+      "value": "Morlas"
+    },
+    {
+      "value": "Brunaga"
+    },
+    {
+      "value": "Picco"
+    },
+    {
+      "value": "Noria"
+    },
+    {
+      "value": "Zoilan"
+    },
+    {
+      "value": "Barberan"
+    },
+    {
+      "value": "Royg"
+    },
+    {
+      "value": "Michael"
+    },
+    {
+      "value": "Achon"
+    },
+    {
+      "value": "Ahrens"
+    },
+    {
+      "value": "Barcovich"
+    },
+    {
+      "value": "Bethge"
+    },
+    {
+      "value": "Britoz"
+    },
+    {
+      "value": "Crechi"
+    },
+    {
+      "value": "Crosta"
+    },
+    {
+      "value": "Cuyuri"
+    },
+    {
+      "value": "Diaz De Moura"
+    },
+    {
+      "value": "Dielma"
+    },
+    {
+      "value": "Felkamp"
+    },
+    {
+      "value": "Fensterseifer"
+    },
+    {
+      "value": "Ferloni"
+    },
+    {
+      "value": "Fullaondo"
+    },
+    {
+      "value": "Gamon"
+    },
+    {
+      "value": "Grissetti"
+    },
+    {
+      "value": "Guarin"
+    },
+    {
+      "value": "Gunther"
+    },
+    {
+      "value": "Jacobo"
+    },
+    {
+      "value": "Merlos"
+    },
+    {
+      "value": "More"
+    },
+    {
+      "value": "Paciello"
+    },
+    {
+      "value": "Penzzi"
+    },
+    {
+      "value": "Perrens"
+    },
+    {
+      "value": "Piccardo"
+    },
+    {
+      "value": "Porcal"
+    },
+    {
+      "value": "Regunega"
+    },
+    {
+      "value": "Schubert"
+    },
+    {
+      "value": "Soares"
+    },
+    {
+      "value": "Vianconi"
+    },
+    {
+      "value": "Maris"
+    },
+    {
+      "value": "Cuttier"
+    },
+    {
+      "value": "Toralez"
+    },
+    {
+      "value": "Campusano"
+    },
+    {
+      "value": "Lencina"
+    },
+    {
+      "value": "Malocevich"
+    },
+    {
+      "value": "Panza"
+    },
+    {
+      "value": "Gonzalez Maya"
+    },
+    {
+      "value": "Latourrette"
+    },
+    {
+      "value": "Schuaighart"
+    },
+    {
+      "value": "Subeldia"
+    },
+    {
+      "value": "Aldao"
+    },
+    {
+      "value": "Alujas"
+    },
+    {
+      "value": "Argañaraz"
+    },
+    {
+      "value": "Arroca"
+    },
+    {
+      "value": "Asilvera"
+    },
+    {
+      "value": "Asva"
+    },
+    {
+      "value": "Barcelo"
+    },
+    {
+      "value": "Berthe"
+    },
+    {
+      "value": "Braga"
+    },
+    {
+      "value": "Burguez"
+    },
+    {
+      "value": "Carbario"
+    },
+    {
+      "value": "Cazeneuve"
+    },
+    {
+      "value": "Ditrani"
+    },
+    {
+      "value": "Esviza"
+    },
+    {
+      "value": "Fabala"
+    },
+    {
+      "value": "Falco"
+    },
+    {
+      "value": "Famoso"
+    },
+    {
+      "value": "Fare"
+    },
+    {
+      "value": "Fuentes"
+    },
+    {
+      "value": "Gabaglio"
+    },
+    {
+      "value": "Garelik"
+    },
+    {
+      "value": "Gaston"
+    },
+    {
+      "value": "Gomez De La Fuente"
+    },
+    {
+      "value": "Gomez Sanchez"
+    },
+    {
+      "value": "Granado"
+    },
+    {
+      "value": "Grubel"
+    },
+    {
+      "value": "Guanaco"
+    },
+    {
+      "value": "Hellman"
+    },
+    {
+      "value": "Hernandez"
+    },
+    {
+      "value": "Imber"
+    },
+    {
+      "value": "Inchaustti"
+    },
+    {
+      "value": "Larssen"
+    },
+    {
+      "value": "Lazarte"
+    },
+    {
+      "value": "Levin"
+    },
+    {
+      "value": "Madruga"
+    },
+    {
+      "value": "Mariani"
+    },
+    {
+      "value": "Martinetti"
+    },
+    {
+      "value": "Mascaro"
+    },
+    {
+      "value": "Mazari"
+    },
+    {
+      "value": "Mc Leod"
+    },
+    {
+      "value": "Mendiola"
+    },
+    {
+      "value": "Moline"
+    },
+    {
+      "value": "Monfillo"
+    },
+    {
+      "value": "Montorfano"
+    },
+    {
+      "value": "Orrabalis"
+    },
+    {
+      "value": "Pacher"
+    },
+    {
+      "value": "Paris"
+    },
+    {
+      "value": "Piazoli"
+    },
+    {
+      "value": "Platon"
+    },
+    {
+      "value": "Rocabruno"
+    },
+    {
+      "value": "Rumich"
+    },
+    {
+      "value": "Said"
+    },
+    {
+      "value": "Schiavo"
+    },
+    {
+      "value": "Vierci"
+    },
+    {
+      "value": "Yurtz"
+    },
+    {
+      "value": "Zamphiropolos"
+    },
+    {
+      "value": "Zanoni"
+    },
+    {
+      "value": "Zerna"
+    },
+    {
+      "value": "De Gonzalez"
+    },
+    {
+      "value": "De Benitez"
+    },
+    {
+      "value": "De Lopez"
+    },
+    {
+      "value": "De Martinez"
+    },
+    {
+      "value": "De Rodriguez"
+    },
+    {
+      "value": "De Duarte"
+    },
+    {
+      "value": "De Gimenez"
+    },
+    {
+      "value": "De Ramirez"
+    },
+    {
+      "value": "De Fernandez"
+    },
+    {
+      "value": "De Vera"
+    },
+    {
+      "value": "De Ortiz"
+    },
+    {
+      "value": "De Villalba"
+    },
+    {
+      "value": "De Gomez"
+    },
+    {
+      "value": "De Rojas"
+    },
+    {
+      "value": "De Britez"
+    },
+    {
+      "value": "De Caceres"
+    },
+    {
+      "value": "De Sosa"
+    },
+    {
+      "value": "De Cardozo"
+    },
+    {
+      "value": "De Nuñez"
+    },
+    {
+      "value": "De Ayala"
+    },
+    {
+      "value": "De Ferreira"
+    },
+    {
+      "value": "De Acosta"
+    },
+    {
+      "value": "De Amarilla"
+    },
+    {
+      "value": "De Franco"
+    },
+    {
+      "value": "De Galeano"
+    },
+    {
+      "value": "De Caballero"
+    },
+    {
+      "value": "De Baez"
+    },
+    {
+      "value": "De Garcia"
+    },
+    {
+      "value": "De Paredes"
+    },
+    {
+      "value": "De Romero"
+    },
+    {
+      "value": "De Aguero"
+    },
+    {
+      "value": "De Escobar"
+    },
+    {
+      "value": "De Medina"
+    },
+    {
+      "value": "De Cabrera"
+    },
+    {
+      "value": "De Pereira"
+    },
+    {
+      "value": "De Sanchez"
+    },
+    {
+      "value": "De Velazquez"
+    },
+    {
+      "value": "De Diaz"
+    },
+    {
+      "value": "De Aquino"
+    },
+    {
+      "value": "De Barrios"
+    },
+    {
+      "value": "De Bogado"
+    },
+    {
+      "value": "De Rolon"
+    },
+    {
+      "value": "De Barreto"
+    },
+    {
+      "value": "De Mendoza"
+    },
+    {
+      "value": "De Sanabria"
+    },
+    {
+      "value": "De Alvarez"
+    },
+    {
+      "value": "De Centurion"
+    },
+    {
+      "value": "De Jara"
+    },
+    {
+      "value": "De Melgarejo"
+    },
+    {
+      "value": "De Espinola"
+    },
+    {
+      "value": "De Perez"
+    },
+    {
+      "value": "De Silva"
+    },
+    {
+      "value": "De Dominguez"
+    },
+    {
+      "value": "De Riveros"
+    },
+    {
+      "value": "De Aguilera"
+    },
+    {
+      "value": "De Gamarra"
+    },
+    {
+      "value": "De Godoy"
+    },
+    {
+      "value": "De Ortega"
+    },
+    {
+      "value": "De Coronel"
+    },
+    {
+      "value": "De Fleitas"
+    },
+    {
+      "value": "De Ojeda"
+    },
+    {
+      "value": "De Peralta"
+    },
+    {
+      "value": "De Ruiz Diaz"
+    },
+    {
+      "value": "De Torres"
+    },
+    {
+      "value": "De Valdez"
+    },
+    {
+      "value": "De Vazquez"
+    },
+    {
+      "value": "De Noguera"
+    },
+    {
+      "value": "De Candia"
+    },
+    {
+      "value": "De Delgado"
+    },
+    {
+      "value": "De Garcete"
+    },
+    {
+      "value": "De Lezcano"
+    },
+    {
+      "value": "De Meza"
+    },
+    {
+      "value": "De Florentin"
+    },
+    {
+      "value": "De Quintana"
+    },
+    {
+      "value": "De Rios"
+    },
+    {
+      "value": "Yeruta"
+    },
+    {
+      "value": "De Avalos"
+    },
+    {
+      "value": "De Portillo"
+    },
+    {
+      "value": "De Quiñonez"
+    },
+    {
+      "value": "De Ruiz"
+    },
+    {
+      "value": "De Zarate"
+    },
+    {
+      "value": "De Enciso"
+    },
+    {
+      "value": "De Mendez"
+    },
+    {
+      "value": "De Recalde"
+    },
+    {
+      "value": "De Acuña"
+    },
+    {
+      "value": "De Arce"
+    },
+    {
+      "value": "De Colman"
+    },
+    {
+      "value": "De Cristaldo"
+    },
+    {
+      "value": "De Estigarribia"
+    },
+    {
+      "value": "De Fariña"
+    },
+    {
+      "value": "De Mereles"
+    },
+    {
+      "value": "De Olmedo"
+    },
+    {
+      "value": "De Rodas"
+    },
+    {
+      "value": "De Roman"
+    },
+    {
+      "value": "De Salinas"
+    },
+    {
+      "value": "De Silvero"
+    },
+    {
+      "value": "De Aguilar"
+    },
+    {
+      "value": "De Britos"
+    },
+    {
+      "value": "De Casco"
+    },
+    {
+      "value": "De Chavez"
+    },
+    {
+      "value": "De Figueredo"
+    },
+    {
+      "value": "De Gaona"
+    },
+    {
+      "value": "De Irala"
+    },
+    {
+      "value": "De Morales"
+    },
+    {
+      "value": "De Segovia"
+    },
+    {
+      "value": "De Torales"
+    },
+    {
+      "value": "De Vega"
+    },
+    {
+      "value": "Vda De Vera"
+    },
+    {
+      "value": "Basili"
+    },
+    {
+      "value": "De Armoa"
+    },
+    {
+      "value": "De Bareiro"
+    },
+    {
+      "value": "De Benegas"
+    },
+    {
+      "value": "De Cañete"
+    },
+    {
+      "value": "De Fretes"
+    },
+    {
+      "value": "De Rivas"
+    },
+    {
+      "value": "De Vargas"
+    },
+    {
+      "value": "De Zarza"
+    },
+    {
+      "value": "De Alcaraz"
+    },
+    {
+      "value": "De Alonso"
+    },
+    {
+      "value": "De Areco"
+    },
+    {
+      "value": "De Arguello"
+    },
+    {
+      "value": "De Bernal"
+    },
+    {
+      "value": "De Bordon"
+    },
+    {
+      "value": "De Cabral"
+    },
+    {
+      "value": "De Davalos"
+    },
+    {
+      "value": "De Esquivel"
+    },
+    {
+      "value": "De Garay"
+    },
+    {
+      "value": "De Gauto"
+    },
+    {
+      "value": "De Gavilan"
+    },
+    {
+      "value": "De Ibarra"
+    },
+    {
+      "value": "De Jimenez"
+    },
+    {
+      "value": "De Leiva"
+    },
+    {
+      "value": "De Maldonado"
+    },
+    {
+      "value": "De Morel"
+    },
+    {
+      "value": "De Moreno"
+    },
+    {
+      "value": "De Santacruz"
+    },
+    {
+      "value": "De Zaracho"
+    },
+    {
+      "value": "De Aranda"
+    },
+    {
+      "value": "De Arrua"
+    },
+    {
+      "value": "De Cantero"
+    },
+    {
+      "value": "De Castillo"
+    },
+    {
+      "value": "De Flores"
+    },
+    {
+      "value": "De Ibarrola"
+    },
+    {
+      "value": "De Leguizamon"
+    },
+    {
+      "value": "De Maidana"
+    },
+    {
+      "value": "De Marecos"
+    },
+    {
+      "value": "De Ortigoza"
+    },
+    {
+      "value": "De Ovelar"
+    },
+    {
+      "value": "De Ramos"
+    },
+    {
+      "value": "De Solis"
+    },
+    {
+      "value": "Vda De Gonzalez"
+    },
+    {
+      "value": "Casui"
+    },
+    {
+      "value": "De Almada"
+    },
+    {
+      "value": "De Arzamendia"
+    },
+    {
+      "value": "De Cano"
+    },
+    {
+      "value": "De Chaparro"
+    },
+    {
+      "value": "De Da Silva"
+    },
+    {
+      "value": "De Delvalle"
+    },
+    {
+      "value": "De Lesme"
+    },
+    {
+      "value": "De Lovera"
+    },
+    {
+      "value": "De Mareco"
+    },
+    {
+      "value": "De Marin"
+    },
+    {
+      "value": "De Monges"
+    },
+    {
+      "value": "De Morinigo"
+    },
+    {
+      "value": "De Oviedo"
+    },
+    {
+      "value": "De Ozuna"
+    },
+    {
+      "value": "De Prieto"
+    },
+    {
+      "value": "De Reyes"
+    },
+    {
+      "value": "De Roa"
+    },
+    {
+      "value": "De Saldivar"
+    },
+    {
+      "value": "De Troche"
+    },
+    {
+      "value": "Echevarria"
+    },
+    {
+      "value": "Estrella"
+    },
+    {
+      "value": "Galvez"
+    },
+    {
+      "value": "Murray"
+    },
+    {
+      "value": "Sales"
+    },
+    {
+      "value": "Valverde"
+    },
+    {
+      "value": "Velotto"
+    },
+    {
+      "value": "Alem"
+    },
+    {
+      "value": "Arepoco"
+    },
+    {
+      "value": "Babañoli"
+    },
+    {
+      "value": "Bizzozzero"
+    },
+    {
+      "value": "Cino"
+    },
+    {
+      "value": "Dalio"
+    },
+    {
+      "value": "De Adorno"
+    },
+    {
+      "value": "De Almiron"
+    },
+    {
+      "value": "De Alvarenga"
+    },
+    {
+      "value": "De Brizuela"
+    },
+    {
+      "value": "De Cabañas"
+    },
+    {
+      "value": "De Cespedes"
+    },
+    {
+      "value": "De Cuenca"
+    },
+    {
+      "value": "De Insfran"
+    },
+    {
+      "value": "De Lugo"
+    },
+    {
+      "value": "De Ocampos"
+    },
+    {
+      "value": "De Pintos"
+    },
+    {
+      "value": "De Samudio"
+    },
+    {
+      "value": "Fabian"
+    },
+    {
+      "value": "Fonceca"
+    },
+    {
+      "value": "Gibbons"
+    },
+    {
+      "value": "Ingis"
+    },
+    {
+      "value": "Limeño"
+    },
+    {
+      "value": "Rainz"
+    },
+    {
+      "value": "Riva"
+    },
+    {
+      "value": "Tileria"
+    },
+    {
+      "value": "Vda De Acosta"
+    },
+    {
+      "value": "Vda De Martinez"
+    },
+    {
+      "value": "Vda De Villalba"
+    },
+    {
+      "value": "Antar"
+    },
+    {
+      "value": "Bertolini"
+    },
+    {
+      "value": "Brites"
+    },
+    {
+      "value": "Cane"
+    },
+    {
+      "value": "Carbajal"
+    },
+    {
+      "value": "Casau"
+    },
+    {
+      "value": "Cortez"
+    },
+    {
+      "value": "Culzoni"
+    },
+    {
+      "value": "De Aveiro"
+    },
+    {
+      "value": "De Bazan"
+    },
+    {
+      "value": "De Blanco"
+    },
+    {
+      "value": "De Campuzano"
+    },
+    {
+      "value": "De Cuevas"
+    },
+    {
+      "value": "De Encina"
+    },
+    {
+      "value": "De Espinoza"
+    },
+    {
+      "value": "De Guerrero"
+    },
+    {
+      "value": "De Mongelos"
+    },
+    {
+      "value": "De Montiel"
+    },
+    {
+      "value": "De Moran"
+    },
+    {
+      "value": "De Muñoz"
+    },
+    {
+      "value": "De Riquelme"
+    },
+    {
+      "value": "De Rotela"
+    },
+    {
+      "value": "De Trinidad"
+    },
+    {
+      "value": "De Urunaga"
+    },
+    {
+      "value": "De Valiente"
+    },
+    {
+      "value": "De Vallejos"
+    },
+    {
+      "value": "De Vergara"
+    },
+    {
+      "value": "De Veron"
+    },
+    {
+      "value": "De Villamayor"
+    },
+    {
+      "value": "De Viveros"
+    },
+    {
+      "value": "Farfan"
+    },
+    {
+      "value": "Landaira"
+    },
+    {
+      "value": "Lirio"
+    },
+    {
+      "value": "Netto"
+    },
+    {
+      "value": "Pachigua"
+    },
+    {
+      "value": "Rafar"
+    },
+    {
+      "value": "Scarpellini"
+    },
+    {
+      "value": "Vda De Gomez"
+    },
+    {
+      "value": "Weiberlen"
+    },
+    {
+      "value": "Yapari"
+    },
+    {
+      "value": "Ybarrola"
+    },
+    {
+      "value": "Albiso"
+    },
+    {
+      "value": "Amante"
+    },
+    {
+      "value": "Barreiro"
+    },
+    {
+      "value": "Brandel"
+    },
+    {
+      "value": "Cousiño"
+    },
+    {
+      "value": "De Alegre"
+    },
+    {
+      "value": "De Alfonso"
+    },
+    {
+      "value": "De Alfonzo"
+    },
+    {
+      "value": "De Almeida"
+    },
+    {
+      "value": "De Bobadilla"
+    },
+    {
+      "value": "De Burgos"
+    },
+    {
+      "value": "De Castro"
+    },
+    {
+      "value": "De Correa"
+    },
+    {
+      "value": "De Echeverria"
+    },
+    {
+      "value": "De Guillen"
+    },
+    {
+      "value": "De Ledesma"
+    },
+    {
+      "value": "De Mora"
+    },
+    {
+      "value": "De Orrego"
+    },
+    {
+      "value": "De Paez"
+    },
+    {
+      "value": "De Samaniego"
+    },
+    {
+      "value": "De Santander"
+    },
+    {
+      "value": "De Servin"
+    },
+    {
+      "value": "De Suarez"
+    },
+    {
+      "value": "De Talavera"
+    },
+    {
+      "value": "De Villar"
+    },
+    {
+      "value": "De Zorrilla"
+    },
+    {
+      "value": "Gonzaga"
+    },
+    {
+      "value": "Guirland"
+    },
+    {
+      "value": "Irepa"
+    },
+    {
+      "value": "Lird"
+    },
+    {
+      "value": "Macian"
+    },
+    {
+      "value": "Piñeiro"
+    },
+    {
+      "value": "Pizurno"
+    },
+    {
+      "value": "Portal"
+    },
+    {
+      "value": "Rosalez"
+    },
+    {
+      "value": "Salen"
+    },
+    {
+      "value": "Scribano"
+    },
+    {
+      "value": "Simonetti"
+    },
+    {
+      "value": "Vda De Lopez"
+    },
+    {
+      "value": "Vda De Sanchez"
+    },
+    {
+      "value": "Vicezar"
+    },
+    {
+      "value": "Barone"
+    },
+    {
+      "value": "Benveniste"
+    },
+    {
+      "value": "Biber"
+    },
+    {
+      "value": "Brons"
+    },
+    {
+      "value": "Del Rio"
+    },
+    {
+      "value": "Hain"
+    },
+    {
+      "value": "Kriege"
+    },
+    {
+      "value": "Lylyk"
+    },
+    {
+      "value": "Malaisé"
+    },
+    {
+      "value": "McKee"
+    },
+    {
+      "value": "Mühlsteph"
+    },
+    {
+      "value": "Nowada"
+    },
+    {
+      "value": "Pistilli"
+    },
+    {
+      "value": "Plass"
+    },
+    {
+      "value": "Rosenberger"
+    },
+    {
+      "value": "Rostand"
+    },
+    {
+      "value": "Santa Maria"
+    },
+    {
+      "value": "Seux"
+    },
+    {
+      "value": "Spitzer"
+    },
+    {
+      "value": "Stefanich"
+    },
+    {
+      "value": "Taylor"
+    },
+    {
+      "value": "Tuma"
+    },
+    {
+      "value": "Valera"
+    },
+    {
+      "value": "Weiler"
+    },
+    {
+      "value": "Wich"
+    },
+    {
+      "value": "Permanente"
+    },
+    {
+      "value": "Contratado"
+    },
+    {
+      "value": "Comisionado"
+    },
+    {
+      "value": "Martinezpermanente"
+    },
+    {
+      "value": "Pretzel"
+    },
+    {
+      "value": "Fernandezpermanente"
+    },
+    {
+      "value": "Gonzalepermanente"
+    },
+    {
+      "value": "Mendozapermanente"
+    },
+    {
+      "value": "Rodriguepermanente"
+    },
+    {
+      "value": "Velazquezpermanente"
+    },
+    {
+      "value": "Bastos"
+    },
+    {
+      "value": "Casey"
+    },
+    {
+      "value": "Cattini"
+    },
+    {
+      "value": "Dimitropulos"
+    },
+    {
+      "value": "Fernandpermanente"
+    },
+    {
+      "value": "Galeanopermanente"
+    },
+    {
+      "value": "Insemblante"
+    },
+    {
+      "value": "Palazon"
+    },
+    {
+      "value": "Soloaga"
+    },
+    {
+      "value": "Visconte"
+    },
+    {
+      "value": "Arrosse"
+    },
+    {
+      "value": "Caballeropermanente"
+    },
+    {
+      "value": "Cataldo"
+    },
+    {
+      "value": "Crosa"
+    },
+    {
+      "value": "Damen"
+    },
+    {
+      "value": "Davalo"
+    },
+    {
+      "value": "Esgaib"
+    },
+    {
+      "value": "Florentpermanente"
+    },
+    {
+      "value": "Gimenezpermanente"
+    },
+    {
+      "value": "Gonzalezpermanente"
+    },
+    {
+      "value": "Kasiañuk"
+    },
+    {
+      "value": "Kronawetter"
+    },
+    {
+      "value": "Kuiumyian"
+    },
+    {
+      "value": "Ovella"
+    },
+    {
+      "value": "Pimienta"
+    },
+    {
+      "value": "Prette"
+    },
+    {
+      "value": "Rodriguezpermanente"
+    },
+    {
+      "value": "Russo"
+    },
+    {
+      "value": "Sayas"
+    },
+    {
+      "value": "Scheid"
+    },
+    {
+      "value": "Vallarino"
+    },
+    {
+      "value": "Vallory"
+    },
+    {
+      "value": "Velazqupermanente"
+    },
+    {
+      "value": "Viñuales"
+    },
+    {
+      "value": "Avalospermanente"
+    },
+    {
+      "value": "Berino"
+    },
+    {
+      "value": "Braez"
+    },
+    {
+      "value": "Cabañaspermanente"
+    },
+    {
+      "value": "Catuognpermanente"
+    },
+    {
+      "value": "Chamorropermanente"
+    },
+    {
+      "value": "Cristaldopermanente"
+    },
+    {
+      "value": "Dubarry"
+    },
+    {
+      "value": "Dubrez"
+    },
+    {
+      "value": "Estigarribiapermanente"
+    },
+    {
+      "value": "Estigarribpermanente"
+    },
+    {
+      "value": "Feris"
+    },
+    {
+      "value": "Ferreirapermanente"
+    },
+    {
+      "value": "Gallagher"
+    },
+    {
+      "value": "Gatti"
+    },
+    {
+      "value": "Ginard"
+    },
+    {
+      "value": "Giubi"
+    },
+    {
+      "value": "Hermaniuk"
+    },
+    {
+      "value": "Karajallopermanente"
+    },
+    {
+      "value": "Montalto"
+    },
+    {
+      "value": "Morinigopermanente"
+    },
+    {
+      "value": "Moris"
+    },
+    {
+      "value": "Petengill"
+    },
+    {
+      "value": "Petersen"
+    },
+    {
+      "value": "Pizzani"
+    },
+    {
+      "value": "Rocholl"
+    },
+    {
+      "value": "Sambuchetti"
+    },
+    {
+      "value": "Sarquis"
+    },
+    {
+      "value": "Shimizu"
+    },
+    {
+      "value": "Sienkovez"
+    },
+    {
+      "value": "Vazquezpermanente"
+    },
+    {
+      "value": "Zanada"
+    },
+    {
+      "value": "Albarracin"
+    },
+    {
+      "value": "Alvarengapermanente"
+    },
+    {
+      "value": "Belazquez"
+    },
+    {
+      "value": "Bilbao"
+    },
+    {
+      "value": "Bogadopermanente"
+    },
+    {
+      "value": "Brizuelpermanente"
+    },
+    {
+      "value": "Brown"
+    },
+    {
+      "value": "Calongapermanente"
+    },
+    {
+      "value": "Calpe"
+    },
+    {
+      "value": "Capurro"
+    },
+    {
+      "value": "Cardoozo"
+    },
+    {
+      "value": "Cardozopermanente"
+    },
+    {
+      "value": "Carman"
+    },
+    {
+      "value": "Castillopermanente"
+    },
+    {
+      "value": "Celano"
+    },
+    {
+      "value": "Cespedespermanente"
+    },
+    {
+      "value": "Chamorrpermanente"
+    },
+    {
+      "value": "Clemotte"
+    },
+    {
+      "value": "Cousirat"
+    },
+    {
+      "value": "Cristaldocontratado"
+    },
+    {
+      "value": "Damus"
+    },
+    {
+      "value": "Diazcontratado"
+    },
+    {
+      "value": "Dominguepermanente"
+    },
+    {
+      "value": "Emery"
+    },
+    {
+      "value": "Esquivelcomisionado"
+    },
+    {
+      "value": "Favole"
+    },
+    {
+      "value": "Fernandepermanente"
+    },
+    {
+      "value": "Figuerepermanente"
+    },
+    {
+      "value": "Frachi"
+    },
+    {
+      "value": "Ghezi"
+    },
+    {
+      "value": "Ghiringhepermanente"
+    },
+    {
+      "value": "Giardina"
+    },
+    {
+      "value": "Gonzapermanente"
+    },
+    {
+      "value": "Gutierrepermanente"
+    },
+    {
+      "value": "Gutierrezpermanente"
+    },
+    {
+      "value": "Hermosillpermanente"
+    },
+    {
+      "value": "Junez"
+    },
+    {
+      "value": "Lailla"
+    },
+    {
+      "value": "Larrain"
+    },
+    {
+      "value": "Letelier"
+    },
+    {
+      "value": "Llamazarpermanente"
+    },
+    {
+      "value": "Llerena"
+    },
+    {
+      "value": "Lutor"
+    },
+    {
+      "value": "Mariano"
+    },
+    {
+      "value": "Martinepermanente"
+    },
+    {
+      "value": "Melgarejopermanente"
+    },
+    {
+      "value": "Micheletto"
+    },
+    {
+      "value": "Milessi"
+    },
+    {
+      "value": "Miskinichizpermanente"
+    },
+    {
+      "value": "Morin"
+    },
+    {
+      "value": "Moyano"
+    },
+    {
+      "value": "Nadel"
+    },
+    {
+      "value": "Neto"
+    },
+    {
+      "value": "Nicolicchia"
+    },
+    {
+      "value": "Noblia"
+    },
+    {
+      "value": "Notto"
+    },
+    {
+      "value": "Olmepermanente"
+    },
+    {
+      "value": "Orella"
+    },
+    {
+      "value": "Pereirpermanente"
+    },
+    {
+      "value": "Petters"
+    },
+    {
+      "value": "Pires"
+    },
+    {
+      "value": "Raviolo"
+    },
+    {
+      "value": "Recaldepermanente"
+    },
+    {
+      "value": "Rigoni"
+    },
+    {
+      "value": "Rodriguezcontratado"
+    },
+    {
+      "value": "Salgado"
+    },
+    {
+      "value": "Salinaspermanente"
+    },
+    {
+      "value": "Samaniegopermanente"
+    },
+    {
+      "value": "Santacrupermanente"
+    },
+    {
+      "value": "Santanderpermanente"
+    },
+    {
+      "value": "Sartori"
+    },
+    {
+      "value": "Staple"
+    },
+    {
+      "value": "Tavarelli"
+    },
+    {
+      "value": "Tyrakowski"
+    },
+    {
+      "value": "Urquhart"
+    },
+    {
+      "value": "Valenzuelpermanente"
+    },
+    {
+      "value": "Venialgopermanente"
+    },
+    {
+      "value": "Verocay"
+    },
+    {
+      "value": "Vester"
+    },
+    {
+      "value": "Vian"
+    },
+    {
+      "value": "Villamayorpermanente"
+    },
+    {
+      "value": "Washmuth"
+    },
+    {
+      "value": "Woitschach"
+    },
+    {
+      "value": "Yampey"
+    },
+    {
+      "value": "Yore"
+    },
+    {
+      "value": "Zarachopermanente"
+    },
+    {
+      "value": "Aguileracontratado"
+    },
+    {
+      "value": "Aguilerapermanente"
+    },
+    {
+      "value": "Alder"
+    },
+    {
+      "value": "Alderet"
+    },
+    {
+      "value": "Almando"
+    },
+    {
+      "value": "Almironpermanente"
+    },
+    {
+      "value": "Alvarencontratado"
+    },
+    {
+      "value": "Alvarengpermanente"
+    },
+    {
+      "value": "Amadit"
+    },
+    {
+      "value": "Amorena"
+    },
+    {
+      "value": "Anciaux"
+    },
+    {
+      "value": "Antell"
+    },
+    {
+      "value": "Arevalocontratado"
+    },
+    {
+      "value": "Arevalospermanente"
+    },
+    {
+      "value": "Arguellopermanente"
+    },
+    {
+      "value": "Arrellagapermanente"
+    },
+    {
+      "value": "Arrom"
+    },
+    {
+      "value": "Arzamendcontratado"
+    },
+    {
+      "value": "Atencio"
+    },
+    {
+      "value": "Azucas"
+    },
+    {
+      "value": "Bagnoli"
+    },
+    {
+      "value": "Balletbopermanente"
+    },
+    {
+      "value": "Barbotte"
+    },
+    {
+      "value": "Barranco"
+    },
+    {
+      "value": "Barraza"
+    },
+    {
+      "value": "Barrientcontratado"
+    },
+    {
+      "value": "Bartomeu"
+    },
+    {
+      "value": "Beaufort"
+    },
+    {
+      "value": "Bejaranopermanente"
+    },
+    {
+      "value": "Benitezpermanente"
+    },
+    {
+      "value": "Beraud"
+    },
+    {
+      "value": "Berden"
     }
   ],
   "production_ready": false
