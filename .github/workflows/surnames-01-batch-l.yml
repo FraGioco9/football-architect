@@ -1,0 +1,68 @@
+name: SURNAMES-01 Batch L (Node 22)
+
+on:
+  pull_request:
+    paths:
+      - data/players/surnames/countries/ITA.json
+      - data/players/surnames/countries/ESP.json
+      - data/players/surnames/countries/FRA.json
+      - data/players/surnames/countries/USA.json
+      - .github/workflows/surnames-01-batch-l.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-batch-l:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check 4 surname pools and adversarial inputs
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import { readFileSync } from "node:fs";
+          const token = String.raw`(?:\p{Script=Latin}\p{M}*)+`;
+          const pattern = new RegExp("^" + token + "(?:[ '\u2019-]" + token + ")*$", "u");
+          const mark = /\p{M}/gu;
+          const markLatin = /\p{Script_Extensions=Latin}/u;
+          const valid = (s) => typeof s === "string" && s.length > 0
+            && s === s.normalize("NFC") && pattern.test(s)
+            && [...s.matchAll(mark)].every(([ch]) => markLatin.test(ch));
+          for (const sample of ["De Luca", "Del Río", "Le Gall", "O'Brien", "Smith-Jones"]) {
+            assert.ok(valid(sample), "valid example: " + sample);
+          }
+          for (const sample of ["Иванов", "Παπαδόπουλος", "김", "Smіth", "Smi\u20DDth", "Smith/", "De  Luca", "Smith-", ""]) {
+            assert.ok(!valid(sample), "invalid example: " + sample);
+          }
+          for (const code of ["ITA", "ESP", "FRA", "USA"]) {
+            const path = "data/players/surnames/countries/" + code + ".json";
+            const doc = JSON.parse(readFileSync(path, "utf8"));
+            assert.deepEqual(Object.keys(doc), [
+              "schema_version", "code", "kind", "selection_policy",
+              "sources", "surnames", "production_ready"
+            ]);
+            assert.equal(doc.schema_version, 1);
+            assert.equal(doc.code, code);
+            assert.equal(doc.kind, "surnames");
+            assert.equal(doc.selection_policy, "uniform");
+            assert.equal(doc.production_ready, false);
+            assert.ok(Array.isArray(doc.sources) && doc.sources.length > 0);
+            assert.ok(doc.sources.every(s => typeof s.url === "string" && s.url.startsWith("https://")));
+            assert.equal(doc.surnames.length, 500, code + " must contain exactly 500 surnames");
+            const seen = new Set();
+            for (const item of doc.surnames) {
+              assert.deepEqual(Object.keys(item), ["value"], code + " entry must have only value");
+              assert.ok(valid(item.value), code + " invalid surname: " + item.value);
+              const canonical = item.value.normalize("NFC").toLocaleLowerCase().replace(/\u2019/g, "'");
+              assert.ok(!seen.has(canonical), code + " duplicate: " + item.value);
+              seen.add(canonical);
+            }
+            console.log("PASS " + code + ": 500 valid unique Latin/NFC surnames, uniform selection, source-backed, no weights");
+          }
+          console.log("PASS adversarial Latin-script acceptance/rejection");
+          NODE

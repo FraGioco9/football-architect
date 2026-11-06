@@ -1,0 +1,1521 @@
+{
+  "schema_version": 1,
+  "code": "ITA",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "italian-1000-cognomi",
+      "url": "https://github.com/fr1zz0/nomi_statisticamente_probabili/blob/98817e0bbf1d3368673245278a6e9bbfc2671ef5/1000_cognomi.txt",
+      "scope": "Italian surnames; third-party top-1000 wordlist, not an official population ranking."
+    },
+    {
+      "id": "cognomix-crosscheck",
+      "url": "https://github.com/PaoloSarti/lista_cognomi_italiani/blob/e201438bc8ac7b3119621488b03e3f8004d0c4cd/cognomi.txt",
+      "scope": "Independent list scraped from Cognomix (Italy); 500 selections must occur in both lists. Source creates some artificial accent variants; no new variant generated here. Reuse terms require review."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Valentino"
+    },
+    {
+      "value": "Salvi"
+    },
+    {
+      "value": "Stefanini"
+    },
+    {
+      "value": "Boscolo"
+    },
+    {
+      "value": "Raimondo"
+    },
+    {
+      "value": "Riccardi"
+    },
+    {
+      "value": "Elia"
+    },
+    {
+      "value": "Bruno"
+    },
+    {
+      "value": "Barletta"
+    },
+    {
+      "value": "Grillo"
+    },
+    {
+      "value": "Perego"
+    },
+    {
+      "value": "Di Nardo"
+    },
+    {
+      "value": "Palma"
+    },
+    {
+      "value": "Carlini"
+    },
+    {
+      "value": "Terzi"
+    },
+    {
+      "value": "Casali"
+    },
+    {
+      "value": "Corradini"
+    },
+    {
+      "value": "Di Stefano"
+    },
+    {
+      "value": "Cesari"
+    },
+    {
+      "value": "Pisani"
+    },
+    {
+      "value": "Bonelli"
+    },
+    {
+      "value": "Bartolini"
+    },
+    {
+      "value": "De Felice"
+    },
+    {
+      "value": "Urso"
+    },
+    {
+      "value": "Cosentino"
+    },
+    {
+      "value": "Sasso"
+    },
+    {
+      "value": "Mangano"
+    },
+    {
+      "value": "Mosca"
+    },
+    {
+      "value": "Manzo"
+    },
+    {
+      "value": "Capuano"
+    },
+    {
+      "value": "Genovese"
+    },
+    {
+      "value": "Pini"
+    },
+    {
+      "value": "Gabriele"
+    },
+    {
+      "value": "Sala"
+    },
+    {
+      "value": "Cardone"
+    },
+    {
+      "value": "Marinelli"
+    },
+    {
+      "value": "Tommasi"
+    },
+    {
+      "value": "Casini"
+    },
+    {
+      "value": "Pecoraro"
+    },
+    {
+      "value": "Signorelli"
+    },
+    {
+      "value": "Zorzi"
+    },
+    {
+      "value": "Massa"
+    },
+    {
+      "value": "Quaglia"
+    },
+    {
+      "value": "Di Leo"
+    },
+    {
+      "value": "Manzoni"
+    },
+    {
+      "value": "Botta"
+    },
+    {
+      "value": "Terranova"
+    },
+    {
+      "value": "Cataldo"
+    },
+    {
+      "value": "Lisi"
+    },
+    {
+      "value": "Brunetti"
+    },
+    {
+      "value": "Mauro"
+    },
+    {
+      "value": "Giuliano"
+    },
+    {
+      "value": "Michelini"
+    },
+    {
+      "value": "Gentile"
+    },
+    {
+      "value": "Patti"
+    },
+    {
+      "value": "Calabrese"
+    },
+    {
+      "value": "Natali"
+    },
+    {
+      "value": "Tozzi"
+    },
+    {
+      "value": "Baldi"
+    },
+    {
+      "value": "Vaccari"
+    },
+    {
+      "value": "Vecchio"
+    },
+    {
+      "value": "Ventura"
+    },
+    {
+      "value": "Floris"
+    },
+    {
+      "value": "Manfredi"
+    },
+    {
+      "value": "Mariotti"
+    },
+    {
+      "value": "Marconi"
+    },
+    {
+      "value": "Paolucci"
+    },
+    {
+      "value": "Guarnieri"
+    },
+    {
+      "value": "Fantoni"
+    },
+    {
+      "value": "Betti"
+    },
+    {
+      "value": "Di Gennaro"
+    },
+    {
+      "value": "Caputo"
+    },
+    {
+      "value": "Di Francesco"
+    },
+    {
+      "value": "Pellegrino"
+    },
+    {
+      "value": "Bernardini"
+    },
+    {
+      "value": "Angelini"
+    },
+    {
+      "value": "Grosso"
+    },
+    {
+      "value": "Mazzola"
+    },
+    {
+      "value": "Barbero"
+    },
+    {
+      "value": "Santi"
+    },
+    {
+      "value": "D'Ambrosio"
+    },
+    {
+      "value": "Colombi"
+    },
+    {
+      "value": "Piras"
+    },
+    {
+      "value": "Anselmi"
+    },
+    {
+      "value": "Belotti"
+    },
+    {
+      "value": "Pasquali"
+    },
+    {
+      "value": "Galante"
+    },
+    {
+      "value": "Novello"
+    },
+    {
+      "value": "Cavaliere"
+    },
+    {
+      "value": "Vinci"
+    },
+    {
+      "value": "Romagnoli"
+    },
+    {
+      "value": "Milanesi"
+    },
+    {
+      "value": "Tomaselli"
+    },
+    {
+      "value": "Casella"
+    },
+    {
+      "value": "Galli"
+    },
+    {
+      "value": "Marras"
+    },
+    {
+      "value": "Bernardi"
+    },
+    {
+      "value": "Graziani"
+    },
+    {
+      "value": "Ghezzi"
+    },
+    {
+      "value": "Proietti"
+    },
+    {
+      "value": "Castiglioni"
+    },
+    {
+      "value": "Natale"
+    },
+    {
+      "value": "Lupi"
+    },
+    {
+      "value": "Zamboni"
+    },
+    {
+      "value": "Tucci"
+    },
+    {
+      "value": "Ferraro"
+    },
+    {
+      "value": "Franchi"
+    },
+    {
+      "value": "Montanaro"
+    },
+    {
+      "value": "Altieri"
+    },
+    {
+      "value": "Fazio"
+    },
+    {
+      "value": "Di Paolo"
+    },
+    {
+      "value": "Spagnolo"
+    },
+    {
+      "value": "Forti"
+    },
+    {
+      "value": "Carnevali"
+    },
+    {
+      "value": "De Simone"
+    },
+    {
+      "value": "Bonomi"
+    },
+    {
+      "value": "Randazzo"
+    },
+    {
+      "value": "Corradi"
+    },
+    {
+      "value": "Corso"
+    },
+    {
+      "value": "Di Salvo"
+    },
+    {
+      "value": "Merlini"
+    },
+    {
+      "value": "Lorenzi"
+    },
+    {
+      "value": "Di Giorgio"
+    },
+    {
+      "value": "Graziano"
+    },
+    {
+      "value": "Gaspari"
+    },
+    {
+      "value": "Stella"
+    },
+    {
+      "value": "Bellotti"
+    },
+    {
+      "value": "Danieli"
+    },
+    {
+      "value": "Grieco"
+    },
+    {
+      "value": "Esposito"
+    },
+    {
+      "value": "De Maria"
+    },
+    {
+      "value": "Clementi"
+    },
+    {
+      "value": "Ambrosi"
+    },
+    {
+      "value": "Beltrame"
+    },
+    {
+      "value": "Benedetti"
+    },
+    {
+      "value": "Romanelli"
+    },
+    {
+      "value": "Cavallini"
+    },
+    {
+      "value": "Santoni"
+    },
+    {
+      "value": "D'Elia"
+    },
+    {
+      "value": "Diana"
+    },
+    {
+      "value": "Bertolini"
+    },
+    {
+      "value": "Longhi"
+    },
+    {
+      "value": "Pasqualini"
+    },
+    {
+      "value": "Giacometti"
+    },
+    {
+      "value": "Mari"
+    },
+    {
+      "value": "Ippolito"
+    },
+    {
+      "value": "Masini"
+    },
+    {
+      "value": "Salvatore"
+    },
+    {
+      "value": "Marin"
+    },
+    {
+      "value": "Galimberti"
+    },
+    {
+      "value": "Damiani"
+    },
+    {
+      "value": "Negro"
+    },
+    {
+      "value": "Cipolla"
+    },
+    {
+      "value": "Romano"
+    },
+    {
+      "value": "Cavallo"
+    },
+    {
+      "value": "Pizzo"
+    },
+    {
+      "value": "Capelli"
+    },
+    {
+      "value": "Cirillo"
+    },
+    {
+      "value": "Pagani"
+    },
+    {
+      "value": "Bortolotti"
+    },
+    {
+      "value": "Bergamaschi"
+    },
+    {
+      "value": "Mura"
+    },
+    {
+      "value": "Fedeli"
+    },
+    {
+      "value": "Rosi"
+    },
+    {
+      "value": "Piccinini"
+    },
+    {
+      "value": "Pavan"
+    },
+    {
+      "value": "Massari"
+    },
+    {
+      "value": "Todaro"
+    },
+    {
+      "value": "Foglia"
+    },
+    {
+      "value": "Filippi"
+    },
+    {
+      "value": "Bellucci"
+    },
+    {
+      "value": "Santoro"
+    },
+    {
+      "value": "Federici"
+    },
+    {
+      "value": "Lancia"
+    },
+    {
+      "value": "D'Amato"
+    },
+    {
+      "value": "Battaglia"
+    },
+    {
+      "value": "Monaco"
+    },
+    {
+      "value": "Spada"
+    },
+    {
+      "value": "Petrone"
+    },
+    {
+      "value": "De Paoli"
+    },
+    {
+      "value": "Cardinale"
+    },
+    {
+      "value": "Brambilla"
+    },
+    {
+      "value": "Grimaldi"
+    },
+    {
+      "value": "Pappalardo"
+    },
+    {
+      "value": "Colella"
+    },
+    {
+      "value": "Morra"
+    },
+    {
+      "value": "Bologna"
+    },
+    {
+      "value": "Valeri"
+    },
+    {
+      "value": "Di Biase"
+    },
+    {
+      "value": "Mosconi"
+    },
+    {
+      "value": "Morabito"
+    },
+    {
+      "value": "Gambino"
+    },
+    {
+      "value": "Calcagno"
+    },
+    {
+      "value": "Marchesi"
+    },
+    {
+      "value": "Falcone"
+    },
+    {
+      "value": "Di Maria"
+    },
+    {
+      "value": "Bianco"
+    },
+    {
+      "value": "Castaldo"
+    },
+    {
+      "value": "Cozzolino"
+    },
+    {
+      "value": "Martelli"
+    },
+    {
+      "value": "Rocco"
+    },
+    {
+      "value": "Sabatino"
+    },
+    {
+      "value": "Mercurio"
+    },
+    {
+      "value": "Riva"
+    },
+    {
+      "value": "Valerio"
+    },
+    {
+      "value": "Fioretti"
+    },
+    {
+      "value": "Lucarelli"
+    },
+    {
+      "value": "Benvenuti"
+    },
+    {
+      "value": "Campi"
+    },
+    {
+      "value": "Simonetti"
+    },
+    {
+      "value": "Marrone"
+    },
+    {
+      "value": "Paoli"
+    },
+    {
+      "value": "Palermo"
+    },
+    {
+      "value": "Sanna"
+    },
+    {
+      "value": "Ricciardi"
+    },
+    {
+      "value": "Riccio"
+    },
+    {
+      "value": "Milan"
+    },
+    {
+      "value": "Ferri"
+    },
+    {
+      "value": "Mazzoleni"
+    },
+    {
+      "value": "Rota"
+    },
+    {
+      "value": "Cavalieri"
+    },
+    {
+      "value": "Trotta"
+    },
+    {
+      "value": "Pandolfi"
+    },
+    {
+      "value": "Colucci"
+    },
+    {
+      "value": "Petrini"
+    },
+    {
+      "value": "Mariano"
+    },
+    {
+      "value": "Di Donato"
+    },
+    {
+      "value": "Clerici"
+    },
+    {
+      "value": "Visconti"
+    },
+    {
+      "value": "Cerutti"
+    },
+    {
+      "value": "Perotti"
+    },
+    {
+      "value": "Cavallaro"
+    },
+    {
+      "value": "Coppola"
+    },
+    {
+      "value": "Baldini"
+    },
+    {
+      "value": "Di Domenico"
+    },
+    {
+      "value": "Barbaro"
+    },
+    {
+      "value": "Di Benedetto"
+    },
+    {
+      "value": "Spina"
+    },
+    {
+      "value": "Franceschini"
+    },
+    {
+      "value": "Trevisan"
+    },
+    {
+      "value": "Campana"
+    },
+    {
+      "value": "De Marchi"
+    },
+    {
+      "value": "Napolitano"
+    },
+    {
+      "value": "Pascale"
+    },
+    {
+      "value": "Giordano"
+    },
+    {
+      "value": "Molinari"
+    },
+    {
+      "value": "Giacomini"
+    },
+    {
+      "value": "Arrigoni"
+    },
+    {
+      "value": "De Lucia"
+    },
+    {
+      "value": "Pozzi"
+    },
+    {
+      "value": "Di Girolamo"
+    },
+    {
+      "value": "Marano"
+    },
+    {
+      "value": "Caselli"
+    },
+    {
+      "value": "Martini"
+    },
+    {
+      "value": "Luciani"
+    },
+    {
+      "value": "Viviani"
+    },
+    {
+      "value": "Greco"
+    },
+    {
+      "value": "Bertini"
+    },
+    {
+      "value": "Orlando"
+    },
+    {
+      "value": "Napoli"
+    },
+    {
+      "value": "Iorio"
+    },
+    {
+      "value": "D'Antonio"
+    },
+    {
+      "value": "Cantoni"
+    },
+    {
+      "value": "Lunardi"
+    },
+    {
+      "value": "Carbone"
+    },
+    {
+      "value": "Carnevale"
+    },
+    {
+      "value": "Trapani"
+    },
+    {
+      "value": "Maiorano"
+    },
+    {
+      "value": "Ruggiero"
+    },
+    {
+      "value": "Usai"
+    },
+    {
+      "value": "Benini"
+    },
+    {
+      "value": "Amoroso"
+    },
+    {
+      "value": "Conforti"
+    },
+    {
+      "value": "Fossati"
+    },
+    {
+      "value": "Leone"
+    },
+    {
+      "value": "Morelli"
+    },
+    {
+      "value": "Valenti"
+    },
+    {
+      "value": "Cavallari"
+    },
+    {
+      "value": "Colombo"
+    },
+    {
+      "value": "Bianchi"
+    },
+    {
+      "value": "Serra"
+    },
+    {
+      "value": "Basile"
+    },
+    {
+      "value": "Curti"
+    },
+    {
+      "value": "Secchi"
+    },
+    {
+      "value": "Puglisi"
+    },
+    {
+      "value": "Bassani"
+    },
+    {
+      "value": "Rossi"
+    },
+    {
+      "value": "Minelli"
+    },
+    {
+      "value": "Donati"
+    },
+    {
+      "value": "Mercuri"
+    },
+    {
+      "value": "La Rocca"
+    },
+    {
+      "value": "Morganti"
+    },
+    {
+      "value": "Grasso"
+    },
+    {
+      "value": "Siciliano"
+    },
+    {
+      "value": "Gandolfi"
+    },
+    {
+      "value": "Grandi"
+    },
+    {
+      "value": "Innocenti"
+    },
+    {
+      "value": "Boschi"
+    },
+    {
+      "value": "Festa"
+    },
+    {
+      "value": "Landi"
+    },
+    {
+      "value": "Fioravanti"
+    },
+    {
+      "value": "Orsini"
+    },
+    {
+      "value": "Bettini"
+    },
+    {
+      "value": "Locatelli"
+    },
+    {
+      "value": "Sessa"
+    },
+    {
+      "value": "D'Onofrio"
+    },
+    {
+      "value": "Sartori"
+    },
+    {
+      "value": "Cocco"
+    },
+    {
+      "value": "Romeo"
+    },
+    {
+      "value": "Antonini"
+    },
+    {
+      "value": "Valentini"
+    },
+    {
+      "value": "Fantini"
+    },
+    {
+      "value": "Russo"
+    },
+    {
+      "value": "Castellani"
+    },
+    {
+      "value": "Moretto"
+    },
+    {
+      "value": "Vassallo"
+    },
+    {
+      "value": "D'Alessio"
+    },
+    {
+      "value": "Montanari"
+    },
+    {
+      "value": "Ferrarese"
+    },
+    {
+      "value": "Lo Presti"
+    },
+    {
+      "value": "Franchini"
+    },
+    {
+      "value": "Mauri"
+    },
+    {
+      "value": "Lepore"
+    },
+    {
+      "value": "Fiorentino"
+    },
+    {
+      "value": "Signorini"
+    },
+    {
+      "value": "Cipriani"
+    },
+    {
+      "value": "Morini"
+    },
+    {
+      "value": "Grande"
+    },
+    {
+      "value": "Croci"
+    },
+    {
+      "value": "Prati"
+    },
+    {
+      "value": "Spano"
+    },
+    {
+      "value": "Vanni"
+    },
+    {
+      "value": "Gozzi"
+    },
+    {
+      "value": "Longo"
+    },
+    {
+      "value": "Abbate"
+    },
+    {
+      "value": "Murgia"
+    },
+    {
+      "value": "Cristiano"
+    },
+    {
+      "value": "Di Bella"
+    },
+    {
+      "value": "Lai"
+    },
+    {
+      "value": "Guerriero"
+    },
+    {
+      "value": "Marra"
+    },
+    {
+      "value": "Venturi"
+    },
+    {
+      "value": "Buzzi"
+    },
+    {
+      "value": "Palazzo"
+    },
+    {
+      "value": "Giuliani"
+    },
+    {
+      "value": "Tedeschi"
+    },
+    {
+      "value": "Carraro"
+    },
+    {
+      "value": "Mele"
+    },
+    {
+      "value": "Zanardi"
+    },
+    {
+      "value": "Milazzo"
+    },
+    {
+      "value": "Florio"
+    },
+    {
+      "value": "Grilli"
+    },
+    {
+      "value": "Persico"
+    },
+    {
+      "value": "Lazzarini"
+    },
+    {
+      "value": "Rosso"
+    },
+    {
+      "value": "Palumbo"
+    },
+    {
+      "value": "Borelli"
+    },
+    {
+      "value": "Casagrande"
+    },
+    {
+      "value": "Giordani"
+    },
+    {
+      "value": "Pellegrini"
+    },
+    {
+      "value": "Guidi"
+    },
+    {
+      "value": "Costantini"
+    },
+    {
+      "value": "De Vito"
+    },
+    {
+      "value": "Di Pietro"
+    },
+    {
+      "value": "Raimondi"
+    },
+    {
+      "value": "Masi"
+    },
+    {
+      "value": "Campanella"
+    },
+    {
+      "value": "Padovani"
+    },
+    {
+      "value": "Messina"
+    },
+    {
+      "value": "Berardi"
+    },
+    {
+      "value": "Fabiano"
+    },
+    {
+      "value": "Bonato"
+    },
+    {
+      "value": "Costantino"
+    },
+    {
+      "value": "Lodi"
+    },
+    {
+      "value": "Parisi"
+    },
+    {
+      "value": "Del Vecchio"
+    },
+    {
+      "value": "Scala"
+    },
+    {
+      "value": "Anelli"
+    },
+    {
+      "value": "Fiorini"
+    },
+    {
+      "value": "Pasini"
+    },
+    {
+      "value": "Bolognesi"
+    },
+    {
+      "value": "Bini"
+    },
+    {
+      "value": "Catania"
+    },
+    {
+      "value": "Bucci"
+    },
+    {
+      "value": "Veronesi"
+    },
+    {
+      "value": "Masiero"
+    },
+    {
+      "value": "Alessandrini"
+    },
+    {
+      "value": "Carminati"
+    },
+    {
+      "value": "Chirico"
+    },
+    {
+      "value": "Vitale"
+    },
+    {
+      "value": "Zaccaria"
+    },
+    {
+      "value": "Prato"
+    },
+    {
+      "value": "Salomone"
+    },
+    {
+      "value": "Schiavone"
+    },
+    {
+      "value": "Corsini"
+    },
+    {
+      "value": "Tartaglia"
+    },
+    {
+      "value": "De Leo"
+    },
+    {
+      "value": "Vaccaro"
+    },
+    {
+      "value": "Stabile"
+    },
+    {
+      "value": "Lucchini"
+    },
+    {
+      "value": "Mazzoni"
+    },
+    {
+      "value": "Poli"
+    },
+    {
+      "value": "Iannone"
+    },
+    {
+      "value": "Porcu"
+    },
+    {
+      "value": "Latini"
+    },
+    {
+      "value": "Maggio"
+    },
+    {
+      "value": "Marzano"
+    },
+    {
+      "value": "Galbiati"
+    },
+    {
+      "value": "Di Carlo"
+    },
+    {
+      "value": "Galletti"
+    },
+    {
+      "value": "Nobili"
+    },
+    {
+      "value": "Falco"
+    },
+    {
+      "value": "Piana"
+    },
+    {
+      "value": "Tortora"
+    },
+    {
+      "value": "Cortesi"
+    },
+    {
+      "value": "Buono"
+    },
+    {
+      "value": "Perin"
+    },
+    {
+      "value": "Bosio"
+    },
+    {
+      "value": "Baldo"
+    },
+    {
+      "value": "Savio"
+    },
+    {
+      "value": "Pinto"
+    },
+    {
+      "value": "Gargano"
+    },
+    {
+      "value": "Costa"
+    },
+    {
+      "value": "Piccolo"
+    },
+    {
+      "value": "Morandi"
+    },
+    {
+      "value": "Gregori"
+    },
+    {
+      "value": "Guida"
+    },
+    {
+      "value": "Capasso"
+    },
+    {
+      "value": "Forte"
+    },
+    {
+      "value": "Paradiso"
+    },
+    {
+      "value": "Bonini"
+    },
+    {
+      "value": "Piva"
+    },
+    {
+      "value": "De Stefano"
+    },
+    {
+      "value": "Barone"
+    },
+    {
+      "value": "Biondi"
+    },
+    {
+      "value": "Corsi"
+    },
+    {
+      "value": "Buratti"
+    },
+    {
+      "value": "Barbera"
+    },
+    {
+      "value": "Pavesi"
+    },
+    {
+      "value": "Callegari"
+    },
+    {
+      "value": "Giacomelli"
+    },
+    {
+      "value": "Taddei"
+    },
+    {
+      "value": "Bevilacqua"
+    },
+    {
+      "value": "Tomasi"
+    },
+    {
+      "value": "Pepe"
+    },
+    {
+      "value": "Bacci"
+    },
+    {
+      "value": "Salerno"
+    },
+    {
+      "value": "Gargiulo"
+    },
+    {
+      "value": "Macchi"
+    },
+    {
+      "value": "Pegoraro"
+    },
+    {
+      "value": "Cattaneo"
+    },
+    {
+      "value": "Frau"
+    },
+    {
+      "value": "Arena"
+    },
+    {
+      "value": "Bongiovanni"
+    },
+    {
+      "value": "Contini"
+    },
+    {
+      "value": "Guarino"
+    },
+    {
+      "value": "D'Andrea"
+    },
+    {
+      "value": "Mora"
+    },
+    {
+      "value": "Zampieri"
+    },
+    {
+      "value": "Federico"
+    },
+    {
+      "value": "D'Amico"
+    },
+    {
+      "value": "Oliveri"
+    },
+    {
+      "value": "Casati"
+    },
+    {
+      "value": "Rocca"
+    },
+    {
+      "value": "Vella"
+    },
+    {
+      "value": "Crotti"
+    },
+    {
+      "value": "Cuomo"
+    },
+    {
+      "value": "Lorenzetti"
+    },
+    {
+      "value": "Cherubini"
+    },
+    {
+      "value": "Bresciani"
+    },
+    {
+      "value": "Piacentini"
+    },
+    {
+      "value": "Spagnuolo"
+    },
+    {
+      "value": "Santini"
+    },
+    {
+      "value": "Santangelo"
+    },
+    {
+      "value": "Guerra"
+    },
+    {
+      "value": "Zucchi"
+    },
+    {
+      "value": "De Francesco"
+    },
+    {
+      "value": "Scotti"
+    },
+    {
+      "value": "Ballerini"
+    },
+    {
+      "value": "Durante"
+    },
+    {
+      "value": "Ciccarelli"
+    },
+    {
+      "value": "Andreotti"
+    },
+    {
+      "value": "Palmieri"
+    },
+    {
+      "value": "Merlo"
+    },
+    {
+      "value": "Turco"
+    },
+    {
+      "value": "Sarti"
+    },
+    {
+      "value": "Negri"
+    },
+    {
+      "value": "Lazzaro"
+    },
+    {
+      "value": "Lorenzini"
+    },
+    {
+      "value": "Loi"
+    },
+    {
+      "value": "Venturini"
+    },
+    {
+      "value": "Zanini"
+    },
+    {
+      "value": "Roma"
+    },
+    {
+      "value": "Aiello"
+    },
+    {
+      "value": "Albertini"
+    },
+    {
+      "value": "Tosi"
+    },
+    {
+      "value": "Nicolini"
+    },
+    {
+      "value": "Nicoli"
+    },
+    {
+      "value": "Marinoni"
+    },
+    {
+      "value": "Chiodi"
+    }
+  ],
+  "production_ready": false
+}
