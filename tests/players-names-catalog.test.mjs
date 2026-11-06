@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -47,22 +47,26 @@ const sourceIds={
  VEN:'ve-damegender-wikidata-male-given-name-sample',
  UKR:'ua-languk-ubertext-firstnames-male-lemma',
  SVK:'forebears-slovakia-male-firstname-incidence',
- PAN:'forebears-panama-male-firstname-incidence'
+ PAN:'forebears-panama-male-firstname-incidence',
+ ARG:'ar-sicytar-male-personnel-damegender-2019',
+ MEX:'mx-sep-male-federal-education-personnel-2012',
+ COL:'co-wikidata-male-colombian-biographies-damegender',
+ CHI:'cl-registro-civil-male-birth-names-2000-2021-guaguas'
 };
 
-test('frozen 50 FIFA codes, exactly 28 saved banks of 300 and 22 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 32 saved banks of 300 and 18 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,8400);
+ assert.equal(master.policy.current_collected_given_names,9600);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,28);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,22);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,32);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,18);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -78,7 +82,7 @@ test('frozen 50 FIFA codes, exactly 28 saved banks of 300 and 22 empty banks',()
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,28);
+ assert.equal(new Set(ids).size,32);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -86,7 +90,7 @@ test('frozen 50 FIFA codes, exactly 28 saved banks of 300 and 22 empty banks',()
  }
 });
 
-test('each of 28 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 32 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -215,4 +219,28 @@ test('Batch K preserves three source-backed research-only Latin pools, with non-
  }
  assert.ok(banks.SVK.given_names.some(x=>x.value==='Štefan'));
  assert.ok(banks.UKR.given_names.some(x=>x.value==='Volodymyr'));
+});
+
+test('Batch D: ARG/MEX/COL/CHI source pins and research-only cohort limits',()=>{
+ const pinned={
+  ARG:'5416f2e019a077e497811d2b28dc597dd9b2819b',
+  MEX:'2e605dbbdf28ca28cea02172b61359a37f9b924b',
+  COL:'7fe0ec3a602aa85ddde713fc065a54eaf68e24e7',
+  CHI:'dd0049fb440703be03312699afd6010ffcb206f6'
+ };
+ for(const code of ['ARG','MEX','COL','CHI']){
+  const bank=banks[code];
+  assert.equal(bank.given_names.length,300);
+  assert.equal(bank.production_ready,false);
+  assert.deepEqual(bank.surnames,[]);
+  assert.equal(bank.source.source_csv_git_blob_sha,pinned[code]);
+  assert.ok(bank.source.source_csv_url.startsWith('https://raw.githubusercontent.com/'));
+  assert.ok(bank.source.metric.length>40);
+  assert.ok(bank.given_names.every(e=>isSingleLatinGivenName(e.value)));
+ }
+ assert.match(banks.ARG.cohort,/NOT birth records/);
+ assert.match(banks.MEX.cohort,/NOT birth records/);
+ assert.match(banks.COL.cohort,/NOT births/);
+ assert.match(banks.CHI.cohort,/2000–2021/);
+ assert.ok(banks.CHI.given_names.some(e=>e.value==='Benjamín'));
 });

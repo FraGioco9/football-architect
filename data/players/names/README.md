@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**8,400 / 15,000** single first-name slots saved in **28 / 50 countries**. **22 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**9,600 / 15,000** single first-name slots saved in **32 / 50 countries**. **18 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -40,6 +40,11 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Ukraine (UKR) | `countries/UKR.json` | 300 | Ukrainian male first-name lexicon: **language-corpus token frequencies**, official 2010 Latin transliteration; **not births** |
 | Slovakia (SVK) | `countries/SVK.json` | 300 | Forebears >=95% male **bearer incidence estimates**, all ages; **not birth counts** |
 | Panama (PAN) | `countries/PAN.json` | 300 | Forebears >=95% male **bearer incidence estimates**, all ages; original Spanish Latin spellings |
+
+| Argentina (ARG) | `countries/ARG.json` | 300 | SICYTAR male scientific/technology personnel (2019); **not births** |
+| Mexico (MEX) | `countries/MEX.json` | 300 | SEP male educational-sector workers (2012); **not births** |
+| Colombia (COL) | `countries/COL.json` | 300 | Wikidata male biography sample; **not births or representative population counts** |
+| Chile (CHI) | `countries/CHI.json` | 300 | Registro Civil male birth names **2000–2021**, via Guaguas |
 
 ### Source integrity, scope and limitations
 
@@ -97,8 +102,15 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **Preservation and QA:** All 25 pre-existing national name files remain Git-blob-identical; the three Batch K files are Git-blob-identical to the independently validated [Batch K PR #422](https://github.com/FraGioco9/football-architect/pull/422). [Batch source Node 22 strict Latin QA](https://github.com/FraGioco9/football-architect/actions/runs/42247643856) PASS; targeted catalog Node 22 checks must cover 28 banks. All research-only `production_ready:false`, no runtime generator or DB writes.
 
 
+**Batch D (PR #419 → PR #407; ARG/MEX/COL/CHI):**
+- **ARG:** [Argentina SICYTAR](https://datos.gob.ar/dataset/mincyt-personal-ciencia-tecnologia/archivo/mincyt_8ab77b16-f1a8-4d3f-b664-67becf83a9b9) scientific/technology personnel register, 2019 source as mirrored by Damegender at pinned repository commit `65ee149ce9da0be2c388b7c3ea62f79709e5336b` and Git blob `5416f2e019a077e497811d2b28dc597dd9b2819b`. 300 male single-token first names; observed male staff record frequencies, **not births, national residents or 2000+ cohort statistics**. Source rows with trailing non-breaking spaces were canonicalized by trimming, so duplicated labels such as ALEJANDRO have their two real observed rows summed, not invented.
+- **MEX:** [Mexico Secretaría de Educación Pública personnel](https://github.com/eduardofv/mexican-names), repository commit `a7fc52c7db3ddf035e458e58a78205b3f7992f30`, male employee names in 2012, source Git blob `2e605dbbdf28ca28cea02172b61359a37f9b924b`. 300 source-observed single first names; sex inferred from CURP by original compiler. **Sector-specific adult employees, not newborn or nationwide male resident frequencies.** Multi-token names are excluded rather than split.
+- **COL:** [Damegender/Wikidata Colombian male biographies](https://raw.githubusercontent.com/davidam/damegender/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_co/comales.csv), commit `65ee149ce9da0be2c388b7c3ea62f79709e5336b`, Git blob `7fe0ec3a602aa85ddde713fc065a54eaf68e24e7`. 300 first-name label frequencies from male Colombian biography entries. **Highly biased, non-representative sample; not national births, male residents or population prevalence.** Source malformed strings and suspect surname records excluded. Wikidata CC0 and Damegender GPLv3 mirroring obligations need review.
+- **CHI:** [Chile Registro Civil via Guaguas](https://github.com/rivaquiroga/guaguas), original source commit `2e4d4efc02eb1a346bb3370f9b64a44465e0faf4`, source Git blob `dd0049fb440703be03312699afd6010ffcb206f6`. 300 male first names by source-observed birth registrations summed over **2000–2021**, Guaguas CC0, not comparable to the three worker/biography samples.
+- **Preservation and release gate:** All four country JSON files copied by their exact Git blob SHAs from independent Draft/HOLD PR #419; the 28 national files already present in #407 remain untouched. Counts/estimates differ by population and are not cross-country comparable. Rights/licensing require review before commercial use; `production_ready:false`, no generator, DB, API, deploy or merge.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 28 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 22 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 32 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 18 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

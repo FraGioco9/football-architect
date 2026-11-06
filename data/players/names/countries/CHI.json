@@ -1,0 +1,1222 @@
+{
+  "schema_version": 2,
+  "code": "CHI",
+  "cohort": "male first names registered at birth in Chile 2000–2021 (Registro Civil data published through Guaguas)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "cl-registro-civil-male-birth-names-2000-2021-guaguas",
+    "provider": "Chile Servicio de Registro Civil e Identificación, via rivaquiroga/guaguas transparency-request extract",
+    "source_url": "https://github.com/rivaquiroga/guaguas",
+    "metric": "Sum of observed male registered first-name birth occurrences in Chile in calendar years 2000 through 2021, by Unicode single-token spelling; original source sex=M",
+    "license": "Guaguas public data package CC0; original Civil Registry records obtained through access-to-information request",
+    "source_git_ref": "2e4d4efc02eb1a346bb3370f9b64a44465e0faf4",
+    "source_csv_git_blob_sha": "dd0049fb440703be03312699afd6010ffcb206f6",
+    "source_csv_url": "https://raw.githubusercontent.com/rivaquiroga/guaguas/2e4d4efc02eb1a346bb3370f9b64a44465e0faf4/data-raw/1920-2021.csv"
+  },
+  "selection_policy": "Top 300 observed distinct single-token male given-name strings by source frequency; Unicode NFC; compounds excluded rather than split; etymological origin unrestricted; counts comparable only within this source",
+  "given_names": [
+    {
+      "value": "Benjamín",
+      "weight": 104363
+    },
+    {
+      "value": "Matías",
+      "weight": 79737
+    },
+    {
+      "value": "Vicente",
+      "weight": 75577
+    },
+    {
+      "value": "Martín",
+      "weight": 65932
+    },
+    {
+      "value": "Agustín",
+      "weight": 59377
+    },
+    {
+      "value": "Sebastián",
+      "weight": 55002
+    },
+    {
+      "value": "Joaquín",
+      "weight": 54565
+    },
+    {
+      "value": "Diego",
+      "weight": 52960
+    },
+    {
+      "value": "Nicolás",
+      "weight": 47417
+    },
+    {
+      "value": "Tomás",
+      "weight": 46621
+    },
+    {
+      "value": "José",
+      "weight": 46014
+    },
+    {
+      "value": "Maximiliano",
+      "weight": 45943
+    },
+    {
+      "value": "Cristóbal",
+      "weight": 44690
+    },
+    {
+      "value": "Mateo",
+      "weight": 42320
+    },
+    {
+      "value": "Felipe",
+      "weight": 41948
+    },
+    {
+      "value": "Juan",
+      "weight": 38544
+    },
+    {
+      "value": "Lucas",
+      "weight": 38372
+    },
+    {
+      "value": "Alonso",
+      "weight": 34961
+    },
+    {
+      "value": "Ignacio",
+      "weight": 34240
+    },
+    {
+      "value": "Bastián",
+      "weight": 30746
+    },
+    {
+      "value": "Francisco",
+      "weight": 29366
+    },
+    {
+      "value": "Gabriel",
+      "weight": 28419
+    },
+    {
+      "value": "Javier",
+      "weight": 27794
+    },
+    {
+      "value": "Luis",
+      "weight": 25355
+    },
+    {
+      "value": "Daniel",
+      "weight": 23332
+    },
+    {
+      "value": "Santiago",
+      "weight": 23328
+    },
+    {
+      "value": "Gaspar",
+      "weight": 22439
+    },
+    {
+      "value": "Renato",
+      "weight": 21576
+    },
+    {
+      "value": "Carlos",
+      "weight": 20738
+    },
+    {
+      "value": "Máximo",
+      "weight": 20174
+    },
+    {
+      "value": "Pablo",
+      "weight": 19327
+    },
+    {
+      "value": "Franco",
+      "weight": 19086
+    },
+    {
+      "value": "Luciano",
+      "weight": 18150
+    },
+    {
+      "value": "Fernando",
+      "weight": 17922
+    },
+    {
+      "value": "Cristian",
+      "weight": 17738
+    },
+    {
+      "value": "Bruno",
+      "weight": 17258
+    },
+    {
+      "value": "Jorge",
+      "weight": 16986
+    },
+    {
+      "value": "David",
+      "weight": 16329
+    },
+    {
+      "value": "Rodrigo",
+      "weight": 16070
+    },
+    {
+      "value": "Julián",
+      "weight": 15247
+    },
+    {
+      "value": "Pedro",
+      "weight": 14703
+    },
+    {
+      "value": "Angel",
+      "weight": 13841
+    },
+    {
+      "value": "Esteban",
+      "weight": 13836
+    },
+    {
+      "value": "Simón",
+      "weight": 13332
+    },
+    {
+      "value": "Amaro",
+      "weight": 13043
+    },
+    {
+      "value": "Emilio",
+      "weight": 12519
+    },
+    {
+      "value": "Manuel",
+      "weight": 12375
+    },
+    {
+      "value": "Kevin",
+      "weight": 12324
+    },
+    {
+      "value": "Alejandro",
+      "weight": 12199
+    },
+    {
+      "value": "Víctor",
+      "weight": 12148
+    },
+    {
+      "value": "Miguel",
+      "weight": 12118
+    },
+    {
+      "value": "Emiliano",
+      "weight": 11950
+    },
+    {
+      "value": "Fabián",
+      "weight": 11789
+    },
+    {
+      "value": "Alexander",
+      "weight": 11744
+    },
+    {
+      "value": "Camilo",
+      "weight": 11709
+    },
+    {
+      "value": "Facundo",
+      "weight": 11430
+    },
+    {
+      "value": "Eduardo",
+      "weight": 11213
+    },
+    {
+      "value": "Ian",
+      "weight": 10933
+    },
+    {
+      "value": "Dante",
+      "weight": 10896
+    },
+    {
+      "value": "Damián",
+      "weight": 10862
+    },
+    {
+      "value": "Rafael",
+      "weight": 10309
+    },
+    {
+      "value": "León",
+      "weight": 10114
+    },
+    {
+      "value": "Thomas",
+      "weight": 9687
+    },
+    {
+      "value": "Gustavo",
+      "weight": 9675
+    },
+    {
+      "value": "Cristopher",
+      "weight": 9272
+    },
+    {
+      "value": "Álvaro",
+      "weight": 9188
+    },
+    {
+      "value": "Andrés",
+      "weight": 9126
+    },
+    {
+      "value": "Dylan",
+      "weight": 9083
+    },
+    {
+      "value": "Marcelo",
+      "weight": 8985
+    },
+    {
+      "value": "Benjamin",
+      "weight": 8767
+    },
+    {
+      "value": "Ricardo",
+      "weight": 8696
+    },
+    {
+      "value": "Gonzalo",
+      "weight": 8537
+    },
+    {
+      "value": "Leonardo",
+      "weight": 8454
+    },
+    {
+      "value": "Claudio",
+      "weight": 8302
+    },
+    {
+      "value": "Samuel",
+      "weight": 8248
+    },
+    {
+      "value": "Patricio",
+      "weight": 8207
+    },
+    {
+      "value": "Mauricio",
+      "weight": 8143
+    },
+    {
+      "value": "Sergio",
+      "weight": 8099
+    },
+    {
+      "value": "Alexis",
+      "weight": 7995
+    },
+    {
+      "value": "Alan",
+      "weight": 7596
+    },
+    {
+      "value": "Elías",
+      "weight": 7278
+    },
+    {
+      "value": "Oscar",
+      "weight": 7008
+    },
+    {
+      "value": "Jean",
+      "weight": 6794
+    },
+    {
+      "value": "Jesús",
+      "weight": 6781
+    },
+    {
+      "value": "Isaac",
+      "weight": 6776
+    },
+    {
+      "value": "Héctor",
+      "weight": 6598
+    },
+    {
+      "value": "Leandro",
+      "weight": 6404
+    },
+    {
+      "value": "Jonathan",
+      "weight": 5977
+    },
+    {
+      "value": "Lukas",
+      "weight": 5881
+    },
+    {
+      "value": "Alex",
+      "weight": 5807
+    },
+    {
+      "value": "Marco",
+      "weight": 5726
+    },
+    {
+      "value": "Clemente",
+      "weight": 5670
+    },
+    {
+      "value": "Guillermo",
+      "weight": 5665
+    },
+    {
+      "value": "Matias",
+      "weight": 5539
+    },
+    {
+      "value": "Liam",
+      "weight": 5447
+    },
+    {
+      "value": "Roberto",
+      "weight": 5425
+    },
+    {
+      "value": "Valentín",
+      "weight": 5416
+    },
+    {
+      "value": "Axel",
+      "weight": 5329
+    },
+    {
+      "value": "Brayan",
+      "weight": 5274
+    },
+    {
+      "value": "Ariel",
+      "weight": 5164
+    },
+    {
+      "value": "César",
+      "weight": 5131
+    },
+    {
+      "value": "Mariano",
+      "weight": 4803
+    },
+    {
+      "value": "Mario",
+      "weight": 4725
+    },
+    {
+      "value": "Bryan",
+      "weight": 4700
+    },
+    {
+      "value": "Antonio",
+      "weight": 4621
+    },
+    {
+      "value": "Salvador",
+      "weight": 4601
+    },
+    {
+      "value": "Brandon",
+      "weight": 4488
+    },
+    {
+      "value": "Santino",
+      "weight": 4482
+    },
+    {
+      "value": "Gael",
+      "weight": 4461
+    },
+    {
+      "value": "Christian",
+      "weight": 4373
+    },
+    {
+      "value": "Christopher",
+      "weight": 4362
+    },
+    {
+      "value": "Aaron",
+      "weight": 4316
+    },
+    {
+      "value": "Mathias",
+      "weight": 4231
+    },
+    {
+      "value": "Angelo",
+      "weight": 4208
+    },
+    {
+      "value": "Jaime",
+      "weight": 4192
+    },
+    {
+      "value": "Cristofer",
+      "weight": 4179
+    },
+    {
+      "value": "Jordán",
+      "weight": 3972
+    },
+    {
+      "value": "Sebastian",
+      "weight": 3964
+    },
+    {
+      "value": "Martin",
+      "weight": 3918
+    },
+    {
+      "value": "Dilan",
+      "weight": 3711
+    },
+    {
+      "value": "Raúl",
+      "weight": 3706
+    },
+    {
+      "value": "Baltazar",
+      "weight": 3656
+    },
+    {
+      "value": "Johan",
+      "weight": 3590
+    },
+    {
+      "value": "Jeremy",
+      "weight": 3547
+    },
+    {
+      "value": "Alfonso",
+      "weight": 3430
+    },
+    {
+      "value": "Josue",
+      "weight": 3403
+    },
+    {
+      "value": "Ismael",
+      "weight": 3351
+    },
+    {
+      "value": "Thiago",
+      "weight": 3338
+    },
+    {
+      "value": "Abraham",
+      "weight": 3224
+    },
+    {
+      "value": "Ivan",
+      "weight": 3181
+    },
+    {
+      "value": "Joaquin",
+      "weight": 3173
+    },
+    {
+      "value": "Lorenzo",
+      "weight": 3121
+    },
+    {
+      "value": "Cristobal",
+      "weight": 3117
+    },
+    {
+      "value": "Arturo",
+      "weight": 3071
+    },
+    {
+      "value": "Matteo",
+      "weight": 3039
+    },
+    {
+      "value": "Moisés",
+      "weight": 3032
+    },
+    {
+      "value": "Jeremías",
+      "weight": 3023
+    },
+    {
+      "value": "Marcos",
+      "weight": 3002
+    },
+    {
+      "value": "Raimundo",
+      "weight": 2991
+    },
+    {
+      "value": "Enzo",
+      "weight": 2990
+    },
+    {
+      "value": "Nicolas",
+      "weight": 2951
+    },
+    {
+      "value": "Michael",
+      "weight": 2948
+    },
+    {
+      "value": "Bayron",
+      "weight": 2881
+    },
+    {
+      "value": "Demian",
+      "weight": 2879
+    },
+    {
+      "value": "Isaias",
+      "weight": 2848
+    },
+    {
+      "value": "Julio",
+      "weight": 2733
+    },
+    {
+      "value": "Iván",
+      "weight": 2727
+    },
+    {
+      "value": "Erick",
+      "weight": 2714
+    },
+    {
+      "value": "Borja",
+      "weight": 2597
+    },
+    {
+      "value": "Oliver",
+      "weight": 2578
+    },
+    {
+      "value": "Hugo",
+      "weight": 2577
+    },
+    {
+      "value": "Aníbal",
+      "weight": 2550
+    },
+    {
+      "value": "Ezequiel",
+      "weight": 2507
+    },
+    {
+      "value": "Nelson",
+      "weight": 2459
+    },
+    {
+      "value": "Jose",
+      "weight": 2397
+    },
+    {
+      "value": "Giovanni",
+      "weight": 2395
+    },
+    {
+      "value": "Brian",
+      "weight": 2386
+    },
+    {
+      "value": "Bastian",
+      "weight": 2383
+    },
+    {
+      "value": "Augusto",
+      "weight": 2369
+    },
+    {
+      "value": "Joel",
+      "weight": 2346
+    },
+    {
+      "value": "Emanuel",
+      "weight": 2311
+    },
+    {
+      "value": "Darío",
+      "weight": 2285
+    },
+    {
+      "value": "Hans",
+      "weight": 2268
+    },
+    {
+      "value": "Williams",
+      "weight": 2260
+    },
+    {
+      "value": "John",
+      "weight": 2224
+    },
+    {
+      "value": "Byron",
+      "weight": 2199
+    },
+    {
+      "value": "Rubén",
+      "weight": 2103
+    },
+    {
+      "value": "Max",
+      "weight": 2100
+    },
+    {
+      "value": "Hernán",
+      "weight": 2095
+    },
+    {
+      "value": "Aarón",
+      "weight": 2086
+    },
+    {
+      "value": "Jairo",
+      "weight": 2062
+    },
+    {
+      "value": "Agustin",
+      "weight": 2045
+    },
+    {
+      "value": "Gastón",
+      "weight": 2031
+    },
+    {
+      "value": "Amaru",
+      "weight": 2023
+    },
+    {
+      "value": "Domingo",
+      "weight": 2004
+    },
+    {
+      "value": "Mauro",
+      "weight": 1989
+    },
+    {
+      "value": "Anthony",
+      "weight": 1962
+    },
+    {
+      "value": "Gerardo",
+      "weight": 1944
+    },
+    {
+      "value": "Richard",
+      "weight": 1940
+    },
+    {
+      "value": "Matheo",
+      "weight": 1929
+    },
+    {
+      "value": "Paolo",
+      "weight": 1918
+    },
+    {
+      "value": "Octavio",
+      "weight": 1912
+    },
+    {
+      "value": "Valentino",
+      "weight": 1908
+    },
+    {
+      "value": "Omar",
+      "weight": 1907
+    },
+    {
+      "value": "Danilo",
+      "weight": 1903
+    },
+    {
+      "value": "Iker",
+      "weight": 1897
+    },
+    {
+      "value": "Joshua",
+      "weight": 1885
+    },
+    {
+      "value": "Thomás",
+      "weight": 1871
+    },
+    {
+      "value": "Alberto",
+      "weight": 1863
+    },
+    {
+      "value": "William",
+      "weight": 1856
+    },
+    {
+      "value": "Exequiel",
+      "weight": 1847
+    },
+    {
+      "value": "Josué",
+      "weight": 1813
+    },
+    {
+      "value": "Noah",
+      "weight": 1802
+    },
+    {
+      "value": "Germán",
+      "weight": 1791
+    },
+    {
+      "value": "Joseph",
+      "weight": 1790
+    },
+    {
+      "value": "Enrique",
+      "weight": 1780
+    },
+    {
+      "value": "Rodolfo",
+      "weight": 1778
+    },
+    {
+      "value": "Piero",
+      "weight": 1762
+    },
+    {
+      "value": "Elian",
+      "weight": 1758
+    },
+    {
+      "value": "Tomas",
+      "weight": 1727
+    },
+    {
+      "value": "Ethan",
+      "weight": 1726
+    },
+    {
+      "value": "Israel",
+      "weight": 1701
+    },
+    {
+      "value": "Leonel",
+      "weight": 1697
+    },
+    {
+      "value": "Lautaro",
+      "weight": 1670
+    },
+    {
+      "value": "Paulo",
+      "weight": 1635
+    },
+    {
+      "value": "Nahuel",
+      "weight": 1620
+    },
+    {
+      "value": "Jhon",
+      "weight": 1553
+    },
+    {
+      "value": "Alfredo",
+      "weight": 1533
+    },
+    {
+      "value": "Emmanuel",
+      "weight": 1527
+    },
+    {
+      "value": "Isaías",
+      "weight": 1524
+    },
+    {
+      "value": "Cristián",
+      "weight": 1514
+    },
+    {
+      "value": "Misael",
+      "weight": 1514
+    },
+    {
+      "value": "Maicol",
+      "weight": 1474
+    },
+    {
+      "value": "Félix",
+      "weight": 1429
+    },
+    {
+      "value": "Adolfo",
+      "weight": 1419
+    },
+    {
+      "value": "Justin",
+      "weight": 1378
+    },
+    {
+      "value": "Lian",
+      "weight": 1376
+    },
+    {
+      "value": "Andy",
+      "weight": 1367
+    },
+    {
+      "value": "Gerald",
+      "weight": 1364
+    },
+    {
+      "value": "Boris",
+      "weight": 1337
+    },
+    {
+      "value": "Milovan",
+      "weight": 1319
+    },
+    {
+      "value": "Jason",
+      "weight": 1305
+    },
+    {
+      "value": "Osvaldo",
+      "weight": 1285
+    },
+    {
+      "value": "Joan",
+      "weight": 1233
+    },
+    {
+      "value": "Pascual",
+      "weight": 1230
+    },
+    {
+      "value": "Jacob",
+      "weight": 1228
+    },
+    {
+      "value": "Ángel",
+      "weight": 1209
+    },
+    {
+      "value": "Eric",
+      "weight": 1196
+    },
+    {
+      "value": "Wladimir",
+      "weight": 1167
+    },
+    {
+      "value": "Eithan",
+      "weight": 1161
+    },
+    {
+      "value": "Steven",
+      "weight": 1138
+    },
+    {
+      "value": "Román",
+      "weight": 1133
+    },
+    {
+      "value": "Bairon",
+      "weight": 1117
+    },
+    {
+      "value": "Yerko",
+      "weight": 1109
+    },
+    {
+      "value": "Ronald",
+      "weight": 1093
+    },
+    {
+      "value": "Edgar",
+      "weight": 1086
+    },
+    {
+      "value": "Eydan",
+      "weight": 1084
+    },
+    {
+      "value": "Edison",
+      "weight": 1083
+    },
+    {
+      "value": "Bernardo",
+      "weight": 1077
+    },
+    {
+      "value": "Adrián",
+      "weight": 1049
+    },
+    {
+      "value": "René",
+      "weight": 1037
+    },
+    {
+      "value": "Stefano",
+      "weight": 1033
+    },
+    {
+      "value": "Edward",
+      "weight": 1031
+    },
+    {
+      "value": "Iñaki",
+      "weight": 1026
+    },
+    {
+      "value": "Emerson",
+      "weight": 1023
+    },
+    {
+      "value": "Patrick",
+      "weight": 1013
+    },
+    {
+      "value": "Maximo",
+      "weight": 1009
+    },
+    {
+      "value": "Maikol",
+      "weight": 972
+    },
+    {
+      "value": "Victor",
+      "weight": 964
+    },
+    {
+      "value": "Samir",
+      "weight": 961
+    },
+    {
+      "value": "Elián",
+      "weight": 954
+    },
+    {
+      "value": "Federico",
+      "weight": 951
+    },
+    {
+      "value": "Said",
+      "weight": 905
+    },
+    {
+      "value": "Paul",
+      "weight": 895
+    },
+    {
+      "value": "Johans",
+      "weight": 892
+    },
+    {
+      "value": "Alvaro",
+      "weight": 885
+    },
+    {
+      "value": "Abel",
+      "weight": 878
+    },
+    {
+      "value": "Yordan",
+      "weight": 869
+    },
+    {
+      "value": "Fabian",
+      "weight": 849
+    },
+    {
+      "value": "Austin",
+      "weight": 841
+    },
+    {
+      "value": "Robinson",
+      "weight": 834
+    },
+    {
+      "value": "Allan",
+      "weight": 819
+    },
+    {
+      "value": "Evan",
+      "weight": 814
+    },
+    {
+      "value": "Erik",
+      "weight": 811
+    },
+    {
+      "value": "Efraín",
+      "weight": 801
+    },
+    {
+      "value": "Braulio",
+      "weight": 796
+    },
+    {
+      "value": "Alessandro",
+      "weight": 786
+    },
+    {
+      "value": "Eidan",
+      "weight": 781
+    },
+    {
+      "value": "Abdiel",
+      "weight": 777
+    },
+    {
+      "value": "Wilson",
+      "weight": 769
+    },
+    {
+      "value": "Derek",
+      "weight": 761
+    },
+    {
+      "value": "Robert",
+      "weight": 761
+    },
+    {
+      "value": "Milan",
+      "weight": 760
+    },
+    {
+      "value": "Lyan",
+      "weight": 759
+    },
+    {
+      "value": "Gerson",
+      "weight": 753
+    },
+    {
+      "value": "Evans",
+      "weight": 746
+    },
+    {
+      "value": "Adán",
+      "weight": 740
+    },
+    {
+      "value": "Milán",
+      "weight": 739
+    },
+    {
+      "value": "Ernesto",
+      "weight": 731
+    },
+    {
+      "value": "Walter",
+      "weight": 729
+    },
+    {
+      "value": "Lionel",
+      "weight": 728
+    },
+    {
+      "value": "Julian",
+      "weight": 723
+    },
+    {
+      "value": "Orlando",
+      "weight": 709
+    },
+    {
+      "value": "Jordan",
+      "weight": 707
+    },
+    {
+      "value": "Aldo",
+      "weight": 697
+    },
+    {
+      "value": "Aron",
+      "weight": 695
+    },
+    {
+      "value": "Branco",
+      "weight": 693
+    },
+    {
+      "value": "Rolando",
+      "weight": 686
+    },
+    {
+      "value": "Yohan",
+      "weight": 685
+    },
+    {
+      "value": "Freddy",
+      "weight": 679
+    },
+    {
+      "value": "Damian",
+      "weight": 676
+    },
+    {
+      "value": "Yeison",
+      "weight": 673
+    },
+    {
+      "value": "Jeison",
+      "weight": 651
+    },
+    {
+      "value": "Yonathan",
+      "weight": 638
+    },
+    {
+      "value": "Andrew",
+      "weight": 633
+    },
+    {
+      "value": "Jimmy",
+      "weight": 629
+    },
+    {
+      "value": "Saúl",
+      "weight": 629
+    },
+    {
+      "value": "Aquiles",
+      "weight": 624
+    },
+    {
+      "value": "Emir",
+      "weight": 620
+    },
+    {
+      "value": "Cristhofer",
+      "weight": 613
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

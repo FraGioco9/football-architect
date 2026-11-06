@@ -170,6 +170,30 @@
       "id": "forebears-panama-male-firstname-incidence",
       "external_file": "countries/PAN.json",
       "description": "Forebears Panama male given-name bearer incidence ESTIMATES, all ages and unspecified period, >=95% source male classification; not official births"
+    },
+    {
+      "code": "ARG",
+      "id": "ar-sicytar-male-personnel-damegender-2019",
+      "external_file": "countries/ARG.json",
+      "description": "Argentina SICYTAR scientific/technology male personnel, 2019 registry, not births"
+    },
+    {
+      "code": "MEX",
+      "id": "mx-sep-male-federal-education-personnel-2012",
+      "external_file": "countries/MEX.json",
+      "description": "Mexico SEP federalized male education workers, 2012 snapshot, not births"
+    },
+    {
+      "code": "COL",
+      "id": "co-wikidata-male-colombian-biographies-damegender",
+      "external_file": "countries/COL.json",
+      "description": "Wikidata Colombian male biography sample, not population or birth frequencies"
+    },
+    {
+      "code": "CHI",
+      "id": "cl-registro-civil-male-birth-names-2000-2021-guaguas",
+      "external_file": "countries/CHI.json",
+      "description": "Chile Registro Civil registered male first names at birth, 2000–2021"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -183,7 +207,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 8400,
+    "current_collected_given_names": 9600,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -209,11 +233,16 @@
       "rank": 2,
       "label": "Argentina",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ar-sicytar-male-personnel-damegender-2019"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/ARG.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "FRA",
@@ -320,22 +349,32 @@
       "rank": 10,
       "label": "Mexico",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "mx-sep-male-federal-education-personnel-2012"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/MEX.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "COL",
       "rank": 11,
       "label": "Colombia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "co-wikidata-male-colombian-biographies-damegender"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/COL.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "SUI",
@@ -870,11 +909,16 @@
       "rank": 50,
       "label": "Chile",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "cl-registro-civil-male-birth-names-2000-2021-guaguas"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/CHI.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     }
   ]
 }
