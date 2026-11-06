@@ -64,6 +64,6 @@ test('reject invalid source fields and untrusted authoritative context',()=>{
   assert.throws(()=>projectPublicFootballerCard(p as any),TypeError);
  for(const ctx of [{publicId:''},{currentAge:-1},{currentAge:18.5}])
   assert.throws(()=>projectPublicFootballerCard(internal,ctx),TypeError);
- assert.throws(()=>projectPublicFootballerProfile({...internal,secondary_positions:'ST'}),TypeError);
+ assert.throws(()=>projectPublicFootballerProfile({...internal,secondary_positions:'ST'} as any),TypeError);
  assert.throws(()=>projectPublicFootballerProfile({...internal,preferred_foot:'both'}),TypeError);
 });
