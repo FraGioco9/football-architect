@@ -1,0 +1,1529 @@
+{
+  "schema_version": 1,
+  "code": "JPN",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-jpn-2014",
+      "url": "https://forebears.io/japan/surnames",
+      "kind": "historical national surname incidence estimates",
+      "purpose": "Attestation among the country's resident population, not a claim of national linguistic origin; no incidence estimates used as selection weights."
+    },
+    {
+      "id": "pin-mirror-jpn",
+      "url": "https://github.com/p-svacha/ProceduralTextGeneration/blob/4ccc1dbecd5d072251a0f10cc96f3a371199181b/Assets/Resources/Geographical/surnames/japan_surnames.txt",
+      "git_blob_sha": "ca7f2c9ec93edb4f7cc1ac250b35f3cb462d41df",
+      "source_rows": 1000,
+      "purpose": "Pinned Latin-script national surname list, source ordering retained after documented de-duplication/exclusions. Redistribution rights not established; data are research-only."
+    },
+    {
+      "id": "japan-mofa-hepburn",
+      "url": "https://www.ezairyu.mofa.go.jp/passport/hebon.html",
+      "purpose": "Hepburn-style passport romanization standard; source-observed macronless Latin forms retained without generating kanji readings or alternate transliterations."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Sato"
+    },
+    {
+      "value": "Suzuki"
+    },
+    {
+      "value": "Tanaka"
+    },
+    {
+      "value": "Watanabe"
+    },
+    {
+      "value": "Takahashi"
+    },
+    {
+      "value": "Ito"
+    },
+    {
+      "value": "Yamamoto"
+    },
+    {
+      "value": "Nakamura"
+    },
+    {
+      "value": "Kobayashi"
+    },
+    {
+      "value": "Saito"
+    },
+    {
+      "value": "Kato"
+    },
+    {
+      "value": "Yoshida"
+    },
+    {
+      "value": "Yamada"
+    },
+    {
+      "value": "Sasaki"
+    },
+    {
+      "value": "Matsumoto"
+    },
+    {
+      "value": "Yamaguchi"
+    },
+    {
+      "value": "Inoue"
+    },
+    {
+      "value": "Kimura"
+    },
+    {
+      "value": "Shimizu"
+    },
+    {
+      "value": "Hayashi"
+    },
+    {
+      "value": "Abe"
+    },
+    {
+      "value": "Ono"
+    },
+    {
+      "value": "Mori"
+    },
+    {
+      "value": "Nakajima"
+    },
+    {
+      "value": "Hashimoto"
+    },
+    {
+      "value": "Ikeda"
+    },
+    {
+      "value": "Yamazaki"
+    },
+    {
+      "value": "Ishikawa"
+    },
+    {
+      "value": "Yamashita"
+    },
+    {
+      "value": "Ogawa"
+    },
+    {
+      "value": "Ishii"
+    },
+    {
+      "value": "Sakamoto"
+    },
+    {
+      "value": "Goto"
+    },
+    {
+      "value": "Maeda"
+    },
+    {
+      "value": "Okada"
+    },
+    {
+      "value": "Hasegawa"
+    },
+    {
+      "value": "Fujita"
+    },
+    {
+      "value": "Kondo"
+    },
+    {
+      "value": "Sakai"
+    },
+    {
+      "value": "Murakami"
+    },
+    {
+      "value": "Ota"
+    },
+    {
+      "value": "Kikuchi"
+    },
+    {
+      "value": "Ueda"
+    },
+    {
+      "value": "Arai"
+    },
+    {
+      "value": "Endo"
+    },
+    {
+      "value": "Aoki"
+    },
+    {
+      "value": "Takeuchi"
+    },
+    {
+      "value": "Nakano"
+    },
+    {
+      "value": "Fujii"
+    },
+    {
+      "value": "Fukuda"
+    },
+    {
+      "value": "Kaneko"
+    },
+    {
+      "value": "Nishimura"
+    },
+    {
+      "value": "Okamoto"
+    },
+    {
+      "value": "Nakagawa"
+    },
+    {
+      "value": "Fujiwara"
+    },
+    {
+      "value": "Miura"
+    },
+    {
+      "value": "Harada"
+    },
+    {
+      "value": "Matsuda"
+    },
+    {
+      "value": "Kojima"
+    },
+    {
+      "value": "Morita"
+    },
+    {
+      "value": "Tamura"
+    },
+    {
+      "value": "Nakayama"
+    },
+    {
+      "value": "Ishida"
+    },
+    {
+      "value": "Wada"
+    },
+    {
+      "value": "Shibata"
+    },
+    {
+      "value": "Masuda"
+    },
+    {
+      "value": "Hara"
+    },
+    {
+      "value": "Ando"
+    },
+    {
+      "value": "Uchida"
+    },
+    {
+      "value": "Shimada"
+    },
+    {
+      "value": "Yokoyama"
+    },
+    {
+      "value": "Miyamoto"
+    },
+    {
+      "value": "Honda"
+    },
+    {
+      "value": "Koyama"
+    },
+    {
+      "value": "Takagi"
+    },
+    {
+      "value": "Miyazaki"
+    },
+    {
+      "value": "Taniguchi"
+    },
+    {
+      "value": "Ueno"
+    },
+    {
+      "value": "Imai"
+    },
+    {
+      "value": "Maruyama"
+    },
+    {
+      "value": "Kudo"
+    },
+    {
+      "value": "Sugiyama"
+    },
+    {
+      "value": "Fujimoto"
+    },
+    {
+      "value": "Kawamura"
+    },
+    {
+      "value": "Kono"
+    },
+    {
+      "value": "Murata"
+    },
+    {
+      "value": "Kubota"
+    },
+    {
+      "value": "Hirano"
+    },
+    {
+      "value": "Otsuka"
+    },
+    {
+      "value": "Noguchi"
+    },
+    {
+      "value": "Takeda"
+    },
+    {
+      "value": "Matsui"
+    },
+    {
+      "value": "Sakurai"
+    },
+    {
+      "value": "Chiba"
+    },
+    {
+      "value": "Ida"
+    },
+    {
+      "value": "Kubo"
+    },
+    {
+      "value": "Sugawara"
+    },
+    {
+      "value": "Kinoshita"
+    },
+    {
+      "value": "Takada"
+    },
+    {
+      "value": "Nomura"
+    },
+    {
+      "value": "Kawai"
+    },
+    {
+      "value": "Sano"
+    },
+    {
+      "value": "Sugimoto"
+    },
+    {
+      "value": "Ichikawa"
+    },
+    {
+      "value": "Matsuo"
+    },
+    {
+      "value": "Oya"
+    },
+    {
+      "value": "Nagai"
+    },
+    {
+      "value": "Furukawa"
+    },
+    {
+      "value": "Adachi"
+    },
+    {
+      "value": "Nakata"
+    },
+    {
+      "value": "Onishi"
+    },
+    {
+      "value": "Yoshikawa"
+    },
+    {
+      "value": "Iwasaki"
+    },
+    {
+      "value": "Yasuda"
+    },
+    {
+      "value": "Mizuno"
+    },
+    {
+      "value": "Kawaguchi"
+    },
+    {
+      "value": "Tsuchiya"
+    },
+    {
+      "value": "Fukushima"
+    },
+    {
+      "value": "Hino"
+    },
+    {
+      "value": "Nishida"
+    },
+    {
+      "value": "Kitamura"
+    },
+    {
+      "value": "Yamauchi"
+    },
+    {
+      "value": "Nishikawa"
+    },
+    {
+      "value": "Takano"
+    },
+    {
+      "value": "Kawakami"
+    },
+    {
+      "value": "Ozawa"
+    },
+    {
+      "value": "Hamada"
+    },
+    {
+      "value": "Komatsu"
+    },
+    {
+      "value": "Seki"
+    },
+    {
+      "value": "Oda"
+    },
+    {
+      "value": "Nakanishi"
+    },
+    {
+      "value": "Igarashi"
+    },
+    {
+      "value": "Hirata"
+    },
+    {
+      "value": "Morimoto"
+    },
+    {
+      "value": "Hattori"
+    },
+    {
+      "value": "Higashi"
+    },
+    {
+      "value": "Akiyama"
+    },
+    {
+      "value": "Kawasaki"
+    },
+    {
+      "value": "Tomita"
+    },
+    {
+      "value": "Tsuji"
+    },
+    {
+      "value": "Sawada"
+    },
+    {
+      "value": "Tanabe"
+    },
+    {
+      "value": "Iwata"
+    },
+    {
+      "value": "Yoshimura"
+    },
+    {
+      "value": "Yamanaka"
+    },
+    {
+      "value": "Taguchi"
+    },
+    {
+      "value": "Oshima"
+    },
+    {
+      "value": "Higuchi"
+    },
+    {
+      "value": "Okubo"
+    },
+    {
+      "value": "Hirose"
+    },
+    {
+      "value": "Ishihara"
+    },
+    {
+      "value": "Matsuoka"
+    },
+    {
+      "value": "Baba"
+    },
+    {
+      "value": "Ohashi"
+    },
+    {
+      "value": "Asano"
+    },
+    {
+      "value": "Yoshioka"
+    },
+    {
+      "value": "Yano"
+    },
+    {
+      "value": "Matsushita"
+    },
+    {
+      "value": "Araki"
+    },
+    {
+      "value": "Koike"
+    },
+    {
+      "value": "Hoshino"
+    },
+    {
+      "value": "Noda"
+    },
+    {
+      "value": "Ohara"
+    },
+    {
+      "value": "Sudo"
+    },
+    {
+      "value": "Kawashima"
+    },
+    {
+      "value": "Uemura"
+    },
+    {
+      "value": "Ozaki"
+    },
+    {
+      "value": "Matsuura"
+    },
+    {
+      "value": "Naito"
+    },
+    {
+      "value": "Kumagai"
+    },
+    {
+      "value": "Iwamoto"
+    },
+    {
+      "value": "Kuroda"
+    },
+    {
+      "value": "Hori"
+    },
+    {
+      "value": "Nagata"
+    },
+    {
+      "value": "Matsumura"
+    },
+    {
+      "value": "Kurihara"
+    },
+    {
+      "value": "Ogura"
+    },
+    {
+      "value": "Nishiyama"
+    },
+    {
+      "value": "Hayakawa"
+    },
+    {
+      "value": "Hirai"
+    },
+    {
+      "value": "Mochizuki"
+    },
+    {
+      "value": "Doi"
+    },
+    {
+      "value": "Yoshino"
+    },
+    {
+      "value": "Yokota"
+    },
+    {
+      "value": "Ishibashi"
+    },
+    {
+      "value": "Koga"
+    },
+    {
+      "value": "Katayama"
+    },
+    {
+      "value": "Sakaguchi"
+    },
+    {
+      "value": "Osawa"
+    },
+    {
+      "value": "Sekiguchi"
+    },
+    {
+      "value": "Kamata"
+    },
+    {
+      "value": "Hagihara"
+    },
+    {
+      "value": "Oishi"
+    },
+    {
+      "value": "Miyata"
+    },
+    {
+      "value": "Konno"
+    },
+    {
+      "value": "Kodama"
+    },
+    {
+      "value": "Uehara"
+    },
+    {
+      "value": "Minami"
+    },
+    {
+      "value": "Konishi"
+    },
+    {
+      "value": "Shoji"
+    },
+    {
+      "value": "Fukui"
+    },
+    {
+      "value": "Koizumi"
+    },
+    {
+      "value": "Yagi"
+    },
+    {
+      "value": "Shinohara"
+    },
+    {
+      "value": "Tajima"
+    },
+    {
+      "value": "Honma"
+    },
+    {
+      "value": "Nagashima"
+    },
+    {
+      "value": "Furuya"
+    },
+    {
+      "value": "Omori"
+    },
+    {
+      "value": "Kitagawa"
+    },
+    {
+      "value": "Miyake"
+    },
+    {
+      "value": "Ogata"
+    },
+    {
+      "value": "Narita"
+    },
+    {
+      "value": "Okumura"
+    },
+    {
+      "value": "Oka"
+    },
+    {
+      "value": "Matsubara"
+    },
+    {
+      "value": "Kano"
+    },
+    {
+      "value": "Matsunaga"
+    },
+    {
+      "value": "Uchiyama"
+    },
+    {
+      "value": "Nakai"
+    },
+    {
+      "value": "Kataoka"
+    },
+    {
+      "value": "Sugiura"
+    },
+    {
+      "value": "Okuda"
+    },
+    {
+      "value": "Sakata"
+    },
+    {
+      "value": "Makino"
+    },
+    {
+      "value": "Okazaki"
+    },
+    {
+      "value": "Hirayama"
+    },
+    {
+      "value": "Nakao"
+    },
+    {
+      "value": "Izumi"
+    },
+    {
+      "value": "Sekine"
+    },
+    {
+      "value": "Takayama"
+    },
+    {
+      "value": "Nakazawa"
+    },
+    {
+      "value": "Shibuya"
+    },
+    {
+      "value": "Shiraishi"
+    },
+    {
+      "value": "Terada"
+    },
+    {
+      "value": "Kuwahara"
+    },
+    {
+      "value": "Imamura"
+    },
+    {
+      "value": "Aoyama"
+    },
+    {
+      "value": "Nagano"
+    },
+    {
+      "value": "Sakuma"
+    },
+    {
+      "value": "Onodera"
+    },
+    {
+      "value": "Tada"
+    },
+    {
+      "value": "Amano"
+    },
+    {
+      "value": "Okamura"
+    },
+    {
+      "value": "Daisen"
+    },
+    {
+      "value": "Tsunoda"
+    },
+    {
+      "value": "Nishi"
+    },
+    {
+      "value": "Toyoda"
+    },
+    {
+      "value": "Tsukamoto"
+    },
+    {
+      "value": "Kawamoto"
+    },
+    {
+      "value": "Konpon"
+    },
+    {
+      "value": "Oba"
+    },
+    {
+      "value": "Shirai"
+    },
+    {
+      "value": "Murayama"
+    },
+    {
+      "value": "Muto"
+    },
+    {
+      "value": "Miyashita"
+    },
+    {
+      "value": "Asai"
+    },
+    {
+      "value": "Kasai"
+    },
+    {
+      "value": "Izuka"
+    },
+    {
+      "value": "Kamiya"
+    },
+    {
+      "value": "Taketa"
+    },
+    {
+      "value": "Morishita"
+    },
+    {
+      "value": "Mizutani"
+    },
+    {
+      "value": "Oikawa"
+    },
+    {
+      "value": "Ijima"
+    },
+    {
+      "value": "Enomoto"
+    },
+    {
+      "value": "Maekawa"
+    },
+    {
+      "value": "Okabe"
+    },
+    {
+      "value": "Kanda"
+    },
+    {
+      "value": "Miyagawa"
+    },
+    {
+      "value": "Ogasawara"
+    },
+    {
+      "value": "Nagao"
+    },
+    {
+      "value": "Okawa"
+    },
+    {
+      "value": "Tani"
+    },
+    {
+      "value": "Inagaki"
+    },
+    {
+      "value": "Wakabayashi"
+    },
+    {
+      "value": "Osada"
+    },
+    {
+      "value": "Inaba"
+    },
+    {
+      "value": "Moriyama"
+    },
+    {
+      "value": "Tashiro"
+    },
+    {
+      "value": "Horiuchi"
+    },
+    {
+      "value": "Tamaki"
+    },
+    {
+      "value": "Ishizuka"
+    },
+    {
+      "value": "Mikami"
+    },
+    {
+      "value": "Morikawa"
+    },
+    {
+      "value": "Kishimoto"
+    },
+    {
+      "value": "Nakatani"
+    },
+    {
+      "value": "Yamane"
+    },
+    {
+      "value": "Kanazawa"
+    },
+    {
+      "value": "Usui"
+    },
+    {
+      "value": "Eguchi"
+    },
+    {
+      "value": "Okano"
+    },
+    {
+      "value": "Kaneda"
+    },
+    {
+      "value": "Nishio"
+    },
+    {
+      "value": "Arakawa"
+    },
+    {
+      "value": "Toda"
+    },
+    {
+      "value": "Hosokawa"
+    },
+    {
+      "value": "Kanai"
+    },
+    {
+      "value": "Hoshi"
+    },
+    {
+      "value": "Otake"
+    },
+    {
+      "value": "Ochiai"
+    },
+    {
+      "value": "Yoshizawa"
+    },
+    {
+      "value": "Nakahara"
+    },
+    {
+      "value": "Hirota"
+    },
+    {
+      "value": "Hatakeyama"
+    },
+    {
+      "value": "Muramatsu"
+    },
+    {
+      "value": "Machida"
+    },
+    {
+      "value": "Tsuda"
+    },
+    {
+      "value": "Matsuzaki"
+    },
+    {
+      "value": "Tsutsumi"
+    },
+    {
+      "value": "Takizawa"
+    },
+    {
+      "value": "Saeki"
+    },
+    {
+      "value": "Iwai"
+    },
+    {
+      "value": "Ide"
+    },
+    {
+      "value": "Kawabata"
+    },
+    {
+      "value": "Sugita"
+    },
+    {
+      "value": "Nagasawa"
+    },
+    {
+      "value": "Takei"
+    },
+    {
+      "value": "Miyoshi"
+    },
+    {
+      "value": "Yoneda"
+    },
+    {
+      "value": "Fukumoto"
+    },
+    {
+      "value": "Kurokawa"
+    },
+    {
+      "value": "Matsuyama"
+    },
+    {
+      "value": "Kishi"
+    },
+    {
+      "value": "Hotta"
+    },
+    {
+      "value": "Nishino"
+    },
+    {
+      "value": "Kai"
+    },
+    {
+      "value": "Yamagishi"
+    },
+    {
+      "value": "Takemoto"
+    },
+    {
+      "value": "Miki"
+    },
+    {
+      "value": "Kurosawa"
+    },
+    {
+      "value": "Tachibana"
+    },
+    {
+      "value": "Nishioka"
+    },
+    {
+      "value": "Kosaka"
+    },
+    {
+      "value": "Miyazawa"
+    },
+    {
+      "value": "Fujisawa"
+    },
+    {
+      "value": "Taiboku"
+    },
+    {
+      "value": "Horie"
+    },
+    {
+      "value": "Mukai"
+    },
+    {
+      "value": "Takashima"
+    },
+    {
+      "value": "Tominaga"
+    },
+    {
+      "value": "Umeda"
+    },
+    {
+      "value": "Kuroki"
+    },
+    {
+      "value": "Nonaka"
+    },
+    {
+      "value": "Kasahara"
+    },
+    {
+      "value": "Obata"
+    },
+    {
+      "value": "Miyagi"
+    },
+    {
+      "value": "Kawata"
+    },
+    {
+      "value": "Yoshimoto"
+    },
+    {
+      "value": "Sakakibara"
+    },
+    {
+      "value": "Nozaki"
+    },
+    {
+      "value": "Shinta"
+    },
+    {
+      "value": "Aizawa"
+    },
+    {
+      "value": "Furuta"
+    },
+    {
+      "value": "Suda"
+    },
+    {
+      "value": "Yamakawa"
+    },
+    {
+      "value": "Murai"
+    },
+    {
+      "value": "Ozeki"
+    },
+    {
+      "value": "Matsushima"
+    },
+    {
+      "value": "Akimoto"
+    },
+    {
+      "value": "Omura"
+    },
+    {
+      "value": "Tokunaga"
+    },
+    {
+      "value": "Okuyama"
+    },
+    {
+      "value": "Yanagisawa"
+    },
+    {
+      "value": "Iguchi"
+    },
+    {
+      "value": "Taira"
+    },
+    {
+      "value": "Nishimoto"
+    },
+    {
+      "value": "Tsuchita"
+    },
+    {
+      "value": "Hata"
+    },
+    {
+      "value": "Oshiro"
+    },
+    {
+      "value": "Shimoda"
+    },
+    {
+      "value": "Kajiwara"
+    },
+    {
+      "value": "Onuma"
+    },
+    {
+      "value": "Takenaka"
+    },
+    {
+      "value": "Kinjo"
+    },
+    {
+      "value": "Otani"
+    },
+    {
+      "value": "Shindo"
+    },
+    {
+      "value": "Uno"
+    },
+    {
+      "value": "Kita"
+    },
+    {
+      "value": "Ogino"
+    },
+    {
+      "value": "Kunai"
+    },
+    {
+      "value": "Takemura"
+    },
+    {
+      "value": "Yasui"
+    },
+    {
+      "value": "Asada"
+    },
+    {
+      "value": "Yajima"
+    },
+    {
+      "value": "Yoshiwara"
+    },
+    {
+      "value": "Shigeki"
+    },
+    {
+      "value": "Okuno"
+    },
+    {
+      "value": "Takeshita"
+    },
+    {
+      "value": "Toyama"
+    },
+    {
+      "value": "Ino"
+    },
+    {
+      "value": "Tsukada"
+    },
+    {
+      "value": "Hatano"
+    },
+    {
+      "value": "Ouchi"
+    },
+    {
+      "value": "Fujikawa"
+    },
+    {
+      "value": "Komori"
+    },
+    {
+      "value": "Otsuki"
+    },
+    {
+      "value": "Nagaoka"
+    },
+    {
+      "value": "Kitano"
+    },
+    {
+      "value": "Ishiguro"
+    },
+    {
+      "value": "Kurita"
+    },
+    {
+      "value": "Fukazawa"
+    },
+    {
+      "value": "Nozawa"
+    },
+    {
+      "value": "Fujino"
+    },
+    {
+      "value": "Tanigawa"
+    },
+    {
+      "value": "San-Rin"
+    },
+    {
+      "value": "Fujioka"
+    },
+    {
+      "value": "Niwa"
+    },
+    {
+      "value": "Hika"
+    },
+    {
+      "value": "Kawara"
+    },
+    {
+      "value": "Fujimura"
+    },
+    {
+      "value": "Negishi"
+    },
+    {
+      "value": "Hyugawa"
+    },
+    {
+      "value": "Shimomura"
+    },
+    {
+      "value": "Kamei"
+    },
+    {
+      "value": "Kan"
+    },
+    {
+      "value": "Miyahara"
+    },
+    {
+      "value": "Deguchi"
+    },
+    {
+      "value": "Sonoda"
+    },
+    {
+      "value": "Aoyagi"
+    },
+    {
+      "value": "Yokoi"
+    },
+    {
+      "value": "Hidaka"
+    },
+    {
+      "value": "Shimazaki"
+    },
+    {
+      "value": "Shinoda"
+    },
+    {
+      "value": "Sanson"
+    },
+    {
+      "value": "Haga"
+    },
+    {
+      "value": "Inada"
+    },
+    {
+      "value": "Nakamoto"
+    },
+    {
+      "value": "Hiramatsu"
+    },
+    {
+      "value": "Seto"
+    },
+    {
+      "value": "Maki"
+    },
+    {
+      "value": "Fukuoka"
+    },
+    {
+      "value": "Moriya"
+    },
+    {
+      "value": "Tahara"
+    },
+    {
+      "value": "Tsutsui"
+    },
+    {
+      "value": "Fukunaga"
+    },
+    {
+      "value": "Eto"
+    },
+    {
+      "value": "Shimura"
+    },
+    {
+      "value": "Mizoguchi"
+    },
+    {
+      "value": "Hayashida"
+    },
+    {
+      "value": "Ninomiya"
+    },
+    {
+      "value": "Shimamura"
+    },
+    {
+      "value": "Isobe"
+    },
+    {
+      "value": "Takai"
+    },
+    {
+      "value": "Kurata"
+    },
+    {
+      "value": "Shinozaki"
+    },
+    {
+      "value": "Kitajima"
+    },
+    {
+      "value": "Ohira"
+    },
+    {
+      "value": "Tezuka"
+    },
+    {
+      "value": "Takase"
+    },
+    {
+      "value": "Koide"
+    },
+    {
+      "value": "Iwase"
+    },
+    {
+      "value": "Yuasa"
+    },
+    {
+      "value": "Senda"
+    },
+    {
+      "value": "Kitahara"
+    },
+    {
+      "value": "Irie"
+    },
+    {
+      "value": "Yanagida"
+    },
+    {
+      "value": "Kido"
+    },
+    {
+      "value": "Numata"
+    },
+    {
+      "value": "Seo"
+    },
+    {
+      "value": "Yamaoka"
+    },
+    {
+      "value": "Horiguchi"
+    },
+    {
+      "value": "Katsumata"
+    },
+    {
+      "value": "Nagase"
+    },
+    {
+      "value": "Kawano"
+    },
+    {
+      "value": "Hosoya"
+    },
+    {
+      "value": "Soma"
+    },
+    {
+      "value": "Ishiyama"
+    },
+    {
+      "value": "Hamano"
+    },
+    {
+      "value": "Horikawa"
+    },
+    {
+      "value": "Kawase"
+    },
+    {
+      "value": "Ochi"
+    },
+    {
+      "value": "Tsuruta"
+    },
+    {
+      "value": "Nanba"
+    },
+    {
+      "value": "Hatake"
+    },
+    {
+      "value": "Kashiwagi"
+    },
+    {
+      "value": "Sugihara"
+    },
+    {
+      "value": "Shima"
+    },
+    {
+      "value": "Hamaguchi"
+    },
+    {
+      "value": "Hiraoka"
+    },
+    {
+      "value": "Kawahara"
+    },
+    {
+      "value": "Terashima"
+    },
+    {
+      "value": "Ikegami"
+    },
+    {
+      "value": "Aihara"
+    },
+    {
+      "value": "Nagayama"
+    },
+    {
+      "value": "Fukuhara"
+    },
+    {
+      "value": "Matsuzawa"
+    },
+    {
+      "value": "Miyajima"
+    },
+    {
+      "value": "Katagiri"
+    },
+    {
+      "value": "Manabe"
+    },
+    {
+      "value": "Shiba"
+    },
+    {
+      "value": "Morioka"
+    },
+    {
+      "value": "Akita"
+    },
+    {
+      "value": "Tanimoto"
+    },
+    {
+      "value": "Hanada"
+    },
+    {
+      "value": "Naikai"
+    },
+    {
+      "value": "Asakura"
+    },
+    {
+      "value": "Kawabe"
+    },
+    {
+      "value": "Murase"
+    },
+    {
+      "value": "Torii"
+    }
+  ],
+  "production_ready": false
+}
