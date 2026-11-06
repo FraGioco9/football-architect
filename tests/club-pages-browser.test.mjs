@@ -421,7 +421,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(shieldGeometry.width,shieldGeometry.imageWidth);
     assert.equal(shieldGeometry.height,shieldGeometry.imageHeight);
     await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
-    await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header .app-club-crest-image')?.complete===true");
+    // A decoded/cached image can have complete=true before the passive crest
+    // manager observes its load event. Wait for the settled host, not only the image.
+    await wait("location.pathname==='/clubs/it/1/overview'&&(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return image?.complete&&image.naturalWidth>0&&image.closest('[data-club-crest]')?.dataset.clubCrestLoaded==='true'})()");
     const destinationCrest=await run("(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return {src:image?.getAttribute('src'),loaded:!!image?.naturalWidth,pending:!!document.querySelector('.club-header [data-club-crest-pending]')}})()");
     assert.equal(destinationCrest.src,sourceCrest);
     assert.equal(destinationCrest.loaded,true,'Club crest must be decoded after directory navigation');

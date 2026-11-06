@@ -1,0 +1,33 @@
+name: Player First-Name Catalog (Node 22)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - data/players/names/**
+      - tests/players-names-catalog.test.mjs
+      - tools/ci-test-ownership.json
+      - .github/workflows/players-names-catalog.yml
+permissions:
+  contents: read
+concurrency:
+  group: players-names-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  first-names:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR HEAD
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate 300 names in each of ITA ESP FRA and 47 empty pools
+        run: |
+          node --test tests/players-names-catalog.test.mjs

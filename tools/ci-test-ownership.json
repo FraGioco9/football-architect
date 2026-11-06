@@ -80,7 +80,6 @@
     "tests/club-pages-browser.test.mjs": "site-node",
     "tests/club-pages.test.mjs": "site-node",
     "tests/page-load-02-club-browser.mjs": "browser",
-    "tests/page-load-03c-first-paint.test.mjs": "site-node",
     "tests/competition-fixtures.test.mjs": "site-node",
     "tests/competition-history.test.mjs": "site-node",
     "tests/competition-content-state.test.mjs": "site-node",
@@ -270,6 +269,9 @@
     "backend/tests/auth-throttle-policy.test.ts": "backend-contract",
     "backend/tests/csrf-policy.test.ts": "backend-contract",
     "backend/tests/auth-boundaries-runtime.test.ts": "backend-runtime",
+    "tests/players-names-catalog.test.mjs": "site-node",
+    "tests/page-load-03c-first-paint.test.mjs": "site-node",
+    "tests/players-name-pools.test.mjs": "site-node",
     "tests/surnames-01-catalog.test.mjs": "site-node"
   }
 }

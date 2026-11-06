@@ -80,7 +80,7 @@ test('AWARDS-CONFIG: configured order overrides route tier and retains only appl
 });
 test('AWARDS-CONFIG: only supplied recipients appear and season changes clear stale winners',()=>{
  const d=get('int-1');d.rules.awards=['champion'];
- const r=awardsFixture(d,{awards:{champion:{recipients:[{name:'A <script> & B'}]}}});
+ const r=awardsFixture(d,{season:1,awards:{champion:{recipients:[{name:'A <script> & B'}]}}});
  assert.ok(r.nodes().some(n=>n.textContent==='A <script> & B'));
  r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:2,revision:2,seasonData:null};
  r.events['fa:competition-context-change']({detail:r.window.faCompetitionContext});
