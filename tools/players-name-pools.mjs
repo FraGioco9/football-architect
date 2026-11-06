@@ -84,7 +84,7 @@ export function loadPlayerNamePools({
  let surnameSource='temporary-demo-fallback',surnames=new Map();
  if(existsSync(surnameCatalogPath)){
   const catalog=readJson(surnameCatalogPath,'SURNAMES-01 catalog');
-  if(catalog.kind!=='surnames'||catalog.selection_policy!=='uniform')
+  if(catalog.kind!=='surnames_catalog'||catalog.selection_policy!=='uniform')
    throw new Error('SURNAMES-01 catalog must use uniform selection');
   validateCountries(catalog.countries,expectedCodes,'SURNAMES-01');
   for(const row of catalog.countries){

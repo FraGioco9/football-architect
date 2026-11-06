@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {
  GIVEN_CATALOG_PATH,loadPlayerNamePools,sampleGivenName,sampleSurname
 } from '../tools/players-name-pools.mjs';
-import {COUNTRIES,generateTrial} from '../tools/players-generation-trial.mjs';
+import {COUNTRIES,generateTrial,summarize} from '../tools/players-generation-trial.mjs';
 
 function withFixture(fn){
  const root=mkdtempSync(join(tmpdir(),'fa-name-pools-'));
@@ -47,7 +47,7 @@ test('weighted given names and uniform compound surnames from synthetic 439 cont
   surnames:[{value:'Rossi'},{value:"van 't Hof"}]});
  ctx.write('surname/countries/ENG.json',{code:'ENG',kind:'surnames',selection_policy:'uniform',
   surnames:[{value:'Smith'},{value:'Davis'}]});
- ctx.write('surname/catalog-v1.json',{kind:'surnames',selection_policy:'uniform',countries:
+ ctx.write('surname/catalog-v1.json',{kind:'surnames_catalog',selection_policy:'uniform',countries:
   cfg.countries.map(code=>({code,path:'data/players/surnames/countries/'+code+'.json',actual_count:2}))});
  const pools=loadPlayerNamePools({...cfg,expectedCodes:cfg.countries});
  assert.equal(pools.surnameSource,'SURNAMES-01 uniform catalog');
@@ -71,7 +71,7 @@ test('corrupt present 439 bank fails instead of silently using demo',()=>withFix
   surnames:[{value:'Rossi',weight:5}]});
  ctx.write('surname/countries/ENG.json',{code:'ENG',kind:'surnames',selection_policy:'uniform',
   surnames:[{value:'Smith'}]});
- ctx.write('surname/catalog-v1.json',{kind:'surnames',selection_policy:'uniform',countries:
+ ctx.write('surname/catalog-v1.json',{kind:'surnames_catalog',selection_policy:'uniform',countries:
   cfg.countries.map(code=>({code,path:'data/players/surnames/countries/'+code+'.json',actual_count:1}))});
  assert.throws(()=>loadPlayerNamePools({...cfg,expectedCodes:cfg.countries}),/Invalid unweighted surname entry/);
 }));
@@ -82,18 +82,23 @@ test('malformed given weights and invalid code coverage fail fast',()=>withFixtu
  assert.throws(()=>loadPlayerNamePools({...cfg,expectedCodes:['ITA','ITA']}),/unique nonempty/);
 }));
 test('seeded generator uses catalog given names and does not affect attribute contract',()=>{
- const trial=generateTrial({count:100,seed:'catalog-identity-qa',knownAs:'none'});
- const same=generateTrial({count:100,seed:'catalog-identity-qa',knownAs:'none'});
+ const trial=generateTrial({count:100,seed:'catalog-identity-qa'});
+ const same=generateTrial({count:100,seed:'catalog-identity-qa'});
  assert.deepEqual(trial,same);
  assert.equal(trial.identity_sources.given_names,'PLAYERS-03 weighted catalog');
  assert.ok(['SURNAMES-01 uniform catalog','temporary-demo-fallback'].includes(trial.identity_sources.surnames));
  const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
  for(const p of trial.candidates){
   assert.ok(pools.given.get(p.nationality).values.includes(p.first_name));
+  assert.equal(Object.hasOwn(p,'known_as'),false,'No obsolete alias field may be generated');
+  assert.equal(p.display_name,`${p.first_name} ${p.last_name}`,'Canonical display is always full name');
   const surname=pools.surnames.get(p.nationality);
   if(surname)assert.ok(surname.includes(p.last_name));
   else assert.ok(COUNTRIES.find(c=>c.code===p.nationality).demoLast.includes(p.last_name));
  }
- const manual=generateTrial({count:1,primaryNationality:'ITA',firstName:'Manual',lastName:'Override',knownAs:'none'}).candidates[0];
+ const manual=generateTrial({count:1,primaryNationality:'ITA',firstName:'Manual',lastName:'Override'}).candidates[0];
  assert.equal(manual.first_name,'Manual');assert.equal(manual.last_name,'Override');
+ assert.equal(manual.display_name,'Manual Override');
+ assert.equal(Object.hasOwn(manual,'known_as'),false);
+ assert.equal(Object.hasOwn(summarize(trial),'known_as'),false);
 });
