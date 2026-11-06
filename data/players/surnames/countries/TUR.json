@@ -1,0 +1,1529 @@
+{
+  "schema_version": 1,
+  "code": "TUR",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-tur-2014",
+      "url": "https://forebears.io/turkey/surnames",
+      "kind": "historical national surname incidence estimates",
+      "purpose": "Attestation among the country's resident population, not a claim of national linguistic origin; no incidence estimates used as selection weights."
+    },
+    {
+      "id": "pin-mirror-tur",
+      "url": "https://github.com/p-svacha/ProceduralTextGeneration/blob/4ccc1dbecd5d072251a0f10cc96f3a371199181b/Assets/Resources/Geographical/surnames/turkey_surnames.txt",
+      "git_blob_sha": "5555c7b07c794829bb5ca762c78614f902755e98",
+      "source_rows": 1000,
+      "purpose": "Pinned Latin-script national surname list, source ordering retained after documented de-duplication/exclusions. Redistribution rights not established; data are research-only."
+    },
+    {
+      "id": "turkish-orthography",
+      "url": "https://forebears.io/turkey/surnames",
+      "purpose": "Native Turkish Latin orthography: source-recorded ç, ğ, ı, İ, ö, ş, ü preserved. Excluded obvious diacritic-lossy forms instead of fabricating corrections; source licensing and individual variants require further review."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Yılmaz"
+    },
+    {
+      "value": "Kaya"
+    },
+    {
+      "value": "Demir"
+    },
+    {
+      "value": "Çelik"
+    },
+    {
+      "value": "Şahin"
+    },
+    {
+      "value": "Yıldız"
+    },
+    {
+      "value": "Yıldırım"
+    },
+    {
+      "value": "Öztürk"
+    },
+    {
+      "value": "Aydın"
+    },
+    {
+      "value": "Özdemir"
+    },
+    {
+      "value": "Arslan"
+    },
+    {
+      "value": "Doğan"
+    },
+    {
+      "value": "Kılıç"
+    },
+    {
+      "value": "Aslan"
+    },
+    {
+      "value": "Çetin"
+    },
+    {
+      "value": "Kara"
+    },
+    {
+      "value": "Koç"
+    },
+    {
+      "value": "Kurt"
+    },
+    {
+      "value": "Özkan"
+    },
+    {
+      "value": "Acar"
+    },
+    {
+      "value": "Polat"
+    },
+    {
+      "value": "Şimşek"
+    },
+    {
+      "value": "Korkmaz"
+    },
+    {
+      "value": "Özcan"
+    },
+    {
+      "value": "Erdoğan"
+    },
+    {
+      "value": "Yavuz"
+    },
+    {
+      "value": "Can"
+    },
+    {
+      "value": "Şen"
+    },
+    {
+      "value": "Yalçın"
+    },
+    {
+      "value": "Güler"
+    },
+    {
+      "value": "Aktaş"
+    },
+    {
+      "value": "Güneş"
+    },
+    {
+      "value": "Bozkurt"
+    },
+    {
+      "value": "Bulut"
+    },
+    {
+      "value": "Işık"
+    },
+    {
+      "value": "Turan"
+    },
+    {
+      "value": "Keskin"
+    },
+    {
+      "value": "Ünal"
+    },
+    {
+      "value": "Gül"
+    },
+    {
+      "value": "Coşkun"
+    },
+    {
+      "value": "Özer"
+    },
+    {
+      "value": "Kaplan"
+    },
+    {
+      "value": "Tekin"
+    },
+    {
+      "value": "Taş"
+    },
+    {
+      "value": "Yüksel"
+    },
+    {
+      "value": "Köse"
+    },
+    {
+      "value": "Ateş"
+    },
+    {
+      "value": "Aksoy"
+    },
+    {
+      "value": "Yiğit"
+    },
+    {
+      "value": "Karataş"
+    },
+    {
+      "value": "Uzun"
+    },
+    {
+      "value": "Ceylan"
+    },
+    {
+      "value": "Karaca"
+    },
+    {
+      "value": "Çiftçi"
+    },
+    {
+      "value": "Çiçek"
+    },
+    {
+      "value": "Çoban"
+    },
+    {
+      "value": "Yaşar"
+    },
+    {
+      "value": "Demirci"
+    },
+    {
+      "value": "Bayram"
+    },
+    {
+      "value": "Deniz"
+    },
+    {
+      "value": "Çakmak"
+    },
+    {
+      "value": "Güngör"
+    },
+    {
+      "value": "Uçar"
+    },
+    {
+      "value": "Erdem"
+    },
+    {
+      "value": "Kahraman"
+    },
+    {
+      "value": "Uysal"
+    },
+    {
+      "value": "Genç"
+    },
+    {
+      "value": "Duman"
+    },
+    {
+      "value": "Akın"
+    },
+    {
+      "value": "Sönmez"
+    },
+    {
+      "value": "Demirel"
+    },
+    {
+      "value": "Ay"
+    },
+    {
+      "value": "Koçak"
+    },
+    {
+      "value": "Mutlu"
+    },
+    {
+      "value": "Küçük"
+    },
+    {
+      "value": "Çetinkaya"
+    },
+    {
+      "value": "Yaman"
+    },
+    {
+      "value": "Altun"
+    },
+    {
+      "value": "Gündüz"
+    },
+    {
+      "value": "Gümüş"
+    },
+    {
+      "value": "Öz"
+    },
+    {
+      "value": "Eren"
+    },
+    {
+      "value": "Aydemir"
+    },
+    {
+      "value": "Çolak"
+    },
+    {
+      "value": "Tunç"
+    },
+    {
+      "value": "Karakaya"
+    },
+    {
+      "value": "Güven"
+    },
+    {
+      "value": "Kartal"
+    },
+    {
+      "value": "Gök"
+    },
+    {
+      "value": "Karaman"
+    },
+    {
+      "value": "Dönmez"
+    },
+    {
+      "value": "Erol"
+    },
+    {
+      "value": "Aksu"
+    },
+    {
+      "value": "Alkan"
+    },
+    {
+      "value": "Tosun"
+    },
+    {
+      "value": "Özen"
+    },
+    {
+      "value": "Türk"
+    },
+    {
+      "value": "Sağlam"
+    },
+    {
+      "value": "Karakuş"
+    },
+    {
+      "value": "Cengiz"
+    },
+    {
+      "value": "Çevik"
+    },
+    {
+      "value": "Güzel"
+    },
+    {
+      "value": "Karabulut"
+    },
+    {
+      "value": "Akbaş"
+    },
+    {
+      "value": "Keleş"
+    },
+    {
+      "value": "Duran"
+    },
+    {
+      "value": "Durmuş"
+    },
+    {
+      "value": "Baş"
+    },
+    {
+      "value": "Eroğlu"
+    },
+    {
+      "value": "Akkaya"
+    },
+    {
+      "value": "Akbulut"
+    },
+    {
+      "value": "Demirtaş"
+    },
+    {
+      "value": "Durmaz"
+    },
+    {
+      "value": "Akgün"
+    },
+    {
+      "value": "Yücel"
+    },
+    {
+      "value": "Uslu"
+    },
+    {
+      "value": "Dursun"
+    },
+    {
+      "value": "Aydoğan"
+    },
+    {
+      "value": "Özçelik"
+    },
+    {
+      "value": "Er"
+    },
+    {
+      "value": "Çelebi"
+    },
+    {
+      "value": "Koca"
+    },
+    {
+      "value": "Karagöz"
+    },
+    {
+      "value": "Ünlü"
+    },
+    {
+      "value": "Ekinci"
+    },
+    {
+      "value": "Karakaş"
+    },
+    {
+      "value": "Gürbüz"
+    },
+    {
+      "value": "Toprak"
+    },
+    {
+      "value": "Akgül"
+    },
+    {
+      "value": "Türkmen"
+    },
+    {
+      "value": "Topal"
+    },
+    {
+      "value": "Dinç"
+    },
+    {
+      "value": "Gültekin"
+    },
+    {
+      "value": "Dağ"
+    },
+    {
+      "value": "Topçu"
+    },
+    {
+      "value": "Sarıkaya"
+    },
+    {
+      "value": "Şentürk"
+    },
+    {
+      "value": "Vural"
+    },
+    {
+      "value": "Zengin"
+    },
+    {
+      "value": "Özmen"
+    },
+    {
+      "value": "Ergün"
+    },
+    {
+      "value": "Şeker"
+    },
+    {
+      "value": "Gündoğdu"
+    },
+    {
+      "value": "Bilgin"
+    },
+    {
+      "value": "Bal"
+    },
+    {
+      "value": "Gökçe"
+    },
+    {
+      "value": "Fidan"
+    },
+    {
+      "value": "Sezer"
+    },
+    {
+      "value": "Güney"
+    },
+    {
+      "value": "Albayrak"
+    },
+    {
+      "value": "Güner"
+    },
+    {
+      "value": "Bektaş"
+    },
+    {
+      "value": "Akyol"
+    },
+    {
+      "value": "Oğuz"
+    },
+    {
+      "value": "Karadağ"
+    },
+    {
+      "value": "Bayrak"
+    },
+    {
+      "value": "Turgut"
+    },
+    {
+      "value": "Orhan"
+    },
+    {
+      "value": "Akar"
+    },
+    {
+      "value": "Aydoğdu"
+    },
+    {
+      "value": "Taşkın"
+    },
+    {
+      "value": "Kalkan"
+    },
+    {
+      "value": "Özel"
+    },
+    {
+      "value": "Ak"
+    },
+    {
+      "value": "Ercan"
+    },
+    {
+      "value": "Akyüz"
+    },
+    {
+      "value": "Uğur"
+    },
+    {
+      "value": "Esen"
+    },
+    {
+      "value": "Akkuş"
+    },
+    {
+      "value": "Günay"
+    },
+    {
+      "value": "Bayraktar"
+    },
+    {
+      "value": "Taşdemir"
+    },
+    {
+      "value": "Budak"
+    },
+    {
+      "value": "Akpınar"
+    },
+    {
+      "value": "Açıkgöz"
+    },
+    {
+      "value": "Aygün"
+    },
+    {
+      "value": "Özbek"
+    },
+    {
+      "value": "Öner"
+    },
+    {
+      "value": "Temel"
+    },
+    {
+      "value": "Ersoy"
+    },
+    {
+      "value": "Ayhan"
+    },
+    {
+      "value": "Efe"
+    },
+    {
+      "value": "Çam"
+    },
+    {
+      "value": "Şener"
+    },
+    {
+      "value": "Sevinç"
+    },
+    {
+      "value": "Çağlar"
+    },
+    {
+      "value": "Ergin"
+    },
+    {
+      "value": "Tuncer"
+    },
+    {
+      "value": "Ertürk"
+    },
+    {
+      "value": "Baran"
+    },
+    {
+      "value": "Sert"
+    },
+    {
+      "value": "Akdemir"
+    },
+    {
+      "value": "Ayaz"
+    },
+    {
+      "value": "Gür"
+    },
+    {
+      "value": "Koyuncu"
+    },
+    {
+      "value": "Akçay"
+    },
+    {
+      "value": "Kaçar"
+    },
+    {
+      "value": "Aras"
+    },
+    {
+      "value": "Altıntaş"
+    },
+    {
+      "value": "Akça"
+    },
+    {
+      "value": "Başaran"
+    },
+    {
+      "value": "Karakoç"
+    },
+    {
+      "value": "Tan"
+    },
+    {
+      "value": "Şengül"
+    },
+    {
+      "value": "Gezer"
+    },
+    {
+      "value": "Akdağ"
+    },
+    {
+      "value": "Karadeniz"
+    },
+    {
+      "value": "Atalay"
+    },
+    {
+      "value": "Çimen"
+    },
+    {
+      "value": "Biçer"
+    },
+    {
+      "value": "Karahan"
+    },
+    {
+      "value": "Akman"
+    },
+    {
+      "value": "Akdeniz"
+    },
+    {
+      "value": "Turhan"
+    },
+    {
+      "value": "Dündar"
+    },
+    {
+      "value": "Gün"
+    },
+    {
+      "value": "Oruç"
+    },
+    {
+      "value": "Sezgin"
+    },
+    {
+      "value": "Mert"
+    },
+    {
+      "value": "Kandemir"
+    },
+    {
+      "value": "Kuş"
+    },
+    {
+      "value": "Bingöl"
+    },
+    {
+      "value": "Usta"
+    },
+    {
+      "value": "Bolat"
+    },
+    {
+      "value": "Bülbül"
+    },
+    {
+      "value": "Yüce"
+    },
+    {
+      "value": "Pehlivan"
+    },
+    {
+      "value": "Fırat"
+    },
+    {
+      "value": "Tuna"
+    },
+    {
+      "value": "Önal"
+    },
+    {
+      "value": "Çakar"
+    },
+    {
+      "value": "Metin"
+    },
+    {
+      "value": "Dinçer"
+    },
+    {
+      "value": "Yeşil"
+    },
+    {
+      "value": "Savaş"
+    },
+    {
+      "value": "Uyar"
+    },
+    {
+      "value": "Altuntaş"
+    },
+    {
+      "value": "Ekici"
+    },
+    {
+      "value": "Arıkan"
+    },
+    {
+      "value": "Atmaca"
+    },
+    {
+      "value": "Akdoğan"
+    },
+    {
+      "value": "Altay"
+    },
+    {
+      "value": "Sevim"
+    },
+    {
+      "value": "Erkan"
+    },
+    {
+      "value": "Kutlu"
+    },
+    {
+      "value": "Doğru"
+    },
+    {
+      "value": "Yalçınkaya"
+    },
+    {
+      "value": "Özkaya"
+    },
+    {
+      "value": "Önder"
+    },
+    {
+      "value": "Demirbaş"
+    },
+    {
+      "value": "Öksüz"
+    },
+    {
+      "value": "Ataş"
+    },
+    {
+      "value": "Boz"
+    },
+    {
+      "value": "Durak"
+    },
+    {
+      "value": "Eser"
+    },
+    {
+      "value": "Eker"
+    },
+    {
+      "value": "Kuru"
+    },
+    {
+      "value": "Oral"
+    },
+    {
+      "value": "Varol"
+    },
+    {
+      "value": "Demircan"
+    },
+    {
+      "value": "Parlak"
+    },
+    {
+      "value": "Ölmez"
+    },
+    {
+      "value": "Gedik"
+    },
+    {
+      "value": "Güçlü"
+    },
+    {
+      "value": "Köksal"
+    },
+    {
+      "value": "Akay"
+    },
+    {
+      "value": "Adıgüzel"
+    },
+    {
+      "value": "Türkoğlu"
+    },
+    {
+      "value": "Göktaş"
+    },
+    {
+      "value": "Soylu"
+    },
+    {
+      "value": "Ertaş"
+    },
+    {
+      "value": "Özden"
+    },
+    {
+      "value": "Şenol"
+    },
+    {
+      "value": "Güleç"
+    },
+    {
+      "value": "Ünsal"
+    },
+    {
+      "value": "Uğurlu"
+    },
+    {
+      "value": "Torun"
+    },
+    {
+      "value": "Gürsoy"
+    },
+    {
+      "value": "Bilgiç"
+    },
+    {
+      "value": "Ergül"
+    },
+    {
+      "value": "Şahan"
+    },
+    {
+      "value": "Köroğlu"
+    },
+    {
+      "value": "Mercan"
+    },
+    {
+      "value": "Türker"
+    },
+    {
+      "value": "Engin"
+    },
+    {
+      "value": "Alp"
+    },
+    {
+      "value": "Solmaz"
+    },
+    {
+      "value": "Değirmenci"
+    },
+    {
+      "value": "Saraç"
+    },
+    {
+      "value": "Yavaş"
+    },
+    {
+      "value": "Avşar"
+    },
+    {
+      "value": "Elmas"
+    },
+    {
+      "value": "Alan"
+    },
+    {
+      "value": "Keser"
+    },
+    {
+      "value": "Dal"
+    },
+    {
+      "value": "Memiş"
+    },
+    {
+      "value": "Solak"
+    },
+    {
+      "value": "Üstün"
+    },
+    {
+      "value": "Deveci"
+    },
+    {
+      "value": "Aktürk"
+    },
+    {
+      "value": "Ocak"
+    },
+    {
+      "value": "Kavak"
+    },
+    {
+      "value": "Aytekin"
+    },
+    {
+      "value": "Özsoy"
+    },
+    {
+      "value": "Özgür"
+    },
+    {
+      "value": "Bayar"
+    },
+    {
+      "value": "Gülmez"
+    },
+    {
+      "value": "Uygun"
+    },
+    {
+      "value": "Karaduman"
+    },
+    {
+      "value": "Baysal"
+    },
+    {
+      "value": "Gökmen"
+    },
+    {
+      "value": "Eryılmaz"
+    },
+    {
+      "value": "Kocaman"
+    },
+    {
+      "value": "Pala"
+    },
+    {
+      "value": "Karaaslan"
+    },
+    {
+      "value": "Özbay"
+    },
+    {
+      "value": "Tetik"
+    },
+    {
+      "value": "Erden"
+    },
+    {
+      "value": "Temiz"
+    },
+    {
+      "value": "Selçuk"
+    },
+    {
+      "value": "Günaydın"
+    },
+    {
+      "value": "Okur"
+    },
+    {
+      "value": "Ulusoy"
+    },
+    {
+      "value": "Ceyhan"
+    },
+    {
+      "value": "Atik"
+    },
+    {
+      "value": "Uyanık"
+    },
+    {
+      "value": "Gürel"
+    },
+    {
+      "value": "Peker"
+    },
+    {
+      "value": "Atay"
+    },
+    {
+      "value": "Sayın"
+    },
+    {
+      "value": "Karabacak"
+    },
+    {
+      "value": "Öcal"
+    },
+    {
+      "value": "Yeşilyurt"
+    },
+    {
+      "value": "Köseoğlu"
+    },
+    {
+      "value": "Şirin"
+    },
+    {
+      "value": "Çağlayan"
+    },
+    {
+      "value": "Sever"
+    },
+    {
+      "value": "Taşkıran"
+    },
+    {
+      "value": "Dede"
+    },
+    {
+      "value": "Ayan"
+    },
+    {
+      "value": "Çavdar"
+    },
+    {
+      "value": "Ok"
+    },
+    {
+      "value": "Salman"
+    },
+    {
+      "value": "Tezcan"
+    },
+    {
+      "value": "Girgin"
+    },
+    {
+      "value": "Akan"
+    },
+    {
+      "value": "Koçyiğit"
+    },
+    {
+      "value": "Kaçmaz"
+    },
+    {
+      "value": "Gencer"
+    },
+    {
+      "value": "Olgun"
+    },
+    {
+      "value": "Tatar"
+    },
+    {
+      "value": "Kuzu"
+    },
+    {
+      "value": "Demirhan"
+    },
+    {
+      "value": "Tok"
+    },
+    {
+      "value": "Kızılkaya"
+    },
+    {
+      "value": "Filiz"
+    },
+    {
+      "value": "Oktay"
+    },
+    {
+      "value": "Ülker"
+    },
+    {
+      "value": "Kurnaz"
+    },
+    {
+      "value": "Bilen"
+    },
+    {
+      "value": "Candan"
+    },
+    {
+      "value": "Tarhan"
+    },
+    {
+      "value": "Akbaba"
+    },
+    {
+      "value": "Başar"
+    },
+    {
+      "value": "Taştan"
+    },
+    {
+      "value": "Topuz"
+    },
+    {
+      "value": "Özdoğan"
+    },
+    {
+      "value": "Uludağ"
+    },
+    {
+      "value": "Poyraz"
+    },
+    {
+      "value": "Ünver"
+    },
+    {
+      "value": "Okumuş"
+    },
+    {
+      "value": "Karadaş"
+    },
+    {
+      "value": "Kaymaz"
+    },
+    {
+      "value": "Karademir"
+    },
+    {
+      "value": "Şenel"
+    },
+    {
+      "value": "Seven"
+    },
+    {
+      "value": "Sağır"
+    },
+    {
+      "value": "Tuncel"
+    },
+    {
+      "value": "Zorlu"
+    },
+    {
+      "value": "Teke"
+    },
+    {
+      "value": "Çifçi"
+    },
+    {
+      "value": "Korkut"
+    },
+    {
+      "value": "Karakurt"
+    },
+    {
+      "value": "Çavuş"
+    },
+    {
+      "value": "Çil"
+    },
+    {
+      "value": "Tiryaki"
+    },
+    {
+      "value": "Zeybek"
+    },
+    {
+      "value": "Tepe"
+    },
+    {
+      "value": "Irmak"
+    },
+    {
+      "value": "Akcan"
+    },
+    {
+      "value": "Top"
+    },
+    {
+      "value": "Yakut"
+    },
+    {
+      "value": "Söylemez"
+    },
+    {
+      "value": "Kocabaş"
+    },
+    {
+      "value": "Kök"
+    },
+    {
+      "value": "Altan"
+    },
+    {
+      "value": "Bilir"
+    },
+    {
+      "value": "Bozdağ"
+    },
+    {
+      "value": "Berber"
+    },
+    {
+      "value": "Düzgün"
+    },
+    {
+      "value": "Ata"
+    },
+    {
+      "value": "Özgül"
+    },
+    {
+      "value": "Balta"
+    },
+    {
+      "value": "Pınar"
+    },
+    {
+      "value": "Ulu"
+    },
+    {
+      "value": "Mete"
+    },
+    {
+      "value": "Atak"
+    },
+    {
+      "value": "Karasu"
+    },
+    {
+      "value": "Dikmen"
+    },
+    {
+      "value": "Yayla"
+    },
+    {
+      "value": "Kaymak"
+    },
+    {
+      "value": "Özalp"
+    },
+    {
+      "value": "Terzi"
+    },
+    {
+      "value": "Kaynak"
+    },
+    {
+      "value": "Kır"
+    },
+    {
+      "value": "Topaloğlu"
+    },
+    {
+      "value": "Demirkol"
+    },
+    {
+      "value": "Yorulmaz"
+    },
+    {
+      "value": "Yolcu"
+    },
+    {
+      "value": "Başer"
+    },
+    {
+      "value": "Göksu"
+    },
+    {
+      "value": "Göçer"
+    },
+    {
+      "value": "Soysal"
+    },
+    {
+      "value": "Çankaya"
+    },
+    {
+      "value": "Çetiner"
+    },
+    {
+      "value": "Ergen"
+    },
+    {
+      "value": "Gündoğan"
+    },
+    {
+      "value": "Erdal"
+    },
+    {
+      "value": "Koyun"
+    },
+    {
+      "value": "Apaydın"
+    },
+    {
+      "value": "Yener"
+    },
+    {
+      "value": "Dilek"
+    },
+    {
+      "value": "Kayhan"
+    },
+    {
+      "value": "Adıyaman"
+    },
+    {
+      "value": "Özbey"
+    },
+    {
+      "value": "Bilici"
+    },
+    {
+      "value": "Yağmur"
+    },
+    {
+      "value": "Öztaş"
+    },
+    {
+      "value": "Şakar"
+    },
+    {
+      "value": "Bodur"
+    },
+    {
+      "value": "Akkurt"
+    },
+    {
+      "value": "Meral"
+    },
+    {
+      "value": "Aşık"
+    },
+    {
+      "value": "Çay"
+    },
+    {
+      "value": "Balaban"
+    },
+    {
+      "value": "Vatansever"
+    },
+    {
+      "value": "Aldemir"
+    },
+    {
+      "value": "Koçer"
+    },
+    {
+      "value": "Kul"
+    },
+    {
+      "value": "Barut"
+    },
+    {
+      "value": "Canpolat"
+    },
+    {
+      "value": "Kanat"
+    },
+    {
+      "value": "Atasoy"
+    },
+    {
+      "value": "Cesur"
+    },
+    {
+      "value": "Cebeci"
+    },
+    {
+      "value": "Sarıoğlu"
+    },
+    {
+      "value": "Özyurt"
+    },
+    {
+      "value": "Alagöz"
+    },
+    {
+      "value": "Sümer"
+    },
+    {
+      "value": "Serin"
+    },
+    {
+      "value": "Erdemir"
+    },
+    {
+      "value": "Kahveci"
+    },
+    {
+      "value": "Karaoğlu"
+    },
+    {
+      "value": "Akarsu"
+    },
+    {
+      "value": "Gökdemir"
+    },
+    {
+      "value": "Ekin"
+    },
+    {
+      "value": "Tufan"
+    },
+    {
+      "value": "Dağdelen"
+    },
+    {
+      "value": "Kurtuluş"
+    },
+    {
+      "value": "Dere"
+    },
+    {
+      "value": "Akkoyun"
+    },
+    {
+      "value": "Başak"
+    },
+    {
+      "value": "Eken"
+    },
+    {
+      "value": "Duru"
+    },
+    {
+      "value": "Ertuğrul"
+    },
+    {
+      "value": "Bedir"
+    },
+    {
+      "value": "Eraslan"
+    },
+    {
+      "value": "Ulaş"
+    },
+    {
+      "value": "Sayar"
+    },
+    {
+      "value": "Özgün"
+    },
+    {
+      "value": "Saka"
+    },
+    {
+      "value": "Baykal"
+    },
+    {
+      "value": "Tuncay"
+    },
+    {
+      "value": "Çabuk"
+    },
+    {
+      "value": "Ulutaş"
+    },
+    {
+      "value": "Gören"
+    },
+    {
+      "value": "Balkan"
+    },
+    {
+      "value": "Kiraz"
+    },
+    {
+      "value": "Kuşçu"
+    },
+    {
+      "value": "Yörük"
+    },
+    {
+      "value": "Kale"
+    },
+    {
+      "value": "Erten"
+    },
+    {
+      "value": "Kasap"
+    },
+    {
+      "value": "Gülen"
+    },
+    {
+      "value": "Yazar"
+    },
+    {
+      "value": "Bahadır"
+    },
+    {
+      "value": "Bahar"
+    },
+    {
+      "value": "Ekiz"
+    },
+    {
+      "value": "Dereli"
+    },
+    {
+      "value": "Bozdemir"
+    }
+  ],
+  "production_ready": false
+}

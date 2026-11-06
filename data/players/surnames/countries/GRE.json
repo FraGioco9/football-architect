@@ -1,0 +1,1529 @@
+{
+  "schema_version": 1,
+  "code": "GRE",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-gre-2014",
+      "url": "https://forebears.io/greece/surnames",
+      "kind": "historical national surname incidence estimates",
+      "purpose": "Attestation among the country's resident population, not a claim of national linguistic origin; no incidence estimates used as selection weights."
+    },
+    {
+      "id": "pin-mirror-gre",
+      "url": "https://github.com/p-svacha/ProceduralTextGeneration/blob/4ccc1dbecd5d072251a0f10cc96f3a371199181b/Assets/Resources/Geographical/surnames/greece_surnames.txt",
+      "git_blob_sha": "0dc11155cb9cf35277fe7070b7328078509978a8",
+      "source_rows": 1001,
+      "purpose": "Pinned Latin-script national surname list, source ordering retained after documented de-duplication/exclusions. Redistribution rights not established; data are research-only."
+    },
+    {
+      "id": "greece-passport-elot",
+      "url": "https://www.passport.gov.gr/passports/GrElotConverter/GrElotConverterEn.html",
+      "purpose": "Greek passport ELOT 743 / ISO 843 romanization reference; actual values are source-observed pre-romanized Latin surname forms, not newly invented transliterations or certified ELOT conversions."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Papadopoulos"
+    },
+    {
+      "value": "Papadopoulou"
+    },
+    {
+      "value": "Papageorgiou"
+    },
+    {
+      "value": "Oikonomou"
+    },
+    {
+      "value": "Papadimitriou"
+    },
+    {
+      "value": "Georgiou"
+    },
+    {
+      "value": "Papaioannou"
+    },
+    {
+      "value": "Pappas"
+    },
+    {
+      "value": "Vasileiou"
+    },
+    {
+      "value": "Nikolaou"
+    },
+    {
+      "value": "Karagiannis"
+    },
+    {
+      "value": "Vlachos"
+    },
+    {
+      "value": "Antoniou"
+    },
+    {
+      "value": "Makris"
+    },
+    {
+      "value": "Papanikolaou"
+    },
+    {
+      "value": "Dimitriou"
+    },
+    {
+      "value": "Ioannidis"
+    },
+    {
+      "value": "Georgiadis"
+    },
+    {
+      "value": "Triantafyllou"
+    },
+    {
+      "value": "Papadakis"
+    },
+    {
+      "value": "Athanasiou"
+    },
+    {
+      "value": "Konstantinidis"
+    },
+    {
+      "value": "Ioannou"
+    },
+    {
+      "value": "Alexiou"
+    },
+    {
+      "value": "Christodoulou"
+    },
+    {
+      "value": "Theodorou"
+    },
+    {
+      "value": "Giannopoulos"
+    },
+    {
+      "value": "Nikolaidis"
+    },
+    {
+      "value": "Konstantinou"
+    },
+    {
+      "value": "Panagiotopoulos"
+    },
+    {
+      "value": "Michailidis"
+    },
+    {
+      "value": "Papakonstantinou"
+    },
+    {
+      "value": "Papathanasiou"
+    },
+    {
+      "value": "Antonopoulos"
+    },
+    {
+      "value": "Dimopoulos"
+    },
+    {
+      "value": "Karagianni"
+    },
+    {
+      "value": "Anastasiou"
+    },
+    {
+      "value": "Dimitriadis"
+    },
+    {
+      "value": "Pappa"
+    },
+    {
+      "value": "Vlachou"
+    },
+    {
+      "value": "Vasileiadis"
+    },
+    {
+      "value": "Giannakopoulos"
+    },
+    {
+      "value": "Angelopoulos"
+    },
+    {
+      "value": "Dimou"
+    },
+    {
+      "value": "Ioannidou"
+    },
+    {
+      "value": "Nikolopoulos"
+    },
+    {
+      "value": "Mylonas"
+    },
+    {
+      "value": "Stergiou"
+    },
+    {
+      "value": "Apostolou"
+    },
+    {
+      "value": "Petropoulos"
+    },
+    {
+      "value": "Lamprou"
+    },
+    {
+      "value": "Papadaki"
+    },
+    {
+      "value": "Christou"
+    },
+    {
+      "value": "Panagiotou"
+    },
+    {
+      "value": "Anagnostou"
+    },
+    {
+      "value": "Makri"
+    },
+    {
+      "value": "Konstantinidou"
+    },
+    {
+      "value": "Samaras"
+    },
+    {
+      "value": "Raptis"
+    },
+    {
+      "value": "Athanasopoulos"
+    },
+    {
+      "value": "Alexopoulos"
+    },
+    {
+      "value": "Christopoulos"
+    },
+    {
+      "value": "Stavropoulos"
+    },
+    {
+      "value": "Anagnostopoulos"
+    },
+    {
+      "value": "Markou"
+    },
+    {
+      "value": "Georgiadou"
+    },
+    {
+      "value": "Spanos"
+    },
+    {
+      "value": "Sidiropoulos"
+    },
+    {
+      "value": "Antoniadis"
+    },
+    {
+      "value": "Panagopoulos"
+    },
+    {
+      "value": "Efthymiou"
+    },
+    {
+      "value": "Spyropoulos"
+    },
+    {
+      "value": "Theodoropoulos"
+    },
+    {
+      "value": "Pavlidis"
+    },
+    {
+      "value": "Athanasiadis"
+    },
+    {
+      "value": "Apostolopoulos"
+    },
+    {
+      "value": "Petrou"
+    },
+    {
+      "value": "Michalopoulos"
+    },
+    {
+      "value": "Arvanitis"
+    },
+    {
+      "value": "Lazaridis"
+    },
+    {
+      "value": "Kontos"
+    },
+    {
+      "value": "Georgopoulos"
+    },
+    {
+      "value": "Panagiotidis"
+    },
+    {
+      "value": "Theodoridis"
+    },
+    {
+      "value": "Chatzis"
+    },
+    {
+      "value": "Anastasiadis"
+    },
+    {
+      "value": "Papavasileiou"
+    },
+    {
+      "value": "Papazoglou"
+    },
+    {
+      "value": "Vasilopoulos"
+    },
+    {
+      "value": "Iliopoulos"
+    },
+    {
+      "value": "Kostopoulos"
+    },
+    {
+      "value": "Politis"
+    },
+    {
+      "value": "Galanis"
+    },
+    {
+      "value": "Stavrou"
+    },
+    {
+      "value": "Apostolidis"
+    },
+    {
+      "value": "Paraskevopoulos"
+    },
+    {
+      "value": "Giannopoulou"
+    },
+    {
+      "value": "Diamantis"
+    },
+    {
+      "value": "Pantazis"
+    },
+    {
+      "value": "Andreou"
+    },
+    {
+      "value": "Petridis"
+    },
+    {
+      "value": "Stathopoulos"
+    },
+    {
+      "value": "Nikolaidou"
+    },
+    {
+      "value": "Michailidou"
+    },
+    {
+      "value": "Dimopoulou"
+    },
+    {
+      "value": "Mavridis"
+    },
+    {
+      "value": "Kyriakou"
+    },
+    {
+      "value": "Grigoriadis"
+    },
+    {
+      "value": "Efstathiou"
+    },
+    {
+      "value": "Sideris"
+    },
+    {
+      "value": "Kyriakidis"
+    },
+    {
+      "value": "Diamantopoulos"
+    },
+    {
+      "value": "Panagiotopoulou"
+    },
+    {
+      "value": "Anastasopoulos"
+    },
+    {
+      "value": "Savvidis"
+    },
+    {
+      "value": "Georgakopoulos"
+    },
+    {
+      "value": "Dimitropoulos"
+    },
+    {
+      "value": "Vasilakis"
+    },
+    {
+      "value": "Rizos"
+    },
+    {
+      "value": "Argyropoulos"
+    },
+    {
+      "value": "Moraitis"
+    },
+    {
+      "value": "Sotiropoulos"
+    },
+    {
+      "value": "Charalampidis"
+    },
+    {
+      "value": "Iliadis"
+    },
+    {
+      "value": "Antonopoulou"
+    },
+    {
+      "value": "Sotiriou"
+    },
+    {
+      "value": "Lampropoulos"
+    },
+    {
+      "value": "Chatzigeorgiou"
+    },
+    {
+      "value": "Angelis"
+    },
+    {
+      "value": "Nikolopoulou"
+    },
+    {
+      "value": "Giannakopoulou"
+    },
+    {
+      "value": "Kollias"
+    },
+    {
+      "value": "Margaritis"
+    },
+    {
+      "value": "Vasileiadou"
+    },
+    {
+      "value": "Katsaros"
+    },
+    {
+      "value": "Chatzi"
+    },
+    {
+      "value": "Sarris"
+    },
+    {
+      "value": "Roussos"
+    },
+    {
+      "value": "Evangelou"
+    },
+    {
+      "value": "Fotiadis"
+    },
+    {
+      "value": "Stefanidis"
+    },
+    {
+      "value": "Mylona"
+    },
+    {
+      "value": "Gkikas"
+    },
+    {
+      "value": "Angelopoulou"
+    },
+    {
+      "value": "Eleftheriadis"
+    },
+    {
+      "value": "Kontogiannis"
+    },
+    {
+      "value": "Dimitriadou"
+    },
+    {
+      "value": "Samara"
+    },
+    {
+      "value": "Spyrou"
+    },
+    {
+      "value": "Stavropoulou"
+    },
+    {
+      "value": "Petropoulou"
+    },
+    {
+      "value": "Symeonidis"
+    },
+    {
+      "value": "Konstantopoulos"
+    },
+    {
+      "value": "Kalogeropoulos"
+    },
+    {
+      "value": "Kyriakopoulos"
+    },
+    {
+      "value": "Filippou"
+    },
+    {
+      "value": "Vogiatzis"
+    },
+    {
+      "value": "Athanasopoulou"
+    },
+    {
+      "value": "Eleftheriou"
+    },
+    {
+      "value": "Fotopoulos"
+    },
+    {
+      "value": "Voulgaris"
+    },
+    {
+      "value": "Christopoulou"
+    },
+    {
+      "value": "Chatzopoulos"
+    },
+    {
+      "value": "Spyropoulou"
+    },
+    {
+      "value": "Argyriou"
+    },
+    {
+      "value": "Georgopoulou"
+    },
+    {
+      "value": "Triantafyllidis"
+    },
+    {
+      "value": "Sakellariou"
+    },
+    {
+      "value": "Kanellopoulos"
+    },
+    {
+      "value": "Avramidis"
+    },
+    {
+      "value": "Athanasiadou"
+    },
+    {
+      "value": "Spanou"
+    },
+    {
+      "value": "Sidiropoulou"
+    },
+    {
+      "value": "Kyriazis"
+    },
+    {
+      "value": "Papachristou"
+    },
+    {
+      "value": "Petrakis"
+    },
+    {
+      "value": "Daskalakis"
+    },
+    {
+      "value": "Stefanou"
+    },
+    {
+      "value": "Anagnostopoulou"
+    },
+    {
+      "value": "Kritikos"
+    },
+    {
+      "value": "Kechagias"
+    },
+    {
+      "value": "Pavlou"
+    },
+    {
+      "value": "Rigas"
+    },
+    {
+      "value": "Arampatzis"
+    },
+    {
+      "value": "Kostopoulou"
+    },
+    {
+      "value": "Lazaridou"
+    },
+    {
+      "value": "Zervas"
+    },
+    {
+      "value": "Alexopoulou"
+    },
+    {
+      "value": "Theodoridou"
+    },
+    {
+      "value": "Stamatiou"
+    },
+    {
+      "value": "Asimakopoulos"
+    },
+    {
+      "value": "Tsakiris"
+    },
+    {
+      "value": "Apostolopoulou"
+    },
+    {
+      "value": "Theodosiou"
+    },
+    {
+      "value": "Mitropoulos"
+    },
+    {
+      "value": "Paraskevopoulou"
+    },
+    {
+      "value": "Panagopoulou"
+    },
+    {
+      "value": "Panou"
+    },
+    {
+      "value": "Karalis"
+    },
+    {
+      "value": "Karras"
+    },
+    {
+      "value": "Pavlidou"
+    },
+    {
+      "value": "Ali"
+    },
+    {
+      "value": "Dimitrakopoulos"
+    },
+    {
+      "value": "Papanastasiou"
+    },
+    {
+      "value": "Michail"
+    },
+    {
+      "value": "Adamopoulos"
+    },
+    {
+      "value": "Michalopoulou"
+    },
+    {
+      "value": "Rapti"
+    },
+    {
+      "value": "Papatheodorou"
+    },
+    {
+      "value": "Deligiannis"
+    },
+    {
+      "value": "Vasilopoulou"
+    },
+    {
+      "value": "Iliopoulou"
+    },
+    {
+      "value": "Panagiotidou"
+    },
+    {
+      "value": "Markopoulos"
+    },
+    {
+      "value": "Antoniadou"
+    },
+    {
+      "value": "Singh"
+    },
+    {
+      "value": "Kefalas"
+    },
+    {
+      "value": "Papagiannis"
+    },
+    {
+      "value": "Kontou"
+    },
+    {
+      "value": "Zisis"
+    },
+    {
+      "value": "Stamatopoulos"
+    },
+    {
+      "value": "Grigoriou"
+    },
+    {
+      "value": "Theocharis"
+    },
+    {
+      "value": "Stamou"
+    },
+    {
+      "value": "Nikou"
+    },
+    {
+      "value": "Kolovos"
+    },
+    {
+      "value": "Xanthopoulos"
+    },
+    {
+      "value": "Theodoropoulou"
+    },
+    {
+      "value": "Giannoulis"
+    },
+    {
+      "value": "Angelidis"
+    },
+    {
+      "value": "Kyritsis"
+    },
+    {
+      "value": "Diamanti"
+    },
+    {
+      "value": "Doukas"
+    },
+    {
+      "value": "Apostolidou"
+    },
+    {
+      "value": "Paschalidis"
+    },
+    {
+      "value": "Floros"
+    },
+    {
+      "value": "Fragkos"
+    },
+    {
+      "value": "Mavridou"
+    },
+    {
+      "value": "Paraskevas"
+    },
+    {
+      "value": "Sideri"
+    },
+    {
+      "value": "Roussou"
+    },
+    {
+      "value": "Roumeliotis"
+    },
+    {
+      "value": "Tsoukalas"
+    },
+    {
+      "value": "Galani"
+    },
+    {
+      "value": "Drosos"
+    },
+    {
+      "value": "Lampropoulou"
+    },
+    {
+      "value": "Kosmidis"
+    },
+    {
+      "value": "Loukas"
+    },
+    {
+      "value": "Alexandris"
+    },
+    {
+      "value": "Pantazi"
+    },
+    {
+      "value": "Charalampidou"
+    },
+    {
+      "value": "Kalyvas"
+    },
+    {
+      "value": "Sarri"
+    },
+    {
+      "value": "Argyropoulou"
+    },
+    {
+      "value": "Papakostas"
+    },
+    {
+      "value": "Kyriakidou"
+    },
+    {
+      "value": "Anastasiadou"
+    },
+    {
+      "value": "Kokkinos"
+    },
+    {
+      "value": "Stathopoulou"
+    },
+    {
+      "value": "Anastasopoulou"
+    },
+    {
+      "value": "Stamoulis"
+    },
+    {
+      "value": "Arvaniti"
+    },
+    {
+      "value": "Sotiropoulou"
+    },
+    {
+      "value": "Ziogas"
+    },
+    {
+      "value": "Stamatis"
+    },
+    {
+      "value": "Mouratidis"
+    },
+    {
+      "value": "Lazarou"
+    },
+    {
+      "value": "Moustakas"
+    },
+    {
+      "value": "Diamantopoulou"
+    },
+    {
+      "value": "Vasilaki"
+    },
+    {
+      "value": "Dimos"
+    },
+    {
+      "value": "Papoutsis"
+    },
+    {
+      "value": "Fragkou"
+    },
+    {
+      "value": "Chalkias"
+    },
+    {
+      "value": "Zafeiropoulos"
+    },
+    {
+      "value": "Manolis"
+    },
+    {
+      "value": "Kyriakopoulou"
+    },
+    {
+      "value": "Georgakopoulou"
+    },
+    {
+      "value": "Lekkas"
+    },
+    {
+      "value": "Andreadis"
+    },
+    {
+      "value": "Chronopoulos"
+    },
+    {
+      "value": "Papantoniou"
+    },
+    {
+      "value": "Polyzos"
+    },
+    {
+      "value": "Savvidou"
+    },
+    {
+      "value": "Petridou"
+    },
+    {
+      "value": "Liapis"
+    },
+    {
+      "value": "Papandreou"
+    },
+    {
+      "value": "Emmanouil"
+    },
+    {
+      "value": "Marinos"
+    },
+    {
+      "value": "Bouras"
+    },
+    {
+      "value": "Emmanouilidis"
+    },
+    {
+      "value": "Goulas"
+    },
+    {
+      "value": "Angeli"
+    },
+    {
+      "value": "Tzimas"
+    },
+    {
+      "value": "Zacharopoulos"
+    },
+    {
+      "value": "Nikolakopoulos"
+    },
+    {
+      "value": "Kalantzis"
+    },
+    {
+      "value": "Kollia"
+    },
+    {
+      "value": "Nikas"
+    },
+    {
+      "value": "Drakopoulos"
+    },
+    {
+      "value": "Michos"
+    },
+    {
+      "value": "Vlachopoulos"
+    },
+    {
+      "value": "Tsekouras"
+    },
+    {
+      "value": "Daskalaki"
+    },
+    {
+      "value": "Charalampous"
+    },
+    {
+      "value": "Apostolakis"
+    },
+    {
+      "value": "Kalaitzis"
+    },
+    {
+      "value": "Kalogirou"
+    },
+    {
+      "value": "Nakos"
+    },
+    {
+      "value": "Aslanidis"
+    },
+    {
+      "value": "Fotopoulou"
+    },
+    {
+      "value": "Stamatakis"
+    },
+    {
+      "value": "Koulouris"
+    },
+    {
+      "value": "Liakos"
+    },
+    {
+      "value": "Konstantopoulou"
+    },
+    {
+      "value": "Dimitrakopoulou"
+    },
+    {
+      "value": "Chatzopoulou"
+    },
+    {
+      "value": "Kosmas"
+    },
+    {
+      "value": "Eleftheriadou"
+    },
+    {
+      "value": "Grivas"
+    },
+    {
+      "value": "Oikonomidis"
+    },
+    {
+      "value": "Grigoriadou"
+    },
+    {
+      "value": "Karakostas"
+    },
+    {
+      "value": "Psarras"
+    },
+    {
+      "value": "Angelou"
+    },
+    {
+      "value": "Tsolakis"
+    },
+    {
+      "value": "Moschos"
+    },
+    {
+      "value": "Giannakis"
+    },
+    {
+      "value": "Giannakos"
+    },
+    {
+      "value": "Chatzidimitriou"
+    },
+    {
+      "value": "Iosifidis"
+    },
+    {
+      "value": "Papamichail"
+    },
+    {
+      "value": "Kanellopoulou"
+    },
+    {
+      "value": "Dimas"
+    },
+    {
+      "value": "Zografos"
+    },
+    {
+      "value": "Kalogeropoulou"
+    },
+    {
+      "value": "Chatzinikolaou"
+    },
+    {
+      "value": "Voulgari"
+    },
+    {
+      "value": "Markakis"
+    },
+    {
+      "value": "Karagiannidis"
+    },
+    {
+      "value": "Stamos"
+    },
+    {
+      "value": "Zafeiris"
+    },
+    {
+      "value": "Gkika"
+    },
+    {
+      "value": "Zachos"
+    },
+    {
+      "value": "Chatziioannou"
+    },
+    {
+      "value": "Symeonidou"
+    },
+    {
+      "value": "Stefanidou"
+    },
+    {
+      "value": "Triantafyllidou"
+    },
+    {
+      "value": "Kritikou"
+    },
+    {
+      "value": "Stavridis"
+    },
+    {
+      "value": "Petraki"
+    },
+    {
+      "value": "Zafeiriou"
+    },
+    {
+      "value": "Fotiou"
+    },
+    {
+      "value": "Dimitropoulou"
+    },
+    {
+      "value": "Angelakis"
+    },
+    {
+      "value": "Vlachakis"
+    },
+    {
+      "value": "Kontogianni"
+    },
+    {
+      "value": "Chatzidakis"
+    },
+    {
+      "value": "Iliadou"
+    },
+    {
+      "value": "Karatzas"
+    },
+    {
+      "value": "Kechagia"
+    },
+    {
+      "value": "Efthymiadis"
+    },
+    {
+      "value": "Vogiatzi"
+    },
+    {
+      "value": "Katsoulis"
+    },
+    {
+      "value": "Zerva"
+    },
+    {
+      "value": "Stamatopoulou"
+    },
+    {
+      "value": "Fotiadou"
+    },
+    {
+      "value": "Katsarou"
+    },
+    {
+      "value": "Rizou"
+    },
+    {
+      "value": "Christidis"
+    },
+    {
+      "value": "Kapsalis"
+    },
+    {
+      "value": "Maragkos"
+    },
+    {
+      "value": "Drakos"
+    },
+    {
+      "value": "Thanos"
+    },
+    {
+      "value": "Karachalios"
+    },
+    {
+      "value": "Kostakis"
+    },
+    {
+      "value": "Filippidis"
+    },
+    {
+      "value": "Makridis"
+    },
+    {
+      "value": "Sakkas"
+    },
+    {
+      "value": "Kostas"
+    },
+    {
+      "value": "Zervos"
+    },
+    {
+      "value": "Metaxas"
+    },
+    {
+      "value": "Peppas"
+    },
+    {
+      "value": "Koutras"
+    },
+    {
+      "value": "Liakopoulos"
+    },
+    {
+      "value": "Adam"
+    },
+    {
+      "value": "Kourtis"
+    },
+    {
+      "value": "Ivanova"
+    },
+    {
+      "value": "Kampouris"
+    },
+    {
+      "value": "Karageorgiou"
+    },
+    {
+      "value": "Thomas"
+    },
+    {
+      "value": "Mavroudis"
+    },
+    {
+      "value": "Chronis"
+    },
+    {
+      "value": "Manos"
+    },
+    {
+      "value": "Bellos"
+    },
+    {
+      "value": "Margariti"
+    },
+    {
+      "value": "Pagonis"
+    },
+    {
+      "value": "Christoforidis"
+    },
+    {
+      "value": "Orfanos"
+    },
+    {
+      "value": "Paschalis"
+    },
+    {
+      "value": "Karali"
+    },
+    {
+      "value": "Ivanov"
+    },
+    {
+      "value": "Oikonomopoulos"
+    },
+    {
+      "value": "Asimakopoulou"
+    },
+    {
+      "value": "Gkoumas"
+    },
+    {
+      "value": "Pantelidis"
+    },
+    {
+      "value": "Alexandropoulos"
+    },
+    {
+      "value": "Riga"
+    },
+    {
+      "value": "Simos"
+    },
+    {
+      "value": "Adamidis"
+    },
+    {
+      "value": "Poulios"
+    },
+    {
+      "value": "Kefala"
+    },
+    {
+      "value": "Papastergiou"
+    },
+    {
+      "value": "Xanthopoulou"
+    },
+    {
+      "value": "Avramidou"
+    },
+    {
+      "value": "Sfakianakis"
+    },
+    {
+      "value": "Maniatis"
+    },
+    {
+      "value": "Lymperopoulos"
+    },
+    {
+      "value": "Lappas"
+    },
+    {
+      "value": "Bakalis"
+    },
+    {
+      "value": "Zachariadis"
+    },
+    {
+      "value": "Tatsis"
+    },
+    {
+      "value": "Kyriazi"
+    },
+    {
+      "value": "Lagos"
+    },
+    {
+      "value": "Chousein"
+    },
+    {
+      "value": "Zacharakis"
+    },
+    {
+      "value": "Mantas"
+    },
+    {
+      "value": "Orfanidis"
+    },
+    {
+      "value": "Muhammad"
+    },
+    {
+      "value": "Karra"
+    },
+    {
+      "value": "Sotiriadis"
+    },
+    {
+      "value": "Spiliopoulos"
+    },
+    {
+      "value": "Moschou"
+    },
+    {
+      "value": "Mavromatis"
+    },
+    {
+      "value": "Kokkinou"
+    },
+    {
+      "value": "Arampatzi"
+    },
+    {
+      "value": "Theodorakis"
+    },
+    {
+      "value": "Chasiotis"
+    },
+    {
+      "value": "Charalampopoulos"
+    },
+    {
+      "value": "Deligianni"
+    },
+    {
+      "value": "Tsakiri"
+    },
+    {
+      "value": "Kanakis"
+    },
+    {
+      "value": "Markopoulou"
+    },
+    {
+      "value": "Kokkalis"
+    },
+    {
+      "value": "Farmakis"
+    },
+    {
+      "value": "Chasan"
+    },
+    {
+      "value": "Tsamis"
+    },
+    {
+      "value": "Argyris"
+    },
+    {
+      "value": "Arvanitakis"
+    },
+    {
+      "value": "Mitropoulou"
+    },
+    {
+      "value": "Papadatos"
+    },
+    {
+      "value": "Adamopoulou"
+    },
+    {
+      "value": "Drosou"
+    },
+    {
+      "value": "Logothetis"
+    },
+    {
+      "value": "Kotsis"
+    },
+    {
+      "value": "Alexakis"
+    },
+    {
+      "value": "Chouliaras"
+    },
+    {
+      "value": "Galanopoulos"
+    },
+    {
+      "value": "Ilias"
+    },
+    {
+      "value": "Paschalidou"
+    },
+    {
+      "value": "Karampelas"
+    },
+    {
+      "value": "Angelidou"
+    },
+    {
+      "value": "Florou"
+    },
+    {
+      "value": "Papachristos"
+    },
+    {
+      "value": "Chalkia"
+    },
+    {
+      "value": "Alexandridis"
+    },
+    {
+      "value": "Paterakis"
+    },
+    {
+      "value": "Liolios"
+    },
+    {
+      "value": "Terzis"
+    },
+    {
+      "value": "Chiotis"
+    },
+    {
+      "value": "Zafeiropoulou"
+    },
+    {
+      "value": "Karagkounis"
+    },
+    {
+      "value": "Tsironis"
+    },
+    {
+      "value": "Fragkoulis"
+    },
+    {
+      "value": "Theochari"
+    },
+    {
+      "value": "Tsoukala"
+    },
+    {
+      "value": "Nika"
+    },
+    {
+      "value": "Papagianni"
+    },
+    {
+      "value": "Xenos"
+    },
+    {
+      "value": "Nanos"
+    },
+    {
+      "value": "Kalogiannis"
+    },
+    {
+      "value": "Stathis"
+    },
+    {
+      "value": "Kalaitzidis"
+    },
+    {
+      "value": "Stergiopoulos"
+    },
+    {
+      "value": "Nomikos"
+    },
+    {
+      "value": "Marinou"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Karageorgos"
+    },
+    {
+      "value": "Douka"
+    },
+    {
+      "value": "Iordanidis"
+    },
+    {
+      "value": "Pavlopoulos"
+    },
+    {
+      "value": "Gkogkos"
+    },
+    {
+      "value": "Stamataki"
+    },
+    {
+      "value": "Andrikopoulos"
+    },
+    {
+      "value": "Karavasilis"
+    },
+    {
+      "value": "Pantazopoulos"
+    },
+    {
+      "value": "Christakis"
+    },
+    {
+      "value": "Tsarouchas"
+    },
+    {
+      "value": "Tzikas"
+    },
+    {
+      "value": "Gkinis"
+    }
+  ],
+  "production_ready": false
+}

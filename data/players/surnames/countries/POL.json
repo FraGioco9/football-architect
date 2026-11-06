@@ -1,0 +1,1526 @@
+{
+  "schema_version": 1,
+  "code": "POL",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-poland-surnames-2014",
+      "url": "https://forebears.io/poland/surnames",
+      "notes": "Poland-specific 2014 bearer-incidence surname list. First 500 distinct ranked names retained, with Polish letters preserved. One inconsistent source spelling at rank 125 (Krük) is corrected to PESEL-attested Kruk, independently documented below. Rankings and counts do not affect random selection."
+    },
+    {
+      "id": "polish-national-pesel-registry",
+      "url": "https://dane.gov.pl/pl/dataset/568",
+      "notes": "Polish Ministry of Digital Affairs PESEL national surname releases provide the official country context; this batch does not claim that every entry was separately verified against the downloadable PESEL file."
+    },
+    {
+      "id": "kruk-pesel-2026-check",
+      "url": "https://www.polskienazwiska.pl/n/KRUK",
+      "notes": "PESEL-derived 2026 evidence for the native surname spelling Kruk in Poland, replacing an inconsistent spelling in the secondary 2014 listing."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Nowak"
+    },
+    {
+      "value": "Kowalski"
+    },
+    {
+      "value": "Lewandowski"
+    },
+    {
+      "value": "Kowalczyk"
+    },
+    {
+      "value": "Kamiński"
+    },
+    {
+      "value": "Zieliński"
+    },
+    {
+      "value": "Szymański"
+    },
+    {
+      "value": "Kozłowski"
+    },
+    {
+      "value": "Jankowski"
+    },
+    {
+      "value": "Wojciechowski"
+    },
+    {
+      "value": "Kwiatkowski"
+    },
+    {
+      "value": "Kaczmarek"
+    },
+    {
+      "value": "Mazur"
+    },
+    {
+      "value": "Krawczyk"
+    },
+    {
+      "value": "Piotrowski"
+    },
+    {
+      "value": "Grabowski"
+    },
+    {
+      "value": "Nowakowski"
+    },
+    {
+      "value": "Pawłowski"
+    },
+    {
+      "value": "Michalski"
+    },
+    {
+      "value": "Adamczyk"
+    },
+    {
+      "value": "Nowicki"
+    },
+    {
+      "value": "Dudek"
+    },
+    {
+      "value": "Zając"
+    },
+    {
+      "value": "Wieczorek"
+    },
+    {
+      "value": "Majewski"
+    },
+    {
+      "value": "Jabłoński"
+    },
+    {
+      "value": "Olszewski"
+    },
+    {
+      "value": "Jaworski"
+    },
+    {
+      "value": "Pawlak"
+    },
+    {
+      "value": "Malinowski"
+    },
+    {
+      "value": "Walczak"
+    },
+    {
+      "value": "Witkowski"
+    },
+    {
+      "value": "Rutkowski"
+    },
+    {
+      "value": "Michalak"
+    },
+    {
+      "value": "Sikora"
+    },
+    {
+      "value": "Ostrowski"
+    },
+    {
+      "value": "Baran"
+    },
+    {
+      "value": "Szewczyk"
+    },
+    {
+      "value": "Duda"
+    },
+    {
+      "value": "Tomaszewski"
+    },
+    {
+      "value": "Pietrzak"
+    },
+    {
+      "value": "Marciniak"
+    },
+    {
+      "value": "Zalewski"
+    },
+    {
+      "value": "Jakubowski"
+    },
+    {
+      "value": "Zawadzki"
+    },
+    {
+      "value": "Jasiński"
+    },
+    {
+      "value": "Sadowski"
+    },
+    {
+      "value": "Chmielewski"
+    },
+    {
+      "value": "Borkowski"
+    },
+    {
+      "value": "Czarnecki"
+    },
+    {
+      "value": "Sawicki"
+    },
+    {
+      "value": "Kubiak"
+    },
+    {
+      "value": "Sokołowski"
+    },
+    {
+      "value": "Maciejewski"
+    },
+    {
+      "value": "Urbański"
+    },
+    {
+      "value": "Kucharski"
+    },
+    {
+      "value": "Szczepański"
+    },
+    {
+      "value": "Wilk"
+    },
+    {
+      "value": "Lis"
+    },
+    {
+      "value": "Mazurek"
+    },
+    {
+      "value": "Kalinowski"
+    },
+    {
+      "value": "Wysocki"
+    },
+    {
+      "value": "Adamski"
+    },
+    {
+      "value": "Wasilewski"
+    },
+    {
+      "value": "Sobczak"
+    },
+    {
+      "value": "Andrzejewski"
+    },
+    {
+      "value": "Czerwiński"
+    },
+    {
+      "value": "Cieślak"
+    },
+    {
+      "value": "Zakrzewski"
+    },
+    {
+      "value": "Sikorski"
+    },
+    {
+      "value": "Krajewski"
+    },
+    {
+      "value": "Szymczak"
+    },
+    {
+      "value": "Szulc"
+    },
+    {
+      "value": "Gajewski"
+    },
+    {
+      "value": "Baranowski"
+    },
+    {
+      "value": "Laskowski"
+    },
+    {
+      "value": "Makowski"
+    },
+    {
+      "value": "Brzeziński"
+    },
+    {
+      "value": "Przybylski"
+    },
+    {
+      "value": "Borowski"
+    },
+    {
+      "value": "Nowacki"
+    },
+    {
+      "value": "Chojnacki"
+    },
+    {
+      "value": "Domański"
+    },
+    {
+      "value": "Ciesielski"
+    },
+    {
+      "value": "Krupa"
+    },
+    {
+      "value": "Szczepaniak"
+    },
+    {
+      "value": "Kaczmarczyk"
+    },
+    {
+      "value": "Wesołowski"
+    },
+    {
+      "value": "Kowalewski"
+    },
+    {
+      "value": "Leszczyński"
+    },
+    {
+      "value": "Lipiński"
+    },
+    {
+      "value": "Kozak"
+    },
+    {
+      "value": "Kania"
+    },
+    {
+      "value": "Urbaniak"
+    },
+    {
+      "value": "Mucha"
+    },
+    {
+      "value": "Kowalik"
+    },
+    {
+      "value": "Tomczak"
+    },
+    {
+      "value": "Czajkowski"
+    },
+    {
+      "value": "Mikołajczyk"
+    },
+    {
+      "value": "Markowski"
+    },
+    {
+      "value": "Kozioł"
+    },
+    {
+      "value": "Nawrocki"
+    },
+    {
+      "value": "Janik"
+    },
+    {
+      "value": "Brzozowski"
+    },
+    {
+      "value": "Markiewicz"
+    },
+    {
+      "value": "Wawrzyniak"
+    },
+    {
+      "value": "Musiał"
+    },
+    {
+      "value": "Jarosz"
+    },
+    {
+      "value": "Tomczyk"
+    },
+    {
+      "value": "Kurek"
+    },
+    {
+      "value": "Wolski"
+    },
+    {
+      "value": "Kot"
+    },
+    {
+      "value": "Stankiewicz"
+    },
+    {
+      "value": "Dziedzic"
+    },
+    {
+      "value": "Tkaczyk"
+    },
+    {
+      "value": "Kopeć"
+    },
+    {
+      "value": "Stasiak"
+    },
+    {
+      "value": "Urban"
+    },
+    {
+      "value": "Pawlik"
+    },
+    {
+      "value": "Polak"
+    },
+    {
+      "value": "Dobrowolski"
+    },
+    {
+      "value": "Piasecki"
+    },
+    {
+      "value": "Wierzbicki"
+    },
+    {
+      "value": "Domagała"
+    },
+    {
+      "value": "Kruk"
+    },
+    {
+      "value": "Karpiński"
+    },
+    {
+      "value": "Jastrzębski"
+    },
+    {
+      "value": "Janicki"
+    },
+    {
+      "value": "Bednarek"
+    },
+    {
+      "value": "Sosnowski"
+    },
+    {
+      "value": "Stefański"
+    },
+    {
+      "value": "Majchrzak"
+    },
+    {
+      "value": "Bielecki"
+    },
+    {
+      "value": "Maj"
+    },
+    {
+      "value": "Sowa"
+    },
+    {
+      "value": "Gajda"
+    },
+    {
+      "value": "Milewski"
+    },
+    {
+      "value": "Klimek"
+    },
+    {
+      "value": "Olejniczak"
+    },
+    {
+      "value": "Ratajczak"
+    },
+    {
+      "value": "Madej"
+    },
+    {
+      "value": "Romanowski"
+    },
+    {
+      "value": "Kasprzak"
+    },
+    {
+      "value": "Matuszewski"
+    },
+    {
+      "value": "Marek"
+    },
+    {
+      "value": "Kowal"
+    },
+    {
+      "value": "Socha"
+    },
+    {
+      "value": "Grzelak"
+    },
+    {
+      "value": "Wilczyński"
+    },
+    {
+      "value": "Czajka"
+    },
+    {
+      "value": "Bednarczyk"
+    },
+    {
+      "value": "Wrona"
+    },
+    {
+      "value": "Skiba"
+    },
+    {
+      "value": "Owczarek"
+    },
+    {
+      "value": "Matusiak"
+    },
+    {
+      "value": "Marcinkowski"
+    },
+    {
+      "value": "Sobolewski"
+    },
+    {
+      "value": "Orzechowski"
+    },
+    {
+      "value": "Olejnik"
+    },
+    {
+      "value": "Kurowski"
+    },
+    {
+      "value": "Mazurkiewicz"
+    },
+    {
+      "value": "Rogowski"
+    },
+    {
+      "value": "Czech"
+    },
+    {
+      "value": "Janiszewski"
+    },
+    {
+      "value": "Bednarski"
+    },
+    {
+      "value": "Barański"
+    },
+    {
+      "value": "Skowroński"
+    },
+    {
+      "value": "Pająk"
+    },
+    {
+      "value": "Chrzanowski"
+    },
+    {
+      "value": "Bukowski"
+    },
+    {
+      "value": "Cieślik"
+    },
+    {
+      "value": "Kosiński"
+    },
+    {
+      "value": "Lisowski"
+    },
+    {
+      "value": "Muszyński"
+    },
+    {
+      "value": "Czaja"
+    },
+    {
+      "value": "Okoń"
+    },
+    {
+      "value": "Kozieł"
+    },
+    {
+      "value": "Grzybowski"
+    },
+    {
+      "value": "Pluta"
+    },
+    {
+      "value": "Osiński"
+    },
+    {
+      "value": "Morawski"
+    },
+    {
+      "value": "Kuczyński"
+    },
+    {
+      "value": "Sobczyk"
+    },
+    {
+      "value": "Konieczny"
+    },
+    {
+      "value": "Kwiecień"
+    },
+    {
+      "value": "Marzec"
+    },
+    {
+      "value": "Rybak"
+    },
+    {
+      "value": "Augustyniak"
+    },
+    {
+      "value": "Michalik"
+    },
+    {
+      "value": "Marczak"
+    },
+    {
+      "value": "Zych"
+    },
+    {
+      "value": "Czyż"
+    },
+    {
+      "value": "Kaczor"
+    },
+    {
+      "value": "Krzemiński"
+    },
+    {
+      "value": "Kubicki"
+    },
+    {
+      "value": "Michałowski"
+    },
+    {
+      "value": "Paluch"
+    },
+    {
+      "value": "Sroka"
+    },
+    {
+      "value": "Stefaniak"
+    },
+    {
+      "value": "Niemiec"
+    },
+    {
+      "value": "Kasprzyk"
+    },
+    {
+      "value": "Kacprzak"
+    },
+    {
+      "value": "Cybulski"
+    },
+    {
+      "value": "Białek"
+    },
+    {
+      "value": "Kujawa"
+    },
+    {
+      "value": "Przybysz"
+    },
+    {
+      "value": "Marszałek"
+    },
+    {
+      "value": "Lewicki"
+    },
+    {
+      "value": "Stachowiak"
+    },
+    {
+      "value": "Witek"
+    },
+    {
+      "value": "Szydłowski"
+    },
+    {
+      "value": "Smoliński"
+    },
+    {
+      "value": "Matysiak"
+    },
+    {
+      "value": "Lech"
+    },
+    {
+      "value": "Piekarski"
+    },
+    {
+      "value": "Janowski"
+    },
+    {
+      "value": "Kulesza"
+    },
+    {
+      "value": "Cichocki"
+    },
+    {
+      "value": "Murawski"
+    },
+    {
+      "value": "Bednarz"
+    },
+    {
+      "value": "Popławski"
+    },
+    {
+      "value": "Niewiadomski"
+    },
+    {
+      "value": "Rudnicki"
+    },
+    {
+      "value": "Staniszewski"
+    },
+    {
+      "value": "Turek"
+    },
+    {
+      "value": "Chmiel"
+    },
+    {
+      "value": "Biernacki"
+    },
+    {
+      "value": "Skrzypczak"
+    },
+    {
+      "value": "Sowiński"
+    },
+    {
+      "value": "Podgórski"
+    },
+    {
+      "value": "Karczewski"
+    },
+    {
+      "value": "Drozd"
+    },
+    {
+      "value": "Cichoń"
+    },
+    {
+      "value": "Rosiński"
+    },
+    {
+      "value": "Pietrzyk"
+    },
+    {
+      "value": "Komorowski"
+    },
+    {
+      "value": "Banach"
+    },
+    {
+      "value": "Antczak"
+    },
+    {
+      "value": "Filipiak"
+    },
+    {
+      "value": "Grochowski"
+    },
+    {
+      "value": "Graczyk"
+    },
+    {
+      "value": "Klimczak"
+    },
+    {
+      "value": "Serafin"
+    },
+    {
+      "value": "Gruszka"
+    },
+    {
+      "value": "Krzyżanowski"
+    },
+    {
+      "value": "Bieniek"
+    },
+    {
+      "value": "Siwek"
+    },
+    {
+      "value": "Rak"
+    },
+    {
+      "value": "Konieczna"
+    },
+    {
+      "value": "Przybyła"
+    },
+    {
+      "value": "Zawada"
+    },
+    {
+      "value": "Godlewski"
+    },
+    {
+      "value": "Kulik"
+    },
+    {
+      "value": "Banaś"
+    },
+    {
+      "value": "Ptak"
+    },
+    {
+      "value": "Mikołajczak"
+    },
+    {
+      "value": "Zarzycki"
+    },
+    {
+      "value": "Strzelecki"
+    },
+    {
+      "value": "Cieśla"
+    },
+    {
+      "value": "Mielczarek"
+    },
+    {
+      "value": "Bartkowiak"
+    },
+    {
+      "value": "Krawiec"
+    },
+    {
+      "value": "Konopka"
+    },
+    {
+      "value": "Bartczak"
+    },
+    {
+      "value": "Gil"
+    },
+    {
+      "value": "Panek"
+    },
+    {
+      "value": "Janiak"
+    },
+    {
+      "value": "Winiarski"
+    },
+    {
+      "value": "Tokarski"
+    },
+    {
+      "value": "Banasiak"
+    },
+    {
+      "value": "Grzyb"
+    },
+    {
+      "value": "Zaremba"
+    },
+    {
+      "value": "Kaczyński"
+    },
+    {
+      "value": "Frankowski"
+    },
+    {
+      "value": "Rakowski"
+    },
+    {
+      "value": "Skowron"
+    },
+    {
+      "value": "Dobosz"
+    },
+    {
+      "value": "Sienkiewicz"
+    },
+    {
+      "value": "Witczak"
+    },
+    {
+      "value": "Dudziński"
+    },
+    {
+      "value": "Nawrot"
+    },
+    {
+      "value": "Fijałkowski"
+    },
+    {
+      "value": "Kostrzewa"
+    },
+    {
+      "value": "Kucharczyk"
+    },
+    {
+      "value": "Tkacz"
+    },
+    {
+      "value": "Biernat"
+    },
+    {
+      "value": "Bogusz"
+    },
+    {
+      "value": "Rybicki"
+    },
+    {
+      "value": "Szymczyk"
+    },
+    {
+      "value": "Czyżewski"
+    },
+    {
+      "value": "Janus"
+    },
+    {
+      "value": "Szczepanik"
+    },
+    {
+      "value": "Rogalski"
+    },
+    {
+      "value": "Buczek"
+    },
+    {
+      "value": "Gawroński"
+    },
+    {
+      "value": "Szostak"
+    },
+    {
+      "value": "Kaleta"
+    },
+    {
+      "value": "Jurek"
+    },
+    {
+      "value": "Grzegorczyk"
+    },
+    {
+      "value": "Kaczorowski"
+    },
+    {
+      "value": "Szczygieł"
+    },
+    {
+      "value": "Trojanowski"
+    },
+    {
+      "value": "Drzewiecki"
+    },
+    {
+      "value": "Gawron"
+    },
+    {
+      "value": "Rogala"
+    },
+    {
+      "value": "Kubik"
+    },
+    {
+      "value": "Kula"
+    },
+    {
+      "value": "Wojtczak"
+    },
+    {
+      "value": "Książek"
+    },
+    {
+      "value": "Kisiel"
+    },
+    {
+      "value": "Bagiński"
+    },
+    {
+      "value": "Radomski"
+    },
+    {
+      "value": "Trzciński"
+    },
+    {
+      "value": "Maliszewski"
+    },
+    {
+      "value": "Rosiak"
+    },
+    {
+      "value": "Gawlik"
+    },
+    {
+      "value": "Cebula"
+    },
+    {
+      "value": "Grzesiak"
+    },
+    {
+      "value": "Rojek"
+    },
+    {
+      "value": "Malec"
+    },
+    {
+      "value": "Cygan"
+    },
+    {
+      "value": "Zaręba"
+    },
+    {
+      "value": "Bogucki"
+    },
+    {
+      "value": "Mikulski"
+    },
+    {
+      "value": "Walkowiak"
+    },
+    {
+      "value": "Flis"
+    },
+    {
+      "value": "Czapla"
+    },
+    {
+      "value": "Burzyński"
+    },
+    {
+      "value": "Wnuk"
+    },
+    {
+      "value": "Drozdowski"
+    },
+    {
+      "value": "Rzepka"
+    },
+    {
+      "value": "Pawelec"
+    },
+    {
+      "value": "Lipski"
+    },
+    {
+      "value": "Kwaśniewski"
+    },
+    {
+      "value": "Filipek"
+    },
+    {
+      "value": "Zaborowski"
+    },
+    {
+      "value": "Andrzejczak"
+    },
+    {
+      "value": "Falkowski"
+    },
+    {
+      "value": "Nowaczyk"
+    },
+    {
+      "value": "Sokół"
+    },
+    {
+      "value": "Urbańczyk"
+    },
+    {
+      "value": "Krysiak"
+    },
+    {
+      "value": "Hajduk"
+    },
+    {
+      "value": "Bielawski"
+    },
+    {
+      "value": "Ciszewski"
+    },
+    {
+      "value": "Mroczek"
+    },
+    {
+      "value": "Lisiecki"
+    },
+    {
+      "value": "Zajączkowski"
+    },
+    {
+      "value": "Lach"
+    },
+    {
+      "value": "Okoński"
+    },
+    {
+      "value": "Pietras"
+    },
+    {
+      "value": "Karwowski"
+    },
+    {
+      "value": "Skrzypek"
+    },
+    {
+      "value": "Borek"
+    },
+    {
+      "value": "Dziuba"
+    },
+    {
+      "value": "Wasiak"
+    },
+    {
+      "value": "Krakowiak"
+    },
+    {
+      "value": "Białas"
+    },
+    {
+      "value": "Mika"
+    },
+    {
+      "value": "Lasota"
+    },
+    {
+      "value": "Jagodziński"
+    },
+    {
+      "value": "Szafrański"
+    },
+    {
+      "value": "Wroński"
+    },
+    {
+      "value": "Juszczak"
+    },
+    {
+      "value": "Borowiec"
+    },
+    {
+      "value": "Jagiełło"
+    },
+    {
+      "value": "Gruszczyński"
+    },
+    {
+      "value": "Sobieraj"
+    },
+    {
+      "value": "Skibiński"
+    },
+    {
+      "value": "Masłowski"
+    },
+    {
+      "value": "Dubiel"
+    },
+    {
+      "value": "Raczyński"
+    },
+    {
+      "value": "Kmiecik"
+    },
+    {
+      "value": "Karaś"
+    },
+    {
+      "value": "Bujak"
+    },
+    {
+      "value": "Dominiak"
+    },
+    {
+      "value": "Misiak"
+    },
+    {
+      "value": "Kubacki"
+    },
+    {
+      "value": "Jakubiak"
+    },
+    {
+      "value": "Bartosik"
+    },
+    {
+      "value": "Mierzejewski"
+    },
+    {
+      "value": "Pilarski"
+    },
+    {
+      "value": "Jurkiewicz"
+    },
+    {
+      "value": "Tarnowski"
+    },
+    {
+      "value": "Gutowski"
+    },
+    {
+      "value": "Jezierski"
+    },
+    {
+      "value": "Janas"
+    },
+    {
+      "value": "Stec"
+    },
+    {
+      "value": "Twardowski"
+    },
+    {
+      "value": "Florczak"
+    },
+    {
+      "value": "Bochenek"
+    },
+    {
+      "value": "Stelmach"
+    },
+    {
+      "value": "Kopczyński"
+    },
+    {
+      "value": "Dudziak"
+    },
+    {
+      "value": "Skoczylas"
+    },
+    {
+      "value": "Pasternak"
+    },
+    {
+      "value": "Bilski"
+    },
+    {
+      "value": "Zielonka"
+    },
+    {
+      "value": "Staszewski"
+    },
+    {
+      "value": "Pakuła"
+    },
+    {
+      "value": "Filipowicz"
+    },
+    {
+      "value": "Piwowarczyk"
+    },
+    {
+      "value": "Noga"
+    },
+    {
+      "value": "Milczarek"
+    },
+    {
+      "value": "Matuszak"
+    },
+    {
+      "value": "Adamus"
+    },
+    {
+      "value": "Olczak"
+    },
+    {
+      "value": "Dobrzyński"
+    },
+    {
+      "value": "Cholewa"
+    },
+    {
+      "value": "Wilczek"
+    },
+    {
+      "value": "Koza"
+    },
+    {
+      "value": "Czechowski"
+    },
+    {
+      "value": "Strzelczyk"
+    },
+    {
+      "value": "Kubica"
+    },
+    {
+      "value": "Jankowiak"
+    },
+    {
+      "value": "Kaczmarski"
+    },
+    {
+      "value": "Gaweł"
+    },
+    {
+      "value": "Misztal"
+    },
+    {
+      "value": "Zygmunt"
+    },
+    {
+      "value": "Szwed"
+    },
+    {
+      "value": "Krupiński"
+    },
+    {
+      "value": "Adamczak"
+    },
+    {
+      "value": "Adamek"
+    },
+    {
+      "value": "Sieradzki"
+    },
+    {
+      "value": "Kapusta"
+    },
+    {
+      "value": "Majcher"
+    },
+    {
+      "value": "Paczkowski"
+    },
+    {
+      "value": "Modzelewski"
+    },
+    {
+      "value": "Iwański"
+    },
+    {
+      "value": "Jackowski"
+    },
+    {
+      "value": "Malicki"
+    },
+    {
+      "value": "Adamiak"
+    },
+    {
+      "value": "Siedlecki"
+    },
+    {
+      "value": "Niedzielski"
+    },
+    {
+      "value": "Zwoliński"
+    },
+    {
+      "value": "Florek"
+    },
+    {
+      "value": "Tkocz"
+    },
+    {
+      "value": "Bober"
+    },
+    {
+      "value": "Adamowicz"
+    },
+    {
+      "value": "Kaszuba"
+    },
+    {
+      "value": "Szcześniak"
+    },
+    {
+      "value": "Grzywacz"
+    },
+    {
+      "value": "Ruciński"
+    },
+    {
+      "value": "Sochacki"
+    },
+    {
+      "value": "Dec"
+    },
+    {
+      "value": "Kwieciński"
+    },
+    {
+      "value": "Stolarczyk"
+    },
+    {
+      "value": "Niemczyk"
+    },
+    {
+      "value": "Prokop"
+    },
+    {
+      "value": "Szyszka"
+    },
+    {
+      "value": "Kuc"
+    },
+    {
+      "value": "Stanek"
+    },
+    {
+      "value": "Dudzik"
+    },
+    {
+      "value": "Molenda"
+    },
+    {
+      "value": "Mroczkowski"
+    },
+    {
+      "value": "Sitek"
+    },
+    {
+      "value": "Bieńkowski"
+    },
+    {
+      "value": "Drabik"
+    },
+    {
+      "value": "Paszkowski"
+    },
+    {
+      "value": "Rusin"
+    },
+    {
+      "value": "Guzik"
+    },
+    {
+      "value": "Czekaj"
+    },
+    {
+      "value": "Stanisławski"
+    },
+    {
+      "value": "Kowalczuk"
+    },
+    {
+      "value": "Suski"
+    },
+    {
+      "value": "Okrój"
+    },
+    {
+      "value": "Czerniak"
+    },
+    {
+      "value": "Pytel"
+    },
+    {
+      "value": "Chojnowski"
+    },
+    {
+      "value": "Kuchta"
+    },
+    {
+      "value": "Kruszewski"
+    },
+    {
+      "value": "Augustyn"
+    },
+    {
+      "value": "Puchalski"
+    },
+    {
+      "value": "Szatkowski"
+    },
+    {
+      "value": "Kaniewski"
+    },
+    {
+      "value": "Kotowski"
+    },
+    {
+      "value": "Urbanowicz"
+    },
+    {
+      "value": "Zdunek"
+    },
+    {
+      "value": "Piechota"
+    },
+    {
+      "value": "Wolak"
+    },
+    {
+      "value": "Kolasa"
+    },
+    {
+      "value": "Budzyński"
+    },
+    {
+      "value": "Kobus"
+    },
+    {
+      "value": "Skalski"
+    },
+    {
+      "value": "Motyka"
+    },
+    {
+      "value": "Bielak"
+    },
+    {
+      "value": "Michałek"
+    },
+    {
+      "value": "Szczęsny"
+    },
+    {
+      "value": "Banasik"
+    },
+    {
+      "value": "Januszewski"
+    },
+    {
+      "value": "Urbanek"
+    },
+    {
+      "value": "Pawlikowski"
+    },
+    {
+      "value": "Rosa"
+    },
+    {
+      "value": "Wypych"
+    },
+    {
+      "value": "Lipka"
+    },
+    {
+      "value": "Trzeciak"
+    },
+    {
+      "value": "Partyka"
+    },
+    {
+      "value": "Tomala"
+    },
+    {
+      "value": "Broda"
+    },
+    {
+      "value": "Zagórski"
+    }
+  ],
+  "production_ready": false
+}

@@ -1,0 +1,1527 @@
+{
+  "schema_version": 1,
+  "code": "UKR",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "lang-uk-lname-ubertext",
+      "name": "lang-uk/name_freq_dict_uk — lname_freq_dict.csv (Ukrainian surname lexical dictionary)",
+      "url": "https://github.com/lang-uk/name_freq_dict_uk/blob/a0a0b6fbd10b70dbd7c7c43cb60a1845358ade33/generated/lname_freq_dict.csv",
+      "revision": "a0a0b6fbd10b70dbd7c7c43cb60a1845358ade33",
+      "population": "Ukrainian surname list crossed with Ukrainian corpus-word lemma occurrences; includes historic/biographical names, NOT a population registry or birth statistics",
+      "method": "500 distinct source-observed surname lemmas in source corpus ordering; source frequency ignored. Source Cyrillic transformed with Ukraine Cabinet of Ministers Resolution 55 (2010) without any Cyrillic output.",
+      "license": "Upstream repository GPL-3.0; corpus/name-list data rights and suitability for redistribution require separate review",
+      "limitations": "Corpus named-entity and tokenization errors remain possible; lexical inclusion does not independently verify current residency."
+    },
+    {
+      "id": "ua-translit-resolution-55",
+      "name": "Ukraine Cabinet of Ministers Resolution No 55 of 27 January 2010",
+      "url": "https://zakon.rada.gov.ua/laws/show/55-2010-%D0%BF",
+      "method": "Official 2010 Ukrainian Cyrillic-to-Latin transliteration; initial Є/Ї/Й/Ю/Я context, зг -> zgh, soft sign/apostrophe omission"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Tymoshenko"
+    },
+    {
+      "value": "Poroshenko"
+    },
+    {
+      "value": "Yushchenko"
+    },
+    {
+      "value": "Shevchenko"
+    },
+    {
+      "value": "Lutsenko"
+    },
+    {
+      "value": "Klychko"
+    },
+    {
+      "value": "Khmelnytskyi"
+    },
+    {
+      "value": "Savchenko"
+    },
+    {
+      "value": "Kuchma"
+    },
+    {
+      "value": "Lytvyn"
+    },
+    {
+      "value": "Yatseniuk"
+    },
+    {
+      "value": "Medvedchuk"
+    },
+    {
+      "value": "Herashchenko"
+    },
+    {
+      "value": "Lysenko"
+    },
+    {
+      "value": "Hrytsenko"
+    },
+    {
+      "value": "Moroz"
+    },
+    {
+      "value": "Bondarenko"
+    },
+    {
+      "value": "Melnyk"
+    },
+    {
+      "value": "Vlasenko"
+    },
+    {
+      "value": "Popov"
+    },
+    {
+      "value": "Liashko"
+    },
+    {
+      "value": "Tomenko"
+    },
+    {
+      "value": "Sheremet"
+    },
+    {
+      "value": "Symonenko"
+    },
+    {
+      "value": "Kravchuk"
+    },
+    {
+      "value": "Kyrylenko"
+    },
+    {
+      "value": "Bandera"
+    },
+    {
+      "value": "Hrushevskyi"
+    },
+    {
+      "value": "Melnychenko"
+    },
+    {
+      "value": "Sadovyi"
+    },
+    {
+      "value": "Oliinyk"
+    },
+    {
+      "value": "Suprun"
+    },
+    {
+      "value": "Klymenko"
+    },
+    {
+      "value": "Tkachenko"
+    },
+    {
+      "value": "Mazepa"
+    },
+    {
+      "value": "Ivanov"
+    },
+    {
+      "value": "Usyk"
+    },
+    {
+      "value": "Moskal"
+    },
+    {
+      "value": "Koval"
+    },
+    {
+      "value": "Marchenko"
+    },
+    {
+      "value": "Kozak"
+    },
+    {
+      "value": "Lazarenko"
+    },
+    {
+      "value": "Pinchuk"
+    },
+    {
+      "value": "Tiahnybok"
+    },
+    {
+      "value": "Petrenko"
+    },
+    {
+      "value": "Chornovol"
+    },
+    {
+      "value": "Danyliuk"
+    },
+    {
+      "value": "Kovalenko"
+    },
+    {
+      "value": "Shufrych"
+    },
+    {
+      "value": "Martynenko"
+    },
+    {
+      "value": "Kostenko"
+    },
+    {
+      "value": "Hryshchenko"
+    },
+    {
+      "value": "Kurchenko"
+    },
+    {
+      "value": "Tymchuk"
+    },
+    {
+      "value": "Sytnyk"
+    },
+    {
+      "value": "Vitrenko"
+    },
+    {
+      "value": "Pavlenko"
+    },
+    {
+      "value": "Omelchenko"
+    },
+    {
+      "value": "Tarasiuk"
+    },
+    {
+      "value": "Korban"
+    },
+    {
+      "value": "Shevchuk"
+    },
+    {
+      "value": "Dovzhenko"
+    },
+    {
+      "value": "Hohol"
+    },
+    {
+      "value": "Kropyvnytskyi"
+    },
+    {
+      "value": "Rybak"
+    },
+    {
+      "value": "Skrypal"
+    },
+    {
+      "value": "Lukash"
+    },
+    {
+      "value": "Franko"
+    },
+    {
+      "value": "Honchar"
+    },
+    {
+      "value": "Zvarych"
+    },
+    {
+      "value": "Doroshenko"
+    },
+    {
+      "value": "Hrytsak"
+    },
+    {
+      "value": "Poltorak"
+    },
+    {
+      "value": "Sushchenko"
+    },
+    {
+      "value": "Matviienko"
+    },
+    {
+      "value": "Kerch"
+    },
+    {
+      "value": "Didenko"
+    },
+    {
+      "value": "Shcherban"
+    },
+    {
+      "value": "Stus"
+    },
+    {
+      "value": "Prysiazhniuk"
+    },
+    {
+      "value": "Duda"
+    },
+    {
+      "value": "Shukhevych"
+    },
+    {
+      "value": "Melnychuk"
+    },
+    {
+      "value": "Kovalchuk"
+    },
+    {
+      "value": "Markevych"
+    },
+    {
+      "value": "Antonenko"
+    },
+    {
+      "value": "Piskun"
+    },
+    {
+      "value": "Chornovil"
+    },
+    {
+      "value": "Kachynskyi"
+    },
+    {
+      "value": "Prykhodko"
+    },
+    {
+      "value": "Bondar"
+    },
+    {
+      "value": "Fesenko"
+    },
+    {
+      "value": "Mosiichuk"
+    },
+    {
+      "value": "Brodskyi"
+    },
+    {
+      "value": "Chaikovskyi"
+    },
+    {
+      "value": "Korniienko"
+    },
+    {
+      "value": "Ruban"
+    },
+    {
+      "value": "Prodan"
+    },
+    {
+      "value": "Vovk"
+    },
+    {
+      "value": "Kolchenko"
+    },
+    {
+      "value": "Makarenko"
+    },
+    {
+      "value": "Hryb"
+    },
+    {
+      "value": "Kobzar"
+    },
+    {
+      "value": "Lytvynenko"
+    },
+    {
+      "value": "Romaniuk"
+    },
+    {
+      "value": "Malynovskyi"
+    },
+    {
+      "value": "Horbatiuk"
+    },
+    {
+      "value": "Petliura"
+    },
+    {
+      "value": "Voloshyn"
+    },
+    {
+      "value": "Miroshnychenko"
+    },
+    {
+      "value": "Ponomarov"
+    },
+    {
+      "value": "Markov"
+    },
+    {
+      "value": "Medvedko"
+    },
+    {
+      "value": "Smolii"
+    },
+    {
+      "value": "Honcharenko"
+    },
+    {
+      "value": "Donets"
+    },
+    {
+      "value": "Khoma"
+    },
+    {
+      "value": "Kostiuk"
+    },
+    {
+      "value": "Kravtsov"
+    },
+    {
+      "value": "Tsushko"
+    },
+    {
+      "value": "Hrin"
+    },
+    {
+      "value": "Barbara"
+    },
+    {
+      "value": "Pavlovskyi"
+    },
+    {
+      "value": "Luhanskyi"
+    },
+    {
+      "value": "Fomenko"
+    },
+    {
+      "value": "Semenchenko"
+    },
+    {
+      "value": "Kulish"
+    },
+    {
+      "value": "Biletskyi"
+    },
+    {
+      "value": "Stepanenko"
+    },
+    {
+      "value": "Kotsiubynskyi"
+    },
+    {
+      "value": "Komorovskyi"
+    },
+    {
+      "value": "Taran"
+    },
+    {
+      "value": "Pavliuk"
+    },
+    {
+      "value": "Sahaidachnyi"
+    },
+    {
+      "value": "Mudryi"
+    },
+    {
+      "value": "Bezsmertnyi"
+    },
+    {
+      "value": "Popovych"
+    },
+    {
+      "value": "Hetman"
+    },
+    {
+      "value": "Semeniuk"
+    },
+    {
+      "value": "Derkach"
+    },
+    {
+      "value": "Zozulia"
+    },
+    {
+      "value": "Danylyshyn"
+    },
+    {
+      "value": "Illienko"
+    },
+    {
+      "value": "Baloh"
+    },
+    {
+      "value": "Chernenko"
+    },
+    {
+      "value": "Vasylenko"
+    },
+    {
+      "value": "Kaskiv"
+    },
+    {
+      "value": "Chalyi"
+    },
+    {
+      "value": "Chaus"
+    },
+    {
+      "value": "Tkachuk"
+    },
+    {
+      "value": "Bilous"
+    },
+    {
+      "value": "Skoropadskyi"
+    },
+    {
+      "value": "Chaika"
+    },
+    {
+      "value": "Kotliarevskyi"
+    },
+    {
+      "value": "Yurchenko"
+    },
+    {
+      "value": "Kozlovskyi"
+    },
+    {
+      "value": "Riaboshapka"
+    },
+    {
+      "value": "Mazur"
+    },
+    {
+      "value": "Rozenko"
+    },
+    {
+      "value": "Sheptytskyi"
+    },
+    {
+      "value": "Shapoval"
+    },
+    {
+      "value": "Kulyk"
+    },
+    {
+      "value": "Levytskyi"
+    },
+    {
+      "value": "Nazarenko"
+    },
+    {
+      "value": "Velykyi"
+    },
+    {
+      "value": "Lubkivskyi"
+    },
+    {
+      "value": "Tymoshchuk"
+    },
+    {
+      "value": "Stelmakh"
+    },
+    {
+      "value": "Artemenko"
+    },
+    {
+      "value": "Andrukhovych"
+    },
+    {
+      "value": "Shlapak"
+    },
+    {
+      "value": "Harmash"
+    },
+    {
+      "value": "Babchenko"
+    },
+    {
+      "value": "Kucher"
+    },
+    {
+      "value": "Demchyshyn"
+    },
+    {
+      "value": "Vynnychenko"
+    },
+    {
+      "value": "Sokolovskyi"
+    },
+    {
+      "value": "Slobodian"
+    },
+    {
+      "value": "Kharchenko"
+    },
+    {
+      "value": "Kovalov"
+    },
+    {
+      "value": "Sydorenko"
+    },
+    {
+      "value": "Ivchenko"
+    },
+    {
+      "value": "Chornyi"
+    },
+    {
+      "value": "Rudenko"
+    },
+    {
+      "value": "Bereza"
+    },
+    {
+      "value": "Loboda"
+    },
+    {
+      "value": "Davydenko"
+    },
+    {
+      "value": "Tereshchenko"
+    },
+    {
+      "value": "Hordiienko"
+    },
+    {
+      "value": "Kubiv"
+    },
+    {
+      "value": "Tulub"
+    },
+    {
+      "value": "Vysotskyi"
+    },
+    {
+      "value": "Savchuk"
+    },
+    {
+      "value": "Zubko"
+    },
+    {
+      "value": "Karpiuk"
+    },
+    {
+      "value": "Khomenko"
+    },
+    {
+      "value": "Bohun"
+    },
+    {
+      "value": "Shchors"
+    },
+    {
+      "value": "Kolomiiets"
+    },
+    {
+      "value": "Bondarchuk"
+    },
+    {
+      "value": "Mohyla"
+    },
+    {
+      "value": "Stakhovskyi"
+    },
+    {
+      "value": "Havryliuk"
+    },
+    {
+      "value": "Rudyk"
+    },
+    {
+      "value": "Yatsenko"
+    },
+    {
+      "value": "Kryklii"
+    },
+    {
+      "value": "Kurbas"
+    },
+    {
+      "value": "Chumak"
+    },
+    {
+      "value": "Orlyk"
+    },
+    {
+      "value": "Korniichuk"
+    },
+    {
+      "value": "Pavlyk"
+    },
+    {
+      "value": "Prytula"
+    },
+    {
+      "value": "Atroshenko"
+    },
+    {
+      "value": "Stupka"
+    },
+    {
+      "value": "Serdiuk"
+    },
+    {
+      "value": "Kolos"
+    },
+    {
+      "value": "Skrypnyk"
+    },
+    {
+      "value": "Havrysh"
+    },
+    {
+      "value": "Konovalets"
+    },
+    {
+      "value": "Dombrovskyi"
+    },
+    {
+      "value": "Kit"
+    },
+    {
+      "value": "Dubyna"
+    },
+    {
+      "value": "Bilyi"
+    },
+    {
+      "value": "Haiduk"
+    },
+    {
+      "value": "Yaroslavskyi"
+    },
+    {
+      "value": "Chervonenko"
+    },
+    {
+      "value": "Shtepa"
+    },
+    {
+      "value": "Romanenko"
+    },
+    {
+      "value": "Bilyk"
+    },
+    {
+      "value": "Radchenko"
+    },
+    {
+      "value": "Serhiienko"
+    },
+    {
+      "value": "Yemets"
+    },
+    {
+      "value": "Bryhynets"
+    },
+    {
+      "value": "Fedorenko"
+    },
+    {
+      "value": "Kyva"
+    },
+    {
+      "value": "Pliushch"
+    },
+    {
+      "value": "Hryhoryshyn"
+    },
+    {
+      "value": "Tkach"
+    },
+    {
+      "value": "Sirko"
+    },
+    {
+      "value": "Tymchenko"
+    },
+    {
+      "value": "Korolenko"
+    },
+    {
+      "value": "Pavelko"
+    },
+    {
+      "value": "Stefanyk"
+    },
+    {
+      "value": "Yelchenko"
+    },
+    {
+      "value": "Kulchytskyi"
+    },
+    {
+      "value": "Ostrovskyi"
+    },
+    {
+      "value": "Ostapenko"
+    },
+    {
+      "value": "Barna"
+    },
+    {
+      "value": "Mamai"
+    },
+    {
+      "value": "Vania"
+    },
+    {
+      "value": "Skrypka"
+    },
+    {
+      "value": "Holub"
+    },
+    {
+      "value": "Humeniuk"
+    },
+    {
+      "value": "Mykhailychenko"
+    },
+    {
+      "value": "Hnatiuk"
+    },
+    {
+      "value": "Kryshchenko"
+    },
+    {
+      "value": "Hrinchenko"
+    },
+    {
+      "value": "Karpenko"
+    },
+    {
+      "value": "Berezenko"
+    },
+    {
+      "value": "Soroka"
+    },
+    {
+      "value": "Blyzniuk"
+    },
+    {
+      "value": "Prokopenko"
+    },
+    {
+      "value": "Muzyka"
+    },
+    {
+      "value": "Shkil"
+    },
+    {
+      "value": "Kolesnyk"
+    },
+    {
+      "value": "Verbytskyi"
+    },
+    {
+      "value": "Kushnir"
+    },
+    {
+      "value": "Hereha"
+    },
+    {
+      "value": "Boichuk"
+    },
+    {
+      "value": "Hryhorenko"
+    },
+    {
+      "value": "Zhukovskyi"
+    },
+    {
+      "value": "Horbal"
+    },
+    {
+      "value": "Pylypenko"
+    },
+    {
+      "value": "Kniazevych"
+    },
+    {
+      "value": "Tychyna"
+    },
+    {
+      "value": "Rybachuk"
+    },
+    {
+      "value": "Plakhotniuk"
+    },
+    {
+      "value": "Bodnar"
+    },
+    {
+      "value": "Yaroshenko"
+    },
+    {
+      "value": "Palii"
+    },
+    {
+      "value": "Dovbush"
+    },
+    {
+      "value": "Yakymenko"
+    },
+    {
+      "value": "Hrabovskyi"
+    },
+    {
+      "value": "Pryhoda"
+    },
+    {
+      "value": "Nalyvaiko"
+    },
+    {
+      "value": "Volynets"
+    },
+    {
+      "value": "Kucherenko"
+    },
+    {
+      "value": "Donii"
+    },
+    {
+      "value": "Dyminskyi"
+    },
+    {
+      "value": "Muzhenko"
+    },
+    {
+      "value": "Lutskyi"
+    },
+    {
+      "value": "Kutsenko"
+    },
+    {
+      "value": "Tarasenko"
+    },
+    {
+      "value": "Lebedynskyi"
+    },
+    {
+      "value": "Romanchuk"
+    },
+    {
+      "value": "Skoryk"
+    },
+    {
+      "value": "Maiboroda"
+    },
+    {
+      "value": "Nikolaienko"
+    },
+    {
+      "value": "Panchenko"
+    },
+    {
+      "value": "Vynnyk"
+    },
+    {
+      "value": "Holovatyi"
+    },
+    {
+      "value": "Hvozdyk"
+    },
+    {
+      "value": "Holovko"
+    },
+    {
+      "value": "Stets"
+    },
+    {
+      "value": "Buriak"
+    },
+    {
+      "value": "Reva"
+    },
+    {
+      "value": "Danylenko"
+    },
+    {
+      "value": "Parkhomenko"
+    },
+    {
+      "value": "Huzhva"
+    },
+    {
+      "value": "Huzar"
+    },
+    {
+      "value": "Mitskevych"
+    },
+    {
+      "value": "Hryshko"
+    },
+    {
+      "value": "Kryvonos"
+    },
+    {
+      "value": "Onopenko"
+    },
+    {
+      "value": "Yavorivskyi"
+    },
+    {
+      "value": "Onishchuk"
+    },
+    {
+      "value": "Mykhailyk"
+    },
+    {
+      "value": "Naumenko"
+    },
+    {
+      "value": "Stetskiv"
+    },
+    {
+      "value": "Ulianchenko"
+    },
+    {
+      "value": "Vasiunyk"
+    },
+    {
+      "value": "Ratushniak"
+    },
+    {
+      "value": "Zinkevych"
+    },
+    {
+      "value": "Vyshnevetskyi"
+    },
+    {
+      "value": "Dziuba"
+    },
+    {
+      "value": "Bida"
+    },
+    {
+      "value": "Nechai"
+    },
+    {
+      "value": "Barabash"
+    },
+    {
+      "value": "Andriievskyi"
+    },
+    {
+      "value": "Kryvenko"
+    },
+    {
+      "value": "Yakovenko"
+    },
+    {
+      "value": "Poplavskyi"
+    },
+    {
+      "value": "Khmara"
+    },
+    {
+      "value": "Yaremenko"
+    },
+    {
+      "value": "Bereziuk"
+    },
+    {
+      "value": "Fedetskyi"
+    },
+    {
+      "value": "Matviichuk"
+    },
+    {
+      "value": "Vozniak"
+    },
+    {
+      "value": "Prystaiko"
+    },
+    {
+      "value": "Ostrozkyi"
+    },
+    {
+      "value": "Telychenko"
+    },
+    {
+      "value": "Mahera"
+    },
+    {
+      "value": "Tarasov"
+    },
+    {
+      "value": "Fedorchuk"
+    },
+    {
+      "value": "Antoniuk"
+    },
+    {
+      "value": "Cherniak"
+    },
+    {
+      "value": "Dmytrenko"
+    },
+    {
+      "value": "Kozachenko"
+    },
+    {
+      "value": "Salo"
+    },
+    {
+      "value": "Orobets"
+    },
+    {
+      "value": "Lozynskyi"
+    },
+    {
+      "value": "Karas"
+    },
+    {
+      "value": "Savka"
+    },
+    {
+      "value": "Korchak"
+    },
+    {
+      "value": "Lesyk"
+    },
+    {
+      "value": "Shnaider"
+    },
+    {
+      "value": "Bilan"
+    },
+    {
+      "value": "Kruk"
+    },
+    {
+      "value": "Mohylevska"
+    },
+    {
+      "value": "Rylskyi"
+    },
+    {
+      "value": "Babych"
+    },
+    {
+      "value": "Danylko"
+    },
+    {
+      "value": "Farion"
+    },
+    {
+      "value": "Zasiadko"
+    },
+    {
+      "value": "Ilchenko"
+    },
+    {
+      "value": "Riabchenko"
+    },
+    {
+      "value": "Apostol"
+    },
+    {
+      "value": "Ivanenko"
+    },
+    {
+      "value": "Kotliar"
+    },
+    {
+      "value": "Zahorodniuk"
+    },
+    {
+      "value": "Korzh"
+    },
+    {
+      "value": "Tarnovskyi"
+    },
+    {
+      "value": "Drach"
+    },
+    {
+      "value": "Ohiienko"
+    },
+    {
+      "value": "Zlochevskyi"
+    },
+    {
+      "value": "Zalizniak"
+    },
+    {
+      "value": "Borovyk"
+    },
+    {
+      "value": "Odarchenko"
+    },
+    {
+      "value": "Vasko"
+    },
+    {
+      "value": "Satsiuk"
+    },
+    {
+      "value": "Babak"
+    },
+    {
+      "value": "Zhuravel"
+    },
+    {
+      "value": "Betsa"
+    },
+    {
+      "value": "Mykolaichuk"
+    },
+    {
+      "value": "Bek"
+    },
+    {
+      "value": "Vashchenko"
+    },
+    {
+      "value": "Perebyinis"
+    },
+    {
+      "value": "Tereshchuk"
+    },
+    {
+      "value": "Shcherbyna"
+    },
+    {
+      "value": "Kril"
+    },
+    {
+      "value": "Sliusarchuk"
+    },
+    {
+      "value": "Konovaliuk"
+    },
+    {
+      "value": "Demko"
+    },
+    {
+      "value": "Korchynskyi"
+    },
+    {
+      "value": "Osadcha"
+    },
+    {
+      "value": "Shulha"
+    },
+    {
+      "value": "Dubnevych"
+    },
+    {
+      "value": "Zaiets"
+    },
+    {
+      "value": "Oleshko"
+    },
+    {
+      "value": "Yurchyshyn"
+    },
+    {
+      "value": "Nahirnyi"
+    },
+    {
+      "value": "Vakulenko"
+    },
+    {
+      "value": "Virastiuk"
+    },
+    {
+      "value": "Maksymenko"
+    },
+    {
+      "value": "Shcherbak"
+    },
+    {
+      "value": "Horyn"
+    },
+    {
+      "value": "Nebozhenko"
+    },
+    {
+      "value": "Palamarchuk"
+    },
+    {
+      "value": "Povalii"
+    },
+    {
+      "value": "Kovtun"
+    },
+    {
+      "value": "Yavorskyi"
+    },
+    {
+      "value": "Samoilovych"
+    },
+    {
+      "value": "Syrotiuk"
+    },
+    {
+      "value": "Stetsko"
+    },
+    {
+      "value": "Korniiets"
+    },
+    {
+      "value": "Horobets"
+    },
+    {
+      "value": "Rozumovskyi"
+    },
+    {
+      "value": "Yevtushenko"
+    },
+    {
+      "value": "Saienko"
+    },
+    {
+      "value": "Kalynovskyi"
+    },
+    {
+      "value": "Filipchuk"
+    },
+    {
+      "value": "Shymkiv"
+    },
+    {
+      "value": "Nikolenko"
+    },
+    {
+      "value": "Mykolenko"
+    },
+    {
+      "value": "Lys"
+    },
+    {
+      "value": "Rak"
+    },
+    {
+      "value": "Hryshchuk"
+    },
+    {
+      "value": "Hloba"
+    },
+    {
+      "value": "Starytskyi"
+    },
+    {
+      "value": "Cherniavskyi"
+    },
+    {
+      "value": "Borodai"
+    },
+    {
+      "value": "Tiutiunnyk"
+    },
+    {
+      "value": "Sych"
+    },
+    {
+      "value": "Malkovych"
+    },
+    {
+      "value": "Pavlychko"
+    },
+    {
+      "value": "Kliuchkovskyi"
+    },
+    {
+      "value": "Podoliak"
+    },
+    {
+      "value": "Mykhailenko"
+    },
+    {
+      "value": "Ostapchuk"
+    },
+    {
+      "value": "Danko"
+    },
+    {
+      "value": "Rybalko"
+    },
+    {
+      "value": "Shevtsov"
+    },
+    {
+      "value": "Varchenko"
+    },
+    {
+      "value": "Liubchenko"
+    },
+    {
+      "value": "Herasymenko"
+    },
+    {
+      "value": "Kohut"
+    },
+    {
+      "value": "Franchuk"
+    },
+    {
+      "value": "Bilozir"
+    },
+    {
+      "value": "Kvit"
+    },
+    {
+      "value": "Fedko"
+    },
+    {
+      "value": "Zaporozhets"
+    },
+    {
+      "value": "Haidai"
+    },
+    {
+      "value": "Komarnytskyi"
+    },
+    {
+      "value": "Zinko"
+    },
+    {
+      "value": "Vasianovych"
+    },
+    {
+      "value": "Sereda"
+    },
+    {
+      "value": "Briukhovetskyi"
+    },
+    {
+      "value": "Zhelezniak"
+    },
+    {
+      "value": "Hlushchenko"
+    },
+    {
+      "value": "Syroid"
+    },
+    {
+      "value": "Kramarenko"
+    },
+    {
+      "value": "Zhuravskyi"
+    },
+    {
+      "value": "Hladkyi"
+    },
+    {
+      "value": "Bilostotskyi"
+    },
+    {
+      "value": "Kovalskyi"
+    },
+    {
+      "value": "Khanenko"
+    },
+    {
+      "value": "Makarevych"
+    },
+    {
+      "value": "Kysil"
+    },
+    {
+      "value": "Kovaliv"
+    },
+    {
+      "value": "Huk"
+    },
+    {
+      "value": "Potebenko"
+    },
+    {
+      "value": "Antonych"
+    },
+    {
+      "value": "Kachur"
+    },
+    {
+      "value": "Hinzburh"
+    },
+    {
+      "value": "Sanin"
+    },
+    {
+      "value": "Dmytryk"
+    },
+    {
+      "value": "Fedyna"
+    },
+    {
+      "value": "Sharii"
+    },
+    {
+      "value": "Yeremenko"
+    },
+    {
+      "value": "Kuzmuk"
+    },
+    {
+      "value": "Kaspruk"
+    },
+    {
+      "value": "Sulyma"
+    },
+    {
+      "value": "Huberskyi"
+    },
+    {
+      "value": "Shpak"
+    },
+    {
+      "value": "Koliada"
+    },
+    {
+      "value": "Nechyporenko"
+    },
+    {
+      "value": "Momot"
+    },
+    {
+      "value": "Sosiura"
+    },
+    {
+      "value": "Krupskyi"
+    },
+    {
+      "value": "Hirnyk"
+    },
+    {
+      "value": "Drozdov"
+    },
+    {
+      "value": "Povoroznyk"
+    },
+    {
+      "value": "Hlushkov"
+    },
+    {
+      "value": "Ustenko"
+    },
+    {
+      "value": "Hryniv"
+    },
+    {
+      "value": "Karpa"
+    },
+    {
+      "value": "Zabolotnyi"
+    },
+    {
+      "value": "Kostyk"
+    },
+    {
+      "value": "Zalishchuk"
+    },
+    {
+      "value": "Hrytsai"
+    }
+  ],
+  "production_ready": false
+}

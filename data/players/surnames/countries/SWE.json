@@ -1,0 +1,1527 @@
+{
+  "schema_version": 1,
+  "code": "SWE",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "scb-derived-surnames-2013",
+      "url": "https://github.com/swedishdata/personal-names/blob/d123ecb2ec91ecd4ceb466691cddfcbe773b764f/last-names.csv",
+      "upstream": "Statistics Sweden (SCB) and other cited sources, derivative personal-names corpus",
+      "geographic_scope": "Sweden; recorded surnames among residents",
+      "population_period": "Source compilation circa 2013",
+      "verification": "500 unique names drawn evenly across 1,000 source forms, retaining major national surnames; no source frequency imported",
+      "limitations": "Compiled historical secondary list, not a fresh comprehensive census; original statistical licence and exact year need verification"
+    },
+    {
+      "id": "skatteverket-current-methodology",
+      "url": "https://www.skatteverket.se/privat/folkbokforing/namn/bytaefternamn/sokblanddevanligasteefternamnen.4.515a6be615c637b9aa48e09.html",
+      "geographic_scope": "Sweden; nationally registered surnames",
+      "population_period": "2026",
+      "verification": "Official current common-surname list is context for historical source, not evidence of every selected historical name"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abrahamsson"
+    },
+    {
+      "value": "Adamsson"
+    },
+    {
+      "value": "Adolfsson"
+    },
+    {
+      "value": "Ahl"
+    },
+    {
+      "value": "Ahlberg"
+    },
+    {
+      "value": "Ahlén"
+    },
+    {
+      "value": "Ahlgren"
+    },
+    {
+      "value": "Ahlin"
+    },
+    {
+      "value": "Ahlqvist"
+    },
+    {
+      "value": "Ahlstrand"
+    },
+    {
+      "value": "Ahlström"
+    },
+    {
+      "value": "Albertsson"
+    },
+    {
+      "value": "Albinsson"
+    },
+    {
+      "value": "Alexandersson"
+    },
+    {
+      "value": "Alfredsson"
+    },
+    {
+      "value": "Algotsson"
+    },
+    {
+      "value": "Alm"
+    },
+    {
+      "value": "Almén"
+    },
+    {
+      "value": "Almgren"
+    },
+    {
+      "value": "Almqvist"
+    },
+    {
+      "value": "Almström"
+    },
+    {
+      "value": "Andersen"
+    },
+    {
+      "value": "Andersson"
+    },
+    {
+      "value": "Andreasson"
+    },
+    {
+      "value": "Antonsson"
+    },
+    {
+      "value": "Appelqvist"
+    },
+    {
+      "value": "Aronsson"
+    },
+    {
+      "value": "Ask"
+    },
+    {
+      "value": "Asp"
+    },
+    {
+      "value": "Augustsson"
+    },
+    {
+      "value": "Axén"
+    },
+    {
+      "value": "Back"
+    },
+    {
+      "value": "Backman"
+    },
+    {
+      "value": "Beckman"
+    },
+    {
+      "value": "Bengtsson"
+    },
+    {
+      "value": "Benjaminsson"
+    },
+    {
+      "value": "Berg"
+    },
+    {
+      "value": "Bergendahl"
+    },
+    {
+      "value": "Berggren"
+    },
+    {
+      "value": "Berglind"
+    },
+    {
+      "value": "Berglund"
+    },
+    {
+      "value": "Bergmark"
+    },
+    {
+      "value": "Bergqvist"
+    },
+    {
+      "value": "Bergsten"
+    },
+    {
+      "value": "Bergström"
+    },
+    {
+      "value": "Berndtsson"
+    },
+    {
+      "value": "Berntsson"
+    },
+    {
+      "value": "Birgersson"
+    },
+    {
+      "value": "Björck"
+    },
+    {
+      "value": "Björkman"
+    },
+    {
+      "value": "Björling"
+    },
+    {
+      "value": "Björnsson"
+    },
+    {
+      "value": "Bladh"
+    },
+    {
+      "value": "Blixt"
+    },
+    {
+      "value": "Blomdahl"
+    },
+    {
+      "value": "Blomkvist"
+    },
+    {
+      "value": "Blomqvist"
+    },
+    {
+      "value": "Boberg"
+    },
+    {
+      "value": "Bodin"
+    },
+    {
+      "value": "Bohlin"
+    },
+    {
+      "value": "Bolin"
+    },
+    {
+      "value": "Bondesson"
+    },
+    {
+      "value": "Borg"
+    },
+    {
+      "value": "Bratt"
+    },
+    {
+      "value": "Broberg"
+    },
+    {
+      "value": "Brodin"
+    },
+    {
+      "value": "Broman"
+    },
+    {
+      "value": "Broström"
+    },
+    {
+      "value": "Brundin"
+    },
+    {
+      "value": "Brändström"
+    },
+    {
+      "value": "Burman"
+    },
+    {
+      "value": "Bylund"
+    },
+    {
+      "value": "Bäcklund"
+    },
+    {
+      "value": "Bäckström"
+    },
+    {
+      "value": "Börjesson"
+    },
+    {
+      "value": "Carlén"
+    },
+    {
+      "value": "Carlsson"
+    },
+    {
+      "value": "Carlström"
+    },
+    {
+      "value": "Cedergren"
+    },
+    {
+      "value": "Cederlund"
+    },
+    {
+      "value": "Christensen"
+    },
+    {
+      "value": "Christiansson"
+    },
+    {
+      "value": "Classon"
+    },
+    {
+      "value": "Dahlberg"
+    },
+    {
+      "value": "Dahlgren"
+    },
+    {
+      "value": "Dahlman"
+    },
+    {
+      "value": "Dahlström"
+    },
+    {
+      "value": "Damberg"
+    },
+    {
+      "value": "Davidsson"
+    },
+    {
+      "value": "Edgren"
+    },
+    {
+      "value": "Edin"
+    },
+    {
+      "value": "Edman"
+    },
+    {
+      "value": "Edvardsson"
+    },
+    {
+      "value": "Ehn"
+    },
+    {
+      "value": "Ekberg"
+    },
+    {
+      "value": "Ekblom"
+    },
+    {
+      "value": "Ekelund"
+    },
+    {
+      "value": "Eklund"
+    },
+    {
+      "value": "Ekman"
+    },
+    {
+      "value": "Ekstrand"
+    },
+    {
+      "value": "Ekvall"
+    },
+    {
+      "value": "Elfström"
+    },
+    {
+      "value": "Eliasson"
+    },
+    {
+      "value": "Emanuelsson"
+    },
+    {
+      "value": "Enberg"
+    },
+    {
+      "value": "Eng"
+    },
+    {
+      "value": "Engblom"
+    },
+    {
+      "value": "Englund"
+    },
+    {
+      "value": "Engqvist"
+    },
+    {
+      "value": "Engström"
+    },
+    {
+      "value": "Enström"
+    },
+    {
+      "value": "Ericsson"
+    },
+    {
+      "value": "Eriksson"
+    },
+    {
+      "value": "Erlandsson"
+    },
+    {
+      "value": "Esbjörnsson"
+    },
+    {
+      "value": "Evertsson"
+    },
+    {
+      "value": "Fagerström"
+    },
+    {
+      "value": "Fahlgren"
+    },
+    {
+      "value": "Falck"
+    },
+    {
+      "value": "Fast"
+    },
+    {
+      "value": "Fernström"
+    },
+    {
+      "value": "Flink"
+    },
+    {
+      "value": "Fogelberg"
+    },
+    {
+      "value": "Fors"
+    },
+    {
+      "value": "Forsberg"
+    },
+    {
+      "value": "Forsgren"
+    },
+    {
+      "value": "Forsman"
+    },
+    {
+      "value": "Forsström"
+    },
+    {
+      "value": "Fransson"
+    },
+    {
+      "value": "Fredin"
+    },
+    {
+      "value": "Fredriksson"
+    },
+    {
+      "value": "Friberg"
+    },
+    {
+      "value": "Frid"
+    },
+    {
+      "value": "Fridell"
+    },
+    {
+      "value": "Fridh"
+    },
+    {
+      "value": "Frisk"
+    },
+    {
+      "value": "From"
+    },
+    {
+      "value": "Fröjd"
+    },
+    {
+      "value": "Gabrielsson"
+    },
+    {
+      "value": "Gidlund"
+    },
+    {
+      "value": "Glad"
+    },
+    {
+      "value": "Grahn"
+    },
+    {
+      "value": "Gran"
+    },
+    {
+      "value": "Granat"
+    },
+    {
+      "value": "Grankvist"
+    },
+    {
+      "value": "Granqvist"
+    },
+    {
+      "value": "Gren"
+    },
+    {
+      "value": "Grundström"
+    },
+    {
+      "value": "Grönlund"
+    },
+    {
+      "value": "Grönvall"
+    },
+    {
+      "value": "Gullberg"
+    },
+    {
+      "value": "Gunnarsson"
+    },
+    {
+      "value": "Gustafsson"
+    },
+    {
+      "value": "Gustavsson"
+    },
+    {
+      "value": "Hagberg"
+    },
+    {
+      "value": "Haglund"
+    },
+    {
+      "value": "Hagström"
+    },
+    {
+      "value": "Hall"
+    },
+    {
+      "value": "Halldén"
+    },
+    {
+      "value": "Hallén"
+    },
+    {
+      "value": "Hallin"
+    },
+    {
+      "value": "Hallqvist"
+    },
+    {
+      "value": "Hamberg"
+    },
+    {
+      "value": "Hammar"
+    },
+    {
+      "value": "Hammarlund"
+    },
+    {
+      "value": "Hansen"
+    },
+    {
+      "value": "Hansson"
+    },
+    {
+      "value": "Haraldsson"
+    },
+    {
+      "value": "Hed"
+    },
+    {
+      "value": "Hedblom"
+    },
+    {
+      "value": "Hedin"
+    },
+    {
+      "value": "Hedman"
+    },
+    {
+      "value": "Hedström"
+    },
+    {
+      "value": "Helgesson"
+    },
+    {
+      "value": "Hellberg"
+    },
+    {
+      "value": "Hellman"
+    },
+    {
+      "value": "Hellsten"
+    },
+    {
+      "value": "Hellström"
+    },
+    {
+      "value": "Hemmingsson"
+    },
+    {
+      "value": "Henning"
+    },
+    {
+      "value": "Hermansson"
+    },
+    {
+      "value": "Hjelm"
+    },
+    {
+      "value": "Hjorth"
+    },
+    {
+      "value": "Holgersson"
+    },
+    {
+      "value": "Holmén"
+    },
+    {
+      "value": "Holmgren"
+    },
+    {
+      "value": "Holmlund"
+    },
+    {
+      "value": "Holmqvist"
+    },
+    {
+      "value": "Holmström"
+    },
+    {
+      "value": "Holst"
+    },
+    {
+      "value": "Hultberg"
+    },
+    {
+      "value": "Hultgren"
+    },
+    {
+      "value": "Hultman"
+    },
+    {
+      "value": "Hurtig"
+    },
+    {
+      "value": "Hård"
+    },
+    {
+      "value": "Häggström"
+    },
+    {
+      "value": "Häll"
+    },
+    {
+      "value": "Hällgren"
+    },
+    {
+      "value": "Höglund"
+    },
+    {
+      "value": "Högström"
+    },
+    {
+      "value": "Ingemarsson"
+    },
+    {
+      "value": "Isaksson"
+    },
+    {
+      "value": "Israelsson"
+    },
+    {
+      "value": "Jacobsson"
+    },
+    {
+      "value": "Jansson"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "Joelsson"
+    },
+    {
+      "value": "Johannisson"
+    },
+    {
+      "value": "Johansson"
+    },
+    {
+      "value": "Johnsson"
+    },
+    {
+      "value": "Jonsson"
+    },
+    {
+      "value": "Juhlin"
+    },
+    {
+      "value": "Jönsson"
+    },
+    {
+      "value": "Kallin"
+    },
+    {
+      "value": "Karlén"
+    },
+    {
+      "value": "Karlsson"
+    },
+    {
+      "value": "Karlström"
+    },
+    {
+      "value": "Kihlberg"
+    },
+    {
+      "value": "Kjell"
+    },
+    {
+      "value": "Kjellberg"
+    },
+    {
+      "value": "Kjellin"
+    },
+    {
+      "value": "Klang"
+    },
+    {
+      "value": "Klingberg"
+    },
+    {
+      "value": "Klint"
+    },
+    {
+      "value": "Konradsson"
+    },
+    {
+      "value": "Krantz"
+    },
+    {
+      "value": "Kristiansson"
+    },
+    {
+      "value": "Kron"
+    },
+    {
+      "value": "Kroon"
+    },
+    {
+      "value": "Kullberg"
+    },
+    {
+      "value": "Kvist"
+    },
+    {
+      "value": "Källberg"
+    },
+    {
+      "value": "Källström"
+    },
+    {
+      "value": "Kämpe"
+    },
+    {
+      "value": "Lagergren"
+    },
+    {
+      "value": "Lagerström"
+    },
+    {
+      "value": "Landberg"
+    },
+    {
+      "value": "Landgren"
+    },
+    {
+      "value": "Landström"
+    },
+    {
+      "value": "Lantz"
+    },
+    {
+      "value": "Larsson"
+    },
+    {
+      "value": "Leander"
+    },
+    {
+      "value": "Leijon"
+    },
+    {
+      "value": "Lennartsson"
+    },
+    {
+      "value": "Lidberg"
+    },
+    {
+      "value": "Lidström"
+    },
+    {
+      "value": "Lilja"
+    },
+    {
+      "value": "Liljegren"
+    },
+    {
+      "value": "Lindahl"
+    },
+    {
+      "value": "Lindberg"
+    },
+    {
+      "value": "Lindblad"
+    },
+    {
+      "value": "Lindbom"
+    },
+    {
+      "value": "Lindbäck"
+    },
+    {
+      "value": "Linde"
+    },
+    {
+      "value": "Lindell"
+    },
+    {
+      "value": "Linderoth"
+    },
+    {
+      "value": "Lindgren"
+    },
+    {
+      "value": "Lindh"
+    },
+    {
+      "value": "Lindmark"
+    },
+    {
+      "value": "Lindqvist"
+    },
+    {
+      "value": "Lindskog"
+    },
+    {
+      "value": "Lindstrand"
+    },
+    {
+      "value": "Lindvall"
+    },
+    {
+      "value": "Ling"
+    },
+    {
+      "value": "Ljungdahl"
+    },
+    {
+      "value": "Ljungkvist"
+    },
+    {
+      "value": "Ljungström"
+    },
+    {
+      "value": "Lorentzon"
+    },
+    {
+      "value": "Ludvigsson"
+    },
+    {
+      "value": "Lund"
+    },
+    {
+      "value": "Lundberg"
+    },
+    {
+      "value": "Lundborg"
+    },
+    {
+      "value": "Lundén"
+    },
+    {
+      "value": "Lundholm"
+    },
+    {
+      "value": "Lundin"
+    },
+    {
+      "value": "Lundmark"
+    },
+    {
+      "value": "Lundqvist"
+    },
+    {
+      "value": "Lundström"
+    },
+    {
+      "value": "Lång"
+    },
+    {
+      "value": "Löf"
+    },
+    {
+      "value": "Löfdahl"
+    },
+    {
+      "value": "Löfqvist"
+    },
+    {
+      "value": "Löfstrand"
+    },
+    {
+      "value": "Lönnqvist"
+    },
+    {
+      "value": "Lööf"
+    },
+    {
+      "value": "Magnusson"
+    },
+    {
+      "value": "Malm"
+    },
+    {
+      "value": "Malmberg"
+    },
+    {
+      "value": "Malmgren"
+    },
+    {
+      "value": "Malmqvist"
+    },
+    {
+      "value": "Malmsten"
+    },
+    {
+      "value": "Markström"
+    },
+    {
+      "value": "Martinsson"
+    },
+    {
+      "value": "Mattiasson"
+    },
+    {
+      "value": "Mattsson"
+    },
+    {
+      "value": "Meijer"
+    },
+    {
+      "value": "Melin"
+    },
+    {
+      "value": "Mikaelsson"
+    },
+    {
+      "value": "Modig"
+    },
+    {
+      "value": "Molander"
+    },
+    {
+      "value": "Morén"
+    },
+    {
+      "value": "Mossberg"
+    },
+    {
+      "value": "Månsson"
+    },
+    {
+      "value": "Möller"
+    },
+    {
+      "value": "Nelson"
+    },
+    {
+      "value": "Niemi"
+    },
+    {
+      "value": "Nilsson"
+    },
+    {
+      "value": "Nord"
+    },
+    {
+      "value": "Nordahl"
+    },
+    {
+      "value": "Nordell"
+    },
+    {
+      "value": "Nordgren"
+    },
+    {
+      "value": "Nordkvist"
+    },
+    {
+      "value": "Nordling"
+    },
+    {
+      "value": "Nordmark"
+    },
+    {
+      "value": "Nordqvist"
+    },
+    {
+      "value": "Nordström"
+    },
+    {
+      "value": "Norén"
+    },
+    {
+      "value": "Norin"
+    },
+    {
+      "value": "Norling"
+    },
+    {
+      "value": "Norman"
+    },
+    {
+      "value": "Norrman"
+    },
+    {
+      "value": "Nyberg"
+    },
+    {
+      "value": "Nyholm"
+    },
+    {
+      "value": "Nylén"
+    },
+    {
+      "value": "Nyman"
+    },
+    {
+      "value": "Nyrén"
+    },
+    {
+      "value": "Nyström"
+    },
+    {
+      "value": "Näsman"
+    },
+    {
+      "value": "Ohlsson"
+    },
+    {
+      "value": "Olausson"
+    },
+    {
+      "value": "Olofsson"
+    },
+    {
+      "value": "Olsen"
+    },
+    {
+      "value": "Olsson"
+    },
+    {
+      "value": "Oskarsson"
+    },
+    {
+      "value": "Palm"
+    },
+    {
+      "value": "Palmér"
+    },
+    {
+      "value": "Pedersen"
+    },
+    {
+      "value": "Persson"
+    },
+    {
+      "value": "Peterson"
+    },
+    {
+      "value": "Petersson"
+    },
+    {
+      "value": "Pettersson"
+    },
+    {
+      "value": "Pålsson"
+    },
+    {
+      "value": "Qvist"
+    },
+    {
+      "value": "Rahm"
+    },
+    {
+      "value": "Ramström"
+    },
+    {
+      "value": "Rask"
+    },
+    {
+      "value": "Rasmusson"
+    },
+    {
+      "value": "Reinholdsson"
+    },
+    {
+      "value": "Renström"
+    },
+    {
+      "value": "Ringström"
+    },
+    {
+      "value": "Risberg"
+    },
+    {
+      "value": "Rodin"
+    },
+    {
+      "value": "Rosander"
+    },
+    {
+      "value": "Rosell"
+    },
+    {
+      "value": "Rosén"
+    },
+    {
+      "value": "Rosendahl"
+    },
+    {
+      "value": "Rosenkvist"
+    },
+    {
+      "value": "Rosvall"
+    },
+    {
+      "value": "Roth"
+    },
+    {
+      "value": "Rundgren"
+    },
+    {
+      "value": "Rutgersson"
+    },
+    {
+      "value": "Rydberg"
+    },
+    {
+      "value": "Rydström"
+    },
+    {
+      "value": "Rylander"
+    },
+    {
+      "value": "Rönn"
+    },
+    {
+      "value": "Rönnbäck"
+    },
+    {
+      "value": "Sahlén"
+    },
+    {
+      "value": "Sahlström"
+    },
+    {
+      "value": "Samuelsson"
+    },
+    {
+      "value": "Sand"
+    },
+    {
+      "value": "Sandberg"
+    },
+    {
+      "value": "Sandén"
+    },
+    {
+      "value": "Sandgren"
+    },
+    {
+      "value": "Sandqvist"
+    },
+    {
+      "value": "Schultz"
+    },
+    {
+      "value": "Seger"
+    },
+    {
+      "value": "Selberg"
+    },
+    {
+      "value": "Sigfridsson"
+    },
+    {
+      "value": "Sjunnesson"
+    },
+    {
+      "value": "Sjöblom"
+    },
+    {
+      "value": "Sjödin"
+    },
+    {
+      "value": "Sjöholm"
+    },
+    {
+      "value": "Sjölander"
+    },
+    {
+      "value": "Sjölund"
+    },
+    {
+      "value": "Sjöstedt"
+    },
+    {
+      "value": "Sjöstrand"
+    },
+    {
+      "value": "Sjöö"
+    },
+    {
+      "value": "Skoog"
+    },
+    {
+      "value": "Smedberg"
+    },
+    {
+      "value": "Sonesson"
+    },
+    {
+      "value": "Staaf"
+    },
+    {
+      "value": "Steen"
+    },
+    {
+      "value": "Sten"
+    },
+    {
+      "value": "Stenberg"
+    },
+    {
+      "value": "Stenman"
+    },
+    {
+      "value": "Stenqvist"
+    },
+    {
+      "value": "Stenström"
+    },
+    {
+      "value": "Stolpe"
+    },
+    {
+      "value": "Stolt"
+    },
+    {
+      "value": "Strand"
+    },
+    {
+      "value": "Strid"
+    },
+    {
+      "value": "Strömbäck"
+    },
+    {
+      "value": "Strömqvist"
+    },
+    {
+      "value": "Sturesson"
+    },
+    {
+      "value": "Stål"
+    },
+    {
+      "value": "Stålberg"
+    },
+    {
+      "value": "Sundelin"
+    },
+    {
+      "value": "Sundén"
+    },
+    {
+      "value": "Sundin"
+    },
+    {
+      "value": "Sundman"
+    },
+    {
+      "value": "Sundqvist"
+    },
+    {
+      "value": "Sundvall"
+    },
+    {
+      "value": "Svahn"
+    },
+    {
+      "value": "Svan"
+    },
+    {
+      "value": "Svanström"
+    },
+    {
+      "value": "Svedin"
+    },
+    {
+      "value": "Svenningsson"
+    },
+    {
+      "value": "Svensson"
+    },
+    {
+      "value": "Säfström"
+    },
+    {
+      "value": "Söder"
+    },
+    {
+      "value": "Söderberg"
+    },
+    {
+      "value": "Södergren"
+    },
+    {
+      "value": "Söderkvist"
+    },
+    {
+      "value": "Söderlund"
+    },
+    {
+      "value": "Söderqvist"
+    },
+    {
+      "value": "Sörman"
+    },
+    {
+      "value": "Tell"
+    },
+    {
+      "value": "Thelin"
+    },
+    {
+      "value": "Thor"
+    },
+    {
+      "value": "Thorell"
+    },
+    {
+      "value": "Thorsell"
+    },
+    {
+      "value": "Thunberg"
+    },
+    {
+      "value": "Thörn"
+    },
+    {
+      "value": "Tillman"
+    },
+    {
+      "value": "Tornberg"
+    },
+    {
+      "value": "Trulsson"
+    },
+    {
+      "value": "Tufvesson"
+    },
+    {
+      "value": "Törnberg"
+    },
+    {
+      "value": "Törngren"
+    },
+    {
+      "value": "Törnqvist"
+    },
+    {
+      "value": "Vahlberg"
+    },
+    {
+      "value": "Vall"
+    },
+    {
+      "value": "Vallgren"
+    },
+    {
+      "value": "Vedin"
+    },
+    {
+      "value": "Vennberg"
+    },
+    {
+      "value": "Vestberg"
+    },
+    {
+      "value": "Vestergren"
+    },
+    {
+      "value": "Vestin"
+    },
+    {
+      "value": "Vestlund"
+    },
+    {
+      "value": "Viberg"
+    },
+    {
+      "value": "Vikberg"
+    },
+    {
+      "value": "Vikman"
+    },
+    {
+      "value": "Viktorsson"
+    },
+    {
+      "value": "Vilhelmsson"
+    },
+    {
+      "value": "Von"
+    },
+    {
+      "value": "Wahlgren"
+    },
+    {
+      "value": "Wahlström"
+    },
+    {
+      "value": "Wallén"
+    },
+    {
+      "value": "Wallin"
+    },
+    {
+      "value": "Wallström"
+    },
+    {
+      "value": "Wedin"
+    },
+    {
+      "value": "Welin"
+    },
+    {
+      "value": "Wennberg"
+    },
+    {
+      "value": "Wennström"
+    },
+    {
+      "value": "Wessman"
+    },
+    {
+      "value": "Westerberg"
+    },
+    {
+      "value": "Westerlund"
+    },
+    {
+      "value": "Westin"
+    },
+    {
+      "value": "Westlund"
+    },
+    {
+      "value": "Wiberg"
+    },
+    {
+      "value": "Wickström"
+    },
+    {
+      "value": "Widén"
+    },
+    {
+      "value": "Wihlborg"
+    },
+    {
+      "value": "Wik"
+    },
+    {
+      "value": "Wikman"
+    },
+    {
+      "value": "Winberg"
+    },
+    {
+      "value": "Zachrisson"
+    },
+    {
+      "value": "Zakrisson"
+    },
+    {
+      "value": "Zetterberg"
+    },
+    {
+      "value": "Zetterström"
+    },
+    {
+      "value": "Ågren"
+    },
+    {
+      "value": "Åhlén"
+    },
+    {
+      "value": "Åhman"
+    },
+    {
+      "value": "Åkerberg"
+    },
+    {
+      "value": "Åkerlind"
+    },
+    {
+      "value": "Åkerman"
+    },
+    {
+      "value": "Åkesson"
+    },
+    {
+      "value": "Ålund"
+    },
+    {
+      "value": "Åslund"
+    },
+    {
+      "value": "Åström"
+    },
+    {
+      "value": "Ödman"
+    },
+    {
+      "value": "Öhlin"
+    },
+    {
+      "value": "Öhman"
+    },
+    {
+      "value": "Ölund"
+    },
+    {
+      "value": "Öqvist"
+    },
+    {
+      "value": "Östberg"
+    },
+    {
+      "value": "Östergren"
+    },
+    {
+      "value": "Österman"
+    },
+    {
+      "value": "Östling"
+    },
+    {
+      "value": "Östman"
+    }
+  ],
+  "production_ready": false
+}

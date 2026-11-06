@@ -1,0 +1,1520 @@
+{
+  "schema_version": 1,
+  "code": "MAR",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "title": "Country-labelled Moroccan surname list, secondary compilation",
+      "source_url": "https://github.com/kg7pnh/names-database/blob/5818e11e06a0322b163f1326a3d2eec091aa66b5/csv/moroccan/surnames.csv",
+      "source_commit": "5818e11e06a0322b163f1326a3d2eec091aa66b5",
+      "source_blob_sha": "c54c59c2f732667c87f00eec3e83060ad25979f2",
+      "license": "not declared",
+      "romanization_convention": "Original published Latin spellings, no automatic Arabic romanization",
+      "limitations": "Country association from secondary surname category; residency and licence not independently audited"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Aamara"
+    },
+    {
+      "value": "Aatabou"
+    },
+    {
+      "value": "Abarhoun"
+    },
+    {
+      "value": "Abdallah"
+    },
+    {
+      "value": "Abdelaziz"
+    },
+    {
+      "value": "Abdellah"
+    },
+    {
+      "value": "Abdessamad"
+    },
+    {
+      "value": "Abdurrahman"
+    },
+    {
+      "value": "Abergel"
+    },
+    {
+      "value": "Abidi"
+    },
+    {
+      "value": "Aboucherouane"
+    },
+    {
+      "value": "Abrous"
+    },
+    {
+      "value": "Abuhatzeira"
+    },
+    {
+      "value": "Achaari"
+    },
+    {
+      "value": "Achik"
+    },
+    {
+      "value": "Adarrak"
+    },
+    {
+      "value": "Adjurru"
+    },
+    {
+      "value": "Adnane"
+    },
+    {
+      "value": "Africanus"
+    },
+    {
+      "value": "Ahamdi"
+    },
+    {
+      "value": "Ahannach"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Ajeddou"
+    },
+    {
+      "value": "Akachar"
+    },
+    {
+      "value": "Akensus"
+    },
+    {
+      "value": "Akhchichine"
+    },
+    {
+      "value": "Akinocho"
+    },
+    {
+      "value": "Akouili"
+    },
+    {
+      "value": "Alabdari"
+    },
+    {
+      "value": "Alamraoui"
+    },
+    {
+      "value": "Alaraj"
+    },
+    {
+      "value": "Alayachi"
+    },
+    {
+      "value": "Albadawi"
+    },
+    {
+      "value": "Albas"
+    },
+    {
+      "value": "Albaydhaq"
+    },
+    {
+      "value": "Aldilai"
+    },
+    {
+      "value": "Alduayf"
+    },
+    {
+      "value": "Alfazazi"
+    },
+    {
+      "value": "Alfourkani"
+    },
+    {
+      "value": "Alghassani"
+    },
+    {
+      "value": "Alghumari"
+    },
+    {
+      "value": "Alhawwat"
+    },
+    {
+      "value": "Alhazmiri"
+    },
+    {
+      "value": "Alhilali"
+    },
+    {
+      "value": "Alifrani"
+    },
+    {
+      "value": "Aljabri"
+    },
+    {
+      "value": "Aljaznai"
+    },
+    {
+      "value": "Alkalby"
+    },
+    {
+      "value": "Alla"
+    },
+    {
+      "value": "Allaoui"
+    },
+    {
+      "value": "Almadini"
+    },
+    {
+      "value": "Almakudi"
+    },
+    {
+      "value": "Almamun"
+    },
+    {
+      "value": "Almaqqari"
+    },
+    {
+      "value": "Almatghari"
+    },
+    {
+      "value": "Almiknasi"
+    },
+    {
+      "value": "Almurtada"
+    },
+    {
+      "value": "Alnasiri"
+    },
+    {
+      "value": "Alqadi"
+    },
+    {
+      "value": "Alrundi"
+    },
+    {
+      "value": "Alsalawi"
+    },
+    {
+      "value": "Altadili"
+    },
+    {
+      "value": "Altebaa"
+    },
+    {
+      "value": "Alwannan"
+    },
+    {
+      "value": "Alyasamin"
+    },
+    {
+      "value": "Alzayyani"
+    },
+    {
+      "value": "Amanallah"
+    },
+    {
+      "value": "Amarcha"
+    },
+    {
+      "value": "Ameziane"
+    },
+    {
+      "value": "Amidou"
+    },
+    {
+      "value": "Amlil"
+    },
+    {
+      "value": "Amor"
+    },
+    {
+      "value": "Amsif"
+    },
+    {
+      "value": "Anafal"
+    },
+    {
+      "value": "Anis"
+    },
+    {
+      "value": "Anouzla"
+    },
+    {
+      "value": "Aqqal"
+    },
+    {
+      "value": "Arazi"
+    },
+    {
+      "value": "Arma"
+    },
+    {
+      "value": "Arroub"
+    },
+    {
+      "value": "Ashcroft"
+    },
+    {
+      "value": "Assaidi"
+    },
+    {
+      "value": "Assouline"
+    },
+    {
+      "value": "Atika"
+    },
+    {
+      "value": "Attik"
+    },
+    {
+      "value": "Aulia"
+    },
+    {
+      "value": "Awzal"
+    },
+    {
+      "value": "Ayouch"
+    },
+    {
+      "value": "Azaykou"
+    },
+    {
+      "value": "Azoulay"
+    },
+    {
+      "value": "Azran"
+    },
+    {
+      "value": "Azziman"
+    },
+    {
+      "value": "Baba"
+    },
+    {
+      "value": "Badda"
+    },
+    {
+      "value": "Bagy"
+    },
+    {
+      "value": "Bahara"
+    },
+    {
+      "value": "Bahnini"
+    },
+    {
+      "value": "Bakkar"
+    },
+    {
+      "value": "Ballouchy"
+    },
+    {
+      "value": "Bar"
+    },
+    {
+      "value": "Barbarin"
+    },
+    {
+      "value": "Barek"
+    },
+    {
+      "value": "Barrada"
+    },
+    {
+      "value": "Basri"
+    },
+    {
+      "value": "Batma"
+    },
+    {
+      "value": "Behar"
+    },
+    {
+      "value": "Bekri"
+    },
+    {
+      "value": "Belghazouani"
+    },
+    {
+      "value": "Belhsen"
+    },
+    {
+      "value": "Belkeziz"
+    },
+    {
+      "value": "Bellani"
+    },
+    {
+      "value": "Belmaalem"
+    },
+    {
+      "value": "Belolo"
+    },
+    {
+      "value": "Ben"
+    },
+    {
+      "value": "Benabderrassoul"
+    },
+    {
+      "value": "Benaim"
+    },
+    {
+      "value": "Benarroch"
+    },
+    {
+      "value": "Benayoun"
+    },
+    {
+      "value": "Benbarek"
+    },
+    {
+      "value": "Bencherifa"
+    },
+    {
+      "value": "Benchrifa"
+    },
+    {
+      "value": "Bendriss"
+    },
+    {
+      "value": "Benezekri"
+    },
+    {
+      "value": "Benhima"
+    },
+    {
+      "value": "Benjelloun"
+    },
+    {
+      "value": "Benkassou"
+    },
+    {
+      "value": "Benkirane"
+    },
+    {
+      "value": "Benmansour"
+    },
+    {
+      "value": "Benmoussa"
+    },
+    {
+      "value": "Bennis"
+    },
+    {
+      "value": "Bensaidi"
+    },
+    {
+      "value": "Bensouda"
+    },
+    {
+      "value": "Benthami"
+    },
+    {
+      "value": "Benzakour"
+    },
+    {
+      "value": "Benzouien"
+    },
+    {
+      "value": "Berdugo"
+    },
+    {
+      "value": "Berhili"
+    },
+    {
+      "value": "Bernoussi"
+    },
+    {
+      "value": "Berrabah"
+    },
+    {
+      "value": "Berradi"
+    },
+    {
+      "value": "Biadillah"
+    },
+    {
+      "value": "Bidouane"
+    },
+    {
+      "value": "Binebine"
+    },
+    {
+      "value": "Biton"
+    },
+    {
+      "value": "Blinda"
+    },
+    {
+      "value": "Booba"
+    },
+    {
+      "value": "Bouab"
+    },
+    {
+      "value": "Bouabid"
+    },
+    {
+      "value": "Bouazza"
+    },
+    {
+      "value": "Bouchikhi"
+    },
+    {
+      "value": "Bouden"
+    },
+    {
+      "value": "Bouguetaib"
+    },
+    {
+      "value": "Boujendar"
+    },
+    {
+      "value": "Boukrouna"
+    },
+    {
+      "value": "Boulif"
+    },
+    {
+      "value": "Bouqantar"
+    },
+    {
+      "value": "Bourguigue"
+    },
+    {
+      "value": "Boussaboun"
+    },
+    {
+      "value": "Boutahar"
+    },
+    {
+      "value": "Boutayeb"
+    },
+    {
+      "value": "Bouyboud"
+    },
+    {
+      "value": "Bouzoubaa"
+    },
+    {
+      "value": "Burou"
+    },
+    {
+      "value": "Campillo"
+    },
+    {
+      "value": "Chaabi"
+    },
+    {
+      "value": "Chadid"
+    },
+    {
+      "value": "Chafni"
+    },
+    {
+      "value": "Chahiri"
+    },
+    {
+      "value": "Chalqi"
+    },
+    {
+      "value": "Chaouch"
+    },
+    {
+      "value": "Charhadi"
+    },
+    {
+      "value": "Chawki"
+    },
+    {
+      "value": "Chehibi"
+    },
+    {
+      "value": "Chemlal"
+    },
+    {
+      "value": "Cherif"
+    },
+    {
+      "value": "Cherrat"
+    },
+    {
+      "value": "Chihab"
+    },
+    {
+      "value": "Chorfi"
+    },
+    {
+      "value": "Choukri"
+    },
+    {
+      "value": "Chtibi"
+    },
+    {
+      "value": "Courgnaud"
+    },
+    {
+      "value": "Dahan"
+    },
+    {
+      "value": "Dahou"
+    },
+    {
+      "value": "Daoud"
+    },
+    {
+      "value": "Daraa"
+    },
+    {
+      "value": "Dati"
+    },
+    {
+      "value": "Debbagh"
+    },
+    {
+      "value": "Dehiba"
+    },
+    {
+      "value": "Dghay"
+    },
+    {
+      "value": "Dif"
+    },
+    {
+      "value": "Dirar"
+    },
+    {
+      "value": "Dlimi"
+    },
+    {
+      "value": "Dolmy"
+    },
+    {
+      "value": "Douis"
+    },
+    {
+      "value": "Draiss"
+    },
+    {
+      "value": "Driouche"
+    },
+    {
+      "value": "Eddine"
+    },
+    {
+      "value": "Elaamri"
+    },
+    {
+      "value": "Elahrach"
+    },
+    {
+      "value": "Elalamy"
+    },
+    {
+      "value": "Elandaloussi"
+    },
+    {
+      "value": "Elarabi"
+    },
+    {
+      "value": "Elasmar"
+    },
+    {
+      "value": "Elassri"
+    },
+    {
+      "value": "Elazzouzi"
+    },
+    {
+      "value": "Elbahri"
+    },
+    {
+      "value": "Elbaz"
+    },
+    {
+      "value": "Elbezaz"
+    },
+    {
+      "value": "Elbounadi"
+    },
+    {
+      "value": "Eldad"
+    },
+    {
+      "value": "Elfassy"
+    },
+    {
+      "value": "Elfrougui"
+    },
+    {
+      "value": "Elghazi"
+    },
+    {
+      "value": "Elglaoui"
+    },
+    {
+      "value": "Elgrably"
+    },
+    {
+      "value": "Elguerroui"
+    },
+    {
+      "value": "Elhachimi"
+    },
+    {
+      "value": "Elhaddaoui"
+    },
+    {
+      "value": "Elhajaoui"
+    },
+    {
+      "value": "Elhajji"
+    },
+    {
+      "value": "Elhaouzy"
+    },
+    {
+      "value": "Elhimma"
+    },
+    {
+      "value": "Elidrissi"
+    },
+    {
+      "value": "Eljarmouni"
+    },
+    {
+      "value": "Elkaim"
+    },
+    {
+      "value": "Elkamche"
+    },
+    {
+      "value": "Elkarti"
+    },
+    {
+      "value": "Elkhalej"
+    },
+    {
+      "value": "Elkhalouki"
+    },
+    {
+      "value": "Elkholti"
+    },
+    {
+      "value": "Elkrim"
+    },
+    {
+      "value": "Elmaghribi"
+    },
+    {
+      "value": "Elmalki"
+    },
+    {
+      "value": "Elmandjra"
+    },
+    {
+      "value": "Elmasbahi"
+    },
+    {
+      "value": "Elmehdi"
+    },
+    {
+      "value": "Elmobarky"
+    },
+    {
+      "value": "Elmoubarki"
+    },
+    {
+      "value": "Elmourabet"
+    },
+    {
+      "value": "Elomari"
+    },
+    {
+      "value": "Elouafa"
+    },
+    {
+      "value": "Elouali"
+    },
+    {
+      "value": "Elwardi"
+    },
+    {
+      "value": "Elyounoussi"
+    },
+    {
+      "value": "Ennaji"
+    },
+    {
+      "value": "Ereyahi"
+    },
+    {
+      "value": "Erraki"
+    },
+    {
+      "value": "Essaidi"
+    },
+    {
+      "value": "Esteve"
+    },
+    {
+      "value": "Ezzaki"
+    },
+    {
+      "value": "Fadel"
+    },
+    {
+      "value": "Fahmi"
+    },
+    {
+      "value": "Fakhir"
+    },
+    {
+      "value": "Faras"
+    },
+    {
+      "value": "Faria"
+    },
+    {
+      "value": "Fassiya"
+    },
+    {
+      "value": "Fellah"
+    },
+    {
+      "value": "Ferhat"
+    },
+    {
+      "value": "Fettah"
+    },
+    {
+      "value": "Fihri"
+    },
+    {
+      "value": "Finzi"
+    },
+    {
+      "value": "Fontang"
+    },
+    {
+      "value": "Fouhami"
+    },
+    {
+      "value": "Freire"
+    },
+    {
+      "value": "Galabru"
+    },
+    {
+      "value": "Game"
+    },
+    {
+      "value": "Ghajji"
+    },
+    {
+      "value": "Ghandi"
+    },
+    {
+      "value": "Gharib"
+    },
+    {
+      "value": "Ghellab"
+    },
+    {
+      "value": "Ghofran"
+    },
+    {
+      "value": "Giraud"
+    },
+    {
+      "value": "Gourram"
+    },
+    {
+      "value": "Goytisolo"
+    },
+    {
+      "value": "Guessous"
+    },
+    {
+      "value": "Guinia"
+    },
+    {
+      "value": "Habassa"
+    },
+    {
+      "value": "Hadda"
+    },
+    {
+      "value": "Haddani"
+    },
+    {
+      "value": "Haddou"
+    },
+    {
+      "value": "Hadouir"
+    },
+    {
+      "value": "Hafidi"
+    },
+    {
+      "value": "Haida"
+    },
+    {
+      "value": "Hakkaoui"
+    },
+    {
+      "value": "Hamdallah"
+    },
+    {
+      "value": "Hammou"
+    },
+    {
+      "value": "Hamri"
+    },
+    {
+      "value": "Harrak"
+    },
+    {
+      "value": "Hassar"
+    },
+    {
+      "value": "Hassin"
+    },
+    {
+      "value": "Hatuelzuckerman"
+    },
+    {
+      "value": "Hazzaz"
+    },
+    {
+      "value": "Hejira"
+    },
+    {
+      "value": "Hilali"
+    },
+    {
+      "value": "Hissou"
+    },
+    {
+      "value": "Hocquard"
+    },
+    {
+      "value": "Houssaini"
+    },
+    {
+      "value": "Iajour"
+    },
+    {
+      "value": "Idrissi"
+    },
+    {
+      "value": "Issangar"
+    },
+    {
+      "value": "Jabbour"
+    },
+    {
+      "value": "Jahjah"
+    },
+    {
+      "value": "Jamal"
+    },
+    {
+      "value": "Jawad"
+    },
+    {
+      "value": "Jebbour"
+    },
+    {
+      "value": "Jelloun"
+    },
+    {
+      "value": "Jobert"
+    },
+    {
+      "value": "Joullon"
+    },
+    {
+      "value": "Jrindou"
+    },
+    {
+      "value": "Kabbaj"
+    },
+    {
+      "value": "Kabli"
+    },
+    {
+      "value": "Kacemi"
+    },
+    {
+      "value": "Kader"
+    },
+    {
+      "value": "Kaissi"
+    },
+    {
+      "value": "Kannun"
+    },
+    {
+      "value": "Kaouch"
+    },
+    {
+      "value": "Karjimi"
+    },
+    {
+      "value": "Kassari"
+    },
+    {
+      "value": "Khalef"
+    },
+    {
+      "value": "Khalloqi"
+    },
+    {
+      "value": "Khanousi"
+    },
+    {
+      "value": "Kharbouchi"
+    },
+    {
+      "value": "Khatibi"
+    },
+    {
+      "value": "Kherrazi"
+    },
+    {
+      "value": "Khubza"
+    },
+    {
+      "value": "Kisri"
+    },
+    {
+      "value": "Kotbi"
+    },
+    {
+      "value": "Krouch"
+    },
+    {
+      "value": "Laalou"
+    },
+    {
+      "value": "Laarif"
+    },
+    {
+      "value": "Lachgar"
+    },
+    {
+      "value": "Laghzioui"
+    },
+    {
+      "value": "Lahbabi"
+    },
+    {
+      "value": "Lahlafi"
+    },
+    {
+      "value": "Lahoucine"
+    },
+    {
+      "value": "Lahsini"
+    },
+    {
+      "value": "Lakhrif"
+    },
+    {
+      "value": "Lamaalem"
+    },
+    {
+      "value": "Lamrani"
+    },
+    {
+      "value": "Lancry"
+    },
+    {
+      "value": "Laraki"
+    },
+    {
+      "value": "Latifa"
+    },
+    {
+      "value": "Lbida"
+    },
+    {
+      "value": "Lecheheb"
+    },
+    {
+      "value": "Leghzaoui"
+    },
+    {
+      "value": "Leroux"
+    },
+    {
+      "value": "Louissi"
+    },
+    {
+      "value": "Maachi"
+    },
+    {
+      "value": "Maazouzi"
+    },
+    {
+      "value": "Madouni"
+    },
+    {
+      "value": "Mahdoufi"
+    },
+    {
+      "value": "Mahrez"
+    },
+    {
+      "value": "Maimonides"
+    },
+    {
+      "value": "Malki"
+    },
+    {
+      "value": "Mankari"
+    },
+    {
+      "value": "Marjouane"
+    },
+    {
+      "value": "Marrakchi"
+    },
+    {
+      "value": "Masbahi"
+    },
+    {
+      "value": "Mazini"
+    },
+    {
+      "value": "Mdaghri"
+    },
+    {
+      "value": "Mednas"
+    },
+    {
+      "value": "Megri"
+    },
+    {
+      "value": "Mekouar"
+    },
+    {
+      "value": "Mellouk"
+    },
+    {
+      "value": "Mernissi"
+    },
+    {
+      "value": "Mesbahi"
+    },
+    {
+      "value": "Messaadi"
+    },
+    {
+      "value": "Messaoudi"
+    },
+    {
+      "value": "Mestari"
+    },
+    {
+      "value": "Mezouar"
+    },
+    {
+      "value": "Miknasa"
+    },
+    {
+      "value": "Mizouz"
+    },
+    {
+      "value": "Mohamadina"
+    },
+    {
+      "value": "Mokhtari"
+    },
+    {
+      "value": "Morceli"
+    },
+    {
+      "value": "Motii"
+    },
+    {
+      "value": "Mouhtassine"
+    },
+    {
+      "value": "Mourhit"
+    },
+    {
+      "value": "Moussaid"
+    },
+    {
+      "value": "Moustaoui"
+    },
+    {
+      "value": "Moutaouali"
+    },
+    {
+      "value": "Mouzaki"
+    },
+    {
+      "value": "Mrabet"
+    },
+    {
+      "value": "Mrikik"
+    },
+    {
+      "value": "Mzoudi"
+    },
+    {
+      "value": "Nader"
+    },
+    {
+      "value": "Najah"
+    },
+    {
+      "value": "Najmi"
+    },
+    {
+      "value": "Naoum"
+    },
+    {
+      "value": "Nater"
+    },
+    {
+      "value": "Nejjary"
+    },
+    {
+      "value": "Nessbeal"
+    },
+    {
+      "value": "Niny"
+    },
+    {
+      "value": "Noujani"
+    },
+    {
+      "value": "Noussir"
+    },
+    {
+      "value": "Obbadi"
+    },
+    {
+      "value": "Omar"
+    },
+    {
+      "value": "Ottmani"
+    },
+    {
+      "value": "Ouaddou"
+    },
+    {
+      "value": "Ouahab"
+    },
+    {
+      "value": "Ouali"
+    },
+    {
+      "value": "Ouaziz"
+    },
+    {
+      "value": "Oubouhou"
+    },
+    {
+      "value": "Oufkir"
+    },
+    {
+      "value": "Ouhadi"
+    },
+    {
+      "value": "Oukach"
+    },
+    {
+      "value": "Oulhaj"
+    },
+    {
+      "value": "Ourahou"
+    },
+    {
+      "value": "Pasquale"
+    },
+    {
+      "value": "Pesquet"
+    },
+    {
+      "value": "Pinto"
+    },
+    {
+      "value": "Qasmi"
+    },
+    {
+      "value": "Qoqaiche"
+    },
+    {
+      "value": "Rabbah"
+    },
+    {
+      "value": "Rachane"
+    },
+    {
+      "value": "Rachidi"
+    },
+    {
+      "value": "Rafik"
+    },
+    {
+      "value": "Raif"
+    },
+    {
+      "value": "Raisuni"
+    },
+    {
+      "value": "Rami"
+    },
+    {
+      "value": "Rebbot"
+    },
+    {
+      "value": "Redouane"
+    },
+    {
+      "value": "Regragui"
+    },
+    {
+      "value": "Reynes"
+    },
+    {
+      "value": "Rhanem"
+    },
+    {
+      "value": "Riyadh"
+    },
+    {
+      "value": "Rokki"
+    },
+    {
+      "value": "Rouani"
+    },
+    {
+      "value": "Roumani"
+    },
+    {
+      "value": "Ryadi"
+    },
+    {
+      "value": "Saber"
+    },
+    {
+      "value": "Saddiki"
+    },
+    {
+      "value": "Saenz"
+    },
+    {
+      "value": "Sahere"
+    },
+    {
+      "value": "Said"
+    },
+    {
+      "value": "Salhi"
+    },
+    {
+      "value": "Samadi"
+    },
+    {
+      "value": "Samih"
+    },
+    {
+      "value": "Saouf"
+    },
+    {
+      "value": "Sassa"
+    },
+    {
+      "value": "Sbihi"
+    },
+    {
+      "value": "Sebti"
+    },
+    {
+      "value": "Sefrioui"
+    },
+    {
+      "value": "Sekour"
+    },
+    {
+      "value": "Selmouni"
+    },
+    {
+      "value": "Semoun"
+    },
+    {
+      "value": "Serhane"
+    },
+    {
+      "value": "Sghyr"
+    },
+    {
+      "value": "Shenna"
+    },
+    {
+      "value": "Shloush"
+    },
+    {
+      "value": "Sibari"
+    },
+    {
+      "value": "Sinaceur"
+    },
+    {
+      "value": "Skah"
+    },
+    {
+      "value": "Skirej"
+    },
+    {
+      "value": "Slimani"
+    },
+    {
+      "value": "Soler"
+    },
+    {
+      "value": "Souaidy"
+    },
+    {
+      "value": "Soufiani"
+    },
+    {
+      "value": "Soulaimani"
+    },
+    {
+      "value": "Soussi"
+    },
+    {
+      "value": "Stephenson"
+    },
+    {
+      "value": "Sudani"
+    },
+    {
+      "value": "Szlovak"
+    },
+    {
+      "value": "Tadili"
+    },
+    {
+      "value": "Tahiri"
+    },
+    {
+      "value": "Taki"
+    },
+    {
+      "value": "Talal"
+    },
+    {
+      "value": "Taleb"
+    },
+    {
+      "value": "Tamsamani"
+    },
+    {
+      "value": "Taouil"
+    },
+    {
+      "value": "Taurel"
+    },
+    {
+      "value": "Temsamani"
+    },
+    {
+      "value": "Termina"
+    },
+    {
+      "value": "Tighazouine"
+    },
+    {
+      "value": "Tnibar"
+    },
+    {
+      "value": "Torres"
+    },
+    {
+      "value": "Toulali"
+    },
+    {
+      "value": "Touzghar"
+    },
+    {
+      "value": "Triki"
+    },
+    {
+      "value": "Turgeman"
+    },
+    {
+      "value": "Ufarte"
+    },
+    {
+      "value": "Vanunu"
+    },
+    {
+      "value": "Wahbi"
+    },
+    {
+      "value": "Yaaza"
+    },
+    {
+      "value": "Yaktine"
+    },
+    {
+      "value": "Yata"
+    },
+    {
+      "value": "Yusuf"
+    },
+    {
+      "value": "Zafzaf"
+    },
+    {
+      "value": "Zahiri"
+    },
+    {
+      "value": "Zairi"
+    },
+    {
+      "value": "Zamzami"
+    },
+    {
+      "value": "Zarruq"
+    },
+    {
+      "value": "Zehhar"
+    },
+    {
+      "value": "Zemmama"
+    },
+    {
+      "value": "Zidan"
+    },
+    {
+      "value": "Zitouna"
+    },
+    {
+      "value": "Znagui"
+    },
+    {
+      "value": "Zohra"
+    },
+    {
+      "value": "Zougam"
+    },
+    {
+      "value": "Zrika"
+    }
+  ],
+  "production_ready": false
+}

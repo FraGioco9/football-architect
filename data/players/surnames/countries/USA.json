@@ -1,0 +1,1521 @@
+{
+  "schema_version": 1,
+  "code": "USA",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "census-2010-surnames",
+      "url": "https://www.census.gov/topics/population/genealogy/data/2010_surnames.html",
+      "scope": "Official U.S. 2010 Census surnames occurring at least 100 times, national aggregate (all ages and backgrounds)."
+    },
+    {
+      "id": "census-2010-csv-mirror",
+      "url": "https://github.com/jyoung128/census-file-reader/blob/c975ec9c1835cd64c6203f4a57598233735ea460/Surnames_2010Census.csv",
+      "scope": "Mirror of official Census surname CSV; case normalized for display without adding accents, selected from top 500 recorded surnames."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Johnson"
+    },
+    {
+      "value": "Williams"
+    },
+    {
+      "value": "Brown"
+    },
+    {
+      "value": "Jones"
+    },
+    {
+      "value": "Garcia"
+    },
+    {
+      "value": "Miller"
+    },
+    {
+      "value": "Davis"
+    },
+    {
+      "value": "Rodriguez"
+    },
+    {
+      "value": "Martinez"
+    },
+    {
+      "value": "Hernandez"
+    },
+    {
+      "value": "Lopez"
+    },
+    {
+      "value": "Gonzalez"
+    },
+    {
+      "value": "Wilson"
+    },
+    {
+      "value": "Anderson"
+    },
+    {
+      "value": "Thomas"
+    },
+    {
+      "value": "Taylor"
+    },
+    {
+      "value": "Moore"
+    },
+    {
+      "value": "Jackson"
+    },
+    {
+      "value": "Martin"
+    },
+    {
+      "value": "Lee"
+    },
+    {
+      "value": "Perez"
+    },
+    {
+      "value": "Thompson"
+    },
+    {
+      "value": "White"
+    },
+    {
+      "value": "Harris"
+    },
+    {
+      "value": "Sanchez"
+    },
+    {
+      "value": "Clark"
+    },
+    {
+      "value": "Ramirez"
+    },
+    {
+      "value": "Lewis"
+    },
+    {
+      "value": "Robinson"
+    },
+    {
+      "value": "Walker"
+    },
+    {
+      "value": "Young"
+    },
+    {
+      "value": "Allen"
+    },
+    {
+      "value": "King"
+    },
+    {
+      "value": "Wright"
+    },
+    {
+      "value": "Scott"
+    },
+    {
+      "value": "Torres"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Hill"
+    },
+    {
+      "value": "Flores"
+    },
+    {
+      "value": "Green"
+    },
+    {
+      "value": "Adams"
+    },
+    {
+      "value": "Nelson"
+    },
+    {
+      "value": "Baker"
+    },
+    {
+      "value": "Hall"
+    },
+    {
+      "value": "Rivera"
+    },
+    {
+      "value": "Campbell"
+    },
+    {
+      "value": "Mitchell"
+    },
+    {
+      "value": "Carter"
+    },
+    {
+      "value": "Roberts"
+    },
+    {
+      "value": "Gomez"
+    },
+    {
+      "value": "Phillips"
+    },
+    {
+      "value": "Evans"
+    },
+    {
+      "value": "Turner"
+    },
+    {
+      "value": "Diaz"
+    },
+    {
+      "value": "Parker"
+    },
+    {
+      "value": "Cruz"
+    },
+    {
+      "value": "Edwards"
+    },
+    {
+      "value": "Collins"
+    },
+    {
+      "value": "Reyes"
+    },
+    {
+      "value": "Stewart"
+    },
+    {
+      "value": "Morris"
+    },
+    {
+      "value": "Morales"
+    },
+    {
+      "value": "Murphy"
+    },
+    {
+      "value": "Cook"
+    },
+    {
+      "value": "Rogers"
+    },
+    {
+      "value": "Gutierrez"
+    },
+    {
+      "value": "Ortiz"
+    },
+    {
+      "value": "Morgan"
+    },
+    {
+      "value": "Cooper"
+    },
+    {
+      "value": "Peterson"
+    },
+    {
+      "value": "Bailey"
+    },
+    {
+      "value": "Reed"
+    },
+    {
+      "value": "Kelly"
+    },
+    {
+      "value": "Howard"
+    },
+    {
+      "value": "Ramos"
+    },
+    {
+      "value": "Kim"
+    },
+    {
+      "value": "Cox"
+    },
+    {
+      "value": "Ward"
+    },
+    {
+      "value": "Richardson"
+    },
+    {
+      "value": "Watson"
+    },
+    {
+      "value": "Brooks"
+    },
+    {
+      "value": "Chavez"
+    },
+    {
+      "value": "Wood"
+    },
+    {
+      "value": "James"
+    },
+    {
+      "value": "Bennett"
+    },
+    {
+      "value": "Gray"
+    },
+    {
+      "value": "Mendoza"
+    },
+    {
+      "value": "Ruiz"
+    },
+    {
+      "value": "Hughes"
+    },
+    {
+      "value": "Price"
+    },
+    {
+      "value": "Alvarez"
+    },
+    {
+      "value": "Castillo"
+    },
+    {
+      "value": "Sanders"
+    },
+    {
+      "value": "Patel"
+    },
+    {
+      "value": "Myers"
+    },
+    {
+      "value": "Long"
+    },
+    {
+      "value": "Ross"
+    },
+    {
+      "value": "Foster"
+    },
+    {
+      "value": "Jimenez"
+    },
+    {
+      "value": "Powell"
+    },
+    {
+      "value": "Jenkins"
+    },
+    {
+      "value": "Perry"
+    },
+    {
+      "value": "Russell"
+    },
+    {
+      "value": "Sullivan"
+    },
+    {
+      "value": "Bell"
+    },
+    {
+      "value": "Coleman"
+    },
+    {
+      "value": "Butler"
+    },
+    {
+      "value": "Henderson"
+    },
+    {
+      "value": "Barnes"
+    },
+    {
+      "value": "Gonzales"
+    },
+    {
+      "value": "Fisher"
+    },
+    {
+      "value": "Vasquez"
+    },
+    {
+      "value": "Simmons"
+    },
+    {
+      "value": "Romero"
+    },
+    {
+      "value": "Jordan"
+    },
+    {
+      "value": "Patterson"
+    },
+    {
+      "value": "Alexander"
+    },
+    {
+      "value": "Hamilton"
+    },
+    {
+      "value": "Graham"
+    },
+    {
+      "value": "Reynolds"
+    },
+    {
+      "value": "Griffin"
+    },
+    {
+      "value": "Wallace"
+    },
+    {
+      "value": "Moreno"
+    },
+    {
+      "value": "West"
+    },
+    {
+      "value": "Cole"
+    },
+    {
+      "value": "Hayes"
+    },
+    {
+      "value": "Bryant"
+    },
+    {
+      "value": "Herrera"
+    },
+    {
+      "value": "Gibson"
+    },
+    {
+      "value": "Ellis"
+    },
+    {
+      "value": "Tran"
+    },
+    {
+      "value": "Medina"
+    },
+    {
+      "value": "Aguilar"
+    },
+    {
+      "value": "Stevens"
+    },
+    {
+      "value": "Murray"
+    },
+    {
+      "value": "Ford"
+    },
+    {
+      "value": "Castro"
+    },
+    {
+      "value": "Marshall"
+    },
+    {
+      "value": "Owens"
+    },
+    {
+      "value": "Harrison"
+    },
+    {
+      "value": "Fernandez"
+    },
+    {
+      "value": "McDonald"
+    },
+    {
+      "value": "Woods"
+    },
+    {
+      "value": "Washington"
+    },
+    {
+      "value": "Kennedy"
+    },
+    {
+      "value": "Wells"
+    },
+    {
+      "value": "Vargas"
+    },
+    {
+      "value": "Henry"
+    },
+    {
+      "value": "Chen"
+    },
+    {
+      "value": "Freeman"
+    },
+    {
+      "value": "Webb"
+    },
+    {
+      "value": "Tucker"
+    },
+    {
+      "value": "Guzman"
+    },
+    {
+      "value": "Burns"
+    },
+    {
+      "value": "Crawford"
+    },
+    {
+      "value": "Olson"
+    },
+    {
+      "value": "Simpson"
+    },
+    {
+      "value": "Porter"
+    },
+    {
+      "value": "Hunter"
+    },
+    {
+      "value": "Gordon"
+    },
+    {
+      "value": "Mendez"
+    },
+    {
+      "value": "Silva"
+    },
+    {
+      "value": "Shaw"
+    },
+    {
+      "value": "Snyder"
+    },
+    {
+      "value": "Mason"
+    },
+    {
+      "value": "Dixon"
+    },
+    {
+      "value": "Munoz"
+    },
+    {
+      "value": "Hunt"
+    },
+    {
+      "value": "Hicks"
+    },
+    {
+      "value": "Holmes"
+    },
+    {
+      "value": "Palmer"
+    },
+    {
+      "value": "Wagner"
+    },
+    {
+      "value": "Black"
+    },
+    {
+      "value": "Robertson"
+    },
+    {
+      "value": "Boyd"
+    },
+    {
+      "value": "Rose"
+    },
+    {
+      "value": "Stone"
+    },
+    {
+      "value": "Salazar"
+    },
+    {
+      "value": "Fox"
+    },
+    {
+      "value": "Warren"
+    },
+    {
+      "value": "Mills"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Rice"
+    },
+    {
+      "value": "Schmidt"
+    },
+    {
+      "value": "Garza"
+    },
+    {
+      "value": "Daniels"
+    },
+    {
+      "value": "Ferguson"
+    },
+    {
+      "value": "Nichols"
+    },
+    {
+      "value": "Stephens"
+    },
+    {
+      "value": "Soto"
+    },
+    {
+      "value": "Weaver"
+    },
+    {
+      "value": "Ryan"
+    },
+    {
+      "value": "Gardner"
+    },
+    {
+      "value": "Payne"
+    },
+    {
+      "value": "Grant"
+    },
+    {
+      "value": "Dunn"
+    },
+    {
+      "value": "Kelley"
+    },
+    {
+      "value": "Spencer"
+    },
+    {
+      "value": "Hawkins"
+    },
+    {
+      "value": "Arnold"
+    },
+    {
+      "value": "Pierce"
+    },
+    {
+      "value": "Vazquez"
+    },
+    {
+      "value": "Hansen"
+    },
+    {
+      "value": "Peters"
+    },
+    {
+      "value": "Santos"
+    },
+    {
+      "value": "Hart"
+    },
+    {
+      "value": "Bradley"
+    },
+    {
+      "value": "Knight"
+    },
+    {
+      "value": "Elliott"
+    },
+    {
+      "value": "Cunningham"
+    },
+    {
+      "value": "Duncan"
+    },
+    {
+      "value": "Armstrong"
+    },
+    {
+      "value": "Hudson"
+    },
+    {
+      "value": "Carroll"
+    },
+    {
+      "value": "Lane"
+    },
+    {
+      "value": "Riley"
+    },
+    {
+      "value": "Andrews"
+    },
+    {
+      "value": "Alvarado"
+    },
+    {
+      "value": "Ray"
+    },
+    {
+      "value": "Delgado"
+    },
+    {
+      "value": "Berry"
+    },
+    {
+      "value": "Perkins"
+    },
+    {
+      "value": "Hoffman"
+    },
+    {
+      "value": "Johnston"
+    },
+    {
+      "value": "Matthews"
+    },
+    {
+      "value": "Pena"
+    },
+    {
+      "value": "Richards"
+    },
+    {
+      "value": "Contreras"
+    },
+    {
+      "value": "Willis"
+    },
+    {
+      "value": "Carpenter"
+    },
+    {
+      "value": "Lawrence"
+    },
+    {
+      "value": "Sandoval"
+    },
+    {
+      "value": "Guerrero"
+    },
+    {
+      "value": "George"
+    },
+    {
+      "value": "Chapman"
+    },
+    {
+      "value": "Rios"
+    },
+    {
+      "value": "Estrada"
+    },
+    {
+      "value": "Ortega"
+    },
+    {
+      "value": "Watkins"
+    },
+    {
+      "value": "Greene"
+    },
+    {
+      "value": "Nunez"
+    },
+    {
+      "value": "Wheeler"
+    },
+    {
+      "value": "Valdez"
+    },
+    {
+      "value": "Harper"
+    },
+    {
+      "value": "Burke"
+    },
+    {
+      "value": "Larson"
+    },
+    {
+      "value": "Santiago"
+    },
+    {
+      "value": "Maldonado"
+    },
+    {
+      "value": "Morrison"
+    },
+    {
+      "value": "Franklin"
+    },
+    {
+      "value": "Carlson"
+    },
+    {
+      "value": "Austin"
+    },
+    {
+      "value": "Dominguez"
+    },
+    {
+      "value": "Carr"
+    },
+    {
+      "value": "Lawson"
+    },
+    {
+      "value": "Jacobs"
+    },
+    {
+      "value": "Obrien"
+    },
+    {
+      "value": "Lynch"
+    },
+    {
+      "value": "Singh"
+    },
+    {
+      "value": "Vega"
+    },
+    {
+      "value": "Bishop"
+    },
+    {
+      "value": "Montgomery"
+    },
+    {
+      "value": "Oliver"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "Harvey"
+    },
+    {
+      "value": "Williamson"
+    },
+    {
+      "value": "Gilbert"
+    },
+    {
+      "value": "Dean"
+    },
+    {
+      "value": "Sims"
+    },
+    {
+      "value": "Espinoza"
+    },
+    {
+      "value": "Howell"
+    },
+    {
+      "value": "Li"
+    },
+    {
+      "value": "Wong"
+    },
+    {
+      "value": "Reid"
+    },
+    {
+      "value": "Hanson"
+    },
+    {
+      "value": "Le"
+    },
+    {
+      "value": "McCoy"
+    },
+    {
+      "value": "Garrett"
+    },
+    {
+      "value": "Burton"
+    },
+    {
+      "value": "Fuller"
+    },
+    {
+      "value": "Wang"
+    },
+    {
+      "value": "Weber"
+    },
+    {
+      "value": "Welch"
+    },
+    {
+      "value": "Rojas"
+    },
+    {
+      "value": "Lucas"
+    },
+    {
+      "value": "Marquez"
+    },
+    {
+      "value": "Fields"
+    },
+    {
+      "value": "Park"
+    },
+    {
+      "value": "Yang"
+    },
+    {
+      "value": "Little"
+    },
+    {
+      "value": "Banks"
+    },
+    {
+      "value": "Padilla"
+    },
+    {
+      "value": "Day"
+    },
+    {
+      "value": "Walsh"
+    },
+    {
+      "value": "Bowman"
+    },
+    {
+      "value": "Schultz"
+    },
+    {
+      "value": "Luna"
+    },
+    {
+      "value": "Fowler"
+    },
+    {
+      "value": "Mejia"
+    },
+    {
+      "value": "Davidson"
+    },
+    {
+      "value": "Acosta"
+    },
+    {
+      "value": "Brewer"
+    },
+    {
+      "value": "May"
+    },
+    {
+      "value": "Holland"
+    },
+    {
+      "value": "Juarez"
+    },
+    {
+      "value": "Newman"
+    },
+    {
+      "value": "Pearson"
+    },
+    {
+      "value": "Curtis"
+    },
+    {
+      "value": "Cortez"
+    },
+    {
+      "value": "Douglas"
+    },
+    {
+      "value": "Schneider"
+    },
+    {
+      "value": "Joseph"
+    },
+    {
+      "value": "Barrett"
+    },
+    {
+      "value": "Navarro"
+    },
+    {
+      "value": "Figueroa"
+    },
+    {
+      "value": "Keller"
+    },
+    {
+      "value": "Avila"
+    },
+    {
+      "value": "Wade"
+    },
+    {
+      "value": "Molina"
+    },
+    {
+      "value": "Stanley"
+    },
+    {
+      "value": "Hopkins"
+    },
+    {
+      "value": "Campos"
+    },
+    {
+      "value": "Barnett"
+    },
+    {
+      "value": "Bates"
+    },
+    {
+      "value": "Chambers"
+    },
+    {
+      "value": "Caldwell"
+    },
+    {
+      "value": "Beck"
+    },
+    {
+      "value": "Lambert"
+    },
+    {
+      "value": "Miranda"
+    },
+    {
+      "value": "Byrd"
+    },
+    {
+      "value": "Craig"
+    },
+    {
+      "value": "Ayala"
+    },
+    {
+      "value": "Lowe"
+    },
+    {
+      "value": "Frazier"
+    },
+    {
+      "value": "Powers"
+    },
+    {
+      "value": "Neal"
+    },
+    {
+      "value": "Leonard"
+    },
+    {
+      "value": "Gregory"
+    },
+    {
+      "value": "Carrillo"
+    },
+    {
+      "value": "Sutton"
+    },
+    {
+      "value": "Fleming"
+    },
+    {
+      "value": "Rhodes"
+    },
+    {
+      "value": "Shelton"
+    },
+    {
+      "value": "Schwartz"
+    },
+    {
+      "value": "Norris"
+    },
+    {
+      "value": "Jennings"
+    },
+    {
+      "value": "Watts"
+    },
+    {
+      "value": "Duran"
+    },
+    {
+      "value": "Walters"
+    },
+    {
+      "value": "Cohen"
+    },
+    {
+      "value": "McDaniel"
+    },
+    {
+      "value": "Moran"
+    },
+    {
+      "value": "Parks"
+    },
+    {
+      "value": "Steele"
+    },
+    {
+      "value": "Vaughn"
+    },
+    {
+      "value": "Becker"
+    },
+    {
+      "value": "Holt"
+    },
+    {
+      "value": "Deleon"
+    },
+    {
+      "value": "Barker"
+    },
+    {
+      "value": "Terry"
+    },
+    {
+      "value": "Hale"
+    },
+    {
+      "value": "Leon"
+    },
+    {
+      "value": "Hail"
+    },
+    {
+      "value": "Benson"
+    },
+    {
+      "value": "Haynes"
+    },
+    {
+      "value": "Horton"
+    },
+    {
+      "value": "Miles"
+    },
+    {
+      "value": "Lyons"
+    },
+    {
+      "value": "Pham"
+    },
+    {
+      "value": "Graves"
+    },
+    {
+      "value": "Bush"
+    },
+    {
+      "value": "Thornton"
+    },
+    {
+      "value": "Wolfe"
+    },
+    {
+      "value": "Warner"
+    },
+    {
+      "value": "Cabrera"
+    },
+    {
+      "value": "McKinney"
+    },
+    {
+      "value": "Mann"
+    },
+    {
+      "value": "Zimmerman"
+    },
+    {
+      "value": "Dawson"
+    },
+    {
+      "value": "Lara"
+    },
+    {
+      "value": "Fletcher"
+    },
+    {
+      "value": "Page"
+    },
+    {
+      "value": "McCarthy"
+    },
+    {
+      "value": "Love"
+    },
+    {
+      "value": "Robles"
+    },
+    {
+      "value": "Cervantes"
+    },
+    {
+      "value": "Solis"
+    },
+    {
+      "value": "Erickson"
+    },
+    {
+      "value": "Reeves"
+    },
+    {
+      "value": "Chang"
+    },
+    {
+      "value": "Klein"
+    },
+    {
+      "value": "Salinas"
+    },
+    {
+      "value": "Fuentes"
+    },
+    {
+      "value": "Baldwin"
+    },
+    {
+      "value": "Daniel"
+    },
+    {
+      "value": "Simon"
+    },
+    {
+      "value": "Velasquez"
+    },
+    {
+      "value": "Hardy"
+    },
+    {
+      "value": "Higgins"
+    },
+    {
+      "value": "Aguirre"
+    },
+    {
+      "value": "Lin"
+    },
+    {
+      "value": "Cummings"
+    },
+    {
+      "value": "Chandler"
+    },
+    {
+      "value": "Sharp"
+    },
+    {
+      "value": "Barber"
+    },
+    {
+      "value": "Bowen"
+    },
+    {
+      "value": "Ochoa"
+    },
+    {
+      "value": "Dennis"
+    },
+    {
+      "value": "Robbins"
+    },
+    {
+      "value": "Liu"
+    },
+    {
+      "value": "Ramsey"
+    },
+    {
+      "value": "Francis"
+    },
+    {
+      "value": "Griffith"
+    },
+    {
+      "value": "Paul"
+    },
+    {
+      "value": "Blair"
+    },
+    {
+      "value": "Oconnor"
+    },
+    {
+      "value": "Cardenas"
+    },
+    {
+      "value": "Pacheco"
+    },
+    {
+      "value": "Cross"
+    },
+    {
+      "value": "Calderon"
+    },
+    {
+      "value": "Quinn"
+    },
+    {
+      "value": "Moss"
+    },
+    {
+      "value": "Swanson"
+    },
+    {
+      "value": "Chan"
+    },
+    {
+      "value": "Rivas"
+    },
+    {
+      "value": "Khan"
+    },
+    {
+      "value": "Rodgers"
+    },
+    {
+      "value": "Serrano"
+    },
+    {
+      "value": "Fitzgerald"
+    },
+    {
+      "value": "Rosales"
+    },
+    {
+      "value": "Stevenson"
+    },
+    {
+      "value": "Christensen"
+    },
+    {
+      "value": "Manning"
+    },
+    {
+      "value": "Gill"
+    },
+    {
+      "value": "Curry"
+    },
+    {
+      "value": "McLaughlin"
+    },
+    {
+      "value": "Harmon"
+    },
+    {
+      "value": "McGee"
+    },
+    {
+      "value": "Gross"
+    },
+    {
+      "value": "Doyle"
+    },
+    {
+      "value": "Garner"
+    },
+    {
+      "value": "Newton"
+    },
+    {
+      "value": "Burgess"
+    },
+    {
+      "value": "Reese"
+    },
+    {
+      "value": "Walton"
+    },
+    {
+      "value": "Blake"
+    },
+    {
+      "value": "Trujillo"
+    },
+    {
+      "value": "Adkins"
+    },
+    {
+      "value": "Brady"
+    },
+    {
+      "value": "Goodman"
+    },
+    {
+      "value": "Roman"
+    },
+    {
+      "value": "Webster"
+    },
+    {
+      "value": "Goodwin"
+    },
+    {
+      "value": "Fischer"
+    },
+    {
+      "value": "Huang"
+    },
+    {
+      "value": "Potter"
+    },
+    {
+      "value": "Delacruz"
+    },
+    {
+      "value": "Montoya"
+    },
+    {
+      "value": "Todd"
+    },
+    {
+      "value": "Wu"
+    },
+    {
+      "value": "Hines"
+    },
+    {
+      "value": "Mullins"
+    },
+    {
+      "value": "Castaneda"
+    },
+    {
+      "value": "Malone"
+    },
+    {
+      "value": "Cannon"
+    },
+    {
+      "value": "Tate"
+    },
+    {
+      "value": "Mack"
+    },
+    {
+      "value": "Sherman"
+    },
+    {
+      "value": "Hubbard"
+    },
+    {
+      "value": "Hodges"
+    },
+    {
+      "value": "Zhang"
+    },
+    {
+      "value": "Guerra"
+    },
+    {
+      "value": "Wolf"
+    },
+    {
+      "value": "Valencia"
+    },
+    {
+      "value": "Saunders"
+    },
+    {
+      "value": "Franco"
+    },
+    {
+      "value": "Rowe"
+    },
+    {
+      "value": "Gallagher"
+    },
+    {
+      "value": "Farmer"
+    },
+    {
+      "value": "Hammond"
+    },
+    {
+      "value": "Hampton"
+    },
+    {
+      "value": "Townsend"
+    },
+    {
+      "value": "Ingram"
+    },
+    {
+      "value": "Wise"
+    },
+    {
+      "value": "Gallegos"
+    },
+    {
+      "value": "Clarke"
+    },
+    {
+      "value": "Barton"
+    },
+    {
+      "value": "Schroeder"
+    },
+    {
+      "value": "Maxwell"
+    },
+    {
+      "value": "Waters"
+    },
+    {
+      "value": "Logan"
+    },
+    {
+      "value": "Camacho"
+    },
+    {
+      "value": "Strickland"
+    },
+    {
+      "value": "Norman"
+    },
+    {
+      "value": "Person"
+    },
+    {
+      "value": "Colon"
+    },
+    {
+      "value": "Parsons"
+    },
+    {
+      "value": "Frank"
+    },
+    {
+      "value": "Harrington"
+    }
+  ],
+  "production_ready": false
+}

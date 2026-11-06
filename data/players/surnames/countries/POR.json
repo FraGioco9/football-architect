@@ -1,0 +1,1085 @@
+{
+  "schema_version": 1,
+  "code": "POR",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-portugal-2014",
+      "title": "Most Common Last Names In Portugal",
+      "url": "https://forebears.io/portugal/surnames",
+      "territory": "Portugal (POR), national territorial page, not Brazil",
+      "period": "2014 distribution snapshot",
+      "scope": "Visible country-specific ranks 1–362; entries individually present in the published Portugal surname table; deduplicated spelling and accent equivalents",
+      "limitations": "Only 362 ranked source rows are publicly visible. Removed equivalent variants and suspect near-duplicates; not enough independently supported entries for 500. Source is third-party estimated incidence, not census register; given-name-shaped strings appear as attested surnames in source; redistribution/license must be reviewed before release."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Silva"
+    },
+    {
+      "value": "Santos"
+    },
+    {
+      "value": "Ferreira"
+    },
+    {
+      "value": "Pereira"
+    },
+    {
+      "value": "Costa"
+    },
+    {
+      "value": "Oliveira"
+    },
+    {
+      "value": "Martins"
+    },
+    {
+      "value": "Rodrigues"
+    },
+    {
+      "value": "Sousa"
+    },
+    {
+      "value": "Fernandes"
+    },
+    {
+      "value": "Lopes"
+    },
+    {
+      "value": "Gonçalves"
+    },
+    {
+      "value": "Marques"
+    },
+    {
+      "value": "Gomes"
+    },
+    {
+      "value": "Ribeiro"
+    },
+    {
+      "value": "Carvalho"
+    },
+    {
+      "value": "Almeida"
+    },
+    {
+      "value": "Pinto"
+    },
+    {
+      "value": "Alves"
+    },
+    {
+      "value": "Dias"
+    },
+    {
+      "value": "Teixeira"
+    },
+    {
+      "value": "Correia"
+    },
+    {
+      "value": "Mendes"
+    },
+    {
+      "value": "Soares"
+    },
+    {
+      "value": "Vieira"
+    },
+    {
+      "value": "Monteiro"
+    },
+    {
+      "value": "Moreira"
+    },
+    {
+      "value": "Cardoso"
+    },
+    {
+      "value": "Duarte"
+    },
+    {
+      "value": "Nunes"
+    },
+    {
+      "value": "Rocha"
+    },
+    {
+      "value": "Coelho"
+    },
+    {
+      "value": "Neves"
+    },
+    {
+      "value": "Reis"
+    },
+    {
+      "value": "Pires"
+    },
+    {
+      "value": "Cunha"
+    },
+    {
+      "value": "Machado"
+    },
+    {
+      "value": "Matos"
+    },
+    {
+      "value": "Fonseca"
+    },
+    {
+      "value": "Ramos"
+    },
+    {
+      "value": "Tavares"
+    },
+    {
+      "value": "Freitas"
+    },
+    {
+      "value": "Simões"
+    },
+    {
+      "value": "Cruz"
+    },
+    {
+      "value": "Antunes"
+    },
+    {
+      "value": "Figueiredo"
+    },
+    {
+      "value": "Barbosa"
+    },
+    {
+      "value": "Castro"
+    },
+    {
+      "value": "Araújo"
+    },
+    {
+      "value": "Azevedo"
+    },
+    {
+      "value": "Lima"
+    },
+    {
+      "value": "Lourenço"
+    },
+    {
+      "value": "Faria"
+    },
+    {
+      "value": "Morais"
+    },
+    {
+      "value": "Andrade"
+    },
+    {
+      "value": "Henriques"
+    },
+    {
+      "value": "Mota"
+    },
+    {
+      "value": "Pinheiro"
+    },
+    {
+      "value": "Afonso"
+    },
+    {
+      "value": "Barros"
+    },
+    {
+      "value": "Miranda"
+    },
+    {
+      "value": "Baptista"
+    },
+    {
+      "value": "Melo"
+    },
+    {
+      "value": "Guerreiro"
+    },
+    {
+      "value": "Nogueira"
+    },
+    {
+      "value": "Abreu"
+    },
+    {
+      "value": "Borges"
+    },
+    {
+      "value": "Brito"
+    },
+    {
+      "value": "Campos"
+    },
+    {
+      "value": "Vaz"
+    },
+    {
+      "value": "Rosa"
+    },
+    {
+      "value": "Maia"
+    },
+    {
+      "value": "Esteves"
+    },
+    {
+      "value": "Batista"
+    },
+    {
+      "value": "Moura"
+    },
+    {
+      "value": "Amaral"
+    },
+    {
+      "value": "Gaspar"
+    },
+    {
+      "value": "Leite"
+    },
+    {
+      "value": "Jorge"
+    },
+    {
+      "value": "Neto"
+    },
+    {
+      "value": "Gouveia"
+    },
+    {
+      "value": "Jesus"
+    },
+    {
+      "value": "Branco"
+    },
+    {
+      "value": "Valente"
+    },
+    {
+      "value": "Pedro"
+    },
+    {
+      "value": "Pinho"
+    },
+    {
+      "value": "Loureiro"
+    },
+    {
+      "value": "Filipe"
+    },
+    {
+      "value": "Cabral"
+    },
+    {
+      "value": "Luís"
+    },
+    {
+      "value": "Miguel"
+    },
+    {
+      "value": "Rebelo"
+    },
+    {
+      "value": "Macedo"
+    },
+    {
+      "value": "Garcia"
+    },
+    {
+      "value": "Couto"
+    },
+    {
+      "value": "Amorim"
+    },
+    {
+      "value": "Nascimento"
+    },
+    {
+      "value": "Leal"
+    },
+    {
+      "value": "Guimarães"
+    },
+    {
+      "value": "Vicente"
+    },
+    {
+      "value": "Paiva"
+    },
+    {
+      "value": "Bastos"
+    },
+    {
+      "value": "Vasconcelos"
+    },
+    {
+      "value": "Matias"
+    },
+    {
+      "value": "Bento"
+    },
+    {
+      "value": "Pacheco"
+    },
+    {
+      "value": "Carneiro"
+    },
+    {
+      "value": "Cordeiro"
+    },
+    {
+      "value": "Sequeira"
+    },
+    {
+      "value": "Domingues"
+    },
+    {
+      "value": "Guedes"
+    },
+    {
+      "value": "Mateus"
+    },
+    {
+      "value": "Saraiva"
+    },
+    {
+      "value": "Coutinho"
+    },
+    {
+      "value": "Sampaio"
+    },
+    {
+      "value": "Morgado"
+    },
+    {
+      "value": "Peixoto"
+    },
+    {
+      "value": "Manuel"
+    },
+    {
+      "value": "Lemos"
+    },
+    {
+      "value": "Madeira"
+    },
+    {
+      "value": "Aguiar"
+    },
+    {
+      "value": "Mendonça"
+    },
+    {
+      "value": "Ramalho"
+    },
+    {
+      "value": "Caetano"
+    },
+    {
+      "value": "Mesquita"
+    },
+    {
+      "value": "Serra"
+    },
+    {
+      "value": "Godinho"
+    },
+    {
+      "value": "Francisco"
+    },
+    {
+      "value": "Paulo"
+    },
+    {
+      "value": "Conceição"
+    },
+    {
+      "value": "Torres"
+    },
+    {
+      "value": "Ventura"
+    },
+    {
+      "value": "Barata"
+    },
+    {
+      "value": "Guerra"
+    },
+    {
+      "value": "Domingos"
+    },
+    {
+      "value": "Viegas"
+    },
+    {
+      "value": "Franco"
+    },
+    {
+      "value": "Braga"
+    },
+    {
+      "value": "Pimenta"
+    },
+    {
+      "value": "Bernardo"
+    },
+    {
+      "value": "Brandão"
+    },
+    {
+      "value": "Raposo"
+    },
+    {
+      "value": "Freire"
+    },
+    {
+      "value": "Pais"
+    },
+    {
+      "value": "Trindade"
+    },
+    {
+      "value": "Martinho"
+    },
+    {
+      "value": "António"
+    },
+    {
+      "value": "Palma"
+    },
+    {
+      "value": "Dinis"
+    },
+    {
+      "value": "Veiga"
+    },
+    {
+      "value": "Roque"
+    },
+    {
+      "value": "Alexandre"
+    },
+    {
+      "value": "Caldeira"
+    },
+    {
+      "value": "Vale"
+    },
+    {
+      "value": "Figueira"
+    },
+    {
+      "value": "Barroso"
+    },
+    {
+      "value": "Viana"
+    },
+    {
+      "value": "Carreira"
+    },
+    {
+      "value": "Carmo"
+    },
+    {
+      "value": "Albuquerque"
+    },
+    {
+      "value": "da Silva"
+    },
+    {
+      "value": "Medeiros"
+    },
+    {
+      "value": "Botelho"
+    },
+    {
+      "value": "Pina"
+    },
+    {
+      "value": "Lobo"
+    },
+    {
+      "value": "Nobre"
+    },
+    {
+      "value": "Carlos"
+    },
+    {
+      "value": "Amaro"
+    },
+    {
+      "value": "Inácio"
+    },
+    {
+      "value": "Graça"
+    },
+    {
+      "value": "Xavier"
+    },
+    {
+      "value": "Sá"
+    },
+    {
+      "value": "Gil"
+    },
+    {
+      "value": "Lucas"
+    },
+    {
+      "value": "Marinho"
+    },
+    {
+      "value": "Cerqueira"
+    },
+    {
+      "value": "Ferrão"
+    },
+    {
+      "value": "Luíz"
+    },
+    {
+      "value": "Fontes"
+    },
+    {
+      "value": "Pimentel"
+    },
+    {
+      "value": "Silveira"
+    },
+    {
+      "value": "Teles"
+    },
+    {
+      "value": "Veloso"
+    },
+    {
+      "value": "Diogo"
+    },
+    {
+      "value": "Ferraz"
+    },
+    {
+      "value": "Queirós"
+    },
+    {
+      "value": "Resende"
+    },
+    {
+      "value": "André"
+    },
+    {
+      "value": "Abrantes"
+    },
+    {
+      "value": "Augusto"
+    },
+    {
+      "value": "Barreto"
+    },
+    {
+      "value": "Magalhães"
+    },
+    {
+      "value": "Farinha"
+    },
+    {
+      "value": "Calado"
+    },
+    {
+      "value": "Patrício"
+    },
+    {
+      "value": "Pedrosa"
+    },
+    {
+      "value": "Louro"
+    },
+    {
+      "value": "Meireles"
+    },
+    {
+      "value": "Gama"
+    },
+    {
+      "value": "Chaves"
+    },
+    {
+      "value": "Coimbra"
+    },
+    {
+      "value": "Salgado"
+    },
+    {
+      "value": "Rego"
+    },
+    {
+      "value": "Varela"
+    },
+    {
+      "value": "Silvestre"
+    },
+    {
+      "value": "Delgado"
+    },
+    {
+      "value": "de Sousa"
+    },
+    {
+      "value": "Sobral"
+    },
+    {
+      "value": "Felix"
+    },
+    {
+      "value": "Pestana"
+    },
+    {
+      "value": "Salgueiro"
+    },
+    {
+      "value": "Catarino"
+    },
+    {
+      "value": "Ricardo"
+    },
+    {
+      "value": "Agostinho"
+    },
+    {
+      "value": "José"
+    },
+    {
+      "value": "Furtado"
+    },
+    {
+      "value": "Candeias"
+    },
+    {
+      "value": "Bessa"
+    },
+    {
+      "value": "Moutinho"
+    },
+    {
+      "value": "Grilo"
+    },
+    {
+      "value": "Fialho"
+    },
+    {
+      "value": "Menezes"
+    },
+    {
+      "value": "Cabrita"
+    },
+    {
+      "value": "Novais"
+    },
+    {
+      "value": "dos Santos"
+    },
+    {
+      "value": "Belo"
+    },
+    {
+      "value": "Horta"
+    },
+    {
+      "value": "Faustino"
+    },
+    {
+      "value": "Mestre"
+    },
+    {
+      "value": "Braz"
+    },
+    {
+      "value": "Castanheira"
+    },
+    {
+      "value": "Jacinto"
+    },
+    {
+      "value": "Salvador"
+    },
+    {
+      "value": "Paulino"
+    },
+    {
+      "value": "Rosado"
+    },
+    {
+      "value": "Paixão"
+    },
+    {
+      "value": "Péres"
+    },
+    {
+      "value": "Vitorino"
+    },
+    {
+      "value": "Fidalgo"
+    },
+    {
+      "value": "Santana"
+    },
+    {
+      "value": "Seabra"
+    },
+    {
+      "value": "Veríssimo"
+    },
+    {
+      "value": "Rosário"
+    },
+    {
+      "value": "Madureira"
+    },
+    {
+      "value": "Sanches"
+    },
+    {
+      "value": "Lisboa"
+    },
+    {
+      "value": "Parreira"
+    },
+    {
+      "value": "Tomás"
+    },
+    {
+      "value": "Camacho"
+    },
+    {
+      "value": "Cavaco"
+    },
+    {
+      "value": "Isabel"
+    },
+    {
+      "value": "Pontes"
+    },
+    {
+      "value": "Vilela"
+    },
+    {
+      "value": "Cristina"
+    },
+    {
+      "value": "Paula"
+    },
+    {
+      "value": "Sofia"
+    },
+    {
+      "value": "Bettencourt"
+    },
+    {
+      "value": "Aires"
+    },
+    {
+      "value": "Anjos"
+    },
+    {
+      "value": "Amado"
+    },
+    {
+      "value": "Barradas"
+    },
+    {
+      "value": "Pedroso"
+    },
+    {
+      "value": "Serrano"
+    },
+    {
+      "value": "Caeiro"
+    },
+    {
+      "value": "Moniz"
+    },
+    {
+      "value": "Seixas"
+    },
+    {
+      "value": "Jardim"
+    },
+    {
+      "value": "Passos"
+    },
+    {
+      "value": "Pessoa"
+    },
+    {
+      "value": "Tomé"
+    },
+    {
+      "value": "Pai"
+    },
+    {
+      "value": "Raimundo"
+    },
+    {
+      "value": "David"
+    },
+    {
+      "value": "Portela"
+    },
+    {
+      "value": "Gameiro"
+    },
+    {
+      "value": "Queiroz"
+    },
+    {
+      "value": "Barreira"
+    },
+    {
+      "value": "Quaresma"
+    },
+    {
+      "value": "Custódio"
+    },
+    {
+      "value": "Bernardino"
+    },
+    {
+      "value": "Quintas"
+    },
+    {
+      "value": "Dantas"
+    },
+    {
+      "value": "Henrique"
+    },
+    {
+      "value": "Mira"
+    },
+    {
+      "value": "Ana"
+    },
+    {
+      "value": "Simão"
+    },
+    {
+      "value": "Semedo"
+    },
+    {
+      "value": "Conde"
+    },
+    {
+      "value": "Prata"
+    },
+    {
+      "value": "Barreiros"
+    },
+    {
+      "value": "Aleixo"
+    },
+    {
+      "value": "Fernando"
+    },
+    {
+      "value": "Fragoso"
+    },
+    {
+      "value": "Bandeira"
+    },
+    {
+      "value": "Meneses"
+    },
+    {
+      "value": "Romão"
+    },
+    {
+      "value": "Caldas"
+    },
+    {
+      "value": "Santiago"
+    },
+    {
+      "value": "Marcelino"
+    },
+    {
+      "value": "Carrilho"
+    },
+    {
+      "value": "Sarmento"
+    },
+    {
+      "value": "Castelo"
+    },
+    {
+      "value": "Diniz"
+    },
+    {
+      "value": "Alberto"
+    },
+    {
+      "value": "França"
+    },
+    {
+      "value": "Malheiro"
+    },
+    {
+      "value": "Ruivo"
+    },
+    {
+      "value": "Osório"
+    },
+    {
+      "value": "Joaquim"
+    },
+    {
+      "value": "Vidal"
+    },
+    {
+      "value": "Mata"
+    },
+    {
+      "value": "Mascarenhas"
+    },
+    {
+      "value": "Lino"
+    },
+    {
+      "value": "Proença"
+    },
+    {
+      "value": "Nelson"
+    },
+    {
+      "value": "Frade"
+    },
+    {
+      "value": "da Costa"
+    },
+    {
+      "value": "Clemente"
+    },
+    {
+      "value": "Bernardes"
+    },
+    {
+      "value": "Rita"
+    },
+    {
+      "value": "Rafael"
+    },
+    {
+      "value": "Lacerda"
+    },
+    {
+      "value": "Baltazar"
+    },
+    {
+      "value": "de Almeida"
+    },
+    {
+      "value": "Câmara"
+    },
+    {
+      "value": "Souza"
+    },
+    {
+      "value": "Brites"
+    },
+    {
+      "value": "Ponte"
+    },
+    {
+      "value": "Crespo"
+    },
+    {
+      "value": "Novo"
+    },
+    {
+      "value": "Noronha"
+    },
+    {
+      "value": "Pascoal"
+    },
+    {
+      "value": "Moita"
+    },
+    {
+      "value": "Joao"
+    },
+    {
+      "value": "Maurício"
+    },
+    {
+      "value": "Parente"
+    },
+    {
+      "value": "Meira"
+    },
+    {
+      "value": "Batalha"
+    },
+    {
+      "value": "Leão"
+    },
+    {
+      "value": "Laranjeira"
+    },
+    {
+      "value": "Leitão"
+    },
+    {
+      "value": "Gabriel"
+    },
+    {
+      "value": "Claro"
+    },
+    {
+      "value": "Manso"
+    },
+    {
+      "value": "Saldanha"
+    },
+    {
+      "value": "Geraldes"
+    },
+    {
+      "value": "Fraga"
+    },
+    {
+      "value": "Garrido"
+    },
+    {
+      "value": "Casimiro"
+    },
+    {
+      "value": "Valentim"
+    },
+    {
+      "value": "Narciso"
+    },
+    {
+      "value": "Vilhena"
+    },
+    {
+      "value": "Espírito"
+    },
+    {
+      "value": "Maciel"
+    },
+    {
+      "value": "Capela"
+    }
+  ],
+  "production_ready": false
+}

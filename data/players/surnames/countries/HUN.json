@@ -1,0 +1,1530 @@
+{
+  "schema_version": 1,
+  "code": "HUN",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "hungarian-500-curated",
+      "url": "https://www.namegeneratorcentral.com/hungarian-last-name-generator",
+      "scope": "Published 500-name Hungarian surname list, consulted 370 A–P entries; author states names screened, but this is an editorial and not governmental source; sampled without probability weighting",
+      "transliteration": "Already native Hungarian Latin script; maintain á é í ó ö ő ú ü ű as published"
+    },
+    {
+      "id": "hungarian-wordlist-pin",
+      "url": "https://github.com/hmlendea/universal-name-generator-wordlists/blob/61cdec4fa571e4338cb326208a47f08ce5aa0020/wordlists/real/hungarian/persons/surnames.lst",
+      "scope": "Hungarian native surname lexicon, 441 published names; used to complete the 500 after cross-source duplicate filtering",
+      "transliteration": "Native published Latin forms retained; NFD accent-insensitive duplicate screening prioritizes the editorial list",
+      "limitations": "Neither source is a national population register; some rare or historical surnames not independently country-residence-verified; source redistribution rights need review"
+    },
+    {
+      "id": "forebears-hungary-validation",
+      "url": "https://forebears.io/hungary/surnames",
+      "scope": "Country-specific surname incidence reference for plausibility and spot checks; no frequency or weighted selection data copied",
+      "limitations": "Third-party incidence estimates"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abonyi"
+    },
+    {
+      "value": "Ábrahám"
+    },
+    {
+      "value": "Ács"
+    },
+    {
+      "value": "Ádám"
+    },
+    {
+      "value": "Albert"
+    },
+    {
+      "value": "Alföldi"
+    },
+    {
+      "value": "Almási"
+    },
+    {
+      "value": "Ambrus"
+    },
+    {
+      "value": "András"
+    },
+    {
+      "value": "Andrássy"
+    },
+    {
+      "value": "Angyal"
+    },
+    {
+      "value": "Antal"
+    },
+    {
+      "value": "Aradi"
+    },
+    {
+      "value": "Arany"
+    },
+    {
+      "value": "Arató"
+    },
+    {
+      "value": "Asztalos"
+    },
+    {
+      "value": "Bácskai"
+    },
+    {
+      "value": "Bagoly"
+    },
+    {
+      "value": "Bajor"
+    },
+    {
+      "value": "Bajusz"
+    },
+    {
+      "value": "Bakó"
+    },
+    {
+      "value": "Bakonyi"
+    },
+    {
+      "value": "Bakos"
+    },
+    {
+      "value": "Balázs"
+    },
+    {
+      "value": "Bálint"
+    },
+    {
+      "value": "Balla"
+    },
+    {
+      "value": "Balog"
+    },
+    {
+      "value": "Balogh"
+    },
+    {
+      "value": "Bán"
+    },
+    {
+      "value": "Bánffy"
+    },
+    {
+      "value": "Bánfi"
+    },
+    {
+      "value": "Bárány"
+    },
+    {
+      "value": "Baranyi"
+    },
+    {
+      "value": "Barát"
+    },
+    {
+      "value": "Barna"
+    },
+    {
+      "value": "Barta"
+    },
+    {
+      "value": "Bartók"
+    },
+    {
+      "value": "Bartos"
+    },
+    {
+      "value": "Báthory"
+    },
+    {
+      "value": "Bátor"
+    },
+    {
+      "value": "Batthyány"
+    },
+    {
+      "value": "Békési"
+    },
+    {
+      "value": "Bencze"
+    },
+    {
+      "value": "Benedek"
+    },
+    {
+      "value": "Benkő"
+    },
+    {
+      "value": "Béres"
+    },
+    {
+      "value": "Berkes"
+    },
+    {
+      "value": "Berki"
+    },
+    {
+      "value": "Bernát"
+    },
+    {
+      "value": "Bertalan"
+    },
+    {
+      "value": "Besenyei"
+    },
+    {
+      "value": "Bethlen"
+    },
+    {
+      "value": "Bihari"
+    },
+    {
+      "value": "Biró"
+    },
+    {
+      "value": "Bódi"
+    },
+    {
+      "value": "Bodnár"
+    },
+    {
+      "value": "Bodó"
+    },
+    {
+      "value": "Bodor"
+    },
+    {
+      "value": "Bogár"
+    },
+    {
+      "value": "Bogdán"
+    },
+    {
+      "value": "Bognár"
+    },
+    {
+      "value": "Bojtár"
+    },
+    {
+      "value": "Bokor"
+    },
+    {
+      "value": "Bokros"
+    },
+    {
+      "value": "Boldog"
+    },
+    {
+      "value": "Bolgár"
+    },
+    {
+      "value": "Borbély"
+    },
+    {
+      "value": "Boros"
+    },
+    {
+      "value": "Bors"
+    },
+    {
+      "value": "Borsodi"
+    },
+    {
+      "value": "Bosnyák"
+    },
+    {
+      "value": "Böszörményi"
+    },
+    {
+      "value": "Bozsik"
+    },
+    {
+      "value": "Budai"
+    },
+    {
+      "value": "Bús"
+    },
+    {
+      "value": "Búza"
+    },
+    {
+      "value": "Búzás"
+    },
+    {
+      "value": "Ceglédi"
+    },
+    {
+      "value": "Cinege"
+    },
+    {
+      "value": "Csapó"
+    },
+    {
+      "value": "Császár"
+    },
+    {
+      "value": "Csatlós"
+    },
+    {
+      "value": "Cseh"
+    },
+    {
+      "value": "Csendes"
+    },
+    {
+      "value": "Csíki"
+    },
+    {
+      "value": "Csikós"
+    },
+    {
+      "value": "Csillag"
+    },
+    {
+      "value": "Csizmadia"
+    },
+    {
+      "value": "Csóka"
+    },
+    {
+      "value": "Csonka"
+    },
+    {
+      "value": "Csorba"
+    },
+    {
+      "value": "Csordás"
+    },
+    {
+      "value": "Csuka"
+    },
+    {
+      "value": "Czakó"
+    },
+    {
+      "value": "Czinege"
+    },
+    {
+      "value": "Dániel"
+    },
+    {
+      "value": "Dankó"
+    },
+    {
+      "value": "Darázs"
+    },
+    {
+      "value": "Daru"
+    },
+    {
+      "value": "Dávid"
+    },
+    {
+      "value": "Deák"
+    },
+    {
+      "value": "Debreceni"
+    },
+    {
+      "value": "Deli"
+    },
+    {
+      "value": "Demeter"
+    },
+    {
+      "value": "Dénes"
+    },
+    {
+      "value": "Dér"
+    },
+    {
+      "value": "Dessewffy"
+    },
+    {
+      "value": "Dévai"
+    },
+    {
+      "value": "Dezső"
+    },
+    {
+      "value": "Diós"
+    },
+    {
+      "value": "Dobó"
+    },
+    {
+      "value": "Dobos"
+    },
+    {
+      "value": "Domokos"
+    },
+    {
+      "value": "Dömötör"
+    },
+    {
+      "value": "Dózsa"
+    },
+    {
+      "value": "Dudás"
+    },
+    {
+      "value": "Dunai"
+    },
+    {
+      "value": "Egri"
+    },
+    {
+      "value": "Elek"
+    },
+    {
+      "value": "Éles"
+    },
+    {
+      "value": "Enyedi"
+    },
+    {
+      "value": "Eördögh"
+    },
+    {
+      "value": "Eötvös"
+    },
+    {
+      "value": "Erdei"
+    },
+    {
+      "value": "Erdélyi"
+    },
+    {
+      "value": "Erdős"
+    },
+    {
+      "value": "Erős"
+    },
+    {
+      "value": "Esterházy"
+    },
+    {
+      "value": "Ezüst"
+    },
+    {
+      "value": "Fábián"
+    },
+    {
+      "value": "Faragó"
+    },
+    {
+      "value": "Farkas"
+    },
+    {
+      "value": "Fazekas"
+    },
+    {
+      "value": "Fecske"
+    },
+    {
+      "value": "Fehér"
+    },
+    {
+      "value": "Fejes"
+    },
+    {
+      "value": "Fekete"
+    },
+    {
+      "value": "Fenyő"
+    },
+    {
+      "value": "Fenyvesi"
+    },
+    {
+      "value": "Ferenc"
+    },
+    {
+      "value": "Ferenczi"
+    },
+    {
+      "value": "Fodor"
+    },
+    {
+      "value": "Forró"
+    },
+    {
+      "value": "Fülöp"
+    },
+    {
+      "value": "Füredi"
+    },
+    {
+      "value": "Gaál"
+    },
+    {
+      "value": "Gábor"
+    },
+    {
+      "value": "Gajdos"
+    },
+    {
+      "value": "Gál"
+    },
+    {
+      "value": "Galamb"
+    },
+    {
+      "value": "Galambos"
+    },
+    {
+      "value": "Gáspár"
+    },
+    {
+      "value": "Gazda"
+    },
+    {
+      "value": "Gazdag"
+    },
+    {
+      "value": "Géczi"
+    },
+    {
+      "value": "Gerencsér"
+    },
+    {
+      "value": "Gergely"
+    },
+    {
+      "value": "Gólya"
+    },
+    {
+      "value": "Gombos"
+    },
+    {
+      "value": "Göndör"
+    },
+    {
+      "value": "Görög"
+    },
+    {
+      "value": "Gulyás"
+    },
+    {
+      "value": "Gyenes"
+    },
+    {
+      "value": "Gyöngyösi"
+    },
+    {
+      "value": "Győrffy"
+    },
+    {
+      "value": "Györfi"
+    },
+    {
+      "value": "György"
+    },
+    {
+      "value": "Győri"
+    },
+    {
+      "value": "Gyulai"
+    },
+    {
+      "value": "Hadnagy"
+    },
+    {
+      "value": "Hajas"
+    },
+    {
+      "value": "Hajdú"
+    },
+    {
+      "value": "Hajnal"
+    },
+    {
+      "value": "Hajós"
+    },
+    {
+      "value": "Halas"
+    },
+    {
+      "value": "Halasi"
+    },
+    {
+      "value": "Halász"
+    },
+    {
+      "value": "Halmai"
+    },
+    {
+      "value": "Harmat"
+    },
+    {
+      "value": "Hatvani"
+    },
+    {
+      "value": "Havas"
+    },
+    {
+      "value": "Havasi"
+    },
+    {
+      "value": "Hegedűs"
+    },
+    {
+      "value": "Hegyi"
+    },
+    {
+      "value": "Herceg"
+    },
+    {
+      "value": "Hevesi"
+    },
+    {
+      "value": "Hídvégi"
+    },
+    {
+      "value": "Holló"
+    },
+    {
+      "value": "Homoki"
+    },
+    {
+      "value": "Horvát"
+    },
+    {
+      "value": "Horváth"
+    },
+    {
+      "value": "Hosszú"
+    },
+    {
+      "value": "Hunyadi"
+    },
+    {
+      "value": "Huszár"
+    },
+    {
+      "value": "Illés"
+    },
+    {
+      "value": "Illyés"
+    },
+    {
+      "value": "Imre"
+    },
+    {
+      "value": "Jakab"
+    },
+    {
+      "value": "Jancsó"
+    },
+    {
+      "value": "Jász"
+    },
+    {
+      "value": "Jenei"
+    },
+    {
+      "value": "Jónás"
+    },
+    {
+      "value": "Józsa"
+    },
+    {
+      "value": "Juhász"
+    },
+    {
+      "value": "Kádár"
+    },
+    {
+      "value": "Kakas"
+    },
+    {
+      "value": "Kakuk"
+    },
+    {
+      "value": "Kállai"
+    },
+    {
+      "value": "Kallós"
+    },
+    {
+      "value": "Kálmán"
+    },
+    {
+      "value": "Kalmár"
+    },
+    {
+      "value": "Kanász"
+    },
+    {
+      "value": "Kanizsai"
+    },
+    {
+      "value": "Kántor"
+    },
+    {
+      "value": "Kapitány"
+    },
+    {
+      "value": "Káposzta"
+    },
+    {
+      "value": "Kapus"
+    },
+    {
+      "value": "Karácsony"
+    },
+    {
+      "value": "Kardos"
+    },
+    {
+      "value": "Károly"
+    },
+    {
+      "value": "Károlyi"
+    },
+    {
+      "value": "Kárpáti"
+    },
+    {
+      "value": "Kassai"
+    },
+    {
+      "value": "Kaszás"
+    },
+    {
+      "value": "Katona"
+    },
+    {
+      "value": "Kecskeméti"
+    },
+    {
+      "value": "Kedves"
+    },
+    {
+      "value": "Kelemen"
+    },
+    {
+      "value": "Kemény"
+    },
+    {
+      "value": "Kenyeres"
+    },
+    {
+      "value": "Kerekes"
+    },
+    {
+      "value": "Keresztes"
+    },
+    {
+      "value": "Kertész"
+    },
+    {
+      "value": "Keserű"
+    },
+    {
+      "value": "Keszthelyi"
+    },
+    {
+      "value": "Kincses"
+    },
+    {
+      "value": "Király"
+    },
+    {
+      "value": "Kis"
+    },
+    {
+      "value": "Kisfaludy"
+    },
+    {
+      "value": "Kiss"
+    },
+    {
+      "value": "Kocsis"
+    },
+    {
+      "value": "Kolozsvári"
+    },
+    {
+      "value": "Komáromi"
+    },
+    {
+      "value": "Kőműves"
+    },
+    {
+      "value": "Kondor"
+    },
+    {
+      "value": "Kopasz"
+    },
+    {
+      "value": "Korcsmáros"
+    },
+    {
+      "value": "Kormos"
+    },
+    {
+      "value": "Körösi"
+    },
+    {
+      "value": "Kos"
+    },
+    {
+      "value": "Kósa"
+    },
+    {
+      "value": "Kossuth"
+    },
+    {
+      "value": "Kőszegi"
+    },
+    {
+      "value": "Köteles"
+    },
+    {
+      "value": "Kovács"
+    },
+    {
+      "value": "Kováts"
+    },
+    {
+      "value": "Kövér"
+    },
+    {
+      "value": "Kövesdi"
+    },
+    {
+      "value": "Kozák"
+    },
+    {
+      "value": "Kozma"
+    },
+    {
+      "value": "Kristóf"
+    },
+    {
+      "value": "Kulcsár"
+    },
+    {
+      "value": "Kun"
+    },
+    {
+      "value": "Kurta"
+    },
+    {
+      "value": "Kürti"
+    },
+    {
+      "value": "Kurucz"
+    },
+    {
+      "value": "Kuti"
+    },
+    {
+      "value": "Laczkó"
+    },
+    {
+      "value": "Lakatos"
+    },
+    {
+      "value": "Lantos"
+    },
+    {
+      "value": "László"
+    },
+    {
+      "value": "Lázár"
+    },
+    {
+      "value": "Lengyel"
+    },
+    {
+      "value": "Lévai"
+    },
+    {
+      "value": "Ligeti"
+    },
+    {
+      "value": "Liliom"
+    },
+    {
+      "value": "Lipták"
+    },
+    {
+      "value": "Lisztes"
+    },
+    {
+      "value": "Lőrincz"
+    },
+    {
+      "value": "Losonczi"
+    },
+    {
+      "value": "Lovas"
+    },
+    {
+      "value": "Lovász"
+    },
+    {
+      "value": "Lugosi"
+    },
+    {
+      "value": "Lukács"
+    },
+    {
+      "value": "Madarász"
+    },
+    {
+      "value": "Magas"
+    },
+    {
+      "value": "Magyar"
+    },
+    {
+      "value": "Magyari"
+    },
+    {
+      "value": "Major"
+    },
+    {
+      "value": "Mák"
+    },
+    {
+      "value": "Makai"
+    },
+    {
+      "value": "Markó"
+    },
+    {
+      "value": "Márkus"
+    },
+    {
+      "value": "Marosi"
+    },
+    {
+      "value": "Márton"
+    },
+    {
+      "value": "Máté"
+    },
+    {
+      "value": "Mátyás"
+    },
+    {
+      "value": "Medve"
+    },
+    {
+      "value": "Méhes"
+    },
+    {
+      "value": "Meleg"
+    },
+    {
+      "value": "Mester"
+    },
+    {
+      "value": "Mészáros"
+    },
+    {
+      "value": "Mezei"
+    },
+    {
+      "value": "Mézes"
+    },
+    {
+      "value": "Mező"
+    },
+    {
+      "value": "Mihály"
+    },
+    {
+      "value": "Miklós"
+    },
+    {
+      "value": "Mikó"
+    },
+    {
+      "value": "Miskolczi"
+    },
+    {
+      "value": "Mogyorósi"
+    },
+    {
+      "value": "Mohácsi"
+    },
+    {
+      "value": "Moldován"
+    },
+    {
+      "value": "Molnár"
+    },
+    {
+      "value": "Móricz"
+    },
+    {
+      "value": "Morva"
+    },
+    {
+      "value": "Mózes"
+    },
+    {
+      "value": "Munkácsi"
+    },
+    {
+      "value": "Nádas"
+    },
+    {
+      "value": "Nádasdy"
+    },
+    {
+      "value": "Nádasi"
+    },
+    {
+      "value": "Nagy"
+    },
+    {
+      "value": "Nemes"
+    },
+    {
+      "value": "Német"
+    },
+    {
+      "value": "Németh"
+    },
+    {
+      "value": "Novák"
+    },
+    {
+      "value": "Nyakas"
+    },
+    {
+      "value": "Nyári"
+    },
+    {
+      "value": "Nyerges"
+    },
+    {
+      "value": "Nyitrai"
+    },
+    {
+      "value": "Nyúl"
+    },
+    {
+      "value": "Okos"
+    },
+    {
+      "value": "Ökrös"
+    },
+    {
+      "value": "Oláh"
+    },
+    {
+      "value": "Olasz"
+    },
+    {
+      "value": "Orbán"
+    },
+    {
+      "value": "Ördög"
+    },
+    {
+      "value": "Öreg"
+    },
+    {
+      "value": "Örmény"
+    },
+    {
+      "value": "Orosz"
+    },
+    {
+      "value": "Oroszlán"
+    },
+    {
+      "value": "Orsós"
+    },
+    {
+      "value": "Ősz"
+    },
+    {
+      "value": "Ötvös"
+    },
+    {
+      "value": "Pál"
+    },
+    {
+      "value": "Pálffy"
+    },
+    {
+      "value": "Pálfi"
+    },
+    {
+      "value": "Pálinkás"
+    },
+    {
+      "value": "Palkó"
+    },
+    {
+      "value": "Palócz"
+    },
+    {
+      "value": "Palotai"
+    },
+    {
+      "value": "Pap"
+    },
+    {
+      "value": "Pápai"
+    },
+    {
+      "value": "Papp"
+    },
+    {
+      "value": "Pásztor"
+    },
+    {
+      "value": "Pataki"
+    },
+    {
+      "value": "Pécsi"
+    },
+    {
+      "value": "Pék"
+    },
+    {
+      "value": "Péntek"
+    },
+    {
+      "value": "Pénzes"
+    },
+    {
+      "value": "Pesti"
+    },
+    {
+      "value": "Péter"
+    },
+    {
+      "value": "Pethő"
+    },
+    {
+      "value": "Pető"
+    },
+    {
+      "value": "Pintér"
+    },
+    {
+      "value": "Pogány"
+    },
+    {
+      "value": "Polgár"
+    },
+    {
+      "value": "Polyák"
+    },
+    {
+      "value": "Puskás"
+    },
+    {
+      "value": "Püspök"
+    },
+    {
+      "value": "Pusztai"
+    },
+    {
+      "value": "Aczél"
+    },
+    {
+      "value": "Ágh"
+    },
+    {
+      "value": "Ajtai"
+    },
+    {
+      "value": "Ajtay"
+    },
+    {
+      "value": "Alpár"
+    },
+    {
+      "value": "Apponyi"
+    },
+    {
+      "value": "Apród"
+    },
+    {
+      "value": "Árvai"
+    },
+    {
+      "value": "Asboth"
+    },
+    {
+      "value": "Babits"
+    },
+    {
+      "value": "Babos"
+    },
+    {
+      "value": "Bács"
+    },
+    {
+      "value": "Bacsik"
+    },
+    {
+      "value": "Balassa"
+    },
+    {
+      "value": "Balasz"
+    },
+    {
+      "value": "Balsai"
+    },
+    {
+      "value": "Balzary"
+    },
+    {
+      "value": "Baranyai"
+    },
+    {
+      "value": "Barati"
+    },
+    {
+      "value": "Bartha"
+    },
+    {
+      "value": "Bekassy"
+    },
+    {
+      "value": "Benyo"
+    },
+    {
+      "value": "Beöthy"
+    },
+    {
+      "value": "Beregfy"
+    },
+    {
+      "value": "Berényi"
+    },
+    {
+      "value": "Bilibok"
+    },
+    {
+      "value": "Birtalan"
+    },
+    {
+      "value": "Bollobás"
+    },
+    {
+      "value": "Bornemisza"
+    },
+    {
+      "value": "Bottyán"
+    },
+    {
+      "value": "Brancsik"
+    },
+    {
+      "value": "Breznay"
+    },
+    {
+      "value": "Buday"
+    },
+    {
+      "value": "Bukrán"
+    },
+    {
+      "value": "Burjan"
+    },
+    {
+      "value": "Csák"
+    },
+    {
+      "value": "Csáki"
+    },
+    {
+      "value": "Csány"
+    },
+    {
+      "value": "Csányi"
+    },
+    {
+      "value": "Csatár"
+    },
+    {
+      "value": "Csere"
+    },
+    {
+      "value": "Cserni"
+    },
+    {
+      "value": "Csiszár"
+    },
+    {
+      "value": "Csókás"
+    },
+    {
+      "value": "Csőke"
+    },
+    {
+      "value": "Csupó"
+    },
+    {
+      "value": "Cziffra"
+    },
+    {
+      "value": "Dajos"
+    },
+    {
+      "value": "Darányi"
+    },
+    {
+      "value": "Dienes"
+    },
+    {
+      "value": "Disztl"
+    },
+    {
+      "value": "Dobay"
+    },
+    {
+      "value": "Draskovich"
+    },
+    {
+      "value": "Draskovics"
+    },
+    {
+      "value": "Draskovits"
+    },
+    {
+      "value": "Egyed"
+    },
+    {
+      "value": "Élő"
+    },
+    {
+      "value": "Eperjesi"
+    },
+    {
+      "value": "Erőss"
+    },
+    {
+      "value": "Fabinyi"
+    },
+    {
+      "value": "Faludy"
+    },
+    {
+      "value": "Fejér"
+    },
+    {
+      "value": "Ferenci"
+    },
+    {
+      "value": "Ferencz"
+    },
+    {
+      "value": "Fogarasi"
+    },
+    {
+      "value": "Földes"
+    },
+    {
+      "value": "Földi"
+    },
+    {
+      "value": "Forintos"
+    },
+    {
+      "value": "Fricsay"
+    },
+    {
+      "value": "Fucsovics"
+    },
+    {
+      "value": "Für"
+    },
+    {
+      "value": "Garaba"
+    },
+    {
+      "value": "Garai"
+    },
+    {
+      "value": "Gárdonyi"
+    },
+    {
+      "value": "Geőcze"
+    },
+    {
+      "value": "Gindl"
+    },
+    {
+      "value": "Göncz"
+    },
+    {
+      "value": "Gönczi"
+    },
+    {
+      "value": "Grósz"
+    },
+    {
+      "value": "Guth"
+    },
+    {
+      "value": "Gyarmati"
+    },
+    {
+      "value": "Gyepes"
+    },
+    {
+      "value": "Gyulay"
+    },
+    {
+      "value": "Hadik"
+    },
+    {
+      "value": "Halmosi"
+    },
+    {
+      "value": "Hamori"
+    },
+    {
+      "value": "Haraszti"
+    },
+    {
+      "value": "Harcsa"
+    },
+    {
+      "value": "Harsanyi"
+    },
+    {
+      "value": "Hátszeghy"
+    },
+    {
+      "value": "Háy"
+    },
+    {
+      "value": "Herczeg"
+    },
+    {
+      "value": "Heszlényi"
+    },
+    {
+      "value": "Hetényi"
+    },
+    {
+      "value": "Hollai"
+    },
+    {
+      "value": "Holup"
+    },
+    {
+      "value": "Horthy"
+    },
+    {
+      "value": "Iglói"
+    },
+    {
+      "value": "Janikovszky"
+    },
+    {
+      "value": "Jeszenszky"
+    },
+    {
+      "value": "Káldy"
+    },
+    {
+      "value": "Kállay"
+    },
+    {
+      "value": "Kalocsai"
+    },
+    {
+      "value": "Kalocsay"
+    },
+    {
+      "value": "Kanizsa"
+    },
+    {
+      "value": "Kanta"
+    },
+    {
+      "value": "Kapolcs"
+    },
+    {
+      "value": "Karinthy"
+    },
+    {
+      "value": "Karman"
+    },
+    {
+      "value": "Kecskés"
+    },
+    {
+      "value": "Kende"
+    },
+    {
+      "value": "Kisfaludi"
+    },
+    {
+      "value": "Kocsárdi"
+    },
+    {
+      "value": "Kollar"
+    },
+    {
+      "value": "Koltai"
+    },
+    {
+      "value": "Koncz"
+    },
+    {
+      "value": "Koranyi"
+    },
+    {
+      "value": "Kornai"
+    },
+    {
+      "value": "Koroknay"
+    },
+    {
+      "value": "Körte"
+    },
+    {
+      "value": "Kósz"
+    },
+    {
+      "value": "Kovacsics"
+    },
+    {
+      "value": "Kristofics"
+    },
+    {
+      "value": "Kurt"
+    },
+    {
+      "value": "Kürthy"
+    },
+    {
+      "value": "Lajtha"
+    },
+    {
+      "value": "Lehár"
+    },
+    {
+      "value": "Liszt"
+    },
+    {
+      "value": "Lucas"
+    },
+    {
+      "value": "Madaras"
+    }
+  ],
+  "production_ready": false
+}

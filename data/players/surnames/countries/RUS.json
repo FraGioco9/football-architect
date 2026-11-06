@@ -1,0 +1,1523 @@
+{
+  "schema_version": 1,
+  "code": "RUS",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "sorokinpf-russian-transliteration",
+      "url": "https://github.com/sorokinpf/russian_names/blob/b23cda8a6011012a30d35f6676521c1a66965f3a/russian_trans_surnames.txt",
+      "scope": "Russian surnames sorted by source occurrence; first 500 unique source-observed Latin forms. Observed ordering does not create weights or statistical representativeness"
+    },
+    {
+      "id": "sorokinpf-romanization-rule",
+      "url": "https://github.com/sorokinpf/russian_names/blob/b23cda8a6011012a30d35f6676521c1a66965f3a/surnamelist_builder.ipynb",
+      "scope": "Publisher's exact Cyrillic-to-Latin transliteration2 mapping. Examples: й→j, ж→zh, х→kh, ц→ts, ч→ch, ш→sh, щ→shch, ю→yu, я→ya, ё→e; ь and ъ omitted. Same source spellings retained without inventing alternative BGN/PCGN versions",
+      "transliteration": "Publisher-defined transliteration2, one-to-one source-observed Latin values; NFC+casefold duplicate removal",
+      "limitations": "Corpus is third-party, not a verified contemporary national population registry; copyright/redistribution requires legal check"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Ivanov"
+    },
+    {
+      "value": "Ivanova"
+    },
+    {
+      "value": "Kuznetsov"
+    },
+    {
+      "value": "Smirnov"
+    },
+    {
+      "value": "Popov"
+    },
+    {
+      "value": "Petrov"
+    },
+    {
+      "value": "Vasilev"
+    },
+    {
+      "value": "Smirnova"
+    },
+    {
+      "value": "Kuznetsova"
+    },
+    {
+      "value": "Kozlov"
+    },
+    {
+      "value": "Vasileva"
+    },
+    {
+      "value": "Petrova"
+    },
+    {
+      "value": "Novikov"
+    },
+    {
+      "value": "Sokolov"
+    },
+    {
+      "value": "Popova"
+    },
+    {
+      "value": "Volkov"
+    },
+    {
+      "value": "Fedorov"
+    },
+    {
+      "value": "Mikhajlov"
+    },
+    {
+      "value": "Semenov"
+    },
+    {
+      "value": "Pavlov"
+    },
+    {
+      "value": "Morozov"
+    },
+    {
+      "value": "Zajtsev"
+    },
+    {
+      "value": "Stepanov"
+    },
+    {
+      "value": "Andreev"
+    },
+    {
+      "value": "Egorov"
+    },
+    {
+      "value": "Nikitin"
+    },
+    {
+      "value": "Mikhajlova"
+    },
+    {
+      "value": "Zakharov"
+    },
+    {
+      "value": "Makarov"
+    },
+    {
+      "value": "Alekseev"
+    },
+    {
+      "value": "Kozlova"
+    },
+    {
+      "value": "Fedorova"
+    },
+    {
+      "value": "Sokolova"
+    },
+    {
+      "value": "Yakovlev"
+    },
+    {
+      "value": "Kovalenko"
+    },
+    {
+      "value": "Nikolaev"
+    },
+    {
+      "value": "Solovev"
+    },
+    {
+      "value": "Bondarenko"
+    },
+    {
+      "value": "Pavlova"
+    },
+    {
+      "value": "Kovalev"
+    },
+    {
+      "value": "Lebedev"
+    },
+    {
+      "value": "Shevchenko"
+    },
+    {
+      "value": "Vorobev"
+    },
+    {
+      "value": "Andreeva"
+    },
+    {
+      "value": "Romanov"
+    },
+    {
+      "value": "Novikova"
+    },
+    {
+      "value": "Semenova"
+    },
+    {
+      "value": "Sergeev"
+    },
+    {
+      "value": "Grigorev"
+    },
+    {
+      "value": "Kiselev"
+    },
+    {
+      "value": "Morozova"
+    },
+    {
+      "value": "Volkova"
+    },
+    {
+      "value": "Kravchenko"
+    },
+    {
+      "value": "Baranov"
+    },
+    {
+      "value": "Kuzmin"
+    },
+    {
+      "value": "Alekseeva"
+    },
+    {
+      "value": "Stepanova"
+    },
+    {
+      "value": "Frolov"
+    },
+    {
+      "value": "Melnikov"
+    },
+    {
+      "value": "Borisov"
+    },
+    {
+      "value": "Egorova"
+    },
+    {
+      "value": "Orlov"
+    },
+    {
+      "value": "Yakovleva"
+    },
+    {
+      "value": "Sorokin"
+    },
+    {
+      "value": "Makarova"
+    },
+    {
+      "value": "Nikolaeva"
+    },
+    {
+      "value": "Zajtseva"
+    },
+    {
+      "value": "Tarasov"
+    },
+    {
+      "value": "Dmitriev"
+    },
+    {
+      "value": "Nikitina"
+    },
+    {
+      "value": "Kovaleva"
+    },
+    {
+      "value": "Medvedev"
+    },
+    {
+      "value": "Zhukov"
+    },
+    {
+      "value": "Polyakov"
+    },
+    {
+      "value": "Lebedeva"
+    },
+    {
+      "value": "Zhuk"
+    },
+    {
+      "value": "Grigoreva"
+    },
+    {
+      "value": "Filippov"
+    },
+    {
+      "value": "Soloveva"
+    },
+    {
+      "value": "Sidorov"
+    },
+    {
+      "value": "Matveev"
+    },
+    {
+      "value": "Gusev"
+    },
+    {
+      "value": "Maksimov"
+    },
+    {
+      "value": "Orlova"
+    },
+    {
+      "value": "Bogdanov"
+    },
+    {
+      "value": "Romanova"
+    },
+    {
+      "value": "Zakharova"
+    },
+    {
+      "value": "Sergeeva"
+    },
+    {
+      "value": "Antonov"
+    },
+    {
+      "value": "Osipov"
+    },
+    {
+      "value": "Marchenko"
+    },
+    {
+      "value": "Kiseleva"
+    },
+    {
+      "value": "Belov"
+    },
+    {
+      "value": "Aleksandrov"
+    },
+    {
+      "value": "Savchenko"
+    },
+    {
+      "value": "Korolev"
+    },
+    {
+      "value": "Ilin"
+    },
+    {
+      "value": "Moroz"
+    },
+    {
+      "value": "Vlasov"
+    },
+    {
+      "value": "Vorobeva"
+    },
+    {
+      "value": "Dmitrieva"
+    },
+    {
+      "value": "Goncharov"
+    },
+    {
+      "value": "Kuzmina"
+    },
+    {
+      "value": "Baranova"
+    },
+    {
+      "value": "Bojko"
+    },
+    {
+      "value": "Tkachenko"
+    },
+    {
+      "value": "Ponomarev"
+    },
+    {
+      "value": "Kulikov"
+    },
+    {
+      "value": "Bogdanova"
+    },
+    {
+      "value": "Kolesnikov"
+    },
+    {
+      "value": "Danilov"
+    },
+    {
+      "value": "Melnikova"
+    },
+    {
+      "value": "Gavrilov"
+    },
+    {
+      "value": "Karpov"
+    },
+    {
+      "value": "Borisova"
+    },
+    {
+      "value": "Titov"
+    },
+    {
+      "value": "Filippova"
+    },
+    {
+      "value": "Frolova"
+    },
+    {
+      "value": "Denisov"
+    },
+    {
+      "value": "Shcherbakov"
+    },
+    {
+      "value": "Novik"
+    },
+    {
+      "value": "Mironov"
+    },
+    {
+      "value": "Belyaev"
+    },
+    {
+      "value": "Kovalchuk"
+    },
+    {
+      "value": "Efimov"
+    },
+    {
+      "value": "Timofeev"
+    },
+    {
+      "value": "Zhukova"
+    },
+    {
+      "value": "Sidorenko"
+    },
+    {
+      "value": "Fomin"
+    },
+    {
+      "value": "Matveeva"
+    },
+    {
+      "value": "Kalinin"
+    },
+    {
+      "value": "Zhuravlev"
+    },
+    {
+      "value": "Aleksandrova"
+    },
+    {
+      "value": "Antonova"
+    },
+    {
+      "value": "Sorokina"
+    },
+    {
+      "value": "Maksimova"
+    },
+    {
+      "value": "Tarasova"
+    },
+    {
+      "value": "Davydov"
+    },
+    {
+      "value": "Afanasev"
+    },
+    {
+      "value": "Kazakov"
+    },
+    {
+      "value": "Komarov"
+    },
+    {
+      "value": "Nazarov"
+    },
+    {
+      "value": "Polyakova"
+    },
+    {
+      "value": "Gerasimov"
+    },
+    {
+      "value": "Bykov"
+    },
+    {
+      "value": "Belova"
+    },
+    {
+      "value": "Koroleva"
+    },
+    {
+      "value": "Chernov"
+    },
+    {
+      "value": "Abramov"
+    },
+    {
+      "value": "Ilina"
+    },
+    {
+      "value": "Konovalov"
+    },
+    {
+      "value": "Medvedeva"
+    },
+    {
+      "value": "Stankevich"
+    },
+    {
+      "value": "Markov"
+    },
+    {
+      "value": "Fedotov"
+    },
+    {
+      "value": "Makarevich"
+    },
+    {
+      "value": "Karpovich"
+    },
+    {
+      "value": "Timofeeva"
+    },
+    {
+      "value": "Melnik"
+    },
+    {
+      "value": "Osipova"
+    },
+    {
+      "value": "Guseva"
+    },
+    {
+      "value": "Tikhonov"
+    },
+    {
+      "value": "Vinogradov"
+    },
+    {
+      "value": "Klimovich"
+    },
+    {
+      "value": "Gavrilova"
+    },
+    {
+      "value": "Martynov"
+    },
+    {
+      "value": "Vinogradova"
+    },
+    {
+      "value": "Ermakov"
+    },
+    {
+      "value": "Ovchinnikov"
+    },
+    {
+      "value": "Belyaeva"
+    },
+    {
+      "value": "Gorbunov"
+    },
+    {
+      "value": "Danilova"
+    },
+    {
+      "value": "Goncharova"
+    },
+    {
+      "value": "Golubev"
+    },
+    {
+      "value": "Kulikova"
+    },
+    {
+      "value": "Sidorova"
+    },
+    {
+      "value": "Romanenko"
+    },
+    {
+      "value": "Lysenko"
+    },
+    {
+      "value": "Efimova"
+    },
+    {
+      "value": "Emelyanov"
+    },
+    {
+      "value": "Yurchenko"
+    },
+    {
+      "value": "Titova"
+    },
+    {
+      "value": "Klimenko"
+    },
+    {
+      "value": "Kirillov"
+    },
+    {
+      "value": "Mironova"
+    },
+    {
+      "value": "Nikiforov"
+    },
+    {
+      "value": "Tarasevich"
+    },
+    {
+      "value": "Golubeva"
+    },
+    {
+      "value": "Afanaseva"
+    },
+    {
+      "value": "Bogdanovich"
+    },
+    {
+      "value": "Trofimov"
+    },
+    {
+      "value": "Vasilenko"
+    },
+    {
+      "value": "Vlasova"
+    },
+    {
+      "value": "Moiseev"
+    },
+    {
+      "value": "Savelev"
+    },
+    {
+      "value": "Bondar"
+    },
+    {
+      "value": "Karpova"
+    },
+    {
+      "value": "Gerasimova"
+    },
+    {
+      "value": "Rudenko"
+    },
+    {
+      "value": "Kalinina"
+    },
+    {
+      "value": "Zhuravleva"
+    },
+    {
+      "value": "Makarenko"
+    },
+    {
+      "value": "Efremov"
+    },
+    {
+      "value": "Kotov"
+    },
+    {
+      "value": "Kudryavtsev"
+    },
+    {
+      "value": "Nazarova"
+    },
+    {
+      "value": "Shcherbakova"
+    },
+    {
+      "value": "Kazakova"
+    },
+    {
+      "value": "Isaev"
+    },
+    {
+      "value": "Karpenko"
+    },
+    {
+      "value": "Potapov"
+    },
+    {
+      "value": "Voronin"
+    },
+    {
+      "value": "Lazarev"
+    },
+    {
+      "value": "Komarova"
+    },
+    {
+      "value": "Lukashevich"
+    },
+    {
+      "value": "Borisenko"
+    },
+    {
+      "value": "Denisova"
+    },
+    {
+      "value": "Krylov"
+    },
+    {
+      "value": "Maltsev"
+    },
+    {
+      "value": "Maslov"
+    },
+    {
+      "value": "Markova"
+    },
+    {
+      "value": "Davydova"
+    },
+    {
+      "value": "Chernykh"
+    },
+    {
+      "value": "Klimov"
+    },
+    {
+      "value": "Anisimov"
+    },
+    {
+      "value": "Timoshenko"
+    },
+    {
+      "value": "Kolesnikova"
+    },
+    {
+      "value": "Borisevich"
+    },
+    {
+      "value": "Malyshev"
+    },
+    {
+      "value": "Naumov"
+    },
+    {
+      "value": "Petrenko"
+    },
+    {
+      "value": "Abramova"
+    },
+    {
+      "value": "Pinchuk"
+    },
+    {
+      "value": "Nikiforova"
+    },
+    {
+      "value": "Saveleva"
+    },
+    {
+      "value": "Ponomareva"
+    },
+    {
+      "value": "Fomina"
+    },
+    {
+      "value": "Leonov"
+    },
+    {
+      "value": "Belousov"
+    },
+    {
+      "value": "Emelyanova"
+    },
+    {
+      "value": "Bykova"
+    },
+    {
+      "value": "Kozlovskij"
+    },
+    {
+      "value": "Tikhonova"
+    },
+    {
+      "value": "Kuzmenko"
+    },
+    {
+      "value": "Kondratev"
+    },
+    {
+      "value": "Fedotova"
+    },
+    {
+      "value": "Chernova"
+    },
+    {
+      "value": "Filatov"
+    },
+    {
+      "value": "Prikhodko"
+    },
+    {
+      "value": "Murashko"
+    },
+    {
+      "value": "Krylova"
+    },
+    {
+      "value": "Kazak"
+    },
+    {
+      "value": "Yushkevich"
+    },
+    {
+      "value": "Tarasenko"
+    },
+    {
+      "value": "Kozlovskaya"
+    },
+    {
+      "value": "Ermakova"
+    },
+    {
+      "value": "Rodionov"
+    },
+    {
+      "value": "Korol"
+    },
+    {
+      "value": "Kulik"
+    },
+    {
+      "value": "Ershov"
+    },
+    {
+      "value": "Pavlovich"
+    },
+    {
+      "value": "Kudryavtseva"
+    },
+    {
+      "value": "Pashkevich"
+    },
+    {
+      "value": "Konovalova"
+    },
+    {
+      "value": "Dubovik"
+    },
+    {
+      "value": "Levchenko"
+    },
+    {
+      "value": "Nesterenko"
+    },
+    {
+      "value": "Yudin"
+    },
+    {
+      "value": "Trofimova"
+    },
+    {
+      "value": "Arkhipov"
+    },
+    {
+      "value": "Kotova"
+    },
+    {
+      "value": "Pavlenko"
+    },
+    {
+      "value": "Karimov"
+    },
+    {
+      "value": "Lukyanov"
+    },
+    {
+      "value": "Martynova"
+    },
+    {
+      "value": "Nesterov"
+    },
+    {
+      "value": "Drozdov"
+    },
+    {
+      "value": "Prokopenko"
+    },
+    {
+      "value": "Bondarev"
+    },
+    {
+      "value": "Kozel"
+    },
+    {
+      "value": "Evdokimov"
+    },
+    {
+      "value": "Gavrilenko"
+    },
+    {
+      "value": "Matskevich"
+    },
+    {
+      "value": "Petrovich"
+    },
+    {
+      "value": "Gorbunova"
+    },
+    {
+      "value": "Tereshchenko"
+    },
+    {
+      "value": "Savitskaya"
+    },
+    {
+      "value": "Naumenko"
+    },
+    {
+      "value": "Zuev"
+    },
+    {
+      "value": "Lobanov"
+    },
+    {
+      "value": "Kravtsov"
+    },
+    {
+      "value": "Zayats"
+    },
+    {
+      "value": "Kharitonov"
+    },
+    {
+      "value": "Anisimova"
+    },
+    {
+      "value": "Prokhorov"
+    },
+    {
+      "value": "Loginov"
+    },
+    {
+      "value": "Savin"
+    },
+    {
+      "value": "Savitskij"
+    },
+    {
+      "value": "Kondrateva"
+    },
+    {
+      "value": "Sobolev"
+    },
+    {
+      "value": "Koval"
+    },
+    {
+      "value": "Drozd"
+    },
+    {
+      "value": "Kirillova"
+    },
+    {
+      "value": "Denisenko"
+    },
+    {
+      "value": "Tkachev"
+    },
+    {
+      "value": "Kolesnik"
+    },
+    {
+      "value": "Efremova"
+    },
+    {
+      "value": "Ovchinnikova"
+    },
+    {
+      "value": "Vashkevich"
+    },
+    {
+      "value": "Kisel"
+    },
+    {
+      "value": "Markevich"
+    },
+    {
+      "value": "Ibragimov"
+    },
+    {
+      "value": "Matusevich"
+    },
+    {
+      "value": "Nazarenko"
+    },
+    {
+      "value": "Litvinov"
+    },
+    {
+      "value": "Grishin"
+    },
+    {
+      "value": "Naumova"
+    },
+    {
+      "value": "Mikheev"
+    },
+    {
+      "value": "Adamovich"
+    },
+    {
+      "value": "Shevchuk"
+    },
+    {
+      "value": "Maksimenko"
+    },
+    {
+      "value": "Khasanov"
+    },
+    {
+      "value": "Ushakov"
+    },
+    {
+      "value": "Klimova"
+    },
+    {
+      "value": "Ignatovich"
+    },
+    {
+      "value": "Velichko"
+    },
+    {
+      "value": "Potapova"
+    },
+    {
+      "value": "Terentev"
+    },
+    {
+      "value": "Safonov"
+    },
+    {
+      "value": "Plotnikov"
+    },
+    {
+      "value": "Sakovich"
+    },
+    {
+      "value": "Malysheva"
+    },
+    {
+      "value": "Golub"
+    },
+    {
+      "value": "Radchenko"
+    },
+    {
+      "value": "Shulga"
+    },
+    {
+      "value": "Valeev"
+    },
+    {
+      "value": "Ignatenko"
+    },
+    {
+      "value": "Krasnov"
+    },
+    {
+      "value": "Kondratenko"
+    },
+    {
+      "value": "Abramovich"
+    },
+    {
+      "value": "Gajduk"
+    },
+    {
+      "value": "Gorbachev"
+    },
+    {
+      "value": "Belousova"
+    },
+    {
+      "value": "Voronov"
+    },
+    {
+      "value": "Gerasimovich"
+    },
+    {
+      "value": "Kireev"
+    },
+    {
+      "value": "Knyazev"
+    },
+    {
+      "value": "Shishkin"
+    },
+    {
+      "value": "Voronina"
+    },
+    {
+      "value": "Soboleva"
+    },
+    {
+      "value": "Loginova"
+    },
+    {
+      "value": "Zhdanovich"
+    },
+    {
+      "value": "Galkin"
+    },
+    {
+      "value": "Dashkevich"
+    },
+    {
+      "value": "Moiseeva"
+    },
+    {
+      "value": "Yaroshevich"
+    },
+    {
+      "value": "Fedorenko"
+    },
+    {
+      "value": "Rusak"
+    },
+    {
+      "value": "Borodin"
+    },
+    {
+      "value": "Leonova"
+    },
+    {
+      "value": "Tsvetkov"
+    },
+    {
+      "value": "Petukhov"
+    },
+    {
+      "value": "Stepanenko"
+    },
+    {
+      "value": "Safronov"
+    },
+    {
+      "value": "Levin"
+    },
+    {
+      "value": "Shevtsov"
+    },
+    {
+      "value": "Tsvetkova"
+    },
+    {
+      "value": "Ignatev"
+    },
+    {
+      "value": "Vasilevskij"
+    },
+    {
+      "value": "Mishchenko"
+    },
+    {
+      "value": "Eliseev"
+    },
+    {
+      "value": "Biryukov"
+    },
+    {
+      "value": "Vlasenko"
+    },
+    {
+      "value": "Demidov"
+    },
+    {
+      "value": "Maslova"
+    },
+    {
+      "value": "Maltseva"
+    },
+    {
+      "value": "Drozdova"
+    },
+    {
+      "value": "Panov"
+    },
+    {
+      "value": "Grishchenko"
+    },
+    {
+      "value": "Shestakov"
+    },
+    {
+      "value": "Vasilevskaya"
+    },
+    {
+      "value": "Alekseenko"
+    },
+    {
+      "value": "Belyakov"
+    },
+    {
+      "value": "Moiseenko"
+    },
+    {
+      "value": "Terenteva"
+    },
+    {
+      "value": "Prokhorova"
+    },
+    {
+      "value": "Ryabov"
+    },
+    {
+      "value": "Kuleshov"
+    },
+    {
+      "value": "Tretyakov"
+    },
+    {
+      "value": "Kuzmich"
+    },
+    {
+      "value": "Soroka"
+    },
+    {
+      "value": "Gurinovich"
+    },
+    {
+      "value": "Lazareva"
+    },
+    {
+      "value": "Kharchenko"
+    },
+    {
+      "value": "Rodionova"
+    },
+    {
+      "value": "Konstantinov"
+    },
+    {
+      "value": "Sharipov"
+    },
+    {
+      "value": "Romanovich"
+    },
+    {
+      "value": "Gorbacheva"
+    },
+    {
+      "value": "Arkhipova"
+    },
+    {
+      "value": "Akulich"
+    },
+    {
+      "value": "Gerasimenko"
+    },
+    {
+      "value": "Baranovskij"
+    },
+    {
+      "value": "Rumyantseva"
+    },
+    {
+      "value": "Poznyak"
+    },
+    {
+      "value": "Bogdan"
+    },
+    {
+      "value": "Ermolenko"
+    },
+    {
+      "value": "Filatova"
+    },
+    {
+      "value": "Vorobej"
+    },
+    {
+      "value": "Kostyuk"
+    },
+    {
+      "value": "Nesterova"
+    },
+    {
+      "value": "Isaeva"
+    },
+    {
+      "value": "Chistyakov"
+    },
+    {
+      "value": "Martynenko"
+    },
+    {
+      "value": "Aksenov"
+    },
+    {
+      "value": "Kostin"
+    },
+    {
+      "value": "Zueva"
+    },
+    {
+      "value": "Panova"
+    },
+    {
+      "value": "Khomich"
+    },
+    {
+      "value": "Bychkov"
+    },
+    {
+      "value": "Leontev"
+    },
+    {
+      "value": "Nikitenko"
+    },
+    {
+      "value": "Kravtsova"
+    },
+    {
+      "value": "Seleznev"
+    },
+    {
+      "value": "Tokarev"
+    },
+    {
+      "value": "Nikulin"
+    },
+    {
+      "value": "Savina"
+    },
+    {
+      "value": "Filimonov"
+    },
+    {
+      "value": "Rumyantsev"
+    },
+    {
+      "value": "Ershova"
+    },
+    {
+      "value": "Ignateva"
+    },
+    {
+      "value": "Yurkevich"
+    },
+    {
+      "value": "Solovej"
+    },
+    {
+      "value": "Kryukov"
+    },
+    {
+      "value": "Pozdnyakov"
+    },
+    {
+      "value": "Akhmetov"
+    },
+    {
+      "value": "Isakov"
+    },
+    {
+      "value": "Mitskevich"
+    },
+    {
+      "value": "Miroshnichenko"
+    },
+    {
+      "value": "Khokhlov"
+    },
+    {
+      "value": "Zhdanov"
+    },
+    {
+      "value": "Fedorovich"
+    },
+    {
+      "value": "Panchenko"
+    },
+    {
+      "value": "Borovik"
+    },
+    {
+      "value": "Urbanovich"
+    },
+    {
+      "value": "Chernyak"
+    },
+    {
+      "value": "Shpak"
+    },
+    {
+      "value": "Kravchuk"
+    },
+    {
+      "value": "Burak"
+    },
+    {
+      "value": "Savchuk"
+    },
+    {
+      "value": "Latypov"
+    },
+    {
+      "value": "Nesterovich"
+    },
+    {
+      "value": "Korzun"
+    },
+    {
+      "value": "Simonov"
+    },
+    {
+      "value": "Kasperovich"
+    },
+    {
+      "value": "Yudina"
+    },
+    {
+      "value": "Mukhin"
+    },
+    {
+      "value": "Demin"
+    },
+    {
+      "value": "Gorshkov"
+    },
+    {
+      "value": "Romanyuk"
+    },
+    {
+      "value": "Skvortsov"
+    },
+    {
+      "value": "Rybakov"
+    },
+    {
+      "value": "Voronova"
+    },
+    {
+      "value": "Lukyanova"
+    },
+    {
+      "value": "Galimov"
+    },
+    {
+      "value": "Molchanov"
+    },
+    {
+      "value": "Ermolaev"
+    },
+    {
+      "value": "Yusupov"
+    },
+    {
+      "value": "Kharitonova"
+    },
+    {
+      "value": "Bobrov"
+    },
+    {
+      "value": "Poleshchuk"
+    },
+    {
+      "value": "Gromyko"
+    },
+    {
+      "value": "Lobanova"
+    },
+    {
+      "value": "Novitskaya"
+    },
+    {
+      "value": "Evdokimova"
+    },
+    {
+      "value": "Babich"
+    },
+    {
+      "value": "Ponomarenko"
+    },
+    {
+      "value": "Sokolovskij"
+    },
+    {
+      "value": "Sazonov"
+    },
+    {
+      "value": "Konstantinova"
+    },
+    {
+      "value": "Davidovich"
+    },
+    {
+      "value": "Petukhova"
+    },
+    {
+      "value": "Korotkevich"
+    },
+    {
+      "value": "Gromov"
+    },
+    {
+      "value": "Tretyakova"
+    },
+    {
+      "value": "Bolshakov"
+    },
+    {
+      "value": "Novitskij"
+    },
+    {
+      "value": "Suvorov"
+    },
+    {
+      "value": "Kudryashov"
+    },
+    {
+      "value": "Gorbach"
+    },
+    {
+      "value": "Eremenko"
+    },
+    {
+      "value": "Kulakov"
+    },
+    {
+      "value": "Mikheeva"
+    },
+    {
+      "value": "Petrovskij"
+    },
+    {
+      "value": "Grachev"
+    },
+    {
+      "value": "Fadeev"
+    },
+    {
+      "value": "Olejnik"
+    },
+    {
+      "value": "Malakhov"
+    },
+    {
+      "value": "Chernyshev"
+    },
+    {
+      "value": "Bondareva"
+    }
+  ],
+  "production_ready": false
+}

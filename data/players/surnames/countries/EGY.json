@@ -1,0 +1,1521 @@
+{
+  "schema_version": 1,
+  "code": "EGY",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "title": "egy-names / Egyptian Names & Onomastic Intelligence Dataset (family-classified canonical entries; Egyptian name-chain corpus)",
+      "source_url": "https://github.com/AbdullahAfifyKhalil/egy-names/blob/1b78c1e6ea7538d0cf055c51686f746030a4debf/huggingface/data/names.csv",
+      "source_commit": "1b78c1e6ea7538d0cf055c51686f746030a4debf",
+      "source_blob_sha": "a918e0079ad37218801a016ec57bba2d7b2047e5",
+      "license": "MIT (upstream repository)",
+      "romanization_convention": "Use each original source name_en value paired to Arabic name_ar, explicitly role=f (family surname); preserve recorded Egyptian English transcription, not an independently generated transliteration.",
+      "selection": "First 500 distinct eligible source family-role entries in the publisher's corpus-ranking order; runtime sampling from selected 500 is uniform, with no retained frequencies.",
+      "limitations": "Corpus derives from Egyptian exam/student name chains; publisher states national all-governorate coverage, not independently verified. Role classification and English transliteration have not been individually manually audited; research only."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abuzeid"
+    },
+    {
+      "value": "Badawy"
+    },
+    {
+      "value": "Bayoumi"
+    },
+    {
+      "value": "Eldesouky"
+    },
+    {
+      "value": "Bassiouny"
+    },
+    {
+      "value": "Elshahat"
+    },
+    {
+      "value": "Afify"
+    },
+    {
+      "value": "Hanafy"
+    },
+    {
+      "value": "Hegazy"
+    },
+    {
+      "value": "Desouky"
+    },
+    {
+      "value": "Shalaby"
+    },
+    {
+      "value": "Elhusseiny"
+    },
+    {
+      "value": "Elsherbiny"
+    },
+    {
+      "value": "Elnaggar"
+    },
+    {
+      "value": "Elmorsy"
+    },
+    {
+      "value": "Farghaly"
+    },
+    {
+      "value": "Qarny"
+    },
+    {
+      "value": "Elshafey"
+    },
+    {
+      "value": "Aboulenein"
+    },
+    {
+      "value": "Elsharkawy"
+    },
+    {
+      "value": "Elsheikh"
+    },
+    {
+      "value": "Eldeeb"
+    },
+    {
+      "value": "Elkholy"
+    },
+    {
+      "value": "El Sawy"
+    },
+    {
+      "value": "Elgendy"
+    },
+    {
+      "value": "Hefny"
+    },
+    {
+      "value": "Abouelmaaty"
+    },
+    {
+      "value": "Elrefaei"
+    },
+    {
+      "value": "El Shenawy"
+    },
+    {
+      "value": "Elshazly"
+    },
+    {
+      "value": "Elfeky"
+    },
+    {
+      "value": "Elbadry"
+    },
+    {
+      "value": "Mehenny"
+    },
+    {
+      "value": "Mohamady"
+    },
+    {
+      "value": "Elazab"
+    },
+    {
+      "value": "Fouda"
+    },
+    {
+      "value": "Elsaidy"
+    },
+    {
+      "value": "Elgohary"
+    },
+    {
+      "value": "Elbassiony"
+    },
+    {
+      "value": "Elgamal"
+    },
+    {
+      "value": "Elgharib"
+    },
+    {
+      "value": "Elbanna"
+    },
+    {
+      "value": "Elbadawy"
+    },
+    {
+      "value": "Elsebaey"
+    },
+    {
+      "value": "Elimam"
+    },
+    {
+      "value": "Ashry"
+    },
+    {
+      "value": "Elbaz"
+    },
+    {
+      "value": "Elsagheer"
+    },
+    {
+      "value": "Elsherif"
+    },
+    {
+      "value": "Elbayoumy"
+    },
+    {
+      "value": "Eltantawy"
+    },
+    {
+      "value": "Elkady"
+    },
+    {
+      "value": "Allah"
+    },
+    {
+      "value": "Elshamy"
+    },
+    {
+      "value": "Elmasry"
+    },
+    {
+      "value": "El Awady"
+    },
+    {
+      "value": "Tantawy"
+    },
+    {
+      "value": "Elshabrawy"
+    },
+    {
+      "value": "Elabd"
+    },
+    {
+      "value": "El Ashry"
+    },
+    {
+      "value": "Elessawy"
+    },
+    {
+      "value": "Essawy"
+    },
+    {
+      "value": "Behairy"
+    },
+    {
+      "value": "Elgammal"
+    },
+    {
+      "value": "Heraidy"
+    },
+    {
+      "value": "Elgazzar"
+    },
+    {
+      "value": "Hendawy"
+    },
+    {
+      "value": "Heikal"
+    },
+    {
+      "value": "El Saadany"
+    },
+    {
+      "value": "Elhaddad"
+    },
+    {
+      "value": "Elsamman"
+    },
+    {
+      "value": "Elsheshtawy"
+    },
+    {
+      "value": "El Bily"
+    },
+    {
+      "value": "Madbouly"
+    },
+    {
+      "value": "Moselhy"
+    },
+    {
+      "value": "Oweida"
+    },
+    {
+      "value": "Elsayyad"
+    },
+    {
+      "value": "Elmaghraby"
+    },
+    {
+      "value": "Elsakka"
+    },
+    {
+      "value": "Ellaithy"
+    },
+    {
+      "value": "Elnady"
+    },
+    {
+      "value": "Eladawy"
+    },
+    {
+      "value": "Maslahy"
+    },
+    {
+      "value": "Elmohamady"
+    },
+    {
+      "value": "Elhanafy"
+    },
+    {
+      "value": "Saadawy"
+    },
+    {
+      "value": "Embaby"
+    },
+    {
+      "value": "Elwakil"
+    },
+    {
+      "value": "Habashy"
+    },
+    {
+      "value": "Makkawy"
+    },
+    {
+      "value": "Hendy"
+    },
+    {
+      "value": "Eladl"
+    },
+    {
+      "value": "Talab"
+    },
+    {
+      "value": "Elattar"
+    },
+    {
+      "value": "Elkhatib"
+    },
+    {
+      "value": "Agamy"
+    },
+    {
+      "value": "Genaidy"
+    },
+    {
+      "value": "Eltokhy"
+    },
+    {
+      "value": "Elmelegy"
+    },
+    {
+      "value": "Mokhaymer"
+    },
+    {
+      "value": "El Damardash"
+    },
+    {
+      "value": "Baghdady"
+    },
+    {
+      "value": "Ashmawy"
+    },
+    {
+      "value": "Khafagy"
+    },
+    {
+      "value": "Elnahas"
+    },
+    {
+      "value": "Elsabbagh"
+    },
+    {
+      "value": "Elbehairy"
+    },
+    {
+      "value": "Elbarbary"
+    },
+    {
+      "value": "El Shahawy"
+    },
+    {
+      "value": "Lashin"
+    },
+    {
+      "value": "Elmaghazy"
+    },
+    {
+      "value": "Elshaer"
+    },
+    {
+      "value": "El Ashmawy"
+    },
+    {
+      "value": "Bora'y"
+    },
+    {
+      "value": "Ziada"
+    },
+    {
+      "value": "Elagamy"
+    },
+    {
+      "value": "Abbady"
+    },
+    {
+      "value": "Olwany"
+    },
+    {
+      "value": "El Sisi"
+    },
+    {
+      "value": "Abolgheit"
+    },
+    {
+      "value": "Elmozein"
+    },
+    {
+      "value": "Maghraby"
+    },
+    {
+      "value": "Shata"
+    },
+    {
+      "value": "Elalfy"
+    },
+    {
+      "value": "Elshaarawy"
+    },
+    {
+      "value": "Elhadidy"
+    },
+    {
+      "value": "Dardir"
+    },
+    {
+      "value": "Elkotb"
+    },
+    {
+      "value": "Khedry"
+    },
+    {
+      "value": "Shabana"
+    },
+    {
+      "value": "Eraky"
+    },
+    {
+      "value": "Ghoneimy"
+    },
+    {
+      "value": "Fouly"
+    },
+    {
+      "value": "Bandary"
+    },
+    {
+      "value": "Meligy"
+    },
+    {
+      "value": "El Komy"
+    },
+    {
+      "value": "El Bastawisy"
+    },
+    {
+      "value": "Elmansy"
+    },
+    {
+      "value": "Masry"
+    },
+    {
+      "value": "Basha"
+    },
+    {
+      "value": "Heiba"
+    },
+    {
+      "value": "El Maghawry"
+    },
+    {
+      "value": "Elborei"
+    },
+    {
+      "value": "Eleraky"
+    },
+    {
+      "value": "Elzayat"
+    },
+    {
+      "value": "Elnabawy"
+    },
+    {
+      "value": "Aboshoaishaa"
+    },
+    {
+      "value": "Elhawary"
+    },
+    {
+      "value": "Sharkawy"
+    },
+    {
+      "value": "Elgharbawy"
+    },
+    {
+      "value": "Elshorbagy"
+    },
+    {
+      "value": "Elfar"
+    },
+    {
+      "value": "Keshk"
+    },
+    {
+      "value": "Hegab"
+    },
+    {
+      "value": "Hasheesh"
+    },
+    {
+      "value": "Mowafy"
+    },
+    {
+      "value": "Elbakry"
+    },
+    {
+      "value": "Dwidar"
+    },
+    {
+      "value": "Maghazy"
+    },
+    {
+      "value": "Eltawil"
+    },
+    {
+      "value": "Elnouby"
+    },
+    {
+      "value": "El Shimy"
+    },
+    {
+      "value": "Elsaadawy"
+    },
+    {
+      "value": "Elmakkawy"
+    },
+    {
+      "value": "Askar"
+    },
+    {
+      "value": "Elhassaneen"
+    },
+    {
+      "value": "Magly"
+    },
+    {
+      "value": "Bahnasy"
+    },
+    {
+      "value": "El Shawadfy"
+    },
+    {
+      "value": "Elzogby"
+    },
+    {
+      "value": "Bebawy"
+    },
+    {
+      "value": "Aboseif"
+    },
+    {
+      "value": "Shaarawy"
+    },
+    {
+      "value": "Elkhidry"
+    },
+    {
+      "value": "Shandy"
+    },
+    {
+      "value": "Fareeg"
+    },
+    {
+      "value": "To'eima"
+    },
+    {
+      "value": "Elbaghdady"
+    },
+    {
+      "value": "Elfakhrany"
+    },
+    {
+      "value": "Elmawafy"
+    },
+    {
+      "value": "Elnemr"
+    },
+    {
+      "value": "Elqassas"
+    },
+    {
+      "value": "Eltabei"
+    },
+    {
+      "value": "Elhag"
+    },
+    {
+      "value": "Haddad"
+    },
+    {
+      "value": "Elzeiny"
+    },
+    {
+      "value": "Elqott"
+    },
+    {
+      "value": "Helaly"
+    },
+    {
+      "value": "Eldabaa"
+    },
+    {
+      "value": "Elgabaly"
+    },
+    {
+      "value": "Elghandour"
+    },
+    {
+      "value": "Elmallah"
+    },
+    {
+      "value": "Elghannam"
+    },
+    {
+      "value": "Elqasaby"
+    },
+    {
+      "value": "Anany"
+    },
+    {
+      "value": "Boreik"
+    },
+    {
+      "value": "Elbab"
+    },
+    {
+      "value": "Hasabelnaby"
+    },
+    {
+      "value": "Elhefnawy"
+    },
+    {
+      "value": "Abuhussein"
+    },
+    {
+      "value": "Elafify"
+    },
+    {
+      "value": "El Dawy"
+    },
+    {
+      "value": "Mohasseb"
+    },
+    {
+      "value": "Gebra"
+    },
+    {
+      "value": "Asran"
+    },
+    {
+      "value": "Saafan"
+    },
+    {
+      "value": "Elanany"
+    },
+    {
+      "value": "Elsenousy"
+    },
+    {
+      "value": "Darraz"
+    },
+    {
+      "value": "Zenaty"
+    },
+    {
+      "value": "Abuali"
+    },
+    {
+      "value": "Halawa"
+    },
+    {
+      "value": "Elmenshawy"
+    },
+    {
+      "value": "Elmaadawy"
+    },
+    {
+      "value": "Menshawy"
+    },
+    {
+      "value": "Elabbasy"
+    },
+    {
+      "value": "Elhendawy"
+    },
+    {
+      "value": "Qobeisy"
+    },
+    {
+      "value": "Elkarim"
+    },
+    {
+      "value": "El Bandary"
+    },
+    {
+      "value": "Nagdy"
+    },
+    {
+      "value": "Abulleil"
+    },
+    {
+      "value": "Hazeen"
+    },
+    {
+      "value": "Asr"
+    },
+    {
+      "value": "Tayel"
+    },
+    {
+      "value": "Elhennawy"
+    },
+    {
+      "value": "Elwardany"
+    },
+    {
+      "value": "Elbeltagy"
+    },
+    {
+      "value": "Elsaoudy"
+    },
+    {
+      "value": "Harb"
+    },
+    {
+      "value": "Moqalled"
+    },
+    {
+      "value": "Adawy"
+    },
+    {
+      "value": "Shalqamy"
+    },
+    {
+      "value": "Elbadrawy"
+    },
+    {
+      "value": "Hawwash"
+    },
+    {
+      "value": "Hassany"
+    },
+    {
+      "value": "Elhefny"
+    },
+    {
+      "value": "Elmahlawy"
+    },
+    {
+      "value": "Gamea"
+    },
+    {
+      "value": "Elzohairy"
+    },
+    {
+      "value": "Elyamany"
+    },
+    {
+      "value": "Sawy"
+    },
+    {
+      "value": "Ghubashy"
+    },
+    {
+      "value": "Geres"
+    },
+    {
+      "value": "Hasab"
+    },
+    {
+      "value": "Lamloum"
+    },
+    {
+      "value": "Elrawy"
+    },
+    {
+      "value": "Shousha"
+    },
+    {
+      "value": "Agayeby"
+    },
+    {
+      "value": "Abumoslem"
+    },
+    {
+      "value": "Elrashidy"
+    },
+    {
+      "value": "Oryan"
+    },
+    {
+      "value": "Ghorab"
+    },
+    {
+      "value": "Elashkar"
+    },
+    {
+      "value": "Elhalawany"
+    },
+    {
+      "value": "Eltahhan"
+    },
+    {
+      "value": "Tahoun"
+    },
+    {
+      "value": "Etreis"
+    },
+    {
+      "value": "Abuyoussef"
+    },
+    {
+      "value": "Abuldahab"
+    },
+    {
+      "value": "Elseify"
+    },
+    {
+      "value": "El Rouby"
+    },
+    {
+      "value": "Saada"
+    },
+    {
+      "value": "Elzenaty"
+    },
+    {
+      "value": "Elqinawy"
+    },
+    {
+      "value": "Bastawy"
+    },
+    {
+      "value": "Nakhla"
+    },
+    {
+      "value": "Elhosary"
+    },
+    {
+      "value": "Noby"
+    },
+    {
+      "value": "Teghyan"
+    },
+    {
+      "value": "Shouman"
+    },
+    {
+      "value": "Abusaada"
+    },
+    {
+      "value": "El Deisty"
+    },
+    {
+      "value": "Elnasr"
+    },
+    {
+      "value": "Khella"
+    },
+    {
+      "value": "Elsaady"
+    },
+    {
+      "value": "Hagras"
+    },
+    {
+      "value": "Elqazzaz"
+    },
+    {
+      "value": "Abusamra"
+    },
+    {
+      "value": "Elfayoumy"
+    },
+    {
+      "value": "Zaitoun"
+    },
+    {
+      "value": "Somaida"
+    },
+    {
+      "value": "Elsharnouby"
+    },
+    {
+      "value": "Elshal"
+    },
+    {
+      "value": "Elghamry"
+    },
+    {
+      "value": "Abureya"
+    },
+    {
+      "value": "Beltagy"
+    },
+    {
+      "value": "Elfarmawy"
+    },
+    {
+      "value": "Elnagdy"
+    },
+    {
+      "value": "Elhabashy"
+    },
+    {
+      "value": "Elazazy"
+    },
+    {
+      "value": "El Meshed"
+    },
+    {
+      "value": "Elkilany"
+    },
+    {
+      "value": "Elerian"
+    },
+    {
+      "value": "Elwaseef"
+    },
+    {
+      "value": "Eldaly"
+    },
+    {
+      "value": "Elnaqeeb"
+    },
+    {
+      "value": "Abuahmed"
+    },
+    {
+      "value": "Khafaga"
+    },
+    {
+      "value": "Elgeyyar"
+    },
+    {
+      "value": "Eltabbakh"
+    },
+    {
+      "value": "Elnashar"
+    },
+    {
+      "value": "Elganainy"
+    },
+    {
+      "value": "Elmorshedy"
+    },
+    {
+      "value": "El Ghoneimy"
+    },
+    {
+      "value": "Maglaa"
+    },
+    {
+      "value": "Elkhomaisy"
+    },
+    {
+      "value": "Meshaly"
+    },
+    {
+      "value": "Abushanab"
+    },
+    {
+      "value": "Elbarry"
+    },
+    {
+      "value": "Elbahrawy"
+    },
+    {
+      "value": "Elkhayyat"
+    },
+    {
+      "value": "Qedees"
+    },
+    {
+      "value": "Sheha"
+    },
+    {
+      "value": "Elghazaly"
+    },
+    {
+      "value": "Elbagoury"
+    },
+    {
+      "value": "Elgarhy"
+    },
+    {
+      "value": "Abushady"
+    },
+    {
+      "value": "Elsafty"
+    },
+    {
+      "value": "Elbahy"
+    },
+    {
+      "value": "El Mougy"
+    },
+    {
+      "value": "Elmawla"
+    },
+    {
+      "value": "Elhelaly"
+    },
+    {
+      "value": "Maaty"
+    },
+    {
+      "value": "Elmessiry"
+    },
+    {
+      "value": "Merghany"
+    },
+    {
+      "value": "Shaltout"
+    },
+    {
+      "value": "Elhelw"
+    },
+    {
+      "value": "Shaeer"
+    },
+    {
+      "value": "Khodairy"
+    },
+    {
+      "value": "Rashidy"
+    },
+    {
+      "value": "Hawwas"
+    },
+    {
+      "value": "Elansary"
+    },
+    {
+      "value": "Abulhadid"
+    },
+    {
+      "value": "Elgabry"
+    },
+    {
+      "value": "Eladly"
+    },
+    {
+      "value": "Elqess"
+    },
+    {
+      "value": "Abuamer"
+    },
+    {
+      "value": "Abuawf"
+    },
+    {
+      "value": "Elsobky"
+    },
+    {
+      "value": "Abushosha"
+    },
+    {
+      "value": "Elsabaa"
+    },
+    {
+      "value": "Masiha"
+    },
+    {
+      "value": "Fingary"
+    },
+    {
+      "value": "El Gizawy"
+    },
+    {
+      "value": "El Ghoubashy"
+    },
+    {
+      "value": "Elsammahy"
+    },
+    {
+      "value": "Abuomar"
+    },
+    {
+      "value": "Elderiny"
+    },
+    {
+      "value": "El A'sar"
+    },
+    {
+      "value": "Elgamil"
+    },
+    {
+      "value": "Nafady"
+    },
+    {
+      "value": "Elolaimy"
+    },
+    {
+      "value": "Gawish"
+    },
+    {
+      "value": "Mashhout"
+    },
+    {
+      "value": "Abusalem"
+    },
+    {
+      "value": "El Fouly"
+    },
+    {
+      "value": "Mandy"
+    },
+    {
+      "value": "Menisy"
+    },
+    {
+      "value": "Da'bas"
+    },
+    {
+      "value": "Hashad"
+    },
+    {
+      "value": "Farmawy"
+    },
+    {
+      "value": "El Dawoudy"
+    },
+    {
+      "value": "Elhadary"
+    },
+    {
+      "value": "Elsokkary"
+    },
+    {
+      "value": "Assy"
+    },
+    {
+      "value": "Elsawah"
+    },
+    {
+      "value": "Ellabban"
+    },
+    {
+      "value": "Elsabahy"
+    },
+    {
+      "value": "Gaheen"
+    },
+    {
+      "value": "Elayedy"
+    },
+    {
+      "value": "Abusaleh"
+    },
+    {
+      "value": "Elrayes"
+    },
+    {
+      "value": "Abulsaad"
+    },
+    {
+      "value": "Aburawash"
+    },
+    {
+      "value": "Hasbo"
+    },
+    {
+      "value": "Elzohry"
+    },
+    {
+      "value": "Elsoudany"
+    },
+    {
+      "value": "Elkordy"
+    },
+    {
+      "value": "Abuhassan"
+    },
+    {
+      "value": "Abuissa"
+    },
+    {
+      "value": "Samak"
+    },
+    {
+      "value": "Elbashbeeshy"
+    },
+    {
+      "value": "Mersal"
+    },
+    {
+      "value": "Bastawisy"
+    },
+    {
+      "value": "Megaweer"
+    },
+    {
+      "value": "Abulaila"
+    },
+    {
+      "value": "Elgonaidy"
+    },
+    {
+      "value": "Gadelmawla"
+    },
+    {
+      "value": "Elbahnasy"
+    },
+    {
+      "value": "Agwa"
+    },
+    {
+      "value": "Fathalbab"
+    },
+    {
+      "value": "Eldakrory"
+    },
+    {
+      "value": "Swefy"
+    },
+    {
+      "value": "Elraey"
+    },
+    {
+      "value": "Gowily"
+    },
+    {
+      "value": "Adas"
+    },
+    {
+      "value": "Barbary"
+    },
+    {
+      "value": "Eldaidamouny"
+    },
+    {
+      "value": "Douma"
+    },
+    {
+      "value": "Qoura"
+    },
+    {
+      "value": "Bahnasawy"
+    },
+    {
+      "value": "Abugabal"
+    },
+    {
+      "value": "Elassal"
+    },
+    {
+      "value": "Elkafrawy"
+    },
+    {
+      "value": "Loundy"
+    },
+    {
+      "value": "Mashriqy"
+    },
+    {
+      "value": "Abuarab"
+    },
+    {
+      "value": "Elbatal"
+    },
+    {
+      "value": "Elbaqary"
+    },
+    {
+      "value": "Abdelmahdy"
+    },
+    {
+      "value": "El Mandouwa"
+    },
+    {
+      "value": "Elezby"
+    },
+    {
+      "value": "Samaha"
+    },
+    {
+      "value": "Taalab"
+    },
+    {
+      "value": "Elkenany"
+    },
+    {
+      "value": "Agha"
+    },
+    {
+      "value": "Qeliny"
+    },
+    {
+      "value": "Zalat"
+    },
+    {
+      "value": "Elaraby"
+    },
+    {
+      "value": "Darbala"
+    },
+    {
+      "value": "Elmaslahy"
+    },
+    {
+      "value": "Feltes"
+    },
+    {
+      "value": "Eita"
+    },
+    {
+      "value": "Ishta"
+    },
+    {
+      "value": "Abughanima"
+    },
+    {
+      "value": "Elsawwaf"
+    },
+    {
+      "value": "Qansouwa"
+    },
+    {
+      "value": "Shetewy"
+    },
+    {
+      "value": "Elsayeh"
+    },
+    {
+      "value": "Rawwash"
+    },
+    {
+      "value": "Elshayeb"
+    },
+    {
+      "value": "Elassy"
+    },
+    {
+      "value": "Aburahab"
+    },
+    {
+      "value": "Elkhawaga"
+    },
+    {
+      "value": "El Nahrawy"
+    },
+    {
+      "value": "Sakran"
+    },
+    {
+      "value": "Oulad"
+    },
+    {
+      "value": "El Rowainy"
+    },
+    {
+      "value": "Rekaby"
+    },
+    {
+      "value": "Mangoud"
+    },
+    {
+      "value": "Elqazzafy"
+    },
+    {
+      "value": "Abukhalil"
+    },
+    {
+      "value": "Sedrak"
+    },
+    {
+      "value": "Shahawy"
+    },
+    {
+      "value": "Elbarmawy"
+    },
+    {
+      "value": "Sharara"
+    },
+    {
+      "value": "Abuleyoun"
+    },
+    {
+      "value": "Elgyoushy"
+    },
+    {
+      "value": "Elghoul"
+    },
+    {
+      "value": "Abusoliman"
+    },
+    {
+      "value": "Qabbary"
+    },
+    {
+      "value": "Elshanawany"
+    },
+    {
+      "value": "Elsayes"
+    },
+    {
+      "value": "Elsarougy"
+    },
+    {
+      "value": "Satouhy"
+    },
+    {
+      "value": "Sabaa"
+    },
+    {
+      "value": "Elatraby"
+    },
+    {
+      "value": "Qorashy"
+    },
+    {
+      "value": "Abaza"
+    },
+    {
+      "value": "Harraz"
+    },
+    {
+      "value": "Elahmady"
+    },
+    {
+      "value": "Asfour"
+    },
+    {
+      "value": "El Houfy"
+    },
+    {
+      "value": "Elmenoufy"
+    },
+    {
+      "value": "Elmenyawy"
+    },
+    {
+      "value": "Dakrouri"
+    },
+    {
+      "value": "El Geddawy"
+    },
+    {
+      "value": "Nazeem"
+    },
+    {
+      "value": "Elanwar"
+    },
+    {
+      "value": "Elsherpasy"
+    },
+    {
+      "value": "Dabbour"
+    },
+    {
+      "value": "Kelada"
+    },
+    {
+      "value": "Elaskary"
+    },
+    {
+      "value": "Elkashef"
+    },
+    {
+      "value": "Aggour"
+    },
+    {
+      "value": "Abuaisha"
+    },
+    {
+      "value": "El Dahshan"
+    },
+    {
+      "value": "Elsatohy"
+    },
+    {
+      "value": "Dogheidy"
+    },
+    {
+      "value": "Elaswad"
+    },
+    {
+      "value": "El Laboudy"
+    },
+    {
+      "value": "Abukhadra"
+    },
+    {
+      "value": "Abushama"
+    },
+    {
+      "value": "Elbahnasawy"
+    },
+    {
+      "value": "Elzaky"
+    },
+    {
+      "value": "Harfoush"
+    },
+    {
+      "value": "El Garayhy"
+    },
+    {
+      "value": "Fleifel"
+    },
+    {
+      "value": "Abudahab"
+    },
+    {
+      "value": "Elkattan"
+    },
+    {
+      "value": "Elhasaneen"
+    },
+    {
+      "value": "Elmanzalawy"
+    },
+    {
+      "value": "Gabal"
+    },
+    {
+      "value": "Laithy"
+    },
+    {
+      "value": "Abuismail"
+    },
+    {
+      "value": "Habeeshy"
+    },
+    {
+      "value": "Elmadany"
+    },
+    {
+      "value": "Swedan"
+    },
+    {
+      "value": "Elabasiry"
+    }
+  ],
+  "production_ready": false
+}

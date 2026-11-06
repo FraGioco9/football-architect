@@ -1,0 +1,1527 @@
+{
+  "schema_version": 1,
+  "code": "NOR",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "ssb-etternavn-github-mirror",
+      "url": "https://github.com/0301/ordliste/blob/e234ae55f2909cdb16cdb82eba14c0b79986b9e6/ordliste_ssb_norske_etternavn.txt",
+      "upstream": "Statistics Norway (SSB) surname frequency list",
+      "geographic_scope": "Norway; people recorded in Norway's surname statistics",
+      "population_period": "Mirror snapshot year not identified",
+      "verification": "First 500 distinct valid forms in the national SSB-derived list; frequencies not copied",
+      "limitations": "Mirror version and period need provenance verification for production"
+    },
+    {
+      "id": "ssb-primary-reference",
+      "url": "https://www.ssb.no/befolkning/navn/statistikk/navn/artikler/etternavn",
+      "geographic_scope": "Norway; nationally registered surname bearers",
+      "population_period": "2025 table shown on SSB page",
+      "verification": "SSB presents national surnames, including full list of names held by more than 200 people"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abdi"
+    },
+    {
+      "value": "Abrahamsen"
+    },
+    {
+      "value": "Ahmad"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Ali"
+    },
+    {
+      "value": "Almås"
+    },
+    {
+      "value": "Alstad"
+    },
+    {
+      "value": "Amundsen"
+    },
+    {
+      "value": "Andersen"
+    },
+    {
+      "value": "Andersson"
+    },
+    {
+      "value": "Andreassen"
+    },
+    {
+      "value": "Andresen"
+    },
+    {
+      "value": "Antonsen"
+    },
+    {
+      "value": "Arnesen"
+    },
+    {
+      "value": "Arntsen"
+    },
+    {
+      "value": "Arntzen"
+    },
+    {
+      "value": "Aronsen"
+    },
+    {
+      "value": "Ask"
+    },
+    {
+      "value": "Askeland"
+    },
+    {
+      "value": "Aslaksen"
+    },
+    {
+      "value": "Aune"
+    },
+    {
+      "value": "Austad"
+    },
+    {
+      "value": "Bakke"
+    },
+    {
+      "value": "Bakken"
+    },
+    {
+      "value": "Bang"
+    },
+    {
+      "value": "Barstad"
+    },
+    {
+      "value": "Bekken"
+    },
+    {
+      "value": "Bekkevold"
+    },
+    {
+      "value": "Bendiksen"
+    },
+    {
+      "value": "Benjaminsen"
+    },
+    {
+      "value": "Bentsen"
+    },
+    {
+      "value": "Berg"
+    },
+    {
+      "value": "Bergan"
+    },
+    {
+      "value": "Berge"
+    },
+    {
+      "value": "Berger"
+    },
+    {
+      "value": "Bergersen"
+    },
+    {
+      "value": "Berget"
+    },
+    {
+      "value": "Bergh"
+    },
+    {
+      "value": "Bergheim"
+    },
+    {
+      "value": "Bergli"
+    },
+    {
+      "value": "Berglund"
+    },
+    {
+      "value": "Bergum"
+    },
+    {
+      "value": "Berntsen"
+    },
+    {
+      "value": "Berntzen"
+    },
+    {
+      "value": "Bertelsen"
+    },
+    {
+      "value": "Birkeland"
+    },
+    {
+      "value": "Bjelland"
+    },
+    {
+      "value": "Bjerke"
+    },
+    {
+      "value": "Bjørge"
+    },
+    {
+      "value": "Bjørklund"
+    },
+    {
+      "value": "Bjørndal"
+    },
+    {
+      "value": "Bjørnsen"
+    },
+    {
+      "value": "Bjørnstad"
+    },
+    {
+      "value": "Blindheim"
+    },
+    {
+      "value": "Blom"
+    },
+    {
+      "value": "Bolstad"
+    },
+    {
+      "value": "Borge"
+    },
+    {
+      "value": "Borgen"
+    },
+    {
+      "value": "Borgersen"
+    },
+    {
+      "value": "Bredesen"
+    },
+    {
+      "value": "Breivik"
+    },
+    {
+      "value": "Brekke"
+    },
+    {
+      "value": "Brenden"
+    },
+    {
+      "value": "Brenna"
+    },
+    {
+      "value": "Brevik"
+    },
+    {
+      "value": "Brun"
+    },
+    {
+      "value": "Bruun"
+    },
+    {
+      "value": "Bråten"
+    },
+    {
+      "value": "Bråthen"
+    },
+    {
+      "value": "Braathen"
+    },
+    {
+      "value": "Bugge"
+    },
+    {
+      "value": "Bye"
+    },
+    {
+      "value": "Bø"
+    },
+    {
+      "value": "Bøe"
+    },
+    {
+      "value": "Børresen"
+    },
+    {
+      "value": "Carlsen"
+    },
+    {
+      "value": "Christensen"
+    },
+    {
+      "value": "Christiansen"
+    },
+    {
+      "value": "Christoffersen"
+    },
+    {
+      "value": "Clausen"
+    },
+    {
+      "value": "Dahl"
+    },
+    {
+      "value": "Dahle"
+    },
+    {
+      "value": "Dahlen"
+    },
+    {
+      "value": "Dale"
+    },
+    {
+      "value": "Dalen"
+    },
+    {
+      "value": "Danielsen"
+    },
+    {
+      "value": "Davidsen"
+    },
+    {
+      "value": "Didriksen"
+    },
+    {
+      "value": "Edvardsen"
+    },
+    {
+      "value": "Egeland"
+    },
+    {
+      "value": "Eggen"
+    },
+    {
+      "value": "Eide"
+    },
+    {
+      "value": "Eidem"
+    },
+    {
+      "value": "Eikeland"
+    },
+    {
+      "value": "Eilertsen"
+    },
+    {
+      "value": "Eliassen"
+    },
+    {
+      "value": "Ellefsen"
+    },
+    {
+      "value": "Ellingsen"
+    },
+    {
+      "value": "Endresen"
+    },
+    {
+      "value": "Engebretsen"
+    },
+    {
+      "value": "Engen"
+    },
+    {
+      "value": "Enger"
+    },
+    {
+      "value": "Engh"
+    },
+    {
+      "value": "Enoksen"
+    },
+    {
+      "value": "Eriksen"
+    },
+    {
+      "value": "Eriksson"
+    },
+    {
+      "value": "Erlandsen"
+    },
+    {
+      "value": "Ervik"
+    },
+    {
+      "value": "Espeland"
+    },
+    {
+      "value": "Evensen"
+    },
+    {
+      "value": "Evjen"
+    },
+    {
+      "value": "Fagerli"
+    },
+    {
+      "value": "Farstad"
+    },
+    {
+      "value": "Finstad"
+    },
+    {
+      "value": "Fjeld"
+    },
+    {
+      "value": "Fjeldstad"
+    },
+    {
+      "value": "Flaten"
+    },
+    {
+      "value": "Foss"
+    },
+    {
+      "value": "Fosse"
+    },
+    {
+      "value": "Fossen"
+    },
+    {
+      "value": "Fossum"
+    },
+    {
+      "value": "Frantzen"
+    },
+    {
+      "value": "Fredheim"
+    },
+    {
+      "value": "Fredriksen"
+    },
+    {
+      "value": "Frydenlund"
+    },
+    {
+      "value": "Furnes"
+    },
+    {
+      "value": "Førde"
+    },
+    {
+      "value": "Gabrielsen"
+    },
+    {
+      "value": "Gilje"
+    },
+    {
+      "value": "Gjerde"
+    },
+    {
+      "value": "Gjerstad"
+    },
+    {
+      "value": "Gjertsen"
+    },
+    {
+      "value": "Gran"
+    },
+    {
+      "value": "Grande"
+    },
+    {
+      "value": "Granli"
+    },
+    {
+      "value": "Gravdal"
+    },
+    {
+      "value": "Gregersen"
+    },
+    {
+      "value": "Grimstad"
+    },
+    {
+      "value": "Grindheim"
+    },
+    {
+      "value": "Grønvold"
+    },
+    {
+      "value": "Gulbrandsen"
+    },
+    {
+      "value": "Gulliksen"
+    },
+    {
+      "value": "Gundersen"
+    },
+    {
+      "value": "Gustavsen"
+    },
+    {
+      "value": "Guttormsen"
+    },
+    {
+      "value": "Haga"
+    },
+    {
+      "value": "Hagen"
+    },
+    {
+      "value": "Halvorsen"
+    },
+    {
+      "value": "Hammer"
+    },
+    {
+      "value": "Hamre"
+    },
+    {
+      "value": "Handeland"
+    },
+    {
+      "value": "Hansen"
+    },
+    {
+      "value": "Hanssen"
+    },
+    {
+      "value": "Haraldsen"
+    },
+    {
+      "value": "Hassan"
+    },
+    {
+      "value": "Haug"
+    },
+    {
+      "value": "Haugan"
+    },
+    {
+      "value": "Hauge"
+    },
+    {
+      "value": "Haugen"
+    },
+    {
+      "value": "Haugerud"
+    },
+    {
+      "value": "Haugland"
+    },
+    {
+      "value": "Heggelund"
+    },
+    {
+      "value": "Heimdal"
+    },
+    {
+      "value": "Helgesen"
+    },
+    {
+      "value": "Helland"
+    },
+    {
+      "value": "Helle"
+    },
+    {
+      "value": "Henriksen"
+    },
+    {
+      "value": "Hermansen"
+    },
+    {
+      "value": "Hetland"
+    },
+    {
+      "value": "Hjelle"
+    },
+    {
+      "value": "Hoel"
+    },
+    {
+      "value": "Hoem"
+    },
+    {
+      "value": "Hoff"
+    },
+    {
+      "value": "Hole"
+    },
+    {
+      "value": "Holen"
+    },
+    {
+      "value": "Holm"
+    },
+    {
+      "value": "Holmen"
+    },
+    {
+      "value": "Holst"
+    },
+    {
+      "value": "Holt"
+    },
+    {
+      "value": "Holte"
+    },
+    {
+      "value": "Holten"
+    },
+    {
+      "value": "Holter"
+    },
+    {
+      "value": "Holthe"
+    },
+    {
+      "value": "Hope"
+    },
+    {
+      "value": "Hopland"
+    },
+    {
+      "value": "Horn"
+    },
+    {
+      "value": "Hovde"
+    },
+    {
+      "value": "Hovden"
+    },
+    {
+      "value": "Hove"
+    },
+    {
+      "value": "Hovland"
+    },
+    {
+      "value": "Husby"
+    },
+    {
+      "value": "Huse"
+    },
+    {
+      "value": "Huseby"
+    },
+    {
+      "value": "Hussain"
+    },
+    {
+      "value": "Hussein"
+    },
+    {
+      "value": "Hustad"
+    },
+    {
+      "value": "Høyland"
+    },
+    {
+      "value": "Hågensen"
+    },
+    {
+      "value": "Håkonsen"
+    },
+    {
+      "value": "Håland"
+    },
+    {
+      "value": "Haaland"
+    },
+    {
+      "value": "Ibrahim"
+    },
+    {
+      "value": "Ingebrigtsen"
+    },
+    {
+      "value": "Ingvaldsen"
+    },
+    {
+      "value": "Iqbal"
+    },
+    {
+      "value": "Isaksen"
+    },
+    {
+      "value": "Iversen"
+    },
+    {
+      "value": "Jacobsen"
+    },
+    {
+      "value": "Jakobsen"
+    },
+    {
+      "value": "Jansen"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "Jenssen"
+    },
+    {
+      "value": "Johannesen"
+    },
+    {
+      "value": "Johannessen"
+    },
+    {
+      "value": "Johansen"
+    },
+    {
+      "value": "Johansson"
+    },
+    {
+      "value": "Johnsen"
+    },
+    {
+      "value": "Johnsrud"
+    },
+    {
+      "value": "Jonassen"
+    },
+    {
+      "value": "Jørgensen"
+    },
+    {
+      "value": "Jørstad"
+    },
+    {
+      "value": "Karlsen"
+    },
+    {
+      "value": "Karlsson"
+    },
+    {
+      "value": "Kaspersen"
+    },
+    {
+      "value": "Kaur"
+    },
+    {
+      "value": "Khan"
+    },
+    {
+      "value": "Klausen"
+    },
+    {
+      "value": "Kleiven"
+    },
+    {
+      "value": "Kleppe"
+    },
+    {
+      "value": "Kleven"
+    },
+    {
+      "value": "Knudsen"
+    },
+    {
+      "value": "Knutsen"
+    },
+    {
+      "value": "Kolstad"
+    },
+    {
+      "value": "Korneliussen"
+    },
+    {
+      "value": "Kristensen"
+    },
+    {
+      "value": "Kristiansen"
+    },
+    {
+      "value": "Kristoffersen"
+    },
+    {
+      "value": "Krogh"
+    },
+    {
+      "value": "Krogstad"
+    },
+    {
+      "value": "Kvalheim"
+    },
+    {
+      "value": "Kvam"
+    },
+    {
+      "value": "Kvamme"
+    },
+    {
+      "value": "Lande"
+    },
+    {
+      "value": "Lange"
+    },
+    {
+      "value": "Langeland"
+    },
+    {
+      "value": "Langseth"
+    },
+    {
+      "value": "Larsen"
+    },
+    {
+      "value": "Larssen"
+    },
+    {
+      "value": "Larsson"
+    },
+    {
+      "value": "Lauritsen"
+    },
+    {
+      "value": "Lauritzen"
+    },
+    {
+      "value": "Le"
+    },
+    {
+      "value": "Lervik"
+    },
+    {
+      "value": "Lia"
+    },
+    {
+      "value": "Lian"
+    },
+    {
+      "value": "Lid"
+    },
+    {
+      "value": "Lie"
+    },
+    {
+      "value": "Lien"
+    },
+    {
+      "value": "Liland"
+    },
+    {
+      "value": "Lind"
+    },
+    {
+      "value": "Lindberg"
+    },
+    {
+      "value": "Lohne"
+    },
+    {
+      "value": "Lorentsen"
+    },
+    {
+      "value": "Lorentzen"
+    },
+    {
+      "value": "Ludvigsen"
+    },
+    {
+      "value": "Lund"
+    },
+    {
+      "value": "Lundberg"
+    },
+    {
+      "value": "Lunde"
+    },
+    {
+      "value": "Lyngstad"
+    },
+    {
+      "value": "Lystad"
+    },
+    {
+      "value": "Løken"
+    },
+    {
+      "value": "Løkken"
+    },
+    {
+      "value": "Løland"
+    },
+    {
+      "value": "Løvås"
+    },
+    {
+      "value": "Madsen"
+    },
+    {
+      "value": "Magnussen"
+    },
+    {
+      "value": "Markussen"
+    },
+    {
+      "value": "Marthinsen"
+    },
+    {
+      "value": "Martinsen"
+    },
+    {
+      "value": "Martinussen"
+    },
+    {
+      "value": "Mathiassen"
+    },
+    {
+      "value": "Mathiesen"
+    },
+    {
+      "value": "Mathisen"
+    },
+    {
+      "value": "Meland"
+    },
+    {
+      "value": "Melby"
+    },
+    {
+      "value": "Meling"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Michelsen"
+    },
+    {
+      "value": "Midtbø"
+    },
+    {
+      "value": "Mikalsen"
+    },
+    {
+      "value": "Mikkelsen"
+    },
+    {
+      "value": "Mo"
+    },
+    {
+      "value": "Moe"
+    },
+    {
+      "value": "Moen"
+    },
+    {
+      "value": "Mohamed"
+    },
+    {
+      "value": "Mohammed"
+    },
+    {
+      "value": "Monsen"
+    },
+    {
+      "value": "Mork"
+    },
+    {
+      "value": "Mortensen"
+    },
+    {
+      "value": "Myhre"
+    },
+    {
+      "value": "Myklebust"
+    },
+    {
+      "value": "Myren"
+    },
+    {
+      "value": "Myrvang"
+    },
+    {
+      "value": "Myrvold"
+    },
+    {
+      "value": "Mæland"
+    },
+    {
+      "value": "Møller"
+    },
+    {
+      "value": "Mørk"
+    },
+    {
+      "value": "Nergård"
+    },
+    {
+      "value": "Nerland"
+    },
+    {
+      "value": "Nes"
+    },
+    {
+      "value": "Nesheim"
+    },
+    {
+      "value": "Ness"
+    },
+    {
+      "value": "Nesse"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Nicolaisen"
+    },
+    {
+      "value": "Nicolaysen"
+    },
+    {
+      "value": "Nielsen"
+    },
+    {
+      "value": "Nikolaisen"
+    },
+    {
+      "value": "Nilsen"
+    },
+    {
+      "value": "Nilssen"
+    },
+    {
+      "value": "Nilsson"
+    },
+    {
+      "value": "Nordahl"
+    },
+    {
+      "value": "Nordal"
+    },
+    {
+      "value": "Nordby"
+    },
+    {
+      "value": "Nordbø"
+    },
+    {
+      "value": "Nordgård"
+    },
+    {
+      "value": "Nordheim"
+    },
+    {
+      "value": "Nordli"
+    },
+    {
+      "value": "Nordvik"
+    },
+    {
+      "value": "Norheim"
+    },
+    {
+      "value": "Normann"
+    },
+    {
+      "value": "Norum"
+    },
+    {
+      "value": "Nyborg"
+    },
+    {
+      "value": "Nygård"
+    },
+    {
+      "value": "Nygaard"
+    },
+    {
+      "value": "Nyheim"
+    },
+    {
+      "value": "Nyhus"
+    },
+    {
+      "value": "Nyland"
+    },
+    {
+      "value": "Nymoen"
+    },
+    {
+      "value": "Næss"
+    },
+    {
+      "value": "Odden"
+    },
+    {
+      "value": "Olafsen"
+    },
+    {
+      "value": "Olaussen"
+    },
+    {
+      "value": "Olsen"
+    },
+    {
+      "value": "Olsson"
+    },
+    {
+      "value": "Olstad"
+    },
+    {
+      "value": "Opheim"
+    },
+    {
+      "value": "Opsahl"
+    },
+    {
+      "value": "Ottesen"
+    },
+    {
+      "value": "Paulsen"
+    },
+    {
+      "value": "Pedersen"
+    },
+    {
+      "value": "Persson"
+    },
+    {
+      "value": "Petersen"
+    },
+    {
+      "value": "Pettersen"
+    },
+    {
+      "value": "Pham"
+    },
+    {
+      "value": "Ramberg"
+    },
+    {
+      "value": "Ramstad"
+    },
+    {
+      "value": "Rasmussen"
+    },
+    {
+      "value": "Reiersen"
+    },
+    {
+      "value": "Reitan"
+    },
+    {
+      "value": "Riise"
+    },
+    {
+      "value": "Ringstad"
+    },
+    {
+      "value": "Robertsen"
+    },
+    {
+      "value": "Rogne"
+    },
+    {
+      "value": "Rustad"
+    },
+    {
+      "value": "Ruud"
+    },
+    {
+      "value": "Rød"
+    },
+    {
+      "value": "Røed"
+    },
+    {
+      "value": "Rønning"
+    },
+    {
+      "value": "Rønningen"
+    },
+    {
+      "value": "Rørvik"
+    },
+    {
+      "value": "Sagen"
+    },
+    {
+      "value": "Salvesen"
+    },
+    {
+      "value": "Samuelsen"
+    },
+    {
+      "value": "Sand"
+    },
+    {
+      "value": "Sandberg"
+    },
+    {
+      "value": "Sande"
+    },
+    {
+      "value": "Sandnes"
+    },
+    {
+      "value": "Sandvik"
+    },
+    {
+      "value": "Schei"
+    },
+    {
+      "value": "Seim"
+    },
+    {
+      "value": "Selnes"
+    },
+    {
+      "value": "Simensen"
+    },
+    {
+      "value": "Simonsen"
+    },
+    {
+      "value": "Singh"
+    },
+    {
+      "value": "Sivertsen"
+    },
+    {
+      "value": "Sjursen"
+    },
+    {
+      "value": "Skar"
+    },
+    {
+      "value": "Skaug"
+    },
+    {
+      "value": "Skeie"
+    },
+    {
+      "value": "Skjæveland"
+    },
+    {
+      "value": "Skog"
+    },
+    {
+      "value": "Skogen"
+    },
+    {
+      "value": "Skoglund"
+    },
+    {
+      "value": "Skogstad"
+    },
+    {
+      "value": "Skår"
+    },
+    {
+      "value": "Skaar"
+    },
+    {
+      "value": "Sletten"
+    },
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Solbakken"
+    },
+    {
+      "value": "Solberg"
+    },
+    {
+      "value": "Solem"
+    },
+    {
+      "value": "Solhaug"
+    },
+    {
+      "value": "Solheim"
+    },
+    {
+      "value": "Solli"
+    },
+    {
+      "value": "Sollie"
+    },
+    {
+      "value": "Solstad"
+    },
+    {
+      "value": "Solvang"
+    },
+    {
+      "value": "Stangeland"
+    },
+    {
+      "value": "Steen"
+    },
+    {
+      "value": "Steffensen"
+    },
+    {
+      "value": "Steinsland"
+    },
+    {
+      "value": "Stenberg"
+    },
+    {
+      "value": "Stene"
+    },
+    {
+      "value": "Stenersen"
+    },
+    {
+      "value": "Stenseth"
+    },
+    {
+      "value": "Stensland"
+    },
+    {
+      "value": "Stensrud"
+    },
+    {
+      "value": "Stokke"
+    },
+    {
+      "value": "Strand"
+    },
+    {
+      "value": "Strøm"
+    },
+    {
+      "value": "Strømme"
+    },
+    {
+      "value": "Strømmen"
+    },
+    {
+      "value": "Sund"
+    },
+    {
+      "value": "Sundal"
+    },
+    {
+      "value": "Sundby"
+    },
+    {
+      "value": "Sunde"
+    },
+    {
+      "value": "Sveen"
+    },
+    {
+      "value": "Svendsen"
+    },
+    {
+      "value": "Svensen"
+    },
+    {
+      "value": "Svensson"
+    },
+    {
+      "value": "Syversen"
+    },
+    {
+      "value": "Syvertsen"
+    },
+    {
+      "value": "Sæbø"
+    },
+    {
+      "value": "Sæter"
+    },
+    {
+      "value": "Sæther"
+    },
+    {
+      "value": "Sætre"
+    },
+    {
+      "value": "Sørensen"
+    },
+    {
+      "value": "Sørli"
+    },
+    {
+      "value": "Sørlie"
+    },
+    {
+      "value": "Sørum"
+    },
+    {
+      "value": "Søvik"
+    },
+    {
+      "value": "Tandberg"
+    },
+    {
+      "value": "Tangen"
+    },
+    {
+      "value": "Teigen"
+    },
+    {
+      "value": "Thomassen"
+    },
+    {
+      "value": "Thomsen"
+    },
+    {
+      "value": "Thorbjørnsen"
+    },
+    {
+      "value": "Thoresen"
+    },
+    {
+      "value": "Thorkildsen"
+    },
+    {
+      "value": "Thorsen"
+    },
+    {
+      "value": "Thorstensen"
+    },
+    {
+      "value": "Thorvaldsen"
+    },
+    {
+      "value": "Tobiassen"
+    },
+    {
+      "value": "Tollefsen"
+    },
+    {
+      "value": "Torgersen"
+    },
+    {
+      "value": "Torp"
+    },
+    {
+      "value": "Torsvik"
+    },
+    {
+      "value": "Tran"
+    },
+    {
+      "value": "Trondsen"
+    },
+    {
+      "value": "Tvedt"
+    },
+    {
+      "value": "Tveit"
+    },
+    {
+      "value": "Tveiten"
+    },
+    {
+      "value": "Tønnesen"
+    },
+    {
+      "value": "Tønnessen"
+    },
+    {
+      "value": "Ueland"
+    },
+    {
+      "value": "Vangen"
+    },
+    {
+      "value": "Vatne"
+    },
+    {
+      "value": "Vik"
+    },
+    {
+      "value": "Viken"
+    },
+    {
+      "value": "Vinje"
+    },
+    {
+      "value": "Vold"
+    },
+    {
+      "value": "Volden"
+    },
+    {
+      "value": "Våge"
+    },
+    {
+      "value": "Vågen"
+    },
+    {
+      "value": "Wang"
+    },
+    {
+      "value": "Westby"
+    },
+    {
+      "value": "Wiig"
+    },
+    {
+      "value": "Wiik"
+    },
+    {
+      "value": "Wilhelmsen"
+    },
+    {
+      "value": "Winther"
+    },
+    {
+      "value": "Wold"
+    },
+    {
+      "value": "Waage"
+    },
+    {
+      "value": "Ødegård"
+    },
+    {
+      "value": "Ødegaard"
+    },
+    {
+      "value": "Øien"
+    },
+    {
+      "value": "Økland"
+    },
+    {
+      "value": "Østby"
+    },
+    {
+      "value": "Øverby"
+    },
+    {
+      "value": "Øverland"
+    },
+    {
+      "value": "Øvrebø"
+    },
+    {
+      "value": "Øye"
+    },
+    {
+      "value": "Øyen"
+    },
+    {
+      "value": "Aamodt"
+    },
+    {
+      "value": "Aas"
+    },
+    {
+      "value": "Aase"
+    },
+    {
+      "value": "Aasen"
+    },
+    {
+      "value": "Åsheim"
+    },
+    {
+      "value": "Aasheim"
+    },
+    {
+      "value": "Aasland"
+    }
+  ],
+  "production_ready": false
+}

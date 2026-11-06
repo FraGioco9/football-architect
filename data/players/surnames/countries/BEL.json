@@ -1,0 +1,1527 @@
+{
+  "schema_version": 1,
+  "code": "BEL",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "belgium-wallonia-statbel-2022",
+      "url": "https://statbel.fgov.be/en/themes/population/family-names-and-first-names/family-names",
+      "mirror_url": "https://github.com/joke2k/faker/blob/553c79c3dfc862de289429f0ff3f0bc6dc07a006/faker/providers/person/fr_BE/__init__.py",
+      "mirror_blob_sha": "553c79c3dfc862de289429f0ff3f0bc6dc07a006",
+      "scope": "Statbel 2022 top 500 Wallonia surnames, Family_names_2022.xlsx sheet top10000_2022 columns H–I, through independent Faker transcription",
+      "limitations": "Walloon regional ranks are not Belgian national weights. 2022 data and derived distribution/redistribution terms need review."
+    },
+    {
+      "id": "belgium-flanders-statbel-2022",
+      "url": "https://statbel.fgov.be/en/themes/population/family-names-and-first-names/family-names",
+      "mirror_url": "https://github.com/joke2k/faker/blob/bac5eace9de6bf9558df54f3923023dafbcdf684/faker/providers/person/nl_BE/__init__.py",
+      "mirror_blob_sha": "bac5eace9de6bf9558df54f3923023dafbcdf684",
+      "scope": "Statbel 2022 top 500 Flanders surnames, Family_names_2022.xlsx sheet top10000_2022 columns E–F, through independent Faker transcription",
+      "limitations": "Flemish regional ranks are not Belgian national weights. Brussels not separately sampled; no regional frequency pooling."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abrassart"
+    },
+    {
+      "value": "Adams"
+    },
+    {
+      "value": "Adam"
+    },
+    {
+      "value": "Adriaensen"
+    },
+    {
+      "value": "Aerts"
+    },
+    {
+      "value": "Adriaenssens"
+    },
+    {
+      "value": "Albert"
+    },
+    {
+      "value": "Alexandre"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Allard"
+    },
+    {
+      "value": "Ali"
+    },
+    {
+      "value": "Anciaux"
+    },
+    {
+      "value": "Andries"
+    },
+    {
+      "value": "André"
+    },
+    {
+      "value": "Baele"
+    },
+    {
+      "value": "Antoine"
+    },
+    {
+      "value": "Baert"
+    },
+    {
+      "value": "Arnould"
+    },
+    {
+      "value": "Baeten"
+    },
+    {
+      "value": "Bah"
+    },
+    {
+      "value": "Baetens"
+    },
+    {
+      "value": "Bailly"
+    },
+    {
+      "value": "Baeyens"
+    },
+    {
+      "value": "Barbier"
+    },
+    {
+      "value": "Bauwens"
+    },
+    {
+      "value": "Barbieux"
+    },
+    {
+      "value": "Beckers"
+    },
+    {
+      "value": "Barry"
+    },
+    {
+      "value": "Beeckman"
+    },
+    {
+      "value": "Bastien"
+    },
+    {
+      "value": "Beernaert"
+    },
+    {
+      "value": "Bastin"
+    },
+    {
+      "value": "Bekaert"
+    },
+    {
+      "value": "Baudoux"
+    },
+    {
+      "value": "Belmans"
+    },
+    {
+      "value": "Bauduin"
+    },
+    {
+      "value": "Berghmans"
+    },
+    {
+      "value": "Bertels"
+    },
+    {
+      "value": "Beaujean"
+    },
+    {
+      "value": "Bervoets"
+    },
+    {
+      "value": "Becker"
+    },
+    {
+      "value": "Beyens"
+    },
+    {
+      "value": "Blommaert"
+    },
+    {
+      "value": "Beguin"
+    },
+    {
+      "value": "Blomme"
+    },
+    {
+      "value": "Benoit"
+    },
+    {
+      "value": "Blondeel"
+    },
+    {
+      "value": "Berger"
+    },
+    {
+      "value": "Boeckx"
+    },
+    {
+      "value": "Bernard"
+    },
+    {
+      "value": "Bogaert"
+    },
+    {
+      "value": "Bertrand"
+    },
+    {
+      "value": "Bogaerts"
+    },
+    {
+      "value": "Blaise"
+    },
+    {
+      "value": "Bollen"
+    },
+    {
+      "value": "Blondiau"
+    },
+    {
+      "value": "Bonte"
+    },
+    {
+      "value": "Bodart"
+    },
+    {
+      "value": "Boon"
+    },
+    {
+      "value": "Bodson"
+    },
+    {
+      "value": "Boone"
+    },
+    {
+      "value": "Boonen"
+    },
+    {
+      "value": "Boland"
+    },
+    {
+      "value": "Borremans"
+    },
+    {
+      "value": "Bonnet"
+    },
+    {
+      "value": "Bosmans"
+    },
+    {
+      "value": "Bouchat"
+    },
+    {
+      "value": "Bossuyt"
+    },
+    {
+      "value": "Boucher"
+    },
+    {
+      "value": "Bouckaert"
+    },
+    {
+      "value": "Bouchez"
+    },
+    {
+      "value": "Bracke"
+    },
+    {
+      "value": "Boudart"
+    },
+    {
+      "value": "Braem"
+    },
+    {
+      "value": "Bouillon"
+    },
+    {
+      "value": "Breugelmans"
+    },
+    {
+      "value": "Boulanger"
+    },
+    {
+      "value": "Broeckx"
+    },
+    {
+      "value": "Bourgeois"
+    },
+    {
+      "value": "Brouwers"
+    },
+    {
+      "value": "Bourguignon"
+    },
+    {
+      "value": "Bruggeman"
+    },
+    {
+      "value": "Bovy"
+    },
+    {
+      "value": "Bruneel"
+    },
+    {
+      "value": "Brasseur"
+    },
+    {
+      "value": "Bruyninckx"
+    },
+    {
+      "value": "Brichard"
+    },
+    {
+      "value": "Buelens"
+    },
+    {
+      "value": "Bruno"
+    },
+    {
+      "value": "Buyse"
+    },
+    {
+      "value": "Bruyère"
+    },
+    {
+      "value": "Buysse"
+    },
+    {
+      "value": "Bultot"
+    },
+    {
+      "value": "Callebaut"
+    },
+    {
+      "value": "Burton"
+    },
+    {
+      "value": "Callens"
+    },
+    {
+      "value": "Bury"
+    },
+    {
+      "value": "Callewaert"
+    },
+    {
+      "value": "Carlier"
+    },
+    {
+      "value": "Cambier"
+    },
+    {
+      "value": "Casier"
+    },
+    {
+      "value": "Capelle"
+    },
+    {
+      "value": "Casteleyn"
+    },
+    {
+      "value": "Cardon"
+    },
+    {
+      "value": "Celis"
+    },
+    {
+      "value": "Ceulemans"
+    },
+    {
+      "value": "Carpentier"
+    },
+    {
+      "value": "Ceuppens"
+    },
+    {
+      "value": "Carton"
+    },
+    {
+      "value": "Christiaens"
+    },
+    {
+      "value": "Cassart"
+    },
+    {
+      "value": "Claes"
+    },
+    {
+      "value": "Caudron"
+    },
+    {
+      "value": "Claesen"
+    },
+    {
+      "value": "Chapelle"
+    },
+    {
+      "value": "Claessens"
+    },
+    {
+      "value": "Charles"
+    },
+    {
+      "value": "Claeys"
+    },
+    {
+      "value": "Charlier"
+    },
+    {
+      "value": "Claus"
+    },
+    {
+      "value": "Chevalier"
+    },
+    {
+      "value": "Coene"
+    },
+    {
+      "value": "Coenen"
+    },
+    {
+      "value": "Colman"
+    },
+    {
+      "value": "Colpaert"
+    },
+    {
+      "value": "Cools"
+    },
+    {
+      "value": "Claude"
+    },
+    {
+      "value": "Coppens"
+    },
+    {
+      "value": "Cornelis"
+    },
+    {
+      "value": "Close"
+    },
+    {
+      "value": "Cox"
+    },
+    {
+      "value": "Closset"
+    },
+    {
+      "value": "Cuypers"
+    },
+    {
+      "value": "Clément"
+    },
+    {
+      "value": "Cuyvers"
+    },
+    {
+      "value": "Colin"
+    },
+    {
+      "value": "D'Hondt"
+    },
+    {
+      "value": "Colinet"
+    },
+    {
+      "value": "Collard"
+    },
+    {
+      "value": "Daems"
+    },
+    {
+      "value": "Collart"
+    },
+    {
+      "value": "Daniels"
+    },
+    {
+      "value": "Collet"
+    },
+    {
+      "value": "David"
+    },
+    {
+      "value": "Collette"
+    },
+    {
+      "value": "De Backer"
+    },
+    {
+      "value": "Collignon"
+    },
+    {
+      "value": "De Baere"
+    },
+    {
+      "value": "Collin"
+    },
+    {
+      "value": "De Baets"
+    },
+    {
+      "value": "Colot"
+    },
+    {
+      "value": "De Bie"
+    },
+    {
+      "value": "Colson"
+    },
+    {
+      "value": "De Block"
+    },
+    {
+      "value": "Compère"
+    },
+    {
+      "value": "De Bock"
+    },
+    {
+      "value": "Constant"
+    },
+    {
+      "value": "De Boeck"
+    },
+    {
+      "value": "De Bondt"
+    },
+    {
+      "value": "Cordier"
+    },
+    {
+      "value": "De Bruycker"
+    },
+    {
+      "value": "Corman"
+    },
+    {
+      "value": "De Bruyn"
+    },
+    {
+      "value": "Cornet"
+    },
+    {
+      "value": "De Bruyne"
+    },
+    {
+      "value": "Cornez"
+    },
+    {
+      "value": "De Clerck"
+    },
+    {
+      "value": "Cornil"
+    },
+    {
+      "value": "De Clercq"
+    },
+    {
+      "value": "Coulon"
+    },
+    {
+      "value": "De Cock"
+    },
+    {
+      "value": "Courtois"
+    },
+    {
+      "value": "De Coninck"
+    },
+    {
+      "value": "Couvreur"
+    },
+    {
+      "value": "De Coster"
+    },
+    {
+      "value": "Crahay"
+    },
+    {
+      "value": "De Cuyper"
+    },
+    {
+      "value": "Cremer"
+    },
+    {
+      "value": "De Decker"
+    },
+    {
+      "value": "Culot"
+    },
+    {
+      "value": "De Graeve"
+    },
+    {
+      "value": "Cuvelier"
+    },
+    {
+      "value": "De Greef"
+    },
+    {
+      "value": "Dardenne"
+    },
+    {
+      "value": "De Groof"
+    },
+    {
+      "value": "De Groote"
+    },
+    {
+      "value": "De Jonghe"
+    },
+    {
+      "value": "De Keyser"
+    },
+    {
+      "value": "De Laet"
+    },
+    {
+      "value": "De Smet"
+    },
+    {
+      "value": "De Leeuw"
+    },
+    {
+      "value": "De Vos"
+    },
+    {
+      "value": "De Maeyer"
+    },
+    {
+      "value": "Debroux"
+    },
+    {
+      "value": "De Meester"
+    },
+    {
+      "value": "Decamps"
+    },
+    {
+      "value": "De Mey"
+    },
+    {
+      "value": "Dechamps"
+    },
+    {
+      "value": "De Meyer"
+    },
+    {
+      "value": "Declercq"
+    },
+    {
+      "value": "De Moor"
+    },
+    {
+      "value": "Degueldre"
+    },
+    {
+      "value": "De Mulder"
+    },
+    {
+      "value": "Dehon"
+    },
+    {
+      "value": "De Muynck"
+    },
+    {
+      "value": "Dejardin"
+    },
+    {
+      "value": "De Neve"
+    },
+    {
+      "value": "Delannoy"
+    },
+    {
+      "value": "De Paepe"
+    },
+    {
+      "value": "Delattre"
+    },
+    {
+      "value": "De Pauw"
+    },
+    {
+      "value": "Delcourt"
+    },
+    {
+      "value": "De Ridder"
+    },
+    {
+      "value": "Delcroix"
+    },
+    {
+      "value": "De Roeck"
+    },
+    {
+      "value": "Delforge"
+    },
+    {
+      "value": "De Roo"
+    },
+    {
+      "value": "Delfosse"
+    },
+    {
+      "value": "De Roover"
+    },
+    {
+      "value": "Delhaye"
+    },
+    {
+      "value": "De Ryck"
+    },
+    {
+      "value": "Delhez"
+    },
+    {
+      "value": "De Rycke"
+    },
+    {
+      "value": "Delmotte"
+    },
+    {
+      "value": "De Schepper"
+    },
+    {
+      "value": "Delporte"
+    },
+    {
+      "value": "De Schrijver"
+    },
+    {
+      "value": "Deltour"
+    },
+    {
+      "value": "De Schryver"
+    },
+    {
+      "value": "Delvaux"
+    },
+    {
+      "value": "De Schutter"
+    },
+    {
+      "value": "Delvigne"
+    },
+    {
+      "value": "De Smedt"
+    },
+    {
+      "value": "Demanet"
+    },
+    {
+      "value": "Demaret"
+    },
+    {
+      "value": "De Sutter"
+    },
+    {
+      "value": "Demir"
+    },
+    {
+      "value": "Demoulin"
+    },
+    {
+      "value": "De Vuyst"
+    },
+    {
+      "value": "Denis"
+    },
+    {
+      "value": "De Wachter"
+    },
+    {
+      "value": "Deprez"
+    },
+    {
+      "value": "De Waele"
+    },
+    {
+      "value": "Descamps"
+    },
+    {
+      "value": "De Weerdt"
+    },
+    {
+      "value": "Desmet"
+    },
+    {
+      "value": "De Wilde"
+    },
+    {
+      "value": "Dessart"
+    },
+    {
+      "value": "De Winter"
+    },
+    {
+      "value": "Dessy"
+    },
+    {
+      "value": "De Wit"
+    },
+    {
+      "value": "Detaille"
+    },
+    {
+      "value": "De Witte"
+    },
+    {
+      "value": "Dethier"
+    },
+    {
+      "value": "De Wolf"
+    },
+    {
+      "value": "Detournay"
+    },
+    {
+      "value": "De Wulf"
+    },
+    {
+      "value": "Detry"
+    },
+    {
+      "value": "Debruyne"
+    },
+    {
+      "value": "Devaux"
+    },
+    {
+      "value": "Deceuninck"
+    },
+    {
+      "value": "Deville"
+    },
+    {
+      "value": "Deckers"
+    },
+    {
+      "value": "Devillers"
+    },
+    {
+      "value": "Declerck"
+    },
+    {
+      "value": "Devos"
+    },
+    {
+      "value": "Dewez"
+    },
+    {
+      "value": "Decock"
+    },
+    {
+      "value": "Diallo"
+    },
+    {
+      "value": "Deconinck"
+    },
+    {
+      "value": "Dieu"
+    },
+    {
+      "value": "Decoster"
+    },
+    {
+      "value": "Dieudonné"
+    },
+    {
+      "value": "Degroote"
+    },
+    {
+      "value": "Docquier"
+    },
+    {
+      "value": "Degryse"
+    },
+    {
+      "value": "Donnay"
+    },
+    {
+      "value": "Dejonghe"
+    },
+    {
+      "value": "Dony"
+    },
+    {
+      "value": "Dekeyser"
+    },
+    {
+      "value": "Doumont"
+    },
+    {
+      "value": "Delaere"
+    },
+    {
+      "value": "Doyen"
+    },
+    {
+      "value": "Deleu"
+    },
+    {
+      "value": "Druart"
+    },
+    {
+      "value": "Deman"
+    },
+    {
+      "value": "Dubois"
+    },
+    {
+      "value": "Demeulenaere"
+    },
+    {
+      "value": "Dubuisson"
+    },
+    {
+      "value": "Demeyer"
+    },
+    {
+      "value": "Duchesne"
+    },
+    {
+      "value": "Demeyere"
+    },
+    {
+      "value": "Duchêne"
+    },
+    {
+      "value": "Demuynck"
+    },
+    {
+      "value": "Duez"
+    },
+    {
+      "value": "Denys"
+    },
+    {
+      "value": "Dufour"
+    },
+    {
+      "value": "Depoorter"
+    },
+    {
+      "value": "Dufrane"
+    },
+    {
+      "value": "Dufrasne"
+    },
+    {
+      "value": "Depuydt"
+    },
+    {
+      "value": "Dujardin"
+    },
+    {
+      "value": "Derycke"
+    },
+    {
+      "value": "Dumont"
+    },
+    {
+      "value": "Desmedt"
+    },
+    {
+      "value": "Dumortier"
+    },
+    {
+      "value": "Dumoulin"
+    },
+    {
+      "value": "Devolder"
+    },
+    {
+      "value": "Dupont"
+    },
+    {
+      "value": "Dupuis"
+    },
+    {
+      "value": "Devriendt"
+    },
+    {
+      "value": "Duquesne"
+    },
+    {
+      "value": "Dewaele"
+    },
+    {
+      "value": "Durant"
+    },
+    {
+      "value": "Dewilde"
+    },
+    {
+      "value": "Durieux"
+    },
+    {
+      "value": "Dewitte"
+    },
+    {
+      "value": "Dury"
+    },
+    {
+      "value": "Dewulf"
+    },
+    {
+      "value": "Dussart"
+    },
+    {
+      "value": "Dhondt"
+    },
+    {
+      "value": "Dutrieux"
+    },
+    {
+      "value": "Duval"
+    },
+    {
+      "value": "Dierckx"
+    },
+    {
+      "value": "Duvivier"
+    },
+    {
+      "value": "Dierick"
+    },
+    {
+      "value": "Eloy"
+    },
+    {
+      "value": "Dierickx"
+    },
+    {
+      "value": "Englebert"
+    },
+    {
+      "value": "Dillen"
+    },
+    {
+      "value": "Ernst"
+    },
+    {
+      "value": "Dobbelaere"
+    },
+    {
+      "value": "Etienne"
+    },
+    {
+      "value": "Dockx"
+    },
+    {
+      "value": "Evrard"
+    },
+    {
+      "value": "Driesen"
+    },
+    {
+      "value": "Fabry"
+    },
+    {
+      "value": "Fauconnier"
+    },
+    {
+      "value": "Feron"
+    },
+    {
+      "value": "Eeckhout"
+    },
+    {
+      "value": "Flament"
+    },
+    {
+      "value": "Engelen"
+    },
+    {
+      "value": "Fontaine"
+    },
+    {
+      "value": "Engels"
+    },
+    {
+      "value": "Foucart"
+    },
+    {
+      "value": "Everaert"
+    },
+    {
+      "value": "Franck"
+    },
+    {
+      "value": "Faes"
+    },
+    {
+      "value": "Franssen"
+    },
+    {
+      "value": "Feys"
+    },
+    {
+      "value": "François"
+    },
+    {
+      "value": "Fierens"
+    },
+    {
+      "value": "Frère"
+    },
+    {
+      "value": "Fransen"
+    },
+    {
+      "value": "Gabriel"
+    },
+    {
+      "value": "Gaillard"
+    },
+    {
+      "value": "Galle"
+    },
+    {
+      "value": "Gallez"
+    },
+    {
+      "value": "Geens"
+    },
+    {
+      "value": "Gallo"
+    },
+    {
+      "value": "Geeraerts"
+    },
+    {
+      "value": "Gaspard"
+    },
+    {
+      "value": "Geerts"
+    },
+    {
+      "value": "Gauthier"
+    },
+    {
+      "value": "Geudens"
+    },
+    {
+      "value": "Genot"
+    },
+    {
+      "value": "Geuens"
+    },
+    {
+      "value": "George"
+    },
+    {
+      "value": "Gevaert"
+    },
+    {
+      "value": "Georges"
+    },
+    {
+      "value": "Gielen"
+    },
+    {
+      "value": "Gerard"
+    },
+    {
+      "value": "Gillis"
+    },
+    {
+      "value": "Ghislain"
+    },
+    {
+      "value": "Goethals"
+    },
+    {
+      "value": "Gilbert"
+    },
+    {
+      "value": "Goossens"
+    },
+    {
+      "value": "Gillain"
+    },
+    {
+      "value": "Goovaerts"
+    },
+    {
+      "value": "Gillard"
+    },
+    {
+      "value": "Goris"
+    },
+    {
+      "value": "Gilles"
+    },
+    {
+      "value": "Govaerts"
+    },
+    {
+      "value": "Gillet"
+    },
+    {
+      "value": "Goyvaerts"
+    },
+    {
+      "value": "Gilson"
+    },
+    {
+      "value": "Hanssens"
+    },
+    {
+      "value": "Glineur"
+    },
+    {
+      "value": "Hellemans"
+    },
+    {
+      "value": "Gobert"
+    },
+    {
+      "value": "Helsen"
+    },
+    {
+      "value": "Goblet"
+    },
+    {
+      "value": "Hendrickx"
+    },
+    {
+      "value": "Godart"
+    },
+    {
+      "value": "Hens"
+    },
+    {
+      "value": "Godefroid"
+    },
+    {
+      "value": "Heremans"
+    },
+    {
+      "value": "Godfroid"
+    },
+    {
+      "value": "Herman"
+    },
+    {
+      "value": "Godin"
+    },
+    {
+      "value": "Hermans"
+    },
+    {
+      "value": "Goffaux"
+    },
+    {
+      "value": "Heylen"
+    },
+    {
+      "value": "Goffin"
+    },
+    {
+      "value": "Heymans"
+    },
+    {
+      "value": "Goffinet"
+    },
+    {
+      "value": "Heyvaert"
+    },
+    {
+      "value": "Holvoet"
+    },
+    {
+      "value": "Gosset"
+    },
+    {
+      "value": "Horemans"
+    },
+    {
+      "value": "Gossiaux"
+    },
+    {
+      "value": "Hoste"
+    },
+    {
+      "value": "Graindorge"
+    },
+    {
+      "value": "Houben"
+    },
+    {
+      "value": "Grandjean"
+    },
+    {
+      "value": "Huybrechts"
+    },
+    {
+      "value": "Greco"
+    },
+    {
+      "value": "Huyghe"
+    },
+    {
+      "value": "Grosjean"
+    },
+    {
+      "value": "Huys"
+    },
+    {
+      "value": "Grégoire"
+    },
+    {
+      "value": "Huysmans"
+    },
+    {
+      "value": "Guillaume"
+    },
+    {
+      "value": "Jacobs"
+    },
+    {
+      "value": "Guiot"
+    },
+    {
+      "value": "Jans"
+    },
+    {
+      "value": "Gustin"
+    },
+    {
+      "value": "Jansen"
+    },
+    {
+      "value": "Gérard"
+    },
+    {
+      "value": "Janssen"
+    },
+    {
+      "value": "Hainaut"
+    },
+    {
+      "value": "Janssens"
+    },
+    {
+      "value": "Halleux"
+    },
+    {
+      "value": "Jonckheere"
+    },
+    {
+      "value": "Hannecart"
+    },
+    {
+      "value": "Joos"
+    },
+    {
+      "value": "Hardy"
+    },
+    {
+      "value": "Joris"
+    },
+    {
+      "value": "Heinen"
+    },
+    {
+      "value": "Kaur"
+    },
+    {
+      "value": "Hendrick"
+    },
+    {
+      "value": "Kaya"
+    },
+    {
+      "value": "Kenis"
+    },
+    {
+      "value": "Henin"
+    },
+    {
+      "value": "Kerkhofs"
+    },
+    {
+      "value": "Henrard"
+    },
+    {
+      "value": "Knockaert"
+    },
+    {
+      "value": "Henrion"
+    },
+    {
+      "value": "Laenen"
+    },
+    {
+      "value": "Henrotte"
+    },
+    {
+      "value": "Lambert"
+    },
+    {
+      "value": "Henry"
+    },
+    {
+      "value": "Lambrecht"
+    },
+    {
+      "value": "Lambrechts"
+    },
+    {
+      "value": "Lammens"
+    },
+    {
+      "value": "Honoré"
+    },
+    {
+      "value": "Laureys"
+    },
+    {
+      "value": "Hougardy"
+    },
+    {
+      "value": "Lauwers"
+    },
+    {
+      "value": "Huart"
+    },
+    {
+      "value": "Leemans"
+    },
+    {
+      "value": "Hubert"
+    },
+    {
+      "value": "Lemmens"
+    },
+    {
+      "value": "Huberty"
+    },
+    {
+      "value": "Lenaerts"
+    },
+    {
+      "value": "Hubin"
+    },
+    {
+      "value": "Leroy"
+    },
+    {
+      "value": "Huet"
+    },
+    {
+      "value": "Leys"
+    },
+    {
+      "value": "Humblet"
+    },
+    {
+      "value": "Leysen"
+    },
+    {
+      "value": "Jacob"
+    },
+    {
+      "value": "Liekens"
+    },
+    {
+      "value": "Lievens"
+    },
+    {
+      "value": "Jacquemart"
+    },
+    {
+      "value": "Lippens"
+    },
+    {
+      "value": "Jacquemin"
+    },
+    {
+      "value": "Loos"
+    },
+    {
+      "value": "Jacques"
+    },
+    {
+      "value": "Luyckx"
+    },
+    {
+      "value": "Jacquet"
+    },
+    {
+      "value": "Luyten"
+    },
+    {
+      "value": "Jadot"
+    },
+    {
+      "value": "Maertens"
+    },
+    {
+      "value": "Jadoul"
+    },
+    {
+      "value": "Maes"
+    },
+    {
+      "value": "Jamar"
+    },
+    {
+      "value": "Mahieu"
+    },
+    {
+      "value": "Malfait"
+    },
+    {
+      "value": "Marien"
+    },
+    {
+      "value": "Joly"
+    },
+    {
+      "value": "Maris"
+    },
+    {
+      "value": "Mariën"
+    },
+    {
+      "value": "Martens"
+    },
+    {
+      "value": "Kinet"
+    },
+    {
+      "value": "Matthijs"
+    },
+    {
+      "value": "Klein"
+    },
+    {
+      "value": "Matthys"
+    },
+    {
+      "value": "Lacroix"
+    },
+    {
+      "value": "Meersman"
+    }
+  ],
+  "production_ready": false
+}
