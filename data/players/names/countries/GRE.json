@@ -1,0 +1,1232 @@
+{
+  "schema_version": 2,
+  "code": "GRE",
+  "cohort": "male names observed among Greek civil-service applicant record sample, 1998–2010; NOT birth registry or census",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "gr-asep-1998-2010-male-observed-names",
+    "provider": "Independent public compilation of male given-name occurrences from Greek ASEP applicant files (1998–2010), published 26 Aug 2010; 168,307 name observations reported by compiler",
+    "source_url": "https://sixnotitafrequency.blogspot.com/2010/08/",
+    "source_secondary_url": "https://ellinikaonomata.com/",
+    "romanization_standard": "ELOT 743 transcription (UNGEGN), accent-insensitive source uppercase normalization; one unique Latin spelling per selected Greek name",
+    "romanization_reference_url": "https://arhiiv.eki.ee/wgrs/res/res_5_19.htm",
+    "metric": "observed male first-name occurrences as stated in researcher's independently compiled ASEP 1998–2010 sample (NOT nationally representative births, NOT official national counts)",
+    "license": "Author's independent published compilation; redistribution license unavailable, provenance cannot be independently audited: HOLD"
+  },
+  "selection_policy": "First 300 letter-only uniquely Romanized names among the first 301 listed male types, excluding malformed source #107 with intervening whitespace; source-observed count unchanged; not national counts",
+  "given_names": [
+    {
+      "value": "Georgios",
+      "weight": 17494
+    },
+    {
+      "value": "Konstantinos",
+      "weight": 13177
+    },
+    {
+      "value": "Dimitrios",
+      "weight": 12792
+    },
+    {
+      "value": "Ioannis",
+      "weight": 12772
+    },
+    {
+      "value": "Nikolaos",
+      "weight": 11092
+    },
+    {
+      "value": "Panagiotis",
+      "weight": 7407
+    },
+    {
+      "value": "Christos",
+      "weight": 7113
+    },
+    {
+      "value": "Vasileios",
+      "weight": 6689
+    },
+    {
+      "value": "Athanasios",
+      "weight": 5393
+    },
+    {
+      "value": "Evangelos",
+      "weight": 3690
+    },
+    {
+      "value": "Michail",
+      "weight": 3255
+    },
+    {
+      "value": "Antonios",
+      "weight": 3096
+    },
+    {
+      "value": "Theodoros",
+      "weight": 2965
+    },
+    {
+      "value": "Spyridon",
+      "weight": 2911
+    },
+    {
+      "value": "Anastasios",
+      "weight": 2647
+    },
+    {
+      "value": "Emmanouil",
+      "weight": 2642
+    },
+    {
+      "value": "Ilias",
+      "weight": 2498
+    },
+    {
+      "value": "Andreas",
+      "weight": 2311
+    },
+    {
+      "value": "Charalampos",
+      "weight": 2190
+    },
+    {
+      "value": "Alexandros",
+      "weight": 2156
+    },
+    {
+      "value": "Apostolos",
+      "weight": 2019
+    },
+    {
+      "value": "Stavros",
+      "weight": 1629
+    },
+    {
+      "value": "Petros",
+      "weight": 1588
+    },
+    {
+      "value": "Sotirios",
+      "weight": 1584
+    },
+    {
+      "value": "Stylianos",
+      "weight": 1476
+    },
+    {
+      "value": "Thomas",
+      "weight": 1298
+    },
+    {
+      "value": "Eleftherios",
+      "weight": 1191
+    },
+    {
+      "value": "Fotios",
+      "weight": 1156
+    },
+    {
+      "value": "Stefanos",
+      "weight": 1116
+    },
+    {
+      "value": "Grigorios",
+      "weight": 1073
+    },
+    {
+      "value": "Dionysios",
+      "weight": 978
+    },
+    {
+      "value": "Angelos",
+      "weight": 948
+    },
+    {
+      "value": "Pavlos",
+      "weight": 866
+    },
+    {
+      "value": "Panteleimon",
+      "weight": 806
+    },
+    {
+      "value": "Kyriakos",
+      "weight": 774
+    },
+    {
+      "value": "Aristeidis",
+      "weight": 764
+    },
+    {
+      "value": "Efthymios",
+      "weight": 761
+    },
+    {
+      "value": "Efstathios",
+      "weight": 732
+    },
+    {
+      "value": "Efstratios",
+      "weight": 668
+    },
+    {
+      "value": "Lampros",
+      "weight": 618
+    },
+    {
+      "value": "Leonidas",
+      "weight": 612
+    },
+    {
+      "value": "Stergios",
+      "weight": 550
+    },
+    {
+      "value": "Gerasimos",
+      "weight": 533
+    },
+    {
+      "value": "Lazaros",
+      "weight": 511
+    },
+    {
+      "value": "Dimosthenis",
+      "weight": 491
+    },
+    {
+      "value": "Stamatios",
+      "weight": 482
+    },
+    {
+      "value": "Nektarios",
+      "weight": 444
+    },
+    {
+      "value": "Savvas",
+      "weight": 441
+    },
+    {
+      "value": "Achilleas",
+      "weight": 437
+    },
+    {
+      "value": "Marios",
+      "weight": 431
+    },
+    {
+      "value": "Theofanis",
+      "weight": 395
+    },
+    {
+      "value": "Argyrios",
+      "weight": 375
+    },
+    {
+      "value": "Filippos",
+      "weight": 357
+    },
+    {
+      "value": "Christoforos",
+      "weight": 356
+    },
+    {
+      "value": "Miltiadis",
+      "weight": 355
+    },
+    {
+      "value": "Periklis",
+      "weight": 337
+    },
+    {
+      "value": "Markos",
+      "weight": 319
+    },
+    {
+      "value": "Alexios",
+      "weight": 306
+    },
+    {
+      "value": "Zacharias",
+      "weight": 301
+    },
+    {
+      "value": "Charilaos",
+      "weight": 297
+    },
+    {
+      "value": "Paraskevas",
+      "weight": 293
+    },
+    {
+      "value": "Loukas",
+      "weight": 289
+    },
+    {
+      "value": "Themistoklis",
+      "weight": 287
+    },
+    {
+      "value": "Asterios",
+      "weight": 283
+    },
+    {
+      "value": "Paschalis",
+      "weight": 278
+    },
+    {
+      "value": "Sokratis",
+      "weight": 271
+    },
+    {
+      "value": "Vaios",
+      "weight": 245
+    },
+    {
+      "value": "Iordanis",
+      "weight": 244
+    },
+    {
+      "value": "Anestis",
+      "weight": 242
+    },
+    {
+      "value": "Symeon",
+      "weight": 239
+    },
+    {
+      "value": "Theocharis",
+      "weight": 233
+    },
+    {
+      "value": "Zisis",
+      "weight": 231
+    },
+    {
+      "value": "Kosmas",
+      "weight": 230
+    },
+    {
+      "value": "Aristotelis",
+      "weight": 218
+    },
+    {
+      "value": "Triantafyllos",
+      "weight": 210
+    },
+    {
+      "value": "Iraklis",
+      "weight": 208
+    },
+    {
+      "value": "Epameinondas",
+      "weight": 205
+    },
+    {
+      "value": "Matthaios",
+      "weight": 196
+    },
+    {
+      "value": "Serafeim",
+      "weight": 193
+    },
+    {
+      "value": "Odysseas",
+      "weight": 189
+    },
+    {
+      "value": "Theofilos",
+      "weight": 175
+    },
+    {
+      "value": "Iosif",
+      "weight": 172
+    },
+    {
+      "value": "Chrysostomos",
+      "weight": 172
+    },
+    {
+      "value": "Christodoulos",
+      "weight": 170
+    },
+    {
+      "value": "Chrysovalantis",
+      "weight": 168
+    },
+    {
+      "value": "Theodosios",
+      "weight": 165
+    },
+    {
+      "value": "Minas",
+      "weight": 163
+    },
+    {
+      "value": "Iakovos",
+      "weight": 162
+    },
+    {
+      "value": "Xenofon",
+      "weight": 158
+    },
+    {
+      "value": "Marinos",
+      "weight": 156
+    },
+    {
+      "value": "Prodromos",
+      "weight": 152
+    },
+    {
+      "value": "Adamantios",
+      "weight": 150
+    },
+    {
+      "value": "Nikitas",
+      "weight": 150
+    },
+    {
+      "value": "Anargyros",
+      "weight": 143
+    },
+    {
+      "value": "Polychronis",
+      "weight": 143
+    },
+    {
+      "value": "Vlasios",
+      "weight": 137
+    },
+    {
+      "value": "Menelaos",
+      "weight": 126
+    },
+    {
+      "value": "Alkiviadis",
+      "weight": 117
+    },
+    {
+      "value": "Tryfon",
+      "weight": 116
+    },
+    {
+      "value": "Tilemachos",
+      "weight": 110
+    },
+    {
+      "value": "Isidoros",
+      "weight": 106
+    },
+    {
+      "value": "Gavriil",
+      "weight": 105
+    },
+    {
+      "value": "Damianos",
+      "weight": 103
+    },
+    {
+      "value": "Avraam",
+      "weight": 97
+    },
+    {
+      "value": "Sofoklis",
+      "weight": 96
+    },
+    {
+      "value": "Prokopios",
+      "weight": 93
+    },
+    {
+      "value": "Nikiforos",
+      "weight": 89
+    },
+    {
+      "value": "Chrysanthos",
+      "weight": 79
+    },
+    {
+      "value": "Orestis",
+      "weight": 77
+    },
+    {
+      "value": "Sarantos",
+      "weight": 76
+    },
+    {
+      "value": "Fragkiskos",
+      "weight": 76
+    },
+    {
+      "value": "Zafeirios",
+      "weight": 75
+    },
+    {
+      "value": "Theologos",
+      "weight": 74
+    },
+    {
+      "value": "Kleanthis",
+      "weight": 74
+    },
+    {
+      "value": "Adam",
+      "weight": 73
+    },
+    {
+      "value": "Charisios",
+      "weight": 69
+    },
+    {
+      "value": "Nestor",
+      "weight": 67
+    },
+    {
+      "value": "Ioakeim",
+      "weight": 63
+    },
+    {
+      "value": "Meletios",
+      "weight": 63
+    },
+    {
+      "value": "Taxiarchis",
+      "weight": 63
+    },
+    {
+      "value": "Thrasyvoulos",
+      "weight": 57
+    },
+    {
+      "value": "Aimilios",
+      "weight": 56
+    },
+    {
+      "value": "Polykarpos",
+      "weight": 56
+    },
+    {
+      "value": "Aristomenis",
+      "weight": 53
+    },
+    {
+      "value": "Ignatios",
+      "weight": 52
+    },
+    {
+      "value": "Paraschos",
+      "weight": 52
+    },
+    {
+      "value": "Aris",
+      "weight": 51
+    },
+    {
+      "value": "Eftychios",
+      "weight": 51
+    },
+    {
+      "value": "Isaak",
+      "weight": 51
+    },
+    {
+      "value": "Asimakis",
+      "weight": 50
+    },
+    {
+      "value": "Vissarion",
+      "weight": 50
+    },
+    {
+      "value": "Napoleon",
+      "weight": 49
+    },
+    {
+      "value": "Timoleon",
+      "weight": 48
+    },
+    {
+      "value": "Polyzois",
+      "weight": 47
+    },
+    {
+      "value": "Evgenios",
+      "weight": 46
+    },
+    {
+      "value": "Vyron",
+      "weight": 44
+    },
+    {
+      "value": "Chariton",
+      "weight": 44
+    },
+    {
+      "value": "Kimon",
+      "weight": 43
+    },
+    {
+      "value": "Spilios",
+      "weight": 41
+    },
+    {
+      "value": "Moschos",
+      "weight": 40
+    },
+    {
+      "value": "Paris",
+      "weight": 38
+    },
+    {
+      "value": "Artemios",
+      "weight": 37
+    },
+    {
+      "value": "Eirinaios",
+      "weight": 37
+    },
+    {
+      "value": "Iason",
+      "weight": 36
+    },
+    {
+      "value": "Anthimos",
+      "weight": 35
+    },
+    {
+      "value": "Daniil",
+      "weight": 33
+    },
+    {
+      "value": "Myron",
+      "weight": 33
+    },
+    {
+      "value": "Charidimos",
+      "weight": 32
+    },
+    {
+      "value": "Agamemnon",
+      "weight": 30
+    },
+    {
+      "value": "Agisilaos",
+      "weight": 30
+    },
+    {
+      "value": "Lykourgos",
+      "weight": 30
+    },
+    {
+      "value": "Margaritis",
+      "weight": 30
+    },
+    {
+      "value": "Platon",
+      "weight": 29
+    },
+    {
+      "value": "David",
+      "weight": 28
+    },
+    {
+      "value": "Ippokratis",
+      "weight": 28
+    },
+    {
+      "value": "Agathoklis",
+      "weight": 26
+    },
+    {
+      "value": "Viktor",
+      "weight": 26
+    },
+    {
+      "value": "Diogenis",
+      "weight": 26
+    },
+    {
+      "value": "Neofytos",
+      "weight": 26
+    },
+    {
+      "value": "Polydoros",
+      "weight": 26
+    },
+    {
+      "value": "Tsampikos",
+      "weight": 26
+    },
+    {
+      "value": "Adrianos",
+      "weight": 25
+    },
+    {
+      "value": "Avgoustinos",
+      "weight": 25
+    },
+    {
+      "value": "Klearchos",
+      "weight": 25
+    },
+    {
+      "value": "Omiros",
+      "weight": 25
+    },
+    {
+      "value": "Arsenios",
+      "weight": 24
+    },
+    {
+      "value": "Velissarios",
+      "weight": 24
+    },
+    {
+      "value": "Polyvios",
+      "weight": 24
+    },
+    {
+      "value": "Fokion",
+      "weight": 24
+    },
+    {
+      "value": "Timotheos",
+      "weight": 23
+    },
+    {
+      "value": "Fanourios",
+      "weight": 22
+    },
+    {
+      "value": "Pantazis",
+      "weight": 21
+    },
+    {
+      "value": "Doukas",
+      "weight": 20
+    },
+    {
+      "value": "Theoklitos",
+      "weight": 20
+    },
+    {
+      "value": "Naoum",
+      "weight": 20
+    },
+    {
+      "value": "Vladimiros",
+      "weight": 19
+    },
+    {
+      "value": "Zisimos",
+      "weight": 19
+    },
+    {
+      "value": "Merkourios",
+      "weight": 19
+    },
+    {
+      "value": "Avgerinos",
+      "weight": 18
+    },
+    {
+      "value": "Drosos",
+      "weight": 18
+    },
+    {
+      "value": "Errikos",
+      "weight": 18
+    },
+    {
+      "value": "Theofylaktos",
+      "weight": 18
+    },
+    {
+      "value": "Neoklis",
+      "weight": 18
+    },
+    {
+      "value": "Sergios",
+      "weight": 18
+    },
+    {
+      "value": "Kleomenis",
+      "weight": 17
+    },
+    {
+      "value": "Klimis",
+      "weight": 17
+    },
+    {
+      "value": "Leonardos",
+      "weight": 17
+    },
+    {
+      "value": "Moysis",
+      "weight": 17
+    },
+    {
+      "value": "Elissaios",
+      "weight": 16
+    },
+    {
+      "value": "Komninos",
+      "weight": 16
+    },
+    {
+      "value": "Leandros",
+      "weight": 16
+    },
+    {
+      "value": "Mavroudis",
+      "weight": 16
+    },
+    {
+      "value": "Faidon",
+      "weight": 16
+    },
+    {
+      "value": "Donatos",
+      "weight": 15
+    },
+    {
+      "value": "Ektor",
+      "weight": 15
+    },
+    {
+      "value": "Zinon",
+      "weight": 15
+    },
+    {
+      "value": "Ierotheos",
+      "weight": 15
+    },
+    {
+      "value": "Othon",
+      "weight": 15
+    },
+    {
+      "value": "Pelopidas",
+      "weight": 15
+    },
+    {
+      "value": "Rigas",
+      "weight": 15
+    },
+    {
+      "value": "Solon",
+      "weight": 15
+    },
+    {
+      "value": "Agapios",
+      "weight": 14
+    },
+    {
+      "value": "Aristogeiton",
+      "weight": 14
+    },
+    {
+      "value": "Archontis",
+      "weight": 14
+    },
+    {
+      "value": "Diomidis",
+      "weight": 14
+    },
+    {
+      "value": "Kanellos",
+      "weight": 14
+    },
+    {
+      "value": "Polyneikis",
+      "weight": 14
+    },
+    {
+      "value": "Aimilianos",
+      "weight": 13
+    },
+    {
+      "value": "Anagnostis",
+      "weight": 13
+    },
+    {
+      "value": "Ananias",
+      "weight": 13
+    },
+    {
+      "value": "Evdokimos",
+      "weight": 13
+    },
+    {
+      "value": "Efkleidis",
+      "weight": 13
+    },
+    {
+      "value": "Karolos",
+      "weight": 13
+    },
+    {
+      "value": "Kyrillos",
+      "weight": 13
+    },
+    {
+      "value": "Maximos",
+      "weight": 13
+    },
+    {
+      "value": "Rafail",
+      "weight": 13
+    },
+    {
+      "value": "Agapitos",
+      "weight": 12
+    },
+    {
+      "value": "Aristofanis",
+      "weight": 12
+    },
+    {
+      "value": "Valsamis",
+      "weight": 12
+    },
+    {
+      "value": "Kleovoulos",
+      "weight": 12
+    },
+    {
+      "value": "Lymperis",
+      "weight": 12
+    },
+    {
+      "value": "Patroklos",
+      "weight": 12
+    },
+    {
+      "value": "Sevastianos",
+      "weight": 12
+    },
+    {
+      "value": "Agathangelos",
+      "weight": 11
+    },
+    {
+      "value": "Aristarchos",
+      "weight": 11
+    },
+    {
+      "value": "Aristodimos",
+      "weight": 11
+    },
+    {
+      "value": "Vardis",
+      "weight": 11
+    },
+    {
+      "value": "Kyros",
+      "weight": 11
+    },
+    {
+      "value": "Nathanail",
+      "weight": 11
+    },
+    {
+      "value": "Onoufrios",
+      "weight": 11
+    },
+    {
+      "value": "Sakellarios",
+      "weight": 11
+    },
+    {
+      "value": "Frixos",
+      "weight": 11
+    },
+    {
+      "value": "Chousein",
+      "weight": 11
+    },
+    {
+      "value": "Andronikos",
+      "weight": 10
+    },
+    {
+      "value": "Garyfallos",
+      "weight": 10
+    },
+    {
+      "value": "Erotokritos",
+      "weight": 10
+    },
+    {
+      "value": "Karyofyllis",
+      "weight": 10
+    },
+    {
+      "value": "Kornilios",
+      "weight": 10
+    },
+    {
+      "value": "Kriton",
+      "weight": 10
+    },
+    {
+      "value": "Nikodimos",
+      "weight": 10
+    },
+    {
+      "value": "Parmenion",
+      "weight": 10
+    },
+    {
+      "value": "Rallis",
+      "weight": 10
+    },
+    {
+      "value": "Rizos",
+      "weight": 10
+    },
+    {
+      "value": "Filimon",
+      "weight": 10
+    },
+    {
+      "value": "Vissarios",
+      "weight": 9
+    },
+    {
+      "value": "Grammenos",
+      "weight": 9
+    },
+    {
+      "value": "Drakon",
+      "weight": 9
+    },
+    {
+      "value": "Themelios",
+      "weight": 9
+    },
+    {
+      "value": "Kyprianos",
+      "weight": 9
+    },
+    {
+      "value": "Laskaris",
+      "weight": 9
+    },
+    {
+      "value": "Leontios",
+      "weight": 9
+    },
+    {
+      "value": "Minos",
+      "weight": 9
+    },
+    {
+      "value": "Mochamed",
+      "weight": 9
+    },
+    {
+      "value": "Ploutarchos",
+      "weight": 9
+    },
+    {
+      "value": "Romaios",
+      "weight": 9
+    },
+    {
+      "value": "Sofianos",
+      "weight": 9
+    },
+    {
+      "value": "Chasan",
+      "weight": 9
+    },
+    {
+      "value": "Chrysafios",
+      "weight": 9
+    },
+    {
+      "value": "Goulielmos",
+      "weight": 8
+    },
+    {
+      "value": "Theopistos",
+      "weight": 8
+    },
+    {
+      "value": "Lyssandros",
+      "weight": 8
+    },
+    {
+      "value": "Nikandros",
+      "weight": 8
+    },
+    {
+      "value": "Orfeas",
+      "weight": 8
+    },
+    {
+      "value": "Polymeros",
+      "weight": 8
+    },
+    {
+      "value": "Rodolfos",
+      "weight": 8
+    },
+    {
+      "value": "Sofronios",
+      "weight": 8
+    },
+    {
+      "value": "Titos",
+      "weight": 8
+    },
+    {
+      "value": "Athinodoros",
+      "weight": 7
+    },
+    {
+      "value": "Akindynos",
+      "weight": 7
+    },
+    {
+      "value": "Apollon",
+      "weight": 7
+    },
+    {
+      "value": "Valasios",
+      "weight": 7
+    },
+    {
+      "value": "Dikaios",
+      "weight": 7
+    },
+    {
+      "value": "Evdoxios",
+      "weight": 7
+    },
+    {
+      "value": "Zarifis",
+      "weight": 7
+    },
+    {
+      "value": "Theoklis",
+      "weight": 7
+    },
+    {
+      "value": "Lavrentios",
+      "weight": 7
+    },
+    {
+      "value": "Loizos",
+      "weight": 7
+    },
+    {
+      "value": "Rovertos",
+      "weight": 7
+    },
+    {
+      "value": "Roussos",
+      "weight": 7
+    },
+    {
+      "value": "Stasinos",
+      "weight": 7
+    },
+    {
+      "value": "Foivos",
+      "weight": 7
+    },
+    {
+      "value": "Alvertos",
+      "weight": 6
+    },
+    {
+      "value": "Ali",
+      "weight": 6
+    },
+    {
+      "value": "Archimidis",
+      "weight": 6
+    },
+    {
+      "value": "Astrinos",
+      "weight": 6
+    },
+    {
+      "value": "Valerios",
+      "weight": 6
+    },
+    {
+      "value": "Venizelos",
+      "weight": 6
+    },
+    {
+      "value": "Defkalion",
+      "weight": 6
+    },
+    {
+      "value": "Edouardos",
+      "weight": 6
+    },
+    {
+      "value": "Ermolaos",
+      "weight": 6
+    },
+    {
+      "value": "Evryviadis",
+      "weight": 6
+    },
+    {
+      "value": "Kyrikos",
+      "weight": 6
+    },
+    {
+      "value": "Loudovikos",
+      "weight": 6
+    },
+    {
+      "value": "Loukianos",
+      "weight": 6
+    },
+    {
+      "value": "Lysimachos",
+      "weight": 6
+    },
+    {
+      "value": "Mavrikios",
+      "weight": 6
+    },
+    {
+      "value": "Nikon",
+      "weight": 6
+    },
+    {
+      "value": "Nomikos",
+      "weight": 6
+    },
+    {
+      "value": "Panormitis",
+      "weight": 6
+    },
+    {
+      "value": "Periandros",
+      "weight": 6
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "romanization_review": "ELOT 743 transcription of original Greek uppercase forms without invented frequency adjustments; source rank #107 'ΕΥΡΙΠΙΔΗ Σ' excluded as malformed, #301 used instead",
+  "name_script": "Latin",
+  "script_policy": {
+    "allowed_letter_script": "Unicode Script=Latin only",
+    "allowed_combining_marks": "Unicode General_Category=Mark AND Script_Extensions=Latin, following a Latin letter",
+    "normalization": "NFC",
+    "name_form": "one single male given name, no spaces, hyphens, apostrophes, punctuation, compounds or surnames",
+    "romanization": "documented and coherent per source where non-Latin source script is used; merge or reject equivalent Latin spellings; no invented romanizations",
+    "frequencies": "source-observed weights unchanged"
+  }
+}

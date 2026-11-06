@@ -1,0 +1,1233 @@
+{
+  "schema_version": 2,
+  "code": "JPN",
+  "cohort": "male baby names in Baby Calendar sampled registrations, 2008–2022",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "jp-baby-calendar-male-readings-2008-2022",
+    "provider": "Baby Calendar (2008–2022), curated by Bond & Barešová (namae-bc)",
+    "source_url": "https://github.com/bond-lab/namae-bc/tree/0148b8f4e8696cd874720d7d58f907a4dec93bad/data/download",
+    "source_file": "data/download/baby_calendar_names.tsv",
+    "source_blob_sha": "df83e4cbbf5584cc83b66f03067bfc093d83a4e3",
+    "romanization_source_url": "https://github.com/shuheilocale/japanese-personal-name-dataset/blob/53251b4207d107fc81a29cd333573d9d1e39ec57/japanese_personal_name_dataset/dataset/first_name_man_opti.csv",
+    "romanization_source_blob_sha": "8a98b34c46a3e395e7bd2e99872ad93642cba08a",
+    "romanization": "romanized source dictionary's ASCII Hepburn-style spellings, preserving written long-vowel sequences (e.g. ou); one unique spelling per reading",
+    "metric": "sum of observed counts from male hiragana-pronunciation-only sample rows 2008–2022, joined to attested male romaji dictionary; sampling frequencies, NOT national birth totals",
+    "license": "namae-bc derived work MIT; underlying Baby Calendar survey limits commercial redistribution (research/fair-use only); HOLD for licence review"
+  },
+  "selection_policy": "Top 300 unique romanized male name readings by observed Baby Calendar pronunciation counts; source dictionary must attest the reading and spelling; exclude missing mappings, not invent names or counts",
+  "given_names": [
+    {
+      "value": "Haruto",
+      "weight": 174
+    },
+    {
+      "value": "Yuto",
+      "weight": 125
+    },
+    {
+      "value": "Haruki",
+      "weight": 110
+    },
+    {
+      "value": "Souta",
+      "weight": 100
+    },
+    {
+      "value": "Kouki",
+      "weight": 99
+    },
+    {
+      "value": "Kaito",
+      "weight": 84
+    },
+    {
+      "value": "Yuito",
+      "weight": 79
+    },
+    {
+      "value": "Yuma",
+      "weight": 78
+    },
+    {
+      "value": "Hinata",
+      "weight": 69
+    },
+    {
+      "value": "Yuki",
+      "weight": 68
+    },
+    {
+      "value": "Minato",
+      "weight": 62
+    },
+    {
+      "value": "Hayato",
+      "weight": 60
+    },
+    {
+      "value": "Sousuke",
+      "weight": 57
+    },
+    {
+      "value": "Taiga",
+      "weight": 55
+    },
+    {
+      "value": "Kouta",
+      "weight": 50
+    },
+    {
+      "value": "Takumi",
+      "weight": 49
+    },
+    {
+      "value": "Hiroto",
+      "weight": 46
+    },
+    {
+      "value": "Souma",
+      "weight": 46
+    },
+    {
+      "value": "Akito",
+      "weight": 45
+    },
+    {
+      "value": "Asahi",
+      "weight": 42
+    },
+    {
+      "value": "Rikuto",
+      "weight": 42
+    },
+    {
+      "value": "Yuta",
+      "weight": 42
+    },
+    {
+      "value": "Kazuki",
+      "weight": 39
+    },
+    {
+      "value": "Touma",
+      "weight": 39
+    },
+    {
+      "value": "Shouta",
+      "weight": 38
+    },
+    {
+      "value": "Takeru",
+      "weight": 38
+    },
+    {
+      "value": "Yamato",
+      "weight": 37
+    },
+    {
+      "value": "Ibuki",
+      "weight": 34
+    },
+    {
+      "value": "Kento",
+      "weight": 33
+    },
+    {
+      "value": "Eita",
+      "weight": 31
+    },
+    {
+      "value": "Eito",
+      "weight": 31
+    },
+    {
+      "value": "Kotarou",
+      "weight": 31
+    },
+    {
+      "value": "Kousei",
+      "weight": 31
+    },
+    {
+      "value": "Takuma",
+      "weight": 31
+    },
+    {
+      "value": "Ryou",
+      "weight": 29
+    },
+    {
+      "value": "Ryouta",
+      "weight": 28
+    },
+    {
+      "value": "Taichi",
+      "weight": 27
+    },
+    {
+      "value": "Hikaru",
+      "weight": 24
+    },
+    {
+      "value": "Ryouma",
+      "weight": 24
+    },
+    {
+      "value": "Tsubasa",
+      "weight": 24
+    },
+    {
+      "value": "Arata",
+      "weight": 23
+    },
+    {
+      "value": "Ryuto",
+      "weight": 22
+    },
+    {
+      "value": "Takuto",
+      "weight": 22
+    },
+    {
+      "value": "Tomoki",
+      "weight": 22
+    },
+    {
+      "value": "Kousuke",
+      "weight": 21
+    },
+    {
+      "value": "Shion",
+      "weight": 21
+    },
+    {
+      "value": "Shun",
+      "weight": 21
+    },
+    {
+      "value": "Taisei",
+      "weight": 21
+    },
+    {
+      "value": "Ayumu",
+      "weight": 20
+    },
+    {
+      "value": "Masato",
+      "weight": 20
+    },
+    {
+      "value": "Shuto",
+      "weight": 20
+    },
+    {
+      "value": "Daiki",
+      "weight": 19
+    },
+    {
+      "value": "Kazuma",
+      "weight": 19
+    },
+    {
+      "value": "Keisuke",
+      "weight": 19
+    },
+    {
+      "value": "Keita",
+      "weight": 19
+    },
+    {
+      "value": "Koudai",
+      "weight": 19
+    },
+    {
+      "value": "Soushi",
+      "weight": 19
+    },
+    {
+      "value": "Daichi",
+      "weight": 18
+    },
+    {
+      "value": "Hiroki",
+      "weight": 18
+    },
+    {
+      "value": "Keigo",
+      "weight": 18
+    },
+    {
+      "value": "Kenshin",
+      "weight": 18
+    },
+    {
+      "value": "Shou",
+      "weight": 18
+    },
+    {
+      "value": "Shougo",
+      "weight": 18
+    },
+    {
+      "value": "Yugo",
+      "weight": 18
+    },
+    {
+      "value": "Yusuke",
+      "weight": 18
+    },
+    {
+      "value": "Mahiro",
+      "weight": 17
+    },
+    {
+      "value": "Seiya",
+      "weight": 17
+    },
+    {
+      "value": "Kazuto",
+      "weight": 16
+    },
+    {
+      "value": "Subaru",
+      "weight": 16
+    },
+    {
+      "value": "Wataru",
+      "weight": 16
+    },
+    {
+      "value": "Yuya",
+      "weight": 16
+    },
+    {
+      "value": "Keito",
+      "weight": 15
+    },
+    {
+      "value": "Naoki",
+      "weight": 15
+    },
+    {
+      "value": "Kanta",
+      "weight": 14
+    },
+    {
+      "value": "Taiyou",
+      "weight": 14
+    },
+    {
+      "value": "Kouhei",
+      "weight": 13
+    },
+    {
+      "value": "Reon",
+      "weight": 13
+    },
+    {
+      "value": "Akira",
+      "weight": 12
+    },
+    {
+      "value": "Shu",
+      "weight": 12
+    },
+    {
+      "value": "Yoshiki",
+      "weight": 12
+    },
+    {
+      "value": "Yudai",
+      "weight": 12
+    },
+    {
+      "value": "Atsuki",
+      "weight": 11
+    },
+    {
+      "value": "Jun",
+      "weight": 11
+    },
+    {
+      "value": "Tougo",
+      "weight": 11
+    },
+    {
+      "value": "Yousuke",
+      "weight": 11
+    },
+    {
+      "value": "Chiaki",
+      "weight": 10
+    },
+    {
+      "value": "Haruhito",
+      "weight": 10
+    },
+    {
+      "value": "Hibiki",
+      "weight": 10
+    },
+    {
+      "value": "Kenta",
+      "weight": 10
+    },
+    {
+      "value": "Koushi",
+      "weight": 10
+    },
+    {
+      "value": "Shouya",
+      "weight": 10
+    },
+    {
+      "value": "Taiki",
+      "weight": 10
+    },
+    {
+      "value": "Issei",
+      "weight": 9
+    },
+    {
+      "value": "Kouya",
+      "weight": 9
+    },
+    {
+      "value": "Makoto",
+      "weight": 9
+    },
+    {
+      "value": "Naoto",
+      "weight": 9
+    },
+    {
+      "value": "Ryuta",
+      "weight": 9
+    },
+    {
+      "value": "Shuta",
+      "weight": 9
+    },
+    {
+      "value": "Tomoya",
+      "weight": 9
+    },
+    {
+      "value": "Eiji",
+      "weight": 8
+    },
+    {
+      "value": "Jou",
+      "weight": 8
+    },
+    {
+      "value": "Kazuya",
+      "weight": 8
+    },
+    {
+      "value": "Kengo",
+      "weight": 8
+    },
+    {
+      "value": "Shuma",
+      "weight": 8
+    },
+    {
+      "value": "Shunta",
+      "weight": 8
+    },
+    {
+      "value": "Takuya",
+      "weight": 8
+    },
+    {
+      "value": "Tatsuya",
+      "weight": 8
+    },
+    {
+      "value": "Touya",
+      "weight": 8
+    },
+    {
+      "value": "Tsukasa",
+      "weight": 8
+    },
+    {
+      "value": "Yushi",
+      "weight": 8
+    },
+    {
+      "value": "Atsushi",
+      "weight": 7
+    },
+    {
+      "value": "Daigo",
+      "weight": 7
+    },
+    {
+      "value": "Hiromu",
+      "weight": 7
+    },
+    {
+      "value": "Keiji",
+      "weight": 7
+    },
+    {
+      "value": "Masayuki",
+      "weight": 7
+    },
+    {
+      "value": "Ryuma",
+      "weight": 7
+    },
+    {
+      "value": "Souya",
+      "weight": 7
+    },
+    {
+      "value": "Yutaka",
+      "weight": 7
+    },
+    {
+      "value": "Keishi",
+      "weight": 6
+    },
+    {
+      "value": "Ryuji",
+      "weight": 6
+    },
+    {
+      "value": "Shunya",
+      "weight": 6
+    },
+    {
+      "value": "Taishi",
+      "weight": 6
+    },
+    {
+      "value": "Tasuku",
+      "weight": 6
+    },
+    {
+      "value": "Hajime",
+      "weight": 5
+    },
+    {
+      "value": "Haruyuki",
+      "weight": 5
+    },
+    {
+      "value": "Hiroaki",
+      "weight": 5
+    },
+    {
+      "value": "Hiroya",
+      "weight": 5
+    },
+    {
+      "value": "Hyuga",
+      "weight": 5
+    },
+    {
+      "value": "Ippei",
+      "weight": 5
+    },
+    {
+      "value": "Mamoru",
+      "weight": 5
+    },
+    {
+      "value": "Masahiro",
+      "weight": 5
+    },
+    {
+      "value": "Masayoshi",
+      "weight": 5
+    },
+    {
+      "value": "Nozomu",
+      "weight": 5
+    },
+    {
+      "value": "Ryouya",
+      "weight": 5
+    },
+    {
+      "value": "Ryu",
+      "weight": 5
+    },
+    {
+      "value": "Shuya",
+      "weight": 5
+    },
+    {
+      "value": "Takaya",
+      "weight": 5
+    },
+    {
+      "value": "Takeshi",
+      "weight": 5
+    },
+    {
+      "value": "Toshiya",
+      "weight": 5
+    },
+    {
+      "value": "Yoshiharu",
+      "weight": 5
+    },
+    {
+      "value": "Yukiya",
+      "weight": 5
+    },
+    {
+      "value": "Akihito",
+      "weight": 4
+    },
+    {
+      "value": "Daisuke",
+      "weight": 4
+    },
+    {
+      "value": "Eisuke",
+      "weight": 4
+    },
+    {
+      "value": "Kichi",
+      "weight": 4
+    },
+    {
+      "value": "Mitsuru",
+      "weight": 4
+    },
+    {
+      "value": "Naoya",
+      "weight": 4
+    },
+    {
+      "value": "Osamu",
+      "weight": 4
+    },
+    {
+      "value": "Reiji",
+      "weight": 4
+    },
+    {
+      "value": "Ryuya",
+      "weight": 4
+    },
+    {
+      "value": "Satoshi",
+      "weight": 4
+    },
+    {
+      "value": "Takashi",
+      "weight": 4
+    },
+    {
+      "value": "Takayuki",
+      "weight": 4
+    },
+    {
+      "value": "Teruki",
+      "weight": 4
+    },
+    {
+      "value": "Tomohito",
+      "weight": 4
+    },
+    {
+      "value": "Chikara",
+      "weight": 3
+    },
+    {
+      "value": "Genki",
+      "weight": 3
+    },
+    {
+      "value": "Hideaki",
+      "weight": 3
+    },
+    {
+      "value": "Hideto",
+      "weight": 3
+    },
+    {
+      "value": "Hisashi",
+      "weight": 3
+    },
+    {
+      "value": "Kazushi",
+      "weight": 3
+    },
+    {
+      "value": "Keichi",
+      "weight": 3
+    },
+    {
+      "value": "Keishin",
+      "weight": 3
+    },
+    {
+      "value": "Kenshi",
+      "weight": 3
+    },
+    {
+      "value": "Kiyoto",
+      "weight": 3
+    },
+    {
+      "value": "Kotetsu",
+      "weight": 3
+    },
+    {
+      "value": "Masaya",
+      "weight": 3
+    },
+    {
+      "value": "Minoru",
+      "weight": 3
+    },
+    {
+      "value": "Mirai",
+      "weight": 3
+    },
+    {
+      "value": "Ryougo",
+      "weight": 3
+    },
+    {
+      "value": "Seigo",
+      "weight": 3
+    },
+    {
+      "value": "Shimpei",
+      "weight": 3
+    },
+    {
+      "value": "Souhei",
+      "weight": 3
+    },
+    {
+      "value": "Taisuke",
+      "weight": 3
+    },
+    {
+      "value": "Takahiro",
+      "weight": 3
+    },
+    {
+      "value": "Takaki",
+      "weight": 3
+    },
+    {
+      "value": "Tarou",
+      "weight": 3
+    },
+    {
+      "value": "Teppei",
+      "weight": 3
+    },
+    {
+      "value": "Tetsuya",
+      "weight": 3
+    },
+    {
+      "value": "Toru",
+      "weight": 3
+    },
+    {
+      "value": "Yukihiro",
+      "weight": 3
+    },
+    {
+      "value": "Akifumi",
+      "weight": 2
+    },
+    {
+      "value": "Akihiro",
+      "weight": 2
+    },
+    {
+      "value": "Akiyoshi",
+      "weight": 2
+    },
+    {
+      "value": "Fumiya",
+      "weight": 2
+    },
+    {
+      "value": "Gouki",
+      "weight": 2
+    },
+    {
+      "value": "Haruyoshi",
+      "weight": 2
+    },
+    {
+      "value": "Hayata",
+      "weight": 2
+    },
+    {
+      "value": "Hidetoshi",
+      "weight": 2
+    },
+    {
+      "value": "Hirotoshi",
+      "weight": 2
+    },
+    {
+      "value": "Hitoshi",
+      "weight": 2
+    },
+    {
+      "value": "Ichirou",
+      "weight": 2
+    },
+    {
+      "value": "Junta",
+      "weight": 2
+    },
+    {
+      "value": "Kazuhiro",
+      "weight": 2
+    },
+    {
+      "value": "Kazumasa",
+      "weight": 2
+    },
+    {
+      "value": "Kazutaka",
+      "weight": 2
+    },
+    {
+      "value": "Kensuke",
+      "weight": 2
+    },
+    {
+      "value": "Kiyoharu",
+      "weight": 2
+    },
+    {
+      "value": "Kouichi",
+      "weight": 2
+    },
+    {
+      "value": "Masaharu",
+      "weight": 2
+    },
+    {
+      "value": "Masataka",
+      "weight": 2
+    },
+    {
+      "value": "Motoharu",
+      "weight": 2
+    },
+    {
+      "value": "Noboru",
+      "weight": 2
+    },
+    {
+      "value": "Nobuki",
+      "weight": 2
+    },
+    {
+      "value": "Renji",
+      "weight": 2
+    },
+    {
+      "value": "Ryouji",
+      "weight": 2
+    },
+    {
+      "value": "Shinichi",
+      "weight": 2
+    },
+    {
+      "value": "Shugo",
+      "weight": 2
+    },
+    {
+      "value": "Shuhei",
+      "weight": 2
+    },
+    {
+      "value": "Shuji",
+      "weight": 2
+    },
+    {
+      "value": "Shunji",
+      "weight": 2
+    },
+    {
+      "value": "Suguru",
+      "weight": 2
+    },
+    {
+      "value": "Takamasa",
+      "weight": 2
+    },
+    {
+      "value": "Tatsumi",
+      "weight": 2
+    },
+    {
+      "value": "Tomoaki",
+      "weight": 2
+    },
+    {
+      "value": "Tomohiro",
+      "weight": 2
+    },
+    {
+      "value": "Tomoyuki",
+      "weight": 2
+    },
+    {
+      "value": "Yoshiaki",
+      "weight": 2
+    },
+    {
+      "value": "Yoshihiko",
+      "weight": 2
+    },
+    {
+      "value": "Yoshihiro",
+      "weight": 2
+    },
+    {
+      "value": "Yoshitaka",
+      "weight": 2
+    },
+    {
+      "value": "Yoshito",
+      "weight": 2
+    },
+    {
+      "value": "Yuhei",
+      "weight": 2
+    },
+    {
+      "value": "Yuji",
+      "weight": 2
+    },
+    {
+      "value": "Yuzuru",
+      "weight": 2
+    },
+    {
+      "value": "Akihiko",
+      "weight": 1
+    },
+    {
+      "value": "Akihisa",
+      "weight": 1
+    },
+    {
+      "value": "Akitoshi",
+      "weight": 1
+    },
+    {
+      "value": "Akitsugu",
+      "weight": 1
+    },
+    {
+      "value": "Atsuhiro",
+      "weight": 1
+    },
+    {
+      "value": "Atsurou",
+      "weight": 1
+    },
+    {
+      "value": "Eikichi",
+      "weight": 1
+    },
+    {
+      "value": "Haruaki",
+      "weight": 1
+    },
+    {
+      "value": "Haruo",
+      "weight": 1
+    },
+    {
+      "value": "Hidenari",
+      "weight": 1
+    },
+    {
+      "value": "Hidenobu",
+      "weight": 1
+    },
+    {
+      "value": "Hikari",
+      "weight": 1
+    },
+    {
+      "value": "Hirofumi",
+      "weight": 1
+    },
+    {
+      "value": "Hirokazu",
+      "weight": 1
+    },
+    {
+      "value": "Hironari",
+      "weight": 1
+    },
+    {
+      "value": "Hironori",
+      "weight": 1
+    },
+    {
+      "value": "Hirotaka",
+      "weight": 1
+    },
+    {
+      "value": "Hiroyasu",
+      "weight": 1
+    },
+    {
+      "value": "Hiroyuki",
+      "weight": 1
+    },
+    {
+      "value": "Hokuto",
+      "weight": 1
+    },
+    {
+      "value": "Ikki",
+      "weight": 1
+    },
+    {
+      "value": "Isamu",
+      "weight": 1
+    },
+    {
+      "value": "Jouji",
+      "weight": 1
+    },
+    {
+      "value": "Katsuhiro",
+      "weight": 1
+    },
+    {
+      "value": "Katsumasa",
+      "weight": 1
+    },
+    {
+      "value": "Kazumichi",
+      "weight": 1
+    },
+    {
+      "value": "Kazutoshi",
+      "weight": 1
+    },
+    {
+      "value": "Keizou",
+      "weight": 1
+    },
+    {
+      "value": "Kenji",
+      "weight": 1
+    },
+    {
+      "value": "Kenya",
+      "weight": 1
+    },
+    {
+      "value": "Kenzou",
+      "weight": 1
+    },
+    {
+      "value": "Kippei",
+      "weight": 1
+    },
+    {
+      "value": "Kiyomasa",
+      "weight": 1
+    },
+    {
+      "value": "Kiyoshi",
+      "weight": 1
+    },
+    {
+      "value": "Kiyotaka",
+      "weight": 1
+    },
+    {
+      "value": "Kouji",
+      "weight": 1
+    },
+    {
+      "value": "Kousaku",
+      "weight": 1
+    },
+    {
+      "value": "Kunimitsu",
+      "weight": 1
+    },
+    {
+      "value": "Masamichi",
+      "weight": 1
+    },
+    {
+      "value": "Masaru",
+      "weight": 1
+    },
+    {
+      "value": "Mikio",
+      "weight": 1
+    },
+    {
+      "value": "Mitsuharu",
+      "weight": 1
+    },
+    {
+      "value": "Mitsuhiro",
+      "weight": 1
+    },
+    {
+      "value": "Motoyuki",
+      "weight": 1
+    },
+    {
+      "value": "Munetaka",
+      "weight": 1
+    },
+    {
+      "value": "Musashi",
+      "weight": 1
+    },
+    {
+      "value": "Naoaki",
+      "weight": 1
+    },
+    {
+      "value": "Naohiro",
+      "weight": 1
+    },
+    {
+      "value": "Naomasa",
+      "weight": 1
+    },
+    {
+      "value": "Naoyuki",
+      "weight": 1
+    },
+    {
+      "value": "Nariaki",
+      "weight": 1
+    },
+    {
+      "value": "Nobuaki",
+      "weight": 1
+    },
+    {
+      "value": "Nobuyoshi",
+      "weight": 1
+    },
+    {
+      "value": "Nobuyuki",
+      "weight": 1
+    },
+    {
+      "value": "Ryugo",
+      "weight": 1
+    },
+    {
+      "value": "Satoru",
+      "weight": 1
+    },
+    {
+      "value": "Seichi",
+      "weight": 1
+    },
+    {
+      "value": "Seiji",
+      "weight": 1
+    },
+    {
+      "value": "Seisuke",
+      "weight": 1
+    },
+    {
+      "value": "Shingo",
+      "weight": 1
+    },
+    {
+      "value": "Shinji",
+      "weight": 1
+    },
+    {
+      "value": "Shinsaku",
+      "weight": 1
+    },
+    {
+      "value": "Shinya",
+      "weight": 1
+    },
+    {
+      "value": "Taiji",
+      "weight": 1
+    },
+    {
+      "value": "Takafumi",
+      "weight": 1
+    },
+    {
+      "value": "Takaharu",
+      "weight": 1
+    },
+    {
+      "value": "Takahito",
+      "weight": 1
+    },
+    {
+      "value": "Takao",
+      "weight": 1
+    },
+    {
+      "value": "Takashige",
+      "weight": 1
+    },
+    {
+      "value": "Takumu",
+      "weight": 1
+    },
+    {
+      "value": "Tatsuhiro",
+      "weight": 1
+    },
+    {
+      "value": "Tatsuma",
+      "weight": 1
+    },
+    {
+      "value": "Tatsushi",
+      "weight": 1
+    },
+    {
+      "value": "Tatsutoshi",
+      "weight": 1
+    },
+    {
+      "value": "Tatsuyuki",
+      "weight": 1
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false,
+  "name_script": "Latin",
+  "script_policy": {
+    "allowed_letter_script": "Unicode Script=Latin only",
+    "allowed_combining_marks": "Unicode General_Category=Mark AND Script_Extensions=Latin, following a Latin letter",
+    "normalization": "NFC",
+    "name_form": "one single male given name, no spaces, hyphens, apostrophes, punctuation, compounds or surnames",
+    "romanization": "documented and coherent per source where non-Latin source script is used; merge or reject equivalent Latin spellings; no invented romanizations",
+    "frequencies": "source-observed weights unchanged"
+  }
+}

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -55,22 +55,26 @@ const sourceIds={
  MAR:'ma-wikidata-male-citizens-explicit-given-name-p735-2026',
  ALG:'dz-aldjia-algerian-male-first-name-registry',
  EGY:'eg-afify-male-given-token-frequency',
- IRN:'ir-wikidata-male-citizens-explicit-given-name-p735-2026'
+ IRN:'ir-wikidata-male-citizens-explicit-given-name-p735-2026',
+ JPN:'jp-baby-calendar-male-readings-2008-2022',
+ KOR:'kr-namechart-male-births-2020',
+ TUR:'tr-turkishnamebase-male-frequencies',
+ GRE:'gr-asep-1998-2010-male-observed-names'
 };
 
-test('frozen 50 FIFA codes, exactly 36 saved banks of 300 and 14 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 40 saved banks of 300 and 10 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,10800);
+ assert.equal(master.policy.current_collected_given_names,12000);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,36);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,14);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,40);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,10);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -86,7 +90,7 @@ test('frozen 50 FIFA codes, exactly 36 saved banks of 300 and 14 empty banks',()
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,36);
+ assert.equal(new Set(ids).size,40);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -94,7 +98,7 @@ test('frozen 50 FIFA codes, exactly 36 saved banks of 300 and 14 empty banks',()
  }
 });
 
-test('each of 36 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 40 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -293,4 +297,38 @@ test('Batch G: four source-backed 300-name Latin pools preserve actual observati
   const names=new Set(banks[code].given_names.map(x=>x.value.toLocaleLowerCase('und')));
   for(const g of groups)assert.ok(g.filter(name=>names.has(name.toLocaleLowerCase('und'))).length<=1,code+' transliteration collision: '+g.join('/'));
  }
+});
+
+
+test('Batch E: JPN KOR TUR GRE contain 300 observed Latin first names and preserve source limitations',()=>{
+ const expected={
+  JPN:'jp-baby-calendar-male-readings-2008-2022',
+  KOR:'kr-namechart-male-births-2020',
+  TUR:'tr-turkishnamebase-male-frequencies',
+  GRE:'gr-asep-1998-2010-male-observed-names'
+ };
+ for(const [code,sourceId] of Object.entries(expected)){
+  const bank=banks[code];
+  assert.equal(bank.schema_version,2);
+  assert.equal(bank.source.id,sourceId);
+  assert.equal(bank.name_script,'Latin');
+  assert.equal(bank.script_policy.allowed_letter_script,'Unicode Script=Latin only');
+  assert.equal(bank.given_names.length,300);
+  assert.ok(bank.given_names.every(x=>isSingleLatinGivenName(x.value)));
+  assert.ok(bank.given_names.every((x,i)=>Number.isSafeInteger(x.weight)&&x.weight>0&&(!i||x.weight<=bank.given_names[i-1].weight)));
+  assert.equal(bank.production_ready,false);
+  assert.deepEqual(bank.surnames,[]);
+  assert.ok(bank.source.source_url.startsWith('https://'));
+  assert.ok(bank.source.license.length>15);
+ }
+ assert.equal(banks.JPN.given_names[0].value,'Haruto');
+ assert.equal(banks.KOR.given_names[0].value,'Doyun');
+ assert.equal(banks.TUR.given_names[0].value,'Mehmet');
+ assert.equal(banks.GRE.given_names[0].value,'Georgios');
+ assert.match(banks.JPN.source.romanization,/Hepburn/i);
+ assert.match(banks.KOR.source.romanization_standard,/Revised Romanization/);
+ assert.match(banks.GRE.source.romanization_standard,/ELOT 743/);
+ assert.match(banks.TUR.source.metric,/NOT TÜİK/i);
+ assert.match(banks.GRE.cohort,/NOT birth registry/);
+ assert.ok(banks.TUR.given_names.some(x=>x.value==='İbrahim'));
 });

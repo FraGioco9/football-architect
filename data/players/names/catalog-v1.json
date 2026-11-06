@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-28-country",
-  "state": "28_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-40-country",
+  "state": "40_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -218,6 +218,30 @@
       "id": "ir-wikidata-male-citizens-explicit-given-name-p735-2026",
       "external_file": "countries/IRN.json",
       "description": "Wikidata male Iranian citizen biographies (P31 human, P21 male, P27 Iran, P735 given-name), 2026 research snapshot; not national births or residents"
+    },
+    {
+      "code": "JPN",
+      "id": "jp-baby-calendar-male-readings-2008-2022",
+      "external_file": "countries/JPN.json",
+      "description": "Baby Calendar sampled male pronunciation first-name counts 2008–2022; documented romaji mappings, not national birth totals"
+    },
+    {
+      "code": "KOR",
+      "id": "kr-namechart-male-births-2020",
+      "external_file": "countries/KOR.json",
+      "description": "NAMEChart Korean registered male birth first names 2020; Latin Revised Romanization of original Hangul"
+    },
+    {
+      "code": "TUR",
+      "id": "tr-turkishnamebase-male-frequencies",
+      "external_file": "countries/TUR.json",
+      "description": "TurkishNameBase third-party male-name observed frequencies, source period/population unknown; not official census"
+    },
+    {
+      "code": "GRE",
+      "id": "gr-asep-1998-2010-male-observed-names",
+      "external_file": "countries/GRE.json",
+      "description": "Independent ASEP Greek male applicant first-name occurrence sample 1998–2010, ELOT 743 Latin transcription; not births"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -231,7 +255,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 10800,
+    "current_collected_given_names": 12000,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -490,11 +514,16 @@
       "rank": 17,
       "label": "Japan",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "jp-baby-calendar-male-readings-2008-2022"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/JPN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "SEN",
@@ -689,22 +718,32 @@
       "rank": 31,
       "label": "Türkiye",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "tr-turkishnamebase-male-frequencies"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/TUR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "KOR",
       "rank": 32,
       "label": "South Korea",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "kr-namechart-male-births-2020"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/KOR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "PAR",
@@ -829,11 +868,16 @@
       "rank": 41,
       "label": "Greece",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "gr-asep-1998-2010-male-observed-names"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/GRE.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "CMR",

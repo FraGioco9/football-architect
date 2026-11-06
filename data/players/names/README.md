@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**10,800 / 15,000** single first-name slots saved in **36 / 50 countries**. **14 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**12,000 / 15,000** single first-name slots saved in **40 / 50 countries**. **10 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -49,6 +49,11 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Algeria (ALG) | `countries/ALG.json` | 300 | Aldjia administrative/student **male first-name** records, multiple generations; **not** national births |
 | Egypt (EGY) | `countries/EGY.json` | 300 | Afify Egyptian male-given-name lexicon + observed name-chain token counts; **not** birth registration frequencies |
 | Iran (IRN) | `countries/IRN.json` | 300 | Wikidata male Iranian citizens' **P735 given names**; biographies 2026 snapshot, **not** national births or residents |
+
+| Japan (JPN) | `countries/JPN.json` | 300 | Baby Calendar observed male name-reading sample 2008–2022, romanized by attested male romaji dictionary; **not nationwide birth counts** |
+| South Korea (KOR) | `countries/KOR.json` | 300 | NAMEChart male registered births, **2020**; Hangul names under NIKL Revised Romanization |
+| Türkiye (TUR) | `countries/TUR.json` | 300 | TurkishNameBase third-party male first-name frequencies; **source population/period unspecified** |
+| Greece (GRE) | `countries/GRE.json` | 300 | Independent ASEP male job-applicant name occurrences, **1998–2010**; **not population/newborn rates** |
 
 ### Source integrity, scope and limitations
 
@@ -120,8 +125,15 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **IRN:** [Wikidata male Iranian citizen biographies](https://www.wikidata.org/wiki/Wikidata:Main_Page), same QLever method and snapshot as MAR, with `P27=Q794` (Iran). Of 872 given-name item QIDs, 797 have eligible single-word Latin labels, leaving 713 distinct candidates after romanization grouping; top **300** ranked by counted male biographical QID occurrences. Published English Latin labels preferred to French. Explicitly collapse `Mehdi/Mahdi`, `Saeed/Saeid`, `Javad/Jawad` and other documented source groups; counts are **not national male birth/resident frequencies** and heavily overrepresent notable people. Wikidata CC0, full query, checksums and mapping in `IRN.json`.
 - **Preservation & QA:** All four JSONs are byte-for-byte identical to [independent Draft/HOLD PR #423](https://github.com/FraGioco9/football-architect/pull/423) and its passed [targeted source extraction + Node 22 QA run 42252977346](https://github.com/FraGioco9/football-architect/actions/runs/42252977346). All **32 existing national JSON** banks are untouched. Exactly four new country data files, catalog, README, shared targeted catalog test added in one grouped commit. No changes to API, generator, DB, build workflows or production; **all `production_ready:false`**. Source populations and absolute counts are incomparable and carry publication/reuse review caveats.
 
+**Batch E (independent Draft/HOLD PR #414 → catalog PR #407; JPN/KOR/TUR/GRE):**
+- **JPN:** [Baby Calendar observations 2008–2022, curated by Bond & Barešová](https://github.com/bond-lab/namae-bc/tree/0148b8f4e8696cd874720d7d58f907a4dec93bad/data/download) supply *sampled* positive male pronunciation frequencies. The [Japanese personal-name reading dictionary](https://github.com/shuheilocale/japanese-personal-name-dataset/blob/53251b4207d107fc81a29cd333573d9d1e39ec57/japanese_personal_name_dataset/dataset/first_name_man_opti.csv) supplies attested Latin spellings with source long-vowel conventions. Top 300 eligible source-backed readings were selected. Neither official nationwide births nor national population totals; Baby Calendar upstream data limit commercial redistribution, review before use.
+- **KOR:** [NAMEChart male names 2020](https://www.namechart.kr/chart/2020?gender=m&page=1) gives recorded male 2020 birth-name occurrence counts, displayed from Korean Supreme Court registration statistics. Top 300 Latin names use [National Institute of Korean Language Revised Romanization](https://www.korean.go.kr/front_eng/roman/roman_01.do), concatenating given-name syllables without spaces/hyphens; no observed weight adjustment. Check secondary publication/reuse terms before commercial release.
+- **TUR:** [TurkishNameBase TR_Man_Name.csv](https://github.com/cemal-nadir/TurkishNameBase/blob/45433156021381ab386e33e3be14c855a1c1438e/TR_Man_Name.csv) has source-observed male name frequencies, including original Turkish Latin letters (ğ ı İ ö ş ü). **Undated third-party list with unspecified sample denominator**: do not claim these are official TÜİK statistics, nationwide births or verified census counts. GPL-3.0 and underlying data provenance require review.
+- **GRE:** [Independent Greek ASEP name-frequency compilation 1998–2010](https://sixnotitafrequency.blogspot.com/2010/08/) records first-name occurrences among male job applicants; **not nationwide resident or birth counts**. Latin strings use documented ELOT 743/UNGEGN transcription; a malformed source row was rejected without guessing and no new counts were invented. Independent sample and reuse rights require separate verification.
+- **Integrity:** JPN/KOR/TUR/GRE country JSON blobs are copied **unchanged** from independent PR #414; they store full source notes, Latin-only NFC single-name policy and 300 positive source-observed sorted weights each. All **36 pre-existing** country JSONs are untouched. Exactly four country JSONs plus catalog, README and targeted tests form the batch integration; no generator, API, DB, deployment or production-ready changes.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 36 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 14 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 40 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 10 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.
