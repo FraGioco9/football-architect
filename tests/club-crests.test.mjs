@@ -46,6 +46,36 @@ function setup(catalog=expected){
   change(node,id){node.dataset.clubCrest=id;observe([{type:'attributes',target:node}])}};
 }
 
+test('CLUB-01: cached prepaint crest is settled after passive renderer initialization',()=>{
+ // The native image can finish decoding before club-crests.js is loaded;
+ // complete/naturalWidth alone are not proof the host has been reconciled.
+ const image={
+  className:'app-club-crest-image',complete:true,naturalWidth:70,
+  getAttribute:name=>name==='src'?'/assets/clubs/IT/1/crest.svg':null,
+  remove(){throw Error('A decoded SVG must not be removed')}
+ };
+ const crest={
+  dataset:{clubCrest:'IT-1',clubCrestPending:'true'},classList:{contains:name=>name==='club-crest'},
+  matches:selector=>selector==='[data-club-crest]',
+  querySelector:selector=>selector==='.app-club-crest-image'?image:null,
+  querySelectorAll:selector=>selector==='.app-club-crest-image'?[image]:[],
+  contains:node=>node===image
+ };
+ assert.equal(image.complete,true);
+ assert.equal(crest.dataset.clubCrestPending,'true','prepaint can be pending before its JS observer runs');
+ const document={body:{},
+  querySelectorAll:selector=>selector==='[data-club-crest]'?[crest]:[],
+  createElement(){throw Error('Cached prepaint crest must not trigger another image')}
+ };
+ runInNewContext(read('assets/club-crests.js'),{
+  document,window:{faClubCrests:{'IT-1':'assets/clubs/IT/1/crest.svg'}},
+  MutationObserver:class{observe(){}}
+ });
+ assert.equal(crest.dataset.clubCrestLoaded,'true','renderer acknowledges already decoded image');
+ assert.equal(crest.dataset.clubCrestPending,undefined,'pending attribute is removed on reconciliation');
+ assert.equal(crest.querySelector('.app-club-crest-image'),image,'decoded image node remains stable');
+});
+
 test('known crests reserve a blank slot while loading; missing or failed images keep the fallback',()=>{
  const s=setup();
  assert.deepEqual([...s.requests].sort(),Object.values(expected).map(path=>'/'+path).sort());
