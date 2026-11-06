@@ -25,7 +25,7 @@
       "territory": "Côte d'Ivoire",
       "source_blob_sha": "da717d166239947717cfec5df3372677a3086457",
       "coverage": "Country-specific last-name column from 2019 locatefamily.com geographic snapshot (SajjadPourali/Surnames); no incidences or weights imported",
-      "limitations": "Secondary geographic observations, not nationality/official population proof; can include entries misclassified as family names, business strings or OCR errors. Obvious non-names excluded; individual surnames still need human audit. Upstream site reuse rights unclear despite MIT mirror. Research only."
+      "limitations": "Secondary geographic observations, not nationality/official population proof; can include entries misclassified as family names, business strings or OCR errors. Obvious non-names excluded; individual surnames still need human audit. Upstream site reuse rights unclear despite MIT mirror. Research only. Batch H ranking policy (2026-11-06): target 2000 surnames; 3000 existing research entries retained; 1000 above target. Count is not individual surname or national-residency certification; retain production_ready=false."
     }
   ],
   "surnames": [

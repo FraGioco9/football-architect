@@ -25,7 +25,7 @@
       "territory": "Senegal",
       "source_blob_sha": "136abbccac6494f86ed8f534494a8bd38863905f",
       "coverage": "Country-specific surname column of 2019 locatefamily.com geographic snapshot published by SajjadPourali/Surnames; ranks/percentages not copied.",
-      "limitations": "Secondary geographic records, not official citizenship/residence register. Some scraped rows clearly represent businesses or arbitrary text; obvious non-name terms excluded, remaining surname usage not independently verified per individual. MIT mirror, underlying source reuse rights unverified. Research-only."
+      "limitations": "Secondary geographic records, not official citizenship/residence register. Some scraped rows clearly represent businesses or arbitrary text; obvious non-name terms excluded, remaining surname usage not independently verified per individual. MIT mirror, underlying source reuse rights unverified. Research-only. Batch H ranking policy (2026-11-06): target 3000 surnames; 3000 existing research entries retained; 0 above target. Count is not individual surname or national-residency certification; retain production_ready=false."
     }
   ],
   "surnames": [

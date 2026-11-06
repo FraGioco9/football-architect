@@ -25,7 +25,7 @@
       "territory": "Nigeria",
       "source_blob_sha": "8ffab4e9ef5743bf3043449773aa698ed5427ba9",
       "coverage": "Country-specific surname column collected from locatefamily.com geographic listings in 2019; archived by SajjadPourali/Surnames; no numerical ranks/frequencies imported.",
-      "limitations": "Secondary address-geographic dataset, not verified national census/citizenship register. Possible false surname-field values, business terms, spelling errors and given-name-as-surname cases. Clear corporate/non-name tokens filtered. Manual attestation and upstream data licensing review required before production."
+      "limitations": "Secondary address-geographic dataset, not verified national census/citizenship register. Possible false surname-field values, business terms, spelling errors and given-name-as-surname cases. Clear corporate/non-name tokens filtered. Manual attestation and upstream data licensing review required before production. Batch H ranking policy (2026-11-06): target 2000 surnames; 3000 existing research entries retained; 1000 above target. Count is not individual surname or national-residency certification; retain production_ready=false."
     }
   ],
   "surnames": [

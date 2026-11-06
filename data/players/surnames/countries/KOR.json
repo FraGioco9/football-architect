@@ -35,6 +35,16 @@
       "romanization": "Source-recorded MR/RR-influenced Latin surname spellings retained, no invented Hangul-to-Latin outputs. Additional identifiable Romanization equivalents removed by reference alias groups. Foreign-origin surnames included where source attests population.",
       "partial_pool": "Only the top 1,090 source entries were accessible, not the underlying 30,165 reported Forebears surname records. Target 3,000 not achieved without unsupported names; do not fill synthetically.",
       "remaining_evidence_caveat": "Census-based population/variant and residency provenance require independent audit; production_ready remains false."
+    },
+    {
+      "id": "forebears-seoul-resident-surnames-2014",
+      "url": "https://forebears.io/south-korea/seoul/surnames",
+      "source_region": "Seoul, South Korea",
+      "reported_distinct_surnames": 3272,
+      "source_published_script": "Latin",
+      "research_scope": "Manually cross-referenced positive-incidence source-listed surnames, including foreign-origin surnames of residents; retained exactly as published in Latin, no new Hangul transliterations or generated spelling variations.",
+      "sample_count_added": 143,
+      "quality_limitations": "Several records have just one reported incidence; individual record-level corroboration and rights of reuse are not independently verified. Known alternate romanizations and names of unclear surname status were conservatively excluded. Research only."
     }
   ],
   "surnames": [
@@ -3070,6 +3080,435 @@
     },
     {
       "value": "Zee"
+    },
+    {
+      "value": "Sisung"
+    },
+    {
+      "value": "Sobari"
+    },
+    {
+      "value": "Sodhi"
+    },
+    {
+      "value": "Stapleton"
+    },
+    {
+      "value": "Sui"
+    },
+    {
+      "value": "Sunder"
+    },
+    {
+      "value": "Tunkara"
+    },
+    {
+      "value": "Vinokurtsev"
+    },
+    {
+      "value": "Weiler"
+    },
+    {
+      "value": "Willoughby"
+    },
+    {
+      "value": "Yul"
+    },
+    {
+      "value": "Zen"
+    },
+    {
+      "value": "Zhong"
+    },
+    {
+      "value": "Zi"
+    },
+    {
+      "value": "Abazid"
+    },
+    {
+      "value": "Abbate"
+    },
+    {
+      "value": "Abdullayev"
+    },
+    {
+      "value": "Abdygapar"
+    },
+    {
+      "value": "Abe"
+    },
+    {
+      "value": "Abedin"
+    },
+    {
+      "value": "Abi"
+    },
+    {
+      "value": "Abolhosseini"
+    },
+    {
+      "value": "Abuaisheh"
+    },
+    {
+      "value": "Abuzaid"
+    },
+    {
+      "value": "Acoco"
+    },
+    {
+      "value": "Aden"
+    },
+    {
+      "value": "Adhi"
+    },
+    {
+      "value": "Adiki"
+    },
+    {
+      "value": "Adler"
+    },
+    {
+      "value": "Adoca"
+    },
+    {
+      "value": "Afanasyev"
+    },
+    {
+      "value": "Agrao"
+    },
+    {
+      "value": "Aguilar"
+    },
+    {
+      "value": "Aguirre"
+    },
+    {
+      "value": "Ahlgren"
+    },
+    {
+      "value": "Ahlstrom"
+    },
+    {
+      "value": "Ahmadi"
+    },
+    {
+      "value": "Aird"
+    },
+    {
+      "value": "Akanji"
+    },
+    {
+      "value": "Akla"
+    },
+    {
+      "value": "Akorede"
+    },
+    {
+      "value": "Akram"
+    },
+    {
+      "value": "Alaeze"
+    },
+    {
+      "value": "Alasari"
+    },
+    {
+      "value": "Alaskar"
+    },
+    {
+      "value": "Alasmari"
+    },
+    {
+      "value": "Alba"
+    },
+    {
+      "value": "Alby"
+    },
+    {
+      "value": "Aldonza"
+    },
+    {
+      "value": "Ale"
+    },
+    {
+      "value": "Alexander"
+    },
+    {
+      "value": "Alfahdawi"
+    },
+    {
+      "value": "Alhossni"
+    },
+    {
+      "value": "Alife"
+    },
+    {
+      "value": "Alim"
+    },
+    {
+      "value": "Allis"
+    },
+    {
+      "value": "Allison"
+    },
+    {
+      "value": "Allo"
+    },
+    {
+      "value": "Almaskeen"
+    },
+    {
+      "value": "Almatar"
+    },
+    {
+      "value": "Almoite"
+    },
+    {
+      "value": "Alonzo"
+    },
+    {
+      "value": "Alpa"
+    },
+    {
+      "value": "Altan"
+    },
+    {
+      "value": "Altheyab"
+    },
+    {
+      "value": "Alvarado"
+    },
+    {
+      "value": "Amaral"
+    },
+    {
+      "value": "Amarjargal"
+    },
+    {
+      "value": "Amayun"
+    },
+    {
+      "value": "Ambs"
+    },
+    {
+      "value": "Amemori"
+    },
+    {
+      "value": "Ammor"
+    },
+    {
+      "value": "Anand"
+    },
+    {
+      "value": "Anbuhl"
+    },
+    {
+      "value": "Andaya"
+    },
+    {
+      "value": "Andrada"
+    },
+    {
+      "value": "Andrade"
+    },
+    {
+      "value": "Andres"
+    },
+    {
+      "value": "André"
+    },
+    {
+      "value": "Andér"
+    },
+    {
+      "value": "Angeles"
+    },
+    {
+      "value": "Angus"
+    },
+    {
+      "value": "Ankolekar"
+    },
+    {
+      "value": "Annamalai"
+    },
+    {
+      "value": "Annis"
+    },
+    {
+      "value": "Antonaz"
+    },
+    {
+      "value": "Antonich"
+    },
+    {
+      "value": "Anupati"
+    },
+    {
+      "value": "Anwar"
+    },
+    {
+      "value": "Ao"
+    },
+    {
+      "value": "Araya"
+    },
+    {
+      "value": "Arbic"
+    },
+    {
+      "value": "Archer"
+    },
+    {
+      "value": "Archi"
+    },
+    {
+      "value": "Ariste"
+    },
+    {
+      "value": "Arote"
+    },
+    {
+      "value": "Arshad"
+    },
+    {
+      "value": "Asahi"
+    },
+    {
+      "value": "Asai"
+    },
+    {
+      "value": "Asano"
+    },
+    {
+      "value": "Asanov"
+    },
+    {
+      "value": "Asanova"
+    },
+    {
+      "value": "Ashby"
+    },
+    {
+      "value": "Ashenfelter"
+    },
+    {
+      "value": "Ashfaq"
+    },
+    {
+      "value": "Ashline"
+    },
+    {
+      "value": "Asquith"
+    },
+    {
+      "value": "Asselborn"
+    },
+    {
+      "value": "Atabaev"
+    },
+    {
+      "value": "Athan"
+    },
+    {
+      "value": "Athanassiou"
+    },
+    {
+      "value": "Attewell"
+    },
+    {
+      "value": "Auxenfans"
+    },
+    {
+      "value": "Avina"
+    },
+    {
+      "value": "Axam"
+    },
+    {
+      "value": "Ayachi"
+    },
+    {
+      "value": "Ayo"
+    },
+    {
+      "value": "Azimi"
+    },
+    {
+      "value": "Azizan"
+    },
+    {
+      "value": "Baasandelger"
+    },
+    {
+      "value": "Baatarkhuu"
+    },
+    {
+      "value": "Babkoff"
+    },
+    {
+      "value": "Backovic"
+    },
+    {
+      "value": "Bada"
+    },
+    {
+      "value": "Badibanga"
+    },
+    {
+      "value": "Baeumler"
+    },
+    {
+      "value": "Bag"
+    },
+    {
+      "value": "Baggam"
+    },
+    {
+      "value": "Bailblé"
+    },
+    {
+      "value": "Bakirova"
+    },
+    {
+      "value": "Balagny"
+    },
+    {
+      "value": "Balci"
+    },
+    {
+      "value": "Balcos"
+    },
+    {
+      "value": "Balgos"
+    },
+    {
+      "value": "Balimann"
+    },
+    {
+      "value": "Balisi"
+    },
+    {
+      "value": "Ballenger"
+    },
+    {
+      "value": "Balson"
+    },
+    {
+      "value": "Baláž"
+    },
+    {
+      "value": "Banait"
+    },
+    {
+      "value": "Banavali"
+    },
+    {
+      "value": "Bandhu"
+    },
+    {
+      "value": "Bangi"
     }
   ],
   "production_ready": false

@@ -48,7 +48,7 @@
       "territory": "Mali-centered family-name collection, grouped by Dogon, Soninké, Bozo, Bambara and other communities; explicit foreign-country labels excluded",
       "source_blob_sha": "bb48ec5e1b54210952f61e2716a68c6435593893",
       "coverage": "Published names of families with source-provided community/ethnic labels. Only single attested value spellings, not slash-separated synonyms, interpreted as names; no invented forms.",
-      "limitations": "Community labels are not proof of Malian citizenship/residence of a specific bearer. Cross-border communities may be represented. Author's database gives no independently verified sampling methodology or explicit dataset licence. Manual person-level audit and redistribution-rights clearance mandatory; research only."
+      "limitations": "Community labels are not proof of Malian citizenship/residence of a specific bearer. Cross-border communities may be represented. Author's database gives no independently verified sampling methodology or explicit dataset licence. Manual person-level audit and redistribution-rights clearance mandatory; research only. Batch H ranking policy (2026-11-06): target 1000 surnames; 1517 existing research entries retained; 517 above target. Count is not individual surname or national-residency certification; retain production_ready=false."
     }
   ],
   "surnames": [

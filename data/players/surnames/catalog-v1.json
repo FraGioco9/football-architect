@@ -356,13 +356,20 @@
       "source_blob_sha": "1e83b5c97db5709125062c21ac93a843d27f095a",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-h",
-      "expansion_head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
-      "expansion_blob_sha": "f1e3054928b55cc6502ece34192b274aff946e1f",
+      "expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3",
+      "expansion_blob_sha": "ef3455e3ce8174f9d36e87dc15275fb4f574ec66",
       "rank": 18,
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
+          "blob_sha": "f1e3054928b55cc6502ece34192b274aff946e1f",
+          "actual_count": 3000
+        }
+      ]
     },
     {
       "code": "NOR",
@@ -580,14 +587,21 @@
       "source_blob_sha": "c6616d0b02952b5fa8a768ad2c903a7e5e6fa443",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-h",
-      "expansion_head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
-      "expansion_blob_sha": "cc9f052720be57261e9f29d53789b4933eb7799f",
+      "expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3",
+      "expansion_blob_sha": "a4a4105e33eba980cd32ac104e2cba21cdd3485a",
       "rank": 29,
       "target_count": 2000,
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "expansion_history": [
+        {
+          "head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
+          "blob_sha": "cc9f052720be57261e9f29d53789b4933eb7799f",
+          "actual_count": 3000
+        }
+      ]
     },
     {
       "code": "NGA",
@@ -601,14 +615,21 @@
       "source_blob_sha": "fa10b23695e5c7e56b448a17dd21c4486f0ae4c1",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-h",
-      "expansion_head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
-      "expansion_blob_sha": "2abf3f6e65fc59d875e2bf6f0606976566342a46",
+      "expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3",
+      "expansion_blob_sha": "58ae9062b924ecb14e02f4991b86e2e494eaee4f",
       "rank": 30,
       "target_count": 2000,
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "expansion_history": [
+        {
+          "head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
+          "blob_sha": "2abf3f6e65fc59d875e2bf6f0606976566342a46",
+          "actual_count": 3000
+        }
+      ]
     },
     {
       "code": "TUR",
@@ -643,13 +664,20 @@
       "source_blob_sha": "a74e60e12b17b20d0b1689011299068f4d1b4edb",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-e",
-      "expansion_head_sha": "7a2c81d4aa9db7f47d6ce3a07a6fa9729236181d",
-      "expansion_blob_sha": "2d981f7cb6d7d0b6d5b577bbc622297c3935b52c",
+      "expansion_head_sha": "2c810078f417e0c55d1c0249f0868b65ad5f97f6",
+      "expansion_blob_sha": "6e1d5e8863ab5b34eb09a2ada13bc14e7a0e7b96",
       "rank": 32,
       "target_count": 2000,
-      "actual_count": 1011,
-      "missing_count": 989,
-      "excess_count": 0
+      "actual_count": 1154,
+      "missing_count": 846,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "head_sha": "7a2c81d4aa9db7f47d6ce3a07a6fa9729236181d",
+          "blob_sha": "2d981f7cb6d7d0b6d5b577bbc622297c3935b52c",
+          "actual_count": 1011
+        }
+      ]
     },
     {
       "code": "PAR",
@@ -758,7 +786,7 @@
     {
       "code": "HUN",
       "path": "data/players/surnames/countries/HUN.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "F",
       "source_pr": 436,
@@ -767,13 +795,20 @@
       "source_blob_sha": "6e71024d367449319df7a6bd6b20387dbfe5af69",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-f",
-      "expansion_head_sha": "cf02a6e67424d0a7616abc4b83618cb7d12d7a01",
-      "expansion_blob_sha": "cb0a5e7e2378587885097a7c0dea39d7f248b527",
+      "expansion_head_sha": "a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b",
+      "expansion_blob_sha": "a9c0fa3a67fcda934ea67268c3cd060ea8b2c0b9",
       "rank": 38,
       "target_count": 1500,
-      "actual_count": 1299,
-      "missing_count": 201,
-      "excess_count": 0
+      "actual_count": 1500,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "head_sha": "cf02a6e67424d0a7616abc4b83618cb7d12d7a01",
+          "blob_sha": "cb0a5e7e2378587885097a7c0dea39d7f248b527",
+          "actual_count": 1299
+        }
+      ]
     },
     {
       "code": "WAL",
@@ -953,8 +988,8 @@
       "source_blob_sha": "7dd8896e0a2994f4d6042b433a77fba2c31fd8df",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-h",
-      "expansion_head_sha": "f99141f8e6bcdd52f26e696d56da98c380fb3df2",
-      "expansion_blob_sha": "e9a27f98e9a6e88178f54c82b8609b3b5735287a",
+      "expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3",
+      "expansion_blob_sha": "f044ce40098f4be4b2d7fcac218003b140771234",
       "previous_expansion": {
         "branch": "research/surnames-3000-batch-h",
         "head_sha": "b44e3c9ed63e411cd9b644427023aa847db54a1a",
@@ -966,7 +1001,14 @@
       "actual_count": 1517,
       "missing_count": 0,
       "excess_count": 517,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "expansion_history": [
+        {
+          "head_sha": "f99141f8e6bcdd52f26e696d56da98c380fb3df2",
+          "blob_sha": "e9a27f98e9a6e88178f54c82b8609b3b5735287a",
+          "actual_count": 1517
+        }
+      ]
     },
     {
       "code": "RSA",
@@ -1006,7 +1048,8 @@
       "excess_count": 0,
       "block_reason": "Batch J source drops original surname 'Lacruz'; preserved current JSON, await corrected source",
       "blocked_source_branch": "research/surnames-3000-batch-j",
-      "blocked_source_head_sha": "a5013463c93493c0f464e933dbbe51d91b5ffe03"
+      "blocked_source_head_sha": "e765c02a25ff314a2ec8f8fafa91326f0a3af336",
+      "blocked_source_blob_sha": "d3db5c45c11f0118b9948298533cc9b92d08c1d2"
     },
     {
       "code": "CHI",
@@ -1031,7 +1074,7 @@
     }
   ],
   "target_total_surnames": 115000,
-  "total_surnames": 124716,
+  "total_surnames": 125060,
   "ranking_policy": "fixed_50_country_rank",
   "ranking_tiers": [
     {
@@ -1055,12 +1098,12 @@
       "target_count": 1000
     }
   ],
-  "preservation_baseline_commit": "7dc8b68400d763d0f1e37e59a13da0102de89f86",
-  "total_missing": 12301,
+  "preservation_baseline_commit": "b91a5ae0d6c020aacdfb2f610ae7d591f690930c",
+  "total_missing": 11957,
   "total_excess": 22017,
   "status_counts": {
-    "complete": 23,
-    "partial": 6,
+    "complete": 24,
+    "partial": 5,
     "pending": 0,
     "over_target": 17,
     "blocked": 4
