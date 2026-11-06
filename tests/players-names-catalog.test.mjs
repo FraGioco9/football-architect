@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE','SEN','CIV','NGA','MLI','COD','CMR','RSA','AUS'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE','SEN','CIV','NGA','MLI','COD','CMR','RSA','AUS','ENG','WAL'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -67,22 +67,24 @@ const sourceIds={
  COD:'players-03-transfermarkt-men-citizenship-cod-single-forenames',
  CMR:'players-03-transfermarkt-men-citizenship-cmr-single-forenames',
  RSA:'za-sampled-male-athletes-football-and-rugby-1950-2025',
- AUS:'au-nsw-bdm-male-births-top100-1960-2024'
+ AUS:'au-nsw-bdm-male-births-top100-1960-2024',
+ ENG:'forebears-england-forename-incidence-2026-11-06',
+ WAL:'forebears-wales-forename-incidence-2026-11-06'
 };
 
-test('frozen 50 FIFA codes, exactly 48 saved banks of 300 and 2 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 50 saved banks of 300 and 0 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,14400);
+ assert.equal(master.policy.current_collected_given_names,15000);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,48);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,2);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,50);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,0);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -98,7 +100,7 @@ test('frozen 50 FIFA codes, exactly 48 saved banks of 300 and 2 empty banks',()=
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,48);
+ assert.equal(new Set(ids).size,50);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -106,7 +108,7 @@ test('frozen 50 FIFA codes, exactly 48 saved banks of 300 and 2 empty banks',()=
  }
 });
 
-test('each of 48 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 50 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -412,4 +414,26 @@ test('Batch I: COD CMR RSA AUS retain pinned observed male first-name samples wi
  assert.match(banks.AUS.source.metric,/NSW boy birth counts/);
  assert.match(banks.AUS.cohort,/NOT a total-Australia/);
  assert.equal(banks.AUS.coverage.eligible_seen_2000_or_later,191);
+});
+
+
+test('Final ENG/WAL territory-specific male-used name pools preserve estimated-incidence caveats and source values',()=>{
+ for(const code of ['ENG','WAL']){
+  const bank=banks[code];
+  assert.equal(bank.source.id,sourceIds[code]);
+  assert.equal(bank.source.source_url,`https://forebears.io/${code==='ENG'?'england':'wales'}/forenames`);
+  assert.match(bank.source.metric,/male\+female bearers/);
+  assert.match(bank.source.metric,/not male-only registrations, not births/);
+  assert.match(bank.source.source_scope,/England and Wales never pooled/);
+  assert.match(bank.source.license,/review/);
+  assert.match(bank.source.data_limitation,/proprietary\/unpublished/);
+  assert.equal(bank.given_names.length,300);
+  assert.equal(bank.production_ready,false);
+  assert.deepEqual(bank.surnames,[]);
+ }
+ assert.deepEqual(banks.ENG.given_names[0],{value:'David',weight:1190573});
+ assert.deepEqual(banks.ENG.given_names.at(-1),{value:'Vijay',weight:6150});
+ assert.deepEqual(banks.WAL.given_names[0],{value:'David',weight:88759});
+ assert.deepEqual(banks.WAL.given_names.at(-1),{value:'Lance',weight:426});
+ assert.equal(master.policy.current_approved_given_names,0);
 });

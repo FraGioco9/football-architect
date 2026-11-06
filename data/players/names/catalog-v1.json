@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-40-country",
-  "state": "40_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-50-country",
+  "state": "50_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -290,6 +290,18 @@
       "id": "au-nsw-bdm-male-births-top100-1960-2024",
       "external_file": "countries/AUS.json",
       "description": "NSW-only registered male births in published annual top-100 name lists, 1960–2024; historical regional proxy, NOT national Australia-wide frequencies"
+    },
+    {
+      "code": "ENG",
+      "id": "forebears-england-forename-incidence-2026-11-06",
+      "external_file": "countries/ENG.json",
+      "description": "England 300 male-used single forenames, all-age Forebears territory-specific estimated incidence (mixed-gender total bearers; not registered male birth counts), as published 2026-11-06; license unverified, research only"
+    },
+    {
+      "code": "WAL",
+      "id": "forebears-wales-forename-incidence-2026-11-06",
+      "external_file": "countries/WAL.json",
+      "description": "Wales 300 male-used single forenames, all-age Forebears territory-specific estimated incidence (mixed-gender total bearers; not registered male birth counts), as published 2026-11-06; license unverified, research only"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -303,7 +315,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 14400,
+    "current_collected_given_names": 15000,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -361,11 +373,16 @@
       "rank": 4,
       "label": "England",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-england-forename-incidence-2026-11-06"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/ENG.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "POR",
@@ -914,11 +931,16 @@
       "rank": 39,
       "label": "Wales",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-wales-forename-incidence-2026-11-06"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/WAL.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "COD",
