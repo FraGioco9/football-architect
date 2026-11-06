@@ -351,3 +351,16 @@ test('FE-03: directory filters reuse the 320 initial keyed cards without parsing
  assert.match(source,/const nodes=reuseCached\?cacheHits\.map/);
  assert.match(source,/out\.insertBefore/,'card identity must survive filtering and reorder');
 });
+
+test('UI-409: all 320 first-paint directory crest slots reserve one borderless image footprint',()=>{
+ const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const slots=[...html.matchAll(/<span class="nav01-crest" aria-hidden="true">((?:<img[^>]+>)?)<\/span>/g)];
+ assert.equal(slots.length,320,'every static club card has a shield slot');
+ assert.equal((html.match(/<img class="nav01-crest-image"/g)||[]).length,Object.keys(manifest.clubCrests).length);
+ assert.doesNotMatch(html,/<img class="nav01-crest"\b/,'real images are children of reserved shield slots');
+ for(const [identity,path] of Object.entries(manifest.clubCrests)){
+  assert.ok(html.includes('<img class="nav01-crest-image" src="/'+path+'" alt="" loading="lazy" decoding="async">'),identity);
+ }
+ assert.match(read('tools/generate-app-pages.mjs'),/class="nav01-crest-image"/);
+ assert.match(read('assets/clubs-directory.js'),/class="nav01-crest-image"/);
+});

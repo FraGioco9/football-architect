@@ -135,3 +135,40 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
  const missing=clubModel.render({...base,clubCrests:{}},{countryId:'FR',clubId:2,view:'overview',base:'/clubs/fr/2'},'en');
  assert.equal((missing.match(/data-club-crest-pending="true"/g)||[]).length,0,'Unknown crests keep their visible fallback');
 });
+
+// UI-409 is presentation-only; public identity URLs and loaded crest nodes must be unchanged.
+test('UI-409: known crests load into a blank slot and missing or failed crests show borderless shields',()=>{
+ const app=read('assets/app.css'),detail=read('assets/club-page.css'),directory=read('assets/clubs-directory.css');
+ assert.match(app,/--fa-crest-shield-shape:polygon\(/);
+ assert.match(app,/html\[data-theme="light"\]\{--fa-crest-shield-fill:/);
+ assert.match(app,/\.app-world-club-crest-placeholder\{[^}]*border:0;border-radius:0;background:transparent/);
+ assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+ assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before,\s*\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+ assert.match(detail,/\.club-first-paint-header \.club-crest\{visibility:visible\}/);
+ assert.match(detail,/\.club-first-paint-header \.club-crest:not\(\[data-club-crest\]\)::before\{display:none\}/);
+ assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\)::before,\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+ assert.match(directory,/\.nav01-crest-image\{position:absolute;inset:0;[^}]*object-fit:contain/);
+ for(const selector of ['app-fixtures-skeleton-crest','app-view-skeleton-crest-slot'])
+  assert.ok(app.includes(selector),'first-paint reserved crest slot '+selector);
+ assert.doesNotMatch(app,/:is\(\.app-fixtures-skeleton-crest,\.app-view-skeleton-crest-slot\)::before\{/,'identity-free skeleton slots must remain blank');
+});
+
+test('UI-409: directory image state is idempotent and failed requests retain the shield',()=>{
+ const source=read('assets/clubs-directory.js');
+ const start=source.indexOf('const settleCrest=('),end=source.indexOf("\ngrid.addEventListener('load'",start);
+ assert.ok(start>=0&&end>start,'image events are bound before manifest loading');
+ const settle=runInNewContext(source.slice(start,end)+';settleCrest',{});
+ const slot={dataset:{},classList:{contains:name=>name==='nav01-crest'}};
+ const image={parentElement:slot,complete:false,naturalWidth:0,matches:selector=>selector==='img.nav01-crest-image',
+  removed:0,remove(){this.removed++}};
+ settle(image);
+ assert.equal(slot.dataset.clubCrestLoaded,undefined,'pending image keeps a blank reserved slot');
+ image.complete=true;image.naturalWidth=70;settle(image);
+ assert.equal(slot.dataset.clubCrestLoaded,'true','loaded image keeps the shield hidden');
+ settle(image);
+ assert.equal(image.removed,0,'cache hit must not discard loaded node');
+ const failed={...image,naturalWidth:0,removed:0,remove(){this.removed++}};
+ settle(failed,true);
+ assert.equal(slot.dataset.clubCrestLoaded,undefined,'failed image must reveal the shared shield');
+ assert.equal(failed.removed,1,'broken image icon is removed without reloading');
+});

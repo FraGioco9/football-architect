@@ -819,8 +819,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.ok(state.hosts===2&&state.visible===1&&state.images&&state.fallback,'Club crest desktop/mobile load and placeholder: '+country+' '+width+' '+JSON.stringify(state));
       }
     }
-    // Slow SVG responses make any transient fallback visible across real frames.
-    const loadingObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__crestLoadingFrames=0;window.__crestPlaceholderFlashes=[];function loadingFrame(){for(const h of document.querySelectorAll('[data-club-crest="DE-1"]')){if(!h.getClientRects().length||getComputedStyle(h).visibility==='hidden')continue;if(h.dataset.clubCrestLoaded!=='true')window.__crestLoadingFrames++;if(getComputedStyle(h,'::before').display!=='none'||getComputedStyle(h).borderTopColor!=='rgba(0, 0, 0, 0)')window.__crestPlaceholderFlashes.push(h.dataset.clubCrest)}requestAnimationFrame(loadingFrame)}requestAnimationFrame(loadingFrame);`});
+    // UI-409: known slow SVGs must keep reserved slots blank while pending and after load.
+    const loadingObserver=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__crestLoadingFrames=0;window.__crestPendingLeaks=[];window.__crestLoadedLeaks=[];function loadingFrame(){for(const h of document.querySelectorAll('[data-club-crest="DE-1"]')){if(!h.getClientRects().length||getComputedStyle(h).visibility==='hidden')continue;const shield=getComputedStyle(h,'::before'),border=getComputedStyle(h).borderTopWidth;if(h.dataset.clubCrestLoaded!=='true'){window.__crestLoadingFrames++;if(shield.display!=='none'||border!=='0px')window.__crestPendingLeaks.push(h.dataset.clubCrest);}else if(shield.display!=='none'||border!=='0px')window.__crestLoadedLeaks.push(h.dataset.clubCrest)}requestAnimationFrame(loadingFrame)}requestAnimationFrame(loadingFrame);`});
     clubCrestDelay=600;
     for(const width of [1440,390])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
@@ -829,13 +829,14 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       for(const refresh of [false,true]){
         if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
-        assert.deepEqual(await run('window.__crestPlaceholderFlashes'),[],'No placeholder flash for an available crest: '+JSON.stringify({width,theme,refresh}));
+        assert.deepEqual(await run('window.__crestPendingLeaks'),[],'Known SVG must never show a pending shield: '+JSON.stringify({width,theme,refresh}));
+        assert.deepEqual(await run('window.__crestLoadedLeaks'),[],'Loaded SVG has no shield or border: '+JSON.stringify({width,theme,refresh}));
         assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"DE-2\"]'),'::before').display==='none'"),true,'Available DE-2 crest hides its placeholder');
       }
     }
     clubCrestDelay=0;
     await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:loadingObserver.identifier});
-    console.log('CLUB_CREST_LOADING_PASS|slow SVG; first paint and warm refresh; desktop/mobile; Dark/Light; no transient placeholder');
+    console.log('CLUB_CREST_LOADING_PASS|slow SVG; blank reserved slot while pending, no overlay after load; first paint and warm refresh; desktop/mobile; Dark/Light');
     // Refresh must preserve the club/crest association after DEV changes the ranking.
     await cmd('Page.navigate',{url:devOrigin+'/'});
     await wait("document.readyState==='complete'&&location.origin==="+JSON.stringify(devOrigin));
