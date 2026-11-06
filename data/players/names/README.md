@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**7,500 / 15,000** single first-name slots saved in **25 / 50 countries**. **25 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**8,400 / 15,000** single first-name slots saved in **28 / 50 countries**. **22 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -36,6 +36,10 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Paraguay (PAR) | `countries/PAR.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
 | Ecuador (ECU) | `countries/ECU.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
 | Venezuela (VEN) | `countries/VEN.json` | 300 | Damegender/Wikidata male biography sample; **not population or births** |
+
+| Ukraine (UKR) | `countries/UKR.json` | 300 | Ukrainian male first-name lexicon: **language-corpus token frequencies**, official 2010 Latin transliteration; **not births** |
+| Slovakia (SVK) | `countries/SVK.json` | 300 | Forebears >=95% male **bearer incidence estimates**, all ages; **not birth counts** |
+| Panama (PAN) | `countries/PAN.json` | 300 | Forebears >=95% male **bearer incidence estimates**, all ages; original Spanish Latin spellings |
 
 ### Source integrity, scope and limitations
 
@@ -85,8 +89,16 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **VEN:** [Wikidata/Damegender Venezuela male biographies](https://github.com/davidam/damegender/blob/65ee149ce9da0be2c388b7c3ea62f79709e5336b/src/damegender/files/names/names_ve/vemales.csv), blob `46c389a636e54ab89612f5ad4da899f490b05ee0`. 300 of 770 eligible single names; weights are **biographical-sample occurrence counts**, not national birth or resident frequencies.
 - **Source caveat:** Damegender warns that its Wikidata-derived frequencies are exploratory and **not representative population statistics**. PAR/ECU/VEN cannot be considered frequency-calibrated national pools without replacement with reliable population data. Source data were not invented or inflated. Source Git blobs are pinned in country JSON; upstream Wikidata CC0 / Damegender GPL-3.0 mirroring obligations and Uruguay open-data reuse terms require review before commercial redistribution. Four country files remain `production_ready:false`; no generator/DB changes. Independent Batch J PR #421 remains Draft/HOLD and is not merged to main.
 
+
+**Batch K (PR #422 → #407; UKR/SVK/PAN):**
+- **UKR:** [lang-uk Ukrainian male-first-name dictionary](https://github.com/lang-uk/name_freq_dict_uk/blob/a0a0b6fbd10b70dbd7c7c43cb60a1845358ade33/generated/male_fname_freq_dict.csv), 410 source lexicon entries: exclude 49 ambiguous surnames, place names or ordinary words and 21 low-count/unrecoverable entries, leaving 340 eligible candidates; top 300 selected. Weights are **reconstructed corpus token occurrences** from the source-normalized UberText lemma-frequency series (normalization unit 9.345967074666703e-8), **not male births, national male bearer counts, or official population observations**. Source Cyrillic given names are romanized according to [Ukraine Cabinet of Ministers Resolution No. 55 (2010)](https://zakon.rada.gov.ua/laws/show/55-2010-%D0%BF) (e.g., Володимир → Volodymyr). Values are exclusively Latin and Unicode NFC; equivalent romanizations are not frequency-merged. Original source lexicon can include rare/historical terms: further first-name lexical review required before production. Repository GPL-3.0; verify data/corpus redistribution rights separately.
+- **SVK:** [Forebears Slovakia male forenames](https://forebears.io/slovakia/forenames); 431 eligible distinct single Latin forenames with at least 95% source-reported male classification; top 300 selected by source-published **bearer incidence estimates**. Slovak Latin diacritics retained where source publishes them. **Not birth registrations or official Slovak resident counts**. Source reuse license unverified.
+- **PAN:** [Forebears Panama male forenames](https://forebears.io/panama/forenames); 387 eligible distinct single Latin forenames with at least 95% source-reported male classification; top 300 selected by source-published **bearer incidence estimates**. Original Latin Spanish spellings/accents preserved without guessing omitted accents. **Not official Panama births or resident registry statistics**. Source reuse license unverified.
+- **Preservation and QA:** All 25 pre-existing national name files remain Git-blob-identical; the three Batch K files are Git-blob-identical to the independently validated [Batch K PR #422](https://github.com/FraGioco9/football-architect/pull/422). [Batch source Node 22 strict Latin QA](https://github.com/FraGioco9/football-architect/actions/runs/42247643856) PASS; targeted catalog Node 22 checks must cover 28 banks. All research-only `production_ready:false`, no runtime generator or DB writes.
+
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 25 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 28 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 22 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

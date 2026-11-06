@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-25-country",
-  "state": "25_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-28-country",
+  "state": "28_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -152,6 +152,24 @@
       "id": "ve-damegender-wikidata-male-given-name-sample",
       "external_file": "countries/VEN.json",
       "description": "Venezuela Wikidata male biography sample name counts; not representative national births/residents"
+    },
+    {
+      "code": "UKR",
+      "id": "ua-languk-ubertext-firstnames-male-lemma",
+      "external_file": "countries/UKR.json",
+      "description": "Ukrainian male-first-name lexicon weighted by UberText corpus lemma-token occurrences (not births or resident counts); source Cyrillic romanized under Ukrainian Resolution 55/2010"
+    },
+    {
+      "code": "SVK",
+      "id": "forebears-slovakia-male-firstname-incidence",
+      "external_file": "countries/SVK.json",
+      "description": "Forebears Slovakia male given-name bearer incidence ESTIMATES, all ages and unspecified period, >=95% source male classification; not official births"
+    },
+    {
+      "code": "PAN",
+      "id": "forebears-panama-male-firstname-incidence",
+      "external_file": "countries/PAN.json",
+      "description": "Forebears Panama male given-name bearer incidence ESTIMATES, all ages and unspecified period, >=95% source male classification; not official births"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -165,7 +183,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 7500,
+    "current_collected_given_names": 8400,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -658,11 +676,16 @@
       "rank": 36,
       "label": "Ukraine",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "ua-languk-ubertext-firstnames-male-lemma"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/UKR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "POL",
@@ -777,22 +800,32 @@
       "rank": 45,
       "label": "Slovakia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-slovakia-male-firstname-incidence"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SVK.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "PAN",
       "rank": 46,
       "label": "Panama",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "forebears-panama-male-firstname-incidence"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/PAN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "MLI",
