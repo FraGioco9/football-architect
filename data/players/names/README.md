@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**3,900 / 15,000** single first-name slots saved in **13 / 50 countries**. **37 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**5,100 / 15,000** single first-name slots saved in **17 / 50 countries**. **33 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -24,6 +24,10 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 | Portugal (POR) | `countries/POR.json` | 300 | Portuguese male birth-name registrations in **2014** (Central de Dados from Público/IRN) |
 | Brazil (BRA) | `countries/BRA.json` | 300 | IBGE 2022 Census, male first names among **residents of all ages**; **not newborn births** |
+| Netherlands (NED) | `countries/NED.json` | 300 | SVB male registered newborn first names, **2025**; counts from a secondary published transcription |
+| Denmark (DEN) | `countries/DEN.json` | 300 | Statistics Denmark **male residents**, undated archival snapshot; **not births** |
+| Norway (NOR) | `countries/NOR.json` | 300 | Statistics Norway SSB **male residents**, 2021 archive; **not births** |
+| Sweden (SWE) | `countries/SWE.json` | 300 | Statistics Sweden SCB male newborn usual first names, **2000–2020**; published counts only |
 
 ### Source integrity, scope and limitations
 
@@ -51,8 +55,15 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **ENG / WAL:** not complete; ONS 2000–2025 **country-specific** annual Top-100 boys data (geography `E92000001` versus `W92000004`) yields only **187** distinct single names for England and **223** for Wales. The combined England & Wales records `K04000001` are not attributed to either nation. Source: [ONS boys' names](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/livebirths/datasets/babynamesenglandandwalesbabynamesstatisticsboys), [rossbowen/babynames](https://github.com/rossbowen/babynames) mirror at commit `582523ce1889445a03b83d1827c73b0ffa91c1af`, mirror SHA-256 `1dad2fed1684dd11e9123d3ea42584445cb4878aa8eb7f2fd2379d48b35bccb1`. Unpublished counts outside each year's Top-100 are unknown, not zeros. No ENG/WAL JSON added; **113/77 names remain unsupported** respectively.
 - [Batch A source extraction and Node 22 QA run 42242188765](https://github.com/FraGioco9/football-architect/actions/runs/42242188765) **PASS** for POR/BRA; the two JSON blobs were transferred byte-for-byte from #417. Frequencies are source-observed and **not numerically comparable** between POR births, BRA census residents, or other countries. All remain `production_ready:false`.
 
+**Batch C (PR #415, NED/DEN/NOR/SWE integrated into #407):**
+- **NED:** [SVB Dutch child names](https://www.svb.nl/nl/kindernamen), male first names in newborn registrations **2025**, with frequencies transcribed in [BijSlingers boys' top 500](https://bijslingers.nl/blog/jongensnamen-top-500/). This is a **secondary transcription** of published SVB counts; verify original source and reuse rights before commercial distribution.
+- **DEN:** [Statistics Denmark male names](https://www.dst.dk/en/Statistik/emner/borgere/navne/hvor-mange-hedder), **resident population** rather than births, in [archived damegender dkmales.csv](https://github.com/davidam/damegender/blob/master/src/damegender/files/names/names_dk/dkmales.csv), immutable blob `5a9bf5624a13e77bef9ffad5cd25566ed7190e97`. **Snapshot date unconfirmed**; corrupted characters excluded, never reconstructed. Verify third-party GPL mirror/count redistribution obligations.
+- **NOR:** [Statistics Norway SSB names](https://www.ssb.no/en/befolkning/navn/statistikk/navn), **resident population** counts from an October 2021 archive, [damegender nomales.csv](https://github.com/davidam/damegender/blob/master/src/damegender/files/names/names_no/nomales.csv), blob `a017d7db55d8870d9b764e623aa81ebdfd4304f1`. Not newborn counts; avoid assigning a birth cohort.
+- **SWE:** [Statistics Sweden SCB boys' usual birth names](https://www.scb.se/en/finding-statistics/statistics-by-subject-area/population/general-statistics/name-statistics/pong/tables-and-graphs/newborn--given-names-alphabetical-overview/boys-names/), summed published annual male registrations **2000–2020** in [SCB archived csv](https://github.com/davidam/damegender/blob/master/src/damegender/files/names/names_se/be0001namntab12-2020.csv), blob `b5538dee93afc1e0e0d1901f17dfe3258162a5f2`. Suppressed counts for individual years (under ten) **omitted**, not guessed or zero-filled; sums are **lower bounds**.
+- All **1,200** names and observed weights were transferred unchanged from independent [Draft PR #415](https://github.com/FraGioco9/football-architect/pull/415). Only schema metadata `origin_review`, `surnames:[]`, `production_ready:false` added to align with the #407 tests. Counts are country-specific and incomparable across statistical populations. **No generation, database or API changes.**
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 13 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 37 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 17 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 33 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

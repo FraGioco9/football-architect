@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_version": "2026-11-06-single-batch02",
-  "state": "seven_country_single_first_name_pools_collected",
+  "catalog_version": "2026-11-06-single-17-country",
+  "state": "17_country_single_first_name_pools_collected",
   "source_registry": [
     {
       "code": "ITA",
@@ -80,6 +80,30 @@
       "id": "br-ibge-census-2022-male-first-names",
       "external_file": "countries/BRA.json",
       "description": "Brazil IBGE 2022 Census male residents (all ages), observed male first names; not newborn birth registrations"
+    },
+    {
+      "code": "NED",
+      "id": "nl-svb-boys-birth-names-2025",
+      "external_file": "countries/NED.json",
+      "description": "SVB Netherlands national male newborn first-name registrations 2025, via secondary published ranking transcription"
+    },
+    {
+      "code": "DEN",
+      "id": "dk-statistics-denmark-male-residents-archived",
+      "external_file": "countries/DEN.json",
+      "description": "Statistics Denmark male resident first names, archived undated source; corrupted source characters excluded; not births"
+    },
+    {
+      "code": "NOR",
+      "id": "no-ssb-male-resident-names-2021-archived",
+      "external_file": "countries/NOR.json",
+      "description": "Statistics Norway SSB male resident first-name counts, October 2021 archived snapshot; not births"
+    },
+    {
+      "code": "SWE",
+      "id": "se-scb-boys-birth-usual-names-2000-2020",
+      "external_file": "countries/SWE.json",
+      "description": "Statistics Sweden SCB male newborn usual first-name totals 2000–2020, published-only frequencies; suppressed cells excluded"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -93,7 +117,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 3900,
+    "current_collected_given_names": 5100,
     "first_name_format": "exactly one first name per entry: Unicode letters and combining marks only; no whitespace, hyphens, apostrophes, punctuation or double given names",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -214,11 +238,16 @@
       "rank": 9,
       "label": "Netherlands",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "nl-svb-boys-birth-names-2025"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/NED.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "MEX",
@@ -344,11 +373,16 @@
       "rank": 19,
       "label": "Norway",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "no-ssb-male-resident-names-2021-archived"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/NOR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "URU",
@@ -366,11 +400,16 @@
       "rank": 21,
       "label": "Denmark",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "dk-statistics-denmark-male-residents-archived"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/DEN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "AUT",
@@ -519,11 +558,16 @@
       "rank": 34,
       "label": "Sweden",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "se-scb-boys-birth-usual-names-2000-2020"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SWE.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "RUS",
