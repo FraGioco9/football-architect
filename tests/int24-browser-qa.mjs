@@ -255,6 +255,65 @@ try {
    checks++;
   }finally{release();await page.unroute('**/competitions/_shared/manifest.json',intercepted);await page.close()}
  }
+ // PAGE-LOAD-03C2: synchronous Season 1 -> Season 2 source invalidation.
+ // A transition must preserve the static shell and must not show old-season
+ // Stats, History or Awards while the new season has no confirmed source.
+ for(const [slug,view,width,lang] of [
+  ['it-1','stats',390,'it'],
+  ['it-2','history',1440,'en'],
+  ['int-1','awards',320,'de']
+ ]){
+  const page=await browser.newPage({viewport:{width,height:900}});
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.addInitScript(language=>localStorage.setItem('football-architect:language',language),lang);
+  const path='/competitions/'+slug+'/'+view+'?season=1';
+  try{
+   const response=await page.goto(base+path,{waitUntil:'networkidle'});
+   assert.equal(response?.status(),200,path);
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id?.toLowerCase()===id&&
+    !!window.faCompetitionContextApi?.selectSeason,slug);
+   const state=await page.evaluate(view=>{
+    const header=document.querySelector('.app-competition-header');
+    const tabs=document.querySelector('.app-competition-tabs');
+    const seasonControl=document.getElementById('app-competition-season');
+    const panel=document.getElementById('competition-panel-'+view);
+    const before=window.faCompetitionContext;
+    const accepted=window.faCompetitionContextApi.selectSeason(2);
+    const after=window.faCompetitionContext;
+    return {accepted,season:after?.selectedSeason,revisionAdvanced:after?.revision>before.revision,
+     data:after?.seasonData??null,
+     headerStable:header===document.querySelector('.app-competition-header'),
+     tabsStable:tabs===document.querySelector('.app-competition-tabs'),
+     controlStable:seasonControl===document.getElementById('app-competition-season'),
+     panelStable:panel===document.getElementById('competition-panel-'+view),
+     selected:document.getElementById('competition-tab-'+view)?.getAttribute('aria-selected'),
+     statsState:view==='stats'?panel.dataset.faContentState:null,
+     statsValues:view==='stats'?panel.querySelectorAll('#fa-dev-stats .app-competition-stat-value').length:null,
+     awardsState:view==='awards'?panel.dataset.faContentState:null,
+     oldAwards:view==='awards'?[...panel.querySelectorAll('.fa-awards-card[data-award-status="available"]')].length:null,
+     authoritativeHistory:view==='history'?!!panel.querySelector('[data-authoritative-history]:not([hidden])'):null};
+   },view);
+   assert.equal(state.accepted,true,'canonical season transition accepted '+path);
+   assert.equal(state.season,2,'new selected season '+path);
+   assert.equal(state.revisionAdvanced,true,'source revision advanced '+path);
+   assert.equal(state.data,null,'new season starts without stale data '+path);
+   for(const key of ['headerStable','tabsStable','controlStable','panelStable'])assert.equal(state[key],true,key+' '+path);
+   assert.equal(state.selected,'true','active view remains selected '+path);
+   if(view==='stats'){
+    assert.equal(state.statsState,'unknown','unresolved Stats are not confirmed empty '+path);
+    assert.equal(state.statsValues,0,'prior stats values removed '+path);
+   }
+   if(view==='awards'){
+    assert.equal(state.awardsState,'unknown','unresolved Awards not confirmed empty '+path);
+    assert.equal(state.oldAwards,0,'no old season award recipient '+path);
+   }
+   if(view==='history')assert.equal(state.authoritativeHistory,false,'no prior authoritative History '+path);
+   assert.deepEqual(errors,[],'no transition errors '+path);
+   console.log('PAGE-LOAD-03C2 SOURCE TRANSITION '+JSON.stringify({slug,view,width,lang,season:state.season}));
+   checks++;
+  }finally{await page.close()}
+ }
+
  // Confirmed failure may show a localized error, not destroy Rules or tabs.
  for(const view of ['rules','history']){
   const page=await browser.newPage({viewport:{width:390,height:900}});
