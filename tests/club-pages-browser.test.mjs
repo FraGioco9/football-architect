@@ -408,7 +408,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
-    const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
+    const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest-image')?.getAttribute('src')||null})()");
     assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
     // UI-409: the shield occupies the same fixed box as the decoded transparent SVG.
     const sourceSlot="const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('.nav01-crest')";
