@@ -61,6 +61,9 @@ test('country target/actual/missing/excess/status and global totals',()=>{
   assert.match(c.source_branch,/^research\/surnames-01-batch-[a-m]$/);
   assert.ok(Number.isInteger(c.source_pr));
   if(c.expansion_blob_sha){assert.match(c.expansion_blob_sha,/^[a-f0-9]{40}$/);assert.match(c.expansion_head_sha,/^[a-f0-9]{40}$/);assert.match(c.expansion_branch,/^research\/surnames-3000-batch-[a-m]$/)}
+  assert.match(c.latest_checked_expansion_head_sha,/^[a-f0-9]{40}$/);
+  if(c.reconciliation_source_blob_sha)assert.equal(c.reconciliation_method,'preserve_previous_prefix_append_new_unique_source_entries');
+  if(c.romanization_corrections)assert.equal(c.code,'IRN');
   counts[c.status]++;actual+=c.actual_count;missing+=c.missing_count;excess+=c.excess_count;
  }
  assert.deepEqual(catalog.status_counts,counts);
@@ -82,9 +85,38 @@ for(const c of catalog.countries)test(c.code+': source blob, full history preser
  noWeights(bank);
  const before=prior(c.path);
  assert.ok(bank.surnames.length>=before.surnames.length,c.code+' lost previously integrated entries');
- assert.deepEqual(bank.surnames.slice(0,before.surnames.length),before.surnames,c.code+' previous entries changed');
  const original=gitBlob(c.source_blob_sha);assert.equal(original.surnames.length,500);
- assert.deepEqual(bank.surnames.slice(0,500),original.surnames,c.code+' lost original 500');
+ function verifyPrevious(reference){
+  if(!c.romanization_corrections){
+   assert.deepEqual(bank.surnames.slice(0,reference.surnames.length),reference.surnames,c.code+' previous validated names changed');
+   return;
+  }
+  assert.equal(c.code,'IRN','only Iranian gloss corrections are authorized');
+  assert.equal(c.romanization_corrections.length,11);
+  const at=new Map(c.romanization_corrections.map(v=>[v.index,v]));
+  assert.equal(at.size,11);
+  const cited=bank.sources.flatMap(s=>s.romanization_corrections||[]);
+  for(const [i,entry] of reference.surnames.entries()){
+   const fix=at.get(i);
+   if(fix){
+    assert.equal(entry.value,fix.previous_value,'old literal gloss at '+i);
+    assert.equal(bank.surnames[i].value,fix.corrected_value,'documented correction at '+i);
+    assert.ok(cited.some(x=>x.source_english_gloss===fix.previous_value&&x.corrected_attested_latin===fix.corrected_value&&x.original_persian===fix.original_persian),'no source evidence for '+fix.previous_value);
+   }else assert.deepEqual(bank.surnames[i],entry,'unexpected lost Iranian surname '+i);
+  }
+ }
+ verifyPrevious(before);
+ verifyPrevious(original);
+ if(c.reconciliation_source_blob_sha){
+  assert.match(c.reconciliation_source_blob_sha,/^[a-f0-9]{40}$/);
+  assert.equal(c.reconciliation_previous_prefix_count,before.surnames.length);
+  const src=gitBlob(c.reconciliation_source_blob_sha);
+  const originalKeys=new Set(before.surnames.map(x=>x.value.toLowerCase().normalize('NFC')));
+  const appended=src.surnames.filter(x=>!originalKeys.has(x.value.toLowerCase().normalize('NFC')));
+  assert.deepEqual(bank.surnames,[...before.surnames,...appended],c.code+' source reconciliation must preserve all old names and all newly sourced names');
+  assert.ok(before.surnames.some(x=>x.value===c.reconciliation_retained_original_value),'reconciled original not present');
+  assert.equal(bank.surnames.length,src.surnames.length+1,c.code+' one retained old variant');
+ }
  if(c.previous_expansion){const old=gitBlob(c.previous_expansion.blob_sha);assert.equal(old.surnames.length,c.previous_expansion.actual_count);assert.deepEqual(bank.surnames.slice(0,old.surnames.length),old.surnames)}
  const seen=new Set();
  for(const [i,item]of bank.surnames.entries()){
@@ -97,6 +129,14 @@ for(const c of catalog.countries)test(c.code+': source blob, full history preser
 test('Unicode and authentic compounds adversarial checks',()=>{
  for(const x of ['Rossi','De Luca',"O'Brien",'O\u2019Reilly','García-Márquez','Müller','Łukaszewicz',"van 't Hof","'s Graeuwen"])assert.equal(isSurname(x),true,x);
  for(const x of ['Иванов','Ανδρέου','محمد','山田','김','Rоssi','A\u0301lvarez','abc\u0300\u034f','',"O''Brien",'Smith--Jones',"van 't",' De Luca','De  Luca','Smith2'])assert.equal(isSurname(x),false,x);
+});
+test('all national minimums reached; surplus remains explicit and untrimmed',()=>{
+ assert.equal(catalog.total_missing,0);
+ assert.equal(catalog.total_surnames,139020);
+ assert.equal(catalog.total_excess,24020);
+ assert.deepEqual(catalog.status_counts,{complete:30,partial:0,pending:0,over_target:20,blocked:0});
+ for(const c of catalog.countries)assert.ok(c.actual_count>=c.target_count,c.code+' not at target');
+ for(const code of ['URU','PAR','VEN'])assert.equal(catalog.countries.find(c=>c.code===code).status,'over_target');
 });
 test('PLAYERS-03 unchanged',()=>{
  if(!process.env.GITHUB_ACTIONS)return;

@@ -22,7 +22,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "846db25c63ef66cee6618993de9ddb599b9b06cf"
     },
     {
       "code": "ARG",
@@ -42,7 +43,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "988b7c7c9128c74d188866555cb73c7b9c657a10"
     },
     {
       "code": "FRA",
@@ -62,7 +64,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "846db25c63ef66cee6618993de9ddb599b9b06cf"
     },
     {
       "code": "ENG",
@@ -82,7 +85,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "eaad7ca8b45587387b63ce18e55fc327931166fc"
     },
     {
       "code": "POR",
@@ -102,7 +106,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "eaad7ca8b45587387b63ce18e55fc327931166fc"
     },
     {
       "code": "BRA",
@@ -122,7 +127,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "eaad7ca8b45587387b63ce18e55fc327931166fc"
     },
     {
       "code": "MAR",
@@ -142,7 +148,8 @@
       "excess_count": 0,
       "expansion_branch": "research/surnames-3000-batch-g",
       "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
-      "expansion_blob_sha": "6b28a6ca408a8c6dcb1c1c3bacb01453d79e4640"
+      "expansion_blob_sha": "6b28a6ca408a8c6dcb1c1c3bacb01453d79e4640",
+      "latest_checked_expansion_head_sha": "9e6c15338eff77a8985664e9cb7296f56d3344a3"
     },
     {
       "code": "BEL",
@@ -162,7 +169,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "4186616986aa2d03773d5c3527f2010bab87e26c"
     },
     {
       "code": "NED",
@@ -182,7 +190,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "13975cafd1b1d256a5046db0ae27777747588202"
     },
     {
       "code": "MEX",
@@ -202,7 +211,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "988b7c7c9128c74d188866555cb73c7b9c657a10"
     },
     {
       "code": "COL",
@@ -222,7 +232,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "988b7c7c9128c74d188866555cb73c7b9c657a10"
     },
     {
       "code": "SUI",
@@ -242,7 +253,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "4186616986aa2d03773d5c3527f2010bab87e26c"
     },
     {
       "code": "GER",
@@ -262,7 +274,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "4186616986aa2d03773d5c3527f2010bab87e26c"
     },
     {
       "code": "CRO",
@@ -282,7 +295,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b"
     },
     {
       "code": "ITA",
@@ -302,7 +316,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "846db25c63ef66cee6618993de9ddb599b9b06cf"
     },
     {
       "code": "USA",
@@ -322,7 +337,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "846db25c63ef66cee6618993de9ddb599b9b06cf"
     },
     {
       "code": "JPN",
@@ -342,7 +358,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "f6637d16282d12d6e63c4ed802d757bee480bfaf"
     },
     {
       "code": "SEN",
@@ -369,7 +386,8 @@
           "blob_sha": "f1e3054928b55cc6502ece34192b274aff946e1f",
           "actual_count": 3000
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3"
     },
     {
       "code": "NOR",
@@ -389,12 +407,13 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "13975cafd1b1d256a5046db0ae27777747588202"
     },
     {
       "code": "URU",
       "path": "data/players/surnames/countries/URU.json",
-      "status": "blocked",
+      "status": "over_target",
       "sources_available": true,
       "source_batch": "J",
       "source_pr": 434,
@@ -404,12 +423,28 @@
       "production_ready": false,
       "rank": 20,
       "target_count": 3000,
-      "actual_count": 500,
-      "missing_count": 2500,
-      "excess_count": 0,
-      "block_reason": "Batch J source drops original surname 'Pena'; preserved current JSON, await corrected source",
-      "blocked_source_branch": "research/surnames-3000-batch-j",
-      "blocked_source_head_sha": "a5013463c93493c0f464e933dbbe51d91b5ffe03"
+      "actual_count": 3001,
+      "missing_count": 0,
+      "excess_count": 1,
+      "expansion_history": [
+        {
+          "branch": null,
+          "head_sha": null,
+          "blob_sha": "e3f965127f7654efeb7ac14fc304c79a1fc090f5",
+          "actual_count": 500
+        }
+      ],
+      "expansion_branch": "research/surnames-3000-batch-j",
+      "expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "expansion_blob_sha": "0d0a6b3a1a1fe4f80b45f17a154b9c1ef747647d",
+      "over_target_review_required": true,
+      "reconciliation_method": "preserve_previous_prefix_append_new_unique_source_entries",
+      "reconciliation_source_blob_sha": "1113f9650e2e68a5396a6bd103b9abd0a6d428ab",
+      "reconciliation_previous_prefix_count": 500,
+      "reconciliation_retained_original_value": "Pena",
+      "reconciliation_source_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "attestation_review_required": true,
+      "latest_checked_expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5"
     },
     {
       "code": "DEN",
@@ -429,7 +464,8 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "13975cafd1b1d256a5046db0ae27777747588202"
     },
     {
       "code": "AUT",
@@ -449,12 +485,13 @@
       "target_count": 3000,
       "actual_count": 3000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "4186616986aa2d03773d5c3527f2010bab87e26c"
     },
     {
       "code": "IRN",
       "path": "data/players/surnames/countries/IRN.json",
-      "status": "blocked",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "G",
       "source_pr": 430,
@@ -464,19 +501,96 @@
       "production_ready": false,
       "rank": 23,
       "target_count": 3000,
-      "actual_count": 500,
-      "missing_count": 2500,
+      "actual_count": 3000,
+      "missing_count": 0,
       "excess_count": 0,
-      "block_reason": "Current Batch G source omits 11 previously integrated surname values; retain existing validated bank until provenance conflict is resolved",
-      "blocked_source_branch": "research/surnames-3000-batch-g",
-      "blocked_source_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
-      "blocked_source_blob_sha": "8410811f3f7958b8be6cc2a56e807e4f620dcbe8",
-      "blocked_source_omitted_count": 11
+      "expansion_history": [
+        {
+          "branch": null,
+          "head_sha": null,
+          "blob_sha": "9c054577cd340f12b5cb580ffdd75d39216e2831",
+          "actual_count": 500
+        }
+      ],
+      "expansion_branch": "research/surnames-3000-batch-g",
+      "expansion_head_sha": "9e6c15338eff77a8985664e9cb7296f56d3344a3",
+      "expansion_blob_sha": "8410811f3f7958b8be6cc2a56e807e4f620dcbe8",
+      "romanization_corrections": [
+        {
+          "index": 105,
+          "previous_value": "Farmer",
+          "corrected_value": "Keshavarz",
+          "original_persian": "کشاورز"
+        },
+        {
+          "index": 139,
+          "previous_value": "Champion",
+          "corrected_value": "Ghahremani",
+          "original_persian": "قهرمانی"
+        },
+        {
+          "index": 201,
+          "previous_value": "Worker",
+          "corrected_value": "Kargar",
+          "original_persian": "کارگر"
+        },
+        {
+          "index": 287,
+          "previous_value": "Biggy",
+          "corrected_value": "Beygi",
+          "original_persian": "بیگی"
+        },
+        {
+          "index": 297,
+          "previous_value": "Desert",
+          "corrected_value": "Sahraei",
+          "original_persian": "صحرائی"
+        },
+        {
+          "index": 366,
+          "previous_value": "Brilliant",
+          "corrected_value": "Derakhshan",
+          "original_persian": "درخشان"
+        },
+        {
+          "index": 375,
+          "previous_value": "Intelligent",
+          "corrected_value": "Hooshmand",
+          "original_persian": "هوشمند"
+        },
+        {
+          "index": 395,
+          "previous_value": "Dragonian",
+          "corrected_value": "Azhdari",
+          "original_persian": "اژدری"
+        },
+        {
+          "index": 416,
+          "previous_value": "Memorial",
+          "corrected_value": "Yadegari",
+          "original_persian": "یادگاری"
+        },
+        {
+          "index": 462,
+          "previous_value": "Carpentry",
+          "corrected_value": "Najari",
+          "original_persian": "نجاری"
+        },
+        {
+          "index": 465,
+          "previous_value": "Hunter",
+          "corrected_value": "Shekari",
+          "original_persian": "شکاری"
+        }
+      ],
+      "romanization_corrections_reason": "11 English literal glosses from previous IRN source were not Latin transliterations; source explicitly documents 11 original Persian lexemes and cross-attested Latin corrections",
+      "transliteration_review_required": true,
+      "latest_checked_expansion_head_sha": "9e6c15338eff77a8985664e9cb7296f56d3344a3"
     },
     {
       "code": "ECU",
       "path": "data/players/surnames/countries/ECU.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "J",
       "source_pr": 434,
@@ -485,13 +599,22 @@
       "source_blob_sha": "69b31fa170a6b8cb163f7ea05ed5c7ccdd4db135",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-j",
-      "expansion_head_sha": "f77e603ca835571fcd7fe710488bfde60e336943",
-      "expansion_blob_sha": "f687c033579812037bb551d6ac18ad9a443cc8f8",
+      "expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "expansion_blob_sha": "971c9d1045dff11df4aa9e6b09935aeb9944f6e3",
       "rank": 24,
       "target_count": 3000,
-      "actual_count": 889,
-      "missing_count": 2111,
-      "excess_count": 0
+      "actual_count": 3000,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "branch": "research/surnames-3000-batch-j",
+          "head_sha": "f77e603ca835571fcd7fe710488bfde60e336943",
+          "blob_sha": "f687c033579812037bb551d6ac18ad9a443cc8f8",
+          "actual_count": 889
+        }
+      ],
+      "latest_checked_expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5"
     },
     {
       "code": "EGY",
@@ -511,12 +634,13 @@
       "excess_count": 0,
       "expansion_branch": "research/surnames-3000-batch-g",
       "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
-      "expansion_blob_sha": "4e4ee450ba52ebb90f4a6df674bc8bdbfb444dcd"
+      "expansion_blob_sha": "4e4ee450ba52ebb90f4a6df674bc8bdbfb444dcd",
+      "latest_checked_expansion_head_sha": "9e6c15338eff77a8985664e9cb7296f56d3344a3"
     },
     {
       "code": "AUS",
       "path": "data/players/surnames/countries/AUS.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "I",
       "source_pr": 425,
@@ -525,13 +649,22 @@
       "source_blob_sha": "753a4520746823126618adf6499b4a145698b672",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-i",
-      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
-      "expansion_blob_sha": "47e16bdf30da269cba32244cd672f4fe9aefef82",
+      "expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59",
+      "expansion_blob_sha": "7b5c2133d61ef1e1f98c118878b301ba856fbf7c",
       "rank": 26,
       "target_count": 2000,
-      "actual_count": 999,
-      "missing_count": 1001,
-      "excess_count": 0
+      "actual_count": 2000,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "branch": "research/surnames-3000-batch-i",
+          "head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+          "blob_sha": "47e16bdf30da269cba32244cd672f4fe9aefef82",
+          "actual_count": 999
+        }
+      ],
+      "latest_checked_expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59"
     },
     {
       "code": "CAN",
@@ -552,7 +685,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "70be31b1146e0c073289a373afb014fe6ec91fa9"
     },
     {
       "code": "ALG",
@@ -573,7 +707,8 @@
       "over_target_review_required": true,
       "expansion_branch": "research/surnames-3000-batch-g",
       "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
-      "expansion_blob_sha": "671d7c80691819f9f3ed09425df349418dbedff4"
+      "expansion_blob_sha": "671d7c80691819f9f3ed09425df349418dbedff4",
+      "latest_checked_expansion_head_sha": "9e6c15338eff77a8985664e9cb7296f56d3344a3"
     },
     {
       "code": "CIV",
@@ -601,7 +736,8 @@
           "blob_sha": "cc9f052720be57261e9f29d53789b4933eb7799f",
           "actual_count": 3000
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3"
     },
     {
       "code": "NGA",
@@ -629,7 +765,8 @@
           "blob_sha": "2abf3f6e65fc59d875e2bf6f0606976566342a46",
           "actual_count": 3000
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3"
     },
     {
       "code": "TUR",
@@ -650,12 +787,13 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "f6637d16282d12d6e63c4ed802d757bee480bfaf"
     },
     {
       "code": "KOR",
       "path": "data/players/surnames/countries/KOR.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "E",
       "source_pr": 432,
@@ -664,25 +802,32 @@
       "source_blob_sha": "a74e60e12b17b20d0b1689011299068f4d1b4edb",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-e",
-      "expansion_head_sha": "2c810078f417e0c55d1c0249f0868b65ad5f97f6",
-      "expansion_blob_sha": "6e1d5e8863ab5b34eb09a2ada13bc14e7a0e7b96",
+      "expansion_head_sha": "f6637d16282d12d6e63c4ed802d757bee480bfaf",
+      "expansion_blob_sha": "1b444ed5b985f3a538df818cc1900ea4c6c712a2",
       "rank": 32,
       "target_count": 2000,
-      "actual_count": 1154,
-      "missing_count": 846,
+      "actual_count": 2000,
+      "missing_count": 0,
       "excess_count": 0,
       "expansion_history": [
         {
           "head_sha": "7a2c81d4aa9db7f47d6ce3a07a6fa9729236181d",
           "blob_sha": "2d981f7cb6d7d0b6d5b577bbc622297c3935b52c",
           "actual_count": 1011
+        },
+        {
+          "branch": "research/surnames-3000-batch-e",
+          "head_sha": "2c810078f417e0c55d1c0249f0868b65ad5f97f6",
+          "blob_sha": "6e1d5e8863ab5b34eb09a2ada13bc14e7a0e7b96",
+          "actual_count": 1154
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "f6637d16282d12d6e63c4ed802d757bee480bfaf"
     },
     {
       "code": "PAR",
       "path": "data/players/surnames/countries/PAR.json",
-      "status": "blocked",
+      "status": "over_target",
       "sources_available": true,
       "source_batch": "J",
       "source_pr": 434,
@@ -692,12 +837,28 @@
       "production_ready": false,
       "rank": 33,
       "target_count": 2000,
-      "actual_count": 500,
-      "missing_count": 1500,
-      "excess_count": 0,
-      "block_reason": "Batch J source drops original surname 'Santa Cruz'; preserved current JSON, await corrected source",
-      "blocked_source_branch": "research/surnames-3000-batch-j",
-      "blocked_source_head_sha": "a5013463c93493c0f464e933dbbe51d91b5ffe03"
+      "actual_count": 2001,
+      "missing_count": 0,
+      "excess_count": 1,
+      "expansion_history": [
+        {
+          "branch": null,
+          "head_sha": null,
+          "blob_sha": "c6faa24a13a9018c6dde9ebaabcb99c428da7037",
+          "actual_count": 500
+        }
+      ],
+      "expansion_branch": "research/surnames-3000-batch-j",
+      "expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "expansion_blob_sha": "799dc6e97219456c15401a06d4315591f55f275e",
+      "over_target_review_required": true,
+      "reconciliation_method": "preserve_previous_prefix_append_new_unique_source_entries",
+      "reconciliation_source_blob_sha": "d10783ad531e67b5d4b5e596e1453afd71dfe233",
+      "reconciliation_previous_prefix_count": 500,
+      "reconciliation_retained_original_value": "Santa Cruz",
+      "reconciliation_source_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "attestation_review_required": true,
+      "latest_checked_expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5"
     },
     {
       "code": "SWE",
@@ -718,7 +879,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "13975cafd1b1d256a5046db0ae27777747588202"
     },
     {
       "code": "RUS",
@@ -739,7 +901,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b"
     },
     {
       "code": "UKR",
@@ -760,7 +923,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "3297ebb7e356365897ad027e651186c7954c7f0d"
     },
     {
       "code": "POL",
@@ -781,7 +945,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "70be31b1146e0c073289a373afb014fe6ec91fa9"
     },
     {
       "code": "HUN",
@@ -808,7 +973,8 @@
           "blob_sha": "cb0a5e7e2378587885097a7c0dea39d7f248b527",
           "actual_count": 1299
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b"
     },
     {
       "code": "WAL",
@@ -829,12 +995,13 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "eaad7ca8b45587387b63ce18e55fc327931166fc"
     },
     {
       "code": "COD",
       "path": "data/players/surnames/countries/COD.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "I",
       "source_pr": 425,
@@ -843,13 +1010,22 @@
       "source_blob_sha": "3188e4282ab835a537357a1d1b6cd8d7c7faf822",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-i",
-      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
-      "expansion_blob_sha": "542e3c89293a8cd2378c281a360bb9566cb55219",
+      "expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59",
+      "expansion_blob_sha": "7d03e1eff49e7fa4fec202f83f6d256c8e1273bc",
       "rank": 40,
       "target_count": 1500,
-      "actual_count": 1001,
-      "missing_count": 499,
-      "excess_count": 0
+      "actual_count": 1500,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "branch": "research/surnames-3000-batch-i",
+          "head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+          "blob_sha": "542e3c89293a8cd2378c281a360bb9566cb55219",
+          "actual_count": 1001
+        }
+      ],
+      "latest_checked_expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59"
     },
     {
       "code": "GRE",
@@ -870,12 +1046,13 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "f6637d16282d12d6e63c4ed802d757bee480bfaf"
     },
     {
       "code": "CMR",
       "path": "data/players/surnames/countries/CMR.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "I",
       "source_pr": 425,
@@ -884,13 +1061,22 @@
       "source_blob_sha": "d65ad8026e592b9c283593eabd7fc82d34fe424b",
       "production_ready": false,
       "expansion_branch": "research/surnames-3000-batch-i",
-      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
-      "expansion_blob_sha": "37f0bff0463393fd3b27b15a3a955f3a81971bb0",
+      "expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59",
+      "expansion_blob_sha": "ce6b8268123bb8e765a319eb5634dc7ed6b67af2",
       "rank": 42,
       "target_count": 1500,
-      "actual_count": 1000,
-      "missing_count": 500,
-      "excess_count": 0
+      "actual_count": 1500,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_history": [
+        {
+          "branch": "research/surnames-3000-batch-i",
+          "head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+          "blob_sha": "37f0bff0463393fd3b27b15a3a955f3a81971bb0",
+          "actual_count": 1000
+        }
+      ],
+      "latest_checked_expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59"
     },
     {
       "code": "SCO",
@@ -911,7 +1097,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "70be31b1146e0c073289a373afb014fe6ec91fa9"
     },
     {
       "code": "SRB",
@@ -932,7 +1119,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b"
     },
     {
       "code": "SVK",
@@ -953,7 +1141,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 1500,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "3297ebb7e356365897ad027e651186c7954c7f0d"
     },
     {
       "code": "PAN",
@@ -974,7 +1163,8 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 2000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "3297ebb7e356365897ad027e651186c7954c7f0d"
     },
     {
       "code": "MLI",
@@ -1008,7 +1198,8 @@
           "blob_sha": "e9a27f98e9a6e88178f54c82b8609b3b5735287a",
           "actual_count": 1517
         }
-      ]
+      ],
+      "latest_checked_expansion_head_sha": "f056e2d5f4d60375c1d85eb30c3324cdbc25aba3"
     },
     {
       "code": "RSA",
@@ -1028,12 +1219,13 @@
       "target_count": 1000,
       "actual_count": 1000,
       "missing_count": 0,
-      "excess_count": 0
+      "excess_count": 0,
+      "latest_checked_expansion_head_sha": "aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59"
     },
     {
       "code": "VEN",
       "path": "data/players/surnames/countries/VEN.json",
-      "status": "blocked",
+      "status": "over_target",
       "sources_available": true,
       "source_batch": "J",
       "source_pr": 434,
@@ -1043,13 +1235,28 @@
       "production_ready": false,
       "rank": 49,
       "target_count": 1000,
-      "actual_count": 500,
-      "missing_count": 500,
-      "excess_count": 0,
-      "block_reason": "Batch J source drops original surname 'Lacruz'; preserved current JSON, await corrected source",
-      "blocked_source_branch": "research/surnames-3000-batch-j",
-      "blocked_source_head_sha": "e765c02a25ff314a2ec8f8fafa91326f0a3af336",
-      "blocked_source_blob_sha": "d3db5c45c11f0118b9948298533cc9b92d08c1d2"
+      "actual_count": 3001,
+      "missing_count": 0,
+      "excess_count": 2001,
+      "expansion_history": [
+        {
+          "branch": null,
+          "head_sha": null,
+          "blob_sha": "8cca560bb5829c1b6a4154aa480882bdc88f6b7b",
+          "actual_count": 500
+        }
+      ],
+      "expansion_branch": "research/surnames-3000-batch-j",
+      "expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "expansion_blob_sha": "a1179f587bdf14bc5d3c7129caa30872460521af",
+      "over_target_review_required": true,
+      "reconciliation_method": "preserve_previous_prefix_append_new_unique_source_entries",
+      "reconciliation_source_blob_sha": "d3db5c45c11f0118b9948298533cc9b92d08c1d2",
+      "reconciliation_previous_prefix_count": 500,
+      "reconciliation_retained_original_value": "Lacruz",
+      "reconciliation_source_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5",
+      "attestation_review_required": true,
+      "latest_checked_expansion_head_sha": "e98c84151711a0fc019b76b437221d0889550fc5"
     },
     {
       "code": "CHI",
@@ -1070,11 +1277,12 @@
       "actual_count": 3000,
       "missing_count": 0,
       "excess_count": 2000,
-      "over_target_review_required": true
+      "over_target_review_required": true,
+      "latest_checked_expansion_head_sha": "988b7c7c9128c74d188866555cb73c7b9c657a10"
     }
   ],
   "target_total_surnames": 115000,
-  "total_surnames": 125060,
+  "total_surnames": 139020,
   "ranking_policy": "fixed_50_country_rank",
   "ranking_tiers": [
     {
@@ -1098,14 +1306,14 @@
       "target_count": 1000
     }
   ],
-  "preservation_baseline_commit": "b91a5ae0d6c020aacdfb2f610ae7d591f690930c",
-  "total_missing": 11957,
-  "total_excess": 22017,
+  "preservation_baseline_commit": "d27a46a5b0f5ac086d16e2de7786590820214255",
+  "total_missing": 0,
+  "total_excess": 24020,
   "status_counts": {
-    "complete": 24,
-    "partial": 5,
+    "complete": 30,
+    "partial": 0,
     "pending": 0,
-    "over_target": 17,
-    "blocked": 4
+    "over_target": 20,
+    "blocked": 0
   }
 }

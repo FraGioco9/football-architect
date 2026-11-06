@@ -1,52 +1,47 @@
-# SURNAMES-01 — National surname pools (research only, DRAFT/HOLD)
+# SURNAMES-01 — National surname pools (DRAFT/HOLD)
 
-## Fixed ranking targets (owner decision, 2026-11-06)
+## Fixed ranking targets — definitive owner policy
 
-**Fixed 50-country ranking**, independent of seasons: positions 1–25 × 3,000 (75,000); 26–35 × 2,000 (20,000); 36–45 × 1,500 (15,000); 46–50 × 1,000 (5,000). **Aggregate target = 115,000.** Codes and order match PLAYERS-03, which is untouched.
+**50 fixed country ranks; 115,000 total national target, independent of seasons.** Ranks 1–25 = 3,000 each (75,000), 26–35 = 2,000 (20,000), 36–45 = 1,500 (15,000), 46–50 = 1,000 (5,000). The exact country codes and per-country targets reside in `catalog-v1.json`.
 
-**Actual entries: 125,060** across 50 JSONs, but this does **not** mean all national targets are met: **11,957 missing within under-target countries** and **22,017 excess retained intact** (net 10,060 above target). Surpluses are not transferable between nations.
+**Verified snapshot: 139,020 actual surnames in 50/50 national JSONs; 0 missing versus each national target; 24,020 valid entries retained beyond country quotas.** Thus **30 `complete` / 20 `over_target` / 0 `partial` / 0 `pending` / 0 `blocked`**. This is **not** final numerical quota compliance: 20 above-target banks require an explicit owner decision; no trimming, random deletion or silent deduplication.
 
-Statuses: **24 complete**, **5 partial**, **0 pending**, **17 over_target**, **4 blocked**. All entries remain `production_ready:false`. Numerical completion is not source or licence certification.
+Each country has `rank`, `target_count`, `actual_count`, `missing_count=max(0,target-actual)`, `excess_count=max(0,actual-target)` and `status`. `over_target` carries `over_target_review_required:true`. `production_ready:false` on every bank, including complete banks. All selection is `uniform`, never based on national rank, source incidence or any weight.
 
-Each catalog country has `rank`, `target_count`, `actual_count`, `missing_count=max(0,target-actual)`, `excess_count=max(0,actual-target)` and `status` (`pending`, `partial`, `complete`, `over_target`, `blocked`). `over_target` entries require an explicit review decision: **no automatic truncation or deletion**. `blocked` marks unresolved source conflicts while retaining the last valid file.
+Each surname is stored only in its national `countries/<CODE>.json` as `{ "value": "Cognome" }`. The catalog does not duplicate surname arrays. Accept only NFC, Latin-script base letters with authentic accents/Latin combining marks, case-insensitive unique values within country, and documented compounds with separators. Latin transliteration is required for original non-Latin scripts.
 
-All surname entries are exactly `{ "value": "..." }`, with `selection_policy:"uniform"`. There is never a `weight`, `probability`, `frequency_weight` or `selection_weight`. Source ranks and estimated incidences are *attestation references only*, not probabilities. No generator integration.
+## Batch A–M national provenance and actual counts
 
-## Fixed-rank band table
+Rows below use the **latest inspected source branch HEAD**. The catalog also retains each file's **exact import SHA**, independent of HEAD-only test/metadata commits, along with all original 500-entry source PRs, original HEADs and Git blobs.
 
-| Ranking | Target per country | Countries | Target total |
-| --- | ---: | ---: | ---: |
-| 1–25 | 3,000 | 25 | 75,000 |
-| 26–35 | 2,000 | 10 | 20,000 |
-| 36–45 | 1,500 | 10 | 15,000 |
-| 46–50 | 1,000 | 5 | 5,000 |
-| **Total** | | **50** | **115,000** |
+| Batch | Latest source branch HEAD | Actual country entries (surplus above individual target) | Batch actual / target |
+| --- | --- | --- | ---: |
+| A | [eaad7ca8b455](https://github.com/FraGioco9/football-architect/commit/eaad7ca8b45587387b63ce18e55fc327931166fc) | ENG 3000; POR 3000; BRA 3000; WAL 3000 (+1500) | 12,000 / 10,500 (+1,500 excess) |
+| B | [4186616986aa](https://github.com/FraGioco9/football-architect/commit/4186616986aa2d03773d5c3527f2010bab87e26c) | BEL 3000; SUI 3000; GER 3000; AUT 3000 | 12,000 / 12,000 |
+| C | [13975cafd1b1](https://github.com/FraGioco9/football-architect/commit/13975cafd1b1d256a5046db0ae27777747588202) | NED 3000; NOR 3000; DEN 3000; SWE 3000 (+1000) | 12,000 / 11,000 (+1,000 excess) |
+| D | [988b7c7c9128](https://github.com/FraGioco9/football-architect/commit/988b7c7c9128c74d188866555cb73c7b9c657a10) | ARG 3000; MEX 3000; COL 3000; CHI 3000 (+2000) | 12,000 / 10,000 (+2,000 excess) |
+| E | [f6637d16282d](https://github.com/FraGioco9/football-architect/commit/f6637d16282d12d6e63c4ed802d757bee480bfaf) | JPN 3000; TUR 3000 (+1000); KOR 2000; GRE 3000 (+1500) | 11,000 / 8,500 (+2,500 excess) |
+| F | [a8ec248cd466](https://github.com/FraGioco9/football-architect/commit/a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b) | CRO 3000; RUS 3000 (+1000); HUN 1500; SRB 3000 (+1500) | 10,500 / 8,000 (+2,500 excess) |
+| G | [9e6c15338eff](https://github.com/FraGioco9/football-architect/commit/9e6c15338eff77a8985664e9cb7296f56d3344a3) | MAR 3000; IRN 3000; EGY 3000; ALG 3000 (+1000) | 12,000 / 11,000 (+1,000 excess) |
+| H | [f056e2d5f4d6](https://github.com/FraGioco9/football-architect/commit/f056e2d5f4d60375c1d85eb30c3324cdbc25aba3) | SEN 3000; CIV 3000 (+1000); NGA 3000 (+1000); MLI 1517 (+517) | 10,517 / 8,000 (+2,517 excess) |
+| I | [aa3429c2bd4f](https://github.com/FraGioco9/football-architect/commit/aa3429c2bd4f0ffb6c50578c0f29161c28dcbb59) | AUS 2000; COD 1500; CMR 1500; RSA 1000 | 6,000 / 6,000 |
+| J | [e98c84151711](https://github.com/FraGioco9/football-architect/commit/e98c84151711a0fc019b76b437221d0889550fc5) | URU 3001 (+1); ECU 3000; PAR 2001 (+1); VEN 3001 (+2001) | 11,003 / 9,000 (+2,003 excess) |
+| K | [3297ebb7e356](https://github.com/FraGioco9/football-architect/commit/3297ebb7e356365897ad027e651186c7954c7f0d) | UKR 3000 (+1500); SVK 3000 (+1500); PAN 3000 (+2000) | 9,000 / 4,000 (+5,000 excess) |
+| L | [846db25c63ef](https://github.com/FraGioco9/football-architect/commit/846db25c63ef66cee6618993de9ddb599b9b06cf) | ESP 3000; FRA 3000; ITA 3000; USA 3000 | 12,000 / 12,000 |
+| M | [70be31b1146e](https://github.com/FraGioco9/football-architect/commit/70be31b1146e0c073289a373afb014fe6ec91fa9) | CAN 3000 (+1000); POL 3000 (+1500); SCO 3000 (+1500) | 9,000 / 5,000 (+4,000 excess) |
 
-## Expansion branches (verified Git SHAs)
+### Conflict reconciliation and genuine source corrections
 
-| Batch | Pinned source HEAD / status | Integrated countries |
-| --- | --- | --- |
-| A | [78b6ed4e166e](https://github.com/FraGioco9/football-architect/commit/78b6ed4e166e7a5f64b2f9969520f710c38ab135) | ENG 3000; POR 3000; BRA 3000; WAL 3000 |
-| B | [4186616986aa](https://github.com/FraGioco9/football-architect/commit/4186616986aa2d03773d5c3527f2010bab87e26c) | BEL 3000; SUI 3000; GER 3000; AUT 3000 |
-| C | [3c426196b5dc](https://github.com/FraGioco9/football-architect/commit/3c426196b5dc261cfc0ab88fea59301b02481b86) | NED 3000; NOR 3000; DEN 3000; SWE 3000 |
-| D | [988b7c7c9128](https://github.com/FraGioco9/football-architect/commit/988b7c7c9128c74d188866555cb73c7b9c657a10) | ARG 3000; MEX 3000; COL 3000; CHI 3000 |
-| E | [2c810078f417](https://github.com/FraGioco9/football-architect/commit/2c810078f417e0c55d1c0249f0868b65ad5f97f6) | JPN 3000; TUR 3000; KOR 1154; GRE 3000 |
-| F | [a8ec248cd466](https://github.com/FraGioco9/football-architect/commit/a8ec248cd466ddc79e14fbd9bbbf4f4b5346050b) | CRO 3000; RUS 3000; HUN 1500; SRB 3000 |
-| G | [fabeee5bcc84](https://github.com/FraGioco9/football-architect/commit/fabeee5bcc84238b95185c0f2e7fa939611884ba) | MAR 3000; ALG 3000; EGY 3000 integrated; IRN original 500 blocked (11 missing names in new source) |
-| H | [f056e2d5f4d6](https://github.com/FraGioco9/football-architect/commit/f056e2d5f4d60375c1d85eb30c3324cdbc25aba3) | SEN 3000; CIV 3000; NGA 3000; MLI 1517; MLI updated 927 → 1517 |
-| I | [770079a8c4b6](https://github.com/FraGioco9/football-architect/commit/770079a8c4b6825e9e89e5441fe8c3374568c1f3) | AUS 999; COD 1001; CMR 1000; RSA 1000 |
-| J | [f77e603ca835](https://github.com/FraGioco9/football-architect/commit/f77e603ca835571fcd7fe710488bfde60e336943) | ECU 889; URU/PAR/VEN BLOCKED |
-| K | [3297ebb7e356](https://github.com/FraGioco9/football-architect/commit/3297ebb7e356365897ad027e651186c7954c7f0d) | UKR 3000; SVK 3000; PAN 3000 |
-| L | [846db25c63ef](https://github.com/FraGioco9/football-architect/commit/846db25c63ef66cee6618993de9ddb599b9b06cf) | ESP 3000; FRA 3000; ITA 3000; USA 3000 |
-| M | [67343d344909](https://github.com/FraGioco9/football-architect/commit/67343d3449090632737d70ee168385be49592b41) | CAN 3000; POL 3000; SCO 3000 |
+- **Uruguay (`URU`)**: latest source contains 3,000, omitting earlier `Pena`; the original 500-entry prefix is preserved and the 2,501 new unique source entries appended → **3,001**. `Pena` and the source-attested `Peña` are kept as distinct Latin spellings pending review. Source blob `1113f9650e2e68a5396a6bd103b9abd0a6d428ab`; integrated reconciled blob `0d0a6b3a1a1fe4f80b45f17a154b9c1ef747647d`.
+- **Paraguay (`PAR`)**: latest source contains 2,000, omitting `Santa Cruz`; its existing 500 are preserved, with all newly sourced unique values appended → **2,001**. Raw source `d10783ad531e67b5d4b5e596e1453afd71dfe233`; reconciled blob `799dc6e97219456c15401a06d4315591f55f275e`.
+- **Venezuela (`VEN`)**: latest source contains 3,000, omitting `Lacruz`; preserve original 500, add 2,501 novel source values → **3,001**. Raw source `d3db5c45c11f0118b9948298533cc9b92d08c1d2`; reconciled blob `a1179f587bdf14bc5d3c7129caa30872460521af`.
+- **Iran (`IRN`)**: the old list's `Farmer`, `Champion`, `Worker`, `Biggy`, `Desert`, `Brilliant`, `Intelligent`, `Dragonian`, `Memorial`, `Carpentry`, `Hunter` were **literal English translation glosses**, not attested Iranian Latin romanizations. The newer source supplies 11 explicitly indexed Latin corrections, each checked against the original Persian lexeme and another Iran-specific Latin directory. All other **489 original entries remain unchanged at their indexes**. The 11 explicit corrections, the source's original-script attestations, and the former original blob remain recorded and tested. The new 3,000-name raw Git blob is `8410811f3f7958b8be6cc2a56e807e4f620dcbe8`. **Independent attestation and redistribution review is still required**.
 
-**Batch G conflict:** IRN expansion source HEAD `fabeee5bcc84238b95185c0f2e7fa939611884ba` omits **11** surnames from the existing 500. New 3,000-entry file is *not* imported; retain existing `IRN.json` and mark `blocked`. The three valid G files are imported without trimming Algeria's 1,000 surplus.
+These reconciliations do **not** create surnames: every retained string already existed in a previous country JSON, and every new name is sourced from the new batch JSON. The three reconciled J pools are above target by one or more entries; **no values were discarded**. Exact source HEADs and raw/imported Git hashes remain distinct and auditable.
 
-**Newer source updates:** Batch E extends KOR to 1,154; Batch F completes HUN at 1,500; Batch H refreshes source metadata for SEN/CIV/NGA/MLI without deleting surnames. New Batch J Venezuela still drops `Lacruz`, so the earlier validated 500 remain. Expanded bank version history is preserved in the catalog.
+## Historical preservation and publication boundaries
 
-**Batch J conflicts:** source branch `research/surnames-3000-batch-j` currently drops earlier verified `Pena` (URU), `Santa Cruz` (PAR), `Lacruz` (VEN). Those files were **not** imported. Keep the original 500 for those three countries until the sources explicitly retain all previous names. ECU 889 stays integrated.
-
-**Full preservation:** Original 50×500 Git blobs, their source PR/branch/HEAD and file SHA are retained in the catalog. `preservation_baseline_commit` pins the previously integrated snapshot (`b91a5ae0d6c020aacdfb2f610ae7d591f690930c`); Node 22 QA verifies its *entire national surname arrays* are prefixes of new files. MLI's previous 927-entry blob is also recorded in `previous_expansion`. All new country files are referenced by exact source branch HEAD and blob SHA. Never import workflow/test experiments from source branches.
+The `preservation_baseline_commit` pins the previous cumulative HEAD `d27a46a5b0f5ac086d16e2de7786590820214255`. Node 22 compares every newly integrated pool with its previous complete JSON, including every former 500-entry base, except the **11 attested IRN mistranslation corrections explicitly enumerated in the catalog**. Versions of country blobs are tracked in `expansion_history`; reconciling J records the original source blob separately from the integrated composite SHA. No source PR, source branch, workflow, names file or database has been modified.
 
 ## Original 500-entry source batch manifest
 
@@ -66,7 +61,7 @@ All surname entries are exactly `{ "value": "..." }`, with `selection_policy:"un
 | L | ITA, ESP, FRA, USA | [#427](https://github.com/FraGioco9/football-architect/pull/427) | [63e5320d8c54](https://github.com/FraGioco9/football-architect/commit/63e5320d8c54b7b56936e74984d884f5b0967379) | 2000 |
 | M | SCO, CAN, POL | [#435](https://github.com/FraGioco9/football-architect/pull/435) | [bd7d58140456](https://github.com/FraGioco9/football-architect/commit/bd7d58140456fdb278278a638103eb421982c07a) | 1500 |
 
-All 13 independent batch PRs remain open and untouched; do not merge or close them automatically. The source HEADs above are the verified snapshot for the integration. On a subsequent refresh, inspect each new source HEAD, compare per-country blob SHAs, report conflicts and never overwrite a changed national file automatically.
+The original 13 source PR references are retained for immutable provenance. Their GitHub states may change independently; this integration does not merge, close or modify any source PR. The source HEADs above are the verified snapshot for the integration. On a subsequent refresh, inspect each new source HEAD, compare per-country blob SHAs, report conflicts and never overwrite a changed national file automatically.
 
 ## Provenance and limits
 
@@ -87,8 +82,9 @@ The **national JSON `sources` arrays are the authoritative per-country citations
 - **M**: Scotland and Canada use their own territorial sources (including multiple Canadian language communities); Poland preserves Polish Latin diacritics and includes source spelling cross-checks. Third-party incidence estimates need licensing and spelling audits.
 
 
-## QA and constraints
 
-Node 22: `node --test tests/surnames-01-catalog.test.mjs`. Checks 50 fixed ranking codes, four tier boundaries, target aggregate 115,000, each `actual_count` against real JSONs, `missing_count`, `excess_count`, status, source SHA and provenance, Unicode NFC and `Script=Latin`, authentic separators (including Dutch `'s`/`'t`), no internal duplicates, `uniform`, no probability weights, `production_ready:false`, no loss of any existing surname, and no changes to PLAYERS-03.
+## QA, source and rights limits
 
-All country sources retain their original per-country notes: territory-specific attestation, transliteration, period, coverage, and licencing caveats. **Individual national attestation and redistribution rights remain unapproved for production.** The PR is DRAFT/HOLD: no merge to `main`, source PR closure, force push, deploy, DB change or PLAYERS-03 change. Only targeted automatic GitHub Actions, no redundant manual workflows.
+Use Node 22 `node --test tests/surnames-01-catalog.test.mjs`; GitHub's automatic SURNAMES-01 workflow checks exact repo scope, 50 countries, fixed-rank target sum 115,000, true actual/missing/excess counts and statuses, Unicode NFC + `Script=Latin`, strict `{value}` entries, no duplicates or weights, valid compounds, cited sources, IRN verified romanization replacements, composite J derivation and preservation of previous files. A `production_ready:false` flag **does not** certify population attestation; source sampling frames, cross-national names, historical periods, romanization conventions, distribution permissions and third-party source licenses still need independent review.
+
+**Draft/HOLD**: never merge to `main`, deploy, write remote databases, update PLAYERS-03 / PR #407, force-push, or close/merge the source PRs without separate authorization. Do not run manual duplicate CI jobs.

@@ -22,6 +22,24 @@
       "temporal_scope": "GitHub source snapshot available by 2023, nominal Forebears 2014 estimated ranking",
       "coverage": "1001 observed rows; original initial 500 values preserved byte-for-byte and in original order.",
       "limitations": "Unofficial mirror; licence not published, redistribution rights to be reviewed before production. Source ends at approximately rank 1000; other ethnonymic or pan-African lists were not treated as national residence evidence."
+    },
+    {
+      "id": "everypolitician-kinshasa-assembly",
+      "url": "https://github.com/everypolitician/everypolitician-data/blob/e6dc9b4adcd34af74aa9199bb98b2f43787d0b74/data/Congo-Kinshasa/Assembly/names.csv",
+      "git_blob_sha": "b1f90c610fadb993b3894159ca98cb9da6ec7d7a",
+      "geographical_scope": "Democratic Republic of the Congo (Kinshasa), National Assembly",
+      "temporal_scope": "Historical legislature data, repository snapshot; not a population census",
+      "coverage": "356 surname-first uppercase tokens newly retained",
+      "limitations": "Names are representative records of elected politicians, not population distributions; first token inferred as surname only for uppercase surname-first rows; manual onomastic verification outstanding"
+    },
+    {
+      "id": "ceni-rdc-2023-elected-deputies",
+      "url": "https://www.radiookapi.net/sites/default/files/2024-01/ceni_rdc_-_liste_des_elus_a_la_deputation_nationale_-_election_legislative_nationale_du_20_decembr.pdf",
+      "dataset": "République démocratique du Congo, CENI — Liste provisoire des élus à la députation nationale, 2023",
+      "geographical_scope": "Democratic Republic of the Congo; multiple provinces and constituencies, not Congo-Brazzaville",
+      "temporal_scope": "National legislative elections 2023, provisional results published 2024",
+      "coverage": "143 first NOM tokens newly retained from manually reviewed country-specific CENI table cells",
+      "limitations": "Name order follows the CENI column NOM, POST-NOM ET PRENOM; ambiguous known given-name/particles omitted. Preliminary elected-member list is not representative of population. PDF mirrored by Radio Okapi; reuse permissions not established"
     }
   ],
   "surnames": [
@@ -3027,6 +3045,1503 @@
     },
     {
       "value": "Kulondi"
+    },
+    {
+      "value": "ABDALLAH"
+    },
+    {
+      "value": "ADIRODU"
+    },
+    {
+      "value": "AKPANZA"
+    },
+    {
+      "value": "ALONGA"
+    },
+    {
+      "value": "AMBATOBE"
+    },
+    {
+      "value": "AMBENA"
+    },
+    {
+      "value": "APAKA"
+    },
+    {
+      "value": "APALATA"
+    },
+    {
+      "value": "ASOBE"
+    },
+    {
+      "value": "ATONZIA"
+    },
+    {
+      "value": "AUNDAGBA"
+    },
+    {
+      "value": "AUTSAI"
+    },
+    {
+      "value": "AWENZE"
+    },
+    {
+      "value": "AYOBANGIRA"
+    },
+    {
+      "value": "AYOMO"
+    },
+    {
+      "value": "BABABASWE"
+    },
+    {
+      "value": "BABALA"
+    },
+    {
+      "value": "BADIBANGI"
+    },
+    {
+      "value": "BAKATSURAKI"
+    },
+    {
+      "value": "BAKONGA"
+    },
+    {
+      "value": "BALAMAGE"
+    },
+    {
+      "value": "BALIESIMA"
+    },
+    {
+      "value": "BALIKWISHA"
+    },
+    {
+      "value": "BAMBOKA"
+    },
+    {
+      "value": "BAMPORIKI"
+    },
+    {
+      "value": "BANDEACHE"
+    },
+    {
+      "value": "BANIO"
+    },
+    {
+      "value": "BASANGO"
+    },
+    {
+      "value": "BASENGEZI"
+    },
+    {
+      "value": "BASIALA"
+    },
+    {
+      "value": "BASILWANGO"
+    },
+    {
+      "value": "BATUMOKO"
+    },
+    {
+      "value": "BATUMONA"
+    },
+    {
+      "value": "BAZAIBA"
+    },
+    {
+      "value": "BAZIR"
+    },
+    {
+      "value": "BEMBA"
+    },
+    {
+      "value": "BEROCAN"
+    },
+    {
+      "value": "BIALOSUKA"
+    },
+    {
+      "value": "BIANDO"
+    },
+    {
+      "value": "BIGABWA"
+    },
+    {
+      "value": "BITAKWIRA"
+    },
+    {
+      "value": "BOJI"
+    },
+    {
+      "value": "BOKOLE"
+    },
+    {
+      "value": "BOKOLO"
+    },
+    {
+      "value": "BOKOLOMBE"
+    },
+    {
+      "value": "BOKONA"
+    },
+    {
+      "value": "BOKONDA"
+    },
+    {
+      "value": "BOKUMWANA"
+    },
+    {
+      "value": "BOLENGE"
+    },
+    {
+      "value": "BOLENGETENGE"
+    },
+    {
+      "value": "BOLOGNA"
+    },
+    {
+      "value": "BOMBELOSANDA"
+    },
+    {
+      "value": "BOMPINI"
+    },
+    {
+      "value": "BONDOMISO"
+    },
+    {
+      "value": "BOONGO"
+    },
+    {
+      "value": "BOPOLO"
+    },
+    {
+      "value": "BOSHAB"
+    },
+    {
+      "value": "BOTAKILE"
+    },
+    {
+      "value": "BOTOMBULA"
+    },
+    {
+      "value": "BUDRI"
+    },
+    {
+      "value": "BUDU"
+    },
+    {
+      "value": "BULAMBO"
+    },
+    {
+      "value": "BULE"
+    },
+    {
+      "value": "BULUKUNGU"
+    },
+    {
+      "value": "BULUPIY"
+    },
+    {
+      "value": "BUSSA"
+    },
+    {
+      "value": "BUTOR"
+    },
+    {
+      "value": "BUTSITSI"
+    },
+    {
+      "value": "CAMUNANI"
+    },
+    {
+      "value": "CHIKVVEJ"
+    },
+    {
+      "value": "CHITULI"
+    },
+    {
+      "value": "CHURA"
+    },
+    {
+      "value": "CIMANUKA"
+    },
+    {
+      "value": "DANGBELE"
+    },
+    {
+      "value": "DARUWEZI"
+    },
+    {
+      "value": "DASYO"
+    },
+    {
+      "value": "DHETCHUVI"
+    },
+    {
+      "value": "DIONGO"
+    },
+    {
+      "value": "DITU"
+    },
+    {
+      "value": "EDUMBADUMBA"
+    },
+    {
+      "value": "EGWAKE"
+    },
+    {
+      "value": "EHOLO"
+    },
+    {
+      "value": "EKOMBE"
+    },
+    {
+      "value": "ENDUNDO"
+    },
+    {
+      "value": "ENERUNGA"
+    },
+    {
+      "value": "ETIBAKO"
+    },
+    {
+      "value": "ETUMANGELE"
+    },
+    {
+      "value": "EWANGA"
+    },
+    {
+      "value": "EZADRI"
+    },
+    {
+      "value": "EZATY"
+    },
+    {
+      "value": "FASO"
+    },
+    {
+      "value": "FAYULU"
+    },
+    {
+      "value": "GABUBA"
+    },
+    {
+      "value": "GACHURUZI"
+    },
+    {
+      "value": "GAPEMONOKO"
+    },
+    {
+      "value": "GEAKORO"
+    },
+    {
+      "value": "GERENGBO"
+    },
+    {
+      "value": "IKULU"
+    },
+    {
+      "value": "INDULU"
+    },
+    {
+      "value": "INGILA"
+    },
+    {
+      "value": "IPALAKA"
+    },
+    {
+      "value": "ISOFALE"
+    },
+    {
+      "value": "ITSHITOKA"
+    },
+    {
+      "value": "JEMSI"
+    },
+    {
+      "value": "KABOMBO"
+    },
+    {
+      "value": "KABOYI"
+    },
+    {
+      "value": "KABWIK"
+    },
+    {
+      "value": "KABWIKA"
+    },
+    {
+      "value": "KAHINDO"
+    },
+    {
+      "value": "KAKULE"
+    },
+    {
+      "value": "KAKVVATA"
+    },
+    {
+      "value": "KALAU"
+    },
+    {
+      "value": "KAMAYI"
+    },
+    {
+      "value": "KAMBALE"
+    },
+    {
+      "value": "KAMBINGA"
+    },
+    {
+      "value": "KAMITATU"
+    },
+    {
+      "value": "KAMUKUNY"
+    },
+    {
+      "value": "KANGIJLUMBA"
+    },
+    {
+      "value": "KANTANTI"
+    },
+    {
+      "value": "KAONDE"
+    },
+    {
+      "value": "KASENDE"
+    },
+    {
+      "value": "KASEREKA"
+    },
+    {
+      "value": "KASHIKI"
+    },
+    {
+      "value": "KASSAPO"
+    },
+    {
+      "value": "KASUNKA"
+    },
+    {
+      "value": "KASWENDE"
+    },
+    {
+      "value": "KATALAY"
+    },
+    {
+      "value": "KATEMBO"
+    },
+    {
+      "value": "KATOLO"
+    },
+    {
+      "value": "KATSHONGO"
+    },
+    {
+      "value": "KATUMWA"
+    },
+    {
+      "value": "KEZAMUDRU"
+    },
+    {
+      "value": "KIAKWAMA"
+    },
+    {
+      "value": "KIKOKA"
+    },
+    {
+      "value": "KILAMBE"
+    },
+    {
+      "value": "KIMBUNDA"
+    },
+    {
+      "value": "KIOVE"
+    },
+    {
+      "value": "KIPELE"
+    },
+    {
+      "value": "KIRO"
+    },
+    {
+      "value": "KOKONYANGI"
+    },
+    {
+      "value": "KOLELA"
+    },
+    {
+      "value": "KOLOBA"
+    },
+    {
+      "value": "KOLOSO"
+    },
+    {
+      "value": "KOMBO"
+    },
+    {
+      "value": "KOSO"
+    },
+    {
+      "value": "KOTA"
+    },
+    {
+      "value": "KUMASAMBA"
+    },
+    {
+      "value": "KUTEKALA"
+    },
+    {
+      "value": "LAPIKA"
+    },
+    {
+      "value": "LEBE"
+    },
+    {
+      "value": "LEMBI"
+    },
+    {
+      "value": "LENGA"
+    },
+    {
+      "value": "LIKINDA"
+    },
+    {
+      "value": "LIYOTA"
+    },
+    {
+      "value": "LLIPULA"
+    },
+    {
+      "value": "LOBO"
+    },
+    {
+      "value": "LOFIMBO"
+    },
+    {
+      "value": "LOKOLA"
+    },
+    {
+      "value": "LOKONDO"
+    },
+    {
+      "value": "LOMANGA"
+    },
+    {
+      "value": "LOMBOTO"
+    },
+    {
+      "value": "LOMEYA"
+    },
+    {
+      "value": "LOTANA"
+    },
+    {
+      "value": "LOTHAPE"
+    },
+    {
+      "value": "LOWUYA"
+    },
+    {
+      "value": "LUBALA"
+    },
+    {
+      "value": "LUBAYA"
+    },
+    {
+      "value": "LUBOTO"
+    },
+    {
+      "value": "LUFULUABO"
+    },
+    {
+      "value": "LUHONGE"
+    },
+    {
+      "value": "LUKIANA"
+    },
+    {
+      "value": "LUKIANA-MUFWANKOLO"
+    },
+    {
+      "value": "LUKONO"
+    },
+    {
+      "value": "LUMANU"
+    },
+    {
+      "value": "LUMEYA"
+    },
+    {
+      "value": "LUNENO"
+    },
+    {
+      "value": "LUNGUANA"
+    },
+    {
+      "value": "LUONO"
+    },
+    {
+      "value": "LUSANGA"
+    },
+    {
+      "value": "LUSENGE"
+    },
+    {
+      "value": "LUTHELO"
+    },
+    {
+      "value": "LUTONGO"
+    },
+    {
+      "value": "LUTUNDULA"
+    },
+    {
+      "value": "MABUNDA"
+    },
+    {
+      "value": "MADIYA"
+    },
+    {
+      "value": "MAELEZO"
+    },
+    {
+      "value": "MAJAGIRA"
+    },
+    {
+      "value": "MAKIASHI"
+    },
+    {
+      "value": "MAKUBA"
+    },
+    {
+      "value": "MAKUTU"
+    },
+    {
+      "value": "MAKVVALA"
+    },
+    {
+      "value": "MAKWA"
+    },
+    {
+      "value": "MAKWENGE"
+    },
+    {
+      "value": "MALUKA"
+    },
+    {
+      "value": "MANARA"
+    },
+    {
+      "value": "MANDJUANDJUA"
+    },
+    {
+      "value": "MANONGI"
+    },
+    {
+      "value": "MANSHIMBA"
+    },
+    {
+      "value": "MANTEZOLO"
+    },
+    {
+      "value": "MASANZA"
+    },
+    {
+      "value": "MASELA"
+    },
+    {
+      "value": "MASHAKO"
+    },
+    {
+      "value": "MASHUKANE"
+    },
+    {
+      "value": "MASIKINI"
+    },
+    {
+      "value": "MASSAMBA"
+    },
+    {
+      "value": "MASSANGU"
+    },
+    {
+      "value": "MASUASUA"
+    },
+    {
+      "value": "MASUKA"
+    },
+    {
+      "value": "MASUMBU"
+    },
+    {
+      "value": "MATENDA"
+    },
+    {
+      "value": "MATERANYA"
+    },
+    {
+      "value": "MATUSILA"
+    },
+    {
+      "value": "MAYAYA"
+    },
+    {
+      "value": "MAYO"
+    },
+    {
+      "value": "MAYOBO"
+    },
+    {
+      "value": "MAYOMBE"
+    },
+    {
+      "value": "MAYUMA"
+    },
+    {
+      "value": "MBAMBU"
+    },
+    {
+      "value": "MBANGAMA"
+    },
+    {
+      "value": "MBATSHI"
+    },
+    {
+      "value": "MBAW"
+    },
+    {
+      "value": "MBIKAYI"
+    },
+    {
+      "value": "MBILAMBANGU"
+    },
+    {
+      "value": "MBINDULE"
+    },
+    {
+      "value": "MBINGHO"
+    },
+    {
+      "value": "MBITSO"
+    },
+    {
+      "value": "MBOSO"
+    },
+    {
+      "value": "MBUELA"
+    },
+    {
+      "value": "MBUKANI"
+    },
+    {
+      "value": "MBUKU"
+    },
+    {
+      "value": "MENANTANGU"
+    },
+    {
+      "value": "MIJABI"
+    },
+    {
+      "value": "MIKULU"
+    },
+    {
+      "value": "MILEMBA"
+    },
+    {
+      "value": "MINAKU"
+    },
+    {
+      "value": "MLJAMBA"
+    },
+    {
+      "value": "MOBANDO"
+    },
+    {
+      "value": "MOBUTU"
+    },
+    {
+      "value": "MOKAKO"
+    },
+    {
+      "value": "MOLEKA"
+    },
+    {
+      "value": "MOLEKO"
+    },
+    {
+      "value": "MOLISHO"
+    },
+    {
+      "value": "MOMBUNZA"
+    },
+    {
+      "value": "MONDOLE"
+    },
+    {
+      "value": "MOPONDI"
+    },
+    {
+      "value": "MOTA"
+    },
+    {
+      "value": "MPANANO"
+    },
+    {
+      "value": "MUABILU"
+    },
+    {
+      "value": "MUBIKAYI"
+    },
+    {
+      "value": "MUGIRANEZA"
+    },
+    {
+      "value": "MUKINGI"
+    },
+    {
+      "value": "MUKUBAGANYI"
+    },
+    {
+      "value": "MUKULUNGU"
+    },
+    {
+      "value": "MULATU"
+    },
+    {
+      "value": "MULENGI"
+    },
+    {
+      "value": "MULIMBALIMBA"
+    },
+    {
+      "value": "MUMPI"
+    },
+    {
+      "value": "MUMPINI"
+    },
+    {
+      "value": "MUNEMBWE"
+    },
+    {
+      "value": "MUNUBO"
+    },
+    {
+      "value": "MUSAGA"
+    },
+    {
+      "value": "MUSEMENA"
+    },
+    {
+      "value": "MUSHITU"
+    },
+    {
+      "value": "MUSHIZI"
+    },
+    {
+      "value": "MUSODI"
+    },
+    {
+      "value": "MUTANDA"
+    },
+    {
+      "value": "MUTIRI"
+    },
+    {
+      "value": "MUTOKAMBALI"
+    },
+    {
+      "value": "MUTOMB"
+    },
+    {
+      "value": "MUTUALE"
+    },
+    {
+      "value": "MUTULA"
+    },
+    {
+      "value": "MUYAMBA"
+    },
+    {
+      "value": "MUZANGISA"
+    },
+    {
+      "value": "MUZAZA"
+    },
+    {
+      "value": "MUZITO"
+    },
+    {
+      "value": "MUZYUMBA"
+    },
+    {
+      "value": "MVEMBA"
+    },
+    {
+      "value": "MVVANGACHUCHU"
+    },
+    {
+      "value": "MVVATSHINUMO"
+    },
+    {
+      "value": "MWALEY"
+    },
+    {
+      "value": "MWANDO"
+    },
+    {
+      "value": "MWANGA"
+    },
+    {
+      "value": "N'DAMBU"
+    },
+    {
+      "value": "N'KUMU"
+    },
+    {
+      "value": "NDUDANGA"
+    },
+    {
+      "value": "NE"
+    },
+    {
+      "value": "NGELEJI"
+    },
+    {
+      "value": "NGENDENZA"
+    },
+    {
+      "value": "NGOBILA"
+    },
+    {
+      "value": "NIANGO"
+    },
+    {
+      "value": "NKU"
+    },
+    {
+      "value": "NSAMAN"
+    },
+    {
+      "value": "NSOMBOLA"
+    },
+    {
+      "value": "NSUKA"
+    },
+    {
+      "value": "NTENDA"
+    },
+    {
+      "value": "NZAJI"
+    },
+    {
+      "value": "NZANGI"
+    },
+    {
+      "value": "NZEKUYE"
+    },
+    {
+      "value": "OKUNDJI"
+    },
+    {
+      "value": "OLEKO"
+    },
+    {
+      "value": "OLONGO"
+    },
+    {
+      "value": "ONOSUMBA"
+    },
+    {
+      "value": "OSHOBALE"
+    },
+    {
+      "value": "OTETE"
+    },
+    {
+      "value": "OWANGA"
+    },
+    {
+      "value": "PALLIKU"
+    },
+    {
+      "value": "PALUKU"
+    },
+    {
+      "value": "PASI"
+    },
+    {
+      "value": "PAYSAYO"
+    },
+    {
+      "value": "PELENDA"
+    },
+    {
+      "value": "PIKOLO"
+    },
+    {
+      "value": "PUELA"
+    },
+    {
+      "value": "RUBOTA"
+    },
+    {
+      "value": "SANGOKITEFU"
+    },
+    {
+      "value": "SEDEA"
+    },
+    {
+      "value": "SEGBEWI"
+    },
+    {
+      "value": "SENDWE"
+    },
+    {
+      "value": "SERUFULI"
+    },
+    {
+      "value": "SERUTOKE"
+    },
+    {
+      "value": "SESANGA"
+    },
+    {
+      "value": "SHENILA"
+    },
+    {
+      "value": "SHIDI"
+    },
+    {
+      "value": "SHOMWA"
+    },
+    {
+      "value": "SIMENE"
+    },
+    {
+      "value": "SOLE"
+    },
+    {
+      "value": "SUDI"
+    },
+    {
+      "value": "SUZE"
+    },
+    {
+      "value": "TAILA"
+    },
+    {
+      "value": "TAKIS"
+    },
+    {
+      "value": "TANZI"
+    },
+    {
+      "value": "TCHEDYA"
+    },
+    {
+      "value": "THETIKA"
+    },
+    {
+      "value": "THOLE"
+    },
+    {
+      "value": "THUAMBE"
+    },
+    {
+      "value": "TIBASIMA"
+    },
+    {
+      "value": "TINANZABO"
+    },
+    {
+      "value": "TINGOMBAY"
+    },
+    {
+      "value": "TSHIBALA"
+    },
+    {
+      "value": "TSHIBANG"
+    },
+    {
+      "value": "TSHIBUMBA"
+    },
+    {
+      "value": "TSHIONGO"
+    },
+    {
+      "value": "TSHIPASA"
+    },
+    {
+      "value": "TUTU"
+    },
+    {
+      "value": "UBIMA"
+    },
+    {
+      "value": "UKUMU"
+    },
+    {
+      "value": "ULUNGU"
+    },
+    {
+      "value": "UPIRA"
+    },
+    {
+      "value": "UWEKA"
+    },
+    {
+      "value": "VETSHI"
+    },
+    {
+      "value": "VUEMBA"
+    },
+    {
+      "value": "WAMU"
+    },
+    {
+      "value": "WANGA"
+    },
+    {
+      "value": "WENGA"
+    },
+    {
+      "value": "WENZI"
+    },
+    {
+      "value": "YALA"
+    },
+    {
+      "value": "YUKULA"
+    },
+    {
+      "value": "ZUMA"
+    },
+    {
+      "value": "TEPAGE"
+    },
+    {
+      "value": "AGITO"
+    },
+    {
+      "value": "INIPAYVUDU"
+    },
+    {
+      "value": "LOKUMU"
+    },
+    {
+      "value": "MPEMBI"
+    },
+    {
+      "value": "BOULU"
+    },
+    {
+      "value": "LOPOSE"
+    },
+    {
+      "value": "AHONO"
+    },
+    {
+      "value": "IWONDO"
+    },
+    {
+      "value": "BAENDE"
+    },
+    {
+      "value": "IWOLO"
+    },
+    {
+      "value": "PEMBAMOTO"
+    },
+    {
+      "value": "KASHOBA"
+    },
+    {
+      "value": "SAMA"
+    },
+    {
+      "value": "MUNANA"
+    },
+    {
+      "value": "TSHANDA"
+    },
+    {
+      "value": "MUTITA"
+    },
+    {
+      "value": "MALANDJI"
+    },
+    {
+      "value": "KITUNGWA"
+    },
+    {
+      "value": "MUYOMBI"
+    },
+    {
+      "value": "TSHIZAINGA"
+    },
+    {
+      "value": "IGWABI"
+    },
+    {
+      "value": "KATEBE"
+    },
+    {
+      "value": "TSHISWAKA"
+    },
+    {
+      "value": "CHEMBO"
+    },
+    {
+      "value": "SHISHOMBO"
+    },
+    {
+      "value": "NDAMBO"
+    },
+    {
+      "value": "TOMBE"
+    },
+    {
+      "value": "TSHIANZA"
+    },
+    {
+      "value": "MBENGELE"
+    },
+    {
+      "value": "OSANGO"
+    },
+    {
+      "value": "KAHROMON"
+    },
+    {
+      "value": "MPOY"
+    },
+    {
+      "value": "BUMBA"
+    },
+    {
+      "value": "BANDUBOLA"
+    },
+    {
+      "value": "KATASI"
+    },
+    {
+      "value": "BIMWALA"
+    },
+    {
+      "value": "SANGANA"
+    },
+    {
+      "value": "EFAMBE"
+    },
+    {
+      "value": "KIBUKA"
+    },
+    {
+      "value": "EYANGA"
+    },
+    {
+      "value": "ILANGA"
+    },
+    {
+      "value": "BUDIMBU"
+    },
+    {
+      "value": "MFUTI"
+    },
+    {
+      "value": "TSUNDU"
+    },
+    {
+      "value": "MATOKO"
+    },
+    {
+      "value": "NGUDIANZA"
+    },
+    {
+      "value": "LUKOKI"
+    },
+    {
+      "value": "MATUTALA"
+    },
+    {
+      "value": "BANDU"
+    },
+    {
+      "value": "MATOMINA"
+    },
+    {
+      "value": "WAMESO"
+    },
+    {
+      "value": "NKONGO"
+    },
+    {
+      "value": "BUKA"
+    },
+    {
+      "value": "LUKAMATA"
+    },
+    {
+      "value": "BINDU"
+    },
+    {
+      "value": "KULUNGU"
+    },
+    {
+      "value": "MAPAMBOLI"
+    },
+    {
+      "value": "MAMBULAU"
+    },
+    {
+      "value": "MANGAY"
+    },
+    {
+      "value": "SAKATA"
+    },
+    {
+      "value": "NGILA"
+    },
+    {
+      "value": "KINZAMBI"
+    },
+    {
+      "value": "BWANGANGA"
+    },
+    {
+      "value": "EYUMU"
+    },
+    {
+      "value": "KOLONGELE"
+    },
+    {
+      "value": "BITINI"
+    },
+    {
+      "value": "FUMUMAPANDA"
+    },
+    {
+      "value": "FUMANY"
+    },
+    {
+      "value": "KIMASA"
+    },
+    {
+      "value": "UYEWA"
+    },
+    {
+      "value": "BYARUHANGA"
+    },
+    {
+      "value": "NDJAZA"
+    },
+    {
+      "value": "BUNGISHABAKU"
+    },
+    {
+      "value": "BABANGU"
+    },
+    {
+      "value": "AGENONG'A"
+    },
+    {
+      "value": "UVOYA"
+    },
+    {
+      "value": "ADUBANG'O"
+    },
+    {
+      "value": "MUNGU"
+    },
+    {
+      "value": "MUBER"
+    },
+    {
+      "value": "MBATA"
+    },
+    {
+      "value": "TSHIPEPELE"
+    },
+    {
+      "value": "BALEKELAYI"
+    },
+    {
+      "value": "NSADI"
+    },
+    {
+      "value": "KENDAMBUYI"
+    },
+    {
+      "value": "KABANDA"
+    },
+    {
+      "value": "TSHILUMBAYI"
+    },
+    {
+      "value": "KAMONJI"
+    },
+    {
+      "value": "INIOKI"
+    },
+    {
+      "value": "MUPASA"
+    },
+    {
+      "value": "MINENGU"
+    },
+    {
+      "value": "YAMA"
+    },
+    {
+      "value": "KIDIMA"
+    },
+    {
+      "value": "MAKONGO"
+    },
+    {
+      "value": "WAMPETI"
+    },
+    {
+      "value": "MONGO"
+    },
+    {
+      "value": "IBULI"
+    },
+    {
+      "value": "MUSONGELA"
+    },
+    {
+      "value": "MUSSA"
+    },
+    {
+      "value": "BOKONDU"
+    },
+    {
+      "value": "LIHAU"
+    },
+    {
+      "value": "NGBUNDU"
+    },
+    {
+      "value": "ANDULU"
+    },
+    {
+      "value": "MANGONZA"
+    },
+    {
+      "value": "ENGBANDA"
+    },
+    {
+      "value": "SAKOMBI"
+    },
+    {
+      "value": "NZANZU"
+    },
+    {
+      "value": "MUMBERE"
+    },
+    {
+      "value": "MUMERE"
+    },
+    {
+      "value": "KAVIRA"
+    },
+    {
+      "value": "MBUSA"
+    },
+    {
+      "value": "MUNYOMO"
+    },
+    {
+      "value": "FURUGUTA"
+    },
+    {
+      "value": "KANEFU"
+    },
+    {
+      "value": "BAZIZANE"
+    },
+    {
+      "value": "MUHIIRWA"
+    },
+    {
+      "value": "MOTO"
+    },
+    {
+      "value": "MIKINDO"
+    },
+    {
+      "value": "MUKULUMANYA"
+    },
+    {
+      "value": "KOTONGO"
+    },
+    {
+      "value": "GBALIMO"
+    },
+    {
+      "value": "ATAMA"
+    },
+    {
+      "value": "ANDRITO"
+    },
+    {
+      "value": "BAKOMITO"
+    },
+    {
+      "value": "BANGAKYA"
+    },
+    {
+      "value": "LITE"
+    },
+    {
+      "value": "INAGOSI"
+    },
+    {
+      "value": "BAKABI"
+    },
+    {
+      "value": "MEBA"
+    },
+    {
+      "value": "MUSHONGO"
+    },
+    {
+      "value": "OHAKI"
+    },
+    {
+      "value": "TOKONGO"
+    },
+    {
+      "value": "MENDE"
+    },
+    {
+      "value": "OMPETA"
+    },
+    {
+      "value": "ASELO"
+    },
+    {
+      "value": "EKUMBAKI"
+    },
+    {
+      "value": "NSASE"
+    },
+    {
+      "value": "NKOSSO"
+    },
+    {
+      "value": "KAMERHE"
+    },
+    {
+      "value": "NAMAZIHANA"
+    },
+    {
+      "value": "MUDEKEREZA"
+    },
+    {
+      "value": "MYEWA"
     }
   ],
   "production_ready": false
