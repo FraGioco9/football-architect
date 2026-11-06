@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE','SEN','CIV','NGA','MLI'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -59,22 +59,26 @@ const sourceIds={
  JPN:'jp-baby-calendar-male-readings-2008-2022',
  KOR:'kr-namechart-male-births-2020',
  TUR:'tr-turkishnamebase-male-frequencies',
- GRE:'gr-asep-1998-2010-male-observed-names'
+ GRE:'gr-asep-1998-2010-male-observed-names',
+ SEN:'wikidata-male-citizens-sen-given-names',
+ CIV:'wikidata-male-citizens-civ-given-names',
+ NGA:'wikidata-male-citizens-nga-given-names',
+ MLI:'wikidata-male-mali-citizens-or-born-given-names'
 };
 
-test('frozen 50 FIFA codes, exactly 40 saved banks of 300 and 10 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 44 saved banks of 300 and 6 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,12000);
+ assert.equal(master.policy.current_collected_given_names,13200);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,40);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,10);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,44);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,6);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -90,7 +94,7 @@ test('frozen 50 FIFA codes, exactly 40 saved banks of 300 and 10 empty banks',()
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,40);
+ assert.equal(new Set(ids).size,44);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -98,7 +102,7 @@ test('frozen 50 FIFA codes, exactly 40 saved banks of 300 and 10 empty banks',()
  }
 });
 
-test('each of 40 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 44 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -331,4 +335,39 @@ test('Batch E: JPN KOR TUR GRE contain 300 observed Latin first names and preser
  assert.match(banks.TUR.source.metric,/NOT TÜİK/i);
  assert.match(banks.GRE.cohort,/NOT birth registry/);
  assert.ok(banks.TUR.given_names.some(x=>x.value==='İbrahim'));
+});
+
+test('Batch H: four source-backed Wikidata P735 Latin name pools preserve provenance and nonrepresentative cohort limits',()=>{
+ const expected={
+  SEN:{id:'wikidata-male-citizens-sen-given-names',country:'Q1041',sha:'b388bd021ecad7e11cfc41795250a6a64a3605b3d1c5c639eb2097fd24028e2e',eligible:448,last:1},
+  CIV:{id:'wikidata-male-citizens-civ-given-names',country:'Q1008',sha:'6961dc97b2357935dec45c36708c29fa75cd363224c0f36e60875cb2dd39ad89',eligible:548,last:1},
+  NGA:{id:'wikidata-male-citizens-nga-given-names',country:'Q1033',sha:'322a04034fd78b18527004e4967d06ce3e65ee16f0a45bb34df3819121d5ed10',eligible:1807,last:5},
+  MLI:{id:'wikidata-male-mali-citizens-or-born-given-names',country:'Q912',sha:'4de4db174a31ced2a332623ce9c644b2f034eb11e20f6be938d6e0dde1571b9d',eligible:300,last:1}
+ };
+ for(const [code,meta] of Object.entries(expected)){
+  const bank=banks[code];
+  assert.equal(bank.source.id,meta.id);
+  assert.equal(bank.source.source_country_qid,meta.country);
+  assert.equal(bank.source.source_response_sha256,meta.sha);
+  assert.equal(bank.source.eligible_unique_names,meta.eligible);
+  assert.ok(bank.given_names.length===300);
+  assert.equal(bank.given_names.at(-1).weight,meta.last);
+  assert.ok(bank.given_names.every(item=>isSingleLatinGivenName(item.value)));
+  assert.equal(bank.production_ready,false);
+  assert.deepEqual(bank.surnames,[]);
+  assert.match(bank.source.metric,/Wikidata/i);
+  assert.match(bank.source.metric,/not national population|not census or births/i);
+  assert.match(bank.source.license,/CC0/);
+  assert.equal(bank.source.source_query_endpoint,'https://qlever.dev/api/wikidata');
+  assert.match(bank.source.source_sparql,/wdt:P21 wd:Q6581097/);
+  assert.match(bank.source.source_sparql,/wdt:P735/);
+  assert.ok(bank.source.source_sparql.includes('wd:'+meta.country));
+  assert.match(bank.cohort,/nonrepresentative biographical sample/i);
+ }
+ for(const code of ['SEN','CIV','NGA']){
+  assert.match(banks[code].source.source_sparql,/wdt:P27/);
+ }
+ assert.match(banks.MLI.source.source_sparql,/UNION/);
+ assert.match(banks.MLI.source.source_sparql,/wdt:P19/);
+ assert.match(banks.MLI.source.source_scope,/citizenship.*birth/i);
 });

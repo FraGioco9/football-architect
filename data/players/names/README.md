@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**12,000 / 15,000** single first-name slots saved in **40 / 50 countries**. **10 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**13,200 / 15,000** single first-name slots saved in **44 / 50 countries**. **6 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -54,6 +54,11 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | South Korea (KOR) | `countries/KOR.json` | 300 | NAMEChart male registered births, **2020**; Hangul names under NIKL Revised Romanization |
 | Türkiye (TUR) | `countries/TUR.json` | 300 | TurkishNameBase third-party male first-name frequencies; **source population/period unspecified** |
 | Greece (GRE) | `countries/GRE.json` | 300 | Independent ASEP male job-applicant name occurrences, **1998–2010**; **not population/newborn rates** |
+
+| Senegal (SEN) | `countries/SEN.json` | 300 | Wikidata male Senegalese citizens' P735 first-name biographical counts, **not births/population** |
+| Côte d'Ivoire (CIV) | `countries/CIV.json` | 300 | Wikidata male Ivorian citizens' P735 first-name biographical counts, **not births/population** |
+| Nigeria (NGA) | `countries/NGA.json` | 300 | Wikidata male Nigerian citizens' P735 first-name biographical counts, **not births/population** |
+| Mali (MLI) | `countries/MLI.json` | 300 | Wikidata male citizens **or people born in Mali**, P735 first names; **not births/population** |
 
 ### Source integrity, scope and limitations
 
@@ -132,8 +137,16 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **GRE:** [Independent Greek ASEP name-frequency compilation 1998–2010](https://sixnotitafrequency.blogspot.com/2010/08/) records first-name occurrences among male job applicants; **not nationwide resident or birth counts**. Latin strings use documented ELOT 743/UNGEGN transcription; a malformed source row was rejected without guessing and no new counts were invented. Independent sample and reuse rights require separate verification.
 - **Integrity:** JPN/KOR/TUR/GRE country JSON blobs are copied **unchanged** from independent PR #414; they store full source notes, Latin-only NFC single-name policy and 300 positive source-observed sorted weights each. All **36 pre-existing** country JSONs are untouched. Exactly four country JSONs plus catalog, README and targeted tests form the batch integration; no generator, API, DB, deployment or production-ready changes.
 
+**Batch H (independent Draft/HOLD PR #424 → PR #407; SEN/CIV/NGA/MLI):**
+- **Wikidata biographical sample, not country population statistics:** [Wikidata](https://www.wikidata.org/) structured CC0 records queried through [QLever Wikidata SPARQL](https://qlever.dev/api/wikidata), snapshot 2026-11-06. Male persons with `P21=Q6581097`, explicit given-name item `P735`, country-specific citizenship `P27`; strictly one source English or French Latin label per given-name item (no invented transliterations). `weight` is the actual counted **distinct Wikidata male person records** sharing a given-name item in that country-specific sample. **NOT official birth counts, census, national incidence or representative male-name frequencies**; biography/notability, missing-statements and geographic-selection biases apply. Absolute weights are not cross-country comparable.
+- **SEN:** `P27=Q1041`, 448 eligible distinct Latin name labels; top 300 retained, ranked count 300 = **1**. Source SPARQL response SHA-256 `b388bd021ecad7e11cfc41795250a6a64a3605b3d1c5c639eb2097fd24028e2e`.
+- **CIV:** `P27=Q1008`, 548 eligible labels; top 300 retained, ranked count 300 = **1**. Source response SHA-256 `6961dc97b2357935dec45c36708c29fa75cd363224c0f36e60875cb2dd39ad89`.
+- **NGA:** `P27=Q1033`, 1,807 eligible labels; top 300 retained, ranked count 300 = **5**. Source response SHA-256 `322a04034fd78b18527004e4967d06ce3e65ee16f0a45bb34df3819121d5ed10`.
+- **MLI:** Citizenship `P27=Q912` **OR** person’s documented birth place in Mali (`P19` place, `P17=Q912`), counted as a deduplicated union; 300 eligible Latin labels; rank 300 = **1**. Restricting to citizenship alone yielded only 270, so **birthplace broadens the selected cohort**, not a Mali population count. Source response SHA-256 `4de4db174a31ced2a332623ce9c644b2f034eb11e20f6be938d6e0dde1571b9d`.
+- Full exact SPARQL, response SHA-256, original case/diacritics, country QIDs and sampled cohort restrictions appear in each JSON. No transliteration was needed; single Latin NFC strings only. The four Git blobs are **unchanged from Batch H #424**, with zero changes to previous country files. [Batch H Node 22 source QA 42248723049](https://github.com/FraGioco9/football-architect/actions/runs/42248723049) **PASS**. These four files remain `production_ready:false` and are not connected to runtime names sampling or database. Research-only name rankings should be replaced with reliable national counts if available before release.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 40 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 10 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 44 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 6 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

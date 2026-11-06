@@ -242,6 +242,30 @@
       "id": "gr-asep-1998-2010-male-observed-names",
       "external_file": "countries/GRE.json",
       "description": "Independent ASEP Greek male applicant first-name occurrence sample 1998–2010, ELOT 743 Latin transcription; not births"
+    },
+    {
+      "code": "SEN",
+      "id": "wikidata-male-citizens-sen-given-names",
+      "external_file": "countries/SEN.json",
+      "description": "Wikidata P735 given-name male biographical records with Senegal citizenship (P27=Q1041), 2026-11-06 QLever snapshot; not birth or population statistics"
+    },
+    {
+      "code": "CIV",
+      "id": "wikidata-male-citizens-civ-given-names",
+      "external_file": "countries/CIV.json",
+      "description": "Wikidata P735 given-name male biographical records with Côte d'Ivoire citizenship (P27=Q1008), 2026-11-06 QLever snapshot; not birth or population statistics"
+    },
+    {
+      "code": "NGA",
+      "id": "wikidata-male-citizens-nga-given-names",
+      "external_file": "countries/NGA.json",
+      "description": "Wikidata P735 given-name male biographical records with Nigeria citizenship (P27=Q1033), 2026-11-06 QLever snapshot; not birth or population statistics"
+    },
+    {
+      "code": "MLI",
+      "id": "wikidata-male-mali-citizens-or-born-given-names",
+      "external_file": "countries/MLI.json",
+      "description": "Wikidata P735 male biographies with Mali citizenship (P27=Q912) OR place of birth in Mali (P19/P17=Q912), 2026-11-06; not population statistics"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -255,7 +279,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 12000,
+    "current_collected_given_names": 13200,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -530,11 +554,16 @@
       "rank": 18,
       "label": "Senegal",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "wikidata-male-citizens-sen-given-names"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SEN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "NOR",
@@ -696,22 +725,32 @@
       "rank": 29,
       "label": "Côte d'Ivoire",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "wikidata-male-citizens-civ-given-names"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/CIV.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "NGA",
       "rank": 30,
       "label": "Nigeria",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "wikidata-male-citizens-nga-given-names"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/NGA.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "TUR",
@@ -959,11 +998,16 @@
       "rank": 47,
       "label": "Mali",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "wikidata-male-mali-citizens-or-born-given-names"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/MLI.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "RSA",
