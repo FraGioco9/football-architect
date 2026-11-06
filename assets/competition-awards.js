@@ -42,23 +42,35 @@ const createIcon=id=>{
  for(const d of iconPaths[id]){const path=document.createElementNS(svgNS,"path");path.setAttribute("d",d);svg.append(path)}
  return svg;
 };
+// Only same-season, explicitly supplied award arrays can certify an empty
+// result. Missing responses and old-season recipients must never be promoted
+// to confirmed content or shown on a newer season's view.
+function selectAwardState(context,visible){
+ const sameSeason=!!context?.seasonData&&String(context.seasonData.season)===String(context.selectedSeason);
+ const payload=sameSeason?context.seasonData.awards:null;
+ const awards=payload&&typeof payload==='object'&&!Array.isArray(payload)?payload:null;
+ const recipients=visible.map(award=>awards?.[award.id]?.recipients);
+ const confirmed=!!awards&&visible.length>0&&recipients.every(Array.isArray);
+ const hasWinner=recipients.some(list=>Array.isArray(list)&&list.length>0&&
+  list.every(item=>item&&typeof item.name==='string'&&item.name.trim().length>0));
+ return {
+  state:confirmed&&recipients.every(list=>list.length===0)?'empty':hasWinner?'available':'unknown',
+  recipients
+ };
+}
 function render(context){
- if(!context?.definition){panel.dataset.faContentState='unknown';panel.replaceChildren();return;}
+ if(!context?.definition){panel.dataset.faContentState='unknown';panel.replaceChildren();lastPresentation=null;return;}
  let ids;
  try{ids=window.faCompetitionRulesView.awardIds(context.definition);}
- catch{panel.dataset.faContentState="unknown";panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));return;}
+ catch{panel.dataset.faContentState="unknown";panel.replaceChildren(el("p","app-competition-status","No season awards are available.","competitionAwardsEmpty"));lastPresentation=null;return;}
  const byId=new Map(definitions.map(item=>[item.id,item]));
  const visible=ids.map(id=>byId.get(id));
- // State metadata advances even when the visible award cards are unchanged.
- const sameSeason=context.seasonData&&String(context.seasonData.season)===String(context.selectedSeason);
- const allPending=visible.length>0&&visible.every(award=>{
-  const recipients=context.seasonData?.awards?.[award.id]?.recipients;
-  return !Array.isArray(recipients)||recipients.length===0;
- });
- panel.dataset.faContentState=sameSeason&&allPending?'empty':sameSeason?'available':'unknown';
+ const awardState=selectAwardState(context,visible);
+ // Metadata follows the selected season/revision even when cards are unchanged.
+ panel.dataset.faContentState=awardState.state;
  panel.dataset.faContentSeason=String(context.selectedSeason);
  panel.dataset.faContentRevision=String(context.revision??'');
- const presentation=JSON.stringify([ids,visible.map(award=>context.seasonData?.awards?.[award.id]?.recipients??null)]);
+ const presentation=JSON.stringify([ids,awardState.recipients.map(list=>list??null)]);
  const current=panel.querySelector?.(":scope > .fa-awards");
  if(current&&presentation===lastPresentation){window.faAppRenderLanguage?.();return;}
  const wrap=el("div","fa-awards");
@@ -75,7 +87,7 @@ function render(context){
   const card=el("article","fa-awards-card fa-awards-card-"+award.id);card.dataset.awardId=award.id;
   const medallion=el("span","fa-awards-medallion");medallion.setAttribute("aria-hidden","true");medallion.append(createIcon(award.id));
   const title=el("h4","fa-awards-card-title",award.title,award.key);
-  const supplied=context.seasonData?.awards?.[award.id]?.recipients;
+  const supplied=awardState.recipients[index];
   const recipients=Array.isArray(supplied)&&supplied.length&&supplied.every(item=>item&&typeof item.name==="string"&&item.name.trim())?supplied:null;
   const chip=recipients?el("span","fa-awards-chip",recipients.map(item=>item.name).join(" · ")):el("span","fa-awards-chip","PENDING","awardsPending");
   card.dataset.awardStatus=recipients?"available":"pending";
