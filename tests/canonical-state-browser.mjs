@@ -89,7 +89,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>document.querySelector('[data-admin-world]')?.textContent.includes('20'));
   assert.equal(await page.locator('[data-admin-prepare]').isEnabled(),false);checks++;
   apiWorld={...world,generation:'12345678-1234-4123-8123-123456789abc',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));
   await page.waitForFunction(()=>window.faWorldState?.get().world?.seasonNumber===0);
   await page.evaluate(()=>new Promise(resolve=>{document.documentElement.lang='it';requestAnimationFrame(resolve)}));
   assert.equal(await page.evaluate(()=>window.faWorldState.get().world.seasonNumber),0,'cached Admin render cannot undo a public reset');checks++;
@@ -99,7 +99,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'networkidle'});
   await page.waitForFunction(()=>window.faCompetitionRoute?.get().season==='1'&&window.faWorldState?.get().current?.season===2);
   await page.locator('#app-competition-season').click();
-  await page.evaluate(()=>{window.sh03Header=document.querySelector('.app-competition-header');window.sh03Picker=document.querySelector('#app-competition-season');window.dispatchEvent(new Event('focus'))});
+  await page.evaluate(()=>{window.sh03Header=document.querySelector('.app-competition-header');window.sh03Picker=document.querySelector('#app-competition-season');window.dispatchEvent(new Event('fa:world-invalidated'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.textContent.includes('No published'));
   assert.equal(await page.locator('#app-competition-season').getAttribute('aria-expanded'),'true');
   assert.equal(await page.evaluate(()=>window.sh03Header===document.querySelector('.app-competition-header')&&window.sh03Picker===document.querySelector('#app-competition-season')),true);checks++;
@@ -116,7 +116,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
   await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
   await page.locator('#calendar-season-picker').click();
-  await page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))}));
+  await page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('fa:world-invalidated'))}));
   assert.equal(await page.evaluate(()=>window.sh03Option===document.querySelector('#calendar-season-menu [role=option]')),true);
   assert.equal(await page.locator('#calendar-season-picker').getAttribute('aria-expanded'),'true');checks++;
   offline=true;
@@ -164,12 +164,33 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     skeleton.style.removeProperty('display');return result;
   });
   assert.deepEqual(heights,[84,84],'mobile pending/loaded geometry must match');
+  const alignment=await page.evaluate(()=>{
+    const loaded=document.querySelector('#app-standings-compact-list .app-world-mobile-summary');
+    const pending=document.querySelector('.app-standings-skeleton .app-world-mobile-summary');
+    const shell=pending.closest('.app-standings-skeleton');
+    shell.style.display='block';
+    const measure=(root,selector)=>{
+      const box=root.querySelector(selector).getBoundingClientRect(),row=root.getBoundingClientRect();
+      return {x:Math.round((box.left-row.left)*10)/10,y:Math.round((box.top-row.top)*10)/10};
+    };
+    const selectors=['.app-world-mobile-position','.app-world-mobile-name','.app-world-mobile-points','.app-world-mobile-form'];
+    const delta=selectors.map(selector=>{
+      const a=measure(loaded,selector),b=measure(pending,selector);
+      return {selector,dx:Math.abs(a.x-b.x),dy:Math.abs(a.y-b.y)};
+    });
+    shell.style.removeProperty('display');return delta;
+  });
+  assert.ok(alignment.every(({dx,dy})=>dx<=1&&dy<=1),
+    'mobile pending/loaded positions must match: '+JSON.stringify(alignment));
+  const worldBeforeFocus=worldCalls;
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  assert.equal(worldCalls,worldBeforeFocus,'focus on competition tabs must not poll the public world');
   await page.setViewportSize(viewportBefore);
-  await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('focus'))});
+  await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('fa:world-invalidated'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
   holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
-  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await oldStarted;
+  await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));await oldStarted;
   await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===2);
   assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
   apiWorld={...world,revision:5,day:21};
@@ -181,7 +202,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();
   await page.waitForFunction(()=>document.querySelectorAll('#calendar-event-dialog [data-authoritative-calendar] li').length===128);
-  await page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))}));
+  await page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('fa:world-invalidated'))}));
   assert.equal(await page.evaluate(()=>window.sh03Dialog.open&&window.sh03Fixture===document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li')),true,'open populated calendar dialog survives refresh');checks++;
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
   assert.deepEqual(errors,[],engine+' SH-03 browser errors');

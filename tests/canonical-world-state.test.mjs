@@ -86,12 +86,23 @@ test('protected shell switches OFF to real API and ON to isolated Season 0 witho
   assert.equal(values.get('football-architect:standings-dev-season'),'0');
  }finally{if(previous===undefined)delete globalThis.sessionStorage;else globalThis.sessionStorage=previous}
 });
-test('a rejected older public world never erases the accepted newer revision',async()=>{
- const state=api.createWorldState(),events={};
- const window={faWorldState:state,addEventListener:(n,fn)=>events[n]=fn,fetch:async()=>({ok:true,json:async()=>({world})})};
- api.mountWorldState({window,document:{documentElement:{dataset:{}}}});
- await events.focus();const newer={...world,revision:9,day:21};state.acceptWorld(newer,state.beginRead());
- await events.focus();assert.deepEqual(state.get().world,newer);
+test('focus is passive while explicit invalidation and tab visibility revalidate safely',async()=>{
+ const state=api.createWorldState(),events={},docEvents={};
+ let calls=0;
+ const window={faWorldState:state,addEventListener:(n,fn)=>events[n]=fn,
+  fetch:async()=>{calls++;return {ok:true,json:async()=>({world})}}};
+ const document={documentElement:{dataset:{}},visibilityState:'visible',addEventListener:(n,fn)=>docEvents[n]=fn};
+ api.mountWorldState({window,document});
+ await events['fa:world-invalidated']();
+ assert.equal(events.focus,undefined,'focus must not trigger an unnecessary world poll');
+ const before=calls;
+ document.visibilityState='hidden';docEvents.visibilitychange();
+ assert.equal(calls,before,'hidden page cannot revalidate');
+ const newer={...world,revision:9,day:21};state.acceptWorld(newer,state.beginRead());
+ document.visibilityState='visible';docEvents.visibilitychange();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.ok(calls>before,'real browser-tab reactivation revalidates');
+ assert.deepEqual(state.get().world,newer,'older world cannot erase accepted revision');
 });
 test('browser populated fixtures satisfy real authoritative validators before browser execution',async()=>{
  const {published,calendarPublished}=await import('./canonical-state-browser.mjs');

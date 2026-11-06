@@ -117,7 +117,11 @@
     window.addEventListener('fa:dev-world-day-change',syncDebug);
     window.addEventListener('fa:source-change',refresh);
     window.addEventListener('fa:world-invalidated',refresh);
-    window.addEventListener('focus',refresh);
+    // Internal view selection and restoring focus from DevTools should never
+    // poll the API. Refresh only after actual browser-tab reactivation.
+    document.addEventListener?.('visibilitychange',()=>{
+      if(document.visibilityState==='visible')void refresh();
+    });
     window.addEventListener('pageshow',event=>{if(event.persisted)void refresh()});
     window.addEventListener('pagehide',()=>controller?.abort());
     void refresh();
