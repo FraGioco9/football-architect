@@ -4,9 +4,9 @@
 
 **Fixed 50-country ranking**, independent of seasons: positions 1–25 × 3,000 (75,000); 26–35 × 2,000 (20,000); 36–45 × 1,500 (15,000); 46–50 × 1,000 (5,000). **Aggregate target = 115,000.** Codes and order match PLAYERS-03, which is untouched.
 
-**Actual entries: 117,216** across 50 JSONs, but this does **not** mean all national targets are met: **18,801 missing within under-target countries** and **21,017 excess retained intact** (net 2,216 above target). Surpluses are not transferable between nations.
+**Actual entries: 124,716** across 50 JSONs, but this does **not** mean all national targets are met: **12,301 missing within under-target countries** and **22,017 excess retained intact** (net 9,716 above target). Surpluses are not transferable between nations.
 
-Statuses: **21 complete**, **10 partial**, **0 pending**, **16 over_target**, **3 blocked**. All entries remain `production_ready:false`. Numerical completion is not source or licence certification.
+Statuses: **23 complete**, **6 partial**, **0 pending**, **17 over_target**, **4 blocked**. All entries remain `production_ready:false`. Numerical completion is not source or licence certification.
 
 Each catalog country has `rank`, `target_count`, `actual_count`, `missing_count=max(0,target-actual)`, `excess_count=max(0,actual-target)` and `status` (`pending`, `partial`, `complete`, `over_target`, `blocked`). `over_target` entries require an explicit review decision: **no automatic truncation or deletion**. `blocked` marks unresolved source conflicts while retaining the last valid file.
 
@@ -32,7 +32,7 @@ All surname entries are exactly `{ "value": "..." }`, with `selection_policy:"un
 | D | [988b7c7c9128](https://github.com/FraGioco9/football-architect/commit/988b7c7c9128c74d188866555cb73c7b9c657a10) | ARG 3000; MEX 3000; COL 3000; CHI 3000 |
 | E | [7a2c81d4aa9d](https://github.com/FraGioco9/football-architect/commit/7a2c81d4aa9db7f47d6ce3a07a6fa9729236181d) | JPN 3000; TUR 3000; KOR 1011; GRE 3000 |
 | F | [cf02a6e67424](https://github.com/FraGioco9/football-architect/commit/cf02a6e67424d0a7616abc4b83618cb7d12d7a01) | CRO 3000; RUS 3000; HUN 1299; SRB 3000 |
-| G | PENDING source | Retain original 500; no importable expansion |
+| G | [fabeee5bcc84](https://github.com/FraGioco9/football-architect/commit/fabeee5bcc84238b95185c0f2e7fa939611884ba) | MAR 3000; ALG 3000; EGY 3000 integrated; IRN original 500 blocked (11 missing names in new source) |
 | H | [f99141f8e6bc](https://github.com/FraGioco9/football-architect/commit/f99141f8e6bcdd52f26e696d56da98c380fb3df2) | SEN 3000; CIV 3000; NGA 3000; MLI 1517; MLI updated 927 → 1517 |
 | I | [770079a8c4b6](https://github.com/FraGioco9/football-architect/commit/770079a8c4b6825e9e89e5441fe8c3374568c1f3) | AUS 999; COD 1001; CMR 1000; RSA 1000 |
 | J | [f77e603ca835](https://github.com/FraGioco9/football-architect/commit/f77e603ca835571fcd7fe710488bfde60e336943) | ECU 889; URU/PAR/VEN BLOCKED |
@@ -40,9 +40,11 @@ All surname entries are exactly `{ "value": "..." }`, with `selection_policy:"un
 | L | [846db25c63ef](https://github.com/FraGioco9/football-architect/commit/846db25c63ef66cee6618993de9ddb599b9b06cf) | ESP 3000; FRA 3000; ITA 3000; USA 3000 |
 | M | [67343d344909](https://github.com/FraGioco9/football-architect/commit/67343d3449090632737d70ee168385be49592b41) | CAN 3000; POL 3000; SCO 3000 |
 
+**Batch G conflict:** IRN expansion source HEAD `fabeee5bcc84238b95185c0f2e7fa939611884ba` omits **11** surnames from the existing 500. New 3,000-entry file is *not* imported; retain existing `IRN.json` and mark `blocked`. The three valid G files are imported without trimming Algeria's 1,000 surplus.
+
 **Batch J conflicts:** source branch `research/surnames-3000-batch-j` currently drops earlier verified `Pena` (URU), `Santa Cruz` (PAR), `Lacruz` (VEN). Those files were **not** imported. Keep the original 500 for those three countries until the sources explicitly retain all previous names. ECU 889 stays integrated.
 
-**Full preservation:** Original 50×500 Git blobs, their source PR/branch/HEAD and file SHA are retained in the catalog. `preservation_baseline_commit` pins the previously integrated snapshot (`b34db4ed7e50a60efdfaee7f538756877753654f`); Node 22 QA verifies its *entire national surname arrays* are prefixes of new files. MLI's previous 927-entry blob is also recorded in `previous_expansion`. All new country files are referenced by exact source branch HEAD and blob SHA. Never import workflow/test experiments from source branches.
+**Full preservation:** Original 50×500 Git blobs, their source PR/branch/HEAD and file SHA are retained in the catalog. `preservation_baseline_commit` pins the previously integrated snapshot (`7dc8b68400d763d0f1e37e59a13da0102de89f86`); Node 22 QA verifies its *entire national surname arrays* are prefixes of new files. MLI's previous 927-entry blob is also recorded in `previous_expansion`. All new country files are referenced by exact source branch HEAD and blob SHA. Never import workflow/test experiments from source branches.
 
 ## Original 500-entry source batch manifest
 

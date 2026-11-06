@@ -127,7 +127,7 @@
     {
       "code": "MAR",
       "path": "data/players/surnames/countries/MAR.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "G",
       "source_pr": 430,
@@ -137,9 +137,12 @@
       "production_ready": false,
       "rank": 7,
       "target_count": 3000,
-      "actual_count": 500,
-      "missing_count": 2500,
-      "excess_count": 0
+      "actual_count": 3000,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_branch": "research/surnames-3000-batch-g",
+      "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
+      "expansion_blob_sha": "6b28a6ca408a8c6dcb1c1c3bacb01453d79e4640"
     },
     {
       "code": "BEL",
@@ -444,7 +447,7 @@
     {
       "code": "IRN",
       "path": "data/players/surnames/countries/IRN.json",
-      "status": "partial",
+      "status": "blocked",
       "sources_available": true,
       "source_batch": "G",
       "source_pr": 430,
@@ -456,7 +459,12 @@
       "target_count": 3000,
       "actual_count": 500,
       "missing_count": 2500,
-      "excess_count": 0
+      "excess_count": 0,
+      "block_reason": "Current Batch G source omits 11 previously integrated surname values; retain existing validated bank until provenance conflict is resolved",
+      "blocked_source_branch": "research/surnames-3000-batch-g",
+      "blocked_source_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
+      "blocked_source_blob_sha": "8410811f3f7958b8be6cc2a56e807e4f620dcbe8",
+      "blocked_source_omitted_count": 11
     },
     {
       "code": "ECU",
@@ -481,7 +489,7 @@
     {
       "code": "EGY",
       "path": "data/players/surnames/countries/EGY.json",
-      "status": "partial",
+      "status": "complete",
       "sources_available": true,
       "source_batch": "G",
       "source_pr": 430,
@@ -491,9 +499,12 @@
       "production_ready": false,
       "rank": 25,
       "target_count": 3000,
-      "actual_count": 500,
-      "missing_count": 2500,
-      "excess_count": 0
+      "actual_count": 3000,
+      "missing_count": 0,
+      "excess_count": 0,
+      "expansion_branch": "research/surnames-3000-batch-g",
+      "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
+      "expansion_blob_sha": "4e4ee450ba52ebb90f4a6df674bc8bdbfb444dcd"
     },
     {
       "code": "AUS",
@@ -539,7 +550,7 @@
     {
       "code": "ALG",
       "path": "data/players/surnames/countries/ALG.json",
-      "status": "partial",
+      "status": "over_target",
       "sources_available": true,
       "source_batch": "G",
       "source_pr": 430,
@@ -549,9 +560,13 @@
       "production_ready": false,
       "rank": 28,
       "target_count": 2000,
-      "actual_count": 500,
-      "missing_count": 1500,
-      "excess_count": 0
+      "actual_count": 3000,
+      "missing_count": 0,
+      "excess_count": 1000,
+      "over_target_review_required": true,
+      "expansion_branch": "research/surnames-3000-batch-g",
+      "expansion_head_sha": "fabeee5bcc84238b95185c0f2e7fa939611884ba",
+      "expansion_blob_sha": "671d7c80691819f9f3ed09425df349418dbedff4"
     },
     {
       "code": "CIV",
@@ -1016,7 +1031,7 @@
     }
   ],
   "target_total_surnames": 115000,
-  "total_surnames": 117216,
+  "total_surnames": 124716,
   "ranking_policy": "fixed_50_country_rank",
   "ranking_tiers": [
     {
@@ -1040,14 +1055,14 @@
       "target_count": 1000
     }
   ],
-  "preservation_baseline_commit": "b34db4ed7e50a60efdfaee7f538756877753654f",
-  "total_missing": 18801,
-  "total_excess": 21017,
+  "preservation_baseline_commit": "7dc8b68400d763d0f1e37e59a13da0102de89f86",
+  "total_missing": 12301,
+  "total_excess": 22017,
   "status_counts": {
-    "complete": 21,
-    "partial": 10,
+    "complete": 23,
+    "partial": 6,
     "pending": 0,
-    "over_target": 16,
-    "blocked": 3
+    "over_target": 17,
+    "blocked": 4
   }
 }
