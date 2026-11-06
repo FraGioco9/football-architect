@@ -51,7 +51,8 @@ test('frozen 50 FIFA codes, exactly 21 saved banks of 300 and 29 empty banks',()
  assert.equal(master.policy.target_male_given_names_per_country,300);
  assert.equal(master.policy.current_collected_given_names,6300);
  assert.equal(master.policy.current_approved_given_names,0);
- assert.match(master.policy.first_name_format,/one first name/i);
+ assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
+ assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
  assert.equal(master.countries.filter(x=>x.given_name_count===300).length,21);
  assert.equal(master.countries.filter(x=>x.given_name_count===0).length,29);
