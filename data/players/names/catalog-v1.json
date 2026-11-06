@@ -1,0 +1,651 @@
+{
+  "schema_version": 3,
+  "catalog_version": "2026-11-06-single-batch02",
+  "state": "seven_country_single_first_name_pools_collected",
+  "source_registry": [
+    {
+      "code": "ITA",
+      "id": "it-admin-register-male-names",
+      "external_file": "countries/ITA.json",
+      "description": "male names observed in Italian local administrators 1985–2014"
+    },
+    {
+      "code": "ESP",
+      "id": "es-ine-residents-male-names",
+      "external_file": "countries/ESP.json",
+      "description": "male names among Spain residents, INE aggregation"
+    },
+    {
+      "code": "FRA",
+      "id": "fr-insee-male-births-2000-2025",
+      "external_file": "countries/FRA.json",
+      "description": "male first names among births in France 2000–2025, INSEE; one first name per entry"
+    },
+    {
+      "code": "USA",
+      "id": "us-ssa-male-births-2016-2020",
+      "external_file": "countries/USA.json",
+      "description": "US Social Security Administration national male birth names, 2016–2020; source years pinned to public GitHub mirror"
+    },
+    {
+      "code": "SCO",
+      "id": "gb-nrs-scotland-male-births-2000-2025",
+      "external_file": "countries/SCO.json",
+      "description": "National Records of Scotland registered male first names, 2000–2025"
+    },
+    {
+      "code": "CAN",
+      "id": "ca-statcan-male-births-2000-2025",
+      "external_file": "countries/CAN.json",
+      "description": "Statistics Canada male first names at birth, national table 17-10-0147-01, 2000–2025"
+    },
+    {
+      "code": "POL",
+      "id": "pl-gov-pesel-first-male-names-2025",
+      "external_file": "countries/POL.json",
+      "description": "Polish Ministry of Digital Affairs PESEL national first male given names in 2025"
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "production_ready": false,
+  "policy": {
+    "target_male_given_names_per_country": 300,
+    "current_approved_given_names": 0,
+    "surnames": "no surname pools; first names only",
+    "allowed_source_names": "newly acquired observed male-name sources (no cultural-origin restriction)",
+    "source_name_weights": "non-fabricated observed male counts, specific and non-comparable per country",
+    "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
+    "dual_nationality_pool_policy": "not_started",
+    "production_generation": "deferred until separate integration approval",
+    "current_collected_given_names": 2100,
+    "first_name_format": "exactly one first name per entry: Unicode letters and combining marks only; no whitespace, hyphens, apostrophes, punctuation or double given names",
+    "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
+  },
+  "countries": [
+    {
+      "code": "ESP",
+      "rank": 1,
+      "label": "Spain",
+      "given_names": [],
+      "name_source_ids": [
+        "es-ine-residents-male-names"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "external_file": "countries/ESP.json",
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "ARG",
+      "rank": 2,
+      "label": "Argentina",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "FRA",
+      "rank": 3,
+      "label": "France",
+      "given_names": [],
+      "name_source_ids": [
+        "fr-insee-male-births-2000-2025"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "external_file": "countries/FRA.json",
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "ENG",
+      "rank": 4,
+      "label": "England",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "POR",
+      "rank": 5,
+      "label": "Portugal",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "BRA",
+      "rank": 6,
+      "label": "Brazil",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "MAR",
+      "rank": 7,
+      "label": "Morocco",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "BEL",
+      "rank": 8,
+      "label": "Belgium",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "NED",
+      "rank": 9,
+      "label": "Netherlands",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "MEX",
+      "rank": 10,
+      "label": "Mexico",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "COL",
+      "rank": 11,
+      "label": "Colombia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "SUI",
+      "rank": 12,
+      "label": "Switzerland",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "GER",
+      "rank": 13,
+      "label": "Germany",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "CRO",
+      "rank": 14,
+      "label": "Croatia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "ITA",
+      "rank": 15,
+      "label": "Italy",
+      "given_names": [],
+      "name_source_ids": [
+        "it-admin-register-male-names"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "external_file": "countries/ITA.json",
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "USA",
+      "rank": 16,
+      "label": "United States",
+      "given_names": [],
+      "name_source_ids": [
+        "us-ssa-male-births-2016-2020"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/USA.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "JPN",
+      "rank": 17,
+      "label": "Japan",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "SEN",
+      "rank": 18,
+      "label": "Senegal",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "NOR",
+      "rank": 19,
+      "label": "Norway",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "URU",
+      "rank": 20,
+      "label": "Uruguay",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "DEN",
+      "rank": 21,
+      "label": "Denmark",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "AUT",
+      "rank": 22,
+      "label": "Austria",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "IRN",
+      "rank": 23,
+      "label": "Iran",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "ECU",
+      "rank": 24,
+      "label": "Ecuador",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "EGY",
+      "rank": 25,
+      "label": "Egypt",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "AUS",
+      "rank": 26,
+      "label": "Australia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "CAN",
+      "rank": 27,
+      "label": "Canada",
+      "given_names": [],
+      "name_source_ids": [
+        "ca-statcan-male-births-2000-2025"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/CAN.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "ALG",
+      "rank": 28,
+      "label": "Algeria",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "CIV",
+      "rank": 29,
+      "label": "Côte d'Ivoire",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "NGA",
+      "rank": 30,
+      "label": "Nigeria",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "TUR",
+      "rank": 31,
+      "label": "Türkiye",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "KOR",
+      "rank": 32,
+      "label": "South Korea",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "PAR",
+      "rank": 33,
+      "label": "Paraguay",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "SWE",
+      "rank": 34,
+      "label": "Sweden",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "RUS",
+      "rank": 35,
+      "label": "Russia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "UKR",
+      "rank": 36,
+      "label": "Ukraine",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "POL",
+      "rank": 37,
+      "label": "Poland",
+      "given_names": [],
+      "name_source_ids": [
+        "pl-gov-pesel-first-male-names-2025"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/POL.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "HUN",
+      "rank": 38,
+      "label": "Hungary",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "WAL",
+      "rank": 39,
+      "label": "Wales",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "COD",
+      "rank": 40,
+      "label": "DR Congo",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "GRE",
+      "rank": 41,
+      "label": "Greece",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "CMR",
+      "rank": 42,
+      "label": "Cameroon",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "SCO",
+      "rank": 43,
+      "label": "Scotland",
+      "given_names": [],
+      "name_source_ids": [
+        "gb-nrs-scotland-male-births-2000-2025"
+      ],
+      "origin_review": "not_required_by_owner",
+      "production_ready": false,
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SCO.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
+    },
+    {
+      "code": "SRB",
+      "rank": 44,
+      "label": "Serbia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "SVK",
+      "rank": 45,
+      "label": "Slovakia",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "PAN",
+      "rank": 46,
+      "label": "Panama",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "MLI",
+      "rank": 47,
+      "label": "Mali",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "RSA",
+      "rank": 48,
+      "label": "South Africa",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "VEN",
+      "rank": 49,
+      "label": "Venezuela",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    },
+    {
+      "code": "CHI",
+      "rank": 50,
+      "label": "Chile",
+      "given_names": [],
+      "name_source_ids": [],
+      "origin_review": "not_started",
+      "production_ready": false,
+      "given_name_count": 0,
+      "collection_status": "not_started"
+    }
+  ]
+}

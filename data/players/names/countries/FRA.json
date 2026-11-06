@@ -1,0 +1,1223 @@
+{
+  "schema_version": 2,
+  "code": "FRA",
+  "cohort": "male registered births in France 2000–2025",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "fr-insee-male-births-2000-2025",
+    "provider": "INSEE national first names, official 2025 edition",
+    "source_url": "https://www.insee.fr/fr/statistiques/8595130",
+    "source_csv_url": "https://www.insee.fr/fr/statistiques/fichier/8595130/prenoms-2025-nat_csv.zip",
+    "source_archive_sha256": "4c3662bbc75a021a2203b9bed0beff7e85c7928779b88602814ed407cfee512e",
+    "source_csv_sha256": "5ec80c06cd9266cc5680885c6a219148bcdfaa53d65086f4ea9d2c584431fbfd",
+    "metric": "rounded male birth counts aggregated 2000–2025 by exact first name",
+    "license": "Licence Ouverte / Open Licence 2.0",
+    "evidence_run": "https://github.com/FraGioco9/football-architect/actions/runs/42228707240"
+  },
+  "selection_policy": "Top 300 distinct male given names aggregated over births 2000–2025; Unicode letters/combining marks only; no compound names; origin unrestricted",
+  "given_names": [
+    {
+      "value": "Lucas",
+      "weight": 144470
+    },
+    {
+      "value": "Hugo",
+      "weight": 116955
+    },
+    {
+      "value": "Louis",
+      "weight": 112720
+    },
+    {
+      "value": "Enzo",
+      "weight": 110660
+    },
+    {
+      "value": "Gabriel",
+      "weight": 108200
+    },
+    {
+      "value": "Nathan",
+      "weight": 106190
+    },
+    {
+      "value": "Léo",
+      "weight": 103810
+    },
+    {
+      "value": "Théo",
+      "weight": 98820
+    },
+    {
+      "value": "Jules",
+      "weight": 94375
+    },
+    {
+      "value": "Arthur",
+      "weight": 93745
+    },
+    {
+      "value": "Raphaël",
+      "weight": 92275
+    },
+    {
+      "value": "Thomas",
+      "weight": 89825
+    },
+    {
+      "value": "Mathis",
+      "weight": 85670
+    },
+    {
+      "value": "Tom",
+      "weight": 81970
+    },
+    {
+      "value": "Paul",
+      "weight": 80900
+    },
+    {
+      "value": "Adam",
+      "weight": 78885
+    },
+    {
+      "value": "Maxime",
+      "weight": 77820
+    },
+    {
+      "value": "Noah",
+      "weight": 75040
+    },
+    {
+      "value": "Ethan",
+      "weight": 73455
+    },
+    {
+      "value": "Antoine",
+      "weight": 72325
+    },
+    {
+      "value": "Clément",
+      "weight": 71975
+    },
+    {
+      "value": "Alexandre",
+      "weight": 66270
+    },
+    {
+      "value": "Axel",
+      "weight": 61205
+    },
+    {
+      "value": "Baptiste",
+      "weight": 60720
+    },
+    {
+      "value": "Sacha",
+      "weight": 59750
+    },
+    {
+      "value": "Yanis",
+      "weight": 59175
+    },
+    {
+      "value": "Valentin",
+      "weight": 58105
+    },
+    {
+      "value": "Alexis",
+      "weight": 57100
+    },
+    {
+      "value": "Mohamed",
+      "weight": 55845
+    },
+    {
+      "value": "Mathéo",
+      "weight": 55060
+    },
+    {
+      "value": "Nolan",
+      "weight": 52200
+    },
+    {
+      "value": "Gabin",
+      "weight": 51620
+    },
+    {
+      "value": "Quentin",
+      "weight": 51140
+    },
+    {
+      "value": "Victor",
+      "weight": 50880
+    },
+    {
+      "value": "Maxence",
+      "weight": 48755
+    },
+    {
+      "value": "Liam",
+      "weight": 48610
+    },
+    {
+      "value": "Maël",
+      "weight": 46150
+    },
+    {
+      "value": "Evan",
+      "weight": 46045
+    },
+    {
+      "value": "Romain",
+      "weight": 43975
+    },
+    {
+      "value": "Martin",
+      "weight": 43785
+    },
+    {
+      "value": "Rayan",
+      "weight": 42510
+    },
+    {
+      "value": "Nicolas",
+      "weight": 41755
+    },
+    {
+      "value": "Samuel",
+      "weight": 41665
+    },
+    {
+      "value": "Simon",
+      "weight": 40150
+    },
+    {
+      "value": "Robin",
+      "weight": 39345
+    },
+    {
+      "value": "Aaron",
+      "weight": 39090
+    },
+    {
+      "value": "Benjamin",
+      "weight": 37525
+    },
+    {
+      "value": "Adrien",
+      "weight": 36975
+    },
+    {
+      "value": "Pierre",
+      "weight": 35735
+    },
+    {
+      "value": "Mattéo",
+      "weight": 35095
+    },
+    {
+      "value": "Noa",
+      "weight": 34805
+    },
+    {
+      "value": "Julien",
+      "weight": 34795
+    },
+    {
+      "value": "Timéo",
+      "weight": 32770
+    },
+    {
+      "value": "Marius",
+      "weight": 32650
+    },
+    {
+      "value": "Noé",
+      "weight": 31320
+    },
+    {
+      "value": "Dylan",
+      "weight": 31300
+    },
+    {
+      "value": "Kylian",
+      "weight": 29885
+    },
+    {
+      "value": "Mathieu",
+      "weight": 29340
+    },
+    {
+      "value": "Eden",
+      "weight": 29300
+    },
+    {
+      "value": "Léon",
+      "weight": 29265
+    },
+    {
+      "value": "Mathys",
+      "weight": 28845
+    },
+    {
+      "value": "Corentin",
+      "weight": 28755
+    },
+    {
+      "value": "Eliott",
+      "weight": 28745
+    },
+    {
+      "value": "Lenny",
+      "weight": 28150
+    },
+    {
+      "value": "Esteban",
+      "weight": 28135
+    },
+    {
+      "value": "Mael",
+      "weight": 27300
+    },
+    {
+      "value": "Florian",
+      "weight": 27295
+    },
+    {
+      "value": "Isaac",
+      "weight": 27090
+    },
+    {
+      "value": "Malo",
+      "weight": 26560
+    },
+    {
+      "value": "Gaspard",
+      "weight": 26405
+    },
+    {
+      "value": "Augustin",
+      "weight": 25855
+    },
+    {
+      "value": "Bastien",
+      "weight": 25600
+    },
+    {
+      "value": "Lorenzo",
+      "weight": 25035
+    },
+    {
+      "value": "Tiago",
+      "weight": 24950
+    },
+    {
+      "value": "Anthony",
+      "weight": 24605
+    },
+    {
+      "value": "Nino",
+      "weight": 23795
+    },
+    {
+      "value": "Tristan",
+      "weight": 23575
+    },
+    {
+      "value": "Antonin",
+      "weight": 22980
+    },
+    {
+      "value": "Kevin",
+      "weight": 22965
+    },
+    {
+      "value": "William",
+      "weight": 22770
+    },
+    {
+      "value": "Mathias",
+      "weight": 22650
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 22565
+    },
+    {
+      "value": "Thibault",
+      "weight": 22055
+    },
+    {
+      "value": "Marceau",
+      "weight": 21925
+    },
+    {
+      "value": "Amine",
+      "weight": 21770
+    },
+    {
+      "value": "Naël",
+      "weight": 21715
+    },
+    {
+      "value": "Oscar",
+      "weight": 21140
+    },
+    {
+      "value": "David",
+      "weight": 20925
+    },
+    {
+      "value": "Jean",
+      "weight": 20615
+    },
+    {
+      "value": "Charles",
+      "weight": 20505
+    },
+    {
+      "value": "Ilyes",
+      "weight": 20490
+    },
+    {
+      "value": "Camille",
+      "weight": 20255
+    },
+    {
+      "value": "Dorian",
+      "weight": 19895
+    },
+    {
+      "value": "Erwan",
+      "weight": 19890
+    },
+    {
+      "value": "Guillaume",
+      "weight": 19835
+    },
+    {
+      "value": "Titouan",
+      "weight": 19460
+    },
+    {
+      "value": "Noam",
+      "weight": 19340
+    },
+    {
+      "value": "Noe",
+      "weight": 19110
+    },
+    {
+      "value": "Amir",
+      "weight": 19010
+    },
+    {
+      "value": "Matéo",
+      "weight": 18440
+    },
+    {
+      "value": "Diego",
+      "weight": 18355
+    },
+    {
+      "value": "Mehdi",
+      "weight": 18305
+    },
+    {
+      "value": "Milo",
+      "weight": 17520
+    },
+    {
+      "value": "Lyam",
+      "weight": 17505
+    },
+    {
+      "value": "Ayoub",
+      "weight": 17345
+    },
+    {
+      "value": "Imran",
+      "weight": 16905
+    },
+    {
+      "value": "Ayden",
+      "weight": 16740
+    },
+    {
+      "value": "Ryan",
+      "weight": 16735
+    },
+    {
+      "value": "Lilian",
+      "weight": 16590
+    },
+    {
+      "value": "Timeo",
+      "weight": 16505
+    },
+    {
+      "value": "Matthieu",
+      "weight": 16475
+    },
+    {
+      "value": "Vincent",
+      "weight": 16375
+    },
+    {
+      "value": "Joseph",
+      "weight": 16335
+    },
+    {
+      "value": "Killian",
+      "weight": 16175
+    },
+    {
+      "value": "Léandre",
+      "weight": 16050
+    },
+    {
+      "value": "Jordan",
+      "weight": 15955
+    },
+    {
+      "value": "Owen",
+      "weight": 15850
+    },
+    {
+      "value": "Kaïs",
+      "weight": 15830
+    },
+    {
+      "value": "Rafael",
+      "weight": 15760
+    },
+    {
+      "value": "Timothée",
+      "weight": 15740
+    },
+    {
+      "value": "Pablo",
+      "weight": 15735
+    },
+    {
+      "value": "Loïc",
+      "weight": 15690
+    },
+    {
+      "value": "Yann",
+      "weight": 15670
+    },
+    {
+      "value": "Kenzo",
+      "weight": 15530
+    },
+    {
+      "value": "Younes",
+      "weight": 15405
+    },
+    {
+      "value": "Ali",
+      "weight": 15310
+    },
+    {
+      "value": "Charly",
+      "weight": 15135
+    },
+    {
+      "value": "Youssef",
+      "weight": 15080
+    },
+    {
+      "value": "Elio",
+      "weight": 15005
+    },
+    {
+      "value": "Rémi",
+      "weight": 15005
+    },
+    {
+      "value": "Yassine",
+      "weight": 14995
+    },
+    {
+      "value": "Soan",
+      "weight": 14890
+    },
+    {
+      "value": "Logan",
+      "weight": 14625
+    },
+    {
+      "value": "Louka",
+      "weight": 14570
+    },
+    {
+      "value": "Luca",
+      "weight": 14560
+    },
+    {
+      "value": "Damien",
+      "weight": 14505
+    },
+    {
+      "value": "Sohan",
+      "weight": 14505
+    },
+    {
+      "value": "Ruben",
+      "weight": 14460
+    },
+    {
+      "value": "Elias",
+      "weight": 14395
+    },
+    {
+      "value": "Wassim",
+      "weight": 14270
+    },
+    {
+      "value": "Basile",
+      "weight": 14100
+    },
+    {
+      "value": "Loan",
+      "weight": 13975
+    },
+    {
+      "value": "Sofiane",
+      "weight": 13935
+    },
+    {
+      "value": "Jeremy",
+      "weight": 13925
+    },
+    {
+      "value": "Nassim",
+      "weight": 13830
+    },
+    {
+      "value": "Hamza",
+      "weight": 13810
+    },
+    {
+      "value": "Bryan",
+      "weight": 13585
+    },
+    {
+      "value": "Aurélien",
+      "weight": 13415
+    },
+    {
+      "value": "Ismaël",
+      "weight": 13330
+    },
+    {
+      "value": "Alban",
+      "weight": 13195
+    },
+    {
+      "value": "Alex",
+      "weight": 13135
+    },
+    {
+      "value": "Ilan",
+      "weight": 13110
+    },
+    {
+      "value": "Milan",
+      "weight": 13090
+    },
+    {
+      "value": "Ewen",
+      "weight": 12945
+    },
+    {
+      "value": "Côme",
+      "weight": 12935
+    },
+    {
+      "value": "Julian",
+      "weight": 12885
+    },
+    {
+      "value": "Adem",
+      "weight": 12815
+    },
+    {
+      "value": "Charlie",
+      "weight": 12795
+    },
+    {
+      "value": "Loris",
+      "weight": 12620
+    },
+    {
+      "value": "Noham",
+      "weight": 12575
+    },
+    {
+      "value": "Lucien",
+      "weight": 12500
+    },
+    {
+      "value": "Mahé",
+      "weight": 12400
+    },
+    {
+      "value": "Amaury",
+      "weight": 12360
+    },
+    {
+      "value": "Anas",
+      "weight": 12230
+    },
+    {
+      "value": "Thibaut",
+      "weight": 11885
+    },
+    {
+      "value": "Tony",
+      "weight": 11870
+    },
+    {
+      "value": "Naïm",
+      "weight": 11805
+    },
+    {
+      "value": "Sasha",
+      "weight": 11760
+    },
+    {
+      "value": "Bilal",
+      "weight": 11730
+    },
+    {
+      "value": "Zakaria",
+      "weight": 11725
+    },
+    {
+      "value": "Eliot",
+      "weight": 11520
+    },
+    {
+      "value": "Nael",
+      "weight": 11505
+    },
+    {
+      "value": "Samy",
+      "weight": 11105
+    },
+    {
+      "value": "Johan",
+      "weight": 11040
+    },
+    {
+      "value": "Roméo",
+      "weight": 11040
+    },
+    {
+      "value": "Luka",
+      "weight": 10950
+    },
+    {
+      "value": "Gaëtan",
+      "weight": 10890
+    },
+    {
+      "value": "Issa",
+      "weight": 10880
+    },
+    {
+      "value": "Ahmed",
+      "weight": 10830
+    },
+    {
+      "value": "Rayane",
+      "weight": 10755
+    },
+    {
+      "value": "Morgan",
+      "weight": 10650
+    },
+    {
+      "value": "Achille",
+      "weight": 10595
+    },
+    {
+      "value": "Alessio",
+      "weight": 10490
+    },
+    {
+      "value": "Félix",
+      "weight": 10390
+    },
+    {
+      "value": "Marin",
+      "weight": 10325
+    },
+    {
+      "value": "Joshua",
+      "weight": 10295
+    },
+    {
+      "value": "Jonathan",
+      "weight": 10270
+    },
+    {
+      "value": "Abel",
+      "weight": 10250
+    },
+    {
+      "value": "Armand",
+      "weight": 10165
+    },
+    {
+      "value": "Daniel",
+      "weight": 9980
+    },
+    {
+      "value": "Yacine",
+      "weight": 9805
+    },
+    {
+      "value": "Alan",
+      "weight": 9785
+    },
+    {
+      "value": "Auguste",
+      "weight": 9680
+    },
+    {
+      "value": "Sandro",
+      "weight": 9580
+    },
+    {
+      "value": "Ismael",
+      "weight": 9485
+    },
+    {
+      "value": "Aymen",
+      "weight": 9430
+    },
+    {
+      "value": "Leo",
+      "weight": 9290
+    },
+    {
+      "value": "Ilyan",
+      "weight": 9135
+    },
+    {
+      "value": "Sami",
+      "weight": 9130
+    },
+    {
+      "value": "Ezio",
+      "weight": 9090
+    },
+    {
+      "value": "Gauthier",
+      "weight": 9090
+    },
+    {
+      "value": "Lukas",
+      "weight": 8880
+    },
+    {
+      "value": "Malone",
+      "weight": 8880
+    },
+    {
+      "value": "Emile",
+      "weight": 8865
+    },
+    {
+      "value": "Raphael",
+      "weight": 8805
+    },
+    {
+      "value": "Livio",
+      "weight": 8715
+    },
+    {
+      "value": "Andrea",
+      "weight": 8595
+    },
+    {
+      "value": "Anis",
+      "weight": 8500
+    },
+    {
+      "value": "Djibril",
+      "weight": 8485
+    },
+    {
+      "value": "Téo",
+      "weight": 8475
+    },
+    {
+      "value": "Emmanuel",
+      "weight": 8450
+    },
+    {
+      "value": "Jason",
+      "weight": 8420
+    },
+    {
+      "value": "Etienne",
+      "weight": 8405
+    },
+    {
+      "value": "Aylan",
+      "weight": 8385
+    },
+    {
+      "value": "Moussa",
+      "weight": 8375
+    },
+    {
+      "value": "Ulysse",
+      "weight": 8370
+    },
+    {
+      "value": "Justin",
+      "weight": 8365
+    },
+    {
+      "value": "Dimitri",
+      "weight": 8350
+    },
+    {
+      "value": "Kyllian",
+      "weight": 8280
+    },
+    {
+      "value": "Arnaud",
+      "weight": 8275
+    },
+    {
+      "value": "Idriss",
+      "weight": 8195
+    },
+    {
+      "value": "Elie",
+      "weight": 8175
+    },
+    {
+      "value": "Aymeric",
+      "weight": 8150
+    },
+    {
+      "value": "Melvin",
+      "weight": 8150
+    },
+    {
+      "value": "Edouard",
+      "weight": 8120
+    },
+    {
+      "value": "Elliot",
+      "weight": 8075
+    },
+    {
+      "value": "Maé",
+      "weight": 8060
+    },
+    {
+      "value": "Sébastien",
+      "weight": 7970
+    },
+    {
+      "value": "Yannis",
+      "weight": 7970
+    },
+    {
+      "value": "Walid",
+      "weight": 7925
+    },
+    {
+      "value": "Emilien",
+      "weight": 7895
+    },
+    {
+      "value": "Kilian",
+      "weight": 7880
+    },
+    {
+      "value": "Ilyas",
+      "weight": 7865
+    },
+    {
+      "value": "Rafaël",
+      "weight": 7840
+    },
+    {
+      "value": "Nahil",
+      "weight": 7830
+    },
+    {
+      "value": "Lino",
+      "weight": 7745
+    },
+    {
+      "value": "Nolann",
+      "weight": 7720
+    },
+    {
+      "value": "Matthias",
+      "weight": 7695
+    },
+    {
+      "value": "Mohammed",
+      "weight": 7615
+    },
+    {
+      "value": "Allan",
+      "weight": 7545
+    },
+    {
+      "value": "Nolhan",
+      "weight": 7460
+    },
+    {
+      "value": "Ugo",
+      "weight": 7405
+    },
+    {
+      "value": "Joris",
+      "weight": 7275
+    },
+    {
+      "value": "Elouan",
+      "weight": 7265
+    },
+    {
+      "value": "Grégoire",
+      "weight": 7260
+    },
+    {
+      "value": "Yohan",
+      "weight": 7235
+    },
+    {
+      "value": "Gianni",
+      "weight": 7230
+    },
+    {
+      "value": "Nathanaël",
+      "weight": 7215
+    },
+    {
+      "value": "Marc",
+      "weight": 7190
+    },
+    {
+      "value": "Marwan",
+      "weight": 7150
+    },
+    {
+      "value": "Steven",
+      "weight": 7135
+    },
+    {
+      "value": "Timothé",
+      "weight": 7060
+    },
+    {
+      "value": "Jonas",
+      "weight": 7055
+    },
+    {
+      "value": "Anatole",
+      "weight": 7015
+    },
+    {
+      "value": "Mickael",
+      "weight": 6975
+    },
+    {
+      "value": "Tim",
+      "weight": 6940
+    },
+    {
+      "value": "Omar",
+      "weight": 6935
+    },
+    {
+      "value": "François",
+      "weight": 6915
+    },
+    {
+      "value": "Rémy",
+      "weight": 6900
+    },
+    {
+      "value": "Benoît",
+      "weight": 6885
+    },
+    {
+      "value": "Thiago",
+      "weight": 6870
+    },
+    {
+      "value": "James",
+      "weight": 6835
+    },
+    {
+      "value": "Leny",
+      "weight": 6825
+    },
+    {
+      "value": "Matteo",
+      "weight": 6825
+    },
+    {
+      "value": "Florent",
+      "weight": 6805
+    },
+    {
+      "value": "Fabio",
+      "weight": 6795
+    },
+    {
+      "value": "Andréa",
+      "weight": 6775
+    },
+    {
+      "value": "Roman",
+      "weight": 6750
+    },
+    {
+      "value": "Marcel",
+      "weight": 6715
+    },
+    {
+      "value": "Andy",
+      "weight": 6675
+    },
+    {
+      "value": "Loïs",
+      "weight": 6665
+    },
+    {
+      "value": "Fabien",
+      "weight": 6635
+    },
+    {
+      "value": "Henri",
+      "weight": 6610
+    },
+    {
+      "value": "Mylan",
+      "weight": 6490
+    },
+    {
+      "value": "Timothe",
+      "weight": 6480
+    },
+    {
+      "value": "Max",
+      "weight": 6475
+    },
+    {
+      "value": "Malik",
+      "weight": 6430
+    },
+    {
+      "value": "Ange",
+      "weight": 6410
+    },
+    {
+      "value": "Hector",
+      "weight": 6385
+    },
+    {
+      "value": "Ewan",
+      "weight": 6355
+    },
+    {
+      "value": "Matis",
+      "weight": 6345
+    },
+    {
+      "value": "Léonard",
+      "weight": 6255
+    },
+    {
+      "value": "Angelo",
+      "weight": 6250
+    },
+    {
+      "value": "Jimmy",
+      "weight": 6205
+    },
+    {
+      "value": "Gael",
+      "weight": 6180
+    },
+    {
+      "value": "Adel",
+      "weight": 6150
+    },
+    {
+      "value": "Fares",
+      "weight": 6145
+    },
+    {
+      "value": "Tanguy",
+      "weight": 6125
+    },
+    {
+      "value": "Gustave",
+      "weight": 6075
+    },
+    {
+      "value": "Imrane",
+      "weight": 6035
+    },
+    {
+      "value": "Lohan",
+      "weight": 6000
+    },
+    {
+      "value": "Yoann",
+      "weight": 5960
+    },
+    {
+      "value": "Octave",
+      "weight": 5940
+    },
+    {
+      "value": "Luc",
+      "weight": 5930
+    },
+    {
+      "value": "Paolo",
+      "weight": 5910
+    },
+    {
+      "value": "Tao",
+      "weight": 5900
+    },
+    {
+      "value": "Zayn",
+      "weight": 5870
+    },
+    {
+      "value": "Jayden",
+      "weight": 5855
+    },
+    {
+      "value": "Haroun",
+      "weight": 5760
+    },
+    {
+      "value": "Ilian",
+      "weight": 5725
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}
