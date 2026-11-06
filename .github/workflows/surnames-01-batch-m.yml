@@ -1,0 +1,28 @@
+name: SURNAMES-01 Batch M (Node 22)
+
+on:
+  push:
+    branches:
+      - research/surnames-01-batch-m
+    paths:
+      - data/players/surnames/countries/SCO.json
+      - data/players/surnames/countries/CAN.json
+      - data/players/surnames/countries/POL.json
+      - tests/surnames-01-batch-m.test.mjs
+      - .github/workflows/surnames-01-batch-m.yml
+
+permissions:
+  contents: read
+
+jobs:
+  surnames-batch-m:
+    name: Node 22 surname QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate Batch M only
+        run: node --test tests/surnames-01-batch-m.test.mjs
