@@ -1,428 +1,1253 @@
 {
   "schema_version": 2,
   "code": "RSA",
-  "cohort": "Country-tagged male first-name instances from validated public social-media profiles in South Africa; collection period and bearers' ages unspecified; not births or a national census",
+  "cohort": "Pooled unique men's South African footballer profiles (historical careers through 2025; including dual nationals) and South Africa men's rugby union test representatives with debut years 1950–2016; NOT birth counts or a national census",
   "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
   "source": {
-    "id": "name-census-social-profiles-male-first-names-za-top100",
-    "provider": "Name Census / Ninble, country-tagged male first-name Top-100 (social-media profile sample)",
-    "source_url": "https://github.com/Ninble/name-census-top-100/blob/27944ac7d285291793f20859ff845aea7787e74d/first-name-database.csv",
-    "source_method_url": "https://census.name/about/",
-    "source_commit": "27944ac7d285291793f20859ff845aea7787e74d",
-    "source_blob_sha": "89768a6b0903edfa7799dd4a996393b3d0c7748d",
-    "source_country_code": "ZA",
-    "sample_scope": "male first-name instances in the country-tagged social-profile sample; full country denominator not extracted here",
-    "metric": "observed count of geolocated country-tagged social-media profiles with each source-classified male first name; NOT estimated national bearer incidences, residents-wide counts or birth counts",
-    "license": "Upstream repository ships GNU GPL v3; review data redistribution/attribution obligations before production"
+    "id": "za-sampled-male-athletes-football-and-rugby-1950-2025",
+    "provider": "salimt/football-datasets (football men) + hautahi/Rugby-Wanderers (South Africa men's rugby Test players)",
+    "source_url": "https://github.com/salimt/football-datasets/blob/da9227e1f42baf74561324290dbf1ad2e3c00edd/datalake/transfermarkt/player_profiles/player_profiles.csv",
+    "source_commit": "da9227e1f42baf74561324290dbf1ad2e3c00edd",
+    "source_blob_sha": "19ead72834e0f1c4621c828c43d2bc72d98129d6",
+    "gender_basis": "men's professional footballer roster; sex not a separate column",
+    "country_scope_rule": "Team==SouthAfrica for men's rugby Test profiles OR exact 'South Africa' citizenship token in men's football profiles (dual nationals accepted); no other countries' first-name counts imported",
+    "first_name_extraction": "Single initial token of men's athlete full display name, corroborated against legal/home first name for football where available; reject punctuation, compounded initial forms and known surname particles/nicknames",
+    "count_type": "distinct named male athlete records, once per source player ID/full rugby name+debut; not nationwide frequency",
+    "metric": "observed number of distinct men recorded with the same first-name token in a union of two explicitly named male-sport datasets (one football record or rugby Test representative per athlete); raw pooled convenience-sample count, NOT a population statistic",
+    "license": "Both upstream repos provide no explicit dataset redistribution license. Transfermarkt/ESPN provenance and third-party dataset rights require legal review; this is research-only.",
+    "components": [
+      {
+        "sport": "football",
+        "source_url": "https://github.com/salimt/football-datasets/blob/da9227e1f42baf74561324290dbf1ad2e3c00edd/datalake/transfermarkt/player_profiles/player_profiles.csv",
+        "source_commit": "da9227e1f42baf74561324290dbf1ad2e3c00edd",
+        "source_blob_sha": "19ead72834e0f1c4621c828c43d2bc72d98129d6",
+        "filter": "citizenship includes exact South Africa; 2+ token displayed full name, verified home-country prefix when present",
+        "qualifying_profile_rows": 84
+      },
+      {
+        "sport": "rugby",
+        "source_url": "https://github.com/hautahi/Rugby-Wanderers/blob/9ec1e451645a79d4cbe06f8b0ed16a342129dc86/data/SouthAfrica.csv",
+        "source_commit": "9ec1e451645a79d4cbe06f8b0ed16a342129dc86",
+        "source_blob_sha": "9d9e7cb742773018e7cd79b0c9a846a17fcaaf9c",
+        "filter": "Team==SouthAfrica and Debut 1950–2016; one entry per male national team Test representative; first full-name token, Latin, no initials or name particles",
+        "qualifying_profile_rows": 502
+      }
+    ]
   },
-  "selection_policy": "Only country=ZA, source male gender=m, Unicode NFC single Latin-script given names; public country Top-100 only; no invented counts, no padding",
+  "selection_policy": "Select top 300 by observed count of distinct individuals across the explicitly defined pooled men's South African football-and-rugby cohort; ties favour a documented football-first-name occurrence for linguistic breadth, then newest football birth year/rugby debut year, then alphabetically. NO population or birth-year inference.",
   "coverage": {
     "target_names": 300,
-    "selected_names": 100,
-    "missing_names": 200,
-    "status": "incomplete",
-    "limitations": "Open source includes only its 100 country-specific top male first names. The full paid data and source microrecords have not been independently checked. Sampling and naming coverage may be biased; cannot claim representative nation-wide male first-name frequencies."
+    "selected_names": 300,
+    "missing_names": 0,
+    "eligible_distinct_names": 386,
+    "qualifying_male_athlete_profiles": 586,
+    "status": "complete_research_only",
+    "limitations": "Two distinct male sports are pooled as a NONREPRESENTATIVE convenience cohort (different recruitment, eras, demographic and regional coverage); individual counts have unit 'one listed male athlete', NOT comparable with national social-profile samples, registered births or resident frequencies. Explicit rugby/football mixture improves linguistic coverage but cannot eliminate sample bias.",
+    "source_population_breakdown": {
+      "footballers": 84,
+      "rugby_players": 502
+    }
   },
   "given_names": [
     {
-      "value": "Michael",
-      "weight": 914
-    },
-    {
-      "value": "Chris",
-      "weight": 904
-    },
-    {
-      "value": "David",
-      "weight": 892
-    },
-    {
-      "value": "John",
-      "weight": 698
-    },
-    {
-      "value": "Mark",
-      "weight": 696
-    },
-    {
-      "value": "Paul",
-      "weight": 693
-    },
-    {
-      "value": "James",
-      "weight": 623
-    },
-    {
-      "value": "Andrew",
-      "weight": 614
-    },
-    {
-      "value": "Daniel",
-      "weight": 597
-    },
-    {
-      "value": "Peter",
-      "weight": 579
-    },
-    {
-      "value": "King",
-      "weight": 537
+      "value": "Piet",
+      "weight": 11
     },
     {
       "value": "Johan",
-      "weight": 536
-    },
-    {
-      "value": "Ryan",
-      "weight": 496
-    },
-    {
-      "value": "Jason",
-      "weight": 465
+      "weight": 11
     },
     {
       "value": "Andre",
-      "weight": 454
+      "weight": 7
     },
     {
-      "value": "Richard",
-      "weight": 445
-    },
-    {
-      "value": "Craig",
-      "weight": 440
-    },
-    {
-      "value": "Matthew",
-      "weight": 422
-    },
-    {
-      "value": "Mike",
-      "weight": 421
-    },
-    {
-      "value": "Alex",
-      "weight": 409
-    },
-    {
-      "value": "Kevin",
-      "weight": 407
-    },
-    {
-      "value": "Shaun",
-      "weight": 386
-    },
-    {
-      "value": "Jacques",
-      "weight": 369
-    },
-    {
-      "value": "Sean",
-      "weight": 367
-    },
-    {
-      "value": "Martin",
-      "weight": 359
-    },
-    {
-      "value": "Bongani",
-      "weight": 358
-    },
-    {
-      "value": "Jonathan",
-      "weight": 355
-    },
-    {
-      "value": "Kyle",
-      "weight": 349
-    },
-    {
-      "value": "Justin",
-      "weight": 340
-    },
-    {
-      "value": "Sam",
-      "weight": 333
-    },
-    {
-      "value": "Pieter",
-      "weight": 332
-    },
-    {
-      "value": "Thabo",
-      "weight": 330
-    },
-    {
-      "value": "Lee",
-      "weight": 316
-    },
-    {
-      "value": "Sibusiso",
-      "weight": 316
-    },
-    {
-      "value": "Steven",
-      "weight": 314
-    },
-    {
-      "value": "Robert",
-      "weight": 309
-    },
-    {
-      "value": "Brian",
-      "weight": 304
-    },
-    {
-      "value": "Adam",
-      "weight": 301
-    },
-    {
-      "value": "Stephen",
-      "weight": 301
-    },
-    {
-      "value": "Thabiso",
-      "weight": 296
-    },
-    {
-      "value": "Simon",
-      "weight": 295
-    },
-    {
-      "value": "Jaco",
-      "weight": 292
-    },
-    {
-      "value": "Ben",
-      "weight": 288
-    },
-    {
-      "value": "Tshepo",
-      "weight": 281
-    },
-    {
-      "value": "Nick",
-      "weight": 280
-    },
-    {
-      "value": "François",
-      "weight": 279
-    },
-    {
-      "value": "Siyabonga",
-      "weight": 275
-    },
-    {
-      "value": "Ian",
-      "weight": 274
-    },
-    {
-      "value": "George",
-      "weight": 267
-    },
-    {
-      "value": "Patrick",
-      "weight": 260
-    },
-    {
-      "value": "Joe",
-      "weight": 256
+      "value": "John",
+      "weight": 6
     },
     {
       "value": "Jan",
-      "weight": 254
+      "weight": 6
     },
     {
-      "value": "Jack",
-      "weight": 249
+      "value": "Jaco",
+      "weight": 5
     },
     {
-      "value": "Steve",
-      "weight": 249
-    },
-    {
-      "value": "Gary",
-      "weight": 246
-    },
-    {
-      "value": "Dean",
-      "weight": 242
-    },
-    {
-      "value": "Dylan",
-      "weight": 238
-    },
-    {
-      "value": "Grant",
-      "weight": 238
-    },
-    {
-      "value": "Neil",
-      "weight": 238
-    },
-    {
-      "value": "Louis",
-      "weight": 237
-    },
-    {
-      "value": "Thomas",
-      "weight": 237
-    },
-    {
-      "value": "Wayne",
-      "weight": 237
-    },
-    {
-      "value": "Andy",
-      "weight": 234
-    },
-    {
-      "value": "Gavin",
-      "weight": 234
-    },
-    {
-      "value": "Tebogo",
-      "weight": 233
-    },
-    {
-      "value": "Dan",
-      "weight": 232
-    },
-    {
-      "value": "Tom",
-      "weight": 230
-    },
-    {
-      "value": "Thabang",
-      "weight": 229
-    },
-    {
-      "value": "Sandile",
-      "weight": 226
-    },
-    {
-      "value": "Christopher",
-      "weight": 224
-    },
-    {
-      "value": "Prince",
-      "weight": 224
-    },
-    {
-      "value": "Brandon",
-      "weight": 223
-    },
-    {
-      "value": "Jay",
-      "weight": 223
-    },
-    {
-      "value": "Rob",
-      "weight": 222
-    },
-    {
-      "value": "Gareth",
-      "weight": 221
-    },
-    {
-      "value": "Dave",
-      "weight": 219
-    },
-    {
-      "value": "Sipho",
-      "weight": 219
-    },
-    {
-      "value": "Marc",
-      "weight": 215
-    },
-    {
-      "value": "Luke",
-      "weight": 213
-    },
-    {
-      "value": "Matt",
-      "weight": 213
-    },
-    {
-      "value": "Anthony",
-      "weight": 210
-    },
-    {
-      "value": "Andile",
-      "weight": 209
-    },
-    {
-      "value": "Charles",
-      "weight": 207
-    },
-    {
-      "value": "Warren",
-      "weight": 207
-    },
-    {
-      "value": "Liam",
-      "weight": 206
+      "value": "Willie",
+      "weight": 5
     },
     {
       "value": "Deon",
-      "weight": 203
+      "weight": 5
     },
     {
-      "value": "Nathan",
-      "weight": 203
+      "value": "Jannie",
+      "weight": 5
     },
     {
-      "value": "Tony",
-      "weight": 203
+      "value": "Robbie",
+      "weight": 5
     },
     {
-      "value": "Themba",
-      "weight": 202
+      "value": "Chris",
+      "weight": 5
     },
     {
-      "value": "Scott",
-      "weight": 200
+      "value": "Dean",
+      "weight": 4
     },
     {
-      "value": "Thato",
-      "weight": 197
+      "value": "Pierre",
+      "weight": 4
     },
     {
-      "value": "Lucky",
-      "weight": 194
+      "value": "Wynand",
+      "weight": 4
+    },
+    {
+      "value": "Paul",
+      "weight": 4
+    },
+    {
+      "value": "Francois",
+      "weight": 4
+    },
+    {
+      "value": "Peter",
+      "weight": 4
+    },
+    {
+      "value": "Danie",
+      "weight": 4
+    },
+    {
+      "value": "Dawie",
+      "weight": 4
+    },
+    {
+      "value": "Tommy",
+      "weight": 4
+    },
+    {
+      "value": "Hannes",
+      "weight": 4
+    },
+    {
+      "value": "Ian",
+      "weight": 4
+    },
+    {
+      "value": "Gert",
+      "weight": 4
+    },
+    {
+      "value": "Michael",
+      "weight": 3
+    },
+    {
+      "value": "Mike",
+      "weight": 3
+    },
+    {
+      "value": "Franco",
+      "weight": 3
+    },
+    {
+      "value": "Warren",
+      "weight": 3
+    },
+    {
+      "value": "Frans",
+      "weight": 3
+    },
+    {
+      "value": "Eben",
+      "weight": 3
+    },
+    {
+      "value": "Jacques",
+      "weight": 3
+    },
+    {
+      "value": "Werner",
+      "weight": 3
+    },
+    {
+      "value": "Schalk",
+      "weight": 3
+    },
+    {
+      "value": "Johann",
+      "weight": 3
+    },
+    {
+      "value": "Gerrie",
+      "weight": 3
+    },
+    {
+      "value": "Christo",
+      "weight": 3
+    },
+    {
+      "value": "Daan",
+      "weight": 3
+    },
+    {
+      "value": "Louis",
+      "weight": 3
+    },
+    {
+      "value": "Dave",
+      "weight": 3
+    },
+    {
+      "value": "Dick",
+      "weight": 3
+    },
+    {
+      "value": "Pieter",
+      "weight": 3
+    },
+    {
+      "value": "James",
+      "weight": 3
+    },
+    {
+      "value": "Hennie",
+      "weight": 3
+    },
+    {
+      "value": "Robert",
+      "weight": 3
+    },
+    {
+      "value": "Colin",
+      "weight": 3
+    },
+    {
+      "value": "Martiens",
+      "weight": 3
+    },
+    {
+      "value": "Sakkie",
+      "weight": 3
+    },
+    {
+      "value": "Steven",
+      "weight": 2
+    },
+    {
+      "value": "Luke",
+      "weight": 2
+    },
+    {
+      "value": "Waylon",
+      "weight": 2
+    },
+    {
+      "value": "Alessandro",
+      "weight": 2
+    },
+    {
+      "value": "Max",
+      "weight": 2
+    },
+    {
+      "value": "Tristan",
+      "weight": 2
+    },
+    {
+      "value": "Quinton",
+      "weight": 2
+    },
+    {
+      "value": "Ricardo",
+      "weight": 2
+    },
+    {
+      "value": "Bradley",
+      "weight": 2
+    },
+    {
+      "value": "Lukas",
+      "weight": 2
+    },
+    {
+      "value": "Andrew",
+      "weight": 2
+    },
+    {
+      "value": "Joel",
+      "weight": 2
+    },
+    {
+      "value": "Mark",
+      "weight": 2
+    },
+    {
+      "value": "Bongani",
+      "weight": 2
+    },
+    {
+      "value": "Jeremy",
+      "weight": 2
+    },
+    {
+      "value": "Ruan",
+      "weight": 2
+    },
+    {
+      "value": "Lionel",
+      "weight": 2
+    },
+    {
+      "value": "Cobus",
+      "weight": 2
+    },
+    {
+      "value": "Lood",
+      "weight": 2
+    },
+    {
+      "value": "Trevor",
+      "weight": 2
+    },
+    {
+      "value": "Pat",
+      "weight": 2
+    },
+    {
+      "value": "Tiaan",
+      "weight": 2
+    },
+    {
+      "value": "Charl",
+      "weight": 2
+    },
+    {
+      "value": "Juan",
+      "weight": 2
+    },
+    {
+      "value": "Willem",
+      "weight": 2
+    },
+    {
+      "value": "Jean",
+      "weight": 2
+    },
+    {
+      "value": "Morne",
+      "weight": 2
+    },
+    {
+      "value": "Adriaan",
+      "weight": 2
+    },
+    {
+      "value": "Brian",
+      "weight": 2
+    },
+    {
+      "value": "Heinrich",
+      "weight": 2
+    },
+    {
+      "value": "Gary",
+      "weight": 2
+    },
+    {
+      "value": "Richard",
+      "weight": 2
+    },
+    {
+      "value": "Norman",
+      "weight": 2
+    },
+    {
+      "value": "Adrian",
+      "weight": 2
+    },
+    {
+      "value": "Butch",
+      "weight": 2
+    },
+    {
+      "value": "Joe",
+      "weight": 2
+    },
+    {
+      "value": "Marius",
+      "weight": 2
+    },
+    {
+      "value": "Anton",
+      "weight": 2
+    },
+    {
+      "value": "Braam",
+      "weight": 2
+    },
+    {
+      "value": "Wayne",
+      "weight": 2
+    },
+    {
+      "value": "Edrich",
+      "weight": 2
+    },
+    {
+      "value": "Henry",
+      "weight": 2
+    },
+    {
+      "value": "Kobus",
+      "weight": 2
+    },
+    {
+      "value": "Steve",
+      "weight": 2
+    },
+    {
+      "value": "Keith",
+      "weight": 2
+    },
+    {
+      "value": "Attie",
+      "weight": 2
+    },
+    {
+      "value": "Avril",
+      "weight": 2
+    },
+    {
+      "value": "Ray",
+      "weight": 2
+    },
+    {
+      "value": "Thys",
+      "weight": 2
+    },
+    {
+      "value": "Theuns",
+      "weight": 2
+    },
+    {
+      "value": "Roy",
+      "weight": 2
+    },
+    {
+      "value": "Joggie",
+      "weight": 2
+    },
+    {
+      "value": "Albie",
+      "weight": 2
+    },
+    {
+      "value": "Andy",
+      "weight": 2
+    },
+    {
+      "value": "Charlie",
+      "weight": 2
+    },
+    {
+      "value": "Tiny",
+      "weight": 2
+    },
+    {
+      "value": "Des",
+      "weight": 2
+    },
+    {
+      "value": "Basie",
+      "weight": 2
+    },
+    {
+      "value": "Fletcher",
+      "weight": 1
+    },
+    {
+      "value": "Arran",
+      "weight": 1
+    },
+    {
+      "value": "Christopher",
+      "weight": 1
+    },
+    {
+      "value": "Elyh",
+      "weight": 1
+    },
+    {
+      "value": "Joshua",
+      "weight": 1
+    },
+    {
+      "value": "Adam",
+      "weight": 1
+    },
+    {
+      "value": "Shandre",
+      "weight": 1
+    },
+    {
+      "value": "Alwande",
+      "weight": 1
+    },
+    {
+      "value": "Ime",
+      "weight": 1
+    },
+    {
+      "value": "Olwethu",
+      "weight": 1
+    },
+    {
+      "value": "Kgaogelo",
+      "weight": 1
+    },
+    {
+      "value": "Lesedi",
+      "weight": 1
+    },
+    {
+      "value": "András",
+      "weight": 1
+    },
+    {
+      "value": "Antonio",
+      "weight": 1
+    },
+    {
+      "value": "Simon",
+      "weight": 1
+    },
+    {
+      "value": "Bongokuhle",
+      "weight": 1
+    },
+    {
+      "value": "Lyle",
+      "weight": 1
+    },
+    {
+      "value": "Tashreeq",
+      "weight": 1
+    },
+    {
+      "value": "Kobamelo",
+      "weight": 1
+    },
+    {
+      "value": "Nikola",
+      "weight": 1
+    },
+    {
+      "value": "Njabulo",
+      "weight": 1
+    },
+    {
+      "value": "Ethan",
+      "weight": 1
+    },
+    {
+      "value": "Keanu",
+      "weight": 1
+    },
+    {
+      "value": "Liam",
+      "weight": 1
+    },
+    {
+      "value": "Loïc",
+      "weight": 1
+    },
+    {
+      "value": "Luther",
+      "weight": 1
+    },
+    {
+      "value": "Arthur",
+      "weight": 1
+    },
+    {
+      "value": "Kurt",
+      "weight": 1
+    },
+    {
+      "value": "Mihlali",
+      "weight": 1
+    },
+    {
+      "value": "Yazeed",
+      "weight": 1
+    },
+    {
+      "value": "Maarten",
+      "weight": 1
+    },
+    {
+      "value": "Marvin",
+      "weight": 1
+    },
+    {
+      "value": "Lebogang",
+      "weight": 1
+    },
+    {
+      "value": "Lindo",
+      "weight": 1
+    },
+    {
+      "value": "Darren",
+      "weight": 1
+    },
+    {
+      "value": "Keagan",
+      "weight": 1
+    },
+    {
+      "value": "Nazeem",
+      "weight": 1
+    },
+    {
+      "value": "Kamohelo",
+      "weight": 1
+    },
+    {
+      "value": "Kearyn",
+      "weight": 1
+    },
+    {
+      "value": "Lars",
+      "weight": 1
+    },
+    {
+      "value": "Keaghan",
+      "weight": 1
+    },
+    {
+      "value": "Luca",
+      "weight": 1
+    },
+    {
+      "value": "Alex",
+      "weight": 1
+    },
+    {
+      "value": "Elrio",
+      "weight": 1
+    },
+    {
+      "value": "Asanda",
+      "weight": 1
+    },
+    {
+      "value": "Carlos",
+      "weight": 1
+    },
+    {
+      "value": "Kofi",
+      "weight": 1
+    },
+    {
+      "value": "Mbulelo",
+      "weight": 1
+    },
+    {
+      "value": "Glen",
+      "weight": 1
+    },
+    {
+      "value": "Matthew",
+      "weight": 1
+    },
+    {
+      "value": "Siyabonga",
+      "weight": 1
+    },
+    {
+      "value": "Glynn",
+      "weight": 1
+    },
+    {
+      "value": "Alfred",
+      "weight": 1
+    },
+    {
+      "value": "Vincenzo",
+      "weight": 1
+    },
+    {
+      "value": "Eric",
+      "weight": 1
+    },
+    {
+      "value": "Bongi",
+      "weight": 1
+    },
+    {
+      "value": "Jamba",
+      "weight": 1
+    },
+    {
+      "value": "Malcolm",
+      "weight": 1
+    },
+    {
+      "value": "Rohan",
+      "weight": 1
+    },
+    {
+      "value": "Uzair",
+      "weight": 1
+    },
+    {
+      "value": "Jesse",
+      "weight": 1
+    },
+    {
+      "value": "Rudy",
+      "weight": 1
+    },
+    {
+      "value": "Vincent",
+      "weight": 1
+    },
+    {
+      "value": "Cornal",
+      "weight": 1
+    },
+    {
+      "value": "Damian",
+      "weight": 1
+    },
+    {
+      "value": "Handre",
+      "weight": 1
+    },
+    {
+      "value": "Julian",
+      "weight": 1
+    },
+    {
+      "value": "Marcel",
+      "weight": 1
+    },
+    {
+      "value": "Marnitz",
+      "weight": 1
+    },
+    {
+      "value": "Nizaam",
+      "weight": 1
+    },
+    {
+      "value": "Oupa",
+      "weight": 1
+    },
+    {
+      "value": "Stephan",
+      "weight": 1
+    },
+    {
+      "value": "Arno",
+      "weight": 1
+    },
+    {
+      "value": "Jano",
+      "weight": 1
+    },
+    {
+      "value": "Lourens",
+      "weight": 1
+    },
+    {
+      "value": "Siya",
+      "weight": 1
+    },
+    {
+      "value": "Coenie",
+      "weight": 1
+    },
+    {
+      "value": "Duane",
+      "weight": 1
+    },
+    {
+      "value": "Elton",
+      "weight": 1
+    },
+    {
+      "value": "Juandre",
+      "weight": 1
+    },
+    {
+      "value": "Marcell",
+      "weight": 1
+    },
+    {
+      "value": "Ashley",
+      "weight": 1
+    },
+    {
+      "value": "Gerhard",
+      "weight": 1
+    },
+    {
+      "value": "Alistair",
+      "weight": 1
+    },
+    {
+      "value": "Bandise",
+      "weight": 1
+    },
+    {
+      "value": "Bjorn",
+      "weight": 1
+    },
+    {
+      "value": "Flip",
+      "weight": 1
+    },
+    {
+      "value": "Gio",
+      "weight": 1
+    },
+    {
+      "value": "Keegan",
+      "weight": 1
+    },
+    {
+      "value": "Lwazi",
+      "weight": 1
+    },
+    {
+      "value": "Patrick",
+      "weight": 1
+    },
+    {
+      "value": "Dewald",
+      "weight": 1
+    },
+    {
+      "value": "Wian",
+      "weight": 1
+    },
+    {
+      "value": "Zane",
+      "weight": 1
+    },
+    {
+      "value": "Andries",
+      "weight": 1
+    },
+    {
+      "value": "Jongi",
+      "weight": 1
+    },
+    {
+      "value": "Odwa",
+      "weight": 1
+    },
+    {
+      "value": "Tendai",
+      "weight": 1
+    },
+    {
+      "value": "Bismarck",
+      "weight": 1
+    },
+    {
+      "value": "Heinke",
+      "weight": 1
+    },
+    {
+      "value": "Ryan",
+      "weight": 1
+    },
+    {
+      "value": "Akona",
+      "weight": 1
+    },
+    {
+      "value": "Bevin",
+      "weight": 1
+    },
+    {
+      "value": "Chiliboy",
+      "weight": 1
+    },
+    {
+      "value": "Hilton",
+      "weight": 1
+    },
+    {
+      "value": "Kabamba",
+      "weight": 1
+    },
+    {
+      "value": "Meyer",
+      "weight": 1
+    },
+    {
+      "value": "Ricky",
+      "weight": 1
+    },
+    {
+      "value": "Tonderai",
+      "weight": 1
+    },
+    {
+      "value": "Bryan",
+      "weight": 1
+    },
+    {
+      "value": "Eddie",
+      "weight": 1
+    },
+    {
+      "value": "Fourie",
+      "weight": 1
+    },
+    {
+      "value": "Gurthro",
+      "weight": 1
+    },
+    {
+      "value": "Hanyani",
+      "weight": 1
+    },
+    {
+      "value": "Henno",
+      "weight": 1
+    },
+    {
+      "value": "Solly",
+      "weight": 1
+    },
+    {
+      "value": "Tim",
+      "weight": 1
+    },
+    {
+      "value": "Ashwin",
+      "weight": 1
+    },
+    {
+      "value": "Dale",
+      "weight": 1
+    },
+    {
+      "value": "Derick",
+      "weight": 1
+    },
+    {
+      "value": "Gcobani",
+      "weight": 1
+    },
+    {
+      "value": "Geo",
+      "weight": 1
+    },
+    {
+      "value": "Hendrik",
+      "weight": 1
+    },
+    {
+      "value": "Jaque",
+      "weight": 1
+    },
+    {
+      "value": "Jorrie",
+      "weight": 1
+    },
+    {
+      "value": "Wikus",
+      "weight": 1
+    },
+    {
+      "value": "Bakkies",
+      "weight": 1
+    },
+    {
+      "value": "Bolla",
+      "weight": 1
+    },
+    {
+      "value": "Brent",
+      "weight": 1
+    },
+    {
+      "value": "Craig",
+      "weight": 1
+    },
+    {
+      "value": "Delarey",
+      "weight": 1
+    },
+    {
+      "value": "Faan",
+      "weight": 1
+    },
+    {
+      "value": "Friedrich",
+      "weight": 1
+    },
+    {
+      "value": "Hendro",
+      "weight": 1
+    },
+    {
+      "value": "Hottie",
+      "weight": 1
+    },
+    {
+      "value": "Marco",
+      "weight": 1
+    },
+    {
+      "value": "Pedrie",
+      "weight": 1
+    },
+    {
+      "value": "Shaun",
+      "weight": 1
+    },
+    {
+      "value": "Wessel",
+      "weight": 1
+    },
+    {
+      "value": "Conrad",
+      "weight": 1
+    },
+    {
+      "value": "Etienne",
+      "weight": 1
+    },
+    {
+      "value": "Lawrence",
+      "weight": 1
+    },
+    {
+      "value": "Neil",
+      "weight": 1
+    },
+    {
+      "value": "Victor",
+      "weight": 1
+    },
+    {
+      "value": "Dan",
+      "weight": 1
+    },
+    {
+      "value": "Grant",
+      "weight": 1
+    },
+    {
+      "value": "Jannes",
+      "weight": 1
+    },
+    {
+      "value": "Thinus",
+      "weight": 1
+    },
+    {
+      "value": "Albert",
+      "weight": 1
+    },
+    {
+      "value": "Breyton",
+      "weight": 1
+    },
+    {
+      "value": "Corne",
+      "weight": 1
+    },
+    {
+      "value": "Kaya",
+      "weight": 1
+    },
+    {
+      "value": "Selborne",
+      "weight": 1
+    },
+    {
+      "value": "Gaffie",
+      "weight": 1
+    },
+    {
+      "value": "McNeil",
+      "weight": 1
+    },
+    {
+      "value": "Stefan",
+      "weight": 1
+    },
+    {
+      "value": "Bobby",
+      "weight": 1
+    },
+    {
+      "value": "Percy",
+      "weight": 1
+    },
+    {
+      "value": "Russell",
+      "weight": 1
+    },
+    {
+      "value": "Schutte",
+      "weight": 1
+    },
+    {
+      "value": "Justin",
+      "weight": 1
+    },
+    {
+      "value": "Vlok",
+      "weight": 1
+    },
+    {
+      "value": "Garry",
+      "weight": 1
+    },
+    {
+      "value": "Krynauw",
+      "weight": 1
+    },
+    {
+      "value": "Mornay",
+      "weight": 1
+    },
+    {
+      "value": "Toks",
+      "weight": 1
+    },
+    {
+      "value": "Brendan",
+      "weight": 1
+    },
+    {
+      "value": "Christiaan",
+      "weight": 1
+    },
+    {
+      "value": "Elandre",
+      "weight": 1
+    },
+    {
+      "value": "Fritz",
+      "weight": 1
+    },
+    {
+      "value": "Japie",
+      "weight": 1
+    },
+    {
+      "value": "Ollie",
+      "weight": 1
+    },
+    {
+      "value": "Phillip",
+      "weight": 1
+    },
+    {
+      "value": "Rudolf",
+      "weight": 1
+    },
+    {
+      "value": "Balie",
+      "weight": 1
+    },
+    {
+      "value": "Chester",
+      "weight": 1
+    },
+    {
+      "value": "Gavin",
+      "weight": 1
+    },
+    {
+      "value": "Guy",
+      "weight": 1
+    },
+    {
+      "value": "Joost",
+      "weight": 1
+    },
+    {
+      "value": "Naka",
+      "weight": 1
     },
     {
       "value": "Nico",
-      "weight": 192
+      "weight": 1
     },
     {
-      "value": "Thulani",
-      "weight": 192
+      "value": "Ruben",
+      "weight": 1
     },
     {
-      "value": "Just",
-      "weight": 191
+      "value": "Adri",
+      "weight": 1
     },
     {
-      "value": "Frank",
-      "weight": 188
+      "value": "Drikus",
+      "weight": 1
     },
     {
-      "value": "William",
-      "weight": 188
+      "value": "Hugh",
+      "weight": 1
     },
     {
-      "value": "Leon",
-      "weight": 185
+      "value": "Theo",
+      "weight": 1
     },
     {
-      "value": "Riaan",
-      "weight": 184
+      "value": "Christian",
+      "weight": 1
     },
     {
-      "value": "Jordan",
-      "weight": 182
+      "value": "Adolf",
+      "weight": 1
+    },
+    {
+      "value": "Hein",
+      "weight": 1
+    },
+    {
+      "value": "Niel",
+      "weight": 1
+    },
+    {
+      "value": "Garth",
+      "weight": 1
+    },
+    {
+      "value": "Helgard",
+      "weight": 1
+    },
+    {
+      "value": "Uli",
+      "weight": 1
+    },
+    {
+      "value": "Wahl",
+      "weight": 1
+    },
+    {
+      "value": "Kulu",
+      "weight": 1
+    },
+    {
+      "value": "Nick",
+      "weight": 1
     }
   ],
   "origin_review": "not_required_by_owner",
