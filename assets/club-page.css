@@ -3,6 +3,8 @@
 .club-first-paint-header .club-crest{visibility:visible}
 /* Static shell has no identity until bootstrap; its fixed crest box remains blank. */
 .club-first-paint-header .club-crest:not([data-club-crest])::before{display:none}
+.club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:fill;flex:none}
 .club-first-paint-header h1{min-height:1.8em}
 .club-first-paint-header .club-location,.club-first-paint-header .club-header-division{min-height:1.5em}
 .club-first-paint-panel{min-height:160px;margin-top:14px;visibility:hidden}

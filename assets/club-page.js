@@ -31,9 +31,10 @@
   // Move already-loaded crest hosts rather than tearing down images on navigation,
   // locale changes or a sporting summary refresh. Match within the relevant panel:
   // the same club may legitimately appear more than once on a page.
-  const reuseCrests=(previous,next)=>{
-   const available=[...previous.querySelectorAll('[data-club-crest]')];
-   for(const incoming of [...next.querySelectorAll('[data-club-crest]')]){
+  const reuseCrests=(previous,next,skipHeader=false)=>{
+   const matches=root=>[...root.querySelectorAll('[data-club-crest]')].filter(node=>!skipHeader||!node.closest('.club-header'));
+   const available=matches(previous);
+   for(const incoming of matches(next)){
     const index=available.findIndex(old=>old.dataset.clubCrest===incoming.dataset.clubCrest
      &&old.className===incoming.className);
     if(index<0)continue;
@@ -43,8 +44,11 @@
   };
   // SAF-03: explicit same-origin league navigation for primary Safari taps.
   // Modified clicks and middle clicks remain native links.
+  const boundDivisionLinks=new WeakSet();
   const bindDivisionLinks=root=>{
    for(const link of root.querySelectorAll('a[data-club-division-link]')){
+    if(boundDivisionLinks.has(link))continue;
+    boundDivisionLinks.add(link);
     link.addEventListener('click',event=>{
      if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
      const destination=new URL(link.href,location.href);
@@ -60,30 +64,77 @@
    const activeHref=active?.getAttribute('href');
    const activeTranslate=active?.hasAttribute('data-translate-club');
    const scrollX=window.scrollX,scrollY=window.scrollY;
-   const tabScrollLeft=host.querySelector('.club-tabs')?.scrollLeft;
-   const markup=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
-   const staging=document.createElement('div');staging.innerHTML=markup;
-   // The header is unchanged across tabs, but locale switches need a translated
-   // header; in both cases existing loaded crest nodes must survive.
-   if(preserveCrest&&host.querySelector('.club-header')&&host.dataset.clubBase===selected.base){
-    staging.querySelector('.club-header')?.replaceWith(host.querySelector('.club-header'));
-   }
-   reuseCrests(host,staging);
-   host.replaceChildren(...staging.childNodes);
+   const previousTabs=host.querySelector(':scope > .club-tabs');
+   const tabScrollLeft=previousTabs?.scrollLeft;
+   const staging=document.createElement('div');
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
+   const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
+   let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
+   if(header&&stagedHeader){
+    const oldCrest=header.querySelector('.club-crest'),incoming=stagedHeader.querySelector('.club-crest');
+    const currentSrc=oldCrest?.querySelector('img')?.getAttribute('src')||null;
+    const expectedSrc=incoming?.querySelector('img')?.getAttribute('src')||null;
+    if(oldCrest&&incoming){
+     if(oldCrest.dataset.clubCrest===incoming.dataset.clubCrest&&currentSrc===expectedSrc){
+      oldCrest.setAttribute('aria-label',incoming.getAttribute('aria-label'));
+      oldCrest.setAttribute('role','img');
+     }else oldCrest.replaceWith(incoming);
+    }
+    const title=header.querySelector('#club-title'),nextTitle=stagedHeader.querySelector('#club-title');
+    if(title&&nextTitle&&title.textContent!==nextTitle.textContent)title.textContent=nextTitle.textContent;
+    for(const selector of ['.club-location','.club-header-division']){
+     const existing=header.querySelector(selector),next=stagedHeader.querySelector(selector);
+     if(existing&&next&&existing.innerHTML!==next.innerHTML)existing.innerHTML=next.innerHTML;
+    }
+    header.removeAttribute('aria-hidden');
+   }else if(stagedHeader){header=stagedHeader;host.prepend(header)}
+   if(tabs&&stagedTabs){
+    tabs.setAttribute('aria-label',stagedTabs.getAttribute('aria-label'));
+    const oldLinks=[...tabs.querySelectorAll('a')],newLinks=[...stagedTabs.querySelectorAll('a')];
+    if(oldLinks.length!==newLinks.length)throw Error('Club tabs mismatch');
+    for(let i=0;i<oldLinks.length;i++){
+     const old=oldLinks[i],next=newLinks[i];
+     if(old.getAttribute('href')!==next.getAttribute('href'))old.setAttribute('href',next.getAttribute('href'));
+     if(old.textContent!==next.textContent)old.textContent=next.textContent;
+     old.classList.toggle('is-active',next.classList.contains('is-active'));
+     if(next.hasAttribute('aria-current'))old.setAttribute('aria-current','page');
+     else old.removeAttribute('aria-current');
+    }
+   }else if(stagedTabs){tabs=stagedTabs;header.after(tabs)}
+   // Preserve the original first-paint header, tab links, scroll and crest image nodes.
+   reuseCrests(host,staging,true);
+   for(const child of [...host.childNodes])if(child!==header&&child!==tabs)child.remove();
+   for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs)host.append(child);
    host.dataset.clubBase=selected.base;
-   // SAF-04: preserve the same first-paint scroll position and edge fade after each render.
-   const newTabs=host.querySelector('.club-tabs');
-   if(newTabs){
+   if(tabs){
     const key='football-architect:club-tabs-scroll:'+selected.base;
-    if(Number.isFinite(tabScrollLeft))newTabs.scrollLeft=tabScrollLeft;
-    else try{const saved=Number(sessionStorage.getItem(key));if(Number.isFinite(saved)&&saved>=0)newTabs.scrollLeft=saved}catch{}
+    if(Number.isFinite(tabScrollLeft))tabs.scrollLeft=tabScrollLeft;
+    else try{const saved=sessionStorage.getItem(key),n=Number(saved);if(saved!==null&&Number.isFinite(n)&&n>=0)tabs.scrollLeft=n}catch{}
     const syncTabEdges=()=>{
-     const maximum=Math.max(0,newTabs.scrollWidth-newTabs.clientWidth);
-     newTabs.dataset.canScrollLeft=String(maximum>1&&newTabs.scrollLeft>1);
-     newTabs.dataset.canScrollRight=String(maximum>1&&newTabs.scrollLeft<maximum-1);
+     const maximum=Math.max(0,tabs.scrollWidth-tabs.clientWidth);
+     tabs.dataset.canScrollLeft=String(maximum>1&&tabs.scrollLeft>1);
+     tabs.dataset.canScrollRight=String(maximum>1&&tabs.scrollLeft<maximum-1);
     };
     syncTabEdges();
-    newTabs.addEventListener('scroll',()=>{syncTabEdges();try{sessionStorage.setItem(key,String(newTabs.scrollLeft))}catch{}},{passive:true});
+    if(tabs.dataset.clubInteractionsBound!=='true'){
+     tabs.dataset.clubInteractionsBound='true';
+     tabs.addEventListener('scroll',()=>{syncTabEdges();try{sessionStorage.setItem(key,String(tabs.scrollLeft))}catch{}},{passive:true});
+     tabs.addEventListener('click',event=>{
+      const link=event.target.closest?.('a');
+      if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+      const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
+      if(!next||next.base!==selected.base)return;
+      event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
+      selected=next;paint(true);
+      tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
+     });
+     tabs.addEventListener('keydown',event=>{
+      const links=[...tabs.querySelectorAll('a')],i=links.indexOf(event.target);
+      if(i<0)return;
+      const n=links.length,next={ArrowRight:(i+1)%n,ArrowLeft:(i+n-1)%n,Home:0,End:n-1}[event.key];
+      if(next!==undefined){event.preventDefault();links[next].focus()}
+     });
+    }
    }
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
@@ -100,28 +151,9 @@
     translate.setAttribute('aria-pressed',String(translated));
     translate.textContent=model.copies[language()][translated?'originalLabel':'translateLabel'];
    });
-   // Native links preserve standard Tab/Enter behavior; arrows, Home and End move focus.
-   const links=[...host.querySelectorAll('.club-tabs a')];
-   for(const link of links)link.addEventListener('click',event=>{
-    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-    const nextUrl=new URL(link.href);
-    const next=model.route(nextUrl.pathname);
-    if(!next||next.base!==selected.base)return;
-    event.preventDefault();
-    history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-    selected=next;
-    paint(true);
-    host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});
-   });
-   for(const link of links)link.addEventListener('keydown',event=>{
-    const i=links.indexOf(link),n=links.length;
-    const next={ArrowRight:(i+1)%n,ArrowLeft:(i+n-1)%n,Home:0,End:n-1}[event.key];
-    if(next!==undefined){event.preventDefault();links[next].focus();}
-   });
    if(active){
     const replacement=activeTranslate?host.querySelector('[data-translate-club]')
-     :activeHref?[...host.querySelectorAll('a')].find(link=>link.getAttribute('href')===activeHref)
-     :null;
+     :activeHref?[...host.querySelectorAll('a')].find(link=>link.getAttribute('href')===activeHref):null;
     replacement?.focus({preventScroll:true});
     if(window.scrollX!==scrollX||window.scrollY!==scrollY)window.scrollTo(scrollX,scrollY);
    }
@@ -172,7 +204,9 @@
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
-  host.replaceChildren();const message=document.createElement('p');
+  // Manifest failure is confirmed, but permanent catalog identity and navigation remain valid.
+  for(const child of [...host.children])if(!child.matches('.club-header,.club-tabs'))child.remove();
+  const message=document.createElement('p');message.className='app-panel club-load-error';
   message.setAttribute('role','alert');message.textContent=model.copies[language()].error;host.append(message);
  }
 })();
