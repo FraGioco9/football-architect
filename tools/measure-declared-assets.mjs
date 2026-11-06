@@ -1,6 +1,5 @@
 // Repository-local declared asset footprint; never a browser transfer metric.
 import {readFileSync,statSync} from "node:fs";
-import {posix} from "node:path";
 import {pathToFileURL} from "node:url";
 
 export function resolveLocalAsset(route,ref){

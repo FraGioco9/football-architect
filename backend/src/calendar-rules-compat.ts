@@ -13,7 +13,7 @@ export function legacySeasonOneRules<T extends Division>(divisions:readonly T[])
  const restored=divisions.map(division=>({...division,rules:{...division.rules,phases:division.rules.phases.map(phase=>{
   const key=division.id+':'+phase.id;
   let markers:string[];try{markers=[...calendarModel.domesticPhaseMarkers(division.id,phase.id)]}catch{return fail()}
-  if(!markers||seen.has(key)||'calendarEvents' in phase||!Array.isArray(markers))return fail();
+  if(seen.has(key)||'calendarEvents' in phase)return fail();
   seen.add(key);
   const {id,type,labelKey,...rest}=phase;
   return {id,type,labelKey,calendarEvents:[...markers],...rest};
