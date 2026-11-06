@@ -1,0 +1,1223 @@
+{
+  "schema_version": 2,
+  "code": "RUS",
+  "cohort": "male name occurrences in Russian-language registries underlying pinned third-party name dataset (period unspecified; not births)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "ru-sorokinpf-russian-male-names-pinned",
+    "provider": "sorokinpf/russian_names; male name frequency wordlist sourced from Russian records",
+    "source_url": "https://github.com/sorokinpf/russian_names/blob/b23cda8a6011012a30d35f6676521c1a66965f3a/russian_male_names.csv",
+    "source_csv_url": "https://raw.githubusercontent.com/sorokinpf/russian_names/b23cda8a6011012a30d35f6676521c1a66965f3a/russian_male_names.csv",
+    "source_csv_git_blob_sha": "6287fea8e12814bedb3d7dff8d0fb4fba119f587",
+    "metric": "source-reported occurrence counts for classified male names; dataset registry sample, NOT Russian national birth or official nationwide resident totals",
+    "license": "Third-party source; verify redistribution terms before publication",
+    "source_script": "Russian Cyrillic",
+    "output_script": "Latin (ASCII A-Z)",
+    "romanization_convention": "Simplified BGN/PCGN (1947) Russian romanization, single-word ASCII letter-only adaptation: word-initial/post-vowel e to ye, yo for ё, zh/kh/ts/ch/sh/shch digraphs, y for й/ы; omit ъ and ь signs because punctuation is prohibited; no artificial change to source counts",
+    "romanization_reference_url": "https://en.wikipedia.org/wiki/BGN/PCGN_romanization_of_Russian",
+    "romanization_collision_policy": "Each different Cyrillic form that collapses to an identical Latin value is deduplicated; keep the higher-frequency source form and its original observed count (do not add counts), then include the next source-ranked distinct male name to retain exactly 300"
+  },
+  "selection_policy": "First 300 highest-ranked distinct Latin romanizations of source-observed male single-word Cyrillic names, simplified letter-only BGN/PCGN convention; NFC, Latin ASCII, no compounds; ё/е source variants deduplicated and Latin spelling collisions excluded without inventing or summing frequencies; REQUIRED: Unicode Script=Latin letters and associated Latin Script_Extensions combining marks only, NFC, exactly one male given name per value, no punctuation/spaces/mixed scripts",
+  "given_names": [
+    {
+      "value": "Aleksandr",
+      "weight": 126139
+    },
+    {
+      "value": "Nikolay",
+      "weight": 107848
+    },
+    {
+      "value": "Ivan",
+      "weight": 90558
+    },
+    {
+      "value": "Sergey",
+      "weight": 89541
+    },
+    {
+      "value": "Vladimir",
+      "weight": 79927
+    },
+    {
+      "value": "Mikhail",
+      "weight": 67395
+    },
+    {
+      "value": "Vasiliy",
+      "weight": 65332
+    },
+    {
+      "value": "Aleksey",
+      "weight": 58992
+    },
+    {
+      "value": "Andrey",
+      "weight": 55285
+    },
+    {
+      "value": "Dmitriy",
+      "weight": 51238
+    },
+    {
+      "value": "Viktor",
+      "weight": 47988
+    },
+    {
+      "value": "Yuriy",
+      "weight": 36945
+    },
+    {
+      "value": "Petr",
+      "weight": 36886
+    },
+    {
+      "value": "Anatoliy",
+      "weight": 34650
+    },
+    {
+      "value": "Pavel",
+      "weight": 32373
+    },
+    {
+      "value": "Igor",
+      "weight": 30299
+    },
+    {
+      "value": "Yevgeniy",
+      "weight": 29261
+    },
+    {
+      "value": "Oleg",
+      "weight": 26154
+    },
+    {
+      "value": "Valeriy",
+      "weight": 21805
+    },
+    {
+      "value": "Vitaliy",
+      "weight": 19880
+    },
+    {
+      "value": "Grigoriy",
+      "weight": 17751
+    },
+    {
+      "value": "Fedor",
+      "weight": 17375
+    },
+    {
+      "value": "Boris",
+      "weight": 17057
+    },
+    {
+      "value": "Gennadiy",
+      "weight": 16997
+    },
+    {
+      "value": "Leonid",
+      "weight": 16729
+    },
+    {
+      "value": "Konstantin",
+      "weight": 16723
+    },
+    {
+      "value": "Vyacheslav",
+      "weight": 14572
+    },
+    {
+      "value": "Georgiy",
+      "weight": 11872
+    },
+    {
+      "value": "Denis",
+      "weight": 11158
+    },
+    {
+      "value": "Valentin",
+      "weight": 10917
+    },
+    {
+      "value": "Maksim",
+      "weight": 10651
+    },
+    {
+      "value": "Vadim",
+      "weight": 10171
+    },
+    {
+      "value": "Roman",
+      "weight": 8445
+    },
+    {
+      "value": "Ilya",
+      "weight": 8440
+    },
+    {
+      "value": "Ruslan",
+      "weight": 8383
+    },
+    {
+      "value": "Stepan",
+      "weight": 6928
+    },
+    {
+      "value": "Semen",
+      "weight": 6511
+    },
+    {
+      "value": "Anton",
+      "weight": 6437
+    },
+    {
+      "value": "Eduard",
+      "weight": 6085
+    },
+    {
+      "value": "Stanislav",
+      "weight": 5910
+    },
+    {
+      "value": "Yakov",
+      "weight": 5429
+    },
+    {
+      "value": "Arkadiy",
+      "weight": 4524
+    },
+    {
+      "value": "Vladislav",
+      "weight": 4489
+    },
+    {
+      "value": "Artem",
+      "weight": 3729
+    },
+    {
+      "value": "Kirill",
+      "weight": 3720
+    },
+    {
+      "value": "Yegor",
+      "weight": 3683
+    },
+    {
+      "value": "Artur",
+      "weight": 3632
+    },
+    {
+      "value": "Marat",
+      "weight": 2984
+    },
+    {
+      "value": "Albert",
+      "weight": 2967
+    },
+    {
+      "value": "Lev",
+      "weight": 2924
+    },
+    {
+      "value": "Ildar",
+      "weight": 2728
+    },
+    {
+      "value": "Iosif",
+      "weight": 2575
+    },
+    {
+      "value": "Timofey",
+      "weight": 2569
+    },
+    {
+      "value": "Rinat",
+      "weight": 2197
+    },
+    {
+      "value": "Rustam",
+      "weight": 1994
+    },
+    {
+      "value": "Veniamin",
+      "weight": 1869
+    },
+    {
+      "value": "Rustem",
+      "weight": 1858
+    },
+    {
+      "value": "Radik",
+      "weight": 1778
+    },
+    {
+      "value": "Aleksand",
+      "weight": 1720
+    },
+    {
+      "value": "Ramil",
+      "weight": 1645
+    },
+    {
+      "value": "Afanasiy",
+      "weight": 1609
+    },
+    {
+      "value": "Nikita",
+      "weight": 1457
+    },
+    {
+      "value": "Filipp",
+      "weight": 1396
+    },
+    {
+      "value": "Yefim",
+      "weight": 1373
+    },
+    {
+      "value": "Azat",
+      "weight": 1321
+    },
+    {
+      "value": "Timur",
+      "weight": 1310
+    },
+    {
+      "value": "Ayrat",
+      "weight": 1307
+    },
+    {
+      "value": "Kuzma",
+      "weight": 1221
+    },
+    {
+      "value": "German",
+      "weight": 1142
+    },
+    {
+      "value": "Robert",
+      "weight": 1077
+    },
+    {
+      "value": "Aleksanr",
+      "weight": 1006
+    },
+    {
+      "value": "Innokentiy",
+      "weight": 989
+    },
+    {
+      "value": "Damir",
+      "weight": 979
+    },
+    {
+      "value": "Ilshat",
+      "weight": 972
+    },
+    {
+      "value": "Yaroslav",
+      "weight": 950
+    },
+    {
+      "value": "Nail",
+      "weight": 936
+    },
+    {
+      "value": "Matvey",
+      "weight": 917
+    },
+    {
+      "value": "Salavat",
+      "weight": 848
+    },
+    {
+      "value": "Shamil",
+      "weight": 838
+    },
+    {
+      "value": "Aydar",
+      "weight": 826
+    },
+    {
+      "value": "Tikhon",
+      "weight": 825
+    },
+    {
+      "value": "Ilgiz",
+      "weight": 792
+    },
+    {
+      "value": "Gleb",
+      "weight": 764
+    },
+    {
+      "value": "Danil",
+      "weight": 751
+    },
+    {
+      "value": "Vsevolod",
+      "weight": 741
+    },
+    {
+      "value": "Ravil",
+      "weight": 732
+    },
+    {
+      "value": "Rishat",
+      "weight": 730
+    },
+    {
+      "value": "Mitrofan",
+      "weight": 725
+    },
+    {
+      "value": "Mark",
+      "weight": 697
+    },
+    {
+      "value": "Gavriil",
+      "weight": 682
+    },
+    {
+      "value": "Genrikh",
+      "weight": 669
+    },
+    {
+      "value": "Daniil",
+      "weight": 663
+    },
+    {
+      "value": "Gavril",
+      "weight": 652
+    },
+    {
+      "value": "Marsel",
+      "weight": 644
+    },
+    {
+      "value": "Farit",
+      "weight": 643
+    },
+    {
+      "value": "Rafael",
+      "weight": 633
+    },
+    {
+      "value": "Irek",
+      "weight": 631
+    },
+    {
+      "value": "Leontiy",
+      "weight": 608
+    },
+    {
+      "value": "Kazimir",
+      "weight": 604
+    },
+    {
+      "value": "Azamat",
+      "weight": 597
+    },
+    {
+      "value": "Rashit",
+      "weight": 595
+    },
+    {
+      "value": "Cheslav",
+      "weight": 580
+    },
+    {
+      "value": "Serafim",
+      "weight": 574
+    },
+    {
+      "value": "Svyatoslav",
+      "weight": 564
+    },
+    {
+      "value": "Rim",
+      "weight": 549
+    },
+    {
+      "value": "Yan",
+      "weight": 539
+    },
+    {
+      "value": "Ilnur",
+      "weight": 525
+    },
+    {
+      "value": "Rostislav",
+      "weight": 522
+    },
+    {
+      "value": "Ildus",
+      "weight": 520
+    },
+    {
+      "value": "Tagir",
+      "weight": 518
+    },
+    {
+      "value": "Renat",
+      "weight": 504
+    },
+    {
+      "value": "Anvar",
+      "weight": 489
+    },
+    {
+      "value": "Tadeush",
+      "weight": 480
+    },
+    {
+      "value": "Zakhar",
+      "weight": 474
+    },
+    {
+      "value": "Alik",
+      "weight": 463
+    },
+    {
+      "value": "Prokopiy",
+      "weight": 463
+    },
+    {
+      "value": "Trofim",
+      "weight": 461
+    },
+    {
+      "value": "David",
+      "weight": 448
+    },
+    {
+      "value": "Arseniy",
+      "weight": 440
+    },
+    {
+      "value": "Nikifor",
+      "weight": 430
+    },
+    {
+      "value": "Magomed",
+      "weight": 425
+    },
+    {
+      "value": "Dinar",
+      "weight": 424
+    },
+    {
+      "value": "Stefan",
+      "weight": 420
+    },
+    {
+      "value": "Kamil",
+      "weight": 410
+    },
+    {
+      "value": "Vener",
+      "weight": 406
+    },
+    {
+      "value": "Feliks",
+      "weight": 406
+    },
+    {
+      "value": "Bulat",
+      "weight": 394
+    },
+    {
+      "value": "Rais",
+      "weight": 390
+    },
+    {
+      "value": "Ibragim",
+      "weight": 382
+    },
+    {
+      "value": "Adam",
+      "weight": 380
+    },
+    {
+      "value": "Frants",
+      "weight": 377
+    },
+    {
+      "value": "Ninel",
+      "weight": 376
+    },
+    {
+      "value": "Rail",
+      "weight": 366
+    },
+    {
+      "value": "Taras",
+      "weight": 356
+    },
+    {
+      "value": "Bronislav",
+      "weight": 355
+    },
+    {
+      "value": "Mansur",
+      "weight": 353
+    },
+    {
+      "value": "Alfred",
+      "weight": 351
+    },
+    {
+      "value": "Vatslav",
+      "weight": 349
+    },
+    {
+      "value": "Abram",
+      "weight": 347
+    },
+    {
+      "value": "Rafail",
+      "weight": 345
+    },
+    {
+      "value": "Rif",
+      "weight": 342
+    },
+    {
+      "value": "Genadiy",
+      "weight": 341
+    },
+    {
+      "value": "Fanil",
+      "weight": 340
+    },
+    {
+      "value": "Moisey",
+      "weight": 339
+    },
+    {
+      "value": "Vikentiy",
+      "weight": 330
+    },
+    {
+      "value": "Saveliy",
+      "weight": 326
+    },
+    {
+      "value": "Mechislav",
+      "weight": 319
+    },
+    {
+      "value": "Maryan",
+      "weight": 312
+    },
+    {
+      "value": "Fanis",
+      "weight": 308
+    },
+    {
+      "value": "Ilyas",
+      "weight": 307
+    },
+    {
+      "value": "Arsentiy",
+      "weight": 304
+    },
+    {
+      "value": "Bogdan",
+      "weight": 304
+    },
+    {
+      "value": "Zufar",
+      "weight": 300
+    },
+    {
+      "value": "Rashid",
+      "weight": 298
+    },
+    {
+      "value": "Ignat",
+      "weight": 291
+    },
+    {
+      "value": "Almaz",
+      "weight": 290
+    },
+    {
+      "value": "Isaak",
+      "weight": 290
+    },
+    {
+      "value": "Panteley",
+      "weight": 287
+    },
+    {
+      "value": "Kim",
+      "weight": 281
+    },
+    {
+      "value": "Khamit",
+      "weight": 280
+    },
+    {
+      "value": "Akhmet",
+      "weight": 279
+    },
+    {
+      "value": "Valeryan",
+      "weight": 277
+    },
+    {
+      "value": "Abdulla",
+      "weight": 276
+    },
+    {
+      "value": "Zinoviy",
+      "weight": 268
+    },
+    {
+      "value": "Mars",
+      "weight": 268
+    },
+    {
+      "value": "Rafis",
+      "weight": 266
+    },
+    {
+      "value": "Ignatiy",
+      "weight": 261
+    },
+    {
+      "value": "Ali",
+      "weight": 258
+    },
+    {
+      "value": "Prokofiy",
+      "weight": 258
+    },
+    {
+      "value": "Illarion",
+      "weight": 256
+    },
+    {
+      "value": "Ilmir",
+      "weight": 255
+    },
+    {
+      "value": "Gerasim",
+      "weight": 253
+    },
+    {
+      "value": "Khasan",
+      "weight": 249
+    },
+    {
+      "value": "Makar",
+      "weight": 248
+    },
+    {
+      "value": "Rudolf",
+      "weight": 247
+    },
+    {
+      "value": "Talgat",
+      "weight": 243
+    },
+    {
+      "value": "Ural",
+      "weight": 243
+    },
+    {
+      "value": "Rafik",
+      "weight": 242
+    },
+    {
+      "value": "Eldar",
+      "weight": 239
+    },
+    {
+      "value": "Yuliy",
+      "weight": 239
+    },
+    {
+      "value": "Irik",
+      "weight": 235
+    },
+    {
+      "value": "Arsen",
+      "weight": 234
+    },
+    {
+      "value": "Romuald",
+      "weight": 231
+    },
+    {
+      "value": "Naum",
+      "weight": 227
+    },
+    {
+      "value": "Amir",
+      "weight": 223
+    },
+    {
+      "value": "Demyan",
+      "weight": 221
+    },
+    {
+      "value": "Rodion",
+      "weight": 221
+    },
+    {
+      "value": "Vil",
+      "weight": 217
+    },
+    {
+      "value": "Adolf",
+      "weight": 213
+    },
+    {
+      "value": "Flyur",
+      "weight": 213
+    },
+    {
+      "value": "Akim",
+      "weight": 212
+    },
+    {
+      "value": "Valerian",
+      "weight": 212
+    },
+    {
+      "value": "Lazar",
+      "weight": 209
+    },
+    {
+      "value": "Akhat",
+      "weight": 204
+    },
+    {
+      "value": "Akhmed",
+      "weight": 199
+    },
+    {
+      "value": "Guriy",
+      "weight": 199
+    },
+    {
+      "value": "Emil",
+      "weight": 196
+    },
+    {
+      "value": "Armen",
+      "weight": 192
+    },
+    {
+      "value": "Makhmut",
+      "weight": 192
+    },
+    {
+      "value": "Radmir",
+      "weight": 192
+    },
+    {
+      "value": "Edvard",
+      "weight": 192
+    },
+    {
+      "value": "Vitold",
+      "weight": 190
+    },
+    {
+      "value": "Askhat",
+      "weight": 184
+    },
+    {
+      "value": "Ramazan",
+      "weight": 182
+    },
+    {
+      "value": "Samuil",
+      "weight": 182
+    },
+    {
+      "value": "Kharis",
+      "weight": 182
+    },
+    {
+      "value": "Erik",
+      "weight": 182
+    },
+    {
+      "value": "Ashot",
+      "weight": 180
+    },
+    {
+      "value": "Gabdulla",
+      "weight": 180
+    },
+    {
+      "value": "Artemiy",
+      "weight": 178
+    },
+    {
+      "value": "Lavrentiy",
+      "weight": 178
+    },
+    {
+      "value": "Rauf",
+      "weight": 178
+    },
+    {
+      "value": "Yemelyan",
+      "weight": 173
+    },
+    {
+      "value": "Zakir",
+      "weight": 172
+    },
+    {
+      "value": "Afonasiy",
+      "weight": 171
+    },
+    {
+      "value": "Spartak",
+      "weight": 170
+    },
+    {
+      "value": "Rasim",
+      "weight": 168
+    },
+    {
+      "value": "Kasim",
+      "weight": 165
+    },
+    {
+      "value": "Munir",
+      "weight": 165
+    },
+    {
+      "value": "Ilfat",
+      "weight": 164
+    },
+    {
+      "value": "Sultan",
+      "weight": 164
+    },
+    {
+      "value": "Vladlen",
+      "weight": 163
+    },
+    {
+      "value": "Leonard",
+      "weight": 160
+    },
+    {
+      "value": "Arnold",
+      "weight": 159
+    },
+    {
+      "value": "Ananiy",
+      "weight": 158
+    },
+    {
+      "value": "Terentiy",
+      "weight": 158
+    },
+    {
+      "value": "Midkhat",
+      "weight": 156
+    },
+    {
+      "value": "Salikh",
+      "weight": 156
+    },
+    {
+      "value": "Luka",
+      "weight": 155
+    },
+    {
+      "value": "Boleslav",
+      "weight": 152
+    },
+    {
+      "value": "Leon",
+      "weight": 151
+    },
+    {
+      "value": "Vladilen",
+      "weight": 147
+    },
+    {
+      "value": "Yevstafiy",
+      "weight": 147
+    },
+    {
+      "value": "Ismagil",
+      "weight": 147
+    },
+    {
+      "value": "Ismail",
+      "weight": 146
+    },
+    {
+      "value": "Karl",
+      "weight": 146
+    },
+    {
+      "value": "Islam",
+      "weight": 145
+    },
+    {
+      "value": "Farid",
+      "weight": 144
+    },
+    {
+      "value": "Sabir",
+      "weight": 142
+    },
+    {
+      "value": "Khamza",
+      "weight": 142
+    },
+    {
+      "value": "Gali",
+      "weight": 140
+    },
+    {
+      "value": "Linar",
+      "weight": 139
+    },
+    {
+      "value": "Khanif",
+      "weight": 138
+    },
+    {
+      "value": "Rifkat",
+      "weight": 137
+    },
+    {
+      "value": "Sagit",
+      "weight": 137
+    },
+    {
+      "value": "Suren",
+      "weight": 137
+    },
+    {
+      "value": "Yuzef",
+      "weight": 137
+    },
+    {
+      "value": "Ernest",
+      "weight": 135
+    },
+    {
+      "value": "Karp",
+      "weight": 133
+    },
+    {
+      "value": "Miroslav",
+      "weight": 133
+    },
+    {
+      "value": "Nikandr",
+      "weight": 133
+    },
+    {
+      "value": "Khaydar",
+      "weight": 133
+    },
+    {
+      "value": "Fedot",
+      "weight": 132
+    },
+    {
+      "value": "Galimzyan",
+      "weight": 131
+    },
+    {
+      "value": "Shakir",
+      "weight": 131
+    },
+    {
+      "value": "Suleyman",
+      "weight": 129
+    },
+    {
+      "value": "Yevdokim",
+      "weight": 128
+    },
+    {
+      "value": "Andrian",
+      "weight": 127
+    },
+    {
+      "value": "Vagiz",
+      "weight": 127
+    },
+    {
+      "value": "Miron",
+      "weight": 127
+    },
+    {
+      "value": "Samvel",
+      "weight": 127
+    },
+    {
+      "value": "Genrik",
+      "weight": 125
+    },
+    {
+      "value": "Zaki",
+      "weight": 125
+    },
+    {
+      "value": "Nurulla",
+      "weight": 125
+    },
+    {
+      "value": "Iskhak",
+      "weight": 124
+    },
+    {
+      "value": "Foma",
+      "weight": 124
+    },
+    {
+      "value": "Viner",
+      "weight": 123
+    },
+    {
+      "value": "Garif",
+      "weight": 123
+    },
+    {
+      "value": "Danis",
+      "weight": 122
+    },
+    {
+      "value": "Murat",
+      "weight": 122
+    },
+    {
+      "value": "Solomon",
+      "weight": 121
+    },
+    {
+      "value": "Danila",
+      "weight": 120
+    },
+    {
+      "value": "Ruben",
+      "weight": 119
+    },
+    {
+      "value": "Izrail",
+      "weight": 118
+    },
+    {
+      "value": "Aron",
+      "weight": 117
+    },
+    {
+      "value": "Klavdiy",
+      "weight": 117
+    },
+    {
+      "value": "Spiridon",
+      "weight": 117
+    },
+    {
+      "value": "Arkhip",
+      "weight": 116
+    },
+    {
+      "value": "Zinur",
+      "weight": 116
+    },
+    {
+      "value": "Gayaz",
+      "weight": 115
+    },
+    {
+      "value": "Alfir",
+      "weight": 114
+    },
+    {
+      "value": "Polikarp",
+      "weight": 114
+    },
+    {
+      "value": "Rasul",
+      "weight": 114
+    },
+    {
+      "value": "Lenar",
+      "weight": 113
+    },
+    {
+      "value": "Porfiriy",
+      "weight": 112
+    },
+    {
+      "value": "Fatykh",
+      "weight": 111
+    },
+    {
+      "value": "Yefrem",
+      "weight": 110
+    },
+    {
+      "value": "Platon",
+      "weight": 110
+    },
+    {
+      "value": "Elvir",
+      "weight": 110
+    },
+    {
+      "value": "Aynur",
+      "weight": 109
+    },
+    {
+      "value": "Mefodiy",
+      "weight": 109
+    },
+    {
+      "value": "Mudaris",
+      "weight": 109
+    },
+    {
+      "value": "Musa",
+      "weight": 109
+    },
+    {
+      "value": "Anisim",
+      "weight": 108
+    },
+    {
+      "value": "Yusup",
+      "weight": 108
+    },
+    {
+      "value": "Fayzrakhman",
+      "weight": 107
+    },
+    {
+      "value": "Mukhamet",
+      "weight": 106
+    },
+    {
+      "value": "Akram",
+      "weight": 105
+    },
+    {
+      "value": "Takhir",
+      "weight": 104
+    },
+    {
+      "value": "Feodosiy",
+      "weight": 104
+    }
+  ]
+}

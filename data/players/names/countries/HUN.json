@@ -1,0 +1,1216 @@
+{
+  "schema_version": 2,
+  "code": "HUN",
+  "cohort": "male given-name bearers in Hungary, source-reported nationwide incidence estimates (all ages; period not specified)",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "forebears-hungary-male-forenames-incidence",
+    "provider": "Forebears, Hungary forenames; gender attributed at least 95% male on the public table",
+    "source_url": "https://forebears.io/hungary/forenames",
+    "metric": "source-reported number of name bearers (incidence ESTIMATES, not official census/birth counts); first-name gender at least 95% male",
+    "license": "Source has no verified open redistribution license; source-level reuse/licensing review required before publication"
+  },
+  "selection_policy": "Top 300 valid single-word male forenames from Hungary table (published estimates); 95%+ male,; Unicode NFC, no compounds; Latin spelling and local accents as published preserved; REQUIRED: Unicode Script=Latin letters and associated Latin Script_Extensions combining marks only, NFC, exactly one male given name per value, no punctuation/spaces/mixed scripts",
+  "given_names": [
+    {
+      "value": "László",
+      "weight": 411299
+    },
+    {
+      "value": "István",
+      "weight": 378646
+    },
+    {
+      "value": "József",
+      "weight": 346581
+    },
+    {
+      "value": "János",
+      "weight": 298178
+    },
+    {
+      "value": "Zoltán",
+      "weight": 252306
+    },
+    {
+      "value": "Ferenc",
+      "weight": 214757
+    },
+    {
+      "value": "Sándor",
+      "weight": 190115
+    },
+    {
+      "value": "Gábor",
+      "weight": 185445
+    },
+    {
+      "value": "Tibor",
+      "weight": 142012
+    },
+    {
+      "value": "Attila",
+      "weight": 139741
+    },
+    {
+      "value": "Tamás",
+      "weight": 132159
+    },
+    {
+      "value": "Péter",
+      "weight": 129910
+    },
+    {
+      "value": "Zsolt",
+      "weight": 122209
+    },
+    {
+      "value": "Lajos",
+      "weight": 119311
+    },
+    {
+      "value": "András",
+      "weight": 116638
+    },
+    {
+      "value": "Imre",
+      "weight": 101024
+    },
+    {
+      "value": "Csaba",
+      "weight": 95163
+    },
+    {
+      "value": "György",
+      "weight": 89121
+    },
+    {
+      "value": "Károly",
+      "weight": 83891
+    },
+    {
+      "value": "Mihály",
+      "weight": 83640
+    },
+    {
+      "value": "Béla",
+      "weight": 82465
+    },
+    {
+      "value": "Gyula",
+      "weight": 71251
+    },
+    {
+      "value": "Miklós",
+      "weight": 69433
+    },
+    {
+      "value": "Róbert",
+      "weight": 57725
+    },
+    {
+      "value": "Pál",
+      "weight": 53585
+    },
+    {
+      "value": "Balázs",
+      "weight": 51071
+    },
+    {
+      "value": "Antal",
+      "weight": 47466
+    },
+    {
+      "value": "Norbert",
+      "weight": 34171
+    },
+    {
+      "value": "Krisztián",
+      "weight": 30089
+    },
+    {
+      "value": "Géza",
+      "weight": 29640
+    },
+    {
+      "value": "Szabolcs",
+      "weight": 27410
+    },
+    {
+      "value": "Árpád",
+      "weight": 26553
+    },
+    {
+      "value": "Kálmán",
+      "weight": 22829
+    },
+    {
+      "value": "Ádám",
+      "weight": 22588
+    },
+    {
+      "value": "Dániel",
+      "weight": 21203
+    },
+    {
+      "value": "Gergely",
+      "weight": 21053
+    },
+    {
+      "value": "Viktor",
+      "weight": 20846
+    },
+    {
+      "value": "Jenő",
+      "weight": 19962
+    },
+    {
+      "value": "Ernő",
+      "weight": 19939
+    },
+    {
+      "value": "Dávid",
+      "weight": 18732
+    },
+    {
+      "value": "Ákos",
+      "weight": 17986
+    },
+    {
+      "value": "Roland",
+      "weight": 17548
+    },
+    {
+      "value": "Endre",
+      "weight": 16815
+    },
+    {
+      "value": "Dezső",
+      "weight": 16455
+    },
+    {
+      "value": "Bálint",
+      "weight": 14465
+    },
+    {
+      "value": "Márton",
+      "weight": 13534
+    },
+    {
+      "value": "Richárd",
+      "weight": 12646
+    },
+    {
+      "value": "Ottó",
+      "weight": 12280
+    },
+    {
+      "value": "Mátyás",
+      "weight": 10633
+    },
+    {
+      "value": "Szilárd",
+      "weight": 10048
+    },
+    {
+      "value": "Máté",
+      "weight": 9543
+    },
+    {
+      "value": "Nándor",
+      "weight": 9246
+    },
+    {
+      "value": "Dénes",
+      "weight": 9114
+    },
+    {
+      "value": "Levente",
+      "weight": 9061
+    },
+    {
+      "value": "Vilmos",
+      "weight": 9022
+    },
+    {
+      "value": "Peter",
+      "weight": 7687
+    },
+    {
+      "value": "Bence",
+      "weight": 7625
+    },
+    {
+      "value": "Rudolf",
+      "weight": 7100
+    },
+    {
+      "value": "Albert",
+      "weight": 7066
+    },
+    {
+      "value": "Barnabás",
+      "weight": 7013
+    },
+    {
+      "value": "Zsigmond",
+      "weight": 6889
+    },
+    {
+      "value": "Márk",
+      "weight": 6788
+    },
+    {
+      "value": "Bertalan",
+      "weight": 6222
+    },
+    {
+      "value": "Gabor",
+      "weight": 6023
+    },
+    {
+      "value": "Győző",
+      "weight": 5587
+    },
+    {
+      "value": "Zoltan",
+      "weight": 5527
+    },
+    {
+      "value": "Ervin",
+      "weight": 5427
+    },
+    {
+      "value": "Kornél",
+      "weight": 5284
+    },
+    {
+      "value": "Laszlo",
+      "weight": 5156
+    },
+    {
+      "value": "Andor",
+      "weight": 5043
+    },
+    {
+      "value": "Tivadar",
+      "weight": 4918
+    },
+    {
+      "value": "Iván",
+      "weight": 4763
+    },
+    {
+      "value": "Tamas",
+      "weight": 4555
+    },
+    {
+      "value": "Vince",
+      "weight": 4054
+    },
+    {
+      "value": "Istvan",
+      "weight": 3756
+    },
+    {
+      "value": "Elemér",
+      "weight": 3701
+    },
+    {
+      "value": "Emil",
+      "weight": 3592
+    },
+    {
+      "value": "Kristóf",
+      "weight": 3552
+    },
+    {
+      "value": "Barna",
+      "weight": 3327
+    },
+    {
+      "value": "Andras",
+      "weight": 3197
+    },
+    {
+      "value": "Szilveszter",
+      "weight": 3133
+    },
+    {
+      "value": "Áron",
+      "weight": 2723
+    },
+    {
+      "value": "Olivér",
+      "weight": 2673
+    },
+    {
+      "value": "Elek",
+      "weight": 2650
+    },
+    {
+      "value": "Henrik",
+      "weight": 2615
+    },
+    {
+      "value": "Balazs",
+      "weight": 2607
+    },
+    {
+      "value": "Janos",
+      "weight": 2574
+    },
+    {
+      "value": "Milán",
+      "weight": 2416
+    },
+    {
+      "value": "Robert",
+      "weight": 2372
+    },
+    {
+      "value": "Erik",
+      "weight": 2360
+    },
+    {
+      "value": "Ignác",
+      "weight": 2357
+    },
+    {
+      "value": "Jozsef",
+      "weight": 2344
+    },
+    {
+      "value": "Frigyes",
+      "weight": 2332
+    },
+    {
+      "value": "Lóránt",
+      "weight": 2297
+    },
+    {
+      "value": "Rezső",
+      "weight": 2275
+    },
+    {
+      "value": "Alajos",
+      "weight": 2182
+    },
+    {
+      "value": "Adam",
+      "weight": 2174
+    },
+    {
+      "value": "Arnold",
+      "weight": 2163
+    },
+    {
+      "value": "Martin",
+      "weight": 2073
+    },
+    {
+      "value": "Marcell",
+      "weight": 2070
+    },
+    {
+      "value": "Daniel",
+      "weight": 2060
+    },
+    {
+      "value": "Sandor",
+      "weight": 2045
+    },
+    {
+      "value": "Oszkár",
+      "weight": 2029
+    },
+    {
+      "value": "David",
+      "weight": 1887
+    },
+    {
+      "value": "Alex",
+      "weight": 1818
+    },
+    {
+      "value": "Patrik",
+      "weight": 1779
+    },
+    {
+      "value": "Vendel",
+      "weight": 1768
+    },
+    {
+      "value": "Botond",
+      "weight": 1663
+    },
+    {
+      "value": "Adrián",
+      "weight": 1636
+    },
+    {
+      "value": "Ede",
+      "weight": 1628
+    },
+    {
+      "value": "Benedek",
+      "weight": 1574
+    },
+    {
+      "value": "Aladár",
+      "weight": 1546
+    },
+    {
+      "value": "Tihamér",
+      "weight": 1507
+    },
+    {
+      "value": "Flórián",
+      "weight": 1490
+    },
+    {
+      "value": "Benjámin",
+      "weight": 1460
+    },
+    {
+      "value": "Menyhért",
+      "weight": 1438
+    },
+    {
+      "value": "Csongor",
+      "weight": 1394
+    },
+    {
+      "value": "Akos",
+      "weight": 1365
+    },
+    {
+      "value": "Miklos",
+      "weight": 1321
+    },
+    {
+      "value": "Zsombor",
+      "weight": 1315
+    },
+    {
+      "value": "Krisztian",
+      "weight": 1261
+    },
+    {
+      "value": "Gyorgy",
+      "weight": 1202
+    },
+    {
+      "value": "Richard",
+      "weight": 1179
+    },
+    {
+      "value": "Lőrinc",
+      "weight": 1167
+    },
+    {
+      "value": "Alfréd",
+      "weight": 1156
+    },
+    {
+      "value": "Gellért",
+      "weight": 1116
+    },
+    {
+      "value": "Ödön",
+      "weight": 1024
+    },
+    {
+      "value": "Benjamin",
+      "weight": 1020
+    },
+    {
+      "value": "Illés",
+      "weight": 992
+    },
+    {
+      "value": "Boldizsár",
+      "weight": 938
+    },
+    {
+      "value": "Gáspár",
+      "weight": 892
+    },
+    {
+      "value": "Benő",
+      "weight": 877
+    },
+    {
+      "value": "Karoly",
+      "weight": 808
+    },
+    {
+      "value": "Loránd",
+      "weight": 761
+    },
+    {
+      "value": "Bela",
+      "weight": 751
+    },
+    {
+      "value": "Donát",
+      "weight": 751
+    },
+    {
+      "value": "Ágoston",
+      "weight": 712
+    },
+    {
+      "value": "Márió",
+      "weight": 700
+    },
+    {
+      "value": "Ambrus",
+      "weight": 697
+    },
+    {
+      "value": "Arpad",
+      "weight": 679
+    },
+    {
+      "value": "Mark",
+      "weight": 673
+    },
+    {
+      "value": "Lehel",
+      "weight": 658
+    },
+    {
+      "value": "Konrád",
+      "weight": 638
+    },
+    {
+      "value": "Sámuel",
+      "weight": 609
+    },
+    {
+      "value": "Mihaly",
+      "weight": 607
+    },
+    {
+      "value": "Vencel",
+      "weight": 607
+    },
+    {
+      "value": "Előd",
+      "weight": 603
+    },
+    {
+      "value": "Kázmér",
+      "weight": 561
+    },
+    {
+      "value": "Balint",
+      "weight": 542
+    },
+    {
+      "value": "Lénárd",
+      "weight": 524
+    },
+    {
+      "value": "Michael",
+      "weight": 522
+    },
+    {
+      "value": "Renátó",
+      "weight": 500
+    },
+    {
+      "value": "Aurél",
+      "weight": 472
+    },
+    {
+      "value": "Bernát",
+      "weight": 452
+    },
+    {
+      "value": "Geza",
+      "weight": 443
+    },
+    {
+      "value": "Pal",
+      "weight": 443
+    },
+    {
+      "value": "Gergo",
+      "weight": 442
+    },
+    {
+      "value": "Artúr",
+      "weight": 433
+    },
+    {
+      "value": "Otto",
+      "weight": 426
+    },
+    {
+      "value": "Valentin",
+      "weight": 420
+    },
+    {
+      "value": "Hunor",
+      "weight": 416
+    },
+    {
+      "value": "Egon",
+      "weight": 414
+    },
+    {
+      "value": "Mate",
+      "weight": 412
+    },
+    {
+      "value": "Alexander",
+      "weight": 411
+    },
+    {
+      "value": "Ferdinánd",
+      "weight": 405
+    },
+    {
+      "value": "George",
+      "weight": 397
+    },
+    {
+      "value": "Soma",
+      "weight": 391
+    },
+    {
+      "value": "John",
+      "weight": 385
+    },
+    {
+      "value": "Thomas",
+      "weight": 383
+    },
+    {
+      "value": "Szilard",
+      "weight": 374
+    },
+    {
+      "value": "Dominik",
+      "weight": 365
+    },
+    {
+      "value": "Csanád",
+      "weight": 364
+    },
+    {
+      "value": "Adolf",
+      "weight": 354
+    },
+    {
+      "value": "Igor",
+      "weight": 353
+    },
+    {
+      "value": "Oliver",
+      "weight": 340
+    },
+    {
+      "value": "Ivan",
+      "weight": 338
+    },
+    {
+      "value": "Kristof",
+      "weight": 336
+    },
+    {
+      "value": "Ábel",
+      "weight": 328
+    },
+    {
+      "value": "Lóránd",
+      "weight": 321
+    },
+    {
+      "value": "Domonkos",
+      "weight": 319
+    },
+    {
+      "value": "Albin",
+      "weight": 317
+    },
+    {
+      "value": "Aron",
+      "weight": 309
+    },
+    {
+      "value": "Stefan",
+      "weight": 309
+    },
+    {
+      "value": "Denes",
+      "weight": 298
+    },
+    {
+      "value": "Lászlo",
+      "weight": 292
+    },
+    {
+      "value": "Kalman",
+      "weight": 276
+    },
+    {
+      "value": "Paul",
+      "weight": 265
+    },
+    {
+      "value": "Bertold",
+      "weight": 263
+    },
+    {
+      "value": "Valter",
+      "weight": 260
+    },
+    {
+      "value": "Vladimir",
+      "weight": 255
+    },
+    {
+      "value": "Adrian",
+      "weight": 253
+    },
+    {
+      "value": "Mohamed",
+      "weight": 247
+    },
+    {
+      "value": "Laci",
+      "weight": 243
+    },
+    {
+      "value": "Ármin",
+      "weight": 237
+    },
+    {
+      "value": "Álmos",
+      "weight": 225
+    },
+    {
+      "value": "Rafael",
+      "weight": 220
+    },
+    {
+      "value": "Atilla",
+      "weight": 219
+    },
+    {
+      "value": "Andrew",
+      "weight": 218
+    },
+    {
+      "value": "Jeno",
+      "weight": 213
+    },
+    {
+      "value": "Nandor",
+      "weight": 212
+    },
+    {
+      "value": "Gedeon",
+      "weight": 209
+    },
+    {
+      "value": "Kornel",
+      "weight": 207
+    },
+    {
+      "value": "Barnabas",
+      "weight": 205
+    },
+    {
+      "value": "Alfonz",
+      "weight": 198
+    },
+    {
+      "value": "Titusz",
+      "weight": 191
+    },
+    {
+      "value": "Zoli",
+      "weight": 187
+    },
+    {
+      "value": "Artur",
+      "weight": 181
+    },
+    {
+      "value": "Walter",
+      "weight": 178
+    },
+    {
+      "value": "Andreas",
+      "weight": 176
+    },
+    {
+      "value": "Domokos",
+      "weight": 176
+    },
+    {
+      "value": "Zorán",
+      "weight": 176
+    },
+    {
+      "value": "Koppány",
+      "weight": 175
+    },
+    {
+      "value": "Zénó",
+      "weight": 175
+    },
+    {
+      "value": "Franz",
+      "weight": 174
+    },
+    {
+      "value": "Valér",
+      "weight": 174
+    },
+    {
+      "value": "Christian",
+      "weight": 173
+    },
+    {
+      "value": "Joseph",
+      "weight": 167
+    },
+    {
+      "value": "Joachim",
+      "weight": 166
+    },
+    {
+      "value": "Sebastian",
+      "weight": 166
+    },
+    {
+      "value": "Anton",
+      "weight": 161
+    },
+    {
+      "value": "Patrick",
+      "weight": 157
+    },
+    {
+      "value": "Steven",
+      "weight": 156
+    },
+    {
+      "value": "Lorant",
+      "weight": 151
+    },
+    {
+      "value": "Tom",
+      "weight": 149
+    },
+    {
+      "value": "Vidor",
+      "weight": 149
+    },
+    {
+      "value": "Adalbert",
+      "weight": 148
+    },
+    {
+      "value": "Mohammad",
+      "weight": 148
+    },
+    {
+      "value": "Karl",
+      "weight": 146
+    },
+    {
+      "value": "Christopher",
+      "weight": 145
+    },
+    {
+      "value": "Kevin",
+      "weight": 145
+    },
+    {
+      "value": "Mózes",
+      "weight": 143
+    },
+    {
+      "value": "Andrej",
+      "weight": 142
+    },
+    {
+      "value": "Bendegúz",
+      "weight": 133
+    },
+    {
+      "value": "Frank",
+      "weight": 133
+    },
+    {
+      "value": "Josef",
+      "weight": 131
+    },
+    {
+      "value": "Wolfgang",
+      "weight": 131
+    },
+    {
+      "value": "Norman",
+      "weight": 129
+    },
+    {
+      "value": "Szaniszló",
+      "weight": 129
+    },
+    {
+      "value": "Béni",
+      "weight": 127
+    },
+    {
+      "value": "Edvárd",
+      "weight": 127
+    },
+    {
+      "value": "Hans",
+      "weight": 126
+    },
+    {
+      "value": "Milan",
+      "weight": 125
+    },
+    {
+      "value": "Marcel",
+      "weight": 123
+    },
+    {
+      "value": "Victor",
+      "weight": 121
+    },
+    {
+      "value": "Gerzson",
+      "weight": 118
+    },
+    {
+      "value": "Pongrác",
+      "weight": 118
+    },
+    {
+      "value": "Dusán",
+      "weight": 117
+    },
+    {
+      "value": "Gyuri",
+      "weight": 117
+    },
+    {
+      "value": "Dezso",
+      "weight": 116
+    },
+    {
+      "value": "Konstantin",
+      "weight": 115
+    },
+    {
+      "value": "Bulcsú",
+      "weight": 113
+    },
+    {
+      "value": "Johann",
+      "weight": 113
+    },
+    {
+      "value": "Gyozo",
+      "weight": 112
+    },
+    {
+      "value": "Edmond",
+      "weight": 111
+    },
+    {
+      "value": "Lorand",
+      "weight": 110
+    },
+    {
+      "value": "Máriusz",
+      "weight": 110
+    },
+    {
+      "value": "Edgár",
+      "weight": 109
+    },
+    {
+      "value": "Szergej",
+      "weight": 109
+    },
+    {
+      "value": "Edvin",
+      "weight": 106
+    },
+    {
+      "value": "Joe",
+      "weight": 106
+    },
+    {
+      "value": "Armand",
+      "weight": 104
+    },
+    {
+      "value": "Eduárd",
+      "weight": 103
+    },
+    {
+      "value": "Georg",
+      "weight": 103
+    },
+    {
+      "value": "Borisz",
+      "weight": 101
+    },
+    {
+      "value": "Ös",
+      "weight": 100
+    },
+    {
+      "value": "Arthur",
+      "weight": 99
+    },
+    {
+      "value": "Román",
+      "weight": 99
+    },
+    {
+      "value": "Mario",
+      "weight": 98
+    },
+    {
+      "value": "Nimród",
+      "weight": 97
+    },
+    {
+      "value": "Gerhard",
+      "weight": 95
+    },
+    {
+      "value": "Johannes",
+      "weight": 95
+    },
+    {
+      "value": "Vajk",
+      "weight": 94
+    },
+    {
+      "value": "Herbert",
+      "weight": 91
+    },
+    {
+      "value": "Ramón",
+      "weight": 89
+    },
+    {
+      "value": "Erhard",
+      "weight": 88
+    },
+    {
+      "value": "Hugó",
+      "weight": 86
+    },
+    {
+      "value": "Alexandru",
+      "weight": 85
+    },
+    {
+      "value": "Jószef",
+      "weight": 85
+    },
+    {
+      "value": "Rómeó",
+      "weight": 85
+    },
+    {
+      "value": "Félix",
+      "weight": 84
+    },
+    {
+      "value": "Eric",
+      "weight": 82
+    },
+    {
+      "value": "Marco",
+      "weight": 82
+    },
+    {
+      "value": "Raymond",
+      "weight": 82
+    },
+    {
+      "value": "Vasile",
+      "weight": 82
+    },
+    {
+      "value": "Erno",
+      "weight": 81
+    },
+    {
+      "value": "Jan",
+      "weight": 81
+    },
+    {
+      "value": "Marius",
+      "weight": 81
+    },
+    {
+      "value": "Kunó",
+      "weight": 80
+    },
+    {
+      "value": "Márkó",
+      "weight": 80
+    },
+    {
+      "value": "Günter",
+      "weight": 79
+    },
+    {
+      "value": "Stephen",
+      "weight": 78
+    },
+    {
+      "value": "Andrei",
+      "weight": 77
+    },
+    {
+      "value": "Tomi",
+      "weight": 77
+    },
+    {
+      "value": "Werner",
+      "weight": 77
+    },
+    {
+      "value": "William",
+      "weight": 77
+    },
+    {
+      "value": "Ibrahim",
+      "weight": 76
+    },
+    {
+      "value": "Yan",
+      "weight": 76
+    },
+    {
+      "value": "Laszló",
+      "weight": 75
+    },
+    {
+      "value": "Pavel",
+      "weight": 75
+    },
+    {
+      "value": "Stefán",
+      "weight": 75
+    }
+  ]
+}
