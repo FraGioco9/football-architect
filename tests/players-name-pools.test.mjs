@@ -118,6 +118,21 @@ test('all 300 Brazilian generated first names retain uppercase initials',()=>{
  }
 });
 
+test('player JSON hides QA-only specialist and suitability diagnostics',()=>{
+ const player=generateTrial({count:1,seed:'internal-json-visibility-01'}).candidates[0];
+ assert.ok(['specialist','versatile','primary_only'].includes(player.trial_role_profile));
+ assert.equal(typeof player.trial_primary_suitability_target,'number');
+ assert.equal(typeof player.trial_primary_suitability_actual,'number');
+ const json=JSON.stringify(player);
+ const encoded=JSON.parse(json);
+ for(const key of ['trial_role_profile','trial_primary_suitability_target','trial_primary_suitability_actual','known_as']){
+  assert.equal(Object.hasOwn(encoded,key),false,'No internal/player JSON should contain '+key);
+  assert.equal(Object.keys(player).includes(key),false);
+ }
+ assert.ok(Object.hasOwn(encoded,'attributes'));
+ assert.equal(encoded.display_name,`${encoded.first_name} ${encoded.last_name}`);
+});
+
 test('Brazil, Portugal and Spain never generate aliases',()=>{
  for(const code of ['BRA','POR','ESP']){
   const rows=generateTrial({count:8,seed:'canonical-name-'+code,primaryNationality:code}).candidates;

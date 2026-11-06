@@ -2,6 +2,33 @@
 
 This contract covers **fictional footballers**, not registered Player accounts.
 
+## Internal stored JSON — gameplay data only
+
+Before inserting a generated footballer into protected persistence, call
+`projectInternalFootballerRecord` from
+`backend/src/footballer-internal-projection.ts`. It constructs a fresh
+allowlisted object; the generator preview JSON is **not** a persistence schema.
+
+The internal record contains only `first_name`, `last_name`,
+`nationality`, optional `secondary_nationality`, `initial_age`,
+`height_cm`, `preferred_foot`, `primary_position`,
+`secondary_positions`, the **20 gameplay attributes**,
+`development_aptitude`, and `career_status`. The name displayed on the
+website is computed from first and last name, not stored twice.
+
+**Never stored as per-player fields:** `trial_role_profile`,
+`specialist`/`versatile` tags, source weights, selection probabilities,
+`known_as`, seed, `preview_id`, target/actual trial suitability diagnostics,
+`identity_sources`, `ranking_snapshot`, and any other QA/build metadata.
+The specialist/versatile calibration still happens internally while generating
+the attributes, but its label is not a player property to save or publish.
+Runtime QA can read non-enumerable diagnostics; normal trial JSON and stored
+player JSON cannot serialize them.
+
+The internal DTO is **not public**; protect it via storage permissions and only
+send the separately allowlisted public DTO to the browser. No persistent
+footballer store or public footballer API has been added by this PR.
+
 ## Trust boundary
 
 The player generator's `generateTrial` export is an internal tool. Its output

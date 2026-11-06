@@ -468,19 +468,23 @@ function generateCandidate(rng,index,options,trialSeed){
  const actualPrimarySuitability=useSuitabilityTarget?
   conditionAttributesToPrimarySuitability(attributes,position,
    primarySuitabilityTarget,options.attributes):null;
- return {
+ const candidate={
   preview_id:`trial-${String(index+1).padStart(4,'0')}`,
   // Permanent id and authoritative entry_season exist only after final confirmation; this tool never persists.
   first_name:first,last_name:last,display_name:`${first} ${last}`,
   initial_age:age,nationality:country,secondary_nationality:secondaryNationality(country,rng,options),
   height_cm:height,preferred_foot:foot,primary_position:position,secondary_positions:secondaries,
-  ...(legacy?{}:{trial_role_profile:profile}), // trial metadata, never a persisted field
-  ...(useSuitabilityTarget?{
-   trial_primary_suitability_target:primarySuitabilityTarget,
-   trial_primary_suitability_actual:Math.round(actualPrimarySuitability*100)/100
-  }:{}),
   attributes,development_aptitude:aptitude,career_status:'active'
  };
+ // Calibration metrics remain readable for QA in memory, but are deliberately
+ // non-enumerable: no specialist/versatile classification or trial target ever
+ // appears in JSON.stringify(candidate) or the generator's --out JSON.
+ if(!legacy)Object.defineProperty(candidate,'trial_role_profile',{value:profile});
+ if(useSuitabilityTarget)Object.defineProperties(candidate,{
+  trial_primary_suitability_target:{value:primarySuitabilityTarget},
+  trial_primary_suitability_actual:{value:Math.round(actualPrimarySuitability*100)/100}
+ });
+ return candidate;
 }
 export function generateTrial(options={}){
  const count=options.count??100,seed=options.seed??'fa-players-01';
