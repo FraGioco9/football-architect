@@ -32,7 +32,6 @@ export function inventoryAssetReferences(root=".",io={readdirSync,readFileSync})
     sourceText.set(source,text);
   }
   for(const asset of assets){
-    const basename=asset.split("/").pop();
     const pathsToFind=[asset,"/"+asset];
     for(const [source,text] of sourceText){
       if(source===asset)continue;
