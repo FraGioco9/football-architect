@@ -33,6 +33,9 @@ test('exact fixed ranking, 4 tiers and 115,000 aggregate target',()=>{
  assert.deepEqual(catalog.ranking_tiers,tiers);
  assert.equal(tiers.reduce((n,t)=>n+(t.end_rank-t.start_rank+1)*t.target_count,0),115000);
  assert.equal(catalog.target_total_surnames,115000);
+ assert.equal(catalog.excess_policy,'retain_all_existing_entries');
+ assert.equal(catalog.excess_policy_owner_decision,'retain');
+ assert.equal(catalog.excess_policy_decision_date,'2026-11-06');
  assert.ok(!Object.hasOwn(catalog,'target_per_country'));
  assert.equal(catalog.selection_policy,'uniform');
  assert.equal(catalog.production_ready,false);
@@ -52,7 +55,12 @@ test('country target/actual/missing/excess/status and global totals',()=>{
   assert.equal(c.status,state,c.code);
   assert.ok(states.includes(c.status));
   if(c.status==='blocked'){assert.match(c.blocked_source_head_sha,/^[a-f0-9]{40}$/);assert.ok(c.actual_count>0)}
-  if(c.status==='over_target')assert.equal(c.over_target_review_required,true);
+  if(c.status==='over_target'){
+   assert.equal(c.over_target_review_required,false,c.code+' owner approved retaining excess');
+   assert.equal(c.over_target_owner_decision,'retain',c.code);
+   assert.equal(c.excess_retention_authorized,true,c.code);
+   assert.ok(c.excess_count>0,c.code);
+  }
   assert.equal(c.production_ready,false);
   assert.equal(c.sources_available,true);
   assert.equal(c.path,'data/players/surnames/countries/'+c.code+'.json');
