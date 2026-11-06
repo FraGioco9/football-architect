@@ -1,0 +1,84 @@
+name: SURNAMES-01 Batch J — Node 22 acceptance
+
+on:
+  pull_request:
+    paths:
+      - "data/players/surnames/countries/URU.json"
+      - "data/players/surnames/countries/PAR.json"
+      - "data/players/surnames/countries/ECU.json"
+      - "data/players/surnames/countries/VEN.json"
+      - ".github/workflows/surnames-01-batch-j.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-batch-j:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate four independent 500-surname uniform pools
+        shell: bash
+        run: |
+          node <<'NODE'
+          'use strict';
+          const fs = require('node:fs');
+          const assert = require('node:assert/strict');
+
+          const codes = ['URU', 'PAR', 'ECU', 'VEN'];
+          const topKeys = ['schema_version', 'code', 'kind', 'selection_policy', 'sources', 'surnames', 'production_ready'].sort();
+          const script = /^(?:\p{Script=Latin}\p{M}*)+(?:[ '-](?:\p{Script=Latin}\p{M}*)+)*$/u;
+          const latinMark = /\p{Script_Extensions=Latin}/u;
+          const valid = (value) =>
+            typeof value === 'string' && value.length > 0 &&
+            value === value.normalize('NFC') &&
+            script.test(value) &&
+            [...value.matchAll(/\p{M}/gu)].every(([mark]) => latinMark.test(mark));
+
+          for (const value of ['Muñoz', 'Gonçalves', 'Müller', "O'Brien", 'Ruiz Diaz', 'de La Rosa']) {
+            assert.ok(valid(value), 'positive Latin example: ' + value);
+          }
+          for (const value of ['', ' García', 'García ', 'García  Pérez', 'López--García',
+            'Pérez/Rojas', 'Pérez2', 'Рerez', 'Σanchez', 'أحمد', '蔡', '🏆', 'García_Pérez',
+            'A\u0301']) {
+            assert.ok(!valid(value), 'invalid / mixed script / non-NFC example: ' + value);
+          }
+
+          function assertNoWeight(value) {
+            if (value && typeof value === 'object') {
+              assert.ok(!Object.hasOwn(value, 'weight'), 'weight key prohibited at every level');
+              for (const nested of Object.values(value)) assertNoWeight(nested);
+            }
+          }
+
+          for (const code of codes) {
+            const filename = 'data/players/surnames/countries/' + code + '.json';
+            const data = JSON.parse(fs.readFileSync(filename, 'utf8'));
+            assert.deepEqual(Object.keys(data).sort(), topKeys, code + ' top-level schema');
+            assert.equal(data.schema_version, 1);
+            assert.equal(data.code, code);
+            assert.equal(data.kind, 'surnames');
+            assert.equal(data.selection_policy, 'uniform');
+            assert.equal(data.production_ready, false);
+            assert.ok(Array.isArray(data.sources) && data.sources.length > 0, code + ' provenance');
+            for (const source of data.sources) {
+              assert.ok(typeof source.url === 'string' && /^https:\/\//.test(source.url), code + ' source URL');
+            }
+            assert.ok(Array.isArray(data.surnames), code + ' surnames');
+            assert.equal(data.surnames.length, 500, code + ' exactly 500 entries');
+            const seen = new Set();
+            for (const [index, surname] of data.surnames.entries()) {
+              assert.deepEqual(Object.keys(surname), ['value'], code + ' only value at ' + index);
+              assert.ok(valid(surname.value), code + ' invalid Latin NFC surname ' + index + ': ' + surname.value);
+              const folded = surname.value.toLocaleLowerCase('und');
+              assert.ok(!seen.has(folded), code + ' duplicate: ' + surname.value);
+              seen.add(folded);
+            }
+            assertNoWeight(data);
+            console.log(code + ': PASS (' + seen.size + ' Latin Unicode NFC surnames; uniform/no weight)');
+          }
+          console.log('SURNAMES-01 Batch J: PASS — 4/4 countries, 2,000/2,000 surnames, adversarial cases');
+          NODE
