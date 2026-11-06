@@ -44,7 +44,7 @@ const sourceIds={
  URU:'uy-montevideo-registered-birth-male-names-1940-2012',
  PAR:'py-damegender-wikidata-male-given-name-sample',
  ECU:'ec-damegender-wikidata-male-given-name-sample',
- VEN:'ve-damegender-wikidata-male-given-name-sample'
+ VEN:'ve-damegender-wikidata-male-given-name-sample',
  UKR:'ua-languk-ubertext-firstnames-male-lemma',
  SVK:'forebears-slovakia-male-firstname-incidence',
  PAN:'forebears-panama-male-firstname-incidence'
