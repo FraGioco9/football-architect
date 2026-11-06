@@ -124,15 +124,18 @@
     {
       "code": "NED",
       "path": "data/players/surnames/countries/NED.json",
-      "count": 500,
-      "status": "partial",
+      "count": 3000,
+      "status": "complete",
       "sources_available": true,
       "source_batch": "C",
       "source_pr": 426,
       "source_branch": "research/surnames-01-batch-c",
       "source_head_sha": "1ad95c65aa30c92fcb809377cdc3f11289be119f",
       "source_blob_sha": "6355a09e3981b3954a4383d4f5219ca9ee6ff2c4",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-c",
+      "expansion_head_sha": "3c426196b5dc261cfc0ab88fea59301b02481b86",
+      "expansion_blob_sha": "d8f7994407e691e959101f5285bbe7437a7d5af6"
     },
     {
       "code": "MEX",
@@ -263,15 +266,18 @@
     {
       "code": "NOR",
       "path": "data/players/surnames/countries/NOR.json",
-      "count": 500,
-      "status": "partial",
+      "count": 3000,
+      "status": "complete",
       "sources_available": true,
       "source_batch": "C",
       "source_pr": 426,
       "source_branch": "research/surnames-01-batch-c",
       "source_head_sha": "1ad95c65aa30c92fcb809377cdc3f11289be119f",
       "source_blob_sha": "b9df873cf2995b34f8404cb41951a9d0ebaad3c7",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-c",
+      "expansion_head_sha": "3c426196b5dc261cfc0ab88fea59301b02481b86",
+      "expansion_blob_sha": "d40f7ba4a37227a44473d75bf60020d02a03d347"
     },
     {
       "code": "URU",
@@ -289,15 +295,18 @@
     {
       "code": "DEN",
       "path": "data/players/surnames/countries/DEN.json",
-      "count": 500,
-      "status": "partial",
+      "count": 3000,
+      "status": "complete",
       "sources_available": true,
       "source_batch": "C",
       "source_pr": 426,
       "source_branch": "research/surnames-01-batch-c",
       "source_head_sha": "1ad95c65aa30c92fcb809377cdc3f11289be119f",
       "source_blob_sha": "95c4990795b9b5e8d979a303b08be0b555f9f09b",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-c",
+      "expansion_head_sha": "3c426196b5dc261cfc0ab88fea59301b02481b86",
+      "expansion_blob_sha": "b71a0ebd57392dfe3fd33fa2d406fb1e04fe8358"
     },
     {
       "code": "AUT",
@@ -357,7 +366,7 @@
     {
       "code": "AUS",
       "path": "data/players/surnames/countries/AUS.json",
-      "count": 500,
+      "count": 999,
       "status": "partial",
       "sources_available": true,
       "source_batch": "I",
@@ -365,7 +374,10 @@
       "source_branch": "research/surnames-01-batch-i",
       "source_head_sha": "1bbb482b752743a89005ade82053ec69193c628a",
       "source_blob_sha": "753a4520746823126618adf6499b4a145698b672",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-i",
+      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+      "expansion_blob_sha": "47e16bdf30da269cba32244cd672f4fe9aefef82"
     },
     {
       "code": "CAN",
@@ -470,15 +482,18 @@
     {
       "code": "SWE",
       "path": "data/players/surnames/countries/SWE.json",
-      "count": 500,
-      "status": "partial",
+      "count": 3000,
+      "status": "complete",
       "sources_available": true,
       "source_batch": "C",
       "source_pr": 426,
       "source_branch": "research/surnames-01-batch-c",
       "source_head_sha": "1ad95c65aa30c92fcb809377cdc3f11289be119f",
       "source_blob_sha": "e9174cfdb6e42941467b52ac7d0161e0a7df78ed",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-c",
+      "expansion_head_sha": "3c426196b5dc261cfc0ab88fea59301b02481b86",
+      "expansion_blob_sha": "aece2fc2b497bafabaf62238d99704cd5fa0efb4"
     },
     {
       "code": "RUS",
@@ -554,7 +569,7 @@
     {
       "code": "COD",
       "path": "data/players/surnames/countries/COD.json",
-      "count": 500,
+      "count": 1001,
       "status": "partial",
       "sources_available": true,
       "source_batch": "I",
@@ -562,7 +577,10 @@
       "source_branch": "research/surnames-01-batch-i",
       "source_head_sha": "1bbb482b752743a89005ade82053ec69193c628a",
       "source_blob_sha": "3188e4282ab835a537357a1d1b6cd8d7c7faf822",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-i",
+      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+      "expansion_blob_sha": "542e3c89293a8cd2378c281a360bb9566cb55219"
     },
     {
       "code": "GRE",
@@ -580,7 +598,7 @@
     {
       "code": "CMR",
       "path": "data/players/surnames/countries/CMR.json",
-      "count": 500,
+      "count": 1000,
       "status": "partial",
       "sources_available": true,
       "source_batch": "I",
@@ -588,7 +606,10 @@
       "source_branch": "research/surnames-01-batch-i",
       "source_head_sha": "1bbb482b752743a89005ade82053ec69193c628a",
       "source_blob_sha": "d65ad8026e592b9c283593eabd7fc82d34fe424b",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-i",
+      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+      "expansion_blob_sha": "37f0bff0463393fd3b27b15a3a955f3a81971bb0"
     },
     {
       "code": "SCO",
@@ -664,7 +685,7 @@
     {
       "code": "RSA",
       "path": "data/players/surnames/countries/RSA.json",
-      "count": 500,
+      "count": 1000,
       "status": "partial",
       "sources_available": true,
       "source_batch": "I",
@@ -672,7 +693,10 @@
       "source_branch": "research/surnames-01-batch-i",
       "source_head_sha": "1bbb482b752743a89005ade82053ec69193c628a",
       "source_blob_sha": "42afa90801c70f68978235c07b1327f2505ebd69",
-      "production_ready": false
+      "production_ready": false,
+      "expansion_branch": "research/surnames-3000-batch-i",
+      "expansion_head_sha": "770079a8c4b6825e9e89e5441fe8c3374568c1f3",
+      "expansion_blob_sha": "1042243684da1d39a4918dd7d28d22fbd6234d6f"
     },
     {
       "code": "VEN",
@@ -702,5 +726,5 @@
     }
   ],
   "target_total_surnames": 150000,
-  "total_surnames": 60427
+  "total_surnames": 72427
 }

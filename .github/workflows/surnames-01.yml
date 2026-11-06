@@ -5,6 +5,7 @@ on:
     paths:
       - 'data/players/surnames/**'
       - 'tests/surnames-01-catalog.test.mjs'
+      - 'tools/ci-test-ownership.json'
       - '.github/workflows/surnames-01.yml'
 permissions:
   contents: read
@@ -24,7 +25,7 @@ jobs:
         shell: bash
         run: |
           git diff --name-only origin/main...HEAD > /tmp/surnames-01-changed.txt
-          if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml)$' /tmp/surnames-01-changed.txt; then
+          if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
             echo 'Out-of-scope changes in SURNAMES-01 PR' >&2
             exit 1
           fi

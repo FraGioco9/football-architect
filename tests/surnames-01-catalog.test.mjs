@@ -18,8 +18,11 @@ const separatorSequence = /[ '\u2019-]{2}/u;
 
 function validSurname(value) {
   if (typeof value !== 'string' || value.length < 1 || value !== value.normalize('NFC')) return false;
-  if (separators.test(value[0]) || separators.test(value[value.length - 1]) || separatorSequence.test(value)) return false;
-  return value.split(separators).every(token =>
+  // Authentic Dutch surname contractions: "van 't Hof" and "'s Graeuwen".
+  // Syntax-only normalization: keep the original surname value untouched.
+  const syntax = value.replace(/(^| )'(?:s|t)(?= )/giu, '$1t');
+  if (separators.test(syntax[0]) || separators.test(syntax[syntax.length - 1]) || separatorSequence.test(syntax)) return false;
+  return syntax.split(separators).every(token =>
     latinToken.test(token) && [...token.matchAll(marks)].every(([mark]) => latinMark.test(mark))
   );
 }
@@ -117,18 +120,23 @@ test('cumulative counts match real pools and the 150,000 target, without padding
   const entries = catalog.countries.reduce((sum, country) => sum + country.count, 0);
   assert.equal(entries, catalog.total_surnames);
   assert.ok(entries >= 25000 && entries <= 150000);
-  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 14);
-  assert.equal(catalog.countries.filter(x => x.status === 'partial').length, 36);
+  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 18);
+  assert.equal(catalog.countries.filter(x => x.status === 'partial').length, 32);
   const mali = catalog.countries.find(x => x.code === 'MLI');
   assert.equal(mali.count, 927);
   assert.equal(mali.status, 'partial');
+  for (const [code, count] of [['COD', 1001], ['CMR', 1000], ['RSA', 1000], ['AUS', 999]]) {
+    const bank = catalog.countries.find(x => x.code === code);
+    assert.equal(bank.count, count);
+    assert.equal(bank.status, 'partial');
+  }
 });
 
 test('adversarial Unicode and compound surname grammar', () => {
-  for (const value of ['Rossi', 'De Luca', "O'Brien", 'O\u2019Reilly', 'García-Márquez', 'Müller', 'Łukaszewicz', 'D\u017eajić']) {
+  for (const value of ['Rossi', 'De Luca', "O'Brien", 'O\u2019Reilly', 'García-Márquez', 'Müller', 'Łukaszewicz', 'D\u017eajić', "van 't Hof", "in 't Veld", "'s Graeuwen"]) {
     assert.ok(validSurname(value), 'valid: ' + value);
   }
-  for (const value of ['Иванов', 'Ανδρέου', 'محمد', '山田', '김', 'שי', 'Rоssi', 'A\u0301lvarez', 'abc\u0300\u034f', '', ' De Luca', 'De Luca ', 'De  Luca', "O''Brien", 'Smith--Jones', '-Rossi', 'Rossi-', 'Smith2', 'Smith.Watson', 'Smith\tJones']) {
+  for (const value of ['Иванов', 'Ανδρέου', 'محمد', '山田', '김', 'שי', 'Rоssi', 'A\u0301lvarez', 'abc\u0300\u034f', '', ' De Luca', 'De Luca ', 'De  Luca', "O''Brien", 'Smith--Jones', '-Rossi', 'Rossi-', 'Smith2', 'Smith.Watson', 'Smith\tJones', "'x Veld", "'t", "'s", "van 't"]) {
     assert.equal(validSurname(value), false, 'reject: ' + value);
   }
 });
