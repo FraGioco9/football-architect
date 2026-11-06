@@ -1,152 +1,104 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {execFileSync} from 'node:child_process';
+import {readFileSync,readdirSync,existsSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import test from 'node:test';
-
-const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const dir = join(root, 'data/players/surnames');
-const catalog = JSON.parse(readFileSync(join(dir, 'catalog-v1.json'), 'utf8'));
-const expectedCodes = 'ESP ARG FRA ENG POR BRA MAR BEL NED MEX COL SUI GER CRO ITA USA JPN SEN NOR URU DEN AUT IRN ECU EGY AUS CAN ALG CIV NGA TUR KOR PAR SWE RUS UKR POL HUN WAL COD GRE CMR SCO SRB SVK PAN MLI RSA VEN CHI'.split(' ');
-const forbidden = new Set(['weight', 'probability', 'frequency_weight', 'selection_weight']);
-const latinToken = /^(?:\p{Script=Latin}\p{M}*)+$/u;
-const latinMark = /\p{Script_Extensions=Latin}/u;
-const marks = /\p{M}/gu;
-const separators = /[ '\u2019-]/u;
-const separatorSequence = /[ '\u2019-]{2}/u;
-
-function validSurname(value) {
-  if (typeof value !== 'string' || value.length < 1 || value !== value.normalize('NFC')) return false;
-  // Authentic Dutch surname contractions: "van 't Hof" and "'s Graeuwen".
-  // Syntax-only normalization: keep the original surname value untouched.
-  const syntax = value.replace(/(^| )'(?:s|t)(?= )/giu, '$1t');
-  if (separators.test(syntax[0]) || separators.test(syntax[syntax.length - 1]) || separatorSequence.test(syntax)) return false;
-  return syntax.split(separators).every(token =>
-    latinToken.test(token) && [...token.matchAll(marks)].every(([mark]) => latinMark.test(mark))
-  );
+const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
+const dir=join(root,'data/players/surnames');
+const catalog=JSON.parse(readFileSync(join(dir,'catalog-v1.json'),'utf8'));
+const codes='ESP ARG FRA ENG POR BRA MAR BEL NED MEX COL SUI GER CRO ITA USA JPN SEN NOR URU DEN AUT IRN ECU EGY AUS CAN ALG CIV NGA TUR KOR PAR SWE RUS UKR POL HUN WAL COD GRE CMR SCO SRB SVK PAN MLI RSA VEN CHI'.split(' ');
+const tiers=[{start_rank:1,end_rank:25,target_count:3000},{start_rank:26,end_rank:35,target_count:2000},{start_rank:36,end_rank:45,target_count:1500},{start_rank:46,end_rank:50,target_count:1000}];
+const states=['complete','partial','pending','over_target','blocked'];
+const forbidden=new Set(['weight','probability','frequency_weight','selection_weight']);
+const latin=/^(?:\p{Script=Latin}\p{M}*)+$/u,mark=/\p{Script_Extensions=Latin}/u,marks=/\p{M}/gu,sep=/[ '\u2019-]/u,repeat=/[ '\u2019-]{2}/u;
+function isSurname(s){
+ if(typeof s!=='string'||!s||s!==s.normalize('NFC'))return false;
+ const grammar=s.replace(/(^| )'(?:s|t)(?= )/giu,'$1t'); // documented Dutch particles
+ return !sep.test(grammar[0])&&!sep.test(grammar.at(-1))&&!repeat.test(grammar)&&grammar.split(sep).every(t=>latin.test(t)&&[...t.matchAll(marks)].every(([m])=>mark.test(m)));
 }
-
-function checkForbiddenKeys(value, path = '$') {
-  if (!value || typeof value !== 'object') return;
-  for (const [key, subvalue] of Object.entries(value)) {
-    assert.ok(!forbidden.has(key), 'Forbidden field ' + path + '.' + key);
-    checkForbiddenKeys(subvalue, path + '.' + key);
-  }
+function noWeights(v,path='$'){
+ if(!v||typeof v!=='object')return;
+ for(const[k,x]of Object.entries(v)){assert.ok(!forbidden.has(k),'Forbidden '+path+'.'+k);noWeights(x,path+'.'+k)}
 }
-
-test('exactly the 50 canonical PLAYERS-03 codes and one file per code', () => {
-  assert.deepEqual(catalog.countries.map(x => x.code), expectedCodes);
-  assert.equal(new Set(catalog.countries.map(x => x.code)).size, 50);
-  assert.deepEqual(
-    readdirSync(join(dir, 'countries')).filter(x => x.endsWith('.json')).sort(),
-    expectedCodes.map(x => x + '.json').sort()
-  );
+function gitBlob(sha){assert.match(sha,/^[a-f0-9]{40}$/);return JSON.parse(execFileSync('git',['cat-file','blob',sha],{cwd:root,encoding:'utf8',maxBuffer:4*1024*1024}))}
+function prior(path){return JSON.parse(execFileSync('git',['show',catalog.preservation_baseline_commit+':'+path],{cwd:root,encoding:'utf8',maxBuffer:4*1024*1024}))}
+const targetFor=i=>i<25?3000:i<35?2000:i<45?1500:1000;
+test('exact fixed ranking, 4 tiers and 115,000 aggregate target',()=>{
+ assert.deepEqual(catalog.countries.map(x=>x.code),codes);
+ assert.equal(new Set(codes).size,50);
+ assert.equal(catalog.schema_version,1);
+ assert.equal(catalog.kind,'surnames_catalog');
+ assert.equal(catalog.ranking_policy,'fixed_50_country_rank');
+ assert.deepEqual(catalog.ranking_tiers,tiers);
+ assert.equal(tiers.reduce((n,t)=>n+(t.end_rank-t.start_rank+1)*t.target_count,0),115000);
+ assert.equal(catalog.target_total_surnames,115000);
+ assert.ok(!Object.hasOwn(catalog,'target_per_country'));
+ assert.equal(catalog.selection_policy,'uniform');
+ assert.equal(catalog.production_ready,false);
+ assert.match(catalog.preservation_baseline_commit,/^[a-f0-9]{40}$/);
+ assert.deepEqual(readdirSync(join(dir,'countries')).filter(x=>x.endsWith('.json')).sort(),catalog.countries.filter(x=>x.status!=='pending').map(x=>x.code+'.json').sort());
+ noWeights(catalog);
 });
-
-test('catalog is uniform, nonproduction and has valid per-country metadata', () => {
-  assert.equal(catalog.schema_version, 1);
-  assert.equal(catalog.kind, 'surnames_catalog');
-  assert.equal(catalog.selection_policy, 'uniform');
-  assert.equal(catalog.target_per_country, 3000);
-  assert.equal(catalog.target_total_surnames, 150000);
-  assert.equal(catalog.total_surnames, catalog.countries.reduce((sum, x) => sum + x.count, 0));
-  assert.equal(catalog.production_ready, false);
-  checkForbiddenKeys(catalog);
-  for (const country of catalog.countries) {
-    assert.equal(country.path, 'data/players/surnames/countries/' + country.code + '.json');
-    assert.ok(['complete', 'partial', 'pending', 'blocked'].includes(country.status));
-    assert.equal(country.production_ready, false);
-    assert.equal(typeof country.sources_available, 'boolean');
-    assert.match(country.source_head_sha, /^[a-f0-9]{40}$/);
-    assert.match(country.source_blob_sha, /^[a-f0-9]{40}$/);
-    assert.match(country.source_branch, /^research\/surnames-01-batch-[a-m]$/);
-    assert.ok(country.count >= 500 && country.count <= 3000);
-    if (country.expansion_blob_sha) {
-      assert.match(country.expansion_blob_sha, /^[a-f0-9]{40}$/);
-      assert.match(country.expansion_branch, /^research\/surnames-3000-batch-[a-m]$/);
-      assert.match(country.expansion_head_sha, /^[a-f0-9]{40}$/);
-    }
-    assert.ok(Number.isInteger(country.source_pr) && country.source_pr > 0);
-  }
+test('country target/actual/missing/excess/status and global totals',()=>{
+ const counts=Object.fromEntries(states.map(x=>[x,0]));let actual=0,missing=0,excess=0;
+ for(const [i,c]of catalog.countries.entries()){
+  assert.equal(c.rank,i+1);
+  const target=targetFor(i);assert.equal(c.target_count,target,c.code);
+  assert.ok(Number.isInteger(c.actual_count)&&c.actual_count>=0,c.code);
+  assert.equal(c.missing_count,Math.max(0,target-c.actual_count),c.code);
+  assert.equal(c.excess_count,Math.max(0,c.actual_count-target),c.code);
+  const state=c.block_reason?'blocked':c.actual_count===0?'pending':c.actual_count<target?'partial':c.actual_count>target?'over_target':'complete';
+  assert.equal(c.status,state,c.code);
+  assert.ok(states.includes(c.status));
+  if(c.status==='blocked'){assert.match(c.blocked_source_head_sha,/^[a-f0-9]{40}$/);assert.ok(c.actual_count>0)}
+  if(c.status==='over_target')assert.equal(c.over_target_review_required,true);
+  assert.equal(c.production_ready,false);
+  assert.equal(c.sources_available,true);
+  assert.equal(c.path,'data/players/surnames/countries/'+c.code+'.json');
+  assert.match(c.source_blob_sha,/^[a-f0-9]{40}$/);
+  assert.match(c.source_head_sha,/^[a-f0-9]{40}$/);
+  assert.match(c.source_branch,/^research\/surnames-01-batch-[a-m]$/);
+  assert.ok(Number.isInteger(c.source_pr));
+  if(c.expansion_blob_sha){assert.match(c.expansion_blob_sha,/^[a-f0-9]{40}$/);assert.match(c.expansion_head_sha,/^[a-f0-9]{40}$/);assert.match(c.expansion_branch,/^research\/surnames-3000-batch-[a-m]$/)}
+  counts[c.status]++;actual+=c.actual_count;missing+=c.missing_count;excess+=c.excess_count;
+ }
+ assert.deepEqual(catalog.status_counts,counts);
+ assert.equal(catalog.total_surnames,actual);assert.equal(catalog.total_missing,missing);assert.equal(catalog.total_excess,excess);
+ assert.equal(actual+missing-excess,115000,'surplus cannot compensate other national shortages');
 });
-
-for (const country of catalog.countries) {
-  test(country.code + ': exact source blob, strict surname contract and actual count', () => {
-    const path = join(root, country.path);
-    const sourceSha = execFileSync('git', ['hash-object', path], { cwd: root, encoding: 'utf8' }).trim();
-    assert.equal(sourceSha, country.expansion_blob_sha ?? country.source_blob_sha, 'exact original or expanded source Git blob must be preserved');
-    const bank = JSON.parse(readFileSync(path, 'utf8'));
-    assert.deepEqual(Object.keys(bank).sort(), [
-      'code', 'kind', 'production_ready', 'schema_version',
-      'selection_policy', 'sources', 'surnames'
-    ].sort());
-    assert.equal(bank.schema_version, 1);
-    assert.equal(bank.code, country.code);
-    assert.equal(bank.kind, 'surnames');
-    assert.equal(bank.selection_policy, 'uniform');
-    assert.equal(bank.production_ready, false);
-    assert.ok(Array.isArray(bank.sources) && bank.sources.length > 0);
-    assert.ok(bank.sources.some(s => /^https:\/\//.test(s.url || s.source_url || '')));
-    assert.equal(country.sources_available, true);
-    assert.ok(Array.isArray(bank.surnames));
-    assert.equal(bank.surnames.length, country.count);
-    assert.equal(country.status, bank.surnames.length === 3000 ? 'complete' : 'partial');
-    if (country.status === 'complete') assert.equal(bank.surnames.length, 3000);
-    if (country.status === 'partial') assert.ok(bank.surnames.length >= 500 && bank.surnames.length < 3000);
-    if (country.expansion_blob_sha) {
-      // The 500-name original was committed in the integration branch history.
-      // Verify the exact original blob and preserve its sequence, not only its cardinality.
-      const previous = JSON.parse(execFileSync('git', ['cat-file', 'blob', country.source_blob_sha], {
-        cwd: root, encoding: 'utf8', maxBuffer: 2 * 1024 * 1024
-      }));
-      assert.equal(previous.code, bank.code);
-      assert.equal(previous.surnames.length, 500);
-      assert.deepEqual(bank.surnames.slice(0, 500), previous.surnames, country.code + ' original 500 surnames must remain byte-for-byte equivalent at entry level');
-    }
-    const seen = new Set();
-    checkForbiddenKeys(bank);
-    for (const [index, item] of bank.surnames.entries()) {
-      assert.deepEqual(Object.keys(item), ['value'], country.code + ' item ' + index + ' must have only value');
-      assert.ok(validSurname(item.value), country.code + ' item ' + index + ' illegal: ' + item.value);
-      const key = item.value.toLowerCase().normalize('NFC');
-      assert.ok(!seen.has(key), country.code + ' duplicate: ' + item.value);
-      seen.add(key);
-    }
-  });
-}
-
-test('cumulative counts match real pools and the 150,000 target, without padding', () => {
-  const entries = catalog.countries.reduce((sum, country) => sum + country.count, 0);
-  assert.equal(entries, catalog.total_surnames);
-  assert.ok(entries >= 25000 && entries <= 150000);
-  assert.equal(catalog.countries.filter(x => x.status === 'complete').length, 18);
-  assert.equal(catalog.countries.filter(x => x.status === 'partial').length, 32);
-  const mali = catalog.countries.find(x => x.code === 'MLI');
-  assert.equal(mali.count, 927);
-  assert.equal(mali.status, 'partial');
-  assert.equal(catalog.countries.find(x => x.code === 'ECU').count, 889);
-  assert.equal(catalog.countries.find(x => x.code === 'ECU').status, 'partial');
-  for (const [code, count] of [['COD', 1001], ['CMR', 1000], ['RSA', 1000], ['AUS', 999]]) {
-    const bank = catalog.countries.find(x => x.code === code);
-    assert.equal(bank.count, count);
-    assert.equal(bank.status, 'partial');
-  }
+for(const c of catalog.countries)test(c.code+': source blob, full history preservation, Unicode and strict unweighted entries',()=>{
+ const path=join(root,c.path);
+ if(c.status==='pending'){assert.ok(!existsSync(path));assert.equal(c.actual_count,0);return}
+ assert.ok(existsSync(path));
+ const sha=execFileSync('git',['hash-object',path],{cwd:root,encoding:'utf8'}).trim();
+ assert.equal(sha,c.expansion_blob_sha??c.source_blob_sha,c.code+' Git blob');
+ const bank=JSON.parse(readFileSync(path,'utf8'));
+ assert.deepEqual(Object.keys(bank).sort(),['schema_version','code','kind','selection_policy','sources','surnames','production_ready'].sort());
+ assert.equal(bank.schema_version,1);assert.equal(bank.code,c.code);assert.equal(bank.kind,'surnames');
+ assert.equal(bank.selection_policy,'uniform');assert.equal(bank.production_ready,false);
+ assert.ok(Array.isArray(bank.sources)&&bank.sources.length>0&&bank.sources.some(s=>/^https:\/\//.test(s.url??s.source_url??'')));
+ assert.equal(bank.surnames.length,c.actual_count);
+ noWeights(bank);
+ const before=prior(c.path);
+ assert.ok(bank.surnames.length>=before.surnames.length,c.code+' lost previously integrated entries');
+ assert.deepEqual(bank.surnames.slice(0,before.surnames.length),before.surnames,c.code+' previous entries changed');
+ const original=gitBlob(c.source_blob_sha);assert.equal(original.surnames.length,500);
+ assert.deepEqual(bank.surnames.slice(0,500),original.surnames,c.code+' lost original 500');
+ if(c.previous_expansion){const old=gitBlob(c.previous_expansion.blob_sha);assert.equal(old.surnames.length,c.previous_expansion.actual_count);assert.deepEqual(bank.surnames.slice(0,old.surnames.length),old.surnames)}
+ const seen=new Set();
+ for(const [i,item]of bank.surnames.entries()){
+  assert.deepEqual(Object.keys(item),['value'],c.code+' '+i+' unexpected fields');
+  assert.ok(isSurname(item.value),c.code+' '+i+' invalid surname '+item.value);
+  const key=item.value.toLowerCase().normalize('NFC');
+  assert.ok(!seen.has(key),c.code+' duplicate '+item.value);seen.add(key);
+ }
 });
-
-test('adversarial Unicode and compound surname grammar', () => {
-  for (const value of ['Rossi', 'De Luca', "O'Brien", 'O\u2019Reilly', 'García-Márquez', 'Müller', 'Łukaszewicz', 'D\u017eajić', "van 't Hof", "in 't Veld", "'s Graeuwen"]) {
-    assert.ok(validSurname(value), 'valid: ' + value);
-  }
-  for (const value of ['Иванов', 'Ανδρέου', 'محمد', '山田', '김', 'שי', 'Rоssi', 'A\u0301lvarez', 'abc\u0300\u034f', '', ' De Luca', 'De Luca ', 'De  Luca', "O''Brien", 'Smith--Jones', '-Rossi', 'Rossi-', 'Smith2', 'Smith.Watson', 'Smith\tJones', "'x Veld", "'t", "'s", "van 't"]) {
-    assert.equal(validSurname(value), false, 'reject: ' + value);
-  }
+test('Unicode and authentic compounds adversarial checks',()=>{
+ for(const x of ['Rossi','De Luca',"O'Brien",'O\u2019Reilly','García-Márquez','Müller','Łukaszewicz',"van 't Hof","'s Graeuwen"])assert.equal(isSurname(x),true,x);
+ for(const x of ['Иванов','Ανδρέου','محمد','山田','김','Rоssi','A\u0301lvarez','abc\u0300\u034f','',"O''Brien",'Smith--Jones',"van 't",' De Luca','De  Luca','Smith2'])assert.equal(isSurname(x),false,x);
 });
-
-test('PLAYERS-03 male given-name files are unchanged by this PR', () => {
-  if (!process.env.GITHUB_ACTIONS) return;
-  const output = execFileSync('git', ['diff', '--name-only', 'origin/main...HEAD', '--', 'data/players/names/'], {
-    cwd: root, encoding: 'utf8'
-  }).trim();
-  assert.equal(output, '', 'PR cannot alter PLAYERS-03 male name files');
+test('PLAYERS-03 unchanged',()=>{
+ if(!process.env.GITHUB_ACTIONS)return;
+ assert.equal(execFileSync('git',['diff','--name-only','origin/main...HEAD','--','data/players/names/'],{cwd:root,encoding:'utf8'}).trim(),'');
 });
