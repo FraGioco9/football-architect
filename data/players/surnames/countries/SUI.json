@@ -1,0 +1,1539 @@
+{
+  "schema_version": 1,
+  "code": "SUI",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "swiss-bfs-2025-top200",
+      "url": "https://namenatlas.ch/nachnamen",
+      "official_reference": "https://statistik.admin.ch/en/asset/36752508",
+      "scope": "Swiss end-2025 nationwide top 200 permanent-resident surname list, plus Romansh language-area top 10",
+      "limitations": "NamesAtlas republishes BFS STATPOP; original official 2025 XLSX not parsed; disclosure thresholds suppress uncommon names."
+    },
+    {
+      "id": "ticino-forebears",
+      "url": "https://forebears.io/switzerland/republic-and-canton-of-ticino/surnames",
+      "scope": "Surnames attested within Swiss canton Ticino, with original Italian spellings",
+      "limitations": "Older third-party estimates, not present-day national counts; incidence omitted; license review pending."
+    },
+    {
+      "id": "swiss-german-faker",
+      "url": "https://github.com/joke2k/faker/blob/27b47264b43ee9403918c91d320162f166dbba04/faker/providers/person/de_CH/__init__.py",
+      "mirror_blob_sha": "27b47264b43ee9403918c91d320162f166dbba04",
+      "scope": "Swiss-German-region surname collection",
+      "limitations": "Language-region curation, no national prevalence claim or Germany-country frequency transfer."
+    },
+    {
+      "id": "swiss-romand-faker",
+      "url": "https://github.com/joke2k/faker/blob/e99ba6f3018dfc4faf170aa16bd4a89d385fa761/faker/providers/person/fr_CH/__init__.py",
+      "mirror_blob_sha": "e99ba6f3018dfc4faf170aa16bd4a89d385fa761",
+      "original_reference": "http://kunden.eye.ch/swissgen/rsr/index.html",
+      "scope": "Swiss Romand/family genealogy surname list",
+      "limitations": "Historic/curated Swiss-family sample, not a representative current population census; licensing and individual contemporary residence require review."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Müller"
+    },
+    {
+      "value": "Ackermann"
+    },
+    {
+      "value": "Aebi"
+    },
+    {
+      "value": "Bernasconi"
+    },
+    {
+      "value": "Derungs"
+    },
+    {
+      "value": "Meier"
+    },
+    {
+      "value": "Aeby"
+    },
+    {
+      "value": "Bianchi"
+    },
+    {
+      "value": "Caduff"
+    },
+    {
+      "value": "Schmid"
+    },
+    {
+      "value": "Albrecht"
+    },
+    {
+      "value": "Alber"
+    },
+    {
+      "value": "Ferrari"
+    },
+    {
+      "value": "Casanova"
+    },
+    {
+      "value": "Keller"
+    },
+    {
+      "value": "Ammann"
+    },
+    {
+      "value": "Babey"
+    },
+    {
+      "value": "Rossi"
+    },
+    {
+      "value": "Maissen"
+    },
+    {
+      "value": "Weber"
+    },
+    {
+      "value": "Amrein"
+    },
+    {
+      "value": "Badan"
+    },
+    {
+      "value": "Crivelli"
+    },
+    {
+      "value": "Monn"
+    },
+    {
+      "value": "Schneider"
+    },
+    {
+      "value": "Arnold"
+    },
+    {
+      "value": "Badel"
+    },
+    {
+      "value": "Fontana"
+    },
+    {
+      "value": "Caviezel"
+    },
+    {
+      "value": "Huber"
+    },
+    {
+      "value": "Bachmann"
+    },
+    {
+      "value": "Bahon"
+    },
+    {
+      "value": "Cattaneo"
+    },
+    {
+      "value": "Cavegn"
+    },
+    {
+      "value": "da Silva"
+    },
+    {
+      "value": "Bader"
+    },
+    {
+      "value": "Balmat"
+    },
+    {
+      "value": "Rezzonico"
+    },
+    {
+      "value": "Venzin"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Bär"
+    },
+    {
+      "value": "Barbey"
+    },
+    {
+      "value": "Galli"
+    },
+    {
+      "value": "Arpagaus"
+    },
+    {
+      "value": "Steiner"
+    },
+    {
+      "value": "Bättig"
+    },
+    {
+      "value": "Barillon"
+    },
+    {
+      "value": "Deplazes"
+    },
+    {
+      "value": "Fischer"
+    },
+    {
+      "value": "Bauer"
+    },
+    {
+      "value": "Barman"
+    },
+    {
+      "value": "Colombo"
+    },
+    {
+      "value": "Gerber"
+    },
+    {
+      "value": "Baumann"
+    },
+    {
+      "value": "Bavaud"
+    },
+    {
+      "value": "Cereghetti"
+    },
+    {
+      "value": "Baumgartner"
+    },
+    {
+      "value": "Beguin"
+    },
+    {
+      "value": "Quadri"
+    },
+    {
+      "value": "Brunner"
+    },
+    {
+      "value": "Baur"
+    },
+    {
+      "value": "Berberat"
+    },
+    {
+      "value": "Cavadini"
+    },
+    {
+      "value": "Frei"
+    },
+    {
+      "value": "Beck"
+    },
+    {
+      "value": "Corti"
+    },
+    {
+      "value": "Zimmermann"
+    },
+    {
+      "value": "Benz"
+    },
+    {
+      "value": "Besançon"
+    },
+    {
+      "value": "Riva"
+    },
+    {
+      "value": "Moser"
+    },
+    {
+      "value": "Berger"
+    },
+    {
+      "value": "Besençon"
+    },
+    {
+      "value": "Camponovo"
+    },
+    {
+      "value": "Graf"
+    },
+    {
+      "value": "Besse"
+    },
+    {
+      "value": "Balmelli"
+    },
+    {
+      "value": "Widmer"
+    },
+    {
+      "value": "Betschart"
+    },
+    {
+      "value": "Beuchat"
+    },
+    {
+      "value": "Soldati"
+    },
+    {
+      "value": "Wyss"
+    },
+    {
+      "value": "Beuret"
+    },
+    {
+      "value": "Pellegrini"
+    },
+    {
+      "value": "Ferreira"
+    },
+    {
+      "value": "Bieri"
+    },
+    {
+      "value": "Beurret"
+    },
+    {
+      "value": "Beretta"
+    },
+    {
+      "value": "Pereira"
+    },
+    {
+      "value": "Blaser"
+    },
+    {
+      "value": "Blanc"
+    },
+    {
+      "value": "Pozzi"
+    },
+    {
+      "value": "Roth"
+    },
+    {
+      "value": "Blum"
+    },
+    {
+      "value": "Bochud"
+    },
+    {
+      "value": "Bolliger"
+    },
+    {
+      "value": "Boechat"
+    },
+    {
+      "value": "Martinelli"
+    },
+    {
+      "value": "Bucher"
+    },
+    {
+      "value": "Bosshard"
+    },
+    {
+      "value": "Boichat"
+    },
+    {
+      "value": "Lepori"
+    },
+    {
+      "value": "Braun"
+    },
+    {
+      "value": "Boillat"
+    },
+    {
+      "value": "Campana"
+    },
+    {
+      "value": "Suter"
+    },
+    {
+      "value": "Brun"
+    },
+    {
+      "value": "Bonvin"
+    },
+    {
+      "value": "Grassi"
+    },
+    {
+      "value": "Bonvini"
+    },
+    {
+      "value": "Bassi"
+    },
+    {
+      "value": "Kaufmann"
+    },
+    {
+      "value": "Botteron"
+    },
+    {
+      "value": "Canonica"
+    },
+    {
+      "value": "Studer"
+    },
+    {
+      "value": "Bühler"
+    },
+    {
+      "value": "Bourquard"
+    },
+    {
+      "value": "Regazzoni"
+    },
+    {
+      "value": "Lüthi"
+    },
+    {
+      "value": "Bühlmann"
+    },
+    {
+      "value": "Bourquin"
+    },
+    {
+      "value": "Cavalli"
+    },
+    {
+      "value": "Krasniqi"
+    },
+    {
+      "value": "Burri"
+    },
+    {
+      "value": "Bouvier"
+    },
+    {
+      "value": "Sala"
+    },
+    {
+      "value": "Christen"
+    },
+    {
+      "value": "Bovet"
+    },
+    {
+      "value": "Soldini"
+    },
+    {
+      "value": "dos Santos"
+    },
+    {
+      "value": "Egger"
+    },
+    {
+      "value": "Brahier"
+    },
+    {
+      "value": "Poretti"
+    },
+    {
+      "value": "Kunz"
+    },
+    {
+      "value": "Egli"
+    },
+    {
+      "value": "Brandt"
+    },
+    {
+      "value": "Togni"
+    },
+    {
+      "value": "Lehmann"
+    },
+    {
+      "value": "Eichenberger"
+    },
+    {
+      "value": "Broquet"
+    },
+    {
+      "value": "Pagani"
+    },
+    {
+      "value": "Hofer"
+    },
+    {
+      "value": "Erni"
+    },
+    {
+      "value": "Bugnon"
+    },
+    {
+      "value": "Leoni"
+    },
+    {
+      "value": "Rodrigues"
+    },
+    {
+      "value": "Ernst"
+    },
+    {
+      "value": "Bujard"
+    },
+    {
+      "value": "Valsangiacomo"
+    },
+    {
+      "value": "Marti"
+    },
+    {
+      "value": "Eugster"
+    },
+    {
+      "value": "Béguelin"
+    },
+    {
+      "value": "Berisha"
+    },
+    {
+      "value": "Fankhauser"
+    },
+    {
+      "value": "Candaux"
+    },
+    {
+      "value": "Solcà"
+    },
+    {
+      "value": "Favre"
+    },
+    {
+      "value": "Carraud"
+    },
+    {
+      "value": "Lurati"
+    },
+    {
+      "value": "Koch"
+    },
+    {
+      "value": "Fehr"
+    },
+    {
+      "value": "Carraux"
+    },
+    {
+      "value": "Gianinazzi"
+    },
+    {
+      "value": "Felber"
+    },
+    {
+      "value": "Carron"
+    },
+    {
+      "value": "Zanetti"
+    },
+    {
+      "value": "Frey"
+    },
+    {
+      "value": "Felder"
+    },
+    {
+      "value": "Cattin"
+    },
+    {
+      "value": "Chiesa"
+    },
+    {
+      "value": "Wüthrich"
+    },
+    {
+      "value": "Chappuis"
+    },
+    {
+      "value": "Genini"
+    },
+    {
+      "value": "Gashi"
+    },
+    {
+      "value": "Chapuis"
+    },
+    {
+      "value": "Rusconi"
+    },
+    {
+      "value": "Flückiger"
+    },
+    {
+      "value": "Charpié"
+    },
+    {
+      "value": "Zürcher"
+    },
+    {
+      "value": "Forster"
+    },
+    {
+      "value": "Chatriand"
+    },
+    {
+      "value": "Fuchs"
+    },
+    {
+      "value": "Chatriant"
+    },
+    {
+      "value": "Lucchini"
+    },
+    {
+      "value": "Fernandes"
+    },
+    {
+      "value": "Chaudet"
+    },
+    {
+      "value": "Vassalli"
+    },
+    {
+      "value": "Gasser"
+    },
+    {
+      "value": "Frick"
+    },
+    {
+      "value": "Chenaux"
+    },
+    {
+      "value": "Sartori"
+    },
+    {
+      "value": "Stalder"
+    },
+    {
+      "value": "Friedli"
+    },
+    {
+      "value": "Chevalley"
+    },
+    {
+      "value": "Frigerio"
+    },
+    {
+      "value": "Pfister"
+    },
+    {
+      "value": "Chevrolet"
+    },
+    {
+      "value": "Conti"
+    },
+    {
+      "value": "Martin"
+    },
+    {
+      "value": "Furrer"
+    },
+    {
+      "value": "Chopard"
+    },
+    {
+      "value": "Robbiani"
+    },
+    {
+      "value": "Koller"
+    },
+    {
+      "value": "Coigny"
+    },
+    {
+      "value": "Piffaretti"
+    },
+    {
+      "value": "Schweizer"
+    },
+    {
+      "value": "Geiger"
+    },
+    {
+      "value": "Comman"
+    },
+    {
+      "value": "Agustoni"
+    },
+    {
+      "value": "Gomes"
+    },
+    {
+      "value": "Comment"
+    },
+    {
+      "value": "Ortelli"
+    },
+    {
+      "value": "Peter"
+    },
+    {
+      "value": "Gfeller"
+    },
+    {
+      "value": "Comte"
+    },
+    {
+      "value": "Bottinelli"
+    },
+    {
+      "value": "Maurer"
+    },
+    {
+      "value": "Giger"
+    },
+    {
+      "value": "Conrad"
+    },
+    {
+      "value": "Gianini"
+    },
+    {
+      "value": "Gloor"
+    },
+    {
+      "value": "Corbat"
+    },
+    {
+      "value": "Morandi"
+    },
+    {
+      "value": "Kohler"
+    },
+    {
+      "value": "Corboz"
+    },
+    {
+      "value": "Locatelli"
+    },
+    {
+      "value": "Wenger"
+    },
+    {
+      "value": "Grob"
+    },
+    {
+      "value": "Cornut"
+    },
+    {
+      "value": "Rigamonti"
+    },
+    {
+      "value": "Martins"
+    },
+    {
+      "value": "Gross"
+    },
+    {
+      "value": "Cornuz"
+    },
+    {
+      "value": "Giovannini"
+    },
+    {
+      "value": "Gut"
+    },
+    {
+      "value": "Corpataux"
+    },
+    {
+      "value": "Caverzasio"
+    },
+    {
+      "value": "Haas"
+    },
+    {
+      "value": "Cosandey"
+    },
+    {
+      "value": "Conconi"
+    },
+    {
+      "value": "Michel"
+    },
+    {
+      "value": "Häfliger"
+    },
+    {
+      "value": "Cosendey"
+    },
+    {
+      "value": "Belotti"
+    },
+    {
+      "value": "Garcia"
+    },
+    {
+      "value": "Hafner"
+    },
+    {
+      "value": "Cossy"
+    },
+    {
+      "value": "Bozzini"
+    },
+    {
+      "value": "Vogel"
+    },
+    {
+      "value": "Hartmann"
+    },
+    {
+      "value": "Courvoisier"
+    },
+    {
+      "value": "Pedrazzi"
+    },
+    {
+      "value": "Lopes"
+    },
+    {
+      "value": "Hasler"
+    },
+    {
+      "value": "Cousin"
+    },
+    {
+      "value": "Scamara"
+    },
+    {
+      "value": "Schär"
+    },
+    {
+      "value": "Hauser"
+    },
+    {
+      "value": "Cretton"
+    },
+    {
+      "value": "Leonardi"
+    },
+    {
+      "value": "Leuenberger"
+    },
+    {
+      "value": "Hermann"
+    },
+    {
+      "value": "Crevoisier"
+    },
+    {
+      "value": "Maggetti"
+    },
+    {
+      "value": "Herzog"
+    },
+    {
+      "value": "Vitali"
+    },
+    {
+      "value": "Hofmann"
+    },
+    {
+      "value": "Hess"
+    },
+    {
+      "value": "Curdy"
+    },
+    {
+      "value": "Bossi"
+    },
+    {
+      "value": "Rüegg"
+    },
+    {
+      "value": "Hirt"
+    },
+    {
+      "value": "de Dardel"
+    },
+    {
+      "value": "Pesenti"
+    },
+    {
+      "value": "Hodel"
+    },
+    {
+      "value": "Deladoëy"
+    },
+    {
+      "value": "Carrara"
+    },
+    {
+      "value": "Hunziker"
+    },
+    {
+      "value": "Delèze"
+    },
+    {
+      "value": "Fornera"
+    },
+    {
+      "value": "Schuler"
+    },
+    {
+      "value": "Hoffmann"
+    },
+    {
+      "value": "Deshusses"
+    },
+    {
+      "value": "Gamboni"
+    },
+    {
+      "value": "Hug"
+    },
+    {
+      "value": "Diesbach"
+    },
+    {
+      "value": "Perucchi"
+    },
+    {
+      "value": "Hofstetter"
+    },
+    {
+      "value": "Droz"
+    },
+    {
+      "value": "Manzoni"
+    },
+    {
+      "value": "Tanner"
+    },
+    {
+      "value": "Hotz"
+    },
+    {
+      "value": "Dubey"
+    },
+    {
+      "value": "Pedretti"
+    },
+    {
+      "value": "Silva"
+    },
+    {
+      "value": "Duroux"
+    },
+    {
+      "value": "Calderari"
+    },
+    {
+      "value": "Kälin"
+    },
+    {
+      "value": "Duvanel"
+    },
+    {
+      "value": "Papa"
+    },
+    {
+      "value": "Oliveira"
+    },
+    {
+      "value": "Délèze"
+    },
+    {
+      "value": "Maggi"
+    },
+    {
+      "value": "Sutter"
+    },
+    {
+      "value": "Hürlimann"
+    },
+    {
+      "value": "Evéquoz"
+    },
+    {
+      "value": "Spinelli"
+    },
+    {
+      "value": "Wagner"
+    },
+    {
+      "value": "Imhof"
+    },
+    {
+      "value": "Fonjallaz"
+    },
+    {
+      "value": "Casellini"
+    },
+    {
+      "value": "Alves"
+    },
+    {
+      "value": "Isler"
+    },
+    {
+      "value": "Francillon"
+    },
+    {
+      "value": "Cerutti"
+    },
+    {
+      "value": "Gonçalves"
+    },
+    {
+      "value": "Iten"
+    },
+    {
+      "value": "Galland"
+    },
+    {
+      "value": "Ratti"
+    },
+    {
+      "value": "Gisler"
+    },
+    {
+      "value": "Jäggi"
+    },
+    {
+      "value": "Georges"
+    },
+    {
+      "value": "Salmina"
+    },
+    {
+      "value": "Schmidt"
+    },
+    {
+      "value": "Jenni"
+    },
+    {
+      "value": "Gillièron"
+    },
+    {
+      "value": "Vanini"
+    },
+    {
+      "value": "Ribeiro"
+    },
+    {
+      "value": "Jost"
+    },
+    {
+      "value": "Gilliéron"
+    },
+    {
+      "value": "Greco"
+    },
+    {
+      "value": "Kägi"
+    },
+    {
+      "value": "Godet"
+    },
+    {
+      "value": "Rosselli"
+    },
+    {
+      "value": "Kaiser"
+    },
+    {
+      "value": "Grand"
+    },
+    {
+      "value": "Simona"
+    },
+    {
+      "value": "Grojean"
+    },
+    {
+      "value": "Valli"
+    },
+    {
+      "value": "Käser"
+    },
+    {
+      "value": "Grosjean"
+    },
+    {
+      "value": "Antognini"
+    },
+    {
+      "value": "Pinto"
+    },
+    {
+      "value": "Gubéran"
+    },
+    {
+      "value": "Luisoni"
+    },
+    {
+      "value": "da Costa"
+    },
+    {
+      "value": "Humbert"
+    },
+    {
+      "value": "Rossinelli"
+    },
+    {
+      "value": "Shala"
+    },
+    {
+      "value": "Kern"
+    },
+    {
+      "value": "Isella"
+    },
+    {
+      "value": "Arigoni"
+    },
+    {
+      "value": "Kessler"
+    },
+    {
+      "value": "Jacot-Descombes"
+    },
+    {
+      "value": "Fassora"
+    },
+    {
+      "value": "Teixeira"
+    },
+    {
+      "value": "Knecht"
+    },
+    {
+      "value": "Jacot-Guillarmod"
+    },
+    {
+      "value": "Milesi"
+    },
+    {
+      "value": "Lang"
+    },
+    {
+      "value": "Joly"
+    },
+    {
+      "value": "Zucchetti"
+    },
+    {
+      "value": "Stucki"
+    },
+    {
+      "value": "Jomini"
+    },
+    {
+      "value": "Dotta"
+    },
+    {
+      "value": "Marques"
+    },
+    {
+      "value": "Kuhn"
+    },
+    {
+      "value": "Joye"
+    },
+    {
+      "value": "Grossi"
+    },
+    {
+      "value": "Senn"
+    },
+    {
+      "value": "Küng"
+    },
+    {
+      "value": "Julliard"
+    },
+    {
+      "value": "Lombardo"
+    },
+    {
+      "value": "Siegenthaler"
+    },
+    {
+      "value": "Maire"
+    },
+    {
+      "value": "Marchesi"
+    },
+    {
+      "value": "Santos"
+    },
+    {
+      "value": "Petralli"
+    },
+    {
+      "value": "Zbinden"
+    },
+    {
+      "value": "Lanz"
+    },
+    {
+      "value": "Barloggio"
+    },
+    {
+      "value": "Sommer"
+    },
+    {
+      "value": "Marty"
+    },
+    {
+      "value": "Berta"
+    },
+    {
+      "value": "Odermatt"
+    },
+    {
+      "value": "Leu"
+    },
+    {
+      "value": "Masseron"
+    },
+    {
+      "value": "Luraschi"
+    },
+    {
+      "value": "Leunberger"
+    },
+    {
+      "value": "Matile"
+    },
+    {
+      "value": "Macchi"
+    },
+    {
+      "value": "Bajrami"
+    },
+    {
+      "value": "Lüscher"
+    },
+    {
+      "value": "Mayor"
+    },
+    {
+      "value": "Tarchini"
+    },
+    {
+      "value": "Morina"
+    },
+    {
+      "value": "Lustenberger"
+    },
+    {
+      "value": "Menthonnex"
+    },
+    {
+      "value": "Domeniconi"
+    },
+    {
+      "value": "Rodriguez"
+    },
+    {
+      "value": "Mercier"
+    },
+    {
+      "value": "Dozio"
+    },
+    {
+      "value": "Scherrer"
+    },
+    {
+      "value": "Lutz"
+    },
+    {
+      "value": "Fattorini"
+    },
+    {
+      "value": "Zaugg"
+    },
+    {
+      "value": "Mäder"
+    },
+    {
+      "value": "Monnard"
+    },
+    {
+      "value": "Peverelli"
+    },
+    {
+      "value": "Maier"
+    },
+    {
+      "value": "Monnet"
+    },
+    {
+      "value": "Gaggini"
+    },
+    {
+      "value": "Ramadani"
+    },
+    {
+      "value": "Frapolli"
+    },
+    {
+      "value": "Portmann"
+    },
+    {
+      "value": "Monney"
+    },
+    {
+      "value": "Banfi"
+    },
+    {
+      "value": "Montandon"
+    },
+    {
+      "value": "Martinoli"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Mayer"
+    },
+    {
+      "value": "Morand"
+    },
+    {
+      "value": "di Stefano"
+    },
+    {
+      "value": "Vogt"
+    },
+    {
+      "value": "Morard"
+    },
+    {
+      "value": "Giglio"
+    },
+    {
+      "value": "Schwarz"
+    },
+    {
+      "value": "Meili"
+    },
+    {
+      "value": "Mottet"
+    },
+    {
+      "value": "Schärer"
+    },
+    {
+      "value": "Meister"
+    },
+    {
+      "value": "Mottiez"
+    },
+    {
+      "value": "Mazzoni"
+    },
+    {
+      "value": "Merz"
+    },
+    {
+      "value": "Muriset"
+    },
+    {
+      "value": "Mutti"
+    },
+    {
+      "value": "Scheidegger"
+    },
+    {
+      "value": "Mettler"
+    },
+    {
+      "value": "Musy"
+    },
+    {
+      "value": "Respini"
+    },
+    {
+      "value": "Rizza"
+    },
+    {
+      "value": "Costa"
+    },
+    {
+      "value": "Niquille"
+    },
+    {
+      "value": "Salvi"
+    },
+    {
+      "value": "Schenk"
+    },
+    {
+      "value": "Nusslé"
+    },
+    {
+      "value": "Signorini"
+    },
+    {
+      "value": "Liechti"
+    },
+    {
+      "value": "Nüsslin"
+    },
+    {
+      "value": "Silini"
+    },
+    {
+      "value": "Rey"
+    },
+    {
+      "value": "Näf"
+    },
+    {
+      "value": "Paccot"
+    },
+    {
+      "value": "Bruschetti"
+    },
+    {
+      "value": "Ott"
+    },
+    {
+      "value": "Pachoud"
+    },
+    {
+      "value": "Calzascia"
+    },
+    {
+      "value": "Schumacher"
+    },
+    {
+      "value": "Paschoud"
+    },
+    {
+      "value": "Casada"
+    },
+    {
+      "value": "Pasquier"
+    },
+    {
+      "value": "Casati"
+    },
+    {
+      "value": "Peitrequin"
+    },
+    {
+      "value": "Colosio"
+    },
+    {
+      "value": "Weiss"
+    },
+    {
+      "value": "Probst"
+    },
+    {
+      "value": "Pellet"
+    },
+    {
+      "value": "Fovini"
+    },
+    {
+      "value": "Staub"
+    },
+    {
+      "value": "Piccand"
+    },
+    {
+      "value": "Gasparini"
+    },
+    {
+      "value": "Ritter"
+    },
+    {
+      "value": "Polla"
+    },
+    {
+      "value": "Ghielmetti"
+    },
+    {
+      "value": "Seiler"
+    },
+    {
+      "value": "Roos"
+    },
+    {
+      "value": "Privet"
+    },
+    {
+      "value": "Giani"
+    },
+    {
+      "value": "Stocker"
+    },
+    {
+      "value": "Quartier"
+    },
+    {
+      "value": "Maiocchi"
+    },
+    {
+      "value": "Wolf"
+    },
+    {
+      "value": "Rapin"
+    },
+    {
+      "value": "Milosevic"
+    },
+    {
+      "value": "Röthlisberger"
+    },
+    {
+      "value": "Schäfer"
+    },
+    {
+      "value": "Rappaz"
+    },
+    {
+      "value": "Petrovic"
+    },
+    {
+      "value": "Schaller"
+    },
+    {
+      "value": "Rapraz"
+    },
+    {
+      "value": "Tamborini"
+    },
+    {
+      "value": "Balzaretti"
+    },
+    {
+      "value": "Dias"
+    },
+    {
+      "value": "Robadey"
+    },
+    {
+      "value": "Bianco"
+    },
+    {
+      "value": "Schnyder"
+    },
+    {
+      "value": "Schaub"
+    },
+    {
+      "value": "Robert"
+    },
+    {
+      "value": "Bizzozzero"
+    },
+    {
+      "value": "Romanens"
+    }
+  ],
+  "production_ready": false
+}

@@ -1,0 +1,23 @@
+name: SURNAMES-01 Batch B (Node 22)
+on:
+  pull_request:
+    paths:
+      - 'data/players/surnames/countries/GER.json'
+      - 'data/players/surnames/countries/AUT.json'
+      - 'data/players/surnames/countries/SUI.json'
+      - 'data/players/surnames/countries/BEL.json'
+      - 'data/players/surnames/batch-b.qa.test.mjs'
+      - '.github/workflows/surnames-01-batch-b-qa.yml'
+permissions:
+  contents: read
+jobs:
+  batch-b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Targeted Node 22 QA
+        run: node --test data/players/surnames/batch-b.qa.test.mjs
