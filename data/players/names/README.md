@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**2,100 / 15,000** single first-name slots saved in **7 / 50 countries**. **43 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**3,300 / 15,000** single first-name slots saved in **11 / 50 countries**. **39 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -17,6 +17,10 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Scotland (SCO) | `countries/SCO.json` | 300 | National Records of Scotland registered male births, 2000–2025 |
 | Canada (CAN) | `countries/CAN.json` | 300 | Statistics Canada national male first names at birth, 2000–2025 |
 | Poland (POL) | `countries/POL.json` | 300 | Polish Ministry of Digital Affairs national PESEL male **first** given names, 2025 |
+| Germany (GER) | `countries/GER.json` | 300 | Berlin male first names at birth, 2023; **regional Berlin sample, not Germany-wide** |
+| Austria (AUT) | `countries/AUT.json` | 300 | Statistik Austria, national registered male first names at birth, 2010–2025 |
+| Switzerland (SUI) | `countries/SUI.json` | 300 | Swiss FSO, national male residents in 2025 born 2000–2025; **not births in Switzerland** |
+| Belgium (BEL) | `countries/BEL.json` | 300 | Statbel, Belgium-wide male birth first names, 2000–2025; Flemish/French/Brussels regions included |
 
 ### Source integrity, scope and limitations
 
@@ -28,10 +32,18 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 - **CAN:** [Statistics Canada table 17-10-0147-01](https://www150.statcan.gc.ca/n1/en/catalogue/1710014701). Keep only `GEO=Canada`, `Sex at birth=Male`, `Indicator=Frequency` and **2000–2025**; sum observed positive `VALUE` and skip suppressed source cells. Source ZIP `17100147-eng.zip`, SHA-256 `c2c4a0b9c40c1116bf4229b97ae0680af4ffdd3721834533c31d4145ed56f420`. Data adapted under the Statistics Canada Open Licence; this does not constitute endorsement by Statistics Canada.
 - **POL:** [Polish government national first names dataset](https://dane.gov.pl/pl/dataset/219,imiona-nadawane-dzieciom-w-polsce/resource/1159536), **2025 first given names of boys**, directly from PESEL; CSV SHA-256 `447f64ad7008f7960341710322d4f4d20e928129753f9469a10abc593da92beb`. 300 selected from 959 eligible single-word male names. Verify the specific government's data reuse notice before commercial publication of the numeric counts. This source is explicitly about **first**, not middle, names.
 
+**Batch B (PR #413, GER/AUT/SUI/BEL):**
+- **GER:** [BerlinOnline/LABO Berlin first names 2023](https://github.com/berlin/haeufige-vornamen-berlin/tree/34ce79c5eccb7bc1f24087a7a3edb1a100bf39e4/data/2023), pinned source commit `34ce79c5eccb7bc1f24087a7a3edb1a100bf39e4`, `all_names.json` SHA-256 `327431daf6854268dce647fb6cdea6fe6f994dd67c60e95ba8b691c43dd44480`. 300 chosen among 1,553 eligible single male first-position names. Observed Berlin district common counts plus published rare-name aggregates; unnamed unique singletons excluded. **Regional Berlin only; frequencies cannot be presented as Germany-wide national statistics.** CC BY 3.0 DE; attribution BerlinOnline GmbH based on Berlin LABO data.
+- **AUT:** [Statistik Austria OGDEXT_VORNAMEN_1](https://data.statistik.gv.at/web/meta.jsp?dataset=OGDEXT_VORNAMEN_1), official CSV SHA-256 `49c277575ff669e5a7b670d759ec17d033e9c079aa802e3a096a0640b6756a6c`. 300 of 1,942 eligible male first names, calendar-year births **2010–2025**, grouped over political districts; all citizenships in this era. Regional units are summed without adding duplicate higher-level totals. CC BY 4.0; credit Statistik Austria.
+- **SUI:** [Swiss Federal Statistical Office, national resident first names by birth cohort](https://dam-api.bfs.admin.ch/hub/api/dam/assets/36752513/master), 2025 source CSV SHA-256 `75f8d1d00f7c0a73b7ad3f149bb39596fee295773ff0416e98b63006e375f66f`. 300 of 23,868 eligible male names among **Swiss residents in 2025 born 2000–2025**. These are resident-stock counts, **not Swiss birth registrations**; cover the country's multilingual regions without importing neighboring countries' counts. FSO open data reuse terms apply.
+- **BEL:** [Statbel Firstnames Boys 1995–2025 workbook](https://statbel.fgov.be/en/themes/population/family-names-and-first-names/first-names-boys-and-girls), XLSX SHA-256 `eb33415f0c1a488d3e0978e6a8b0b3f06e32a9fe3ac3038edeafc6c7f4dc03a1`. 300 of 3,668 eligible Belgian male names. Sum **Belgium national** birth columns for 2000–2025, **not** additional Flanders/Wallonia/Brussels columns. Names below the published annual threshold (5) are suppressed and not artificially estimated. CC BY 4.0.
+
+Batch B [targeted Node 22 source-extraction QA: PASS](https://github.com/FraGioco9/football-architect/actions/runs/42240818838); all four unchanged Git blob objects were carried to the catalog branch. Frequency weights must not be compared across countries, populations, cohorts or languages. Data remain `production_ready:false`.
+
 The selected four are country-specific (no indiscriminate England/Wales shared pool), and national origins may be mixed as authorized. The different source periods are documented. Earlier Onomaverse research, surname candidates and PLAYERS-01 prototype identities were not reused as data for these new lists.
 
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 7 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 43 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC single-token male first names in **each of 11 populated banks**, unique casefold within each country, positive source counts sorted descending, source ID/registry coherence, no compound names or surnames, and 39 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

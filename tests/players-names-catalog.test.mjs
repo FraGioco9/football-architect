@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const strict=/^[\p{L}\p{M}]+$/u;
 const sourceIds={
@@ -14,21 +14,25 @@ const sourceIds={
  USA:'us-ssa-male-births-2016-2020',
  SCO:'gb-nrs-scotland-male-births-2000-2025',
  CAN:'ca-statcan-male-births-2000-2025',
- POL:'pl-gov-pesel-first-male-names-2025'
+ POL:'pl-gov-pesel-first-male-names-2025',
+ GER:'de-berlin-first-male-births-2023',
+ AUT:'at-statistikaustria-first-male-births-2010-2025',
+ SUI:'ch-bfs-resident-male-birth-cohorts-2000-2025',
+ BEL:'be-statbel-male-births-2000-2025'
 };
 
-test('frozen 50 FIFA codes, exactly 7 saved banks of 300 and 43 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 11 saved banks of 300 and 39 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,2100);
+ assert.equal(master.policy.current_collected_given_names,3300);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one first name/i);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,7);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,43);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,11);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,39);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -44,7 +48,7 @@ test('frozen 50 FIFA codes, exactly 7 saved banks of 300 and 43 empty banks',()=
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,7);
+ assert.equal(new Set(ids).size,11);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -52,7 +56,7 @@ test('frozen 50 FIFA codes, exactly 7 saved banks of 300 and 43 empty banks',()=
  }
 });
 
-test('each of seven country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of eleven country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -97,4 +101,8 @@ test('known formerly invalid compound forms cannot return; accents and unrestric
  assert.equal(banks.SCO.source.source_zip_sha256,'e1dd892b576f75cc349caeee7a219aa9fad3857b1849bc2ce21bfd81c24b3085');
  assert.equal(banks.CAN.source.source_zip_sha256,'c2c4a0b9c40c1116bf4229b97ae0680af4ffdd3721834533c31d4145ed56f420');
  assert.equal(banks.POL.source.source_csv_sha256,'447f64ad7008f7960341710322d4f4d20e928129753f9469a10abc593da92beb');
+ assert.equal(banks.GER.source.source_sha256,'327431daf6854268dce647fb6cdea6fe6f994dd67c60e95ba8b691c43dd44480');
+ assert.equal(banks.AUT.source.source_csv_sha256,'49c277575ff669e5a7b670d759ec17d033e9c079aa802e3a096a0640b6756a6c');
+ assert.equal(banks.SUI.source.source_csv_sha256,'75f8d1d00f7c0a73b7ad3f149bb39596fee295773ff0416e98b63006e375f66f');
+ assert.equal(banks.BEL.source.source_xlsx_sha256,'eb33415f0c1a488d3e0978e6a8b0b3f06e32a9fe3ac3038edeafc6c7f4dc03a1');
 });

@@ -44,6 +44,30 @@
       "id": "pl-gov-pesel-first-male-names-2025",
       "external_file": "countries/POL.json",
       "description": "Polish Ministry of Digital Affairs PESEL national first male given names in 2025"
+    },
+    {
+      "code": "GER",
+      "id": "de-berlin-first-male-births-2023",
+      "external_file": "countries/GER.json",
+      "description": "Berlin LABO registered first-position male names, Berlin-only regional births 2023 (not Germany-wide)"
+    },
+    {
+      "code": "AUT",
+      "id": "at-statistikaustria-first-male-births-2010-2025",
+      "external_file": "countries/AUT.json",
+      "description": "Statistik Austria national male registered first names at birth 2010–2025, political districts aggregated"
+    },
+    {
+      "code": "SUI",
+      "id": "ch-bfs-resident-male-birth-cohorts-2000-2025",
+      "external_file": "countries/SUI.json",
+      "description": "Swiss FSO 2025 national male residents born 2000–2025 (resident population stock, not births)"
+    },
+    {
+      "code": "BEL",
+      "id": "be-statbel-male-births-2000-2025",
+      "external_file": "countries/BEL.json",
+      "description": "Statbel Belgian national male registered births 2000–2025 (Belgium columns, no regional double counting)"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -57,7 +81,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 2100,
+    "current_collected_given_names": 3300,
     "first_name_format": "exactly one first name per entry: Unicode letters and combining marks only; no whitespace, hyphens, apostrophes, punctuation or double given names",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -154,11 +178,16 @@
       "rank": 8,
       "label": "Belgium",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "be-statbel-male-births-2000-2025"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/BEL.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "NED",
@@ -198,22 +227,32 @@
       "rank": 12,
       "label": "Switzerland",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "ch-bfs-resident-male-birth-cohorts-2000-2025"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/SUI.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "GER",
       "rank": 13,
       "label": "Germany",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "de-berlin-first-male-births-2023"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/GER.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "CRO",
@@ -318,11 +357,16 @@
       "rank": 22,
       "label": "Austria",
       "given_names": [],
-      "name_source_ids": [],
+      "name_source_ids": [
+        "at-statistikaustria-first-male-births-2010-2025"
+      ],
       "origin_review": "not_started",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/AUT.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "one Unicode letter-only first name; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "IRN",
