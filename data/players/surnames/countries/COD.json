@@ -1,0 +1,1530 @@
+{
+  "schema_version": 1,
+  "code": "COD",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-national-surnames-2014",
+      "url": "https://forebears.io/dr-congo/surnames",
+      "dataset": "Forebears, Most Common Last Names",
+      "geographical_scope": "Democratic Republic of the Congo (ISO CD; COD)",
+      "temporal_scope": "Publisher's 2014 country estimates; not a current census or a birth-cohort dataset.",
+      "coverage": "The 500 listed surname entries at source positions 1–500; no frequency or rank is used as selection weight.",
+      "limitations": "Country ranking is explicitly DR Congo (ISO CD), not Republic of the Congo (ISO CG). Nationwide estimates, not a Congolese civil-registry enumeration. Forebears methodology/coverage may be incomplete and surname incidence is modeled, not a government-certified population count."
+    },
+    {
+      "id": "source-transcription-github",
+      "url": "https://github.com/p-svacha/ProceduralTextGeneration/blob/f31c130063fc5f4c8c09322f1f67879f595579fb/Assets/Resources/Geographical/surnames/CD_surnames.txt",
+      "git_blob_sha": "f31c130063fc5f4c8c09322f1f67879f595579fb",
+      "dataset": "p-svacha/ProceduralTextGeneration geographic surname transcription",
+      "geographical_scope": "Democratic Republic of the Congo (ISO CD; COD)",
+      "temporal_scope": "Repository mirror publicly available by 2023; snapshot preserves source order.",
+      "coverage": "Used the first 500 lines as a verbatim country-specific extract. No surnames constructed or spelling variants fabricated.",
+      "limitations": "Independent mirror; source data rights and repository dataset redistribution licence not verified. Research/HOLD only."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Ilunga"
+    },
+    {
+      "value": "Ngoy"
+    },
+    {
+      "value": "Kasongo"
+    },
+    {
+      "value": "Banza"
+    },
+    {
+      "value": "Ntumba"
+    },
+    {
+      "value": "Mujinga"
+    },
+    {
+      "value": "Ngalula"
+    },
+    {
+      "value": "Nkulu"
+    },
+    {
+      "value": "Kyungu"
+    },
+    {
+      "value": "Ngoie"
+    },
+    {
+      "value": "Kapinga"
+    },
+    {
+      "value": "Mbuyi"
+    },
+    {
+      "value": "Mwamba"
+    },
+    {
+      "value": "Mutombo"
+    },
+    {
+      "value": "Kazadi"
+    },
+    {
+      "value": "Mbombo"
+    },
+    {
+      "value": "Kalenga"
+    },
+    {
+      "value": "Monga"
+    },
+    {
+      "value": "Mputu"
+    },
+    {
+      "value": "Mbuyu"
+    },
+    {
+      "value": "Umba"
+    },
+    {
+      "value": "Numbi"
+    },
+    {
+      "value": "Mukalay"
+    },
+    {
+      "value": "Tshibola"
+    },
+    {
+      "value": "Kayembe"
+    },
+    {
+      "value": "Kanku"
+    },
+    {
+      "value": "Banze"
+    },
+    {
+      "value": "Kabange"
+    },
+    {
+      "value": "Mumba"
+    },
+    {
+      "value": "Kabamba"
+    },
+    {
+      "value": "Nzuzi"
+    },
+    {
+      "value": "Mbayo"
+    },
+    {
+      "value": "Kisimba"
+    },
+    {
+      "value": "Bahati"
+    },
+    {
+      "value": "Ngalamulume"
+    },
+    {
+      "value": "Nsenga"
+    },
+    {
+      "value": "Kabeya"
+    },
+    {
+      "value": "Nlandu"
+    },
+    {
+      "value": "Nsimba"
+    },
+    {
+      "value": "Ngoyi"
+    },
+    {
+      "value": "Nyembo"
+    },
+    {
+      "value": "Yumba"
+    },
+    {
+      "value": "Maloba"
+    },
+    {
+      "value": "Kabongo"
+    },
+    {
+      "value": "Kalala"
+    },
+    {
+      "value": "Misenga"
+    },
+    {
+      "value": "Mbumba"
+    },
+    {
+      "value": "Furaha"
+    },
+    {
+      "value": "Muamba"
+    },
+    {
+      "value": "Kongolo"
+    },
+    {
+      "value": "Mwilambwe"
+    },
+    {
+      "value": "Mulumba"
+    },
+    {
+      "value": "Kakudji"
+    },
+    {
+      "value": "Kabulo"
+    },
+    {
+      "value": "Kalunga"
+    },
+    {
+      "value": "Kabila"
+    },
+    {
+      "value": "Ngombe"
+    },
+    {
+      "value": "Kayumba"
+    },
+    {
+      "value": "Mbuya"
+    },
+    {
+      "value": "Matondo"
+    },
+    {
+      "value": "Mwanza"
+    },
+    {
+      "value": "Ngoma"
+    },
+    {
+      "value": "Mande"
+    },
+    {
+      "value": "Masengo"
+    },
+    {
+      "value": "Mukendi"
+    },
+    {
+      "value": "Tshibuabua"
+    },
+    {
+      "value": "Kitenge"
+    },
+    {
+      "value": "Tsimba"
+    },
+    {
+      "value": "Mulongo"
+    },
+    {
+      "value": "Fatuma"
+    },
+    {
+      "value": "Beya"
+    },
+    {
+      "value": "Mwepu"
+    },
+    {
+      "value": "Ngandu"
+    },
+    {
+      "value": "Mboyo"
+    },
+    {
+      "value": "Lunda"
+    },
+    {
+      "value": "Nkongolo"
+    },
+    {
+      "value": "Sifa"
+    },
+    {
+      "value": "Muteba"
+    },
+    {
+      "value": "Mwape"
+    },
+    {
+      "value": "Feza"
+    },
+    {
+      "value": "Nsimire"
+    },
+    {
+      "value": "Mpanga"
+    },
+    {
+      "value": "Tshimanga"
+    },
+    {
+      "value": "Kalombo"
+    },
+    {
+      "value": "Muzinga"
+    },
+    {
+      "value": "Ngongo"
+    },
+    {
+      "value": "Lenge"
+    },
+    {
+      "value": "Kishimba"
+    },
+    {
+      "value": "Mwange"
+    },
+    {
+      "value": "Mwenze"
+    },
+    {
+      "value": "Milolo"
+    },
+    {
+      "value": "Ndala"
+    },
+    {
+      "value": "Safi"
+    },
+    {
+      "value": "Tshibangu"
+    },
+    {
+      "value": "Nyota"
+    },
+    {
+      "value": "Nday"
+    },
+    {
+      "value": "Kabwe"
+    },
+    {
+      "value": "Amisi"
+    },
+    {
+      "value": "Kapya"
+    },
+    {
+      "value": "Lelo"
+    },
+    {
+      "value": "Mwema"
+    },
+    {
+      "value": "Kunda"
+    },
+    {
+      "value": "Kalonda"
+    },
+    {
+      "value": "Tambwe"
+    },
+    {
+      "value": "Makonga"
+    },
+    {
+      "value": "Lusamba"
+    },
+    {
+      "value": "Faida"
+    },
+    {
+      "value": "Kalumba"
+    },
+    {
+      "value": "Ntambue"
+    },
+    {
+      "value": "Kabemba"
+    },
+    {
+      "value": "Muanda"
+    },
+    {
+      "value": "Malu"
+    },
+    {
+      "value": "Phemba"
+    },
+    {
+      "value": "Lukadi"
+    },
+    {
+      "value": "Mulamba"
+    },
+    {
+      "value": "Kabasele"
+    },
+    {
+      "value": "Kiluba"
+    },
+    {
+      "value": "Badibanga"
+    },
+    {
+      "value": "Meta"
+    },
+    {
+      "value": "Mushiya"
+    },
+    {
+      "value": "Ramazani"
+    },
+    {
+      "value": "Tshiela"
+    },
+    {
+      "value": "Nzigire"
+    },
+    {
+      "value": "Mapendo"
+    },
+    {
+      "value": "Kumwimba"
+    },
+    {
+      "value": "Mbala"
+    },
+    {
+      "value": "Bondo"
+    },
+    {
+      "value": "Ngoya"
+    },
+    {
+      "value": "Kalumbu"
+    },
+    {
+      "value": "Ndaya"
+    },
+    {
+      "value": "Kasonga"
+    },
+    {
+      "value": "Masangu"
+    },
+    {
+      "value": "Samba"
+    },
+    {
+      "value": "Kamwanya"
+    },
+    {
+      "value": "Vumilia"
+    },
+    {
+      "value": "Kayombo"
+    },
+    {
+      "value": "Malonda"
+    },
+    {
+      "value": "Bilonda"
+    },
+    {
+      "value": "Mutonkole"
+    },
+    {
+      "value": "Khonde"
+    },
+    {
+      "value": "Kalonji"
+    },
+    {
+      "value": "Nabintu"
+    },
+    {
+      "value": "Odia"
+    },
+    {
+      "value": "Mawazo"
+    },
+    {
+      "value": "Kaj"
+    },
+    {
+      "value": "Neema"
+    },
+    {
+      "value": "Sango"
+    },
+    {
+      "value": "Kashala"
+    },
+    {
+      "value": "Mwayuma"
+    },
+    {
+      "value": "Byamungu"
+    },
+    {
+      "value": "Ndongo"
+    },
+    {
+      "value": "Mwelwa"
+    },
+    {
+      "value": "Kabuya"
+    },
+    {
+      "value": "Mambwe"
+    },
+    {
+      "value": "Musau"
+    },
+    {
+      "value": "Omba"
+    },
+    {
+      "value": "Kabedi"
+    },
+    {
+      "value": "Kitwa"
+    },
+    {
+      "value": "Yav"
+    },
+    {
+      "value": "Mwadi"
+    },
+    {
+      "value": "Mpoyo"
+    },
+    {
+      "value": "Kabunda"
+    },
+    {
+      "value": "Mangaza"
+    },
+    {
+      "value": "Bukasa"
+    },
+    {
+      "value": "Kibwe"
+    },
+    {
+      "value": "Mabiala"
+    },
+    {
+      "value": "Kamona"
+    },
+    {
+      "value": "Seya"
+    },
+    {
+      "value": "Kalamba"
+    },
+    {
+      "value": "Nzau"
+    },
+    {
+      "value": "Mamba"
+    },
+    {
+      "value": "Muanza"
+    },
+    {
+      "value": "Bipendu"
+    },
+    {
+      "value": "Kamba"
+    },
+    {
+      "value": "Ngolela"
+    },
+    {
+      "value": "Kabala"
+    },
+    {
+      "value": "Kahilu"
+    },
+    {
+      "value": "Kalume"
+    },
+    {
+      "value": "Kalanga"
+    },
+    {
+      "value": "Bolumbu"
+    },
+    {
+      "value": "Zawadi"
+    },
+    {
+      "value": "Mafuta"
+    },
+    {
+      "value": "Tabu"
+    },
+    {
+      "value": "Mvumbi"
+    },
+    {
+      "value": "Safari"
+    },
+    {
+      "value": "Mwenge"
+    },
+    {
+      "value": "Sangwa"
+    },
+    {
+      "value": "Masiala"
+    },
+    {
+      "value": "Amani"
+    },
+    {
+      "value": "Tumba"
+    },
+    {
+      "value": "Muyumba"
+    },
+    {
+      "value": "Luzolo"
+    },
+    {
+      "value": "Masudi"
+    },
+    {
+      "value": "Mulanga"
+    },
+    {
+      "value": "Salumu"
+    },
+    {
+      "value": "Shabani"
+    },
+    {
+      "value": "Moma"
+    },
+    {
+      "value": "Ndaye"
+    },
+    {
+      "value": "Mitonga"
+    },
+    {
+      "value": "Nzeba"
+    },
+    {
+      "value": "Katempa"
+    },
+    {
+      "value": "Manda"
+    },
+    {
+      "value": "Makenga"
+    },
+    {
+      "value": "Mukadi"
+    },
+    {
+      "value": "Muaka"
+    },
+    {
+      "value": "Tshituka"
+    },
+    {
+      "value": "Mukenge"
+    },
+    {
+      "value": "Kwete"
+    },
+    {
+      "value": "Bope"
+    },
+    {
+      "value": "Buanga"
+    },
+    {
+      "value": "Nyemba"
+    },
+    {
+      "value": "Kyembe"
+    },
+    {
+      "value": "Riziki"
+    },
+    {
+      "value": "Mwansa"
+    },
+    {
+      "value": "Kabangu"
+    },
+    {
+      "value": "Zaina"
+    },
+    {
+      "value": "Lwamba"
+    },
+    {
+      "value": "Nshimba"
+    },
+    {
+      "value": "Mwamini"
+    },
+    {
+      "value": "Kadima"
+    },
+    {
+      "value": "Nzita"
+    },
+    {
+      "value": "Mpemba"
+    },
+    {
+      "value": "Kapenda"
+    },
+    {
+      "value": "Kaji"
+    },
+    {
+      "value": "Mateso"
+    },
+    {
+      "value": "Kibawa"
+    },
+    {
+      "value": "Mukanya"
+    },
+    {
+      "value": "Kalubi"
+    },
+    {
+      "value": "Mwewa"
+    },
+    {
+      "value": "Lokuli"
+    },
+    {
+      "value": "Faila"
+    },
+    {
+      "value": "Tshilanda"
+    },
+    {
+      "value": "Betu"
+    },
+    {
+      "value": "Mbungu"
+    },
+    {
+      "value": "Ekila"
+    },
+    {
+      "value": "Yenga"
+    },
+    {
+      "value": "Twite"
+    },
+    {
+      "value": "Sakina"
+    },
+    {
+      "value": "Tshijika"
+    },
+    {
+      "value": "Mukonkole"
+    },
+    {
+      "value": "Machozi"
+    },
+    {
+      "value": "Maombi"
+    },
+    {
+      "value": "Mikombe"
+    },
+    {
+      "value": "Yuma"
+    },
+    {
+      "value": "Mavungu"
+    },
+    {
+      "value": "Ntakwinja"
+    },
+    {
+      "value": "Kabembo"
+    },
+    {
+      "value": "Lumbu"
+    },
+    {
+      "value": "Mwila"
+    },
+    {
+      "value": "Mbula"
+    },
+    {
+      "value": "Madilu"
+    },
+    {
+      "value": "Mbambi"
+    },
+    {
+      "value": "Bora"
+    },
+    {
+      "value": "Omari"
+    },
+    {
+      "value": "Nawej"
+    },
+    {
+      "value": "Vangu"
+    },
+    {
+      "value": "Lukombo"
+    },
+    {
+      "value": "Lumbwe"
+    },
+    {
+      "value": "Ndumba"
+    },
+    {
+      "value": "Longo"
+    },
+    {
+      "value": "Tshilomba"
+    },
+    {
+      "value": "Kaya"
+    },
+    {
+      "value": "Bisimwa"
+    },
+    {
+      "value": "Shukuru"
+    },
+    {
+      "value": "Mbiya"
+    },
+    {
+      "value": "Mwika"
+    },
+    {
+      "value": "Kyondwa"
+    },
+    {
+      "value": "Senga"
+    },
+    {
+      "value": "Buyamba"
+    },
+    {
+      "value": "Kanyinda"
+    },
+    {
+      "value": "Mondonga"
+    },
+    {
+      "value": "Tshianda"
+    },
+    {
+      "value": "Mulunda"
+    },
+    {
+      "value": "Ombeni"
+    },
+    {
+      "value": "Makambo"
+    },
+    {
+      "value": "Mauwa"
+    },
+    {
+      "value": "Kaimba"
+    },
+    {
+      "value": "Muleka"
+    },
+    {
+      "value": "Mbulu"
+    },
+    {
+      "value": "Bambi"
+    },
+    {
+      "value": "Ngimbi"
+    },
+    {
+      "value": "Makaya"
+    },
+    {
+      "value": "Tundwa"
+    },
+    {
+      "value": "Mukumbi"
+    },
+    {
+      "value": "Ntambwe"
+    },
+    {
+      "value": "Ndayi"
+    },
+    {
+      "value": "Aziza"
+    },
+    {
+      "value": "Amuri"
+    },
+    {
+      "value": "Mbaya"
+    },
+    {
+      "value": "Musonda"
+    },
+    {
+      "value": "Kapend"
+    },
+    {
+      "value": "Mukengeshayi"
+    },
+    {
+      "value": "Lukusa"
+    },
+    {
+      "value": "Mbelu"
+    },
+    {
+      "value": "Kilufya"
+    },
+    {
+      "value": "Nsungu"
+    },
+    {
+      "value": "Lokwa"
+    },
+    {
+      "value": "Matembe"
+    },
+    {
+      "value": "Mbongo"
+    },
+    {
+      "value": "Kazembe"
+    },
+    {
+      "value": "Mavinga"
+    },
+    {
+      "value": "Mambu"
+    },
+    {
+      "value": "Tembo"
+    },
+    {
+      "value": "Mbenza"
+    },
+    {
+      "value": "Phanzu"
+    },
+    {
+      "value": "Lumbala"
+    },
+    {
+      "value": "Masumbuko"
+    },
+    {
+      "value": "Ngole"
+    },
+    {
+      "value": "Tshisola"
+    },
+    {
+      "value": "Masamba"
+    },
+    {
+      "value": "Binda"
+    },
+    {
+      "value": "Mianda"
+    },
+    {
+      "value": "Phambu"
+    },
+    {
+      "value": "Kungwa"
+    },
+    {
+      "value": "Mbidi"
+    },
+    {
+      "value": "Mpala"
+    },
+    {
+      "value": "Kabanga"
+    },
+    {
+      "value": "Mpoyi"
+    },
+    {
+      "value": "Nseya"
+    },
+    {
+      "value": "Ikopo"
+    },
+    {
+      "value": "Mutamba"
+    },
+    {
+      "value": "Mulenga"
+    },
+    {
+      "value": "Salima"
+    },
+    {
+      "value": "Nama"
+    },
+    {
+      "value": "Masengu"
+    },
+    {
+      "value": "Muadi"
+    },
+    {
+      "value": "Manyonga"
+    },
+    {
+      "value": "Tsasa"
+    },
+    {
+      "value": "Tshipamba"
+    },
+    {
+      "value": "Makiese"
+    },
+    {
+      "value": "Selemani"
+    },
+    {
+      "value": "Saidi"
+    },
+    {
+      "value": "Manga"
+    },
+    {
+      "value": "Sadiki"
+    },
+    {
+      "value": "Tshibanda"
+    },
+    {
+      "value": "Kankolongo"
+    },
+    {
+      "value": "Kayambi"
+    },
+    {
+      "value": "Mikobi"
+    },
+    {
+      "value": "Demomo"
+    },
+    {
+      "value": "Ipanga"
+    },
+    {
+      "value": "Mushagalusa"
+    },
+    {
+      "value": "Wumba"
+    },
+    {
+      "value": "Kombe"
+    },
+    {
+      "value": "Makengo"
+    },
+    {
+      "value": "Tshilombo"
+    },
+    {
+      "value": "Shamba"
+    },
+    {
+      "value": "Kitoko"
+    },
+    {
+      "value": "Nkoy"
+    },
+    {
+      "value": "Mujing"
+    },
+    {
+      "value": "Mbwisha"
+    },
+    {
+      "value": "Kenda"
+    },
+    {
+      "value": "Mukuna"
+    },
+    {
+      "value": "Muyaya"
+    },
+    {
+      "value": "Nkumwimba"
+    },
+    {
+      "value": "Kyabu"
+    },
+    {
+      "value": "Assani"
+    },
+    {
+      "value": "Mulenda"
+    },
+    {
+      "value": "Sonyi"
+    },
+    {
+      "value": "Chola"
+    },
+    {
+      "value": "Kapemba"
+    },
+    {
+      "value": "Nzinga"
+    },
+    {
+      "value": "Mpiana"
+    },
+    {
+      "value": "Mvuezolo"
+    },
+    {
+      "value": "Kibambe"
+    },
+    {
+      "value": "Masanga"
+    },
+    {
+      "value": "Kama"
+    },
+    {
+      "value": "Ntoto"
+    },
+    {
+      "value": "Kamuanya"
+    },
+    {
+      "value": "Kabuanga"
+    },
+    {
+      "value": "Mukala"
+    },
+    {
+      "value": "Kankonde"
+    },
+    {
+      "value": "Longwa"
+    },
+    {
+      "value": "Kanda"
+    },
+    {
+      "value": "Pombo"
+    },
+    {
+      "value": "Mitwele"
+    },
+    {
+      "value": "Tshikuta"
+    },
+    {
+      "value": "Kahenga"
+    },
+    {
+      "value": "Kimpinde"
+    },
+    {
+      "value": "Kashindi"
+    },
+    {
+      "value": "Maboso"
+    },
+    {
+      "value": "Mutanga"
+    },
+    {
+      "value": "Mambueni"
+    },
+    {
+      "value": "Tshinyama"
+    },
+    {
+      "value": "Katende"
+    },
+    {
+      "value": "Kiza"
+    },
+    {
+      "value": "Useni"
+    },
+    {
+      "value": "Kinda"
+    },
+    {
+      "value": "Luboya"
+    },
+    {
+      "value": "Kyanda"
+    },
+    {
+      "value": "Bulonza"
+    },
+    {
+      "value": "Kongo"
+    },
+    {
+      "value": "Mpundu"
+    },
+    {
+      "value": "Bukumba"
+    },
+    {
+      "value": "Ngondo"
+    },
+    {
+      "value": "Kalenda"
+    },
+    {
+      "value": "Olofio"
+    },
+    {
+      "value": "Kumbu"
+    },
+    {
+      "value": "Yamba"
+    },
+    {
+      "value": "Mboma"
+    },
+    {
+      "value": "Ndjibu"
+    },
+    {
+      "value": "Kasenga"
+    },
+    {
+      "value": "Naweji"
+    },
+    {
+      "value": "Kona"
+    },
+    {
+      "value": "Pezo"
+    },
+    {
+      "value": "Nyange"
+    },
+    {
+      "value": "Kahite"
+    },
+    {
+      "value": "Abedi"
+    },
+    {
+      "value": "Asani"
+    },
+    {
+      "value": "Rehema"
+    },
+    {
+      "value": "Kabwa"
+    },
+    {
+      "value": "Kasanga"
+    },
+    {
+      "value": "Leya"
+    },
+    {
+      "value": "Nzumba"
+    },
+    {
+      "value": "Kyalwe"
+    },
+    {
+      "value": "Ngolo"
+    },
+    {
+      "value": "Basa"
+    },
+    {
+      "value": "Tshitenge"
+    },
+    {
+      "value": "Munganga"
+    },
+    {
+      "value": "Ngombo"
+    },
+    {
+      "value": "Kasanda"
+    },
+    {
+      "value": "Kilolo"
+    },
+    {
+      "value": "Basanga"
+    },
+    {
+      "value": "Tshiyoyo"
+    },
+    {
+      "value": "Mapenzi"
+    },
+    {
+      "value": "Ngandwe"
+    },
+    {
+      "value": "Komba"
+    },
+    {
+      "value": "Mulobe"
+    },
+    {
+      "value": "Tshiabu"
+    },
+    {
+      "value": "Saboko"
+    },
+    {
+      "value": "Nkashama"
+    },
+    {
+      "value": "Nsongo"
+    },
+    {
+      "value": "Kamin"
+    },
+    {
+      "value": "Nsasi"
+    },
+    {
+      "value": "Nsamba"
+    },
+    {
+      "value": "Nsombo"
+    },
+    {
+      "value": "Kalombe"
+    },
+    {
+      "value": "Bupe"
+    },
+    {
+      "value": "Katanga"
+    },
+    {
+      "value": "Kainda"
+    },
+    {
+      "value": "Kapuku"
+    },
+    {
+      "value": "Shako"
+    },
+    {
+      "value": "Mutshipayi"
+    },
+    {
+      "value": "Katumba"
+    },
+    {
+      "value": "Musenge"
+    },
+    {
+      "value": "Mpembe"
+    },
+    {
+      "value": "Mananga"
+    },
+    {
+      "value": "Mbembe"
+    },
+    {
+      "value": "Musenga"
+    },
+    {
+      "value": "Ndomba"
+    },
+    {
+      "value": "Muangala"
+    },
+    {
+      "value": "Musa"
+    },
+    {
+      "value": "Lubamba"
+    },
+    {
+      "value": "Nzambi"
+    },
+    {
+      "value": "Matanda"
+    },
+    {
+      "value": "Nkusu"
+    },
+    {
+      "value": "Kabwita"
+    },
+    {
+      "value": "Amunazo"
+    },
+    {
+      "value": "Bakajika"
+    },
+    {
+      "value": "Nkulimba"
+    },
+    {
+      "value": "Ngomba"
+    },
+    {
+      "value": "Rashidi"
+    },
+    {
+      "value": "Muhindo"
+    },
+    {
+      "value": "Landu"
+    },
+    {
+      "value": "Mugisho"
+    },
+    {
+      "value": "Mayele"
+    },
+    {
+      "value": "Matsi"
+    },
+    {
+      "value": "Nankafu"
+    },
+    {
+      "value": "Musawu"
+    },
+    {
+      "value": "Sita"
+    },
+    {
+      "value": "Mbadu"
+    },
+    {
+      "value": "Tshiama"
+    },
+    {
+      "value": "Mwenda"
+    },
+    {
+      "value": "Kat"
+    },
+    {
+      "value": "Kabena"
+    },
+    {
+      "value": "Kitengie"
+    },
+    {
+      "value": "Kisenga"
+    },
+    {
+      "value": "Kabango"
+    },
+    {
+      "value": "Mukekwa"
+    },
+    {
+      "value": "Ngonga"
+    },
+    {
+      "value": "Musumba"
+    },
+    {
+      "value": "Kamwanga"
+    },
+    {
+      "value": "Maria"
+    },
+    {
+      "value": "Tumaini"
+    },
+    {
+      "value": "Kabezya"
+    },
+    {
+      "value": "Kayinda"
+    },
+    {
+      "value": "Kanga"
+    },
+    {
+      "value": "Pongo"
+    },
+    {
+      "value": "Tshilumba"
+    },
+    {
+      "value": "Muzala"
+    },
+    {
+      "value": "Dunia"
+    },
+    {
+      "value": "Mukanda"
+    },
+    {
+      "value": "Kanama"
+    },
+    {
+      "value": "Muya"
+    },
+    {
+      "value": "Mbaka"
+    },
+    {
+      "value": "Ngadi"
+    },
+    {
+      "value": "Ihemba"
+    },
+    {
+      "value": "Kalonga"
+    },
+    {
+      "value": "Bwalya"
+    },
+    {
+      "value": "Nsango"
+    },
+    {
+      "value": "Amba"
+    }
+  ],
+  "production_ready": false
+}
