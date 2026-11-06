@@ -5,7 +5,7 @@
  * role, selection, ARIA, focus, Escape or translation (FE-04 owns those). */
 (()=>{
  let pending=false;
- const position=()=>{
+ const positionOpenDropdowns=()=>{
   pending=false;
   const viewport=window.visualViewport;
   const screenTop=viewport?.offsetTop||0;
@@ -40,18 +40,18 @@
    }
   }
  };
- const schedule=()=>{if(!pending){pending=true;requestAnimationFrame(position);}};
- document.addEventListener('click',()=>{position();schedule();},{passive:true});
+ const scheduleDropdownPositionUpdate=()=>{if(!pending){pending=true;requestAnimationFrame(positionOpenDropdowns);}};
+ document.addEventListener('click',()=>{positionOpenDropdowns();scheduleDropdownPositionUpdate();},{passive:true});
  document.addEventListener('keydown',event=>{
-  if(['Enter',' ','ArrowDown','ArrowUp','Home','End','Escape','Tab'].includes(event.key))schedule();
+  if(['Enter',' ','ArrowDown','ArrowUp','Home','End','Escape','Tab'].includes(event.key))scheduleDropdownPositionUpdate();
  });
  document.addEventListener('input',event=>{
-  if(event.target.closest?.('.language-control,.nav01-filter'))schedule();
+  if(event.target.closest?.('.language-control,.nav01-filter'))scheduleDropdownPositionUpdate();
  },{passive:true});
- document.addEventListener('scroll',()=>{position();schedule();},true);
- window.addEventListener('resize',schedule,{passive:true});
- window.visualViewport?.addEventListener('resize',schedule,{passive:true});
- window.visualViewport?.addEventListener('scroll',schedule,{passive:true});
+ document.addEventListener('scroll',()=>{positionOpenDropdowns();scheduleDropdownPositionUpdate();},true);
+ window.addEventListener('resize',scheduleDropdownPositionUpdate,{passive:true});
+ window.visualViewport?.addEventListener('resize',scheduleDropdownPositionUpdate,{passive:true});
+ window.visualViewport?.addEventListener('scroll',scheduleDropdownPositionUpdate,{passive:true});
 })();
 
 if(nav.dataset.nav01Bound==='true'){

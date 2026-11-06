@@ -39,6 +39,6 @@ test("FE-04 localizes early errors, singular counters and Calendar marker names"
  assert.match(search,/matches\.length === 1 \? strings\.resultSingular : strings\.results/);
  assert.match(search,/matches\.length === 1 \? strings\.suggestionSingular : strings\.suggestions/);
  assert.match(club,/labels\[hits\.length===1\?9:7\]/);
- assert.match(cal,/refreshMarkerLabels\(\)/);assert.match(cal,/Federation Cup '\+t\(\)\.final/);
+ assert.match(cal,/refreshMarkerLabels\(\)/);assert.match(cal,/Federation Cup '\+calendarTexts\(\)\.final/);
  assert.match(cal,/marker\.addEventListener\('focusin',\(\)=>\{if\(!window\.matchMedia/);
 });

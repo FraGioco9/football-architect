@@ -17,7 +17,7 @@ const awayTable=[0,0,0,0,0,0,1,1,1,1,1,1,2,2,3,4];
 const neutralTable=[0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,4];
 const extraTable=[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2];
 const fail=():never=>{throw new ApiError(422,'simulation_invalid')};
-function parseContext(input:unknown):MatchContext{
+function parseMatchContext(input:unknown):MatchContext{
  if(!input||typeof input!=='object'||Array.isArray(input))return fail();
  const c=input as MatchContext,keys=Object.keys(c).sort().join(',');
  if((c.mode==='regulation'||c.mode==='single-knockout')&&keys==='mode')return {mode:c.mode};
@@ -26,7 +26,7 @@ function parseContext(input:unknown):MatchContext{
  return fail();
 }
 export async function simulateTemporaryMatch(fixture:Fixture,seed:string,contextInput:MatchContext):Promise<TemporaryResult>{
- const context=parseContext(contextInput);
+ const context=parseMatchContext(contextInput);
  const identity=typeof fixture?.id==='string'?fixture.id.match(/^season:([1-9][0-9]{0,6}):/):null,season=identity?Number(identity[1]):0;
  if(!fixture||!Number.isSafeInteger(season)||season<1||season>1000000||Object.keys(fixture).sort().join(',')!=='awayClubId,competitionId,day,homeClubId,id,marker,round'||
   !['homeClubId','awayClubId'].every(k=>/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.test(fixture[k as 'homeClubId']))||fixture.homeClubId===fixture.awayClubId||

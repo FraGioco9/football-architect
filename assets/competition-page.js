@@ -6,10 +6,10 @@
   const requestedSeasonWasExplicit=window.location?.href?new URL(window.location.href).searchParams.has('season'):false;
   const routeId = document.querySelector('meta[name="fa-competition"]')?.content;
   const root = new URL("../competitions/_shared/", sourceUrl);
-  const status = document.getElementById("main-content");
+  const mainContent = document.getElementById("main-content");
 
   function fail() {
-    if (!status || !document.body) return;
+    if (!mainContent || !document.body) return;
     delete window.faCompetitionContext;
     delete window.faCompetitionDivision;
     delete window.faCompetitionContextApi;
@@ -32,7 +32,7 @@
       back.textContent = recovery;
     };
     paint();
-    status.replaceChildren(message, back);
+    mainContent.replaceChildren(message, back);
     if(typeof MutationObserver==="function") new MutationObserver(paint).observe(document.documentElement, {attributes:true, attributeFilter:["lang"]});
   }
   const model=window.faCompetitionModel;

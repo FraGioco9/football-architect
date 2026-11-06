@@ -34,7 +34,7 @@ test("FE-02 menu positioning does not acquire FE-04 interaction semantics",()=>{
  assert.ok(a>0&&b>a);
  const scoped=nav.slice(a,b);
  for(const feature of ["window.visualViewport","getBoundingClientRect",
-  "dataset.menuPlacement","requestAnimationFrame(position)",
+  "dataset.menuPlacement","requestAnimationFrame(positionOpenDropdowns)",
   ".fa-shell-workspace .nav01-filter"])assert.ok(scoped.includes(feature),feature);
  for(const forbidden of ["setAttribute('aria-","setAttribute(\"aria-",
   "document.activeElement","preventDefault()","history.pushState"])
