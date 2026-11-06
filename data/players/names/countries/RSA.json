@@ -1,0 +1,431 @@
+{
+  "schema_version": 2,
+  "code": "RSA",
+  "cohort": "Country-tagged male first-name instances from validated public social-media profiles in South Africa; collection period and bearers' ages unspecified; not births or a national census",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "name-census-social-profiles-male-first-names-za-top100",
+    "provider": "Name Census / Ninble, country-tagged male first-name Top-100 (social-media profile sample)",
+    "source_url": "https://github.com/Ninble/name-census-top-100/blob/27944ac7d285291793f20859ff845aea7787e74d/first-name-database.csv",
+    "source_method_url": "https://census.name/about/",
+    "source_commit": "27944ac7d285291793f20859ff845aea7787e74d",
+    "source_blob_sha": "89768a6b0903edfa7799dd4a996393b3d0c7748d",
+    "source_country_code": "ZA",
+    "sample_scope": "male first-name instances in the country-tagged social-profile sample; full country denominator not extracted here",
+    "metric": "observed count of geolocated country-tagged social-media profiles with each source-classified male first name; NOT estimated national bearer incidences, residents-wide counts or birth counts",
+    "license": "Upstream repository ships GNU GPL v3; review data redistribution/attribution obligations before production"
+  },
+  "selection_policy": "Only country=ZA, source male gender=m, Unicode NFC single Latin-script given names; public country Top-100 only; no invented counts, no padding",
+  "coverage": {
+    "target_names": 300,
+    "selected_names": 100,
+    "missing_names": 200,
+    "status": "incomplete",
+    "limitations": "Open source includes only its 100 country-specific top male first names. The full paid data and source microrecords have not been independently checked. Sampling and naming coverage may be biased; cannot claim representative nation-wide male first-name frequencies."
+  },
+  "given_names": [
+    {
+      "value": "Michael",
+      "weight": 914
+    },
+    {
+      "value": "Chris",
+      "weight": 904
+    },
+    {
+      "value": "David",
+      "weight": 892
+    },
+    {
+      "value": "John",
+      "weight": 698
+    },
+    {
+      "value": "Mark",
+      "weight": 696
+    },
+    {
+      "value": "Paul",
+      "weight": 693
+    },
+    {
+      "value": "James",
+      "weight": 623
+    },
+    {
+      "value": "Andrew",
+      "weight": 614
+    },
+    {
+      "value": "Daniel",
+      "weight": 597
+    },
+    {
+      "value": "Peter",
+      "weight": 579
+    },
+    {
+      "value": "King",
+      "weight": 537
+    },
+    {
+      "value": "Johan",
+      "weight": 536
+    },
+    {
+      "value": "Ryan",
+      "weight": 496
+    },
+    {
+      "value": "Jason",
+      "weight": 465
+    },
+    {
+      "value": "Andre",
+      "weight": 454
+    },
+    {
+      "value": "Richard",
+      "weight": 445
+    },
+    {
+      "value": "Craig",
+      "weight": 440
+    },
+    {
+      "value": "Matthew",
+      "weight": 422
+    },
+    {
+      "value": "Mike",
+      "weight": 421
+    },
+    {
+      "value": "Alex",
+      "weight": 409
+    },
+    {
+      "value": "Kevin",
+      "weight": 407
+    },
+    {
+      "value": "Shaun",
+      "weight": 386
+    },
+    {
+      "value": "Jacques",
+      "weight": 369
+    },
+    {
+      "value": "Sean",
+      "weight": 367
+    },
+    {
+      "value": "Martin",
+      "weight": 359
+    },
+    {
+      "value": "Bongani",
+      "weight": 358
+    },
+    {
+      "value": "Jonathan",
+      "weight": 355
+    },
+    {
+      "value": "Kyle",
+      "weight": 349
+    },
+    {
+      "value": "Justin",
+      "weight": 340
+    },
+    {
+      "value": "Sam",
+      "weight": 333
+    },
+    {
+      "value": "Pieter",
+      "weight": 332
+    },
+    {
+      "value": "Thabo",
+      "weight": 330
+    },
+    {
+      "value": "Lee",
+      "weight": 316
+    },
+    {
+      "value": "Sibusiso",
+      "weight": 316
+    },
+    {
+      "value": "Steven",
+      "weight": 314
+    },
+    {
+      "value": "Robert",
+      "weight": 309
+    },
+    {
+      "value": "Brian",
+      "weight": 304
+    },
+    {
+      "value": "Adam",
+      "weight": 301
+    },
+    {
+      "value": "Stephen",
+      "weight": 301
+    },
+    {
+      "value": "Thabiso",
+      "weight": 296
+    },
+    {
+      "value": "Simon",
+      "weight": 295
+    },
+    {
+      "value": "Jaco",
+      "weight": 292
+    },
+    {
+      "value": "Ben",
+      "weight": 288
+    },
+    {
+      "value": "Tshepo",
+      "weight": 281
+    },
+    {
+      "value": "Nick",
+      "weight": 280
+    },
+    {
+      "value": "François",
+      "weight": 279
+    },
+    {
+      "value": "Siyabonga",
+      "weight": 275
+    },
+    {
+      "value": "Ian",
+      "weight": 274
+    },
+    {
+      "value": "George",
+      "weight": 267
+    },
+    {
+      "value": "Patrick",
+      "weight": 260
+    },
+    {
+      "value": "Joe",
+      "weight": 256
+    },
+    {
+      "value": "Jan",
+      "weight": 254
+    },
+    {
+      "value": "Jack",
+      "weight": 249
+    },
+    {
+      "value": "Steve",
+      "weight": 249
+    },
+    {
+      "value": "Gary",
+      "weight": 246
+    },
+    {
+      "value": "Dean",
+      "weight": 242
+    },
+    {
+      "value": "Dylan",
+      "weight": 238
+    },
+    {
+      "value": "Grant",
+      "weight": 238
+    },
+    {
+      "value": "Neil",
+      "weight": 238
+    },
+    {
+      "value": "Louis",
+      "weight": 237
+    },
+    {
+      "value": "Thomas",
+      "weight": 237
+    },
+    {
+      "value": "Wayne",
+      "weight": 237
+    },
+    {
+      "value": "Andy",
+      "weight": 234
+    },
+    {
+      "value": "Gavin",
+      "weight": 234
+    },
+    {
+      "value": "Tebogo",
+      "weight": 233
+    },
+    {
+      "value": "Dan",
+      "weight": 232
+    },
+    {
+      "value": "Tom",
+      "weight": 230
+    },
+    {
+      "value": "Thabang",
+      "weight": 229
+    },
+    {
+      "value": "Sandile",
+      "weight": 226
+    },
+    {
+      "value": "Christopher",
+      "weight": 224
+    },
+    {
+      "value": "Prince",
+      "weight": 224
+    },
+    {
+      "value": "Brandon",
+      "weight": 223
+    },
+    {
+      "value": "Jay",
+      "weight": 223
+    },
+    {
+      "value": "Rob",
+      "weight": 222
+    },
+    {
+      "value": "Gareth",
+      "weight": 221
+    },
+    {
+      "value": "Dave",
+      "weight": 219
+    },
+    {
+      "value": "Sipho",
+      "weight": 219
+    },
+    {
+      "value": "Marc",
+      "weight": 215
+    },
+    {
+      "value": "Luke",
+      "weight": 213
+    },
+    {
+      "value": "Matt",
+      "weight": 213
+    },
+    {
+      "value": "Anthony",
+      "weight": 210
+    },
+    {
+      "value": "Andile",
+      "weight": 209
+    },
+    {
+      "value": "Charles",
+      "weight": 207
+    },
+    {
+      "value": "Warren",
+      "weight": 207
+    },
+    {
+      "value": "Liam",
+      "weight": 206
+    },
+    {
+      "value": "Deon",
+      "weight": 203
+    },
+    {
+      "value": "Nathan",
+      "weight": 203
+    },
+    {
+      "value": "Tony",
+      "weight": 203
+    },
+    {
+      "value": "Themba",
+      "weight": 202
+    },
+    {
+      "value": "Scott",
+      "weight": 200
+    },
+    {
+      "value": "Thato",
+      "weight": 197
+    },
+    {
+      "value": "Lucky",
+      "weight": 194
+    },
+    {
+      "value": "Nico",
+      "weight": 192
+    },
+    {
+      "value": "Thulani",
+      "weight": 192
+    },
+    {
+      "value": "Just",
+      "weight": 191
+    },
+    {
+      "value": "Frank",
+      "weight": 188
+    },
+    {
+      "value": "William",
+      "weight": 188
+    },
+    {
+      "value": "Leon",
+      "weight": 185
+    },
+    {
+      "value": "Riaan",
+      "weight": 184
+    },
+    {
+      "value": "Jordan",
+      "weight": 182
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}

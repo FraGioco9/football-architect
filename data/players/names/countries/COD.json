@@ -1,0 +1,427 @@
+{
+  "schema_version": 2,
+  "code": "COD",
+  "cohort": "Country-tagged male first-name instances from validated public social-media profiles in Democratic Republic of the Congo; collection period and bearers' ages unspecified; not births or a national census",
+  "name_format": "single_first_name_only_no_spaces_hyphens_apostrophes",
+  "source": {
+    "id": "name-census-social-profiles-male-first-names-cd-top100",
+    "provider": "Name Census / Ninble, country-tagged male first-name Top-100 (social-media profile sample)",
+    "source_url": "https://github.com/Ninble/name-census-top-100/blob/27944ac7d285291793f20859ff845aea7787e74d/first-name-database.csv",
+    "source_method_url": "https://census.name/about/",
+    "source_commit": "27944ac7d285291793f20859ff845aea7787e74d",
+    "source_blob_sha": "89768a6b0903edfa7799dd4a996393b3d0c7748d",
+    "source_country_code": "CD",
+    "sample_scope": "8,241 male profiles among 11,228 validated geolocated profiles; provider-reported; NOT national coverage",
+    "metric": "observed count of geolocated country-tagged social-media profiles with each source-classified male first name; NOT estimated national bearer incidences, residents-wide counts or birth counts",
+    "license": "Upstream repository ships GNU GPL v3; review data redistribution/attribution obligations before production"
+  },
+  "selection_policy": "Only country=CD, source male gender=m, Unicode NFC single Latin-script given names; public country Top-100 only; source Jean-Luc excluded as hyphenated; no invented counts, no padding",
+  "coverage": {
+    "target_names": 300,
+    "selected_names": 99,
+    "missing_names": 201,
+    "status": "incomplete",
+    "limitations": "Open source includes only its 100 country-specific top male first names. The full paid data and source microrecords have not been independently checked. Sampling and naming coverage may be biased; cannot claim representative nation-wide male first-name frequencies."
+  },
+  "given_names": [
+    {
+      "value": "Patrick",
+      "weight": 91
+    },
+    {
+      "value": "Christian",
+      "weight": 79
+    },
+    {
+      "value": "John",
+      "weight": 65
+    },
+    {
+      "value": "David",
+      "weight": 60
+    },
+    {
+      "value": "Joseph",
+      "weight": 53
+    },
+    {
+      "value": "Daniel",
+      "weight": 52
+    },
+    {
+      "value": "Kevin",
+      "weight": 52
+    },
+    {
+      "value": "Emmanuel",
+      "weight": 50
+    },
+    {
+      "value": "Peter",
+      "weight": 48
+    },
+    {
+      "value": "Eric",
+      "weight": 47
+    },
+    {
+      "value": "Jonathan",
+      "weight": 47
+    },
+    {
+      "value": "Ben",
+      "weight": 42
+    },
+    {
+      "value": "James",
+      "weight": 42
+    },
+    {
+      "value": "Michael",
+      "weight": 41
+    },
+    {
+      "value": "Chris",
+      "weight": 39
+    },
+    {
+      "value": "Serge",
+      "weight": 39
+    },
+    {
+      "value": "Alain",
+      "weight": 36
+    },
+    {
+      "value": "Joel",
+      "weight": 36
+    },
+    {
+      "value": "Paul",
+      "weight": 35
+    },
+    {
+      "value": "King",
+      "weight": 33
+    },
+    {
+      "value": "Samuel",
+      "weight": 33
+    },
+    {
+      "value": "Charles",
+      "weight": 32
+    },
+    {
+      "value": "Joe",
+      "weight": 32
+    },
+    {
+      "value": "Mike",
+      "weight": 32
+    },
+    {
+      "value": "Thierry",
+      "weight": 32
+    },
+    {
+      "value": "Hervé",
+      "weight": 30
+    },
+    {
+      "value": "Isaac",
+      "weight": 29
+    },
+    {
+      "value": "Prince",
+      "weight": 29
+    },
+    {
+      "value": "Brian",
+      "weight": 28
+    },
+    {
+      "value": "Vincent",
+      "weight": 28
+    },
+    {
+      "value": "Victor",
+      "weight": 27
+    },
+    {
+      "value": "Yannick",
+      "weight": 27
+    },
+    {
+      "value": "Alex",
+      "weight": 26
+    },
+    {
+      "value": "Erick",
+      "weight": 26
+    },
+    {
+      "value": "George",
+      "weight": 26
+    },
+    {
+      "value": "Nathan",
+      "weight": 26
+    },
+    {
+      "value": "Olivier",
+      "weight": 26
+    },
+    {
+      "value": "Franck",
+      "weight": 25
+    },
+    {
+      "value": "Michel",
+      "weight": 25
+    },
+    {
+      "value": "Mohamed",
+      "weight": 25
+    },
+    {
+      "value": "Steve",
+      "weight": 25
+    },
+    {
+      "value": "Sam",
+      "weight": 24
+    },
+    {
+      "value": "Yves",
+      "weight": 24
+    },
+    {
+      "value": "Félix",
+      "weight": 23
+    },
+    {
+      "value": "Francis",
+      "weight": 23
+    },
+    {
+      "value": "Mark",
+      "weight": 23
+    },
+    {
+      "value": "Richard",
+      "weight": 23
+    },
+    {
+      "value": "Elie",
+      "weight": 22
+    },
+    {
+      "value": "Fabrice",
+      "weight": 22
+    },
+    {
+      "value": "Trésor",
+      "weight": 22
+    },
+    {
+      "value": "Tony",
+      "weight": 21
+    },
+    {
+      "value": "Jacques",
+      "weight": 20
+    },
+    {
+      "value": "Jérémie",
+      "weight": 20
+    },
+    {
+      "value": "Josue",
+      "weight": 20
+    },
+    {
+      "value": "Martin",
+      "weight": 20
+    },
+    {
+      "value": "Moses",
+      "weight": 20
+    },
+    {
+      "value": "Simón",
+      "weight": 20
+    },
+    {
+      "value": "Dan",
+      "weight": 19
+    },
+    {
+      "value": "Justin",
+      "weight": 19
+    },
+    {
+      "value": "Anthony",
+      "weight": 18
+    },
+    {
+      "value": "Benjamin",
+      "weight": 18
+    },
+    {
+      "value": "Freddy",
+      "weight": 18
+    },
+    {
+      "value": "Heritier",
+      "weight": 18
+    },
+    {
+      "value": "José",
+      "weight": 18
+    },
+    {
+      "value": "Moïse",
+      "weight": 18
+    },
+    {
+      "value": "Pierre",
+      "weight": 18
+    },
+    {
+      "value": "Robert",
+      "weight": 18
+    },
+    {
+      "value": "Didier",
+      "weight": 17
+    },
+    {
+      "value": "Jules",
+      "weight": 17
+    },
+    {
+      "value": "Papy",
+      "weight": 17
+    },
+    {
+      "value": "Ali",
+      "weight": 16
+    },
+    {
+      "value": "Andrew",
+      "weight": 16
+    },
+    {
+      "value": "Ian",
+      "weight": 16
+    },
+    {
+      "value": "William",
+      "weight": 16
+    },
+    {
+      "value": "Arnold",
+      "weight": 15
+    },
+    {
+      "value": "Bienvenu",
+      "weight": 15
+    },
+    {
+      "value": "Cedric",
+      "weight": 15
+    },
+    {
+      "value": "Francois",
+      "weight": 15
+    },
+    {
+      "value": "Guy",
+      "weight": 15
+    },
+    {
+      "value": "Jean",
+      "weight": 15
+    },
+    {
+      "value": "Ahmed",
+      "weight": 14
+    },
+    {
+      "value": "Carlos",
+      "weight": 14
+    },
+    {
+      "value": "Gabriel",
+      "weight": 14
+    },
+    {
+      "value": "Israel",
+      "weight": 14
+    },
+    {
+      "value": "Pascal",
+      "weight": 14
+    },
+    {
+      "value": "Stephen",
+      "weight": 14
+    },
+    {
+      "value": "Thabo",
+      "weight": 14
+    },
+    {
+      "value": "Thomas",
+      "weight": 14
+    },
+    {
+      "value": "Willy",
+      "weight": 14
+    },
+    {
+      "value": "Andy",
+      "weight": 13
+    },
+    {
+      "value": "Bernard",
+      "weight": 13
+    },
+    {
+      "value": "Dieudonne",
+      "weight": 13
+    },
+    {
+      "value": "Don",
+      "weight": 13
+    },
+    {
+      "value": "Eddy",
+      "weight": 13
+    },
+    {
+      "value": "Edwin",
+      "weight": 13
+    },
+    {
+      "value": "Jack",
+      "weight": 13
+    },
+    {
+      "value": "Ken",
+      "weight": 13
+    },
+    {
+      "value": "Lionel",
+      "weight": 13
+    },
+    {
+      "value": "Nicholas",
+      "weight": 13
+    }
+  ],
+  "origin_review": "not_required_by_owner",
+  "surnames": [],
+  "production_ready": false
+}
