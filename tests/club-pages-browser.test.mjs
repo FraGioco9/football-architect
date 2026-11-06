@@ -410,6 +410,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
     const sourceCrest=await run("(()=>{const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('img.nav01-crest')?.getAttribute('src')||null})()");
     assert.equal(sourceCrest,'/assets/clubs/IT/1/crest.svg');
+    // UI-409: the shield occupies the same fixed box as the decoded transparent SVG.
+    const sourceSlot="const card=[...document.querySelectorAll('.nav01-card')].find(a=>a.getAttribute('href')==='/clubs/it/1/overview');return card?.querySelector('.nav01-crest')";
+    await run("(()=>{"+sourceSlot+"?.scrollIntoView({block:'center'})})()");
+    await wait("(()=>{"+sourceSlot+"?.dataset.clubCrestLoaded==='true'})()");
+    const shieldGeometry=await run("(()=>{"+sourceSlot.replace("return card?.querySelector('.nav01-crest')","const slot=card?.querySelector('.nav01-crest')")+
+       ";const img=slot?.querySelector('img'),a=slot?.getBoundingClientRect(),b=img?.getBoundingClientRect();return {border:getComputedStyle(slot).borderTopWidth,shield:getComputedStyle(slot,'::before').display,width:a.width,height:a.height,imageWidth:b.width,imageHeight:b.height}})()");
+    assert.equal(shieldGeometry.border,'0px');
+    assert.equal(shieldGeometry.shield,'none','successful SVG decode must hide the shield');
+    assert.equal(shieldGeometry.width,shieldGeometry.imageWidth);
+    assert.equal(shieldGeometry.height,shieldGeometry.imageHeight);
     await run("document.querySelector('.nav01-card[href=\"/clubs/it/1/overview\"]').click()");
     await wait("location.pathname==='/clubs/it/1/overview'&&document.querySelector('.club-header .app-club-crest-image')?.complete===true");
     const destinationCrest=await run("(()=>{const image=document.querySelector('.club-header .app-club-crest-image');return {src:image?.getAttribute('src'),loaded:!!image?.naturalWidth,pending:!!document.querySelector('.club-header [data-club-crest-pending]')}})()");
