@@ -1,5 +1,13 @@
 # PLAYER-LOCAL-DEV-01 — local-only auth acceptance (#334)
 
+> **Living operational boundary — REPO-04 #358 (2026-11-06).** Current behavior is summarized first. The original implementation-phase notes, dates, approvals and status labels below are preserved as historical evidence; do not infer deployed remote state.
+
+## Current local authentication boundary
+
+`backend/wrangler.toml` opts in to `PLAYER_LOCAL_INBOX_ENABLED = "true"`; `backend/src/index.ts` chooses `localInboxDeliveries` when `PLAYER_MODE=local`. With Node 22 run `npm --prefix backend ci`, then `node tools/dev.mjs` from the repository root. Worker/D1/account/inbox endpoints remain **loopback-only**; the optional LAN preview is **frontend-only** and rejects `/api/*`. Local D1 initialization and owner-only Admin grant/revoke are independent manual operations; never infer that the first-run persistence warnings from the old #334 implementation-plan section below are current CI results. There are **no** remote database, real external email or Production side effects. [DEV-ENV-01](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md).
+
+## Original implementation record (historical)
+
 ## Audit
 The merged #170 backend uses one `handlePlayer` for login, registration, verification and reset. Delivery is injected via `PLAYER_VERIFICATION_DELIVERY` and `PLAYER_RESET_DELIVERY`; Gmail is Preview-only and Cloudflare Email is Production-only. Local D1 does not share accounts, sessions or permissions with Preview. The local origin policy allows only exact HTTP loopback hosts. Owner-only `backend/tools/admin-permissions.mts` already provides local grant/revoke without remote D1.
 

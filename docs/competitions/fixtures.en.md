@@ -1,5 +1,8 @@
 # Competition Fixtures — first implementation
 
+> **Historical/specialist record — REPO-04 #358, 2026-11-06.** The early **six-view** and provisional-season implementation descriptions are a frozen design record; current generated pages have the approved multi-view structure, validated sporting provenance and 56-day projection. Use the [living architecture](../architecture/overview.md) for current ownership and approved behavior. Frozen source names, immutable identities and migration receipts below remain intentionally preserved.
+
+
 Issue: #147. Scope: the existing Fixtures tab in all 16 competition detail pages.
 
 ## Display decisions for review

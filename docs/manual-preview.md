@@ -1,5 +1,13 @@
 # Manual Vercel Preview — Football Architect
 
+> **Living operational boundary — REPO-04 #358 (2026-11-06).** Current behavior is summarized first. The original implementation-phase notes, dates, approvals and status labels below are preserved as historical evidence; do not infer deployed remote state.
+
+## Current publishing stop rule
+
+`.github/workflows/manual-vercel-preview.yml` is an **explicitly dispatched Preview publisher**, distinct from automatic test workflows. REPO-04 does not invoke it or grant deployment approval. The older example alias, blocked deployment reference and third-party project status below are **dated procedure observations**, not a live-state attestation. Before any separately approved use, verify exact PR/source SHA, owner, target, existing alias, provider secrets and external authorization; never promote to Production or mutate remote D1 from a documentation workflow. [Architecture](architecture/overview.md), [CI/QA](ci/README.md).
+
+## Original implementation record (historical)
+
 ## Status and activation
 
 The only event trigger is **workflow_dispatch**. No push, PR, schedule, merge or hook automatically publishes anything. The manual workflow was integrated into **main** in PR #122. Any future alias change must be reviewed and merged separately; configuring a new alias does not trigger a workflow run.

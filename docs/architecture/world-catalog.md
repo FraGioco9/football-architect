@@ -1,4 +1,7 @@
 # ARCH-CLEAN-02 PR-02 — Canonical World Catalog (A01)
+
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** A01's six-file freeze and Draft/HOLD apply to a past implementation tranche; current immutable ID/catalogue behavior is governed by existing source. Use the [current contract](overview.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
 Status: **Draft / HOLD**. Based on `b5e0a0a05037404d02da455ff12824e55e7d3609`. Tracking: #268.
 
 ## Frozen scope

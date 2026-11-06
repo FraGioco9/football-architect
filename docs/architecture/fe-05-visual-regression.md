@@ -1,5 +1,8 @@
 # FE-05 — Visual Regression & Interaction Tests (#369)
 
+> **Merged implementation / historical acceptance record — REPO-04 #358, 2026-11-06.** #369 was squash-merged in PR #401. FE-05 compares deterministic visual samples on the **same source SHA** and does not approve permanent cross-commit golden files or physical-device accessibility. See the [current CI/QA operating guide](../ci/README.md). Baseline SHAs, old open-PR wording and test run receipts below remain dated evidence; they are not current merge/deploy authorization.
+
+
 ## Baseline, scope and dependencies
 
 Starting main: 071891ae8b7baf0f7ecaccf93bc105bb969d34b2, after FE-01 (#365), FE-02 (#366), FE-04 (#368), the Safari follow-up and FE-03 (#367) squash merge (PR #402). The FE-03 implementation only changes the Clubs directory card-update path; no FE-05 file overlaps. The visual suite is rebased onto the post-performance HEAD. Cross-commit historical golden files remain explicitly outside the scope of this bounded same-SHA visual stability suite. No application runtime, CSS, routing, backend, remote DB, publication or deployment changes are authorized by this PR.

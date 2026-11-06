@@ -1,5 +1,8 @@
 # Backend domain boundaries — BE-01
 
+> **Historical/specialist record — REPO-04 #358, 2026-11-06.** The BE-01 pure qualification-policy module move remains an important preserved source-boundary decision, not a new rename authorization. Use the [living architecture](../../../../docs/architecture/sh-01-sporting-contracts.md) for current ownership and approved behavior. Frozen source names, immutable identities and migration receipts below remain intentionally preserved.
+
+
 This directory contains the **pure international qualification policy** used by season planning and historical review. Five modules have moved here without changes to their algorithms, public function names, input contracts, error codes or persisted data.
 
 | Module | Owns |

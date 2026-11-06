@@ -1,5 +1,8 @@
 # Backend source ownership — BE-01
 
+> **Historical/specialist record — REPO-04 #358, 2026-11-06.** BE-01's restructuring plan is historical; after #357 zero modules were deleted and after #370 only private identifiers changed, not file paths. Use the [living architecture](../../../docs/architecture/overview.md) for current ownership and approved behavior. Frozen source names, immutable identities and migration receipts below remain intentionally preserved.
+
+
 This is the canonical **directory-level ownership map** for the scoped restructuring in PR #364. It describes actual code boundaries, not authorization to alter sporting outcomes, production security or the D1 database.
 
 | Location | Responsibility | Boundary |

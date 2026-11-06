@@ -1,5 +1,13 @@
 # BE-04 — Canonical season lifecycle and sporting policy boundary
 
+> **Living contract — REPO-04 #358, 2026-11-06.** The current section describes reviewed repository source at `main@f9b595636d02d4a1ebfdbd967e1a97c18f2dd41d`. Dates, SHA baselines, Draft/HOLD labels and gates in the following original record are **historical evidence**, not today's release state. No merge/deploy/remote D1 authorization is implied.
+
+## Current season lifecycle and terminal policy
+
+The approved frozen Season 1 snapshot initializes an unstarted **Season 0** world via guarded server commands; viewed URLs/Debug cannot progress it. The sporting/transition calendar has 56 days and distinct terminal receipts. Backend Admin commands alone can prepare, start, advance, archive, close and reset subject to current D1 authorization, revision/generation, idempotency, approval and sporting invariants. Historical records cannot be silently recomputed from current rules; preserved archives and receipts remain authoritative. Do not infer arbitrary future-season support beyond verified command paths. [World/Debug](../docs/state/sh-03.md), [D1](docs-d1-repositories-be-03.md), [Auth](docs-auth-security-be-05.md). The #351 PR baseline, command matrix and PASS evidence below are historical implementation details, not permission to mutate Production.
+
+## Historical implementation audit (retained)
+
 Issue #351. Baseline: `main@6dba946d3f97d63d2bb550aa20cb6c92197666c5` (rebased after #380 and #354) following squash-merges #359/#381, #384, BE-01/#348, BE-02/#349, SH-01/#353. Preserve the approved model. #350 independently owns persistence.
 
 ## Command flows, owners and invariants

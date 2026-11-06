@@ -1,5 +1,8 @@
 # Shared competition model
 
+> **Historical/specialist record — REPO-04 #358, 2026-11-06.** This is a historical renderer/consolidation plan, not instructions to open an old PR; SH-02 and static first-paint architecture are integrated. Use the [living architecture](../architecture/overview.md) for current ownership and approved behavior. Frozen source names, immutable identities and migration receipts below remain intentionally preserved.
+
+
 All sixteen domestic divisions use one page renderer and one competition model.
 Country, tier, name, badge and club identities remain catalogue data. No page
 owns a separate sporting implementation.

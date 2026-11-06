@@ -1,5 +1,8 @@
 # FE-04 — Accessibility & i18n implementation contract (#368)
 
+> **Merged implementation / historical acceptance record — REPO-04 #358, 2026-11-06.** #368 was squash-merged in PR #394 after FE-02. The original sentence saying #366 is still open is historical, not current; physical assistive-technology acceptance remains separately scoped. See the [current CI/QA operating guide](../ci/README.md). Baseline SHAs, old open-PR wording and test run receipts below remain dated evidence; they are not current merge/deploy authorization.
+
+
 ## Baseline and FE-02 coordination
 - `main@eef67365dbcd5445a7121a0dfe5351dbfa4b5232` is the true #365/PR #393 squash merge, parent `4b28fd3d47f05c7bd8ccf4f04fcfc99a179fc133` after #352/#356.
 - #366 is open without an active PR or GitHub issue comments at baseline. FE-02 owns breakpoints, touch target geometry, safe areas, viewport and scrolling; FE-04 owns only keyboard semantics, semantic landmarks, accessible names, error/feedback and UI translations. No structural overlap.

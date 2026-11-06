@@ -1,5 +1,11 @@
 # Hosted Preview package — preparation only
 
+> **Archived status — REPO-04 #358 (2026-11-06).** This document preserves the original proposal/acceptance record; its old status and activation statements do not supersede verified source, merge history or present independent provider checks.
+
+**Historical hosted Preview preparation and migration record.** The opening assertion of "no Worker published" and #170 "13/15" is a dated plan, **not verified current remote status**: #170 technical acceptance is closed and [PR #329](https://github.com/FraGioco9/football-architect/pull/329) was merged. Preparation commands, immutable artifact checks and hostname/cookie migration hazards remain useful evidence, **never approval to deploy** or touch remote D1. Current environment authority: [shared nonproduction](docs-shared-nonproduction.md).
+
+## Original implementation record (historical)
+
 The existing nonproduction D1 is initialized, but no Worker has been published. The proposed Worker is `football-architect-preview` on the account's workers.dev subdomain: frontend and `/api/*` share one exact origin. Dev connects through its existing opt-in bridge. Production remains separate; Vercel Preview, local wrangler.toml and the publication guard remain unchanged. Issue #170 remains **13/15 (86.7%)**.
 
 ## Prepare from an exact reviewed commit

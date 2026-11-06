@@ -1,5 +1,8 @@
 # CI-FAST-01 — scoped CI for protected provider changes
 
+> **Historical implementation record — REPO-04 #358, 2026-11-06.** This provider-only FAST idea predates the current FAST/TARGETED/FULL classifier; its original Draft/HOLD gate is not today's workflow behavior. Use the [current contract](../ci/README.md) for operation. Original frozen SHAs, Draft/HOLD gates, earlier names and audit evidence are preserved below, but are not today's release state.
+
+
 Tracking: #268. Draft/HOLD; no merge, deployment, or database operation.
 
 The default remains full `Site checks` and INT-24 Chromium. The fast path
