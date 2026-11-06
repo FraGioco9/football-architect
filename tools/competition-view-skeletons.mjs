@@ -6,8 +6,8 @@ const bar='<span class="app-skeleton-bar"></span>';
 const label=(tag,key,text,cls='')=>'<'+tag+(tag==='button'?' type="button" disabled tabindex="-1"':'')+(cls?' class="'+cls+'"':'')+' data-app-i18n="'+key+'">'+text+'</'+tag+'>';
 const recordKeys=[['historyBestAttack','Best attack in a season'],['historyBestDefence','Best defence in a season'],['historyMostSeasonWins','Most wins in a season'],['historyMostSeasonPoints','Most points in a season'],['historyBestGoalDifference','Best goal difference in a season'],['historyLargestTitleMargin','Largest title-winning points margin']];
 const playerKeys=[['historyPlayerSeasonGoals','Most goals in a season'],['historyPlayerSeasonAssists','Most assists in a season'],['historyPlayerSeasonCleanSheets','Most clean sheets in a season']];
-const recordCards=items=>'<div class="app-competition-stat-grid">'+items.map(([key,text])=>'<article class="app-competition-stat-card">'+label('h5',key,text,'app-competition-stat-label')+'<strong class="app-competition-stat-value">'+bar+'</strong><div class="app-view-skeleton-record-holder">'+bar+'</div></article>').join('')+'</div>';
-function history(d,preview){
+const renderRecordSkeletonCards=items=>'<div class="app-competition-stat-grid">'+items.map(([key,text])=>'<article class="app-competition-stat-card">'+label('h5',key,text,'app-competition-stat-label')+'<strong class="app-competition-stat-value">'+bar+'</strong><div class="app-view-skeleton-record-holder">'+bar+'</div></article>').join('')+'</div>';
+function renderHistorySkeletonMarkup(d,preview){
  let first;
  if(preview){
   const cells='<span class="app-history-dev-season-link app-world-standing-club-link"><span class="app-history-dev-season">'+bar+'</span></span>'+Array.from({length:3},(_,i)=>'<span class="app-history-dev-archive-club'+(i===0?' app-history-dev-archive-champion':'')+'">'+label('span',['historyChampionLabel','historyRunnerUp','historyThirdPlace'][i],['Champion','Runner-up','Third place'][i],'app-history-dev-podium-label')+'<span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" aria-hidden="true"></span><span class="app-world-club-name">'+bar+'</span></span></span>').join('');
@@ -15,10 +15,10 @@ function history(d,preview){
  }else{
   first=label('h3','historyHallOfChampions','Hall of Champions')+'<div class="app-view-skeleton-champion">'+bar+'</div>'+label('h3','historyFinalLeagueTable','Final league table')+'<table class="app-history-authoritative-table app-view-skeleton-history-table"><thead><tr><th>#</th>'+label('th','standingsClub','Club')+label('th','historyPlayed','Played')+label('th','historyPoints','Points')+'</tr></thead><tbody>'+Array(d.capacity).fill('<tr>'+Array(4).fill('<td>'+bar+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
  }
- return '<div class="app-history-dev"><section class="app-history-dev-section">'+first+'</section><section class="app-history-dev-section">'+label('h3','historyHistoricalRecords','Historical records')+'<div class="app-history-record-controls">'+label('button','historySeasonLabel','Season')+label('button','historyAllTimeRecords','All-time')+'</div><section class="app-history-record-group">'+label('h4','historyTeamRecords','Team records')+recordCards(recordKeys)+'</section><section class="app-history-record-group">'+label('h4','historyPlayerRecords','Player records')+recordCards(playerKeys)+'</section></section></div>';
+ return '<div class="app-history-dev"><section class="app-history-dev-section">'+first+'</section><section class="app-history-dev-section">'+label('h3','historyHistoricalRecords','Historical records')+'<div class="app-history-record-controls">'+label('button','historySeasonLabel','Season')+label('button','historyAllTimeRecords','All-time')+'</div><section class="app-history-record-group">'+label('h4','historyTeamRecords','Team records')+renderRecordSkeletonCards(recordKeys)+'</section><section class="app-history-record-group">'+label('h4','historyPlayerRecords','Player records')+renderRecordSkeletonCards(playerKeys)+'</section></section></div>';
 }
 const awards={champion:['honours','awardsChampion','Champion'],promotion:['honours','awardsPromotion','Direct Promotion'],playoff:['honours','awardsPlayoff','Playoff Winner'],manager:['excellence','awardsManager','Manager of the Season'],player:['excellence','awardsPlayer','Player of the Season'],young:['excellence','awardsYoung','Young Player of the Season'],boot:['performance','awardsBoot','Golden Boot'],assists:['performance','awardsAssists','Top Assists'],glove:['performance','awardsGlove','Golden Glove'],defender:['performance','awardsDefender','Defender of the Season'],midfielder:['performance','awardsMidfielder','Midfielder of the Season'],forward:['performance','awardsForward','Forward of the Season'],xi:['xi','awardsXi','Team of the Season']};
-function awardCards(d){
+function renderAwardSkeletonCards(d){
  const sections={excellence:['awardsExcellence','Individual Excellence'],performance:['awardsPerformance','Performance & Position Awards'],xi:['awardsXi','Team of the Season']};
  let html='',previous;
  for(const id of d.rules.awards){
@@ -33,7 +33,7 @@ export function renderViewSkeleton(d,view,variant){
  const league=d.rules.phases.find(p=>p.rankOutcomes),marker=league.calendarEvents?.at(-1);
  const lastDay=calendarModel.createSeason(1).days.find(day=>day.events.some(event=>event.marker===marker))?.day||0;
  const historyAttrs=key==='history-preview'?' data-skeleton-last-league-day="'+lastDay+'" data-skeleton-league-rounds="'+rules.phaseMetrics(d,league.id).rounds+'"':'';
- const content=view==='stats'?stats.renderSkeleton(key.split('-')[1]):view==='history'?history(d,key==='history-preview'):awardCards(d);
+ const content=view==='stats'?stats.renderSkeleton(key.split('-')[1]):view==='history'?renderHistorySkeletonMarkup(d,key==='history-preview'):renderAwardSkeletonCards(d);
  return '<div class="app-competition-view-skeleton" data-competition-skeleton-root="'+key+'"'+historyAttrs+' aria-hidden="true">'+content+'</div>';
 }
 export function renderViewTemplates(d,view){
