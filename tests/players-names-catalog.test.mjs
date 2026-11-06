@@ -268,7 +268,7 @@ test('Batch G: four source-backed 300-name Latin pools preserve actual observati
  }
  for(const [code,country] of [['MAR','Q1028'],['IRN','Q794']]){
   const b=banks[code];
-  assert.match(b.source.metric,/COUNT\\(DISTINCT Wikidata human person QIDs\\)/);
+  assert.ok(b.source.metric.startsWith('COUNT(DISTINCT Wikidata human person QIDs)'),code+' observed biographical metric');
   assert.match(b.source.source_query_sparql,/wdt:P31 wd:Q5/);
   assert.ok(b.source.source_query_sparql.includes('wdt:P27 wd:'+country));
   assert.match(b.source.sampling_limitations,/not a population census/i);
