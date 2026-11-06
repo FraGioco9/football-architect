@@ -270,6 +270,7 @@
     "backend/tests/csrf-policy.test.ts": "backend-contract",
     "backend/tests/auth-boundaries-runtime.test.ts": "backend-runtime",
     "tests/players-names-catalog.test.mjs": "site-node",
-    "tests/page-load-03c-first-paint.test.mjs": "site-node"
+    "tests/page-load-03c-first-paint.test.mjs": "site-node",
+    "tests/players-name-pools.test.mjs": "site-node"
   }
 }

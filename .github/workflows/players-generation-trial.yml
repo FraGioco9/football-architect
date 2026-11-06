@@ -4,6 +4,12 @@ on:
     branches: [main]
     paths:
       - tools/players-generation-trial.mjs
+      - tools/players-name-pools.mjs
+      - tests/players-name-pools.test.mjs
+      - data/players/names/**
+      - data/players/surnames/**
+      - tools/players-generation-audit.mjs
+      - tools/players-suitability-extremes-qa.mjs
       - .github/workflows/players-generation-trial.yml
 permissions:
   contents: read
@@ -29,10 +35,151 @@ jobs:
       - name: Generate and validate isolated test cohorts
         run: |
           mkdir -p "$RUNNER_TEMP/fa-ci-artifacts"
+          node --check tools/players-name-pools.mjs
+          node --test tests/players-name-pools.test.mjs
           node --check tools/players-generation-trial.mjs
+          node --check tools/players-generation-audit.mjs
+          node tools/players-generation-audit.mjs --self-test > "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-self-test.json"
+          node tools/players-generation-audit.mjs --count 1000 > "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-3000.json"
+          node --input-type=module <<'AUDIT'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const report=JSON.parse(readFileSync(join(process.env.RUNNER_TEMP,'fa-ci-artifacts','players-role-audit-3000.json'),'utf8'));
+          assert.equal(report.pooled.n,3000);
+          assert.equal(Object.keys(report.pooled.roles).length,14);
+          assert.equal(report.coherence_mix_proposed,.60);
+          assert.deepEqual(report.offsets_previous,{A:12,B:4,C:-5,D:-13});
+          assert.deepEqual(report.offsets_proposed,{A:15,B:5,C:-8,D:-13});
+          assert.equal(report.prior60.n,3000);
+          assert.equal(report.previousTiers.n,3000);
+          assert.equal(report.core_role_directions.length,13);
+          assert.deepEqual(report.owner_approved_prior_profiles.specialist,{share:.80,primary:.70,secondaries_total:.30});
+          assert.deepEqual(report.owner_approved_prior_profiles.versatile,{share:.20,primary:.50,secondaries_total:.50});
+          assert.deepEqual(report.proposed_profiles.specialist,{share:.45,primary:.70,secondaries_total:.30});
+          assert.deepEqual(report.proposed_profiles.versatile,{share:.55,primary:.50,secondaries_total:.50});
+          assert.equal(report.proposed_profiles.secondary_favored,null);
+          assert.ok(report.approved80.secondary_fit.versatile_share>=.15);
+          assert.ok(report.approved80.secondary_fit.versatile_share<=.25);
+          assert.ok(report.pooled.secondary_fit.versatile_share>=.49);
+          assert.ok(report.pooled.secondary_fit.versatile_share<=.64);
+          assert.equal(report.measured_target_met,true,
+            'Secondary 5-10%, equivalent 20-25%, primary 65-75% all required');
+          const fit=report.pooled.secondary_fit;
+          assert.ok(fit.secondary_better_share>=.05&&fit.secondary_better_share<=.10);
+          assert.ok(fit.equivalent_share>=.20&&fit.equivalent_share<=.25);
+          assert.ok(fit.primary_better_share>=.65&&fit.primary_better_share<=.75);
+          assert.equal(fit.secondary_better_by_3+fit.equivalent_within_3+
+            fit.primary_better_by_3,fit.possible);
+          assert.equal(report.prior55.n,3000);
+          assert.equal(report.uncorrected.n,3000);
+          assert.equal(report.preTarget.n,3000);
+          assert.equal(report.suitability_generation.mode,'automatic_target_first');
+          assert.equal(report.suitability_generation.not_persisted,true);
+          assert.equal(report.suitability_generation.tolerance,.5);
+          assert.equal(report.suitability_generation.maximum_primary_suitability,90);
+          assert.ok(report.suitability_generation.desired.max<=90);
+          assert.ok(report.suitability_generation.max_absolute_error<=.500001);
+          assert.deepEqual(report.provisional_role_core_floor,{
+            primary_only:6,specialist:10,versatile:12,
+            reference:'median of four essential (A) plus four supporting (B) attributes',
+            height_modifiers_applied_after_core_floor:true,
+            preserves_manual_overrides:true
+          });
+          assert.equal(Object.keys(report.core_floor.by_role).length,14);
+          assert.ok(Object.values(report.core_floor.by_role).every(r=>r.players_changed>0));
+          assert.ok(report.core_floor.corrected_attributes>0);
+          assert.equal(report.comparison.trial_0143_before_after.shooting_before,48);
+          assert.ok(report.comparison.trial_0143_before_after.shooting_after>=62);
+          assert.equal(report.no_suitability_score_recalibration,true);
+          assert.deepEqual(report.provisional_position_expression,{
+            mean:15,sd:12,clamp:35,max_skill_change:25});
+          assert.ok(report.pooled.secondary_fit.no_secondary_favored);
+          assert.ok(Object.entries(report.role_tiers).every(([role,t])=>
+            t.A>t.B&&(role==='GK'||t.B>t.C)));
+          assert.ok(report.pooled.spread.mean<50);
+          assert.ok(report.core_role_directions.every(item=>item.passed));
+          const selected=['ST__CB__shooting','CB__ST__tackling','RW__CB__speed','CM__CB__passing','GK__ST__gk_reflexes','ST__CB__heading'];
+          console.log(JSON.stringify({v6_spread:report.baseline.spread,
+            old60_spread:report.prior60.spread,
+            previous_tier_spread:report.previousTiers.spread,
+            proposed_spread:report.pooled.spread,
+            secondary_fit_before_target:report.preTarget.secondary_fit,
+            secondary_fit_new:report.pooled.secondary_fit,
+            suitability_target_generation:report.suitability_generation,
+            core_floor:report.core_floor,
+            trial_0143:report.comparison.trial_0143_before_after,
+            per_seed_buckets:report.comparison.per_seed_bucket_comparison,
+            meets_all_3_targets:report.measured_target_met,
+            comparison:report.comparison}));
+          for(const key of selected)console.log(JSON.stringify({
+            name:key,baseline:report.baseline.contrasts[key],
+            proposed:report.pooled.contrasts[key]
+          }));
+          AUDIT
           node tools/players-generation-trial.mjs --self-test > "$RUNNER_TEMP/fa-ci-artifacts/players-self-test.json"
+          node --check tools/players-suitability-extremes-qa.mjs
+
+          node tools/players-generation-trial.mjs --count 3 --seed fixed-75 --primary-suitability 75 --out "$RUNNER_TEMP/fa-ci-artifacts/players-fixed-75.json" > /dev/null
+          node tools/players-generation-trial.mjs --count 3 --seed range-65-80 --primary-suitability 65:80 --out "$RUNNER_TEMP/fa-ci-artifacts/players-range-65-80.json" > /dev/null
+          node --input-type=module <<'SUITABILITY'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {calculatePositionSuitability} from './tools/players-generation-trial.mjs';
+          const dir=join(process.env.RUNNER_TEMP,'fa-ci-artifacts');
+          for(const [file,low,high] of [['players-fixed-75.json',75,75],
+           ['players-range-65-80.json',65,80]]){
+           const trial=JSON.parse(readFileSync(join(dir,file),'utf8'));
+           assert.equal(trial.count,3);
+           assert.equal(trial.persisted,false);
+           for(const p of trial.candidates){
+            assert.ok(p.trial_primary_suitability_target>=low&&
+             p.trial_primary_suitability_target<=high);
+            const actual=calculatePositionSuitability(p.attributes,p.primary_position);
+            assert.ok(Math.abs(actual-p.trial_primary_suitability_target)<=.500001);
+            assert.equal(Object.keys(p.attributes).length,20);
+           }
+          }
+          SUITABILITY
+          # Legacy full-JSON hashes include the old 3-name demo identity fixture.
+          # Since PLAYERS-03 supplies 50 weighted national name pools, verify
+          # exact seeded replay instead. Numerical ability contracts remain frozen.
+          node --input-type=module <<'REPLAY'
+          import assert from 'node:assert/strict';
+          import {createHash} from 'node:crypto';
+          import {generateTrial} from './tools/players-generation-trial.mjs';
+          const oldOffsets={A:12,B:4,C:-5,D:-13};
+          const baseline=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalCoherenceMix:.65,experimentalRoleOffsets:oldOffsets,experimentalLegacySecondaryModel:true});
+          const bytes=JSON.stringify(baseline,null,2)+'\n';
+          const sha=createHash('sha256').update(bytes).digest('hex');
+          const baselineReplay=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalCoherenceMix:.65,experimentalRoleOffsets:oldOffsets,experimentalLegacySecondaryModel:true});
+          assert.equal(sha,createHash('sha256').update(JSON.stringify(baselineReplay,null,2)+'\n').digest('hex'));
+          console.log('Seeded V6 1k replay SHA-256 (catalog-identity aware):',sha);
+          const prior60=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalRoleOffsets:oldOffsets,experimentalLegacySecondaryModel:true});
+          const prior60sha=createHash('sha256')
+            .update(JSON.stringify(prior60,null,2)+'\n').digest('hex');
+          const prior60Replay=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalRoleOffsets:oldOffsets,experimentalLegacySecondaryModel:true});
+          assert.equal(prior60sha,createHash('sha256').update(JSON.stringify(prior60Replay,null,2)+'\n').digest('hex'));
+          console.log('Seeded prior-60% 1k replay SHA-256:',prior60sha);
+          const previous55=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalRoleExpression:false,experimentalRoleCoreFloor:false,
+            experimentalPrimarySuitabilityModel:false});
+          const previous55sha=createHash('sha256')
+            .update(JSON.stringify(previous55,null,2)+'\n').digest('hex');
+          const previous55Replay=generateTrial({count:1000,seed:'fa-official-trial-01',
+            experimentalRoleExpression:false,experimentalRoleCoreFloor:false,
+            experimentalPrimarySuitabilityModel:false});
+          assert.equal(previous55sha,createHash('sha256').update(JSON.stringify(previous55Replay,null,2)+'\n').digest('hex'));
+          console.log('Seeded previous-55% 1k replay SHA-256:',previous55sha);
+          REPLAY
           node tools/players-generation-trial.mjs --count 100 --seed fa-official-trial-01 --out "$RUNNER_TEMP/fa-ci-artifacts/players-trial-100.json" > "$RUNNER_TEMP/fa-ci-artifacts/players-100-summary.json"
           node tools/players-generation-trial.mjs --count 1000 --seed fa-official-trial-01 --out "$RUNNER_TEMP/fa-ci-artifacts/players-trial-1000.json" > "$RUNNER_TEMP/fa-ci-artifacts/players-1000-summary.json"
+          node tools/players-suitability-extremes-qa.mjs --audit-path "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-3000.json" --trial-path "$RUNNER_TEMP/fa-ci-artifacts/players-trial-1000.json" --out "$RUNNER_TEMP/fa-ci-artifacts/players-extreme-role-qa.json"
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           import {readFileSync,writeFileSync} from 'node:fs';
