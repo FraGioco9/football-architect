@@ -43,8 +43,9 @@ export function renderViewTemplates(d,view){
 export function viewSkeletonScript(view){return '<script data-view-skeleton-first-paint="'+view+'">('+viewSkeletonFirstPaint.toString()+')('+JSON.stringify(view)+');</script>';}
 export function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&document.documentElement.dataset.faDevSeasons!==undefined&&
-    (document.documentElement.dataset.faDevCurrentSeason==='0'||window.faDebugEnabled===false)){
+ if(view==='history'&&window.faDebugEnabled!==false&&
+    document.documentElement.dataset.faDevSeasons!==undefined&&
+    document.documentElement.dataset.faDevCurrentSeason==='0'){
   panel.querySelector('[data-competition-skeleton-root]')?.remove();
   panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
   if(document.documentElement.dataset.competitionView===view){panel.hidden=false;document.documentElement.removeAttribute('data-fa-competition-prepaint');}
@@ -58,23 +59,26 @@ export function viewSkeletonFirstPaint(view){
  if(view==='history'){
   const progress=window.faFixturesInitialProgress||{},skeleton=panel.querySelector('[data-competition-skeleton-root]');
   const last=Number(skeleton?.dataset.skeletonLastLeagueDay),rounds=Number(skeleton?.dataset.skeletonLeagueRounds);
-  const season=Number(document.documentElement.dataset.faDevCurrentSeason??progress.currentSeason??1);
+  const devSeason=window.faDebugEnabled!==false?document.documentElement.dataset.faDevCurrentSeason:undefined;
+  const knownSeason=devSeason??progress.currentSeason;
+  const season=Number(knownSeason??1);
   const completed=Math.max(0,season-1+((last>0&&progress.day>=last)||(!progress.day&&rounds>0&&progress.matchdays>=rounds)?1:0));
   const archive=skeleton?.querySelector('.app-history-dev-archive');
   if(archive){
-   if(completed===0){
+   if(completed===0&&knownSeason!==undefined){
     const shell=archive.closest('.app-view-skeleton-history-archive');
     if(shell)shell.innerHTML='<p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p>';
    }else{
    // Extend the four pre-rendered rows for histories longer than four seasons.
+   const needed=knownSeason===undefined?Math.max(4,archive.children.length):completed;
    const sample=archive.querySelector('[data-skeleton-archive-row]');
-   while(sample&&archive.children.length<completed){
+   while(sample&&archive.children.length<needed){
     const row=sample.cloneNode(true);
     row.dataset.skeletonArchiveRow=String(archive.children.length);
     archive.append(row);
    }
    for(const row of archive.querySelectorAll('[data-skeleton-archive-row]'))
-    row.hidden=Number(row.dataset.skeletonArchiveRow)>=completed;
+    row.hidden=Number(row.dataset.skeletonArchiveRow)>=needed;
    }
   }
  }

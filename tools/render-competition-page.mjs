@@ -8,11 +8,35 @@ import statsView from "../assets/competition-stats.js";
 
 export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,renderLogo,clubsByDivision,crestCatalog}){
 // Decorative skeleton mirrors the real table and compact rows; no fake identities or crests.
-const standingsSkeleton=(d,cols)=>{
- const cells=Array.from({length:11},(_,i)=>'<'+(i===1?'th':'td')+'><span class="app-skeleton-bar"></span></'+(i===1?'th':'td')+'>').join('');
- const rows=Array.from({length:d.capacity},()=>'<tr data-skeleton-row>'+cells+'</tr>').join('');
- const mobile=Array.from({length:d.capacity},()=>'<li class="app-world-mobile-item" data-skeleton-mobile><div class="app-world-mobile-summary"><span class="app-world-mobile-position app-skeleton-bar"></span><span class="app-world-mobile-name app-skeleton-bar"></span><span class="app-world-mobile-points app-skeleton-bar"></span><span class="app-world-mobile-form app-skeleton-bar"></span></div></li>').join('');
- return '<div class="app-standings-skeleton" aria-hidden="true"><div class="app-world-standing-scroll"><table class="app-world-standing-table"><thead><tr>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table></div><ol class="app-world-mobile-list app-skeleton-mobile">'+mobile+'</ol></div><!-- standings-skeleton-end -->';
+// Keep known Season 1 identities in the initial loading shell, not sporting values.
+const standingsSkeleton=(d,cols,neutral=false)=>{
+ const known=!neutral&&d.category==='domestic'?clubsByDivision.get(d.id):null;
+ const knownCrest=(club,size)=>{
+  const id=club.countryId+'-'+club.clubId;
+  const asset=Object.hasOwn(crestCatalog,id)?crestCatalog[id]:null;
+  const host='<span class="app-world-club-crest-placeholder"'+(asset?' data-club-crest="'+encode(id)+'" data-club-crest-pending="true"':'')+' aria-hidden="true">';
+  return host+(asset?'<img class="app-club-crest-image" src="/'+encode(asset)+'" alt="" width="'+size+'" height="'+size+'" loading="eager" decoding="async" draggable="false">':'')+'</span>';
+ };
+ const cell=(i,club)=>{
+  if(i!==1||!club)return '<'+(i===1?'th':'td')+'><span class="app-skeleton-bar"></span></'+(i===1?'th':'td')+'>';
+  return '<th scope="row" class="app-world-standing-club"><span class="app-world-club-identity" data-skeleton-identity>'+
+   knownCrest(club,48)+'<span class="app-world-club-name">'+encode(club.primaryName||club.abbr)+'</span></span>'+
+   '<span class="app-skeleton-bar" data-skeleton-identity-placeholder></span></th>';
+ };
+ const rows=Array.from({length:d.capacity},(_,i)=>'<tr data-skeleton-row>'+Array.from({length:11},(_,j)=>cell(j,known?.[i])).join('')+'</tr>').join('');
+ const mobile=Array.from({length:d.capacity},(_,i)=>{
+  const club=known?.[i];
+  const identity=club?'<span class="app-world-mobile-name" data-skeleton-identity>'+knownCrest(club,40)+
+   '<span class="app-world-mobile-club-name">'+encode(club.primaryName||club.abbr)+'</span></span>':'';
+  const placeholder='<span class="app-world-mobile-name app-skeleton-bar"'+(club?' data-skeleton-identity-placeholder':'')+'></span>';
+  return '<li class="app-world-mobile-item" data-skeleton-mobile><div class="app-world-mobile-summary">'+
+   '<span class="app-world-mobile-position app-skeleton-bar"></span>'+identity+placeholder+
+   '<span class="app-world-mobile-points app-skeleton-bar"></span><span class="app-world-mobile-form app-skeleton-bar"></span></div></li>';
+ }).join('');
+ // For an unspecified season the world clock is not yet known: reserve blank
+ // slots until the authoritative coordinator identifies the viewed season.
+ const gate=known?'<script data-fa-standings-identity-first-paint>(function(){const season=new URLSearchParams(location.search).get("season");document.documentElement.dataset.faStandingsKnownIdentity=season==="1"?"true":"false";})();</script>':'';
+ return '<div class="app-standings-skeleton" aria-hidden="true"><div class="app-world-standing-scroll"><table class="app-world-standing-table"><thead><tr>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table></div><ol class="app-world-mobile-list app-skeleton-mobile">'+mobile+'</ol></div>'+gate+'<!-- standings-skeleton-end -->';
 };
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
@@ -34,7 +58,7 @@ ${d.category==="international"?'<tr><td colspan="11" class="app-competition-empt
                 </tbody>
               </table>
             </div>
-          </div>${standingsSkeleton(d,cols)}${legend}`;
+          </div>${standingsSkeleton(d,cols,neutral)}${legend}`;
 };
 const menuChevron='<svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const fixtureOption=(d,c)=>'                  <div class="language-option" role="option" id="app-fixtures-round-option-'+c.value+'" data-menu-value="'+c.value+'" data-fixture-round-choice="'+c.value+'" aria-selected="'+(c.value===1)+'"><span data-competition-fixture-choice="'+c.value+'">'+rulesView.fixturesChoiceLabel(d,c)+'</span></div>';
@@ -114,7 +138,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
  }).join("\n");
- return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${firstPaintTabScrollScript}\n${panels}\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;
+ return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${firstPaintTabScrollScript}\n${panels}\n          <script data-fa-competition-selected-panel-first-paint>(function(){const view=document.documentElement.dataset.competitionView||"standings";for(const panel of document.querySelectorAll("#app-divisions > .app-competition-panel"))panel.hidden=panel.id!=="competition-panel-"+view;})();</script>\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;
 };
 const detailContent = function detailContent(d,neutral=false){
  const c=countryById[d.countryId];
