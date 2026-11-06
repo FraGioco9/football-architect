@@ -103,6 +103,21 @@ test('seeded generator uses catalog given names and does not affect attribute co
  assert.equal(Object.hasOwn(summarize(trial),'known_as'),false);
 });
 
+test('all 300 Brazilian generated first names retain uppercase initials',()=>{
+ const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
+ const values=pools.given.get('BRA').values;
+ assert.equal(values.length,300);
+ assert.ok(values.every(n=>Array.from(n)[0]===Array.from(n)[0].toLocaleUpperCase('und')));
+ assert.equal(values[0],'Jose');
+ assert.equal(values[1],'Joao');
+ const trial=generateTrial({count:50,seed:'brazil-uppercase-qa',primaryNationality:'BRA'});
+ for(const p of trial.candidates){
+  assert.equal(p.first_name[0],p.first_name[0].toLocaleUpperCase('und'));
+  assert.equal(p.display_name,p.first_name+' '+p.last_name);
+  assert.equal(Object.hasOwn(p,'known_as'),false);
+ }
+});
+
 test('Brazil, Portugal and Spain never generate aliases',()=>{
  for(const code of ['BRA','POR','ESP']){
   const rows=generateTrial({count:8,seed:'canonical-name-'+code,primaryNationality:code}).candidates;
