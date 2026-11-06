@@ -6,7 +6,7 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 
 ## Collection progress
 
-**13,200 / 15,000** single first-name slots saved in **44 / 50 countries**. **6 countries remain empty**. `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
+**14,400 / 15,000** single first-name slots saved in **48 / 50 countries**. **2 countries remain empty** (ENG, WAL). `catalog-v1.json` references the saved country files; the names themselves live only in `countries/<FIFA>.json`.
 
 | Country | JSON file | Unique single names | Source and period |
 | --- | --- | ---: | --- |
@@ -59,6 +59,11 @@ All banks store `given_names` as sorted `{ "value": "Name", "weight": observed_c
 | Côte d'Ivoire (CIV) | `countries/CIV.json` | 300 | Wikidata male Ivorian citizens' P735 first-name biographical counts, **not births/population** |
 | Nigeria (NGA) | `countries/NGA.json` | 300 | Wikidata male Nigerian citizens' P735 first-name biographical counts, **not births/population** |
 | Mali (MLI) | `countries/MLI.json` | 300 | Wikidata male citizens **or people born in Mali**, P735 first names; **not births/population** |
+
+| DR Congo (COD) | `countries/COD.json` | 300 | DR Congo-tagged male footballer profiles; observed first-name counts, **not representative national births** |
+| Cameroon (CMR) | `countries/CMR.json` | 300 | Cameroon-tagged male footballer profiles; observed first-name counts, **not representative national births** |
+| South Africa (RSA) | `countries/RSA.json` | 300 | Male footballer + Test rugby athlete profiles; historical, mixed-sport **nonrepresentative** sample |
+| Australia (AUS) | `countries/AUS.json` | 300 | NSW-only male registered births in annual top-100 lists **1960–2024**, **not national Australian** counts |
 
 ### Source integrity, scope and limitations
 
@@ -145,8 +150,14 @@ The selected four are country-specific (no indiscriminate England/Wales shared p
 - **MLI:** Citizenship `P27=Q912` **OR** person’s documented birth place in Mali (`P19` place, `P17=Q912`), counted as a deduplicated union; 300 eligible Latin labels; rank 300 = **1**. Restricting to citizenship alone yielded only 270, so **birthplace broadens the selected cohort**, not a Mali population count. Source response SHA-256 `4de4db174a31ced2a332623ce9c644b2f034eb11e20f6be938d6e0dde1571b9d`.
 - Full exact SPARQL, response SHA-256, original case/diacritics, country QIDs and sampled cohort restrictions appear in each JSON. No transliteration was needed; single Latin NFC strings only. The four Git blobs are **unchanged from Batch H #424**, with zero changes to previous country files. [Batch H Node 22 source QA 42248723049](https://github.com/FraGioco9/football-architect/actions/runs/42248723049) **PASS**. These four files remain `production_ready:false` and are not connected to runtime names sampling or database. Research-only name rankings should be replaced with reliable national counts if available before release.
 
+**Batch I (PR #420, COD / CMR / RSA / AUS; incorporated into PR #407):**
+- **COD / CMR:** Male first-name tokens from [salimt/football-datasets](https://github.com/salimt/football-datasets/blob/da9227e1f42baf74561324290dbf1ad2e3c00edd/datalake/transfermarkt/player_profiles/player_profiles.csv) (Transfermarkt), pinned commit `da9227e1f42baf74561324290dbf1ad2e3c00edd`, raw Git blob `19ead72834e0f1c4621c828c43d2bc72d98129d6`. Exactly **300** unique male first-token names selected from **416 / 325** eligible source names, respectively. Weights count **distinct male athlete profiles**, not national births, residents or survey incidence. Citizenship is specifically **DR Congo (COD), not the Republic of the Congo**, or Cameroon (CMR), including dual-national diaspora. First-token interpretation is imperfect and needs manual audit before production.
+- **RSA:** Same male footballer source (**84** qualifying South African profiles), plus men's South African rugby Test representatives (**502** rugby profiles; debut years **1950–2016**) from [hautahi/Rugby-Wanderers](https://github.com/hautahi/Rugby-Wanderers/blob/9ec1e451645a79d4cbe06f8b0ed16a342129dc86/data/SouthAfrica.csv), source commit `9ec1e451645a79d4cbe06f8b0ed16a342129dc86` and Git blob `9d9e7cb742773018e7cd79b0c9a846a17fcaaf9c`. **300** unique first tokens from **386** eligible. The pooled weights are observations in a deliberately nonrepresentative two-sport convenience cohort with differing eras and community coverage; **not national South African first-name frequencies**.
+- **AUS:** [New South Wales Registry of Births Deaths and Marriages](https://data.nsw.gov.au/data/dataset/popular-baby-names-from-1952) annual published Top-100 male registered births **1960–2024**, mirrored by [ozbabynames](https://github.com/robjhyndman/ozbabynames/blob/dad7314f1f774b3e8cfd57df0be9f40ade4639ce/data-raw/nsw/nsw_babynames.csv), Git blob `0704a824ffc9adf027b589480e6c9b8d7826de74`. 300 names ranked by sum of source-published counts, with older decades necessary to reach quota. Unpublished counts outside annual Top-100 are **unknown**, not zero. This is **NSW regional**, not national Australia. Counts must not be compared to other countries.
+- **Licensing/quality:** Upstream football/ESPN-sourced athlete datasets lack clear redistribution permission; legal review required before commercial use. NSW dataset requires attribution. All 1,200 names are source-pinned Latin NFC single-word tokens, per-bank unique with positive sorted observed weights. `production_ready:false`. Original four country JSON Git blobs are copied unchanged from Batch I [Draft/HOLD PR #420](https://github.com/FraGioco9/football-architect/pull/420); it must not be independently merged into main.
+
 ### Validation
 
-`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 44 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 6 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
+`node --test tests/players-names-catalog.test.mjs` covers all 50 frozen country codes, exactly 300 Unicode NFC Latin-script single-token male first names in **each of 48 populated banks**, unique casefold within each country, positive documented source counts/estimates sorted descending, source ID/registry coherence, no compound names or surnames, and 2 empty country entries. Exact-HEAD targeted Node 22 GitHub Actions only; avoid redundant manual runs.
 
 **Draft/HOLD PR #407**: no merge without separate authorization, no deploy, D1/Worker, permanent footballers, or changes to PLAYERS-02 PR #400. These are research/catalog data, **not yet connected to the player generator**.

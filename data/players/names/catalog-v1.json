@@ -266,6 +266,30 @@
       "id": "wikidata-male-mali-citizens-or-born-given-names",
       "external_file": "countries/MLI.json",
       "description": "Wikidata P735 male biographies with Mali citizenship (P27=Q912) OR place of birth in Mali (P19/P17=Q912), 2026-11-06; not population statistics"
+    },
+    {
+      "code": "COD",
+      "id": "players-03-transfermarkt-men-citizenship-cod-single-forenames",
+      "external_file": "countries/COD.json",
+      "description": "DR Congo-tagged men's footballer profiles, first-name-token occurrence counts through 2025, including dual nationals; a biased athlete sample, NOT national births or resident frequencies"
+    },
+    {
+      "code": "CMR",
+      "id": "players-03-transfermarkt-men-citizenship-cmr-single-forenames",
+      "external_file": "countries/CMR.json",
+      "description": "Cameroon-tagged men's footballer profiles, first-name-token occurrence counts through 2025, including dual nationals; a biased athlete sample, NOT national births or resident frequencies"
+    },
+    {
+      "code": "RSA",
+      "id": "za-sampled-male-athletes-football-and-rugby-1950-2025",
+      "external_file": "countries/RSA.json",
+      "description": "Men's South African footballer and national rugby Test representatives, 1950–2025; mixed-sport, nonrepresentative athlete sample, NOT population or birth frequencies"
+    },
+    {
+      "code": "AUS",
+      "id": "au-nsw-bdm-male-births-top100-1960-2024",
+      "external_file": "countries/AUS.json",
+      "description": "NSW-only registered male births in published annual top-100 name lists, 1960–2024; historical regional proxy, NOT national Australia-wide frequencies"
     }
   ],
   "origin_review": "not_required_by_owner",
@@ -279,7 +303,7 @@
     "origin_rule": "NOT REQUIRED; any male given name reported for the country may be included, irrespective of etymological origin",
     "dual_nationality_pool_policy": "not_started",
     "production_generation": "deferred until separate integration approval",
-    "current_collected_given_names": 13200,
+    "current_collected_given_names": 14400,
     "first_name_format": "exactly one male first given name written in Unicode NFC Latin-script letters and Latin-compatible combining marks only (Script=Latin, mark Script_Extensions=Latin); no spaces, hyphens, apostrophes, punctuation, compounds, surnames or mixed-script confusables",
     "year_scope": "2000 onward when birth-year sources permit; older population-based sources may not encode a birth-year cohort"
   },
@@ -682,11 +706,16 @@
       "rank": 26,
       "label": "Australia",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "au-nsw-bdm-male-births-top100-1960-2024"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/AUS.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "CAN",
@@ -896,11 +925,16 @@
       "rank": 40,
       "label": "DR Congo",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "players-03-transfermarkt-men-citizenship-cod-single-forenames"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/COD.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "GRE",
@@ -923,11 +957,16 @@
       "rank": 42,
       "label": "Cameroon",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "players-03-transfermarkt-men-citizenship-cmr-single-forenames"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/CMR.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "SCO",
@@ -1014,11 +1053,16 @@
       "rank": 48,
       "label": "South Africa",
       "given_names": [],
-      "name_source_ids": [],
-      "origin_review": "not_started",
+      "name_source_ids": [
+        "za-sampled-male-athletes-football-and-rugby-1950-2025"
+      ],
+      "origin_review": "not_required_by_owner",
       "production_ready": false,
-      "given_name_count": 0,
-      "collection_status": "not_started"
+      "given_name_count": 300,
+      "collection_status": "collected_300",
+      "external_file": "countries/RSA.json",
+      "name_format": "single_first_name_only",
+      "selection_rule": "exactly one Unicode NFC Latin-script male first given name, Latin-compatible combining marks only; no spaces, hyphens, apostrophes, compounds or surnames"
     },
     {
       "code": "VEN",

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {COUNTRIES} from '../tools/players-generation-trial.mjs';
 
 const master=JSON.parse(readFileSync(new URL('../data/players/names/catalog-v1.json',import.meta.url),'utf8'));
-const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE','SEN','CIV','NGA','MLI'];
+const FILLED=['ITA','ESP','FRA','USA','SCO','CAN','POL','GER','AUT','SUI','BEL','POR','BRA','NED','DEN','NOR','SWE','CRO','SRB','HUN','RUS','URU','PAR','ECU','VEN','UKR','SVK','PAN','ARG','MEX','COL','CHI','MAR','ALG','EGY','IRN','JPN','KOR','TUR','GRE','SEN','CIV','NGA','MLI','COD','CMR','RSA','AUS'];
 const banks=Object.fromEntries(FILLED.map(code=>[code,JSON.parse(readFileSync(new URL('../data/players/names/countries/'+code+'.json',import.meta.url),'utf8'))]));
 const latinLetter=/^\p{Script=Latin}$/u;
 const unicodeMark=/^\p{M}$/u;
@@ -63,22 +63,26 @@ const sourceIds={
  SEN:'wikidata-male-citizens-sen-given-names',
  CIV:'wikidata-male-citizens-civ-given-names',
  NGA:'wikidata-male-citizens-nga-given-names',
- MLI:'wikidata-male-mali-citizens-or-born-given-names'
+ MLI:'wikidata-male-mali-citizens-or-born-given-names',
+ COD:'players-03-transfermarkt-men-citizenship-cod-single-forenames',
+ CMR:'players-03-transfermarkt-men-citizenship-cmr-single-forenames',
+ RSA:'za-sampled-male-athletes-football-and-rugby-1950-2025',
+ AUS:'au-nsw-bdm-male-births-top100-1960-2024'
 };
 
-test('frozen 50 FIFA codes, exactly 44 saved banks of 300 and 6 empty banks',()=>{
+test('frozen 50 FIFA codes, exactly 48 saved banks of 300 and 2 empty banks',()=>{
  assert.equal(master.schema_version,3);
  assert.equal(master.countries.length,50);
  assert.deepEqual(master.countries.map(x=>x.code),COUNTRIES.map(x=>x.code));
  assert.equal(master.source_registry.length,FILLED.length);
  assert.equal(master.policy.target_male_given_names_per_country,300);
- assert.equal(master.policy.current_collected_given_names,13200);
+ assert.equal(master.policy.current_collected_given_names,14400);
  assert.equal(master.policy.current_approved_given_names,0);
  assert.match(master.policy.first_name_format,/one (?:male )?first (?:given )?name/i);
  assert.match(master.policy.first_name_format,/Script=Latin/);
  assert.match(master.policy.origin_rule,/NOT REQUIRED/);
- assert.equal(master.countries.filter(x=>x.given_name_count===300).length,44);
- assert.equal(master.countries.filter(x=>x.given_name_count===0).length,6);
+ assert.equal(master.countries.filter(x=>x.given_name_count===300).length,48);
+ assert.equal(master.countries.filter(x=>x.given_name_count===0).length,2);
  for(const country of master.countries){
   assert.deepEqual(country.given_names,[]);
   assert.equal(country.production_ready,false);
@@ -94,7 +98,7 @@ test('frozen 50 FIFA codes, exactly 44 saved banks of 300 and 6 empty banks',()=
   }
  }
  const ids=master.source_registry.map(s=>s.id);
- assert.equal(new Set(ids).size,44);
+ assert.equal(new Set(ids).size,48);
  for(const code of FILLED){
   const meta=master.source_registry.find(s=>s.code===code);
   assert.equal(meta.id,sourceIds[code]);
@@ -102,7 +106,7 @@ test('frozen 50 FIFA codes, exactly 44 saved banks of 300 and 6 empty banks',()=
  }
 });
 
-test('each of 44 country files contains exactly 300 distinct SINGLE-word male names',()=>{
+test('each of 48 country files contains exactly 300 distinct SINGLE-word male names',()=>{
  for(const code of FILLED){
   const bank=banks[code];
   assert.equal(bank.schema_version,2);
@@ -370,4 +374,42 @@ test('Batch H: four source-backed Wikidata P735 Latin name pools preserve proven
  assert.match(banks.MLI.source.source_sparql,/UNION/);
  assert.match(banks.MLI.source.source_sparql,/wdt:P19/);
  assert.match(banks.MLI.source.source_scope,/citizenship.*birth/i);
+});
+ 
+test('Batch I: COD CMR RSA AUS retain pinned observed male first-name samples with documented limitations',()=>{
+ const expected={
+  COD:{id:'players-03-transfermarkt-men-citizenship-cod-single-forenames',blob:'19ead72834e0f1c4621c828c43d2bc72d98129d6',eligible:416,profiles:613},
+  CMR:{id:'players-03-transfermarkt-men-citizenship-cmr-single-forenames',blob:'19ead72834e0f1c4621c828c43d2bc72d98129d6',eligible:325,profiles:499},
+  RSA:{id:'za-sampled-male-athletes-football-and-rugby-1950-2025',blob:'19ead72834e0f1c4621c828c43d2bc72d98129d6',eligible:386,profiles:586},
+  AUS:{id:'au-nsw-bdm-male-births-top100-1960-2024',blob:'0704a824ffc9adf027b589480e6c9b8d7826de74',eligible:309}
+ };
+ for(const [code,info] of Object.entries(expected)){
+  const bank=banks[code];
+  assert.equal(bank.schema_version,2);
+  assert.equal(bank.code,code);
+  assert.equal(bank.source.id,info.id);
+  assert.equal(bank.source.source_blob_sha,info.blob);
+  assert.equal(bank.coverage.target_names,300);
+  assert.equal(bank.coverage.selected_names,300);
+  assert.equal(bank.coverage.missing_names,0);
+  assert.equal(bank.coverage.eligible_distinct_names??bank.coverage.eligible_source_names,info.eligible);
+  if(info.profiles)assert.equal(bank.coverage.qualifying_male_athlete_profiles,info.profiles);
+  assert.equal(bank.production_ready,false);
+  assert.deepEqual(bank.surnames,[]);
+  assert.equal(bank.given_names.length,300);
+  assert.ok(bank.given_names.every((e,i)=>isSingleLatinGivenName(e.value)&&Number.isSafeInteger(e.weight)&&e.weight>0&&(!i||e.weight<=bank.given_names[i-1].weight)));
+  assert.match(bank.coverage.limitations,/nonrepresentative|NSW-only/i);
+  assert.ok(bank.source.license.length>20);
+ }
+ for(const code of ['COD','CMR']){
+  assert.match(banks[code].source.country_scope_rule,/citizenship token/);
+  assert.match(banks[code].source.first_name_extraction,/First token/);
+  assert.match(banks[code].source.metric,/distinct male player IDs/);
+ }
+ assert.deepEqual(banks.RSA.coverage.source_population_breakdown,{footballers:84,rugby_players:502});
+ assert.equal(banks.RSA.source.components[1].source_blob_sha,'9d9e7cb742773018e7cd79b0c9a846a17fcaaf9c');
+ assert.match(banks.RSA.source.metric,/NOT a population statistic/);
+ assert.match(banks.AUS.source.metric,/NSW boy birth counts/);
+ assert.match(banks.AUS.cohort,/NOT a total-Australia/);
+ assert.equal(banks.AUS.coverage.eligible_seen_2000_or_later,191);
 });
