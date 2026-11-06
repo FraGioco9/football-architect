@@ -32,7 +32,21 @@
       back.textContent = recovery;
     };
     paint();
-    mainContent.replaceChildren(message, back);
+    // A failed shared manifest does not invalidate the known competition identity.
+    const shell = mainContent.querySelector?.('#app-divisions');
+    if (shell?.querySelector('.app-competition-header')) {
+      const notice = document.createElement('div');
+      notice.className = 'app-panel app-competition-load-error';
+      notice.dataset.competitionLoadError = 'true';
+      notice.style.order = '2';
+      back.className = 'app-link app-link-secondary';
+      notice.append(message, back);
+      shell.insertBefore(notice, shell.querySelector(':scope > .app-competition-panel'));
+      for (const panel of shell.querySelectorAll('.app-competition-panel')) panel.setAttribute('aria-busy', 'false');
+      document.getElementById('app-fixtures-empty')?.setAttribute('hidden', '');
+      document.documentElement.removeAttribute('data-fa-competition-prepaint');
+      window.faStandingsLoading?.set('bootstrap', false);
+    } else mainContent.replaceChildren(message, back);
     if(typeof MutationObserver==="function") new MutationObserver(paint).observe(document.documentElement, {attributes:true, attributeFilter:["lang"]});
   }
   const model=window.faCompetitionModel;
@@ -852,6 +866,10 @@
     return freeze(JSON.parse(JSON.stringify({definition:applicable,currentDefinition:definition,selectedSeason,seasonData,revision})));
   }
   function publishCompetitionContext(context){
+    // The initial 16-club list is canonical only for Season 1. When the viewed
+    // season changes, do not leave old names visible beneath pending skeletons.
+    if(typeof document!=='undefined')document.documentElement.dataset.faStandingsKnownIdentity=
+      context.definition.category==='domestic'&&context.selectedSeason===1?'true':'false';
     window.faCompetitionContext=context;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
   }

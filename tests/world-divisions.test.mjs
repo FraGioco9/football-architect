@@ -449,7 +449,7 @@ test('standings loading stays active until all overlapping requests finish',()=>
  loading.set('api',false);assert.equal(states.at(-1),false);
 });
 
-test('every competition serves a data-free desktop and mobile standings skeleton',()=>{
+test('every competition serves a sporting-value-free desktop and mobile standings skeleton',()=>{
  const ids=['br','de','eng','es','fr','it','nl','pt'].flatMap(c=>[c+'-1',c+'-2']).concat(['int-1','int-2']);
  for(const id of ids){
   const html=read('competitions/'+id+'/index.html');
@@ -459,7 +459,12 @@ test('every competition serves a data-free desktop and mobile standings skeleton
   const capacity=id.startsWith('int-')?24:16;
   assert.equal((skeleton.match(/data-skeleton-row/g)||[]).length,capacity,id+' desktop rows');
   assert.equal((skeleton.match(/data-skeleton-mobile/g)||[]).length,capacity,id+' mobile rows');
-  assert.doesNotMatch(skeleton,/<img|data-club-crest|data-world-club|id="/);
+  assert.doesNotMatch(skeleton,/data-world-club|id="/,id+' never renders confirmed sporting rows in the reserved shell');
+  if(id.startsWith('int-')){
+   assert.doesNotMatch(skeleton,/<img|data-club-crest|data-skeleton-identity(?=[\s>])/,id+' keeps anonymous cup slots');
+  }else{
+   assert.equal((skeleton.match(/data-skeleton-identity(?=[\s>])/g)||[]).length,capacity*2,id+' preserves known club names in both static projections');
+  }
   assert.ok(html.indexOf('standings-loading.js')<html.indexOf('competition-page.js'));
   assert.ok(html.indexOf('data-fa-standings-first-paint-ready')>html.indexOf('<!-- standings-skeleton-end -->'));
   assert.ok(html.includes('id="competition-panel-standings" aria-busy="true"'));

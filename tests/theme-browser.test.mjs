@@ -228,7 +228,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
             assert.equal(desktop.clubLeft,wide?"44px":"38px","UX-01B sticky offset "+width);
             assert.equal(desktop.sticky,"sticky","UX-01B club sticky "+width);
             if(wide)assert.equal(desktop.clubMin,"210px","UX-01B club minimum "+width);
-            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"400","Only standings Pts remains bold");
+            assert.equal(desktop.clubFont,"13px");assert.equal(desktop.clubWeight,"700","Standings club names and points are bold");
             assert.equal(desktop.crestWidth,"48px");assert.equal(desktop.crestHeight,"48px");
             assert.equal(desktop.numeric,"center");assert.equal(desktop.pointsAlign,"center");
             assert.equal(desktop.pointsSize,"14px");assert.equal(desktop.pointsWeight,"800");
@@ -800,18 +800,18 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       for(const country of ['DE','BR','PT']){
-        // The image load event can precede the Standings hydration release:
-        // the real table is then still visibility:hidden behind its skeleton.
+        // The first-paint skeleton has separate canonical crest hosts.
+        // Assert both hydrated projections, independently of the decorative skeleton.
         await visit('/competitions/'+country.toLowerCase()+'-1/standings',
           "!!window.faFixtures&&!!document.querySelector('#competition-panel-standings>.app-world-standings')"+
           "&&getComputedStyle(document.querySelector('#competition-panel-standings>.app-world-standings')).visibility==='visible'");
         const selector='[data-club-crest="'+country+'-1"]';
-        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")];return hosts.length===2&&hosts.every(n=>n.dataset.clubCrestLoaded==='true'&&n.querySelector('img')?.naturalWidth>0)})()");
         // Preserve the strict rendering assertion below, but sample it only
         // after the responsive projection and its loaded SVG are actually visible.
-        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")].filter(n=>n.getClientRects().length);return hosts.length===1&&hosts.every(n=>{const i=n.querySelector('img');if(!i)return false;const r=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&r.width>0&&r.height>0&&getComputedStyle(i).visibility==='visible'})})()");
-        const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify(selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
-        const geometry=await run("(()=>{const h=[...document.querySelectorAll("+JSON.stringify(selector)+")].find(n=>n.getClientRects().length),b=h.getBoundingClientRect(),r=h.closest('tr,summary').getBoundingClientRect();return {width:b.width,height:b.height,row:r.height,overflow:document.documentElement.scrollWidth>innerWidth}})()");
+        await wait("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")].filter(n=>n.getClientRects().length);return hosts.length===1&&hosts.every(n=>{const i=n.querySelector('img');if(!i)return false;const r=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&r.width>0&&r.height>0&&getComputedStyle(i).visibility==='visible'})})()");
+        const state=await run("(()=>{const hosts=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")],visible=hosts.filter(n=>n.getClientRects().length),missing=[...document.querySelectorAll('[data-club-crest]')].filter(n=>!Object.hasOwn(window.faClubCrests,n.dataset.clubCrest));return {hosts:hosts.length,visible:visible.length,images:visible.every(n=>{const i=n.querySelector('img'),b=i.getBoundingClientRect();return i.complete&&i.naturalWidth>0&&b.width>0&&b.height>0&&getComputedStyle(i).visibility==='visible'}),fallback:missing.length>0&&missing.every(n=>!n.querySelector('img')&&n.dataset.clubCrestLoaded!=='true')}})()");
+        const geometry=await run("(()=>{const h=[...document.querySelectorAll("+JSON.stringify('.app-world-standings '+selector)+")].find(n=>n.getClientRects().length),b=h.getBoundingClientRect(),r=h.closest('tr,summary').getBoundingClientRect();return {width:b.width,height:b.height,row:r.height,overflow:document.documentElement.scrollWidth>innerWidth}})()");
         assert.equal(geometry.width,width<620?40:48,'Crest slot width');
         assert.equal(geometry.height,width<620?40:48,'Crest slot height');
         assert.ok(geometry.row>=(width<620?64:68)&&!geometry.overflow,'Roomy standings without page overflow: '+JSON.stringify(geometry));
@@ -825,13 +825,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     for(const width of [1440,390])for(const theme of ['dark','light']){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
       await run("localStorage.setItem('football-architect:theme',"+JSON.stringify(theme)+")");
-      await visit('/competitions/de-1/standings',"[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
+      await visit('/competitions/de-1/standings',"[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");
       for(const refresh of [false,true]){
-        if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('[data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
+        if(refresh){await run('window.__crestBeforeReload=true');await cmd('Page.reload',{ignoreCache:false});await wait("window.__crestBeforeReload!==true&&document.readyState==='complete'&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].length===2&&[...document.querySelectorAll('.app-world-standings [data-club-crest=\"DE-1\"]')].every(h=>h.dataset.clubCrestLoaded==='true')");}
         assert.ok(await run('window.__crestLoadingFrames>0'),'Slow SVG actually exercised the loading state');
         assert.deepEqual(await run('window.__crestPendingLeaks'),[],'Known SVG must never show a pending shield: '+JSON.stringify({width,theme,refresh}));
         assert.deepEqual(await run('window.__crestLoadedLeaks'),[],'Loaded SVG has no shield or border: '+JSON.stringify({width,theme,refresh}));
-        assert.equal(await run("getComputedStyle(document.querySelector('[data-club-crest=\"DE-2\"]'),'::before').display==='none'"),true,'Available DE-2 crest hides its placeholder');
+        assert.equal(await run("getComputedStyle(document.querySelector('.app-world-standings [data-club-crest=\"DE-2\"]'),'::before').display==='none'"),true,'Available DE-2 crest hides its placeholder');
       }
     }
     clubCrestDelay=0;

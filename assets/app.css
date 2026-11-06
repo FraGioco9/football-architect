@@ -1180,12 +1180,24 @@ svg.site-chevron>path{translate:0 .5px}
 .app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
 /* Club placeholder starts at the crest, not after it, and stays compact on wide tables. */
 .app-standings-skeleton tr>:nth-child(2) .app-skeleton-bar{width:148px;max-width:100%;margin-inline:0 auto}
+/* Never project provisional Season 1 clubs into an unknown or later season. */
+.app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
+html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]{display:flex}
+html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity-placeholder]{display:none}
+.app-standings-skeleton [data-skeleton-identity] .app-world-club-name{min-width:0}
+/* Published SVGs start loading in parser time: no shield flash for supported crests. */
+.app-standings-skeleton [data-club-crest-pending="true"]>.app-club-crest-image{visibility:visible}
+@media(max-width:620px){
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity]{width:auto;max-width:100%;margin-left:0;min-height:40px}
+ .app-standings-skeleton .app-world-mobile-name .app-world-club-crest-placeholder{flex:0 0 40px;width:40px;height:40px}
+}
 #competition-panel-standings{position:relative}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]) #competition-panel-standings>.app-standings-skeleton{display:block}
-/* Only points are bold, including headings and the mobile projection. */
+/* Club names and points lead the standings hierarchy; other statistics stay normal. */
 #competition-panel-standings .app-world-standing-table :is(th,td),
-#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd){font-weight:400}
+#competition-panel-standings :is(.app-world-mobile-name,.app-world-mobile-position,.app-world-mobile-stat dt,.app-world-mobile-stat dd){font-weight:400}
+#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-club-name){font-weight:700}
 #competition-panel-standings .app-world-standing-table tr>:nth-child(10),
 #competition-panel-standings .app-world-mobile-points{font-weight:800}
 @media(max-width:620px){
