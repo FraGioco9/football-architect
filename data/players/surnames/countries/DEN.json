@@ -1,0 +1,1535 @@
+{
+  "schema_version": 1,
+  "code": "DEN",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "dtu-cpr-counted-surnames-mirror",
+      "url": "https://github.com/Romultra/DTU-CP-my-solutions/blob/5399f90d471ec02e078dad46fb433a0e4f061a65/cp/ex08/files/efternavne.csv",
+      "upstream": "DTU Computer Programming teaching file derived from Danish registered surname counts",
+      "geographic_scope": "Denmark; registered residents",
+      "population_period": "Archive year not established",
+      "verification": "First 492 distinct valid surname forms from CSV with strictly positive observed counts; no counts copied",
+      "limitations": "Teaching extract omits names containing non-ASCII letters; source year and primary export not pinned"
+    },
+    {
+      "id": "danske-navne-2023-dst-top100",
+      "url": "https://www.navneguiden.dk/toplister/danmarks-mest-almindelige-efternavn",
+      "upstream": "Danmarks Statistik (DST), reproduced by Navneguiden",
+      "geographic_scope": "Denmark; registered residents",
+      "population_period": "1 January 2023",
+      "verification": "Eight original Unicode spellings Sørensen, Jørgensen, Møller, Østergaard, Kjær, Nørgaard, Søndergaard, Søgaard documented in ranked national list"
+    },
+    {
+      "id": "dst-methodology",
+      "url": "https://www.dst.dk/en/Statistik/emner/borgere/navne/hvor-mange-hedder",
+      "geographic_scope": "Denmark; whole resident population from CPR register",
+      "population_period": "Annual January snapshots",
+      "verification": "Official meaning and methodology of Danish surname statistics"
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Abildgaard"
+    },
+    {
+      "value": "Abrahamsen"
+    },
+    {
+      "value": "Adamsen"
+    },
+    {
+      "value": "Ahmad"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Albertsen"
+    },
+    {
+      "value": "Albrechtsen"
+    },
+    {
+      "value": "Ali"
+    },
+    {
+      "value": "Alstrup"
+    },
+    {
+      "value": "Andersen"
+    },
+    {
+      "value": "Anderson"
+    },
+    {
+      "value": "Andersson"
+    },
+    {
+      "value": "Andreasen"
+    },
+    {
+      "value": "Andreassen"
+    },
+    {
+      "value": "Andresen"
+    },
+    {
+      "value": "Antonsen"
+    },
+    {
+      "value": "Asmussen"
+    },
+    {
+      "value": "Astrup"
+    },
+    {
+      "value": "Axelsen"
+    },
+    {
+      "value": "Bach"
+    },
+    {
+      "value": "Bager"
+    },
+    {
+      "value": "Bagge"
+    },
+    {
+      "value": "Bagger"
+    },
+    {
+      "value": "Bak"
+    },
+    {
+      "value": "Balle"
+    },
+    {
+      "value": "Bang"
+    },
+    {
+      "value": "Bay"
+    },
+    {
+      "value": "Bech"
+    },
+    {
+      "value": "Beck"
+    },
+    {
+      "value": "Bendixen"
+    },
+    {
+      "value": "Bendtsen"
+    },
+    {
+      "value": "Bengtsen"
+    },
+    {
+      "value": "Bengtson"
+    },
+    {
+      "value": "Bengtsson"
+    },
+    {
+      "value": "Bentsen"
+    },
+    {
+      "value": "Bentzen"
+    },
+    {
+      "value": "Berg"
+    },
+    {
+      "value": "Bergmann"
+    },
+    {
+      "value": "Bertelsen"
+    },
+    {
+      "value": "Berthelsen"
+    },
+    {
+      "value": "Beyer"
+    },
+    {
+      "value": "Bidstrup"
+    },
+    {
+      "value": "Bille"
+    },
+    {
+      "value": "Birch"
+    },
+    {
+      "value": "Birk"
+    },
+    {
+      "value": "Bisgaard"
+    },
+    {
+      "value": "Bitsch"
+    },
+    {
+      "value": "Bjerg"
+    },
+    {
+      "value": "Bjerre"
+    },
+    {
+      "value": "Bjerregaard"
+    },
+    {
+      "value": "Bjerring"
+    },
+    {
+      "value": "Bjerrum"
+    },
+    {
+      "value": "Bloch"
+    },
+    {
+      "value": "Blom"
+    },
+    {
+      "value": "Boesen"
+    },
+    {
+      "value": "Boisen"
+    },
+    {
+      "value": "Bonde"
+    },
+    {
+      "value": "Borch"
+    },
+    {
+      "value": "Borg"
+    },
+    {
+      "value": "Bork"
+    },
+    {
+      "value": "Borup"
+    },
+    {
+      "value": "Bossen"
+    },
+    {
+      "value": "Boye"
+    },
+    {
+      "value": "Boysen"
+    },
+    {
+      "value": "Brandt"
+    },
+    {
+      "value": "Brink"
+    },
+    {
+      "value": "Brix"
+    },
+    {
+      "value": "Bro"
+    },
+    {
+      "value": "Broberg"
+    },
+    {
+      "value": "Brodersen"
+    },
+    {
+      "value": "Brogaard"
+    },
+    {
+      "value": "Bruhn"
+    },
+    {
+      "value": "Bruun"
+    },
+    {
+      "value": "Buch"
+    },
+    {
+      "value": "Buhl"
+    },
+    {
+      "value": "Bundgaard"
+    },
+    {
+      "value": "Busch"
+    },
+    {
+      "value": "Busk"
+    },
+    {
+      "value": "Buus"
+    },
+    {
+      "value": "Callesen"
+    },
+    {
+      "value": "Carlsen"
+    },
+    {
+      "value": "Carlsson"
+    },
+    {
+      "value": "Carstens"
+    },
+    {
+      "value": "Carstensen"
+    },
+    {
+      "value": "Caspersen"
+    },
+    {
+      "value": "Celik"
+    },
+    {
+      "value": "Christensen"
+    },
+    {
+      "value": "Christiansen"
+    },
+    {
+      "value": "Christoffersen"
+    },
+    {
+      "value": "Christophersen"
+    },
+    {
+      "value": "Clausen"
+    },
+    {
+      "value": "Clemmensen"
+    },
+    {
+      "value": "Conradsen"
+    },
+    {
+      "value": "Dahl"
+    },
+    {
+      "value": "Dalgaard"
+    },
+    {
+      "value": "Dall"
+    },
+    {
+      "value": "Dalsgaard"
+    },
+    {
+      "value": "Dam"
+    },
+    {
+      "value": "Damgaard"
+    },
+    {
+      "value": "Damm"
+    },
+    {
+      "value": "Damsgaard"
+    },
+    {
+      "value": "Danielsen"
+    },
+    {
+      "value": "Daugaard"
+    },
+    {
+      "value": "Davidsen"
+    },
+    {
+      "value": "Degn"
+    },
+    {
+      "value": "Deleuran"
+    },
+    {
+      "value": "Dideriksen"
+    },
+    {
+      "value": "Didriksen"
+    },
+    {
+      "value": "Dinesen"
+    },
+    {
+      "value": "Dissing"
+    },
+    {
+      "value": "Ditlevsen"
+    },
+    {
+      "value": "Drejer"
+    },
+    {
+      "value": "Dreyer"
+    },
+    {
+      "value": "Due"
+    },
+    {
+      "value": "Dupont"
+    },
+    {
+      "value": "Duus"
+    },
+    {
+      "value": "Dyhr"
+    },
+    {
+      "value": "Ebbesen"
+    },
+    {
+      "value": "Egede"
+    },
+    {
+      "value": "Elgaard"
+    },
+    {
+      "value": "Eliasen"
+    },
+    {
+      "value": "Ellegaard"
+    },
+    {
+      "value": "Enemark"
+    },
+    {
+      "value": "Enevoldsen"
+    },
+    {
+      "value": "Erichsen"
+    },
+    {
+      "value": "Eriksen"
+    },
+    {
+      "value": "Ernst"
+    },
+    {
+      "value": "Esbensen"
+    },
+    {
+      "value": "Eskesen"
+    },
+    {
+      "value": "Eskildsen"
+    },
+    {
+      "value": "Espensen"
+    },
+    {
+      "value": "Espersen"
+    },
+    {
+      "value": "Fabricius"
+    },
+    {
+      "value": "Falk"
+    },
+    {
+      "value": "Feddersen"
+    },
+    {
+      "value": "Fischer"
+    },
+    {
+      "value": "Fisker"
+    },
+    {
+      "value": "Flindt"
+    },
+    {
+      "value": "Fog"
+    },
+    {
+      "value": "Foged"
+    },
+    {
+      "value": "Fogh"
+    },
+    {
+      "value": "Frandsen"
+    },
+    {
+      "value": "Frank"
+    },
+    {
+      "value": "Frederiksen"
+    },
+    {
+      "value": "Friis"
+    },
+    {
+      "value": "From"
+    },
+    {
+      "value": "Frost"
+    },
+    {
+      "value": "Fuglsang"
+    },
+    {
+      "value": "Funch"
+    },
+    {
+      "value": "Gade"
+    },
+    {
+      "value": "Gammelgaard"
+    },
+    {
+      "value": "Geertsen"
+    },
+    {
+      "value": "Geisler"
+    },
+    {
+      "value": "Gertsen"
+    },
+    {
+      "value": "Gotfredsen"
+    },
+    {
+      "value": "Gram"
+    },
+    {
+      "value": "Graversen"
+    },
+    {
+      "value": "Gravesen"
+    },
+    {
+      "value": "Green"
+    },
+    {
+      "value": "Gregersen"
+    },
+    {
+      "value": "Greve"
+    },
+    {
+      "value": "Groth"
+    },
+    {
+      "value": "Guldager"
+    },
+    {
+      "value": "Gundersen"
+    },
+    {
+      "value": "Hald"
+    },
+    {
+      "value": "Hammer"
+    },
+    {
+      "value": "Hansen"
+    },
+    {
+      "value": "Hansson"
+    },
+    {
+      "value": "Harder"
+    },
+    {
+      "value": "Hartmann"
+    },
+    {
+      "value": "Hassan"
+    },
+    {
+      "value": "Hauge"
+    },
+    {
+      "value": "Haugaard"
+    },
+    {
+      "value": "Have"
+    },
+    {
+      "value": "Hede"
+    },
+    {
+      "value": "Hedegaard"
+    },
+    {
+      "value": "Heilmann"
+    },
+    {
+      "value": "Hein"
+    },
+    {
+      "value": "Hemmingsen"
+    },
+    {
+      "value": "Hendriksen"
+    },
+    {
+      "value": "Henningsen"
+    },
+    {
+      "value": "Henriksen"
+    },
+    {
+      "value": "Hermann"
+    },
+    {
+      "value": "Hermansen"
+    },
+    {
+      "value": "Hertz"
+    },
+    {
+      "value": "Hinrichsen"
+    },
+    {
+      "value": "Hjort"
+    },
+    {
+      "value": "Hjorth"
+    },
+    {
+      "value": "Hoffmann"
+    },
+    {
+      "value": "Holgersen"
+    },
+    {
+      "value": "Holm"
+    },
+    {
+      "value": "Holmberg"
+    },
+    {
+      "value": "Holmgaard"
+    },
+    {
+      "value": "Holst"
+    },
+    {
+      "value": "Holt"
+    },
+    {
+      "value": "Horn"
+    },
+    {
+      "value": "Hougaard"
+    },
+    {
+      "value": "Hove"
+    },
+    {
+      "value": "Hussain"
+    },
+    {
+      "value": "Hussein"
+    },
+    {
+      "value": "Husted"
+    },
+    {
+      "value": "Hvid"
+    },
+    {
+      "value": "Hviid"
+    },
+    {
+      "value": "Haagensen"
+    },
+    {
+      "value": "Haahr"
+    },
+    {
+      "value": "Ibsen"
+    },
+    {
+      "value": "Ipsen"
+    },
+    {
+      "value": "Isaksen"
+    },
+    {
+      "value": "Iversen"
+    },
+    {
+      "value": "Jacobsen"
+    },
+    {
+      "value": "Jakobsen"
+    },
+    {
+      "value": "Jansen"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "Jeppesen"
+    },
+    {
+      "value": "Jepsen"
+    },
+    {
+      "value": "Jeremiassen"
+    },
+    {
+      "value": "Jespersen"
+    },
+    {
+      "value": "Jessen"
+    },
+    {
+      "value": "Jochumsen"
+    },
+    {
+      "value": "Joensen"
+    },
+    {
+      "value": "Johannesen"
+    },
+    {
+      "value": "Johannessen"
+    },
+    {
+      "value": "Johannsen"
+    },
+    {
+      "value": "Johansen"
+    },
+    {
+      "value": "Johansson"
+    },
+    {
+      "value": "Johnsen"
+    },
+    {
+      "value": "Jonassen"
+    },
+    {
+      "value": "Josefsen"
+    },
+    {
+      "value": "Juhl"
+    },
+    {
+      "value": "Junker"
+    },
+    {
+      "value": "Just"
+    },
+    {
+      "value": "Justesen"
+    },
+    {
+      "value": "Juul"
+    },
+    {
+      "value": "Jørgensen"
+    },
+    {
+      "value": "Kanstrup"
+    },
+    {
+      "value": "Karlsen"
+    },
+    {
+      "value": "Karlsson"
+    },
+    {
+      "value": "Kaspersen"
+    },
+    {
+      "value": "Kastrup"
+    },
+    {
+      "value": "Keller"
+    },
+    {
+      "value": "Khan"
+    },
+    {
+      "value": "Kilic"
+    },
+    {
+      "value": "Kirk"
+    },
+    {
+      "value": "Kirkeby"
+    },
+    {
+      "value": "Kirkegaard"
+    },
+    {
+      "value": "Kjeldgaard"
+    },
+    {
+      "value": "Kjeldsen"
+    },
+    {
+      "value": "Kjær"
+    },
+    {
+      "value": "Klausen"
+    },
+    {
+      "value": "Klein"
+    },
+    {
+      "value": "Kleist"
+    },
+    {
+      "value": "Klemmensen"
+    },
+    {
+      "value": "Klitgaard"
+    },
+    {
+      "value": "Kloster"
+    },
+    {
+      "value": "Knudsen"
+    },
+    {
+      "value": "Koch"
+    },
+    {
+      "value": "Kock"
+    },
+    {
+      "value": "Koefoed"
+    },
+    {
+      "value": "Kofod"
+    },
+    {
+      "value": "Kofoed"
+    },
+    {
+      "value": "Korsgaard"
+    },
+    {
+      "value": "Krabbe"
+    },
+    {
+      "value": "Krag"
+    },
+    {
+      "value": "Kragelund"
+    },
+    {
+      "value": "Kragh"
+    },
+    {
+      "value": "Kramer"
+    },
+    {
+      "value": "Krarup"
+    },
+    {
+      "value": "Kristensen"
+    },
+    {
+      "value": "Kristiansen"
+    },
+    {
+      "value": "Kristoffersen"
+    },
+    {
+      "value": "Krog"
+    },
+    {
+      "value": "Krogh"
+    },
+    {
+      "value": "Krogsgaard"
+    },
+    {
+      "value": "Kromann"
+    },
+    {
+      "value": "Kronborg"
+    },
+    {
+      "value": "Kruse"
+    },
+    {
+      "value": "Kure"
+    },
+    {
+      "value": "Kvist"
+    },
+    {
+      "value": "Kaae"
+    },
+    {
+      "value": "Kaas"
+    },
+    {
+      "value": "Ladefoged"
+    },
+    {
+      "value": "Ladegaard"
+    },
+    {
+      "value": "Lang"
+    },
+    {
+      "value": "Lange"
+    },
+    {
+      "value": "Larsen"
+    },
+    {
+      "value": "Larsson"
+    },
+    {
+      "value": "Lassen"
+    },
+    {
+      "value": "Laugesen"
+    },
+    {
+      "value": "Lauridsen"
+    },
+    {
+      "value": "Lauritsen"
+    },
+    {
+      "value": "Lauritzen"
+    },
+    {
+      "value": "Laursen"
+    },
+    {
+      "value": "Lausen"
+    },
+    {
+      "value": "Laustsen"
+    },
+    {
+      "value": "Le"
+    },
+    {
+      "value": "Lehmann"
+    },
+    {
+      "value": "Lerche"
+    },
+    {
+      "value": "Leth"
+    },
+    {
+      "value": "Lind"
+    },
+    {
+      "value": "Lindberg"
+    },
+    {
+      "value": "Linde"
+    },
+    {
+      "value": "Lindegaard"
+    },
+    {
+      "value": "Lindhardt"
+    },
+    {
+      "value": "Lindholm"
+    },
+    {
+      "value": "Lohse"
+    },
+    {
+      "value": "Lorentsen"
+    },
+    {
+      "value": "Lorentzen"
+    },
+    {
+      "value": "Lorenzen"
+    },
+    {
+      "value": "Ludvigsen"
+    },
+    {
+      "value": "Lund"
+    },
+    {
+      "value": "Lundberg"
+    },
+    {
+      "value": "Lundgaard"
+    },
+    {
+      "value": "Lundsgaard"
+    },
+    {
+      "value": "Lyberth"
+    },
+    {
+      "value": "Lykke"
+    },
+    {
+      "value": "Lynge"
+    },
+    {
+      "value": "Lynggaard"
+    },
+    {
+      "value": "Madsen"
+    },
+    {
+      "value": "Magnussen"
+    },
+    {
+      "value": "Marcher"
+    },
+    {
+      "value": "Marcussen"
+    },
+    {
+      "value": "Mark"
+    },
+    {
+      "value": "Marker"
+    },
+    {
+      "value": "Markussen"
+    },
+    {
+      "value": "Martinsen"
+    },
+    {
+      "value": "Martinussen"
+    },
+    {
+      "value": "Mathiasen"
+    },
+    {
+      "value": "Mathiassen"
+    },
+    {
+      "value": "Mathiesen"
+    },
+    {
+      "value": "Matthiesen"
+    },
+    {
+      "value": "Matzen"
+    },
+    {
+      "value": "Meier"
+    },
+    {
+      "value": "Meldgaard"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Michaelsen"
+    },
+    {
+      "value": "Michelsen"
+    },
+    {
+      "value": "Mikkelsen"
+    },
+    {
+      "value": "Mogensen"
+    },
+    {
+      "value": "Mohamed"
+    },
+    {
+      "value": "Mortensen"
+    },
+    {
+      "value": "Mose"
+    },
+    {
+      "value": "Mouritsen"
+    },
+    {
+      "value": "Mouritzen"
+    },
+    {
+      "value": "Munch"
+    },
+    {
+      "value": "Munck"
+    },
+    {
+      "value": "Munk"
+    },
+    {
+      "value": "Møller"
+    },
+    {
+      "value": "Nedergaard"
+    },
+    {
+      "value": "Neumann"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Nicolaisen"
+    },
+    {
+      "value": "Nicolajsen"
+    },
+    {
+      "value": "Nielsen"
+    },
+    {
+      "value": "Nikolajsen"
+    },
+    {
+      "value": "Nilsson"
+    },
+    {
+      "value": "Nissen"
+    },
+    {
+      "value": "Norup"
+    },
+    {
+      "value": "Nyborg"
+    },
+    {
+      "value": "Nygaard"
+    },
+    {
+      "value": "Nørgaard"
+    },
+    {
+      "value": "Odgaard"
+    },
+    {
+      "value": "Olesen"
+    },
+    {
+      "value": "Olsen"
+    },
+    {
+      "value": "Olsson"
+    },
+    {
+      "value": "Ottesen"
+    },
+    {
+      "value": "Ottosen"
+    },
+    {
+      "value": "Overgaard"
+    },
+    {
+      "value": "Ovesen"
+    },
+    {
+      "value": "Pagh"
+    },
+    {
+      "value": "Pallesen"
+    },
+    {
+      "value": "Paulsen"
+    },
+    {
+      "value": "Pedersen"
+    },
+    {
+      "value": "Persson"
+    },
+    {
+      "value": "Petersen"
+    },
+    {
+      "value": "Petersson"
+    },
+    {
+      "value": "Pham"
+    },
+    {
+      "value": "Philipsen"
+    },
+    {
+      "value": "Pihl"
+    },
+    {
+      "value": "Pilgaard"
+    },
+    {
+      "value": "Ploug"
+    },
+    {
+      "value": "Post"
+    },
+    {
+      "value": "Poulsen"
+    },
+    {
+      "value": "Povlsen"
+    },
+    {
+      "value": "Paaske"
+    },
+    {
+      "value": "Qvist"
+    },
+    {
+      "value": "Rahbek"
+    },
+    {
+      "value": "Rasch"
+    },
+    {
+      "value": "Rask"
+    },
+    {
+      "value": "Rasmussen"
+    },
+    {
+      "value": "Raun"
+    },
+    {
+      "value": "Ravn"
+    },
+    {
+      "value": "Refsgaard"
+    },
+    {
+      "value": "Reimer"
+    },
+    {
+      "value": "Riis"
+    },
+    {
+      "value": "Roed"
+    },
+    {
+      "value": "Rohde"
+    },
+    {
+      "value": "Rose"
+    },
+    {
+      "value": "Rosenberg"
+    },
+    {
+      "value": "Rosendahl"
+    },
+    {
+      "value": "Rosenkilde"
+    },
+    {
+      "value": "Rossen"
+    },
+    {
+      "value": "Rytter"
+    },
+    {
+      "value": "Salling"
+    },
+    {
+      "value": "Salomonsen"
+    },
+    {
+      "value": "Samuelsen"
+    },
+    {
+      "value": "Sand"
+    },
+    {
+      "value": "Sandberg"
+    },
+    {
+      "value": "Sander"
+    },
+    {
+      "value": "Schmidt"
+    },
+    {
+      "value": "Schneider"
+    },
+    {
+      "value": "Schou"
+    },
+    {
+      "value": "Schultz"
+    },
+    {
+      "value": "Schulz"
+    },
+    {
+      "value": "Schwartz"
+    },
+    {
+      "value": "Sejersen"
+    },
+    {
+      "value": "Severinsen"
+    },
+    {
+      "value": "Simonsen"
+    },
+    {
+      "value": "Sivertsen"
+    },
+    {
+      "value": "Skou"
+    },
+    {
+      "value": "Skov"
+    },
+    {
+      "value": "Skovgaard"
+    },
+    {
+      "value": "Skriver"
+    },
+    {
+      "value": "Skytte"
+    },
+    {
+      "value": "Skaaning"
+    },
+    {
+      "value": "Skaarup"
+    },
+    {
+      "value": "Slot"
+    },
+    {
+      "value": "Sloth"
+    },
+    {
+      "value": "Smed"
+    },
+    {
+      "value": "Smedegaard"
+    },
+    {
+      "value": "Smidt"
+    },
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Sommer"
+    },
+    {
+      "value": "Sonne"
+    },
+    {
+      "value": "Stage"
+    },
+    {
+      "value": "Stampe"
+    },
+    {
+      "value": "Steen"
+    },
+    {
+      "value": "Steenberg"
+    },
+    {
+      "value": "Steensen"
+    },
+    {
+      "value": "Steffensen"
+    },
+    {
+      "value": "Stephansen"
+    },
+    {
+      "value": "Stokholm"
+    },
+    {
+      "value": "Storgaard"
+    },
+    {
+      "value": "Storm"
+    },
+    {
+      "value": "Stougaard"
+    },
+    {
+      "value": "Strand"
+    },
+    {
+      "value": "Staal"
+    },
+    {
+      "value": "Svane"
+    },
+    {
+      "value": "Svendsen"
+    },
+    {
+      "value": "Svenningsen"
+    },
+    {
+      "value": "Svensson"
+    },
+    {
+      "value": "Søgaard"
+    },
+    {
+      "value": "Søndergaard"
+    },
+    {
+      "value": "Sørensen"
+    },
+    {
+      "value": "Tang"
+    },
+    {
+      "value": "Terkelsen"
+    },
+    {
+      "value": "Terp"
+    },
+    {
+      "value": "Therkelsen"
+    },
+    {
+      "value": "Therkildsen"
+    },
+    {
+      "value": "Thomasen"
+    },
+    {
+      "value": "Thomassen"
+    },
+    {
+      "value": "Thomsen"
+    },
+    {
+      "value": "Thorsen"
+    },
+    {
+      "value": "Thorup"
+    },
+    {
+      "value": "Thrane"
+    },
+    {
+      "value": "Thuesen"
+    },
+    {
+      "value": "Thygesen"
+    },
+    {
+      "value": "Toft"
+    },
+    {
+      "value": "Tolstrup"
+    },
+    {
+      "value": "Torp"
+    },
+    {
+      "value": "Tran"
+    },
+    {
+      "value": "Troelsen"
+    },
+    {
+      "value": "Truelsen"
+    },
+    {
+      "value": "Vad"
+    },
+    {
+      "value": "Vang"
+    },
+    {
+      "value": "Vedel"
+    },
+    {
+      "value": "Vester"
+    },
+    {
+      "value": "Vestergaard"
+    },
+    {
+      "value": "Vilhelmsen"
+    },
+    {
+      "value": "Villadsen"
+    },
+    {
+      "value": "Villumsen"
+    },
+    {
+      "value": "Vind"
+    },
+    {
+      "value": "Vinther"
+    },
+    {
+      "value": "Vistisen"
+    },
+    {
+      "value": "Voss"
+    },
+    {
+      "value": "Wagner"
+    },
+    {
+      "value": "Warming"
+    },
+    {
+      "value": "Weber"
+    },
+    {
+      "value": "Westergaard"
+    },
+    {
+      "value": "Westh"
+    },
+    {
+      "value": "Willumsen"
+    },
+    {
+      "value": "Wind"
+    },
+    {
+      "value": "Winther"
+    },
+    {
+      "value": "Wolff"
+    },
+    {
+      "value": "Worm"
+    },
+    {
+      "value": "Wulff"
+    },
+    {
+      "value": "Yde"
+    },
+    {
+      "value": "Yilmaz"
+    },
+    {
+      "value": "Østergaard"
+    },
+    {
+      "value": "Aagesen"
+    },
+    {
+      "value": "Aagaard"
+    }
+  ],
+  "production_ready": false
+}

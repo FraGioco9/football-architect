@@ -1,0 +1,83 @@
+name: SURNAMES-01 Batch C (Node 22)
+on:
+  pull_request:
+    paths:
+      - 'data/players/surnames/countries/NED.json'
+      - 'data/players/surnames/countries/DEN.json'
+      - 'data/players/surnames/countries/NOR.json'
+      - 'data/players/surnames/countries/SWE.json'
+      - '.github/workflows/surnames-01-batch-c.yml'
+permissions:
+  contents: read
+jobs:
+  batch-c-names:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate national surname banks and adversarial Unicode cases
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const countries = ['NED', 'DEN', 'NOR', 'SWE'];
+          const component = /^['’]?(?:\p{Script=Latin}\p{M}*)+(?:[-'’](?:\p{Script=Latin}\p{M}*)+)*$/u;
+          function validSurname(value) {
+            return typeof value === 'string'
+              && value.length > 0
+              && value === value.normalize('NFC')
+              && value.trim() === value
+              && !value.includes('  ')
+              && value.split(' ').every(part => component.test(part))
+              && [...value.matchAll(/\p{M}/gu)].every(([mark]) => /\p{Script_Extensions=Latin}/u.test(mark));
+          }
+          function assertNoWeights(node, path = '$') {
+            if (node && typeof node === 'object') {
+              for (const [key, value] of Object.entries(node)) {
+                assert.notEqual(key.toLowerCase(), 'weight', 'Forbidden sampling weight at ' + path);
+                assertNoWeights(value, path + '.' + key);
+              }
+            }
+          }
+          assert(validSurname("van 't Hof"));
+          assert(validSurname("O'Brien"));
+          assert(validSurname('van der Meer'));
+          assert(validSurname('Björkström'));
+          for (const bad of ['Петров', '张', 'علي', 'AliЖ', 'Van  Dijk', 'in \' t Veld', 'A1', '-Larsen', 'O--Brien', 'van Dijk ', 'Andre\u0301']) {
+            assert(!validSurname(bad), 'Expected invalid: ' + bad);
+          }
+          for (const country of countries) {
+            const path = 'data/players/surnames/countries/' + country + '.json';
+            const doc = JSON.parse(readFileSync(path, 'utf8'));
+            assert.equal(doc.schema_version, 1);
+            assert.equal(doc.code, country);
+            assert.equal(doc.kind, 'surnames');
+            assert.equal(doc.selection_policy, 'uniform');
+            assert.equal(doc.production_ready, false);
+            assert.deepEqual(Object.keys(doc), ['schema_version','code','kind','selection_policy','sources','surnames','production_ready']);
+            assert(Array.isArray(doc.sources) && doc.sources.length >= 1);
+            assert(doc.sources.every(s => typeof s.url === 'string' && s.url.startsWith('https://') && typeof s.geographic_scope === 'string' && s.geographic_scope.includes(({NED:'Netherlands',DEN:'Denmark',NOR:'Norway',SWE:'Sweden'})[country])));
+            assert.equal(doc.surnames.length, 500);
+            assertNoWeights(doc);
+            const seen = new Set();
+            for (const item of doc.surnames) {
+              assert.deepEqual(Object.keys(item), ['value']);
+              assert(validSurname(item.value), 'Invalid Latin-script NFC surname: ' + JSON.stringify(item.value));
+              const key = item.value.toLowerCase();
+              assert(!seen.has(key), 'Duplicate in ' + country + ': ' + item.value);
+              seen.add(key);
+            }
+            if (country === 'NED') {
+              for (const required of ['de Jong','van den Berg','van Dijk','van der Meer']) assert(seen.has(required.toLowerCase()));
+            }
+            if (country === 'DEN') {
+              for (const required of ['Sørensen','Jørgensen','Møller','Østergaard','Kjær','Nørgaard','Søndergaard','Søgaard']) assert(seen.has(required.toLowerCase()));
+            }
+            console.log('PASS ' + country + ': 500 unique NFC Latin Unicode surnames; sources; uniform; no weights');
+          }
+          console.log('PASS SURNAMES-01 Batch C: 4/4 countries, 2,000 entries, positive/negative format checks');
+          
+          NODE
