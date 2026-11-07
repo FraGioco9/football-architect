@@ -25,6 +25,12 @@ jobs:
         shell: bash
         run: |
           git diff --name-only origin/main...HEAD > /tmp/surnames-01-changed.txt
+          # This workflow is also triggered by edits to the shared CI ownership
+          # registry. Do not impose SURNAMES-only scope on unrelated player PRs.
+          if ! grep -Eq '^(data/players/surnames/|tests/surnames-01-catalog\.test\.mjs$)' /tmp/surnames-01-changed.txt; then
+            echo 'No surname catalog/test changes: SURNAMES-only scope guard not applicable.'
+            exit 0
+          fi
           if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
             echo 'Out-of-scope changes in SURNAMES-01 PR' >&2
             exit 1
