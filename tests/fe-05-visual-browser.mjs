@@ -153,8 +153,24 @@ try{
    assert.equal(pre.temporary,0,'History never uses a short-lived duplicate shell');
    assert.ok(pre.header>0&&pre.skeletonWidth>0&&pre.skeletonHeight>0,
     'Header and History skeleton occupy visible space before controller hydration');
-   // Force browser paint and verify the shell survives without JS controller.
-   await historyPage.locator('#competition-panel-history>.app-competition-view-skeleton').screenshot({animations:'disabled',timeout:12000});
+   // Reproduce the reported flash: global bootstrap finishes while History
+   // is still unresolved. The actual skeleton must stay painted for two frames.
+   await historyPage.evaluate(async()=>{
+    window.faStandingsLoading.set('bootstrap',false);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   });
+   const intermediate=await historyPage.evaluate(()=>{
+    const host=document.querySelector('#competition-panel-history>.app-competition-view-skeleton');
+    const box=host?.getBoundingClientRect(),style=host&&getComputedStyle(host);
+    return {global:document.documentElement.dataset.faStandingsLoading,
+     history:document.documentElement.dataset.faHistoryLoading,
+     width:box?.width||0,height:box?.height||0,display:style?.display,visibility:style?.visibility};
+   });
+   assert.equal(intermediate.global,'false','global bootstrap was deliberately released');
+   assert.equal(intermediate.history,'true','History remains pending until its presenter resolves');
+   assert.equal(intermediate.display,'block');
+   assert.equal(intermediate.visibility,'visible');
+   assert.ok(intermediate.width>0&&intermediate.height>0,'History shell remains painted after global loading drops');
    release();await historyPage.waitForLoadState('load',{timeout:30000});
    results.push({head,scenario:'qa-05-history-visible-before-hydration',status:'PASS',path:historyConfig.path,engine:'chromium'});
   }finally{release();await historyContext.close();}
