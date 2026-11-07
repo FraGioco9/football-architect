@@ -9,6 +9,7 @@ on:
       - data/players/names/**
       - data/players/surnames/**
       - tools/players-generation-audit.mjs
+      - tools/players-generation-phase1-qa.mjs
       - tools/players-suitability-extremes-qa.mjs
       - .github/workflows/players-generation-trial.yml
 permissions:
@@ -251,6 +252,10 @@ jobs:
           writeFileSync(join(base,'players-check-report.json'),JSON.stringify(result,null,2)+'\n');
           console.log(JSON.stringify(result,null,2));
           NODE
+          # Phase-1 evidence: three independent 1k cohorts, four forced country
+          # pairs and manual-name marginals. This is observational QA only.
+          node --check tools/players-generation-phase1-qa.mjs
+          node tools/players-generation-phase1-qa.mjs --json "$RUNNER_TEMP/fa-ci-artifacts/players-phase1-qa.json" --markdown "$RUNNER_TEMP/fa-ci-artifacts/players-phase1-qa.md"
       - name: Retain trial evidence
         if: always()
         uses: actions/upload-artifact@v4
