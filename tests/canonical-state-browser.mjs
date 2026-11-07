@@ -160,6 +160,15 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.ok(await page.locator('#app-standings-body tr .app-world-form-strip').count()>0,'published recent form');
   const viewportBefore=page.viewportSize();
   await page.setViewportSize({width:390,height:844});
+  // A populated compact DOM may exist before the responsive shell is shown.
+  // Measure only after the actual loaded mobile row is visible, not a hidden
+  // 0px element; retain the exact 84px and 1px layout assertions below.
+  await page.waitForFunction(()=>{
+    const compact=document.getElementById('app-standings-compact');
+    const row=document.querySelector('#app-standings-compact-list .app-world-mobile-summary');
+    return !!row&&!compact?.hidden&&row.getClientRects().length>0&&
+      getComputedStyle(row).display!=='none';
+  },null,{timeout:10000});
   const heights=await page.evaluate(()=>{
     const loaded=document.querySelector('#app-standings-compact-list .app-world-mobile-summary');
     const pending=document.querySelector('.app-standings-skeleton .app-world-mobile-summary');
