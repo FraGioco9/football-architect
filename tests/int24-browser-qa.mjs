@@ -467,7 +467,7 @@ try {
   await screenshot(page,cup+'-'+width+'-supplied-knockouts.png');
   await page.locator('#competition-tab-stats').click();
   await page.locator('[data-stats-view="overview"]').click();
-  assert.deepEqual(await page.locator('.app-competition-stat-value').allTextContents(),['12','36','3.00']);
+  assert.deepEqual(await page.locator('#competition-panel-stats .app-competition-stat-value').allTextContents(),['12','36','3.00']);
   await page.locator('[data-stats-view="overview"]').focus();await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('.fa-dev-stats-team-card').count(),7);
   assert.equal(await page.locator('.fa-dev-stats-expand').count(),7);
