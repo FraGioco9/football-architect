@@ -68,6 +68,11 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   if(sessionStorage.getItem('football-architect:calendar-dev-world-day')===null)sessionStorage.setItem('football-architect:calendar-dev-world-day','1');
  },{debugPort:String(debugHost.address().port)});
  let checks=0;
+ const bounded=async(promise,label,ms=15000)=>{
+  let timer;
+  try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('SH-03 timeout: '+label)),ms)})]);}
+  finally{clearTimeout(timer)}
+ };
  try{
   for(const [i,path] of routes.entries()){
    const width=[320,390,768,1440][i%4],lang=['en','de','es','fr','it'][i%5],theme=i%2?'light':'dark';
@@ -109,14 +114,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
   await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
   let release;holdSeasonOne=new Promise(resolve=>release=resolve);const started=new Promise(resolve=>heldStarted=resolve);
-  await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});await started;
+  await page.goto(origin+'/competitions/it-1/standings?season=1',{waitUntil:'domcontentloaded'});await bounded(started,'held Season 1 API request');
   await page.evaluate(()=>window.faCompetitionRoute.set({season:'2'}));
   await page.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
   release();holdSeasonOne=null;await page.waitForLoadState('networkidle');
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
   await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
   await page.locator('#calendar-season-picker').click();
-  await page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('fa:world-invalidated'))}));
+  await bounded(page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))})),'calendar menu refresh');
   assert.equal(await page.evaluate(()=>window.sh03Option===document.querySelector('#calendar-season-menu [role=option]')),true);
   assert.equal(await page.locator('#calendar-season-picker').getAttribute('aria-expanded'),'true');checks++;
   offline=true;
@@ -195,19 +200,23 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);
   assert.equal(await page.evaluate(()=>window.sh03Row===document.querySelector('#app-standings-body tr')),true,'populated refresh retains rows');
   holdNumber='2';let releaseOld;holdSeasonOne=new Promise(resolve=>releaseOld=resolve);const oldStarted=new Promise(resolve=>heldStarted=resolve);
-  await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));await oldStarted;
+  // A same-revision world invalidation no longer refetches the season.
+  // Advance world revision deliberately to exercise a genuinely stale in-flight read.
+  apiWorld={...world,revision:5,day:21};
+  await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));
+  await bounded(oldStarted,'season read after world revision advances');
   await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===2);
   assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
-  apiWorld={...world,revision:5,day:21};
-  await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===21);
+  apiWorld={...world,revision:6,day:22};
+  await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===22);
   assert.equal(new URL(page.url()).searchParams.get('season'),'2','OFF retains viewed season');
-  releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===5);
+  releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
   assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();
   await page.waitForFunction(()=>document.querySelectorAll('#calendar-event-dialog [data-authoritative-calendar] li').length===128);
-  await page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('fa:world-invalidated'))}));
+  await bounded(page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))})),'calendar dialog refresh');
   assert.equal(await page.evaluate(()=>window.sh03Dialog.open&&window.sh03Fixture===document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li')),true,'open populated calendar dialog survives refresh');checks++;
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
   // Cold navigation: one shared global read plus one post-season revision
