@@ -74,12 +74,25 @@
     const render=()=>{
       const state=root.document.documentElement.dataset;
       const loading=requestsLoading||['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
+      const history=root.document.getElementById('competition-panel-history');
+      // A global bootstrap may settle before the History-specific provider.
+      // Keep the real panel's shell until its own data/verified empty state is committed.
+      const historyPending=history?.dataset.faHistoryContentReady!=='true';
+      const historyBusy=loading||Boolean(local.history)||historyPending;
       if(state.faStandingsLoading!==String(loading))state.faStandingsLoading=String(loading);
+      if(state.faHistoryLoading!==String(historyBusy))state.faHistoryLoading=String(historyBusy);
       for(const view of ['standings','fixtures',...views]){
-        const busy=loading||Boolean(local[view]);
+        const busy=loading||Boolean(local[view])||(view==='history'&&historyPending);
         root.document.getElementById('competition-panel-'+view)?.setAttribute('aria-busy',String(busy));
         if(views.includes(view))syncSkeleton(view,busy);
       }
+    };
+    // Explicit completion contract shared by public and DEV History presenters.
+    // Loading CSS and DOM removal update together, so no intermediate blank frame.
+    root.faHistorySetReady=ready=>{
+      const panel=root.document.getElementById('competition-panel-history');
+      if(panel)panel.dataset.faHistoryContentReady=String(ready);
+      render();
     };
     root.faStandingsLoading=createStandingsLoading(loading=>{requestsLoading=loading;render();},(view,loading)=>{
       local[view]=loading;root.document.documentElement.dataset['fa'+view[0].toUpperCase()+view.slice(1)+'Loading']=String(loading);render();

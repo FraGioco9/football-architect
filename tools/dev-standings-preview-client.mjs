@@ -161,7 +161,7 @@ let historyManifest=null;
 function clearHistoryPreview(){
  historyRenderVersion++;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
- panel.querySelector(".app-history-dev")?.remove();
+ panel.querySelector(':scope > .app-history-dev')?.remove();
  const empty=panel.querySelector('[data-history-empty]');
  if(empty)empty.hidden=false;
  const error=panel.querySelector('[data-history-error]');if(error)error.hidden=true;
@@ -261,10 +261,11 @@ async function renderHistoryPreview(){
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
   debugSeason===progressSeason&&matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
+ window.faHistorySetReady?.(false);
+ const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
- const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  try{
   if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
@@ -275,7 +276,7 @@ async function renderHistoryPreview(){
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const {completed:seasons,played}=createPreviewHistory(division,progressSeason,progressDay);
-  if(!played.length){clearHistoryPreview();return;}
+  if(!played.length){clearHistoryPreview();window.faHistorySetReady?.(true);return;}
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
@@ -351,14 +352,16 @@ async function renderHistoryPreview(){
   }
   records.append(panel.querySelector('[data-history-player-records]').cloneNode(true));
   if(!current())return;
-  panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
+  panel.querySelector(':scope > .app-history-dev')?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
+  window.faHistorySetReady?.(true);
 
  }catch(error){
   if(!current())return;
-  console.error("DEV History preview unavailable:",error);panel.querySelector(".app-history-dev")?.remove();
+  console.error("DEV History preview unavailable:",error);panel.querySelector(':scope > .app-history-dev')?.remove();
   if(status)status.hidden=false;
   if(errorMessage)errorMessage.hidden=false;
   window.faAppRenderLanguage?.();
+  window.faHistorySetReady?.(true);
  }finally{finishHistory();}
 }
 function syncHistoryPreview(){
