@@ -122,28 +122,37 @@ const byLevel=requestedLevels.map(level=>{
 const official=JSON.parse(readFileSync(trialPath,'utf8'));
 assert.equal(official.count,1000);
 assert.equal(official.seed,'fa-official-trial-01');
+// The trial export excludes the per-player build label and target diagnostics.
+// Only the in-memory replay exposes the QA-only values.
+const withDiagnostics=generateTrial({count:official.count,seed:official.seed});
+assert.deepEqual(official.candidates,JSON.parse(JSON.stringify(withDiagnostics.candidates)),
+ 'The exported JSON must be an exact projection of the seeded generator');
+for(const p of official.candidates){
+ for(const name of ['trial_role_profile','trial_primary_suitability_target','trial_primary_suitability_actual'])
+  assert.equal(Object.hasOwn(p,name),false);
+}
 const earlier=generateTrial({count:1000,seed:official.seed,
  experimentalPrimarySuitabilityModel:false});
 const reviewFlags=[],summaryByRole={};
 let earlierError=0,nowError=0,changedPlayerCount=0;
 for(let i=0;i<official.count;i++){
- const p=official.candidates[i],prior=earlier.candidates[i];
+ const p=official.candidates[i],diagnostic=withDiagnostics.candidates[i],prior=earlier.candidates[i];
  assert.equal(p.preview_id,prior.preview_id);
  assert.equal(p.primary_position,prior.primary_position);
  assert.deepEqual(p.secondary_positions,prior.secondary_positions);
  if(ATTRIBUTES.some(a=>p.attributes[a]!==prior.attributes[a]))changedPlayerCount++;
  const role=p.primary_position,core=roles[role].signature,support=roles[role].support;
  const values=[...core,...support].map(a=>p.attributes[a]).sort((a,b)=>a-b);
- const margin={primary_only:6,specialist:10,versatile:12}[p.trial_role_profile];
+ const margin={primary_only:6,specialist:10,versatile:12}[diagnostic.trial_role_profile];
  const threshold=Math.round((values[3]+values[4])/2-margin);
  const row=summaryByRole[role]??={players:0,warnings:0};
  row.players++;
  const actual=calculatePositionSuitability(p.attributes,role);
- const error=Math.abs(actual-p.trial_primary_suitability_target);
+ const error=Math.abs(actual-diagnostic.trial_primary_suitability_target);
  nowError=Math.max(nowError,error);
  assert.ok(error<=.500001);
  earlierError=Math.max(earlierError,Math.abs(calculatePositionSuitability(prior.attributes,role)-
-  p.trial_primary_suitability_target));
+  diagnostic.trial_primary_suitability_target));
  for(const attr of core){
   if(p.attributes[attr]>=threshold)continue;
   const deficit=threshold-p.attributes[attr];
@@ -153,10 +162,10 @@ for(let i=0;i<official.count;i++){
    Math.max(-10,Math.min(10,Math.round((p.height_cm-180)*.4))):0;
   const classification=anthropometric<0&&deficit<=-anthropometric+1?
    'height_effect_expected':deficit<=3?'minor_rounding_or_rebase':'investigate';
-  reviewFlags.push({id:p.preview_id,name:p.display_name,role,profile:p.trial_role_profile,
+  reviewFlags.push({id:p.preview_id,name:p.display_name,role,
    age:p.initial_age,height_cm:p.height_cm,skill:attr,actual:p.attributes[attr],
    expected_relative_floor:threshold,deficit,anthropometric_modifier:anthropometric,
-   classification,primary_target:p.trial_primary_suitability_target,
+   classification,primary_target:diagnostic.trial_primary_suitability_target,
    primary_actual:round(actual)});
   row.warnings++;
  }

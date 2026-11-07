@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {
  GIVEN_CATALOG_PATH,loadPlayerNamePools,sampleGivenName,sampleSurname
 } from '../tools/players-name-pools.mjs';
-import {COUNTRIES,generateTrial} from '../tools/players-generation-trial.mjs';
+import {COUNTRIES,generateTrial,summarize} from '../tools/players-generation-trial.mjs';
 
 function withFixture(fn){
  const root=mkdtempSync(join(tmpdir(),'fa-name-pools-'));
@@ -82,18 +82,63 @@ test('malformed given weights and invalid code coverage fail fast',()=>withFixtu
  assert.throws(()=>loadPlayerNamePools({...cfg,expectedCodes:['ITA','ITA']}),/unique nonempty/);
 }));
 test('seeded generator uses catalog given names and does not affect attribute contract',()=>{
- const trial=generateTrial({count:100,seed:'catalog-identity-qa',knownAs:'none'});
- const same=generateTrial({count:100,seed:'catalog-identity-qa',knownAs:'none'});
+ const trial=generateTrial({count:100,seed:'catalog-identity-qa'});
+ const same=generateTrial({count:100,seed:'catalog-identity-qa'});
  assert.deepEqual(trial,same);
  assert.equal(trial.identity_sources.given_names,'PLAYERS-03 weighted catalog');
  assert.ok(['SURNAMES-01 uniform catalog','temporary-demo-fallback'].includes(trial.identity_sources.surnames));
  const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
  for(const p of trial.candidates){
   assert.ok(pools.given.get(p.nationality).values.includes(p.first_name));
+  assert.equal(Object.hasOwn(p,'known_as'),false);
+  assert.equal(p.display_name,`${p.first_name} ${p.last_name}`);
   const surname=pools.surnames.get(p.nationality);
   if(surname)assert.ok(surname.includes(p.last_name));
   else assert.ok(COUNTRIES.find(c=>c.code===p.nationality).demoLast.includes(p.last_name));
  }
- const manual=generateTrial({count:1,primaryNationality:'ITA',firstName:'Manual',lastName:'Override',knownAs:'none'}).candidates[0];
+ const manual=generateTrial({count:1,primaryNationality:'ITA',firstName:'Manual',lastName:'Override'}).candidates[0];
  assert.equal(manual.first_name,'Manual');assert.equal(manual.last_name,'Override');
+ assert.equal(manual.display_name,'Manual Override');
+ assert.equal(Object.hasOwn(manual,'known_as'),false);
+ assert.equal(Object.hasOwn(summarize(trial),'known_as'),false);
+});
+
+test('all 300 Brazilian generated first names retain uppercase initials',()=>{
+ const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
+ const values=pools.given.get('BRA').values;
+ assert.equal(values.length,300);
+ assert.ok(values.every(n=>Array.from(n)[0]===Array.from(n)[0].toLocaleUpperCase('und')));
+ assert.equal(values[0],'Jose');
+ assert.equal(values[1],'Joao');
+ const trial=generateTrial({count:50,seed:'brazil-uppercase-qa',primaryNationality:'BRA'});
+ for(const p of trial.candidates){
+  assert.equal(p.first_name[0],p.first_name[0].toLocaleUpperCase('und'));
+  assert.equal(p.display_name,p.first_name+' '+p.last_name);
+  assert.equal(Object.hasOwn(p,'known_as'),false);
+ }
+});
+
+test('player JSON hides QA-only specialist and suitability diagnostics',()=>{
+ const player=generateTrial({count:1,seed:'internal-json-visibility-01'}).candidates[0];
+ assert.ok(['specialist','versatile','primary_only'].includes(player.trial_role_profile));
+ assert.equal(typeof player.trial_primary_suitability_target,'number');
+ assert.equal(typeof player.trial_primary_suitability_actual,'number');
+ const json=JSON.stringify(player);
+ const encoded=JSON.parse(json);
+ for(const key of ['trial_role_profile','trial_primary_suitability_target','trial_primary_suitability_actual','known_as']){
+  assert.equal(Object.hasOwn(encoded,key),false,'No internal/player JSON should contain '+key);
+  assert.equal(Object.keys(player).includes(key),false);
+ }
+ assert.ok(Object.hasOwn(encoded,'attributes'));
+ assert.equal(encoded.display_name,`${encoded.first_name} ${encoded.last_name}`);
+});
+
+test('Brazil, Portugal and Spain never generate aliases',()=>{
+ for(const code of ['BRA','POR','ESP']){
+  const rows=generateTrial({count:8,seed:'canonical-name-'+code,primaryNationality:code}).candidates;
+  for(const p of rows){
+   assert.equal(Object.hasOwn(p,'known_as'),false);
+   assert.equal(p.display_name,`${p.first_name} ${p.last_name}`);
+  }
+ }
 });

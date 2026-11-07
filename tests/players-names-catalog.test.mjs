@@ -128,6 +128,7 @@ test('each of 50 country files contains exactly 300 distinct SINGLE-word male na
    assert.equal(n.value,n.value.trim());
    assert.equal(n.value,n.value.normalize('NFC'));
    assert.ok(isSingleLatinGivenName(n.value),code+' non-Latin, compound, or punctuation: '+n.value);
+   assert.equal(Array.from(n.value)[0],Array.from(n.value)[0].toLocaleUpperCase('und'),code+' first name must start with an uppercase letter: '+n.value);
    assert.ok(Number.isSafeInteger(n.weight)&&n.weight>0,code+' non-positive source weight');
    if(i)assert.ok(n.weight<=bank.given_names[i-1].weight,code+' ranking disorder');
    const key=n.value.toLocaleLowerCase('und');
@@ -187,7 +188,8 @@ test('known formerly invalid compound forms cannot return; accents and unrestric
  assert.equal(banks.POR.source.source_file_sha256,'b14ac2d593a95955946af6df6d35befc905ee2ec6708219a6e4e38fd9131cd85');
  assert.equal(banks.BRA.source.source_parquet_sha256,'91518f2d0d1da8e438ab9f557127da06633e186914aecb717f1bbf7bfb6b2943');
  assert.ok(banks.POR.given_names.some(x=>x.value==='João'));
- assert.ok(banks.BRA.given_names.some(x=>x.value==='jose'));
+ assert.ok(banks.BRA.given_names.some(x=>x.value==='Jose'));
+ assert.ok(banks.BRA.given_names.some(x=>x.value==='Joao'));
  assert.ok(banks.NED.given_names.some(x=>x.value==='Daniël'));
  assert.ok(banks.NOR.given_names.some(x=>x.value==='Bjørn'));
  assert.ok(banks.SWE.given_names.some(x=>x.value==='Måns'));

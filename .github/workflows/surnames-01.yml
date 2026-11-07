@@ -22,9 +22,18 @@ jobs:
         with:
           node-version: '22'
       - name: Reject unrelated files and PLAYERS-03 changes
+        id: surname_scope
         shell: bash
         run: |
           git diff --name-only origin/main...HEAD > /tmp/surnames-01-changed.txt
+          # This workflow is also triggered by edits to the shared CI ownership
+          # registry. Do not impose SURNAMES-only scope on unrelated player PRs.
+          if ! grep -Eq '^data/players/surnames/' /tmp/surnames-01-changed.txt; then
+            echo 'No surname catalog/test changes: SURNAMES-only scope guard not applicable.'
+            echo 'catalog_changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'catalog_changed=true' >> "$GITHUB_OUTPUT"
           if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
             echo 'Out-of-scope changes in SURNAMES-01 PR' >&2
             exit 1
@@ -34,4 +43,5 @@ jobs:
             exit 1
           fi
       - name: Validate surname catalog and 50 exact source blobs
+        if: steps.surname_scope.outputs.catalog_changed == 'true'
         run: node --test tests/surnames-01-catalog.test.mjs

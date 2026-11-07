@@ -146,7 +146,9 @@ test('all national minimums reached; surplus remains explicit and untrimmed',()=
  for(const c of catalog.countries)assert.ok(c.actual_count>=c.target_count,c.code+' not at target');
  for(const code of ['URU','PAR','VEN'])assert.equal(catalog.countries.find(c=>c.code===code).status,'over_target');
 });
-test('PLAYERS-03 unchanged',()=>{
+test('PLAYERS-03 unchanged when SURNAMES-01 catalog data changes',()=>{
  if(!process.env.GITHUB_ACTIONS)return;
+ const changedSurnames=execFileSync('git',['diff','--name-only','origin/main...HEAD','--','data/players/surnames/'],{cwd:root,encoding:'utf8'}).trim();
+ if(!changedSurnames)return; // Player-only PRs may legitimately update first-name spelling.
  assert.equal(execFileSync('git',['diff','--name-only','origin/main...HEAD','--','data/players/names/'],{cwd:root,encoding:'utf8'}).trim(),'');
 });
