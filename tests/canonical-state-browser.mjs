@@ -184,7 +184,13 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     const shell=pending.closest('.app-standings-skeleton');
     shell.style.display='block';
     const measure=(root,selector)=>{
-      const box=root.querySelector(selector).getBoundingClientRect(),row=root.getBoundingClientRect();
+      // Skeleton keeps the known ID identity node in the DOM for resource
+      // preloading, but it is hidden to prevent a false league ranking.
+      // Compare only the actual displayed placeholder to the loaded row.
+      const target=[...root.querySelectorAll(selector)].find(el=>
+        el.getClientRects().length>0&&getComputedStyle(el).display!=='none');
+      if(!target)throw Error('Missing visible standings item: '+selector);
+      const box=target.getBoundingClientRect(),row=root.getBoundingClientRect();
       return {x:Math.round((box.left-row.left)*10)/10,y:Math.round((box.top-row.top)*10)/10};
     };
     const selectors=['.app-world-mobile-position','.app-world-mobile-name','.app-world-mobile-points','.app-world-mobile-form'];
