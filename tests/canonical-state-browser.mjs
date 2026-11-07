@@ -206,9 +206,12 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   assert.equal(worldCalls,worldBeforeFocus,'focus must not poll /api/world');
   // The DEV debug controls were opened earlier for the source transition.
-  // Close their modal backdrop before interacting with the real view tabs.
+  // The backdrop hides immediately; the panel finishes a 180ms close animation.
+  // Wait for BOTH to close so the next widget click opens, rather than re-closes,
+  // the panel (especially important for WebKit's fast click scheduling).
   await page.locator('.fa-dev-widget-close').click();
-  await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-backdrop')?.hidden===true);
+  await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-backdrop')?.hidden===true&&
+    document.querySelector('.fa-dev-widget-panel')?.hidden===true);
   const worldBeforeTabs=worldCalls;
   await page.locator('#competition-tab-fixtures').click();
   await page.locator('#competition-tab-stats').click();

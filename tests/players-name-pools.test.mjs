@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {
  GIVEN_CATALOG_PATH,loadPlayerNamePools,sampleGivenName,sampleSurname
 } from '../tools/players-name-pools.mjs';
-import {COUNTRIES,generateTrial,summarize} from '../tools/players-generation-trial.mjs';
+import {COUNTRIES,generateTrial,summarize,selectDualNameOrigins} from '../tools/players-generation-trial.mjs';
 
 function withFixture(fn){
  const root=mkdtempSync(join(tmpdir(),'fa-name-pools-'));
@@ -89,18 +89,102 @@ test('seeded generator uses catalog given names and does not affect attribute co
  assert.ok(['SURNAMES-01 uniform catalog','temporary-demo-fallback'].includes(trial.identity_sources.surnames));
  const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
  for(const p of trial.candidates){
-  assert.ok(pools.given.get(p.nationality).values.includes(p.first_name));
+  const eligible=[p.nationality,...(p.secondary_nationality?[p.secondary_nationality]:[])];
+  assert.ok(eligible.some(code=>pools.given.get(code).values.includes(p.first_name)));
   assert.equal(Object.hasOwn(p,'known_as'),false);
   assert.equal(p.display_name,`${p.first_name} ${p.last_name}`);
-  const surname=pools.surnames.get(p.nationality);
-  if(surname)assert.ok(surname.includes(p.last_name));
-  else assert.ok(COUNTRIES.find(c=>c.code===p.nationality).demoLast.includes(p.last_name));
+  assert.ok(eligible.some(code=>(pools.surnames.get(code)??
+   COUNTRIES.find(c=>c.code===code).demoLast).includes(p.last_name)));
  }
  const manual=generateTrial({count:1,primaryNationality:'ITA',firstName:'Manual',lastName:'Override'}).candidates[0];
  assert.equal(manual.first_name,'Manual');assert.equal(manual.last_name,'Override');
  assert.equal(manual.display_name,'Manual Override');
  assert.equal(Object.hasOwn(manual,'known_as'),false);
  assert.equal(Object.hasOwn(summarize(trial),'known_as'),false);
+});
+
+
+test('dual-name probability thresholds and manual-name marginal probabilities',()=>{
+ const choose=(draw,firstManual=false,lastManual=false,hasSecondary=true)=>
+  selectDualNameOrigins(hasSecondary,firstManual,lastManual,draw);
+ const PP={first:'primary',last:'primary'},SP={first:'secondary',last:'primary'},
+  PS={first:'primary',last:'secondary'},SS={first:'secondary',last:'secondary'};
+ for(const [draw,want] of [[0,PP],[.499999,PP],[.5,SP],[.649999,SP],
+  [.65,PS],[.899999,PS],[.9,SS],[.999999,SS]])
+  assert.deepEqual(choose(draw),want);
+ assert.deepEqual(choose(.9,false,false,false),PP);
+ assert.deepEqual(choose(.9,true,true),PP);
+ assert.deepEqual(choose(.3499,true,false),PS);
+ assert.deepEqual(choose(.35,true,false),PP);
+ assert.deepEqual(choose(.2499,false,true),SP);
+ assert.deepEqual(choose(.25,false,true),PP);
+ assert.throws(()=>choose(1),/Invalid dual-nationality name draw/);
+ assert.throws(()=>choose(-.01),/Invalid dual-nationality name draw/);
+ const counts={PP:0,SP:0,PS:0,SS:0};
+ let secondarySurname=0,secondaryGiven=0;
+ for(let i=0;i<10000;i++){
+  const draw=(i+.5)/10000,o=choose(draw);
+  const key=(o.first==='secondary'?'S':'P')+(o.last==='secondary'?'S':'P');
+  counts[key]++;
+  if(choose(draw,true,false).last==='secondary')secondarySurname++;
+  if(choose(draw,false,true).first==='secondary')secondaryGiven++;
+ }
+ assert.deepEqual(counts,{PP:5000,SP:1500,PS:2500,SS:1000});
+ assert.equal(secondarySurname,3500);
+ assert.equal(secondaryGiven,2500);
+});
+test('dual names: forced/manual/allowed-set origin, manual precedence, seed and attribute isolation',()=>{
+ const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
+ const opts={count:240,seed:'dual-name-identity',primaryNationality:'ITA'};
+ const plain=generateTrial({...opts,secondaryNationality:'none'}).candidates;
+ const forced=generateTrial({...opts,secondaryNationality:'MAR'}).candidates;
+ assert.deepEqual(forced,generateTrial({...opts,secondaryNationality:'MAR'}).candidates);
+ const itaNames=new Set(pools.given.get('ITA').values),marNames=new Set(pools.given.get('MAR').values);
+ const itaSurnames=new Set(pools.surnames.get('ITA')),marSurnames=new Set(pools.surnames.get('MAR'));
+ let secondaryGiven=0,secondarySurname=0;
+ const otherFields=({first_name,last_name,display_name,secondary_nationality,...other})=>other;
+ for(let i=0;i<forced.length;i++){
+  const p=forced[i],base=plain[i];
+  assert.equal(p.nationality,'ITA');assert.equal(p.secondary_nationality,'MAR');
+  assert.ok(itaNames.has(p.first_name)||marNames.has(p.first_name));
+  assert.ok(itaSurnames.has(p.last_name)||marSurnames.has(p.last_name));
+  if(marNames.has(p.first_name)&&!itaNames.has(p.first_name))secondaryGiven++;
+  if(marSurnames.has(p.last_name)&&!itaSurnames.has(p.last_name))secondarySurname++;
+  assert.deepEqual(otherFields(p),otherFields(base),'Name origin must not affect sports/age RNG');
+  assert.equal(p.display_name,p.first_name+' '+p.last_name);
+  assert.equal(Object.hasOwn(p,'known_as'),false);
+ }
+ assert.ok(secondaryGiven>10);
+ assert.ok(secondarySurname>20);
+ const manualFirst=generateTrial({...opts,count:90,secondaryNationality:'MAR',
+  firstName:'Explicit'}).candidates;
+ assert.ok(manualFirst.every(p=>p.first_name==='Explicit'&&
+  (itaSurnames.has(p.last_name)||marSurnames.has(p.last_name))));
+ const manualLast=generateTrial({...opts,count:90,secondaryNationality:'MAR',
+  lastName:'Explicit'}).candidates;
+ assert.ok(manualLast.every(p=>p.last_name==='Explicit'&&
+  (itaNames.has(p.first_name)||marNames.has(p.first_name))));
+ const manualBoth=generateTrial({...opts,count:5,secondaryNationality:'MAR',
+  firstName:'Manual',lastName:'Surname'}).candidates;
+ assert.ok(manualBoth.every(p=>p.first_name==='Manual'&&
+  p.last_name==='Surname'&&p.display_name==='Manual Surname'));
+ const allowed=generateTrial({...opts,count:120,secondaryNationality:['MAR','GER']}).candidates;
+ assert.ok(allowed.every(p=>['MAR','GER'].includes(p.secondary_nationality)));
+ for(const p of allowed){
+  assert.ok(pools.given.get(p.nationality).values.includes(p.first_name)||
+   pools.given.get(p.secondary_nationality).values.includes(p.first_name));
+  assert.ok(pools.surnames.get(p.nationality).includes(p.last_name)||
+   pools.surnames.get(p.secondary_nationality).includes(p.last_name));
+ }
+ const automatic=generateTrial({count:1000,seed:'dual-name-auto-integration'});
+ for(const p of automatic.candidates){
+  const eligible=[p.nationality,...(p.secondary_nationality?[p.secondary_nationality]:[])];
+  assert.ok(eligible.some(code=>pools.given.get(code).values.includes(p.first_name)));
+  assert.ok(eligible.some(code=>pools.surnames.get(code).includes(p.last_name)));
+ }
+ for(const invalid of [[],['MAR','MAR'],['ITA'],['UNKNOWN'],['MAR','ITA']])
+  assert.throws(()=>generateTrial({...opts,count:1,secondaryNationality:invalid}),
+   /Invalid allowed secondary nationalities/);
 });
 
 test('all 300 Brazilian generated first names retain uppercase initials',()=>{
