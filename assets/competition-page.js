@@ -980,7 +980,7 @@
     let suppliedMobile;
     if(division){
     // Only standings are enhanced; the original inline logo DOM is never replaced.
-    const standings=document.querySelector(".app-world-standings");
+    const standings=document.querySelector("#competition-panel-standings > .app-world-standings");
     if(!standings)throw Error("Missing standings");
     standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
@@ -1033,7 +1033,7 @@
     createPostseason(division);
     }else{
       delete window.faCompetitionDivision;
-      const standings=document.querySelector('.app-world-standings');
+      const standings=document.querySelector('#competition-panel-standings > .app-world-standings');
       if(!standings)throw Error('Missing standings');
       standings.outerHTML=withMobileShell(standings.outerHTML);
       suppliedMobile=createMobileStandings();window.faStandingsMobile=suppliedMobile;

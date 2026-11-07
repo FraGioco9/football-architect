@@ -106,3 +106,11 @@ test('QA-05: the real History panel and its skeleton paint before other competit
  assert.doesNotMatch(read('competitions/_shared/index.html'),/historyFinalLeagueTable|app-view-skeleton-history-table/);
  assert.doesNotMatch(read('assets/authoritative-history.mjs'),/section\.append\(table\)|make\('table'\)|Final league table/);
 });
+
+test('QA-05: standings runtime remains scoped when History is parsed first',()=>{
+ const runtime=read('assets/competition-page.js');
+ assert.match(runtime,/document\.querySelector\("#competition-panel-standings > \.app-world-standings"\)/);
+ assert.match(runtime,/document\.querySelector\('#competition-panel-standings > \.app-world-standings'\)/);
+ assert.doesNotMatch(runtime,/document\.querySelector\(["']\.app-world-standings["']\)/,
+  'History archive must never be mistaken for the standings host');
+});
