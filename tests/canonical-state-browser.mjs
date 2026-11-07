@@ -210,12 +210,12 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('fa:world-invalidated'))}));
   assert.equal(await page.evaluate(()=>window.sh03Dialog.open&&window.sh03Fixture===document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li')),true,'open populated calendar dialog survives refresh');checks++;
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
-  // Cold direct navigation uses the one global world read and one season API.
-  // Earlier implementations made three /api/world requests per competition.
+  // Cold navigation: one shared global read plus one post-season revision
+  // check. The second GET protects against cross-session world resets.
   const coldWorldCalls=worldCalls;
   await page.goto(origin+'/competitions/it-1/standings?season=2',{waitUntil:'networkidle'});
   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative');
-  assert.equal(worldCalls-coldWorldCalls,1,'one /api/world request on direct competition load');
+  assert.equal(worldCalls-coldWorldCalls,2,'two world checks: canonical bootstrap and post-season reset fence');
   const beforeTab=worldCalls;
   await page.locator('#competition-tab-fixtures').click();
   await page.locator('#competition-tab-standings').click();

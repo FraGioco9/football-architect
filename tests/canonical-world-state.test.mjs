@@ -50,7 +50,7 @@ test('guarded read publishes only coherent data and cancellation releases no sta
  const accepted=api.createSnapshotReader({getIdentity:()=>1,isEnabled:()=>true,clear:()=>{},fetchWorld:async()=>world,read:async()=>({world,status:'empty',data:null}),validate:x=>x,commit:x=>{assert.equal(x.data,null);committed++;return true}});
  assert.equal(await accepted.load(),true);assert.equal(committed,1);
 });
-test('shared public clock supplies one world snapshot to the competition',async()=>{
+test('shared public clock reuses first world read and revalidates once after season',async()=>{
  const state=api.createWorldState(),tick=state.beginRead();let worlds=0,seasons=0,commits=0;
  const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
   clear:()=>{},fetchWorld:async()=>{worlds++;return world},
@@ -59,13 +59,13 @@ test('shared public clock supplies one world snapshot to the competition',async(
  const pending=reader.load();assert.equal(seasons,0);
  state.acceptWorld(world,tick);
  assert.equal(await pending,true);
- assert.deepEqual([worlds,seasons,commits],[0,1,1]);
+ assert.deepEqual([worlds,seasons,commits],[1,1,1], 'one global world read + one post-season revision check');
 });
 test('shared world rejects stale results after a clock revision change',async()=>{
  const state=api.createWorldState();state.acceptWorld(world,state.beginRead());
  const started=deferred(),held=deferred();let commits=0;
  const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
-  clear:()=>{},fetchWorld:async()=>{throw Error('unexpected world fetch')},
+  clear:()=>{},fetchWorld:async()=>world,
   read:async()=>{started.resolve();return held.promise},validate:x=>x,
   commit:()=>{commits++;return true}});
  const pending=reader.load();await started.promise;
@@ -73,6 +73,19 @@ test('shared world rejects stale results after a clock revision change',async()=
  held.resolve({world,status:'partial'});
  assert.equal(await pending,false);assert.equal(commits,0);
  assert.deepEqual(state.get().world,newer);
+});
+test('world reset after season response was captured cannot publish a stale standing',async()=>{
+ const state=api.createWorldState();state.acceptWorld(world,state.beginRead());
+ const reset={...world,generation:'12345678-1234-4123-8123-123456789abc',revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+ let worldChecks=0,commits=0;
+ const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
+  clear:()=>{},fetchWorld:async()=>{worldChecks++;return reset},
+  read:async()=>({world,status:'partial'}),validate:x=>x,
+  commit:()=>{commits++;return true}});
+ assert.equal(await reader.load(),false,'reset prevents old season publication');
+ assert.equal(worldChecks,1,'one post-season consistency read');
+ assert.equal(commits,0);
+ assert.deepEqual(state.get().world,reset,'new generation becomes canonical');
 });
 test('unavailable canonical world does not trigger a duplicate read',async()=>{
  const state=api.createWorldState(),tick=state.beginRead();let worldReads=0,seasonReads=0;

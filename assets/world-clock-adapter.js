@@ -103,8 +103,21 @@
     const payload=validate(await read({signal}));if(!current()||!sameWorld(before,payload?.world))return false;
     let after=before;
     if(shared){
-     const latest=getSource();
-     if(latest?.readRevision!==lease||!sameWorld(latest?.world,before))return false;
+     // A canonical snapshot is enough for the initial read, but the backend
+     // can reset while the season response is in flight (including a response
+     // held by the network). Recheck once *after* that response before commit.
+     // This preserves cross-session reset fencing without the old third GET.
+     const latest=await fetchWorld({signal});
+     if(!current()||!validPublicWorld(latest))return false;
+     const snapshot=getSource();
+     if(snapshot?.readRevision!==lease||!sameWorld(snapshot?.world,before))return false;
+     if(!sameWorld(payload.world,latest)){
+      // Publish the newly observed canonical world so consumers can invalidate
+      // the old view and load the correct season; never commit the old payload.
+      if(worldState?.acceptWorld)worldState.acceptWorld(latest,worldState.beginRead());
+      return false;
+     }
+     after=latest;
     }else{
      after=await fetchWorld({signal});
      if(!current()||!validPublicWorld(after)||!sameWorld(payload.world,after))return false;
