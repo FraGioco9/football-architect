@@ -382,13 +382,17 @@ test('PAGE-LOAD-03B: a confirmed broken manifest must not destroy the static com
   assert.ok(source.includes(token),token);
 });
 
-test('PAGE-LOAD-03B: static names are gated to known Season 1; pending sporting state stays hidden',()=>{
+test('PAGE-LOAD-03B: neutral skeleton reserves 16 ranked slots until season data arrives',()=>{
  const renderer=readFileSync(new URL('../tools/render-competition-page.mjs',import.meta.url),'utf8');
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  const runtime=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
  assert.ok(renderer.includes('season==="1"?"true":"false"'),'explicit S1 only at prepaint');
  assert.ok(runtime.includes("context.definition.category==='domestic'&&context.selectedSeason===1"),'source/season transition updates identity visibility');
- assert.ok(css.includes('html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]'),'visible known static identities');
+ assert.ok(css.includes('.app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}'),'catalog ID order hidden until ranking is known');
+ assert.ok(css.includes('.app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}'),'neutral skeleton identities reserve space');
+ assert.ok(css.includes('.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::before{'),'desktop reserves crest track');
+ assert.ok(css.includes('.app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::before{'),'mobile reserves crest track');
+ assert.ok(!css.includes('html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]'),'unknown ranking never shows catalog order');
  assert.ok(css.includes('#competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}'),'previous sporting data remains hidden during loading');
  assert.ok(css.includes('#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-club-name){font-weight:700}'),'club-name bold typography');
  assert.ok(!css.includes('[data-skeleton-identity]{display:none;min-width:0;gap:7px'),'skeleton inherits the loaded desktop/mobile crest-to-name gap');

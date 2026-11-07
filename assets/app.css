@@ -1178,12 +1178,20 @@ svg.site-chevron>path{translate:0 .5px}
 .app-standings-skeleton{display:none;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
 .app-standings-skeleton .app-skeleton-mobile{display:none}
 .app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
-/* Club placeholder starts at the crest, not after it, and stays compact on wide tables. */
-.app-standings-skeleton tr>:nth-child(2) .app-skeleton-bar{width:148px;max-width:100%;margin-inline:0 auto}
-/* Never project provisional Season 1 clubs into an unknown or later season. */
+/* Catalog ID order is not a verified standings order. Reserve 16 neutral
+   identity slots until ranked season data arrives from the selected source. */
 .app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
-html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]{display:flex}
-html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity-placeholder]{display:none}
+.app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}
+.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]{
+ width:148px;max-width:100%;height:48px;gap:7px;
+}
+.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::before{
+ content:"";flex:0 0 48px;height:48px;
+}
+.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::after{
+ content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
+ background:color-mix(in srgb,var(--muted) 22%,var(--surface));
+}
 .app-standings-skeleton [data-skeleton-identity] .app-world-club-name{min-width:0}
 /* Published SVGs start loading in parser time: no shield flash for supported crests. */
 .app-standings-skeleton [data-club-crest-pending="true"]>.app-club-crest-image{visibility:visible}
@@ -1202,10 +1210,49 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
 #competition-panel-standings .app-world-mobile-points{font-weight:800}
 @media(max-width:620px){
  .app-standings-skeleton .app-skeleton-mobile{display:block}
- .app-standings-skeleton .app-world-mobile-position{width:12px}
- .app-standings-skeleton .app-world-mobile-name{width:148px;max-width:100%;margin-left:0}
- .app-standings-skeleton .app-world-mobile-points{width:24px;min-height:30px;padding:0}
- .app-standings-skeleton .app-world-mobile-form{width:60px;margin-left:48px}
+ /* Identical grid tracks and offsets in first-paint, unknown and loaded rows. */
+ #competition-panel-standings .app-world-mobile-summary{
+  height:84px;min-height:84px;box-sizing:border-box;
+  grid-template-rows:40px 21px;align-content:center;
+ }
+ #competition-panel-standings .app-world-mobile-position{
+  height:16px;line-height:16px;box-sizing:border-box;
+ }
+ #competition-panel-standings .app-world-mobile-name{min-height:40px}
+ #competition-panel-standings .app-world-mobile-points{
+  height:56px;min-height:56px;box-sizing:border-box;justify-content:center;
+ }
+ #competition-panel-standings .app-world-mobile-form{align-self:start}
+ .app-standings-skeleton .app-world-mobile-position{
+  width:12px;margin:0;justify-self:start;
+ }
+ /* Anonymous crest slot followed by a name bar at the real text origin. */
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]{
+  display:flex;width:148px;max-width:100%;height:40px;margin:0;
+  align-items:center;gap:7px;background:transparent;
+ }
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::before{
+  content:"";flex:0 0 40px;height:40px;
+ }
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::after{
+  content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
+  background:color-mix(in srgb,var(--muted) 22%,var(--surface));
+ }
+ .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity]{
+  height:40px;min-height:40px;align-self:center;
+ }
+ .app-standings-skeleton .app-world-mobile-points{
+  width:100%;padding:7px 3px;margin:0;
+ }
+ /* Align the form skeleton with the center of the loaded 16px glyph line. */
+ .app-standings-skeleton .app-world-mobile-form{
+  width:60px;height:16px;margin:0;justify-self:start;
+  align-self:start;align-items:center;background:transparent;
+ }
+ .app-standings-skeleton .app-world-mobile-form::before{
+  content:"";display:block;flex:0 0 60px;width:60px;height:10px;
+  border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface));
+ }
 }
 /* DEV hides the canonical table until commit; the decorative table remains visible. */
 #competition-panel-standings>.app-standings-skeleton .app-world-standing-table{visibility:visible}

@@ -207,7 +207,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",DEBUG_MODE_BOOTSTRAP+'\n</head>'),"utf8");
       res.writeHead(200, {
         "Content-Type": type,
-        "Cache-Control": "no-store",
+        "Cache-Control": raw === "/favicon.ico" || raw === "/favicon.svg" ? "public, max-age=86400" : "no-store",
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY"
       });

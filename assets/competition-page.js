@@ -645,7 +645,25 @@
         const commitMobile=mobile.prepare(rows);
         const desktop=rows.map((row,index)=>{
           const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
-          if(supplied){const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)})}
+          if(supplied){
+            const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
+            values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
+            // Real published form must never reuse the fictional demo score tooltip.
+            if(row.recent.length){
+              const strip=document.createElement('span');strip.className='app-world-form-strip';
+              for(const game of row.recent){
+                const mark=document.createElement('span');
+                mark.className='app-world-form-dot app-world-form-'+game.result.toLowerCase()+
+                  (game===row.recent[0]?' app-world-form-last':'');
+                mark.dataset.appI18n=formLabels[game.result][2];
+                mark.setAttribute('role','img');
+                mark.setAttribute('aria-label',game.result+' — '+game.round);
+                mark.title=game.result+' — '+game.round;
+                mark.textContent=game.result;strip.append(mark);
+              }
+              tr.children[10].replaceChildren(strip);
+            }
+          }
           return tr;
         });
         // Resolving a referenced winner requires a complete original table and an explicit completed tie.
@@ -697,7 +715,7 @@
           const value=metric==='aggregate'?games.length?games.reduce((sum,g)=>sum+goals(g),0):null:game?goals(game):null;
           score.textContent=value===null?'—':String(value);
         }
-      }catch{empty();resetBracket();}
+      }catch(error){if(window.faDevPreviewMode===true)console.warn('Standings snapshot presentation rejected',error);empty();resetBracket();}
       window.faAppRenderLanguage?.();
     }
     window.addEventListener('fa:competition-context-change',refresh);refresh();
@@ -1057,11 +1075,29 @@
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
           commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
-        let selection='';const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void loader.load()};
+        // The global clock owns focus refresh. Only changed world snapshots
+        // should force another season fetch, without weakening generation fencing.
+        let selection='',pendingLoads=0,lastWorldReload='';
+        const revalidateWorld=snapshot=>{
+          const c=window.faCompetitionContext,data=c?.seasonData;
+          if(activeDebugSeason!==null||pendingLoads||snapshot?.source!=='authoritative'||data?.provenance?.kind!=='authoritative')return;
+          if(snapshot.world&&window.faWorldClockAdapter.sameWorld(data.world,snapshot.world))return;
+          const token=JSON.stringify([c.definition.id,c.selectedSeason,snapshot.sourceRevision,snapshot.world?.generation,snapshot.world?.revision,snapshot.world?.seasonNumber,snapshot.world?.day]);
+          if(lastWorldReload===token)return;
+          lastWorldReload=token;void load();
+        };
+        const load=()=>{
+          pendingLoads++;
+          return loader.load().finally(()=>{
+            pendingLoads--;
+            if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
+          });
+        };
+        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
-        window.addEventListener('focus',()=>void loader.load());
-        window.addEventListener('pageshow',event=>{if(event.persisted)void loader.load()});
+        window.faWorldState?.subscribe?.(revalidateWorld);
+        window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
         new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
