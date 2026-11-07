@@ -78,25 +78,30 @@ test('PAGE-LOAD-03C: loading lifecycle shares the same isolated/public History r
  assert.doesNotMatch(source,/season===0\|\|root\.faDebugEnabled===false/);
 });
 
-test('QA-05: History skeleton is visible early and no final standings table is present',()=>{
+test('QA-05: the real History panel and its skeleton paint before other competition panels',()=>{
  for(const competition of manifest.competitions){
   const html=read('competitions/'+competition.slug+'/index.html');
-  const early=html.indexOf('id="app-history-first-paint"');
-  const release=html.indexOf('data-fa-history-early-ready');
+  const history=html.indexOf('id="competition-panel-history"');
   const standings=html.indexOf('id="competition-panel-standings"');
-  const actual=html.indexOf('id="competition-panel-history"');
-  const handoff=html.indexOf('data-fa-history-early-handoff');
-  assert.ok(early>0&&early<release&&release<standings,competition.slug+' early History skeleton is released before Standings is parsed');
-  assert.ok(actual>standings&&handoff>actual,competition.slug+' History handoff follows the actual panel');
-  const preview=renderViewSkeleton(competition,'history').replace('data-competition-skeleton-root="history-preview"','data-competition-early-skeleton="history-preview"');
-  assert.ok(html.slice(early,standings).includes(preview),competition.slug+' early History skeleton mirrors reserved layout');
-  assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,competition.slug+' no History final table skeleton');
+  const skeleton=html.indexOf('data-competition-skeleton-root="history-preview"',history);
+  const ready=html.indexOf('data-fa-history-first-paint-ready',history);
+  assert.ok(history>0&&history<skeleton&&skeleton<ready&&ready<standings,
+   competition.slug+' true History skeleton is revealed before Standings HTML');
+  const preview=renderViewSkeleton(competition,'history');
+  assert.ok(html.slice(history,standings).includes(preview),competition.slug+' sole History skeleton reserves the actual panel geometry');
+  assert.ok(html.slice(history,standings).includes('document.getElementById("competition-panel-history").hidden=false'),
+   competition.slug+' parser-time History panel is unhidden before the other tabs');
+  assert.equal((html.match(/id="competition-panel-history"/g)||[]).length,1,competition.slug+' exactly one real History panel');
+  assert.doesNotMatch(html,/app-history-first-paint|data-fa-history-early-ready|data-fa-history-early-handoff/,
+   competition.slug+' never uses a temporary History shell and a synchronous handoff');
+  assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,
+   competition.slug+' no History final table skeleton');
   const css=html.match(/<style data-fa-competition-shell>([^<]+)<\/style>/)?.[1]||'';
-  assert.match(css,/#app-history-first-paint\{display:block!important\}/,competition.slug+' early History is visible');
   const visibilityGuard='html[data-fa-competition-prepaint]:not([data-competition-view="history"]) body{visibility:hidden}';
-  assert.ok(css.includes(visibilityGuard),competition.slug+' History must never be blocked by a whole-body prepaint gate');
-  assert.ok(!css.includes('html[data-fa-competition-prepaint] body{visibility:hidden}'),competition.slug+' no unconditional body hiding');
-  assert.ok(html.indexOf('id="competition-tab-history"') < early,competition.slug+' static tabs are parsed before the early History shell');
+  assert.ok(css.includes(visibilityGuard),competition.slug+' History must not be blocked by the body prepaint gate');
+  assert.ok(!css.includes('html[data-fa-competition-prepaint] body{visibility:hidden}'),
+   competition.slug+' no blanket body hiding');
+  assert.ok(html.indexOf('id="competition-tab-history"')<history,competition.slug+' static tabs precede History content');
  }
  assert.doesNotMatch(read('competitions/_shared/index.html'),/historyFinalLeagueTable|app-view-skeleton-history-table/);
  assert.doesNotMatch(read('assets/authoritative-history.mjs'),/section\.append\(table\)|make\('table'\)|Final league table/);

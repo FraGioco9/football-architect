@@ -122,6 +122,43 @@ try{
   assert.equal(await firstPage.locator('.app-competition-header').count(),pre.headers);
   results.push({head,scenario:'static-competition-pre-hydration',status:'PASS',path:cold.path,engine:'chromium'});
  }finally{unblock();await firstContext.close()}
+ // QA-05: the real History panel must be visibly painted before the deferred
+ // competition controller can hydrate it. Holding the script rules out a
+ // JS-driven skeleton appearing only after loading.
+ {
+  const historyConfig={...cold,path:'/competitions/it-1/history?season=1',width:390,height:844};
+  const historyContext=await fixtureContext(historyConfig),historyPage=await historyContext.newPage();
+  let release;const stalled=new Promise(resolve=>{release=resolve});
+  let seen;const intercepted=new Promise(resolve=>{seen=resolve});
+  try{
+   await historyContext.route('**/assets/competition-page.js',async route=>{
+    seen();await stalled;await route.continue();
+   });
+   await historyPage.goto(originFor(historyConfig)+historyConfig.path,{waitUntil:'commit',timeout:30000});
+   await intercepted;
+   await historyPage.locator('#competition-panel-history>.app-competition-view-skeleton').waitFor({state:'visible',timeout:12000});
+   const pre=await historyPage.evaluate(()=>{
+    const panel=document.querySelector('#competition-panel-history');
+    const skeleton=panel?.querySelector('.app-competition-view-skeleton');
+    const rect=skeleton?.getBoundingClientRect();
+    return {body:getComputedStyle(document.body).visibility,view:document.documentElement.dataset.competitionView,
+     panelHidden:panel?.hidden,header:document.querySelector('.app-competition-header')?.getBoundingClientRect().height||0,
+     tabs:document.querySelectorAll('.app-competition-tabs [role="tab"]').length,
+     skeletonWidth:rect?.width||0,skeletonHeight:rect?.height||0,temporary:document.querySelectorAll('#app-history-first-paint').length};
+   });
+   assert.equal(pre.body,'visible','History is not hidden behind whole-body prepaint');
+   assert.equal(pre.view,'history');
+   assert.equal(pre.panelHidden,false,'real History panel unhidden at parser time');
+   assert.equal(pre.tabs,7,'History tabs exist before hydration');
+   assert.equal(pre.temporary,0,'History never uses a short-lived duplicate shell');
+   assert.ok(pre.header>0&&pre.skeletonWidth>0&&pre.skeletonHeight>0,
+    'Header and History skeleton occupy visible space before controller hydration');
+   // Force browser paint and verify the shell survives without JS controller.
+   await historyPage.locator('#competition-panel-history>.app-competition-view-skeleton').screenshot({animations:'disabled',timeout:12000});
+   release();await historyPage.waitForLoadState('load',{timeout:30000});
+   results.push({head,scenario:'qa-05-history-visible-before-hydration',status:'PASS',path:historyConfig.path,engine:'chromium'});
+  }finally{release();await historyContext.close();}
+ }
  // One focused visual navigation test; existing SH-03/INT24 suites own season, source and stale-response semantics.
  const config=visualProfiles.find(v=>v.id==='standings'),ctx=await fixtureContext(config),page=await ctx.newPage();
  try{
