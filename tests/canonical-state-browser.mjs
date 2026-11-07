@@ -205,6 +205,10 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   const worldBeforeFocus=worldCalls;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   assert.equal(worldCalls,worldBeforeFocus,'focus must not poll /api/world');
+  // The DEV debug controls were opened earlier for the source transition.
+  // Close their modal backdrop before interacting with the real view tabs.
+  await page.locator('.fa-dev-widget-close').click();
+  await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-backdrop')?.hidden===true);
   const worldBeforeTabs=worldCalls;
   await page.locator('#competition-tab-fixtures').click();
   await page.locator('#competition-tab-stats').click();
@@ -220,6 +224,8 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   apiWorld={...world,revision:5,day:21};
   await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));
   await bounded(oldStarted,'season read after world revision advances');
+  // Reopen the controls only for the following Debug ON/OFF checks.
+  await page.locator('.fa-dev-widget-button').click();
   await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===2);
   assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
   apiWorld={...world,revision:6,day:22};
