@@ -271,6 +271,9 @@
     "backend/tests/auth-boundaries-runtime.test.ts": "backend-runtime",
     "tests/players-names-catalog.test.mjs": "site-node",
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
-    "tests/players-name-pools.test.mjs": "site-node"
+    "tests/players-name-pools.test.mjs": "site-node",
+    "tests/surnames-01-catalog.test.mjs": "site-node",
+    "backend/tests/footballer-public-projection-runtime.test.ts": "backend-runtime",
+    "backend/tests/footballer-internal-projection-runtime.test.ts": "backend-runtime"
   }
 }
