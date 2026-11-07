@@ -1310,6 +1310,10 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+/* The outer border owns the bottom edge even if extra rows are hidden.
+   Only visible following rows receive a separator, never the last visible row. */
+.app-view-skeleton-history-archive .app-history-dev-archive li{border-bottom:0}
+.app-view-skeleton-history-archive .app-history-dev-archive li:not([hidden])~li:not([hidden]){border-top:1px solid var(--line)}
 /* Archive skeleton reuses live crest footprint; the name bar spans crest + name. */
 .app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
 .app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}

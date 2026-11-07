@@ -351,6 +351,8 @@ async function renderHistoryPreview(){
    grid.append(empty);
   }
   records.append(panel.querySelector('[data-history-player-records]').cloneNode(true));
+  // History order: historical records first, completed-season archive below.
+  root.append(archive);
   if(!current())return;
   panel.querySelector(':scope > .app-history-dev')?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
   window.faHistorySetReady?.(true);

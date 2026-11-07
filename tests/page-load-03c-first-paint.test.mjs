@@ -43,7 +43,7 @@ test('PAGE-LOAD-03C: parser-time selected view exclusively unhides its panel',()
 
 function inspectHistoryPrepaint({debugEnabled,devSeason,progress}){
  let removed=0,emptyShown=0;
- const rows=Array.from({length:4},(_,i)=>({dataset:{skeletonArchiveRow:String(i)},hidden:false,cloneNode(){return {dataset:{...this.dataset},hidden:false,cloneNode:this.cloneNode}}}));
+ const rows=Array.from({length:1},(_,i)=>({dataset:{skeletonArchiveRow:String(i)},hidden:false,cloneNode(){return {dataset:{...this.dataset},hidden:false,cloneNode:this.cloneNode}}}));
  const archive={children:rows,querySelector:()=>rows[0],querySelectorAll:()=>[...rows],append:row=>rows.push(row)};
  const skeleton={dataset:{skeletonLastLeagueDay:'56',skeletonLeagueRounds:'30'},remove:()=>{removed++},replaceWith:()=>{},querySelector:sel=>sel==='.app-history-dev-archive'?archive:null};
  const empty={removeAttribute:()=>{emptyShown++}};
@@ -58,14 +58,14 @@ test('PAGE-LOAD-03C: Debug OFF uses the global world, never stale local Season 0
  const actual=inspectHistoryPrepaint({debugEnabled:false,devSeason:0,progress:{currentSeason:2,day:1}});
  assert.equal(actual.removed,0,'pending global History remains in its reserved structure');
  assert.equal(actual.emptyShown,0,'local Season 0 never leaks into public History');
- assert.deepEqual(actual.rows,[false,true,true,true],'global Season 2 reserves one completed season');
+ assert.deepEqual(actual.rows,[false],'global Season 2 reserves one completed season');
 });
 
 test('PAGE-LOAD-03C: unknown public clock remains pending; isolated Season 0 may be empty',()=>{
  const unknown=inspectHistoryPrepaint({debugEnabled:false,devSeason:0});
  assert.equal(unknown.removed,0);
  assert.equal(unknown.emptyShown,0,'unknown public season is not confirmed empty');
- assert.deepEqual(unknown.rows,[false,false,false,false],'unknown clock retains reserved archive bars');
+ assert.deepEqual(unknown.rows,[false],'unknown clock keeps exactly one archive row until completed-season count is known');
  const isolated=inspectHistoryPrepaint({debugEnabled:true,devSeason:0});
  assert.equal(isolated.removed,1,'explicit isolated Season 0 has a confirmed static-empty state');
  assert.equal(isolated.emptyShown,1);

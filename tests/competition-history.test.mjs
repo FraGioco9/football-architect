@@ -480,3 +480,13 @@ test('Restoring debug waits for History before completing the first-paint releas
  assert.equal(settled,false,'The preview must not reveal the shorter empty History before its populated layout is ready');
  finishHistory();assert.equal(await pending,true);
 });
+
+
+test('loaded DEV History mounts Historical records before Season archive without affecting season links',()=>{
+ const makeArchive=client.indexOf('  const archive=section("historySeasonArchive"');
+ const makeRecords=client.indexOf('  const records=section("historyHistoricalRecords"',makeArchive);
+ const reappend=client.indexOf('root.append(archive);',makeRecords);
+ const commit=client.indexOf('panel.append(root);',makeRecords);
+ assert.ok(makeArchive>0&&makeRecords>makeArchive&&reappend>makeRecords&&commit>reappend,
+  'the archive is moved below the completed records just before committing the preview DOM');
+});

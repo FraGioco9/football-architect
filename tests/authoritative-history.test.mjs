@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {historyViewModel} from '../assets/authoritative-history.mjs';
 const club={countryId:'IT',clubId:1,primaryName:'Test club'};
 const row={club,played:30,won:20,drawn:5,lost:5,gf:60,ga:20,gd:40,pts:65,recent:[]};
@@ -14,4 +15,11 @@ test('refuses unknown historical champion and preserves unavailable player/all-t
 });
 test('keeps selected Season1 history when actual world advances into active Season2',()=>{
  const c=context();c.seasonData.world={phase:'active',seasonNumber:2,day:1};c.seasonData.seasonState={phase:'closed',day:56};assert.equal(historyViewModel(c).season,1);
+});
+
+test('authoritative Hall of Champions replaces only the archive, not the Historical records section',()=>{
+ const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
+ assert.match(source,/panel\.querySelector\('\[data-history-empty\] \[data-app-i18n="historySeasonArchive"\]'\)\?\.closest\('\.app-history-dev-section'\)/,
+  'archive lookup must not accidentally target the reordered first records section');
+ assert.doesNotMatch(source,/panel\.querySelector\('\[data-history-empty\] > section'\)/);
 });

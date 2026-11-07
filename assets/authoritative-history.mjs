@@ -13,7 +13,7 @@ export function historyViewModel(context){
 }
 const copy={en:['Hall of Champions','Season'],it:['Albo dei campioni','Stagione'],de:['Meisterliste','Saison'],es:['Palmarés de campeones','Temporada'],fr:['Palmarès des champions','Saison']};
 export function mountAuthoritativeHistory(panel,{getContext,document=globalThis.document,refreshRecords=()=>{}}){
- const placeholder=panel.querySelector('[data-history-empty] > section'),section=document.createElement('section');
+ const placeholder=panel.querySelector('[data-history-empty] [data-app-i18n="historySeasonArchive"]')?.closest('.app-history-dev-section'),section=document.createElement('section');
  section.className='app-history-dev-section';section.dataset.authoritativeHistory='';section.hidden=true;placeholder?.before(section);
  const cards=[...panel.querySelectorAll('[data-history-team-records] [data-history-scope="season"]')].map(node=>({node,html:node.innerHTML}));
  const make=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);return node};
