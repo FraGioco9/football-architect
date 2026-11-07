@@ -1,0 +1,41 @@
+name: Player Names Realism QA (Node 22)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/players-names-realism-qa.mjs
+      - .github/workflows/players-names-realism-qa.yml
+permissions:
+  contents: read
+concurrency:
+  group: names-realism-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  names-realism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR head
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate catalog evidence
+        run: |
+          node --check tools/players-names-realism-qa.mjs
+          node tools/players-names-realism-qa.mjs --self-test
+          mkdir -p "$RUNNER_TEMP/names-realism"
+          node tools/players-names-realism-qa.mjs --json "$RUNNER_TEMP/names-realism/names-realism-01.json" --markdown "$RUNNER_TEMP/names-realism/names-realism-01.md"
+      - name: Store read-only evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: names-realism-01
+          path: ${{ runner.temp }}/names-realism/
+          if-no-files-found: error
+          retention-days: 7
