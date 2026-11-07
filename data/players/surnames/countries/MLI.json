@@ -1,0 +1,4608 @@
+{
+  "schema_version": 1,
+  "code": "MLI",
+  "kind": "surnames",
+  "selection_policy": "uniform",
+  "sources": [
+    {
+      "id": "forebears-ml",
+      "url": "https://forebears.io/mali/surnames",
+      "territory": "Mali",
+      "coverage": "Country-specific surname table, estimated 2014 national bearer incidence; original displayed 195 surname rows",
+      "limitations": "Third-party model, not an official civil registry; estimated incidences omitted; could contain spelling and given-name ambiguities; no verified redistribution licence."
+    },
+    {
+      "id": "forebears-snapshot",
+      "url": "https://github.com/p-svacha/ProceduralTextGeneration/blob/4ccc1dbecd5d072251a0f10cc96f3a371199181b/Assets/Resources/Geographical/surnames/mali_surnames.txt",
+      "territory": "Mali",
+      "source_blob_sha": "4e7ebc6b80c70783109ac2b824aabe56d57e456e",
+      "coverage": "Pinned archival extraction of 195 country-specific Forebears surname entries",
+      "limitations": "Snapshot is not an independently sampled population or proof of licence."
+    },
+    {
+      "id": "globalsurnames-ml",
+      "url": "https://globalsurnames.com/en/ml",
+      "territory": "Mali",
+      "coverage": "Mali-specific ranking, supplementary published last-name entries, ranks 196 through approximately 655",
+      "limitations": "Estimated/private data, not a civil registry; methodology and licence unverified; names also used as given names are retained only where this source labels them as surnames; no numeric frequencies used."
+    },
+    {
+      "id": "locatefamily-geographic-2019",
+      "url": "https://github.com/SajjadPourali/Surnames/blob/183d75a675dcd45973a6422b34ee6bb302cc27b0/withoutStatistics/ml.txt",
+      "territory": "Mali",
+      "source_blob_sha": "1f12300be7e7a0205cea167e3ab8d94177dd6f66",
+      "coverage": "Country-specific last-name column indexed from 2019 locatefamily.com geographic listings and published by SajjadPourali/Surnames; does not claim national coverage.",
+      "limitations": "Sparse secondary Mali-geographic sample, includes non-surname business strings, given-name ambiguity and errors. Clear non-name entries removed, but the remaining values are not individually independently corroborated. This does NOT support filling 3000 without invention. Upstream data rights unclear despite the mirror's MIT license. Research only."
+    },
+    {
+      "id": "bamadaba-malian-clan-lexicon",
+      "url": "https://github.com/maslinych/bamadaba/blob/0e950f4ea9f23f4c138fe7958d14d6eb6e88f07d/jamuw.txt",
+      "territory": "Mali: Bambara-language clan-name dictionary, with Mali-specific locales and neighboring-language notes; not a national population register",
+      "source_blob_sha": "73b68b514a155a12f704c2de2b97c8ac40347fcc",
+      "coverage": "393 distinct \\lx entries of clan names labeled \\gf NOM.CL in Bamadaba jamuw v0.3, including Bambara/Dogon/Soninké/Peul/Malinké traditions. When present, published French or Latin spelling variants are preferred; one name per clan entry, aliases checked for duplicates.",
+      "limitations": "A clan-name lexicon is not direct person-level proof of Malian nationality or current residence. Some groups are transnational; tonal Bambara orthography differs from civil-register French spelling. Dictionary described as CC BY-NC-SA; noncommercial/sharealike conditions require licence review before reuse; research only."
+    },
+    {
+      "id": "malian-family-clan-community-records",
+      "url": "https://github.com/foussdjenika/familynames/blob/a39721eaaa4aed59e4396148758324fdf2af35cf/familynames.json",
+      "territory": "Mali-centered family-name collection, grouped by Dogon, Soninké, Bozo, Bambara and other communities; explicit foreign-country labels excluded",
+      "source_blob_sha": "bb48ec5e1b54210952f61e2716a68c6435593893",
+      "coverage": "Published names of families with source-provided community/ethnic labels. Only single attested value spellings, not slash-separated synonyms, interpreted as names; no invented forms.",
+      "limitations": "Community labels are not proof of Malian citizenship/residence of a specific bearer. Cross-border communities may be represented. Author's database gives no independently verified sampling methodology or explicit dataset licence. Manual person-level audit and redistribution-rights clearance mandatory; research only. Batch H ranking policy (2026-11-06): target 1000 surnames; 1517 existing research entries retained; 517 above target. Count is not individual surname or national-residency certification; retain production_ready=false."
+    }
+  ],
+  "surnames": [
+    {
+      "value": "Traore"
+    },
+    {
+      "value": "Coulibaly"
+    },
+    {
+      "value": "Diarra"
+    },
+    {
+      "value": "Dembele"
+    },
+    {
+      "value": "Diallo"
+    },
+    {
+      "value": "Kone"
+    },
+    {
+      "value": "Keita"
+    },
+    {
+      "value": "Sidibe"
+    },
+    {
+      "value": "Toure"
+    },
+    {
+      "value": "Doumbia"
+    },
+    {
+      "value": "Diakite"
+    },
+    {
+      "value": "Cisse"
+    },
+    {
+      "value": "Maiga"
+    },
+    {
+      "value": "Konate"
+    },
+    {
+      "value": "Samake"
+    },
+    {
+      "value": "Sangare"
+    },
+    {
+      "value": "Sissoko"
+    },
+    {
+      "value": "Sanogo"
+    },
+    {
+      "value": "Camara"
+    },
+    {
+      "value": "Guindo"
+    },
+    {
+      "value": "Fofana"
+    },
+    {
+      "value": "Sacko"
+    },
+    {
+      "value": "Bagayoko"
+    },
+    {
+      "value": "Sylla"
+    },
+    {
+      "value": "Diawara"
+    },
+    {
+      "value": "Berthe"
+    },
+    {
+      "value": "Togo"
+    },
+    {
+      "value": "Diabate"
+    },
+    {
+      "value": "Kante"
+    },
+    {
+      "value": "Tangara"
+    },
+    {
+      "value": "Dao"
+    },
+    {
+      "value": "Togola"
+    },
+    {
+      "value": "Dicko"
+    },
+    {
+      "value": "Goïta"
+    },
+    {
+      "value": "Haidara"
+    },
+    {
+      "value": "Ouattara"
+    },
+    {
+      "value": "Ballo"
+    },
+    {
+      "value": "Sow"
+    },
+    {
+      "value": "Bah"
+    },
+    {
+      "value": "Kane"
+    },
+    {
+      "value": "Tounkara"
+    },
+    {
+      "value": "Mariko"
+    },
+    {
+      "value": "Doucoure"
+    },
+    {
+      "value": "Malle"
+    },
+    {
+      "value": "Daou"
+    },
+    {
+      "value": "Sogoba"
+    },
+    {
+      "value": "Fomba"
+    },
+    {
+      "value": "Bouare"
+    },
+    {
+      "value": "Fane"
+    },
+    {
+      "value": "Kouyate"
+    },
+    {
+      "value": "Diaby"
+    },
+    {
+      "value": "Drame"
+    },
+    {
+      "value": "Sagara"
+    },
+    {
+      "value": "Kamissoko"
+    },
+    {
+      "value": "Djire"
+    },
+    {
+      "value": "N'Diaye"
+    },
+    {
+      "value": "Konare"
+    },
+    {
+      "value": "Barry"
+    },
+    {
+      "value": "Bengaly"
+    },
+    {
+      "value": "Koita"
+    },
+    {
+      "value": "Bamba"
+    },
+    {
+      "value": "Dolo"
+    },
+    {
+      "value": "Niare"
+    },
+    {
+      "value": "Sogodogo"
+    },
+    {
+      "value": "Kanoute"
+    },
+    {
+      "value": "Bocoum"
+    },
+    {
+      "value": "Soumare"
+    },
+    {
+      "value": "Bathily"
+    },
+    {
+      "value": "Thera"
+    },
+    {
+      "value": "Kamate"
+    },
+    {
+      "value": "Ba"
+    },
+    {
+      "value": "Ouologuem"
+    },
+    {
+      "value": "Yattara"
+    },
+    {
+      "value": "Sy"
+    },
+    {
+      "value": "Kouma"
+    },
+    {
+      "value": "Kodio"
+    },
+    {
+      "value": "Simpara"
+    },
+    {
+      "value": "Tamboura"
+    },
+    {
+      "value": "Dabo"
+    },
+    {
+      "value": "Bagayogo"
+    },
+    {
+      "value": "Kassogue"
+    },
+    {
+      "value": "Dakouo"
+    },
+    {
+      "value": "Douyon"
+    },
+    {
+      "value": "Poudiougo"
+    },
+    {
+      "value": "Sanou"
+    },
+    {
+      "value": "Diop"
+    },
+    {
+      "value": "Thiam"
+    },
+    {
+      "value": "Diamoutene"
+    },
+    {
+      "value": "Ongoiba"
+    },
+    {
+      "value": "Dia"
+    },
+    {
+      "value": "Tall"
+    },
+    {
+      "value": "Mohamed"
+    },
+    {
+      "value": "Magassa"
+    },
+    {
+      "value": "Yalcouye"
+    },
+    {
+      "value": "Diane"
+    },
+    {
+      "value": "Cissouma"
+    },
+    {
+      "value": "Siby"
+    },
+    {
+      "value": "Tembely"
+    },
+    {
+      "value": "Macalou"
+    },
+    {
+      "value": "Tolo"
+    },
+    {
+      "value": "Konta"
+    },
+    {
+      "value": "Mounkoro"
+    },
+    {
+      "value": "Djiguiba"
+    },
+    {
+      "value": "Koumare"
+    },
+    {
+      "value": "Marico"
+    },
+    {
+      "value": "Coumare"
+    },
+    {
+      "value": "Tessougue"
+    },
+    {
+      "value": "Dara"
+    },
+    {
+      "value": "Kassambara"
+    },
+    {
+      "value": "Cissoko"
+    },
+    {
+      "value": "Konte"
+    },
+    {
+      "value": "Kebe"
+    },
+    {
+      "value": "Thiero"
+    },
+    {
+      "value": "Niambele"
+    },
+    {
+      "value": "Saye"
+    },
+    {
+      "value": "Dougnon"
+    },
+    {
+      "value": "Ibrahim"
+    },
+    {
+      "value": "Karembe"
+    },
+    {
+      "value": "Arama"
+    },
+    {
+      "value": "Abdoulaye"
+    },
+    {
+      "value": "Sinayoko"
+    },
+    {
+      "value": "Nimaga"
+    },
+    {
+      "value": "Niang"
+    },
+    {
+      "value": "Bore"
+    },
+    {
+      "value": "Magassouba"
+    },
+    {
+      "value": "Wague"
+    },
+    {
+      "value": "Ly"
+    },
+    {
+      "value": "Ouedraogo"
+    },
+    {
+      "value": "Sall"
+    },
+    {
+      "value": "Doumbo"
+    },
+    {
+      "value": "Niangaly"
+    },
+    {
+      "value": "Tapily"
+    },
+    {
+      "value": "Teme"
+    },
+    {
+      "value": "Soumaoro"
+    },
+    {
+      "value": "Niakate"
+    },
+    {
+      "value": "Traor"
+    },
+    {
+      "value": "Moussa"
+    },
+    {
+      "value": "Kansaye"
+    },
+    {
+      "value": "Baby"
+    },
+    {
+      "value": "Diassana"
+    },
+    {
+      "value": "Soumano"
+    },
+    {
+      "value": "Boire"
+    },
+    {
+      "value": "Gakou"
+    },
+    {
+      "value": "Mahamane"
+    },
+    {
+      "value": "Danioko"
+    },
+    {
+      "value": "Nantoume"
+    },
+    {
+      "value": "Baradji"
+    },
+    {
+      "value": "Dissa"
+    },
+    {
+      "value": "Samassekou"
+    },
+    {
+      "value": "Sountoura"
+    },
+    {
+      "value": "Alassane"
+    },
+    {
+      "value": "Soukouna"
+    },
+    {
+      "value": "Dansoko"
+    },
+    {
+      "value": "Sogore"
+    },
+    {
+      "value": "Tandia"
+    },
+    {
+      "value": "Kaba"
+    },
+    {
+      "value": "Gassama"
+    },
+    {
+      "value": "Senou"
+    },
+    {
+      "value": "Telly"
+    },
+    {
+      "value": "Goro"
+    },
+    {
+      "value": "Kanta"
+    },
+    {
+      "value": "Yattassaye"
+    },
+    {
+      "value": "Makadji"
+    },
+    {
+      "value": "Niangadou"
+    },
+    {
+      "value": "Samassa"
+    },
+    {
+      "value": "Ouedrago"
+    },
+    {
+      "value": "Dagnoko"
+    },
+    {
+      "value": "Fadiga"
+    },
+    {
+      "value": "Guirou"
+    },
+    {
+      "value": "Tambadou"
+    },
+    {
+      "value": "Sawadogo"
+    },
+    {
+      "value": "Tigana"
+    },
+    {
+      "value": "Sangho"
+    },
+    {
+      "value": "Oumar"
+    },
+    {
+      "value": "Kontao"
+    },
+    {
+      "value": "Dagnon"
+    },
+    {
+      "value": "Poudiougou"
+    },
+    {
+      "value": "Dabou"
+    },
+    {
+      "value": "Diagouraga"
+    },
+    {
+      "value": "Perou"
+    },
+    {
+      "value": "Djimde"
+    },
+    {
+      "value": "Minta"
+    },
+    {
+      "value": "Sankare"
+    },
+    {
+      "value": "Drabo"
+    },
+    {
+      "value": "Souare"
+    },
+    {
+      "value": "Gueye"
+    },
+    {
+      "value": "Dena"
+    },
+    {
+      "value": "Bayoko"
+    },
+    {
+      "value": "Togora"
+    },
+    {
+      "value": "Diall"
+    },
+    {
+      "value": "Zerbo"
+    },
+    {
+      "value": "Tandina"
+    },
+    {
+      "value": "Nomoko"
+    },
+    {
+      "value": "Lah"
+    },
+    {
+      "value": "Bolly"
+    },
+    {
+      "value": "Idrissa"
+    },
+    {
+      "value": "Kampo"
+    },
+    {
+      "value": "Dama"
+    },
+    {
+      "value": "Mangane"
+    },
+    {
+      "value": "Abdou"
+    },
+    {
+      "value": "Arby"
+    },
+    {
+      "value": "Mahamadou"
+    },
+    {
+      "value": "Diao"
+    },
+    {
+      "value": "Boubacar"
+    },
+    {
+      "value": "Kounta"
+    },
+    {
+      "value": "Djibo"
+    },
+    {
+      "value": "Amadou"
+    },
+    {
+      "value": "Sako"
+    },
+    {
+      "value": "Fall"
+    },
+    {
+      "value": "Sarre"
+    },
+    {
+      "value": "Kondo"
+    },
+    {
+      "value": "Kamite"
+    },
+    {
+      "value": "Sarr"
+    },
+    {
+      "value": "Balde"
+    },
+    {
+      "value": "Kon"
+    },
+    {
+      "value": "Gana"
+    },
+    {
+      "value": "Alhousseini"
+    },
+    {
+      "value": "Singare"
+    },
+    {
+      "value": "Kourouma"
+    },
+    {
+      "value": "Soumbounou"
+    },
+    {
+      "value": "Katile"
+    },
+    {
+      "value": "Dramera"
+    },
+    {
+      "value": "Marega"
+    },
+    {
+      "value": "Samoura"
+    },
+    {
+      "value": "Yossi"
+    },
+    {
+      "value": "Diarrassouba"
+    },
+    {
+      "value": "Diarisso"
+    },
+    {
+      "value": "N'daou"
+    },
+    {
+      "value": "Dante"
+    },
+    {
+      "value": "Diakit"
+    },
+    {
+      "value": "Plea"
+    },
+    {
+      "value": "Dianka"
+    },
+    {
+      "value": "Kiabou"
+    },
+    {
+      "value": "Napo"
+    },
+    {
+      "value": "Guisse"
+    },
+    {
+      "value": "Semega"
+    },
+    {
+      "value": "Baba"
+    },
+    {
+      "value": "Djenepo"
+    },
+    {
+      "value": "Toloba"
+    },
+    {
+      "value": "Diaw"
+    },
+    {
+      "value": "Aliou"
+    },
+    {
+      "value": "Nadio"
+    },
+    {
+      "value": "Mangara"
+    },
+    {
+      "value": "Barro"
+    },
+    {
+      "value": "Santara"
+    },
+    {
+      "value": "Danfaga"
+    },
+    {
+      "value": "Dem"
+    },
+    {
+      "value": "Sissako"
+    },
+    {
+      "value": "Baya"
+    },
+    {
+      "value": "Ciss"
+    },
+    {
+      "value": "Koite"
+    },
+    {
+      "value": "Dioni"
+    },
+    {
+      "value": "Gamby"
+    },
+    {
+      "value": "Kienou"
+    },
+    {
+      "value": "Tirera"
+    },
+    {
+      "value": "Timbo"
+    },
+    {
+      "value": "Daffe"
+    },
+    {
+      "value": "Djikine"
+    },
+    {
+      "value": "Savane"
+    },
+    {
+      "value": "Djigue"
+    },
+    {
+      "value": "Seck"
+    },
+    {
+      "value": "Ahmed"
+    },
+    {
+      "value": "Aya"
+    },
+    {
+      "value": "Deme"
+    },
+    {
+      "value": "Yara"
+    },
+    {
+      "value": "Faye"
+    },
+    {
+      "value": "Kaloga"
+    },
+    {
+      "value": "Degoga"
+    },
+    {
+      "value": "Kantako"
+    },
+    {
+      "value": "Diaoune"
+    },
+    {
+      "value": "Hamma"
+    },
+    {
+      "value": "Drago"
+    },
+    {
+      "value": "Kasse"
+    },
+    {
+      "value": "Gary"
+    },
+    {
+      "value": "Tienou"
+    },
+    {
+      "value": "Ouane"
+    },
+    {
+      "value": "Diabira"
+    },
+    {
+      "value": "Kamara"
+    },
+    {
+      "value": "Sangar"
+    },
+    {
+      "value": "Denou"
+    },
+    {
+      "value": "Denon"
+    },
+    {
+      "value": "Daniogo"
+    },
+    {
+      "value": "Alhassane"
+    },
+    {
+      "value": "Sinayogo"
+    },
+    {
+      "value": "Samate"
+    },
+    {
+      "value": "Hamidou"
+    },
+    {
+      "value": "Dioma"
+    },
+    {
+      "value": "Barre"
+    },
+    {
+      "value": "Anne"
+    },
+    {
+      "value": "Koroma"
+    },
+    {
+      "value": "Sougoule"
+    },
+    {
+      "value": "Dansira"
+    },
+    {
+      "value": "Seydou"
+    },
+    {
+      "value": "Demba"
+    },
+    {
+      "value": "Damba"
+    },
+    {
+      "value": "Sidi"
+    },
+    {
+      "value": "Bere"
+    },
+    {
+      "value": "Conde"
+    },
+    {
+      "value": "Ganame"
+    },
+    {
+      "value": "Kangama"
+    },
+    {
+      "value": "M'baye"
+    },
+    {
+      "value": "Boly"
+    },
+    {
+      "value": "Diombera"
+    },
+    {
+      "value": "Kene"
+    },
+    {
+      "value": "Wane"
+    },
+    {
+      "value": "Agaly"
+    },
+    {
+      "value": "Savadogo"
+    },
+    {
+      "value": "Diagne"
+    },
+    {
+      "value": "Ali"
+    },
+    {
+      "value": "Bilal"
+    },
+    {
+      "value": "Souleymane"
+    },
+    {
+      "value": "Adama"
+    },
+    {
+      "value": "Bane"
+    },
+    {
+      "value": "Yaro"
+    },
+    {
+      "value": "Ahmadou"
+    },
+    {
+      "value": "Saounera"
+    },
+    {
+      "value": "Tandjigora"
+    },
+    {
+      "value": "Diouf"
+    },
+    {
+      "value": "Kaya"
+    },
+    {
+      "value": "Harouna"
+    },
+    {
+      "value": "Mossa"
+    },
+    {
+      "value": "Moro"
+    },
+    {
+      "value": "Din"
+    },
+    {
+      "value": "Kantao"
+    },
+    {
+      "value": "Lougue"
+    },
+    {
+      "value": "Konde"
+    },
+    {
+      "value": "Issa"
+    },
+    {
+      "value": "Sam"
+    },
+    {
+      "value": "Dacko"
+    },
+    {
+      "value": "Kolo"
+    },
+    {
+      "value": "Belem"
+    },
+    {
+      "value": "Gadiaga"
+    },
+    {
+      "value": "Gandega"
+    },
+    {
+      "value": "Badiaga"
+    },
+    {
+      "value": "Bakayoko"
+    },
+    {
+      "value": "Bassoum"
+    },
+    {
+      "value": "Goumane"
+    },
+    {
+      "value": "Bomba"
+    },
+    {
+      "value": "Aly"
+    },
+    {
+      "value": "Sao"
+    },
+    {
+      "value": "Diepkile"
+    },
+    {
+      "value": "Sereme"
+    },
+    {
+      "value": "Yaffa"
+    },
+    {
+      "value": "Hama"
+    },
+    {
+      "value": "Gory"
+    },
+    {
+      "value": "Kida"
+    },
+    {
+      "value": "Pare"
+    },
+    {
+      "value": "Konat"
+    },
+    {
+      "value": "Boune"
+    },
+    {
+      "value": "Dieng"
+    },
+    {
+      "value": "Dione"
+    },
+    {
+      "value": "Daff"
+    },
+    {
+      "value": "Maga"
+    },
+    {
+      "value": "Tanou"
+    },
+    {
+      "value": "Mahmoud"
+    },
+    {
+      "value": "Berete"
+    },
+    {
+      "value": "Toe"
+    },
+    {
+      "value": "Zonou"
+    },
+    {
+      "value": "Sabe"
+    },
+    {
+      "value": "Bayo"
+    },
+    {
+      "value": "Hanne"
+    },
+    {
+      "value": "Sakho"
+    },
+    {
+      "value": "Diouara"
+    },
+    {
+      "value": "Gassamba"
+    },
+    {
+      "value": "Sawane"
+    },
+    {
+      "value": "Ky"
+    },
+    {
+      "value": "Dibo"
+    },
+    {
+      "value": "Wangara"
+    },
+    {
+      "value": "Halidou"
+    },
+    {
+      "value": "Diancoumba"
+    },
+    {
+      "value": "Wattara"
+    },
+    {
+      "value": "Sene"
+    },
+    {
+      "value": "Kanadji"
+    },
+    {
+      "value": "Coulibali"
+    },
+    {
+      "value": "Kamia"
+    },
+    {
+      "value": "Youssouf"
+    },
+    {
+      "value": "Sakiliba"
+    },
+    {
+      "value": "Makalou"
+    },
+    {
+      "value": "Niane"
+    },
+    {
+      "value": "Kayentao"
+    },
+    {
+      "value": "Dagno"
+    },
+    {
+      "value": "Kamena"
+    },
+    {
+      "value": "Nango"
+    },
+    {
+      "value": "Guire"
+    },
+    {
+      "value": "Sarro"
+    },
+    {
+      "value": "Gambi"
+    },
+    {
+      "value": "Ibrahima"
+    },
+    {
+      "value": "Issiaka"
+    },
+    {
+      "value": "Nabo"
+    },
+    {
+      "value": "Yacouba"
+    },
+    {
+      "value": "Djibrilla"
+    },
+    {
+      "value": "Kagnassy"
+    },
+    {
+      "value": "Boite"
+    },
+    {
+      "value": "Bello"
+    },
+    {
+      "value": "Soumahoro"
+    },
+    {
+      "value": "Pona"
+    },
+    {
+      "value": "Tiama"
+    },
+    {
+      "value": "Konandji"
+    },
+    {
+      "value": "Dagnogo"
+    },
+    {
+      "value": "Draba"
+    },
+    {
+      "value": "Pamateck"
+    },
+    {
+      "value": "Timite"
+    },
+    {
+      "value": "Gackou"
+    },
+    {
+      "value": "Soumana"
+    },
+    {
+      "value": "Tina"
+    },
+    {
+      "value": "Kalle"
+    },
+    {
+      "value": "Kabore"
+    },
+    {
+      "value": "Kindo"
+    },
+    {
+      "value": "Sarl"
+    },
+    {
+      "value": "Sissao"
+    },
+    {
+      "value": "Taboure"
+    },
+    {
+      "value": "Boundy"
+    },
+    {
+      "value": "Daouda"
+    },
+    {
+      "value": "Sadou"
+    },
+    {
+      "value": "Ould"
+    },
+    {
+      "value": "Sarra"
+    },
+    {
+      "value": "Zorome"
+    },
+    {
+      "value": "Doucara"
+    },
+    {
+      "value": "Ganaba"
+    },
+    {
+      "value": "Diako"
+    },
+    {
+      "value": "Wele"
+    },
+    {
+      "value": "Oumarou"
+    },
+    {
+      "value": "Warme"
+    },
+    {
+      "value": "Moulaye"
+    },
+    {
+      "value": "Sery"
+    },
+    {
+      "value": "Saloum"
+    },
+    {
+      "value": "Sima"
+    },
+    {
+      "value": "Mara"
+    },
+    {
+      "value": "Gaba"
+    },
+    {
+      "value": "Berte"
+    },
+    {
+      "value": "Cap"
+    },
+    {
+      "value": "Sanga"
+    },
+    {
+      "value": "Yattabare"
+    },
+    {
+      "value": "Kanadjigui"
+    },
+    {
+      "value": "Yehia"
+    },
+    {
+      "value": "Aw"
+    },
+    {
+      "value": "Macina"
+    },
+    {
+      "value": "Aboubacar"
+    },
+    {
+      "value": "Songomo"
+    },
+    {
+      "value": "Almoustapha"
+    },
+    {
+      "value": "Diango"
+    },
+    {
+      "value": "Bangoura"
+    },
+    {
+      "value": "Lamine"
+    },
+    {
+      "value": "Kome"
+    },
+    {
+      "value": "Gano"
+    },
+    {
+      "value": "Yebedie"
+    },
+    {
+      "value": "Tamega"
+    },
+    {
+      "value": "Terera"
+    },
+    {
+      "value": "Soro"
+    },
+    {
+      "value": "Balam"
+    },
+    {
+      "value": "Diamond"
+    },
+    {
+      "value": "Koffi"
+    },
+    {
+      "value": "Issouf"
+    },
+    {
+      "value": "Sanoko"
+    },
+    {
+      "value": "Younoussa"
+    },
+    {
+      "value": "Koussoube"
+    },
+    {
+      "value": "Bambera"
+    },
+    {
+      "value": "Dibassy"
+    },
+    {
+      "value": "Yanogo"
+    },
+    {
+      "value": "Kant"
+    },
+    {
+      "value": "Bangaly"
+    },
+    {
+      "value": "Azar"
+    },
+    {
+      "value": "Fainke"
+    },
+    {
+      "value": "Were"
+    },
+    {
+      "value": "Hassane"
+    },
+    {
+      "value": "Abdoulahi"
+    },
+    {
+      "value": "Bathe"
+    },
+    {
+      "value": "Hamadi"
+    },
+    {
+      "value": "Korera"
+    },
+    {
+      "value": "Zongo"
+    },
+    {
+      "value": "Seye"
+    },
+    {
+      "value": "Bagaga"
+    },
+    {
+      "value": "Moukoro"
+    },
+    {
+      "value": "Nouhou"
+    },
+    {
+      "value": "Balayira"
+    },
+    {
+      "value": "Niafo"
+    },
+    {
+      "value": "Diagana"
+    },
+    {
+      "value": "Soumaila"
+    },
+    {
+      "value": "Konda"
+    },
+    {
+      "value": "Thiao"
+    },
+    {
+      "value": "Mamadou"
+    },
+    {
+      "value": "Minthe"
+    },
+    {
+      "value": "Salihou"
+    },
+    {
+      "value": "Yare"
+    },
+    {
+      "value": "Maouloud"
+    },
+    {
+      "value": "Djiga"
+    },
+    {
+      "value": "Bagaya"
+    },
+    {
+      "value": "Dembaga"
+    },
+    {
+      "value": "Yao"
+    },
+    {
+      "value": "Khalil"
+    },
+    {
+      "value": "Kote"
+    },
+    {
+      "value": "Fissourou"
+    },
+    {
+      "value": "Mama"
+    },
+    {
+      "value": "Keta"
+    },
+    {
+      "value": "Kouassi"
+    },
+    {
+      "value": "Dionou"
+    },
+    {
+      "value": "Porgo"
+    },
+    {
+      "value": "Diarre"
+    },
+    {
+      "value": "Diambou"
+    },
+    {
+      "value": "Bocar"
+    },
+    {
+      "value": "Zomahoun"
+    },
+    {
+      "value": "Ousmane"
+    },
+    {
+      "value": "Badra"
+    },
+    {
+      "value": "Gondo"
+    },
+    {
+      "value": "Sekou"
+    },
+    {
+      "value": "Moulekafou"
+    },
+    {
+      "value": "Koureissi"
+    },
+    {
+      "value": "Sa"
+    },
+    {
+      "value": "Soungalo"
+    },
+    {
+      "value": "Attisso"
+    },
+    {
+      "value": "Fousseyni"
+    },
+    {
+      "value": "Hmam"
+    },
+    {
+      "value": "Menta"
+    },
+    {
+      "value": "Cheick"
+    },
+    {
+      "value": "Becamo"
+    },
+    {
+      "value": "Biro"
+    },
+    {
+      "value": "Yacoubou"
+    },
+    {
+      "value": "Touko"
+    },
+    {
+      "value": "Stevance"
+    },
+    {
+      "value": "Sakaly"
+    },
+    {
+      "value": "Samuel"
+    },
+    {
+      "value": "Alidou"
+    },
+    {
+      "value": "Awougno"
+    },
+    {
+      "value": "Abdrahamane"
+    },
+    {
+      "value": "Fares"
+    },
+    {
+      "value": "Haneefa"
+    },
+    {
+      "value": "Hane"
+    },
+    {
+      "value": "Modibo"
+    },
+    {
+      "value": "Djeneba"
+    },
+    {
+      "value": "Edmon"
+    },
+    {
+      "value": "Bintou"
+    },
+    {
+      "value": "Bankineza"
+    },
+    {
+      "value": "Lassana"
+    },
+    {
+      "value": "Yaressi"
+    },
+    {
+      "value": "Renouveau"
+    },
+    {
+      "value": "Rabadan"
+    },
+    {
+      "value": "Rida"
+    },
+    {
+      "value": "Ismael"
+    },
+    {
+      "value": "Ismail"
+    },
+    {
+      "value": "Gie"
+    },
+    {
+      "value": "Gesam"
+    },
+    {
+      "value": "Zeinaba"
+    },
+    {
+      "value": "Toumi"
+    },
+    {
+      "value": "Tudos"
+    },
+    {
+      "value": "Tapo"
+    },
+    {
+      "value": "Seuyong"
+    },
+    {
+      "value": "Salikou"
+    },
+    {
+      "value": "Sud"
+    },
+    {
+      "value": "Seybou"
+    },
+    {
+      "value": "Siaka"
+    },
+    {
+      "value": "Askofare"
+    },
+    {
+      "value": "Abdoul"
+    },
+    {
+      "value": "Abdoulatif"
+    },
+    {
+      "value": "Abbas"
+    },
+    {
+      "value": "Akouete"
+    },
+    {
+      "value": "Ayach"
+    },
+    {
+      "value": "Abdramane"
+    },
+    {
+      "value": "Abba"
+    },
+    {
+      "value": "Alpha"
+    },
+    {
+      "value": "Antoine"
+    },
+    {
+      "value": "Frantz"
+    },
+    {
+      "value": "Osman"
+    },
+    {
+      "value": "Ovchinnikov"
+    },
+    {
+      "value": "Mendoza"
+    },
+    {
+      "value": "Malitique"
+    },
+    {
+      "value": "Mouctar"
+    },
+    {
+      "value": "Michael"
+    },
+    {
+      "value": "Couriba"
+    },
+    {
+      "value": "Curie"
+    },
+    {
+      "value": "Czaplinski"
+    },
+    {
+      "value": "Voyage"
+    },
+    {
+      "value": "Bakouan"
+    },
+    {
+      "value": "Baye"
+    },
+    {
+      "value": "Bartolo"
+    },
+    {
+      "value": "Bona"
+    },
+    {
+      "value": "Buzz"
+    },
+    {
+      "value": "Boubacarbiro"
+    },
+    {
+      "value": "Konlambigue"
+    },
+    {
+      "value": "Lacina"
+    },
+    {
+      "value": "Lawubah"
+    },
+    {
+      "value": "Liang"
+    },
+    {
+      "value": "Yahya"
+    },
+    {
+      "value": "Yap"
+    },
+    {
+      "value": "Plastique"
+    },
+    {
+      "value": "Rich"
+    },
+    {
+      "value": "Rieussec"
+    },
+    {
+      "value": "Ressources"
+    },
+    {
+      "value": "Richard"
+    },
+    {
+      "value": "Radio"
+    },
+    {
+      "value": "Roach"
+    },
+    {
+      "value": "Rosa"
+    },
+    {
+      "value": "Raoul"
+    },
+    {
+      "value": "Rene"
+    },
+    {
+      "value": "Investissement"
+    },
+    {
+      "value": "Info"
+    },
+    {
+      "value": "Ismaila"
+    },
+    {
+      "value": "Intelis"
+    },
+    {
+      "value": "Idris"
+    },
+    {
+      "value": "Idriss"
+    },
+    {
+      "value": "Ito"
+    },
+    {
+      "value": "Ibstelix"
+    },
+    {
+      "value": "Nienou"
+    },
+    {
+      "value": "Nafanga"
+    },
+    {
+      "value": "Na"
+    },
+    {
+      "value": "Nicolas"
+    },
+    {
+      "value": "Neimatou"
+    },
+    {
+      "value": "N-daw"
+    },
+    {
+      "value": "Nguyen"
+    },
+    {
+      "value": "Ndoye"
+    },
+    {
+      "value": "Ngom"
+    },
+    {
+      "value": "Nguiro"
+    },
+    {
+      "value": "Nouhoum"
+    },
+    {
+      "value": "Nouhoun"
+    },
+    {
+      "value": "Ndindayino"
+    },
+    {
+      "value": "Galedou"
+    },
+    {
+      "value": "Gouro"
+    },
+    {
+      "value": "George"
+    },
+    {
+      "value": "Gbadoe"
+    },
+    {
+      "value": "Guisso"
+    },
+    {
+      "value": "Ghammache"
+    },
+    {
+      "value": "Gill"
+    },
+    {
+      "value": "Gaye"
+    },
+    {
+      "value": "Gold"
+    },
+    {
+      "value": "Gaoussou"
+    },
+    {
+      "value": "Gacko"
+    },
+    {
+      "value": "Gillis"
+    },
+    {
+      "value": "Gaudin"
+    },
+    {
+      "value": "Zhang"
+    },
+    {
+      "value": "Zafar"
+    },
+    {
+      "value": "Zamai"
+    },
+    {
+      "value": "Toussaint"
+    },
+    {
+      "value": "Tezgel"
+    },
+    {
+      "value": "Technolab"
+    },
+    {
+      "value": "Tabalaba"
+    },
+    {
+      "value": "Travis"
+    },
+    {
+      "value": "Tomota"
+    },
+    {
+      "value": "Traorae"
+    },
+    {
+      "value": "Tidiane"
+    },
+    {
+      "value": "Tidiani"
+    },
+    {
+      "value": "Tic"
+    },
+    {
+      "value": "Tchetchebleko"
+    },
+    {
+      "value": "Thompson"
+    },
+    {
+      "value": "Tiemoko"
+    },
+    {
+      "value": "Tawati"
+    },
+    {
+      "value": "Tinkele"
+    },
+    {
+      "value": "Triai"
+    },
+    {
+      "value": "Thibault"
+    },
+    {
+      "value": "Tan"
+    },
+    {
+      "value": "Traveltours"
+    },
+    {
+      "value": "Tamou"
+    },
+    {
+      "value": "Toualy"
+    },
+    {
+      "value": "Tiefolo"
+    },
+    {
+      "value": "Sofware"
+    },
+    {
+      "value": "Sherba"
+    },
+    {
+      "value": "Sankhare"
+    },
+    {
+      "value": "Serigne"
+    },
+    {
+      "value": "Sanvee"
+    },
+    {
+      "value": "Sallemi"
+    },
+    {
+      "value": "Saad"
+    },
+    {
+      "value": "Saham"
+    },
+    {
+      "value": "Sinenta"
+    },
+    {
+      "value": "Surl"
+    },
+    {
+      "value": "Seidi"
+    },
+    {
+      "value": "Sallah"
+    },
+    {
+      "value": "Seydina"
+    },
+    {
+      "value": "Selim"
+    },
+    {
+      "value": "Sankorelabs"
+    },
+    {
+      "value": "Sas"
+    },
+    {
+      "value": "Site"
+    },
+    {
+      "value": "Sawaya"
+    },
+    {
+      "value": "Saamiu"
+    },
+    {
+      "value": "Segala"
+    },
+    {
+      "value": "Sebastian"
+    },
+    {
+      "value": "Statix"
+    },
+    {
+      "value": "Smith"
+    },
+    {
+      "value": "Soumountera"
+    },
+    {
+      "value": "Shahid"
+    },
+    {
+      "value": "Shop"
+    },
+    {
+      "value": "Sani"
+    },
+    {
+      "value": "Sh"
+    },
+    {
+      "value": "Simplice"
+    },
+    {
+      "value": "Samaka"
+    },
+    {
+      "value": "Salami"
+    },
+    {
+      "value": "Sl"
+    },
+    {
+      "value": "Seya"
+    },
+    {
+      "value": "Salmon"
+    },
+    {
+      "value": "Sharingprogram"
+    },
+    {
+      "value": "Shaarani"
+    },
+    {
+      "value": "Saleh"
+    },
+    {
+      "value": "Abdallah"
+    },
+    {
+      "value": "Amonce"
+    },
+    {
+      "value": "Abdullah"
+    },
+    {
+      "value": "Akesushimaliyafukeyiyuan"
+    },
+    {
+      "value": "Abdel"
+    },
+    {
+      "value": "Abramia"
+    },
+    {
+      "value": "Aurelekouame"
+    },
+    {
+      "value": "Amine"
+    },
+    {
+      "value": "Audeoud"
+    },
+    {
+      "value": "Abayithera"
+    },
+    {
+      "value": "Ayubi"
+    },
+    {
+      "value": "Ani"
+    },
+    {
+      "value": "Alhakimou"
+    },
+    {
+      "value": "Abdu"
+    },
+    {
+      "value": "Acti"
+    },
+    {
+      "value": "Alou"
+    },
+    {
+      "value": "Asso"
+    },
+    {
+      "value": "Adam"
+    },
+    {
+      "value": "Ades"
+    },
+    {
+      "value": "Akinocho"
+    },
+    {
+      "value": "Akimy"
+    },
+    {
+      "value": "Aboul"
+    },
+    {
+      "value": "Ayi"
+    },
+    {
+      "value": "Alhousseyne"
+    },
+    {
+      "value": "Arbi"
+    },
+    {
+      "value": "Adoun"
+    },
+    {
+      "value": "Frls"
+    },
+    {
+      "value": "Faguibine"
+    },
+    {
+      "value": "Faskoye"
+    },
+    {
+      "value": "Fawe"
+    },
+    {
+      "value": "Femme"
+    },
+    {
+      "value": "Fouseyni"
+    },
+    {
+      "value": "Formation"
+    },
+    {
+      "value": "Fodie"
+    },
+    {
+      "value": "Franklin"
+    },
+    {
+      "value": "Faiza"
+    },
+    {
+      "value": "Flantie"
+    },
+    {
+      "value": "Fofan"
+    },
+    {
+      "value": "Fakhry"
+    },
+    {
+      "value": "Federation"
+    },
+    {
+      "value": "Fanta"
+    },
+    {
+      "value": "Freres"
+    },
+    {
+      "value": "Fakoly"
+    },
+    {
+      "value": "Fatima"
+    },
+    {
+      "value": "Fatimetou"
+    },
+    {
+      "value": "Far"
+    },
+    {
+      "value": "Ocana"
+    },
+    {
+      "value": "Olga"
+    },
+    {
+      "value": "Orabank"
+    },
+    {
+      "value": "Olivier"
+    },
+    {
+      "value": "Org"
+    },
+    {
+      "value": "Ong"
+    },
+    {
+      "value": "Ozturk"
+    },
+    {
+      "value": "Orange"
+    },
+    {
+      "value": "Onwuka"
+    },
+    {
+      "value": "Hamadoun"
+    },
+    {
+      "value": "Habib"
+    },
+    {
+      "value": "Horner"
+    },
+    {
+      "value": "Horne"
+    },
+    {
+      "value": "Hawa"
+    },
+    {
+      "value": "Hammou"
+    },
+    {
+      "value": "Hounake"
+    },
+    {
+      "value": "Hardley"
+    },
+    {
+      "value": "Meyer"
+    },
+    {
+      "value": "Malissa"
+    },
+    {
+      "value": "Madani"
+    },
+    {
+      "value": "Manzi"
+    },
+    {
+      "value": "Macoura"
+    },
+    {
+      "value": "Mahazou"
+    },
+    {
+      "value": "Mica"
+    },
+    {
+      "value": "Marshal"
+    },
+    {
+      "value": "Maguiraga"
+    },
+    {
+      "value": "My"
+    },
+    {
+      "value": "Malik"
+    },
+    {
+      "value": "Moss"
+    },
+    {
+      "value": "Moubarak"
+    },
+    {
+      "value": "Mope"
+    },
+    {
+      "value": "Mizero"
+    },
+    {
+      "value": "Moise"
+    },
+    {
+      "value": "Mariane"
+    },
+    {
+      "value": "Mardochee"
+    },
+    {
+      "value": "Malili"
+    },
+    {
+      "value": "Melama"
+    },
+    {
+      "value": "Mamoutou"
+    },
+    {
+      "value": "Malicom"
+    },
+    {
+      "value": "Margolis"
+    },
+    {
+      "value": "M-bo"
+    },
+    {
+      "value": "Midiomba"
+    },
+    {
+      "value": "Mansour"
+    },
+    {
+      "value": "Malfait"
+    },
+    {
+      "value": "Metowanou"
+    },
+    {
+      "value": "Minga"
+    },
+    {
+      "value": "Mbarakou"
+    },
+    {
+      "value": "Mady"
+    },
+    {
+      "value": "Massire"
+    },
+    {
+      "value": "Mining"
+    },
+    {
+      "value": "Moustaph"
+    },
+    {
+      "value": "Mougnard"
+    },
+    {
+      "value": "Moctardicko"
+    },
+    {
+      "value": "Mbaya"
+    },
+    {
+      "value": "Maria"
+    },
+    {
+      "value": "Mansa"
+    },
+    {
+      "value": "Meite"
+    },
+    {
+      "value": "Maliorangemali"
+    },
+    {
+      "value": "Malirap"
+    },
+    {
+      "value": "Master"
+    },
+    {
+      "value": "Mazzella"
+    },
+    {
+      "value": "Jacqueline"
+    },
+    {
+      "value": "Julian"
+    },
+    {
+      "value": "Johanes"
+    },
+    {
+      "value": "Jacquemin"
+    },
+    {
+      "value": "Jean"
+    },
+    {
+      "value": "Jensen"
+    },
+    {
+      "value": "John"
+    },
+    {
+      "value": "Jamieson"
+    },
+    {
+      "value": "Crash"
+    },
+    {
+      "value": "Cheickahmedtidianikane"
+    },
+    {
+      "value": "Cheickne"
+    },
+    {
+      "value": "Coulidiaty"
+    },
+    {
+      "value": "Cru"
+    },
+    {
+      "value": "Clean"
+    },
+    {
+      "value": "Chollet"
+    },
+    {
+      "value": "Chouaibou"
+    },
+    {
+      "value": "Chen"
+    },
+    {
+      "value": "Castronoda"
+    },
+    {
+      "value": "Comlan"
+    },
+    {
+      "value": "Cecile"
+    },
+    {
+      "value": "Crdi"
+    },
+    {
+      "value": "Castillo"
+    },
+    {
+      "value": "Claude"
+    },
+    {
+      "value": "Charles"
+    },
+    {
+      "value": "Cazor"
+    },
+    {
+      "value": "Chua"
+    },
+    {
+      "value": "Daniel"
+    },
+    {
+      "value": "Dala"
+    },
+    {
+      "value": "Djiro"
+    },
+    {
+      "value": "Dramane"
+    },
+    {
+      "value": "Diariatou"
+    },
+    {
+      "value": "Dyogou"
+    },
+    {
+      "value": "Diadie"
+    },
+    {
+      "value": "Dapa"
+    },
+    {
+      "value": "Djegui"
+    },
+    {
+      "value": "Djibril"
+    },
+    {
+      "value": "Diabagate"
+    },
+    {
+      "value": "Dogbovi"
+    },
+    {
+      "value": "Democrate"
+    },
+    {
+      "value": "Diarrah"
+    },
+    {
+      "value": "Drtyg"
+    },
+    {
+      "value": "Diplomatic"
+    },
+    {
+      "value": "Drissa"
+    },
+    {
+      "value": "Dahl"
+    },
+    {
+      "value": "Deby"
+    },
+    {
+      "value": "Duret"
+    },
+    {
+      "value": "Debey"
+    },
+    {
+      "value": "Vant"
+    },
+    {
+      "value": "Viossi"
+    },
+    {
+      "value": "Vilcu"
+    },
+    {
+      "value": "Viswanathan"
+    },
+    {
+      "value": "Qimi"
+    },
+    {
+      "value": "Xivna"
+    },
+    {
+      "value": "Extream"
+    },
+    {
+      "value": "Esaie"
+    },
+    {
+      "value": "Erman"
+    },
+    {
+      "value": "Ekpeh"
+    },
+    {
+      "value": "Ere"
+    },
+    {
+      "value": "Eureka"
+    },
+    {
+      "value": "Expertise"
+    },
+    {
+      "value": "Emmanuel"
+    },
+    {
+      "value": "Elhadj"
+    },
+    {
+      "value": "Escort"
+    },
+    {
+      "value": "Espace"
+    },
+    {
+      "value": "Bnk"
+    },
+    {
+      "value": "Bouzou"
+    },
+    {
+      "value": "Berthier"
+    },
+    {
+      "value": "Bly"
+    },
+    {
+      "value": "Bliard"
+    },
+    {
+      "value": "Bodon"
+    },
+    {
+      "value": "Balosk"
+    },
+    {
+      "value": "Bhai"
+    },
+    {
+      "value": "Bakary"
+    },
+    {
+      "value": "Buro"
+    },
+    {
+      "value": "Ben"
+    },
+    {
+      "value": "Boureima"
+    },
+    {
+      "value": "Boiry"
+    },
+    {
+      "value": "Beidi"
+    },
+    {
+      "value": "Barges"
+    },
+    {
+      "value": "Bamako-coura"
+    },
+    {
+      "value": "Bouba"
+    },
+    {
+      "value": "Boubeye"
+    },
+    {
+      "value": "Babi"
+    },
+    {
+      "value": "Kocevar"
+    },
+    {
+      "value": "Krishnan"
+    },
+    {
+      "value": "Kipret"
+    },
+    {
+      "value": "Kola"
+    },
+    {
+      "value": "Kassambra"
+    },
+    {
+      "value": "Kintonou"
+    },
+    {
+      "value": "Koureich"
+    },
+    {
+      "value": "Khairy"
+    },
+    {
+      "value": "Kanakomo"
+    },
+    {
+      "value": "Kaja"
+    },
+    {
+      "value": "Kady"
+    },
+    {
+      "value": "Kamgaing"
+    },
+    {
+      "value": "Kalilou"
+    },
+    {
+      "value": "Kokouvi"
+    },
+    {
+      "value": "Katie"
+    },
+    {
+      "value": "Kalakodio"
+    },
+    {
+      "value": "Khadi"
+    },
+    {
+      "value": "Khadidjatou"
+    },
+    {
+      "value": "King"
+    },
+    {
+      "value": "Kevin"
+    },
+    {
+      "value": "Kalifa"
+    },
+    {
+      "value": "Kadi"
+    },
+    {
+      "value": "Kanne"
+    },
+    {
+      "value": "Karim"
+    },
+    {
+      "value": "Laforgues"
+    },
+    {
+      "value": "Liberti"
+    },
+    {
+      "value": "Latif"
+    },
+    {
+      "value": "Laborex"
+    },
+    {
+      "value": "Levy"
+    },
+    {
+      "value": "Leon"
+    },
+    {
+      "value": "Light"
+    },
+    {
+      "value": "Lompo"
+    },
+    {
+      "value": "Lompogarba"
+    },
+    {
+      "value": "Loum"
+    },
+    {
+      "value": "Logistics"
+    },
+    {
+      "value": "Lin"
+    },
+    {
+      "value": "Laminediarra"
+    },
+    {
+      "value": "Laminekaba"
+    },
+    {
+      "value": "Yuan"
+    },
+    {
+      "value": "Pacepep"
+    },
+    {
+      "value": "Pati"
+    },
+    {
+      "value": "Papa"
+    },
+    {
+      "value": "Papou"
+    },
+    {
+      "value": "Pickles"
+    },
+    {
+      "value": "Paul"
+    },
+    {
+      "value": "Palliere"
+    },
+    {
+      "value": "Wahab"
+    },
+    {
+      "value": "Wodji"
+    },
+    {
+      "value": "Angontinbe"
+    },
+    {
+      "value": "Bajaga"
+    },
+    {
+      "value": "Baalo"
+    },
+    {
+      "value": "Bamiya"
+    },
+    {
+      "value": "Bànbó"
+    },
+    {
+      "value": "Bàngura"
+    },
+    {
+      "value": "Banjugusi"
+    },
+    {
+      "value": "Baraga"
+    },
+    {
+      "value": "Baraji"
+    },
+    {
+      "value": "Bari"
+    },
+    {
+      "value": "Barola"
+    },
+    {
+      "value": "Basum"
+    },
+    {
+      "value": "Baxaga"
+    },
+    {
+      "value": "Benkali"
+    },
+    {
+      "value": "Bɛ́lìko"
+    },
+    {
+      "value": "Bí"
+    },
+    {
+      "value": "Bìdanesi"
+    },
+    {
+      "value": "Bíibà"
+    },
+    {
+      "value": "Bokum"
+    },
+    {
+      "value": "Boyigille"
+    },
+    {
+      "value": "Cam"
+    },
+    {
+      "value": "Cɛrɔ"
+    },
+    {
+      "value": "Cɛnta"
+    },
+    {
+      "value": "Cokari"
+    },
+    {
+      "value": "Cùlentà"
+    },
+    {
+      "value": "Cun"
+    },
+    {
+      "value": "Dáfe"
+    },
+    {
+      "value": "Dakuwo"
+    },
+    {
+      "value": "Dàngo"
+    },
+    {
+      "value": "Dànsúba"
+    },
+    {
+      "value": "Dányò"
+    },
+    {
+      "value": "Danyɔgɔ"
+    },
+    {
+      "value": "Daɲon"
+    },
+    {
+      "value": "Daramerra"
+    },
+    {
+      "value": "Daramɛ"
+    },
+    {
+      "value": "Drawé"
+    },
+    {
+      "value": "Dawo"
+    },
+    {
+      "value": "Dende"
+    },
+    {
+      "value": "Deteba"
+    },
+    {
+      "value": "Diko"
+    },
+    {
+      "value": "Dìsá"
+    },
+    {
+      "value": "Jásana"
+    },
+    {
+      "value": "Dùwansí"
+    },
+    {
+      "value": "Dukare"
+    },
+    {
+      "value": "Dúkùre"
+    },
+    {
+      "value": "Dumasi"
+    },
+    {
+      "value": "Dunbuya"
+    },
+    {
+      "value": "Dúnɔ"
+    },
+    {
+      "value": "Dunu"
+    },
+    {
+      "value": "Dunyo"
+    },
+    {
+      "value": "Fal"
+    },
+    {
+      "value": "Pámàntà"
+    },
+    {
+      "value": "Fasa"
+    },
+    {
+      "value": "Fisuru"
+    },
+    {
+      "value": "Funɛmuso"
+    },
+    {
+      "value": "Gajigo"
+    },
+    {
+      "value": "Gaku"
+    },
+    {
+      "value": "Galedu"
+    },
+    {
+      "value": "Gandeega"
+    },
+    {
+      "value": "Gasama"
+    },
+    {
+      "value": "Gey"
+    },
+    {
+      "value": "Gèyita"
+    },
+    {
+      "value": "Gigilay"
+    },
+    {
+      "value": "Gilawogi"
+    },
+    {
+      "value": "Ginbaira"
+    },
+    {
+      "value": "Gìndo"
+    },
+    {
+      "value": "Gise"
+    },
+    {
+      "value": "Golfa"
+    },
+    {
+      "value": "Galogo"
+    },
+    {
+      "value": "Goyita"
+    },
+    {
+      "value": "Gumane"
+    },
+    {
+      "value": "Gunbala"
+    },
+    {
+      "value": "Gboɛta"
+    },
+    {
+      "value": "Haba"
+    },
+    {
+      "value": "Háyidara"
+    },
+    {
+      "value": "Honomu"
+    },
+    {
+      "value": "Ja"
+    },
+    {
+      "value": "Jaabi"
+    },
+    {
+      "value": "Jàanɛ"
+    },
+    {
+      "value": "Jabira"
+    },
+    {
+      "value": "Jágàraga"
+    },
+    {
+      "value": "Jagate"
+    },
+    {
+      "value": "Jahune"
+    },
+    {
+      "value": "Jàkite"
+    },
+    {
+      "value": "Jàlo"
+    },
+    {
+      "value": "Janbisi"
+    },
+    {
+      "value": "Jánka"
+    },
+    {
+      "value": "Jàra"
+    },
+    {
+      "value": "Jaraga"
+    },
+    {
+      "value": "Jarasuba"
+    },
+    {
+      "value": "Jariso"
+    },
+    {
+      "value": "Jaruma"
+    },
+    {
+      "value": "Jasarɛ"
+    },
+    {
+      "value": "Jaw"
+    },
+    {
+      "value": "Jáwara"
+    },
+    {
+      "value": "Jàwunɛ"
+    },
+    {
+      "value": "Jebikile"
+    },
+    {
+      "value": "Jefaga"
+    },
+    {
+      "value": "Jemen"
+    },
+    {
+      "value": "Jenepo"
+    },
+    {
+      "value": "Jeng"
+    },
+    {
+      "value": "Jenta"
+    },
+    {
+      "value": "Jeye"
+    },
+    {
+      "value": "Jabate"
+    },
+    {
+      "value": "Jige"
+    },
+    {
+      "value": "Jigibe"
+    },
+    {
+      "value": "Njim"
+    },
+    {
+      "value": "Jinbiya"
+    },
+    {
+      "value": "Jire"
+    },
+    {
+      "value": "Jonbana"
+    },
+    {
+      "value": "Jong"
+    },
+    {
+      "value": "Jonu"
+    },
+    {
+      "value": "Juf"
+    },
+    {
+      "value": "Jɔ́mànde"
+    },
+    {
+      "value": "Jɔnfaga"
+    },
+    {
+      "value": "Jɔnsan"
+    },
+    {
+      "value": "Juhara"
+    },
+    {
+      "value": "Jukanci"
+    },
+    {
+      "value": "Jum"
+    },
+    {
+      "value": "Jumasi"
+    },
+    {
+      "value": "Jwàra"
+    },
+    {
+      "value": "Kaane"
+    },
+    {
+      "value": "Kalafo"
+    },
+    {
+      "value": "Kale"
+    },
+    {
+      "value": "Kama"
+    },
+    {
+      "value": "Kamagate"
+    },
+    {
+      "value": "Kàmisogo"
+    },
+    {
+      "value": "Kamiyan"
+    },
+    {
+      "value": "Kan"
+    },
+    {
+      "value": "Kàni"
+    },
+    {
+      "value": "Kanisi"
+    },
+    {
+      "value": "Kankama"
+    },
+    {
+      "value": "Kanpo"
+    },
+    {
+      "value": "Kansai"
+    },
+    {
+      "value": "Kantara"
+    },
+    {
+      "value": "Kanute"
+    },
+    {
+      "value": "Kanyasi"
+    },
+    {
+      "value": "Karabɛnta"
+    },
+    {
+      "value": "Karanbe"
+    },
+    {
+      "value": "Karanyara"
+    },
+    {
+      "value": "Karo"
+    },
+    {
+      "value": "Kásanbàra"
+    },
+    {
+      "value": "Kase"
+    },
+    {
+      "value": "Kasoge"
+    },
+    {
+      "value": "Kasumasi"
+    },
+    {
+      "value": "Kelefeli"
+    },
+    {
+      "value": "Kelem"
+    },
+    {
+      "value": "Keren"
+    },
+    {
+      "value": "Kɛ̀mɛnaani"
+    },
+    {
+      "value": "Kiabu"
+    },
+    {
+      "value": "Kide"
+    },
+    {
+      "value": "Kindibilba"
+    },
+    {
+      "value": "Kirigun"
+    },
+    {
+      "value": "Kobara"
+    },
+    {
+      "value": "Kojo"
+    },
+    {
+      "value": "Komma"
+    },
+    {
+      "value": "Kómàra"
+    },
+    {
+      "value": "Kòmú"
+    },
+    {
+      "value": "Konipo"
+    },
+    {
+      "value": "Korkosi"
+    },
+    {
+      "value": "Korora"
+    },
+    {
+      "value": "Kóytà"
+    },
+    {
+      "value": "Compaoré"
+    },
+    {
+      "value": "Kɔ́ntawò"
+    },
+    {
+      "value": "Kɔrɛ"
+    },
+    {
+      "value": "Kuɛyta"
+    },
+    {
+      "value": "Kúlubàli"
+    },
+    {
+      "value": "Kuma"
+    },
+    {
+      "value": "Kumare"
+    },
+    {
+      "value": "Kumate"
+    },
+    {
+      "value": "Kume"
+    },
+    {
+      "value": "Kunbare"
+    },
+    {
+      "value": "Kundur"
+    },
+    {
+      "value": "Kusa"
+    },
+    {
+      "value": "Kuwate"
+    },
+    {
+      "value": "La"
+    },
+    {
+      "value": "Lam"
+    },
+    {
+      "value": "Landure"
+    },
+    {
+      "value": "Lé"
+    },
+    {
+      "value": "Lilenta"
+    },
+    {
+      "value": "Maale"
+    },
+    {
+      "value": "Maane"
+    },
+    {
+      "value": "Magaji"
+    },
+    {
+      "value": "Magasa"
+    },
+    {
+      "value": "Màgasùba"
+    },
+    {
+      "value": "Magiraga"
+    },
+    {
+      "value": "Màkalu"
+    },
+    {
+      "value": "Makangile"
+    },
+    {
+      "value": "Makkaji"
+    },
+    {
+      "value": "Male"
+    },
+    {
+      "value": "Mandakunu"
+    },
+    {
+      "value": "Mànju"
+    },
+    {
+      "value": "Màsaren"
+    },
+    {
+      "value": "Markus"
+    },
+    {
+      "value": "Masasi"
+    },
+    {
+      "value": "Mayiga"
+    },
+    {
+      "value": "Mònekata"
+    },
+    {
+      "value": "Mukɔrɔ"
+    },
+    {
+      "value": "Nafo"
+    },
+    {
+      "value": "Nàmɔgɔ"
+    },
+    {
+      "value": "Náyitɛ"
+    },
+    {
+      "value": "Nbay"
+    },
+    {
+      "value": "Ngalingo"
+    },
+    {
+      "value": "Ngoni"
+    },
+    {
+      "value": "Njade"
+    },
+    {
+      "value": "Njay"
+    },
+    {
+      "value": "Nmub"
+    },
+    {
+      "value": "Nomogo"
+    },
+    {
+      "value": "Numansana"
+    },
+    {
+      "value": "Ɲagaso"
+    },
+    {
+      "value": "Ɲákàte"
+    },
+    {
+      "value": "Ɲalibuli"
+    },
+    {
+      "value": "Ɲamakansi"
+    },
+    {
+      "value": "Ɲan"
+    },
+    {
+      "value": "Ɲanbali"
+    },
+    {
+      "value": "Ɲanbele"
+    },
+    {
+      "value": "Ɲang"
+    },
+    {
+      "value": "Ɲangado"
+    },
+    {
+      "value": "Ɲangi"
+    },
+    {
+      "value": "Ɲaraxi"
+    },
+    {
+      "value": "Ɲàre"
+    },
+    {
+      "value": "Ɲɛ́ntaò"
+    },
+    {
+      "value": "Odraogo"
+    },
+    {
+      "value": "Pujugu"
+    },
+    {
+      "value": "Saane"
+    },
+    {
+      "value": "Sagone"
+    },
+    {
+      "value": "Sal"
+    },
+    {
+      "value": "Salu"
+    },
+    {
+      "value": "Samagana"
+    },
+    {
+      "value": "Samasa"
+    },
+    {
+      "value": "Samaseku"
+    },
+    {
+      "value": "Same"
+    },
+    {
+      "value": "Samura"
+    },
+    {
+      "value": "Sanarkua"
+    },
+    {
+      "value": "Sanbaxe"
+    },
+    {
+      "value": "Sangone"
+    },
+    {
+      "value": "Sanpi"
+    },
+    {
+      "value": "Sanu"
+    },
+    {
+      "value": "Saɲɔ"
+    },
+    {
+      "value": "Sar"
+    },
+    {
+      "value": "Sare"
+    },
+    {
+      "value": "Sarisi"
+    },
+    {
+      "value": "Sek"
+    },
+    {
+      "value": "Sekem"
+    },
+    {
+      "value": "Serefu"
+    },
+    {
+      "value": "Seynu"
+    },
+    {
+      "value": "Sí"
+    },
+    {
+      "value": "Sibi"
+    },
+    {
+      "value": "Sìdimɛ"
+    },
+    {
+      "value": "Silla"
+    },
+    {
+      "value": "Simaxa"
+    },
+    {
+      "value": "Simalo"
+    },
+    {
+      "value": "Sinaba"
+    },
+    {
+      "value": "Sineba"
+    },
+    {
+      "value": "Sise"
+    },
+    {
+      "value": "Sisoko"
+    },
+    {
+      "value": "Sisuma"
+    },
+    {
+      "value": "Sogoxe"
+    },
+    {
+      "value": "Sok"
+    },
+    {
+      "value": "Somaso"
+    },
+    {
+      "value": "Sumano"
+    },
+    {
+      "value": "Soropɔgi"
+    },
+    {
+      "value": "Suxuna"
+    },
+    {
+      "value": "Sogo"
+    },
+    {
+      "value": "Suma"
+    },
+    {
+      "value": "Sumaworo"
+    },
+    {
+      "value": "Sumare"
+    },
+    {
+      "value": "Sumunu"
+    },
+    {
+      "value": "Sunbunu"
+    },
+    {
+      "value": "Suntura"
+    },
+    {
+      "value": "Susogo"
+    },
+    {
+      "value": "Sùwanun"
+    },
+    {
+      "value": "Sùware"
+    },
+    {
+      "value": "Tabure"
+    },
+    {
+      "value": "Tali"
+    },
+    {
+      "value": "Tammbura"
+    },
+    {
+      "value": "Tanja"
+    },
+    {
+      "value": "Tapili"
+    },
+    {
+      "value": "Teli"
+    },
+    {
+      "value": "Tembeli"
+    },
+    {
+      "value": "Tembine"
+    },
+    {
+      "value": "Tera"
+    },
+    {
+      "value": "Tisugem"
+    },
+    {
+      "value": "Tereta"
+    },
+    {
+      "value": "Tùngara"
+    },
+    {
+      "value": "Tùre"
+    },
+    {
+      "value": "Wago"
+    },
+    {
+      "value": "Wakannesaxo"
+    },
+    {
+      "value": "Walikalo"
+    },
+    {
+      "value": "Waɲe"
+    },
+    {
+      "value": "Watara"
+    },
+    {
+      "value": "Wederawogo"
+    },
+    {
+      "value": "Woge"
+    },
+    {
+      "value": "Wologem"
+    },
+    {
+      "value": "Worote"
+    },
+    {
+      "value": "Wùlalɛ"
+    },
+    {
+      "value": "Wùlare"
+    },
+    {
+      "value": "Xomme"
+    },
+    {
+      "value": "Yansane"
+    },
+    {
+      "value": "Yarangore"
+    },
+    {
+      "value": "Yaresi"
+    },
+    {
+      "value": "Yatabere"
+    },
+    {
+      "value": "Yatara"
+    },
+    {
+      "value": "Yatasay"
+    },
+    {
+      "value": "Yattoura"
+    },
+    {
+      "value": "Yebese"
+    },
+    {
+      "value": "Zogbelemu"
+    },
+    {
+      "value": "Adiango"
+    },
+    {
+      "value": "Arou"
+    },
+    {
+      "value": "Atch"
+    },
+    {
+      "value": "Badimi"
+    },
+    {
+      "value": "Badiaka"
+    },
+    {
+      "value": "Ball"
+    },
+    {
+      "value": "Bally"
+    },
+    {
+      "value": "Bamani"
+    },
+    {
+      "value": "Bamadiou"
+    },
+    {
+      "value": "Bamago"
+    },
+    {
+      "value": "Bamian"
+    },
+    {
+      "value": "Baniani"
+    },
+    {
+      "value": "Banou"
+    },
+    {
+      "value": "Bass"
+    },
+    {
+      "value": "Bayi"
+    },
+    {
+      "value": "Belleme"
+    },
+    {
+      "value": "Béridogo"
+    },
+    {
+      "value": "Bill"
+    },
+    {
+      "value": "Bidanis"
+    },
+    {
+      "value": "Bilakoro"
+    },
+    {
+      "value": "Binima"
+    },
+    {
+      "value": "Bolezogola"
+    },
+    {
+      "value": "Bomboté"
+    },
+    {
+      "value": "Bomere"
+    },
+    {
+      "value": "Boudourou"
+    },
+    {
+      "value": "Bougoudogo"
+    },
+    {
+      "value": "Boukanem"
+    },
+    {
+      "value": "Bow"
+    },
+    {
+      "value": "Couare"
+    },
+    {
+      "value": "Dabitao"
+    },
+    {
+      "value": "Dackouo"
+    },
+    {
+      "value": "Damango"
+    },
+    {
+      "value": "Dantioko"
+    },
+    {
+      "value": "Deh"
+    },
+    {
+      "value": "Deba"
+    },
+    {
+      "value": "Deboukama"
+    },
+    {
+      "value": "Dedougounanou"
+    },
+    {
+      "value": "Desso"
+    },
+    {
+      "value": "Diagarassy"
+    },
+    {
+      "value": "Diagayété"
+    },
+    {
+      "value": "Diala"
+    },
+    {
+      "value": "Diaou"
+    },
+    {
+      "value": "Diancouba"
+    },
+    {
+      "value": "Diaouré"
+    },
+    {
+      "value": "Diarouma"
+    },
+    {
+      "value": "Dibangalou"
+    },
+    {
+      "value": "Diéfaga"
+    },
+    {
+      "value": "Dienta"
+    },
+    {
+      "value": "Diomanndé"
+    },
+    {
+      "value": "Diombana"
+    },
+    {
+      "value": "Diombélé"
+    },
+    {
+      "value": "Dionsan"
+    },
+    {
+      "value": "Dioura"
+    },
+    {
+      "value": "Dioumassi"
+    },
+    {
+      "value": "Dioméra"
+    },
+    {
+      "value": "Diourté"
+    },
+    {
+      "value": "Djélikoumbaga"
+    },
+    {
+      "value": "Djigua"
+    },
+    {
+      "value": "Djingaraye"
+    },
+    {
+      "value": "Djiguande"
+    },
+    {
+      "value": "Djiguiné"
+    },
+    {
+      "value": "Djila"
+    },
+    {
+      "value": "Djimegua"
+    },
+    {
+      "value": "Djon"
+    },
+    {
+      "value": "Doningo"
+    },
+    {
+      "value": "Dorantié"
+    },
+    {
+      "value": "Dosso"
+    },
+    {
+      "value": "Doubéré"
+    },
+    {
+      "value": "Doukara"
+    },
+    {
+      "value": "Doumboua"
+    },
+    {
+      "value": "Dounde"
+    },
+    {
+      "value": "Doura"
+    },
+    {
+      "value": "Dravé"
+    },
+    {
+      "value": "Fabé"
+    },
+    {
+      "value": "Fianké"
+    },
+    {
+      "value": "Farota"
+    },
+    {
+      "value": "Faskoy"
+    },
+    {
+      "value": "Fole"
+    },
+    {
+      "value": "Fongoro"
+    },
+    {
+      "value": "Forgo"
+    },
+    {
+      "value": "Frantao"
+    },
+    {
+      "value": "Gadigo"
+    },
+    {
+      "value": "Gama"
+    },
+    {
+      "value": "Game"
+    },
+    {
+      "value": "Ganessy"
+    },
+    {
+      "value": "Gadio"
+    },
+    {
+      "value": "Guendeba"
+    },
+    {
+      "value": "Gnamba"
+    },
+    {
+      "value": "Gnoumenta"
+    },
+    {
+      "value": "Goundouba"
+    },
+    {
+      "value": "Goïmba"
+    },
+    {
+      "value": "Gouanle"
+    },
+    {
+      "value": "Goundiam"
+    },
+    {
+      "value": "Goundourou"
+    },
+    {
+      "value": "Gundourou"
+    },
+    {
+      "value": "Guerew"
+    },
+    {
+      "value": "Guéguéré"
+    },
+    {
+      "value": "Guidjilaye"
+    },
+    {
+      "value": "Guindeba"
+    },
+    {
+      "value": "Garango"
+    },
+    {
+      "value": "Idi"
+    },
+    {
+      "value": "Issabré"
+    },
+    {
+      "value": "Ka"
+    },
+    {
+      "value": "Kabayoko"
+    },
+    {
+      "value": "Kagnassi"
+    },
+    {
+      "value": "Kagoe"
+    },
+    {
+      "value": "Kamian"
+    },
+    {
+      "value": "Kanambaye"
+    },
+    {
+      "value": "Kanajigui"
+    },
+    {
+      "value": "Kanawa"
+    },
+    {
+      "value": "Kanfo"
+    },
+    {
+      "value": "Kaniantao"
+    },
+    {
+      "value": "Kaninkao"
+    },
+    {
+      "value": "Kara"
+    },
+    {
+      "value": "Karagnara"
+    },
+    {
+      "value": "Karanbera"
+    },
+    {
+      "value": "Karasso"
+    },
+    {
+      "value": "Karavata"
+    },
+    {
+      "value": "Karonta"
+    },
+    {
+      "value": "Kassibo"
+    },
+    {
+      "value": "Kayo"
+    },
+    {
+      "value": "Kewe"
+    },
+    {
+      "value": "Kelema"
+    },
+    {
+      "value": "Kelepili"
+    },
+    {
+      "value": "Keli"
+    },
+    {
+      "value": "Kemenani"
+    },
+    {
+      "value": "Kemésso"
+    },
+    {
+      "value": "Kerenta"
+    },
+    {
+      "value": "Kimbiri"
+    },
+    {
+      "value": "Kiné"
+    },
+    {
+      "value": "Kire"
+    },
+    {
+      "value": "Kissa"
+    },
+    {
+      "value": "Komangara"
+    },
+    {
+      "value": "Komagara"
+    },
+    {
+      "value": "Komékama"
+    },
+    {
+      "value": "Komina"
+    },
+    {
+      "value": "Komokara"
+    },
+    {
+      "value": "Konake"
+    },
+    {
+      "value": "Konékeou"
+    },
+    {
+      "value": "Konitio"
+    },
+    {
+      "value": "Konery"
+    },
+    {
+      "value": "Korkoss"
+    },
+    {
+      "value": "Kornio"
+    },
+    {
+      "value": "Korobara"
+    },
+    {
+      "value": "Koromakan"
+    },
+    {
+      "value": "Kouata"
+    },
+    {
+      "value": "Koulohogon"
+    },
+    {
+      "value": "Kounandi"
+    },
+    {
+      "value": "Koudé"
+    },
+    {
+      "value": "Kountaga"
+    },
+    {
+      "value": "Kourémakan"
+    },
+    {
+      "value": "Kouriba"
+    },
+    {
+      "value": "Labita"
+    },
+    {
+      "value": "Lougé"
+    },
+    {
+      "value": "Maganminè"
+    },
+    {
+      "value": "Maïssiyé"
+    },
+    {
+      "value": "Mako"
+    },
+    {
+      "value": "Makolo"
+    },
+    {
+      "value": "Malikité"
+    },
+    {
+      "value": "Malinké"
+    },
+    {
+      "value": "Maniantao"
+    },
+    {
+      "value": "Mangassy"
+    },
+    {
+      "value": "Marena"
+    },
+    {
+      "value": "Massa"
+    },
+    {
+      "value": "Mayissé"
+    },
+    {
+      "value": "Mbow"
+    },
+    {
+      "value": "Milogo"
+    },
+    {
+      "value": "Mindou"
+    },
+    {
+      "value": "Moïda"
+    },
+    {
+      "value": "Morba"
+    },
+    {
+      "value": "Morogowe"
+    },
+    {
+      "value": "Moukoumak"
+    },
+    {
+      "value": "Mare"
+    },
+    {
+      "value": "Naganera"
+    },
+    {
+      "value": "Nago"
+    },
+    {
+      "value": "Naité"
+    },
+    {
+      "value": "Najim"
+    },
+    {
+      "value": "Nalia"
+    },
+    {
+      "value": "Namakakiri"
+    },
+    {
+      "value": "Nampo"
+    },
+    {
+      "value": "Nanakasse"
+    },
+    {
+      "value": "Napare"
+    },
+    {
+      "value": "Narakumadan"
+    },
+    {
+      "value": "Nareme"
+    },
+    {
+      "value": "Nassere"
+    },
+    {
+      "value": "Nassogo"
+    },
+    {
+      "value": "Ndioum"
+    },
+    {
+      "value": "Niampa"
+    },
+    {
+      "value": "Nioumata"
+    },
+    {
+      "value": "Nombori"
+    },
+    {
+      "value": "Noni"
+    },
+    {
+      "value": "Nouguem"
+    },
+    {
+      "value": "Niangali"
+    },
+    {
+      "value": "Niono"
+    },
+    {
+      "value": "Nissama"
+    },
+    {
+      "value": "Nomko"
+    },
+    {
+      "value": "Noumasana"
+    },
+    {
+      "value": "Ombotimbé"
+    },
+    {
+      "value": "Ouéré"
+    },
+    {
+      "value": "Oulalé"
+    },
+    {
+      "value": "Pelkoulba"
+    },
+    {
+      "value": "Pello"
+    },
+    {
+      "value": "Pelgourou"
+    },
+    {
+      "value": "Pouryoba"
+    },
+    {
+      "value": "Sabo"
+    },
+    {
+      "value": "Saabé"
+    },
+    {
+      "value": "Sadessy"
+    },
+    {
+      "value": "Sagadani"
+    },
+    {
+      "value": "Salamanta"
+    },
+    {
+      "value": "Sama"
+    },
+    {
+      "value": "Samabali"
+    },
+    {
+      "value": "Samagassy"
+    },
+    {
+      "value": "Samboura"
+    },
+    {
+      "value": "Sampana"
+    },
+    {
+      "value": "Sampy"
+    },
+    {
+      "value": "Sanankoua"
+    },
+    {
+      "value": "Sagala"
+    },
+    {
+      "value": "Sanoussy"
+    },
+    {
+      "value": "Sanoura"
+    },
+    {
+      "value": "Santao"
+    },
+    {
+      "value": "Seginpyere"
+    },
+    {
+      "value": "Sellou"
+    },
+    {
+      "value": "Sémari"
+    },
+    {
+      "value": "Sénéga"
+    },
+    {
+      "value": "Sénafo"
+    },
+    {
+      "value": "Séré"
+    },
+    {
+      "value": "Siboliyen"
+    },
+    {
+      "value": "Sinate"
+    },
+    {
+      "value": "Singuinpire"
+    },
+    {
+      "value": "Sissouma"
+    },
+    {
+      "value": "Sodio"
+    },
+    {
+      "value": "Sokanda"
+    },
+    {
+      "value": "Somboro"
+    },
+    {
+      "value": "Sonfo"
+    },
+    {
+      "value": "Sonin"
+    },
+    {
+      "value": "Sonta"
+    },
+    {
+      "value": "Soso"
+    },
+    {
+      "value": "Soufountera"
+    },
+    {
+      "value": "Soucko"
+    },
+    {
+      "value": "Sougané"
+    },
+    {
+      "value": "Soukoulé"
+    },
+    {
+      "value": "Tabadongo"
+    },
+    {
+      "value": "Tagadiou"
+    },
+    {
+      "value": "Tagoudiou"
+    },
+    {
+      "value": "Taïta"
+    },
+    {
+      "value": "Tamata"
+    },
+    {
+      "value": "Tambassi"
+    },
+    {
+      "value": "Taminé"
+    },
+    {
+      "value": "Tanapo"
+    },
+    {
+      "value": "Tanjigora"
+    },
+    {
+      "value": "Taoureri"
+    },
+    {
+      "value": "Taravélé"
+    },
+    {
+      "value": "Taraty"
+    },
+    {
+      "value": "Tawaty"
+    },
+    {
+      "value": "Tékété"
+    },
+    {
+      "value": "Thiama"
+    },
+    {
+      "value": "Thiéré"
+    },
+    {
+      "value": "Timbiné"
+    },
+    {
+      "value": "Tiokary"
+    },
+    {
+      "value": "Tioulenta"
+    },
+    {
+      "value": "Tolofoundie"
+    },
+    {
+      "value": "Tonata"
+    },
+    {
+      "value": "Toulema"
+    },
+    {
+      "value": "Toumagnon"
+    },
+    {
+      "value": "Tourfo"
+    },
+    {
+      "value": "Waigalo"
+    },
+    {
+      "value": "Walet"
+    },
+    {
+      "value": "Wanégué"
+    },
+    {
+      "value": "Warama"
+    },
+    {
+      "value": "Wodiou"
+    },
+    {
+      "value": "Wonogo"
+    },
+    {
+      "value": "Worome"
+    },
+    {
+      "value": "Yalkouyé"
+    },
+    {
+      "value": "Yamassoumou"
+    },
+    {
+      "value": "Yanoga"
+    },
+    {
+      "value": "Yanogué"
+    },
+    {
+      "value": "Yéna"
+    },
+    {
+      "value": "Yérélé"
+    },
+    {
+      "value": "Yérnacoré"
+    },
+    {
+      "value": "Yirango"
+    },
+    {
+      "value": "Yoroté"
+    },
+    {
+      "value": "Yosse"
+    },
+    {
+      "value": "Yougonogé"
+    }
+  ],
+  "production_ready": false
+}

@@ -1,0 +1,37 @@
+name: SURNAMES-01 — 50-country Node 22 targeted QA
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/players/surnames/**'
+      - 'tests/surnames-01-catalog.test.mjs'
+      - 'tools/ci-test-ownership.json'
+      - '.github/workflows/surnames-01.yml'
+permissions:
+  contents: read
+jobs:
+  surname-catalog:
+    name: Node 22 surname catalog + scope guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reject unrelated files and PLAYERS-03 changes
+        shell: bash
+        run: |
+          git diff --name-only origin/main...HEAD > /tmp/surnames-01-changed.txt
+          if grep -E -v '^(data/players/surnames/(countries/[A-Z]{3}\.json|catalog-v1\.json|README\.md)|tests/surnames-01-catalog\.test\.mjs|\.github/workflows/surnames-01\.yml|tools/ci-test-ownership\.json)$' /tmp/surnames-01-changed.txt; then
+            echo 'Out-of-scope changes in SURNAMES-01 PR' >&2
+            exit 1
+          fi
+          if git diff --name-only origin/main...HEAD -- data/players/names/ | grep .; then
+            echo 'PLAYERS-03 names must not change' >&2
+            exit 1
+          fi
+      - name: Validate surname catalog and 50 exact source blobs
+        run: node --test tests/surnames-01-catalog.test.mjs
