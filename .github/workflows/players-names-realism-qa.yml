@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - tools/players-names-realism-qa.mjs
+      - docs/players/names-residency-evidence-01.json
       - .github/workflows/players-names-realism-qa.yml
 permissions:
   contents: read

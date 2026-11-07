@@ -58,6 +58,24 @@ function readBank(code,type){
   digest:createHash('sha256').update(bytes).digest('hex')};
 }
 function audit(){
+ const ledger=JSON.parse(readFileSync(new URL('../docs/players/names-residency-evidence-01.json',import.meta.url),'utf8'));
+ assert.equal(ledger.schema_version,1);
+ assert.ok(Array.isArray(ledger.records)&&ledger.records.length===20);
+ const evidenceMap=new Map();
+ for(const record of ledger.records){
+  const key=[record.country,record.field,record.value].join('|');
+  assert.ok(!evidenceMap.has(key),'Duplicate evidence entry '+key);
+  assert.ok(Object.hasOwn(ledger.categories,record.evidence_category));
+  assert.equal(record.original_catalog_row_source_verified,false);
+  assert.equal(record.action,'retain_unchanged');
+  assert.equal(record.person_level_residence_documented,
+   record.evidence_category==='direct_resident_biography');
+  if(record.evidence_category!=='catalog_only')
+   assert.ok(typeof record.source_url==='string'&&record.source_url.startsWith('https://'));
+  if(record.evidence_category==='territorial_model')
+   assert.ok(Number.isInteger(record.modeled_incidence)&&record.modeled_incidence>0);
+  evidenceMap.set(key,record);
+ }
  const details=[],review=[],bank={};
  for(const code of ['KOR','MAR','POR']){
   const s=readBank(code,'surname'),g=readBank(code,'first'),config=countries[code];
@@ -92,12 +110,24 @@ function audit(){
  for(const [code,field,value,signal,notes] of cases){
   const b=bank[code],selected=field==='surname'?b.s:b.g;
   assert.ok(selected.set.has(value),'Review candidate missing: '+code+'/'+value);
+  const evidence=evidenceMap.get([code,field,value].join('|'));
+  assert.ok(evidence,'Missing evidence record '+code+'/'+value);
   review.push({code,field,value,signal,notes,
+   residence_evidence_category:evidence.evidence_category,
+   residence_evidence_url:evidence.source_url,
+   third_party_modeled_incidence:evidence.modeled_incidence,
+   source_reference_period:evidence.reference_period,
+   residence_evidence_note:evidence.note,
+   person_level_residence_documented:evidence.person_level_residence_documented,
+   original_catalog_row_source_verified:false,
    bank_membership_confirmed:true,
    same_country_given_name_overlap:field==='surname'&&b.g.set.has(value),
    item_specific_evidence_available:false,classification:'UNREVIEWED',
    status:'KEEP_UNCHANGED_AND_REQUEST_INDIVIDUAL_EVIDENCE'});
  }
+ assert.equal(evidenceMap.size,review.length,'Evidence queue must cover all 20 cases');
+ const evidenceCounts=Object.fromEntries(
+  Object.keys(ledger.categories).map(k=>[k,review.filter(x=>x.residence_evidence_category===k).length]));
  const pairOverlap=[];
  for(const [a,b] of [['KOR','MAR'],['KOR','POR'],['MAR','POR']]){
   const shared=bank[a].s.values.filter(v=>bank[b].s.set.has(v));
@@ -111,6 +141,9 @@ function audit(){
   unchanged_name_origin_distribution:'50/15/25/10',
   unchanged_surname_policy:'uniform',
   catalogs:details,review_queue:review,cross_country_overlap:pairOverlap,
+  residency_evidence_categories:ledger.categories,residency_evidence_counts:evidenceCounts,
+  direct_person_level_residence_cases:review.filter(x=>x.person_level_residence_documented).length,
+  territorial_models_not_automatic_proof:true,
   external_context:official,
   limitations:[
    'A listed country/resident/citizenship surname is not automatically a culturally typical national surname.',
@@ -156,6 +189,13 @@ function md(report){
   x.signal+' | '+(x.same_country_given_name_overlap?'Yes':'No')+' | Retain / review |');
  out.push('');
  for(const x of report.review_queue)out.push('- '+x.code+' '+x.value+': '+x.notes);
+ out.push('','## Source-based residence evidence per item','','| Country | Field | Value | Evidence type | Reported territorial incidence | Person-level resident proof | Source |','|---|---|---|---|---:|---|---|');
+ for(const x of report.review_queue)out.push('| '+x.code+' | '+x.field+' | '+x.value+
+  ' | '+x.residence_evidence_category+' | '+(x.third_party_modeled_incidence??'—')+
+  ' | '+(x.person_level_residence_documented?'Historical biographical example':'No')+
+  ' | '+(x.residence_evidence_url??'No independently matched URL')+' |');
+ out.push('','**Evidence totals:** '+JSON.stringify(report.residency_evidence_counts)+
+  '. The historical biographical example is not linked to the original source row of the catalog, and modeled territorial tables are not official registers.');
  out.push('','## Country-pair string matches');
  for(const item of report.cross_country_overlap)out.push('- '+item.pair+': '+item.exact_spelling_overlap+
   ' shared spellings; samples: '+item.sample.join(', ')+'.');
@@ -177,6 +217,10 @@ function main(){
  }
  const report=audit();
  assert.equal(report.review_queue.length,20);
+ assert.equal(Object.values(report.residency_evidence_counts).reduce((sum,n)=>sum+n,0),20);
+ assert.equal(report.residency_evidence_counts.direct_resident_biography,1);
+ assert.equal(report.residency_evidence_counts.territorial_model,16);
+ assert.ok(report.review_queue.every(x=>x.original_catalog_row_source_verified===false));
  assert.deepEqual(report.catalogs.map(x=>x.surname_count),[2000,3000,3000]);
  assert.deepEqual(report.catalogs.map(x=>x.first_count),[300,300,300]);
  assert.ok(report.catalogs.every(x=>x.per_record_source_links===0&&!x.production_ready));
@@ -192,6 +236,9 @@ function main(){
    code:x.code,n:x.surname_count,sources:x.source_count,overlap:x.given_surname_overlap_count,
    overlap_percent:x.given_surname_overlap_percent,uniform_per_surname_pct:x.per_surname_uniform_percent,
    item_sources:x.per_record_source_links,source_licences:x.explicit_source_licence_notes})),
-  review_queue:report.review_queue.length,automatic_deletions:0}));
+  review_queue:report.review_queue.length,
+  residency_evidence:report.residency_evidence_counts,
+  direct_resident_biography:report.direct_person_level_residence_cases,
+  original_catalog_rows_verified:0,automatic_deletions:0}));
 }
 try{main()}catch(e){console.error('NAMES_REALISM_FAILED',e);process.exitCode=1;}
