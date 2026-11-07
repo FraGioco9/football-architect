@@ -50,6 +50,39 @@ test('guarded read publishes only coherent data and cancellation releases no sta
  const accepted=api.createSnapshotReader({getIdentity:()=>1,isEnabled:()=>true,clear:()=>{},fetchWorld:async()=>world,read:async()=>({world,status:'empty',data:null}),validate:x=>x,commit:x=>{assert.equal(x.data,null);committed++;return true}});
  assert.equal(await accepted.load(),true);assert.equal(committed,1);
 });
+test('shared public clock supplies one world snapshot to the competition',async()=>{
+ const state=api.createWorldState(),tick=state.beginRead();let worlds=0,seasons=0,commits=0;
+ const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
+  clear:()=>{},fetchWorld:async()=>{worlds++;return world},
+  read:async()=>{seasons++;return {world,status:'partial'}},validate:x=>x,
+  commit:()=>{commits++;return true}});
+ const pending=reader.load();assert.equal(seasons,0);
+ state.acceptWorld(world,tick);
+ assert.equal(await pending,true);
+ assert.deepEqual([worlds,seasons,commits],[0,1,1]);
+});
+test('shared world rejects stale results after a clock revision change',async()=>{
+ const state=api.createWorldState();state.acceptWorld(world,state.beginRead());
+ const started=deferred(),held=deferred();let commits=0;
+ const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
+  clear:()=>{},fetchWorld:async()=>{throw Error('unexpected world fetch')},
+  read:async()=>{started.resolve();return held.promise},validate:x=>x,
+  commit:()=>{commits++;return true}});
+ const pending=reader.load();await started.promise;
+ const newer={...world,revision:4,day:15};state.acceptWorld(newer,state.beginRead());
+ held.resolve({world,status:'partial'});
+ assert.equal(await pending,false);assert.equal(commits,0);
+ assert.deepEqual(state.get().world,newer);
+});
+test('unavailable canonical world does not trigger a duplicate read',async()=>{
+ const state=api.createWorldState(),tick=state.beginRead();let worldReads=0,seasonReads=0;
+ const reader=api.createSnapshotReader({worldState:state,useSharedWorld:true,getIdentity:()=>1,
+  clear:()=>{},fetchWorld:async()=>{worldReads++;return world},
+  read:async()=>{seasonReads++;return {world}},validate:x=>x,commit:()=>true});
+ const pending=reader.load();state.unavailable(tick);
+ assert.equal(await pending,false);
+ assert.equal(worldReads,0);assert.equal(seasonReads,0);
+});
 test('Debug reset retains isolated Season 0 across reload instead of defaulting to Season 1',()=>{
  const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
  const clock=createDevWorldClock(storage);clock.setSeason(3);clock.setDay(45);clock.reset();

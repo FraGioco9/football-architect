@@ -136,6 +136,9 @@ export function createAuthoritativeLoader({getContext,clear,commit,isDev,fetchJs
   getIdentity:()=>{const c=getContext();return c?JSON.stringify([c.definition?.id,c.selectedSeason,c.revision]):null},
   isEnabled:()=>!isDev(),clear:()=>{retained=!!getContext()?.seasonData;if(!retained)clear();context=getContext()},
   onState:state=>{if(state==='unavailable'&&retained)clear();onState(state)},
+  // Reuse the authoritative global clock; the season payload carries its
+  // own verified world revision and provenance.
+  useSharedWorld:true,
   fetchWorld:async options=>(await fetchJson('/api/world',options))?.world,
   onBeforeWorld:onWorld,
   read:options=>fetchJson(`/api/competitions/${context.definition.id}/seasons/${context.selectedSeason}`,options),
