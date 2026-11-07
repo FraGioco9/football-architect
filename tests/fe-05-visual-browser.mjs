@@ -20,6 +20,16 @@ const nextFrame=async(page,selector)=>page.locator(selector).first().evaluate(el
 });
 const settled=async(page,config)=>{
  await page.locator(config.ready).first().waitFor({state:'visible',timeout:12000});
+ if(config.id==='international-postseason'){
+  // Postseason bracket geometry changes while the official world/season read
+  // is in flight. Compare loaded-to-loaded frames, never pre-hydration to
+  // post-hydration. Preserve the strict frame and pixel assertions below.
+  await page.waitForFunction(()=>window.faCompetitionContext?.definition?.category==='international'&&
+   !!window.faFixtures,null,{timeout:15000});
+  await page.waitForLoadState('networkidle',{timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading!=='true',
+   null,{timeout:15000});
+ }
  if(config.path.startsWith('/account/'))await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
  if(config.path.startsWith('/clubs/it/'))await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
  await page.evaluate(async()=>{

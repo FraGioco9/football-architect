@@ -1492,3 +1492,14 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
  #competition-panel-fixtures .app-fixtures-trigger{padding-inline:12px 24px}
  #competition-panel-fixtures .app-fixtures-current{width:32px;min-width:32px}
 }
+
+/* QA-02 accessibility: the compact 36px visual controls retain a 44px
+   vertical pointer target. The transparent hit extension does not change
+   the owner-approved widths, center alignment, or toolbar geometry. */
+#competition-panel-fixtures :is(.app-fixtures-arrow,.app-fixtures-trigger,.app-fixtures-current){
+ position:relative;
+}
+#competition-panel-fixtures :is(.app-fixtures-arrow,.app-fixtures-trigger,.app-fixtures-current)::before{
+ content:"";position:absolute;inset-block:-4px;inset-inline:0;
+ background:transparent;pointer-events:auto;
+}
