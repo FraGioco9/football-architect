@@ -77,3 +77,23 @@ test('PAGE-LOAD-03C: loading lifecycle shares the same isolated/public History r
  assert.match(source,/knownSeason=\(preview\?/);
  assert.doesNotMatch(source,/season===0\|\|root\.faDebugEnabled===false/);
 });
+
+test('QA-05: History skeleton is visible early and no final standings table is present',()=>{
+ for(const competition of manifest.competitions){
+  const html=read('competitions/'+competition.slug+'/index.html');
+  const early=html.indexOf('id="app-history-first-paint"');
+  const release=html.indexOf('data-fa-history-early-ready');
+  const standings=html.indexOf('id="competition-panel-standings"');
+  const actual=html.indexOf('id="competition-panel-history"');
+  const handoff=html.indexOf('data-fa-history-early-handoff');
+  assert.ok(early>0&&early<release&&release<standings,competition.slug+' early History skeleton is released before Standings is parsed');
+  assert.ok(actual>standings&&handoff>actual,competition.slug+' History handoff follows the actual panel');
+  const preview=renderViewSkeleton(competition,'history').replace('data-competition-skeleton-root="history-preview"','data-competition-early-skeleton="history-preview"');
+  assert.ok(html.slice(early,standings).includes(preview),competition.slug+' early History skeleton mirrors reserved layout');
+  assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,competition.slug+' no History final table skeleton');
+  const css=html.match(/<style data-fa-competition-shell>([^<]+)<\/style>/)?.[1]||'';
+  assert.match(css,/#app-history-first-paint\{display:block!important\}/,competition.slug+' early History is visible');
+ }
+ assert.doesNotMatch(read('competitions/_shared/index.html'),/historyFinalLeagueTable|app-view-skeleton-history-table/);
+ assert.doesNotMatch(read('assets/authoritative-history.mjs'),/section\.append\(table\)|make\('table'\)|Final league table/);
+});
