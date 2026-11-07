@@ -93,6 +93,10 @@ test('QA-05: History skeleton is visible early and no final standings table is p
   assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,competition.slug+' no History final table skeleton');
   const css=html.match(/<style data-fa-competition-shell>([^<]+)<\/style>/)?.[1]||'';
   assert.match(css,/#app-history-first-paint\{display:block!important\}/,competition.slug+' early History is visible');
+  const visibilityGuard='html[data-fa-competition-prepaint]:not([data-competition-view="history"]) body{visibility:hidden}';
+  assert.ok(css.includes(visibilityGuard),competition.slug+' History must never be blocked by a whole-body prepaint gate');
+  assert.ok(!css.includes('html[data-fa-competition-prepaint] body{visibility:hidden}'),competition.slug+' no unconditional body hiding');
+  assert.ok(html.indexOf('id="competition-tab-history"') < early,competition.slug+' static tabs are parsed before the early History shell');
  }
  assert.doesNotMatch(read('competitions/_shared/index.html'),/historyFinalLeagueTable|app-view-skeleton-history-table/);
  assert.doesNotMatch(read('assets/authoritative-history.mjs'),/section\.append\(table\)|make\('table'\)|Final league table/);
