@@ -192,18 +192,51 @@ try{
    });
    assert.ok(geometry.controls.every(r=>r.left>=geometry.pane.left-2&&r.right<=geometry.pane.right+2),
     "SAF-01 Fixtures must fit mobile content: "+JSON.stringify({width,geometry}));
-   const actionLayout=await page.evaluate(()=>{
-    const current=document.getElementById("app-fixtures-current");current.hidden=false;
-    const button=current.getBoundingClientRect();
-    const navigation=document.querySelector("#competition-panel-fixtures .app-fixtures-navigation").getBoundingClientRect();
+   const measureControls=()=>page.evaluate(()=>{
+    const current=document.getElementById("app-fixtures-current");
+    const toolbar=document.querySelector("#competition-panel-fixtures .app-fixtures-toolbar");
+    const navigation=toolbar.querySelector(".app-fixtures-navigation");
+    const arrows=[...navigation.querySelectorAll(".app-fixtures-arrow")];
+    const selector=navigation.querySelector(".app-fixtures-select");
     const pane=document.querySelector(".fa-shell-content-scroll").getBoundingClientRect();
-    return {button:[button.left,button.right,button.top],navigation:[navigation.left,navigation.right,navigation.top],pane:[pane.left,pane.right]};
+    const wasHidden=current.hidden;
+    const sample=()=>{
+     const bar=toolbar.getBoundingClientRect(),nav=navigation.getBoundingClientRect();
+     const button=current.getBoundingClientRect();
+     return {barCenter:(bar.left+bar.right)/2,navCenter:(nav.left+nav.right)/2,
+      navLeft:nav.left,navRight:nav.right,navTop:nav.top,
+      buttonLeft:button.left,buttonRight:button.right,buttonTop:button.top,
+      arrowWidths:arrows.map(x=>x.getBoundingClientRect().width),
+      pickerWidth:selector.getBoundingClientRect().width};
+    };
+    current.hidden=false;const visible=sample();
+    current.hidden=true;const hidden=sample();
+    current.hidden=wasHidden;
+    return {visible,hidden,pane:[pane.left,pane.right]};
    });
-   assert.ok(Math.abs(actionLayout.button[2]-actionLayout.navigation[2])<=2 &&
-     actionLayout.navigation[1]<=actionLayout.button[0]-2 &&
-     actionLayout.navigation[0]>=actionLayout.pane[0]-2 &&
-     actionLayout.button[1]<=actionLayout.pane[1]+2,
-    "SAF-01 Current matchday must fit on the same row: "+JSON.stringify({width,actionLayout}));
+   const checkControls=(layout,label,maxPicker,maxArrow)=>{
+    const {visible,hidden,pane}=layout;
+    assert.ok(Math.abs(visible.navCenter-visible.barCenter)<=1&&
+      Math.abs(hidden.navCenter-hidden.barCenter)<=1&&
+      Math.abs(visible.navCenter-hidden.navCenter)<=1,
+      "QA-02 V06 selector must stay truly centered with/without Reset: "+JSON.stringify({label,layout}));
+    assert.ok(Math.abs(visible.buttonTop-visible.navTop)<=2&&
+      visible.navRight<=visible.buttonLeft-2&&
+      visible.navLeft>=pane[0]-2&&visible.buttonRight<=pane[1]+2,
+      "QA-02 V06 Reset must fit alongside navigation: "+JSON.stringify({label,layout}));
+    assert.ok(visible.pickerWidth<=maxPicker+1&&
+      visible.arrowWidths.every(size=>size<=maxArrow+1),
+      "QA-02 V06 compact picker/arrows: "+JSON.stringify({label,layout}));
+   };
+   const actionLayout=await measureControls();
+   checkControls(actionLayout,width+"px",width<=360?118:132,width<=360?28:30);
+   if(width===390){
+    for(const desktop of [768,1440]){
+     await page.setViewportSize({width:desktop,height:900});
+     checkControls(await measureControls(),desktop+"px",168,32);
+    }
+    await page.setViewportSize({width,height:844});
+   }
    // Scroll the actual strip: pagehide persists its real offset on reload.
    await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
    await page.reload({waitUntil:"domcontentloaded"});

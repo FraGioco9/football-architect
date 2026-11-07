@@ -179,7 +179,11 @@
   }
   function matchRow(game){
     const item=element("li","app-fixture-match");
-    item.dataset.fixtureMatch=game.round+":"+game.homeId+":"+game.awayId;
+    // Unresolved knockout ties share unknown participants. Their configured
+    // tie slot, not null/null club IDs, is the stable DOM reconciliation key.
+    item.dataset.fixtureMatch=game.fixtureSlot
+      ?'pending:'+game.round+':'+game.fixtureSlot
+      :game.round+':'+game.homeId+':'+game.awayId;
     item.dataset.fixtureRound=String(game.round);
     const result=element("div","app-fixture-result"),played=game.homeGoals!==null;
     let status;
@@ -255,7 +259,10 @@
         const games=postseason.filter(g=>g.round===round);
         if(round===33&&!hasFinal)continue;
         const count=round===33?1:firstTies.length;
-        const display=games.length?games:Array.from({length:count},()=>({round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null}));
+        const display=games.length?games:Array.from({length:count},(_,index)=>({
+          round,homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null,
+          fixtureSlot:round===33?'final':firstTies[index].id
+        }));
         const heading=element('li','app-fixture-stage');
         const title=element('h3');title.append(word(round===31?'postseasonFirstLeg':round===32?'postseasonSecondLeg':'postseasonFinal',round===31?'First leg':round===32?'Second leg':'Final'));
         heading.append(title);matches.push(heading,...display.map(matchRow));

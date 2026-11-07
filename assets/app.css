@@ -1440,3 +1440,55 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 /* UI-409: unidentified fixture/Stats first-paint slots reserve geometry without showing a crest. */
 :is(.app-fixtures-skeleton-crest,.app-view-skeleton-crest-slot){box-sizing:border-box;border:0;background:transparent}
 
+
+/* QA-02 V06: center the matchday trio against the full Fixtures toolbar.
+   Equal side tracks reserve a permanent right slot for the Current/Reset
+   shortcut: toggling that action never shifts the matchday selector. */
+#competition-panel-fixtures .app-fixtures-toolbar{
+ display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+ column-gap:0;align-items:center;min-height:36px;
+}
+#competition-panel-fixtures .app-fixtures-toolbar[hidden]{display:none}
+#competition-panel-fixtures .app-fixtures-navigation{
+ grid-column:2;grid-row:1;display:flex;align-items:center;justify-self:center;
+ flex:0 0 auto;width:max-content;max-width:100%;min-width:0;gap:4px;
+}
+#competition-panel-fixtures .app-fixtures-select{
+ flex:0 0 168px;width:168px;max-width:168px;min-width:0;font-size:12px;
+}
+#competition-panel-fixtures .app-fixtures-arrow{
+ width:32px;min-width:32px!important;height:36px;min-height:36px;
+}
+#competition-panel-fixtures .app-fixtures-trigger{
+ height:36px;min-height:36px;padding-inline:22px 26px;font-size:inherit;
+}
+#competition-panel-fixtures .app-fixtures-current{
+ position:static;inset:auto;grid-column:3;grid-row:1;justify-self:end;align-self:center;
+ width:36px;min-width:36px;height:36px;min-height:36px;margin:0;padding:0;
+}
+#competition-panel-fixtures .app-fixtures-current span{
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+ clip-path:inset(50%);white-space:nowrap;
+}
+@media(max-width:620px){
+ #competition-panel-fixtures .app-fixtures-navigation{gap:3px}
+ #competition-panel-fixtures .app-fixtures-arrow{
+  width:30px;min-width:30px!important;height:36px;min-height:36px;
+ }
+ #competition-panel-fixtures .app-fixtures-select{
+  flex:0 0 132px;width:132px;max-width:132px;font-size:12px;
+ }
+ #competition-panel-fixtures .app-fixtures-trigger{
+  height:36px;min-height:36px;padding-inline:16px 24px;
+ }
+}
+@media(max-width:360px){
+ #competition-panel-fixtures .app-fixtures-arrow{
+  width:28px;min-width:28px!important;height:36px;min-height:36px;
+ }
+ #competition-panel-fixtures .app-fixtures-select{
+  flex:0 0 118px;width:118px;max-width:118px;font-size:11.5px;
+ }
+ #competition-panel-fixtures .app-fixtures-trigger{padding-inline:12px 24px}
+ #competition-panel-fixtures .app-fixtures-current{width:32px;min-width:32px}
+}

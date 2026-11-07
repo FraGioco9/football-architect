@@ -297,6 +297,38 @@ const postseasonSchedule=(d,day)=>{
  if(result.final)games.push({round:33,kickoff:null,...result.final});
  return games;
 };
+test('QA-02 V08: unresolved two-leg playoff boxes keep distinct nodes through rerender and hydration',()=>{
+ for(const d of [divisions.find(x=>x.id==='IT-2'),divisions.find(x=>x.id==='IT-1')]){
+  const {view,fields,route}=setup(d),tierTwo=d.tier===2;
+  const phase=definitions.find(x=>x.id===d.id).rules.phases.find(x=>x.type==='knockout');
+  const first=phase.ties.filter(t=>t.legs===2).map(t=>t.id);
+  const expected=[...first.map(id=>'pending:31:'+id),
+   ...first.map(id=>'pending:32:'+id),...(tierTwo?['pending:33:final']:[])];
+  view.prepare(schedule(d,30),{postseason:[]})();
+  route.set({matchday:tierTwo?'playoffs':'playout'});
+  for(let render=0;render<4;render++){
+   const rows=fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch);
+   assert.equal(rows.length,tierTwo?5:2,d.id+' full unknown fixture slots');
+   assert.deepEqual(rows.map(n=>n.dataset.fixtureMatch),expected,d.id+' stable tie-slot keys');
+   assert.equal(new Set(rows).size,rows.length,d.id+' distinct DOM nodes');
+   assert.equal(new Set(rows.map(n=>n.dataset.fixtureMatch)).size,rows.length,d.id+' distinct identities');
+   assert.ok(rows.every(n=>n.dataset.fixtureRound==='31'||n.dataset.fixtureRound==='32'||n.dataset.fixtureRound==='33'));
+   route.set({matchday:30});route.set({matchday:tierTwo?'playoffs':'playout'});
+  }
+  // Once teams are actually known, use the ordinary immutable match identity
+  // and keep exactly the same number of stage boxes on subsequent refreshes.
+  const published=postseasonSchedule(d,33);
+  view.prepare(schedule(d,30),{postseason:published})();
+  const real=fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch);
+  assert.equal(real.length,published.length,d.id+' hydrated fixture count');
+  assert.ok(real.every(n=>!n.dataset.fixtureMatch.startsWith('pending:')));
+  assert.equal(new Set(real).size,real.length);
+  view.prepare(schedule(d,30),{postseason:[]})();
+  assert.deepEqual(fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch)
+    .map(n=>n.dataset.fixtureMatch),expected,d.id+' placeholders restored after invalidation');
+ }
+});
+
 test('FIXTURES-POSTSEASON: stages remain selectable with placeholders before qualification',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),key=d.tier===1?'playout':'playoffs';
