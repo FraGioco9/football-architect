@@ -462,7 +462,12 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
        'QA-02 mobile controls preserve >=24px width and >=44px actual vertical touch area: '+JSON.stringify(centeredControls));
       assert.ok(centeredControls.controls.filter(c=>c.id.includes('previous')||c.id.includes('next')).every(c=>c.width<=(width<=360?28:30)),
        'QA-02 compact arrows retain the approved widths');
-      assert.ok(centeredControls.left>=centeredControls.panelLeft-2&&centeredControls.right<=centeredControls.panelRight-40,'matchday navigation reserves inline space for Current matchday');
+      // The left/right tracks are symmetric: navigation must be page-centered.
+      // The formerly hard-coded 40px margin incorrectly rejected the approved
+      // compact 24px Reset on 320px. The actual Reset overlap is checked below.
+      assert.ok(Math.abs(centeredControls.center-(centeredControls.panelLeft+centeredControls.panelRight)/2)<=1&&
+       centeredControls.left>=centeredControls.panelLeft-2&&centeredControls.right<=centeredControls.panelRight+2,
+       'QA-02 matchday navigation stays page-centered and inside the panel');
       await tap('#app-fixtures-round');await wait("!document.getElementById('app-fixtures-picker').hidden");await menuFits('app-fixtures-picker');
       const pickerGeometry=await run("(()=>{const menu=document.getElementById('app-fixtures-picker'),m=menu.getBoundingClientRect(),trigger=document.getElementById('app-fixtures-round').getBoundingClientRect(),option=menu.querySelector('[role=option]'),r=option.getBoundingClientRect();let overlap=0;const above=[...document.querySelectorAll('[data-fixture-match]')].every(e=>{const b=e.getBoundingClientRect(),l=Math.max(m.left,b.left),t=Math.max(m.top,b.top),right=Math.min(m.right,b.right),bottom=Math.min(m.bottom,b.bottom);if(right<=l||bottom<=t)return true;overlap++;return menu.contains(document.elementFromPoint((l+right)/2,(t+bottom)/2))});return {menuWidth:m.width,triggerWidth:trigger.width,optionHeight:r.height,optionFont:parseFloat(getComputedStyle(option).fontSize),triggerFont:parseFloat(getComputedStyle(document.getElementById('app-fixtures-round')).fontSize),above,overlap}})()");
       assert.ok(Math.abs(pickerGeometry.menuWidth-pickerGeometry.triggerWidth)<1,'matchday menu matches trigger width');

@@ -1486,11 +1486,14 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
  #competition-panel-fixtures .app-fixtures-arrow{
   width:28px;min-width:28px!important;height:36px;min-height:36px;
  }
+ /* At 320px the perfectly centered 118px picker left a 9px overlap
+    with Reset. Use 110px + a 24px Reset, keeping a real 3px separation
+    and >=24px horizontal / 44px vertical pointer targets. */
  #competition-panel-fixtures .app-fixtures-select{
-  flex:0 0 118px;width:118px;max-width:118px;font-size:11.5px;
+  flex:0 0 110px;width:110px;max-width:110px;font-size:11.5px;
  }
  #competition-panel-fixtures .app-fixtures-trigger{padding-inline:12px 24px}
- #competition-panel-fixtures .app-fixtures-current{width:32px;min-width:32px}
+ #competition-panel-fixtures .app-fixtures-current{width:24px;min-width:24px}
 }
 
 /* QA-02 accessibility: the compact 36px visual controls retain a 44px
