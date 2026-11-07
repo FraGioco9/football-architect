@@ -86,23 +86,21 @@ test('protected shell switches OFF to real API and ON to isolated Season 0 witho
   assert.equal(values.get('football-architect:standings-dev-season'),'0');
  }finally{if(previous===undefined)delete globalThis.sessionStorage;else globalThis.sessionStorage=previous}
 });
-test('focus is passive while explicit invalidation and tab visibility revalidate safely',async()=>{
- const state=api.createWorldState(),events={},docEvents={};
- let calls=0;
+test('focus/visibility do not poll world; explicit invalidation still fences revisions',async()=>{
+ const state=api.createWorldState(),events={},docEvents={};let calls=0;
  const window={faWorldState:state,addEventListener:(n,fn)=>events[n]=fn,
   fetch:async()=>{calls++;return {ok:true,json:async()=>({world})}}};
  const document={documentElement:{dataset:{}},visibilityState:'visible',addEventListener:(n,fn)=>docEvents[n]=fn};
  api.mountWorldState({window,document});
  await events['fa:world-invalidated']();
- assert.equal(events.focus,undefined,'focus must not trigger an unnecessary world poll');
+ assert.equal(events.focus,undefined);assert.equal(docEvents.visibilitychange,undefined);
  const before=calls;
- document.visibilityState='hidden';docEvents.visibilitychange();
- assert.equal(calls,before,'hidden page cannot revalidate');
+ document.visibilityState='hidden';document.visibilityState='visible';
+ assert.equal(calls,before,'tab change must not fetch again');
  const newer={...world,revision:9,day:21};state.acceptWorld(newer,state.beginRead());
- document.visibilityState='visible';docEvents.visibilitychange();
- await new Promise(resolve=>setImmediate(resolve));
- assert.ok(calls>before,'real browser-tab reactivation revalidates');
- assert.deepEqual(state.get().world,newer,'older world cannot erase accepted revision');
+ await events['fa:world-invalidated']();
+ assert.equal(calls,before+1,'explicit invalidation still refreshes');
+ assert.deepEqual(state.get().world,newer,'stale response must not replace newer revision');
 });
 test('browser populated fixtures satisfy real authoritative validators before browser execution',async()=>{
  const {published,calendarPublished}=await import('./canonical-state-browser.mjs');

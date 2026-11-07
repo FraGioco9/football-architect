@@ -184,7 +184,12 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     'mobile pending/loaded positions must match: '+JSON.stringify(alignment));
   const worldBeforeFocus=worldCalls;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  assert.equal(worldCalls,worldBeforeFocus,'focus on competition tabs must not poll the public world');
+  assert.equal(worldCalls,worldBeforeFocus,'focus must not poll /api/world');
+  const worldBeforeTabs=worldCalls;
+  await page.locator('#competition-tab-fixtures').click();
+  await page.locator('#competition-tab-stats').click();
+  await page.locator('#competition-tab-standings').click();
+  assert.equal(worldCalls,worldBeforeTabs,'in-page tab switch must not poll /api/world');
   await page.setViewportSize(viewportBefore);
   await page.evaluate(()=>{window.sh03Row=document.querySelector('#app-standings-body tr');window.sh03DocumentToken={};window.dispatchEvent(new Event('fa:world-invalidated'))});
   await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.hidden===true);

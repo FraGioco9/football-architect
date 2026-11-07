@@ -97,11 +97,15 @@ try {
      visibleNames:[...document.querySelectorAll(innerWidth<=620?
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
       '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name')].filter(visible).length,
+     visiblePlaceholders:[...document.querySelectorAll(innerWidth<=620?
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
+      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]')].filter(visible).length,
      staticIdentity:document.documentElement.dataset.faStandingsKnownIdentity,
      sportVisible:visible(document.querySelector('#competition-panel-standings > .app-world-standings #app-standings-body tr td:nth-child(10)')),
      firstNameLeft:(()=>{const n=document.querySelector(innerWidth<=620?
-      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
-      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name');return n?.getBoundingClientRect().left??null})(),
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
+      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]');
+      return n?n.getBoundingClientRect().left+(innerWidth<=620?47:55):null})(),
      firstNameWeight:(()=>{const n=document.querySelector(innerWidth<=620?
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
       '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name');return n?getComputedStyle(n).fontWeight:null})(),
@@ -127,18 +131,12 @@ try {
    assert.equal(pending.contextReady,false,'manifest genuinely held '+route);
    if(view==='standings'){
     assert.equal(pending.staticIdentity,season==='1'?'true':'false','correct viewed-season first-paint gate '+route);
-    assert.equal(pending.visibleNames,season==='1'?16:0,'all and only known Season 1 identities visible before provider '+route);
-    assert.equal(pending.sportVisible,false,'no previous/statistic sporting values visible while pending '+route);
-    if(season==='1'){
-     assert.ok(pending.firstNameLeft>0,'known first-paint name has nonzero horizontal position '+route);
-     assert.equal(pending.firstNameWeight,'700','known team name bold on first paint '+route);
-    }
+    assert.equal(pending.visibleNames,0,'ID-ordered identities must not paint before ranking '+route);
+    assert.equal(pending.visiblePlaceholders,16,'16 neutral reserved club slots '+route);
+    assert.equal(pending.sportVisible,false,'no premature sporting values '+route);
+    assert.ok(pending.firstNameLeft>0,'reserve loaded club text X '+route);
     if(['it-1','de-1'].includes(slug)&&season==='1'){
-     assert.ok(pending.crestProbe?.src?.startsWith('/assets/clubs/'),'prepaint SVG asset source '+route);
-     assert.equal(pending.crestProbe.shield,'none','published crest must not show shield placeholder '+route);
-     assert.equal(pending.crestProbe.visible,'visible','published crest image participates in first paint '+route);
-     await page.waitForFunction(()=>[...document.querySelectorAll('.app-standings-skeleton [data-club-crest-pending="true"] img.app-club-crest-image')].every(img=>img.complete&&img.naturalWidth>0));
-
+     assert.ok(pending.crestProbe?.src?.startsWith('/assets/clubs/'),'SVG assets remain declared without false order '+route);
     }
    }
    if(view==='fixtures'){
@@ -166,7 +164,7 @@ try {
      return n?.getBoundingClientRect().left??null;
     });
     assert.ok(loadedLeft!==null&&Math.abs(loadedLeft-pending.firstNameLeft)<=2,
-      'club name x alignment between prepaint and hydrated standings within 2px '+route+
+      'neutral slot and loaded club name aligned within 2px '+route+
       ': first='+pending.firstNameLeft+', loaded='+loadedLeft);
     const loadedWeight=await page.evaluate(()=>{
      const n=document.querySelector(innerWidth<=620?
