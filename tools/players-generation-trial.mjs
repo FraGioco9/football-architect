@@ -405,6 +405,14 @@ function secondaryPositions(role,foot,rng,options){
 }
 function secondaryNationality(country,rng,options){
  if(options.secondaryNationality==='none')return null;
+ // An explicit nonempty allowed set always provides one secondary country.
+ if(Array.isArray(options.secondaryNationality)){
+  const allowed=options.secondaryNationality;
+  if(!allowed.length||new Set(allowed).size!==allowed.length||
+    allowed.some(code=>!byCountry.has(code)||code===country))
+   throw Error('Invalid allowed secondary nationalities');
+  return pick(allowed,rng);
+ }
  if(options.secondaryNationality&&options.secondaryNationality!=='automatic'){
   if(!byCountry.has(options.secondaryNationality)||options.secondaryNationality===country)throw Error('Invalid exact secondary nationality');
   return options.secondaryNationality;
@@ -413,6 +421,23 @@ function secondaryNationality(country,rng,options){
  // Explicit allowlist only: unlisted secondary nationalities have zero probability.
  const choices=COUNTRIES.filter(c=>c.code!==country&&related.has(`${country}:${c.code}`));
  return choices.length?pick(choices,rng).code:null;
+}
+/**
+ * PLAYERS-GEN-DUAL-NAME-01, conditional on a second nationality:
+ * both automatic: PP 50%, SP 15%, PS 25%, SS 10%.
+ * only first automatic: 25% secondary; only surname automatic: 35% secondary.
+ */
+export function selectDualNameOrigins(hasSecondary,firstManual,lastManual,draw){
+ const primary={first:'primary',last:'primary'};
+ if(!hasSecondary||(firstManual&&lastManual))return primary;
+ if(typeof draw!=='number'||!Number.isFinite(draw)||draw<0||draw>=1)
+  throw Error('Invalid dual-nationality name draw');
+ if(firstManual)return {first:'primary',last:draw<.35?'secondary':'primary'};
+ if(lastManual)return {first:draw<.25?'secondary':'primary',last:'primary'};
+ if(draw<.50)return primary;
+ if(draw<.65)return {first:'secondary',last:'primary'};
+ if(draw<.90)return {first:'primary',last:'secondary'};
+ return {first:'secondary',last:'secondary'};
 }
 function generateCandidate(rng,index,options,trialSeed){
  const eligible=options.allowedPositions||POSITIONS;
@@ -423,11 +448,12 @@ function generateCandidate(rng,index,options,trialSeed){
  const country=options.primaryNationality??COUNTRIES[index%COUNTRIES.length].code;
  if(!byCountry.has(country))throw Error('Primary nationality outside test top 50');
  const bank=byCountry.get(country);
- // Each automatic selection consumes exactly one legacy RNG draw, preserving
- // height, aptitude, positions, attributes and seeded calibration comparisons.
- const first=options.firstName??sampleGivenName(nationalNamePools,country,rng);
- const last=options.lastName??sampleSurname(nationalNamePools,country,rng,bank.demoLast);
- if(!first||!last||typeof first!=='string'||typeof last!=='string')throw Error('First and last names required');
+ // Preserve the original RNG draws and choose final name sources after the
+ // second nationality is known, with a separate seeded per-player stream.
+ const primaryFirst=options.firstName??sampleGivenName(nationalNamePools,country,rng);
+ const primaryLast=options.lastName??sampleSurname(nationalNamePools,country,rng,bank.demoLast);
+ if(!primaryFirst||!primaryLast||typeof primaryFirst!=='string'||typeof primaryLast!=='string')
+  throw Error('First and last names required');
  const [ageLo,ageHi]=validRange(options.age,16,19);
  const age=discrete(rng,ageLo,ageHi,[30,35,20,15].slice(ageLo-16,ageHi-15));
  const foot=options.preferredFoot??(rng()*100<footLeftPct[position]?'left':'right');
@@ -468,11 +494,20 @@ function generateCandidate(rng,index,options,trialSeed){
  const actualPrimarySuitability=useSuitabilityTarget?
   conditionAttributesToPrimarySuitability(attributes,position,
    primarySuitabilityTarget,options.attributes):null;
+ const secondary=secondaryNationality(country,rng,options);
+ const nameRng=seededRandom('dual-name:'+trialSeed+':'+index);
+ const firstManual=options.firstName!=null,lastManual=options.lastName!=null;
+ const origins=selectDualNameOrigins(Boolean(secondary),firstManual,lastManual,
+  secondary&&(!firstManual||!lastManual)?nameRng():0);
+ const first=origins.first==='secondary'?
+  sampleGivenName(nationalNamePools,secondary,nameRng):primaryFirst;
+ const last=origins.last==='secondary'?
+  sampleSurname(nationalNamePools,secondary,nameRng,byCountry.get(secondary).demoLast):primaryLast;
  const candidate={
   preview_id:`trial-${String(index+1).padStart(4,'0')}`,
   // Permanent id and authoritative entry_season exist only after final confirmation; this tool never persists.
   first_name:first,last_name:last,display_name:`${first} ${last}`,
-  initial_age:age,nationality:country,secondary_nationality:secondaryNationality(country,rng,options),
+  initial_age:age,nationality:country,secondary_nationality:secondary,
   height_cm:height,preferred_foot:foot,primary_position:position,secondary_positions:secondaries,
   attributes,development_aptitude:aptitude,career_status:'active'
  };
