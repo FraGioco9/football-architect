@@ -627,6 +627,13 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
  #competition-panel-history .app-history-record-group,
  #competition-panel-history .app-history-record-group .app-competition-stat-grid,
  #competition-panel-history .app-world-standings{min-width:0;max-width:100%}
+ /* Prevent the 160px Season/All-time buttons from determining the grid's min-content width. */
+ #competition-panel-history .app-history-empty,
+ #competition-panel-history .app-history-dev,
+ #competition-panel-history .app-history-dev-section,
+ #competition-panel-history .app-history-record-group{grid-template-columns:minmax(0,1fr)}
+ #competition-panel-history .app-history-record-controls{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
+ #competition-panel-history .app-history-record-controls button{box-sizing:border-box;flex:1 1 0;width:auto;max-width:160px}
  #competition-panel-history .app-competition-stat-grid{grid-template-columns:minmax(0,1fr)}
  #competition-panel-history .app-competition-stat-card{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
  #competition-panel-history .app-history-record-holders,

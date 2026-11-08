@@ -131,7 +131,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
-  if(id==="history")return `          <section ${attrs}>${renderViewSkeleton(d,id)}<script data-fa-history-first-paint-ready>if(document.documentElement.dataset.competitionView==="history"){document.getElementById("competition-panel-history").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>${renderViewTemplates(d,id)}${historyEmptyContent()}${viewSkeletonScript(id)}\n          </section>`;
+  if(id==="history")return `          <section ${attrs}>${renderViewSkeleton(d,id)}\n            <script data-fa-history-first-paint-ready>if(document.documentElement.dataset.competitionView==="history"){document.getElementById("competition-panel-history").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>${renderViewTemplates(d,id)}${historyEmptyContent()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return renderRules(d,neutral,attrs,key,label);
   if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
