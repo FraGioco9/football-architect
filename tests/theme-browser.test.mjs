@@ -722,7 +722,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           "return {cols:getComputedStyle(g).gridTemplateColumns.trim().split(/\\s+/).length,"+
           "overflow:g.scrollWidth>g.clientWidth+1,"+
           "fit:cards.every(c=>{const b=c.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&c.scrollWidth<=c.clientWidth+1})}})})()");
-        const expectedColumns=width<=520?1:width<=650?2:3;
+        const expectedColumns=width<=620?1:width<=650?2:3;
         assert.ok(boxGeometry.length>0&&boxGeometry.every(g=>g.cols===expectedColumns&&!g.overflow&&g.fit),
           'History record boxes fit without inner horizontal scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(boxGeometry));
         // The shell owns vertical scrolling. Unlike document.scrollWidth, it

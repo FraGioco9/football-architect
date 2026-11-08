@@ -119,7 +119,7 @@ test('QA-05: standings runtime remains scoped when History is parsed first',()=>
 test('QA-05: no generated History panel contains Hall of Champions, mobile cards can shrink',()=>{
  const css=read('assets/app.css');
  assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?#competition-panel-history \.app-competition-stat-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
- assert.doesNotMatch(css,/#competition-panel-history #app-history-records\{/);
+ assert.match(css,/#competition-panel-history #app-history-records\{/);
  for(const competition of manifest.competitions){
   const html=read('competitions/'+competition.slug+'/index.html');
   assert.doesNotMatch(html,/historyHallOfChampions|app-view-skeleton-champion/,competition.slug+' no Hall skeleton');

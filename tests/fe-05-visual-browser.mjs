@@ -188,10 +188,16 @@ try{
     const host=document.querySelector('.fa-shell-content-scroll');
     const panel=document.querySelector('#competition-panel-history');
     const limit=panel?.getBoundingClientRect(),cards=[...(panel?.querySelectorAll('.app-competition-stat-card')||[])]
-     .filter(card=>{const s=getComputedStyle(card);return s.display!=='none'&&s.visibility!=='hidden'})
+     .filter(card=>{const s=getComputedStyle(card);return s.display!=='none'&&s.visibility!=='hidden'&&card.getBoundingClientRect().width>0})
      .map(card=>{const r=card.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}});
+    const boundary=host?.getBoundingClientRect(),overflowers=[...(host?.querySelectorAll('*')||[])]
+     .map(el=>({el,rect:el.getBoundingClientRect()}))
+     .filter(({el,rect})=>rect.width>0&&rect.right>(boundary?.right||0)+1&&getComputedStyle(el).display!=='none')
+     .sort((a,b)=>b.rect.right-a.rect.right).slice(0,12)
+     .map(({el,rect})=>({tag:el.tagName,id:el.id,cls:String(el.className).slice(0,110),
+       left:Math.round(rect.left),right:Math.round(rect.right),width:Math.round(rect.width)}));
     return {scrollWidth:host?.scrollWidth,clientWidth:host?.clientWidth,
-      panelLeft:limit?.left,panelRight:limit?.right,cards};
+      panelLeft:limit?.left,panelRight:limit?.right,overflowers,cards};
    });
    assert.ok(m.scrollWidth<=m.clientWidth+1,'History document must not scroll horizontally: '+JSON.stringify({width,m}));
    assert.ok(m.cards.every(r=>r.left>=m.panelLeft-1&&r.right<=m.panelRight+1),
