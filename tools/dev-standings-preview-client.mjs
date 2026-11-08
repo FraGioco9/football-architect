@@ -234,6 +234,12 @@ function openHistorySeason(season){
  if(String(window.faCompetitionRoute?.get?.().season)!==String(season))
   document.documentElement.dataset.faDevSeasonTransition="true";
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
+ // Archive navigation is a new destination, unlike a view-only tab change.
+ // The shell (not window) owns page scrolling on desktop and iPhone Safari.
+ // Reset synchronously before asynchronous DEV hydration can snapshot scroll.
+ const shell=document.querySelector(".fa-shell-content-scroll");
+ if(shell)shell.scrollTop=0;
+ if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
 function historyExpandableHolders(card,holders,metric){
  const extra=[...holders.children].slice(2);

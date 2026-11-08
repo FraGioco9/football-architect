@@ -671,6 +671,11 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         "if(window.innerWidth!=="+width+")record.wrongLayout++;"+
         "}}requestAnimationFrame(probe)};requestAnimationFrame(probe)})()";
       await run(observer);
+      if(width===390){
+        // A real archive click begins below the top of the phone scrollport.
+        const before=await run("(()=>{const host=document.querySelector('.fa-shell-content-scroll');host.scrollTop=240;return host.scrollTop})()");
+        assert.ok(before>0,'History archive scroll test begins below the top at 390px');
+      }
       // Manifest is shared per document and already cached on this page.
       // Observe the synchronous route guard instead of relying on a fetch delay.
       try{
@@ -685,6 +690,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.equal(frames.unguarded,0,width+' guard must hide Standings on every frame');
         assert.equal(frames.wrongLayout,0,width+' expected viewport is retained');
         assert.deepEqual(frames.stale,[],width+' never reveals old '+(mobile?'mobile':'desktop')+' standings');
+        if(width===390){
+          const scroll=await run("(()=>({shell:document.querySelector('.fa-shell-content-scroll').scrollTop,page:document.scrollingElement?.scrollTop||0}))()");
+          assert.deepEqual(scroll,{shell:0,page:0},'Season archive opens Standings scrolled all the way to top on mobile');
+        }
         const expectedRows=await run("(()=>{const mobile="+String(mobile)+";"+
           "return [...document.querySelectorAll(mobile?"+
           "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')].map(row=>"+

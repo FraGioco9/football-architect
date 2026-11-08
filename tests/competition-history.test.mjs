@@ -452,7 +452,8 @@ test('Selecting a History season guards Safari first paint before revealing Stan
  const start=client.indexOf('function openHistorySeason('),end=client.indexOf('\nasync function renderHistoryPreview',start);
  assert.ok(start>=0&&end>start,'History season navigation exists');
  for(const season of [1,2,3,4]){
-  const calls=[],document={documentElement:{dataset:{}}};
+  const calls=[],shell={scrollTop:280},page={scrollTop:140};
+  const document={documentElement:{dataset:{}},scrollingElement:page,querySelector:selector=>selector===".fa-shell-content-scroll"?shell:null};
   const window={faCompetitionRoute:{
    get:()=>({season:'4',view:'history'}),
    set:(patch,options)=>{
@@ -463,6 +464,8 @@ test('Selecting a History season guards Safari first paint before revealing Stan
   }};
   runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,document,season});
   assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
+  assert.equal(shell.scrollTop,0,'Archive season opens Standings at the shell top');
+  assert.equal(page.scrollTop,0,'Archive season clears document scroll without changing history routing');
   assert.equal(document.documentElement.dataset.faDevSeasonTransition,season===4?undefined:'true');
  }
 });
