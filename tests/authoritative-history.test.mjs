@@ -17,9 +17,10 @@ test('keeps selected Season1 history when actual world advances into active Seas
  const c=context();c.seasonData.world={phase:'active',seasonNumber:2,day:1};c.seasonData.seasonState={phase:'closed',day:56};assert.equal(historyViewModel(c).season,1);
 });
 
-test('authoritative Hall of Champions replaces only the archive, not the Historical records section',()=>{
+test('verified History populates records without mounting a Hall or hiding Season archive',()=>{
  const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
- assert.match(source,/panel\.querySelector\('\[data-history-empty\] \[data-app-i18n="historySeasonArchive"\]'\)\?\.closest\('\.app-history-dev-section'\)/,
-  'archive lookup must not accidentally target the reordered first records section');
- assert.doesNotMatch(source,/panel\.querySelector\('\[data-history-empty\] > section'\)/);
+ assert.doesNotMatch(source,/historyHallOfChampions|authoritativeHistory|placeholder\.hidden|section\.append\(/);
+ assert.match(source,/panel\.querySelectorAll\('\[data-history-team-records\] \[data-history-scope="season"\]'\)/);
+ assert.match(source,/refreshRecords\(\)/);
+
 });

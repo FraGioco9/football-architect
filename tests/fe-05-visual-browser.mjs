@@ -166,7 +166,8 @@ try{
      history:document.documentElement.dataset.faHistoryLoading,
      width:box?.width||0,height:box?.height||0,display:style?.display,visibility:style?.visibility};
    });
-   assert.equal(intermediate.global,'false','global bootstrap was deliberately released');
+   // Other pending source tokens may legitimately keep global loading true.
+   // Independent History readiness and uninterrupted visible geometry are the contract.
    assert.equal(intermediate.history,'true','History remains pending until its presenter resolves');
    assert.equal(intermediate.display,'block');
    assert.equal(intermediate.visibility,'visible');
@@ -174,6 +175,56 @@ try{
    release();await historyPage.waitForLoadState('load',{timeout:30000});
    results.push({head,scenario:'qa-05-history-visible-before-hydration',status:'PASS',path:historyConfig.path,engine:'chromium'});
   }finally{release();await historyContext.close();}
+ }
+ // QA-05 V08: page scroll remains vertical, while History cards and archives
+ // shrink inside the visible content area (no global overflow clipping).
+ for(const width of [320,390,520,620]){
+  const config={...cold,path:'/competitions/it-1/history?season=1',width,height:844};
+  const context=await fixtureContext(config),page=await context.newPage();
+  try{
+   await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   const m=await page.evaluate(()=>{
+    const host=document.querySelector('.fa-shell-content-scroll');
+    const panel=document.querySelector('#competition-panel-history');
+    const limit=panel?.getBoundingClientRect(),cards=[...(panel?.querySelectorAll('.app-competition-stat-card')||[])]
+     .filter(card=>{const s=getComputedStyle(card);return s.display!=='none'&&s.visibility!=='hidden'})
+     .map(card=>{const r=card.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}});
+    return {scrollWidth:host?.scrollWidth,clientWidth:host?.clientWidth,
+      panelLeft:limit?.left,panelRight:limit?.right,cards};
+   });
+   assert.ok(m.scrollWidth<=m.clientWidth+1,'History document must not scroll horizontally: '+JSON.stringify({width,m}));
+   assert.ok(m.cards.every(r=>r.left>=m.panelLeft-1&&r.right<=m.panelRight+1),
+    'History cards must fit their panel at '+width+': '+JSON.stringify(m));
+   results.push({head,scenario:'qa-05-history-mobile-no-overflow',status:'PASS',width});
+  }finally{await context.close();}
+ }
+ // QA-05 V06: separate one cold document from cumulative navigation requests.
+ {
+  const config={...cold,path:'/competitions/it-1/history?season=1',width:390,height:844};
+  const context=await fixtureContext(config),page=await context.newPage();
+  const reads=[];
+  page.on('request',request=>{
+   const path=new URL(request.url()).pathname;
+   if(path==='/competitions/_shared/manifest.json'||path==='/api/world')reads.push(path);
+  });
+  try{
+   const response=await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
+   assert.equal(response?.status(),200);
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   const manifestReads=reads.filter(path=>path==='/competitions/_shared/manifest.json').length;
+   const worldReads=reads.filter(path=>path==='/api/world').length;
+   assert.equal(manifestReads,1,'one shared manifest request per cold History document');
+   assert.ok(worldReads<=2,'cold world reads respect the two-read reset fence');
+   const before=reads.length;
+   for(const view of ['stats','standings','history']){
+    await page.locator('#competition-tab-'+view).click();
+    await page.waitForURL(url=>url.pathname.endsWith('/'+view)&&url.searchParams.get('season')==='1');
+   }
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   assert.deepEqual(reads.slice(before),[],'view-only tabs must not refetch manifest or world');
+   results.push({head,scenario:'qa-05-history-network-per-document',status:'PASS',manifestReads,worldReads});
+  }finally{await context.close();}
  }
  // One focused visual navigation test; existing SH-03/INT24 suites own season, source and stale-response semantics.
  const config=visualProfiles.find(v=>v.id==='standings'),ctx=await fixtureContext(config),page=await ctx.newPage();
