@@ -617,26 +617,33 @@ html[data-competition-season-unavailable="true"] .app-competition-panel{display:
 .app-history-record-group .app-competition-stat-grid{align-items:stretch}
 .app-history-record-group .app-competition-stat-card{min-height:128px}
 .app-history-record-group .app-competition-stat-card:has(.app-competition-stat-value){min-height:160px}
-/* History record boxes use the full content column on narrow phones. Keep this
-   local to History: competition tabs, archive rows and Stats retain their layout. */
-@media(max-width:520px){
- #competition-panel-history .app-competition-stat-grid{grid-template-columns:minmax(0,1fr)}
- #competition-panel-history .app-competition-stat-card{max-width:100%;min-width:0}
- #competition-panel-history .app-history-dev-record-entry .app-world-club-name{overflow-wrap:anywhere}
- /* Safari: guard the actual record-box region, not the global page or tabs.
-    Prevent nested min-content sizing and touch-driven horizontal panning while
-    allowing every club name, score and record to grow vertically. */
- #competition-panel-history #app-history-records{
-  min-width:0;max-width:100%;overflow-x:clip;touch-action:pan-y
- }
+/* QA-05: shrink actual History grid tracks at every phone width; no page-level clipping. */
+@media(max-width:620px){
+ #competition-panel-history,
+ #competition-panel-history>.app-competition-view-skeleton,
+ #competition-panel-history>.app-history-empty,
+ #competition-panel-history .app-history-dev,
+ #competition-panel-history .app-history-dev-section,
  #competition-panel-history .app-history-record-group,
  #competition-panel-history .app-history-record-group .app-competition-stat-grid,
- #competition-panel-history .app-history-record-group .app-competition-stat-card,
+ #competition-panel-history .app-world-standings{min-width:0;max-width:100%}
+ /* Prevent the 160px Season/All-time buttons from determining the grid's min-content width. */
+ #competition-panel-history .app-history-empty,
+ #competition-panel-history .app-history-dev,
+ #competition-panel-history .app-history-dev-section,
+ #competition-panel-history .app-history-record-group{grid-template-columns:minmax(0,1fr)}
+ #competition-panel-history .app-history-record-controls{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
+ #competition-panel-history .app-history-record-controls button{box-sizing:border-box;flex:1 1 0;width:auto;max-width:160px}
+ #competition-panel-history .app-competition-stat-grid{grid-template-columns:minmax(0,1fr)}
+ #competition-panel-history .app-competition-stat-card{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
  #competition-panel-history .app-history-record-holders,
- #competition-panel-history .app-history-dev-record-entry{min-width:0;max-width:100%}
- #competition-panel-history .app-history-dev-record-entry .app-world-club-identity{
-  max-width:100%;min-width:0
- }
+ #competition-panel-history .app-history-dev-record-entry,
+ #competition-panel-history .app-world-club-identity{min-width:0;max-width:100%}
+ #competition-panel-history .app-history-dev-record-entry .app-world-club-name{overflow-wrap:anywhere}
+}
+/* Preserve DEV History's local Safari touch guard without masking page overflow. */
+@media(max-width:520px){
+ #competition-panel-history #app-history-records{min-width:0;max-width:100%;overflow-x:clip;touch-action:pan-y}
 }
 .app-history-dev-section>h3:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
 .app-history-dev-season{font-size:12px;font-weight:700}
@@ -882,7 +889,11 @@ html[data-fa-dev-standings-pending="true"] #competition-panel-postseason,html[da
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-crest-placeholder{grid-column:1;grid-row:1}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-world-club-name{grid-column:2;grid-row:1;min-width:0;line-height:1.35}
 #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link) .app-history-dev-season-link{grid-column:3;grid-row:1;min-height:0;align-self:center}
-@media(max-width:520px){#competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){grid-template-columns:40px minmax(0,1fr) max-content;column-gap:6px}}
+@media(max-width:620px){
+ #competition-panel-history .app-history-dev-record-entry:has(.app-history-dev-season-link){grid-template-columns:40px minmax(0,1fr) minmax(0,auto);column-gap:6px}
+ #competition-panel-history .app-history-dev-season-link{min-width:0;white-space:normal;overflow-wrap:anywhere}
+ #competition-panel-history .app-history-dev-archive .app-world-club-identity .app-world-club-name{width:auto;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
+}
 
 /* Country flags: shared 5:4 slots; source SVG owns its native rounded mask. */
 .app-world-flag-frame{overflow:visible;border-radius:0;clip-path:none}
@@ -1310,6 +1321,10 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
+/* The outer border owns the bottom edge even if extra rows are hidden.
+   Only visible following rows receive a separator, never the last visible row. */
+.app-view-skeleton-history-archive .app-history-dev-archive li{border-bottom:0}
+.app-view-skeleton-history-archive .app-history-dev-archive li:not([hidden])~li:not([hidden]){border-top:1px solid var(--line)}
 /* Archive skeleton reuses live crest footprint; the name bar spans crest + name. */
 .app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
 .app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}

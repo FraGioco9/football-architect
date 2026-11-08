@@ -161,7 +161,7 @@ let historyManifest=null;
 function clearHistoryPreview(){
  historyRenderVersion++;
  const panel=document.getElementById("competition-panel-history");if(!panel)return;
- panel.querySelector(".app-history-dev")?.remove();
+ panel.querySelector(':scope > .app-history-dev')?.remove();
  const empty=panel.querySelector('[data-history-empty]');
  if(empty)empty.hidden=false;
  const error=panel.querySelector('[data-history-error]');if(error)error.hidden=true;
@@ -234,6 +234,12 @@ function openHistorySeason(season){
  if(String(window.faCompetitionRoute?.get?.().season)!==String(season))
   document.documentElement.dataset.faDevSeasonTransition="true";
  window.faCompetitionRoute?.set?.({season:String(season),view:"standings"},{focus:true});
+ // Archive navigation is a new destination, unlike a view-only tab change.
+ // The shell (not window) owns page scrolling on desktop and iPhone Safari.
+ // Reset synchronously before asynchronous DEV hydration can snapshot scroll.
+ const shell=document.querySelector(".fa-shell-content-scroll");
+ if(shell)shell.scrollTop=0;
+ if(document.scrollingElement)document.scrollingElement.scrollTop=0;
 }
 function historyExpandableHolders(card,holders,metric){
  const extra=[...holders.children].slice(2);
@@ -261,21 +267,23 @@ async function renderHistoryPreview(){
  if(route?.view!=="history")return;
  const current=()=>version===historyRenderVersion&&isPreviewEnabled()&&
   debugSeason===progressSeason&&matchdays===progressDay&&window.faCompetitionRoute?.get?.().view==="history"&&window.faCompetitionRoute.get().season===route.season;
+ window.faHistorySetReady?.(false);
+ const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  const status=panel.querySelector('[data-history-empty]');
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
- const finishHistory=window.faStandingsLoading?.beginView?.('history')||(()=>{});
  try{
-  if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
+  if(!historyManifest)historyManifest=(window.faCompetitionManifestPromise ||= fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
-   const manifest=await response.json();
+   return response.json();
+  })).then(manifest=>{
    if(!competitionModel.validManifest(manifest))throw Error("Invalid DEV History manifest");
    return manifest;
-  }).catch(error=>{historyManifest=null;throw error});
+  }).catch(error=>{historyManifest=null;window.faCompetitionManifestPromise=null;throw error});
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const {completed:seasons,played}=createPreviewHistory(division,progressSeason,progressDay);
-  if(!played.length){clearHistoryPreview();return;}
+  if(!played.length){clearHistoryPreview();window.faHistorySetReady?.(true);return;}
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
@@ -350,15 +358,19 @@ async function renderHistoryPreview(){
    grid.append(empty);
   }
   records.append(panel.querySelector('[data-history-player-records]').cloneNode(true));
+  // History order: historical records first, completed-season archive below.
+  root.append(archive);
   if(!current())return;
-  panel.querySelector(".app-history-dev")?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
+  panel.querySelector(':scope > .app-history-dev')?.remove();if(status)status.hidden=true;panel.append(root);window.faSyncHistoryRecords?.();window.faAppRenderLanguage?.();
+  window.faHistorySetReady?.(true);
 
  }catch(error){
   if(!current())return;
-  console.error("DEV History preview unavailable:",error);panel.querySelector(".app-history-dev")?.remove();
+  console.error("DEV History preview unavailable:",error);panel.querySelector(':scope > .app-history-dev')?.remove();
   if(status)status.hidden=false;
   if(errorMessage)errorMessage.hidden=false;
   window.faAppRenderLanguage?.();
+  window.faHistorySetReady?.(true);
  }finally{finishHistory();}
 }
 function syncHistoryPreview(){
@@ -585,10 +597,13 @@ function waitForRows() {
 
 async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
   try {
-    const response = await fetch("/competitions/_shared/manifest.json",
-      { cache: "no-store", credentials: "same-origin" });
-    if (!response.ok) throw Error("DEV manifest unavailable");
-    const manifest = await response.json();
+    // A single per-document manifest promise is reused by the competition
+    // bootstrap, DEV standings and DEV History rather than three network reads.
+    const manifest=await (window.faCompetitionManifestPromise ||= fetch("/competitions/_shared/manifest.json",
+      { cache: "no-store", credentials: "same-origin" }).then(async response=>{
+      if(!response.ok)throw Error("DEV manifest unavailable");
+      return response.json();
+    }).catch(error=>{window.faCompetitionManifestPromise=null;throw error}));
     if (!competitionModel.validManifest(manifest)) {
       throw Error("Invalid DEV manifest");
     }

@@ -942,9 +942,13 @@
     const viewSegment=segments[2];
     const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
     if(segments.length<2||segments.length>3||segments[0]!=="competitions"||segments[1]!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
-    const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
-    if(!dataResponse.ok)throw Error("Competition data unavailable");
-    const manifest=await dataResponse.json();
+    // Share the one validated manifest read with the local DEV presenters.
+    // The promise is installed synchronously before any dependent script boots.
+    const manifest=await (window.faCompetitionManifestPromise ||= (async()=>{
+      const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+      if(!dataResponse.ok)throw Error("Competition data unavailable");
+      return dataResponse.json();
+    })());
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     definition=model.competitionById(manifest,routeId);
     if(!definition)throw Error("Unknown competition");
@@ -980,7 +984,7 @@
     let suppliedMobile;
     if(division){
     // Only standings are enhanced; the original inline logo DOM is never replaced.
-    const standings=document.querySelector(".app-world-standings");
+    const standings=document.querySelector("#competition-panel-standings > .app-world-standings");
     if(!standings)throw Error("Missing standings");
     standings.outerHTML=withMobileShell(standings.outerHTML);
     document.getElementById("division-detail-name").textContent=division.name;
@@ -1033,7 +1037,7 @@
     createPostseason(division);
     }else{
       delete window.faCompetitionDivision;
-      const standings=document.querySelector('.app-world-standings');
+      const standings=document.querySelector('#competition-panel-standings > .app-world-standings');
       if(!standings)throw Error('Missing standings');
       standings.outerHTML=withMobileShell(standings.outerHTML);
       suppliedMobile=createMobileStandings();window.faStandingsMobile=suppliedMobile;
@@ -1073,7 +1077,7 @@
         document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
         let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{live.hidden=sourceState!=='empty';live.textContent=sourceState==='empty'?(copy[document.documentElement.lang]||copy.en):''};
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1101,7 +1105,7 @@
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
         new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
-      }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
+      }catch{window.faHistorySetReady?.(true);window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }
   }
   start().catch(fail).finally(()=>window.faStandingsLoading?.set('bootstrap',false));

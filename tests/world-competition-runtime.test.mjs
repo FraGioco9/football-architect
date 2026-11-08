@@ -147,7 +147,8 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
  body.className="app-body";
  for(const id of ids)if(!shell.includes('id="'+id+'"')&&!id.startsWith('app-standings-compact')&&id!=='app-standings-full')fields.delete(id);
  const standings=node("div");
- let standingsMarkup=shell.match(/<div class="app-world-standings">[\s\S]*?<\/table>\s*<\/div>\s*<\/div>/)?.[0];
+ const standingsShell=shell.slice(shell.indexOf('id="competition-panel-standings"'));
+ let standingsMarkup=standingsShell.match(/<div class="app-world-standings">[\s\S]*?<\/table>\s*<\/div>\s*<\/div>/)?.[0];
  Object.defineProperty(standings,"outerHTML",{get(){return standingsMarkup},set(value){standingsMarkup=value;for(const id of ['app-standings-compact','app-standings-compact-list','app-standings-full'])fields.set(id,node('div'));}});
  const document={
   events:{},activeElement:null,
@@ -170,7 +171,7 @@ async function simulate({division,ending="/",data=manifest,shell=null,fetchFailu
    if(selector==='meta[name="fa-competition"]')return metadata===null?null:{content:metadata??selected};
    if(selector==='meta[name="fa-division"]')return division?.category==="international"?null:{content:selected};
    if(selector===".fa-shell-topbar")return topbar;
-   if(selector===".app-world-standings")return standingsMarkup?standings:null;
+   if(selector===".app-world-standings"||selector==="#competition-panel-standings > .app-world-standings")return standingsMarkup?standings:null;
    return null;
   },
   querySelectorAll(selector){

@@ -43,7 +43,7 @@ test('PAGE-LOAD-03C: parser-time selected view exclusively unhides its panel',()
 
 function inspectHistoryPrepaint({debugEnabled,devSeason,progress}){
  let removed=0,emptyShown=0;
- const rows=Array.from({length:4},(_,i)=>({dataset:{skeletonArchiveRow:String(i)},hidden:false,cloneNode(){return {dataset:{...this.dataset},hidden:false,cloneNode:this.cloneNode}}}));
+ const rows=Array.from({length:1},(_,i)=>({dataset:{skeletonArchiveRow:String(i)},hidden:false,cloneNode(){return {dataset:{...this.dataset},hidden:false,cloneNode:this.cloneNode}}}));
  const archive={children:rows,querySelector:()=>rows[0],querySelectorAll:()=>[...rows],append:row=>rows.push(row)};
  const skeleton={dataset:{skeletonLastLeagueDay:'56',skeletonLeagueRounds:'30'},remove:()=>{removed++},replaceWith:()=>{},querySelector:sel=>sel==='.app-history-dev-archive'?archive:null};
  const empty={removeAttribute:()=>{emptyShown++}};
@@ -58,14 +58,14 @@ test('PAGE-LOAD-03C: Debug OFF uses the global world, never stale local Season 0
  const actual=inspectHistoryPrepaint({debugEnabled:false,devSeason:0,progress:{currentSeason:2,day:1}});
  assert.equal(actual.removed,0,'pending global History remains in its reserved structure');
  assert.equal(actual.emptyShown,0,'local Season 0 never leaks into public History');
- assert.deepEqual(actual.rows,[false,true,true,true],'global Season 2 reserves one completed season');
+ assert.deepEqual(actual.rows,[false],'global Season 2 reserves one completed season');
 });
 
 test('PAGE-LOAD-03C: unknown public clock remains pending; isolated Season 0 may be empty',()=>{
  const unknown=inspectHistoryPrepaint({debugEnabled:false,devSeason:0});
  assert.equal(unknown.removed,0);
  assert.equal(unknown.emptyShown,0,'unknown public season is not confirmed empty');
- assert.deepEqual(unknown.rows,[false,false,false,false],'unknown clock retains reserved archive bars');
+ assert.deepEqual(unknown.rows,[false],'unknown clock keeps exactly one archive row until completed-season count is known');
  const isolated=inspectHistoryPrepaint({debugEnabled:true,devSeason:0});
  assert.equal(isolated.removed,1,'explicit isolated Season 0 has a confirmed static-empty state');
  assert.equal(isolated.emptyShown,1);
@@ -76,4 +76,52 @@ test('PAGE-LOAD-03C: loading lifecycle shares the same isolated/public History r
  assert.match(source,/if\(view==='history'&&preview&&season===0\)/);
  assert.match(source,/knownSeason=\(preview\?/);
  assert.doesNotMatch(source,/season===0\|\|root\.faDebugEnabled===false/);
+});
+
+test('QA-05: the real History panel and its skeleton paint before other competition panels',()=>{
+ for(const competition of manifest.competitions){
+  const html=read('competitions/'+competition.slug+'/index.html');
+  const history=html.indexOf('id="competition-panel-history"');
+  const standings=html.indexOf('id="competition-panel-standings"');
+  const skeleton=html.indexOf('data-competition-skeleton-root="history-preview"',history);
+  const ready=html.indexOf('data-fa-history-first-paint-ready',history);
+  assert.ok(history>0&&history<skeleton&&skeleton<ready&&ready<standings,
+   competition.slug+' true History skeleton is revealed before Standings HTML');
+  const preview=renderViewSkeleton(competition,'history');
+  assert.ok(html.slice(history,standings).includes(preview),competition.slug+' sole History skeleton reserves the actual panel geometry');
+  assert.ok(html.slice(history,standings).includes('document.getElementById("competition-panel-history").hidden=false'),
+   competition.slug+' parser-time History panel is unhidden before the other tabs');
+  assert.equal((html.match(/id="competition-panel-history"/g)||[]).length,1,competition.slug+' exactly one real History panel');
+  assert.doesNotMatch(html,/app-history-first-paint|data-fa-history-early-ready|data-fa-history-early-handoff/,
+   competition.slug+' never uses a temporary History shell and a synchronous handoff');
+  assert.doesNotMatch(html,/historyFinalLeagueTable|app-view-skeleton-history-table/,
+   competition.slug+' no History final table skeleton');
+  const css=html.match(/<style data-fa-competition-shell>([^<]+)<\/style>/)?.[1]||'';
+  const visibilityGuard='html[data-fa-competition-prepaint]:not([data-competition-view="history"]) body{visibility:hidden}';
+  assert.ok(css.includes(visibilityGuard),competition.slug+' History must not be blocked by the body prepaint gate');
+  assert.ok(!css.includes('html[data-fa-competition-prepaint] body{visibility:hidden}'),
+   competition.slug+' no blanket body hiding');
+  assert.ok(html.indexOf('id="competition-tab-history"')<history,competition.slug+' static tabs precede History content');
+ }
+ assert.doesNotMatch(read('competitions/_shared/index.html'),/historyFinalLeagueTable|app-view-skeleton-history-table/);
+ assert.doesNotMatch(read('assets/authoritative-history.mjs'),/section\.append\(table\)|make\('table'\)|Final league table/);
+});
+
+test('QA-05: standings runtime remains scoped when History is parsed first',()=>{
+ const runtime=read('assets/competition-page.js');
+ assert.match(runtime,/document\.querySelector\("#competition-panel-standings > \.app-world-standings"\)/);
+ assert.match(runtime,/document\.querySelector\('#competition-panel-standings > \.app-world-standings'\)/);
+ assert.doesNotMatch(runtime,/document\.querySelector\(["']\.app-world-standings["']\)/,
+  'History archive must never be mistaken for the standings host');
+});
+
+// QA-05 V02/V08: remove even dormant Hall markup; shrink History cards locally.
+test('QA-05: no generated History panel contains Hall of Champions, mobile cards can shrink',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?#competition-panel-history \.app-competition-stat-grid\{grid-template-columns:minmax\(0,1fr\)\}/);
+ assert.match(css,/#competition-panel-history #app-history-records\{/);
+ for(const competition of manifest.competitions){
+  const html=read('competitions/'+competition.slug+'/index.html');
+  assert.doesNotMatch(html,/historyHallOfChampions|app-view-skeleton-champion/,competition.slug+' no Hall skeleton');
+ }
 });

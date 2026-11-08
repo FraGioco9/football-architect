@@ -62,7 +62,10 @@ test('Season archive links retain native navigation and guard in-page Standings 
  const node=(tag,className='',textContent='')=>({tag,className,textContent,children:[],dataset:{},attributes:{},events:{},
   append(...items){this.children.push(...items)},setAttribute(key,value){this.attributes[key]=value},
   addEventListener(kind,fn){this.events[kind]=fn}});
- const list=node('ol'),changes=[],document={documentElement:{dataset:{}},createTextNode:text=>node('#text','',text)};
+ const shell={scrollTop:350},page={scrollTop:180};
+ const list=node('ol'),changes=[],document={documentElement:{dataset:{}},scrollingElement:page,
+  querySelector:selector=>selector==='.fa-shell-content-scroll'?shell:null,
+  createTextNode:text=>node('#text','',text)};
  const window={faCompetitionRoute:{get:()=>({season:'1',view:'history'}),set:(...args)=>changes.push(args)}};
  runInNewContext(helpers+client.slice(start,end),{
   historyNode:node,historyLabel:key=>node('span','',key),document,window,list,
@@ -84,6 +87,8 @@ test('Season archive links retain native navigation and guard in-page Standings 
  assert.equal(prevented,1);
  assert.equal(document.documentElement.dataset.faDevSeasonTransition,'true');
  assert.deepEqual(plain(changes),[[{season:'2',view:'standings'},{focus:true}]]);
+ assert.equal(shell.scrollTop,0,'Archive click resets the application scroll shell');
+ assert.equal(page.scrollTop,0,'Archive click resets the document scroll');
  for(const modifiers of [{ctrlKey:true},{metaKey:true},{shiftKey:true},{altKey:true},{button:1},{defaultPrevented:true}])
   link.events.click({...click,...modifiers});
  assert.equal(prevented,1,'Modified clicks retain native new-tab/window behavior');
@@ -452,7 +457,8 @@ test('Selecting a History season guards Safari first paint before revealing Stan
  const start=client.indexOf('function openHistorySeason('),end=client.indexOf('\nasync function renderHistoryPreview',start);
  assert.ok(start>=0&&end>start,'History season navigation exists');
  for(const season of [1,2,3,4]){
-  const calls=[],document={documentElement:{dataset:{}}};
+  const calls=[],shell={scrollTop:280},page={scrollTop:140};
+  const document={documentElement:{dataset:{}},scrollingElement:page,querySelector:selector=>selector===".fa-shell-content-scroll"?shell:null};
   const window={faCompetitionRoute:{
    get:()=>({season:'4',view:'history'}),
    set:(patch,options)=>{
@@ -463,6 +469,8 @@ test('Selecting a History season guards Safari first paint before revealing Stan
   }};
   runInNewContext(client.slice(start,end)+';openHistorySeason(season)',{window,document,season});
   assert.deepEqual(calls,[[{season:String(season),view:'standings'},{focus:true}]]);
+  assert.equal(shell.scrollTop,0,'Archive season opens Standings at the shell top');
+  assert.equal(page.scrollTop,0,'Archive season clears document scroll without changing history routing');
   assert.equal(document.documentElement.dataset.faDevSeasonTransition,season===4?undefined:'true');
  }
 });
@@ -479,4 +487,14 @@ test('Restoring debug waits for History before completing the first-paint releas
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(settled,false,'The preview must not reveal the shorter empty History before its populated layout is ready');
  finishHistory();assert.equal(await pending,true);
+});
+
+
+test('loaded DEV History mounts Historical records before Season archive without affecting season links',()=>{
+ const makeArchive=client.indexOf('  const archive=section("historySeasonArchive"');
+ const makeRecords=client.indexOf('  const records=section("historyHistoricalRecords"',makeArchive);
+ const reappend=client.indexOf('root.append(archive);',makeRecords);
+ const commit=client.indexOf('panel.append(root);',makeRecords);
+ assert.ok(makeArchive>0&&makeRecords>makeArchive&&reappend>makeRecords&&commit>reappend,
+  'the archive is moved below the completed records just before committing the preview DOM');
 });

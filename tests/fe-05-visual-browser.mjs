@@ -122,6 +122,116 @@ try{
   assert.equal(await firstPage.locator('.app-competition-header').count(),pre.headers);
   results.push({head,scenario:'static-competition-pre-hydration',status:'PASS',path:cold.path,engine:'chromium'});
  }finally{unblock();await firstContext.close()}
+ // QA-05: the real History panel must be visibly painted before the deferred
+ // competition controller can hydrate it. Holding the script rules out a
+ // JS-driven skeleton appearing only after loading.
+ {
+  const historyConfig={...cold,path:'/competitions/it-1/history?season=1',width:390,height:844};
+  const historyContext=await fixtureContext(historyConfig),historyPage=await historyContext.newPage();
+  let release;const stalled=new Promise(resolve=>{release=resolve});
+  let seen;const intercepted=new Promise(resolve=>{seen=resolve});
+  try{
+   await historyContext.route('**/assets/competition-page.js',async route=>{
+    seen();await stalled;await route.continue();
+   });
+   await historyPage.goto(originFor(historyConfig)+historyConfig.path,{waitUntil:'commit',timeout:30000});
+   await intercepted;
+   await historyPage.locator('#competition-panel-history>.app-competition-view-skeleton').waitFor({state:'visible',timeout:12000});
+   const pre=await historyPage.evaluate(()=>{
+    const panel=document.querySelector('#competition-panel-history');
+    const skeleton=panel?.querySelector('.app-competition-view-skeleton');
+    const rect=skeleton?.getBoundingClientRect();
+    return {body:getComputedStyle(document.body).visibility,view:document.documentElement.dataset.competitionView,
+     panelHidden:panel?.hidden,header:document.querySelector('.app-competition-header')?.getBoundingClientRect().height||0,
+     tabs:document.querySelectorAll('.app-competition-tabs [role="tab"]').length,
+     skeletonWidth:rect?.width||0,skeletonHeight:rect?.height||0,temporary:document.querySelectorAll('#app-history-first-paint').length};
+   });
+   assert.equal(pre.body,'visible','History is not hidden behind whole-body prepaint');
+   assert.equal(pre.view,'history');
+   assert.equal(pre.panelHidden,false,'real History panel unhidden at parser time');
+   assert.equal(pre.tabs,7,'History tabs exist before hydration');
+   assert.equal(pre.temporary,0,'History never uses a short-lived duplicate shell');
+   assert.ok(pre.header>0&&pre.skeletonWidth>0&&pre.skeletonHeight>0,
+    'Header and History skeleton occupy visible space before controller hydration');
+   // Reproduce the reported flash: global bootstrap finishes while History
+   // is still unresolved. The actual skeleton must stay painted for two frames.
+   await historyPage.evaluate(async()=>{
+    window.faStandingsLoading.set('bootstrap',false);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   });
+   const intermediate=await historyPage.evaluate(()=>{
+    const host=document.querySelector('#competition-panel-history>.app-competition-view-skeleton');
+    const box=host?.getBoundingClientRect(),style=host&&getComputedStyle(host);
+    return {global:document.documentElement.dataset.faStandingsLoading,
+     history:document.documentElement.dataset.faHistoryLoading,
+     width:box?.width||0,height:box?.height||0,display:style?.display,visibility:style?.visibility};
+   });
+   // Other pending source tokens may legitimately keep global loading true.
+   // Independent History readiness and uninterrupted visible geometry are the contract.
+   assert.equal(intermediate.history,'true','History remains pending until its presenter resolves');
+   assert.equal(intermediate.display,'block');
+   assert.equal(intermediate.visibility,'visible');
+   assert.ok(intermediate.width>0&&intermediate.height>0,'History shell remains painted after global loading drops');
+   release();await historyPage.waitForLoadState('load',{timeout:30000});
+   results.push({head,scenario:'qa-05-history-visible-before-hydration',status:'PASS',path:historyConfig.path,engine:'chromium'});
+  }finally{release();await historyContext.close();}
+ }
+ // QA-05 V08: page scroll remains vertical, while History cards and archives
+ // shrink inside the visible content area (no global overflow clipping).
+ for(const width of [320,390,520,620]){
+  const config={...cold,path:'/competitions/it-1/history?season=1',width,height:844};
+  const context=await fixtureContext(config),page=await context.newPage();
+  try{
+   await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   const m=await page.evaluate(()=>{
+    const host=document.querySelector('.fa-shell-content-scroll');
+    const panel=document.querySelector('#competition-panel-history');
+    const limit=panel?.getBoundingClientRect(),cards=[...(panel?.querySelectorAll('.app-competition-stat-card')||[])]
+     .filter(card=>{const s=getComputedStyle(card);return s.display!=='none'&&s.visibility!=='hidden'&&card.getBoundingClientRect().width>0})
+     .map(card=>{const r=card.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}});
+    const boundary=host?.getBoundingClientRect(),overflowers=[...(host?.querySelectorAll('*')||[])]
+     .map(el=>({el,rect:el.getBoundingClientRect()}))
+     .filter(({el,rect})=>rect.width>0&&rect.right>(boundary?.right||0)+1&&getComputedStyle(el).display!=='none')
+     .sort((a,b)=>b.rect.right-a.rect.right).slice(0,12)
+     .map(({el,rect})=>({tag:el.tagName,id:el.id,cls:String(el.className).slice(0,110),
+       left:Math.round(rect.left),right:Math.round(rect.right),width:Math.round(rect.width)}));
+    return {scrollWidth:host?.scrollWidth,clientWidth:host?.clientWidth,
+      panelLeft:limit?.left,panelRight:limit?.right,overflowers,cards};
+   });
+   assert.ok(m.scrollWidth<=m.clientWidth+1,'History document must not scroll horizontally: '+JSON.stringify({width,m}));
+   assert.ok(m.cards.every(r=>r.left>=m.panelLeft-1&&r.right<=m.panelRight+1),
+    'History cards must fit their panel at '+width+': '+JSON.stringify(m));
+   results.push({head,scenario:'qa-05-history-mobile-no-overflow',status:'PASS',width});
+  }finally{await context.close();}
+ }
+ // QA-05 V06: separate one cold document from cumulative navigation requests.
+ {
+  const config={...cold,path:'/competitions/it-1/history?season=1',width:390,height:844};
+  const context=await fixtureContext(config),page=await context.newPage();
+  const reads=[];
+  page.on('request',request=>{
+   const path=new URL(request.url()).pathname;
+   if(path==='/competitions/_shared/manifest.json'||path==='/api/world')reads.push(path);
+  });
+  try{
+   const response=await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
+   assert.equal(response?.status(),200);
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   const manifestReads=reads.filter(path=>path==='/competitions/_shared/manifest.json').length;
+   const worldReads=reads.filter(path=>path==='/api/world').length;
+   assert.equal(manifestReads,1,'one shared manifest request per cold History document');
+   assert.ok(worldReads<=2,'cold world reads respect the two-read reset fence');
+   const before=reads.length;
+   for(const view of ['stats','standings','history']){
+    await page.locator('#competition-tab-'+view).click();
+    await page.waitForURL(url=>url.pathname.endsWith('/'+view)&&url.searchParams.get('season')==='1');
+   }
+   await page.waitForLoadState('networkidle',{timeout:15000});
+   assert.deepEqual(reads.slice(before),[],'view-only tabs must not refetch manifest or world');
+   results.push({head,scenario:'qa-05-history-network-per-document',status:'PASS',manifestReads,worldReads});
+  }finally{await context.close();}
+ }
  // One focused visual navigation test; existing SH-03/INT24 suites own season, source and stale-response semantics.
  const config=visualProfiles.find(v=>v.id==='standings'),ctx=await fixtureContext(config),page=await ctx.newPage();
  try{

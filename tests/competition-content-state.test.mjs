@@ -134,3 +134,38 @@ test('03C2 real Awards presenter removes stale winners on season and source refr
  assert.equal(panel.dataset.faContentState,'unknown','refresh without a source resets certainty');
  assert.deepEqual(chips(),['PENDING','PENDING']);
 });
+
+
+test('QA-05 History shell stays painted when global bootstrap drops before its own content is ready',()=>{
+ const skeleton={dataset:{competitionSkeletonRoot:'history-preview',skeletonLastLeagueDay:'50',skeletonLeagueRounds:'30'},
+  querySelectorAll:()=>[],querySelector:()=>null,remove(){this.removed=true}};
+ const panel={dataset:{},current:skeleton,attributes:{},
+  querySelector(selector){return selector==='[data-competition-skeleton-root]'?this.current:null},
+  setAttribute(key,value){this.attributes[key]=value}};
+ const dataset={faStandingsLoading:'true',faHistoryLoading:'true'};
+ const document={documentElement:{dataset},getElementById:id=>id==='competition-panel-history'?panel:null,querySelector:()=>null};
+ const window={document,faDebugEnabled:false,MutationObserver:class {observe(){}}};
+ runInNewContext(read('assets/standings-loading.js'),{window});
+ assert.equal(typeof window.faHistorySetReady,'function');
+ window.faStandingsLoading.set('bootstrap',false);
+ assert.equal(dataset.faStandingsLoading,'false','global bootstrap has ended');
+ assert.equal(dataset.faHistoryLoading,'true','History remains visibly pending');
+ assert.equal(skeleton.removed,undefined,'History must not vanish between loading phases');
+ const finish=window.faStandingsLoading.beginView('history');
+ finish();
+ assert.equal(dataset.faHistoryLoading,'true','an unrelated view token must not release an unready skeleton');
+ assert.equal(skeleton.removed,undefined);
+ window.faHistorySetReady(true);
+ assert.equal(dataset.faHistoryLoading,'false','only committed History releases the pending presentation');
+ assert.equal(skeleton.removed,true,'the skeleton is removed after ready content');
+});
+test('QA-05 History providers publish completion only after content and DEV cleanup preserves the nested skeleton',()=>{
+ const publicSource=read('assets/competition-page.js');
+ const dev=read('tools/dev-standings-preview-client.mjs');
+ assert.match(publicSource,/onState:state=>\{window\.faHistorySetReady\?\.\(state!=='loading'\)/);
+ assert.match(dev,/panel\.append\(root\);window\.faSyncHistoryRecords\?\.\(\);window\.faAppRenderLanguage\?\.\(\);\s*window\.faHistorySetReady\?\.\(true\)/);
+ assert.match(dev,/window\.faHistorySetReady\?\.\(false\);\s*const finishHistory/);
+ assert.doesNotMatch(dev,/panel\.querySelector\(["']\.app-history-dev["']\)\?\.remove\(\)/,
+  'DEV preview must not remove the first-paint shell nested inside the skeleton');
+ assert.equal((dev.match(/panel\.querySelector\(':scope > \.app-history-dev'\)\?\.remove\(\)/g)||[]).length,3);
+});

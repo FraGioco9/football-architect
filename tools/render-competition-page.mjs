@@ -82,10 +82,6 @@ ${rulesView.fixturesDisplayChoices(d).map(c=>fixtureOption(d,c)).join("\n")}
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
-                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
-                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
-              </section>
-              <section class="app-history-dev-section">
                 <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
                 <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
                   <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season</button>
@@ -105,6 +101,10 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
                   </div>
                   <p class="app-competition-status app-history-record-empty-state" data-history-player-empty data-app-i18n="historyPlayerNoData">No historical player data available yet.</p>
                 </section>
+              </section>
+              <section class="app-history-dev-section">
+                <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
+                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
               </section>
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;
@@ -127,17 +127,18 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   fixtures:"No scheduled matches or results are available.",
   stats:"Competition statistics are not available before matches are played."
  };
- const panels=views.map(({id,key,label},i)=>{
+ const panelMarkup=views.map(({id,key,label},i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
-  if(id==="history")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${historyEmptyContent()}${viewSkeletonScript(id)}\n          </section>`;
+  if(id==="history")return `          <section ${attrs}>${renderViewSkeleton(d,id)}\n            <script data-fa-history-first-paint-ready>if(document.documentElement.dataset.competitionView==="history"){document.getElementById("competition-panel-history").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>${renderViewTemplates(d,id)}${historyEmptyContent().trimStart()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
-  if(id==="rules")return renderRules(d,neutral,attrs,key,label);
+  if(id==="rules")return (neutral&&d.category!=="international"?"":"\n")+renderRules(d,neutral,attrs,key,label);
   if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
- }).join("\n");
+ });
+ const panels=[panelMarkup[views.findIndex(view=>view.id==="history")],...panelMarkup.filter((_,index)=>views[index].id!=="history")].join("\n");
  return `          <div class="app-competition-tabs" role="tablist" aria-label="Competition views" data-app-aria="competitionViews">\n${nav}\n          </div>\n          <script>(()=>{const view=document.documentElement.dataset.competitionView||"standings";for(const tab of document.querySelectorAll(".app-competition-tab")){const active=tab.id==="competition-tab-"+view;tab.setAttribute("aria-selected",String(active));tab.tabIndex=active?0:-1;tab.classList.toggle("is-active",active)}})();</script>\n${firstPaintTabScrollScript}\n${panels}\n          <script data-fa-competition-selected-panel-first-paint>(function(){const view=document.documentElement.dataset.competitionView||"standings";for(const panel of document.querySelectorAll("#app-divisions > .app-competition-panel"))panel.hidden=panel.id!=="competition-panel-"+view;})();</script>\n          <script src="/assets/competition-tabs.js" defer></script>\n          <script src="/assets/competition-history.js" defer></script>`;
 };
 const detailContent = function detailContent(d,neutral=false){

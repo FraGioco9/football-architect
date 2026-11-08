@@ -648,7 +648,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const observer="(()=>{"+
         "const expected="+JSON.stringify(JSON.stringify(currentSeason3))+";"+
         "const mobile="+String(mobile)+";"+
-        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,active:true};"+
+        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,guardArmed:0,active:true};"+
+        "const guardObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.attributeName==='data-fa-dev-season-transition'&&m.oldValue===null))window.__faSeasonFrame.guardArmed++;});"+
+        "guardObserver.observe(document.documentElement,{attributes:true,attributeOldValue:true,attributeFilter:['data-fa-dev-season-transition']});"+
+        "window.__faSeasonGuardObserver=guardObserver;"+
         "const probe=()=>{const record=window.__faSeasonFrame;if(!record.active)return;"+
         "const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
         "if(route?.view==='standings'&&route.season==='3'&&panel){"+
@@ -668,7 +671,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         "if(window.innerWidth!=="+width+")record.wrongLayout++;"+
         "}}requestAnimationFrame(probe)};requestAnimationFrame(probe)})()";
       await run(observer);
-      devManifestDelay=350;
+      if(width===390){
+        // A real archive click begins below the top of the phone scrollport.
+        const before=await run("(()=>{const host=document.querySelector('.fa-shell-content-scroll');host.scrollTop=240;return host.scrollTop})()");
+        assert.ok(before>0,'History archive scroll test begins below the top at 390px');
+      }
+      // Manifest is shared per document and already cached on this page.
+      // Observe the synchronous route guard instead of relying on a fetch delay.
       try{
         await run("document.querySelector('.app-history-dev-archive a.app-history-dev-season-link[href$=\"standings?season=3\"]').click()");
         await wait("window.faCompetitionRoute.get().view==='standings'&&"+
@@ -676,11 +685,15 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           "document.documentElement.dataset.faDevSeasonTransition===undefined");
         await delay(75); // capture frames immediately after the protected reveal
         const frames=await run("(()=>{window.__faSeasonFrame.active=false;return window.__faSeasonFrame})()");
-        assert.ok(frames.hidden>0,width+' History transition was guarded across animation frames');
+        assert.ok(frames.guardArmed>0,width+' History transition guard was armed, even if loading finishes within one frame');
         assert.ok(frames.shown>0,width+' latest-season Standings became visible');
         assert.equal(frames.unguarded,0,width+' guard must hide Standings on every frame');
         assert.equal(frames.wrongLayout,0,width+' expected viewport is retained');
         assert.deepEqual(frames.stale,[],width+' never reveals old '+(mobile?'mobile':'desktop')+' standings');
+        if(width===390){
+          const scroll=await run("(()=>({shell:document.querySelector('.fa-shell-content-scroll').scrollTop,page:document.scrollingElement?.scrollTop||0}))()");
+          assert.deepEqual(scroll,{shell:0,page:0},'Season archive opens Standings scrolled all the way to top on mobile');
+        }
         const expectedRows=await run("(()=>{const mobile="+String(mobile)+";"+
           "return [...document.querySelectorAll(mobile?"+
           "'#app-standings-compact-list .app-world-mobile-item':'#app-standings-body tr')].map(row=>"+
@@ -689,8 +702,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.deepEqual(expectedRows,currentSeason3,width+' '+(mobile?'mobile':'desktop')+' DOM matches Season 3');
         console.log('HISTORY_FIRST_PAINT_PASS|'+width+'|'+(mobile?'mobile':'desktop')+'|delayed archive to standings');
       }finally{
-        devManifestDelay=0;
-        await run("if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
+        await run("window.__faSeasonGuardObserver?.disconnect();if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
       }
     }
     // A prior archive-click matrix ends on Standings; reload must start from
@@ -722,7 +734,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           "return {cols:getComputedStyle(g).gridTemplateColumns.trim().split(/\\s+/).length,"+
           "overflow:g.scrollWidth>g.clientWidth+1,"+
           "fit:cards.every(c=>{const b=c.getBoundingClientRect();return b.left>=r.left-1&&b.right<=r.right+1&&c.scrollWidth<=c.clientWidth+1})}})})()");
-        const expectedColumns=width<=520?1:width<=650?2:3;
+        const expectedColumns=width<=620?1:width<=650?2:3;
         assert.ok(boxGeometry.length>0&&boxGeometry.every(g=>g.cols===expectedColumns&&!g.overflow&&g.fit),
           'History record boxes fit without inner horizontal scroll at '+width+' '+theme+' '+lang+' '+JSON.stringify(boxGeometry));
         // The shell owns vertical scrolling. Unlike document.scrollWidth, it

@@ -473,7 +473,7 @@ test('every competition serves a sporting-value-free desktop and mobile standing
 
 test('standings loading keeps aria-busy synchronized with initial DEV hydration',()=>{
  const attributes={},dataset={faDevStandingsPending:'true'};let notify;
- const window={document:{documentElement:{dataset},getElementById:()=>({setAttribute:(key,value)=>attributes[key]=value})},MutationObserver:class{constructor(callback){notify=callback;}observe(){}}};
+ const window={document:{documentElement:{dataset},getElementById:()=>({dataset:{faHistoryContentReady:'true'},setAttribute:(key,value)=>attributes[key]=value})},MutationObserver:class{constructor(callback){notify=callback;}observe(){}}};
  runInNewContext(read('assets/standings-loading.js'),{window});
  window.faStandingsLoading.set('bootstrap',false);
  assert.equal(dataset.faStandingsLoading,'true');assert.equal(attributes['aria-busy'],'true');

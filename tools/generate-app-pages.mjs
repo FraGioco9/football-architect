@@ -151,7 +151,7 @@ const frontloadCompetitionShell=(source,id)=>{
  const readyAt=headerEnd+'          </header>'.length;
  return result.slice(0,readyAt)+'\n          <script data-fa-competition-first-paint-ready>if(!["standings","fixtures","stats","history","awards"].includes(document.documentElement.dataset.competitionView))document.documentElement.removeAttribute("data-fa-competition-prepaint");</script>'+result.slice(readyAt);
 };
-const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint] body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
+const competitionShellCss='<style data-fa-competition-shell>html[data-fa-competition-prepaint]:not([data-competition-view=\"history\"]) body{visibility:hidden}#app-divisions{display:flex;flex-direction:column}#app-divisions>.app-competition-header{order:0}#app-divisions>#app-competition-season-unavailable{order:0}#app-divisions>.app-competition-tabs{order:1;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap,28px);padding:0 0 7px;border-bottom:1px solid var(--line)}#app-divisions>.app-competition-panel{order:2}</style>';
 const competitionRoute = d=>{
  let html=template;
  for(const [token,value] of Object.entries(worldPageReplacements(d,d.category==="international")))html=html.replace(token,value);
@@ -233,8 +233,13 @@ const writeOutput=(path,content)=>{
   const current=readFileSync(file,"utf8");
   // Existing Windows checkouts may still use CRLF from before LF attributes were added.
   // Compare exact generated content except for CRLF-to-LF conversion.
-  if(content!==current.replace(/\r\n/g,"\n"))
-   throw Error("Generated output differs from checked-in file: "+path);
+  const actual=current.replace(/\r\n/g,"\n");
+  if(content!==actual){
+   let offset=0;while(offset<content.length&&offset<actual.length&&content[offset]===actual[offset])offset++;
+   throw Error("Generated output differs from checked-in file: "+path+
+     " at offset "+offset+" generated="+JSON.stringify(content.slice(offset,offset+180))+
+     " checked-in="+JSON.stringify(actual.slice(offset,offset+180)));
+  }
  }else{
   mkdirSync(new URL("./",file),{recursive:true});
   writeFileSync(file,content,"utf8");
