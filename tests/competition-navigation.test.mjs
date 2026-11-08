@@ -390,8 +390,8 @@ test('PAGE-LOAD-03B: neutral skeleton reserves 16 ranked slots until season data
  assert.ok(runtime.includes("context.definition.category==='domestic'&&context.selectedSeason===1"),'source/season transition updates identity visibility');
  assert.ok(css.includes('.app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}'),'catalog ID order hidden until ranking is known');
  assert.ok(css.includes('.app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}'),'neutral skeleton identities reserve space');
- assert.ok(css.includes('.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::before{'),'desktop reserves crest track');
- assert.ok(css.includes('.app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::before{'),'mobile reserves crest track');
+ assert.ok(css.includes('.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{'),'desktop reserves the same crest track for domestic and international');
+ assert.ok(css.includes('.app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{'),'mobile reserves the same crest track for domestic and international');
  assert.ok(!css.includes('html[data-fa-standings-known-identity="true"] .app-standings-skeleton [data-skeleton-identity]'),'unknown ranking never shows catalog order');
  assert.ok(css.includes('#competition-panel-standings>.app-world-standings{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}'),'previous sporting data remains hidden during loading');
  assert.ok(css.includes('#competition-panel-standings :is(.app-world-club-name,.app-world-mobile-club-name){font-weight:700}'),'club-name bold typography');

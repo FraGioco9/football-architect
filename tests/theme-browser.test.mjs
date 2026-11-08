@@ -145,6 +145,9 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           })));
           window.faStandingsMobile.prepare(rows)(true);
           const list=[...document.querySelectorAll('#app-standings-compact-list>li[data-world-club]')];
+          // Measure real computed pseudo-element size after revealing the
+          // dormant skeleton, otherwise Chromium reports auto for display:none.
+          document.querySelector('#competition-panel-standings .app-standings-skeleton').style.display='block';
           const first=document.querySelector('.app-standings-skeleton .app-skeleton-mobile .app-world-mobile-name.app-skeleton-bar');
           const desktop=document.querySelector('.app-standings-skeleton tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
           return {count:list.length,unique:new Set(list.map(x=>x.dataset.worldClub)).size,
@@ -239,6 +242,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         await wait("document.readyState==='complete'&&!!document.querySelector('.app-standings-skeleton tr[data-skeleton-row]')");
         const layout=await run(`(()=>{
           const root=document.querySelector('#competition-panel-standings .app-standings-skeleton');
+          root.style.display='block'; // computed pseudo-element geometry needs a rendered ancestor
           const bar=root.querySelector('tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
           const style=getComputedStyle(bar),crest=getComputedStyle(bar,'::before'),name=getComputedStyle(bar,'::after');
           return {

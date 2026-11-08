@@ -62,7 +62,10 @@ test('LAN opt-in serves only anonymous world and competition GETs on a verified 
  upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
  const target='http://127.0.0.1:'+upstream.address().port;
  const host='192.168.50.10:2000',remote='192.168.50.22',opts={target,lanEnabled:true,lanHosts:['192.168.50.10']};
- const lanRequest=path=>({...req(path,remote,host),headers:{host,cookie:'operator=secret',origin:'http://192.168.50.10:2000','x-csrf-token':'do-not-forward'}});
+ // Synthetic requests must implement the HTTP IncomingMessage body iterator:
+ // the bridge accepts an empty body for anonymous GETs and refuses credentials.
+ const lanRequest=path=>({...req(path,remote,host),headers:{host,cookie:'operator=secret',origin:'http://192.168.50.10:2000','x-csrf-token':'do-not-forward'},
+  async *[Symbol.asyncIterator](){} });
  try{
   for(const path of ['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13']){
    const res=response();await proxyAdminApi(lanRequest(path),res,opts);

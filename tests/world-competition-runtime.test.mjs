@@ -90,7 +90,7 @@ test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties a
  assert.equal(compact[23].dataset.worldClub,'ES-8');
  assert.equal(compact[0].dataset.standingOutcome,'quarterfinals');
  assert.equal(compact[4].dataset.standingOutcome,'playoff');
- assert.equal(compact[0].children[0].children[2].textContent,'8','Mobile must display the same supplied points as desktop');
+ assert.equal(compact[0].children[0].children[0].children[2].textContent,'8','Mobile must display the same supplied points as desktop');
  assert.equal(compact.some(li=>li.className.includes('app-world-mobile-empty')),false,'Never show an empty message over a populated snapshot');
  api.selectSeason(2);
  assert.equal(r.fields.get('app-standings-body').children.length,1,'new season cannot retain old participants');
