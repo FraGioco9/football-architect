@@ -168,6 +168,64 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       assert.ok(state.scroll<=width+1,'QA-08 '+width+' no page-level overflow');
     }
+    // QA-08: the *visible* Form loading bar must have the same position as
+    // the published W/D/L glyph, not merely the same grid-area. Compare the
+    // real form and both skeleton variants on narrow mobile widths.
+    for(const width of [320,390,620]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height:844,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:844});
+      for(const id of ['it-1','int-1']){
+        await cmd('Page.navigate',{url:devOrigin+'/competitions/'+id+'/standings?season=1'});
+        await wait("!!window.faStandingsMobile&&document.querySelector('.app-standings-skeleton [data-skeleton-mobile]')!==null");
+        const position=await run(`(()=>{
+          const cup=${JSON.stringify(id)}==='int-1';
+          const clubs=cup?['IT','ENG','ES','DE','FR','PT','NL','BR']
+            .flatMap(countryId=>[1,2,3].map(clubId=>({countryId,clubId,
+              primaryName:'QA '+countryId+' '+clubId,abbr:'QA'}))):
+            window.faCompetitionDivision.clubs;
+          const key=club=>cup?club.countryId+'-'+club.clubId:club.clubId;
+          const homeId=key(clubs[0]),awayId=key(clubs[1]);
+          const rows=clubs.map(club=>({
+            club,played:1,won:1,drawn:0,lost:0,gf:1,ga:0,gd:1,pts:3,
+            recent:[{result:'W',round:1,homeId,awayId}]
+          }));
+          window.faStandingsMobile.prepare(rows)(true);
+          const skeleton=document.querySelector('#competition-panel-standings .app-standings-skeleton');
+          skeleton.style.display='block'; // measure dormant first-paint layout without changing production
+          const placeholder=skeleton.querySelector('.app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-form');
+          const loaded=document.querySelector('#app-standings-compact-list [data-world-club] .app-world-mobile-form');
+          const glyph=loaded?.querySelector('.app-world-form-dot');
+          if(!placeholder||!loaded||!glyph)return {error:'missing form or skeleton'};
+          const sr=placeholder.getBoundingClientRect(),lr=loaded.getBoundingClientRect(),
+            gr=glyph.getBoundingClientRect(),box=n=>{
+              const r=n.closest('.app-world-mobile-summary').getBoundingClientRect();
+              return {x:n.getBoundingClientRect().left-r.left,
+                y:n.getBoundingClientRect().top-r.top};
+            };
+          const a=box(placeholder),b=box(loaded),glyphOffset=box(glyph);
+          const style=getComputedStyle(placeholder);
+          const pseudo=getComputedStyle(placeholder,'::before');
+          return {count:rows.length,display:style.display,alignment:style.alignItems,
+            skeletonX:a.x,formX:b.x,glyphX:glyphOffset.x,
+            skeletonCenterY:a.y+sr.height/2,
+            formCenterY:b.y+lr.height/2,
+            glyphCenterY:glyphOffset.y+gr.height/2,
+            skeletonHeight:sr.height,glyphHeight:gr.height,
+            barHeight:pseudo.height,barWidth:pseudo.width};
+        })()`);
+        assert.equal(position.error,undefined,`QA-08 ${id} ${width} ${position.error||''}`);
+        assert.equal(position.count,id==='int-1'?24:16);
+        assert.equal(position.display,'flex',`QA-08 ${id} ${width} skeleton Form must inherit real flex layout`);
+        assert.equal(position.alignment,'center');
+        assert.equal(position.skeletonHeight,16);
+        assert.equal(position.glyphHeight,16);
+        assert.equal(position.barHeight,'10px');
+        assert.ok(Math.abs(position.skeletonX-position.glyphX)<=1,
+          `QA-08 ${id} ${width} Form skeleton X is offset: ${JSON.stringify(position)}`);
+        assert.ok(Math.abs(position.skeletonCenterY-position.glyphCenterY)<=1,
+          `QA-08 ${id} ${width} Form skeleton Y is offset: ${JSON.stringify(position)}`);
+      }
+    }
     // QA-08: Domestic and International share identical desktop/tablet
     // skeleton geometry, irrespective of their 16/24 participating clubs.
     // Previous checks covered only mobile, missing the international desktop

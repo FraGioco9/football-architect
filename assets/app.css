@@ -1264,9 +1264,12 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
  .app-standings-skeleton .app-world-mobile-points{
   width:100%;padding:7px 3px;margin:0;
  }
- /* Align the form skeleton with the center of the loaded 16px glyph line. */
+ /* The skeleton Form occupies the same flex box and grid origin as the
+    published 16px W/D/L glyphs. The generic .app-skeleton-bar otherwise
+    overrides .app-world-mobile-form with display:block, placing its 10px
+    pseudo bar above the actual glyph's vertical center. */
  .app-standings-skeleton .app-world-mobile-form{
-  width:60px;height:16px;margin:0;justify-self:start;
+  display:flex;width:60px;height:16px;margin:0;justify-self:start;
   align-self:start;align-items:center;background:transparent;
  }
  .app-standings-skeleton .app-world-mobile-form::before{
