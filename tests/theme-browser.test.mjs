@@ -123,6 +123,19 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     // First paint has four decorative archive rows too. Wait for the real
     // season anchors after DEV History hydration before asserting their links.
+    // QA-08: desktop international empty standings have an equivalent mobile
+    // message. A blank compact list previously made Standings disappear on iOS.
+    for(const [width,height,mobile] of [[390,844,true],[320,700,true],[621,800,false]]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:height});
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/int-1/standings?season=1'});
+      await wait("!!window.faStandingsMobile&&document.querySelector('#app-standings-compact-list')!==null");
+      const state=await run("(()=>{const c=document.getElementById('app-standings-compact'),f=document.getElementById('app-standings-full');return {compact:!c.hidden&&getComputedStyle(c).display!=='none',full:!f.hidden&&getComputedStyle(f).display!=='none',empty:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty [data-app-i18n=competitionStandingsEmpty]'),scroll:document.documentElement.scrollWidth,width:innerWidth}})()");
+      assert.equal(state.compact,mobile,'QA-08 '+width+' correct compact visibility');
+      assert.equal(state.full,!mobile,'QA-08 '+width+' correct desktop table visibility');
+      if(mobile)assert.equal(state.empty,true,'QA-08 '+width+' mobile shows verified empty state');
+      assert.ok(state.scroll<=width+1,'QA-08 '+width+' no page-level overflow');
+    }
     const waitForHistoryArchive=async route=>{
       const target=new URL(route,devOrigin);
       await wait("location.origin==="+JSON.stringify(target.origin)+

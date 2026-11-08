@@ -115,3 +115,50 @@ test('INT-24: Knockouts uses a localized cup empty state instead of domestic ins
   assert.equal(message.textContent,expected);
  }
 });
+
+test("QA-08: international mobile blank-state stays visible while unpublished",()=>{
+ const source=read("assets/competition-page.js"),css=read("assets/app.css");
+ assert.match(source,/app-world-mobile-empty/);
+ assert.match(source,/message\.dataset\.appI18n='competitionStandingsEmpty'/);
+ assert.match(source,/replaceChildren\(li\)/);
+ assert.match(css,/@media\(max-width:620px\)\{\.app-world-standing-scroll\{display:none!important\}/);
+ assert.match(css,/\.app-world-mobile-empty/);
+});
+
+test("QA-08: verified international Form tooltip cannot invent opponents or scores",async()=>{
+ const {runInNewContext}=await import("node:vm");
+ const src=read("assets/competition-page.js");
+ const start=src.indexOf("  function verifiedPublishedForms(");
+ const end=src.indexOf("\n  function bindPublishedFormTooltips(",start);
+ assert.ok(start>=0&&end>start);
+ const verify=runInNewContext(src.slice(start,end)+";verifiedPublishedForms",{}, {timeout:1000});
+ const italy={countryId:"IT",clubId:1,primaryName:"Italy One"};
+ const england={countryId:"ENG",clubId:1,primaryName:"England One"};
+ const rules={clubKey:c=>c.countryId+"-"+c.clubId};
+ const definition={category:"international"};
+ const fixture={phaseId:"league",round:2,homeId:"IT-1",awayId:"ENG-1",homeGoals:2,awayGoals:1,kickoff:null};
+ const game={round:2,homeId:"IT-1",awayId:"ENG-1",result:"W"};
+ const data={participants:[italy,england],fixtures:[fixture]};
+ const rows=[{club:italy,recent:[game]}];
+ const actual=verify(data,rows,definition,rules);
+ assert.deepEqual([...actual.keys()],["IT-1|2|IT-1|ENG-1"]);
+ const value=actual.get("IT-1|2|IT-1|ENG-1");
+ assert.equal(value.fixture.homeGoals,2);
+ assert.equal(value.fixture.awayGoals,1);
+ assert.equal(value.home.primaryName,italy.primaryName);
+ assert.equal(value.away.primaryName,england.primaryName);
+ assert.equal(value.homePerspective,true);
+ for(const invalid of [
+  {...fixture,homeGoals:null},{...fixture,awayGoals:null},
+  {...fixture,phaseId:"quarterfinals"},{...fixture,awayId:"FR-1"}
+ ]){
+  assert.equal(verify({...data,fixtures:[invalid]},rows,definition,rules).size,0,"Do not show unknown or unplayed scores");
+ }
+ assert.equal(verify(data,[{club:italy,recent:[{...game,result:"D"}]}],definition,rules).size,0,"Form letter must match actual result");
+ assert.equal(verify({...data,fixtures:[]},rows,definition,rules).size,0,"Never infer a score from W alone");
+ // Domestic uses numeric fixture IDs but the exact same verified tooltip contract.
+ const domestic={category:"domestic"};
+ const dFixture={...fixture,homeId:1,awayId:2},dGame={...game,homeId:1,awayId:2};
+ const dClubs=[italy,{...england,countryId:"IT",clubId:2}];
+ assert.equal(verify({participants:dClubs,fixtures:[dFixture]},[{club:italy,recent:[dGame]}],domestic,rules).size,1);
+});

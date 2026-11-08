@@ -597,8 +597,170 @@
     return tr;
   }
 
+  // Published form previews are built only from the same verified played fixtures
+  // as the season table; a result letter alone can never create a scoreline.
+  function verifiedPublishedForms(data,rows,definition,rules){
+    const idOf=club=>definition.category==="international"?rules.clubKey(club):String(club.clubId);
+    const clubs=new Map(data.participants.map(club=>[idOf(club),club]));
+    const fixtures=new Map();
+    for(const fixture of data.fixtures||[]){
+      if(fixture.phaseId!=="league"||!Number.isInteger(fixture.round)||
+        !Number.isSafeInteger(fixture.homeGoals)||fixture.homeGoals<0||
+        !Number.isSafeInteger(fixture.awayGoals)||fixture.awayGoals<0)continue;
+      const home=String(fixture.homeId),away=String(fixture.awayId);
+      if(home===away||!clubs.has(home)||!clubs.has(away))continue;
+      fixtures.set([fixture.round,home,away].join("|"),fixture);
+    }
+    const verified=new Map();
+    for(const row of rows){
+      const owner=idOf(row.club);
+      for(const game of row.recent||[]){
+        const home=String(game.homeId),away=String(game.awayId);
+        const fixture=fixtures.get([game.round,home,away].join("|"));
+        if(!fixture||owner!==home&&owner!==away)continue;
+        const ours=owner===home?fixture.homeGoals:fixture.awayGoals;
+        const theirs=owner===home?fixture.awayGoals:fixture.homeGoals;
+        const result=ours>theirs?"W":ours<theirs?"L":"D";
+        if(result!==game.result)continue;
+        verified.set([owner,game.round,home,away].join("|"),{
+          fixture,home:clubs.get(home),away:clubs.get(away),homePerspective:owner===home
+        });
+      }
+    }
+    return verified;
+  }
+
+  function bindPublishedFormTooltips(){
+    const host=document.getElementById("competition-panel-standings");
+    const tooltip=document.createElement("div");
+    tooltip.id="app-published-form-tooltip";
+    tooltip.className="app-world-form-tooltip";
+    tooltip.setAttribute("role","tooltip");
+    tooltip.hidden=true;
+    const element=(tag,cls,text)=>{const x=document.createElement(tag);x.className=cls;x.textContent=text||"";return x};
+    const meta=element("div","app-world-form-tooltip-meta");
+    const round=element("span","app-world-form-tooltip-round");
+    const roundLabel=element("span","","Matchday ");
+    roundLabel.dataset.appI18n="standingsTooltipRound";
+    const roundNumber=element("span","");
+    round.append(roundLabel,roundNumber);
+    const date=element("time","app-world-form-tooltip-date");
+    meta.append(round,date);
+    const scoreline=element("div","app-world-form-tooltip-scoreline");
+    const home=element("span","app-world-form-tooltip-team");
+    const score=element("strong","app-world-form-tooltip-score");
+    const homeScore=element("span",""),separator=element("span",""," – "),awayScore=element("span","");
+    score.append(homeScore,separator,awayScore);
+    const away=element("span","app-world-form-tooltip-team");
+    scoreline.append(home,score,away);
+    const context=element("div","app-world-form-tooltip-context");
+    const perspective=element("span","");
+    const stadium=element("span","app-world-form-tooltip-stadium");
+    context.append(perspective,stadium);
+    tooltip.append(meta,scoreline,context);
+    document.body.append(tooltip);
+    let verified=new Map(),active=null,touchWasOpen=false;
+    const close=()=>{
+      active?.removeAttribute("aria-describedby");
+      active=null;tooltip.hidden=true;tooltip.className="app-world-form-tooltip";
+      tooltip.setAttribute("aria-hidden","true");
+    };
+    const place=()=>{
+      if(!active||tooltip.hidden)return;
+      const rect=active.getBoundingClientRect(),width=window.innerWidth,height=window.innerHeight;
+      const bar=Math.max(0,document.querySelector(".fa-shell-topbar")?.getBoundingClientRect().bottom??0);
+      const minTop=Math.max(8,bar+8),maxBottom=height-8,w=tooltip.offsetWidth||300,h=tooltip.offsetHeight||114;
+      if(rect.bottom<=bar||rect.top>=height||rect.right<=0||rect.left>=width||maxBottom-minTop<h){close();return}
+      const above=rect.top-h-8,below=rect.bottom+8;
+      const top=above>=minTop?above:below+h<=maxBottom?below:
+        (rect.top-minTop>=maxBottom-rect.bottom?minTop:maxBottom-h);
+      tooltip.style.left=Math.round(Math.max(8,Math.min(rect.left+rect.width/2-w/2,width-w-8)))+"px";
+      tooltip.style.top=Math.round(Math.max(minTop,Math.min(top,maxBottom-h)))+"px";
+    };
+    const target=event=>{
+      const node=event.target?.closest?.("[data-published-form]");
+      return node&&host.contains(node)?node:null;
+    };
+    const open=node=>{
+      const record=verified.get(node.dataset.publishedForm);
+      if(!record)return;
+      if(active!==node)active?.removeAttribute("aria-describedby");
+      active=node;
+      home.textContent=record.home.primaryName||record.home.abbr;
+      away.textContent=record.away.primaryName||record.away.abbr;
+      homeScore.textContent=String(record.fixture.homeGoals);
+      awayScore.textContent=String(record.fixture.awayGoals);
+      roundNumber.textContent=String(record.fixture.round);
+      perspective.dataset.appI18n=record.homePerspective?"standingsTooltipHome":"standingsTooltipAway";
+      perspective.textContent=record.homePerspective?"Home":"Away";
+      stadium.textContent=record.home.stadiumName||"";
+      stadium.hidden=!record.home.stadiumName;
+      const kickoff=record.fixture.kickoff;
+      const knownDate=typeof kickoff==="string"&&Number.isFinite(Date.parse(kickoff));
+      date.hidden=!knownDate;
+      if(knownDate){
+        date.dateTime=kickoff;
+        date.textContent=new Intl.DateTimeFormat(document.documentElement.lang||"en",{dateStyle:"medium",timeStyle:"short"}).format(new Date(kickoff));
+      }
+      tooltip.hidden=false;tooltip.className="app-world-form-tooltip";
+      tooltip.removeAttribute("aria-hidden");
+      node.setAttribute("aria-describedby",tooltip.id);
+      window.faAppRenderLanguage?.();
+      place();
+    };
+    host.addEventListener("pointerover",event=>{const node=target(event);if(node&&["mouse","pen"].includes(event.pointerType))open(node)});
+    host.addEventListener("pointerout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget)&&["mouse","pen"].includes(event.pointerType))close()});
+    host.addEventListener("focusin",event=>{const node=target(event);if(node)open(node)});
+    host.addEventListener("focusout",event=>{const node=target(event);if(node&&active===node&&!node.contains(event.relatedTarget))close()});
+    host.addEventListener("pointerdown",event=>{const node=target(event);touchWasOpen=!!node&&["touch","pen"].includes(event.pointerType)&&active===node});
+    host.addEventListener("click",event=>{
+      const node=target(event);if(!node)return;
+      if(node.closest("summary")){event.preventDefault();event.stopPropagation()}
+      if(touchWasOpen&&active===node)close();else open(node);
+      touchWasOpen=false;
+    });
+    host.addEventListener("keydown",event=>{
+      const node=target(event);
+      if(!node||node.tagName==="BUTTON"||!["Enter"," "].includes(event.key))return;
+      event.preventDefault();event.stopPropagation();open(node);
+    });
+    document.addEventListener("pointerdown",event=>{if(active&&!active.contains(event.target))close()});
+    document.addEventListener("keydown",event=>{if(event.key==="Escape"&&active)close()});
+    window.addEventListener("resize",place);
+    window.addEventListener("scroll",place,{passive:true});
+    document.querySelector(".fa-shell-content-scroll")?.addEventListener("scroll",place,{passive:true});
+    document.querySelector(".app-world-standing-scroll")?.addEventListener("scroll",place,{passive:true});
+    return {
+      clear(){verified=new Map();close()},
+      sync(records,rows,definition,rules){
+        close();verified=records;
+        const list=document.getElementById("app-standings-compact-list");
+        const items=new Map([...list.children].map(li=>[li.dataset.worldClub,li]));
+        for(const row of rows){
+          const identity=row.club.countryId+"-"+row.club.clubId;
+          const owner=definition.category==="international"?rules.clubKey(row.club):String(row.club.clubId);
+          const marks=[...items.get(identity)?.querySelectorAll(".app-world-mobile-form .app-world-form-dot")||[]];
+          marks.forEach((mark,index)=>{
+            const game=row.recent[index];
+            const key=[owner,game.round,game.homeId,game.awayId].join("|");
+            if(records.has(key)){
+              mark.dataset.publishedForm=key;mark.tabIndex=0;
+              mark.setAttribute("role","button");mark.setAttribute("aria-haspopup","true");
+              mark.setAttribute("aria-label",game.result+" — "+game.round);
+            }else{
+              delete mark.dataset.publishedForm;mark.removeAttribute("role");
+              mark.removeAttribute("aria-haspopup");mark.removeAttribute("aria-label");
+              mark.removeAttribute("tabindex");
+            }
+          });
+        }
+      }
+    };
+  }
+
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
+    const publishedFormTips=bindPublishedFormTooltips();
     let slots,scores,initialSlots,bracketEmpty,initialHomeLabels;
     const capture=()=>{
       slots=[...document.querySelectorAll('[data-postseason-config-slot]')];scores=[...document.querySelectorAll('[data-postseason-score]')];initialSlots=slots.map(slot=>slot.innerHTML);
@@ -610,11 +772,18 @@
     const empty=()=>{
       if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);window.faPostseason?.prepare(null)();suppliedOwned=false;return;
+        renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);window.faPostseason?.prepare(null)();publishedFormTips.clear();suppliedOwned=false;return;
       }
       const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=11;
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
-      document.getElementById('app-standings-compact-list')?.replaceChildren();
+      // At mobile widths the desktop table is CSS-hidden: preserve the same
+      // translated empty state instead of silently replacing it with nothing.
+      const li=document.createElement('li');li.className='app-world-mobile-item app-world-mobile-empty';
+      const message=document.createElement('p');message.className='app-competition-status';
+      message.dataset.appI18n='competitionStandingsEmpty';message.textContent='No standings available yet.';
+      li.appendChild(message);
+      document.getElementById('app-standings-compact-list')?.replaceChildren(li);
+      publishedFormTips.clear();window.faAppRenderLanguage?.();
     };
     const resetBracket=(keep=new Set())=>{slots.forEach((slot,i)=>{if(!keep.has(slot)&&slot.innerHTML!==initialSlots[i])slot.innerHTML=initialSlots[i]});for(const home of initialHomeLabels)if(home){home.label.dataset.appI18n=home.key;home.label.textContent=home.text}if(definition.category==='international')scores.forEach(score=>score.textContent='—');if(bracketEmpty)bracketEmpty.hidden=false};
     function refresh(){
@@ -627,7 +796,7 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){publishedFormTips.clear();if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -643,23 +812,32 @@
           return {...row,club,position:index+1,recent:row.recent||[]};
         }):data.participants.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
         const commitMobile=mobile.prepare(rows);
+        const verifiedForms=verifiedPublishedForms(data,rows,definition,rules);
         const desktop=rows.map((row,index)=>{
           const tr=createStandingsRow(row.club);decorateStanding(tr,supplied?index+1:null);
           if(supplied){
             const values=[index+1,null,...['played','won','drawn','lost','gf','ga','gd','pts'].map(k=>row[k])];
             values.forEach((value,i)=>{if(i!==1)tr.children[i].textContent=String(value)});
-            // Real published form must never reuse the fictional demo score tooltip.
+            // A real match can use the domestic tooltip layout only when
+            // the verified fixture also supplies the actual score.
             if(row.recent.length){
               const strip=document.createElement('span');strip.className='app-world-form-strip';
+              const owner=definition.category==='international'?rules.clubKey(row.club):String(row.club.clubId);
               for(const game of row.recent){
-                const mark=document.createElement('span');
-                mark.className='app-world-form-dot app-world-form-'+game.result.toLowerCase()+
+                const key=[owner,game.round,game.homeId,game.awayId].join('|');
+                const isVerified=verifiedForms.has(key);
+                const mark=document.createElement(isVerified?'button':'span');
+                if(isVerified){mark.type='button';mark.dataset.publishedForm=key;mark.setAttribute('aria-haspopup','true')}
+                mark.className='app-world-form-dot'+(isVerified?' app-world-form-control':'')+
+                  ' app-world-form-'+game.result.toLowerCase()+
                   (game===row.recent[0]?' app-world-form-last':'');
-                mark.dataset.appI18n=formLabels[game.result][2];
-                mark.setAttribute('role','img');
                 mark.setAttribute('aria-label',game.result+' — '+game.round);
-                mark.title=game.result+' — '+game.round;
-                mark.textContent=game.result;strip.append(mark);
+                if(isVerified){
+                  const glyph=document.createElement('span');glyph.className='app-world-form-glyph';
+                  glyph.dataset.appI18n=formLabels[game.result][2];glyph.textContent=game.result;
+                  mark.append(glyph);
+                }else{mark.dataset.appI18n=formLabels[game.result][2];mark.textContent=game.result}
+                strip.append(mark);
               }
               tr.children[10].replaceChildren(strip);
             }
@@ -690,7 +868,9 @@
           const [id,side]=slot.dataset.postseasonConfigSlot.split(':');return {slot,club:resolved.get(id)?.[Number(side)]||null};
         });
         const commitDomestic=definition.category==='domestic'?window.faPostseason?.prepare(rows):null;
-        renderDOM.keyed(tbody,desktop,row=>row.dataset.worldClub);commitMobile(true);commitDomestic?.();suppliedOwned=true;resetBracket(new Set(updates.filter(item=>item.club).map(item=>item.slot)));
+        renderDOM.keyed(tbody,desktop,row=>row.dataset.worldClub);commitMobile(true);
+        publishedFormTips.sync(verifiedForms,rows,definition,rules);
+        commitDomestic?.();suppliedOwned=true;resetBracket(new Set(updates.filter(item=>item.club).map(item=>item.slot)));
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
           const name=document.createElement('a');name.className='app-world-standing-club-link';name.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});name.textContent=club.primaryName;
