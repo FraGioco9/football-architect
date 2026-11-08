@@ -62,7 +62,10 @@ test('Season archive links retain native navigation and guard in-page Standings 
  const node=(tag,className='',textContent='')=>({tag,className,textContent,children:[],dataset:{},attributes:{},events:{},
   append(...items){this.children.push(...items)},setAttribute(key,value){this.attributes[key]=value},
   addEventListener(kind,fn){this.events[kind]=fn}});
- const list=node('ol'),changes=[],document={documentElement:{dataset:{}},createTextNode:text=>node('#text','',text)};
+ const shell={scrollTop:350},page={scrollTop:180};
+ const list=node('ol'),changes=[],document={documentElement:{dataset:{}},scrollingElement:page,
+  querySelector:selector=>selector==='.fa-shell-content-scroll'?shell:null,
+  createTextNode:text=>node('#text','',text)};
  const window={faCompetitionRoute:{get:()=>({season:'1',view:'history'}),set:(...args)=>changes.push(args)}};
  runInNewContext(helpers+client.slice(start,end),{
   historyNode:node,historyLabel:key=>node('span','',key),document,window,list,
@@ -84,6 +87,8 @@ test('Season archive links retain native navigation and guard in-page Standings 
  assert.equal(prevented,1);
  assert.equal(document.documentElement.dataset.faDevSeasonTransition,'true');
  assert.deepEqual(plain(changes),[[{season:'2',view:'standings'},{focus:true}]]);
+ assert.equal(shell.scrollTop,0,'Archive click resets the application scroll shell');
+ assert.equal(page.scrollTop,0,'Archive click resets the document scroll');
  for(const modifiers of [{ctrlKey:true},{metaKey:true},{shiftKey:true},{altKey:true},{button:1},{defaultPrevented:true}])
   link.events.click({...click,...modifiers});
  assert.equal(prevented,1,'Modified clicks retain native new-tab/window behavior');
