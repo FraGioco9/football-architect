@@ -83,7 +83,10 @@ test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties a
  assert.equal(rows[0].dataset.standingOutcome,'quarterfinals');assert.equal(rows[4].dataset.standingOutcome,'playoff');
  api.selectSeason(2);
  assert.equal(r.fields.get('app-standings-body').children.length,1,'new season cannot retain old participants');
- assert.equal(r.fields.get('app-standings-compact-list').children.length,0);
+ const emptyMobile=r.fields.get('app-standings-compact-list').children;
+ assert.equal(emptyMobile.length,1,'An unpublished international season keeps a visible mobile empty state');
+ assert.equal(emptyMobile[0].className,'app-world-mobile-item app-world-mobile-empty');
+ assert.equal(emptyMobile[0].children[0].dataset.appI18n,'competitionStandingsEmpty');
 });
 test('CONFIG-CUP-HELP: configured score help works with keyboard focus and Escape',async()=>{
  const r=await simulate({division:divisionsForTest('int-1')});

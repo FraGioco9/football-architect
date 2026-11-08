@@ -760,7 +760,9 @@
 
   function bindSuppliedPanels(mobile){
     const tbody=document.getElementById('app-standings-body'),rules=window.faCompetitionRules;
-    const publishedFormTips=bindPublishedFormTooltips();
+    // Mount the published tooltip only after verified played fixtures exist.
+    // Do not change first paint or the empty-context bootstrap DOM.
+    let publishedFormTips=null;
     let slots,scores,initialSlots,bracketEmpty,initialHomeLabels;
     const capture=()=>{
       slots=[...document.querySelectorAll('[data-postseason-config-slot]')];scores=[...document.querySelectorAll('[data-postseason-score]')];initialSlots=slots.map(slot=>slot.innerHTML);
@@ -772,7 +774,7 @@
     const empty=()=>{
       if(definition.category==='domestic'&&!(activeDebugSeason===null&&window.faCompetitionContext?.selectedSeason>1)){
         const rows=division.clubs.map(club=>({club,played:null,won:null,drawn:null,lost:null,gf:null,ga:null,gd:null,pts:null,recent:[]}));
-        renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);window.faPostseason?.prepare(null)();publishedFormTips.clear();suppliedOwned=false;return;
+        renderDOM.keyed(tbody,division.clubs.map(club=>createStandingsRow(club)),row=>row.dataset.worldClub);mobile.prepare(rows)(true);window.faPostseason?.prepare(null)();publishedFormTips?.clear();suppliedOwned=false;return;
       }
       const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=11;
       cell.className='app-competition-empty-row';cell.dataset.appI18n='competitionStandingsEmpty';cell.textContent='No standings available yet.';row.appendChild(cell);tbody.replaceChildren(row);
@@ -783,7 +785,7 @@
       message.dataset.appI18n='competitionStandingsEmpty';message.textContent='No standings available yet.';
       li.appendChild(message);
       document.getElementById('app-standings-compact-list')?.replaceChildren(li);
-      publishedFormTips.clear();window.faAppRenderLanguage?.();
+      publishedFormTips?.clear();window.faAppRenderLanguage?.();
     };
     const resetBracket=(keep=new Set())=>{slots.forEach((slot,i)=>{if(!keep.has(slot)&&slot.innerHTML!==initialSlots[i])slot.innerHTML=initialSlots[i]});for(const home of initialHomeLabels)if(home){home.label.dataset.appI18n=home.key;home.label.textContent=home.text}if(definition.category==='international')scores.forEach(score=>score.textContent='—');if(bracketEmpty)bracketEmpty.hidden=false};
     function refresh(){
@@ -796,7 +798,7 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){publishedFormTips.clear();if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){publishedFormTips?.clear();if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -869,7 +871,10 @@
         });
         const commitDomestic=definition.category==='domestic'?window.faPostseason?.prepare(rows):null;
         renderDOM.keyed(tbody,desktop,row=>row.dataset.worldClub);commitMobile(true);
-        publishedFormTips.sync(verifiedForms,rows,definition,rules);
+        if(verifiedForms.size){
+          if(!publishedFormTips)publishedFormTips=bindPublishedFormTooltips();
+          publishedFormTips.sync(verifiedForms,rows,definition,rules);
+        }else publishedFormTips?.clear();
         commitDomestic?.();suppliedOwned=true;resetBracket(new Set(updates.filter(item=>item.club).map(item=>item.slot)));
         if(bracketEmpty)bracketEmpty.hidden=completed.some(t=>t.legs?.some(Boolean));
         for(const {slot,club} of updates)if(club){
