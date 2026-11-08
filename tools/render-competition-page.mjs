@@ -133,7 +133,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
   if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
   if(id==="history")return `          <section ${attrs}>${renderViewSkeleton(d,id)}\n            <script data-fa-history-first-paint-ready>if(document.documentElement.dataset.competitionView==="history"){document.getElementById("competition-panel-history").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>${renderViewTemplates(d,id)}${historyEmptyContent().trimStart()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
-  if(id==="rules")return (neutral?"":"\n")+renderRules(d,neutral,attrs,key,label);
+  if(id==="rules")return (neutral&&d.category!=="international"?"":"\n")+renderRules(d,neutral,attrs,key,label);
   if(id==="stats")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${statsView.renderEmpty()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="awards")return `${renderViewTemplates(d,id)}          <section ${attrs}>${renderViewSkeleton(d,id)}${viewSkeletonScript(id)}\n          </section>`;
   return `          <section ${attrs}>\n            <h2 data-app-i18n="${key}">${label}</h2>\n            <p class="app-competition-status" data-app-i18n="${emptyKeys[id]}">${messages[id]}</p>\n          </section>`;
