@@ -1312,8 +1312,15 @@
     const snapshot=window.faWorldState?.get?.(),current=snapshot?.current;
     const strings=copies[language()],day={en:'Day',de:'Tag',es:'Día',fr:'Jour',it:'Giorno'}[language()];
     const full=current?(snapshot.source==='dev'?'Debug · ':'')+(current.season===0?strings.noSeason:strings.historySeasonLabel+' '+current.season+' · '+day+' '+current.day+'/56'):'—';
+    // Mobile is a shorter presentation of the same canonical public/dev day,
+    // never a separate clock or an invented Season 1 / Day 1 fallback.
+    const compact=current?.season>0?'S'+current.season+' · '+day[0].toUpperCase()+current.day+'/56':'—';
     for(const node of document.querySelectorAll('.fa-shell-date-full'))node.textContent=full;
-    for(const node of document.querySelectorAll('.fa-shell-date-short'))node.textContent=current?current.season+' · '+current.day+'/56':'—';
+    for(const node of document.querySelectorAll('.fa-shell-date-short'))node.textContent=compact;
+    for(const node of document.querySelectorAll('.fa-shell-time')){
+      node.setAttribute('aria-label',current?full:strings.timeLabel+' —');
+      node.title=current?full:strings.timeLabel+' —';
+    }
   }
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
