@@ -267,12 +267,13 @@ async function renderHistoryPreview(){
  const errorMessage=panel.querySelector('[data-history-error]');if(errorMessage)errorMessage.hidden=true;
  if(status)status.hidden=true;
  try{
-  if(!historyManifest)historyManifest=fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
+  if(!historyManifest)historyManifest=(window.faCompetitionManifestPromise ||= fetch("/competitions/_shared/manifest.json",{cache:"no-store",credentials:"same-origin"}).then(async response=>{
    if(!response.ok)throw Error("DEV History manifest unavailable");
-   const manifest=await response.json();
+   return response.json();
+  })).then(manifest=>{
    if(!competitionModel.validManifest(manifest))throw Error("Invalid DEV History manifest");
    return manifest;
-  }).catch(error=>{historyManifest=null;throw error});
+  }).catch(error=>{historyManifest=null;window.faCompetitionManifestPromise=null;throw error});
   const manifest=await historyManifest;if(!current())return;
   const division=manifest.divisions.find(item=>item.id===validPath[1].toUpperCase());if(!division)throw Error("Unknown DEV History division");
   const {completed:seasons,played}=createPreviewHistory(division,progressSeason,progressDay);
@@ -590,10 +591,13 @@ function waitForRows() {
 
 async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
   try {
-    const response = await fetch("/competitions/_shared/manifest.json",
-      { cache: "no-store", credentials: "same-origin" });
-    if (!response.ok) throw Error("DEV manifest unavailable");
-    const manifest = await response.json();
+    // A single per-document manifest promise is reused by the competition
+    // bootstrap, DEV standings and DEV History rather than three network reads.
+    const manifest=await (window.faCompetitionManifestPromise ||= fetch("/competitions/_shared/manifest.json",
+      { cache: "no-store", credentials: "same-origin" }).then(async response=>{
+      if(!response.ok)throw Error("DEV manifest unavailable");
+      return response.json();
+    }).catch(error=>{window.faCompetitionManifestPromise=null;throw error}));
     if (!competitionModel.validManifest(manifest)) {
       throw Error("Invalid DEV manifest");
     }

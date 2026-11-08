@@ -942,9 +942,13 @@
     const viewSegment=segments[2];
     const allowedViews=new Set(["overview","standings","postseason","fixtures","stats","history","rules","awards","teams"]);
     if(segments.length<2||segments.length>3||segments[0]!=="competitions"||segments[1]!==routeId.toLowerCase()||(viewSegment&&!allowedViews.has(viewSegment)))throw Error("Route identity mismatch");
-    const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
-    if(!dataResponse.ok)throw Error("Competition data unavailable");
-    const manifest=await dataResponse.json();
+    // Share the one validated manifest read with the local DEV presenters.
+    // The promise is installed synchronously before any dependent script boots.
+    const manifest=await (window.faCompetitionManifestPromise ||= (async()=>{
+      const dataResponse=await fetch(new URL("manifest.json",root),{credentials:"same-origin"});
+      if(!dataResponse.ok)throw Error("Competition data unavailable");
+      return dataResponse.json();
+    })());
     if(!model.validManifest(manifest))throw Error("Invalid or approved competition manifest");
     definition=model.competitionById(manifest,routeId);
     if(!definition)throw Error("Unknown competition");
