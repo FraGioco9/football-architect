@@ -168,6 +168,46 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       }
       assert.ok(state.scroll<=width+1,'QA-08 '+width+' no page-level overflow');
     }
+    // QA-08: Domestic and International share identical desktop/tablet
+    // skeleton geometry, irrespective of their 16/24 participating clubs.
+    // Previous checks covered only mobile, missing the international desktop
+    // span's default display:block instead of the domestic flex identity slot.
+    for(const width of [621,768,1440]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height:900,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:900});
+      const layouts=[];
+      for(const [id,expectedRows] of [['it-1',16],['int-1',24]]){
+        await cmd('Page.navigate',{url:devOrigin+'/competitions/'+id+'/standings?season=1'});
+        await wait("document.readyState==='complete'&&!!document.querySelector('.app-standings-skeleton tr[data-skeleton-row]')");
+        const layout=await run(`(()=>{
+          const root=document.querySelector('#competition-panel-standings .app-standings-skeleton');
+          const bar=root.querySelector('tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
+          const style=getComputedStyle(bar),crest=getComputedStyle(bar,'::before'),name=getComputedStyle(bar,'::after');
+          return {
+            count:root.querySelectorAll('tr[data-skeleton-row]').length,
+            mobileCount:root.querySelectorAll('[data-skeleton-mobile]').length,
+            desktopRowsVisible:getComputedStyle(root.querySelector('.app-world-standing-scroll')).display!=='none',
+            mobileRowsVisible:getComputedStyle(root.querySelector('.app-skeleton-mobile')).display!=='none',
+            identity:{display:style.display,alignItems:style.alignItems,width:style.width,height:style.height,
+              marginTop:style.marginTop,marginLeft:style.marginLeft,background:style.backgroundColor,gap:style.columnGap,
+              crestWidth:crest.width,crestHeight:crest.height,crestDisplay:crest.display,
+              nameHeight:name.height,nameDisplay:name.display},
+            scrollWidth:document.documentElement.scrollWidth,viewport:innerWidth
+          };
+        })()`);
+        assert.equal(layout.count,expectedRows,`QA-08 ${id} desktop ${width} row capacity`);
+        assert.equal(layout.mobileCount,expectedRows,`QA-08 ${id} mobile skeleton preserved`);
+        assert.equal(layout.desktopRowsVisible,true,`QA-08 ${id} desktop shell at ${width}`);
+        assert.equal(layout.mobileRowsVisible,false,`QA-08 ${id} mobile shell hidden at ${width}`);
+        assert.equal(layout.identity.display,'flex',`QA-08 ${id} desktop identity is flex at ${width}`);
+        assert.equal(layout.identity.height,'48px');
+        assert.equal(layout.identity.crestWidth,'48px');
+        assert.equal(layout.identity.crestHeight,'48px');
+        assert.ok(layout.scrollWidth<=width+1,`QA-08 ${id} ${width} no page overflow`);
+        layouts.push(layout.identity);
+      }
+      assert.deepEqual(layouts[1],layouts[0],`QA-08 Domestic/International identical desktop skeleton at ${width}px`);
+    }
     const waitForHistoryArchive=async route=>{
       const target=new URL(route,devOrigin);
       await wait("location.origin==="+JSON.stringify(target.origin)+

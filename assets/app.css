@@ -1192,12 +1192,16 @@ svg.site-chevron>path{translate:0 .5px}
 .app-standings-skeleton{display:none;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
 .app-standings-skeleton .app-skeleton-mobile{display:none}
 .app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
-/* Catalog ID order is not a verified standings order. Reserve 16 neutral
-   identity slots until ranked season data arrives from the selected source. */
+/* Catalog ID order is not a verified standings order. Reserve a neutral
+   identity slot per participant (16 domestic / 24 international) until
+   ranked season data arrives from the selected source. */
 .app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
 .app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}
 .app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar){
- width:148px;max-width:100%;height:48px;gap:7px;
+ /* Anonymous international spans and domestic identity placeholders must both
+    be flex rows; otherwise desktop international shows one oversized bar. */
+ display:flex;align-items:center;width:148px;max-width:100%;height:48px;
+ margin:0;gap:7px;background:transparent;
 }
 .app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
  content:"";flex:0 0 48px;height:48px;border-radius:50%;
