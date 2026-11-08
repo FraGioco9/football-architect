@@ -133,7 +133,39 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const state=await run("(()=>{const c=document.getElementById('app-standings-compact'),f=document.getElementById('app-standings-full');return {compact:!c.hidden&&getComputedStyle(c).display!=='none',full:!f.hidden&&getComputedStyle(f).display!=='none',empty:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty [data-app-i18n=competitionStandingsEmpty]'),scroll:document.documentElement.scrollWidth,width:innerWidth}})()");
       assert.equal(state.compact,mobile,'QA-08 '+width+' correct compact visibility');
       assert.equal(state.full,!mobile,'QA-08 '+width+' correct desktop table visibility');
-      if(mobile)assert.equal(state.empty,true,'QA-08 '+width+' mobile shows verified empty state');
+      if(mobile){
+        // Empty is valid only for genuinely unavailable source data. Exercise
+        // the shared mobile presenter with an isolated 24-club test snapshot:
+        // the previous QA asserted the empty message but never checked rows.
+        const populated=await run(`(()=>{
+          const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+          const rows=countries.flatMap(countryId=>[1,2,3].map(clubId=>({
+            club:{countryId,clubId,primaryName:'QA '+countryId+' '+clubId,abbr:'QA'},
+            played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]
+          })));
+          window.faStandingsMobile.prepare(rows)(true);
+          const list=[...document.querySelectorAll('#app-standings-compact-list>li[data-world-club]')];
+          const first=document.querySelector('.app-standings-skeleton .app-skeleton-mobile .app-world-mobile-name.app-skeleton-bar');
+          const desktop=document.querySelector('.app-standings-skeleton tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
+          return {count:list.length,unique:new Set(list.map(x=>x.dataset.worldClub)).size,
+            empty:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'),
+            first:list[0]?.dataset.worldClub,last:list[23]?.dataset.worldClub,
+            skeletonRows:document.querySelectorAll('.app-standings-skeleton [data-skeleton-mobile]').length,
+            mobileSlot:first?getComputedStyle(first).height:null,
+            mobileCrest:first?getComputedStyle(first,'::before').width:null,
+            desktopSlot:desktop?getComputedStyle(desktop).height:null,
+            scroll:document.documentElement.scrollWidth};
+        })()`);
+        assert.equal(populated.count,24,'QA-08 '+width+' published mobile cards');
+        assert.equal(populated.unique,24,'QA-08 '+width+' distinct identities');
+        assert.equal(populated.empty,false,'QA-08 '+width+' published data replaces empty status');
+        assert.equal(populated.first,'IT-1');assert.equal(populated.last,'BR-3');
+        assert.equal(populated.skeletonRows,24,'QA-08 '+width+' skeleton reserves 24 rows');
+        assert.equal(populated.mobileSlot,'40px','QA-08 '+width+' international uses domestic mobile skeleton slot');
+        assert.equal(populated.mobileCrest,'40px','QA-08 '+width+' international reserves domestic crest slot');
+        assert.equal(populated.desktopSlot,'48px','QA-08 '+width+' shared desktop skeleton geometry');
+        assert.ok(populated.scroll<=width+1,'QA-08 '+width+' 24 mobile cards must not overflow');
+      }
       assert.ok(state.scroll<=width+1,'QA-08 '+width+' no page-level overflow');
     }
     const waitForHistoryArchive=async route=>{

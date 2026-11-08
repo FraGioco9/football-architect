@@ -81,6 +81,17 @@ test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties a
  const rows=r.fields.get('app-standings-body').children;
  assert.equal(rows.length,24);assert.equal(rows[0].dataset.worldClub,'IT-1');assert.equal(rows[8].dataset.worldClub,'ENG-1');
  assert.equal(rows[0].dataset.standingOutcome,'quarterfinals');assert.equal(rows[4].dataset.standingOutcome,'playoff');
+ // Desktop and compact mobile must consume the SAME valid 24-club snapshot;
+ // the previously-green browser test checked only the unavailable message.
+ const compact=r.fields.get('app-standings-compact-list').children;
+ assert.equal(compact.length,24,'Real international standings must populate 24 mobile club cards');
+ assert.equal(compact[0].dataset.worldClub,'IT-1');
+ assert.equal(compact[8].dataset.worldClub,'ENG-1');
+ assert.equal(compact[23].dataset.worldClub,'ES-8');
+ assert.equal(compact[0].dataset.standingOutcome,'quarterfinals');
+ assert.equal(compact[4].dataset.standingOutcome,'playoff');
+ assert.equal(compact[0].children[0].children[2].textContent,'8','Mobile must display the same supplied points as desktop');
+ assert.equal(compact.some(li=>li.className.includes('app-world-mobile-empty')),false,'Never show an empty message over a populated snapshot');
  api.selectSeason(2);
  assert.equal(r.fields.get('app-standings-body').children.length,1,'new season cannot retain old participants');
  const emptyMobile=r.fields.get('app-standings-compact-list').children;

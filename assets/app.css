@@ -1196,14 +1196,14 @@ svg.site-chevron>path{translate:0 .5px}
    identity slots until ranked season data arrives from the selected source. */
 .app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
 .app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]{
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar){
  width:148px;max-width:100%;height:48px;gap:7px;
 }
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::before{
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
  content:"";flex:0 0 48px;height:48px;border-radius:50%;
  background:color-mix(in srgb,var(--muted) 12%,var(--surface));
 }
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::after{
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::after{
  content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
  background:color-mix(in srgb,var(--muted) 22%,var(--surface));
 }
@@ -1242,15 +1242,15 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
   width:12px;margin:0;justify-self:start;
  }
  /* Anonymous crest slot followed by a name bar at the real text origin. */
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]{
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar){
   display:flex;width:148px;max-width:100%;height:40px;margin:0;
   align-items:center;gap:7px;background:transparent;
  }
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::before{
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
   content:"";flex:0 0 40px;height:40px;border-radius:50%;
   background:color-mix(in srgb,var(--muted) 12%,var(--surface));
  }
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::after{
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar)::after{
   content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
   background:color-mix(in srgb,var(--muted) 22%,var(--surface));
  }
