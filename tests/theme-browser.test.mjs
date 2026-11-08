@@ -648,7 +648,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const observer="(()=>{"+
         "const expected="+JSON.stringify(JSON.stringify(currentSeason3))+";"+
         "const mobile="+String(mobile)+";"+
-        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,active:true};"+
+        "window.__faSeasonFrame={hidden:0,shown:0,unguarded:0,stale:[],wrongLayout:0,guardArmed:0,active:true};"+
+        "const guardObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.attributeName==='data-fa-dev-season-transition'&&m.oldValue===null))window.__faSeasonFrame.guardArmed++;});"+
+        "guardObserver.observe(document.documentElement,{attributes:true,attributeOldValue:true,attributeFilter:['data-fa-dev-season-transition']});"+
+        "window.__faSeasonGuardObserver=guardObserver;"+
         "const probe=()=>{const record=window.__faSeasonFrame;if(!record.active)return;"+
         "const route=window.faCompetitionRoute?.get?.(),panel=document.getElementById('competition-panel-standings');"+
         "if(route?.view==='standings'&&route.season==='3'&&panel){"+
@@ -668,7 +671,8 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         "if(window.innerWidth!=="+width+")record.wrongLayout++;"+
         "}}requestAnimationFrame(probe)};requestAnimationFrame(probe)})()";
       await run(observer);
-      devManifestDelay=350;
+      // Manifest is shared per document and already cached on this page.
+      // Observe the synchronous route guard instead of relying on a fetch delay.
       try{
         await run("document.querySelector('.app-history-dev-archive a.app-history-dev-season-link[href$=\"standings?season=3\"]').click()");
         await wait("window.faCompetitionRoute.get().view==='standings'&&"+
@@ -676,7 +680,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
           "document.documentElement.dataset.faDevSeasonTransition===undefined");
         await delay(75); // capture frames immediately after the protected reveal
         const frames=await run("(()=>{window.__faSeasonFrame.active=false;return window.__faSeasonFrame})()");
-        assert.ok(frames.hidden>0,width+' History transition was guarded across animation frames');
+        assert.ok(frames.guardArmed>0,width+' History transition guard was armed, even if loading finishes within one frame');
         assert.ok(frames.shown>0,width+' latest-season Standings became visible');
         assert.equal(frames.unguarded,0,width+' guard must hide Standings on every frame');
         assert.equal(frames.wrongLayout,0,width+' expected viewport is retained');
@@ -689,8 +693,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
         assert.deepEqual(expectedRows,currentSeason3,width+' '+(mobile?'mobile':'desktop')+' DOM matches Season 3');
         console.log('HISTORY_FIRST_PAINT_PASS|'+width+'|'+(mobile?'mobile':'desktop')+'|delayed archive to standings');
       }finally{
-        devManifestDelay=0;
-        await run("if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
+        await run("window.__faSeasonGuardObserver?.disconnect();if(window.__faSeasonFrame)window.__faSeasonFrame.active=false");
       }
     }
     // A prior archive-click matrix ends on Standings; reload must start from
