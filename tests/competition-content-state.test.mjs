@@ -162,10 +162,27 @@ test('QA-05 History shell stays painted when global bootstrap drops before its o
 test('QA-05 History providers publish completion only after content and DEV cleanup preserves the nested skeleton',()=>{
  const publicSource=read('assets/competition-page.js');
  const dev=read('tools/dev-standings-preview-client.mjs');
- assert.match(publicSource,/onState:state=>\{window\.faHistorySetReady\?\.\(state!=='loading'\)/);
+ assert.match(publicSource,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+ assert.doesNotMatch(publicSource,/onState:state=>\{[^}]*faHistorySetReady/,'public season loader cannot release or reset History independent loading');
+ assert.doesNotMatch(publicSource,/faHistorySetReady\?\.\(state!=='loading'\)/,'History readiness belongs to its own historical data request');
  assert.match(dev,/panel\.append\(root\);window\.faSyncHistoryRecords\?\.\(\);window\.faAppRenderLanguage\?\.\(\);\s*window\.faHistorySetReady\?\.\(true\)/);
  assert.match(dev,/window\.faHistorySetReady\?\.\(false\);\s*const finishHistory/);
  assert.doesNotMatch(dev,/panel\.querySelector\(["']\.app-history-dev["']\)\?\.remove\(\)/,
   'DEV preview must not remove the first-paint shell nested inside the skeleton');
  assert.equal((dev.match(/panel\.querySelector\(':scope > \.app-history-dev'\)\?\.remove\(\)/g)||[]).length,3);
+});
+
+test('QA-12: completed History becomes visible even if unrelated current-season Standings is loading',()=>{
+ const skeleton={dataset:{competitionSkeletonRoot:'history-preview',skeletonLastLeagueDay:'50',skeletonLeagueRounds:'30'},
+  querySelectorAll:()=>[],querySelector:()=>null,remove(){this.removed=true}};
+ const panel={dataset:{},querySelector(selector){return selector==='[data-competition-skeleton-root]'?skeleton:null},setAttribute(){}};
+ const dataset={faHistoryLoading:'true'};
+ const document={documentElement:{dataset},getElementById:id=>id==='competition-panel-history'?panel:null,querySelector:()=>null};
+ const window={document,faDebugEnabled:false,MutationObserver:class {observe(){}}};
+ runInNewContext(read('assets/standings-loading.js'),{window});
+ window.faStandingsLoading.set('api',true);
+ assert.equal(dataset.faStandingsLoading,'true');
+ window.faHistorySetReady(true);
+ assert.equal(dataset.faHistoryLoading,'false','History readiness is independent of the current-season public provider');
+ assert.equal(skeleton.removed,true);
 });

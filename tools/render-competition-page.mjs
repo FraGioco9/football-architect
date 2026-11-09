@@ -82,7 +82,6 @@ ${rulesView.fixturesDisplayChoices(d).map(c=>fixtureOption(d,c)).join("\n")}
 const historyEmptyContent = ()=>`
             <div class="app-history-empty" data-history-empty>
               <section class="app-history-dev-section">
-                <h3 data-app-i18n="historyHistoricalRecords">Historical records</h3>
                 <div class="app-history-record-controls" data-history-record-controls role="group" data-app-aria="historyRecordScope" aria-label="Record scope">
                   <button type="button" data-history-record-scope="season" aria-pressed="true" data-app-i18n="historySeasonRecords">Season</button>
                   <button type="button" data-history-record-scope="all-time" aria-pressed="false" data-app-i18n="historyAllTimeRecords">All-time</button>
@@ -104,7 +103,7 @@ ${[["seasonGoals","historyPlayerSeasonGoals","Most goals in a season","season"],
               </section>
               <section class="app-history-dev-section">
                 <h3 data-app-i18n="historySeasonArchive">Season archive</h3>
-                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p></div>
+                <div class="app-world-standings app-view-skeleton-history-archive"><p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty" data-history-archive-empty hidden>No completed seasons available yet.</p></div>
               </section>
             </div>
             <p class="app-competition-status" data-history-error data-app-i18n="historyUnavailable" hidden>Season history is temporarily unavailable. Switch tabs to retry.</p>`;

@@ -672,6 +672,7 @@ html[data-theme="light"] .app-history-dev-archive-head{background:#E8F1EB;color:
 .app-history-dev-season-button:hover{background:rgba(100,203,169,.075)}
 html[data-theme="light"] .app-history-dev-season-button:hover{background:#E7F4EB}
 .app-history-dev-archive-club{display:flex;align-items:center;gap:6px;min-width:0;opacity:.82}
+.app-history-dev-archive-clubs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr));flex:1;gap:6px;min-width:0}
 .app-history-dev-archive-champion{opacity:1;font-weight:750}
 .app-history-dev-archive-champion .app-world-club-name{font-weight:750}
 .app-history-dev-archive-champion::before{content:"";display:block;flex:0 0 3px;align-self:stretch;border-radius:5px;background:#69cba9}
@@ -1346,16 +1347,13 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
    Only visible following rows receive a separator, never the last visible row. */
 .app-view-skeleton-history-archive .app-history-dev-archive li{border-bottom:0}
 .app-view-skeleton-history-archive .app-history-dev-archive li:not([hidden])~li:not([hidden]){border-top:1px solid var(--line)}
-/* Archive skeleton reuses live crest footprint; the name bar spans crest + name. */
-.app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
-.app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}
+/* Keep loading decoration scoped to the skeleton; History also uses the archive wrapper for live rows. */
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season-link{pointer-events:none}
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season{display:flex;align-items:center;min-width:0}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season .app-skeleton-bar{width:9ch;max-width:100%}
-.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-identity{position:relative;width:100%}
-.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-crest-placeholder{visibility:hidden}
-.app-view-skeleton-history-archive .app-history-dev-archive-club .app-world-club-name{position:absolute;left:0;top:50%;transform:translateY(-50%);display:block;width:148px;max-width:100%}
+.app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name{display:block;width:148px;max-width:100%}
 .app-competition-view-skeleton .app-view-skeleton-history-archive .app-world-club-name .app-skeleton-bar{width:100%;max-width:100%}
-/* The list item includes its divider: total desktop archive row is exactly 72px. */
-@media(min-width:621px){.app-view-skeleton-history-archive .app-history-dev-archive li{box-sizing:border-box;height:72px}.app-view-skeleton-history-archive .app-history-dev-season-button{box-sizing:border-box;height:100%;min-height:0;padding-block:10px}}
+@media(min-width:621px){.app-competition-view-skeleton .app-view-skeleton-history-archive .app-history-dev-season-button{min-height:71px}}
 .app-view-skeleton-champion{display:flex;align-items:center;min-height:24px}
 .app-view-skeleton-champion>.app-skeleton-bar{max-width:180px}
 .app-view-skeleton-history-table{width:100%;table-layout:fixed;border-collapse:collapse}
@@ -1367,8 +1365,13 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 @media(max-width:620px){.app-view-skeleton-crest-slot{flex-basis:40px;width:40px;height:40px}}
 html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>.app-competition-view-skeleton{display:block}
 html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
-html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>.app-competition-view-skeleton{display:block}
-html:is([data-fa-standings-loading="true"],[data-fa-history-loading="true"]) #competition-panel-history>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+/* QA-12: first paint must reserve History skeleton until historical archive hydration settles.
+   An unresolved archive is never a verified empty state. The Season-0 DEV static
+   exception below remains explicit and is not overridden by this pending gate. */
+html:not([data-fa-history-loading="false"]) #competition-panel-history>.app-competition-view-skeleton{display:block}
+html:not([data-fa-history-loading="false"]) #competition-panel-history>.app-history-empty{position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
+html[data-fa-history-loading="true"] #competition-panel-history>.app-competition-view-skeleton{display:block}
+html[data-fa-history-loading="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>.app-competition-view-skeleton{display:block}
 html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #competition-panel-awards>:not(.app-competition-view-skeleton){position:absolute;inset-inline:0;top:0;visibility:hidden;pointer-events:none}
 html:is([data-fa-standings-loading="true"],[data-fa-stats-loading="true"]) #competition-panel-stats[data-fa-content-state="empty"]>.app-competition-view-skeleton,
@@ -1379,7 +1382,7 @@ html:is([data-fa-standings-loading="true"],[data-fa-awards-loading="true"]) #com
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-history{visibility:visible!important}
 
 
-/* A pre-season or disabled local Debug world has a fully known, static empty History. */
+/* An enabled Debug world in Season 0 has a fully known, static empty History. */
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>.app-competition-view-skeleton{display:none!important}
 html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-history>:not(.app-competition-view-skeleton){position:static!important;visibility:visible!important;pointer-events:auto!important}
 
