@@ -75,7 +75,9 @@ it('atomically generates knockout ties,handles phase-day contention/rollback,and
  const results=await Promise.allSettled([run('advance','phase-day36-competing-01'),run('advance','phase-day36-competing-02')]);
  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(results.filter(r=>r.status==='rejected').map((r:any)=>r.reason.status)).toEqual([409]);
  world=(results.find(r=>r.status==='fulfilled') as PromiseFulfilledResult<any>).value.world;
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(16);
+ // Day 36: the Playoff pairings were already published at I06 / day 31.
+ // Quarter-finals are not qualified until both Playoff legs finish on day 38.
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(8);
  while(world.day<40)await step();
  await db.prepare("CREATE TRIGGER knockout_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END").run();
  try{await expect(step()).rejects.toMatchObject({status:503})}finally{await db.prepare('DROP TRIGGER knockout_late_failure').run()}
