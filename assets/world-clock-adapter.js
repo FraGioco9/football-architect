@@ -41,7 +41,7 @@
  function createWorldState(){
   let source='authoritative',sourceRevision=0,world=null,current=null,readRevision=0,worldStatus='pending';
   const listeners=new Set();
-  const get=()=>Object.freeze({source,sourceRevision,world,current,readRevision});
+  const get=()=>Object.freeze({source,sourceRevision,world,current,readRevision,worldStatus});
   const emit=()=>{const value=get();for(const listener of listeners)listener(value)};
   return Object.freeze({get,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn)},
    waitForWorld({signal}={}){

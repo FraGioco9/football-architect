@@ -30,3 +30,14 @@ test('CAL-IMP-05A adapter does not fabricate lifecycle for transition boundaries
   assert.equal(adapter.project(1,s).days[day-1].relative,'current');
  }
 });
+
+test('CAL-IMP-05A world state exposes pending vs unavailable to History without inventing a season',()=>{
+ const state=adapter.createWorldState(),events=[];
+ state.subscribe(()=>events.push(state.get().worldStatus));
+ assert.equal(state.get().worldStatus,'pending');
+ const ticket=state.beginRead();
+ assert.equal(state.unavailable(ticket),true);
+ assert.equal(state.get().worldStatus,'unavailable');
+ assert.equal(state.get().world,null);
+ assert.deepEqual(events,['unavailable']);
+});

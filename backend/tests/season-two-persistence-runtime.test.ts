@@ -13,6 +13,7 @@ import {approveSeasonTwoSnapshot} from '../src/season-two-approval-command.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {prepareSeasonTwo} from '../src/season-two-prepare-command.ts';
 import {readSeasonArchives} from '../src/season-archive-read.ts';
+import {readPublicSportingSeason} from '../src/public-sporting-read.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {type AdminSession} from '../src/auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
@@ -78,6 +79,26 @@ it('persists the full Season1→2 transition, all56 Season2 receipts and a separ
  expect((await readSeasonArchives(db)).archives.map(a=>a.seasonNumber)).toEqual([2,1]);
  await expect(prepareSeasonTwo(db,session,meta(),'two-not-season-three',now)).rejects.toMatchObject({status:409});
 },180000);
+it('QA-12: closed Season1 Team records remain publicly readable in domestic and international History after Season2 starts',async()=>{
+ await approve();
+ world=(await prepareSeasonTwo(db,session,meta(),'qa12-season2-prep',now)).world;
+ world=(await generateSeasonCalendar(db,session,meta(),'qa12-season2-calendar',now)).world;
+ world=(await executeLifecycle(db,session,'start',meta(),'qa12-season2-start',now)).world;
+ expect(world).toMatchObject({seasonNumber:2,phase:'active'});
+ for(const [competitionId,count] of [['IT-1',16],['IT-2',16],['int-1',24],['int-2',24]] as const){
+  const payload=await readPublicSportingSeason(db,competitionId,1) as any;
+  expect(payload.status).toBe('available');
+  expect(payload.selectedSeason).toBe(1);
+  expect(payload.world).toMatchObject({generation:world.generation,seasonNumber:2});
+  expect(payload.data?.seasonState).toMatchObject({phase:'closed',day:56});
+  expect(payload.data?.history?.championClubId).toBeTruthy();
+  expect(payload.data?.standings.rows).toHaveLength(count);
+  expect(payload.data?.statistics.teams).toHaveLength(count);
+  expect(payload.data?.statistics.playerStatus).toBe('unavailable');
+  expect(payload.data?.statistics.players).toBe(null);
+ }
+},120000);
+
 it('rolls back the new snapshot/world/audit after a late prepare audit failure',async()=>{
  await approve();const before=world;
  await db.prepare("CREATE TRIGGER fail_next_prepare BEFORE INSERT ON admin_operations WHEN NEW.command='prepare-season-two-v2' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();

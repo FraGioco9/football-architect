@@ -1289,12 +1289,13 @@
         const {createAuthoritativeLoader}=await import(new URL('authoritative-season.mjs',sourceUrl).href);
         const {mountAuthoritativeHistory}=await import(new URL('authoritative-history.mjs',sourceUrl).href);
         const historyPanel=document.getElementById('competition-panel-history');
-        if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
+        const history=historyPanel?mountAuthoritativeHistory(historyPanel,{manifest,isDev:()=>activeDebugSeason!==null,getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()}):null;
+        if(history){window.addEventListener('fa:competition-context-change',history.render);window.addEventListener('fa:competition-route-change',history.render);window.addEventListener('fa:source-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
         // Each competition view owns its empty/loading shell; no global
         // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{if(state==='unavailable'&&!window.faWorldState?.get?.().world)history?.settleUnavailable();else history?.render();window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1321,7 +1322,7 @@
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
         select();
-      }catch{window.faHistorySetReady?.(true);window.faStandingsLoading?.set('api',false);clearSeasonData();}
+      }catch{window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }
   }
   start().catch(fail).finally(()=>window.faStandingsLoading?.set('bootstrap',false));

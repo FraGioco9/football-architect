@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {DEBUG_MODE_BOOTSTRAP,DEBUG_SEASON_BOOTSTRAP} from '../tools/dev-preview-artifact.mjs';
 import {renderViewSkeleton,viewSkeletonScript} from '../tools/competition-view-skeletons.mjs';
 
 // Regression: the loading manager re-mounts templates independently of the
@@ -39,15 +40,17 @@ test('unresolved public season preserves exactly one archive slot until count is
  assert.equal(archive.rows.filter(row=>!row.hidden).length,1);
 });
 
-test('Season 0 uses the empty archive message instead of fabricated podium rows',()=>{
+test('Loading History always reserves an archive skeleton until completed seasons are verified',()=>{
  const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
  const firstPaint=readFileSync(new URL('../tools/competition-view-skeletons.mjs',import.meta.url),'utf8');
  assert.match(loading,/knownSeason=\(preview\?/);
  assert.match(loading,/season=Number\(knownSeason\?\?1\)/);
- assert.match(loading,/if\(completed===0&&knownCompleted\)/);
+ assert.doesNotMatch(loading,/if\(completed===0&&knownCompleted\)/);
+ assert.match(loading,/const needed=knownCompleted\?Math\.max\(1,completed\):1/);
  assert.match(firstPaint,/const completed=Math\.max\(0,/);
- assert.match(firstPaint,/if\(completed===0&&knownCompleted\)/);
- assert.match(firstPaint,/competitionHistoryEmpty/);
+ assert.doesNotMatch(firstPaint,/if\(completed===0&&knownCompleted\)/);
+ assert.match(firstPaint,/const needed=knownCompleted\?Math\.max\(1,completed\):1/);
+ assert.doesNotMatch(firstPaint,/competitionHistoryEmpty/);
 });
 
 
@@ -57,7 +60,7 @@ test('Season 0 uses the DEV archive shell rather than published Hall of Champion
  assert.match(loading,/history-preview/);
  assert.doesNotMatch(loading,/view==='history'&&preview&&season===0\)\{current\?\.remove\(\)/);
  assert.match(firstPaint,/if\(template&&skeleton\)skeleton\.replaceWith\(template\.content\.cloneNode\(true\)\)/);
- assert.match(firstPaint,/if\(completed===0&&knownCompleted\)/);
+ assert.doesNotMatch(firstPaint,/if\(completed===0&&knownCompleted\)/);
 });
 
 test('Static Season 0 History uses the same archive wrapper and panel spacing as other seasons',()=>{
@@ -117,23 +120,109 @@ test('Archive skeleton never guesses four rows and only adds separators between 
  assert.equal(archive.rows.filter(row=>!row.hidden).length,1);
 });
 
-test('History has Historical records before Season archive in loading and empty shells on every route',()=>{
+test('History places Team and Player records before Season archive without a redundant heading',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
  for(const slug of [...manifest.competitions.map(c=>c.slug),'_shared']){
   const html=readFileSync(new URL('../competitions/'+slug+'/index.html',import.meta.url),'utf8');
+  assert.equal(html.includes('data-app-i18n="historyHistoricalRecords"'),false,slug+' omits the redundant heading');
   const positions=[...html.matchAll(/data-competition-skeleton-root="history-preview"/g)].map(m=>m.index);
   assert.equal(positions.length,2,slug+' includes initial and template preview skeleton');
   for(const start of positions){
    const shell=html.slice(start,start+18000);
-   const records=shell.indexOf('data-app-i18n="historyHistoricalRecords"');
+   const teams=shell.indexOf('data-app-i18n="historyTeamRecords"');
+   const players=shell.indexOf('data-app-i18n="historyPlayerRecords"');
    const archive=shell.indexOf('data-app-i18n="historySeasonArchive"');
-   assert.ok(records>0&&archive>records,slug+' loading History puts records ahead of archive');
+   assert.ok(teams>0&&players>teams&&archive>players,slug+' loading History puts records ahead of archive');
    assert.ok(!shell.slice(0,archive+2000).includes('data-skeleton-archive-row="1"'),
     slug+' unresolved skeleton initially contains a single archive row');
   }
   const empty=html.indexOf('<div class="app-history-empty" data-history-empty>');
   const area=html.slice(empty,empty+18000);
-  assert.ok(empty>0&&area.indexOf('data-app-i18n="historyHistoricalRecords"')<area.indexOf('data-app-i18n="historySeasonArchive"'),
+  const teams=area.indexOf('data-app-i18n="historyTeamRecords"');
+  const players=area.indexOf('data-app-i18n="historyPlayerRecords"');
+  assert.ok(empty>0&&teams>0&&players>teams&&area.indexOf('data-app-i18n="historySeasonArchive"')>players,
    slug+' static empty History puts records ahead of archive');
+ }
+});
+
+
+test('A known zero-completed loading state never replaces the archive skeleton with a completed-seasons message',()=>{
+ const archive=fakeArchive(),current={querySelector(){return archive}};
+ runInNewContext('const current=ctx.current,completed=0,knownSeason=1,knownCompleted=true;'+resize,{ctx:{current}});
+ assert.equal(archive.rows.length,1);
+ assert.equal(archive.rows.filter(row=>!row.hidden).length,1);
+ const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
+ assert.doesNotMatch(loading,/shell\.innerHTML=['"]<p class=/,'a loading skeleton must never render the final empty message');
+});
+test('History first paint hides the static empty copy until its own historical provider settles',()=>{
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ const publicPage=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(css,/html:not\(\[data-fa-history-loading="false"\]\) #competition-panel-history>\.app-competition-view-skeleton\{display:block\}/);
+ assert.match(css,/html:not\(\[data-fa-history-loading="false"\]\) #competition-panel-history>\.app-history-empty\{[^}]*visibility:hidden/);
+ assert.match(publicPage,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+ assert.doesNotMatch(publicPage,/faHistorySetReady\?\.\(state!=='loading'\)/);
+});
+
+
+test('A cached verified historical archive restores History readiness after a new current-season provider refresh',()=>{
+ const source=readFileSync(new URL('../assets/authoritative-history.mjs',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../assets/competition-page.js',import.meta.url),'utf8');
+ assert.match(source,/if\(ready===key\)\{refreshRecords\(\);window\.faHistorySetReady\?\.\(true\);return;\}/);
+ assert.match(page,/onState:state=>\{if\(state==='unavailable'&&![^;]*\)history\?\.settleUnavailable\(\);else history\?\.render\(\);window\.faStandingsLoading\?\.set\('api'/);
+});
+
+
+test('All generated domestic/international pages embed the corrected first-paint History skeleton script',()=>{
+ const slugs=['br','de','eng','es','fr','it','nl','pt'].flatMap(c=>[c+'-1',c+'-2']).concat(['int-1','int-2','_shared']);
+ for(const slug of slugs){
+  const page=readFileSync(new URL('../competitions/'+slug+'/index.html',import.meta.url),'utf8');
+  assert.doesNotMatch(page,/if\(completed===0&&knownCompleted\)/,slug+' must not retain the obsolete first-paint empty-state branch');
+  assert.equal((page.match(/Unknown \/ zero completed-season count is still pending/g)||[]).length,3,slug+' updates all three embedded first-paint functions');
+ }
+});
+
+test('All generated first-paint History pages hide the empty-archive copy until the public clock verifies zero seasons',()=>{
+ const slugs=['br','de','eng','es','fr','it','nl','pt'].flatMap(c=>[c+'-1',c+'-2']).concat(['int-1','int-2','_shared']);
+ const source=readFileSync(new URL('../tools/render-competition-page.mjs',import.meta.url),'utf8');
+ assert.match(source,/data-history-archive-empty hidden>No completed seasons available yet/);
+ for(const slug of slugs){
+  const html=readFileSync(new URL('../competitions/'+slug+'/index.html',import.meta.url),'utf8');
+  assert.equal((html.match(/data-history-archive-empty hidden>No completed seasons available yet/g)||[]).length,1,slug+' initial empty copy is hidden in HTML');
+  assert.equal((html.match(/panel\.querySelector\('\[data-history-archive-empty\]'\)\?\.removeAttribute\('hidden'\)/g)||[]).length,3,slug+' DEV Season0 still reveals verified static empty archive');
+ }
+ const loading=readFileSync(new URL('../assets/standings-loading.js',import.meta.url),'utf8');
+ assert.match(loading,/historyBusy=Boolean\(local\.history\)\|\|historyPending/);
+ assert.match(loading,/const busy=view==='history'\?historyBusy:loading\|\|Boolean\(local\[view\]\)/);
+});
+
+test('Only enabled Debug Season 0 uses the static History layout at first paint and on Debug changes',()=>{
+ const bootstrap=(DEBUG_SEASON_BOOTSTRAP+DEBUG_MODE_BOOTSTRAP).match(/<script>(.*?)<\/script>/g)
+  .map(script=>script.slice(8,-9)).join('\n');
+ const client=readFileSync(new URL('../tools/dev-standings-preview-client.mjs',import.meta.url),'utf8');
+ const sync=client.slice(client.indexOf('function syncDebugControls()'),client.indexOf('async function refreshProgress()'));
+ for(const [enabled,season,expected] of [[false,2,'false'],[false,0,'false'],[true,0,'true'],[true,2,'false']]){
+  const dataset={};
+  const document={documentElement:{dataset},querySelectorAll:()=>[]};
+  const window={};
+  const sessionStorage={getItem(key){
+   if(key.endsWith(':debug-enabled'))return enabled?'on':'off';
+   if(key.endsWith(':standings-dev-season'))return String(season);
+   return null;
+  }};
+  runInNewContext(bootstrap,{window,document,sessionStorage});
+  assert.equal(dataset.faHistoryStatic,expected,'first paint');
+  delete dataset.faHistoryStatic;
+  runInNewContext(sync+'syncDebugControls();',{document,debugEnabled:()=>enabled,debugSeason:season,
+   widgetRoot:null,matchdays:0,readWorldDay:()=>null,syncCompetitionLinks:()=>{}});
+  assert.equal(dataset.faHistoryStatic,expected,'runtime');
+ }
+});
+
+test('Season archive skeleton reserves one crest slot per podium club',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
+ for(const [id,expected] of [['IT-1',3],['int-1',4],['int-2',4]]){
+  const competition=manifest.competitions.find(item=>item.id===id);
+  const markup=renderViewSkeleton(competition,'history');
+  assert.equal((markup.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,expected,id);
  }
 });

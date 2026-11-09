@@ -35,6 +35,7 @@
       if(view==='history'&&preview&&season===0){
         current?.remove();
         panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
+        panel.querySelector('[data-history-archive-empty]')?.removeAttribute('hidden');
         return;
       }
       const selected=view==='stats'?(['overview','teams','players'].includes(panel.dataset.faStatsSelectedView)?panel.dataset.faStatsSelectedView:(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview')):null;
@@ -50,17 +51,10 @@
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));
         const archive=current.querySelector('.app-history-dev-archive');
         if(archive){
-          if(completed===0&&knownCompleted){
-            const shell=archive.closest('.app-view-skeleton-history-archive');
-            if(shell){
-              shell.innerHTML='<p class="app-competition-empty-row" data-app-i18n="competitionHistoryEmpty">No completed seasons available yet.</p>';
-              root.faAppRenderLanguage?.();
-            }
-          }else{
+          // A loading shell must never claim zero completed seasons.
+          // Reserve at least one row until authoritative History confirms empty.
           const needed=knownCompleted?Math.max(1,completed):1;
           const sample=archive.querySelector('[data-skeleton-archive-row]');
-          // A recreated template starts with one row; extend only when the count is known.
-          // This must run on every loading refresh, not only during first paint.
           while(sample&&archive.querySelectorAll('[data-skeleton-archive-row]').length<needed){
             const row=sample.cloneNode(true);
             row.dataset.skeletonArchiveRow=String(archive.querySelectorAll('[data-skeleton-archive-row]').length);
@@ -68,7 +62,6 @@
           }
           for(const row of archive.querySelectorAll('[data-skeleton-archive-row]'))
             row.hidden=Number(row.dataset.skeletonArchiveRow)>=needed;
-          }
         }
       }
     }
@@ -79,11 +72,11 @@
       // A global bootstrap may settle before the History-specific provider.
       // Keep the real panel's shell until its own data/verified empty state is committed.
       const historyPending=history?.dataset.faHistoryContentReady!=='true';
-      const historyBusy=loading||Boolean(local.history)||historyPending;
+      const historyBusy=Boolean(local.history)||historyPending;
       if(state.faStandingsLoading!==String(loading))state.faStandingsLoading=String(loading);
       if(state.faHistoryLoading!==String(historyBusy))state.faHistoryLoading=String(historyBusy);
       for(const view of ['standings','fixtures',...views]){
-        const busy=loading||Boolean(local[view])||(view==='history'&&historyPending);
+        const busy=view==='history'?historyBusy:loading||Boolean(local[view]);
         root.document.getElementById('competition-panel-'+view)?.setAttribute('aria-busy',String(busy));
         if(views.includes(view))syncSkeleton(view,busy);
       }

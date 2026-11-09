@@ -57,7 +57,7 @@ test('A partial first season shows the completed-seasons empty state inside Seas
 });
 test('Season archive links retain native navigation and guard in-page Standings changes',()=>{
  const start=client.indexOf('  for(const item of [...seasons].reverse()){');
- const end=client.indexOf('  const records=section("historyHistoricalRecords"',start);
+ const end=client.indexOf('  const records=section(null,"app-history-records"',start);
  const helpers=client.slice(client.indexOf('function historyIdentity('),client.indexOf('function historyExpandableHolders('));
  const node=(tag,className='',textContent='')=>({tag,className,textContent,children:[],dataset:{},attributes:{},events:{},
   append(...items){this.children.push(...items)},setAttribute(key,value){this.attributes[key]=value},
@@ -490,9 +490,9 @@ test('Restoring debug waits for History before completing the first-paint releas
 });
 
 
-test('loaded DEV History mounts Historical records before Season archive without affecting season links',()=>{
+test('loaded DEV History mounts record groups before Season archive without affecting season links',()=>{
  const makeArchive=client.indexOf('  const archive=section("historySeasonArchive"');
- const makeRecords=client.indexOf('  const records=section("historyHistoricalRecords"',makeArchive);
+ const makeRecords=client.indexOf('  const records=section(null,"app-history-records"',makeArchive);
  const reappend=client.indexOf('root.append(archive);',makeRecords);
  const commit=client.indexOf('panel.append(root);',makeRecords);
  assert.ok(makeArchive>0&&makeRecords>makeArchive&&reappend>makeRecords&&commit>reappend,

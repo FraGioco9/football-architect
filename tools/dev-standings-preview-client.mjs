@@ -57,7 +57,7 @@ function syncCompetitionLinks(){
 }
 function syncDebugControls(){
  document.documentElement.dataset.faDevCurrentSeason=String(debugSeason);
- document.documentElement.dataset.faHistoryStatic=String(debugSeason===0||!debugEnabled());
+ document.documentElement.dataset.faHistoryStatic=String(debugSeason===0&&debugEnabled());
  widgetRoot?.syncVisibility?.();
  syncCompetitionLinks();
  for(const [id,value] of [["season",debugSeason],["matchdays",matchdays],["world-day",readWorldDay()??1]])
@@ -287,7 +287,8 @@ async function renderHistoryPreview(){
   const root=historyNode("div","app-history-dev");
   const section=(key,id)=>{
    const box=historyNode("section","app-history-dev-section");box.id=id;
-   const h=historyLabel(key,"h3");box.append(h);root.append(box);return box;
+   if(key)box.append(historyLabel(key,"h3"));
+   root.append(box);return box;
   };
   const archive=section("historySeasonArchive","app-history-archive"),list=historyNode("ol","app-history-dev-archive");
   const archiveHeader=historyNode("div","app-history-dev-archive-head");archiveHeader.setAttribute("aria-hidden","true");
@@ -316,7 +317,7 @@ async function renderHistoryPreview(){
    });
    li.append(row);list.append(li);
   }
-  const records=section("historyHistoricalRecords","app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
+  const records=section(null,"app-history-records"),grid=historyNode("div","app-competition-stat-grid app-history-dev-records");
   const controls=panel.querySelector('[data-history-record-controls]').cloneNode(true);records.append(controls);
   const teams=historyNode("section","app-history-record-group");teams.dataset.historyTeamRecords="";
   teams.append(historyLabel("historyTeamRecords","h4"),grid);records.append(teams);
