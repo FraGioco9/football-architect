@@ -105,6 +105,30 @@ export async function processSportingDay(state:Progression,day:number):Promise<{
   }
   const result=await simulateTemporaryMatch(f,working.schedule.seed,context);results.push(result);working.results.set(f.id,result);
  }
+ // Cup brackets are scheduled when the preceding phase is completed, not
+ // only when the next leg's matchday starts. Store canonical future pairings
+ // without publishing any scores ahead of their actual sporting day.
+ for(const definition of definitions.filter(d=>d.id.startsWith('int-'))){
+  const leagueFixtures=state.schedule.fixtures.filter(f=>f.competitionId===definition.id);
+  if(leagueFixtures.length!==72)return fail();
+  const finalLeagueDay=Math.max(...leagueFixtures.map(f=>f.day));
+  if(day<finalLeagueDay)continue;
+  if(leagueFixtures.some(f=>!working.results.has(f.id)))return fail();
+  for(const phase of definition.rules.phases.filter(p=>p.type==='knockout'))for(const rule of phase.ties??[]){
+   const key=tieKey({competitionId:definition.id,phaseId:phase.id,tieId:rule.id});
+   if(working.ties.has(key))continue;
+   const ready=rule.participants.every(p=>{
+    if(p.phaseId==='league')return Number.isInteger(p.rank)&&p.rank!>0&&p.rank!<=24;
+    if(!p.tieId||p.phaseId||p.rank!==undefined)return false;
+    const previous=[...working.ties.values()].filter(t=>t.competitionId===definition.id&&t.tieId===p.tieId);
+    return previous.length===1&&!!working.results.get(previous[0].fixtures.at(-1)!.fixture.id)?.winnerClubId;
+   });
+   if(!ready)continue;
+   const tie=await resolveTie(working,definition,phase,rule);
+   if(tie.fixtures.some(f=>f.fixture.day<=day))return fail();
+   working.ties.set(key,tie);newTies.push(tie);
+  }
+ }
  state.results=working.results;state.ties=working.ties;state.tables=working.tables;state.lastDay=day;
  return {results,newTies};
 }

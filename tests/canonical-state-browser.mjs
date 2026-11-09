@@ -105,7 +105,9 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faCompetitionRoute?.get().season==='1'&&window.faWorldState?.get().current?.season===2);
   await page.locator('#app-competition-season').click();
   await page.evaluate(()=>{window.sh03Header=document.querySelector('.app-competition-header');window.sh03Picker=document.querySelector('#app-competition-season');window.dispatchEvent(new Event('fa:world-invalidated'))});
-  await page.waitForFunction(()=>document.querySelector('.app-competition-status')?.textContent.includes('No published'));
+  await page.waitForFunction(()=>document.getElementById('app-competition-season-unavailable')?.hidden===true&&
+    !document.querySelector('#competition-panel-standings > .app-competition-status'));
+  assert.equal(await page.locator('#app-competition-season-unavailable').textContent(),'','Retired notice must not return after translation');
   assert.equal(await page.locator('#app-competition-season').getAttribute('aria-expanded'),'true');
   assert.equal(await page.evaluate(()=>window.sh03Header===document.querySelector('.app-competition-header')&&window.sh03Picker===document.querySelector('#app-competition-season')),true);checks++;
   await page.keyboard.press('Escape');

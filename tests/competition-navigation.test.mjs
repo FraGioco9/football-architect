@@ -9,7 +9,7 @@ import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null){
+function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null,initialPublicSeason=null){
  const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -32,30 +32,33 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
- const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faCompetitionInitialSeason:initialPublicSeason,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
  runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return key.startsWith('football-architect:competition-tabs-scroll:')&&restoredScroll!==null?String(restoredScroll):null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,contextSeasons,scrollKeys,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
-test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
+test('CONFIG-URL: cup routes use phase-only links with Back/Forward',()=>{
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=30');
  assert.equal(s.window.faCompetitionRoute.get().matchday,1);
  s.window.faCompetitionRoute.set({matchday:'quarterfinals:2'});
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
- s.window.faCompetitionRoute.set({matchday:'final:1'});s.back();
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
+ assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals');
+ s.window.faCompetitionRoute.set({matchday:'final:1'});
+ assert.equal(s.window.location.search,'?season=1&matchday=final');
+ s.back();
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
  s.window.faCompetitionRoute.set({matchday:'playout'});
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
 });
-test('DEV season menu ends at current progress and moves an invalid viewed season to season 1',()=>{
+test('DEV season menu ends at current progress and redirects an invalid future season to the current season',()=>{
  const s=setup('/competitions/it-1?season=3&view=fixtures&matchday=13',3);
  const menu=s.fields.get('app-competition-season-menu');
  assert.deepEqual(menu.options.map(node=>node.dataset.menuValue),['3','2','1']);
  s.window.faCompetitionRoute.setSeasonLimit(2);
  assert.deepEqual(menu.options.map(node=>node.dataset.menuValue),['2','1']);
- assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:'1',view:'fixtures',matchday:13});
+ assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:'2',view:'fixtures',matchday:13});
  s.window.faCompetitionRoute.set({season:'1'});
  s.window.faCompetitionRoute.setSeasonLimit(3);
  assert.equal(s.window.faCompetitionRoute.get().season,'1','Raising Debug keeps a valid viewed season');
@@ -66,9 +69,9 @@ test('DEV season menu ends at current progress and moves an invalid viewed seaso
  assert.equal(s.window.faCompetitionRoute.get().season,'1');
  s.back();assert.equal(s.window.faCompetitionRoute.get().season,'1','Back navigation cannot reveal a future season');
 });
-test('DEV future deep links normalize to season 1',()=>{
+test('DEV future deep links normalize to the current season',()=>{
  const s=setup('/competitions/it-1?season=4&view=stats',2);
- assert.equal(s.window.faCompetitionRoute.get().season,'1');
+ assert.equal(s.window.faCompetitionRoute.get().season,'2');
  assert.equal(s.fields.get('competition-panel-stats').hidden,false);
 });
 test('COMPETITION-URL: canonical deep links restore every view, round and browser history',()=>{
@@ -84,17 +87,71 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
  s.forward();assert.equal(s.window.faCompetitionRoute.get().matchday,13);
  for(let i=0;i<views.length;i++){s.tabs[i].events.click();assert.equal(s.window.faCompetitionRoute.get().view,views[i]);assert.equal([...s.fields].filter(([id,p])=>id.startsWith('competition-panel-')&&!p.hidden).length,1);}
 });
+test('INT-24 legacy leg links normalize on both cups',()=>{
+ for(const cup of ['int-1','int-2'])for(const phase of ['playoffs','quarterfinals','semifinals','final']){
+  for(const suffix of ['', '%3A1', '%3A2']){
+   const link=setup('/competitions/'+cup+'/fixtures?season=1&matchday='+phase+suffix);
+   assert.equal(link.window.faCompetitionRoute.get().matchday,phase+':1');
+   assert.equal(link.window.location.search,'?season=1&matchday='+phase);
+  }
+ }
+});
 test('COMPETITION-URL: invalid parameters normalize while explicit public seasons remain selected',()=>{
  const s=setup('/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
  assert.equal(s.window.location.pathname,'/competitions/it-1/standings');
  assert.equal(s.window.location.search,'?season=1');assert.equal(s.count(),1);
  const missing=setup('/competitions/it-1?season=2&view=fixtures&matchday=4');
- assert.equal(missing.window.faCompetitionRoute.get().season,'2');
- assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,false);
- assert.equal(missing.fields.get('competition-panel-fixtures').hidden,true);
- missing.fields.get('app-competition-season-option-1').events.click();
- assert.equal(missing.fields.get('competition-panel-fixtures').hidden,false);
+ assert.equal(missing.window.faCompetitionRoute.get().season,'2','Do not invent a public world before its response');
+ assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,true,'Never show the retired notice');
+ assert.equal(missing.fields.get('competition-panel-fixtures').hidden,false,'Static view never disappears');
+ missing.window.faCompetitionRoute.setPublicSeasonLimit(1);
+ assert.equal(missing.window.faCompetitionRoute.get().season,'1');
+ assert.equal(missing.window.location.search,'?season=1&matchday=4');
+ assert.equal(missing.count(),1,'Redirect replaces the history entry');
+ const future=setup('/competitions/int-1/fixtures?season=9&matchday=playoffs:1');
+ future.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(future.window.faCompetitionRoute.get().season,'2');
+ assert.equal(future.window.location.search,'?season=2&matchday=playoffs');
+ const historical=setup('/competitions/int-1/history?season=1');
+ historical.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(historical.window.faCompetitionRoute.get().season,'1');
+ const unstarted=setup('/competitions/it-1/rules?season=9');
+ unstarted.window.faCompetitionRoute.setPublicSeasonLimit(0);
+ assert.equal(unstarted.window.faCompetitionRoute.get().season,'1');
+ assert.equal(unstarted.fields.get('app-competition-season-value').textContent,'1');
 });
+test('PUBLIC first paint uses verified latest Season 2 without showing 1 or skeleton',()=>{
+ const latest=setup('/competitions/it-1/standings',null,routeRegistry,null,2);
+ assert.equal(latest.window.faCompetitionRoute.get().season,'2');
+ assert.equal(latest.fields.get('app-competition-season-value').textContent,'2');
+ assert.equal(latest.fields.get('app-competition-season').disabled,false);
+ assert.equal(latest.window.location.search,'?season=2');
+ const historical=setup('/competitions/it-1/standings?season=1',null,routeRegistry,null,2);
+ assert.equal(historical.fields.get('app-competition-season-value').textContent,'1');
+ const future=setup('/competitions/it-1/standings?season=9',null,routeRegistry,null,2);
+ assert.equal(future.fields.get('app-competition-season-value').textContent,'2');
+ assert.equal(future.window.location.search,'?season=2');
+});
+test('PUBLIC season picker reserves its label until world confirms the redirect; no future numeral flashes',()=>{
+ const future=setup('/competitions/it-1/fixtures?season=99&matchday=4');
+ const value=future.fields.get('app-competition-season-value'),trigger=future.fields.get('app-competition-season');
+ assert.equal(future.window.faCompetitionRoute.get().season,'99','Unverified route identity is retained without inventing a clock');
+ assert.equal(value.textContent,'','Unverified future value is not rendered');
+ assert.equal(value.dataset.seasonPending,'true');
+ assert.equal(trigger.disabled,true,'Unverified picker must not offer provisional options');
+ future.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(future.window.faCompetitionRoute.get().season,'2');
+ assert.equal(value.textContent,'2','Only the verified world season is displayed');
+ assert.equal(value.dataset.seasonPending,'false');
+ assert.equal(trigger.disabled,false);
+ const unstarted=setup('/competitions/it-1/standings?season=1');
+ const unstartedValue=unstarted.fields.get('app-competition-season-value');
+ assert.equal(unstartedValue.textContent,'1','An explicit Season 1 is safe to show without a source read');
+ unstarted.window.faCompetitionRoute.setPublicSeasonLimit(0);
+ assert.equal(unstartedValue.textContent,'1','Season 0 confirms Season 1 even when the option list is unchanged');
+ assert.equal(unstarted.fields.get('app-competition-season').disabled,false);
+});
+
 test('COMPETITION-URL: keyboard navigation retains one active tab and does not duplicate history entries',()=>{
  const s=setup();let prevented=false;
  s.tabs[0].events.keydown({key:'ArrowLeft',preventDefault(){prevented=true}});
@@ -202,24 +259,41 @@ test('History and Rules retain the viewed season through navigation and direct r
  assert.equal(direct.window.location.search,'?season=4');
 });
 
-test('DEV unavailable seasons fall back while public routes preserve their explicit viewed season',()=>{
+test('DEV future seasons clamp to progress while unresolved public URLs keep their static view',()=>{
  for(const slug of ['int-1','int-2',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
   for(const dev of [null,3]){
    const s=setup('/competitions/'+slug+'/fixtures?season=99&matchday=4',dev);
-   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'1');
+   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'3');
    assert.equal(s.window.faCompetitionRoute.get().view,'fixtures');
    assert.equal(s.window.faCompetitionRoute.get().matchday,4);
-   assert.equal(s.window.location.search,'?season='+(dev===null?'99':'1')+'&matchday=4');
-   assert.equal(s.fields.get('app-competition-season-unavailable').hidden,dev!==null);
-   assert.equal(s.fields.get('competition-panel-fixtures').hidden,dev===null);
+   assert.equal(s.window.location.search,'?season='+(dev===null?'99':'3')+'&matchday=4');
+   assert.equal(s.fields.get('app-competition-season-unavailable').hidden,true);
+   assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
    s.window.faCompetitionRoute.set({season:'99'});
-   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'1');
+   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'3');
   }
   const preview=setup('/competitions/'+slug+'/standings?season=3',3);
   assert.equal(preview.window.faCompetitionRoute.get().season,'3');
   preview.window.faCompetitionRoute.setSeasonLimit(2);
-  assert.equal(preview.window.faCompetitionRoute.get().season,'1');
+  assert.equal(preview.window.faCompetitionRoute.get().season,'2');
  }
+});
+
+test('Debug OFF defers clamping until public world is actually verified',()=>{
+ const s=setup('/competitions/it-1/fixtures?season=2&matchday=9');
+ s.window.faDebugEnabled=false;
+ s.window.faWorldState={get:()=>({source:'authoritative',world:null})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'2',
+  'Source change with unknown world cannot redirect Season 2 to Season 1');
+ assert.equal(s.window.location.search,'?season=2&matchday=9');
+ s.window.faWorldState={get:()=>({source:'authoritative',world:{seasonNumber:2}})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'2','Verified Season 2 stays selected');
+ s.window.faWorldState={get:()=>({source:'authoritative',world:{seasonNumber:1}})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'1','Verified Season 1 redirects future Season 2');
+ assert.equal(s.window.location.search,'?season=1&matchday=9');
 });
 
 test('DEV season 0 keeps season 1 available without creating a season 0 URL',()=>{
@@ -281,8 +355,10 @@ const a03Baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes
 test('A03-04C: browser URL normalization preserves the frozen domestic and cup oracle',()=>{
  for(const row of a03Baseline.competitionBrowser){
   const s=setup(row.input);
-  assert.equal(s.window.location.pathname+s.window.location.search+s.window.location.hash,row.expected,row.input);
-  assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:row.season,view:row.view,matchday:row.matchday},row.input);
+  const groupedLeg=row.matchday==='quarterfinals:2';
+   const expectedUrl=groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected;
+   assert.equal(s.window.location.pathname+s.window.location.search+s.window.location.hash,expectedUrl,row.input);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:row.season,view:row.view,matchday:groupedLeg?'quarterfinals:1':row.matchday},row.input);
   assert.equal(s.count(),1,'Initial canonicalization replaces rather than pushes: '+row.input);
  }
 });
@@ -302,7 +378,7 @@ test('A03-04E: competition navigation uses the real registry while preserving ca
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2',null,registry);
  s.window.faCompetitionRoute.set({view:'history'});
  assert.equal(s.window.location.pathname+s.window.location.search,'/competitions/int-1/history?season=1');
- s.back();assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals%3A2');
+ s.back();assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals');
  assert.ok(calls.includes('parse'));assert.ok(calls.includes('build'));
 });
 
@@ -329,8 +405,9 @@ test('validated public world updates season choices without changing an explicit
  latest.window.faCompetitionRoute.setPublicSeasonLimit(2,{selectLatest:true});
  assert.equal(latest.window.faCompetitionRoute.get().season,'2');
  latest.window.faCompetitionRoute.setPublicSeasonLimit(0);
- assert.equal(latest.window.faCompetitionRoute.get().season,'2','Reset keeps explicit viewed season unavailable');
- assert.equal(latest.fields.get('competition-panel-standings').hidden,true);
+ assert.equal(latest.window.faCompetitionRoute.get().season,'1','World reset redirects future Season 2 to permitted Season 1');
+ assert.equal(latest.fields.get('competition-panel-standings').hidden,false);
+ assert.equal(latest.fields.get('app-competition-season-unavailable').hidden,true);
 });
 
 test('PAGE-LOAD-03B P04/P05: 16 canonical domestic shells pre-render their club rows and fixtures',()=>{

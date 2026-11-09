@@ -9,8 +9,11 @@ describe('canonical knockout qualification and complete sporting days',()=>{
   const {state}=await setup(),allNew:any[]=[];
   for(let day=1;day<=56;day++){
    const result=await processSportingDay(state,day);allNew.push(...result.newTies);
-   if(day===36){expect(result.results).toHaveLength(8);expect(result.newTies).toHaveLength(8)}
-   if(day===52){expect(result.results).toHaveLength(24);expect(result.newTies).toHaveLength(24)}
+   if(day===36){expect(result.results).toHaveLength(8);expect(result.newTies).toHaveLength(0)}
+   if(day===52)expect(result.results).toHaveLength(24);
+   if(day===38)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='quarterfinals')).toHaveLength(8);
+   if(day===43)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='semifinals')).toHaveLength(4);
+   if(day===48)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='final')).toHaveLength(2);
    if(day===53)expect(result.results).toHaveLength(25);
    if(day===54)expect(result.results).toHaveLength(9);
    if(day===55||day===56)expect(result.results).toHaveLength(0);
@@ -40,13 +43,25 @@ describe('canonical knockout qualification and complete sporting days',()=>{
  },30000);
  it('does not create unqualified future ties or mutate progression on absent dependency evidence',async()=>{
   const {state}=await setup();for(let day=1;day<=35;day++)await processSportingDay(state,day);
-  expect(state.ties.size).toBe(0);const before=state.results.size;
+  const priorTies=state.ties.size,before=state.results.size;
   const key=[...state.results.keys()].find(id=>id.includes(':int-1:I01:'))!,saved=state.results.get(key)!;state.results.delete(key);
-  await expect(processSportingDay(state,36)).rejects.toMatchObject({status:422});expect(state.ties.size).toBe(0);expect(state.lastDay).toBe(35);
+  await expect(processSportingDay(state,36)).rejects.toMatchObject({status:422});expect(state.ties.size).toBe(priorTies);expect(state.lastDay).toBe(35);
   state.results.set(key,saved);await processSportingDay(state,36);expect(state.results.size).toBe(before+8);
   await expect(processSportingDay(state,38)).rejects.toMatchObject({status:422});
  });
 });
+
+it('publishes future international Playoffs immediately after the sixth league round',async()=>{
+ const {state,schedule}=await setup();
+ const finalDay=Math.max(...schedule.fixtures.filter(f=>f.competitionId==='int-1').map(f=>f.day));
+ for(let day=1;day<finalDay;day++)await processSportingDay(state,day);
+ expect([...state.ties.values()].filter(t=>t.competitionId.startsWith('int-'))).toHaveLength(0);
+ const result=await processSportingDay(state,finalDay);
+ const cupPlans=result.newTies.filter(t=>t.competitionId.startsWith('int-'));
+ expect(cupPlans).toHaveLength(8);
+ expect(cupPlans.every(t=>t.phaseId==='playoffs'&&t.fixtures.length===2&&t.fixtures.every(f=>f.fixture.day>finalDay&&!state.results.has(f.fixture.id)))).toBe(true);
+ expect([...state.ties.values()].filter(t=>t.competitionId.startsWith('int-')&&t.phaseId!=='playoffs')).toHaveLength(0);
+},30000);
 
 it('refuses a return leg without the actual first-leg score and keeps the day unchanged',async()=>{
  const {state}=await setup();for(let day=1;day<=37;day++)await processSportingDay(state,day);

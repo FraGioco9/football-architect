@@ -169,6 +169,30 @@ test('SEASON-FIXTURES: accepted historical seeds replace the definition captured
  assert.equal(r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,1);
 });
 
+test('SEASON-2 FIXTURES: promoted domestic clubs replace Season 1 membership without stale fixtures',()=>{
+ const d=divisions.find(d=>d.id==='IT-1'),second=divisions.find(d=>d.id==='IT-2');
+ const promoted=second.clubs.find(c=>c.clubId===17);
+ assert.ok(promoted,'A verified second-division club can enter the Season 2 first division');
+ const s=setup(d),fixtures=schedule(d,0);
+ const replaced=d.clubs.at(-1).clubId;
+ const participants=[...d.clubs.slice(0,-1),promoted];
+ const later=fixtures.map(f=>({
+  ...f,homeId:f.homeId===replaced?promoted.clubId:f.homeId,
+  awayId:f.awayId===replaced?promoted.clubId:f.awayId
+ }));
+ const before=s.fields.get('app-fixtures-list').children;
+ const commit=s.view.prepare(later,{participants});
+ assert.equal(s.fields.get('app-fixtures-list').children,before,'Preparation does not mutate mounted fixtures');
+ s.route.set({season:'2'});
+ commit();
+ assert.equal(s.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,8);
+ assert.match(contents(s.fields.get('app-fixtures-list')),new RegExp(promoted.primaryName),'Season 2 newly promoted identity is visible');
+ assert.doesNotMatch(contents(s.fields.get('app-fixtures-list')),new RegExp(d.clubs.at(-1).primaryName),'Dropped inaugural club is absent');
+ const restore=s.view.snapshot();
+ assert.throws(()=>s.view.prepare([{...later[0],homeId:99}],{participants}),/Incomplete competition schedule|Invalid fixture/);
+ assert.equal(s.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,8,'Rejected fixture set cannot corrupt the rendered season');
+ restore();
+});
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),round=fields.get('app-fixtures-round'),list=fields.get('app-fixtures-list');
@@ -419,6 +443,9 @@ test('FIXTURES first paint resolves URL/Debug selection and knockout skeleton co
  assert.deepEqual(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).groups.map(g=>g.count),[4,4]);
  assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).value,'quarterfinals:1');
  assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).labels.en,'Quarter-finals');
+  for(const phase of ['playoffs','quarterfinals','semifinals','final']){
+   assert.equal(resolveFixtureSelection(cup,{matchday:phase}).value,phase+':1','Phase-only URLs must choose the correct first-paint skeleton');
+  }
  assert.equal(resolveFixtureSelection(cup,{currentSeason:1,season:1,day:31}).value,'playoffs:1');
 });
 

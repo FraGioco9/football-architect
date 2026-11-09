@@ -275,7 +275,11 @@
         if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
       }
     }
-    const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    // The first season has a fixed approved membership. From Season 2 onward
+    // the domestic division can contain promoted/relegated clubs; use the
+    // verified selected-season rows rather than the inaugural catalogue.
+    const inauguralClubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    let clubs=inauguralClubs;
     const closeTips=bindPostseasonTips();
     let current={rows:null,results:null};
     const tieId=id=>id.replace(/^postseason-/,"");
@@ -392,16 +396,30 @@
         }
         if(rows===null){if(results!==null)throw Error("Invalid postseason standings");return()=>render(null,null)}
         if(!Array.isArray(rows)||rows.length!==definition.capacity)throw Error("Invalid postseason standings");
+        const laterSeason=window.faCompetitionContext?.selectedSeason>1;
+        const nextClubs=laterSeason?new Map():inauguralClubs;
         const seen=new Set();
         const next=rows.map(row=>{
-          const club=clubs.get(row?.club?.clubId);
-          if(!club||row.club.countryId!==division.countryId||seen.has(club.clubId)||!Number.isInteger(row.played)||row.played<0||row.played>roundCount)throw Error("Invalid postseason participant");
-          seen.add(club.clubId);return{club,played:row.played};
+          const id=row?.club?.clubId;
+          const club=laterSeason?row?.club:inauguralClubs.get(id);
+          if(!club||!Number.isInteger(id)||id<1||id>40||
+             club.countryId!==division.countryId||seen.has(id)||
+             typeof club.primaryName!=='string'||!club.primaryName.trim()||
+             !Number.isInteger(row.played)||row.played<0||row.played>roundCount)
+            throw Error("Invalid postseason participant");
+          seen.add(id);
+          if(laterSeason)nextClubs.set(id,club);
+          return{club,played:row.played};
         });
+        if(seen.size!==definition.capacity||nextClubs.size!==definition.capacity)
+          throw Error("Incomplete postseason participant set");
         const prepared=validateResults(results,next);
-        return()=>render(next,prepared);
+        // Preparation is atomic: neither the roster nor the mounted bracket is
+        // changed before all participant/result validation has succeeded.
+        return()=>{clubs=nextClubs;render(next,prepared)};
       },
-      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)},
+      snapshot(){const previous=current,previousClubs=clubs;
+        return()=>{clubs=previousClubs;render(previous.rows,previous.results)}},
       destroy(){closeTips.destroy();for(const release of releases)release();}
     });
     render(null,null);
@@ -798,7 +816,15 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){publishedFormTips?.clear();if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){
+        publishedFormTips?.clear();
+        // An unresolved public Season 2 may temporarily render one anonymous
+        // empty row. On source handoff into DEV restore the 16 reserved rows,
+        // otherwise DEV hydration waits for a table that never materializes.
+        const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==division.clubs.length;
+        if(suppliedOwned||wrongShell||(activeDebugSeason===null&&context.selectedSeason>1))empty();
+        return;
+      }
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -1076,9 +1102,9 @@
     window.faCompetitionContext=context;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
   }
-  function nextContext(season,data=null){
+  function nextContext(season,data=null,{force=false}={}){
     const current=window.faCompetitionContext;
-    if(current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
+    if(!force&&current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
     publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
   }
   function selectSeason(season){
@@ -1093,7 +1119,12 @@
   function setDebugSeason(season){
     if(season!==null&&window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return false;
     if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
-    if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
+    if(activeDebugSeason!==season){
+      activeDebugSeason=season;
+      // Source changes invalidate pending providers even if no data was
+      // published yet; rebuild the correct first-paint shell for this source.
+      if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason,null,{force:true});
+    }
     if(season===0)selectSeason(1);
     return true;
   }
@@ -1114,7 +1145,8 @@
     for(const club of data.participants){
       if(!club||!model.countries.includes(club.countryId)||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40)return false;
       const id=club.countryId+"-"+club.clubId;
-      if(ids.has(id)||!authoritative&&division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
+      if(ids.has(id)||division&&(club.countryId!==division.countryId||
+        !authoritative&&current.selectedSeason===1&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId)))return false;
       ids.add(id);
     }
     nextContext(current.selectedSeason,data);return true;
@@ -1150,9 +1182,11 @@
     const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
     const raw=new URL(window.location.href).searchParams.get("season");
-    const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
+    const initial=activeDebugSeason===null&&Number.isInteger(window.faCompetitionInitialSeason)
+      ?Math.max(1,window.faCompetitionInitialSeason):null;
+    const requested=raw===null?initial??Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
-    nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
+    nextContext(activeDebugSeason===null&&initial!==null?Math.min(requested,initial):activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('world-calendar-model.js');
     await loadScript('competition-rules.js');
     await loadScript('competition-rules-view.js');
@@ -1257,12 +1291,10 @@
         const historyPanel=document.getElementById('competition-panel-history');
         if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
-        const copy={en:'No published season data yet.',it:'Nessun dato della stagione ancora pubblicato.',de:'Noch keine veröffentlichten Saisondaten.',es:'Aún no hay datos publicados de la temporada.',fr:'Aucune donnée de saison publiée pour le moment.'};
-        const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
-        document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
-        let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{live.hidden=sourceState!=='empty';live.textContent=sourceState==='empty'?(copy[document.documentElement.lang]||copy.en):''};
+        // Each competition view owns its empty/loading shell; no global
+        // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1282,13 +1314,12 @@
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
         };
-        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
+        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
-        new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
       }catch{window.faHistorySetReady?.(true);window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }

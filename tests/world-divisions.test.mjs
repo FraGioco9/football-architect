@@ -228,7 +228,7 @@ test("COMPETITIONS-06 keyboard and click controls preserve seven-tab routing",()
  for(const key of ["ArrowRight","ArrowLeft","Home","End"])
   assert.ok(code.includes('event.key==="'+key+'"'),key);
  assert.ok(code.includes('event.preventDefault();set({view:views[next]},{focus:true})'));
- assert.ok(code.includes('panels[i].hidden=!active||!available'));
+ assert.ok(code.includes('panels[i].hidden=!active;'),'static panels survive pending world redirects');
 });
 
 test("COMPETITIONS-06 loader parses as JavaScript and its route cannot bypass validation",async()=>{
@@ -483,16 +483,14 @@ test('standings loading keeps aria-busy synchronized with initial DEV hydration'
  assert.equal(attributes['aria-busy'],'true');finish();assert.equal(attributes['aria-busy'],'false');
 });
 
-test('competition unavailable source releases loading without a visible status message in every locale',()=>{
- const source=read('assets/competition-page.js');
- const copy=source.split('\n').find(line=>line.includes('const copy={en:'));
- const presentation=source.split('\n').find(line=>line.includes('let sourceState=activeDebugSeason'));
- for(const lang of ['en','de','es','fr','it']){
-  const live={hidden:false,textContent:''};
-  runInNewContext(copy+'\n'+presentation+'\nsourceState="unavailable";renderSource();',{live,activeDebugSeason:null,document:{documentElement:{lang}}});
-  assert.equal(live.hidden,true,lang);
-  assert.equal(live.textContent,'',lang);
- }
+test('competition pages never inject obsolete cross-view season notices',()=>{
+ const source=read('assets/competition-page.js'),router=read('assets/competition-tabs.js');
+ assert.doesNotMatch(source,/const copy=\{en:'No published season data yet.'/);
+ assert.doesNotMatch(source,/\.prepend\(live\)/);
+ assert.doesNotMatch(source,/renderSource\(\)/);
+ assert.match(router,/unavailable\.hidden=true/);
+ assert.match(router,/unavailable\.textContent=''/);
+ assert.match(router,/panels\[i\]\.hidden=!active;/);
 });
 
 test('Stats History and Awards have reusable static skeletons and prepaint release on every route',async()=>{

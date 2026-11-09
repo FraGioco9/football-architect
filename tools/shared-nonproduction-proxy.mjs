@@ -3,7 +3,7 @@ import {request as httpsRequest} from 'node:https';
 import {isIP} from 'node:net';
 const fail=res=>{res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"environment_unavailable"}}');return true};
 const forbidden=res=>{res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"forbidden"}}');return true};
-export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0),limit=65536}={}){
+export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0),limit=65536,timeoutMs=15000}={}){
  return new Promise((resolve,reject)=>{
   const request=httpsRequest(url,{method,headers},response=>{
    const chunks=[];let length=0;
@@ -11,7 +11,7 @@ export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0
    response.on('error',reject);
    response.on('end',()=>{if(response.complete)resolve({status:response.statusCode,headers:response.headers,body:Buffer.concat(chunks)});else reject(new Error('incomplete response'))});
   });
-  const timer=setTimeout(()=>request.destroy(new Error('upstream timeout')),15000);
+  const timer=setTimeout(()=>request.destroy(new Error('upstream timeout')),timeoutMs);
   request.on('close',()=>clearTimeout(timer));request.on('error',reject);request.end(body);
  });
 }
@@ -41,6 +41,19 @@ function responseCookie(values){
 function validResponse(response,limit){
  if(!response||!Number.isInteger(response.status)||response.status<200||response.status>=300&&response.status<400||response.status>599||!Buffer.isBuffer(response.body)||response.body.length>limit)throw Error('invalid response');
  return response;
+}
+// The HTML first paint may read only the anonymous public world, with the same
+// environment handshake as API proxying. No credential or operator mutation.
+export async function readSharedPublicWorld(target,{send=sendSharedHttps,timeoutMs=2500}={}){
+ try{
+  const url=targetOrigin(target),marker={'x-fa-expected-pool':'dev-preview'};
+  const handshake=validResponse(await send(new URL('/api/environment',url),{headers:marker,limit:1024,timeoutMs}),1024);
+  if(handshake.status!==200)return null;
+  const env=JSON.parse(handshake.body.toString('utf8'));
+  if(!env||env.schemaVersion!==1||env.pool!=='dev-preview'||env.origin!==url.origin||env.sharedWorld!==true||env.separateSignIn!==true)return null;
+  const response=validResponse(await send(new URL('/api/world',url),{headers:marker,limit:4096,timeoutMs}),4096);
+  return response.status===200?JSON.parse(response.body.toString('utf8'))?.world??null:null;
+ }catch{return null}
 }
 export async function proxySharedNonproduction(req,res,{target,path,body,publicRead,send=sendSharedHttps}){
  let url,session;

@@ -1,4 +1,9 @@
 import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
+import {readSharedPublicWorld} from './shared-nonproduction-proxy.mjs';
+import {request as httpRequest} from 'node:http';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {validPublicWorld}=require('../assets/world-clock-adapter.js');
 // Loopback-only static DEV server. Never stage this module in a public artifact.
 import {resolveSubpage,clubViews} from "../assets/subpage-routes.mjs";
 import {parseRoute,buildRoute} from "../assets/routes-registry.mjs";
@@ -103,8 +108,33 @@ async function safeFile(root, relativePath) {
   return readFile(fileReal);
 }
 
+// Read the same canonical public endpoint used by the client before serving
+// the local HTML. This is read-only; no sessionStorage or wall-clock inference.
+async function readPublicWorldForFirstPaint(){
+ const target=process.env.FA_ADMIN_API_TARGET;
+ if(!target)return null;
+ try{
+  if(process.env.FA_ADMIN_API_POOL==='dev-preview')return await readSharedPublicWorld(target);
+  if(!/^http:\/\/(?:127\.0\.0\.1|\[::1\]):[1-9][0-9]{0,4}\/?$/.test(target))return null;
+  const upstream=new URL(target);
+  return await new Promise(resolve=>{
+   const req=httpRequest({hostname:upstream.hostname.replace(/^\[|\]$/g,''),port:upstream.port,
+     path:'/api/world',method:'GET',timeout:2500,
+     // Reuse the existing local app origin for the same anonymous world
+     // endpoint; do not expose the upstream Worker port as browser Host.
+     headers:{host:'app.localhost:2000'}},res=>{
+    let size=0;const chunks=[];
+    res.on('data',part=>{size+=part.length;if(size>4096)req.destroy();else chunks.push(part)});
+    res.on('end',()=>{try{resolve(res.statusCode===200?JSON.parse(Buffer.concat(chunks).toString('utf8'))?.world??null:null)}catch{resolve(null)}});
+    res.on('error',()=>resolve(null));
+   });
+   req.on('timeout',()=>req.destroy());req.on('error',()=>resolve(null));req.end();
+  });
+ }catch{return null}
+}
 // Exported solely to test the server without opening a production or LAN socket.
-export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true } = {}) {
+export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true,
+  readInitialWorld = readPublicWorldForFirstPaint } = {}) {
   const sharedBackend=process.env.FA_ADMIN_API_POOL==='dev-preview';
   devPreview=devPreview&&!sharedBackend;
   return createServer(async (req, res) => {
@@ -201,6 +231,40 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
               return prefix + siteOrigin + (href === "/" ? "" : href) + quote;
             return all;
           }), "utf8");
+      }
+      // Server-render only a *verified* canonical season into the first HTML
+      // paint. Links retain their own valid earlier season, future URLs are
+      // clamped, and plain /standings starts directly at the public latest.
+      if((DETAIL.test(raw)||CUP_DETAIL.test(raw))&&type===TYPES[".html"]&&req.method==='GET'){
+        const candidate=await readInitialWorld();
+        const world=validPublicWorld(candidate)&&candidate.seasonNumber<=2?candidate:null;
+        const param=new URL(req.url,'http://localhost').searchParams.get('season');
+        const requested=/^[1-9]\d{0,8}$/.test(param||'')?Number(param):null;
+        const current=world?Math.max(1,world.seasonNumber):null;
+        const chosen=current===null?(requested===1?1:null):
+          requested===null?current:Math.min(requested,current);
+        let html=body.toString('utf8');
+        if(chosen!==null)html=html.replace(/id="app-competition-season-value">\d+<\/span>/,
+          'id="app-competition-season-value">'+chosen+'</span>');
+        const head='<style>html:not([data-fa-competition-season-verified="true"]) #app-competition-season-value{visibility:hidden}</style>'+
+          (chosen!==null?'<script>window.faCompetitionInitialSeason='+(current===null?'null':current)+
+           ';document.documentElement.dataset.faCompetitionSeasonVerified="true";</script>':'');
+        html=html.replace('</head>',head+'\n</head>');
+        // Debug's isolated season comes from its own client-side session. The
+        // parser-time script runs directly after the value and before paint.
+        if(devPreview){
+          const script='<script data-fa-competition-season-first-paint>(function(){'+
+            'if(window.faDebugEnabled===false||!document.documentElement.dataset.faDevSeasons)return;'+
+            'const v=document.getElementById("app-competition-season-value");if(!v)return;'+
+            'const s=new URLSearchParams(location.search).get("season"),'+
+            'current=Math.max(1,Number(document.documentElement.dataset.faDevCurrentSeason)||1),'+
+            'requested=/^[1-9]\\d{0,8}$/.test(s||"")?Number(s):null;'+
+            'v.textContent=String(requested!==null&&requested<=current?requested:current);'+
+            'document.documentElement.dataset.faCompetitionSeasonVerified="true";'+
+            '})();</script>';
+          html=html.replace(/(<span id="app-competition-season-value">\d+<\/span>)/,'$1'+script);
+        }
+        body=Buffer.from(html,'utf8');
       }
       if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.

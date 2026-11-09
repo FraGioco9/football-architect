@@ -28,7 +28,7 @@ export function fixturesShellConfig(d){
 }
 // Pure and serializable, shared by generator tests and the synchronous browser bootstrap.
 export function resolveFixtureSelection(config,options={}){
- const explicit=config.choices.find(c=>String(c.value)===String(options.matchday)||c.aliases.includes(String(options.matchday)));
+ const explicit=config.choices.find(c=>String(c.value)===String(options.matchday)||c.aliases.includes(String(options.matchday))||(config.international&&typeof c.value==="string"&&c.value.split(":")[0]===String(options.matchday)));
  if(explicit)return explicit;
  if(options.matchday!==undefined&&options.matchday!==null)return config.choices[0];
  let selected=1;

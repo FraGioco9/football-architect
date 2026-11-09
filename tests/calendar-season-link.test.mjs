@@ -77,12 +77,17 @@ test('Calendar season 0 keeps season 1 selectable without an inactive-season mes
   assert.equal(new URL(href).searchParams.get('season'),'1');
  }
 });
-test('unchanged public season availability preserves an open competition season menu',()=>{
+test('first verified public season releases the pending picker, then identical updates preserve its open menu',()=>{
  const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
  const snippet=source.slice(source.indexOf('  window.faCompetitionRoute.setPublicSeasonLimit='),source.indexOf('  window.faCompetitionRoute.setSeasonLimit='));
  let updates=0,applies=0;const window={faCompetitionRoute:{}};
- runInNewContext(snippet,{window,devSeasons:[],availableSeasons:['1','2'],latestSeason:'2',state:{season:'1'},seasonPicker:{update(){updates++}},seasonOptions:()=>[],apply(){applies++}});
- assert.equal(window.faCompetitionRoute.setPublicSeasonLimit(2),true);assert.equal(updates,0);assert.equal(applies,0);
+ runInNewContext('let publicSeasonConfirmed=false;\n'+snippet,{window,devSeasons:[],availableSeasons:['1','2'],latestSeason:'2',state:{season:'1'},seasonPicker:{update(){updates++}},seasonOptions:()=>[],apply(){applies++}});
+ assert.equal(window.faCompetitionRoute.setPublicSeasonLimit(2),true);
+ assert.equal(updates,1,'The first verified world update releases the pending season value');
+ assert.equal(applies,1);
+ assert.equal(window.faCompetitionRoute.setPublicSeasonLimit(2),true);
+ assert.equal(updates,1,'Identical world updates keep an already-open menu and its options stable');
+ assert.equal(applies,1);
 });
 for(const mobile of [false,true])test('public sidebar uses authoritative current season independently of the viewed season '+mobile,()=>{
  const link={dataset:{},setAttribute(k,v){this[k]=v},addEventListener(){}};

@@ -73,7 +73,10 @@ test('real Wrangler canonical initialize/read and idempotent audit survive resta
    const day=await persisted.db.prepare('SELECT * FROM season_day_outcomes WHERE day=13').first() as any;
    const scores=JSON.parse(day.outcome_json);assert.equal(scores.results.length,128);
    assert.ok(scores.results.every((r:any)=>r.algorithmVersion==='temporary-score-v1'));
-   const knockoutPlans=await persisted.db.prepare('SELECT * FROM season_knockout_ties').all();assert.equal(knockoutPlans.results.length,8);
+   const knockoutPlans=await persisted.db.prepare('SELECT * FROM season_knockout_ties').all();
+   assert.equal(knockoutPlans.results.length,16,'Playoff plus Quarter-final tie plans survive the Worker restart');
+   assert.equal(knockoutPlans.results.filter((t:any)=>t.phase_id==='playoffs').length,8);
+   assert.equal(knockoutPlans.results.filter((t:any)=>t.phase_id==='quarterfinals').length,8);
    const secondLeg=await persisted.db.prepare('SELECT * FROM season_day_outcomes WHERE day=38').first() as any;
    const knockouts=JSON.parse(secondLeg.outcome_json).results;assert.equal(knockouts.length,8);assert.ok(knockouts.every((r:any)=>r.context.mode==='second-leg'&&r.winnerClubId));
    const calendar=await persisted.db.prepare('SELECT * FROM season_calendars').first() as any;
