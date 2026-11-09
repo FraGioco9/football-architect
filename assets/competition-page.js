@@ -1257,12 +1257,10 @@
         const historyPanel=document.getElementById('competition-panel-history');
         if(historyPanel){const history=mountAuthoritativeHistory(historyPanel,{getContext:()=>window.faCompetitionContext,refreshRecords:()=>window.faSyncHistoryRecords?.()});window.addEventListener('fa:competition-context-change',history.render);new MutationObserver(history.render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});}
 
-        const copy={en:'No published season data yet.',it:'Nessun dato della stagione ancora pubblicato.',de:'Noch keine veröffentlichten Saisondaten.',es:'Aún no hay datos publicados de la temporada.',fr:'Aucune donnée de saison publiée pour le moment.'};
-        const live=document.createElement('p');live.className='app-competition-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');
-        document.getElementById('app-standings-body')?.closest('section')?.prepend(live);
-        let sourceState=activeDebugSeason===null?'loading':'isolated';const renderSource=()=>{live.hidden=sourceState!=='empty';live.textContent=sourceState==='empty'?(copy[document.documentElement.lang]||copy.en):''};
+        // Each competition view owns its empty/loading shell; no global
+        // "No published season data yet" banner is inserted above standings.
         const loader=createAuthoritativeLoader({manifest,getContext:()=>window.faCompetitionContext,isDev:()=>activeDebugSeason!==null,clear:clearSeasonData,
-          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');sourceState=state;renderSource()},
+          commit:(data,revision)=>acceptSeasonData(data,revision,true),onWorld:world=>{window.faCompetitionRoute?.setPublicSeasonLimit(world.seasonNumber,{selectLatest:!initialExplicitSeason&&!publicDefaultApplied});publicDefaultApplied=true;},onState:state=>{window.faHistorySetReady?.(state!=='loading');window.faStandingsLoading?.set('api',state==='loading');/* No cross-view empty banner; retain panel-specific loading states. */},
           fetchJson:async(path,{signal})=>{const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});if(!response.ok)throw Error('Season source unavailable');return response.json()}});
         // The global clock owns focus refresh. Only changed world snapshots
         // should force another season fetch, without weakening generation fencing.
@@ -1282,13 +1280,12 @@
             if(pendingLoads===0)revalidateWorld(window.faWorldState?.get?.());
           });
         };
-        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);sourceState='isolated';renderSource();return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
+        const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
         window.addEventListener('fa:competition-context-change',select);
         window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});
-        new MutationObserver(renderSource).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
         select();
       }catch{window.faHistorySetReady?.(true);window.faStandingsLoading?.set('api',false);clearSeasonData();}
     }

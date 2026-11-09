@@ -166,14 +166,19 @@
     const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
-    return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?"1":requested,
+    return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?latestSeason:requested,
       view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     const previousView=state?.view;
     state={...next};
-    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season="1";
+    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season=latestSeason;
+    // Only the canonical public world may clamp a future deep link; until it
+    // arrives keep the static shell visible without assuming Season 1.
+    const world=window.faDebugEnabled===false?window.faWorldState?.get?.().world:null;
+    if(Number.isInteger(world?.seasonNumber)&&Number(state.season)>Math.max(1,world.seasonNumber))
+      state.season=String(Math.max(1,world.seasonNumber));
     const url=new URL(window.location.href);
     const identity=routePath();
     url.pathname=routes.buildRoute({kind:identity.kind,id:identity.base.slice("/competitions/".length),view:state.view});
@@ -182,18 +187,18 @@
     url.searchParams.set("season",state.season);
     if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
-    const index=views.indexOf(state.view),available=availableSeasons.includes(state.season);
+    const index=views.indexOf(state.view);
     season.disabled=false;
     document.documentElement.dataset.competitionView=state.view;
-    document.documentElement.dataset.competitionSeasonUnavailable=String(!available);
-    seasonPicker.sync(available?state.season:"");seasonPicker.close();unavailable.hidden=available;
-    seasonValue.textContent=available?state.season:unavailable.textContent;
-    if(available)seasonValue.removeAttribute("data-app-i18n");
-    else seasonValue.setAttribute("data-app-i18n","competitionSeasonUnavailable");
+    // Do not replace a whole competition view with "Season unavailable".
+    // The eventual verified world callback redirects future selections.
+    document.documentElement.dataset.competitionSeasonUnavailable="false";
+    seasonPicker.sync(state.season);seasonPicker.close();unavailable.hidden=true;
+    seasonValue.textContent=state.season;seasonValue.removeAttribute("data-app-i18n");
     for(let i=0;i<tabs.length;i++){
       const active=i===index;
       tabs[i].setAttribute("aria-selected",String(active));tabs[i].tabIndex=active?0:-1;
-      tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active||!available;
+      tabs[i].classList.toggle("is-active",active);panels[i].hidden=!active;
     }
     if(focus)tabs[index].focus({preventScroll:true});
     if(focus||(previousView!==undefined&&previousView!==state.view))revealSelectedTab();
@@ -248,9 +253,10 @@
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
     if(devSeasons.length&&window.faDebugEnabled!==false||!Number.isInteger(limit)||limit<0||limit>2)return false;
     const next=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));
-    if(next.length===availableSeasons.length&&next.every((value,i)=>availableSeasons[i]===value)&&(!selectLatest||state.season===next.at(-1)))return true;
+    const target=selectLatest||!next.includes(state.season)?next.at(-1):state.season;
+    if(next.length===availableSeasons.length&&next.every((value,i)=>availableSeasons[i]===value)&&state.season===target)return true;
     availableSeasons=next;latestSeason=availableSeasons.at(-1);
-    seasonPicker.update(seasonOptions());apply({...state,season:selectLatest?latestSeason:state.season},{replace:true});return true;
+    seasonPicker.update(seasonOptions());apply({...state,season:target},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
     if(window.faDebugEnabled===false)return false;
@@ -261,7 +267,7 @@
     if(!inactiveChanged&&next.length===availableSeasons.length&&next.every(id=>availableSeasons.includes(id)))return true;
     availableSeasons=next;latestSeason=next.reduce((a,b)=>Number(a)>Number(b)?a:b);
     seasonPicker.update(seasonOptions());
-    apply({...state,season:availableSeasons.includes(state.season)?state.season:"1"},{replace:true});
+    apply({...state,season:availableSeasons.includes(state.season)?state.season:latestSeason},{replace:true});
     return true;
   };
   window.addEventListener('fa:source-change',()=>{

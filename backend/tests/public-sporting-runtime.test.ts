@@ -70,6 +70,21 @@ it('uses saved day13 results for partial standings and score-only statistics',as
  expect(cup.data.fixtures).toHaveLength(72);expect(cup.data.statistics.matchesPlayed).toBe(0);
  expect(cup.data.standings.rows.every((r:any)=>r.played===0)).toBe(true);
 });
+it('makes real future Playoff pairings public immediately after I06 without scores',async()=>{
+ await calendar();
+ const calendarModel=(await import('../../assets/world-calendar-model.js')).default;
+ const finalDay=calendarModel.createSeason(1).days.find((d:any)=>d.events.some((e:any)=>e.marker==='I06'))!.day;
+ await through(finalDay);
+ const cup=await (await request('int-1')).json() as any;
+ expect(cup.status).toBe('partial');
+ expect(cup.data.standings.complete).toBe(true);
+ expect(cup.data.fixtures).toHaveLength(80);
+ const planned=cup.data.fixtures.filter((f:any)=>f.phaseId==='playoffs');
+ expect(planned).toHaveLength(8);
+ expect(planned.every((f:any)=>f.day>finalDay&&f.result===null&&f.tieId!==null)).toBe(true);
+ expect(cup.data.fixtures.filter((f:any)=>['quarterfinals','semifinals','final'].includes(f.phaseId))).toHaveLength(0);
+},120000);
+
 it('fails closed on a missing daily receipt without advancing the shared world',async()=>{
  await calendar();await through(13);
  await db.prepare('DELETE FROM season_day_outcomes WHERE day=12').run();
