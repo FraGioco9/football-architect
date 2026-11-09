@@ -31,7 +31,7 @@ export function renderViewSkeleton(d,view,variant){
  const lastDay=calendarModel.createSeason(1).days.find(day=>day.events.some(event=>event.marker===marker))?.day||0;
  const historyAttrs=key==='history-preview'?' data-skeleton-last-league-day="'+lastDay+'" data-skeleton-league-rounds="'+rules.phaseMetrics(d,league.id).rounds+'"':'';
  const content=view==='stats'?stats.renderSkeleton(key.split('-')[1]):view==='history'?renderHistorySkeletonMarkup(d,key==='history-preview'):renderAwardSkeletonCards(d);
- return '<div class="app-competition-view-skeleton" data-competition-skeleton-root="'+key+'"'+historyAttrs+' aria-hidden="true">'+content+'</div>';
+ return '<div class="app-competition-view-skeleton" data-competition-skeleton-root="'+key+'"'+historyAttrs+(view==='stats'?'':' aria-hidden="true"')+'>'+content+'</div>';
 }
 export function renderViewTemplates(d,view){
  const keys=view==='stats'?['stats-overview','stats-teams','stats-players']:view==='history'?['history-authoritative','history-preview']:['awards'];
@@ -40,7 +40,33 @@ export function renderViewTemplates(d,view){
 export function viewSkeletonScript(view){return '<script data-view-skeleton-first-paint="'+view+'">('+viewSkeletonFirstPaint.toString()+')('+JSON.stringify(view)+');</script>';}
 export function viewSkeletonFirstPaint(view){
  const panel=document.getElementById('competition-panel-'+view);if(!panel)return;
- if(view==='history'&&window.faDebugEnabled!==false&&
+ if(view==='stats'){
+   const subviews=['overview','teams','players'];
+   const selected=event=>{
+    const button=event.target?.closest?.('[data-stats-view]');
+    return button?.closest?.('[data-competition-skeleton-root]')?button:null;
+   };
+   const select=(value,focus)=>{
+    if(!subviews.includes(value))return;
+    panel.dataset.faStatsSelectedView=value;
+    const current=panel.querySelector('[data-competition-skeleton-root]');
+    if(current&&current.dataset.competitionSkeletonRoot!=='stats-'+value){
+     const template=document.querySelector('template[data-competition-skeleton="stats-'+value+'"]');
+     if(template)current.replaceWith(template.content.cloneNode(true));
+     window.faAppRenderLanguage?.();
+    }
+    if(focus)panel.querySelector('[data-competition-skeleton-root] [data-stats-view="'+value+'"]')?.focus({preventScroll:true});
+    panel.dispatchEvent(new CustomEvent('fa:stats-shell-selection',{detail:value}));
+   };
+   panel.addEventListener('click',event=>{const button=selected(event);if(button)select(button.dataset.statsView,true);});
+   panel.addEventListener('keydown',event=>{
+    const button=selected(event);if(!button||event.altKey||event.ctrlKey||event.metaKey)return;
+    const index=subviews.indexOf(button.dataset.statsView);
+    const next=event.key==='ArrowRight'?subviews[(index+1)%3]:event.key==='ArrowLeft'?subviews[(index+2)%3]:event.key==='Home'?subviews[0]:event.key==='End'?subviews[2]:null;
+    if(next===null)return;event.preventDefault();select(next,true);
+   });
+  }
+  if(view==='history'&&window.faDebugEnabled!==false&&
     document.documentElement.dataset.faDevSeasons!==undefined&&
     document.documentElement.dataset.faDevCurrentSeason==='0'){
   panel.querySelector('[data-competition-skeleton-root]')?.remove();
