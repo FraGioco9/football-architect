@@ -663,7 +663,7 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     });
     if(postResults.final)postFixtures.push({round:33,kickoff:null,...postResults.final});
     const commitFixtures=typeof fixturesApi?.prepare==="function"
-      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures,definition}):null;
+      ?fixturesApi.prepare(fixtureData,{currentMatchday:currentRound,postseason:postFixtures,definition,participants:division.clubs}):null;
     const restorePostseason=window.faPostseason?.snapshot();
     const commitPostseason=window.faPostseason?.prepare(rows,postResults,definition);
     // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.

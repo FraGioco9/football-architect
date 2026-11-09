@@ -684,6 +684,19 @@ test('CONTEXT: later domestic seasons accept verified same-country replacement i
   'A later domestic season cannot enroll a foreign-country identity');
 });
 
+test('CONTEXT: Debug/public source handoff restores later-season domestic rows before DEV hydration',async()=>{
+ const d=divisionsForTest('IT-1'),r=await simulate({division:d,devSeason:3,ending:'/?season=2'});
+ const api=r.window.faCompetitionContextApi,tbody=r.fields.get('app-standings-body');
+ assert.equal(r.window.faCompetitionContext.selectedSeason,2);
+ assert.equal(tbody.children.length,16);
+ assert.equal(api.setDebugSeason(null),true,'Switch to public source');
+ assert.equal(tbody.children.length,1,'Unknown Season 2 public standings use a neutral empty row');
+ const revision=r.window.faCompetitionContext.revision;
+ assert.equal(api.setDebugSeason(3),true,'Return to DEV Season 3');
+ assert.ok(r.window.faCompetitionContext.revision>revision,'Even an empty source handoff invalidates stale reads');
+ assert.equal(tbody.children.length,16,'DEV season hydration gets the full reserved domestic table again');
+});
+
 test('CONTEXT: a world-day change with unchanged domestic progress retains supplied season data',async()=>{
  const r=await simulate({division:manifest.divisions[0],devSeason:1,ending:'/?season=1'});
  const api=r.window.faCompetitionContextApi;

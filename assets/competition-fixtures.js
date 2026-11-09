@@ -345,7 +345,7 @@
       // Validate against the selected season's supplied membership, not the
       // Season 1 DOM catalogue. Rejected preparation must not mutate live UI.
       const context=window.faCompetitionContext;
-      const scoped=participants??(context?.selectedSeason===context?.seasonData?.season?context.seasonData.participants:null);
+      const scoped=participants??(context?.seasonData&&context.selectedSeason===context.seasonData.season?context.seasonData.participants:null);
       const nextClubs=Array.isArray(scoped)?new Map(scoped.map(club=>[international?rules.clubKey(club):club.clubId,club])):clubs;
       if(Array.isArray(scoped)&&(nextClubs.size!==capacity||scoped.some(club=>!club||!Number.isInteger(club.clubId)||!club.primaryName)))throw Error('Invalid season participants');
       const previousClubs=clubs;

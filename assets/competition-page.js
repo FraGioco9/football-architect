@@ -798,7 +798,15 @@
         graph=nextGraph;capture();
       }
       const data=context.seasonData;
-      if(definition.category==='domestic'&&!data?.statistics?.standings){publishedFormTips?.clear();if(suppliedOwned||(activeDebugSeason===null&&context.selectedSeason>1))empty();return;}
+      if(definition.category==='domestic'&&!data?.statistics?.standings){
+        publishedFormTips?.clear();
+        // An unresolved public Season 2 may temporarily render one anonymous
+        // empty row. On source handoff into DEV restore the 16 reserved rows,
+        // otherwise DEV hydration waits for a table that never materializes.
+        const wrongShell=(tbody.rows?.length??tbody.children?.length??0)!==division.clubs.length;
+        if(suppliedOwned||wrongShell||(activeDebugSeason===null&&context.selectedSeason>1))empty();
+        return;
+      }
       if(!data){empty();resetBracket();return;}
       try{
         const clubs=new Map(data.participants.map(club=>[rules.clubKey(club),club]));
@@ -1076,9 +1084,9 @@
     window.faCompetitionContext=context;
     window.dispatchEvent(new CustomEvent("fa:competition-context-change",{detail:context}));
   }
-  function nextContext(season,data=null){
+  function nextContext(season,data=null,{force=false}={}){
     const current=window.faCompetitionContext;
-    if(current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
+    if(!force&&current?.selectedSeason===season&&(current.seasonData===data||data&&current.seasonData&&JSON.stringify(current.seasonData)===JSON.stringify(data)))return;
     publishCompetitionContext(createContext(definition,season,data,(current?.revision||0)+1));
   }
   function selectSeason(season){
@@ -1093,7 +1101,12 @@
   function setDebugSeason(season){
     if(season!==null&&window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return false;
     if(season!==null&&(!Number.isInteger(season)||season<0||season>4))return false;
-    if(activeDebugSeason!==season){activeDebugSeason=season;clearSeasonData();}
+    if(activeDebugSeason!==season){
+      activeDebugSeason=season;
+      // Source changes invalidate pending providers even if no data was
+      // published yet; rebuild the correct first-paint shell for this source.
+      if(window.faCompetitionContext)nextContext(window.faCompetitionContext.selectedSeason,null,{force:true});
+    }
     if(season===0)selectSeason(1);
     return true;
   }
