@@ -184,7 +184,7 @@ test('QA-15: known directory crests have a skeleton and missing or failed crests
  assert.doesNotMatch(app,/:is\(\.app-fixtures-skeleton-crest,\.app-view-skeleton-crest-slot\)::before\{/,'identity-free skeleton slots must remain blank');
 });
 
-test('QA-15: Clubs uses the same 48px desktop / 40px mobile circular crest skeleton as Standings',()=>{
+test('QA-15: Clubs scales the Standings circular crest skeleton to its own logo slot',()=>{
  const app=read('assets/app.css'),directory=read('assets/clubs-directory.css');
  const standingsDesktop=app.match(/\.app-standings-skeleton tr>:nth-child\(2\) :is\([^}]+\)::before\{([^}]*)\}/)?.[1];
  const standingsMobile=app.match(/\.app-standings-skeleton \.app-world-mobile-name:is\([^}]+\)::before\{([^}]*)\}/)?.[1];
@@ -194,12 +194,14 @@ test('QA-15: Clubs uses the same 48px desktop / 40px mobile circular crest skele
  assert.match(standingsMobile,/flex:0 0 40px;height:40px;border-radius:50%/);
  for(const style of [standingsDesktop,standingsMobile,clubsPending])
   assert.match(style,/background:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)/);
- assert.match(clubsPending,/left:50%;top:50%;width:48px;height:48px;transform:translate\(-50%,-50%\)/);
+ assert.match(clubsPending,/left:50%;top:50%;width:100%;height:auto;max-height:100%;aspect-ratio:1;transform:translate\(-50%,-50%\)/);
  assert.match(clubsPending,/clip-path:none;border-radius:50%/);
- assert.match(directory,/@media\(max-width:620px\)\{\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{width:40px;height:40px\}\}/);
+ for(const slot of ['width:82px;height:88px','width:68px;height:74px','width:64px;height:70px'])
+  assert.ok(directory.includes('.nav01-crest{'+slot),'directory crest slots remain responsive: '+slot);
+ assert.doesNotMatch(directory,/@media\(max-width:620px\)\{\.nav01-crest:has\(>\.nav01-crest-image\)/,
+  'skeleton follows its host instead of hard-coding Standings widths');
  assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
 });
-
 test('UI-409: directory image state is idempotent and failed requests retain the shield',()=>{
  const source=read('assets/clubs-directory.js');
  const start=source.indexOf('const settleCrest=('),end=source.indexOf("\ngrid.addEventListener('load'",start);
