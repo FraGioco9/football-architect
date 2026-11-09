@@ -281,12 +281,25 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
   const division=firstPaintDivisionById.get(a.divisionId);
   return a.clubIds.map(clubId=>[division.countryId+'-'+clubId,division]);
  }));
+ // Render flags at parser time using the exact SVG vectors from /competitions.
+ // Eight shared symbol definitions avoid duplicating artwork across 320 cards.
+ const directoryFlagUse=countryId=>{
+  const code=countryId==='ENG'?'gb-eng':countryId.toLowerCase();
+  return '<svg class="nav01-country-flag" role="img" aria-label="'+encode(countryId)+'" width="20" height="16" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><use href="#fa-directory-flag-'+code+'"></use></svg>';
+ };
+ const directoryFlagSprite='<svg class="nav01-flag-sprite" aria-hidden="true" focusable="false" width="0" height="0" xmlns="http://www.w3.org/2000/svg" style="position:absolute;overflow:hidden"><defs>'+
+  ["IT","ENG","ES","DE","FR","PT","NL","BR"].map(countryId=>{
+   const code=countryId==='ENG'?'gb-eng':countryId.toLowerCase();
+   const svg=inlineCountryFlag(countryById[countryId]);
+   const content=svg.slice(svg.indexOf(">",svg.indexOf("<svg"))+1,svg.lastIndexOf("</svg>"));
+   return '<symbol id="fa-directory-flag-'+code+'" viewBox="0 0 5 4">'+content+'</symbol>';
+  }).join('')+'</defs></svg>';
  const firstPaintCrests=clubCrestAssets().catalog;
  const firstPaintCards=clubData.slice().sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en')||a.countryId.localeCompare(b.countryId)||a.clubId-b.clubId).map(c=>{
   const id=c.countryId+'-'+c.clubId,crest=firstPaintCrests[id],division=firstPaintDivisionByClub.get(id);
-  return '<a class="nav01-card" href="/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview"'+' data-country="'+c.countryId+'" data-tier="'+(division?.tier||0)+'" data-search="'+encode([c.primaryName,c.fullName,c.city].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/gu,' '))+'"'+'>'+'<span class="nav01-crest" aria-hidden="true">'+(crest?'<img class="nav01-crest-image" src="/'+encode(crest)+'" alt="" loading="lazy" decoding="async">':'')+'</span>'+'<span><strong>'+encode(c.primaryName)+'</strong><small>'+encode(c.city)+' · <img class="nav01-country-flag" src="/'+encode(flagForCountry(c.countryId))+'" alt="'+encode(c.countryId)+'" loading="lazy">'+(division?' · '+encode(division.name):'')+'</small></span></a>';
+  return '<a class="nav01-card" href="/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview"'+' data-country="'+c.countryId+'" data-tier="'+(division?.tier||0)+'" data-search="'+encode([c.primaryName,c.fullName,c.city].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/gu,' '))+'"'+'>'+'<span class="nav01-crest" aria-hidden="true">'+(crest?'<img class="nav01-crest-image" src="/'+encode(crest)+'" alt="" loading="lazy" decoding="async">':'')+'</span>'+'<span><strong>'+encode(c.primaryName)+'</strong><small>'+encode(c.city)+' · '+directoryFlagUse(c.countryId)+(division?' · '+encode(division.name):'')+'</small></span></a>';
  }).join('');
- const firstPaintContent=content.replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');
+ const firstPaintContent=content.replace('<div class="nav01-grid" aria-busy="true">',directoryFlagSprite+'<div class="nav01-grid" aria-busy="true">').replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');
  const filterScript="<script data-nav01-filter-first-paint>(()=>{const grid=document.currentScript.previousElementSibling;if(!grid)return;const params=new URLSearchParams(location.search);const compact=v=>String(v||'').trim().replace(/\\s+/gu,' ');const norm=v=>compact(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();const q=params.getAll('q').map(compact).find(Boolean)?.slice(0,100)||'';const country=params.getAll('country').map(v=>v.trim().toUpperCase()).find(v=>['BR','DE','ENG','ES','FR','IT','NL','PT'].includes(v))||'';const division=params.getAll('division').map(v=>v.trim().toLowerCase()).find(v=>v==='first'||v==='second')||'';if(!q&&!country&&!division)return;let count=0;for(const card of grid.querySelectorAll('a.nav01-card')){if((q&&!card.dataset.search.includes(norm(q)))||(country&&card.dataset.country!==country)||(division&&card.dataset.tier!==(division==='first'?'1':'2')))card.remove();else count++}const label=grid.parentElement.querySelector('.nav01-count');if(label)label.textContent=count+' clubs'})();</script>";
  const filteredFirstPaint=firstPaintContent.replace('</div></div></section>','</div>'+filterScript+'</div></section>');
  let html=source.slice(0,begin)+filteredFirstPaint+source.slice(finish);

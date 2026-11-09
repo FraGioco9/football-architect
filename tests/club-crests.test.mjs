@@ -167,7 +167,7 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
 });
 
 // UI-409 is presentation-only; public identity URLs and loaded crest nodes must be unchanged.
-test('UI-409: known crests load into a blank slot and missing or failed crests show borderless shields',()=>{
+test('QA-15: known directory crests have a skeleton and missing or failed crests show borderless shields',()=>{
  const app=read('assets/app.css'),detail=read('assets/club-page.css'),directory=read('assets/clubs-directory.css');
  assert.match(app,/--fa-crest-shield-shape:polygon\(/);
  assert.match(app,/html\[data-theme="light"\]\{--fa-crest-shield-fill:/);
@@ -176,13 +176,51 @@ test('UI-409: known crests load into a blank slot and missing or failed crests s
  assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before,\s*\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(detail,/\.club-first-paint-header \.club-crest\{visibility:visible\}/);
  assert.match(detail,/\.club-first-paint-header \.club-crest:not\(\[data-club-crest\]\)::before\{display:none\}/);
- assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\)::before,\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+ assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{[^}]*background:color-mix\([^}]*clip-path:none/);
+ assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(directory,/\.nav01-crest-image\{position:absolute;inset:0;[^}]*object-fit:contain/);
  for(const selector of ['app-fixtures-skeleton-crest','app-view-skeleton-crest-slot'])
   assert.ok(app.includes(selector),'first-paint reserved crest slot '+selector);
  assert.doesNotMatch(app,/:is\(\.app-fixtures-skeleton-crest,\.app-view-skeleton-crest-slot\)::before\{/,'identity-free skeleton slots must remain blank');
 });
 
+test('QA-15: Clubs scales the Standings circular crest skeleton to its own logo slot',()=>{
+ const app=read('assets/app.css'),directory=read('assets/clubs-directory.css');
+ const standingsDesktop=app.match(/\.app-standings-skeleton tr>:nth-child\(2\) :is\([^}]+\)::before\{([^}]*)\}/)?.[1];
+ const standingsMobile=app.match(/\.app-standings-skeleton \.app-world-mobile-name:is\([^}]+\)::before\{([^}]*)\}/)?.[1];
+ const clubsPending=directory.match(/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{([^}]*)\}/)?.[1];
+ assert.ok(standingsDesktop&&standingsMobile&&clubsPending,'both pages expose crest skeleton styles');
+ assert.match(standingsDesktop,/flex:0 0 48px;height:48px;border-radius:50%/);
+ assert.match(standingsMobile,/flex:0 0 40px;height:40px;border-radius:50%/);
+ for(const style of [standingsDesktop,standingsMobile,clubsPending])
+  assert.match(style,/background:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)/);
+ assert.match(clubsPending,/left:50%;top:50%;width:100%;height:auto;max-height:100%;aspect-ratio:1;transform:translate\(-50%,-50%\)/);
+ assert.match(clubsPending,/clip-path:none;border-radius:50%/);
+ for(const slot of ['width:82px;height:88px','width:68px;height:74px','width:64px;height:70px'])
+  assert.ok(directory.includes('.nav01-crest{'+slot),'directory crest slots remain responsive: '+slot);
+ assert.doesNotMatch(directory,/@media\(max-width:620px\)\{\.nav01-crest:has\(>\.nav01-crest-image\)/,
+  'skeleton follows its host instead of hard-coding Standings widths');
+ assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
+});
+test('QA-15: Clubs first-paint flags share eight /competitions inline SVG artworks',()=>{
+ const html=read('clubs/index.html'),generator=read('tools/generate-app-pages.mjs'),client=read('assets/clubs-directory.js');
+ const countries=['it','gb-eng','es','de','fr','pt','nl','br'];
+ const symbols=[...html.matchAll(/<symbol id="fa-directory-flag-([a-z-]+)" viewBox="0 0 5 4">/g)].map(m=>m[1]);
+ assert.deepEqual(symbols,countries,'exactly eight shared flag definitions');
+ for(const country of countries){
+  assert.ok(html.includes('<use href="#fa-directory-flag-'+country+'"></use>'),'local symbol used: '+country);
+  assert.ok(html.includes('id="fa-competition-flag-'+country+'"'),'same vector as Competitions: '+country);
+ }
+ const flags=[...html.matchAll(/<svg class="nav01-country-flag" role="img" aria-label="([A-Z]+)" width="20" height="16" viewBox="0 0 5 4" xmlns="http:\/\/www\.w3\.org\/2000\/svg"><use href="#fa-directory-flag-([a-z-]+)"><\/use><\/svg>/g)];
+ assert.equal(flags.length,320,'all static cards provide a first-paint vector flag');
+ assert.equal(new Set(flags.map(m=>m[1])).size,8);
+ assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-card"'),'symbols are declared ahead of cards');
+ assert.doesNotMatch(html,/<img class="nav01-country-flag"/,'no network/lazy flags at first paint');
+ assert.match(generator,/const directoryFlagSprite=/);
+ assert.match(generator,/const directoryFlagUse=/);
+ assert.match(client,/<use href="#fa-directory-flag-/,'filtered cards retain vector flags');
+ assert.doesNotMatch(client,/<img class="nav01-country-flag"/);
+});
 test('UI-409: directory image state is idempotent and failed requests retain the shield',()=>{
  const source=read('assets/clubs-directory.js');
  const start=source.indexOf('const settleCrest=('),end=source.indexOf("\ngrid.addEventListener('load'",start);
@@ -192,7 +230,7 @@ test('UI-409: directory image state is idempotent and failed requests retain the
  const image={parentElement:slot,complete:false,naturalWidth:0,matches:selector=>selector==='img.nav01-crest-image',
   removed:0,remove(){this.removed++}};
  settle(image);
- assert.equal(slot.dataset.clubCrestLoaded,undefined,'pending image keeps a blank reserved slot');
+ assert.equal(slot.dataset.clubCrestLoaded,undefined,'pending image leaves the skeleton visible');
  image.complete=true;image.naturalWidth=70;settle(image);
  assert.equal(slot.dataset.clubCrestLoaded,'true','loaded image keeps the shield hidden');
  settle(image);
