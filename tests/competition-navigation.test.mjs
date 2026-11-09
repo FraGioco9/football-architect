@@ -355,8 +355,10 @@ const a03Baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes
 test('A03-04C: browser URL normalization preserves the frozen domestic and cup oracle',()=>{
  for(const row of a03Baseline.competitionBrowser){
   const s=setup(row.input);
-  assert.equal(s.window.location.pathname+s.window.location.search+s.window.location.hash,row.expected,row.input);
-  assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:row.season,view:row.view,matchday:row.matchday},row.input);
+  const groupedLeg=row.matchday==='quarterfinals:2';
+   const expectedUrl=groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected;
+   assert.equal(s.window.location.pathname+s.window.location.search+s.window.location.hash,expectedUrl,row.input);
+  assert.deepEqual(JSON.parse(JSON.stringify(s.window.faCompetitionRoute.get())),{season:row.season,view:row.view,matchday:groupedLeg?'quarterfinals:1':row.matchday},row.input);
   assert.equal(s.count(),1,'Initial canonicalization replaces rather than pushes: '+row.input);
  }
 });

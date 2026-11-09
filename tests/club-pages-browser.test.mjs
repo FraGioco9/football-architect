@@ -566,10 +566,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      for(const row of baseline.competitionBrowser){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
-      // Route parsing preserves legacy leg URLs; the deferred Fixtures UI groups both legs.
+      // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';
       if(groupedLeg)await wait("!!window.faFixtures&&window.faCompetitionRoute.get().matchday==='quarterfinals:1'");
-      assert.equal(await currentUrl(),groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals%3A1'):row.expected,'A03-04C direct '+width+' '+row.input);
+      assert.equal(await currentUrl(),groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected,'A03-04C direct '+width+' '+row.input);
       assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},'Core precedes deferred consumers');
       assert.equal(await run('Object.isFrozen(window.faRoutesRegistry)&&Object.isFrozen(window.faRoutesRegistry.countries)'),true);
       assert.equal(await run("window.faRoutesRegistry.buildRoute({kind:'club',country:'br',id:40,view:'history'})"),'/clubs/br/40/history');
