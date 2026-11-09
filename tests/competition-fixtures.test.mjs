@@ -443,6 +443,9 @@ test('FIXTURES first paint resolves URL/Debug selection and knockout skeleton co
  assert.deepEqual(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).groups.map(g=>g.count),[4,4]);
  assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).value,'quarterfinals:1');
  assert.equal(resolveFixtureSelection(cup,{matchday:'quarterfinals:2'}).labels.en,'Quarter-finals');
+  for(const phase of ['playoffs','quarterfinals','semifinals','final']){
+   assert.equal(resolveFixtureSelection(cup,{matchday:phase}).value,phase+':1','Phase-only URLs must choose the correct first-paint skeleton');
+  }
  assert.equal(resolveFixtureSelection(cup,{currentSeason:1,season:1,day:31}).value,'playoffs:1');
 });
 

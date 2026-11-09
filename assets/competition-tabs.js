@@ -174,9 +174,15 @@
   // Season 1 is a provisional display context, not an official calendar/history.
   const configuredChoices=()=>window.faCompetitionContext&&window.faCompetitionRules?.fixtureChoices(window.faCompetitionContext.definition);
   const validFixtureRound=value=>{const choices=configuredChoices();return choices?choices.some(c=>c.value===value):model.validRound(value)||value==="playoffs"||value==="playout"};
+  // Cup URLs identify grouped phases; :1/:2 tokens are internal or legacy only.
+  const normalizeCupRound=value=>{
+    if(routePath().kind!=="cup"||typeof value!=="string")return value;
+    const phase=/^(playoffs|quarterfinals|semifinals|final)(?::[12])?$/.exec(value);
+    return phase?phase[1]+":1":value;
+  };
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=params.get("matchday"),parsed=routePath();
+    const id=params.get("season"),round=normalizeCupRound(params.get("matchday")),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
     return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?latestSeason:requested,
@@ -185,7 +191,7 @@
   }
   function apply(next,{replace=false,focus=false}={}){
     const previousView=state?.view;
-    state={...next};
+    state={...next,matchday:normalizeCupRound(next.matchday)};
     if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season=latestSeason;
     // Only the canonical public world may clamp a future deep link; until it
     // arrives keep the static shell visible without assuming Season 1.
@@ -200,7 +206,7 @@
     url.search="";url.hash="";
     if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
     url.searchParams.set("season",state.season);
-    if(state.view==="fixtures")url.searchParams.set("matchday",String(state.matchday));
+    if(state.view==="fixtures")url.searchParams.set("matchday",identity.kind==="cup"&&typeof state.matchday==="string"?state.matchday.replace(/:1$/,""):String(state.matchday));
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view);
     // Preserve the physical combobox at first paint, but reserve its value
@@ -234,7 +240,7 @@
     if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
     const next={...state,...patch};
     if(!views.includes(next.view)||!/^[1-9]\d{0,8}$/.test(next.season)||
-      !validFixtureRound(next.matchday))return;
+      !validFixtureRound(normalizeCupRound(next.matchday)))return;
     apply(next,options);
   }
   window.faCompetitionRoute={get:()=>({...state}),set,

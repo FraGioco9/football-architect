@@ -39,15 +39,18 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,
  runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return key.startsWith('football-architect:competition-tabs-scroll:')&&restoredScroll!==null?String(restoredScroll):null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,contextSeasons,scrollKeys,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
-test('CONFIG-URL: cup routes reject domestic rounds and retain configured leg tokens through history',()=>{
+test('CONFIG-URL: cup routes use phase-only links with Back/Forward',()=>{
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=30');
  assert.equal(s.window.faCompetitionRoute.get().matchday,1);
  s.window.faCompetitionRoute.set({matchday:'quarterfinals:2'});
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
- s.window.faCompetitionRoute.set({matchday:'final:1'});s.back();
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
+ assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals');
+ s.window.faCompetitionRoute.set({matchday:'final:1'});
+ assert.equal(s.window.location.search,'?season=1&matchday=final');
+ s.back();
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
  s.window.faCompetitionRoute.set({matchday:'playout'});
- assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:2');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
 });
 test('DEV season menu ends at current progress and redirects an invalid future season to the current season',()=>{
  const s=setup('/competitions/it-1?season=3&view=fixtures&matchday=13',3);
@@ -84,6 +87,15 @@ test('COMPETITION-URL: canonical deep links restore every view, round and browse
  s.forward();assert.equal(s.window.faCompetitionRoute.get().matchday,13);
  for(let i=0;i<views.length;i++){s.tabs[i].events.click();assert.equal(s.window.faCompetitionRoute.get().view,views[i]);assert.equal([...s.fields].filter(([id,p])=>id.startsWith('competition-panel-')&&!p.hidden).length,1);}
 });
+test('INT-24 legacy leg links normalize on both cups',()=>{
+ for(const cup of ['int-1','int-2'])for(const phase of ['playoffs','quarterfinals','semifinals','final']){
+  for(const suffix of ['', '%3A1', '%3A2']){
+   const link=setup('/competitions/'+cup+'/fixtures?season=1&matchday='+phase+suffix);
+   assert.equal(link.window.faCompetitionRoute.get().matchday,phase+':1');
+   assert.equal(link.window.location.search,'?season=1&matchday='+phase);
+  }
+ }
+});
 test('COMPETITION-URL: invalid parameters normalize while explicit public seasons remain selected',()=>{
  const s=setup('/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
  assert.equal(s.window.location.pathname,'/competitions/it-1/standings');
@@ -99,7 +111,7 @@ test('COMPETITION-URL: invalid parameters normalize while explicit public season
  const future=setup('/competitions/int-1/fixtures?season=9&matchday=playoffs:1');
  future.window.faCompetitionRoute.setPublicSeasonLimit(2);
  assert.equal(future.window.faCompetitionRoute.get().season,'2');
- assert.equal(future.window.location.search,'?season=2&matchday=playoffs%3A1');
+ assert.equal(future.window.location.search,'?season=2&matchday=playoffs');
  const historical=setup('/competitions/int-1/history?season=1');
  historical.window.faCompetitionRoute.setPublicSeasonLimit(2);
  assert.equal(historical.window.faCompetitionRoute.get().season,'1');
@@ -364,7 +376,7 @@ test('A03-04E: competition navigation uses the real registry while preserving ca
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=quarterfinals%3A2',null,registry);
  s.window.faCompetitionRoute.set({view:'history'});
  assert.equal(s.window.location.pathname+s.window.location.search,'/competitions/int-1/history?season=1');
- s.back();assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals%3A2');
+ s.back();assert.equal(s.window.location.search,'?season=1&matchday=quarterfinals');
  assert.ok(calls.includes('parse'));assert.ok(calls.includes('build'));
 });
 
