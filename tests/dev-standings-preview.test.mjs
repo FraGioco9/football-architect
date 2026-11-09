@@ -254,8 +254,8 @@ test("DEV-GATE-06: malformed and incomplete models are rejected without partial 
   assert.ok(client.includes("competitionModel.validManifest(manifest)"));
 });
 
-async function withServer(callback) {
-  const server = createPreviewServer();
+async function withServer(callback,options={}) {
+  const server = createPreviewServer(options);
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const port = server.address().port;
@@ -307,6 +307,34 @@ test("DEV-ROUTES: canonical slashless pages, assets and season links load direct
     for(const path of ["/unknown","/app/unknown","/competitions/unknown","/data/clubs","/tools/dev-standings-preview"])
       assert.equal((await get(path)).status,404,path);
   });
+});
+
+test("PUBLIC-FIRST-PAINT: server embeds verified Season 2 before the body paints",async()=>{
+ const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:2,seasonNumber:2,day:1,phase:'active'};
+ let reads=0;
+ await withServer(async get=>{
+  const host='app.localhost:2000';
+  for(const [path,want] of [
+   ['/competitions/it-1/standings','2'],
+   ['/competitions/it-1/standings?season=1','1'],
+   ['/competitions/it-1/standings?season=99','2'],
+   ['/competitions/int-1/fixtures','2']]){
+   const response=await get(path,{host});
+   assert.equal(response.status,200);
+   assert.ok(response.body.includes('id="app-competition-season-value">'+want+'</span>'),path);
+   assert.match(response.body,/window\.faCompetitionInitialSeason=2/);
+   assert.match(response.body,/data-fa-competition-season-verified="true"/);
+  }
+  assert.equal(reads,4,'Each direct HTML gets an independent up-to-date public read');
+ },{subdomains:true,readInitialWorld:async()=>{reads++;return world}});
+});
+test("PUBLIC-FIRST-PAINT: unavailable world hides provisional 1 instead of displaying false latest",async()=>{
+ await withServer(async get=>{
+  const result=await get('/competitions/it-1/standings',{host:'app.localhost:2000'});
+  assert.equal(result.status,200);
+  assert.match(result.body,/html:not\(\[data-fa-competition-season-verified="true"\]\) #app-competition-season-value\{visibility:hidden\}/);
+  assert.doesNotMatch(result.body,/window\.faCompetitionInitialSeason=2/);
+ },{subdomains:true,readInitialWorld:async()=>null});
 });
 
 test("DEV-GATE-04: server accepts only loopback + strict Host, rejects traversal", async () => {

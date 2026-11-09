@@ -1164,9 +1164,11 @@
     const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
     const raw=new URL(window.location.href).searchParams.get("season");
-    const requested=raw===null?Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
+    const initial=activeDebugSeason===null&&Number.isInteger(window.faCompetitionInitialSeason)
+      ?Math.max(1,window.faCompetitionInitialSeason):null;
+    const requested=raw===null?initial??Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
-    nextContext(activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
+    nextContext(activeDebugSeason===null&&initial!==null?Math.min(requested,initial):activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('world-calendar-model.js');
     await loadScript('competition-rules.js');
     await loadScript('competition-rules-view.js');

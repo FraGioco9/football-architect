@@ -157,6 +157,10 @@
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
   if(window.faDebugEnabled!==false&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
     availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
+  const serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
+    ?window.faCompetitionInitialSeason:null;
+  if((window.faDebugEnabled===false||devSeasons.length===0)&&serverSeason!==null)
+    availableSeasons=Array.from({length:serverSeason},(_,i)=>String(i+1));
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
   const publicRoute=()=>window.faDebugEnabled===false||devSeasons.length===0;
   const confirmedPublicWorld=()=>{
@@ -165,7 +169,8 @@
   };
   // Public season numbers are not valid display values until the canonical
   // clock has resolved. A requested ?season=999 must never flash in the picker.
-  let publicSeasonConfirmed=Boolean(confirmedPublicWorld());
+  let publicSeasonConfirmed=Boolean(confirmedPublicWorld())||serverSeason!==null||
+    new URL(window.location.href).searchParams.get('season')==='1';
   // Season 1 is a provisional display context, not an official calendar/history.
   const configuredChoices=()=>window.faCompetitionContext&&window.faCompetitionRules?.fixtureChoices(window.faCompetitionContext.definition);
   const validFixtureRound=value=>{const choices=configuredChoices();return choices?choices.some(c=>c.value===value):model.validRound(value)||value==="playoffs"||value==="playout"};
@@ -185,8 +190,9 @@
     // Only the canonical public world may clamp a future deep link; until it
     // arrives keep the static shell visible without assuming Season 1.
     const world=publicRoute()?confirmedPublicWorld():null;
-    if(world&&Number(state.season)>Math.max(1,world.seasonNumber))
-      state.season=String(Math.max(1,world.seasonNumber));
+    const knownLimit=world?.seasonNumber??(publicRoute()?serverSeason:null);
+    if(knownLimit!==null&&knownLimit!==undefined&&Number(state.season)>Math.max(1,knownLimit))
+      state.season=String(Math.max(1,knownLimit));
     const pendingPublicSeason=publicRoute()&&!publicSeasonConfirmed&&!world;
     const url=new URL(window.location.href);
     const identity=routePath();
@@ -209,6 +215,7 @@
     unavailable.textContent='';unavailable.removeAttribute('data-app-i18n');
     seasonValue.dataset.seasonPending=String(Boolean(pendingPublicSeason));
     seasonValue.textContent=pendingPublicSeason?"":state.season;
+    document.documentElement.dataset.faCompetitionSeasonVerified=String(!pendingPublicSeason);
     seasonValue.removeAttribute("data-app-i18n");
     for(let i=0;i<tabs.length;i++){
       const active=i===index;
@@ -300,6 +307,7 @@
         season.disabled=true;season.setAttribute('aria-busy','true');
         seasonPicker.close();seasonPicker.sync('');
         seasonValue.textContent='';seasonValue.dataset.seasonPending='true';
+        document.documentElement.dataset.faCompetitionSeasonVerified='false';
       }
     }else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
   });

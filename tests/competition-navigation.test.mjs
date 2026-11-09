@@ -9,7 +9,7 @@ import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null){
+function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null,initialPublicSeason=null){
  const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -32,7 +32,7 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
- const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faCompetitionInitialSeason:initialPublicSeason,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
@@ -107,6 +107,18 @@ test('COMPETITION-URL: invalid parameters normalize while explicit public season
  unstarted.window.faCompetitionRoute.setPublicSeasonLimit(0);
  assert.equal(unstarted.window.faCompetitionRoute.get().season,'1');
  assert.equal(unstarted.fields.get('app-competition-season-value').textContent,'1');
+});
+test('PUBLIC first paint uses verified latest Season 2 without showing 1 or skeleton',()=>{
+ const latest=setup('/competitions/it-1/standings',null,routeRegistry,null,2);
+ assert.equal(latest.window.faCompetitionRoute.get().season,'2');
+ assert.equal(latest.fields.get('app-competition-season-value').textContent,'2');
+ assert.equal(latest.fields.get('app-competition-season').disabled,false);
+ assert.equal(latest.window.location.search,'?season=2');
+ const historical=setup('/competitions/it-1/standings?season=1',null,routeRegistry,null,2);
+ assert.equal(historical.fields.get('app-competition-season-value').textContent,'1');
+ const future=setup('/competitions/it-1/standings?season=9',null,routeRegistry,null,2);
+ assert.equal(future.fields.get('app-competition-season-value').textContent,'2');
+ assert.equal(future.window.location.search,'?season=2');
 });
 test('PUBLIC season picker reserves its label until world confirms the redirect; no future numeral flashes',()=>{
  const future=setup('/competitions/it-1/fixtures?season=99&matchday=4');
