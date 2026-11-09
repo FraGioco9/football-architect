@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101A1D">
+<title>Kit Maker — Football Architect</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/assets/theme.js"></script>
+<script src="/assets/sidebar-evolution.js" defer></script>
+<script src="/assets/profile-navigation.js" defer></script>
+<link rel="stylesheet" href="/assets/landing.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/sidebar-evolution.css">
+<link rel="stylesheet" href="/__fa_kit_maker__/lab.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"}}
+</script>
+</head>
+<body class="app-body km-lab-page">
+<a class="fa-skip-link" href="#main-content">Skip to Kit Maker</a>
+<div class="fa-career-shell">
+  <!-- KM-01_CANONICAL_SIDEBAR -->
+  <div class="fa-shell-workspace">
+    <header class="fa-shell-topbar">
+      <div class="fa-shell-club">
+        <span class="app-crest" aria-hidden="true">3D</span>
+        <strong>Development</strong>
+      </div>
+      <div class="km-theme-picker app-theme-choices" role="group" aria-label="Appearance">
+        <button type="button" class="app-theme-choice" data-theme-choice="dark" aria-pressed="true">Dark</button>
+        <button type="button" class="app-theme-choice" data-theme-choice="light" aria-pressed="false">Light</button>
+      </div>
+    </header>
+    <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+        <section class="app-view" aria-labelledby="km-title">
+          <h1 class="app-page-title" id="km-title">Kit Maker</h1>
+          <p id="status" class="km-sr-status" role="status" aria-live="polite">Loading mannequin…</p>
+          <div class="km-layout">
+            <section class="app-panel km-preview-panel" aria-label="3D mannequin preview">
+              <div class="km-stage">
+                <canvas id="viewport" aria-label="Rotatable 180 cm male mannequin with relaxed arms slightly away from the torso"></canvas>
+              </div>
+            </section>
+            <aside class="app-panel km-settings" aria-label="Kit Maker options">
+              <section class="km-field" aria-labelledby="km-club-label">
+                <h2 id="km-club-label">Club</h2>
+                <div class="language-control km-club-control">
+                  <select id="km-club-select" hidden aria-hidden="true" tabindex="-1">
+                    <option value="">Select club</option>
+                  </select>
+                  <button type="button" id="km-club-trigger" class="language-trigger"
+                    role="combobox" aria-labelledby="km-club-label km-club-value"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-controls="km-club-menu" disabled>
+                    <span id="km-club-value">Select club</span>
+                    <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                      <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor"
+                        stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div id="km-club-menu" class="language-menu" role="listbox"
+                    aria-labelledby="km-club-label" hidden></div>
+                </div>
+                <p id="km-club-status" class="km-field-status" role="status"
+                  aria-live="polite" hidden></p>
+              </section>
+              <section class="km-colors" aria-labelledby="km-colors-title">
+                <h2 id="km-colors-title">Colors</h2>
+                <div class="km-color-option" aria-disabled="true">
+                  <span class="km-color-swatch" aria-hidden="true"></span>
+                  <span>Primary</span>
+                  <span class="km-coming-soon">Coming soon</span>
+                </div>
+                <div class="km-color-option" aria-disabled="true">
+                  <span class="km-color-swatch" aria-hidden="true"></span>
+                  <span>Secondary</span>
+                  <span class="km-coming-soon">Coming soon</span>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+<script type="module" src="/__fa_kit_maker__/viewer.mjs"></script>
+<script type="module" src="/__fa_kit_maker__/club-select.mjs"></script>
+</body>
+</html>
