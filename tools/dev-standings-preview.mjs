@@ -236,12 +236,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         const candidate=await readInitialWorld();
         const world=validPublicWorld(candidate)&&candidate.seasonNumber<=2?candidate:null;
         const param=new URL(req.url,'http://localhost').searchParams.get('season');
-        const requested=/^[1-9]\\d{0,8}$/.test(param||'')?Number(param):null;
+        const requested=/^[1-9]\d{0,8}$/.test(param||'')?Number(param):null;
         const current=world?Math.max(1,world.seasonNumber):null;
         const chosen=current===null?(requested===1?1:null):
           requested===null?current:Math.min(requested,current);
         let html=body.toString('utf8');
-        if(chosen!==null)html=html.replace(/id="app-competition-season-value">\\d+<\\/span>/,
+        if(chosen!==null)html=html.replace(/id="app-competition-season-value">\d+<\/span>/,
           'id="app-competition-season-value">'+chosen+'</span>');
         const head='<style>html:not([data-fa-competition-season-verified="true"]) #app-competition-season-value{visibility:hidden}</style>'+
           (chosen!==null?'<script>window.faCompetitionInitialSeason='+(current===null?'null':current)+
@@ -259,7 +259,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
             'v.textContent=String(requested!==null&&requested<=current?requested:current);'+
             'document.documentElement.dataset.faCompetitionSeasonVerified="true";'+
             '})();</script>';
-          html=html.replace(/(<span id="app-competition-season-value">\\d+<\\/span>)/,'$1'+script);
+          html=html.replace(/(<span id="app-competition-season-value">\d+<\/span>)/,'$1'+script);
         }
         body=Buffer.from(html,'utf8');
       }
