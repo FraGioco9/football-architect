@@ -75,11 +75,11 @@ it('atomically generates knockout ties,handles phase-day contention/rollback,and
  const results=await Promise.allSettled([run('advance','phase-day36-competing-01'),run('advance','phase-day36-competing-02')]);
  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(results.filter(r=>r.status==='rejected').map((r:any)=>r.reason.status)).toEqual([409]);
  world=(results.find(r=>r.status==='fulfilled') as PromiseFulfilledResult<any>).value.world;
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(8);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(16);
  while(world.day<40)await step();
  await db.prepare("CREATE TRIGGER knockout_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='advance-season-v1' BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END").run();
  try{await expect(step()).rejects.toMatchObject({status:503})}finally{await db.prepare('DROP TRIGGER knockout_late_failure').run()}
- expect((await readWorld(db)).day).toBe(40);expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(8);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=41').first()).toBeNull();
+ expect((await readWorld(db)).day).toBe(40);expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(16);expect(await db.prepare('SELECT day FROM season_day_outcomes WHERE day=41').first()).toBeNull();
  while(world.day<56)await step();
  expect((await readWorld(db)).day).toBe(56);expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
  const receipts=(await db.prepare('SELECT * FROM season_day_outcomes ORDER BY day').all()).results;

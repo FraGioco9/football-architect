@@ -272,8 +272,15 @@
     return true;
   };
   window.addEventListener('fa:source-change',()=>{
-    if(window.faDebugEnabled===false)window.faCompetitionRoute.setPublicSeasonLimit(window.faWorldState?.get?.().world?.seasonNumber||0);
-    else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
+    if(window.faDebugEnabled===false){
+      // Switching away from Debug invalidates its clock before the public
+      // /api/world response is verified. Never treat that unknown state as
+      // world Season 0: it would wrongly redirect a valid Season 2 view to 1.
+      // The authoritative loader's onWorld callback will apply the real limit.
+      const snapshot=window.faWorldState?.get?.();
+      if(snapshot?.source==='authoritative'&&Number.isInteger(snapshot.world?.seasonNumber))
+        window.faCompetitionRoute.setPublicSeasonLimit(snapshot.world.seasonNumber);
+    }else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
   });
   window.addEventListener("popstate",()=>{
     pendingDefaultMatchday=false;

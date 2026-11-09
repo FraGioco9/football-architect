@@ -41,7 +41,8 @@ it('loads only durable approved Season2 authority and leaves the actual world cl
  const schedule=await buildApprovedSeasonTwoInitialSchedule(db,'next-engine-approved-seed-0001');
  const state=createProgression(authority.snapshot,schedule);
  for(let day=1;day<=38;day++)await processSportingDay(state,day);
- expect(state.ties.size).toBe(8);expect([...state.results.keys()].every(id=>id.startsWith('season:2:'))).toBe(true);
+ expect(state.ties.size).toBe(16,'Season 2 also plans verified Playoffs and Quarter-finals before kickoff');
+ expect([...state.results.keys()].every(id=>id.startsWith('season:2:'))).toBe(true);
  expect(await readWorld(db)).toEqual(approvedWorld);
  expect((await db.prepare('SELECT count(*) n FROM seasons WHERE season_number=2').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes WHERE season_number=2').first()).n).toBe(0);

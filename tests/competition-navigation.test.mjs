@@ -235,6 +235,23 @@ test('DEV future seasons clamp to progress while unresolved public URLs keep the
  }
 });
 
+test('Debug OFF defers clamping until public world is actually verified',()=>{
+ const s=setup('/competitions/it-1/fixtures?season=2&matchday=9');
+ s.window.faDebugEnabled=false;
+ s.window.faWorldState={get:()=>({source:'authoritative',world:null})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'2',
+  'Source change with unknown world cannot redirect Season 2 to Season 1');
+ assert.equal(s.window.location.search,'?season=2&matchday=9');
+ s.window.faWorldState={get:()=>({source:'authoritative',world:{seasonNumber:2}})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'2','Verified Season 2 stays selected');
+ s.window.faWorldState={get:()=>({source:'authoritative',world:{seasonNumber:1}})};
+ s.events['fa:source-change']();
+ assert.equal(s.window.faCompetitionRoute.get().season,'1','Verified Season 1 redirects future Season 2');
+ assert.equal(s.window.location.search,'?season=1&matchday=9');
+});
+
 test('DEV season 0 keeps season 1 available without creating a season 0 URL',()=>{
  const s=setup('/competitions/it-1/standings?season=3',3);
  s.window.faCompetitionRoute.setSeasonLimit(0);
