@@ -33,6 +33,37 @@ test('RULES-CONFIG: all 18 definitions derive their metrics, rank bands and orde
   }
  }
 });
+test('International Rules show one format per round and preserve every knockout pairing',()=>{
+ for(const id of ['int-1','int-2'])for(const locale of ['en','de','es','fr','it']){
+  const d=get(id),html=view.renderRules(d,locale);
+  assert.equal((html.match(/data-rule-template="knockoutFormat"/g)||[]).length,4);
+  assert.equal((html.match(/data-rule-template="tie"/g)||[]).length,0);
+  for(const phase of d.rules.phases.filter(phase=>phase.type==='knockout')){
+   for(const tie of phase.ties)assert.ok(html.includes('data-rule-tie="'+tie.id+'"'),tie.id);
+  }
+  assert.doesNotMatch(html,/undefined|\[object Object\]/);
+ }
+ const mixed=get('int-1');
+ mixed.rules.phases[1].ties[0].homePolicy='neutral';
+ const detailed=view.renderRules(mixed,'en');
+ assert.equal((detailed.match(/data-rule-template="tie"/g)||[]).length,4,'different rules keep their per-tie detail');
+ assert.match(detailed,/data-rule-tie="p512" data-rule-home="neutral"/);
+});
+test('Domestic Rules compact the playout and separate the promotion semifinals from the final',()=>{
+ for(const d of catalogue.filter(d=>d.category==='domestic'))for(const locale of ['en','de','es','fr','it']){
+  const html=view.renderRules(d,locale);
+  assert.equal((html.match(/data-rule-template="knockoutFormat"/g)||[]).length,d.tier===1?1:2,d.id);
+  assert.doesNotMatch(html,/data-rule-template="tie"/);
+  const ties=[...html.matchAll(/<li data-rule-tie="([^"]+)"/g)].map(match=>match[1]);
+  assert.deepEqual(ties,d.tier===1?['playout']:['semi36','semi45','final']);
+  if(d.tier===1)assert.match(html,/data-rule-winner="remain"[\s\S]+data-rule-loser="relegated"/);
+  else {
+   assert.match(html,/<h4>[^<]+<\/h4>[^]*?<ul><li data-rule-tie="semi36"[^]*?data-rule-tie="semi45"[^]*?<\/ul>/);
+   if(locale==='en')assert.match(html,/Winner of \(League phase, rank 3 — League phase, rank 6\)/);
+   assert.match(html,/<h4>[^<]+<\/h4>[\s\S]+data-rule-tie="semi36"[\s\S]+data-rule-tie="semi45"[\s\S]+<h4>[^<]+<\/h4>[\s\S]+data-rule-tie="final"[\s\S]+data-rule-winner="promoted"/);
+  }
+ }
+});
 test('RULES-CONFIG: points and valid outcome edits change text and metadata in every locale',()=>{
  assert.equal(typeof view?.renderRules,'function');
  const d=get('IT-1');d.rules.phases[0].points.win=2;

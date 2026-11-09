@@ -48,9 +48,16 @@
  };
  const internationalSectionTitles={en:'International sporting outcomes',de:'Internationale sportliche Ergebnisse',es:'Resultados deportivos internacionales',fr:'Résultats sportifs internationaux',it:'Esiti sportivi internazionali'};
  const internationalOutcomeLabels={"en":["Sovereign Cup qualification (subject to titleholder allocation)","Federation Cup qualification (subject to titleholder allocation)"],"de":["Qualifikation zum Sovereign Cup (Titelverteidiger-Regel vorbehalten)","Qualifikation zum Federation Cup (Titelverteidiger-Regel vorbehalten)"],"es":["Clasificación a la Sovereign Cup (sujeta a plazas de campeones)","Clasificación a la Federation Cup (sujeta a plazas de campeones)"],"fr":["Qualification pour la Sovereign Cup (sous réserve des tenants du titre)","Qualification pour la Federation Cup (sous réserve des tenants du titre)"],"it":["Qualificazione alla Sovereign Cup (salvo posti ai campioni in carica)","Qualificazione alla Federation Cup (salvo posti ai campioni in carica)"]};
+ const knockoutLegs={
+  en:['Single match.','Two legs.'],
+  de:['Ein Spiel.','Hin- und Rückspiel.'],
+  es:['Partido único.','Ida y vuelta.'],
+  fr:['Match unique.','Matchs aller et retour.'],
+  it:['Gara unica.','Andata e ritorno.']
+ };
  function renderRules(input,locale="en"){
   const d=definition(input),t=Object.hasOwn(copy,locale)?copy[locale]:copy.en;
-  const paragraph=(key,params={})=>'<p data-rule-template="'+escape(key)+'" data-rule-params="'+escape(JSON.stringify(params))+'">'+escape(format(t[key],params))+'</p>';
+  const paragraph=(key,params={},template=t[key])=>'<p data-rule-template="'+escape(key)+'" data-rule-params="'+escape(JSON.stringify(params))+'">'+escape(format(template,params))+'</p>';
   const metric=(key,label,value,id="")=>'<div class="app-rules-metric"><dt>'+escape(label)+'</dt><dd data-rule-metric="'+escape(key)+'"'+(id?' id="'+escape(id)+'"':'')+'>'+escape(value)+'</dd></div>';
   const section=(id,label,content)=>'<section class="app-rules-section" aria-labelledby="'+escape(id)+'"><h3 id="'+escape(id)+'">'+escape(label)+'</h3>'+content+'</section>';
   const league=d.rules.phases.find(p=>p.type==='roundRobin'||p.type==='leaguePhase');
@@ -65,8 +72,11 @@
   ].join('')+'</dl>';
   let html=section('rules-format',t.format,formatHtml);
   const tieNames=new Map();
-  for(const p of d.rules.phases)if(p.type==='knockout')p.ties.forEach((tie,i)=>tieNames.set(tie.id,t.phases[p.labelKey]+' '+(i+1)));
   const refLabel=ref=>ref.tieId?format(t.winner,{tie:tieNames.get(ref.tieId)}):format(t.rank,{phase:t.phases[d.rules.phases.find(p=>p.id===ref.phaseId).labelKey],rank:ref.rank});
+  for(const p of d.rules.phases)if(p.type==='knockout')p.ties.forEach((tie,i)=>{
+   const seededPromotionTie=p.labelKey==='promotionPlayoffs'&&tie.participants.every(ref=>ref.rank!==undefined);
+   tieNames.set(tie.id,seededPromotionTie?'('+tie.participants.map(refLabel).join(' — ')+')':t.phases[p.labelKey]+' '+(i+1));
+  });
   for(const phase of d.rules.phases){
    if(phase.type==='roundRobin'||phase.type==='leaguePhase'){
     const suffix=phase.id===league.id?'':'-'+phase.id;
@@ -85,11 +95,39 @@
      html+=section('rules-international-qualification',internationalSectionTitles[locale]||internationalSectionTitles.en,'<div class="app-rules-outcomes">'+rows+'</div><p data-rule-international-qualification="true">'+escape(internationalQualificationNotes[locale]||internationalQualificationNotes.en)+'</p>');
     }
    }else{
-    const ties=phase.ties.map(tie=>{
-     const home=tie.homePolicy==='neutral'?t.neutral:tie.legs===1?t.higherSingle:t.higherDouble;
-     const resolution=tie.resolution==='aggregateExtraTimePenalties'?t.aggregate:t.single;
-     return '<div data-rule-tie="'+escape(tie.id)+'" data-rule-home="'+escape(tie.homePolicy)+'" data-rule-resolution="'+escape(tie.resolution)+'">'+paragraph('tie',{a:refLabel(tie.participants[0]),b:refLabel(tie.participants[1]),legs:tie.legs,home,resolution})+['winner','loser'].map(side=>{const kind=tie[side+'Outcome'];return kind?'<div data-rule-'+side+'="'+escape(kind)+'">'+paragraph(side+'Outcome',{outcome:t.tieOutcomes[kind]})+'</div>':''}).join('')+'</div>';
+    const homeLabel=tie=>tie.homePolicy==='neutral'?t.neutral:tie.legs===1?t.higherSingle:t.higherDouble;
+    const resolutionLabel=tie=>tie.resolution==='aggregateExtraTimePenalties'?t.aggregate:t.single;
+    const tieAttributes=tie=>' data-rule-tie="'+escape(tie.id)+'" data-rule-home="'+escape(tie.homePolicy)+'" data-rule-resolution="'+escape(tie.resolution)+'"';
+    const outcomes=tie=>['winner','loser'].map(side=>{
+     const kind=tie[side+'Outcome'];
+     return kind?'<div data-rule-'+side+'="'+escape(kind)+'">'+paragraph(side+'Outcome',{outcome:t.tieOutcomes[kind]})+'</div>':'';
     }).join('');
+    const sameFormat=(tie,other)=>['legs','homePolicy','resolution','winnerOutcome','loserOutcome'].every(key=>tie[key]===other[key]);
+    const compact=group=>{
+     const first=group[0];
+     const list=group.map(tie=>'<li'+tieAttributes(tie)+'>'+tie.participants.map(ref=>escape(refLabel(ref))).join(' — ')+'</li>').join('');
+     return paragraph('knockoutFormat',{legs:first.legs,home:homeLabel(first),resolution:resolutionLabel(first)},
+       (knockoutLegs[locale]||knockoutLegs.en)[first.legs-1]+' {home} {resolution}')+
+      '<ul>'+list+'</ul>'+outcomes(first);
+    };
+    let ties;
+    if(phase.ties.every(tie=>sameFormat(tie,phase.ties[0])))ties=compact(phase.ties);
+    else if(d.category==='domestic'&&phase.labelKey==='promotionPlayoffs'){
+     const groups=[];
+     for(const tie of phase.ties){
+      const group=groups.at(-1);
+      if(group&&sameFormat(tie,group[0]))group.push(tie);
+      else groups.push([tie]);
+     }
+     ties=groups.map(group=>{
+      const first=group[0];
+      const round=first.winnerOutcome==='promoted'?t.phases.final:
+       group.every(tie=>tie.participants.every(ref=>ref.rank!==undefined))?t.phases.semifinals:'';
+      return (round?'<h4>'+escape(round)+'</h4>':'')+compact(group);
+     }).join('');
+    }else ties=phase.ties.map(tie=>'<div'+tieAttributes(tie)+'>'+paragraph('tie',{
+     a:refLabel(tie.participants[0]),b:refLabel(tie.participants[1]),legs:tie.legs,home:homeLabel(tie),resolution:resolutionLabel(tie)
+    })+outcomes(tie)+'</div>').join('');
     html+=section('rules-'+phase.id,t.phases[phase.labelKey],ties);
    }
   }
