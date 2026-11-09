@@ -55,6 +55,59 @@ test('STATS-PUBLIC: domestic and both cup contexts expose 3/7/4 empty cards with
   assert.equal(byClass(r,'fa-dev-stats-expand').length,0);
  }
 });
+test('QA-11: loading-shell Stats selection survives hydration and season changes across competitions',()=>{
+ for(const id of ['IT-1','int-1','int-2']){
+  const r=fixture();r.panel.dataset.faStatsSelectedView='players';
+  const mounted=r.api.mount(r.panel,context(id));
+  assert.equal(r.panel.dataset.faStatsSelectedView,'players');
+  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+  r.panel.emit('fa:stats-shell-selection',{detail:'teams'});
+  assert.equal(r.panel.dataset.faStatsSelectedView,'teams');
+  assert.equal(byClass(r,'fa-dev-stats-team-card').length,7);
+  const ready=supplied(id,id==='IT-1'?16:24);ready.revision=2;mounted.update(ready);
+  assert.equal(r.panel.dataset.faStatsSelectedView,'teams');
+  assert.equal(byClass(r,'fa-dev-stats-top').length,7);
+  r.panel.emit('fa:stats-shell-selection',{detail:'players'});
+  assert.equal(byClass(r,'fa-dev-stats-leader-card').length,4);
+  mounted.update({...ready,revision:3,selectedSeason:2,seasonData:null});
+  assert.equal(r.panel.dataset.faStatsSelectedView,'players');
+  assert.equal(byClass(r,'fa-dev-stats-top').length,0);
+ }
+});
+test('QA-11: Teams and Players loading crests match the Standings circular skeleton, not the missing-logo shield',()=>{
+ const r=fixture();
+ for(const [view,count] of [['teams',35],['players',20]]){
+  const markup=r.api.renderSkeleton(view);
+  assert.equal((markup.match(/class="app-view-skeleton-crest-slot"/g)||[]).length,count,view+' reserves one circle per pending row');
+  assert.equal((markup.match(/app-world-club-crest-placeholder/g)||[]).length,0,view+' loading never renders the no-logo shield');
+ }
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-view-skeleton-crest-slot\{[^}]*width:48px;height:48px;border-radius:50%;background:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)/,
+  'desktop crest skeleton must use the same shape, fill and geometry as Standings');
+ assert.match(css,/@media\(max-width:620px\)\{\.app-view-skeleton-crest-slot\{flex-basis:40px;width:40px;height:40px\}\}/,
+  'mobile crest skeleton must use the same 40px footprint as Standings');
+ assert.doesNotMatch(css,/:is\(\.app-fixtures-skeleton-crest,\.app-view-skeleton-crest-slot\)\{[^}]*background:transparent/,
+  'fixture loading must never hide the Stats crest skeleton');
+});
+test('QA-11: Stats skeleton cards reserve Show all size before hydration in domestic and international shells',()=>{
+ const r=fixture();
+ for(const [view,count] of [['teams',7],['players',4]]){
+  const markup=r.api.renderSkeleton(view);
+  assert.equal((markup.match(/class="fa-dev-stats-expand app-view-skeleton-stats-expand"/g)||[]).length,count,view+' reserves one footer per card');
+  assert.equal((markup.match(/class="app-view-skeleton-stats-expand-label" data-app-i18n="statsDevShowAll">Show all<\/span>/g)||[]).length,count,view+' reserves translated button text metrics');
+  for(const d of definitions){
+   const page=readFileSync(new URL('../competitions/'+d.slug+'/index.html',import.meta.url),'utf8');
+   const template=page.match(new RegExp('<template data-competition-skeleton="stats-'+view+'">([\\s\\S]*?)<\\/template>'))?.[1];
+   assert.ok(template,d.slug+' includes '+view+' template');
+   assert.equal((template.match(/class="fa-dev-stats-expand app-view-skeleton-stats-expand"/g)||[]).length,count,d.slug+' '+view+' footer count');
+  }
+ }
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-stats-expand-label\{visibility:hidden\}/);
+ assert.match(css,/\.app-competition-view-skeleton \.app-view-skeleton-stats-expand>\.app-skeleton-bar\{[^}]*position:absolute;/);
+ assert.match(css,/\.fa-dev-stats-expand\{[^}]*margin:10px auto 0;padding:5px 9px/);
+});
+
 test('STATS-SUPPLIED: averages retain two decimals and Show all uses actual 16/24 identities and tied ranks',()=>{
  for(const [id,count] of [['IT-1',16],['int-1',24]]){
   const r=fixture();assert.equal(typeof r.api?.mount,'function');const c=supplied(id,count);
@@ -97,8 +150,10 @@ test('STATS-FIRST-PAINT: all 18 generated routes contain the full empty Overview
   const html=readFileSync(new URL('../competitions/'+d.slug+'/index.html',import.meta.url),'utf8');
   const panel=html.split('id="competition-panel-stats"')[1].split('id="competition-panel-history"')[0];
   assert.ok(panel.includes('id="fa-dev-stats"'));
-  assert.equal((panel.match(/<button[^>]*data-stats-view=/g)||[]).length,3);
+  assert.equal((panel.match(/<button[^>]*data-stats-view=/g)||[]).length,6,d.slug+' shell and runtime buttons');
   const [firstPaint,emptyView]=panel.split('id="fa-dev-stats"');
+  assert.equal((firstPaint.match(/<button[^>]*data-stats-view=/g)||[]).length,3,d.slug+' clickable prepaint buttons');
+  assert.equal((emptyView.match(/<button[^>]*data-stats-view=/g)||[]).length,3,d.slug+' runtime buttons');
   const skeleton=html.match(/<template data-competition-skeleton="stats-overview">([\s\S]*?)<\/template>/)?.[1];
   assert.ok(emptyView&&skeleton,d.slug+' has static Overview and reusable skeleton');
   assert.equal((firstPaint.match(/fa-dev-stats-card"/g)||[]).length,3,d.slug+' first-paint cards');

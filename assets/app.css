@@ -1330,10 +1330,15 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-competition-view-skeleton .app-skeleton-bar{width:100%;max-width:100%;margin:0}
 .app-competition-view-skeleton .app-competition-stat-value{display:flex;align-items:center;min-height:1.25em}
 .app-competition-view-skeleton .app-competition-stat-value>.app-skeleton-bar{width:5ch;height:12px}
-.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px}
+/* Stats loading uses the same anonymous circular crest skeleton as Standings, not the missing-logo shield. */
+.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px;border-radius:50%;background:color-mix(in srgb,var(--muted) 12%,var(--surface))}
 .app-competition-view-skeleton .fa-dev-stats-team-name{width:110px;max-width:100%;min-width:0}
 .app-competition-view-skeleton .fa-dev-stats-rank{width:12px}
 .app-competition-view-skeleton .fa-dev-stats-top li>strong{width:3.5ch;display:flex;align-items:center;min-height:1.3em}
+/* Reserve the same footer geometry as a real Show all button during Stats loading. */
+.app-competition-view-skeleton .app-view-skeleton-stats-expand{position:relative;pointer-events:none;cursor:default}
+.app-competition-view-skeleton .app-view-skeleton-stats-expand-label{visibility:hidden}
+.app-competition-view-skeleton .app-view-skeleton-stats-expand>.app-skeleton-bar{position:absolute;left:50%;top:50%;translate:-50% -50%;width:56px;height:10px}
 .app-view-skeleton-record-holder{display:flex;align-items:center;min-height:48px}
 .app-view-skeleton-record-holder>.app-skeleton-bar{max-width:140px}
 .app-view-skeleton-history-archive{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)}
@@ -1468,8 +1473,8 @@ html[data-fa-dev-seasons][data-fa-history-static="true"] #competition-panel-hist
 #world-calendar #calendar-controls #calendar-week-value{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 #world-calendar #calendar-controls #calendar-week-trigger>.language-chevron{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);margin:0;flex:none}
 
-/* UI-409: unidentified fixture/Stats first-paint slots reserve geometry without showing a crest. */
-:is(.app-fixtures-skeleton-crest,.app-view-skeleton-crest-slot){box-sizing:border-box;border:0;background:transparent}
+/* Unidentified Fixtures slots remain transparent; Stats uses the visible circular skeleton above. */
+.app-fixtures-skeleton-crest{box-sizing:border-box;border:0;background:transparent}
 
 
 /* QA-02 V06: center the matchday trio against the full Fixtures toolbar.

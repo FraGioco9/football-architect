@@ -37,7 +37,7 @@
         panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
         return;
       }
-      const selected=view==='stats'?(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview'):null;
+      const selected=view==='stats'?(['overview','teams','players'].includes(panel.dataset.faStatsSelectedView)?panel.dataset.faStatsSelectedView:(panel.querySelector('[data-stats-view][aria-pressed="true"]')?.dataset.statsView||'overview')):null;
       const key=view==='stats'?'stats-'+selected:view==='history'?'history-preview':'awards';
       if(current?.dataset.competitionSkeletonRoot!==key){
         const template=root.document.querySelector('template[data-competition-skeleton="'+key+'"]');

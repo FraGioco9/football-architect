@@ -27,6 +27,21 @@ test('PAGE-LOAD-03C: all 18 routes publish canonical Rules and view-specific res
  }
 });
 
+test('QA-11: all generated competition templates expose accessible loading Stats controls',()=>{
+ for(const definition of manifest.competitions){
+  const html=read('competitions/'+definition.slug+'/index.html');
+  for(const mode of ['overview','teams','players']){
+   const marker='<template data-competition-skeleton="stats-'+mode+'">';
+   const start=html.indexOf(marker),end=html.indexOf('</template>',start);
+   assert.ok(start>=0&&end>start,definition.slug+' '+mode+' exists');
+   const section=html.slice(start,end);
+   assert.ok(!section.includes('data-competition-skeleton-root="stats-'+mode+'" aria-hidden="true"'),definition.slug+' nav accessible');
+   assert.equal((section.match(/data-stats-view=/g)||[]).length,3,definition.slug+' nav buttons');
+   assert.ok(!section.includes('disabled aria-pressed='),definition.slug+' buttons enabled');
+   assert.ok(section.includes('aria-hidden="true"'),definition.slug+' placeholder values decorative');
+  }
+ }
+});
 test('PAGE-LOAD-03C: parser-time selected view exclusively unhides its panel',()=>{
  const html=read('competitions/it-1/index.html');
  const startTag='<script data-fa-competition-selected-panel-first-paint>';
@@ -41,6 +56,33 @@ test('PAGE-LOAD-03C: parser-time selected view exclusively unhides its panel',()
  }
 });
 
+test('QA-11: parser-time Stats shell switches via click and keyboard before hydration',()=>{
+ const handlers={},events=[];let current='overview',focused=null;
+ const button=id=>({dataset:{statsView:id},closest(sel){
+  if(sel==='[data-stats-view]')return this;
+  if(sel==='[data-competition-skeleton-root]')return {dataset:{competitionSkeletonRoot:'stats-'+current}};
+  return null;
+ }});
+ const panel={dataset:{},hidden:true,addEventListener(name,fn){handlers[name]=fn},
+  dispatchEvent(event){events.push(event.detail)},
+  querySelector(sel){
+   if(sel==='[data-competition-skeleton-root]')return {dataset:{competitionSkeletonRoot:'stats-'+current},replaceWith(node){current=node.mode}};
+   const found=sel.match(/data-stats-view="(overview|teams|players)"/);
+   return found?{focus(){focused=found[1]}}:null;
+  }};
+ const document={getElementById:()=>panel,querySelector(sel){
+  const found=sel.match(/stats-(overview|teams|players)/);
+  return found?{content:{cloneNode:()=>({mode:found[1]})}}:null;
+ },documentElement:{dataset:{competitionView:'stats'},removeAttribute(){}}};
+ class CustomEvent{constructor(type,opts){this.type=type;this.detail=opts.detail}}
+ runInNewContext('('+viewSkeletonFirstPaint.toString()+')("stats")',{document,window:{},CustomEvent});
+ handlers.click({target:button('teams')});assert.equal(current,'teams');
+ assert.equal(panel.dataset.faStatsSelectedView,'teams');
+ handlers.keydown({target:button('teams'),key:'ArrowRight',preventDefault(){}});
+ assert.equal(current,'players');assert.equal(focused,'players');
+ handlers.keydown({target:button('players'),key:'Home',preventDefault(){}});
+ assert.equal(current,'overview');assert.deepEqual(events,['teams','players','overview']);
+});
 function inspectHistoryPrepaint({debugEnabled,devSeason,progress}){
  let removed=0,emptyShown=0;
  const rows=Array.from({length:1},(_,i)=>({dataset:{skeletonArchiveRow:String(i)},hidden:false,cloneNode(){return {dataset:{...this.dataset},hidden:false,cloneNode:this.cloneNode}}}));

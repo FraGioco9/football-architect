@@ -18,11 +18,11 @@
  }
  function renderSkeleton(selected='overview'){
   const bar='<span class="app-skeleton-bar"></span>';
-  const nav='<div class="fa-dev-stats-nav">'+views.map(([id,key,label])=>'<button type="button" class="language-trigger" disabled aria-pressed="'+(id===selected)+'" data-app-i18n="'+key+'">'+label+'</button>').join('')+'</div>';
-  if(selected==='overview')return nav+'<div class="app-competition-stat-grid fa-dev-stats-grid">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span><strong class="app-competition-stat-value">'+bar+'</strong></div>').join('')+'</div>';
+  const nav='<div class="fa-dev-stats-nav" role="group" aria-label="Stats" data-app-aria="competitionTabStats">'+views.map(([id,key,label])=>'<button type="button" class="language-trigger" data-stats-view="'+id+'" aria-pressed="'+(id===selected)+'" tabindex="'+(id===selected?'0':'-1')+'" data-app-i18n="'+key+'">'+label+'</button>').join('')+'</div>';
+  if(selected==='overview')return nav+'<div class="app-competition-stat-grid fa-dev-stats-grid" aria-hidden="true">'+overview.map(([,key,label])=>'<div class="app-competition-stat-card app-competition-stat-card--compact fa-dev-stats-card"><span class="app-competition-stat-label" data-app-i18n="'+key+'">'+label+'</span><strong class="app-competition-stat-value">'+bar+'</strong></div>').join('')+'</div>';
   const player=selected==='players';
   const row='<li><span class="fa-dev-stats-rank">'+bar+'</span><span class="app-world-club-identity"><span class="app-view-skeleton-crest-slot"></span><span class="fa-dev-stats-team-name">'+bar+'</span></span><strong>'+bar+'</strong></li>';
-  return nav+'<section class="fa-dev-stats-section"><div class="fa-dev-stats-leader-grid">'+(player?players:teams).map(([,key,label])=>'<section class="app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card')+'"><h4 class="app-competition-stat-label fa-dev-stats-leader-title" data-app-i18n="'+key+'">'+label+'</h4><ol class="fa-dev-stats-top">'+row.repeat(5)+'</ol></section>').join('')+'</div></section>';
+  return nav+'<section class="fa-dev-stats-section" aria-hidden="true"><div class="fa-dev-stats-leader-grid">'+(player?players:teams).map(([,key,label])=>'<section class="app-competition-stat-card '+(player?'app-competition-stat-card--compact':'app-competition-stat-card--fluid')+' fa-dev-stats-leader-card'+(player?'':' fa-dev-stats-team-card')+'"><h4 class="app-competition-stat-label fa-dev-stats-leader-title" data-app-i18n="'+key+'">'+label+'</h4><ol class="fa-dev-stats-top">'+row.repeat(5)+'</ol><span class="fa-dev-stats-expand app-view-skeleton-stats-expand" aria-hidden="true"><span class="app-view-skeleton-stats-expand-label" data-app-i18n="statsDevShowAll">Show all</span>'+bar+'</span></section>').join('')+'</div></section>';
  }
  function normalize(context){
   const current=context?.seasonData;
@@ -65,8 +65,10 @@
   const sync=()=>window.faAppRenderLanguage?.();
   const root=create('div');root.id='fa-dev-stats';
   const nav=create('div',undefined,'fa-dev-stats-nav');nav.setAttribute('role','group');nav.setAttribute('aria-label','Stats');nav.dataset.appAria='competitionTabStats';
-  const content=create('div',undefined,'fa-dev-stats-content');root.append(nav,content);panel.replaceChildren(root);
-  let context=null,stats=null,view='overview',revision=-1,dialog=null,opener=null,closeTimer=null,destroyed=false,invalid=false;
+  const content=create('div',undefined,'fa-dev-stats-content');root.append(nav,content);
+  const shell=panel.querySelector?.('[data-competition-skeleton-root]');
+  if(shell)panel.replaceChildren(shell,root);else panel.replaceChildren(root);
+  let context=null,stats=null,view=views.some(([id])=>id===panel.dataset.faStatsSelectedView)?panel.dataset.faStatsSelectedView:'overview',revision=-1,dialog=null,opener=null,closeTimer=null,destroyed=false,invalid=false;
   const navButtons=[];
   const removeDialog=(restore=true)=>{
    if(!dialog)return;const current=dialog;dialog=null;clearTimeout(closeTimer);
@@ -118,6 +120,7 @@
   }
   let previousPresentation=null;
   function render(){
+   panel.dataset.faStatsSelectedView=view;
    const presentation=JSON.stringify([view,invalid,stats]);
    if(previousPresentation===presentation&&content.firstElementChild){sync();return;}
    previousPresentation=presentation;
@@ -141,7 +144,12 @@
    }
    sync();
   }
-  views.forEach(([id,key,label],index)=>{
+  const onShellSelection=event=>{
+    if(!views.some(([id])=>id===event.detail)||event.detail===view)return;
+    removeDialog(false);view=event.detail;render();
+   };
+   panel.addEventListener('fa:stats-shell-selection',onShellSelection);
+   views.forEach(([id,key,label],index)=>{
    const button=localized('button',key,label,'language-trigger');button.type='button';button.dataset.statsView=id;
    const select=focus=>{removeDialog(false);view=id;render();if(focus)button.focus()};
    button.addEventListener('click',()=>select(false));
@@ -169,7 +177,7 @@
     panel.dataset.faContentRevision=String(next.revision??'');
     render();if(hadDialog)navButtons[views.findIndex(item=>item[0]===view)].focus();return true;
    },
-   destroy(){if(destroyed)return;destroyed=true;removeDialog(false);root.remove();mounted.delete(panel)}
+   destroy(){if(destroyed)return;destroyed=true;panel.removeEventListener('fa:stats-shell-selection',onShellSelection);removeDialog(false);root.remove();mounted.delete(panel)}
   });
   mounted.set(panel,api);api.update(initial);return api;
  }
