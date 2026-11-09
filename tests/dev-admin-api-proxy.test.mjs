@@ -53,6 +53,40 @@ test('public sporting bridge permits only canonical GET paths and strips operato
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))])}
 });
 
+test('LAN opt-in serves only anonymous world and competition GETs on a verified local interface',async()=>{
+ const upstream=createServer((request,res)=>{
+  assert.ok(['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13'].includes(request.url));
+  for(const key of ['cookie','origin','x-csrf-token','idempotency-key'])assert.equal(request.headers[key],undefined,'public LAN read must not forward '+key);
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=must-not-leak']});res.end('{"ok":true}');
+ });
+ upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const host='192.168.50.10:2000',remote='192.168.50.22',opts={target,lanEnabled:true,lanHosts:['192.168.50.10']};
+ // Synthetic requests must implement the HTTP IncomingMessage body iterator:
+ // the bridge accepts an empty body for anonymous GETs and refuses credentials.
+ const lanRequest=path=>({...req(path,remote,host),headers:{host,cookie:'operator=secret',origin:'http://192.168.50.10:2000','x-csrf-token':'do-not-forward'},
+  async *[Symbol.asyncIterator](){} });
+ try{
+  for(const path of ['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13']){
+   const res=response();await proxyAdminApi(lanRequest(path),res,opts);
+   assert.equal(res.status,200,path);assert.equal(JSON.parse(res.body).ok,true);assert.equal(res.headers['set-cookie'],undefined);
+  }
+  for(const path of ['/api/admin/world','/api/player/session','/api/local-dev/inbox']){
+   const res=response();await proxyAdminApi(lanRequest(path),res,opts);assert.equal(res.status,403,path);
+  }
+  for(const [reason,request,options] of [
+   ['LAN disabled',lanRequest('/api/world'),{...opts,lanEnabled:false}],
+   ['unknown Host', {...lanRequest('/api/world'),headers:{host:'192.168.50.99:2000'}},opts],
+   ['external client',req('/api/world','8.8.8.8',host),opts],
+   ['wrong port',req('/api/world',remote,'192.168.50.10:2001'),opts],
+   ['POST denied', {...lanRequest('/api/world'),method:'POST'},opts],
+   ['unsafe query',lanRequest('/api/competitions/int-1/seasons/1?admin=1'),opts]
+  ]){
+   const res=response();await proxyAdminApi(request,res,options);assert.equal(res.status,403,reason);
+  }
+ }finally{upstream.closeAllConnections();await new Promise(r=>upstream.close(r))}
+});
+
 test('protected next-season routes enforce exact method and forward only to the fixed Worker',async()=>{
  const seen=[];
  const upstream=createServer(async(req,res)=>{

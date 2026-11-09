@@ -123,6 +123,153 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     };
     // First paint has four decorative archive rows too. Wait for the real
     // season anchors after DEV History hydration before asserting their links.
+    // QA-08: desktop international empty standings have an equivalent mobile
+    // message. A blank compact list previously made Standings disappear on iOS.
+    for(const [width,height,mobile] of [[390,844,true],[320,700,true],[621,800,false]]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height,deviceScaleFactor:1,mobile,screenWidth:width,screenHeight:height});
+      await cmd('Page.navigate',{url:devOrigin+'/competitions/int-1/standings?season=1'});
+      await wait("!!window.faStandingsMobile&&document.querySelector('#app-standings-compact-list')!==null");
+      const state=await run("(()=>{const c=document.getElementById('app-standings-compact'),f=document.getElementById('app-standings-full');return {compact:!c.hidden&&getComputedStyle(c).display!=='none',full:!f.hidden&&getComputedStyle(f).display!=='none',empty:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty [data-app-i18n=competitionStandingsEmpty]'),scroll:document.documentElement.scrollWidth,width:innerWidth}})()");
+      assert.equal(state.compact,mobile,'QA-08 '+width+' correct compact visibility');
+      assert.equal(state.full,!mobile,'QA-08 '+width+' correct desktop table visibility');
+      if(mobile){
+        // Empty is valid only for genuinely unavailable source data. Exercise
+        // the shared mobile presenter with an isolated 24-club test snapshot:
+        // the previous QA asserted the empty message but never checked rows.
+        const populated=await run(`(()=>{
+          const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'];
+          const rows=countries.flatMap(countryId=>[1,2,3].map(clubId=>({
+            club:{countryId,clubId,primaryName:'QA '+countryId+' '+clubId,abbr:'QA'},
+            played:0,won:0,drawn:0,lost:0,gf:0,ga:0,gd:0,pts:0,recent:[]
+          })));
+          window.faStandingsMobile.prepare(rows)(true);
+          const list=[...document.querySelectorAll('#app-standings-compact-list>li[data-world-club]')];
+          // Measure real computed pseudo-element size after revealing the
+          // dormant skeleton, otherwise Chromium reports auto for display:none.
+          document.querySelector('#competition-panel-standings .app-standings-skeleton').style.display='block';
+          const first=document.querySelector('.app-standings-skeleton .app-skeleton-mobile .app-world-mobile-name.app-skeleton-bar');
+          const desktop=document.querySelector('.app-standings-skeleton tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
+          return {count:list.length,unique:new Set(list.map(x=>x.dataset.worldClub)).size,
+            empty:!!document.querySelector('#app-standings-compact-list .app-world-mobile-empty'),
+            first:list[0]?.dataset.worldClub,last:list[23]?.dataset.worldClub,
+            skeletonRows:document.querySelectorAll('.app-standings-skeleton [data-skeleton-mobile]').length,
+            mobileSlot:first?getComputedStyle(first).height:null,
+            mobileCrest:first?getComputedStyle(first,'::before').width:null,
+            desktopSlot:desktop?getComputedStyle(desktop).height:null,
+            scroll:document.documentElement.scrollWidth};
+        })()`);
+        assert.equal(populated.count,24,'QA-08 '+width+' published mobile cards');
+        assert.equal(populated.unique,24,'QA-08 '+width+' distinct identities');
+        assert.equal(populated.empty,false,'QA-08 '+width+' published data replaces empty status');
+        assert.equal(populated.first,'IT-1');assert.equal(populated.last,'BR-3');
+        assert.equal(populated.skeletonRows,24,'QA-08 '+width+' skeleton reserves 24 rows');
+        assert.equal(populated.mobileSlot,'40px','QA-08 '+width+' international uses domestic mobile skeleton slot');
+        assert.equal(populated.mobileCrest,'40px','QA-08 '+width+' international reserves domestic crest slot');
+        assert.equal(populated.desktopSlot,'48px','QA-08 '+width+' shared desktop skeleton geometry');
+        assert.ok(populated.scroll<=width+1,'QA-08 '+width+' 24 mobile cards must not overflow');
+      }
+      assert.ok(state.scroll<=width+1,'QA-08 '+width+' no page-level overflow');
+    }
+    // QA-08: the *visible* Form loading bar must have the same position as
+    // the published W/D/L glyph, not merely the same grid-area. Compare the
+    // real form and both skeleton variants on narrow mobile widths.
+    for(const width of [320,390,620]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height:844,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:844});
+      for(const id of ['it-1','int-1']){
+        await cmd('Page.navigate',{url:devOrigin+'/competitions/'+id+'/standings?season=1'});
+        await wait("!!window.faStandingsMobile&&document.querySelector('.app-standings-skeleton [data-skeleton-mobile]')!==null");
+        const position=await run(`(()=>{
+          const cup=${JSON.stringify(id)}==='int-1';
+          const clubs=cup?['IT','ENG','ES','DE','FR','PT','NL','BR']
+            .flatMap(countryId=>[1,2,3].map(clubId=>({countryId,clubId,
+              primaryName:'QA '+countryId+' '+clubId,abbr:'QA'}))):
+            window.faCompetitionDivision.clubs;
+          const key=club=>cup?club.countryId+'-'+club.clubId:club.clubId;
+          const homeId=key(clubs[0]),awayId=key(clubs[1]);
+          const rows=clubs.map(club=>({
+            club,played:1,won:1,drawn:0,lost:0,gf:1,ga:0,gd:1,pts:3,
+            recent:[{result:'W',round:1,homeId,awayId}]
+          }));
+          window.faStandingsMobile.prepare(rows)(true);
+          const skeleton=document.querySelector('#competition-panel-standings .app-standings-skeleton');
+          skeleton.style.display='block'; // measure dormant first-paint layout without changing production
+          const placeholder=skeleton.querySelector('.app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-form');
+          const loaded=document.querySelector('#app-standings-compact-list [data-world-club] .app-world-mobile-form');
+          const glyph=loaded?.querySelector('.app-world-form-dot');
+          if(!placeholder||!loaded||!glyph)return {error:'missing form or skeleton'};
+          const sr=placeholder.getBoundingClientRect(),lr=loaded.getBoundingClientRect(),
+            gr=glyph.getBoundingClientRect(),box=n=>{
+              const r=n.closest('.app-world-mobile-summary').getBoundingClientRect();
+              return {x:n.getBoundingClientRect().left-r.left,
+                y:n.getBoundingClientRect().top-r.top};
+            };
+          const a=box(placeholder),b=box(loaded),glyphOffset=box(glyph);
+          const style=getComputedStyle(placeholder);
+          const pseudo=getComputedStyle(placeholder,'::before');
+          return {count:rows.length,display:style.display,alignment:style.alignItems,
+            skeletonX:a.x,formX:b.x,glyphX:glyphOffset.x,
+            skeletonCenterY:a.y+sr.height/2,
+            formCenterY:b.y+lr.height/2,
+            glyphCenterY:glyphOffset.y+gr.height/2,
+            skeletonHeight:sr.height,glyphHeight:gr.height,
+            barHeight:pseudo.height,barWidth:pseudo.width};
+        })()`);
+        assert.equal(position.error,undefined,`QA-08 ${id} ${width} ${position.error||''}`);
+        assert.equal(position.count,id==='int-1'?24:16);
+        assert.equal(position.display,'flex',`QA-08 ${id} ${width} skeleton Form must inherit real flex layout`);
+        assert.equal(position.alignment,'center');
+        assert.equal(position.skeletonHeight,16);
+        assert.equal(position.glyphHeight,16);
+        assert.equal(position.barHeight,'10px');
+        assert.ok(Math.abs(position.skeletonX-position.glyphX)<=1,
+          `QA-08 ${id} ${width} Form skeleton X is offset: ${JSON.stringify(position)}`);
+        assert.ok(Math.abs(position.skeletonCenterY-position.glyphCenterY)<=1,
+          `QA-08 ${id} ${width} Form skeleton Y is offset: ${JSON.stringify(position)}`);
+      }
+    }
+    // QA-08: Domestic and International share identical desktop/tablet
+    // skeleton geometry, irrespective of their 16/24 participating clubs.
+    // Previous checks covered only mobile, missing the international desktop
+    // span's default display:block instead of the domestic flex identity slot.
+    for(const width of [621,768,1440]){
+      await cmd('Emulation.setDeviceMetricsOverride',{
+        width,height:900,deviceScaleFactor:1,mobile:false,screenWidth:width,screenHeight:900});
+      const layouts=[];
+      for(const [id,expectedRows] of [['it-1',16],['int-1',24]]){
+        await cmd('Page.navigate',{url:devOrigin+'/competitions/'+id+'/standings?season=1'});
+        await wait("document.readyState==='complete'&&!!document.querySelector('.app-standings-skeleton tr[data-skeleton-row]')");
+        const layout=await run(`(()=>{
+          const root=document.querySelector('#competition-panel-standings .app-standings-skeleton');
+          root.style.display='block'; // computed pseudo-element geometry needs a rendered ancestor
+          const bar=root.querySelector('tr[data-skeleton-row]>:nth-child(2)>.app-skeleton-bar');
+          const style=getComputedStyle(bar),crest=getComputedStyle(bar,'::before'),name=getComputedStyle(bar,'::after');
+          return {
+            count:root.querySelectorAll('tr[data-skeleton-row]').length,
+            mobileCount:root.querySelectorAll('[data-skeleton-mobile]').length,
+            desktopRowsVisible:getComputedStyle(root.querySelector('.app-world-standing-scroll')).display!=='none',
+            mobileRowsVisible:getComputedStyle(root.querySelector('.app-skeleton-mobile')).display!=='none',
+            identity:{display:style.display,alignItems:style.alignItems,width:style.width,height:style.height,
+              marginTop:style.marginTop,marginLeft:style.marginLeft,background:style.backgroundColor,gap:style.columnGap,
+              crestWidth:crest.width,crestHeight:crest.height,crestDisplay:crest.display,
+              nameHeight:name.height,nameDisplay:name.display},
+            scrollWidth:document.documentElement.scrollWidth,viewport:innerWidth
+          };
+        })()`);
+        assert.equal(layout.count,expectedRows,`QA-08 ${id} desktop ${width} row capacity`);
+        assert.equal(layout.mobileCount,expectedRows,`QA-08 ${id} mobile skeleton preserved`);
+        assert.equal(layout.desktopRowsVisible,true,`QA-08 ${id} desktop shell at ${width}`);
+        assert.equal(layout.mobileRowsVisible,false,`QA-08 ${id} mobile shell hidden at ${width}`);
+        assert.equal(layout.identity.display,'flex',`QA-08 ${id} desktop identity is flex at ${width}`);
+        assert.equal(layout.identity.height,'48px');
+        assert.equal(layout.identity.crestWidth,'48px');
+        assert.equal(layout.identity.crestHeight,'48px');
+        assert.ok(layout.scrollWidth<=width+1,`QA-08 ${id} ${width} no page overflow`);
+        layouts.push(layout.identity);
+      }
+      assert.deepEqual(layouts[1],layouts[0],`QA-08 Domestic/International identical desktop skeleton at ${width}px`);
+    }
     const waitForHistoryArchive=async route=>{
       const target=new URL(route,devOrigin);
       await wait("location.origin==="+JSON.stringify(target.origin)+

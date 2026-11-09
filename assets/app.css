@@ -368,6 +368,9 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 @media(min-width:621px){.app-world-compact{display:none!important}}
 @media(max-width:620px){.app-world-standing-scroll{display:none!important}.app-world-standings{overflow:hidden}.app-world-mobile-name{font-size:12px}}
 @media(max-width:360px){.app-world-mobile-summary{grid-template-columns:21px minmax(0,1fr) 36px;column-gap:4px;padding:8px 5px}.app-world-mobile-points{font-size:15px}.app-world-mobile-name{font-size:11.5px}}
+.app-world-mobile-empty{padding:12px 14px}
+.app-world-mobile-empty .app-competition-status{margin:0}
+.app-world-mobile-form [data-published-form]{cursor:pointer;touch-action:manipulation}
 
 /* Competition views share the same page and never fabricate data. */
 .app-competition-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
@@ -1189,17 +1192,22 @@ svg.site-chevron>path{translate:0 .5px}
 .app-standings-skeleton{display:none;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden}
 .app-standings-skeleton .app-skeleton-mobile{display:none}
 .app-skeleton-bar{display:block;width:50%;height:10px;margin-inline:auto;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
-/* Catalog ID order is not a verified standings order. Reserve 16 neutral
-   identity slots until ranked season data arrives from the selected source. */
+/* Catalog ID order is not a verified standings order. Reserve a neutral
+   identity slot per participant (16 domestic / 24 international) until
+   ranked season data arrives from the selected source. */
 .app-standings-skeleton [data-skeleton-identity]{display:none;min-width:0;align-items:center}
 .app-standings-skeleton [data-skeleton-identity-placeholder]{display:flex;align-items:center;background:transparent;margin:0}
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]{
- width:148px;max-width:100%;height:48px;gap:7px;
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar){
+ /* Anonymous international spans and domestic identity placeholders must both
+    be flex rows; otherwise desktop international shows one oversized bar. */
+ display:flex;align-items:center;width:148px;max-width:100%;height:48px;
+ margin:0;gap:7px;background:transparent;
 }
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::before{
- content:"";flex:0 0 48px;height:48px;
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
+ content:"";flex:0 0 48px;height:48px;border-radius:50%;
+ background:color-mix(in srgb,var(--muted) 12%,var(--surface));
 }
-.app-standings-skeleton tr>:nth-child(2) [data-skeleton-identity-placeholder]::after{
+.app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::after{
  content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
  background:color-mix(in srgb,var(--muted) 22%,var(--surface));
 }
@@ -1238,14 +1246,15 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
   width:12px;margin:0;justify-self:start;
  }
  /* Anonymous crest slot followed by a name bar at the real text origin. */
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]{
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar){
   display:flex;width:148px;max-width:100%;height:40px;margin:0;
   align-items:center;gap:7px;background:transparent;
  }
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::before{
-  content:"";flex:0 0 40px;height:40px;
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
+  content:"";flex:0 0 40px;height:40px;border-radius:50%;
+  background:color-mix(in srgb,var(--muted) 12%,var(--surface));
  }
- .app-standings-skeleton .app-world-mobile-name[data-skeleton-identity-placeholder]::after{
+ .app-standings-skeleton .app-world-mobile-name:is([data-skeleton-identity-placeholder],.app-skeleton-bar)::after{
   content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
   background:color-mix(in srgb,var(--muted) 22%,var(--surface));
  }
@@ -1255,9 +1264,12 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
  .app-standings-skeleton .app-world-mobile-points{
   width:100%;padding:7px 3px;margin:0;
  }
- /* Align the form skeleton with the center of the loaded 16px glyph line. */
+ /* The skeleton Form occupies the same flex box and grid origin as the
+    published 16px W/D/L glyphs. The generic .app-skeleton-bar otherwise
+    overrides .app-world-mobile-form with display:block, placing its 10px
+    pseudo bar above the actual glyph's vertical center. */
  .app-standings-skeleton .app-world-mobile-form{
-  width:60px;height:16px;margin:0;justify-self:start;
+  display:flex;width:60px;height:16px;margin:0;justify-self:start;
   align-self:start;align-items:center;background:transparent;
  }
  .app-standings-skeleton .app-world-mobile-form::before{

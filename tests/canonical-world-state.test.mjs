@@ -177,12 +177,17 @@ test('the shared header shows canonical current progress rather than a historica
  const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8'),start=source.indexOf('  function renderWorldProgress() {'),end=source.indexOf('  function activeView()',start);
  assert.ok(start>=0&&end>start);
  for(const [lang,seasonLabel,dayLabel] of [['en','Season','Day'],['de','Saison','Tag'],['es','Temporada','Día'],['fr','Saison','Jour'],['it','Stagione','Giorno']]){
-  const full={textContent:'stale'},short={textContent:'stale'};
+  const full={textContent:'stale'},short={textContent:'stale'},header={setAttribute(key,value){this[key]=value}};
   let snapshot={source:'authoritative',current:{season:2,day:21}};
-  const paint=runInNewContext(source.slice(start,end)+';renderWorldProgress',{window:{faWorldState:{get:()=>snapshot}},copies:{[lang]:{historySeasonLabel:seasonLabel,noSeason:'inactive'}},language:()=>lang,document:{querySelectorAll:selector=>selector==='.fa-shell-date-full'?[full]:selector==='.fa-shell-date-short'?[short]:[]}});
-  paint();assert.equal(full.textContent,seasonLabel+' 2 · '+dayLabel+' 21/56');assert.equal(short.textContent,'2 · 21/56');
+  const paint=runInNewContext(source.slice(start,end)+';renderWorldProgress',{window:{faWorldState:{get:()=>snapshot}},copies:{[lang]:{historySeasonLabel:seasonLabel,noSeason:'inactive',timeLabel:'World date'}},language:()=>lang,document:{querySelectorAll:selector=>selector==='.fa-shell-date-full'?[full]:selector==='.fa-shell-date-short'?[short]:selector==='.fa-shell-time'?[header]:[]}});
+  paint();assert.equal(full.textContent,seasonLabel+' 2 · '+dayLabel+' 21/56');
+  assert.equal(short.textContent,'S2 · '+dayLabel[0]+'21/56');
+  assert.equal(header['aria-label'],full.textContent,'Mobile reads the same verified world clock');
   snapshot={source:'dev',current:{season:0,day:0}};paint();assert.equal(full.textContent,'Debug · inactive');
+  assert.equal(short.textContent,'—','Unstarted world must not display Day 0/56 as a matchday');
+  assert.equal(header['aria-label'],'Debug · inactive');
   snapshot={source:'authoritative',current:null};paint();assert.equal(full.textContent,'—');assert.equal(short.textContent,'—');
+  assert.equal(header['aria-label'],'World date —','Unknown public world must not silently become Season 1');
  }
 });
 test('a newly mounted shell consumes an already accepted world immediately',()=>{
