@@ -134,7 +134,7 @@ test('PUBLIC season picker reserves its label until world confirms the redirect;
  assert.equal(trigger.disabled,false);
  const unstarted=setup('/competitions/it-1/standings?season=1');
  const unstartedValue=unstarted.fields.get('app-competition-season-value');
- assert.equal(unstartedValue.textContent,'');
+ assert.equal(unstartedValue.textContent,'1','An explicit Season 1 is safe to show without a source read');
  unstarted.window.faCompetitionRoute.setPublicSeasonLimit(0);
  assert.equal(unstartedValue.textContent,'1','Season 0 confirms Season 1 even when the option list is unchanged');
  assert.equal(unstarted.fields.get('app-competition-season').disabled,false);

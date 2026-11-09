@@ -119,7 +119,10 @@ async function readPublicWorldForFirstPaint(){
   const upstream=new URL(target);
   return await new Promise(resolve=>{
    const req=httpRequest({hostname:upstream.hostname.replace(/^\[|\]$/g,''),port:upstream.port,
-     path:'/api/world',method:'GET',timeout:2500},res=>{
+     path:'/api/world',method:'GET',timeout:2500,
+     // Reuse the existing local app origin for the same anonymous world
+     // endpoint; do not expose the upstream Worker port as browser Host.
+     headers:{host:'app.localhost:2000'}},res=>{
     let size=0;const chunks=[];
     res.on('data',part=>{size+=part.length;if(size>4096)req.destroy();else chunks.push(part)});
     res.on('end',()=>{try{resolve(res.statusCode===200?JSON.parse(Buffer.concat(chunks).toString('utf8'))?.world??null:null)}catch{resolve(null)}});

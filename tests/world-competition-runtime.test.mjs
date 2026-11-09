@@ -70,6 +70,46 @@ test('CONFIG-SUPPLIED-DOMESTIC: clearing supplied data resets table, mobile and 
  assert.equal(r.fields.get('app-standings-body').children[0].children[9].textContent,'—');
  assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'false');
 });
+test('SEASON-2 DOMESTIC: promoted/relegated members hydrate standings, mobile and Postseason together',async()=>{
+ for(const [id,other,index] of [['IT-1','IT-2',12],['IT-2','IT-1',2]]){
+  const division=divisionsForTest(id),replacement=divisionsForTest(other).clubs[0];
+  const r=await simulate({division,devSeason:2,ending:'/?season=2'});
+  const oldClub=createPreviewStandings(division,30,2).rows[index].club;
+  const rows=createPreviewStandings(division,30,2).rows.map((row,i)=>({
+   ...row,club:i===index?replacement:row.club,
+   recent:row.recent.map(game=>({
+    ...game,homeId:game.homeId===oldClub.clubId?replacement.clubId:game.homeId,
+    awayId:game.awayId===oldClub.clubId?replacement.clubId:game.awayId
+   }))
+  }));
+  const payload={
+   season:2,rulesVersion:r.window.faCompetitionContext.definition.rules.version,
+   participants:rows.map(row=>row.club),fixtures:null,results:[],
+   statistics:{standings:rows},status:'partial'
+  };
+  const api=r.window.faCompetitionContextApi;
+  assert.equal(api.replaceSeasonData(payload,r.window.faCompetitionContext.revision),true,id+' valid published participants');
+  const desktop=r.fields.get('app-standings-body').children;
+  const mobile=r.fields.get('app-standings-compact-list').children;
+  const idOf=club=>club.countryId+'-'+club.clubId;
+  assert.equal(desktop.length,16,id+' real Season 2 table rows');
+  assert.equal(mobile.length,16,id+' real Season 2 mobile rows');
+  assert.equal(desktop[index].dataset.worldClub,idOf(replacement),id+' promoted club replaces Season 1 club');
+  assert.equal(mobile[index].dataset.worldClub,idOf(replacement),id+' promoted club visible mobile');
+  assert.equal(desktop.some(row=>row.dataset.worldClub===idOf(oldClub)),false,id+' no obsolete entrant');
+  assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'true',
+   id+' knockout model must not erase a valid Season 2 table');
+  // A forged club from another country must still fail before touching the
+  // mounted bracket or the active Season 2 participant map.
+  const invalid=rows.map(row=>({...row}));
+  invalid[index]={...invalid[index],club:{...replacement,countryId:'ENG'}};
+  assert.throws(()=>r.window.faPostseason.prepare(invalid),/Invalid postseason participant/);
+  assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'true');
+  api.selectSeason(1);
+  assert.equal(r.fields.get('app-postseason-bracket').dataset.postseasonQualified,'false');
+ }
+});
+
 test('CONFIG-SUPPLIED: cup standings use composite identities, unresolved ties and clear across seasons',async()=>{
  const cup=manifest.competitions.find(d=>d.id==='int-1');
  const r=await simulate({division:cup,devSeason:1});

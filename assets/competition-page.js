@@ -275,7 +275,11 @@
         if(typeof requestAnimationFrame==="function")requestAnimationFrame(alignLine);
       }
     }
-    const clubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    // The first season has a fixed approved membership. From Season 2 onward
+    // the domestic division can contain promoted/relegated clubs; use the
+    // verified selected-season rows rather than the inaugural catalogue.
+    const inauguralClubs=new Map(division.clubs.map(club=>[club.clubId,club]));
+    let clubs=inauguralClubs;
     const closeTips=bindPostseasonTips();
     let current={rows:null,results:null};
     const tieId=id=>id.replace(/^postseason-/,"");
@@ -392,16 +396,30 @@
         }
         if(rows===null){if(results!==null)throw Error("Invalid postseason standings");return()=>render(null,null)}
         if(!Array.isArray(rows)||rows.length!==definition.capacity)throw Error("Invalid postseason standings");
+        const laterSeason=window.faCompetitionContext?.selectedSeason>1;
+        const nextClubs=laterSeason?new Map():inauguralClubs;
         const seen=new Set();
         const next=rows.map(row=>{
-          const club=clubs.get(row?.club?.clubId);
-          if(!club||row.club.countryId!==division.countryId||seen.has(club.clubId)||!Number.isInteger(row.played)||row.played<0||row.played>roundCount)throw Error("Invalid postseason participant");
-          seen.add(club.clubId);return{club,played:row.played};
+          const id=row?.club?.clubId;
+          const club=laterSeason?row?.club:inauguralClubs.get(id);
+          if(!club||!Number.isInteger(id)||id<1||id>40||
+             club.countryId!==division.countryId||seen.has(id)||
+             typeof club.primaryName!=='string'||!club.primaryName.trim()||
+             !Number.isInteger(row.played)||row.played<0||row.played>roundCount)
+            throw Error("Invalid postseason participant");
+          seen.add(id);
+          if(laterSeason)nextClubs.set(id,club);
+          return{club,played:row.played};
         });
+        if(seen.size!==definition.capacity||nextClubs.size!==definition.capacity)
+          throw Error("Incomplete postseason participant set");
         const prepared=validateResults(results,next);
-        return()=>render(next,prepared);
+        // Preparation is atomic: neither the roster nor the mounted bracket is
+        // changed before all participant/result validation has succeeded.
+        return()=>{clubs=nextClubs;render(next,prepared)};
       },
-      snapshot(){const previous=current;return()=>render(previous.rows,previous.results)},
+      snapshot(){const previous=current,previousClubs=clubs;
+        return()=>{clubs=previousClubs;render(previous.rows,previous.results)}},
       destroy(){closeTips.destroy();for(const release of releases)release();}
     });
     render(null,null);
