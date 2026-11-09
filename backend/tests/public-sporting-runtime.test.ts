@@ -72,7 +72,7 @@ it('uses saved day13 results for partial standings and score-only statistics',as
 });
 it('makes real future Playoff pairings public immediately after I06 without scores',async()=>{
  await calendar();
- const calendarModel=(await import('../../assets/world-calendar-model.js')).default;
+ const calendarModel=(await import('../../assets/world-calendar-model.js')).default as {createSeason:(season:number)=>{days:{day:number;events:{marker:string}[]}[]}};
  const finalDay=calendarModel.createSeason(1).days.find((d:any)=>d.events.some((e:any)=>e.marker==='I06'))!.day;
  await through(finalDay);
  const cup=await (await request('int-1')).json() as any;

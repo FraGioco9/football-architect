@@ -9,8 +9,11 @@ describe('canonical knockout qualification and complete sporting days',()=>{
   const {state}=await setup(),allNew:any[]=[];
   for(let day=1;day<=56;day++){
    const result=await processSportingDay(state,day);allNew.push(...result.newTies);
-   if(day===36){expect(result.results).toHaveLength(8);expect(result.newTies).toHaveLength(8)}
+   if(day===36){expect(result.results).toHaveLength(8);expect(result.newTies).toHaveLength(0)}
    if(day===52)expect(result.results).toHaveLength(24);
+   if(day===38)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='quarterfinals')).toHaveLength(8);
+   if(day===43)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='semifinals')).toHaveLength(4);
+   if(day===48)expect(result.newTies.filter(t=>t.competitionId.startsWith('int-')&&t.phaseId==='final')).toHaveLength(2);
    if(day===53)expect(result.results).toHaveLength(25);
    if(day===54)expect(result.results).toHaveLength(9);
    if(day===55||day===56)expect(result.results).toHaveLength(0);

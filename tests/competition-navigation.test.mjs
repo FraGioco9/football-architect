@@ -215,23 +215,23 @@ test('History and Rules retain the viewed season through navigation and direct r
  assert.equal(direct.window.location.search,'?season=4');
 });
 
-test('DEV unavailable seasons fall back while public routes preserve their explicit viewed season',()=>{
+test('DEV future seasons clamp to progress while unresolved public URLs keep their static view',()=>{
  for(const slug of ['int-1','int-2',...competitionModel.countries.flatMap(c=>[c.toLowerCase()+'-1',c.toLowerCase()+'-2'])]){
   for(const dev of [null,3]){
    const s=setup('/competitions/'+slug+'/fixtures?season=99&matchday=4',dev);
-   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'1');
+   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'3');
    assert.equal(s.window.faCompetitionRoute.get().view,'fixtures');
    assert.equal(s.window.faCompetitionRoute.get().matchday,4);
-   assert.equal(s.window.location.search,'?season='+(dev===null?'99':'1')+'&matchday=4');
-   assert.equal(s.fields.get('app-competition-season-unavailable').hidden,dev!==null);
-   assert.equal(s.fields.get('competition-panel-fixtures').hidden,dev===null);
+   assert.equal(s.window.location.search,'?season='+(dev===null?'99':'3')+'&matchday=4');
+   assert.equal(s.fields.get('app-competition-season-unavailable').hidden,true);
+   assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
    s.window.faCompetitionRoute.set({season:'99'});
-   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'1');
+   assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'3');
   }
   const preview=setup('/competitions/'+slug+'/standings?season=3',3);
   assert.equal(preview.window.faCompetitionRoute.get().season,'3');
   preview.window.faCompetitionRoute.setSeasonLimit(2);
-  assert.equal(preview.window.faCompetitionRoute.get().season,'1');
+  assert.equal(preview.window.faCompetitionRoute.get().season,'2');
  }
 });
 
@@ -342,8 +342,9 @@ test('validated public world updates season choices without changing an explicit
  latest.window.faCompetitionRoute.setPublicSeasonLimit(2,{selectLatest:true});
  assert.equal(latest.window.faCompetitionRoute.get().season,'2');
  latest.window.faCompetitionRoute.setPublicSeasonLimit(0);
- assert.equal(latest.window.faCompetitionRoute.get().season,'2','Reset keeps explicit viewed season unavailable');
- assert.equal(latest.fields.get('competition-panel-standings').hidden,true);
+ assert.equal(latest.window.faCompetitionRoute.get().season,'1','World reset redirects future Season 2 to permitted Season 1');
+ assert.equal(latest.fields.get('competition-panel-standings').hidden,false);
+ assert.equal(latest.fields.get('app-competition-season-unavailable').hidden,true);
 });
 
 test('PAGE-LOAD-03B P04/P05: 16 canonical domestic shells pre-render their club rows and fixtures',()=>{

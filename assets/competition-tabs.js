@@ -194,6 +194,7 @@
     // The eventual verified world callback redirects future selections.
     document.documentElement.dataset.competitionSeasonUnavailable="false";
     seasonPicker.sync(state.season);seasonPicker.close();unavailable.hidden=true;
+    unavailable.textContent='';unavailable.removeAttribute('data-app-i18n');
     seasonValue.textContent=state.season;seasonValue.removeAttribute("data-app-i18n");
     for(let i=0;i<tabs.length;i++){
       const active=i===index;
