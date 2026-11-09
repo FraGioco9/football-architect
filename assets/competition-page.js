@@ -1114,7 +1114,8 @@
     for(const club of data.participants){
       if(!club||!model.countries.includes(club.countryId)||!Number.isInteger(club.clubId)||club.clubId<1||club.clubId>40)return false;
       const id=club.countryId+"-"+club.clubId;
-      if(ids.has(id)||!authoritative&&division&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId))return false;
+      if(ids.has(id)||division&&(club.countryId!==division.countryId||
+        !authoritative&&current.selectedSeason===1&&!division.clubs.some(c=>c.countryId===club.countryId&&c.clubId===club.clubId)))return false;
       ids.add(id);
     }
     nextContext(current.selectedSeason,data);return true;

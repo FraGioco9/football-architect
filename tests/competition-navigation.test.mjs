@@ -108,6 +108,26 @@ test('COMPETITION-URL: invalid parameters normalize while explicit public season
  assert.equal(unstarted.window.faCompetitionRoute.get().season,'1');
  assert.equal(unstarted.fields.get('app-competition-season-value').textContent,'1');
 });
+test('PUBLIC season picker reserves its label until world confirms the redirect; no future numeral flashes',()=>{
+ const future=setup('/competitions/it-1/fixtures?season=99&matchday=4');
+ const value=future.fields.get('app-competition-season-value'),trigger=future.fields.get('app-competition-season');
+ assert.equal(future.window.faCompetitionRoute.get().season,'99','Unverified route identity is retained without inventing a clock');
+ assert.equal(value.textContent,'','Unverified future value is not rendered');
+ assert.equal(value.dataset.seasonPending,'true');
+ assert.equal(trigger.disabled,true,'Unverified picker must not offer provisional options');
+ future.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(future.window.faCompetitionRoute.get().season,'2');
+ assert.equal(value.textContent,'2','Only the verified world season is displayed');
+ assert.equal(value.dataset.seasonPending,'false');
+ assert.equal(trigger.disabled,false);
+ const unstarted=setup('/competitions/it-1/standings?season=1');
+ const unstartedValue=unstarted.fields.get('app-competition-season-value');
+ assert.equal(unstartedValue.textContent,'');
+ unstarted.window.faCompetitionRoute.setPublicSeasonLimit(0);
+ assert.equal(unstartedValue.textContent,'1','Season 0 confirms Season 1 even when the option list is unchanged');
+ assert.equal(unstarted.fields.get('app-competition-season').disabled,false);
+});
+
 test('COMPETITION-URL: keyboard navigation retains one active tab and does not duplicate history entries',()=>{
  const s=setup();let prevented=false;
  s.tabs[0].events.keydown({key:'ArrowLeft',preventDefault(){prevented=true}});

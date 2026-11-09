@@ -390,6 +390,9 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 @media(hover:none){.app-competition-tab:hover{background:transparent;color:var(--muted)}.app-competition-tab:focus:not(:focus-visible),.app-competition-panel:focus:not(:focus-visible){outline:none;box-shadow:none}.app-competition-panel:focus-visible{outline:none}}
 .app-competition-panel{margin-top:14px;min-width:0}
 .app-competition-panel[hidden]{display:none}
+/* The combobox box stays mounted; its unverified public season numeral does not flash. */
+#app-competition-season-value[data-season-pending="true"]{display:inline-block;min-width:1.4ch;line-height:1;vertical-align:middle}
+#app-competition-season-value[data-season-pending="true"]::before{content:"";display:inline-block;width:1.4ch;height:.75em;border-radius:3px;background:var(--line);vertical-align:middle}
 .app-competition-panel>.app-world-standings{margin-top:0}
 .app-competition-panel>h2{margin:0 0 12px;font-size:17px;font-weight:750}
 .app-competition-status{margin:0;color:var(--muted);font-size:13px;line-height:1.6}

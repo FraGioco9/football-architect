@@ -665,6 +665,25 @@ test('CONTEXT: a changed season invalidates pending provider revisions and clear
  assert.equal(api.replaceSeasonData(payload,r.window.faCompetitionContext.revision),false,'inactive simulation rejects late data');
 });
 
+test('CONTEXT: later domestic seasons accept verified same-country replacement identities',async()=>{
+ const division=divisionsForTest('IT-1'),reserve=divisionsForTest('IT-2').clubs.find(c=>c.clubId===17);
+ assert.ok(reserve);
+ const r=await simulate({division,devSeason:3,ending:'/?season=2'});
+ const api=r.window.faCompetitionContextApi;
+ assert.equal(r.window.faCompetitionContext.selectedSeason,2);
+ const participants=[...division.clubs.slice(0,-1),reserve];
+ const base={rulesVersion:r.window.faCompetitionContext.definition.rules.version,participants,fixtures:null,results:[],statistics:null,status:'partial'};
+ assert.equal(api.replaceSeasonData({...base,season:2},r.window.faCompetitionContext.revision),true,
+  'Season 2 permits an authenticated provider to supply promoted same-country members');
+ api.selectSeason(1);
+ assert.equal(api.replaceSeasonData({...base,season:1},r.window.faCompetitionContext.revision),false,
+  'Season 1 retains its exact opening catalogue');
+ const foreign={...reserve,countryId:'ENG'};
+ api.selectSeason(2);
+ assert.equal(api.replaceSeasonData({...base,participants:[...participants.slice(0,-1),foreign],season:2},r.window.faCompetitionContext.revision),false,
+  'A later domestic season cannot enroll a foreign-country identity');
+});
+
 test('CONTEXT: a world-day change with unchanged domestic progress retains supplied season data',async()=>{
  const r=await simulate({division:manifest.divisions[0],devSeason:1,ending:'/?season=1'});
  const api=r.window.faCompetitionContextApi;

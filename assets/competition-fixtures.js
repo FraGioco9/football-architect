@@ -339,21 +339,33 @@
   fields.next.addEventListener("click",()=>{if(!fields.next.disabled)select(configured[configured.findIndex(c=>c.value===selected)+1].value)});
   // Validate before returning a commit function; rejected input leaves the view intact.
   window.faFixtures={
-    prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition}={}){
+    prepare(fixtures,{currentMatchday:current=null,postseason:games=[],definition:applicable=window.faCompetitionContext?.definition,participants=null}={}){
       updateDefinition(applicable);
-      const next=validate(fixtures);
-      const post=international?next?.postseason||[]:validatePostseason(games);
-      if(!next&&post.length)throw Error('Post-season requires a league schedule');
-      if(current!==null&&!validChoice(current))throw Error("Invalid current matchday");
-       // The stage is selectable before participating clubs are known.
+      // Future domestic seasons can promote clubs outside the inaugural 16.
+      // Validate against the selected season's supplied membership, not the
+      // Season 1 DOM catalogue. Rejected preparation must not mutate live UI.
+      const context=window.faCompetitionContext;
+      const scoped=participants??(context?.selectedSeason===context?.seasonData?.season?context.seasonData.participants:null);
+      const nextClubs=Array.isArray(scoped)?new Map(scoped.map(club=>[international?rules.clubKey(club):club.clubId,club])):clubs;
+      if(Array.isArray(scoped)&&(nextClubs.size!==capacity||scoped.some(club=>!club||!Number.isInteger(club.clubId)||!club.primaryName)))throw Error('Invalid season participants');
+      const previousClubs=clubs;
+      let next,post;
+      try{
+        clubs=nextClubs;
+        next=validate(fixtures);
+        post=international?next?.postseason||[]:validatePostseason(games);
+        if(!next&&post.length)throw Error('Post-season requires a league schedule');
+        if(current!==null&&!validChoice(current))throw Error("Invalid current matchday");
+      }finally{clubs=previousClubs;}
+      // The stage is selectable before participating clubs are known.
       return ()=>{
-        rounds=next;postseason=post;currentMatchday=next&&current!==null?displayValue(current):null;selected=navigation.get().matchday;
+        clubs=nextClubs;rounds=next;postseason=post;currentMatchday=next&&current!==null?displayValue(current):null;selected=navigation.get().matchday;
         navigation.defaultMatchday(currentMatchday??1);
         render();
       };
     },
-    snapshot(){const previous=rounds,current=currentMatchday,post=postseason;return ()=>{
-      rounds=previous;postseason=post;currentMatchday=current;selected=navigation.get().matchday;render()};}
+    snapshot(){const previous=rounds,current=currentMatchday,post=postseason,previousClubs=clubs;return ()=>{
+      clubs=previousClubs;rounds=previous;postseason=post;currentMatchday=current;selected=navigation.get().matchday;render()};}
   };
   new MutationObserver(render).observe(document.documentElement,
     {attributes:true,attributeFilter:["lang","data-fa-standings-loading"]});
