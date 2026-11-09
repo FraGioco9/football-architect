@@ -1,0 +1,28 @@
+name: Match Engine ME-01 targeted
+on:
+  pull_request:
+    paths:
+      - 'match-engine/**'
+      - 'tools/dev-standings-preview.mjs'
+      - '.github/workflows/match-engine-01.yml'
+jobs:
+  match-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - name: Install pinned physics candidate
+        run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: Focused core and route security tests
+        run: npm --prefix match-engine test
+      - name: Existing routing/preview regressions
+        run: node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs
+      - name: Browser viewport fit (Chrome, Advanced settings open and closed)
+        run: node --test match-engine/tests/lab-viewport-browser.test.mjs
+      - name: Measured local CPU / memory sample
+        run: npm --prefix match-engine run bench -- 6000

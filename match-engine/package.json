@@ -1,0 +1,13 @@
+{
+  "name": "football-architect-match-engine-lab",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/core.test.mjs tests/lab-route.test.mjs tests/physics-diagnostics.test.mjs",
+    "bench": "node tools/bench.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-deterministic-compat": "0.21.0"
+  }
+}
