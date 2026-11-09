@@ -127,6 +127,7 @@
     "tests/hosted-preview-origins.test.mjs": "site-node",
     "tests/int24-browser-qa.mjs": "browser",
     "tests/international-cups-ui.test.mjs": "site-node",
+    "tests/kit-designer-prototype.test.mjs": "site-node",
     "tests/landing.test.mjs": "site-node",
     "tests/nav-01-sidebar.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
