@@ -113,17 +113,18 @@ try{
     const current=button.getBoundingClientRect();
     const prev=document.getElementById("calendar-previous").getBoundingClientRect();
     const next=document.getElementById("calendar-next").getBoundingClientRect();
-    const controls=document.getElementById("calendar-controls"),root=controls.getBoundingClientRect(),style=getComputedStyle(controls);
-    return {selector:[selector.left,selector.right,selector.top],current:[current.left,current.right,current.top],prev:[prev.left,prev.right],root:[root.left,root.right],free:root.width-parseFloat(style.paddingInlineEnd)-prev.width-next.width-2*parseFloat(style.columnGap)};
+    const root=document.getElementById("calendar-controls").getBoundingClientRect();
+    return {selector:[selector.left,selector.right,selector.top],current:[current.left,current.right,current.top],resetSquare:Math.abs(current.width-current.height)<=1&&current.height>=43.9,prev:[prev.left,prev.right],root:[root.left,root.right],nextRight:next.right,centerError:Math.abs(selector.left+selector.width/2-root.left-root.width/2)};
    });
-   assert.ok(weekLayout.selector[1]<=weekLayout.current[0]-2 &&
+   assert.ok(weekLayout.resetSquare&&weekLayout.nextRight<=weekLayout.current[0]-2 &&
      Math.abs(weekLayout.selector[2]-weekLayout.current[2])<=2 &&
      weekLayout.prev[0]>=weekLayout.root[0]-1 &&
      weekLayout.current[1]<=weekLayout.root[1]+1 &&
-     weekLayout.selector[1]-weekLayout.selector[0]>=Math.max(0,weekLayout.free-3),
-     "Calendar Week selector must stretch without overlapping Current week: "+JSON.stringify({profile,weekLayout}));
+     weekLayout.centerError<=1,
+     "Calendar Week selector must stay centered without overlapping Current week: "+JSON.stringify({profile,weekLayout}));
    const columns=async()=>page.evaluate(()=>{
-    const tracks=getComputedStyle(document.querySelector(".calendar-week-row")).gridTemplateColumns;
+    const row=[...document.querySelectorAll(".calendar-week-row")].find(row=>row.getClientRects().length);
+    const tracks=getComputedStyle(row).gridTemplateColumns;
     return tracks.split(/\s+/).filter(Boolean).length;
    });
    assert.equal(await columns(),1,"Week view has one day column");

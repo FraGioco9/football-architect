@@ -6,17 +6,17 @@ import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../assets/world-calendar.js',import.meta.url),'utf8');
 
 test('CAL-WEEK-INIT-01 remembers last explicit Week day separately from Season browsing',()=>{
- assert.match(source,/let manualWeekDay=null/);
- assert.match(source,/const rememberWeek=\(\)=>\{manualWeekDay=state\.day/);
+ assert.match(source,/let manualWeekDay=root\.dataset\.calendarWeekExplicit==='true'\?state\.day:null/);
+ assert.match(source,/const rememberWeek=\(day=state\.day\)=>\{manualWeekDay=day/);
  assert.match(source,/enteringWeek\?\{view,day:manualWeekDay\?\?state\.day\}:\{view\}/);
  assert.match(source,/if\(state\.view==='week'\)rememberWeek\(\)/);
 });
 test('CAL-WEEK-INIT-02 current week applies only to the matching DEV season',()=>{
  assert.match(source,/current\.season===viewedSeason&&Number\.isInteger\(current\.day\)&&current\.day>=1&&current\.day<=56/);
- assert.match(source,/pendingInitialWeek=true;change\(\{view,day:currentWeekDay\(\)\}\)/);
+ assert.match(source,/pendingInitialWeek=root\.dataset\.calendarWeekPending==='true';change\(\{view,day:currentWeekDay\(\)\}\)/);
 });
 test('CAL-WEEK-INIT-03 explicit dropdown, arrows and keyboard update manual selection',()=>{
- assert.match(source,/setWeek:n=>\{[^\n]*rememberWeek\(\)/);
+ assert.match(source,/setWeek:n=>\{[^\n]*rememberWeek\(day\)/);
  assert.match(source,/get\('previous'\)[^\n]*rememberWeek\(\)/);
  assert.match(source,/get\('next'\)[^\n]*rememberWeek\(\)/);
  assert.match(source,/event\.preventDefault\(\);change\([^\n]*if\(state\.view==='week'\)rememberWeek\(\)/);

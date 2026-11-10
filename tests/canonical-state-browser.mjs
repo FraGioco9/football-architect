@@ -123,7 +123,17 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(await page.evaluate(()=>window.faCompetitionContext.selectedSeason),2);assert.equal(await page.evaluate(()=>window.faCompetitionContext.seasonData),null);checks++;
   await page.goto(origin+'/calendar?season=1&calendarView=week',{waitUntil:'networkidle'});
   await page.locator('#calendar-season-picker').click();
-  await bounded(page.evaluate(()=>new Promise(resolve=>{window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))})),'calendar menu refresh');
+  const menuWorldCalls=worldCalls;
+  await page.evaluate(()=>{
+   window.sh03Option=document.querySelector('#calendar-season-menu [role=option]');
+   window.dispatchEvent(new Event('focus'));
+  });
+  await page.waitForLoadState('networkidle');
+  assert.equal(worldCalls,menuWorldCalls,'Focusing the Calendar does not reread the world');
+  await bounded(page.evaluate(()=>new Promise(resolve=>{
+   window.addEventListener('fa:public-calendar-change',resolve,{once:true});
+   window.dispatchEvent(new Event('fa:world-invalidated'));
+  })),'calendar menu refresh');
   assert.equal(await page.evaluate(()=>window.sh03Option===document.querySelector('#calendar-season-menu [role=option]')),true);
   assert.equal(await page.locator('#calendar-season-picker').getAttribute('aria-expanded'),'true');checks++;
   offline=true;
@@ -241,9 +251,12 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
   await page.evaluate(()=>window.faWorldCalendar.setWeek(2));
   await page.locator('[data-calendar-day="13"]').click();
-  await page.waitForFunction(()=>document.querySelectorAll('#calendar-event-dialog [data-authoritative-calendar] li').length===128);
-  await bounded(page.evaluate(()=>new Promise(resolve=>{window.sh03Dialog=document.getElementById('calendar-event-dialog');window.sh03Fixture=document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li');window.addEventListener('fa:public-calendar-change',resolve,{once:true});window.dispatchEvent(new Event('focus'))})),'calendar dialog refresh');
-  assert.equal(await page.evaluate(()=>window.sh03Dialog.open&&window.sh03Fixture===document.querySelector('#calendar-event-dialog [data-authoritative-calendar] li')),true,'open populated calendar dialog survives refresh');checks++;
+  const calendarWorldCalls=worldCalls;
+  await page.waitForLoadState('networkidle');
+  assert.equal(worldCalls,calendarWorldCalls,'Opening a calendar day does not reread the world');
+  assert.equal(await page.locator('#calendar-event-dialog .calendar-event-description').textContent(),'Domestic round 1');
+  assert.equal(await page.locator('#calendar-event-dialog [data-authoritative-calendar]').count(),0);
+  assert.equal(await page.evaluate(()=>performance.getEntriesByType('resource').some(entry=>new URL(entry.name).pathname.startsWith('/api/calendar/'))),false);checks++;
   await page.screenshot({path:'int24-browser-artifacts/sh03-'+engine+'-calendar-dialog.png',fullPage:true});
   // Cold navigation: one shared global read plus one post-season revision
   // check. The second GET protects against cross-session world resets.

@@ -44,7 +44,7 @@ test("FE-02 menu positioning does not acquire FE-04 interaction semantics",()=>{
 test("SAF-01 Fixtures and Calendar Week keep the current shortcut on the same line",()=>{
  assert.ok(app.includes("#competition-panel-fixtures .app-fixtures-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 44px"));
  assert.ok(app.includes("#competition-panel-fixtures .app-fixtures-current{position:static;grid-column:2;grid-row:1"));
- assert.ok(app.includes("#world-calendar #calendar-controls .app-fixtures-select{flex:1 1 0;width:auto"));
+ assert.ok(app.includes("#world-calendar #calendar-controls .app-fixtures-select{flex-basis:104px;width:104px"));
  assert.ok(app.includes("#world-calendar #calendar-controls #calendar-week-menu{width:100%"));
 });
 test("SAF-02/04 both competition and club fades initialize during parsing",()=>{
@@ -63,11 +63,11 @@ test("SAF-02/04 both competition and club fades initialize during parsing",()=>{
 test("Calendar first paint resolves the stored DEV season, including the selected Week",()=>{
  for(const path of ["tools/render-world-calendar.mjs","calendar/index.html"]){
   const html=read(path);
-  assert.match(html,/Boolean\(window\.faDevPreviewMode\)&&window\.faDebugEnabled!==false/);
+  assert.match(html,/window\.faDebugEnabled !== false\s*&&\s*\(window\.faDevPreviewMode === true/);
   assert.match(html,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
   assert.doesNotMatch(html,/const limit=window\.faDevCalendarClockSnapshot\?\.source\?\.kind==='dev'/);
  }
- assert.match(read("assets/calendar-simplified.js"),/selectedSeason=Number\(root\.dataset\.calendarSeason\)\|\|1/);
+ assert.match(read("assets/calendar-simplified.js"),/selectedSeason=Number\(document\.documentElement\.dataset\.calendarSeason\)\|\|null/);
 });
 
 test("SAF-05 selectors retain centered labels and right-edge chevrons",()=>{

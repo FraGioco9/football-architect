@@ -64,7 +64,7 @@ test('shared-mode Dev pages use authoritative sporting loaders without fictional
   for(const path of ['/calendar','/competitions/it-1/standings','/competitions/it-1/fixtures','/settings','/account/login']){
    const result=await new Promise((resolve,reject)=>{const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{Host:'app.localhost:2000'}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body}))});req.on('error',reject);req.end()});
    assert.equal(result.status,200,path);
-   assert.equal(/window\.faDevPreviewMode\s*=|window\.faDevCalendarClockSnapshot\s*=|dataset\.faDevDefaultSeason\s*=|data-fa-dev-preview|data-fa-dev-stats|data-fa-dev-club-summary/.test(result.body),false,path+' fictional overlay');
+   assert.equal(/window\.faDevPreviewMode\s*=(?!=)|window\.faDevCalendarClockSnapshot\s*=(?!=)|dataset\.faDevDefaultSeason\s*=(?!=)|data-fa-dev-preview|data-fa-dev-stats|data-fa-dev-club-summary/.test(result.body),false,path+' fictional overlay');
    assert.match(result.body,/faDevAppOrigin/,path);
   }
  }finally{if(saved===undefined)delete process.env.FA_ADMIN_API_POOL;else process.env.FA_ADMIN_API_POOL=saved;server.closeAllConnections();await new Promise(r=>server.close(r))}

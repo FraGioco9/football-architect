@@ -18,9 +18,9 @@
   };
   let state={day:Number(root.dataset.calendarDay),view:root.dataset.calendarView};
   if(!Number.isInteger(state.day)||state.day<1||state.day>56||!['season','week'].includes(state.view))state={day:1,view:'season'};
-  let manualWeekDay=null;
-  let pendingInitialWeek=false;
-  const rememberWeek=()=>{manualWeekDay=state.day;pendingInitialWeek=false};
+  let manualWeekDay=root.dataset.calendarWeekExplicit==='true'?state.day:null;
+  let pendingInitialWeek=state.view==='week'&&root.dataset.calendarWeekPending==='true';
+  const rememberWeek=(day=state.day)=>{manualWeekDay=day;pendingInitialWeek=false;delete root.dataset.calendarWeekPending};
   const currentWeekDay=()=>{
     const current=clockSnapshot?.current;
     const viewedSeason=window.faCalendarSelectedSeason?.()??1;
@@ -46,12 +46,13 @@
     get('mode-label')?.setAttribute('aria-label',w.view);
     get('controls').hidden=state.view!=='week';get('controls').setAttribute('aria-label',w.navigation);
     get('previous').setAttribute('aria-label',w.previous);get('next').setAttribute('aria-label',w.next);
-    get('previous').disabled=week===1;get('next').disabled=week===8;
+    const pending=root.dataset.calendarWeekPending==='true';
+    get('previous').disabled=pending||week===1;get('next').disabled=pending||week===8;
     get('week-label').textContent=w.week+' '+week+' / 8';
     get('days').setAttribute('aria-label',state.view==='season'?w.season+' · '+w.days+' 1–56':w.week+' '+week);
     get('selected').textContent=w.selected+': '+label(days[state.day-1],w);
     root.dataset.calendarReady='true';
-    renderDetails();renderNav();renderClock();
+    renderDetails();renderClock();
     window.dispatchEvent(new CustomEvent('fa:calendar-selection-change'));
   }
   function change(patch,focus=false){
@@ -61,7 +62,7 @@
   }
   for(const view of ['season','week'])get(view).addEventListener('click',()=>{
     const enteringWeek=view==='week'&&state.view!=='week';
-    if(enteringWeek&&manualWeekDay===null){pendingInitialWeek=true;change({view,day:currentWeekDay()})}
+    if(enteringWeek&&manualWeekDay===null){pendingInitialWeek=root.dataset.calendarWeekPending==='true';change({view,day:currentWeekDay()})}
     else change(enteringWeek?{view,day:manualWeekDay??state.day}:{view});
   });
   get('previous').addEventListener('click',()=>{if(state.day>7){const day=state.day-7;change({day},day<=7);rememberWeek()}});
@@ -89,17 +90,16 @@
   let lastDetailsDay=null,lastDetailsLanguage=null;
   function renderDetails(){
     if(!details||!heading||!content)return; // Old lightweight DOM harnesses do not create details.
-    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang&&content.dataset.filter===filter&&content.dataset.division===division)return;
+    if(lastDetailsDay===state.day&&lastDetailsLanguage===root.lang)return;
     lastDetailsDay=state.day;lastDetailsLanguage=root.lang;
     const w=detailWords[root.lang]||detailWords.en,d=days[state.day-1];
-    details.dataset.day=String(state.day);content.dataset.filter=filter;content.dataset.division=division;
+    details.dataset.day=String(state.day);
     heading.textContent=w.day+' '+d.day+' · '+(d.events.length?w.events:w[d.kind]);
     content.replaceChildren();
-    const visible=d.events.filter(matches);
-    if(!visible.length){
+    if(!d.events.length){
       const p=document.createElement('p');p.className='calendar-details-empty';p.textContent=w[d.kind+'Text']||w.none;content.append(p);return;
     }
-    for(const e of visible){
+    for(const e of d.events){
       const article=document.createElement('article');article.className='calendar-detail-card';article.dataset.marker=e.marker;
       const h=document.createElement('h4');h.textContent=e.marker+' · '+nameFor(e,w);article.append(h);
       const summary=document.createElement('p');summary.className='calendar-detail-summary';summary.textContent=w[e.phase]||w.events;article.append(summary);
@@ -109,20 +109,18 @@
       const scope=document.createElement('p');scope.textContent=w.scope+': '+(e.family==='international'?e.competitionIds.map(id=>id==='int-1'?'Sovereign Cup':'Federation Cup').join(' · '):'16');info.append(scope);
       for(const value of [w.fixtures,w.results,w.unknown]){const p=document.createElement('p');p.textContent=value;info.append(p)}
       disclosure.append(info);article.append(disclosure);
-      if(e.family==='national'&&division&&e.round<=30){const a=document.createElement('a');a.href=window.faRoutesRegistry.buildRoute({kind:'competition',id:division,view:'fixtures'})+'?season=1&matchday='+e.round+'&calendarReturn='+encodeURIComponent(returnPath());a.textContent='View fixtures';article.append(a)}
       content.append(article);
     }
   }
-  // CAL-IMP-04: filter and navigation are presentation state, not sporting progress.
   // CAL-IMP-05A: only explicit DEV snapshots; public and missing sources remain unavailable.
-  const clockValue=get('clock-value'),clockSource=get('clock-source'),todayButton=get('today');
+  const clockValue=get('clock-value'),clockSource=get('clock-source');
   const devSlider=get('dev-world-day'),devLabel=get('dev-world-label');
   const clockText={
-    en:['World day unavailable','Season','Day','Fictional DEV/Preview','No authoritative world clock','Today','Today unavailable'],
-    de:['Welttag nicht verfügbar','Saison','Tag','Fiktive DEV/Vorschau','Keine autoritative Weltzeit','Heute','Heute nicht verfügbar'],
-    es:['Día mundial no disponible','Temporada','Día','DEV/Vista previa ficticia','Sin reloj mundial oficial','Hoy','Hoy no disponible'],
-    fr:['Jour mondial indisponible','Saison','Jour','DEV/Aperçu fictif','Aucune horloge mondiale officielle',"Aujourd’hui","Aujourd’hui indisponible"],
-    it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile','Oggi','Oggi non disponibile']
+    en:['World day unavailable','Season','Day','Fictional DEV/Preview','No authoritative world clock'],
+    de:['Welttag nicht verfügbar','Saison','Tag','Fiktive DEV/Vorschau','Keine autoritative Weltzeit'],
+    es:['Día mundial no disponible','Temporada','Día','DEV/Vista previa ficticia','Sin reloj mundial oficial'],
+    fr:['Jour mondial indisponible','Saison','Jour','DEV/Aperçu fictif','Aucune horloge mondiale officielle'],
+    it:['Giorno mondiale non disponibile','Stagione','Giorno','DEV/Anteprima fittizia','Orologio mondiale ufficiale non disponibile']
   };
   for(const [lang,label] of Object.entries({en:'Authoritative world',it:'Mondo autorevole',de:'Verbindliche Welt',es:'Mundo oficial',fr:'Monde officiel'}))clockText[lang].push(label);
   // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
@@ -140,11 +138,9 @@
     if(!clockValue||!clockSource)return;
     const w=clockText[root.lang]||clockText.en;
     const valid=clockSnapshot?.current;
-    const navigable=Boolean(valid&&valid.season===(window.faCalendarSelectedSeason?.()??1));
     const dev=clockSnapshot?.source.kind==='dev';
     clockValue.textContent=valid?w[1]+' '+valid.season+' · '+w[2]+' '+valid.day+'/56 · '+Math.round(valid.day/56*100)+'%':w[0];
-    clockSource.textContent=dev?w[3]:clockSnapshot?.source.kind==='authoritative'?w[7]:w[4];
-    if(todayButton){todayButton.disabled=!navigable;todayButton.textContent=navigable?w[5]:w[6]}
+    clockSource.textContent=dev?w[3]:clockSnapshot?.source.kind==='authoritative'?w[5]:w[4];
     if(devSlider&&devLabel){
       devSlider.hidden=devLabel.hidden=!dev;
       devSlider.disabled=!dev;
@@ -160,7 +156,6 @@
       }
     }
   }
-  if(todayButton)todayButton.addEventListener('click',()=>{if(clockSnapshot?.current?.season===(window.faCalendarSelectedSeason?.()??1))change({day:clockSnapshot.current.day})});
   if(devSlider)devSlider.addEventListener('input',()=>{
     if(clockSnapshot?.source.kind!=='dev')return;
     const day=Number(devSlider.value);
@@ -170,17 +165,13 @@
   });
   window.addEventListener?.('fa:world-clock-snapshot',event=>updateClock(event.detail));
   updateClock(window.faDevCalendarClockSnapshot??null);
-  const filterElement=get('filter'),divisionElement=get('division');
-  const filters=['all','national','international','sovereign','federation'];
-  const validDivision=v=>/^(it|eng|es|de|fr|pt|nl|br)-[12]$/.test(v);
-  let filter='all',division='';
-  const matches=e=>filter==='all'||filter===e.family||
-    (filter==='sovereign'&&e.competitionIds.includes('int-1'))||
-    (filter==='federation'&&e.competitionIds.includes('int-2'));
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
-    const p=new URLSearchParams({season:String(window.faCalendarSelectedSeason?.()||1),calendarView:state.view});
-    
+    const p=new URLSearchParams();
+    const season=window.faCalendarSelectedSeason?.()??Number(root.dataset.calendarSeason);
+    if(season)p.set('season',String(season));
+    p.set('calendarView',state.view);
+    if(state.view==='week'&&root.dataset.calendarWeekPending!=='true')p.set('week',String(Math.ceil(state.day/7)));
     return '/calendar?'+p.toString();
   };
   const saveUrl=push=>{
@@ -189,37 +180,47 @@
     if(window.location.pathname+window.location.search!==target)
       window.history[push?'pushState':'replaceState'](null,'',target);
   };
-  const restoreUrl=()=>{
+  window.addEventListener?.('popstate',()=>{
     if(!hasLocation())return;
-    const p=new URL(window.location.href).searchParams;
-    filter='all';division=''; // Missing or malformed history parameters cannot inherit stale filters.
-    
-    if(['season','week'].includes(p.get('calendarView')))state.view=p.get('calendarView');
-    if(filters.includes(p.get('competition')))filter=p.get('competition');
-    if(validDivision(p.get('division')||''))division=p.get('division');
-  };
-  const renderNav=()=>{
-    if(!filterElement||!divisionElement)return;
-    filterElement.value=filter;divisionElement.value=division;
-    divisionElement.disabled=!['all','national'].includes(filter);
-  };
-  if(filterElement&&divisionElement){
-    restoreUrl();
-    filterElement.addEventListener('change',()=>{filter=filters.includes(filterElement.value)?filterElement.value:'all';lastDetailsDay=null;render();saveUrl(true)});
-    divisionElement.addEventListener('change',()=>{division=validDivision(divisionElement.value)?divisionElement.value:'';lastDetailsDay=null;render();saveUrl(true)});
-    window.addEventListener?.('popstate',()=>{restoreUrl();lastDetailsDay=null;render()});
-  }
-  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state,filter,division}),getPublicWorld:()=>publicWorld,setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;change({day:(n-1)*7+1,view:'week'});rememberWeek();return true}});
+    const params=new URL(window.location.href).searchParams;
+    const view=params.get('calendarView');
+    if(!['season','week'].includes(view))return;
+    const week=Number(params.get('week'));
+    if(view==='week'){
+      if(Number.isInteger(week)&&week>=1&&week<=8)rememberWeek((week-1)*7+1);
+      else {
+        manualWeekDay=null;
+        pendingInitialWeek=root.dataset.calendarWeekPending==='true';
+      }
+    }
+    state={...state,view,day:view==='week'?manualWeekDay??currentWeekDay():state.day};
+    render();
+  });
+  window.faWorldCalendar=Object.freeze({getSelection:()=>Object.freeze({...state}),getPublicWorld:()=>publicWorld,setWeek:n=>{if(!Number.isInteger(n)||n<1||n>8)return false;const day=(n-1)*7+1;rememberWeek(day);change({day,view:'week'});return true}});
   new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['lang']});
   render();
-  {
-    const publicEnabled=()=>!devClockEnabled();
-    pendingInitialWeek=state.view==='week';
-    import('/assets/authoritative-calendar.mjs').then(({mountAuthoritativeCalendar})=>mountAuthoritativeCalendar({root:calendar,isEnabled:publicEnabled,onWorld:world=>{
-      publicWorld=world?Object.freeze({...world}):null;
-      try{clockSnapshot=devClockEnabled()?clockAdapter.normalize(window.faDevWorldClockSnapshot??window.faDevCalendarClockSnapshot??null):world&&world.seasonNumber>0&&world.day>=1?clockAdapter.normalize({source:{kind:'authoritative',reference:'world:'+world.generation+':'+world.revision},current:{season:world.seasonNumber,day:world.day}}):null}catch{clockSnapshot=null}
-      if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){const day=currentWeekDay();if(day!==state.day)state={...state,day};if(world&&clockSnapshot?.current?.season===(window.faCalendarSelectedSeason?.()??1))pendingInitialWeek=false;}
-      render();window.dispatchEvent(new CustomEvent('fa:public-calendar-change'));
-    }})).catch(()=>{});
-  }
+  const worldState=window.faWorldState;
+  const syncPublicWorld=()=>{
+    const snapshot=worldState.get();
+    if(snapshot.source==='dev'){
+      if(publicWorld){
+        publicWorld=null;
+        clockSnapshot=null;
+      }
+      delete root.dataset.calendarWeekPending;
+      return;
+    }
+    if(snapshot.worldStatus==='pending')return;
+    const world=snapshot.world;
+    publicWorld=world;
+    clockSnapshot=world?.day>0?clockAdapter.normalize({source:{kind:'authoritative',reference:'world:'+world.generation+':'+world.revision},current:{season:world.seasonNumber,day:world.day}}):null;
+    window.dispatchEvent(new CustomEvent('fa:public-calendar-change'));
+    const resolveWeek=pendingInitialWeek&&state.view==='week'&&manualWeekDay===null;
+    if(resolveWeek)state={...state,day:currentWeekDay()};
+    pendingInitialWeek=false;
+    delete root.dataset.calendarWeekPending;
+    render();
+    if(resolveWeek)saveUrl(false);
+  };
+  if(worldState){worldState.subscribe(syncPublicWorld);syncPublicWorld();}
 })();
