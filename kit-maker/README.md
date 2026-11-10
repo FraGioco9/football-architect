@@ -1273,3 +1273,46 @@ Original author GLB, position, UV, normals, index, sewn collar/cuff/
 waist trims, shorts, socks, boots, palette and permissions are intact.
 The original private GLB still requires owner-local visual WebGL QA.
 PR Draft/HOLD; no merge/deployment/remote DB or asset distribution.
+
+## KM-31 — shoulder seam precision and 1 cm stripe minimum (2026-11-10)
+
+Owner visual QA found that KM-30 still produced inexact colour bands
+at the original sewn shoulder joints. Its correspondence required
+similar VERTEX locations, which is not valid for differently tessellated
+body/sleeve patterns or glTF files with duplicate UV/normal vertices.
+
+**KM-31 source-topology correction:** Weld coincident triangle positions
+within each original garment mesh using 20-micron source-local
+tolerance; classify real open seam EDGES, not arbitrary UV-island or
+nonindexed triangle corners. Index full 3D boundary segments in a
+spatial grid, then project each actual adjoining sleeve seam vertex
+onto a source torso segment within 2.7mm. The torso's intrinsic stripe
+coordinate is interpolated at that physical point. All duplicate
+vertices at one original sleeve stitch inherit the exact same
+physical stripe coordinate. Residual non-affine atlas corrections
+fade away from the shoulder (45mm falloff) so the remaining source
+fabric width is preserved. Mirrored/rotated pattern charts and
+separate left/right sleeve connections are supported, with original
+source geometry, UVs, indices, materials and GLB left untouched.
+
+A DEV-only `km31ShoulderStripeReport` lists matched seam segments,
+median physical gap, connected/unmatched source panels and right/left
+sleeve coverage. The console displays the report once on a real
+Three.js garment. Source calibration still fails closed where
+genuine geometry does not correspond; it never projects fabricated
+colour strips across unverified gaps.
+
+**Slider:** Vertical stripes now range from **1 cm to 15 cm** (10–150mm)
+in steps of 0.5 cm (5mm), retaining the 7.5cm default.
+This updates the canonical validation, first-paint HTML, available
+selector range, responsive labels and regression tests. All garments
+support the new minimum with independent widths. Synthetic tests
+include fine sleeve/coarse torso, nonindexed duplicate stitches,
+left-side rotated atlas and stripe-wave continuity at 1cm.
+
+**QA gate:** The owner-local private Alberto Sena GLB is not stored
+in GitHub, so the original model must still be reviewed in Chrome
+at 1cm/3cm/7.5cm from front, back and side before visual acceptance.
+Collar/cuff/waist trims, source artist binary, palettes, boots,
+shorts/socks and production assets remain untouched.
+PR #454 Draft/HOLD; no merge, production deploy or DB operation.

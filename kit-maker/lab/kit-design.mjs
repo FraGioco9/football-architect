@@ -7,7 +7,7 @@ export const KIT_STYLES=Object.freeze([
   Object.freeze({id:"solid",label:"Solid"}),
   Object.freeze({id:"vertical-stripes",label:"Vertical stripes"})
 ]);
-export const KIT_STRIPE_WIDTH_RANGE=Object.freeze({minMm:30,maxMm:150,stepMm:5,defaultMm:75});
+export const KIT_STRIPE_WIDTH_RANGE=Object.freeze({minMm:10,maxMm:150,stepMm:5,defaultMm:75});
 export function formatKitStripeWidth(mm){
   if(!Number.isFinite(mm))throw new Error("Invalid stripe width display");
   return (mm/10).toFixed(1).replace(/\.0$/,"")+" cm";
@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km30-stitched-single-band-shoulder-v1";
+export const KIT_STRIPE_SHADER_KEY="km31-segment-stitched-shoulder-and-10mm-stripes-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -591,12 +591,18 @@ export function applyKitDesign(outfit,state,THREE){
       shoulder=alignOriginalShoulderStripes(outfit,prepared);
       outfit.userData??={};
       outfit.userData.km29ShoulderStripeReport=shoulder.report;
+      outfit.userData.km31ShoulderStripeReport=shoulder.report;
+      if(typeof THREE?.Mesh==="function"&&!outfit.userData.km31SeamLogged){
+        outfit.userData.km31SeamLogged=true;
+        console.info("Kit Maker shoulder seam coverage",shoulder.report);
+      }
     }catch(error){
       const reason=String(error?.message??error);
       if(typeof THREE?.Mesh==="function")
         console.warn("Kit Maker shoulder stripe calibration skipped:",reason);
       outfit.userData??={};
       outfit.userData.km29ShoulderStripeReport={status:"skipped",reason};
+      outfit.userData.km31ShoulderStripeReport={status:"skipped",reason};
     }
   }
   // Stitch-adjacent vertices inherit the same authored fabric-metre

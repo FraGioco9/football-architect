@@ -41,9 +41,13 @@ test('KM-17 initial design shows Solid and Vertical stripes, three garments and 
   assert.deepEqual(KIT_PARTS,['jersey','shorts','socks']);
   assert.deepEqual(KIT_STYLES.map(s=>s.id),['solid','vertical-stripes']);
   assert.deepEqual(KIT_STRIPE_WIDTH_RANGE,
-    {minMm:30,maxMm:150,stepMm:5,defaultMm:75});
+    {minMm:10,maxMm:150,stepMm:5,defaultMm:75});
+  assert.equal(formatKitStripeWidth(10),'1 cm');
   assert.equal(formatKitStripeWidth(75),'7.5 cm');
   assert.equal(formatKitStripeWidth(100),'10 cm');
+  assert.equal(isKitStripeWidthAllowed(.01),true);
+  assert.equal(isKitStripeWidthAllowed(.015),true);
+  assert.equal(isKitStripeWidthAllowed(.005),false);
   assert.equal(isKitStripeWidthAllowed(.075),true);
   assert.equal(isKitStripeWidthAllowed(.11),true);
   assert.equal(isKitStripeWidthAllowed(.074),false);
@@ -209,7 +213,7 @@ test('KM-18 slider widths and layers are independent for each garment',()=>{
   assert.throws(()=>store.selectStripeWidth('invalid'),/Unsupported/);
   assert.throws(()=>store.selectStripeWidth(74),/Unsupported/);
   assert.throws(()=>store.selectStripeWidth(155),/Unsupported/);
-  assert.throws(()=>store.selectStripeWidth(25),/Unsupported/);
+  assert.equal(store.selectStripeWidth(25).widths.jersey,.025);
   assert.throws(()=>store.selectStripeWidth(75.5),/Unsupported/);
   assert.throws(()=>store.selectStripeWidth(0),/Unsupported/);
   assert.throws(()=>store.selectColorLayer('third'),/Unsupported/);
@@ -343,12 +347,12 @@ test('KM-18 slider continuously controls widths and remembers them across garmen
   const store=createKitDesignStore(),sizes=[];
   store.selectStyle('vertical-stripes');
   const unsubscribe=store.subscribe(next=>sizes.push(next.stripeWidths.jersey));
-  for(const width of [30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150]){
+  for(const width of [10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150]){
     const state=store.selectStripeWidth(width);
     assert.equal(state.stripeWidths.jersey,width);
     assert.ok(Math.abs(state.widths.jersey-width/1000)<1e-9);
   }
-  assert.equal(sizes.length,25,'Slider input changes are broadcast without model reload');
+  assert.equal(sizes.length,29,'Slider input changes are broadcast without model reload');
   unsubscribe();
   store.selectPart('shorts');
   store.selectStyle('vertical-stripes');
@@ -397,7 +401,7 @@ test('KM-20 calipers derive physical stripe width from source-pattern UV geometr
   assert.ok(Math.abs(metric.originU-.15)<1e-10);
   assert.ok(metric.sampledTriangles>=2);
   assert.ok(Math.abs(metric.rangeU-.1)<1e-12);
-  for(const width of [.03,.045,.075,.1,.15]){
+  for(const width of [.01,.015,.03,.045,.075,.1,.15]){
     const deltaU=width/metric.metresPerUv;
     const distanceOnCloth=deltaU*metric.metresPerUv;
     assert.ok(Math.abs(distanceOnCloth-width)<1e-12,

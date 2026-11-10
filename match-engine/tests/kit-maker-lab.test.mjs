@@ -86,7 +86,7 @@ test('KM-01 canonical DEV lab and both Development sidebar links work on app.loc
   assert.doesNotMatch(html,/data-km-layer="collar"|data-km-layer="cuffs"/);
   assert.match(html,/id="km-color-target"/);
   assert.doesNotMatch(html,/data-km-stripe-width=/);
-  assert.match(html,/id="km-stripe-width"[^>]*type="range"[^>]*min="30" max="150" step="5" value="75"/);
+  assert.match(html,/id="km-stripe-width"[^>]*type="range"[^>]*min="10" max="150" step="5" value="75"/);
   assert.match(html,/id="km-stripe-width-value"[^>]*>7\.5 cm</);
   assert.match(html,/id="km-stripe-settings"[^>]*hidden/);
   assert.match(html,/data-km-style="vertical-stripes"/);
@@ -251,6 +251,7 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('alignOriginalShoulderStripes'));
   assert.ok(designJS.includes('km29ShoulderStripeReport'));
   assert.ok(designJS.includes('kmStripeSewnMetres'));
+  assert.ok(designJS.includes('km31ShoulderStripeReport'));
   assert.ok(designJS.includes('shoulder.coordinates'));
   assert.ok(designJS.includes('hasSewnCoordinates'));
   assert.ok(designJS.includes('new THREE.Float32BufferAttribute(metres,1)'));

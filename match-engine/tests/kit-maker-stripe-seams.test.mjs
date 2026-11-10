@@ -54,7 +54,7 @@ test('KM-29 shoulder aligns mirrored sleeve and front/back pattern islands',()=>
   for(const entry of inputs)
     assert.equal(Math.abs(adjusted(entry,result).metresPerUv),
       entry.metric.metresPerUv,'Stripe fabric width must stay unchanged');
-  for(const width of [.03,.075,.15]){
+  for(const width of [.01,.03,.075,.15]){
     for(let i=0;i<19;i++){
       const value=phase(body.seamSamples[i],adjusted(body,result));
       const opposite=phase(sleeve.seamSamples[i],adjusted(sleeve,result));
@@ -168,4 +168,89 @@ test('KM-30 actual design pipeline binds one continuous shader attribute before 
   store.selectStripeWidth(150);
   applyKitDesign(outfit,store.getState(),THREE);
   assert.equal(u.kmStripeWidth.value,.15);
+});
+
+function irregularSeamPanel(name,{count,lower=false,rotated=false,
+    triangleSoup=false,offset=0,side=1}){
+  const original=[],faces=[];
+  for(const y of [1.48,lower?1.39:1.60])
+    for(let j=0;j<count;j++){
+      const t=j/(count-1),x=side*(.14+.24*t),
+        u=(rotated?y:x)/1.52+offset+
+          (lower?.008*Math.sin(2*Math.PI*t):0),
+        v=(rotated?x:y)/1.52;
+      original.push({p:[x,y,0],uv:[u,v]});
+    }
+  for(let j=0;j<count-1;j++){
+    const a=j,b=j+1,c=j+count,d=c+1;
+    faces.push(a,b,c,b,d,c);
+  }
+  const nodes=triangleSoup?faces.map(i=>original[i]):original,
+    pos={count:nodes.length,getX(i){return nodes[i].p[0]},
+      getY(i){return nodes[i].p[1]},getZ(i){return nodes[i].p[2]}},
+    uv={count:nodes.length,getX(i){return nodes[i].uv[0]},
+      getY(i){return nodes[i].uv[1]}};
+  const geometry={
+    index:triangleSoup?null:{count:faces.length,getX(i){return faces[i]}},
+    getAttribute(k){return k==='position'?pos:k==='uv'?uv:null;}
+  };
+  // Reference the actual source pattern extrema, NOT triangle-soup
+  // index positions. Repeated nonindexed vertices do not define UV bounds.
+  const originU=(original[0].uv[0]+original[count-1].uv[0])/2;
+  return {part:'jersey',meshName:name,mesh:{name},geometry,
+    metric:{originU,metresPerUv:1.52,metresPerUvV:1.52}};
+}
+test('KM-31 projects finely tessellated sleeve seam to coarser torso edges at 1cm',()=>{
+  const body=irregularSeamPanel('FA_jersey__9',{count:13}),
+    sleeve=irregularSeamPanel('FA_jersey__38',
+      {count:57,lower:true,offset:.6});
+  const result=alignOriginalShoulderStripes({},[body,sleeve]);
+  assert.equal(result.report.status,'aligned');
+  assert.equal(result.report.connections[0].segmentProjected,true);
+  assert.ok(result.report.connections[0].matchedVertices>=55);
+  assert.ok(result.report.connections[0].medianPhysicalGapMm<=1);
+  assert.equal(result.report.sleeves.right,true);
+  const field=result.coordinates.get(sleeve.geometry),
+    pos=sleeve.geometry.getAttribute('position');
+  assert.ok(field&&field.length===pos.count);
+  for(let i=0;i<57;i++){
+    const expected=pos.getX(i)-.26;
+    assert.ok(Math.abs(field[i]-expected)<.0001,
+      'Every finer sleeve stitch must retain the same 1cm band phase');
+    for(const width of [.01,.015,.075]){
+      const waveA=Math.cos(Math.PI*field[i]/width),
+        waveB=Math.cos(Math.PI*expected/width);
+      assert.ok(Math.abs(waveA-waveB)<.04);
+    }
+  }
+});
+test('KM-31 physically duplicated triangle-soup stitches stay equal',()=>{
+  const body=irregularSeamPanel('FA_jersey__9',
+      {count:15,triangleSoup:true}),
+    sleeve=irregularSeamPanel('FA_jersey__38',
+      {count:59,lower:true,offset:.7,triangleSoup:true});
+  const result=alignOriginalShoulderStripes({},[body,sleeve]);
+  assert.equal(result.report.status,'aligned');
+  const field=result.coordinates.get(sleeve.geometry),
+    pos=sleeve.geometry.getAttribute('position');
+  assert.ok(field);
+  for(let i=0;i<field.length;i++){
+    if(Math.abs(pos.getY(i)-1.48)>.00001)continue;
+    assert.ok(Math.abs(field[i]-(pos.getX(i)-.26))<.00012,
+      'Duplicate real source vertices must share one stripe colour');
+  }
+});
+test('KM-31 left sleeve with rotated atlas and different mesh sampling joins the shirt',()=>{
+  const body=irregularSeamPanel('FA_jersey__42',{count:16,side:-1}),
+    sleeve=irregularSeamPanel('FA_jersey__62',
+      {count:47,lower:true,rotated:true,offset:.6,side:-1});
+  const result=alignOriginalShoulderStripes({},[body,sleeve]);
+  assert.equal(result.report.status,'aligned');
+  assert.equal(result.report.connections[0].seamAcrossUvAxis,'V');
+  assert.equal(result.report.sleeves.left,true);
+  const field=result.coordinates.get(sleeve.geometry),
+    pos=sleeve.geometry.getAttribute('position');
+  assert.ok(field);
+  for(let i=0;i<47;i++)
+    assert.ok(Math.abs(field[i]-(pos.getX(i)+.26))<.0001);
 });

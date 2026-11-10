@@ -1,7 +1,7 @@
 // KM-29: match phase of original flat-fabric UV stripes at REAL upper
 // jersey stitches. Width stays in original cloth metres; no 3D planar
 // stripe projection, no UV/geometry mutation, no private model upload.
-const CELL=.0015,MAX_GAP=.0027;
+const CELL=.008,MAX_GAP=.0027,WELD=.00002;
 const key=(x,y,z)=>x+":"+y+":"+z;
 const mid=v=>{const a=[...v].sort((x,y)=>x-y),n=a.length;
   if(!n)throw Error("Empty shoulder seam data");
@@ -10,76 +10,115 @@ const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
 const category=name=>/^FA_jersey__(?:9|10|42|43)(?:_\d+)?$/i.test(name)?"body":
   /^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name)?"right":
   /^FA_jersey__(?:62|63)(?:_\d+)?$/i.test(name)?"left":null;
-function boundaryIndices(geometry){
-  const indices=geometry.index,pos=geometry.getAttribute("position");
-  if(!indices)return Array.from({length:pos.count},(_,i)=>i);
-  const edges=new Map();
-  const count=Math.floor(indices.count/3);
-  for(let t=0;t<count;t++){
-    const ids=[indices.getX(3*t),indices.getX(3*t+1),indices.getX(3*t+2)];
-    for(const [a,b] of [[ids[0],ids[1]],[ids[1],ids[2]],[ids[2],ids[0]]]){
-      const lo=Math.min(a,b),hi=Math.max(a,b),name=lo+":"+hi;
-      if(!edges.has(name))edges.set(name,{a:lo,b:hi,count:1});
-      else edges.get(name).count++;
+// KM-31: Identify physical triangle boundaries after welding duplicated
+// positions. Non-indexed glTF and UV-normal splits are not genuine seams.
+function boundaryEdges(geometry){
+  const pos=geometry.getAttribute?.("position"),idx=geometry.index;
+  if(!pos||pos.count<3)throw Error("Missing source positions");
+  const raw=Array.from({length:pos.count},(_,i)=>[
+    pos.getX(i),pos.getY(i),pos.getZ(i)]);
+  const unique=new Map(),welded=new Int32Array(pos.count);
+  for(let i=0;i<raw.length;i++){
+    const key=raw[i].map(x=>Math.round(x/WELD)).join(":");
+    if(!unique.has(key))unique.set(key,unique.size);
+    welded[i]=unique.get(key);
+  }
+  const edges=new Map(),count=Math.floor((idx?.count??pos.count)/3);
+  for(let i=0;i<count;i++){
+    const ids=[0,1,2].map(k=>idx?idx.getX(i*3+k):i*3+k);
+    if(ids.some(id=>!Number.isInteger(id)||id<0||id>=pos.count))
+      throw Error("Malformed source triangle");
+    const physical=ids.map(id=>welded[id]);
+    if(new Set(physical).size<3)continue;
+    for(const [x,y] of [[0,1],[1,2],[2,0]]){
+      const lo=Math.min(physical[x],physical[y]),
+        hi=Math.max(physical[x],physical[y]),key=lo+":"+hi;
+      if(!edges.has(key))edges.set(key,{i:ids[x],j:ids[y],count:1});
+      else edges.get(key).count++;
     }
   }
-  const open=new Set();
-  for(const e of edges.values())if(e.count===1){
-    open.add(e.a);open.add(e.b);
-  }
-  return [...open];
+  return {raw,edges:[...edges.values()].filter(e=>e.count===1)};
 }
+const inShoulder=p=>p[1]>=1.385&&Math.abs(p[0])>=.105;
+const gridAt=p=>key(...p.map(x=>Math.floor(x/CELL)));
 function locateSamples(entry){
-  const geometry=entry.geometry,p=geometry.getAttribute("position"),
-    uv=geometry.getAttribute("uv");
-  if(!p||!uv||p.count!==uv.count)return new Map();
-  const m=entry.mesh?.matrixWorld?.elements??
+  const geom=entry.geometry,pos=geom.getAttribute?.("position"),
+    uv=geom.getAttribute?.("uv");
+  if(!pos||!uv||pos.count!==uv.count)
+    return {grid:new Map(),samples:[],segmentGrid:new Map(),segments:[]};
+  const outline=boundaryEdges(geom);
+  const matrix=entry.mesh?.matrixWorld?.elements??
     [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
-  const grid=new Map();
-  for(const i of boundaryIndices(geometry)){
-    if(i<0||i>=p.count)continue;
-    const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-    const pos=[
-      m[0]*x+m[4]*y+m[8]*z+m[12],
-      m[1]*x+m[5]*y+m[9]*z+m[13],
-      m[2]*x+m[6]*y+m[10]*z+m[14]];
-    // Upper shoulder/armhole seam; explicitly exclude waist and cuffs.
-    if(pos[1]<1.39||Math.abs(pos[0])<.105)continue;
-    const u=uv.getX(i);
-    if(!Number.isFinite(u)||!pos.every(Number.isFinite))continue;
-    const gridKey=key(...pos.map(x=>Math.round(x/CELL)));
-    const point={pos,i,d:(u-entry.metric.originU)*entry.metric.metresPerUv};
-    if(!grid.has(gridKey))grid.set(gridKey,[]);
-    grid.get(gridKey).push(point);
-  }
-  return grid;
-}
-function seamPairs(a,b){
-  const found=[],used=new Set();
-  for(const [where,points] of a.grid){
-    const [x,y,z]=where.split(":").map(Number);
-    for(const left of points){
-      let candidate=null,gap=MAX_GAP;
-      for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++)
-        for(let dz=-2;dz<=2;dz++)
-          for(const right of b.grid.get(key(x+dx,y+dy,z+dz))??[]){
-            const d=dist(left.pos,right.pos);
-            if(d<gap){gap=d;candidate=right;}
-          }
-      if(!candidate)continue;
-      const identifier=left.pos.map(x=>Math.round(x/.002)).join(":");
-      if(used.has(identifier))continue;
-      used.add(identifier);
-      found.push({a:left.d,b:candidate.d,ai:left.i,bi:candidate.i});
+  const world=outline.raw.map(([x,y,z])=>[
+    matrix[0]*x+matrix[4]*y+matrix[8]*z+matrix[12],
+    matrix[1]*x+matrix[5]*y+matrix[9]*z+matrix[13],
+    matrix[2]*x+matrix[6]*y+matrix[10]*z+matrix[14]]);
+  const samples=new Map(),grid=new Map(),segmentGrid=new Map(),segments=[];
+  const get=i=>{
+    if(samples.has(i))return samples.get(i);
+    const p=world[i],u=uv.getX(i),v=uv.getY(i);
+    if(!Number.isFinite(u)||!Number.isFinite(v)||!p.every(Number.isFinite))
+      return null;
+    const sample={i,pos:p,d:(u-entry.metric.originU)*entry.metric.metresPerUv};
+    samples.set(i,sample);
+    return sample;
+  };
+  for(const edge of outline.edges){
+    const first=get(edge.i),last=get(edge.j);
+    if(!first||!last||!inShoulder(first.pos)||!inShoulder(last.pos))continue;
+    const length=dist(first.pos,last.pos);
+    if(length<.00004||length>.06)continue;
+    const segment={first,last,length};segments.push(segment);
+    // Index the FULL line segment in a spatial hash. Different source
+    // tessellations can share a continuous seam without shared vertices.
+    const lower=first.pos.map((v,i)=>Math.floor(
+        (Math.min(v,last.pos[i])-MAX_GAP)/CELL)),
+      upper=first.pos.map((v,i)=>Math.floor(
+        (Math.max(v,last.pos[i])+MAX_GAP)/CELL));
+    for(let x=lower[0];x<=upper[0];x++)
+      for(let y=lower[1];y<=upper[1];y++)
+        for(let z=lower[2];z<=upper[2];z++){
+          const cell=key(x,y,z);
+          if(!segmentGrid.has(cell))segmentGrid.set(cell,[]);
+          segmentGrid.get(cell).push(segment);
+        }
+    for(const item of [first,last]){
+      const cell=gridAt(item.pos);
+      if(!grid.has(cell))grid.set(cell,[]);
+      grid.get(cell).push(item);
     }
   }
-  return found;
+  return {grid,samples:[...samples.values()],segments,segmentGrid};
 }
+function seamPairs(source,target){
+  const pairs=[],seen=new Set();
+  for(const vertex of target.samples){
+    if(!inShoulder(vertex.pos)||seen.has(vertex.i))continue;
+    const candidates=source.segmentGrid.get(gridAt(vertex.pos))??[];
+    let nearest,smallest=MAX_GAP;
+    for(const edge of candidates){
+      const direction=edge.first.pos.map((v,i)=>edge.last.pos[i]-v),
+        offset=edge.first.pos.map((v,i)=>vertex.pos[i]-v),
+        t=Math.max(0,Math.min(1,
+          direction.reduce((sum,x,i)=>sum+x*offset[i],0)/edge.length**2)),
+        point=edge.first.pos.map((v,i)=>v+t*direction[i]),
+        gap=dist(vertex.pos,point);
+      if(gap<smallest){smallest=gap;nearest={edge,t,gap};}
+    }
+    if(!nearest)continue;
+    seen.add(vertex.i);
+    pairs.push({ai:nearest.edge.first.i,aj:nearest.edge.last.i,
+      bi:vertex.i,b:vertex.d,t:nearest.t,physicalGap:nearest.gap});
+  }
+  return pairs;
+}
+const desiredValue=(pair,values)=>
+  values[pair.ai]*(1-pair.t)+values[pair.aj]*pair.t;
 function fit(pairs,sourceCoords,entry){
   if(pairs.length<8)return null;
   const uv=entry.geometry.getAttribute("uv");
   if(!uv)return null;
-  const desired=pairs.map(p=>sourceCoords[p.ai]);
+  const desired=pairs.map(p=>desiredValue(p,sourceCoords));
   if(desired.some(v=>!Number.isFinite(v)))return null;
   const span=xs=>Math.max(...xs)-Math.min(...xs);
   if(span(desired)<.018)return null;
@@ -118,21 +157,41 @@ function stitchedCoordinates(entry,pairs,fit,sourceCoords){
       (uv.getX(i)-entry.metric.originU)*entry.metric.metresPerUv)+fit.offset;
   const byIndex=new Map();
   for(const pair of pairs){
-    const wanted=sourceCoords[pair.ai];
+    const wanted=desiredValue(pair,sourceCoords);
     if(!Number.isFinite(wanted)||pair.bi<0||pair.bi>=length)continue;
     const difference=wanted-baseline[pair.bi];
     if(!byIndex.has(pair.bi))byIndex.set(pair.bi,[]);
-    byIndex.get(pair.bi).push(difference);
+    byIndex.get(pair.bi).push({wanted,difference});
   }
   if(byIndex.size<8)throw Error("Too few genuine sewn stripe anchors");
   const anchors=[...byIndex].map(([i,list])=>({
-    i,u:uv.getX(i),v:uv.getY(i),delta:mid(list)
+    i,u:uv.getX(i),v:uv.getY(i),
+    wanted:mid(list.map(p=>p.wanted)),
+    delta:mid(list.map(p=>p.difference))
   }));
   if(anchors.some(a=>Math.abs(a.delta)>.08))
     throw Error("Incompatible UV shoulder seam: excessive distortion");
   const direct=new Map(anchors.map(a=>[a.i,a.delta]));
+  // Original glTF may have multiple normal/UV indices at the same
+  // physical seam. All duplicates must share the same stripe value.
+  const position=entry.geometry.getAttribute("position"),
+    duplicates=new Map();
+  for(let i=0;i<length;i++){
+    const key=[position.getX(i),position.getY(i),position.getZ(i)]
+      .map(v=>Math.round(v/WELD)).join(":");
+    if(!duplicates.has(key))duplicates.set(key,[]);
+    duplicates.get(key).push(i);
+  }
+  for(const anchor of anchors){
+    const key=[position.getX(anchor.i),position.getY(anchor.i),
+      position.getZ(anchor.i)].map(v=>Math.round(v/WELD)).join(":");
+    for(const i of duplicates.get(key)??[])
+      direct.set(i,anchor.wanted-baseline[i]);
+  }
   const sample=anchors.length<=128?anchors:
     anchors.filter((a,i)=>i%Math.ceil(anchors.length/128)===0);
+  const scaleU=entry.metric.metresPerUv,
+    chartScaleV=entry.metric.metresPerUvV??scaleU;
   const result=new Float32Array(length);
   for(let i=0;i<length;i++){
     let correction=direct.get(i);
@@ -140,7 +199,7 @@ function stitchedCoordinates(entry,pairs,fit,sourceCoords){
       const u=uv.getX(i),v=uv.getY(i);
       const nearest=[];
       for(const a of sample){
-        const d2=(a.u-u)**2+(a.v-v)**2;
+        const d2=((a.u-u)*scaleU)**2+((a.v-v)*chartScaleV)**2;
         if(nearest.length<4){
           nearest.push({d2,delta:a.delta});
           nearest.sort((a,b)=>a.d2-b.d2);
@@ -153,7 +212,11 @@ function stitchedCoordinates(entry,pairs,fit,sourceCoords){
       for(const a of nearest){
         const w=1/(a.d2+1e-7);total+=w;weighted+=a.delta*w;
       }
-      correction=total?weighted/total:0;
+      // Restrict nonlinear corrections to the shoulder area. Elsewhere
+      // preserve the artist's flat-fabric stripe width and direction.
+      const near=Math.sqrt(nearest[0]?.d2??Infinity),
+        attenuation=Math.exp(-Math.pow(near/.045,2));
+      correction=total?(weighted/total)*attenuation:0;
     }
     result[i]=baseline[i]+correction;
   }
@@ -172,8 +235,9 @@ export function alignOriginalShoulderStripes(outfit,prepared){
     const kind=item.part==="jersey"?category(item.meshName):null;
     if(!kind||seen.has(item.geometry))continue;
     seen.add(item.geometry);
-    const grid=locateSamples(item);
-    if(grid.size>=8)entries.push({...item,kind,grid});
+    const outline=locateSamples(item);
+    if(outline.samples.length>=8&&outline.segments.length>=7)
+      entries.push({...item,kind,...outline});
   }
   const solved=new Map(),coordinates=new Map(),
     report={status:"no-seam-match",matches:0,connections:[]};
@@ -214,6 +278,10 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       report.matches+=candidate.matched;
       report.connections.push({from:a.meshName,to:b.meshName,
         matchedVertices:candidate.matched,
+        segmentProjected:true,
+        medianPhysicalGapMm:Math.round(mid(pairCache.get(
+          entries.indexOf(a)+":"+entries.indexOf(b))
+          .map(p=>p.physicalGap))*1000),
         preciseAnchors:complete.anchors,
         maxSeamCorrectionMm:complete.maxSeamCorrectionMm,
         residualMm:Math.round(candidate.error*1000),
@@ -232,6 +300,16 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       originU:item.metric.originU-x.offset/metresPerUv
     });
   }
+  // Report incomplete original shoulder connections explicitly, so the
+  // owner can distinguish a successful fit from UV fallbacks in Chrome.
+  report.connectedPanels=entries.filter(e=>solved.has(e.geometry))
+    .map(e=>e.meshName);
+  report.unmatchedPanels=entries.filter(e=>!solved.has(e.geometry))
+    .map(e=>e.meshName);
+  report.sleeves={
+    right:entries.some(e=>e.kind==="right"&&solved.has(e.geometry)),
+    left:entries.some(e=>e.kind==="left"&&solved.has(e.geometry))
+  };
   // No spurious attribute when a source has no trustworthy seams.
   if(report.status!=="aligned")coordinates.clear();
   const result={adjustments,coordinates,report};
