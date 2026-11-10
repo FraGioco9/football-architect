@@ -45,6 +45,21 @@ try{
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
    assert.equal(await page.locator('#account-go-back,#account-language-trigger').count(),0);
    assert.equal(await page.locator('html').getAttribute('lang'),language);
+   // All authentication text and native controls must match the app font across routes and hydration.
+   const typography=()=>page.evaluate(()=>{
+    const root=getComputedStyle(document.documentElement).fontFamily;
+    const selectors=['.fa-shell-sidebar','.fa-shell-topbar','.app-page-title','.app-authentication-card','.app-authentication-card label','.app-authentication-card input','.app-authentication-card button','.app-authentication-card select','.app-authentication-card a'];
+    return {root,styles:selectors.flatMap(selector=>{
+     const element=document.querySelector(selector);if(!element)return [];
+     const style=getComputedStyle(element);
+     return [{selector,family:style.fontFamily,size:style.fontSize,weight:style.fontWeight,spacing:style.letterSpacing}];
+    })};
+   });
+   const before=await typography();
+   for(const style of before.styles)assert.equal(style.family,before.root,route+' '+language+' '+style.selector+' font');
+   await page.evaluate(()=>window.faAccountUI.choose(document.documentElement.lang==='it'?'en':'it'));
+   assert.deepEqual(await typography(),before,route+' keeps identical typography after locale activation');
+   assert.equal(await page.locator('html').getAttribute('lang'),language==='it'?'en':'it');
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
    assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:login-return')),'/calendar?season=2&calendarView=week');
    checks++;
