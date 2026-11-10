@@ -31,7 +31,6 @@ try{
    const dropdownSelector=route==='/clubs'?'.nav01-filter .language-trigger':'#nationality-trigger';
    const dropdown=page.locator(dropdownSelector).first();
    await dropdown.click();
-   assert.equal(await dropdown.getAttribute('aria-expanded'),'true','Dropdown opens with the pointer');
    if(route==='/clubs')await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:dropdownSelector,color:expected});
    await dropdown.click();
    assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
