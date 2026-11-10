@@ -34,7 +34,7 @@ for(const mobile of [false,true]){
   assert.equal(scenario({snapshot:true,season:'2',mobile}).link.href,'/calendar?season=2&calendarView='+view);
  });
  test('CAL-SEASON-LINK-01 public cannot inherit DEV storage '+view,()=>{
-  assert.equal(scenario({season:'4',mobile}).link.href,'/calendar?season=1&calendarView='+view);
+  assert.equal(scenario({season:'4',mobile}).link.href,'/calendar?calendarView='+view);
  });
  test('CAL-SEASON-LINK-01 invalid DEV season fallback '+view,()=>{
   assert.equal(scenario({dev:true,season:'99',mobile}).link.href,'/calendar?season=1&calendarView='+view);
@@ -43,7 +43,7 @@ for(const mobile of [false,true]){
 test('CAL-SEASON-LINK-01 historical season URLs remain supported',()=>{
  const calendar=readFileSync(new URL('../assets/calendar-simplified.js',import.meta.url),'utf8');
  assert.match(calendar,/params\.has\('season'\)&&validSeason\(requested\)/);
- assert.match(calendar,/selectedSeason=requested/);
+ assert.match(calendar,/validSeason\(requested\)\?requested/);
 });
 
 for(const mobile of [false,true])test('CAL-SEASON-LINK-01 localhost DEV without subdomains '+(mobile?'mobile':'desktop'),()=>{

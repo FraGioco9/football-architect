@@ -78,7 +78,7 @@ try{
    assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }
   for(const selector of selectors){
-   // The approved Week selector now uses all free inline space at every viewport.
+   // Calendar uses centered controls and reserves space for its Week shortcut.
    // Restrict exceptions to Calendar control geometry; all other styles still match main.
    const authorizedCalendar=route==="/calendar"&&
     ["#world-calendar #calendar-controls","#calendar-previous","#calendar-next",
@@ -86,7 +86,7 @@ try{
    const comparable=items=>items.map(item=>{
     const result=structuredClone(item);
     if(authorizedCalendar){
-     for(const key of ["width","height","padding"])delete result.props[key];
+     for(const key of ["width","height","padding","gap"])delete result.props[key];
      result.rect=null; // tested independently on both browser engines in FE-02.
     }
     return result;

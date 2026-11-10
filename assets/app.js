@@ -1257,10 +1257,11 @@
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
     // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
-    let activeSeason=Math.max(1,window.faWorldState?.get?.().current?.season||1);
+    const worldSeason=window.faWorldState?.get?.().current?.season;
+    let activeSeason=Math.max(1,worldSeason||1);
     const isDevCalendar=window.faDebugEnabled!==false&&(window.faWorldState?.get?.().source==='dev'||window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev");
     if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
-    const calendarRoute="/calendar?season="+activeSeason+"&calendarView="+defaultView;
+    const calendarRoute="/calendar?"+(isDevCalendar||worldSeason!=null?"season="+activeSeason+"&":"")+"calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
     const calendarNav=links.calendar;
     if(calendarNav?.dataset&&!calendarNav.dataset.calendarSeasonLinkBound&&typeof calendarNav.addEventListener==="function"){

@@ -17,11 +17,11 @@ function element(){
     focus(){this.focused=true},append(...nodes){this.children.push(...nodes)},replaceChildren(...nodes){this.children=nodes},classList:{toggle(){}}};
   return n;
 }
-function boot({mobile=false,saved=null,blocked=false}={}){
+function boot({mobile=false,saved=null,blocked=false,search=''}={}){
   const source=read('calendar/index.html').match(/<script data-calendar-bootstrap>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(source,'Calendar initial view must be resolved before CSS');
   const root={dataset:{}};
-  const location={href:'http://localhost/calendar',pathname:'/calendar',search:''};
+  const location={href:'http://localhost/calendar'+search,pathname:'/calendar',search};
   const history={state:null,replaceState(_state,_title,url){location.href=String(url);location.search=new URL(location.href).search}};
   const createElement=()=>({dataset:{},textContent:''});
   runInNewContext(source,{URL,URLSearchParams,location,history,document:{documentElement:root,createElement,head:{append(){}}},window:{matchMedia:()=>({matches:mobile})},
@@ -31,7 +31,7 @@ function boot({mobile=false,saved=null,blocked=false}={}){
 function setup(options={}){
   const root=boot(options);root.lang='en';let observer;
   const names=['world-calendar','calendar-season','calendar-week','calendar-previous','calendar-next','calendar-week-label','calendar-selected','calendar-plan-label','calendar-note','calendar-key','calendar-controls','calendar-days'];
-  if(options.details)names.push('calendar-details','calendar-details-heading','calendar-details-content','calendar-filter','calendar-division');
+  if(options.details)names.push('calendar-details','calendar-details-heading','calendar-details-content');
   const fields=new Map(names.map(id=>[id,element()]));
   fields.get('calendar-note').textContent='Season structure only. No live fixtures or results are available.';
   const rows=Array.from({length:8},(_,i)=>({...element(),dataset:{week:String(i+1)}}));
@@ -138,14 +138,24 @@ test('CAL-IMP-02 boundary navigation moves focus from a disabled arrow to the se
   assert.equal(days[0].focused,true);
 });
 
-test('A03-04E: calendar detail links preserve exact domestic Fixtures query and existing return encoding',()=>{
- const r=setup({details:true}),walk=node=>[node,...node.children.flatMap(walk)];
- r.days[12].emit('click');
- for(const country of ['it','eng','es','de','fr','pt','nl','br'])for(const tier of [1,2]){
-  const division=country+'-'+tier,control=r.fields.get('calendar-division');
-  control.value=division;control.emit('change');
-  const links=walk(r.fields.get('calendar-details-content')).filter(node=>node.tagName==='a');
-  assert.equal(links.length,1);
-  assert.equal(links[0].href,'/competitions/'+division+'/fixtures?season=1&matchday=1&calendarReturn=%2Fcalendar%3Fseason%3D1%26calendarView%3Dseason');
- }
+test('Calendar details include both official events without a competition filter',()=>{
+ const r=setup({details:true});
+ r.days[15].emit('click');
+ const details=r.fields.get('calendar-details-content');
+ assert.equal(details.children.length,2);
+ assert.deepEqual(details.children.map(node=>node.dataset.marker),['I01','N04']);
+});
+
+test('an implicit public season stays unset until world state resolves, while direct seasons paint immediately',()=>{
+ assert.equal(boot({mobile:true}).dataset.calendarSeason,'');
+ assert.equal(boot({search:'?season=2'}).dataset.calendarSeason,'2');
+});
+
+test('a Week link supplies its days at first paint while invalid weeks wait for the world',()=>{
+ const explicit=boot({search:'?season=2&calendarView=week&week=6'}).dataset;
+ assert.equal(explicit.calendarWeek,'6');
+ assert.equal(explicit.calendarDay,'36');
+ assert.equal(explicit.calendarWeekPending,undefined);
+ const invalid=boot({search:'?calendarView=week&week=9'}).dataset;
+ assert.equal(invalid.calendarWeekPending,'true');
 });

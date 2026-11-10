@@ -24,9 +24,18 @@ function chrome(){
 test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844/1440, restoration and keyboard',{timeout:150000},async()=>{
   const binary=chrome(); // Fail before opening any server if Chrome is unavailable.
   const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+  const world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:26,seasonNumber:2,day:26,phase:'active'};
+  let worldReads=0,calendarReads=0,holdWorld=false,releaseWorld;
   const publicServer=createServer(async(req,res)=>{
     try{
-      const path=publicRequestFile(new URL(req.url,'http://localhost').pathname);
+      const pathname=new URL(req.url,'http://localhost').pathname;
+      if(pathname==='/api/world'){
+        worldReads++;
+        if(holdWorld)await new Promise(resolve=>{releaseWorld=resolve});
+        res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({world}));return;
+      }
+      if(pathname.startsWith('/api/calendar/'))calendarReads++;
+      const path=publicRequestFile(pathname);
       if(!isAllowlistedPublicPath(path))throw Error('Not public');
       const bytes=await readFile(new URL('../'+path,import.meta.url));
       res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream','Cache-Control':'no-store'});res.end(bytes);
@@ -57,18 +66,67 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     }
     async function visit(base=origin){
       await cmd('Page.navigate',{url:base+'/calendar'});
-      for(let i=0;i<100;i++){if(await run("location.href.startsWith("+JSON.stringify(base)+")&&document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'"))return;await delay(100)}
+      for(let i=0;i<100;i++){if(await run("location.href.startsWith("+JSON.stringify(base)+")&&document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'&&Boolean(document.getElementById('calendar-season-value').textContent)"))return;await delay(100)}
       throw Error('Calendar did not initialize: '+JSON.stringify(await run('({url:location.href,errors:window.__calendarErrors})')));
     }
     const measure=()=>run(`(()=>{const root=document.getElementById('world-calendar'),visible=[...root.querySelectorAll('[data-calendar-day]')].filter(b=>b.getClientRects().length),rows=[...root.querySelectorAll('[data-week]')].filter(r=>r.getClientRects().length);return {view:document.documentElement.dataset.calendarView,selection:window.faWorldCalendar.getSelection(),rows:rows.length,visible:visible.length,scroll:root.scrollWidth,width:root.clientWidth,body:document.documentElement.scrollWidth,viewport:innerWidth,clipped:[...root.querySelectorAll('button,.calendar-event,.calendar-day-kind,.calendar-note,.calendar-selected')].filter(n=>n.getClientRects().length&&n.scrollWidth>n.clientWidth+1).map(n=>n.className+':'+n.textContent),errors:window.__calendarErrors}})()`);
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
-    await visit();
     const runValue=expr=>run(expr);
+    holdWorld=true;
+    await cmd('Page.navigate',{url:origin+'/calendar?calendarView=week'});
+    for(let i=0;i<100&&!releaseWorld;i++)await delay(30);
+    assert.ok(releaseWorld,'Calendar requests the canonical world');
+    assert.equal(await run("document.querySelector('#calendar-week-value').textContent"),'Week','Keep the Week selector in place while its authoritative value is pending');
+    assert.equal(await run("getComputedStyle(document.querySelector('#calendar-controls')).display"),'flex');
+    assert.equal(await run("document.querySelector('#calendar-season-value').textContent"),'','No provisional season in the picker');
+    assert.equal(await run("new URL(location.href).searchParams.has('season')"),false,'No provisional season in the URL');
+    const visibleWeekNumbers=()=>run(`[...document.querySelectorAll('#calendar-days .calendar-day-number')]
+      .filter(node=>node.getClientRects().length).map(node=>node.textContent)`);
+    assert.deepEqual(await visibleWeekNumbers(),Array(7).fill(''));
+    for(const field of ['number','kind'])assert.equal(await run(`[...document.querySelectorAll('.calendar-week-preview .app-skeleton-bar.calendar-day-${field}')]
+      .filter(node=>node.getClientRects().length).length`),7);
+    const pendingHeight=await run("document.getElementById('calendar-days').getBoundingClientRect().height");
+    holdWorld=false;releaseWorld();
+    for(let i=0;i<100&&await run("document.querySelector('#calendar-week-value').textContent")!=='Week 4';i++)await delay(30);
+    assert.equal(await run("document.querySelector('#calendar-week-value').textContent"),'Week 4');
+    assert.equal(await run("document.querySelector('#calendar-season-value').textContent"),'2');
+    assert.equal(await run("new URL(location.href).searchParams.get('season')"),'2');
+    assert.deepEqual(await visibleWeekNumbers(),['22','23','24','25','26','27','28']);
+    assert.equal(await run("new URL(location.href).searchParams.get('week')"),'4');
+    assert.equal(await run("document.getElementById('calendar-days').getBoundingClientRect().height"),pendingHeight);
+    await run("document.querySelector('#calendar-season').click();document.querySelector('#calendar-week').click();document.querySelector('#calendar-next').click();window.dispatchEvent(new Event('focus'))");
+    await delay(150);
+    assert.equal(worldReads,1,'Cold load and view changes reuse one canonical world request');
+    assert.equal(calendarReads,0,'Week navigation does not load daily fixtures');
+    assert.equal(await run("new URL(location.href).searchParams.get('week')"),'5');
+    for(const width of [320,390]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
+      const geometry=()=>run(`(()=>{
+        const box=id=>document.getElementById(id).getBoundingClientRect();
+        const row=box('calendar-controls'),trigger=box('calendar-week-trigger'),reset=box('calendar-current-week');
+        return {centerError:Math.abs(trigger.left+trigger.width/2-row.left-row.width/2),left:trigger.left,
+          resetGap:reset.left-box('calendar-next').right,resetWidth:reset.width,resetHeight:reset.height,
+          resetHidden:document.getElementById('calendar-current-week').hidden};
+      })()`);
+      const away=await geometry();
+      assert.ok(away.centerError<=1&&away.resetGap>=2&&away.resetWidth===44&&away.resetHeight===44&&!away.resetHidden,JSON.stringify({width,away}));
+      await run("document.getElementById('calendar-current-week').click()");
+      const current=await geometry();
+      assert.equal(await run("new URL(location.href).searchParams.get('week')"),'4');
+      assert.ok(current.centerError<=1&&current.resetHidden&&Math.abs(current.left-away.left)<=1,JSON.stringify({width,current,away}));
+      await run("document.getElementById('calendar-next').click()");
+    }
+    await cmd('Emulation.clearDeviceMetricsOverride');
+    await cmd('Page.navigate',{url:origin+'/calendar?season=2&calendarView=week&week=8'});
+    for(let i=0;i<100&&await run("document.querySelector('#calendar-week-value')?.textContent")!=='Week 8';i++)await delay(30);
+    assert.deepEqual(await visibleWeekNumbers(),['50','51','52','53','54','55','56']);
+    assert.equal(await run("document.querySelector('#calendar-week-value').textContent"),'Week 8');
+    await visit();
     // Public rendering must ignore a leftover fictional DEV world day.
     await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
     await visit();
-    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.get('season')"),'1','Public Calendar link must ignore DEV season storage');
+    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.get('season')"),'2','Public Calendar link must ignore DEV season storage');
     assert.equal(await runValue("document.documentElement.dataset.calendarView"),'season','Cached Week must not override the device default');
     assert.equal(await runValue("new URL(location.href).searchParams.get('calendarView')"),'season','Default view is canonicalized in the URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
@@ -77,11 +135,11 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelectorAll('.calendar-day[data-calendar-day]').length"),56);
     assert.equal(await runValue("document.querySelector('.calendar-key')===null"),true);
     assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-clock')).display"),'none');
-    assert.equal(await runValue("getComputedStyle(document.querySelector('.calendar-filterbar')).display"),'none');
+    assert.equal(await runValue("document.querySelector('.calendar-filterbar')===null"),true);
     assert.equal(await runValue("getComputedStyle(document.querySelector('.world-calendar')).maxWidth"),'none');
     assert.equal(await runValue("getComputedStyle(document.querySelector('.world-calendar')).borderTopWidth"),'0px');
     assert.equal(await runValue("document.querySelector('#calendar-season-picker').getAttribute('role')"),'combobox');
-    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1');
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'2');
     assert.equal(await runValue("document.querySelector('.calendar-event').hasAttribute('title')"),false);
     const fineHover=await runValue("matchMedia('(hover: hover) and (pointer: fine)').matches");
     await runValue("document.querySelector('[data-calendar-marker=\\\"N04\\\"]').dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse'}))");
@@ -105,6 +163,9 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('Pending')"),false);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details').textContent.includes('competitions:')"),false);
     assert.equal(await runValue("document.querySelector('#calendar-event-dialog-details .calendar-event-code').dataset.eventType"),'international');
+    await delay(150);
+    assert.equal(calendarReads,0,'Opening a day never requests daily matches or results');
+    assert.equal(await runValue("document.querySelector('[data-authoritative-calendar]')===null"),true);
     await runValue("document.querySelector('#calendar-event-dialog').close()");
     assert.equal(await runValue("document.querySelector('#calendar-day-16').getAttribute('aria-pressed')"),'false');
     assert.equal(await runValue("new URL(location.href).searchParams.has('day')"),false);
@@ -197,6 +258,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await runValue("document.querySelector('#calendar-event-dialog').close()");
     console.log('CAL_SIMPLE_BROWSER_PASS|'+cases+' responsive cases, tooltip, dialog, season dropdown, global debug, no persistent selection');
   }finally{
+    releaseWorld?.();
     try{socket?.close()}catch{}proc.kill('SIGTERM');publicServer.close();devServer.close();
     for(let i=0;i<30&&proc.exitCode===null;i++)await delay(100);
     if(proc.exitCode===null)proc.kill('SIGKILL');
