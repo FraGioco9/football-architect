@@ -54,13 +54,15 @@ test('KM-29 shoulder aligns mirrored sleeve and front/back pattern islands',()=>
   for(const entry of inputs)
     assert.equal(Math.abs(adjusted(entry,result).metresPerUv),
       entry.metric.metresPerUv,'Stripe fabric width must stay unchanged');
+  // KM-36: the renderer uses sewn-coordinates per vertex when present.
+  // Legacy affine UV uniforms are no longer the render-time stripe field.
+  const chestMetres=result.coordinates.get(body.geometry),
+    sleeveMetres=result.coordinates.get(sleeve.geometry);
+  assert.ok(chestMetres&&sleeveMetres);
   for(const width of [.01,.03,.075,.15]){
-    for(let i=0;i<19;i++){
-      const value=phase(body.seamSamples[i],adjusted(body,result));
-      const opposite=phase(sleeve.seamSamples[i],adjusted(sleeve,result));
-      assert.ok(Math.abs(Math.cos(Math.PI*value/width)-
-        Math.cos(Math.PI*opposite/width))<1e-8);
-    }
+    for(let i=0;i<19;i++)
+      assert.ok(Math.abs(Math.cos(Math.PI*chestMetres[i]/width)-
+        Math.cos(Math.PI*sleeveMetres[19+i]/width))<1e-5);
   }
   assert.equal(alignOriginalShoulderStripes(outfit,inputs),result,
     'Repeated style or slider updates must reuse one geometry analysis');
@@ -441,4 +443,105 @@ test('KM-33 shoulder reference discovery is bounded on dense private-source topo
     'Selected actual front/back seam must still fit its full detail');
   assert.ok(mapped.coordinates.has(front.geometry));
   assert.ok(mapped.coordinates.has(back.geometry));
+});
+
+test('KM-36 separated front/back source primitives still share the upper shoulder start',()=>{
+  for(const side of [1,-1]){
+    const front=shoulderSewnPanel('FA_jersey__9',
+      {samples:25,front:true,side}),
+      back=shoulderSewnPanel('FA_jersey__42',
+      {samples:55,front:false,side,flip:true,atlasShift:.84});
+    // Two sewn pattern primitives are separated by 12mm in the Z axis.
+    // There are NO physically coincident mesh edges for KM-32 to match.
+    const pos=back.geometry.getAttribute('position'),
+      previousZ=pos.getZ.bind(pos);
+    pos.getZ=i=>previousZ(i)+.012;
+    const result=alignOriginalShoulderStripes({},[back,front]);
+    assert.equal(result.report.shoulderReference.status,'not-detected');
+    assert.equal(result.report.torsoShoulderStart.status,
+      'shared-physical-upper-start');
+    assert.equal(result.report.status,'torso-anchored');
+    const a=result.coordinates.get(front.geometry),
+      b=result.coordinates.get(back.geometry);
+    assert.ok(a&&b);
+    assert.ok(Math.abs(a[0])<1e-6);
+    assert.ok(Math.abs(b[0])<1e-6);
+    for(let i=0;i<55;i++){
+      const x=pos.getX(i);
+      const expected=Math.abs(x)-.12;
+      assert.ok(Math.abs(b[i]-expected)<1e-6,
+        'Back first stripe must follow exactly the same physical start');
+    }
+  }
+});
+test('KM-36 torso-only fallback does not fabricate a sleeve connection',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',{samples:21}),
+    back=shoulderSewnPanel('FA_jersey__42',
+      {samples:39,front:false,flip:true,atlasShift:.84}),
+    sleeve=irregularSeamPanel('FA_jersey__38',
+      {count:51,lower:true,offset:.72});
+  const positions=back.geometry.getAttribute('position'),
+    original=positions.getZ.bind(positions);
+  positions.getZ=i=>original(i)+.012;
+  const sleevePos=sleeve.geometry.getAttribute('position'),
+    sleeveOriginal=sleevePos.getZ.bind(sleevePos);
+  sleevePos.getZ=i=>sleeveOriginal(i)+.08;
+  const r=alignOriginalShoulderStripes({},[front,back,sleeve]);
+  assert.equal(r.report.torsoShoulderStart.status,'shared-physical-upper-start');
+  assert.ok(r.coordinates.has(front.geometry));
+  assert.ok(r.coordinates.has(back.geometry));
+  assert.ok(!r.coordinates.has(sleeve.geometry),
+    'Do not call an unattached sleeve a verified stitched band');
+});
+
+test('KM-36 real shader binds identical physical start to separated front/back mesh',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',{samples:29}),
+    back=shoulderSewnPanel('FA_jersey__42',{
+      samples:51,front:false,flip:true,atlasShift:.93}),
+    shorts=panel('FA_shorts__body'),socks=panel('FA_socks__body');
+  const positions=back.geometry.getAttribute('position'),
+    original=positions.getZ.bind(positions);
+  positions.getZ=i=>original(i)+.012;
+  class Color{constructor(value){this.hex=value;}set(value){this.hex=value;return this;}}
+  class Float32BufferAttribute{
+    constructor(value,itemSize){this.array=value;this.itemSize=itemSize;
+      this.count=value.length/itemSize;}
+  }
+  const meshEntries=[back,front,shorts,socks];
+  const meshes=meshEntries.map(e=>{
+    const attrs=new Map(),read=e.geometry.getAttribute.bind(e.geometry);
+    e.geometry.getAttribute=k=>attrs.get(k)??read(k);
+    e.geometry.setAttribute=(k,value)=>{attrs.set(k,value);return e.geometry;};
+    return {isMesh:true,name:e.meshName,geometry:e.geometry,
+      material:{name:(e.meshName.startsWith('FA_jersey__')?
+        'km13-white-':'km14-white-')+e.meshName,
+        color:new Color('#FFFFFF'),userData:{}}};
+  });
+  const outfit={traverse(fn){meshes.forEach(fn);},userData:{}},
+    store=createKitDesignStore(),THREE={Color,Float32BufferAttribute};
+  applyKitDesign(outfit,store.getState(),THREE);
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(outfit,store.getState(),THREE);
+  assert.equal(outfit.userData.km36TorsoStartReport.status,
+    'shared-physical-upper-start');
+  assert.equal(outfit.userData.km31ShoulderStripeReport.status,
+    'torso-anchored');
+  const a=front.geometry.getAttribute('kmStripeSewnMetres'),
+    b=back.geometry.getAttribute('kmStripeSewnMetres');
+  assert.ok(a&&b);
+  for(let i=0;i<51;i++){
+    const x=positions.getX(i),expected=x-.12;
+    assert.ok(Math.abs(b.array[i]-expected)<1e-6);
+    const width=.01;
+    assert.ok(Math.abs(Math.cos(Math.PI*b.array[i]/width)-
+      Math.cos(Math.PI*expected/width))<.00001);
+  }
+  assert.ok(Math.abs(a.array[0])<1e-6&&Math.abs(b.array[0])<1e-6);
+  for(const name of ['FA_jersey__9','FA_jersey__42']){
+    const material=meshes.find(m=>m.name===name).material;
+    assert.equal(material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-sewn');
+    assert.equal(material.userData.kitStripeUniforms.kmStripeFabricOrigin.value,0);
+    assert.equal(material.userData.kitStripeUniforms.kmStripeFabricScale.value,1);
+  }
 });

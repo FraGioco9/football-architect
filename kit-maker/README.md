@@ -1491,3 +1491,51 @@ This does **not** remove the upstream license restriction, create
 a GitHub asset, imply the private license has been verified, or make
 the original third-party model universally available to other users.
 Full owner Chrome/WebGL visual QA remains open; PR remains Draft/HOLD.
+
+## KM-36 — same front/back stripe start on original upper-shoulder geometry (2026-11-11)
+
+**Owner QA:** After recovering the original Alberto Sena GLB, the
+front and rear vertical stripes still start at different locations.
+
+**Cause identified in source:** KM-32 only shared one origin after a
+successful front↔back **open-edge vertex/segment match**. The actual
+author garment can split the upper torso into materially separate
+mesh primitives that do not export coincident open-edge endpoints.
+In this case the previous algorithm could silently use separately
+centred UV charts. Its `aligned` status could also refer only to a
+torso↔sleeve match, not front↔back shoulder start verification.
+
+**Repair:** KM-36 independently measures each original *upper-torso*
+front/back source mesh's uppermost boundary samples. It rejects
+vertical/inclined SIDE seams, and derives one shared
+**collar-side radial (absolute-X) start** from the real source
+geometry on both chest/back panels. Within the upper 10cm shoulder
+region it enforces the same physical-metre stripe coordinate on both
+meshes; lower down it smoothly blends into the author's genuine
+flat-pattern UV metre field. Existing **verified** original shoulder
+stitches still have priority for connecting sleeves AFTER the torso;
+no sleeve correspondence is invented if a sleeve is detached.
+This can slightly alter projected stripe width very close to the
+shoulder; the rest of the original cloth UV pattern is preserved.
+Neither original geometry nor source UVs are edited. Original
+1–15cm widths, collars, cuff/waist trims, palette and shoe/material
+logic are unchanged.
+
+If a front/back mesh pairing is not topologically verified but
+upper-shoulder geometry exists, diagnostics show
+`torsoShoulderStart.status="shared-physical-upper-start"`, with
+`report.status="torso-anchored"` if no other seams match. Both statuses
+now render the dedicated sewn stripe attribute; "aligned" alone is
+not mistaken for a verified front/back physical stitch. If suitable
+upper geometry is absent the old source UVs remain, and a
+`no-common-shoulder-start` report is emitted.
+
+Targeted regression tests include physically separated front/back
+primitives, a mirrored UV pattern, front/back start at **1cm width**,
+fail-closed detached sleeves, original previous valid seam models,
+and a direct `applyKitDesign` first-Solid-to-Stripe shader-attribute
+integration test. **User's private GLB was not attached** to the
+conversation, so its actual pixel-alignment is pending manual Chrome
+QA. Further adjustments must use real model evidence rather than
+calling synthetic checks a visual approval. PR #454 Draft/HOLD;
+no merge/deploy/database operations or third-party redistribution.

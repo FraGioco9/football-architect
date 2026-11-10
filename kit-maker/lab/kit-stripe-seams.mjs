@@ -304,6 +304,105 @@ function findShoulderReference(entries){
   return best;
 }
 
+// KM-36: normalize the visible upper-shoulder stripe start using the
+// SAME physical collar-side origin on the front and back artist panels.
+// A real glTF stitch is preferable; this fallback is visibly continuous
+// when front/back primitives have no exposed open-edge match.
+function sourceWorldPoint(entry,position,i){
+  const x=position.getX(i),y=position.getY(i),z=position.getZ(i),
+    m=entry.mesh?.matrixWorld?.elements;
+  return m?[
+    m[0]*x+m[4]*y+m[8]*z+m[12],
+    m[1]*x+m[5]*y+m[9]*z+m[13],
+    m[2]*x+m[6]*y+m[10]*z+m[14]
+  ]:[x,y,z];
+}
+function topShoulderSamples(entry){
+  const top=new Map();
+  for(const p of entry.samples){
+    const radial=Math.abs(p.pos[0]),height=p.pos[1];
+    if(radial<.095||height<1.385)continue;
+    const k=Math.floor(radial/.008);
+    if(!top.has(k)||top.get(k).pos[1]<height)top.set(k,p);
+  }
+  const samples=[...top.values()];
+  if(samples.length<8)return null;
+  const radial=samples.map(p=>Math.abs(p.pos[0])),
+    heights=samples.map(p=>p.pos[1]),
+    dx=Math.max(...radial)-Math.min(...radial),
+    dy=Math.max(...heights)-Math.min(...heights);
+  return dx>=.045&&dx>=1.2*dy?samples:null;
+}
+function unifyTorsoStart(entries,solved,coordinates,report){
+  const front=entries.filter(e=>torsoFace(e.meshName)==="front"),
+    back=entries.filter(e=>torsoFace(e.meshName)==="back"),
+    upper=new Map();
+  for(const entry of [...front,...back]){
+    const points=topShoulderSamples(entry);
+    if(points)upper.set(entry,points);
+  }
+  const validFront=front.filter(e=>upper.has(e)),
+    validBack=back.filter(e=>upper.has(e));
+  if(!validFront.length||!validBack.length){
+    report.torsoShoulderStart={status:"no-common-shoulder-start"};
+    return;
+  }
+  const all=[...validFront,...validBack],
+    origin=Math.min(...all.flatMap(e=>upper.get(e).map(p=>Math.abs(p.pos[0]))));
+  for(const entry of all){
+    const pos=entry.geometry.getAttribute("position"),
+      uv=entry.geometry.getAttribute("uv"),top=upper.get(entry);
+    let field=coordinates.get(entry.geometry);
+    if(!field){
+      const points=top.map(p=>({
+        radial:Math.abs(p.pos[0]),
+        u:(uv.getX(p.i)-entry.metric.originU)*entry.metric.metresPerUv,
+        v:uv.getY(p.i)*(entry.metric.metresPerUvV??entry.metric.metresPerUv)
+      }));
+      const fitAxis=axis=>{
+        const midU=mid(points.map(p=>p[axis])),
+          midX=mid(points.map(p=>p.radial)),
+          cov=points.reduce((sum,p)=>sum+
+            (p[axis]-midU)*(p.radial-midX),0),
+          sign=cov>=0?1:-1,
+          offsets=points.map(p=>p.radial-origin-sign*p[axis]),
+          offset=mid(offsets);
+        return {axis,sign,offset,
+          error:mid(offsets.map(d=>Math.abs(d-offset)))};
+      };
+      const fit=[fitAxis("u"),fitAxis("v")]
+        .sort((a,b)=>a.error-b.error)[0];
+      field=Float32Array.from({length:uv.count},(_,i)=>{
+        const source=fit.axis==="u"
+          ?(uv.getX(i)-entry.metric.originU)*entry.metric.metresPerUv
+          :uv.getY(i)*(entry.metric.metresPerUvV??entry.metric.metresPerUv);
+        return fit.sign*source+fit.offset;
+      });
+      solved.set(entry.geometry,{
+        axis:fit.axis,sign:fit.sign,offset:fit.offset
+      });
+    }else{
+      const shift=mid(top.map(p=>Math.abs(p.pos[0])-origin-field[p.i]));
+      field=Float32Array.from(field,v=>v+shift);
+    }
+    const synchronized=new Float32Array(pos.count);
+    for(let i=0;i<pos.count;i++){
+      const world=sourceWorldPoint(entry,pos,i),
+        t=Math.max(0,Math.min(1,(world[1]-1.285)/.100)),
+        w=t*t*(3-2*t);
+      synchronized[i]=(1-w)*field[i]+
+        w*(Math.abs(world[0])-origin);
+    }
+    coordinates.set(entry.geometry,synchronized);
+  }
+  report.torsoShoulderStart={
+    status:"shared-physical-upper-start",
+    method:"source-geometry-near-shoulder",
+    originRadialM:Math.round(origin*10000)/10000,
+    sourcePanels:all.map(e=>e.meshName)
+  };
+}
+
 const alignmentCache=new WeakMap();
 export function alignOriginalShoulderStripes(outfit,prepared){
   const old=alignmentCache.get(outfit);
@@ -374,6 +473,9 @@ export function alignOriginalShoulderStripes(outfit,prepared){
         report.shoulderReference.innerEdgeZero=false;
       }
     }
+    // Make the upper stripe start identical on original front/back
+    // geometry BEFORE fitting any sleeve to the already-sewn torso.
+    unifyTorsoStart(entries,solved,coordinates,report);
     while(solved.size<entries.length){
       let best=null;
       for(let i=0;i<entries.length;i++){
@@ -417,6 +519,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
         seamAcrossUvAxis:candidate.axis.toUpperCase()});
     }
     if(report.matches)report.status="aligned";
+    else if(report.torsoShoulderStart?.status==="shared-physical-upper-start")
+      report.status="torso-anchored";
   }
   const adjustments=new Map();
   for(const item of entries){
@@ -439,7 +543,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
     left:entries.some(e=>e.kind==="left"&&solved.has(e.geometry))
   };
   // No spurious attribute when a source has no trustworthy seams.
-  if(report.status!=="aligned")coordinates.clear();
+  if(report.status!=="aligned"&&report.status!=="torso-anchored")
+    coordinates.clear();
   const result={adjustments,coordinates,report};
   alignmentCache.set(outfit,result);
   return result;

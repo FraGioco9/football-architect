@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km33-lazy-shoulder-load-guard-v1";
+export const KIT_STRIPE_SHADER_KEY="km36-front-back-source-shoulder-start-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -605,6 +605,7 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km29ShoulderStripeReport=shoulder.report;
       outfit.userData.km31ShoulderStripeReport=shoulder.report;
       outfit.userData.km32ShoulderOriginReport=shoulder.report.shoulderReference;
+      outfit.userData.km36TorsoStartReport=shoulder.report.torsoShoulderStart;
       if(typeof THREE?.Mesh==="function"&&!outfit.userData.km31SeamLogged){
         outfit.userData.km31SeamLogged=true;
         console.info("Kit Maker shoulder seam coverage",shoulder.report);
@@ -621,7 +622,9 @@ export function applyKitDesign(outfit,state,THREE){
   }
   // Stitch-adjacent vertices inherit the same authored fabric-metre
   // stripe field on both sides of the seam. Original UVs stay untouched.
-  if(canBindSewnCoordinates&&shoulder.report.status==="aligned"){
+  if(canBindSewnCoordinates&&
+      (shoulder.report.status==="aligned"||
+       shoulder.report.status==="torso-anchored")){
     for(const [geometry,metres] of shoulder.coordinates){
       const p=geometry.getAttribute?.("position");
       if(!p||p.count!==metres.length||
