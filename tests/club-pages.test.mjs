@@ -23,31 +23,25 @@ test('CLUB-01 all 320 identities and 1600 subpages resolve to one public templat
  for(const path of ['/clubs/xx/1/overview','/clubs/it/0/overview','/clubs/it/41/overview','/clubs/it/01/overview','/clubs/it/1/unknown','/app/clubs/it/1/overview'])
   assert.equal(isAllowlistedPublicPath(publicRequestFile(path)),false,path);
 });
-test('PAGE-LOAD-03A P17/P18: complete canonical identities and five tabs are in the synchronous shell',()=>{
+test('PAGE-LOAD-04 B01: the synchronous club shell has tabs, static labels and anonymous values only',()=>{
  const html=read('clubs/_shared/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const script=html.match(/<script data-fa-club-first-paint>([\s\S]*?)<\/script>/)?.[1];
- assert.ok(script,'synchronous first-paint bootstrap');
- for(const token of ['<header class="club-header club-first-paint-header"','<h1 id="club-title"','<span class="club-first-paint-flag"','clubIdentityReady','([1-9]|[1-3][0-9]|40)'])
-  assert.ok((token.startsWith('<')?html:script).includes(token),token);
+ assert.ok(script,'synchronous route-only bootstrap');
+ assert.ok(script.includes("dataset.clubShellReady='true'"));
+ assert.ok(!script.includes('clubIdentityReady'),'identity must only be ready after the manifest');
+ assert.ok(html.includes('class="club-fp-bar club-fp-header-name"'));
+ assert.ok(html.includes('class="club-fp-bar club-fp-header-location"'));
  for(const view of clubViews)assert.ok(html.includes('data-club-first-paint-tab="'+view+'"'),view);
  assert.equal((html.match(/data-club-first-paint-tab="/g)||[]).length,5);
- for(const club of manifest.clubs){
-  const key=club.countryId.toLowerCase()+'/'+club.clubId;
-  assert.ok(script.includes(JSON.stringify(key)+':['+JSON.stringify(club.fullName)+','),key);
- }
+ for(const field of ['nameLabel','country','city','abbr','nickname','stadium'])assert.ok(html.includes('data-club-first-paint-label="'+field+'"'));
+ for(const value of ['nameLabel','country','city'])assert.ok(html.includes('data-club-first-paint-value="'+value+'"><span class="club-fp-bar"'));
  assert.equal(manifest.clubs.length,320);
- const countryCodes=['it','gb-eng','es','de','fr','pt','nl','br'];
- for(const country of countryCodes)assert.ok(script.includes('fa-competition-flag-'+country),'canonical vector '+country);
- assert.ok(script.includes('flags[country.toUpperCase()]'),'parser-time vector source');
- assert.ok(script.includes("outerHTML=flagSvg"),'no flag image swap');
- assert.ok(script.includes('const headings='),'localized panel headings');
- assert.ok(script.includes('const factLabels='),'localized static label data');
- assert.ok(script.includes('identityFlag'),'no API needed for country flag');
- assert.ok(html.includes('club-first-paint-panel" aria-busy="true"'),'visible Overview panels');
+ assert.ok(!script.includes('const identities='));
+ assert.ok(!script.includes('crestAssets'));
+ for(const c of manifest.clubs)assert.ok(!html.includes(c.fullName),'no preloaded club identity: '+c.countryId+'-'+c.clubId);
+ assert.ok(html.includes('club-first-paint-panel" aria-busy="true"'),'preserved overview structure');
  assert.ok(brotliCompressSync(html).length<50000,'first-paint HTML compressed-size budget');
- console.log('PAGE-LOAD-03A HTML payload bytes: raw='+Buffer.byteLength(html)+' gzip='+gzipSync(html).length+' brotli='+brotliCompressSync(html).length);
 });
-
 test('CLUB-01 derived manifest preserves canonical fields and provisional placement',()=>{
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const descriptions=JSON.parse(read('data/club-descriptions.i18n.json'));
@@ -319,32 +313,20 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });
 
-test('PAGE-LOAD-02 P16 canonically known Clubs cards exist in static HTML before the manifest request',()=>{
+test('PAGE-LOAD-04 B01: club directory displays 6 anonymous card skeletons before catalog hydration',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  assert.equal(manifest.clubs.length,320);
- assert.equal((html.match(/class="nav01-card"/g)||[]).length,320);
- assert.equal((html.match(/class="nav01-country-flag"/g)||[]).length,320);
- assert.equal((html.match(/class="nav01-crest"/g)||[]).length,320);
- assert.equal((html.match(/data-country="/g)||[]).length,320);
- assert.equal((html.match(/data-tier="/g)||[]).length,320);
- assert.equal((html.match(/data-search="/g)||[]).length,320);
- assert.match(html,/data-nav01-filter-first-paint/);
- const divisionById=new Map(manifest.divisions.map(d=>[d.id,d]));
- for(const club of manifest.clubs){
-  const division=divisionById.get(club.divisionId),tier=division?.tier||0;
-  const prefix='<a class="nav01-card" href="/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview"'+
-   ' data-country="'+club.countryId+'" data-tier="'+tier+'"';
-  assert.ok(html.includes(prefix),'static assignment must follow canonical provisional membership: '+club.countryId+'-'+club.clubId);
- }
- assert.doesNotMatch(html,/<span class="nav01-crest" aria-hidden="true">[^<]+<\/span>/,'missing canonical crest must reserve blank space, not a fake emblem');
- assert.match(html,/<p class="nav01-count" aria-live="polite">320 clubs<\/p>/);
- assert.doesNotMatch(html,/data-nav01-loading-first-paint|Loading clubs…/);
- for(const c of manifest.clubs){
-  const href='/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview';
-  assert.ok(html.includes('href="'+href+'"'),'missing static club '+href);
- }
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6);
+ assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,6);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,6);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-meta"/g)||[]).length,6);
+ assert.match(html,/class="nav01-skeleton-bar nav01-skeleton-count"/);
+ assert.doesNotMatch(html,/data-nav01-filter-first-paint|data-nav01-loading-first-paint/);
+ assert.doesNotMatch(html,/data-search="|<a class="nav01-card"/,'no catalog search keys or links until the manifest loads');
+ assert.ok(html.includes('data-nav01-search-first-paint'),'static search input remains');
+ assert.ok(html.includes('class="nav01-flag-sprite"'),'static flag definitions remain available');
+ for(const c of manifest.clubs)assert.ok(!html.includes(c.fullName),'no pre-rendered club data: '+c.countryId+'-'+c.clubId);
 });
-
 test('club competition links open Standings with the displayed season and no fixture round',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json')),selected=model.route('/clubs/it/1/overview');

@@ -410,38 +410,20 @@ test('validated public world updates season choices without changing an explicit
  assert.equal(latest.fields.get('app-competition-season-unavailable').hidden,true);
 });
 
-test('PAGE-LOAD-03B P04/P05: 16 canonical domestic shells pre-render their club rows and fixtures',()=>{
+test('PAGE-LOAD-03B P04/P05: 16 domestic routes reserve anonymous standings and fixture skeletons',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8'));
  assert.equal(manifest.divisions.length,16);
  for(const division of manifest.divisions){
   const slug=division.id.toLowerCase(),html=readFileSync(new URL('../competitions/'+slug+'/index.html',import.meta.url),'utf8');
   const tbody=html.match(/<tbody id="app-standings-body">([\s\S]*?)<\/tbody>/)?.[1];
   assert.ok(tbody,'standing body '+slug);
-  const rows=[...tbody.matchAll(/<tr data-world-club="([^"]+)"/g)].map(m=>m[1]);
-  assert.deepEqual(rows,division.clubs.map(c=>c.countryId+'-'+c.clubId),'16 pre-rendered identities '+slug);
+  assert.ok(!tbody.trim(),'real standings data is not shown until the source responds: '+slug);
   const standingsSkeleton=html.match(/<div class="app-standings-skeleton" aria-hidden="true">[\s\S]*?<!-- standings-skeleton-end -->/)?.[0];
   assert.ok(standingsSkeleton,'static standings skeleton '+slug);
-  const desktopNames=[...standingsSkeleton.matchAll(/class="app-world-club-name">([^<]+)<\/span>/g)].map(m=>m[1]);
-  const mobileNames=[...standingsSkeleton.matchAll(/class="app-world-mobile-club-name">([^<]+)<\/span>/g)].map(m=>m[1]);
-  const escaped=division.clubs.map(club=>String(club.primaryName||club.abbr).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
-  assert.deepEqual(desktopNames,escaped,'all canonical first-paint desktop skeleton identities '+slug);
-  assert.deepEqual(mobileNames,escaped,'all canonical first-paint mobile skeleton identities '+slug);
-
-  for(const club of division.clubs){
-   const id=club.countryId+'-'+club.clubId,asset=manifest.clubCrests[id];
-   const known=!!asset,host='data-club-crest="'+id+'" data-club-crest-pending="true"';
-   const hosts=standingsSkeleton.split(host).length-1;
-   assert.equal(hosts,known?2:0,'two prepaint crest hosts only for supported club '+id);
-   if(known){
-    const image='src="/'+asset+'"';
-    assert.equal(standingsSkeleton.split(image).length-1,2,'same canonical SVG for desktop/mobile '+id);
-    assert.ok(standingsSkeleton.includes('width="48" height="48" loading="eager"'),'desktop crest retains 48px slot');
-    assert.ok(standingsSkeleton.includes('width="40" height="40" loading="eager"'),'mobile crest retains 40px slot');
-   }
-  }
-
-  assert.ok(standingsSkeleton.includes('data-fa-standings-identity-first-paint'),'pre-paint season safety gate '+slug);
-  assert.equal((standingsSkeleton.match(/data-skeleton-identity-placeholder/g)||[]).length,32,'masked alternative for unknown season '+slug);
+  assert.equal((standingsSkeleton.match(/data-skeleton-row/g)||[]).length,16,'reserved desktop rows '+slug);
+  assert.equal((standingsSkeleton.match(/data-skeleton-mobile/g)||[]).length,16,'reserved mobile rows '+slug);
+  assert.doesNotMatch(standingsSkeleton,/data-skeleton-identity|data-club-crest|app-world-club-name|<img/,'no preloaded club names or crests '+slug);
+  assert.ok(!html.includes('data-fa-standings-identity-first-paint'),'no Season 1 identity bypass '+slug);
 
   const choices=[...html.matchAll(/data-fixture-round-choice="([^"]+)"/g)].map(m=>m[1]);
   assert.deepEqual(choices.slice(0,30),Array.from({length:30},(_,i)=>String(i+1)),'matchdays '+slug);
