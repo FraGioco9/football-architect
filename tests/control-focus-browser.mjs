@@ -22,12 +22,19 @@ try{
    if(await field.getAttribute('type')!=='email')assert.equal(style.selection,'Selectable text');assert.equal(await field.inputValue(),'Selectable text');assert.equal(style.select,'text');assert.ok(style.shadow.includes('inset'),'Focus uses a stronger inset border');
    const expected=await field.evaluate(el=>{const sample=document.createElement('span');sample.style.color='var(--muted)';el.after(sample);const color=getComputedStyle(sample).color;sample.remove();return color});
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filters>input':'[name=email]',color:expected});const after=await field.boundingBox();assert.equal(before.width,after.width);assert.equal(before.height,after.height);
-   const dropdown=page.locator(route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger').first();
+   if(route==='/account/login/'){
+    assert.equal(await page.locator('#account-language-trigger').count(),0,'Login has no language selector');
+    await page.keyboard.press('Tab');
+    assert.equal(await page.locator('[name=password]').evaluate(el=>el===document.activeElement),true,'Tab advances from Email to Password');
+    checks++;continue;
+   }
+   const dropdownSelector=route==='/clubs'?'.nav01-filter .language-trigger':'#nationality-trigger';
+   const dropdown=page.locator(dropdownSelector).first();
    await dropdown.click();
-   await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger',color:expected});
+   await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:dropdownSelector,color:expected});
    await dropdown.click();
    assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger');assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
+   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',dropdownSelector);assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
    await dropdown.focus();await page.keyboard.press('ArrowDown');
    await page.keyboard.press('Escape');
    assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Escape restores trigger focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
