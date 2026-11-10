@@ -367,7 +367,7 @@ try {
           try{issue=(await result.json()).reason||issue;}catch{}
           status.textContent='Outfit unavailable ('+issue+
             ') · configure an authorized private GitHub Release. '+
-            'See kit-maker/README.md. The mannequin is still available.';
+            'See kit-maker/README.md. Clothing preview remains empty.';
         }else if(result.status===404){
           status.textContent="Outfit not found locally · clothing-only preview is empty.";
         }else if(!result.ok){

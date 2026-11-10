@@ -1440,7 +1440,7 @@ README and GitHub PR do not carry the token or asset binary.
 **Without a confirmed license or GitHub source, the endpoint returns
 424** with a minimal machine-readable reason, and Kit Maker explains
 what is missing instead of presenting a misleading unexplained 404.
-Its CC0 mannequin remains accessible, but the original costume
+The CC0 rig stays loaded but hidden, and the original costume
 cannot appear until an authorized source exists.
 
 Validation should include owner-local real GLB loading and isolated
