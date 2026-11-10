@@ -347,9 +347,10 @@ function colourOriginalSewnTrims(outfit,prepared,THREE,color){
     cached={materials:[],report:{}};
     // No synthetic fallback: without real Three.js geometry the collar
     // alone remains coloured and this state is reported explicitly.
-    if(typeof THREE?.Mesh==="function"&&
-       typeof THREE?.BufferGeometry==="function"&&
-       typeof THREE?.Float32BufferAttribute==="function"){
+    const canInspectOriginalMesh=typeof THREE?.Mesh==="function"&&
+      typeof THREE?.BufferGeometry==="function"&&
+      typeof THREE?.Float32BufferAttribute==="function";
+    if(canInspectOriginalMesh){
       outfit.updateMatrixWorld?.(true);
       const groups={right:[],left:[],waist:[]};
       const seen=new Set();
@@ -383,8 +384,12 @@ function colourOriginalSewnTrims(outfit,prepared,THREE,color){
     authorTrimOverlayCache.set(outfit,cached);
     outfit.userData??={};
     outfit.userData.km27SourceTrimReport=cached.report;
-    if(cached.materials.length)console.info("Kit Maker original sewn trims",cached.report);
-    else console.warn("Kit Maker: no authored trim faces recognised",cached.report);
+    // Unit tests intentionally use tiny Three.js mocks, not a WebGL
+    // renderer. Only warn when a real source inspection was attempted.
+    if(canInspectOriginalMesh){
+      if(cached.materials.length)console.info("Kit Maker original sewn trims",cached.report);
+      else console.warn("Kit Maker: no authored trim faces recognised",cached.report);
+    }
   }
   for(const material of cached.materials)material.color.set(color);
   return cached.report;

@@ -226,12 +226,14 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('kmStripeFabricOrigin'));
   assert.ok(designJS.includes('kmStripeFabricScale'));
   assert.ok(designJS.includes('kitJerseyDetailRegion'));
-  assert.ok(designJS.includes('KIT_CUFF_BORDER_METRES'));
+  // KM-27 colours faces between author-made seams/folds. KM-25's
+  // 24mm rim-distance shaders must not be part of the active render path.
   assert.ok(designJS.includes('kmTrimRegion'));
-  assert.ok(designJS.includes('kmRimDistance'));
-  assert.ok(designJS.includes('measureKitPhysicalRimDistances'));
-  assert.ok(designJS.includes('KIT_CUFF_FOLD_RETURN_METRES'));
-  assert.ok(designJS.includes('KIT_TORSO_HEM_METRES'));
+  assert.ok(designJS.includes('colourOriginalSewnTrims'));
+  assert.ok(designJS.includes('makeOriginalTrimOverlay'));
+  assert.ok(designJS.includes('authorTrimOverlayCache'));
+  assert.ok(designJS.includes('km27SourceTrimReport'));
+  assert.ok(designJS.includes('polygonOffset:true'));
   assert.ok(designJS.includes('38|39|62|63'));
   assert.ok(designJS.includes('9|10|42|43'));
   assert.doesNotMatch(designJS,/kmTrimCuffV|kitCuffOuterTrimThreshold/);
