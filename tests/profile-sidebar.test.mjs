@@ -17,7 +17,10 @@ test('account uses the shared app shell with a profile table and a collapsed pas
  assert.match(html,/<header class="fa-shell-topbar">/);
  assert.match(html,/<nav class="fa-shell-nav" data-nav01-static/);
  assert.match(html,/<h1[^>]*>Profile<\/h1>/);
- assert.match(html,/<table class="app-profile-table"[\s\S]*?<th scope="row" id="username-label">[\s\S]*?<td id="identity">[\s\S]*?<tr id="nationality-row"[\s\S]*?id="city-row">/);
+ assert.match(html,/id="protected" aria-busy="true" inert/);
+ assert.doesNotMatch(html,/Checking your session/);
+ assert.equal((html.match(/class="app-skeleton-bar" aria-hidden="true"/g)||[]).length,5);
+ assert.match(html,/<table class="app-profile-table"[\s\S]*?<th scope="row" id="username-label">[\s\S]*?id="identity"[\s\S]*?<tr id="nationality-row"[\s\S]*?id="city-row">/);
  for(const field of ['username','nationality','city']){
   assert.match(html,new RegExp(`data-profile-edit="${field}" aria-labelledby="profile-edit-label ${field}-label"`));
  }

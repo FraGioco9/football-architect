@@ -43,7 +43,7 @@ html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body main.app-panel,.account-body main.app-panel:hover,.account-body main.app-panel:focus-within{border-color:transparent;outline:none;box-shadow:none}
 
 /* Reveal only the fully localized, bound account layout; no native-select flash. */
-html:not([data-account-ready="true"]) .account-body{visibility:hidden}
+html:not([data-account-ready="true"]) .account-body:not(.app-profile-body){visibility:hidden}
 .account-body .account-feedback{position:relative;margin-block:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:var(--background);color:var(--text);font-size:13px;line-height:1.5}
 .account-body .account-feedback::before{content:"!";position:absolute;left:14px;top:13px;display:grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;font-size:11px;font-weight:700;color:var(--muted)}
 .account-body .account-feedback[data-kind="error"]{border-inline-start:3px solid #B77878}
@@ -107,7 +107,10 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 
 .app-profile-icons{position:absolute}
 .app-profile-field{display:flex;align-items:center;justify-content:space-between;gap:var(--fa-space-2)}
-.app-profile-field span{min-width:0}
+.app-profile-value{display:block;min-width:0;line-height:1.4}
+.app-profile [aria-busy="true"] .app-profile-value{display:flex;align-items:center;width:100%;min-height:1.4em}
+.app-profile-value .app-skeleton-bar{width:min(11ch,100%);margin:0}
+.app-profile-value:is(#identity,#security-email-value) .app-skeleton-bar{width:min(19ch,100%)}
 .app-profile-pencil{display:grid;place-items:center;flex:none;width:36px;height:36px;border:0;border-radius:var(--fa-radius-control);background:transparent;color:var(--muted);cursor:pointer}
 .app-profile-pencil:hover,.app-profile-pencil[aria-expanded="true"]{color:var(--text);background:var(--surface-raised)}
 .app-profile-pencil:focus-visible{outline:2px solid var(--focus);outline-offset:2px}

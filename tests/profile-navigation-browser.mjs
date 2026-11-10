@@ -14,7 +14,14 @@ try{
    await context.addInitScript(lang=>localStorage.setItem('football-architect:language',lang),language);
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    let sessions=0, sessionLists=0;
-   await page.route('**/api/player/session',r=>{sessions++;return r.fulfill({status:authenticated?200:401,contentType:'application/json',body:authenticated?JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[],profile:width===1440?{username:null,nationality:null,city:null}:{username:'synthetic_player',nationality:'IT',city:'Rome'}}):'{}'});});
+   const delayProfile=authenticated&&language==='en'&&width===1440;
+   let releaseProfile;
+   const profileGate=new Promise(resolve=>{releaseProfile=resolve;});
+   await page.route('**/api/player/session',async r=>{
+    sessions++;
+    if(delayProfile&&sessions===2)await profileGate;
+    await r.fulfill({status:authenticated?200:401,contentType:'application/json',body:authenticated?JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[],profile:width===1440?{username:null,nationality:null,city:null}:{username:'synthetic_player',nationality:'IT',city:'Rome'}}):'{}'});
+   });
    await page.route('**/api/player/sessions',r=>{
     sessionLists++;
     return r.fulfill({status:200,contentType:'application/json',body:'{"sessions":[]}'});
@@ -28,7 +35,17 @@ try{
    assert.equal(sessions,0,'Public page load does not probe player session');
    await profile.click();
    if(authenticated){
-    await page.waitForURL(url=>url.pathname==='/account');await page.locator('#protected').waitFor();
+    await page.waitForURL(url=>url.pathname==='/account');
+    if(delayProfile){
+     try{
+      const loading=page.locator('#protected[aria-busy=true][inert]');
+      await loading.locator('#profile-panel .app-skeleton-bar').first().waitFor();
+      assert.equal(await loading.locator('#profile-panel .app-skeleton-bar:visible').count(),4);
+      assert.equal(await page.getByText('Checking your session').count(),0);
+     }finally{releaseProfile();}
+    }
+    await page.locator('#protected[aria-busy=false]').waitFor();
+    assert.equal(await page.locator('#protected .app-skeleton-bar').count(),0);
     assert.equal(await page.locator('.fa-shell-topbar').isVisible(),true);
     assert.equal(await page.locator('#fa-skip-link').getAttribute('href'),'#main-content');
     assert.equal(await page.locator('.fa-shell-nav [aria-current="page"]').getAttribute('id'),'app-nav-profile');

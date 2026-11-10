@@ -81,7 +81,7 @@ try{
  try{
   const page=await account.newPage();
   await page.route('**/api/player/session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[]})}));
-  await page.goto('http://app.localhost:2000/account/');await page.locator('#protected').waitFor();
+  await page.goto('http://app.localhost:2000/account/');await page.locator('#protected[aria-busy=false]').waitFor();
   await page.locator('#security-tab').click();
   await page.locator('#change-title').click();
   const handshake=requestHandshake('account/change-password');

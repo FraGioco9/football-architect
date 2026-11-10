@@ -24,7 +24,7 @@ try{
     if(route==='login')await page.route('**/api/player/session',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
     await page.goto('http://app.localhost:2000/account/'+(route==='account'?'':route+'/'));
     await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
-    if(route==='account')await page.locator('#protected').waitFor();
+    if(route==='account')await page.locator('#protected[aria-busy=false]').waitFor();
     assert.equal(new URL(page.url()).pathname.endsWith('/'),false,'Account URL is canonical');
     assert.deepEqual(await page.locator('a[href]').evaluateAll(links=>links.filter(a=>a.origin===location.origin&&a.pathname!=='/'&&a.pathname.endsWith('/')).map(a=>a.href)),[],'Internal links have no trailing slash');
     assert.equal(await page.locator('html').getAttribute('lang'),language);
