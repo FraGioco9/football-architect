@@ -1248,3 +1248,28 @@ or third-party GLB are exported. Focused tests include the
 mirrored front/back UV atlas and sleeve with unmatched cases.
 Real owner-local Chrome GLB shoulder visual QA remains pending.
 PR #454 Draft/HOLD, no merge/deploy/DB/asset redistribution.
+
+## KM-30 — a single continuous vertical stripe over shoulder stitches (2026-11-10)
+
+The desired stripe is one continuous sewn band from shirt body over the
+shoulder onto the sleeve. Per-panel UV centering / one uniform phase
+offset cannot achieve this over a curved, nonaffine author seam.
+
+KM-30 derives one additional per-vertex fabric metre coordinate
+`kmStripeSewnMetres` on every physically matched original torso/arm
+panel. The sleeve inherits *exactly* the corresponding torso stripe
+coordinate at **each actual stitched vertex**. The remaining seam
+correction is smoothly carried across the source sleeve's UV pattern.
+It can follow mirrored or 90-degree-rotated source pattern islands.
+The existing PBR stripe colours and selectable 30–150mm widths remain
+unchanged, with no world-space planarity, source UV edits or generated
+trim surfaces. In a real 3D environment the stitched shader attribute
+is bound at first paint even if Solid is the initial style. On models
+with no verifiable stitch, original UV mapping is retained.
+
+The only changed areas are stripe-coordinate calibration, shader
+read path for confirmed joined panels, and focused regression tests.
+Original author GLB, position, UV, normals, index, sewn collar/cuff/
+waist trims, shorts, socks, boots, palette and permissions are intact.
+The original private GLB still requires owner-local visual WebGL QA.
+PR Draft/HOLD; no merge/deployment/remote DB or asset distribution.

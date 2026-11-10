@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km29-original-uv-shoulder-seam-phase-v1";
+export const KIT_STRIPE_SHADER_KEY="km30-stitched-single-band-shoulder-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -247,7 +247,7 @@ function cachedKitStripeMetric(geometry){
   }
   return metric;
 }
-export function installKitStripeShader(material,THREE){
+export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
   if(material.userData?.kitStripeUniforms)
     return material.userData.kitStripeUniforms;
   if(typeof THREE?.Color!=="function")
@@ -274,9 +274,13 @@ export function installKitStripeShader(material,THREE){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader="varying float vKmPatternU;\n"+
+    shader.vertexShader=(hasSewnCoordinates?
+      "attribute float kmStripeSewnMetres;\n":"")+
+      "varying float vKmPatternU;\n"+
       shader.vertexShader.replace("#include <begin_vertex>",
-        "#include <begin_vertex>\n vKmPatternU = uv.x;");
+        "#include <begin_vertex>\n "+
+          (hasSewnCoordinates?"vKmPatternU = kmStripeSewnMetres;":
+            "vKmPatternU = uv.x;"));
     shader.fragmentShader=[
       "varying float vKmPatternU;",
       "uniform float kmTrimRegion;",
@@ -302,7 +306,8 @@ export function installKitStripeShader(material,THREE){
         "}"
       ].join("\n"));
   };
-  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+'-plain';
+  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+
+    (hasSewnCoordinates?"-sewn":"-plain");
   material.userData??={};
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
@@ -577,8 +582,11 @@ export function applyKitDesign(outfit,state,THREE){
   // KM-29: source UV islands have independent origins. At real shoulder
   // stitches, align their stripe phase while retaining physical UV width.
   // A missing/unreliable seam leaves the existing source mapping intact.
-  let shoulder={adjustments:new Map(),report:{status:"inactive"}};
-  if(state.styles.jersey==="vertical-stripes"){
+  let shoulder={adjustments:new Map(),coordinates:new Map(),
+    report:{status:"inactive"}};
+  const canBindSewnCoordinates=typeof THREE?.Float32BufferAttribute==="function";
+  // Compile the correct shader from first paint, including Solid mode.
+  if(canBindSewnCoordinates||state.styles.jersey==="vertical-stripes"){
     try{
       shoulder=alignOriginalShoulderStripes(outfit,prepared);
       outfit.userData??={};
@@ -591,16 +599,31 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km29ShoulderStripeReport={status:"skipped",reason};
     }
   }
+  // Stitch-adjacent vertices inherit the same authored fabric-metre
+  // stripe field on both sides of the seam. Original UVs stay untouched.
+  if(canBindSewnCoordinates&&shoulder.report.status==="aligned"){
+    for(const [geometry,metres] of shoulder.coordinates){
+      const p=geometry.getAttribute?.("position");
+      if(!p||p.count!==metres.length||
+          typeof geometry.setAttribute!=="function")continue;
+      if(!geometry.getAttribute("kmStripeSewnMetres"))
+        geometry.setAttribute("kmStripeSewnMetres",
+          new THREE.Float32BufferAttribute(metres,1));
+    }
+  }
   for(const {part,material,meshName,metric,geometry} of prepared){
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
-    const uniforms=installKitStripeShader(material,THREE);
+    const sewn=part==="jersey"&&
+      Boolean(geometry.getAttribute?.("kmStripeSewnMetres"));
+    const uniforms=installKitStripeShader(material,THREE,sewn);
     uniforms.kmTrimRegion.value=region==="collar"?1:
       region==="cuffs"?2:region==="hem"?3:0;
     uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");
 
     const aligned=part==="jersey"?shoulder.adjustments.get(geometry):null;
-    uniforms.kmStripeFabricOrigin.value=aligned?.originU??metric.originU;
-    uniforms.kmStripeFabricScale.value=aligned?.metresPerUv??metric.metresPerUv;
+    uniforms.kmStripeFabricOrigin.value=sewn?0:(aligned?.originU??metric.originU);
+    uniforms.kmStripeFabricScale.value=sewn?1:
+      (aligned?.metresPerUv??metric.metresPerUv);
     uniforms.kmStripeSection.value=part==="jersey"
       ?stripeSectionForMesh(meshName):0;
     uniforms.kmStripeEnabled.value=state.styles[part]==="vertical-stripes"?1:0;
