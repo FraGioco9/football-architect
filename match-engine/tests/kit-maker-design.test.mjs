@@ -4,7 +4,8 @@ import {KIT_PARTS,KIT_STYLES,KIT_STRIPE_WIDTH_RANGE,formatKitStripeWidth,isKitSt
   createKitDesignStore,applySolidKitColors,applyKitDesign,KIT_STRIPE_SHADER_KEY,
   stripeSectionForMesh,measureKitStripeFabricMetric,
   kitJerseyDetailRegion,KIT_CUFF_BORDER_METRES,
-  KIT_CUFF_FOLD_RETURN_METRES,kitCuffOuterTrimThreshold} from '../../kit-maker/lab/kit-design.mjs';
+  KIT_CUFF_FOLD_RETURN_METRES,KIT_TORSO_HEM_METRES,
+  kitOuterTrimThreshold} from '../../kit-maker/lab/kit-design.mjs';
 
 // Minimal BufferGeometry-like fixture with a true flattened sewing-pattern UV
 // and 3D vertex positions. A metre on this cloth is independent of its shape
@@ -482,193 +483,155 @@ test('KM-20 unknown or malformed UV panels fail atomically without recolouring',
   assert.throws(()=>measureKitStripeFabricMetric(null),/pattern UVs/);
 });
 
-test('KM-21 collar and sleeve cuff selections are independent and club-role aware',()=>{
+
+test('KM-23 one Jersey trims role colours collar, both cuffs and bottom hem',()=>{
   const store=createKitDesignStore();
-  assert.deepEqual(store.getState().detailColors,{collar:'#FFFFFF',cuffs:'#FFFFFF'});
-  store.selectColorLayer('collar');
+  assert.deepEqual(store.getState().detailColors,{trim:'#FFFFFF'});
+  store.selectColorLayer('trim');
   assert.equal(store.selectColor('neutral-black'),true);
-  store.selectColorLayer('cuffs');
-  assert.equal(store.selectColor('neutral-ivory'),true);
-  let state=store.getState();
-  assert.deepEqual(state.detailColors,{collar:'#111111',cuffs:'#F5F1E9'});
-  assert.equal(state.colors.jersey,'#FFFFFF');
-  assert.equal(state.accentColors.jersey,'#111111');
-  store.selectColorLayer('base');
-  store.selectColor('neutral-grey');
+  assert.deepEqual(store.getState().detailColors,{trim:'#111111'});
+  assert.equal(store.getState().colors.jersey,'#FFFFFF');
   store.selectStyle('vertical-stripes');
-  assert.equal(store.getState().detailColors.collar,'#111111');
-  assert.equal(store.getState().detailColors.cuffs,'#F5F1E9');
+  assert.equal(store.getState().activeLayer,'trim');
+  assert.equal(store.getState().detailColors.trim,'#111111');
   store.selectPart('shorts');
-  assert.throws(()=>store.selectColorLayer('collar'),/Jersey details/);
-  assert.throws(()=>store.selectColorLayer('cuffs'),/Jersey details/);
+  assert.throws(()=>store.selectColorLayer('trim'),/Jersey trim/);
+  store.selectPart('socks');
+  assert.throws(()=>store.selectColorLayer('trim'),/Jersey trim/);
   store.selectPart('jersey');
   assert.equal(store.getState().activeLayer,'base');
-  store.selectColorLayer('collar');
+  store.selectColorLayer('trim');
   store.setClub('ENG-1',{primaryColor:'#162B5A',secondaryColor:'#EADAC0'});
   store.selectColor('primary');
-  store.selectColorLayer('cuffs');
-  store.selectColor('secondary');
   store.setClub('ENG-2',{primaryColor:'#4B165C',secondaryColor:'#6B9B32'});
-  state=store.getState();
-  assert.deepEqual(state.detailColors,{collar:'#4B165C',cuffs:'#6B9B32'});
-  assert.equal(state.detailSelections.collar,'primary');
-  assert.equal(state.detailSelections.cuffs,'secondary');
+  assert.equal(store.getState().detailColors.trim,'#4B165C');
+  assert.equal(store.getState().detailSelections.trim,'primary');
   store.setClub(null);
-  assert.equal(store.getState().detailColors.collar,'#FFFFFF');
-  assert.equal(store.getState().detailColors.cuffs,'#FFFFFF');
+  assert.equal(store.getState().detailColors.trim,'#FFFFFF');
   assert.equal(store.selectColor('primary'),false);
+  assert.throws(()=>store.selectColorLayer('collar'),/Unsupported/);
+  assert.throws(()=>store.selectColorLayer('cuffs'),/Unsupported/);
   assert.throws(()=>store.selectColorLayer('anything'),/Unsupported/);
 });
 
-test('KM-21 identifies outer collar and actual two sleeve meshes only',()=>{
-  assert.equal(kitJerseyDetailRegion('FA_jersey__Pattern2D_3805002'),'collar');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__Pattern2D_3805002_1'),'collar');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__38'),'cuffs');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__38_1'),'cuffs');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__62'),'cuffs');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__62_1'),'cuffs');
-  assert.equal(kitJerseyDetailRegion('FA_jersey__9'),null);
-  assert.equal(kitJerseyDetailRegion('FA_jersey__42'),null);
-  assert.equal(kitJerseyDetailRegion('FA_jersey__Pattern_2702362'),null,
-    'Removed inner printed collar remains excluded');
+test('KM-23 includes BOTH source mesh primitives for collar sleeves and hem',()=>{
+  for(const name of ['FA_jersey__Pattern2D_3805002',
+    'FA_jersey__Pattern2D_3805003','FA_jersey__Pattern2D_3805002_1'])
+    assert.equal(kitJerseyDetailRegion(name),'collar',name);
+  for(const n of [38,39,62,63]){
+    assert.equal(kitJerseyDetailRegion('FA_jersey__'+n),'cuffs');
+    assert.equal(kitJerseyDetailRegion('FA_jersey__'+n+'_1'),'cuffs');
+  }
+  for(const n of [9,10,42,43]){
+    assert.equal(kitJerseyDetailRegion('FA_jersey__'+n),'hem');
+    assert.equal(kitJerseyDetailRegion('FA_jersey__'+n+'_1'),'hem');
+  }
+  assert.equal(kitJerseyDetailRegion('FA_jersey__Pattern_2702362'),null);
   assert.equal(kitJerseyDetailRegion('FA_boots__shoes_l001_1'),null);
-  assert.equal(KIT_CUFF_BORDER_METRES,.012);
+  assert.equal(kitJerseyDetailRegion('FA_jersey__Pattern2D_1871004'),null);
 });
 
-test('KM-21 live rendering isolates collar and both cuffs from body/stripes',()=>{
-  class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
-  function jersey(name){
-    return {isMesh:true,name,material:{
-      name:'km13-white-'+name,color:new Color('#FFFFFF'),userData:{}},
-      geometry:fabricGeometry(name)};
-  }
-  const meshes=[
-    jersey('FA_jersey__9'),jersey('FA_jersey__42'),
-    jersey('FA_jersey__Pattern2D_3805002'),
-    jersey('FA_jersey__38'),jersey('FA_jersey__62'),
-    {isMesh:true,name:'FA_shorts__body',material:{
-      name:'km14-white-shorts',color:new Color('#FFFFFF'),userData:{}},
-      geometry:fabricGeometry('shorts')},
-    {isMesh:true,name:'FA_socks__body',material:{
-      name:'km14-white-socks',color:new Color('#FFFFFF'),userData:{}},
-      geometry:fabricGeometry('socks')},
-    {isMesh:true,name:'FA_boots__shoes_l001',material:{
-      name:'FA_boots__material_0',color:new Color('#111111')},
-      geometry:{tag:'untouched boots'}}
+test('KM-23 the original outer sleeve opening is LOW-V, not the shoulder HIGH-V',()=>{
+  assert.equal(KIT_CUFF_BORDER_METRES,.012);
+  assert.equal(KIT_CUFF_FOLD_RETURN_METRES,.012);
+  assert.equal(KIT_TORSO_HEM_METRES,.024);
+  // Values read from original private GLB (SHA256 985a4596...):
+  // both sleeve material primitives use the SAME UV vertices.
+  const sleeves=[
+    {highV:.2314679623,lowV:.11085414886,metresPerUvV:1.5772967},
+    {highV:.2314678431,lowV:.11085408926,metresPerUvV:1.5778716}
   ];
-  const geometries=meshes.map(x=>x.geometry);
-  const bootMaterial=meshes[7].material;
+  for(const metric of sleeves){
+    const limit=kitOuterTrimThreshold(metric,'cuffs');
+    assert.ok(limit>.125&&limit<.128,'12mm exterior + 12mm return');
+    assert.ok(metric.lowV<limit,'Real outer opening must be included');
+    assert.ok(metric.highV>limit,'Near-shoulder region remains base colour');
+    assert.ok(.111<limit&&.223>limit,
+      'Previously applied high-V collar-side cut is now inverted');
+  }
+  const hem={
+    highV:.75237846,lowV:.27564692,metresPerUvV:1.55
+  };
+  const edge=kitOuterTrimThreshold(hem,'hem');
+  assert.ok(edge>.290&&edge<.293,'Hem is at torso lowest-V edge');
+  assert.ok(.278<edge&&.728>edge);
+  assert.throws(()=>kitOuterTrimThreshold(null,'hem'),/Invalid/);
+  assert.throws(()=>kitOuterTrimThreshold({
+    highV:.8,lowV:.7,metresPerUvV:0
+  },'cuffs'),/Invalid/);
+  assert.throws(()=>kitOuterTrimThreshold(hem,'collar'),/Unsupported/);
+  assert.throws(()=>kitOuterTrimThreshold({
+    highV:.021,lowV:.02,metresPerUvV:1.57
+  },'cuffs'),/too short/);
+});
+
+test('KM-23 the same trim color overrides collar sleeves AND torso bottom in both styles',()=>{
+  class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
+  const sourceNames=[
+    'FA_jersey__Pattern2D_3805002','FA_jersey__Pattern2D_3805003',
+    'FA_jersey__38','FA_jersey__39','FA_jersey__62','FA_jersey__63',
+    'FA_jersey__9','FA_jersey__10','FA_jersey__42','FA_jersey__43',
+    'FA_shorts__body','FA_socks__body','FA_boots__shoes_l001'
+  ];
+  const meshes=sourceNames.map(name=>({
+    name,isMesh:true,
+    material:{name:(name.startsWith('FA_jersey__')?'km13-white-':
+      name.startsWith('FA_boots__')?'author-boot-':'km14-white-')+name,
+      color:new Color('#FFFFFF'),userData:{}},
+    geometry:name.startsWith('FA_boots__')
+      ?{tag:'original boots'}:fabricGeometry(name)
+  }));
+  const geometries=meshes.map(x=>x.geometry),boot=meshes.at(-1).material;
   const outfit={traverse(fn){meshes.forEach(fn);}};
   const store=createKitDesignStore();
-  store.selectStyle('vertical-stripes');
   store.selectColorLayer('base');store.selectColor('neutral-grey');
-  store.selectColorLayer('accent');store.selectColor('neutral-ivory');
-  store.selectColorLayer('collar');store.selectColor('neutral-black');
-  store.selectColorLayer('cuffs');store.selectColor('neutral-grey');
-  const applied=applyKitDesign(outfit,store.getState(),{Color});
-  assert.equal(applied.changedMaterials,7);
-  const uniforms=meshes.map(x=>x.material.userData?.kitStripeUniforms);
-  assert.equal(uniforms[0].kmTrimRegion.value,0);
-  assert.equal(uniforms[1].kmTrimRegion.value,0);
-  assert.equal(uniforms[2].kmTrimRegion.value,1);
-  assert.equal(uniforms[3].kmTrimRegion.value,2);
-  assert.equal(uniforms[4].kmTrimRegion.value,2);
-  for(const u of [uniforms[0],uniforms[1],uniforms[2],uniforms[3],uniforms[4]])
-    assert.equal(u.kmStripeEnabled.value,1,
-      'Coloured collar/cuffs must override base stripes regardless of style');
-  assert.equal(uniforms[2].kmTrimColor.value.hex,'#111111');
-  assert.equal(uniforms[3].kmTrimColor.value.hex,'#808080');
-  assert.equal(uniforms[4].kmTrimColor.value.hex,'#808080');
-  assert.ok(Math.abs(uniforms[3].kmTrimCuffV.value-(.3-.024/1.52))<1e-10);
-  assert.equal(uniforms[3].kmTrimCuffV.value,uniforms[4].kmTrimCuffV.value);
+  store.selectColorLayer('trim');store.selectColor('neutral-black');
+  for(const style of ['solid','vertical-stripes']){
+    store.selectStyle(style);
+    const result=applyKitDesign(outfit,store.getState(),{Color});
+    assert.equal(result.changedMaterials,12);
+    for(let i=0;i<sourceNames.length-1;i++){
+      const region=kitJerseyDetailRegion(sourceNames[i]);
+      const uniforms=meshes[i].material.userData.kitStripeUniforms;
+      const expected=region==='collar'?1:region==='cuffs'?2:region==='hem'?3:0;
+      assert.equal(uniforms.kmTrimRegion.value,expected,sourceNames[i]);
+      if(region){
+        assert.equal(uniforms.kmTrimColor.value.hex,'#111111');
+        if(region!=='collar')
+          assert.ok(Math.abs(uniforms.kmTrimEdgeV.value-(.2+.024/1.52))<1e-10);
+      }
+      assert.equal(uniforms.kmStripeEnabled.value,
+        sourceNames[i].startsWith('FA_jersey__')&&style==='vertical-stripes'?1:0);
+    }
+    assert.equal(meshes.at(-1).material,boot,
+      'Neither boots nor shoe laces may be modified');
+  }
+  assert.deepEqual(meshes.map(x=>x.geometry),geometries);
   const shader={uniforms:{},
     vertexShader:'void main(){\n#include <begin_vertex>\n}',
     fragmentShader:'void main(){\n#include <color_fragment>\n}'};
-  meshes[3].material.onBeforeCompile(shader);
+  meshes[2].material.onBeforeCompile(shader);
   assert.match(shader.vertexShader,/vKmPatternV = uv.y/);
-  assert.match(shader.fragmentShader,/kmTrimCuffV/);
-  assert.match(shader.fragmentShader,/kmTrimRegion > 1\.5/);
-  assert.match(shader.fragmentShader,/diffuseColor\.rgb=kmTrimColor/);
-  store.selectStyle('solid');
-  applyKitDesign(outfit,store.getState(),{Color});
-  assert.equal(uniforms[3].kmStripeEnabled.value,0);
-  assert.equal(uniforms[3].kmTrimRegion.value,2);
-  assert.equal(uniforms[2].kmTrimColor.value.hex,'#111111');
-  assert.deepEqual(meshes.map(x=>x.geometry),geometries);
-  assert.equal(meshes[7].material,bootMaterial);
+  assert.match(shader.fragmentShader,/kmTrimEdgeV/);
+  assert.match(shader.fragmentShader,/1.0-smoothstep/);
+  assert.match(shader.fragmentShader,/exteriorMask/);
+  assert.match(shader.fragmentShader,/diffuseColor.rgb=kmTrimColor/);
 });
 
-test('KM-21 illegal detail colours reject atomically before touching materials',()=>{
+test('KM-23 invalid shared trim rejects atomically before touching kit materials',()=>{
   class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
-  const outfitParts=['FA_jersey__Pattern2D_3805002','FA_jersey__38',
-    'FA_shorts__body','FA_socks__body'].map((name,i)=>({
-    isMesh:true,name,
-    material:{name:(i<2?'km13-white-':'km14-white-')+name,
-      color:new Color('#FFFFFF'),userData:{}},geometry:fabricGeometry(name)
-  }));
-  const outfit={traverse(fn){outfitParts.forEach(fn);}};
-  const state=createKitDesignStore().getState();
-  state.detailColors.cuffs='#00FF00';
-  assert.throws(()=>applyKitDesign(outfit,state,{Color}),/Kit detail colours/);
-  assert.ok(outfitParts.every(x=>x.material.color.hex==='#FFFFFF'));
-  assert.ok(outfitParts.every(x=>!x.material.userData.kitStripeUniforms));
-});
-
-test('KM-22 source sleeve folded hem reaches the OUTER opening, not only inside tape',()=>{
-  assert.equal(KIT_CUFF_BORDER_METRES,.012);
-  assert.equal(KIT_CUFF_FOLD_RETURN_METRES,.012);
-  // Original private Alberto Sena GLB (both sleeve UV patterns):
-  // exterior fold starts near UV V=.8743; previous inner-only cut=.8815.
-  const sleeves=[
-    {highV:.88914585,lowV:.76853204,metresPerUvV:1.5772967},
-    {highV:.88914590,lowV:.76853216,metresPerUvV:1.5778716}
-  ];
-  for(const metric of sleeves){
-    const threshold=kitCuffOuterTrimThreshold(metric);
-    assert.ok(threshold<=.8743,
-      'Exterior fold must be coloured all the way out to the opening');
-    assert.ok(threshold>.871,
-      'The cuff must not recolour the entire sleeve');
-    assert.ok(.8891>threshold,'Inner return stays the same colour');
-    assert.ok(.8743>threshold,'Outer lip no longer remains unpainted');
-    const oldThreshold=metric.highV-KIT_CUFF_BORDER_METRES/metric.metresPerUvV;
-    assert.ok(oldThreshold>.881,'Regression: previous cut painted an inner line');
-    assert.ok(threshold<oldThreshold,
-      'Outer and folded-return segments must be one continuous region');
-  }
-  assert.throws(()=>kitCuffOuterTrimThreshold(null),/Invalid/);
-  assert.throws(()=>kitCuffOuterTrimThreshold({
-    highV:.8,lowV:.7,metresPerUvV:0
-  }),/Invalid/);
-  assert.throws(()=>kitCuffOuterTrimThreshold({
-    highV:.021,lowV:.02,metresPerUvV:1.57
-  }),/too short/);
-});
-
-test('KM-22 cuff trim shader includes the outer sewn edge in Solid and Stripes',()=>{
-  class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
-  const meshes=['FA_jersey__38','FA_jersey__62','FA_jersey__9',
-    'FA_shorts__sample','FA_socks__sample'].map(name=>({
-    name,isMesh:true,geometry:fabricGeometry(name),
+  const names=['FA_jersey__Pattern2D_3805002','FA_jersey__38',
+    'FA_jersey__9','FA_shorts__body','FA_socks__body'];
+  const meshes=names.map(name=>({
+    isMesh:true,name,geometry:fabricGeometry(name),
     material:{
       name:(name.startsWith('FA_jersey__')?'km13-white-':'km14-white-')+name,
-      color:new Color('#FFFFFF'),userData:{}
-    }
+      color:new Color('#FFFFFF'),userData:{}}
   }));
-  const outfit={traverse(fn){for(const m of meshes)fn(m);}};
-  const store=createKitDesignStore();
-  store.selectColorLayer('cuffs');
-  store.selectColor('neutral-black');
-  for(const style of ['solid','vertical-stripes']){
-    store.selectStyle(style);
-    applyKitDesign(outfit,store.getState(),{Color});
-    const cuffUniforms=meshes.slice(0,2).map(m=>m.material.userData.kitStripeUniforms);
-    for(const uniforms of cuffUniforms){
-      assert.equal(uniforms.kmTrimRegion.value,2);
-      assert.equal(uniforms.kmTrimColor.value.hex,'#111111');
-      assert.ok(Math.abs(uniforms.kmTrimCuffV.value-(.3-.024/1.52))<1e-10);
-      assert.equal(uniforms.kmStripeEnabled.value,style==='solid'?0:1);
-    }
-    assert.equal(meshes[2].material.userData.kitStripeUniforms.kmTrimRegion.value,0);
-  }
+  const state=createKitDesignStore().getState();
+  state.detailColors.trim='#00FF00';
+  assert.throws(()=>applyKitDesign({traverse(fn){meshes.forEach(fn);}},
+    state,{Color}),/Kit detail colours/);
+  assert.ok(meshes.every(m=>m.material.color.hex==='#FFFFFF'));
+  assert.ok(meshes.every(m=>!m.material.userData.kitStripeUniforms));
 });

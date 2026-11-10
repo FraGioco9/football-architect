@@ -1,0 +1,80 @@
+{
+  "revision": "KM-23",
+  "date": "2026-11-10",
+  "pr": 454,
+  "ownerRequest": "Sleeve cuffs still on inside; one selector for collar, both sleeve edges and shirt bottom hem",
+  "rootCauses": [
+    "The old sleeve mask used source pattern HIGH V, which is near the shoulder rather than the distal opening",
+    "The original GLB has two material primitives per sleeve and only one was previously targeted"
+  ],
+  "originalLocalGLB": {
+    "sha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+    "rightSleevePrimitives": [
+      "FA_jersey__38",
+      "FA_jersey__39"
+    ],
+    "leftSleevePrimitives": [
+      "FA_jersey__62",
+      "FA_jersey__63"
+    ],
+    "originalSleeveUvVRange": [
+      0.110854,
+      0.231468
+    ],
+    "originalSleeveLowVMedianHeightM": 1.358,
+    "originalSleeveHighVMedianHeightM": 1.526,
+    "torsoFrontPrimitives": [
+      "FA_jersey__9",
+      "FA_jersey__10"
+    ],
+    "torsoBackPrimitives": [
+      "FA_jersey__42",
+      "FA_jersey__43"
+    ],
+    "frontLowV": 0.275647,
+    "backLowV": 0.278342,
+    "collarPrimitives": [
+      "FA_jersey__Pattern2D_3805002",
+      "FA_jersey__Pattern2D_3805003"
+    ],
+    "excludedInnerCollarPrint": "FA_jersey__Pattern_2702362"
+  },
+  "settings": {
+    "oneAllowedRole": "trim",
+    "defaultRole": "neutral-white",
+    "affectedRegions": [
+      "outer collar",
+      "right and left exterior sleeve cuffs",
+      "front/back lower body hem"
+    ],
+    "colorChoices": [
+      "canonical primary",
+      "canonical secondary",
+      "allowed white",
+      "allowed black",
+      "allowed grey",
+      "allowed ivory"
+    ],
+    "shortsSocksUnchanged": true
+  },
+  "shader": {
+    "key": "km23-unified-exterior-shirt-trims-v1",
+    "regionIds": {
+      "collar": 1,
+      "sleeves": 2,
+      "hem": 3
+    },
+    "outerSleeveBandM": 0.024,
+    "lowerTorsoBandM": 0.024,
+    "selectionDirection": "UV V <= lowV + metresOfBand / metresPerUvV",
+    "antialias": true
+  },
+  "qa": {
+    "isolatedDesignTests": "20 PASS",
+    "staticSyntax": "pending final verification",
+    "localRealWebGL": "pending",
+    "fullNode": "pending"
+  },
+  "status": "Draft/HOLD",
+  "noMerge": true
+}

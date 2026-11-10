@@ -38,7 +38,8 @@ export function createKitDesignStore(){
   let clubId=null,club=null,activePart="jersey",activeLayer="base";
   const selections={jersey:"neutral-white",shorts:"neutral-white",socks:"neutral-white"};
   const accentSelections={jersey:"neutral-black",shorts:"neutral-black",socks:"neutral-black"};
-  const detailSelections={collar:"neutral-white",cuffs:"neutral-white"};
+  // One role colours collar, both outer sleeve cuffs and shirt bottom hem.
+  const detailSelections={trim:"neutral-white"};
   const styles={jersey:"solid",shorts:"solid",socks:"solid"};
   const stripeWidths={jersey:75,shorts:75,socks:75};
   const listeners=new Set();
@@ -100,12 +101,12 @@ export function createKitDesignStore(){
       return announce();
     },
     selectColorLayer(layer){
-      if(!["base","accent","collar","cuffs"].includes(layer))
+      if(!["base","accent","trim"].includes(layer))
         throw new Error("Unsupported Kit Maker colour layer");
       if(layer==="accent"&&styles[activePart]!=="vertical-stripes")
         throw new Error("Stripe colour is unavailable for solid kits");
-      if((layer==="collar"||layer==="cuffs")&&activePart!=="jersey")
-        throw new Error("Jersey details are unavailable for other garments");
+      if(layer==="trim"&&activePart!=="jersey")
+        throw new Error("Jersey trim is unavailable for other garments");
       activeLayer=layer;
       return announce();
     },
@@ -122,7 +123,7 @@ export function createKitDesignStore(){
     },
     selectColor(id){
       if(!kitColorChoices(club).some(c=>c.id===id&&c.hex))return false;
-      if(activeLayer==="collar"||activeLayer==="cuffs")detailSelections[activeLayer]=id;
+      if(activeLayer==="trim")detailSelections.trim=id;
       else (activeLayer==="accent"?accentSelections:selections)[activePart]=id;
       announce();
       return true;
@@ -172,7 +173,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km20-fabric-width-uv-stripes-v1";
+export const KIT_STRIPE_SHADER_KEY="km23-unified-exterior-shirt-trims-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -258,7 +259,7 @@ export function installKitStripeShader(material,THREE){
     kmStripeFabricOrigin:{value:0},
     kmStripeFabricScale:{value:1},
     kmTrimRegion:{value:0},
-    kmTrimCuffV:{value:0},
+    kmTrimEdgeV:{value:0},
     kmTrimColor:{value:new THREE.Color("#FFFFFF")},
     kmStripeBase:{value:new THREE.Color("#FFFFFF")},
     kmStripeAccent:{value:new THREE.Color("#111111")}
@@ -278,7 +279,7 @@ export function installKitStripeShader(material,THREE){
       "varying float vKmPatternU;",
       "varying float vKmPatternV;",
       "uniform float kmTrimRegion;",
-      "uniform float kmTrimCuffV;",
+      "uniform float kmTrimEdgeV;",
       "uniform vec3 kmTrimColor;",
       "uniform float kmStripeEnabled;",
       "uniform float kmStripeWidth;",
@@ -299,9 +300,9 @@ export function installKitStripeShader(material,THREE){
         "if(kmTrimRegion > 0.5 && kmTrimRegion < 1.5){",
         "  diffuseColor.rgb=kmTrimColor;",
         "}else if(kmTrimRegion > 1.5){",
-        "  float cuffEdge=max(fwidth(vKmPatternV),0.0001);",
-        "  float cuffBlend=smoothstep(kmTrimCuffV-cuffEdge,kmTrimCuffV+cuffEdge,vKmPatternV);",
-        "  diffuseColor.rgb=mix(diffuseColor.rgb,kmTrimColor,cuffBlend);",
+        "  float edgeAA=max(fwidth(vKmPatternV),0.0001);",
+        "  float exteriorMask=1.0-smoothstep(kmTrimEdgeV-edgeAA,kmTrimEdgeV+edgeAA,vKmPatternV);",
+        "  diffuseColor.rgb=mix(diffuseColor.rgb,kmTrimColor,exteriorMask);",
         "}"
       ].join("\n"));
   };
@@ -311,29 +312,38 @@ export function installKitStripeShader(material,THREE){
   material.needsUpdate=true;
   return uniforms;
 }
-// KM-22: the original sleeve hems fold back onto themselves. The
-// previous 12mm tail of the UV island recoloured only the INNER folded
-// return (an internal stripe), leaving the outside opening white.
-// Include both the 12mm exposed cuff and the approximately 12mm
-// turned-under return. The actual creator GLB's distal hem boundary
-// begins at V ~0.8743 and the inner fold ends at ~0.88915 on BOTH arms.
-// Apply one continuous colour through the complete folded lip.
+// KM-23: the actual original GLB has V MINIMUM at the OUTER sleeve opening,
+// not the V maximum (which is at the shoulder). The earlier high-V threshold
+// painted the inner/upper band. All 38/39 and 62/63 material primitives must
+// be included; otherwise the visible opposite face keeps its old colour.
+// Front/back hem likewise occupies the low-V end of torso panels.
 export const KIT_CUFF_BORDER_METRES=.012;
 export const KIT_CUFF_FOLD_RETURN_METRES=.012;
-export function kitCuffOuterTrimThreshold(metric){
+export const KIT_TORSO_HEM_METRES=.024;
+export function kitOuterTrimThreshold(metric,region){
   if(!Number.isFinite(metric?.highV)||!Number.isFinite(metric?.lowV)||
      !Number.isFinite(metric?.metresPerUvV)||metric.metresPerUvV<=0||
      metric.highV<=metric.lowV)
-    throw new Error("Invalid original sleeve cuff fabric metric");
-  const outerBand=KIT_CUFF_BORDER_METRES+KIT_CUFF_FOLD_RETURN_METRES;
-  const threshold=metric.highV-outerBand/metric.metresPerUvV;
-  if(threshold<=metric.lowV)
-    throw new Error("Sleeve pattern is too short for the outer cuff band");
+    throw new Error("Invalid original shirt trim fabric metric");
+  if(region!=="cuffs"&&region!=="hem")
+    throw new Error("Unsupported shirt outer trim region");
+  const width=region==="cuffs"
+    ?KIT_CUFF_BORDER_METRES+KIT_CUFF_FOLD_RETURN_METRES
+    :KIT_TORSO_HEM_METRES;
+  const threshold=metric.lowV+width/metric.metresPerUvV;
+  if(threshold>=metric.highV)
+    throw new Error("Shirt pattern is too short for exterior trim band");
   return threshold;
 }
+// Strictly identify garment shell primitives, not shoes, inner collar print,
+// or other decorative pieces. Both author material primitives are necessary.
 export function kitJerseyDetailRegion(name){
-  if(/^FA_jersey__Pattern2D_3805002(?:_\d+)?$/i.test(name))return "collar";
-  if(/^FA_jersey__(?:38|62)(?:_\d+)?$/i.test(name))return "cuffs";
+  if(/^FA_jersey__Pattern2D_380500[23](?:_\d+)?$/i.test(name))
+    return "collar";
+  if(/^FA_jersey__(?:38|39|62|63)(?:_\d+)?$/i.test(name))
+    return "cuffs";
+  if(/^FA_jersey__(?:9|10|42|43)(?:_\d+)?$/i.test(name))
+    return "hem";
   return null;
 }
 // Applies validated UI design state to only the existing private garment
@@ -354,7 +364,7 @@ export function applyKitDesign(outfit,state,THREE){
        !allowed.has(base[part])||!allowed.has(accent[part]))
       throw new Error("Kit colours must use club colours or allowed neutrals");
   }
-  for(const detail of ["collar","cuffs"]){
+  for(const detail of ["trim"]){
     details[detail]=hexOrNull(state.detailColors?.[detail]);
     if(!details[detail]||!allowed.has(details[detail]))
       throw new Error("Kit detail colours must use club colours or allowed neutrals");
@@ -372,10 +382,11 @@ export function applyKitDesign(outfit,state,THREE){
   for(const {part,material,meshName,metric} of prepared){
     const uniforms=installKitStripeShader(material,THREE);
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
-    uniforms.kmTrimRegion.value=region==="collar"?1:region==="cuffs"?2:0;
-    uniforms.kmTrimColor.value.set(region?details[region]:"#FFFFFF");
-    uniforms.kmTrimCuffV.value=region==="cuffs"
-      ?kitCuffOuterTrimThreshold(metric):0;
+    uniforms.kmTrimRegion.value=region==="collar"?1:
+      region==="cuffs"?2:region==="hem"?3:0;
+    uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");
+    uniforms.kmTrimEdgeV.value=region==="cuffs"||region==="hem"
+      ?kitOuterTrimThreshold(metric,region):0;
     uniforms.kmStripeFabricOrigin.value=metric.originU;
     uniforms.kmStripeFabricScale.value=metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"

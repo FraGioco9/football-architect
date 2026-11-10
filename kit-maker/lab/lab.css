@@ -39,6 +39,8 @@
 .km-stripe-layer-choices button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .km-stripe-layer-choices button[hidden]{display:none}
 .km-color-target h2{margin-bottom:var(--fa-space-2)}
+.km-trim-note{margin:9px 2px 0;font-size:11px;line-height:1.5;color:var(--muted)}
+.km-trim-note[hidden]{display:none}
 .km-stripe-width-header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .km-stripe-width-header label{font-size:var(--fa-text-panel-heading);font-weight:700;color:var(--text)}
 #km-stripe-width-value{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}

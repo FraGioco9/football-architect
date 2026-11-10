@@ -197,9 +197,10 @@ export function initKitMakerControls(doc=document,store=kitDesignStore){
   const widthValue=doc.getElementById("km-stripe-width-value");
   const stripePanel=doc.getElementById("km-stripe-settings");
   const colorHeading=doc.getElementById("km-colors-title");
+  const trimNote=doc.getElementById("km-trim-note");
   if(parts.length!==3||colors.length!==6||styles.length!==2||
-     layers.length!==4||!widthSlider||widthSlider.type!=="range"||
-     !widthValue||!stripePanel||!colorHeading)
+     layers.length!==3||!widthSlider||widthSlider.type!=="range"||
+     !widthValue||!stripePanel||!colorHeading||!trimNote)
     throw new Error("Kit Maker design panel is incomplete");
   for(const button of parts)
     button.addEventListener("click",()=>store.selectPart(button.dataset.kmPart));
@@ -218,9 +219,9 @@ export function initKitMakerControls(doc=document,store=kitDesignStore){
   function render(state){
     const striped=state.style==="vertical-stripes";
     stripePanel.hidden=!striped;
+    trimNote.hidden=state.activePart!=="jersey";
     colorHeading.textContent={
-      base:"Body color",accent:"Stripe color",
-      collar:"Collar color",cuffs:"Sleeve cuff color"
+      base:"Body color",accent:"Stripe color",trim:"Jersey trim color"
     }[state.activeLayer]||"Color";
     for(const button of parts)
       button.setAttribute("aria-pressed",String(button.dataset.kmPart===state.activePart));
@@ -229,15 +230,15 @@ export function initKitMakerControls(doc=document,store=kitDesignStore){
     for(const button of layers){
       const layer=button.dataset.kmLayer;
       button.hidden=(layer==="accent"&&!striped)||
-        ((layer==="collar"||layer==="cuffs")&&state.activePart!=="jersey");
+        (layer==="trim"&&state.activePart!=="jersey");
       button.setAttribute("aria-pressed",String(layer===state.activeLayer));
     }
     const widthMm=state.stripeWidths[state.activePart];
     widthSlider.value=String(widthMm);
     widthValue.textContent=formatKitStripeWidth(widthMm);
     widthSlider.setAttribute("aria-valuetext",formatKitStripeWidth(widthMm));
-    const selectedRole=state.activeLayer==="collar"||state.activeLayer==="cuffs"
-      ?state.detailSelections[state.activeLayer]
+    const selectedRole=state.activeLayer==="trim"
+      ?state.detailSelections.trim
       :state.activeLayer==="accent"
         ?state.accentSelections[state.activePart]
         :state.selections[state.activePart];

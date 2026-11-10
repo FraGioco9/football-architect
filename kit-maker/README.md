@@ -1016,3 +1016,78 @@ and full Node suite remain pending; **not** reported as completed.
 Changes committed as one grouped update to the existing **Draft/HOLD
 PR #454**. No merge, deploy, remote database writes, or changes to
 the underlying Match Engine PR #455.
+
+## KM-23 — one jersey-trims colour, real exterior sleeve ends and lower torso hem (2026-11-10)
+
+**Owner QA:** Sleeve cuffs were STILL appearing on the **inside** of the
+sleeve, and one setting should apply exactly the same allowed colour
+to **outer collar, exterior sleeve cuffs on both arms and the bottom
+edge of the shirt body**.
+
+**Confirmed actual GLB root cause:** A direct read-only audit of
+`alberto-sena-outfit.glb` (SHA-256
+`985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8`)
+shows that the earlier high-V KM-21/22 mask was reversed. In the real
+author mesh `FA_jersey__38/39`, the **outer sleeve opening** is at
+UV `V≈0.110854`, with vertical 3D height near **1.358 m**;
+the **shoulder** is near `V≈0.231468`, Y≈**1.526 m**.
+The other sleeve `FA_jersey__62/63` is the mirror image.
+Thus sampling `V > highV-24mm/metresPerUvV` had consistently
+colored a stripe near the *wrong end* of the arm.
+
+The original GLB also splits **each sleeve across TWO material
+primitives** (`38/39` and `62/63`), with the same original
+underlying coordinates but different faces/materials. KM-21/22
+selected `38/62` only. KM-23 correctly processes **both
+primitive materials** of **both sleeves**. Their trim now selects
+`V <= lowV + (12mm visible + 12mm folded return)/metresPerUvV`
+with antialiasing. It reaches the actual distal opening, not the
+upper/inner line. The old private material atlas, original
+geometry, UVs and artist binary are untouched.
+
+**One setting:** Jersey's Color area now offers **Body**,
+**Stripes** (only when vertical style selected), and
+**Jersey trims**. The trim selector is accompanied by the text
+“Collar, sleeve edges and bottom hem use the same color.”
+It controls a **single in-memory colour role**, selected from the
+existing allowed club Primary/Secondary and White/Black/Grey/Ivory
+neutrals. The former independent Collar and Sleeve cuffs selectors
+are **removed**; all three trim regions use exactly the same live
+uniform `detailColors.trim`. Club-role changes, garment tab
+changes and Solid ↔ Vertical stripes preserve the selection;
+Shorts/Socks hide the trim option.
+
+**Included meshes:** Both separate outer-collar material primitives
+`FA_jersey__Pattern2D_3805002/3805003` are recoloured fully.
+Both sleeve material primitives per side (`38/39/62/63`) receive
+the exterior hem band. The two front and two back shirt-body
+material primitives (`FA_jersey__9/10/42/43`) receive a continuous
+**24mm cloth-pattern lower hem** using their independently measured
+**low-V** edge (front V≈0.275647, back V≈0.278342).
+The previously removed black-lettered inner collar tape
+`FA_jersey__Pattern_2702362` remains excluded. Boots and
+shoelaces, shorts and socks are unmodified.
+
+**Implementation:** No new material, texture or geometric segment.
+The same private Standard PBR shader retains KM-20's equal-width
+sewn vertical stripes. `kmTrimRegion` distinguishes collar (1),
+sleeve edges (2), body hem (3). `kmTrimEdgeV` is each flat-pattern
+piece's **minimum V plus a measured physical fabric width**;
+the fragment mask fades from colour at the real exterior side to
+body colour using `1-smoothstep(...,vKmPatternV)`. New shader cache
+key `km23-unified-exterior-shirt-trims-v1` guarantees the old
+direction is not reused across refreshed sessions.
+
+**QA:** targeted design-state/render regressions verify the one
+trim role, allowed colour guard and club changes, ALL creator mesh
+primitives, source-model sleeve low-V geometry, lower-body hem,
+shared colour in Solid and Vertical stripes, untouched shoe mesh
+and shader orientation. Page/server and Chrome interaction checks
+were updated to expect exactly three active colour areas and the
+new first-paint explanatory text. Isolated state/shader tests and
+syntax preflight pass; full Node, actual Chrome WebGL rendering with
+the owner's original local outfit and Safari visual QA remain to
+be confirmed. No CI success is claimed.
+
+PR #454 stays **Draft/HOLD**. No merge, deploy, remote DB change
+or redistribution of the privately licensed artist model.
