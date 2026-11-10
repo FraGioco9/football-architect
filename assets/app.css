@@ -763,6 +763,7 @@ html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-col
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
 /* PAGE-LOAD-04 B02: one crest loading primitive for Standings, Clubs,
    Fixtures and Stats. Geometry is set by each containing slot. */
+/* This loading token is independent of the responsive postseason bracket rules. */
 :root{--fa-crest-skeleton-fill:color-mix(in srgb,var(--muted) 12%,var(--surface))}
 .app-world-club-crest-placeholder.fa-crest-loading,
 #competition-panel-fixtures .app-fixtures-skeleton-crest{display:grid;place-items:center}
