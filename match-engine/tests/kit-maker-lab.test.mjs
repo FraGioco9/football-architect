@@ -199,10 +199,14 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('applySolidKitColors'));
   assert.ok(designJS.includes('applyKitDesign'));
   assert.ok(designJS.includes('KIT_STRIPE_WIDTH_RANGE'));
-  assert.ok(designJS.includes('kmTorsoStripeArc'));
-  assert.ok(designJS.includes('kmSleeveStripeArc'));
+  // KM-19 replaces KM-18 polar unwraps: straight, parallel bands
+  // with a small contour-aware displacement and no focal-point seams.
+  assert.ok(designJS.includes('kmTorsoStripeCoordinate'));
+  assert.ok(designJS.includes('kmSleeveStripeCoordinate'));
+  assert.ok(designJS.includes('kmParallelStripeCoordinate'));
   assert.ok(designJS.includes('vKmClothPosition = position'));
-  assert.doesNotMatch(designJS,/vKmKitX/);
+  assert.ok(designJS.includes('return p.x+drape'));
+  assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
   assert.doesNotMatch(designJS,/\bPOST\b|\bPUT\b|\bDELETE\b/);
   assert.ok(clubsJS.includes('item.className="language-option"'));
