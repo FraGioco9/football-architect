@@ -1155,3 +1155,39 @@ Examine `sections.rightSleeve`, `sections.leftSleeve` and
 folded fabric faces once source topology identifies them. The current
 shader is not yet approved by real-model visual QA. PR Draft/HOLD;
 no merge, deployment, remote DB change or artist GLB redistribution.
+
+## KM-27 — colour ORIGINAL modelled cuff and hem surfaces, not a generated band
+
+Owner-provided KM-26 private-local topology report identifies, on
+**both sleeves**, a closed original 73-edge material boundary around
+Y~1.368 and a second ~70-edge fold around Y~1.350. The outer sewn
+segment is about 18mm deep; earlier flat UV/global 3D masks did not
+select these exact face rings. The waist has a real 198-edge, ~0.965m
+fold ring centred near Y~0.937 and a segmented original lower
+material border near Y~0.959. Absolute Y values are **evidence only**
+because the on-load fit may shift original coordinates.
+
+KM-27 reads the PRIVATE, already-loaded and fitted artist geometry
+in browser, welds matching original vertices across both source
+primitives, and identifies the original topological seam/fold loops.
+Only existing source triangles between those rings are coloured.
+An additional small overlay MeshStandardMaterial draws the selected
+triangles coplanar with the original materials. The original source
+GLB, vertex/normal/UV/index buffers, boots and jersey shell are
+not changed. Collar remains fully coloured as before. No fixed width,
+UV-V cut, shader-created 24mm edge, new vertices beyond the selected
+overlay faces, or arbitrary trim shape is used.
+
+The code reports selected source face counts via
+`outfit.userData.km27SourceTrimReport` and Chrome DevTools.
+If the original source topological contour cannot be identified,
+it displays **no invented edge** rather than an inaccurate stripe.
+Both material/crease seam and outside fold must be present for a
+region. Paired sleeve topology is detected separately by side;
+the waist joins front/back segment arcs.
+
+The added testing uses synthetic multi-primitives with actual sewn
+fold rings. The source report was parsed from user-local output, NOT
+from an uploaded original GLB. Real user-local WebGL visual QA remains
+pending before APPROVAL. PR Draft/HOLD, no merge/deploy/remote DB or
+private-asset redistribution.

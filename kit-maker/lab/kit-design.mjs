@@ -1,3 +1,4 @@
+import {findOriginalSewnTrimFaces} from './kit-trim-geometry.mjs';
 // KM-17: DEV-only kit geometry styles. All colours are canonical club roles
 // or the fixed local neutral allowlist. No arbitrary colour picker or writes.
 export const KIT_PARTS=Object.freeze(["jersey","shorts","socks"]);
@@ -160,7 +161,7 @@ function collectGarmentMaterials(outfit){
       typeof mat.color?.set!=="function"))
       throw new Error("Kit colour target is not a private neutral material: "+mesh.name);
     for(const material of materials)
-      result.push({material,part,meshName:mesh.name,geometry:mesh.geometry});
+      result.push({material,part,meshName:mesh.name,geometry:mesh.geometry,mesh});
     present.add(part);
   });
   if(KIT_PARTS.some(part=>!present.has(part)))
@@ -173,7 +174,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km25-contour-rim-distance-v1";
+export const KIT_STRIPE_SHADER_KEY="km27-original-source-fold-overlays-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -245,7 +246,7 @@ function cachedKitStripeMetric(geometry){
   }
   return metric;
 }
-export function installKitStripeShader(material,THREE,hasPhysicalRim=false){
+export function installKitStripeShader(material,THREE){
   if(material.userData?.kitStripeUniforms)
     return material.userData.kitStripeUniforms;
   if(typeof THREE?.Color!=="function")
@@ -272,16 +273,11 @@ export function installKitStripeShader(material,THREE,hasPhysicalRim=false){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader=[
-      "varying float vKmPatternU;",
-      "varying float vKmRimDistance;",
-      ...(hasPhysicalRim?["attribute float kmRimDistance;"]:[])
-    ].join("\n")+"\n"+shader.vertexShader.replace("#include <begin_vertex>",
-      "#include <begin_vertex>\n vKmPatternU = uv.x;\n vKmRimDistance = "+
-        (hasPhysicalRim?"kmRimDistance;":"1000.0;"));
+    shader.vertexShader="varying float vKmPatternU;\n"+
+      shader.vertexShader.replace("#include <begin_vertex>",
+        "#include <begin_vertex>\n vKmPatternU = uv.x;");
     shader.fragmentShader=[
       "varying float vKmPatternU;",
-      "varying float vKmRimDistance;",
       "uniform float kmTrimRegion;",
       "uniform vec3 kmTrimColor;",
       "uniform float kmStripeEnabled;",
@@ -302,18 +298,96 @@ export function installKitStripeShader(material,THREE,hasPhysicalRim=false){
         "}",
         "if(kmTrimRegion > 0.5 && kmTrimRegion < 1.5){",
         "  diffuseColor.rgb=kmTrimColor;",
-        "}else if(kmTrimRegion > 1.5){",
-        "  float edgeAA=max(fwidth(vKmRimDistance),0.0004);",
-        "  float exteriorMask=1.0-smoothstep(0.024-edgeAA,0.024+edgeAA,vKmRimDistance);",
-        "  diffuseColor.rgb=mix(diffuseColor.rgb,kmTrimColor,exteriorMask);",
         "}"
       ].join("\n"));
   };
-  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+(hasPhysicalRim?'-rim':'-plain');
+  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+'-plain';
   material.userData??={};
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
   return uniforms;
+}
+// KM-27: colour ONLY existing sewn fold faces, selected from the actual
+// source triangle topology. The private glTF geometry stays unmodified:
+// separate small coplanar MeshStandardMaterial overlays receive the trim.
+const authorTrimOverlayCache=new WeakMap();
+function makeOriginalTrimOverlay(entry,triangles,THREE,name){
+  if(!triangles.length)return null;
+  const geometry=entry.geometry,position=geometry.getAttribute("position"),
+    normal=geometry.getAttribute("normal"),index=geometry.index;
+  const positions=[],normals=[];
+  for(const tri of triangles)for(let corner=0;corner<3;corner++){
+    const i=index?index.getX(tri*3+corner):tri*3+corner;
+    positions.push(position.getX(i),position.getY(i),position.getZ(i));
+    if(normal)normals.push(normal.getX(i),normal.getY(i),normal.getZ(i));
+  }
+  const buffer=new THREE.BufferGeometry();
+  buffer.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
+  if(normal)buffer.setAttribute("normal",new THREE.Float32BufferAttribute(normals,3));
+  else buffer.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({
+    name:"km27-sewn-trim-overlay-"+name,
+    color:"#FFFFFF",roughness:.85,metalness:0,
+    side:THREE.DoubleSide,polygonOffset:true,
+    polygonOffsetFactor:-1,polygonOffsetUnits:-1,
+    depthWrite:false
+  });
+  const overlay=new THREE.Mesh(buffer,material);
+  overlay.name="km27-author-sewn-fold-"+name;
+  overlay.frustumCulled=false;
+  overlay.castShadow=false;
+  overlay.receiveShadow=false;
+  overlay.renderOrder=(entry.mesh.renderOrder??0)+1;
+  entry.mesh.add(overlay);
+  return {mesh:overlay,material,triangles:triangles.length};
+}
+function colourOriginalSewnTrims(outfit,prepared,THREE,color){
+  let cached=authorTrimOverlayCache.get(outfit);
+  if(!cached){
+    cached={materials:[],report:{}};
+    // No synthetic fallback: without real Three.js geometry the collar
+    // alone remains coloured and this state is reported explicitly.
+    if(typeof THREE?.Mesh==="function"&&
+       typeof THREE?.BufferGeometry==="function"&&
+       typeof THREE?.Float32BufferAttribute==="function"){
+      outfit.updateMatrixWorld?.(true);
+      const groups={right:[],left:[],waist:[]};
+      const seen=new Set();
+      for(const {part,meshName,mesh,geometry} of prepared){
+        if(part!=="jersey"||!mesh||seen.has(mesh))continue;
+        seen.add(mesh);
+        const region=kitJerseyDetailRegion(meshName);
+        const key=region==="cuffs"
+          ?(stripeSectionForMesh(meshName)===1?"right":"left")
+          :region==="hem"?"waist":null;
+        if(key)groups[key].push({mesh,meshName,geometry});
+      }
+      for(const [key,entries] of Object.entries(groups)){
+        if(!entries.length){cached.report[key]={status:"missing-original-mesh"};continue;}
+        try{
+          const result=findOriginalSewnTrimFaces(entries,
+            key==="waist"?"waist":"cuffs");
+          let painted=0;
+          for(const [entry,triangles] of result.selected){
+            const record=makeOriginalTrimOverlay(entry,triangles,THREE,key);
+            if(record){cached.materials.push(record.material);painted+=record.triangles;}
+          }
+          cached.report[key]={status:painted>0?"source-fold-faces":"no-source-fold-faces",
+            triangles:painted,...result.evidence};
+        }catch(error){
+          // A failure must NEVER reinstate the inaccurate 24mm band.
+          cached.report[key]={status:"not-detected",reason:String(error?.message||error)};
+        }
+      }
+    }else cached.report={status:"3d-source-inspector-unavailable"};
+    authorTrimOverlayCache.set(outfit,cached);
+    outfit.userData??={};
+    outfit.userData.km27SourceTrimReport=cached.report;
+    if(cached.materials.length)console.info("Kit Maker original sewn trims",cached.report);
+    else console.warn("Kit Maker: no authored trim faces recognised",cached.report);
+  }
+  for(const material of cached.materials)material.color.set(color);
+  return cached.report;
 }
 // KM-25: The actual cuff and waist edges are curved 3D contours, not
 // global planes or atlas-V cuts. A new shader attribute holds the 3D
@@ -492,19 +566,11 @@ export function applyKitDesign(outfit,state,THREE){
   for(const {material} of prepared)
     if(!material.userData&&Object.isFrozen(material))
       throw new Error("Kit Maker material cannot be edited");
-  const rimDistances=cachedKitPhysicalRimDistances(outfit,prepared);
-  if(rimDistances.size&&typeof THREE.Float32BufferAttribute!=="function")
-    throw new Error("THREE.Float32BufferAttribute required for physical rim");
-  for(const [geometry,distances] of rimDistances){
-    if(typeof geometry?.setAttribute!=="function")
-      throw new Error("Jersey geometry cannot receive rim attribute");
-    if(geometry.getAttribute("kmRimDistance")?.count!==distances.length)
-      geometry.setAttribute("kmRimDistance",
-        new THREE.Float32BufferAttribute(distances,1));
-  }
-  for(const {part,material,meshName,metric,geometry} of prepared){
+  // Install narrow overlays on actual sewn faces, never create a fake rim mask.
+  colourOriginalSewnTrims(outfit,prepared,THREE,details.trim);
+  for(const {part,material,meshName,metric} of prepared){
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
-    const uniforms=installKitStripeShader(material,THREE,rimDistances.has(geometry));
+    const uniforms=installKitStripeShader(material,THREE);
     uniforms.kmTrimRegion.value=region==="collar"?1:
       region==="cuffs"?2:region==="hem"?3:0;
     uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");

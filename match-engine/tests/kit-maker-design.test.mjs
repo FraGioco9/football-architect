@@ -635,10 +635,8 @@ test('KM-23 the same trim color overrides collar sleeves AND torso bottom in bot
       if(region){
         assert.equal(uniforms.kmTrimColor.value.hex,'#111111');
         if(region!=='collar'){
-          const attr=meshes[i].geometry.getAttribute('kmRimDistance');
-          assert.ok(attr,'No physical distance on one of the author primitives');
-          assert.equal(attr.count,meshes[i].geometry.getAttribute('position').count);
-          assert.ok([...attr.array].every(d=>Number.isFinite(d)&&d>=0));
+          assert.equal(meshes[i].geometry.getAttribute('kmRimDistance'),null,
+            'Do not create synthetic 24mm colour bands in the author geometry');
         }
       }
       assert.equal(uniforms.kmStripeEnabled.value,
@@ -652,10 +650,8 @@ test('KM-23 the same trim color overrides collar sleeves AND torso bottom in bot
     vertexShader:'void main(){\n#include <begin_vertex>\n}',
     fragmentShader:'void main(){\n#include <color_fragment>\n}'};
   meshes[2].material.onBeforeCompile(shader);
-  assert.match(shader.vertexShader,/attribute float kmRimDistance/);
-  assert.match(shader.vertexShader,/vKmRimDistance = kmRimDistance/);
-  assert.match(shader.fragmentShader,/smoothstep\(0.024-edgeAA/);
-  assert.match(shader.fragmentShader,/exteriorMask/);
+  assert.doesNotMatch(shader.vertexShader,/attribute float kmRimDistance/);
+  assert.doesNotMatch(shader.fragmentShader,/smoothstep\(0.024-edgeAA|exteriorMask/);
   assert.doesNotMatch(shader.fragmentShader,/vKmPatternV|kmTrimEdgeV/);
   assert.match(shader.fragmentShader,/diffuseColor.rgb=kmTrimColor/);
 });

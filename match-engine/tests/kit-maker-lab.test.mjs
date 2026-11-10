@@ -235,12 +235,16 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('38|39|62|63'));
   assert.ok(designJS.includes('9|10|42|43'));
   assert.doesNotMatch(designJS,/kmTrimCuffV|kitCuffOuterTrimThreshold/);
-  // KM-25: the flattened sewing UV remains exclusive to vertical stripes;
-  // sleeve/waist trims use the original 3D rim-distance vertex attribute.
-  assert.ok(designJS.includes('vKmRimDistance = '));
-  assert.ok(designJS.includes('attribute float kmRimDistance;'));
-  assert.ok(designJS.includes('smoothstep(0.024-edgeAA'));
+  // KM-27: sewn material/crease faces are rendered as small overlays,
+  // never as atlas-V or an estimated 24mm vertex-distance band.
+  assert.ok(designJS.includes('findOriginalSewnTrimFaces'));
+  assert.ok(designJS.includes('km27-sewn-trim-overlay'));
+  assert.doesNotMatch(designJS,/attribute float kmRimDistance;/);
+  assert.doesNotMatch(designJS,/smoothstep\(0\.024-edgeAA/);
   assert.doesNotMatch(designJS,/vKmPatternV\s*=\s*uv\.y/);
+  const topologyModule=await get(server,'/__fa_kit_maker__/kit-trim-geometry.mjs');
+  assert.equal(topologyModule.status,200,'Source trim geometry must be served in DEV');
+  assert.ok(topologyModule.body.toString('utf8').includes('findOriginalSewnTrimFaces'));
   assert.ok(designJS.includes('cachedKitStripeMetric'));
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));

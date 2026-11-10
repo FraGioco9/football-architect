@@ -60,6 +60,7 @@ const KIT_MAKER_LAB = Object.freeze({
   '/__fa_kit_maker__/lab.css': 'kit-maker/lab/lab.css',
   '/__fa_kit_maker__/club-select.mjs': 'kit-maker/lab/club-select.mjs',
   '/__fa_kit_maker__/kit-design.mjs': 'kit-maker/lab/kit-design.mjs',
+  '/__fa_kit_maker__/kit-trim-geometry.mjs': 'kit-maker/lab/kit-trim-geometry.mjs',
   '/__fa_kit_maker__/body-visibility.mjs': 'kit-maker/lab/body-visibility.mjs',
   '/__fa_kit_maker__/sena-fit.mjs': 'kit-maker/lab/sena-fit.mjs',
   '/__fa_kit_maker__/jersey-geometry.mjs': 'kit-maker/lab/jersey-geometry.mjs',
