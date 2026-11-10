@@ -359,7 +359,16 @@ try {
         const result=await fetch(studioAssets+"alberto-sena-outfit.glb",{
           cache:"no-store"
         });
-        if(result.status===404){
+        if(result.status===424){
+          // The author-owned GLB is not in the public repository. When
+          // licensed, DEV can retrieve it automatically from an approved
+          // private GitHub Release without a manual filesystem copy.
+          let issue='not-configured';
+          try{issue=(await result.json()).reason||issue;}catch{}
+          status.textContent='Outfit unavailable ('+issue+
+            ') · configure an authorized private GitHub Release. '+
+            'See kit-maker/README.md. The mannequin is still available.';
+        }else if(result.status===404){
           status.textContent="Outfit not found locally · clothing-only preview is empty.";
         }else if(!result.ok){
           throw new Error("Sena outfit HTTP "+result.status);
@@ -453,7 +462,8 @@ try {
             });
           }
           outfit.name="km05-alberto-sena-clothing";
-          outfit.userData.kitMakerSource="Alberto Sena / local file / rights unverified";
+          outfit.userData.kitMakerSource=
+            "Alberto Sena / owner-authorized DEV asset / rights not embedded";
           // The current palette can already be selected while the GLB loads.
           // Only the new private neutral materials of jersey/shorts/socks
           // are recoloured; footwear stays black/white.

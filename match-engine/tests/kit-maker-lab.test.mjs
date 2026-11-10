@@ -196,6 +196,8 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
     script.indexOf('setActiveModel(model);describeSource();'),
     'Anatomical body must be hidden before the first render');
   assert.ok(script.includes('Outfit not found locally · clothing-only preview is empty.'));
+  assert.ok(script.includes('result.status===424'));
+  assert.ok(script.includes('configure an authorized private GitHub Release'));
   assert.match(script,/FA_\(jersey\|shorts\|socks\|boots\)/);
   assert.ok(script.includes('result.status===404'));
   assert.doesNotMatch(script,/createNeutralShortSleeveJersey/);

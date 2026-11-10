@@ -1,4 +1,5 @@
 import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
+import {createAuthorizedGitHubOutfitLoader} from './kit-designer-prototype/authorized-github-outfit.mjs';
 import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap,renderKitMakerLab,kitFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
 import {readSharedPublicWorld} from './shared-nonproduction-proxy.mjs';
 import {request as httpRequest} from 'node:http';
@@ -177,7 +178,8 @@ async function readPublicWorldForFirstPaint(){
 }
 // Exported solely to test the server without opening a production or LAN socket.
 export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true,
-  readInitialWorld = readPublicWorldForFirstPaint } = {}) {
+  readInitialWorld = readPublicWorldForFirstPaint,
+  kitOutfitLoader = createAuthorizedGitHubOutfitLoader() } = {}) {
   const sharedBackend=process.env.FA_ADMIN_API_POOL==='dev-preview';
   devPreview=devPreview&&!sharedBackend;
   return createServer(async (req, res) => {
@@ -202,11 +204,30 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         try {
           bytes = await safeFile(root, labFile);
         } catch (error) {
-          // The original artist's outfit is optional and ALWAYS gitignored.
-          // Missing local test assets are a quiet 404, not a server failure.
+          // KM-34: When the original asset is absent locally, resolve it
+          // automatically from an explicitly authorized PRIVATE GitHub
+          // release. Do not disclose tokens or release URLs to the client.
+          // The route above is already gated to loopback app.localhost DEV.
           if(raw === '/__fa_kit_maker__/alberto-sena-outfit.glb' &&
-             error?.code === 'ENOENT') return reject(res, 404);
-          throw error;
+             error?.code === 'ENOENT'){
+            const asset=await kitOutfitLoader();
+            if(asset?.status === 'available' && Buffer.isBuffer(asset.bytes)){
+              bytes=asset.bytes;
+            }else{
+              res.writeHead(424,{
+                'Content-Type':'application/json; charset=utf-8',
+                'Cache-Control':'private, no-store',
+                'X-Content-Type-Options':'nosniff',
+                'X-Robots-Tag':'noindex, nofollow',
+                'X-Frame-Options':'DENY'
+              });
+              res.end(req.method==='HEAD'?undefined:JSON.stringify({
+                error:'private-kit-asset-unavailable',
+                reason:asset?.status??'not-configured'
+              }));
+              return;
+            }
+          }else throw error;
         }
         if (raw === '/dev/match-engine' || raw === '/dev/kit-maker') {
           const canonicalDashboard = await safeFile(root, 'dashboard/index.html');

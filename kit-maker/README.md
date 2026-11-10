@@ -1395,3 +1395,54 @@ the full Node suite or live model was run here.
 No changes to original glTF geometry, sewn collar/cuff/waist trims,
 colours, slider minimum 1cm, frontend navigation, public assets,
 database, deployment or merge. PR #454 remains Draft/HOLD.
+
+## KM-34 — automatic asset loading from an authorized private GitHub Release
+
+The **public** Football Architect GitHub repository intentionally does
+**not** contain Alberto Sena's authored GLB: the source ZIP provided no
+redistribution license. Approval to implement automatic retrieval is
+**not** permission to publish the binary. No source model or texture is
+included by this PR.
+
+The DEV-only server still prefers an existing, gitignored
+`kit-maker/local-assets/alberto-sena-outfit.glb`. If that file is
+missing, it can retrieve an explicitly authorized binary from a
+**separate private GitHub Release**, purely on the server side. GitHub
+repo/token/asset identifiers are not sent to the browser. The original
+GLB is SHA-256 verified and checked for glTF v2 signature, declared
+file length and the 100MB limit. The signed GitHub download redirect
+is restricted to trusted asset delivery hosts, with no credential
+forwarding. A successful remote asset is cached only **in memory**
+for the current DEV process; there is no need to copy it locally.
+
+**Only after you obtain written redistribution/storage permission for
+the third-party model and create a private Release containing the
+authorized, SHA-256 verified GLB**, provide these environment variables
+in the *local DEV shell* before starting `node tools/dev.mjs`:
+
+```powershell
+$env:FA_KIT_MAKER_ASSET_RIGHTS_CONFIRMED = '1'
+$env:FA_KIT_MAKER_GITHUB_REPO = 'OWNER/PRIVATE_ASSETS_REPO'
+$env:FA_KIT_MAKER_GITHUB_ASSET_ID = 'RELEASE_ASSET_NUMERIC_ID'
+$env:FA_KIT_MAKER_GITHUB_SHA256 = 'EXPECTED_64_CHARACTER_SHA256'
+$env:FA_KIT_MAKER_GITHUB_TOKEN = 'YOUR_REPO_READ_ONLY_TOKEN'
+node tools/dev.mjs
+```
+
+Use a fine-grained token limited to **Contents: read** for that private
+repository; never commit the token, place it in browser JavaScript, or
+use an unauthenticated public download of the proprietary model.
+Release asset metadata endpoints accept `application/octet-stream`
+and can redirect (302) or return the binary (200). Only the DEV
+loopback `app.localhost:2000` host can invoke the route. The repository
+README and GitHub PR do not carry the token or asset binary.
+
+**Without a confirmed license or GitHub source, the endpoint returns
+424** with a minimal machine-readable reason, and Kit Maker explains
+what is missing instead of presenting a misleading unexplained 404.
+Its CC0 mannequin remains accessible, but the original costume
+cannot appear until an authorized source exists.
+
+Validation should include owner-local real GLB loading and isolated
+private token checks. No merge, deployment, production publish, remote
+database change or third-party asset redistribution.
