@@ -85,7 +85,7 @@ test('KM-01 canonical DEV lab and both Development sidebar links work on app.loc
   assert.match(html,/id="km-stripe-width-value"[^>]*>7\.5 cm</);
   assert.match(html,/id="km-stripe-settings"[^>]*hidden/);
   assert.match(html,/data-km-style="vertical-stripes"/);
-  assert.match(html,/Stripe colors/);
+  assert.match(html,/<h2 id="km-color-target-title">Color area<\/h2>/);
   assert.match(html,/Stripe width/);
   assert.equal((html.match(/data-km-color=/g)||[]).length,6);
   for(const id of ['km-parts-title','km-style-title','km-colors-title'])
