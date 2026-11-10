@@ -157,6 +157,7 @@
     replacement?.focus({preventScroll:true});
     if(window.scrollX!==scrollX||window.scrollY!==scrollY)window.scrollTo(scrollX,scrollY);
    }
+   document.documentElement.dataset.clubIdentityReady='true';
    document.documentElement.dataset.clubReady='true';
   };
   const applyCompetitionSnapshot=incoming=>{

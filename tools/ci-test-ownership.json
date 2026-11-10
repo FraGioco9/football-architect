@@ -238,6 +238,7 @@
     "tests/nav-01-sidebar.test.mjs": "site-node",
     "tests/page-load-02-club-browser.mjs": "browser",
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
+    "tests/page-load-04-club-html.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/players-name-pools.test.mjs": "site-node",
     "tests/players-names-catalog.test.mjs": "site-node",

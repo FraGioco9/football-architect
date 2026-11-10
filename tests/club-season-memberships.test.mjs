@@ -118,7 +118,7 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
  assert.equal(labels.length,9,'All nine identity labels are static before manifest');
  assert.deepEqual(labels.map(x=>x[1]),['nameLabel','country','city','abbr','colorsLabel','nickname','stadium','rivalriesLabel','descriptionLabel']);
  assert.doesNotMatch(part,/<dt[^>]*><span class="club-fp-bar"/,'Never skeleton a label');
- assert.equal((part.match(/class="club-fp-bar(?: |")/g)||[]).length,10,'Five identity text values, two HEX values and three API values');
+ assert.equal((part.match(/class="club-fp-bar(?: |")/g)||[]).length,13,'Anonymous name/country/city add three shape-aware identity skeletons');
  assert.match(part,/<dt data-club-first-paint-label="abbr">Abbreviation<\/dt><dd><span class="club-fp-bar club-fp-abbr" aria-hidden="true"><\/span>/);
  const colors=part.match(/<dd><span class="club-colors club-fp-colors" aria-hidden="true">([\s\S]*?)<\/span><\/dd>/)?.[1];
  assert.ok(colors,'Colors reserve the final two-swatch layout');
@@ -135,10 +135,11 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
  assert.ok(part.includes('data-club-first-paint-label="nextMatchLabel"'));
 
  assert.ok(part.includes('data-club-first-paint-title="competitions"'));
- assert.ok(html.includes("header.querySelector('.club-first-paint-flag').outerHTML=flagSvg"));
+ assert.ok(html.includes("dataset.clubShellReady='true'"),'route shell ready before catalog');
+ assert.ok(!html.includes("header.querySelector('.club-first-paint-flag').outerHTML=flagSvg"),'no preloaded identity artwork');
  assert.ok(!html.includes('class="club-header-division"'),'First paint must not reserve a league row');
  assert.doesNotMatch(generator,/class="club-header-division"/);
- assert.ok(generator.includes('safeJSON(manifest.countryFlags)'));
+ assert.doesNotMatch(generator,/safeJSON\(manifest\.countryFlags\)/,'identity flags are fetched with manifest');
  assert.match(css,/\.club-first-paint-panel\{min-height:160px;visibility:visible\}/);
  assert.match(css,/\.club-first-paint-panel \.club-fp-bar\{max-inline-size:124px\}/);
  assert.match(css,/\.club-competition-list \.club-competition-entry\{/);
