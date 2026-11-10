@@ -1,7 +1,9 @@
 /* Account pages share the site's Graphite & Petrol tokens and brand assets. */
 html[data-account-redirecting="true"] body{visibility:hidden}
 /* Match the main app typography on every authentication route, including native form controls. */
-.app-authentication,.app-authentication :is(input,select,textarea,button){font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+/* Keep the app font and fixed tracking on native form controls, including focus. */
+.app-authentication{font-family:inherit}
+.app-authentication :is(input,select,textarea,button){font-family:inherit;letter-spacing:normal}
 .account-body,.account-body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .account-body form .language-control,.account-body form .language-trigger{width:100%;min-width:0}
 .account-body form .language-menu{width:100%;max-height:260px}

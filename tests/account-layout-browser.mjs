@@ -45,6 +45,26 @@ try{
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
    assert.equal(await page.locator('#account-go-back,#account-language-trigger').count(),0);
    assert.equal(await page.locator('html').getAttribute('lang'),language);
+   if(language==='en'){
+    // Focus or hover may change a border, never letter spacing or glyph metrics.
+    const controls=page.locator('.app-authentication-card :is(input,button):visible');
+    for(const control of await controls.all()){
+     const sample=()=>control.evaluate(node=>{
+      const style=getComputedStyle(node);
+      return {family:style.fontFamily,size:style.fontSize,weight:style.fontWeight,
+       tracking:style.letterSpacing,lineHeight:style.lineHeight,stretch:style.fontStretch,
+       variant:style.fontVariantLigatures,kerning:style.fontKerning};
+     });
+     const before=await sample(),boxBefore=await control.boundingBox();
+     await control.focus();
+     assert.deepEqual(await sample(),before,route+' focus changes text metrics');
+     const boxAfter=await control.boundingBox();
+     assert.ok(Math.abs(boxBefore.width-boxAfter.width)<1&&Math.abs(boxBefore.height-boxAfter.height)<1,
+      route+' focus changes field geometry');
+     await control.blur();
+     assert.deepEqual(await sample(),before,route+' blur changes text metrics');
+    }
+   }
    // All authentication text and native controls must match the app font across routes and hydration.
    const typography=()=>page.evaluate(()=>{
     const root=getComputedStyle(document.documentElement).fontFamily;
