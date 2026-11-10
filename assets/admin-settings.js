@@ -172,7 +172,10 @@
   if(!response.ok)throw Object.assign(Error('request failed'),{status:response.status,code:data?.error?.code});return data;
  }
  function mount(doc){
-  const host=doc.querySelector('[data-admin-settings]');if(!host)return;
+  const template=doc.querySelector('template[data-settings-admin]');
+  if(!template||doc.documentElement.dataset.settingsView!=='admin')return;
+  const host=template.content.firstElementChild.cloneNode(true);
+  template.before(host);
   const find=s=>host.querySelector(s);
   const controller=createAdminController(browserRequest,render);
   function render(state=controller.state()){

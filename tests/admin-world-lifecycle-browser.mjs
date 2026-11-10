@@ -6,7 +6,7 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
  try{
   const admin=await operator.newPage(),publicPage=await visitor.newPage(),errors=[];
   for(const page of [admin,publicPage])page.on('pageerror',e=>errors.push(e.message));
-  await admin.goto(origin+'/settings');
+  await admin.goto(origin+'/settings?view=admin');
   assert.equal(await admin.locator('#admin-email,#admin-password,[data-admin-login]').count(),0);
   assert.equal(await admin.evaluate(()=>fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.status)),410);
   const signIn=admin.locator('[data-admin-signin-link] a');
@@ -19,7 +19,7 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   await admin.locator('#account-login input[name="email"]').fill(email);
   await admin.locator('#account-login input[name="password"]').fill(password);
   await admin.locator('#account-login button[type="submit"]').click();
-  await admin.waitForURL(url=>url.pathname==='/settings');
+  await admin.waitForURL(url=>url.pathname==='/settings'&&url.searchParams.get('view')==='admin');
   const cookies=await operator.cookies(origin);
   assert.ok(cookies.some(cookie=>cookie.name==='fa_player_local'&&cookie.httpOnly));
   assert.ok(!cookies.some(cookie=>cookie.name.includes('fa_admin')));

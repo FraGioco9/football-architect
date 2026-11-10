@@ -25,6 +25,12 @@ try{
    await page.route('**/api/player/permissions',route=>route.fulfill({status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'}));
    await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"world_unavailable"}}'}));
    await page.goto('http://localhost:2000/settings');
+   assert.deepEqual(await page.locator('.app-settings-grid h2').allTextContents(),await page.locator('#app-language-heading,#app-theme-heading').allTextContents());
+   assert.equal(await page.locator('.app-settings-grid h2').count(),2);
+   assert.equal(await page.locator('[data-admin-settings]').count(),0);
+   assert.equal(adminCalls,0);
+   await page.goto('http://localhost:2000/settings?view=admin');
+   assert.equal(await page.locator('.app-settings-grid').isVisible(),false);
    const signIn=page.locator('[data-admin-signin-link] a');
    await signIn.waitFor({state:'visible'});
    const destination=new URL(await signIn.getAttribute('href'),'http://localhost:2000');
