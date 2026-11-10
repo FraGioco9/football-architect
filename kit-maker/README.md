@@ -1191,3 +1191,27 @@ fold rings. The source report was parsed from user-local output, NOT
 from an uploaded original GLB. Real user-local WebGL visual QA remains
 pending before APPROVAL. PR Draft/HOLD, no merge/deploy/remote DB or
 private-asset redistribution.
+
+## KM-28 — only the waist's lateral seam joins (2026-11-10)
+
+Owner visual QA approved the overall original sewn trims but asked to
+recheck the waist **where front/back meet at both side seams**.
+The upper hem profile in KM-27 treated ALL original primitive
+interfaces near the lower waist as part of the horizontal waistband.
+That inadvertently admitted near-vertical side-seam segments: their
+upper vertices could pull the local trim line upwards at the flank.
+
+KM-28 retains only genuine circumferential/tangential original seam
+edges when constructing the *upper* waist hem profile. Source seam
+segments with negligible horizontal angular progress or predominantly
+vertical displacement are excluded, while both complete front/back
+horizontal arcs and the original closed bottom fold remain. No
+synthesized width, new colour mask, extra mesh topology or changes to
+cuffs/collar. Report now includes `upperCircumferentialEdges` and
+`excludedVerticalSideEdges` for local QA.
+Added a targeted 4-panel regression with two 3D front/back vertical
+side joins; body triangles must stay uncoloured while both original
+hem halves remain coloured across the lateral joins.
+
+Real original Alberto Sena GLB WebGL QA remains pending; PR #454
+Draft/HOLD. No merge, deploy, remote DB or third-party asset export.

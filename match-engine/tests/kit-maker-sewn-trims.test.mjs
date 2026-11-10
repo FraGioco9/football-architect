@@ -52,3 +52,51 @@ test('KM-27 if source lacks a sewn fold, refuses to invent a hem',()=>{
   assert.throws(()=>findOriginalSewnTrimFaces([tube('body',[a,b])],'cuffs'),
     /ring|fold|missing|absent/i);
 });
+
+function tubeHalf(name,rings,start,n=160){
+  const positions=[],indices=[],half=n/2;
+  for(const ring of rings)for(let j=0;j<=half;j++){
+    const a=2*Math.PI*(start+j)/n;
+    positions.push([ring.r*Math.cos(a),ring.y+.004*Math.cos(2*a),
+      .013+ring.r*Math.sin(a)]);
+  }
+  const columns=half+1;
+  for(let row=0;row<rings.length-1;row++)for(let j=0;j<half;j++){
+    const a=row*columns+j,b=a+1,c=(row+1)*columns+j,d=c+1;
+    indices.push(a,c,b,b,c,d);
+  }
+  return {meshName:name,geometry:{index:{
+    count:indices.length,getX(i){return indices[i];}},
+    getAttribute(key){
+      return key==='position'?{
+        count:positions.length,getX(i){return positions[i][0];},
+        getY(i){return positions[i][1];},getZ(i){return positions[i][2]}
+      }:null;
+    }
+  }};
+}
+test('KM-28 side seams do not pull the waist trim above its genuine circumferential border',()=>{
+  // Front/back panels join vertically up to Y=.995, while the original
+  // sewn horizontal hem ends at Y=.965. Both side joins must stay clean.
+  const upper=[{y:1.10,r:.17},{y:.995,r:.171},{y:.965,r:.174}],
+    lower=[{y:.965,r:.174},{y:.937,r:.173},{y:.9372,r:.169}];
+  const panels=[
+    tubeHalf('body front',upper,0),tubeHalf('body back',upper,80),
+    tubeHalf('hem front',lower,0),tubeHalf('hem back',lower,80)
+  ];
+  const selected=findOriginalSewnTrimFaces(panels,'waist');
+  assert.ok(selected.evidence.excludedVerticalSideEdges>=4,
+    'Must exclude original vertical side joins from upper waist seam');
+  assert.ok(selected.evidence.upperCircumferentialEdges>100,
+    'Preserve real front and back hem circumference');
+  assert.ok(selected.evidence.maximumUncoveredAngleRad<.1,
+    'Both lateral joins must remain connected without a fabricated band');
+  assert.equal(selected.selected.get(panels[0]).length,0,
+    'Do not paint a vertical stripe up the front side seam');
+  assert.equal(selected.selected.get(panels[1]).length,0,
+    'Do not paint a vertical stripe up the back side seam');
+  assert.ok(selected.selected.get(panels[2]).length>50,
+    'Original front hem remains coloured at both lateral joins');
+  assert.ok(selected.selected.get(panels[3]).length>50,
+    'Original back hem remains coloured at both lateral joins');
+});

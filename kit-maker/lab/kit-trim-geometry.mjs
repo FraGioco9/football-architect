@@ -152,9 +152,27 @@ function waistBetween(g){
   if(!ring)throw Error("Original lower waist fold ring missing");
   const theta=p=>Math.atan2(p[2]-ring.center[2],p[0]-ring.center[0]),
     low=ringProfile(ring.coords,theta,p=>p[1]);
+  // KM-28: lateral front/back seams are upright. They are NOT part of
+  // the horizontally sewn upper hem boundary. Taking their higher Y
+  // points into ringProfile lifted the trim at both side joins.
+  // Keep real circumferential source edges; no generated band or
+  // extrapolated vertical seam faces are allowed.
+  const lowerCandidate=ring.center[1]+.005,
+    upperCandidate=ring.center[1]+.075;
+  let excludedVerticalSideEdges=0;
   const seamEdges=g.seams.filter(e=>{
-    const y=(g.points[e.a][1]+g.points[e.b][1])/2;
-    return y>ring.center[1]+.005&&y<ring.center[1]+.075;
+    const a=g.points[e.a],b=g.points[e.b],
+      y=(a[1]+b[1])/2;
+    if(y<=lowerCandidate||y>=upperCandidate)return false;
+    const horizontal=Math.hypot(a[0]-b[0],a[2]-b[2]),
+      vertical=Math.abs(a[1]-b[1]);
+    const a0=theta(a),a1=theta(b),
+      angleDelta=Math.abs(Math.atan2(Math.sin(a1-a0),Math.cos(a1-a0)));
+    if(horizontal<.001||vertical>horizontal*.65||angleDelta<.004){
+      excludedVerticalSideEdges++;
+      return false;
+    }
+    return true;
   });
   const vertices=new Set();
   for(const edge of seamEdges){vertices.add(edge.a);vertices.add(edge.b);}
@@ -170,6 +188,8 @@ function waistBetween(g){
     const t=theta(p),a=valueAt(low,t),b=valueAt(high,t);
     return b-a>.004&&b-a<.065&&p[1]>=a-.0004&&p[1]<=b+.0004;
   },evidence:{lowerFoldPerimeterM:ring.perimeter,upperSeamVertices:vertices.size,
+      upperCircumferentialEdges:seamEdges.length,
+      excludedVerticalSideEdges,
       maximumUncoveredAngleRad:gap}};
 }
 export function findOriginalSewnTrimFaces(entries,region){
