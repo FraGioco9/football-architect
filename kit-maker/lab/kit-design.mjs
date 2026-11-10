@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km36-front-back-source-shoulder-start-v1";
+export const KIT_STRIPE_SHADER_KEY="km37-straight-torso-independent-sleeve-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -589,15 +589,15 @@ export function applyKitDesign(outfit,state,THREE){
       throw new Error("Kit Maker material cannot be edited");
   // Install narrow overlays on actual sewn faces, never create a fake rim mask.
   colourOriginalSewnTrims(outfit,prepared,THREE,details.trim);
-  // KM-29: source UV islands have independent origins. At real shoulder
-  // stitches, align their stripe phase while retaining physical UV width.
-  // A missing/unreliable seam leaves the existing source mapping intact.
+  // KM-37: both torso sides share one source-geometry X start along the
+  // ENTIRE chest/abdomen. Sleeves intentionally keep independent UV
+  // stripes: their phase is not forced to meet the torso at the seam.
   let shoulder={adjustments:new Map(),coordinates:new Map(),
     report:{status:"inactive"}};
   const canBindSewnCoordinates=typeof THREE?.Float32BufferAttribute==="function";
-  // The 20 MB author GLB must load before expensive shoulder matching.
-  // Solid first paint does not perform any KM-29/31/32 analysis.
-  // On stripe selection the material upgrades without a GLB reload.
+  // Solid first paint never runs stripe mapping; the private source GLB
+  // loads normally. In Vertical stripes only the torso coordinates are
+  // derived (and cached) without GLB reload or sleeve matching.
   if(canBindSewnCoordinates&&state.styles.jersey==="vertical-stripes"){
     try{
       shoulder=alignOriginalShoulderStripes(outfit,prepared);
@@ -606,9 +606,10 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km31ShoulderStripeReport=shoulder.report;
       outfit.userData.km32ShoulderOriginReport=shoulder.report.shoulderReference;
       outfit.userData.km36TorsoStartReport=shoulder.report.torsoShoulderStart;
+      outfit.userData.km37StripeReport=shoulder.report;
       if(typeof THREE?.Mesh==="function"&&!outfit.userData.km31SeamLogged){
         outfit.userData.km31SeamLogged=true;
-        console.info("Kit Maker shoulder seam coverage",shoulder.report);
+        console.info("Kit Maker torso/sleeve stripe mapping",shoulder.report);
       }
     }catch(error){
       const reason=String(error?.message??error);
@@ -618,13 +619,13 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km29ShoulderStripeReport={status:"skipped",reason};
       outfit.userData.km31ShoulderStripeReport={status:"skipped",reason};
       outfit.userData.km32ShoulderOriginReport={status:"skipped",reason};
+      outfit.userData.km37StripeReport={status:"skipped",reason};
     }
   }
-  // Stitch-adjacent vertices inherit the same authored fabric-metre
-  // stripe field on both sides of the seam. Original UVs stay untouched.
-  if(canBindSewnCoordinates&&
-      (shoulder.report.status==="aligned"||
-       shoulder.report.status==="torso-anchored")){
+  // Add a source-geometry X coordinate only to torso fabric. This field
+  // has zero Y-dependence, so stripes cannot veer on the chest.
+  // Sleeve geometry keeps its original UV shader attribute unchanged.
+  if(canBindSewnCoordinates&&shoulder.report.status==="torso-straight"){
     for(const [geometry,metres] of shoulder.coordinates){
       const p=geometry.getAttribute?.("position");
       if(!p||p.count!==metres.length||
@@ -637,6 +638,7 @@ export function applyKitDesign(outfit,state,THREE){
   for(const {part,material,meshName,metric,geometry} of prepared){
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
     const sewn=part==="jersey"&&
+      /^FA_jersey__(?:9|10|42|43)(?:_\d+)?$/i.test(meshName)&&
       Boolean(geometry.getAttribute?.("kmStripeSewnMetres"));
     const uniforms=installKitStripeShader(material,THREE,sewn);
     uniforms.kmTrimRegion.value=region==="collar"?1:

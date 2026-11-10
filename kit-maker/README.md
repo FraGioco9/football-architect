@@ -1539,3 +1539,64 @@ conversation, so its actual pixel-alignment is pending manual Chrome
 QA. Further adjustments must use real model evidence rather than
 calling synthetic checks a visual approval. PR #454 Draft/HOLD;
 no merge/deploy/database operations or third-party redistribution.
+
+## KM-37 — straight torso stripes; sleeves independent from torso (2026-11-11)
+
+Owner accepted KM-36's shared front/back shoulder start but reported
+that stripes **deviate/bend along the torso**. The owner explicitly
+requested that the left/right sleeves have stripe patterns **independent
+of the torso**.
+
+**Cause:** KM-36's per-vertex stripe field interpolated between the
+artist's two differently oriented UV sewing islands and the
+shoulder-side physical X coordinate across a 10cm height band. A
+vertical stripe therefore changed horizontal position as it went
+down the chest, even with identical front/back shoulder phase.
+Previous KM-31/32 logic also attempted to extend body stripe phase
+to sleeve UVs.
+
+**Fix:** The front and back torso mesh primitives (9/10/42/43)
+now use **one single, Y-independent, source-geometry X coordinate**
+for the **whole torso**, with the same collar-side start radius
+detected from genuine upper source geometry. Every vertex at the
+same physical |X| has the same stripe phase regardless of Y, UV atlas
+rotation, front/back mesh, or sculpted 3D chest/back surface.
+**No interpolated shoulder warp** and no change of direction between
+upper chest and waist. The original artist positions/UVs are read
+but not mutated; one additional shader scalar attribute is attached
+to torso meshes only. The width continues to be selected from 1 to
+15cm, in 0.5cm increments. Note: a full X-projection preserves visual
+verticality and front/back phase but can make physical fabric width
+appear compressed around strongly curved flanks; this is an accepted
+tradeoff for straight vertical torso stripes, not an assertion of
+constant cloth-space width on all curvature.
+
+**Sleeve independence:** Both sleeve source primitives 38/39 (right)
+and 62/63 (left) retain their own original sewing-pattern UV U as
+the stripe axis, plus their own existing UV-metre scale/origin. They
+do **not** inherit the torso's X start, phase, sewn scalar attribute,
+or source-edge correspondence; sleeve colours and width are still
+controlled by the shared Jersey controls. The sleeve stripe pattern
+is therefore intentionally allowed to differ at the torso-to-arm
+seam. Shorts, socks, sleeve cuffs, waist hem, collar, trims, palette,
+private GLB ownership and the existing Solid-first-load behavior
+are unchanged.
+
+**Diagnostics:** `outfit.userData.km37StripeReport` reports
+`torso-straight`, `constant-source-world-x`,
+`noVerticalBlend: true`, and
+`sleeves.mode: independent-source-uv`. The separate source geometry
+origin is a shared *physical phase reference*, not a claim that
+original front/back material primitives are a welded physical seam.
+No per-sleeve "connected" status is reported.
+
+**Focused tests:** Torso stripes straight across all rows and front/
+back pattern islands (both left/right), 1cm/1.5cm/3cm/7.5cm/15cm,
+all four actual torso primitives, UV warping, nonindexed triangles,
+world transforms and missing shoulder fail-closed. Both sleeves
+retain their own shader variant and independent original UVs even
+when their geometry coincides with the torso. The design's shader
+is directly tested after Solid→Vertical stripes and slider updates.
+Full Node/browser visual QA with the owner's local third-party GLB
+is still required before approval. PR #454 remains Draft/HOLD;
+no merge, deployment, remote DB or upload of proprietary assets.
