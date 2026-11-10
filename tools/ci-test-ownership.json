@@ -182,6 +182,7 @@
     "tests/clean-ui-03-repository-assets.test.mjs": "site-node",
     "tests/clean-ui-03-shell-assets.test.mjs": "site-node",
     "tests/clean-ui-03-webkit-iphone.mjs": "browser",
+    "tests/club-colors-integration.test.mjs": "site-node",
     "tests/club-competition-summary.test.mjs": "site-node",
     "tests/club-crests.test.mjs": "site-node",
     "tests/club-identity-trafford.test.mjs": "site-node",

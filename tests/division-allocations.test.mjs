@@ -29,10 +29,10 @@ test("CLUB-REGISTRY-01: all approved identities use the flat twelve-field catalo
 });
 
 test("CLUB-REGISTRY-02: current owner-authorized CSV/JSON bytes retain exact controlled fingerprints",()=>{
-  // Baseline 2026-10-16 fingerprints remain historical; these match ENG-2/IT-27 owner-authorized identity changes.
+  // Controlled fingerprints reflect the owner-approved ENG-2/IT-27 identities and 320 palettes in issue #466.
   const hash=value=>createHash("sha256").update(value).digest("hex");
-  assert.equal(hash(readFileSync(new URL("../data/clubs-registry.csv",import.meta.url))),"08e22137565af033cc5c21cf5dae124fcff922828dca95245d1c2d5701b41b7d");
-  assert.equal(hash(JSON.stringify(clubs)),"24168497bf02303a01df595ea93eb83937957ca58bcc44c78a534fe0d724cc17");
+  assert.equal(hash(readFileSync(new URL("../data/clubs-registry.csv",import.meta.url))),"12bb6597bf71cad46711b98c336b7fa9c8eb30f64e6643127eb6da4b5dfb47d4");
+  assert.equal(hash(JSON.stringify(clubs)),"6eb0b232fe8ff32871c6b54ffd5b91ead9013756ffc32970669ad84c91315763");
 });
 
 test("REGISTRY-01: CSV and JSON use the same flat division fields and records",()=>{
