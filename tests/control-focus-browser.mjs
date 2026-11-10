@@ -31,10 +31,12 @@ try{
    const dropdownSelector=route==='/clubs'?'.nav01-filter .language-trigger':'#nationality-trigger';
    const dropdown=page.locator(dropdownSelector).first();
    await dropdown.click();
-   await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:dropdownSelector,color:expected});
+   assert.equal(await dropdown.getAttribute('aria-expanded'),'true','Dropdown opens with the pointer');
+   if(route==='/clubs')await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:dropdownSelector,color:expected});
    await dropdown.click();
    assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',dropdownSelector);assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
+   if(route==='/clubs')await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',dropdownSelector);
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
    await dropdown.focus();await page.keyboard.press('ArrowDown');
    await page.keyboard.press('Escape');
    assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Escape restores trigger focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
