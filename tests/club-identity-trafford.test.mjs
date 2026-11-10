@@ -82,3 +82,17 @@ test('ENG-2 owner-approved nickname and description match all sources and four t
  assert.equal(club.city,'Manchester');
  assert.equal(club.stadiumName,'Foundry Park');
 });
+
+
+test('Trafford first-paint directory searches canonically and preserves alphabetical order',()=>{
+ const html=load('clubs/index.html');
+ const cards=[...html.matchAll(/<a class="nav01-card"[\s\S]*?<\/a>/g)].map(m=>m[0]);
+ assert.equal(cards.length,320);
+ assert.ok(cards.every(c=>!c.includes('medlock united')));
+ const name=card=>card.match(/<strong>(.*?)<\/strong>/)[1];
+ for(let i=1;i<cards.length;i++){
+  assert.ok(name(cards[i-1]).localeCompare(name(cards[i]),'en')<=0,name(cards[i-1])+' before '+name(cards[i]));
+ }
+ const trafford=cards.find(c=>c.includes('href="/clubs/eng/2/overview"'));
+ assert.ok(trafford.includes('data-search="trafford united trafford united football club manchester"'));
+});

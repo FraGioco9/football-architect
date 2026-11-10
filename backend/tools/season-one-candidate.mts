@@ -10,10 +10,12 @@ import {snapshotHashes,validateApprovedSeasonOneSnapshot,type CanonicalCatalogue
 
 export const SOURCE_REVISION='c187d4ebfc0240515e79b4dbd9f3dceea3f293cc';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-// Frozen review ancestry at SOURCE_REVISION; byte pins below track the approved calendar-compatible source layout.
+// SOURCE_REVISION tracks the historical sporting review ancestry, not an approval of current club labels.
+// Owner-authorized identity changes refresh only the live clubs.json source pin and pending-review candidate.
+// Production season-1 approval and frozen participants/rules hashes remain unchanged.
 // The reconstructed full rules and approval hashes remain those of that review; no new approval is granted.
 const sourceChecksums:Readonly<Record<string,string>>={
- "data/clubs.json": "48a8e2ba8299ef49455630c052ac038b19bebafdab4ba134deb95da23dcf05b7",
+ "data/clubs.json": "d20b8d92bbf7c252d59058bdc02da938703d3d0b5366f5ff3be8436dab318181",
  "data/divisions.json": "3a9de975a1916aefe19e0e85ba39dbec66a3cdb32fab6618a1e732976107d4b3",
  "data/international-competitions.json": "56ef86848e58010f31aeaba46fe5027dede3af2a33db4b558025cc8490f51f65",
  "backend/catalogues/season-1.participants.json": "f09cda2533f4cb8b77eac1fe5c5d96c992238530786ff49c7999715fc3770d93",
