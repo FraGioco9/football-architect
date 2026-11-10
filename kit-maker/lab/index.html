@@ -42,6 +42,13 @@
             <section class="app-panel km-preview-panel" aria-label="3D football outfit preview">
               <div class="km-stage">
                 <canvas id="viewport" aria-label="3D football kit: left-drag to rotate, right-drag or two-finger gesture to move, wheel or pinch to zoom"></canvas>
+                <div id="km-outfit-missing" class="km-outfit-missing" hidden>
+                  <strong>3D kit source unavailable</strong>
+                  <p>The original outfit is not included in the public repository. Select your previously extracted GLB once to keep it privately in this browser.</p>
+                  <button id="km-outfit-import-button" class="km-outfit-import" type="button">Select local GLB</button>
+                  <input id="km-outfit-file" type="file" accept=".glb,model/gltf-binary" hidden>
+                  <p class="km-outfit-privacy">Private to this browser · not uploaded to GitHub</p>
+                </div>
               </div>
               <p class="km-camera-hint">Drag to rotate · Right-drag to move · Scroll to zoom. On touch: one finger rotates; two fingers move and zoom.</p>
             </section>

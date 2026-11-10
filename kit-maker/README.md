@@ -1446,3 +1446,48 @@ cannot appear until an authorized source exists.
 Validation should include owner-local real GLB loading and isolated
 private token checks. No merge, deployment, production publish, remote
 database change or third-party asset redistribution.
+
+## KM-35 — restore the original owner-owned GLB without the GitHub Release (2026-11-10)
+
+**Repeated owner QA:** Kit Maker displays no garment after the previous
+KM-33/KM-34 changes. The original 404 now becomes 424 when no separate
+GitHub Release, rights confirmation and private token are configured.
+Neither GitHub code changes nor KM-34 can supply a GLB that is absent
+from both the public repo and the private release. Blank preview was
+not a crash of the 3D shaders; it was a missing source binary.
+
+**KM-35 recovery path:** The DEV-only 3D stage now shows a distinct
+"3D kit source unavailable" panel with a keyboard-accessible button
+"Select local GLB". The owner chooses their ALREADY EXTRACTED, verified
+Alberto Sena `alberto-sena-outfit.glb` **once from their own device**.
+The browser validates the standalone glTF v2 header and one of the
+**three GitHub-versioned, recognized SHA-256 source revisions** before
+writing it to origin-scoped IndexedDB. The save is transaction-committed
+before refreshing. Subsequent page loads first request the existing
+localhost asset route and, on 424/404, read the private browser cache
+instead of showing a blank viewport. It uses the **unchanged** GLTFLoader,
+fit, monochrome, sewn trim and stripes pipeline: no procedural fake
+garment, no lossy conversion or copying of the artist's GLB into Git.
+
+Browser storage stays on the user's machine and may be lost when they
+clear site data or use private browsing. If disabled, the import shows
+a clear error; a currently configured, authorized GitHub Release
+still works automatically and takes precedence. Wrong/unsupported
+source hashes are rejected before browser caching; a corrupt older
+cache is cleared and re-import is offered. No binary, texture,
+SHA token, browser file name, or authentication secret is sent to
+GitHub or any remote service through this recovery path.
+
+**Owner instructions:** Sync PR #454, open
+`http://app.localhost:2000/dev/kit-maker`, click
+"Select local GLB" in the 3D preview and select their original
+extracted `.glb`. Do not select the source Blender `.blend` or
+the `.zip` container: first extract the original standalone
+`kit-maker/local-assets/alberto-sena-outfit.glb` from their earlier
+local package. After import, simply revisit Kit Maker; no repeated
+manual copy or selection is required on that browser profile.
+
+This does **not** remove the upstream license restriction, create
+a GitHub asset, imply the private license has been verified, or make
+the original third-party model universally available to other users.
+Full owner Chrome/WebGL visual QA remains open; PR remains Draft/HOLD.

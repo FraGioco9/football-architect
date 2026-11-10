@@ -7,7 +7,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createRiggedArmPose } from "./rigged-arms.mjs";
 import { validateLocalModelFile, validateStandaloneGLB } from "./reference-import.mjs";
 import { hideAnatomicalBody } from "./body-visibility.mjs";
-import {sha256Outfit,fitSenaOutfit,removeSenaInnerNeckPrint,makeSenaJerseySolidWhite,makeSenaShortsSocksSolidWhite,makeSenaBootLacesSolidWhite,makeSenaBootsBlackAndWhite} from "./sena-fit.mjs";
+import {cachePrivateOutfit,readCachedPrivateOutfit,clearCachedPrivateOutfit} from "./private-outfit-cache.mjs";
+import {SENA_MODEL_SHA,sha256Outfit,fitSenaOutfit,removeSenaInnerNeckPrint,makeSenaJerseySolidWhite,makeSenaShortsSocksSolidWhite,makeSenaBootLacesSolidWhite,makeSenaBootsBlackAndWhite} from "./sena-fit.mjs";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 
 const canvas=document.getElementById("viewport");
@@ -125,6 +126,35 @@ let activeModel=null;
 let loadGeneration=0;
 let activeKitOutfit=null;
 let kitDesigner=null;
+const missingOutfitPanel=document.getElementById("km-outfit-missing");
+const outfitFileInput=document.getElementById("km-outfit-file");
+const outfitImportButton=document.getElementById("km-outfit-import-button");
+outfitImportButton?.addEventListener("click",()=>outfitFileInput?.click());
+function showMissingOutfit(){
+  if(missingOutfitPanel)missingOutfitPanel.hidden=false;
+}
+// A developer can restore their already owned, previously extracted
+// original GLB without copying files into the repo or uploading to GitHub.
+// IndexedDB keeps the binary private to this origin across Git checkouts.
+outfitFileInput?.addEventListener("change",async()=>{
+  const file=outfitFileInput.files?.[0];
+  if(!file)return;
+  try{
+    if(file.size>100*1024*1024)throw Error("GLB exceeds 100 MB");
+    status.textContent="Importing private GLB into this browser…";
+    const data=await file.arrayBuffer();
+    validateStandaloneGLB(data);
+    const sha=await sha256Outfit(data);
+    if(!Object.values(SENA_MODEL_SHA).includes(sha))
+      throw Error("This is not a verified Alberto Sena outfit GLB");
+    await cachePrivateOutfit(data);
+    location.reload();
+  }catch(error){
+    console.error("Kit Maker private outfit import failed",error);
+    status.textContent="Could not save private GLB: "+String(error?.message||error);
+    showMissingOutfit();
+  }finally{outfitFileInput.value="";}
+});
 // The standalone anatomy lab must not import DEV Kit Maker design modules.
 if(location.pathname==="/dev/kit-maker"){
   try{
@@ -359,26 +389,33 @@ try {
         const result=await fetch(studioAssets+"alberto-sena-outfit.glb",{
           cache:"no-store"
         });
-        if(result.status===424){
-          // The author-owned GLB is not in the public repository. When
-          // licensed, DEV can retrieve it automatically from an approved
-          // private GitHub Release without a manual filesystem copy.
-          let issue='not-configured';
-          try{issue=(await result.json()).reason||issue;}catch{}
-          status.textContent='Outfit unavailable ('+issue+
-            ') · configure an authorized private GitHub Release. '+
-            'See kit-maker/README.md. Clothing preview remains empty.';
-        }else if(result.status===404){
-          status.textContent="Outfit not found locally · clothing-only preview is empty.";
-        }else if(!result.ok){
-          throw new Error("Sena outfit HTTP "+result.status);
+        let data=null;
+        if(result.ok){
+          const length=Number(result.headers.get("Content-Length")||0);
+          if(length>100*1024*1024)
+            throw Error("Outfit exceeds the private 100 MB limit");
+          data=await result.arrayBuffer();
+        }else if(result.status===424||result.status===404){
+          // No authorized GitHub source configured. A private browser
+          // cache can restore the owner's approved source model without
+          // distributing it through the public project.
+          data=await readCachedPrivateOutfit();
+          if(!data){
+            let issue='not-configured';
+            if(result.status===424){
+              try{issue=(await result.json()).reason||issue;}catch{}
+            }
+            showMissingOutfit();
+            status.textContent="Outfit not available ("+issue+
+              ") · select the original GLB in the 3D preview. "+
+              "Private browser storage; no GitHub upload.";
+          }
         }else{
-          const contentLength=Number(result.headers.get("Content-Length")||0);
-          if(contentLength>100*1024*1024)
-            throw new Error("Outfit exceeds the private 100 MB limit");
-          const data=await result.arrayBuffer();
+          throw Error("Sena outfit HTTP "+result.status);
+        }
+        if(data){
           if(data.byteLength>100*1024*1024)
-            throw new Error("Outfit exceeds the private 100 MB limit");
+            throw Error("Outfit exceeds the private 100 MB limit");
           validateStandaloneGLB(data);
           const hash=await sha256Outfit(data);
           const parsedKit=await new GLTFLoader().parseAsync(data,"");
@@ -486,7 +523,11 @@ try {
       }catch(outfitError){
         // An invalid outfit never replaces or mutates the CC0 mannequin.
         console.error("KM-05 private garment preview failed",outfitError);
-        status.textContent="Outfit failed validation · clothing-only preview is empty. "+
+        // If an old browser-cached GLB is unsupported, offer a fresh
+        // source file instead of leaving a completely blank viewport.
+        try{await clearCachedPrivateOutfit();}catch{}
+        showMissingOutfit();
+        status.textContent="Outfit failed validation · choose the original GLB. "+
           "Details: "+String(outfitError?.message||outfitError);
       }
     }

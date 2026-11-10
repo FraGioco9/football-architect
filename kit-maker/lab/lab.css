@@ -4,9 +4,17 @@
 .km-sr-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .km-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,320px);align-items:start;gap:var(--fa-space-4)}
 .km-preview-panel{min-width:0}
-.km-stage{width:100%;height:clamp(420px,72dvh,790px);overflow:hidden;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:var(--surface-raised)}
+.km-stage{position:relative;width:100%;height:clamp(420px,72dvh,790px);overflow:hidden;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:var(--surface-raised)}
 .km-stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .km-stage canvas:active{cursor:grabbing}
+.km-outfit-missing{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:clamp(20px,5vw,50px);background:var(--surface-raised);color:var(--text)}
+.km-outfit-missing[hidden]{display:none}
+.km-outfit-missing strong{font-size:15px;line-height:1.3}
+.km-outfit-missing p{max-width:360px;margin:0;color:var(--muted);font-size:12px;line-height:1.55}
+button.km-outfit-import{font:inherit;display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 16px;border:1px solid var(--focus);border-radius:var(--fa-radius-control);background:var(--surface-raised);color:var(--text);font-weight:700;font-size:12px;cursor:pointer}
+.km-outfit-import:hover{background:var(--surface)}
+.km-outfit-import:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.km-outfit-missing .km-outfit-privacy{font-size:11px}
 .km-camera-hint{margin:8px 2px 0;color:var(--muted);font-size:11px;line-height:1.45}
 .km-settings{display:grid;align-content:start;gap:var(--fa-space-4);min-width:0;overflow:visible}
 .km-field,.km-colors{min-width:0}

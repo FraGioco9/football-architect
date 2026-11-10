@@ -68,6 +68,10 @@ test('KM-01 canonical DEV lab and both Development sidebar links work on app.loc
     assert.ok(!html.includes('id="'+missing+'"'),missing+' must not appear');
   assert.doesNotMatch(html,/data-view=/);
   assert.ok(html.includes('src="/__fa_kit_maker__/club-select.mjs"'));
+  assert.match(html,/id="km-outfit-missing"[^>]*hidden/);
+  assert.match(html,/id="km-outfit-import-button"/);
+  assert.match(html,/id="km-outfit-file"[^>]*type="file"/);
+  assert.match(html,/Private to this browser/);
   assert.match(html,/Select club/);
   assert.match(html,/class="app-panel km-preview-panel"/);
   assert.match(html,/class="app-panel km-settings"/);
@@ -120,6 +124,7 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
     '/__fa_kit_maker__/rigged-arms.mjs',
     '/__fa_kit_maker__/club-select.mjs',
     '/__fa_kit_maker__/kit-design.mjs',
+    '/__fa_kit_maker__/private-outfit-cache.mjs',
     '/__fa_kit_maker__/body-visibility.mjs',
     '/__fa_kit_maker__/sena-fit.mjs',
     '/__fa_kit_maker__/jersey-geometry.mjs',
@@ -195,9 +200,12 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(script.indexOf('hideAnatomicalBody(model)') <
     script.indexOf('setActiveModel(model);describeSource();'),
     'Anatomical body must be hidden before the first render');
-  assert.ok(script.includes('Outfit not found locally · clothing-only preview is empty.'));
+  assert.ok(script.includes('Outfit not available ('));
   assert.ok(script.includes('result.status===424'));
-  assert.ok(script.includes('configure an authorized private GitHub Release'));
+  assert.ok(script.includes('data=await readCachedPrivateOutfit()'));
+  assert.ok(script.includes('cachePrivateOutfit(data)'));
+  assert.ok(script.includes('Object.values(SENA_MODEL_SHA).includes(sha)'));
+  assert.ok(script.includes('outfitImportButton?.addEventListener("click"'));
   assert.match(script,/FA_\(jersey\|shorts\|socks\|boots\)/);
   assert.ok(script.includes('result.status===404'));
   assert.doesNotMatch(script,/createNeutralShortSleeveJersey/);
@@ -246,6 +254,9 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.doesNotMatch(designJS,/attribute float kmRimDistance;/);
   assert.doesNotMatch(designJS,/smoothstep\(0\.024-edgeAA/);
   assert.doesNotMatch(designJS,/vKmPatternV\s*=\s*uv\.y/);
+  const browserCacheModule=await get(server,'/__fa_kit_maker__/private-outfit-cache.mjs');
+  assert.equal(browserCacheModule.status,200);
+  assert.match(browserCacheModule.body.toString('utf8'),/readCachedPrivateOutfit/);
   const topologyModule=await get(server,'/__fa_kit_maker__/kit-trim-geometry.mjs');
   assert.equal(topologyModule.status,200,'Source trim geometry must be served in DEV');
   assert.ok(topologyModule.body.toString('utf8').includes('findOriginalSewnTrimFaces'));
