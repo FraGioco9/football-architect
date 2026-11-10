@@ -14,7 +14,8 @@ test('Trafford United receives TRA and Tramontana retains unique TRM',()=>{
   ['Trafford United','Trafford United Football Club','Trafford','TRA']);
  assert.equal(eng.city,'Manchester');
  assert.equal(eng.stadiumName,'Foundry Park');
- assert.equal(eng.nickname,'The Mancunians');
+ assert.equal(eng.nickname,'The Foundrymen');
+ assert.equal(eng.description,"Trafford United draws its identity from Manchester's industrial heritage, where foundries, workshops and working communities helped shape the city's character. Foundry Park stands as a symbol of craftsmanship, determination and collective effort. Rooted in a culture of resilience and solidarity, the club carries the spirit of its industrial origins onto the football pitch.");
  assert.equal(it.primaryName,'Tramontana Calcio');
  assert.equal(it.abbr,'TRM');
  for(const [key,abbrev] of [['ENG-2','TRA'],['IT-27','TRM']]){
@@ -56,4 +57,28 @@ test('Foundry Park and Trafford United propagate to rivalry data and published s
  assert.ok(!load('clubs/_shared/index.html').includes('Medlock United'));
  assert.ok(load('clubs/index.html').includes('Trafford United'));
  assert.ok(!load('clubs/index.html').includes('Medlock United'));
+});
+
+test('ENG-2 owner-approved nickname and description match all sources and four translations',()=>{
+ const clubs=JSON.parse(load('data/clubs.json'));
+ const eng=clubs.find(c=>c.countryId==='ENG'&&c.clubId===2);
+ const csv=load('data/clubs-registry.csv').split('\n').find(l=>l.startsWith('ENG,2,'));
+ assert.ok(csv.includes(',The Foundrymen,'));
+ assert.ok(csv.includes(eng.description));
+ const translations=JSON.parse(load('data/club-descriptions.i18n.json')).ENG['2'];
+ assert.deepEqual(Object.keys(translations),['de','es','fr','it']);
+ for(const [lang,copy] of Object.entries(translations)){
+  assert.ok(copy.includes('Trafford United'),lang);
+  assert.ok(copy.includes('Foundry Park'),lang);
+  assert.ok(copy.length>260,lang);
+  const i18nCsv=load('data/club-descriptions.i18n.csv').split('\n').find(row=>row.startsWith('ENG,2,'));
+  assert.ok(i18nCsv.includes(copy),lang);
+ }
+ const manifest=JSON.parse(load('clubs/_shared/manifest.json'));
+ const club=manifest.clubs.find(c=>c.countryId==='ENG'&&c.clubId===2);
+ assert.equal(club.nickname,eng.nickname);
+ assert.equal(club.description,eng.description);
+ assert.deepEqual(club.descriptions,{...translations,en:eng.description});
+ assert.equal(club.city,'Manchester');
+ assert.equal(club.stadiumName,'Foundry Park');
 });
