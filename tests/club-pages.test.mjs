@@ -319,7 +319,9 @@ test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons befo
  assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,16);
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-meta"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-location"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-flag"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-city"/g)||[]).length,16);
  assert.match(html,/class="nav01-skeleton-bar nav01-skeleton-count"/);
  assert.doesNotMatch(html,/data-nav01-filter-first-paint|data-nav01-loading-first-paint/);
  assert.doesNotMatch(html,/data-search="|<a class="nav01-card"/,'no catalog search keys or links until the manifest loads');
@@ -386,6 +388,21 @@ test('FE-03: directory filters reuse keyed cards once hydrated without parsing o
  assert.match(source,/out\.insertBefore/,'card identity must survive filtering and reorder');
 });
 
+test('PAGE-LOAD-04 B02: directory reserves name, flag, city skeletons and hydrates a clean metadata row',()=>{
+ const html=read('clubs/index.html'),js=read('assets/clubs-directory.js'),css=read('assets/clubs-directory.css'),generator=read('tools/generate-app-pages.mjs');
+ const cards=[...html.matchAll(/<div class="nav01-card nav01-skeleton-card" aria-hidden="true">([\s\S]*?)<\/div>/g)].map(m=>m[1]);
+ assert.equal(cards.length,16);
+ for(const card of cards){
+  for(const part of ['nav01-skeleton-name','nav01-skeleton-location','nav01-skeleton-flag','nav01-skeleton-city'])
+   assert.ok(card.includes(part),'Missing first-paint skeleton: '+part);
+  assert.doesNotMatch(card,/ · |nav01-country-flag|<svg/,'no visible identities while awaiting the manifest');
+ }
+ assert.ok(generator.includes('nav01-skeleton-flag')&&generator.includes('nav01-skeleton-city'),'HTML is generated from the same skeleton contract');
+ assert.ok(css.includes('.nav01-card.nav01-skeleton-card>.nav01-skeleton-copy{display:flex'),'loading bars are not hidden by normal card styling');
+ assert.ok(js.includes('class="nav01-club-location"><svg'),'real flag is first on the metadata row');
+ assert.match(js,/class="nav01-club-city">'\+safe\(c\.city\)/,'city is the only visible metadata text');
+ assert.ok(!js.includes("safe(c.city)+' · ")&&!js.includes('dm.has(c.divisionId)'),'no separating dot or league name');
+});
 test('UI-409 PAGE-LOAD-04: anonymous crest slots are replaced only after the club manifest resolves',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16,'sixteen anonymous directory cards');
