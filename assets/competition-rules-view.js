@@ -141,40 +141,85 @@
   catch(error){rendered.delete(panel);throw error;}
  }
  const phaseLabel=(key,locale='en')=>(copy[locale]||copy.en).phases[key]||'';
-  function renderPostseason(input,neutral=false){
- const d=definition(input);
- const word=(key,text)=>`<span data-app-i18n="${key}">${text}</span>`;
- const seed=position=>`<span class="app-postseason-team" data-postseason-position="${position}">${word("postseasonPosition","League position")} <strong>${position}</strong></span>`;
- const score=(key,label,id,side,metric)=>`<span class="app-knockout-score" role="cell"><span class="sr-only" data-app-i18n="${key}">${label}</span><strong data-postseason-score="${id}:${side}:${metric}">—</strong></span>`;
- const head=(single,id)=>`<div class="app-knockout-score-head${single?" app-knockout-single":""}" role="row"><span role="columnheader" class="sr-only" data-app-i18n="standingsClub">Club</span>${(single?[["postseasonSingleMatch","Single match","—"]]:[["postseasonFirstLeg","First leg","1"],["postseasonSecondLeg","Second leg","2"],["postseasonAggregate","Aggregate","Σ"]]).map(([key,label,symbol],index)=>`<span role="columnheader" class="app-knockout-column"><button type="button" class="app-knockout-help" data-postseason-help="${id}-tip-${index}" aria-describedby="${id}-tip-${index}" data-app-aria="${key}"><span aria-hidden="true">${symbol}</span></button><span id="${id}-tip-${index}" role="tooltip" class="app-knockout-tooltip" data-app-i18n="${key}" hidden>${label}</span></span>`).join("")}</div>`;
- const row=(team,homeKey,homeLabel,id,side,single=false)=>`<div class="app-knockout-team-row${single?" app-knockout-single":""}" role="row" data-postseason-row="${id}:${side}"><div class="app-knockout-identity" role="rowheader">${team}${homeKey?`<span class="app-knockout-home" data-app-i18n="${homeKey}">${homeLabel}</span>`:""}</div>${single?score("postseasonSingleMatch","Single match",id,side,"final"):score("postseasonFirstLeg","First leg",id,side,"first")+score("postseasonSecondLeg","Second leg",id,side,"second")+score("postseasonAggregate","Aggregate",id,side,"aggregate")}</div>`;
- const tie=(id,key,label,better,lower)=>`<section class="app-postseason-group" aria-labelledby="${id}" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="${id}" data-app-i18n="${key}">${label}</h3><div role="table" aria-labelledby="${id}">${head(false,id)}${row(seed(better),"postseasonHomeReturn","Home in return leg",id,better)}${row(seed(lower),"postseasonHomeFirst","Home in first leg",id,lower)}</div><p class="app-knockout-resolution" data-postseason-resolution="${id}" hidden></p></section>`;
- if(d.category==="international"){
-  const reference=ref=>{
-   if(ref.rank)return seed(ref.rank);
-   const source=d.rules.phases.find(p=>p.ties?.some(t=>t.id===ref.tieId));
-   const index=source.ties.findIndex(t=>t.id===ref.tieId)+1;
-   return word('postseasonWinner','Winner')+' · <span data-competition-phase="'+escape(source.labelKey)+'">'+phaseLabel(source.labelKey)+'</span> '+index;
-  };
-  const rounds=d.rules.phases.filter(p=>p.type==='knockout').map(p=>{
-   const ties=p.ties.map((t,index)=>{
-    const homeKey=t.homePolicy==='neutral'?'postseasonNeutralVenue':t.legs===1?'postseasonHomeSingle':'postseasonHigherReturn';
-    const homeText=t.homePolicy==='neutral'?'Neutral venue':t.legs===1?'Home match':'Better original rank hosts the return leg';
-    const teams=t.participants.map((ref,i)=>row('<span class="app-postseason-team" data-postseason-config-slot="'+escape(t.id)+':'+i+'">'+reference(ref)+'</span>',homeKey,homeText,t.id,i,t.legs===1)).join('');
-    return '<section class="app-postseason-group" data-postseason-config-tie="'+escape(t.id)+'"><div role="table" aria-label="'+escape(phaseLabel(p.labelKey)+' '+(index+1))+'">'+head(t.legs===1,t.id)+teams+'</div></section>';
-   }).join('');
-   return '<div class="app-configured-knockout-round"><h3 data-competition-phase="'+escape(p.labelKey)+'">'+phaseLabel(p.labelKey)+'</h3>'+ties+'</div>';
-  }).join('');
-  return '<p class="app-competition-status" data-configured-knockout-empty data-app-i18n="cupKnockoutsEmpty">No knockout results available yet.</p><div id="app-postseason-bracket" class="app-configured-knockouts">'+rounds+'</div>';
+ function renderBracketLinks(rounds){
+  // Keep these dimensions in sync with the fixed tracks in app.css.
+  const cardWidth=320,columnGap=14,headingHeight=42,slotPitch=146;
+  const width=rounds.length*(cardWidth+columnGap)-columnGap;
+  const rows=Math.max(...rounds.map(round=>round.ties.length));
+  const height=headingHeight+rows*slotPitch-8;
+  const center=(row,count)=>headingHeight+rows*slotPitch*(row+.5)/count-13;
+  const ties=new Map(rounds.flatMap((round,column)=>round.ties.map((tie,row)=>[tie.id,{column,y:center(row,round.ties.length)}])));
+  const paths=[];
+  for(const round of rounds)for(const tie of round.ties){
+   const target=ties.get(tie.id);
+   for(const ref of tie.participants){
+    const source=ties.get(ref.tieId);
+    if(!source||source.column+1!==target.column)continue;
+    const x=target.column*(cardWidth+columnGap);
+    const d=`M ${x-columnGap} ${source.y} H ${x-columnGap/2} V ${target.y} H ${x}`;
+    paths.push(`<path data-bracket-link="${escape(ref.tieId)}:${escape(tie.id)}" d="${d}"/>`);
+   }
+  }
+  return paths.length?`<svg class="fa-bracket-links" width="${width}" height="${height}" aria-hidden="true" focusable="false">${paths.join('')}</svg>`:'';
  }
- if(neutral)return `<p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>`;
- const winner=`<div class="app-knockout-round app-knockout-result"><section class="app-postseason-group app-postseason-winner" aria-labelledby="postseason-winner" data-standing-outcome="${d.tier===1?"playout":"playoff"}"><h3 id="postseason-winner" data-app-i18n="postseasonWinner">Winner</h3><strong id="app-postseason-winner" class="app-knockout-winner-name">—</strong></section></div>`;
- const final=`<div class="app-knockout-round app-knockout-final"><section class="app-postseason-group app-postseason-final" aria-labelledby="postseason-final" data-standing-outcome="playoff"><h3 id="postseason-final" data-app-i18n="postseasonFinal">Final</h3><div role="table" aria-labelledby="postseason-final">${head(true,"final")}${row(`<span class="app-postseason-team" data-postseason-finalist="home">${word("postseasonFinalHome","Better-ranked finalist")}</span>`,null,null,"final","home",true)}${row(`<span class="app-postseason-team" data-postseason-finalist="away">${word("postseasonFinalAway","Other finalist")}</span>`,null,null,"final","away",true)}</div><p class="app-knockout-resolution" data-postseason-resolution="final" hidden></p></section></div>`;
- const first=d.rules.phases.find(p=>p.type==='knockout'),isPlayout=first.labelKey==='playout';
- const legacyTieId=id=>({semi36:'semi-one',semi45:'semi-two'}[id]||id);
- const bracket=first.ties.filter(t=>t.participants.every(ref=>ref.rank)).map((t,i)=>`<div class="app-knockout-round ${i===0?'app-knockout-left':'app-knockout-right'}">${tie('postseason-'+legacyTieId(t.id),isPlayout?'rulesPlayoutTitle':i===0?'postseasonSemiOne':'postseasonSemiTwo',isPlayout?'Relegation play-out':'Semi-final '+(i+1),...t.participants.map(ref=>ref.rank).sort((a,b)=>a-b))}</div>`).join('')+(first.ties.some(t=>t.legs===1)?final:'')+winner;
- return `<div id="app-postseason-bracket" class="app-postseason-grid${isPlayout?" app-postseason-playout":""}">${bracket}</div>`;
-}
+ function renderPostseason(input,neutral=false){
+  const d=definition(input);
+  const domestic=d.category==='domestic';
+  if(neutral&&domestic)return '<p class="app-competition-status" data-app-i18n="postseasonNeutral">Select a division to view its play-offs or play-out.</p>';
+  const word=(key,text)=>`<span data-app-i18n="${key}">${text}</span>`;
+  const seed=position=>`<span class="fa-bracket-team" data-postseason-position="${position}">${word('postseasonPosition','League position')} <strong>${position}</strong></span>`;
+  const legs=[['first','postseasonFirstLeg','First leg'],['second','postseasonSecondLeg','Second leg']];
+  const row=(team,id,side,single,homeKey,homeLabel)=>{
+   const metrics=single?[['final','postseasonSingleMatch','Single match']]:legs;
+   const scores=metrics.map(([metric,key,label])=>`<span class="fa-bracket-score" role="cell"><span class="sr-only" data-app-i18n="${key}">${label}</span><strong data-postseason-score="${id}:${side}:${metric}"></strong></span>`).join('');
+   return `<div class="fa-bracket-row${single?' fa-bracket-single':''}" role="row" data-postseason-row="${id}:${side}">
+    <div class="fa-bracket-identity" role="rowheader">${team}${homeKey?`<span class="sr-only" data-postseason-home data-app-i18n="${homeKey}">${homeLabel}</span>`:''}</div>
+    ${scores}
+   </div>`;
+  };
+  const phases=d.rules.phases.filter(p=>p.type==='knockout');
+  const rounds=domestic&&d.tier===2
+   ? phases.flatMap(p=>[
+     {id:'semifinals',labelKey:'semifinals',ties:p.ties.filter(t=>t.legs===2)},
+     {id:'final',labelKey:'final',ties:p.ties.filter(t=>t.legs===1)}
+    ].filter(round=>round.ties.length))
+   : phases;
+  // Order earlier ties by their destination so the lines don't cross between rounds.
+  for(let i=rounds.length-2;i>=0;i--){
+   const feeders=rounds[i+1].ties.flatMap(tie=>tie.participants.flatMap(ref=>ref.tieId?[ref.tieId]:[]));
+   const position=new Map(feeders.map((id,index)=>[id,index]));
+   const round=rounds[i];
+   const ties=[...round.ties].sort((a,b)=>(position.get(a.id)??feeders.length)-(position.get(b.id)??feeders.length));
+   rounds[i]={...round,ties};
+  }
+  const reference=ref=>{
+   if(ref.rank)return `${word('postseasonPosition','League position')} <strong>${ref.rank}</strong>`;
+   const source=rounds.find(p=>p.ties.some(t=>t.id===ref.tieId));
+   const index=source.ties.findIndex(t=>t.id===ref.tieId)+1;
+   return `<span>${word('postseasonWinner','Winner')} · <span data-competition-phase="${escape(source.labelKey)}">${phaseLabel(source.labelKey)}</span> ${index}</span>`;
+  };
+  const phaseTitle=(round,tag,attrs)=>`<${tag} ${attrs} data-competition-phase="${escape(round.labelKey)}">${phaseLabel(round.labelKey)}</${tag}>`;
+  return `<div class="fa-bracket-layout"><div id="app-postseason-bracket" class="fa-bracket-board" data-bracket-columns="${rounds.length}">${renderBracketLinks(rounds)}${rounds.map(round=>{
+   const heading='postseason-round-'+round.id;
+   const ties=round.ties.map(tie=>{
+    const single=tie.legs===1;
+    const legacyId=({semi36:'semi-one',semi45:'semi-two'}[tie.id]||tie.id);
+    const id=domestic&&!single?'postseason-'+legacyId:tie.id;
+    const homeKey=tie.homePolicy==='neutral'?'postseasonNeutralVenue':single?'postseasonHomeSingle':'postseasonHigherReturn';
+    const homeText=tie.homePolicy==='neutral'?'Neutral venue':single?'Home match':'Better original rank hosts the return leg';
+    const domesticOrder=domestic&&!single?[...tie.participants].sort((a,b)=>a.rank-b.rank):tie.participants;
+    const teams=domestic?domesticOrder.map((ref,i)=>{
+     if(!single)return row(seed(ref.rank),id,ref.rank,false,i===0?'postseasonHomeReturn':'postseasonHomeFirst',i===0?'Home in return leg':'Home in first leg');
+     const side=i===0?'home':'away';
+     const team=`<span class="fa-bracket-team" data-postseason-finalist="${side}">${word(i===0?'postseasonFinalHome':'postseasonFinalAway',i===0?'Better-ranked finalist':'Other finalist')}</span>`;
+     return row(team,id,side,true);
+    }):tie.participants.map((ref,i)=>row(`<span class="fa-bracket-team" data-postseason-config-slot="${escape(tie.id)}:${i}">${reference(ref)}</span>`,id,i,single,homeKey,homeText));
+    const feeders=tie.participants.flatMap(ref=>ref.tieId?[ref.tieId]:[]).join(' ');
+    return `<div class="fa-bracket-tie"${domestic?'':` data-postseason-config-tie="${escape(tie.id)}"`}><div class="fa-bracket-card" data-bracket-tie="${escape(tie.id)}" data-bracket-feeders="${escape(feeders)}" role="table" aria-labelledby="${escape(heading)}">${teams.join('')}</div><p class="fa-bracket-resolution" data-postseason-resolution="${escape(id)}" hidden></p></div>`;
+   }).join('');
+   return `<section class="fa-bracket-round" data-postseason-round="${escape(round.id)}" aria-labelledby="${escape(heading)}">${phaseTitle(round,'h3','id="'+escape(heading)+'"')}<div class="fa-bracket-ties">${ties}</div></section>`;
+  }).join('')}</div></div>`;
+ }
  // Qualification colors decorate neutral league places; configured sporting outcomes always win.
  function standingsOutcomes(d){
   const phase=d.rules.phases.find(p=>p.rankOutcomes),bands=[];

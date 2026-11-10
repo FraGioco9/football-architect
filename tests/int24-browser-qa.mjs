@@ -355,6 +355,28 @@ try {
    checks++;
   }finally{await page.unroute('**/competitions/_shared/manifest.json',broken);await page.close()}
  }
+ const firstPaint=await browser.newPage({viewport:{width:1440,height:900}});
+ await firstPaint.route('**/assets/competition-page.js',route=>route.abort());
+ await firstPaint.goto(base+'/competitions/int-1/postseason',{waitUntil:'domcontentloaded'});
+ assert.equal(await firstPaint.evaluate(()=>Boolean(window.faCompetitionContext)),false);
+ assert.ok(await firstPaint.locator('#competition-panel-postseason').isVisible());
+ assert.ok(await firstPaint.locator('.fa-bracket-links').isVisible());
+ assert.ok(await firstPaint.locator('[data-postseason-config-slot]').evaluateAll(nodes=>nodes.length===22&&nodes.every(node=>{
+  const crest=getComputedStyle(node,'::before'),name=getComputedStyle(node,'::after');
+  return crest.width==='28px'&&crest.height==='28px'&&name.width==='112px'&&name.height==='13px';
+ })),
+  'First paint reserves the club crest and name');
+ const misplacedLinks=await firstPaint.locator('[data-bracket-link]').evaluateAll(paths=>paths.filter(path=>{
+  const [sourceId,targetId]=path.dataset.bracketLink.split(':');
+  const source=document.querySelector('[data-bracket-tie="'+sourceId+'"]').getBoundingClientRect();
+  const target=document.querySelector('[data-bracket-tie="'+targetId+'"]').getBoundingClientRect();
+  const origin=path.ownerSVGElement.getBoundingClientRect();
+  const start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());
+  return Math.abs(origin.left+start.x-source.right)>1||Math.abs(origin.top+start.y-source.top-source.height/2)>1||
+    Math.abs(origin.left+end.x-target.left)>1||Math.abs(origin.top+end.y-target.top-target.height/2)>1;
+ }).map(path=>path.dataset.bracketLink));
+ assert.deepEqual(misplacedLinks,[],'Static links touch the center edges of the correct cards');
+ await firstPaint.close();
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
@@ -408,6 +430,30 @@ try {
    }
    if(view==='postseason'){
     assert.equal(await page.locator('[data-postseason-config-tie]').count(),11);
+    const cards=page.locator('[data-bracket-tie]');
+    assert.equal(await cards.count(),11);
+    assert.equal(await page.locator('[data-postseason-help],[data-postseason-filter],[data-postseason-outcome]').count(),0);
+    const cardLayout=await cards.evaluateAll(nodes=>nodes.map(card=>({
+     id:card.dataset.bracketTie,width:card.offsetWidth,height:card.offsetHeight,rows:card.children.length,
+     scores:card.querySelectorAll('[data-postseason-score]').length
+    })));
+    const availableWidth=await page.locator('.fa-bracket-layout').evaluate(layout=>layout.clientWidth);
+    for(const {id,...card} of cardLayout)assert.deepEqual(card,{
+     width:Math.min(320,availableWidth),height:120,rows:2,scores:id==='final'?2:4
+    },cup+' '+width+'px '+id+' card geometry and scores');
+    const links=page.locator('.fa-bracket-links path');
+    assert.equal(await links.count(),10);
+    assert.equal(await page.locator('[data-postseason-config-slot]').first().evaluate(node=>getComputedStyle(node,'::before').content),'none','Unassigned slots become readable when loading settles');
+    if(width===1440)assert.ok(await page.locator('.fa-bracket-links').isVisible(),'Desktop shows the rendered connections');
+    if(width<=390)assert.equal(await page.locator('.fa-bracket-links').isVisible(),false,'Stacked rounds have no crossing lines');
+    const rounds=page.locator('[data-postseason-round]:visible');
+    assert.deepEqual(await rounds.evaluateAll(nodes=>nodes.map(node=>node.dataset.postseasonRound)),['playoffs','quarterfinals','semifinals','final']);
+    const columns=await rounds.evaluateAll(nodes=>nodes.map(node=>{
+      const box=node.getBoundingClientRect();
+      return {left:box.left,top:box.top,width:box.width};
+    }));
+    if(width===1440)assert.ok(columns.every((column,i)=>i===0||column.left>columns[i-1].left&&Math.abs(column.top-columns[0].top)<=1),'Desktop displays one column per round');
+    if(width<=390)assert.ok(columns.every(column=>Math.abs(column.left-columns[0].left)<=1),'Phone stacks rounds vertically');
     const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
     assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
    }
@@ -455,13 +501,25 @@ try {
    const fixtures=Array.from({length:12},(_,i)=>({phaseId:'league',round:1,homeId:id(i),awayId:id(i+12),homeGoals:null,awayGoals:null,kickoff:null}));
    const standings=participants.map(club=>({club,played:6,won:2,drawn:2,lost:2,gf:5,ga:5,gd:0,pts:8,recent:[]}));
    const teams=participants.map(club=>({clubKey:club.countryId+'-'+club.clubId,clubName:club.primaryName,mp:6,gf:5,ga:5,w:2,cs:1,ppg:8/6,gd:0,unbeatenStreak:2}));
-   const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
+   const data={season:1,rulesVersion:window.faCompetitionContext.definition.rules.version,participants,fixtures,results:[{id:'p89',winnerId:id(8)},{id:'q1',winnerId:id(0),legs:[{homeId:id(8),awayId:id(0),homeGoals:1,awayGoals:0},{homeId:id(0),awayId:id(8),homeGoals:2,awayGoals:0,afterExtraTime:true}]}],statistics:{standings,overview:{matchesPlayed:12,totalGoals:36,goalsPerMatch:3},teams,players:[]},status:'partial'};
    if(!window.faCompetitionContextApi.replaceSeasonData(data,window.faCompetitionContext.revision))throw Error('QA supplied data rejected');
   });
   assert.equal(await page.locator('#app-standings-body tr').count(),24);
   assert.equal(await page.locator('[data-postseason-config-slot="q1:0"]').innerText(),'QA Club 1');
   assert.equal(await page.locator('[data-postseason-config-slot="q1:1"]').innerText(),'QA Club 9');
-  assert.equal(await page.locator('[data-postseason-score="q1:0:aggregate"]').innerText(),'2');
+  assert.equal(await page.locator('[data-postseason-score="q1:0:first"]').innerText(),'0');
+  assert.equal(await page.locator('[data-postseason-score="q1:0:second"]').innerText(),'2');
+  assert.equal(await page.locator('[data-postseason-score="q1:1:first"]').innerText(),'1');
+  assert.equal(await page.locator('[data-postseason-score="q1:1:second"]').innerText(),'0');
+  assert.ok(await page.locator('[data-postseason-resolution="q1"]').isVisible());
+  const alignment=await page.locator('[data-bracket-tie="q1"]').evaluate(card=>{
+   const end=selector=>card.querySelector(selector).getBoundingClientRect().right;
+   const first=end('[data-postseason-score="q1:0:first"]');
+   const second=end('[data-postseason-score="q1:0:second"]');
+   const note=card.nextElementSibling.getBoundingClientRect().right;
+   return {gap:second-first,inset:card.getBoundingClientRect().right-second,noteOffset:note-second};
+  });
+  assert.deepEqual(alignment,{gap:22,inset:18,noteOffset:0},'Scores and resolution share the right edge');
   await screenshot(page,cup+'-'+width+'-supplied-knockouts.png');
   await page.locator('#competition-tab-stats').click();
   await page.locator('[data-stats-view="overview"]').click();

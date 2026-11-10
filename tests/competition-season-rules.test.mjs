@@ -114,9 +114,10 @@ test('SEASON-BRACKET: runtime and static knockout markup can render a historical
  phase.id='historic-playoffs';d.rules.phases[0].rankOutcomes.find(o=>o.targetPhaseId==='playoffs').targetPhaseId=phase.id;
  phase.ties[0].participants[0].rank=6;
  const html=view.renderPostseason(d);
- assert.ok(html.includes('data-postseason-config-tie="p512"'));
- assert.ok(html.includes('data-postseason-position="6"'));
- assert.ok(!html.includes('data-postseason-position="5"'));
+ assert.match(html,/data-postseason-round="historic-playoffs"/);
+ assert.match(html,/data-postseason-config-tie="p512"/);
+ assert.match(html,/data-postseason-config-slot="p512:0"><span[^>]+>League position<\/span> <strong>6<\/strong>/);
+ assert.doesNotMatch(html,/data-postseason-config-slot="p512:0"><span[^>]+>League position<\/span> <strong>5<\/strong>/);
 });
 test('SEASON-HISTORY-VERSIONS: mixed archives use the stable catalogue while any constituent season is selected',()=>{
  const source=readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8');

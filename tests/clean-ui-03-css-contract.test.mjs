@@ -85,10 +85,9 @@ test("CLEAN-UI-03: protected Calendar event palette retains four types and light
 });
 
 // Nested context duplicates must not reappear after consolidation.
-test("identical standings/postseason declarations are not duplicated in nested contexts",()=>{
+test("identical standings declarations are not duplicated in nested contexts",()=>{
  const css=readFileSync(new URL("../assets/app.css",import.meta.url),"utf8");
  assert.equal(css.split(".app-world-standing-table tbody tr>*{height:68px}").length-1,1);
- assert.equal(css.split(".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}").length-1,1);
 });
 
 test("Calendar enabled selector consolidation retains full four-ID contract",()=>{
@@ -113,9 +112,21 @@ test("CLEAN-UI-03: safe CSS dedupes preserve repeated responsive competition-log
  const css=read("assets/app.css");
  const declarations=[
   ".app-world-standing-table tbody tr>*{height:68px}",
-  ".app-postseason-grid:not(.app-postseason-playout) .app-knockout-result::before{display:none}",
   ".app-history-dev-archive-head{display:none}"
  ];
  for(const declaration of declarations)assert.equal(count(css,declaration),1,declaration);
  assert.ok(css.includes("#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled){"));
+});
+
+test("Postseason cards have fixed dimensions and omit repeated labels and controls",()=>{
+ const css=read("assets/app.css"),view=read("assets/competition-rules-view.js");
+ assert.ok(/\.fa-bracket-card\{[^}]*height:120px/.test(css),"fixed card height");
+ assert.ok(/\.fa-bracket-board\{[^}]*grid-template-columns:min\(100%,320px\)/.test(css),"fixed column width");
+ assert.doesNotMatch(view,/data-postseason-(filter|help|outcome)|postseasonTie/);
+ assert.match(view,/data-bracket-feeders/);
+ assert.match(css,/\.fa-bracket-card\{[^}]*padding-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\)/);
+ assert.match(css,/\.fa-bracket-resolution\{[^}]*margin-inline-end:var\(--fa-bracket-score-inset\)/);
+ assert.doesNotMatch(view,/fa-bracket-leg-headings/);
+ assert.match(css,/data-fa-standings-loading="true"[^\n]*fa-bracket-team[^\n]*::before/);
+ assert.match(css,/data-fa-standings-loading="true"[^\n]*fa-bracket-team[^\n]*::after/);
 });
