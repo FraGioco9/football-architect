@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101A1D">
+<title>Match Engine Laboratory — Football Architect</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/assets/theme.js"></script>
+<script src="/assets/sidebar-evolution.js" defer></script>
+<script src="/assets/profile-navigation.js" defer></script>
+<link rel="stylesheet" href="/assets/landing.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/sidebar-evolution.css">
+<link rel="stylesheet" href="/__fa_match_engine__/lab.css">
+</head>
+<body class="app-body me-lab-page">
+<a class="fa-skip-link" href="#main-content">Skip to laboratory</a>
+<div class="fa-career-shell">
+  <!-- ME-01_CANONICAL_SIDEBAR -->
+  <div class="fa-shell-workspace">
+    <header class="fa-shell-topbar">
+      <div class="fa-shell-club">
+        <span class="app-crest" aria-hidden="true">3D</span>
+        <strong>Development</strong>
+      </div>
+      <div class="me-theme-picker app-theme-choices" role="group" aria-label="Appearance">
+        <button type="button" class="app-theme-choice" data-theme-choice="dark" aria-pressed="true">Dark</button>
+        <button type="button" class="app-theme-choice" data-theme-choice="light" aria-pressed="false">Light</button>
+      </div>
+    </header>
+    <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+        <section class="app-view" aria-labelledby="lab-title">
+          <div class="me-page-heading">
+            <div>
+              <h1 class="app-page-title" id="lab-title">Match Engine</h1>
+              <p class="me-subtitle">3D physics · 2D visual tests</p>
+            </div>
+          </div>
+          <p id="status" class="me-status" role="status" aria-live="polite">Loading physics…</p>
+          <div class="me-layout">
+            <section class="app-panel me-panel me-main-panel" aria-label="Match engine simulation">
+              <div class="me-toolbar">
+                <div class="me-preset-control">
+                  <span class="me-field-label" id="preset-label">Scenario</span>
+                  <div class="language-control me-dropdown" data-me-dropdown="preset">
+                    <input id="preset" type="hidden" value="drop">
+                    <button type="button" class="language-trigger" id="preset-trigger" role="combobox" aria-labelledby="preset-label preset-value" aria-haspopup="listbox" aria-controls="preset-options" aria-expanded="false">
+                      <span id="preset-value">LAB-01 · Ball Drop</span>
+                      <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="language-menu" id="preset-options" role="listbox" aria-labelledby="preset-label" hidden>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-drop" data-value="drop" aria-selected="true">LAB-01 · Ball Drop</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-launch" data-value="launch" aria-selected="false">LAB-02 · Ball Launch</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-roll" data-value="roll" aria-selected="false">LAB-04 · Ball Roll (Grass)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-bounce" data-value="bounce" aria-selected="false">LAB-05 · Ball Bounce (2 m)</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="me-button-group" aria-label="Simulation controls">
+                  <button id="play" class="me-button me-button-primary" type="button" disabled>Play</button>
+                  <button id="pause" class="me-button" type="button" disabled>Pause</button>
+                  <button id="step" class="me-button" type="button" disabled>Step</button>
+                  <button id="reset" class="me-button" type="button" disabled>Reset</button>
+                </div>
+                <div class="me-speed-control">
+                  <span class="me-field-label" id="speed-label">Speed</span>
+                  <div class="language-control me-dropdown" data-me-dropdown="speed">
+                    <input id="speed" type="hidden" value="1">
+                    <button type="button" class="language-trigger" id="speed-trigger" role="combobox" aria-labelledby="speed-label speed-value" aria-haspopup="listbox" aria-controls="speed-options" aria-expanded="false">
+                      <span id="speed-value">1×</span>
+                      <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="language-menu" id="speed-options" role="listbox" aria-labelledby="speed-label" hidden>
+                      <div class="language-option" role="option" tabindex="-1" id="speed-opt-025" data-value="0.25" aria-selected="false">0.25×</div>
+                      <div class="language-option" role="option" tabindex="-1" id="speed-opt-1" data-value="1" aria-selected="true">1×</div>
+                      <div class="language-option" role="option" tabindex="-1" id="speed-opt-2" data-value="2" aria-selected="false">2×</div>
+                      <div class="language-option" role="option" tabindex="-1" id="speed-opt-4" data-value="4" aria-selected="false">4×</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="me-canvas-frame me-pitch-frame">
+                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field with ball position and trajectory"></canvas>
+              </div>
+              <div class="me-at-a-glance" aria-live="off">
+                <span>Time <strong id="tick">0 · 0.00 s</strong></span>
+                <span>Height above ground <strong id="height">—</strong></span>
+                <span>Ball <strong id="ground">—</strong></span>
+                <span>Ground speed <strong id="ground-speed">—</strong></span>
+              </div>
+            </section>
+            <div class="me-side">
+              <section class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
+                <div class="me-elevation-heading"><h2 id="side-heading">Ball height</h2><span id="bounce-result" class="me-bounce-result" role="status" aria-live="polite" hidden></span></div>
+                <div class="me-canvas-frame me-elevation-frame">
+                  <canvas id="elevation" width="560" height="260" aria-label="Distance from ball underside to the pitch over simulated time"></canvas>
+                </div>
+              </section>
+              <details class="app-panel me-advanced" id="advanced-settings">
+                <summary>Advanced settings <svg class="language-chevron me-details-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+                <div class="me-advanced-body">
+                  <fieldset class="me-parameter-group">
+                    <legend>Position · m</legend>
+                    <div class="me-field-grid">
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-x">X</span>
+                        <div class="me-number-control">
+                          <input id="x" type="number" inputmode="decimal" step="any" min="-48" max="48" aria-labelledby="me-label-x">
+                          <div class="me-number-arrows" role="group" aria-label="X adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="x" data-direction="1" aria-label="Increase X by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="x" data-direction="-1" aria-label="Decrease X by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-y">Y</span>
+                        <div class="me-number-control">
+                          <input id="y" type="number" inputmode="decimal" step="any" min="-30" max="30" aria-labelledby="me-label-y">
+                          <div class="me-number-arrows" role="group" aria-label="Y adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="y" data-direction="1" aria-label="Increase Y by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="y" data-direction="-1" aria-label="Decrease Y by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-z">Z</span>
+                        <div class="me-number-control">
+                          <input id="z" type="number" inputmode="decimal" step="any" min="0" max="30" aria-labelledby="me-label-z" title="Height of ball underside above the pitch; 0.00 m when resting">
+                          <div class="me-number-arrows" role="group" aria-label="Z adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="z" data-direction="1" aria-label="Increase Z by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="z" data-direction="-1" aria-label="Decrease Z by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </fieldset>
+                  <fieldset class="me-parameter-group">
+                    <legend>Velocity · m/s</legend>
+                    <div class="me-field-grid">
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-vx">Vx</span>
+                        <div class="me-number-control">
+                          <input id="vx" type="number" inputmode="decimal" step="any" min="-60" max="60" aria-labelledby="me-label-vx">
+                          <div class="me-number-arrows" role="group" aria-label="Vx adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="vx" data-direction="1" aria-label="Increase Vx by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="vx" data-direction="-1" aria-label="Decrease Vx by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-vy">Vy</span>
+                        <div class="me-number-control">
+                          <input id="vy" type="number" inputmode="decimal" step="any" min="-60" max="60" aria-labelledby="me-label-vy">
+                          <div class="me-number-arrows" role="group" aria-label="Vy adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="vy" data-direction="1" aria-label="Increase Vy by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="vy" data-direction="-1" aria-label="Decrease Vy by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="me-field">
+                        <span class="me-field-caption" id="me-label-vz">Vz</span>
+                        <div class="me-number-control">
+                          <input id="vz" type="number" inputmode="decimal" step="any" min="-60" max="60" aria-labelledby="me-label-vz">
+                          <div class="me-number-arrows" role="group" aria-label="Vz adjustment">
+                            <button type="button" class="me-number-arrow" data-me-spin="vz" data-direction="1" aria-label="Increase Vz by 1" title="+1"><svg class="language-chevron me-number-chevron me-number-up" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <button type="button" class="me-number-arrow" data-me-spin="vz" data-direction="-1" aria-label="Decrease Vz by 1" title="-1"><svg class="language-chevron me-number-chevron" viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </fieldset>
+                  <div class="me-field me-seed-field"><span class="me-field-caption" id="me-label-seed">Seed</span><input id="seed" value="me01-fixed" maxlength="64" spellcheck="false" aria-labelledby="me-label-seed"></div>
+                  <div class="me-button-group me-advanced-actions">
+                    <button id="apply" class="me-button me-button-primary" type="button" disabled>Apply &amp; restart</button>
+                    <button id="compare" class="me-button" type="button" disabled>Compare replay</button>
+                    <button id="measure" class="me-button" type="button" title="Measure bounce and grass-roll A/B diagnostics" disabled>Metrics</button>
+                  </div>
+                  <p id="compare-result" class="me-hint" role="status" aria-live="polite" hidden></p>
+                  <div class="me-diagnostics">
+                    <div><span>Position (x, y, z)</span><strong id="position">—</strong></div>
+                    <div><span>Velocity (vx, vy, vz)</span><strong id="velocity">—</strong></div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer class="app-footer"><span>FOOTBALL ARCHITECT · MATCH ENGINE</span><span>DEV ONLY · NO WORLD WRITES</span></footer>
+    </div>
+  </div>
+</div>
+<dialog id="metrics-dialog" class="me-metrics-dialog" aria-labelledby="metrics-title">
+  <div class="me-metrics-header">
+    <div><h2 id="metrics-title">Physics diagnostics</h2><p id="metrics-config" class="me-hint">Fixed-step experiment · 60 Hz</p></div>
+    <button id="metrics-close" type="button" class="me-button">Close</button>
+  </div>
+  <section aria-labelledby="metrics-bounce-title">
+    <h3 id="metrics-bounce-title">LAB-05 · Rebound sequence (2 m)</h3>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Bounce</th><th scope="col">Impact (s)</th><th scope="col">Interval (s)</th><th scope="col">Peak (m)</th><th scope="col">Energy kept</th></tr></thead><tbody id="metrics-bounce-rows"></tbody></table>
+    </div>
+    <p id="metrics-bounce-stop" class="me-hint" role="status"></p>
+  </section>
+  <section aria-labelledby="metrics-roll-title">
+    <h3 id="metrics-roll-title">LAB-04 · Grass roll comparison</h3>
+    <p class="me-hint">Measured horizontal speed over time · 4 m/s is the reference run</p>
+    <canvas id="metrics-roll-chart" class="me-metrics-chart" width="560" height="166" aria-label="Measured ground speed versus seconds for initial speeds of 2, 4 and 6 metres per second" role="img"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Start</th><th scope="col">Stop (s)</th><th scope="col">Distance (m)</th><th scope="col">End x/y</th><th scope="col">Δ vs 4 m/s</th></tr></thead><tbody id="metrics-roll-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Checkpoints · speed (m/s) / distance (m) / contact slip (m/s)</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table"><thead><tr><th scope="col">Time</th><th scope="col">2 m/s</th><th scope="col">4 m/s</th><th scope="col">6 m/s</th></tr></thead><tbody id="metrics-roll-checkpoints"></tbody></table></div>
+    <p id="metrics-roll-note" class="me-hint"></p>
+  </section>
+  <section aria-labelledby="metrics-spin-title">
+    <h3 id="metrics-spin-title">Sliding → rolling · same 4 m/s launch</h3>
+    <p class="me-hint">Three initial spin states: 0% sliding, 50% matched spin, 100% pure rolling at release. All runs use the same pitch and resistance.</p>
+    <canvas id="metrics-spin-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Ground contact slip over time for zero, half and fully matched rolling spin"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Spin</th><th scope="col">Roll matched (s)</th><th scope="col">Stop (s)</th><th scope="col">Distance (m)</th><th scope="col">Speed at 1s</th><th scope="col">Energy at 1s</th></tr></thead><tbody id="metrics-spin-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Checkpoints · speed (m/s) / slip (m/s) / spin (rad/s) / kinetic energy (J)</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Time</th><th scope="col">0% spin</th><th scope="col">50% spin</th><th scope="col">100% spin</th></tr></thead><tbody id="metrics-spin-checkpoints"></tbody></table>
+    </div>
+    <p id="metrics-spin-note" class="me-hint">Roll matched requires at least 0.2 seconds of low contact slip. Rotational and translational kinetic energies are measured, not estimated from speed alone.</p>
+  </section>
+  <section aria-labelledby="metrics-grass-title">
+    <h3 id="metrics-grass-title">ME-PHYS-05 · Natural-grass sensitivity</h3>
+    <p class="me-hint">4 m/s, initially fully rolling · vary only grass rolling deceleration: 0.45 / 0.80 / 1.50 m/s²</p>
+    <canvas id="metrics-grass-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Speed trajectories at three alternative grass rolling resistance coefficients"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table">
+        <thead><tr><th scope="col">Set (m/s²)</th><th scope="col">Measured (m/s²)</th><th scope="col">Max slip (m/s)</th><th scope="col">Stop (s)</th><th scope="col">Distance (m)</th><th scope="col">Δ vs default</th></tr></thead>
+        <tbody id="metrics-grass-rows"></tbody>
+      </table>
+    </div>
+    <p class="me-hint">Checkpoints · horizontal speed (m/s) / distance (m) / contact slip (m/s)</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table">
+        <thead><tr><th scope="col">Time</th><th scope="col">0.45</th><th scope="col">0.80 default</th><th scope="col">1.50</th></tr></thead>
+        <tbody id="metrics-grass-checkpoints"></tbody>
+      </table>
+    </div>
+    <p id="metrics-grass-note" class="me-hint"></p>
+    <p class="me-hint">Reference: S. W. Baker (1989), six natural-grass pitches, approx. 90% of measured rolling decelerations in 0.45–1.50 m/s². This is an observational range, not a FIFA pass/fail standard or pitch-specific calibration. <a href="https://store.astm.org/stp25348s.html" target="_blank" rel="noopener noreferrer">Research source</a></p>
+  </section>
+  <section aria-labelledby="metrics-flight-title">
+    <h3 id="metrics-flight-title">ME-PHYS-06 · LAB-02 flight baseline</h3>
+    <p class="me-hint">Ball flight before the first bounce · real 60 Hz Rapier vs ideal drag-free projectile</p>
+    <canvas id="metrics-flight-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Height of airborne ball over time, simulated versus ideal ballistic reference"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Measure</th><th scope="col">Rapier</th><th scope="col">Ideal</th></tr></thead><tbody id="metrics-flight-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Checkpoints · underside clearance (m), ideal reference (m), XY error (m)</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Time</th><th scope="col">Height</th><th scope="col">Ideal height</th><th scope="col">XY error</th></tr></thead><tbody id="metrics-flight-checkpoints"></tbody></table>
+    </div>
+    <p id="metrics-flight-note" class="me-hint">Air drag and Magnus forces are not implemented. Minor height differences are expected from fixed-step numerical integration.</p>
+  </section>
+  <section aria-labelledby="metrics-drag-title">
+    <h3 id="metrics-drag-title">ME-PHYS-07 · Air drag A/B experiment</h3>
+    <p class="me-hint">Identical LAB-02 launch: Cd=0 (accepted baseline) vs constant Cd=0.24 (experiment only). Same ball, gravity and universal grass.</p>
+    <canvas id="metrics-drag-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Flight height comparison without air drag and with candidate quadratic air drag"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Measure</th><th scope="col">Cd=0</th><th scope="col">Cd=0.24</th></tr></thead><tbody id="metrics-drag-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Checkpoints before contact · underside clearance (m) / horizontal distance (m)</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Time</th><th scope="col">Cd=0</th><th scope="col">Cd=0.24</th></tr></thead><tbody id="metrics-drag-checkpoints"></tbody></table>
+    </div>
+    <p id="metrics-drag-note" class="me-hint"></p>
+    <p class="me-hint">Model: Fd = ½ρCdπr²v², opposite velocity; air density 1.225 kg/m³. Cd=0.24 is illustrative, not validated for this 15 m/s launch or enabled in gameplay. Sources: <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/drag-equation/" target="_blank" rel="noopener noreferrer">NASA drag equation</a>; <a href="https://www.sciencedirect.com/science/article/pii/S3051268926000577" target="_blank" rel="noopener noreferrer">Goff et al. (2026), match-ball wind-tunnel measurements</a>.</p>
+  </section>
+  <section aria-labelledby="metrics-speed-title">
+    <h3 id="metrics-speed-title">ME-PHYS-08 · Speed-dependent Cd(v) research</h3>
+    <p class="me-hint">Three independent LAB-02-style launches (vx = 7, 15, 30 m/s; same vy, vz, position, seed, ball and universal grass). Each compares Cd=0, fixed Cd=0.24 and a continuous diagnostic Cd(v) proxy. Launch vx is the X component only; Cd is calculated from total 3D speed including vy and vz. No engine/gameplay default is changed.</p>
+    <canvas id="metrics-speed-curve-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Candidate drag coefficient versus instantaneous airspeed with reference and hypothetical knots"></canvas>
+    <p class="me-hint">Cd(v) reference: Euro 2024 ball at ~19 m/s (Cd 0.21) and ~32 m/s (Cd 0.24), with transition near 12 m/s. Other knots are <strong>hypotheses</strong>, NOT measured wind-tunnel values.</p>
+    <canvas id="metrics-speed-range-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Measured first-flight distance for three launch speeds and three drag models"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Launch vx (m/s)</th><th scope="col">Mode</th><th scope="col">Cd at start</th><th scope="col">Cd at 1 s</th><th scope="col">Contact (s)</th><th scope="col">Travel (m)</th><th scope="col">Peak (m)</th><th scope="col">Mechanical E lost at 1 s (J)</th></tr></thead><tbody id="metrics-speed-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Pre-contact checkpoints · height (m) / horizontal distance (m)</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Launch vx (m/s)</th><th scope="col">Time</th><th scope="col">Cd=0</th><th scope="col">Cd=0.24</th><th scope="col">Cd(v)</th></tr></thead><tbody id="metrics-speed-checkpoints"></tbody></table>
+    </div>
+    <p id="metrics-speed-note" class="me-hint"></p>
+    <p class="me-hint">Research: <a href="https://kjss.sports.re.kr/v.35/2/392/21" target="_blank" rel="noopener noreferrer">Hong (2024), wind tunnel and Euro 2024 ball</a>; <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/drag-on-a-soccer-ball/" target="_blank" rel="noopener noreferrer">NASA, speed-dependent drag and drag crisis</a>. The curve is a bounded proxy, not a calibrated Football Architect ball; no wind, spin lift or Magnus.</p>
+  </section>
+  <section aria-labelledby="metrics-magnus-title">
+    <h3 id="metrics-magnus-title">ME-PHYS-09 · Magnus spin / flight A/B</h3>
+    <p class="me-hint">Five independent LAB-02-derived launches, same 3D start (vx=11, vy=0, vz=10 m/s), fixed experimental Cd=0.24, seed, mass, grass and gravity. Only initial spin changes: none, ±side spin (±Z), topspin (+Y), backspin (−Y); magnitude 6 rev/s (37.70 rad/s). vy=0 isolates lateral sign symmetry.</p>
+    <canvas id="metrics-magnus-side-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Lateral displacement for positive and negative side spin versus no spin"></canvas>
+    <canvas id="metrics-magnus-height-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Height over time for no spin, topspin, and backspin"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Spin</th><th scope="col">Actual initial spin (rev/s)</th><th scope="col">Spin at 1 s (rev/s)</th><th scope="col">Cl at 1 s</th><th scope="col">Lateral Δ at 1 s (m)</th><th scope="col">Peak Z (m)</th><th scope="col">XY travel (m)</th><th scope="col">Contact (s)</th><th scope="col">Δ mech E at 1 s (J)</th></tr></thead><tbody id="metrics-magnus-rows"></tbody></table>
+    </div>
+    <p class="me-hint">Pre-contact checkpoints: lateral offset / underside height (m). Unobserved entries are not filled with post-contact bounce data.</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table"><thead><tr><th scope="col">Spin</th><th scope="col">Time</th><th scope="col">Lateral / height</th></tr></thead><tbody id="metrics-magnus-checkpoints"></tbody></table>
+    </div>
+    <p id="metrics-magnus-note" class="me-hint"></p>
+    <p class="me-hint">Physics: F_M=½ρA·Cl·|v|² directed along ω×v, perpendicular to flight; Cl=min(0.25, 0.6×Sp⊥), Sp⊥=r|ω⊥|/|v|. The numeric slope and cap are <strong>experimental hypotheses</strong>, not a fitted match-ball law. Negative Magnus, aerodynamic torque, wind and variable air density are not modelled. Sources: <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-of-a-soccer-ball/" target="_blank" rel="noopener noreferrer">NASA — soccer-ball lift</a>; <a href="https://www.mdpi.com/2504-3900/49/1/88" target="_blank" rel="noopener noreferrer">soccer-ball flight/spin measurement (2020)</a>; <a href="https://www.sciencedirect.com/science/article/pii/S1877705816306361" target="_blank" rel="noopener noreferrer">wind-tunnel spin-dependence study (2016)</a>.</p>
+  </section>
+  <section aria-labelledby="metrics-combined-title">
+    <h3 id="metrics-combined-title">ME-PHYS-10 · Combined Cd(v) + Magnus flight diagnostics</h3>
+    <p class="me-hint">36 independent Rapier worlds: vx=7/15/30 m/s × no/±Z side spin (0/±6 rev/s) × four force modes (none, Cd(v) only, Magnus only, combined). All launches share vy=0, vz=10 m/s, position, seed, mass and the same one universal grass. Within each speed/spin group, the actual initial spin is identical in all four modes; only the force switches differ.</p>
+    <canvas id="metrics-combined-side-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="ME-PHYS-10 lateral trajectory with positive and negative side spin and Cd-v plus Magnus at 15 meters per second"></canvas>
+    <canvas id="metrics-combined-distance-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="ME-PHYS-10 first-flight horizontal range at three launch speeds in four force modes"></canvas>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table">
+        <thead><tr><th scope="col">Launch vx (m/s)</th><th scope="col">Spin (rev/s)</th><th scope="col">Mode</th><th scope="col">Cd at 1 s</th><th scope="col">Cl at 1 s</th><th scope="col">Y at 1 s (m)</th><th scope="col">Peak Z (m)</th><th scope="col">XY travel (m)</th><th scope="col">Contact (s)</th><th scope="col">Δ mech E at 1 s (J)</th></tr></thead>
+        <tbody id="metrics-combined-rows"></tbody>
+      </table>
+    </div>
+    <p class="me-hint">Pre-contact checkpoints at 0/0.5/1/1.5/2 seconds · Y displacement / underside height (m), by shared launch and four force modes. After first impact: Not observed.</p>
+    <div class="me-metrics-table-scroll">
+      <table class="me-metrics-table">
+        <thead><tr><th scope="col">vx</th><th scope="col">Spin</th><th scope="col">Time</th><th scope="col">No forces</th><th scope="col">Cd(v)</th><th scope="col">Magnus</th><th scope="col">Both</th></tr></thead>
+        <tbody id="metrics-combined-checkpoints"></tbody>
+      </table>
+    </div>
+    <p id="metrics-combined-note" class="me-hint"></p>
+    <p class="me-hint">Research status: <strong>experimental diagnostic proxy, not a calibrated gameplay model</strong>. Cd(v) interpolation and the bounded Cl curve contain unmeasured hypotheses; negative Magnus, wind and aerodynamic torque are excluded. Lift is perpendicular to velocity (no instantaneous work in the ideal continuous-time law); the observed mechanical-energy change includes drag and 60 Hz solver effects and excludes rotational energy. References: <a href="https://kjss.sports.re.kr/v.35/2/392/21" target="_blank" rel="noopener noreferrer">Hong (2024) drag crisis</a>, <a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-of-a-soccer-ball/" target="_blank" rel="noopener noreferrer">NASA Magnus direction</a>.</p>
+  </section>
+  <section aria-labelledby="metrics-calibration-title">
+    <h3 id="metrics-calibration-title">ME-PHYS-11 · Aerodynamic calibration evidence audit</h3>
+    <p class="me-hint"><strong>RESEARCH AUDIT — NOT CALIBRATED.</strong> Evidence for selecting a future single universal ball, not a new aerodynamic setting. The drag references are for the Euro 2024 ball; the side-force references come from a separate free-flight curve-kick study and cannot be assumed to describe that same ball.</p>
+    <canvas id="metrics-calibration-cd-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Current hypothetical drag curve with published Euro 2024 wind-tunnel Cd anchors"></canvas>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Approx. airspeed (m/s)</th><th scope="col">Published Euro 2024 Cd</th><th scope="col">Current proxy Cd(v)</th><th scope="col">Signed difference</th></tr></thead>
+      <tbody id="metrics-calibration-drag-rows"></tbody>
+    </table></div>
+    <p class="me-hint">Two Cd anchors are built into the existing curve: agreement at those exact points is <strong>not independent validation</strong>, and the transition and low-speed drag remain unconstrained by these two measurements.</p>
+    <canvas id="metrics-calibration-cs-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Current hypothetical Magnus coefficient compared to three published trial-averaged side-force coefficients at different mean spin parameters"></canvas>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Mean Sp</th><th scope="col">Published mean side-force Cs</th><th scope="col">Current Cl proxy</th><th scope="col">Signed difference</th></tr></thead>
+      <tbody id="metrics-calibration-side-rows"></tbody>
+    </table></div>
+    <p id="metrics-calibration-note" class="me-hint"></p>
+    <p class="me-hint">Sources: <a href="https://kjss.sports.re.kr/v.35/2/392/21" target="_blank" rel="noopener noreferrer">Hong (2024), Table 3 (Cd)</a>; <a href="https://www.mdpi.com/2504-3900/49/1/88" target="_blank" rel="noopener noreferrer">Curve-kick free-flight study (2020), Discussion (mean Cs vs mean Sp)</a>. These studies use different specimens and procedures. Side-force Cs for vertical-axis spin is <strong>not</strong> an independently measured universal lift Cl for topspin/backspin. No calibration, coefficient substitution, gameplay change or replay-version bump.</p>
+  </section>
+  <section aria-labelledby="metrics-universal-title">
+    <h3 id="metrics-universal-title">ME-PHYS-12 · Single-ball calibration readiness gate</h3>
+    <p class="me-hint"><strong>CALIBRATION HOLD — EVIDENCE INCOMPLETE.</strong> The goal is ONE Football Architect ball for every match, not different physics by pitch or real-world brand. The provisional 430 g / 0.11 m ball and 0.80 m/s² grass model are unchanged; aerodynamics remain off in normal LAB-02 and all official simulations.</p>
+    <canvas id="metrics-universal-range-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="2026 Trionda same-ball fixed-orientation, modeled nonspinning 30-meter-per-second long-kick range comparison"></canvas>
+    <p class="me-hint">Same Trionda specimen, two fixed orientations A-90/B-90: this is a <strong>2D model result using measured non-spinning drag</strong>, NOT measured flight ranges or a spinning-ball Magnus calibration. No orientation variants are proposed for gameplay.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Orientation (same specimen)</th><th scope="col">Simulated range (m)</th><th scope="col">Subcritical mean Cd</th><th scope="col">Supercritical mean Cd</th><th scope="col">Full-range mean Cd</th></tr></thead>
+      <tbody id="metrics-universal-orientation-rows"></tbody>
+    </table></div>
+    <p id="metrics-universal-range-note" class="me-hint"></p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Validation requirement</th><th scope="col">Evidence</th><th scope="col">Why not ready</th></tr></thead>
+      <tbody id="metrics-universal-gates"></tbody>
+    </table></div>
+    <p id="metrics-universal-readiness" class="me-hint"></p>
+    <p class="me-hint">Sources: <a href="https://www.mdpi.com/2311-5521/11/5/128" target="_blank" rel="noopener noreferrer">Hong &amp; Asai (2026), single Trionda specimen and six fixed orientations</a>; <a href="https://kjss.sports.re.kr/v.35/2/392/21" target="_blank" rel="noopener noreferrer">Hong (2024), Euro 2024 Cd anchors</a>; <a href="https://www.mdpi.com/2504-3900/49/1/88" target="_blank" rel="noopener noreferrer">2020 side-spin flight averages, different specimen</a>. The studies cannot be combined into a validated joint speed/spin law. No new coefficient, aerodynamic switch, gameplay profile, deploy or replay-version change.</p>
+  </section>
+  <section aria-labelledby="metrics-intake-title">
+    <h3 id="metrics-intake-title">ME-PHYS-13 · Verified dataset intake and flight holdout</h3>
+    <p class="me-hint"><strong>NO VERIFIED MATCHED DATASET.</strong> Source inventory and a schema for future real measurements. Passing format checks cannot prove authenticity, physical specimen identity or permission to use data, and NEVER enables gameplay forces.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Research source</th><th scope="col">Evidence</th><th scope="col">Calibration</th><th scope="col">Flight holdout</th></tr></thead>
+      <tbody id="metrics-intake-sources"></tbody>
+    </table></div>
+    <p id="metrics-intake-status" class="me-hint"></p>
+    <p class="me-hint">Required: measured Cd(v), signed Cs/Cl(v, spin axis), uncertainties, verified shared specimen, and independent observed 3D flight tracks. The <a href="https://github.com/lukaszgrad/ball3d/blob/main/DATA.md" target="_blank" rel="noopener noreferrer">Soccer Ball 3D dataset</a> stores positions in <strong>decimeters</strong> and uses zero-based frame indices; its license is <strong>CC BY-NC-SA 4.0 / non-commercial academic use</strong>. No third-party raw dataset is downloaded or committed here.</p>
+    <p class="me-hint">Sources: <a href="https://www.mdpi.com/2311-5521/11/5/128" target="_blank" rel="noopener noreferrer">2026 Trionda wind tunnel</a>; <a href="https://www.mdpi.com/2504-3900/49/1/88" target="_blank" rel="noopener noreferrer">2020 spinning flight averages</a>; <a href="https://lukaszgrad.github.io/soccer-ball3d/" target="_blank" rel="noopener noreferrer">CVPR 2026 3D benchmark</a>. New source: <a href="https://doi.org/10.1007/s12283-023-00409-5" target="_blank" rel="noopener noreferrer">Ward et al. (2023)</a> measured drag and spinning side forces on the same experimental football specimens, including 100–400 rpm wind-tunnel tests. The article is CC BY 4.0; raw sample data and independent measured flight holdouts are not verified. No same-specimen measured holdout is verified.</p>
+  </section>
+  <section aria-labelledby="metrics-ball3d-adapter-title">
+    <h3 id="metrics-ball3d-adapter-title">ME-PHYS-14 · Offline 3D trajectory unit adapter</h3>
+    <p class="me-hint"><strong>CONVERSION ONLY — NOT CALIBRATED OR LICENSED FOR GAME USE.</strong> A private, local-only parser can validate a user-supplied ground-truth CSV excerpt from the documented Soccer Ball 3D format. It converts x/y/z from decimeters to meters and frame numbers into seconds using the sequence's measured FPS, preserving track IDs and rejecting missing headers, duplicate frames and malformed values.</p>
+    <p class="me-hint">No file-upload interface, remote dataset fetch or source repository import is enabled. Ball identity, angular spin, commercial permission and aerodynamic coefficients remain <strong>unverified</strong>; any converted trajectory is a <strong>structural candidate</strong> for independent academic inspection, not a calibration of the universal Football Architect ball. See <a href="https://github.com/lukaszgrad/ball3d/blob/main/DATA.md" target="_blank" rel="noopener noreferrer">the upstream data conventions and non-commercial licensing</a>.</p>
+  </section>
+  <section aria-labelledby="metrics-trajectory-eval-title">
+    <h3 id="metrics-trajectory-eval-title">ME-PHYS-15 · Independent 3D trajectory error protocol</h3>
+    <p class="me-hint"><strong>SCIENTIFIC HOLD — NO VERIFIED REAL FLIGHT HOLDOUT.</strong> An offline, synthetic-tested evaluator calculates 3D MAE/RMSE, per-axis RMSE, maximum error, endpoint error and translation-invariant displacement RMSE when observed and predicted trajectories use the same verified xyz axes, metres and time origin. Linear interpolation of 60 Hz predictions onto observation timestamps is bounded and never extrapolates or bridges large gaps.</p>
+    <p class="me-hint">The evaluator never rotates, scales or shifts measurements to hide discrepancies. A displacement-only metric can remove a constant translation, but not axis, clock, camera or physical-model errors. Flight-phase selection, camera uncertainty, independently measured launch spin, original acquisition independence and commercial-use rights must be verified <strong>outside</strong> this numerical routine. <strong>No simulated self-comparison is evidence of real-world accuracy</strong>; no user dataset loaded, coefficient approved or game physics changed.</p>
+  </section>
+  <section aria-labelledby="metrics-literature-title">
+    <h3 id="metrics-literature-title">ME-PHYS-17 · One-ball literature-inspired aerodynamic candidate</h3>
+    <p class="me-hint"><strong>PROVISIONAL DIAGNOSTIC — NOT A CALIBRATED UNIVERSAL BALL.</strong> This is one fixed, windless field model: existing Cd(v) plus a bounded spin-drag increment and a saturating Magnus coefficient. Spin and drag equations are borrowed from different published studies; they are <strong>not</strong> measured together on one chosen match ball. No weather, per-pitch or per-brand variants.</p>
+    <canvas id="metrics-literature-cl-chart" class="me-metrics-chart" width="560" height="166" role="img" aria-label="Literature-inspired lift coefficient compared with existing linear spin proxy, by perpendicular spin in revolutions per second"></canvas>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table">
+      <thead><tr><th scope="col">Launch vx</th><th scope="col">Spin</th><th scope="col">Old / candidate Cd at 1s</th><th scope="col">Old / candidate Cl at 1s</th><th scope="col">Old / candidate lateral at 1s (m)</th><th scope="col">Old / candidate first flight range (m)</th></tr></thead>
+      <tbody id="metrics-literature-rows"></tbody>
+    </table></div>
+    <p id="metrics-literature-note" class="me-hint"></p>
+    <h4 id="metrics-aero-review-title">ME-PHYS-21 · Coefficient parameterization audit</h4>
+    <p class="me-hint"><strong>STATIC SNAPSHOTS, NOT NEW FLIGHT MEASUREMENTS.</strong> At fixed sideways spin, the previous model uses dimensionless Sp = ωR/v, while the literature candidate uses perpendicular rev/s. The table evaluates the same horizontal 3D force state at each speed, without tuning either model.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-aero-review-title">
+      <thead><tr><th scope="col">Speed</th><th scope="col">Spin</th><th scope="col">Sp</th><th scope="col">Old / candidate Cl</th><th scope="col">Lift ratio</th><th scope="col">Old / candidate Cd</th></tr></thead>
+      <tbody id="metrics-aero-review-rows"></tbody>
+    </table></div>
+    <p id="metrics-aero-review-verdict" class="me-hint"></p>
+    <h4 id="metrics-spin-axis-title">ME-PHYS-22 · Spin axes: sidespin, topspin and backspin</h4>
+    <p class="me-hint"><strong>SIMULATED 3D FLIGHT, NOT CALIBRATED BALL PHYSICS.</strong> Ten disposable Rapier launches compare the unchanged previous and candidate models with identical starting conditions. +Z spin bends toward +Y; +Y topspin pushes downward, and −Y backspin upward at a +X kick. These directions follow the assumed ω × v law, not a verified same-ball 3D lift dataset.</p>
+    <canvas id="metrics-spin-axis-elevation" class="me-metrics-chart" width="560" height="225" role="img" aria-label="Measured Rapier X versus Z underside height for zero spin, topspin and backspin; previous model dashed and candidate model solid through first contact"></canvas>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-spin-axis-title">
+      <thead><tr><th scope="col">Spin axis</th><th scope="col">Initial lift Y (N)</th><th scope="col">Initial lift Z (N)</th><th scope="col">Y at 1 s (m)</th><th scope="col">Z at 1 s (m)</th><th scope="col">First contact (s)</th></tr></thead>
+      <tbody id="metrics-spin-axis-rows"></tbody>
+    </table></div>
+    <p id="metrics-spin-axis-note" class="me-hint"></p>
+    <p class="me-hint">Every numeric pair is previous / candidate. The elevation chart uses physical forward distance X and underside height Z, showing measured pre-impact traces only. Topspin/backspin coefficients are extrapolations of provisional aerodynamic research. No data acquisition, coefficient tuning, wind, per-pitch physics or gameplay activation.</p>
+    <h4 id="metrics-spin-decay-title">ME-PHYS-23 · In-flight spin decay — controlled sensitivity</h4>
+    <p class="me-hint"><strong>EXPERIMENTAL ONLY — NO VERIFIED ROTATIONAL DRAG MEASUREMENT.</strong> At unchanged launch speed and spin, compare λ=0, 0.20 and 0.50 s⁻¹ for ±Z sidespin, +Y topspin and −Y backspin, using both existing provisional aerodynamic models. λ=0 preserves the original simulation. These hypothetical rates are <strong>not</strong> a fit to real-ball angular decay.</p>
+    <canvas id="metrics-spin-decay-chart" class="me-metrics-chart" width="560" height="195" role="img" aria-label="Measured Rapier airborne spin in revolutions per second versus time for zero, moderate and elevated experimental angular damping"></canvas>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-spin-decay-title">
+      <thead><tr><th scope="col">Spin axis</th><th scope="col">λ</th><th scope="col">Spin at 1 s (rev/s)</th><th scope="col">Lateral Y at 1 s (m)</th><th scope="col">Height Z at 1 s (m)</th><th scope="col">First contact (s)</th></tr></thead>
+      <tbody id="metrics-spin-decay-rows"></tbody>
+    </table></div>
+    <p id="metrics-spin-decay-note" class="me-hint"></p>
+    <h4 id="metrics-spin-retention-title">ME-PHYS-24 · Observed spin retention vs published free-flight trial</h4>
+    <p class="me-hint"><strong>EXTERNAL OBSERVATIONAL CHECK — NOT A BALL-SPECIFIC CALIBRATION.</strong> In one published 2020 free-flight trial, measured vertical-axis spin changed approximately 5.8 → 5.7 rev/s over 0.8 s, while ball speed changed 18.8 → 14.7 m/s over 1 s. These are <strong>different time intervals</strong>. The approximate observation does not determine a universal spin-drag law, does not validate 3D topspin/backspin, and cannot be treated as a fitted reference trajectory. <a href="https://www.mdpi.com/2504-3900/49/1/88" target="_blank" rel="noopener noreferrer">Published trajectory and angular-speed study (2020)</a>.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-spin-retention-title">
+      <thead><tr><th scope="col">Diagnostic λ</th><th scope="col">Actual simulated spin retained at 0.8 s (old / candidate)</th><th scope="col">Spin lost (old / candidate)</th><th scope="col">Loss ÷ published single-trial loss</th></tr></thead>
+      <tbody id="metrics-spin-retention-rows"></tbody>
+    </table></div>
+    <p id="metrics-spin-retention-note" class="me-hint"></p>
+    <p class="me-hint">The 0.8-second rows are actual recorded Rapier angular velocities for the +Z sidespin case, not curves fitted to the study. The two aerodynamic models have no aerodynamic torque of their own. Larger diagnostic λ values intentionally represent stress tests, not plausible universal gameplay defaults. <strong>Decision: HOLD.</strong></p>
+    <h4 id="metrics-lift-input-title">ME-PHYS-25 · Velocity-vector vs spin-vector lift attribution</h4>
+    <p class="me-hint"><strong>EXACT MODEL-INTERNAL DECOMPOSITION — NOT NEW PHYSICS OR OBSERVED REAL FORCES.</strong> Compare the signed lateral Y lift at launch and at 0.8 s using each model's existing instantaneous equation and the actual Rapier velocity and angular-velocity vectors. Two possible replacement orders are averaged so that the <em>velocity-vector</em> and <em>spin-vector</em> contributions add exactly to the modeled force change. The velocity contribution explicitly includes changes in <strong>speed and flight direction</strong>; it is not a speed-only or causal measurement.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-lift-input-title">
+      <thead><tr><th scope="col">Diagnostic λ</th><th scope="col">Force model</th><th scope="col">Y lift at launch (N)</th><th scope="col">Y lift at 0.8 s (N)</th><th scope="col">Velocity-vector contribution (N)</th><th scope="col">Spin-vector contribution (N)</th><th scope="col">Total change (N)</th><th scope="col">Closure residual (N)</th></tr></thead>
+      <tbody id="metrics-lift-input-rows"></tbody>
+    </table></div>
+    <p id="metrics-lift-input-note" class="me-hint"></p>
+    <p class="me-hint">Only 6 rows: +Z sidespin × 0 / 0.20 / 0.50 s⁻¹ × previous/candidate. Each row evaluates four combinations of already measured pre-impact input vectors. No extra Rapier flights or force models, fitted coefficients, real-ball attribution, aerodynamic torque, changes to the universal grass model or gameplay activation. <strong>Scientific HOLD.</strong></p>
+    <h4 id="metrics-contact-impact-title">ME-PHYS-26 · First ground contact and spin rebound audit</h4>
+    <p class="me-hint"><strong>MEASURED SIMULATOR STATES — NOT A REAL-WORLD CERTIFICATION.</strong> Five independent 60 Hz Rapier launches drop the same ball from 2 m underside height with 4 m/s forward speed, comparing no spin, ±Y topspin/backspin and ±Z sidespin at 6 rev/s. Aerodynamic forces are OFF in all five worlds. Measurements bracket the first detected ground contact: vertical and horizontal velocities, contact-point slip, rebound height, angular-speed change and the complete translational + rotational + gravitational energy ledger. Ground restitution and turf friction remain unchanged.</p>
+    <div class="me-metrics-table-scroll"><table class="me-metrics-table" aria-labelledby="metrics-contact-impact-title">
+      <thead><tr><th scope="col">Spin</th><th scope="col">Incoming vz (m/s)</th><th scope="col">Outgoing vz (m/s)</th><th scope="col">Step restitution (ratio)</th><th scope="col">1st apex (m)</th><th scope="col">Slip before (m/s)</th><th scope="col">Slip after (m/s)</th><th scope="col">Outgoing vx (m/s)</th><th scope="col">Δspin (rev/s)</th><th scope="col">Mechanical E after/before</th><th scope="col">Observed energy gain (J)</th></tr></thead>
+      <tbody id="metrics-contact-impact-rows"></tbody>
+    </table></div>
+    <p id="metrics-contact-impact-note" class="me-hint"></p>
+    <p class="me-hint">Step-to-step restitution is <strong>not</strong> the configured material restitution: gravity and the contact solver act during the same 1/60 s interval. The energy comparison includes kinetic, angular and clearance-based gravitational potential energy at the two measured snapshots; it cannot isolate the impulse loss exactly. Surface slip uses the bottom-tangent approximation rather than a measured solver impulse. Any unexpected energy gain is reported, never hidden or compensated by tuning. No new coefficient, pitch type, force law, game activation or merge.</p>
+    <p class="me-hint">Each table pair is previous / candidate. The chart plots actual measured Rapier spin over the initial airborne 1.5 seconds for +Z sidespin. Angular damping is applied only in a disposable flight diagnostic, not to contact, turf, gameplay physics, player attributes or official match results. Physical λ requires independent real measurements and approval.</p>
+    <p class="me-hint">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3737918/" target="_blank" rel="noopener noreferrer">Linthorne &amp; Patel (2011), citing the Linthorne &amp; Everett (2006) fit</a>, approximated Cl=0.25(1−e^(−0.5×spin rev/s)) and roughly +0.014 Cd per rev/s; <a href="https://kjss.sports.re.kr/v.35/2/392/21" target="_blank" rel="noopener noreferrer">Hong (2024)</a>, two Cd(v) anchors. The comparison uses actual 60 Hz Rapier trajectories, the same launch and starting physical spin, with no real-world error claim. Reverse Magnus regimes documented by <a href="https://doi.org/10.1007/s12283-023-00409-5" target="_blank" rel="noopener noreferrer">Ward et al. (2023)</a> are not modelled by this nonnegative Cl candidate. All forces remain OFF in normal LAB/gameplay.</p>
+  </section>
+  <section aria-labelledby="metrics-literature-paths-title">
+    <h3 id="metrics-literature-paths-title">ME-PHYS-18 · Visual pre-impact shot trajectory QA</h3>
+    <p class="me-hint"><strong>REAL RAPIER PATHS, NOT REAL-WORLD VALIDATION.</strong> View the top-down bend and side elevation for the same initial kick. Curves use ball-center X/Y positions relative to the launch and Z underside clearance. They end at the first observed ground contact: bounce/rolling motion is deliberately excluded.</p>
+    <div class="me-metrics-flight-select">
+      <label for="metrics-literature-speed">Forward launch speed</label>
+      <select id="metrics-literature-speed" aria-label="Select forward launch speed">
+        <option value="7">7 m/s</option>
+        <option value="15">15 m/s</option>
+        <option value="30" selected>30 m/s</option>
+      </select>
+    </div>
+    <canvas id="metrics-literature-topdown" class="me-metrics-chart me-metrics-trajectory-top" width="560" height="320" role="img" aria-label="Physically scaled top-down ball trajectory: previous and literature candidate aerodynamic models at positive and negative spin, through first contact"></canvas>
+    <canvas id="metrics-literature-elevation" class="me-metrics-chart me-metrics-trajectory-side" width="560" height="235" role="img" aria-label="Side elevation ball height versus forward distance for previous and candidate aerodynamic models through first contact"></canvas>
+    <p id="metrics-literature-trajectory-note" class="me-hint" role="status"></p>
+    <p class="me-hint">The top view uses the same pixels/metre for both horizontal axes, with a different indicated zoom for each speed. Side elevation uses separately labelled axes. Solid/dashed strokes distinguish ±Z; the 1-second dot and impact cross are based on actual fixed-step snapshots. The magnitude of the 30 m/s bend is a <strong>plausibility review target</strong>, not a calibrated acceptance threshold. One ball, one grass model, zero gameplay aerodynamic forces.</p>
+  </section>
+  <section aria-labelledby="metrics-flight-animation-title">
+    <h3 id="metrics-flight-animation-title">ME-PHYS-19 · Synchronized shot animation — previous vs candidate</h3>
+    <p class="me-hint"><strong>SIMULATED MOTION ONLY — NOT A MEASURED REAL KICK.</strong> Both balls follow the same simulated clock, from identical initial conditions, and individually freeze at their own first ground contact. Smooth movement interpolates between recorded pre-impact Rapier samples; it does not solve new physics.</p>
+    <div class="me-metrics-animation-options">
+      <div class="me-metrics-flight-select">
+        <label for="metrics-animation-speed">Forward speed</label>
+        <select id="metrics-animation-speed" aria-label="Animated comparison forward launch speed">
+          <option value="7">7 m/s</option>
+          <option value="15">15 m/s</option>
+          <option value="30" selected>30 m/s</option>
+        </select>
+      </div>
+      <div class="me-metrics-flight-select">
+        <label for="metrics-animation-spin">Side spin</label>
+        <select id="metrics-animation-spin" aria-label="Animated comparison side spin">
+          <option value="plus" selected>+Z · 6 rev/s</option>
+          <option value="minus">−Z · 6 rev/s</option>
+        </select>
+      </div>
+    </div>
+    <div class="me-metrics-animation-transport" role="group" aria-label="Shot animation controls">
+      <button type="button" id="metrics-animation-play" class="me-button">Play</button>
+      <button type="button" id="metrics-animation-reset" class="me-button">Reset</button>
+      <label for="metrics-animation-timeline">Time</label>
+      <input id="metrics-animation-timeline" type="range" min="0" max="300" step="1" value="0" aria-label="Seek animated shot time in hundredths of a second">
+      <output id="metrics-animation-time" for="metrics-animation-timeline">0.00 s</output>
+    </div>
+    <canvas id="metrics-animation-topdown" class="me-metrics-chart me-metrics-trajectory-top" width="560" height="300" role="img" aria-label="Animated same-scale overhead XY view of old teal and candidate amber ball paths, stopped at individual first ground contact"></canvas>
+    <canvas id="metrics-animation-elevation" class="me-metrics-chart me-metrics-trajectory-side" width="560" height="200" role="img" aria-label="Animated side elevation comparing old and candidate pre-impact ball height and forward displacement"></canvas>
+    <p id="metrics-animation-status" class="me-hint" aria-live="off">Previous: airborne · Candidate: airborne</p>
+    <p id="metrics-animation-announcement" class="me-a11y-announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+    <p class="me-hint">Teal = previous model; amber = literature candidate. Large circles show synchronized positions; faint lines are complete pre-impact reference paths, solid lines are already travelled positions, and contact markers appear only on impact. The overhead X/Y axes retain equal pixels per metre. Select a speed or spin, use Play/Pause, Reset or drag the time slider. Closing Metrics stops playback. Main LAB play/pause, tick, seed and replay are never changed.</p>
+  </section>
+  <p class="me-hint">Observations only: 430 g · 0.62 restitution · grass deceleration 0.8 m/s². No default/gameplay physics parameters are changed.</p>
+</dialog>
+<script type="module" src="/__fa_match_engine__/lab.mjs"></script>
+</body>
+</html>
