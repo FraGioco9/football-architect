@@ -111,6 +111,14 @@ jobs:
           node --check assets/competition-page.js
           node --check assets/competition-fixtures.js
           node --check tools/validate-division-assets.mjs
+      # The source research branches were deleted after the cumulative surname merge.
+      # Its preserved PR ref still contains baseline d27a46a and original pool blobs,
+      # required by the catalog provenance tests during FULL checks.
+      - name: Restore SURNAMES-01 provenance for FULL contracts
+        if: ${{ (needs.head-exact.outputs.mode == 'full') && !needs.head-exact.outputs.reuse }}
+        run: |
+          git fetch --no-tags origin '+refs/pull/439/head:refs/remotes/origin/ci-surnames-01-provenance'
+          git cat-file -e d27a46a5b0f5ac086d16e2de7786590820214255:data/players/surnames/countries/ESP.json
       - name: Site contracts (full)
         if: ${{ (needs.head-exact.outputs.mode == 'full') && !needs.head-exact.outputs.reuse }}
         run: |
