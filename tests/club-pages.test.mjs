@@ -56,7 +56,7 @@ test('CLUB-01 derived manifest preserves canonical fields and provisional placem
   const allocation=allocations.allocations.find(a=>a.divisionId.startsWith(c.countryId+'-')&&a.clubIds.includes(c.clubId));
   assert.equal(derived.divisionId,allocation?.divisionId??null);
  }
- assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,164);
+ assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,64);
 });
 test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared Debug Settings and the DEV summary',async()=>{
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -117,7 +117,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
-   }else assert.ok(html.includes('club-empty'));
+   }else assert.ok(html.includes(view==='history'?'club-history-loading':'club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
   }
  }
@@ -335,6 +335,23 @@ test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loa
  assert.match(styles,/app-fixtures-skeleton-crest::before/,'Fixtures uses the same primitive');
  assert.match(read('assets/competition-fixtures.js'),/app-world-club-crest-placeholder fa-crest-loading/,'loaded Fixtures use the same shape before the asset resolves');
  assert.match(read('assets/club-crests.js'),/fa-crest-loading/,'missing crests fall back to a shield only on confirmed absence');
+});
+test('PAGE-LOAD-04 B02: Club History renders only verified seasons without guessed records',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/1/history'),clubKey='IT-1';
+ const pending=model.render(manifest,selected,'en','',null,2,{source:'loading'});
+ assert.match(pending,/class="club-history-loading"/);
+ assert.doesNotMatch(pending,/data-club-history-season=/);
+ const verified={source:'authoritative',clubKey,coverage:'complete',seasons:[{season:1,memberships:[{competitionId:'IT-1',category:'domestic',season:1,position:3,points:56,name:'IT-1'}]}]};
+ const html=model.render(manifest,selected,'en','',null,2,verified);
+ assert.match(html,/data-club-history-season="1"/);
+ assert.match(html,/data-history-competition="IT-1"/);
+ assert.match(html,/standings\\?season=1/);
+ assert.match(html,/56/);
+ assert.doesNotMatch(html,/data-club-history-season="2"/);
+ assert.match(model.render(manifest,selected,'it','',null,2,verified),/Stagione 1/);
+ assert.match(model.render(manifest,selected,'en','',null,2,{source:'unavailable'}),/role="status"/);
 });
 test('club competition links open Standings with the displayed season and no fixture round',async()=>{
  const {default:model}=await import('../assets/club-model.js');

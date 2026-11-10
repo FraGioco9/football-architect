@@ -187,6 +187,7 @@
     "tests/club-identity-trafford.test.mjs": "site-node",
     "tests/club-pages-browser.test.mjs": "site-node",
     "tests/club-pages.test.mjs": "site-node",
+    "tests/club-history-source.test.mjs": "site-node",
     "tests/club-season-memberships.test.mjs": "site-node",
     "tests/competition-content-state.test.mjs": "site-node",
     "tests/competition-fixtures.test.mjs": "site-node",

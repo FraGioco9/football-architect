@@ -380,3 +380,18 @@
 /* PAGE-LOAD-04 B01: anonymous identity placeholders reserve the final header geometry. */
 .club-first-paint-header .club-fp-header-name{display:block;width:min(58%,320px);height:.88em;min-height:22px;margin:.12em 0 .1em}
 .club-first-paint-header .club-fp-header-location{display:block;width:min(52%,210px);height:14px;min-height:14px}
+
+/* PAGE-LOAD-04 B02: validated club-season memberships, not a static History empty panel. */
+.club-history{margin-top:14px;min-width:0}
+.club-history h2{margin:0 0 16px}
+.club-history-seasons{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.club-history-season{border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.club-history-season h3{margin:0 0 12px;font-size:1rem}
+.club-history-competitions{display:grid;gap:10px}
+.club-history-competition{display:flex;justify-content:space-between;align-items:baseline;gap:16px;min-width:0}
+.club-history-competition>a{min-width:0;overflow-wrap:anywhere}
+.club-history-result{display:flex;flex-wrap:wrap;gap:8px 16px;flex:none;color:var(--muted);font-size:.85rem}
+.club-history-loading{display:grid;gap:18px;padding-block:8px}
+.club-history-loading>.club-fp-bar{width:70%;max-width:260px}
+.club-history-status{color:var(--muted)}
+@media(max-width:500px){.club-history-competition{flex-direction:column;align-items:flex-start;gap:5px}.club-history-result{flex:none}}
