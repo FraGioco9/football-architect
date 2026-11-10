@@ -3989,7 +3989,7 @@
         {
           "countryId": "IT",
           "clubId": 27,
-          "abbr": "TRA",
+          "abbr": "TRM",
           "fullName": "Associazione Sportiva Tramontana Calcio",
           "primaryName": "Tramontana Calcio",
           "stadiumName": "Stadio del Vento di Tramontana"
@@ -4056,10 +4056,10 @@
         {
           "countryId": "ENG",
           "clubId": 2,
-          "abbr": "MED",
-          "fullName": "Medlock United Football Club",
-          "primaryName": "Medlock United",
-          "stadiumName": "Medlock Park"
+          "abbr": "TRA",
+          "fullName": "Trafford United Football Club",
+          "primaryName": "Trafford United",
+          "stadiumName": "Foundry Park"
         },
         {
           "countryId": "ENG",
