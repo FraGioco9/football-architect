@@ -83,14 +83,52 @@
                 </div>
               </div>
               <div class="me-canvas-frame me-pitch-frame">
-                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field with ball position and trajectory"></canvas>
+                <canvas id="pitch" width="1050" height="680" aria-label="Complete 105 by 68 meter football field with ball trajectory and autonomous players when enabled"></canvas>
               </div>
               <div class="me-at-a-glance" aria-live="off">
                 <span>Time <strong id="tick">0 · 0.00 s</strong></span>
                 <span>Height above ground <strong id="height">—</strong></span>
                 <span>Ball <strong id="ground">—</strong></span>
                 <span>Ground speed <strong id="ground-speed">—</strong></span>
+                <button id="players-toggle" class="me-button me-players-toggle" type="button" aria-pressed="false" aria-controls="player-controls">Players (22)</button>
               </div>
+              <section id="player-controls" class="me-player-controls" aria-label="ME-PLAYER-01 autonomous team movement" hidden>
+                <div class="me-player-controls-main">
+                  <label class="me-inspect-label" for="player-inspect-choice">Inspect player</label>
+                  <select id="player-inspect-choice" class="me-inspect-select" aria-label="Read-only inspect autonomous player">
+                    <option value="">Select a player</option>
+                    <option value="home-1">Home #1</option>
+                    <option value="home-2">Home #2</option>
+                    <option value="home-3">Home #3</option>
+                    <option value="home-4">Home #4</option>
+                    <option value="home-5">Home #5</option>
+                    <option value="home-6">Home #6</option>
+                    <option value="home-7">Home #7</option>
+                    <option value="home-8">Home #8</option>
+                    <option value="home-9">Home #9</option>
+                    <option value="home-10">Home #10</option>
+                    <option value="home-11">Home #11</option>
+                    <option value="away-1">Away #1</option>
+                    <option value="away-2">Away #2</option>
+                    <option value="away-3">Away #3</option>
+                    <option value="away-4">Away #4</option>
+                    <option value="away-5">Away #5</option>
+                    <option value="away-6">Away #6</option>
+                    <option value="away-7">Away #7</option>
+                    <option value="away-8">Away #8</option>
+                    <option value="away-9">Away #9</option>
+                    <option value="away-10">Away #10</option>
+                    <option value="away-11">Away #11</option>
+                  </select>
+                  <div class="me-player-readout" aria-live="off">
+                    <div><span>Ball zone</span><strong id="player-ball-sector">Middle third · Centre</strong></div>
+                    <div><span>Pressing</span><strong id="player-pressing">Home #10 · Away #10</strong></div>
+                    <div><span>Selected player</span><strong id="player-inspection">Select a player</strong></div>
+                    <div><span>Current duty</span><strong id="player-inspection-duty">Select a player</strong></div>
+                  </div>
+                </div>
+                <p class="me-player-note">Players move automatically. Select a marker on the pitch or use the menu to inspect a player; selection never controls movement.</p>
+              </section>
             </section>
             <div class="me-side">
               <section class="app-panel me-panel me-elevation-panel" aria-labelledby="side-heading">
