@@ -261,3 +261,66 @@ export function readPreviewClubProgress(storage){
  }catch{}
  return progress;
 }
+
+
+/** Club History on the isolated DEV preview. A single season's final/partial
+ * results come from the same deterministic league and postseason readers as
+ * other DEV pages, never from the public/official history endpoints.
+ */
+export function createPreviewClubHistory(division,clubId,progress){
+ assertDivision(division);
+ if(!Number.isInteger(clubId)||!division.clubs.some(c=>c.clubId===clubId)||
+   !Number.isInteger(progress?.season)||progress.season<0||progress.season>4||
+   !Number.isInteger(progress?.matchdays)||progress.matchdays<0||progress.matchdays>DEBUG_MAX_MATCHDAY)
+  throw Error('Invalid DEV club History progress');
+ const clubKey=division.countryId+'-'+clubId;
+ const seasons=[];
+ for(let season=1;season<=progress.season;season++){
+  const phaseProgress=previewSeasonProgress(season,progress);
+  const leagueDays=previewSeasonMatchdays(season,progress);
+  const league=createPreviewStandings(division,leagueDays,season);
+  const rank=league.rows.findIndex(row=>row.club.clubId===clubId);
+  if(rank<0||league.rows[rank].played!==leagueDays)throw Error('Unverified DEV club season');
+  const played=[...league.fixtures];
+  if(phaseProgress>rounds){
+   const knockout=createPreviewPostseason(division,phaseProgress,season);
+   for(const tie of knockout.ties)for(const leg of tie.legs){
+    if(leg&&Number.isSafeInteger(leg.homeGoals)&&Number.isSafeInteger(leg.awayGoals))
+     played.push(leg);
+   }
+   if(knockout.final&&Number.isSafeInteger(knockout.final.homeGoals)&&
+     Number.isSafeInteger(knockout.final.awayGoals))played.push(knockout.final);
+  }
+  const totals={played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0,cleanSheets:0};
+  for(const match of played){
+   if(match.homeId!==clubId&&match.awayId!==clubId)continue;
+   const home=match.homeId===clubId;
+   const gf=home?match.homeGoals:match.awayGoals;
+   const ga=home?match.awayGoals:match.homeGoals;
+   if(!Number.isSafeInteger(gf)||gf<0||!Number.isSafeInteger(ga)||ga<0)
+    throw Error('Invalid DEV match history');
+   totals.played++;totals.goalsFor+=gf;totals.goalsAgainst+=ga;
+   if(gf>ga)totals.won++;
+   else if(gf<ga)totals.lost++;
+   else totals.drawn++;
+   if(ga===0)totals.cleanSheets++;
+  }
+  totals.goalDifference=totals.goalsFor-totals.goalsAgainst;
+  const leagueRow=league.rows[rank];
+  if(leagueRow.played!==leagueDays||
+    leagueRow.gf>totals.goalsFor||leagueRow.ga>totals.goalsAgainst||
+    leagueRow.won>totals.won||leagueRow.drawn>totals.drawn||leagueRow.lost>totals.lost||
+    totals.played!==totals.won+totals.drawn+totals.lost)
+   throw Error('Inconsistent DEV club History totals');
+  const membership=Object.freeze({competitionId:division.id,category:'domestic',name:division.name||division.id,
+   season,position:leagueDays===0?null:rank+1,points:leagueRow.pts,cupStatus:null,nextMatch:null,
+   stats:Object.freeze(totals)});
+  seasons.push(Object.freeze({season,ongoing:season===progress.season&&phaseProgress<DEBUG_MAX_MATCHDAY,
+   memberships:Object.freeze([membership])}));
+ }
+ return Object.freeze({schemaVersion:1,source:'dev',clubKey,
+  provenance:Object.freeze({kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}),
+  currentSeason:progress.season,matchdays:progress.matchdays,
+  coverage:seasons.some(s=>s.memberships.some(m=>m.stats.played>0))?'complete':'empty',
+  seasons:Object.freeze(seasons)});
+}

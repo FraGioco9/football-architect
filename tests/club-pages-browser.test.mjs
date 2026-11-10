@@ -12,7 +12,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {repositoryRoot,stagePublicArtifact,publicRequestFile} from '../tools/publication-guard.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {createPreviewStandings} from '../tools/dev-standings-preview-data.mjs';
-const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 const chrome=()=>{
   const windows=process.platform==="win32"?[
     process.env.ProgramFiles&&join(process.env.ProgramFiles,"Google","Chrome","Application","chrome.exe"),
@@ -36,6 +36,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
+ assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
+ assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
  let refuseCrests=false,holdDeferred=false,manifestMode='ok';const deferredResponses=[];
  const server=createServer((req,res)=>{
   try{
@@ -99,8 +101,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     };
 
     const visit=async(path,base=origin)=>{
+     const expectedPath=new URL(base+path).pathname;
+     const overview=/\/overview(?:[?#]|$)/.test(path);
      await cmd('Page.navigate',{url:base+path});
-     await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
+     // A previous Club document may still expose clubReady during navigation.
+     // The route, readiness and hydrated Overview must match in one read.
+     await wait("location.pathname==="+JSON.stringify(expectedPath)+
+      "&&document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'"+
+      (overview?"&&document.querySelector('.club-description')!==null":""));
     };
     await cmd('Runtime.enable');
     const errors=[];socket.addEventListener('message',event=>{
