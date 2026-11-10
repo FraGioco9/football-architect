@@ -27,14 +27,22 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.17;
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+// KM-22: no ground/contact shadow in the mannequin studio.
+renderer.shadowMap.enabled=false;
 
 const controls=new OrbitControls(camera,canvas);
 controls.target.copy(focus);
 controls.enableDamping=true;
 controls.dampingFactor=.075;
-controls.enablePan=false;
+controls.enablePan=true;
+controls.screenSpacePanning=true;
+controls.panSpeed=1.0;
+// Left drag: rotate; wheel: zoom; right drag/Shift+left: pan.
+// Touch: one finger rotate; two fingers zoom and pan.
+controls.mouseButtons={
+  LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN
+};
+controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
 controls.minDistance=1.65;
 controls.maxDistance=7.8;
 controls.minPolarAngle=.22;
@@ -48,13 +56,7 @@ const bodyMaterial=new THREE.MeshPhysicalMaterial({
 scene.add(new THREE.HemisphereLight(0xe8f4ff,0x53646d,1.9));
 const key=new THREE.DirectionalLight(0xffffff,3.1);
 key.position.set(-2.9,4.8,3.9);
-key.castShadow=true;
-key.shadow.mapSize.set(1024,1024);
-key.shadow.camera.left=-2.1;
-key.shadow.camera.right=2.1;
-key.shadow.camera.top=2.8;
-key.shadow.camera.bottom=-1.4;
-key.shadow.normalBias=.009;
+key.castShadow=false;
 scene.add(key);
 const fill=new THREE.DirectionalLight(0xd1e4ed,1.1);
 fill.position.set(3,2.2,1.7);
@@ -62,15 +64,6 @@ scene.add(fill);
 const rim=new THREE.DirectionalLight(0xc4dfe4,1.7);
 rim.position.set(1.8,3,-3);
 scene.add(rim);
-
-const floor=new THREE.Mesh(
-  new THREE.PlaneGeometry(30,30),
-  new THREE.ShadowMaterial({opacity:.20})
-);
-floor.rotation.x=-Math.PI/2;
-floor.position.y=-.008;
-floor.receiveShadow=true;
-scene.add(floor);
 
 const views={
   front:[0,.98,3.52],
@@ -174,8 +167,8 @@ function prepareModel(root,{weldObj=false}={}){
       child.geometry.computeVertexNormals();
     }
     child.material=bodyMaterial;
-    child.castShadow=true;
-    child.receiveShadow=true;
+    child.castShadow=false;
+    child.receiveShadow=false;
   });
   for(const child of remove)child.parent?.remove(child);
   if(meshes===0)throw new Error("The selected model contains no body mesh.");
@@ -392,7 +385,7 @@ try {
             if(!child.geometry?.getAttribute("position"))
               throw new Error("Garment mesh lacks vertex positions");
             groups.add(match[1].toLowerCase());
-            child.castShadow=true;child.receiveShadow=true;
+            child.castShadow=false;child.receiveShadow=false;
           });
           if(meshCount<4||meshCount>150||
              ![...valid].every(k=>groups.has(k)))
@@ -452,7 +445,7 @@ try {
               const clip=m=>{
                 const copy=m.clone();
                 copy.clippingPlanes=[cut];
-                copy.clipShadows=true;
+                copy.clipShadows=false;
                 return copy;
               };
               child.material=Array.isArray(child.material)

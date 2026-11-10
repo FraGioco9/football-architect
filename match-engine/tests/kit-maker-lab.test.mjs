@@ -56,6 +56,9 @@ test('KM-01 canonical DEV lab and both Development sidebar links work on app.loc
   assert.match(html,/src="\/__fa_kit_maker__\/viewer\.mjs"/);
   assert.match(html,/id="viewport"/);
   assert.match(html,/aria-label="3D football outfit preview"/);
+  assert.match(html,/class="km-camera-hint"/);
+  assert.match(html,/Right-drag to move/);
+  assert.match(html,/two fingers move and zoom/);
   assert.doesNotMatch(html,/aria-label="3D mannequin preview"/);
   assert.equal(html.split('<h1 ').length-1,1);
   for(const id of ['status','viewport','km-club-select','km-club-status','km-colors-title'])
@@ -132,6 +135,17 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   const obj=await get(server,'/__fa_kit_maker__/mannequin-180.obj',{method:'HEAD'});
   assert.equal(obj.status,200);
   const script=(await get(server,'/__fa_kit_maker__/viewer.mjs')).body.toString('utf8');
+  // KM-22: remove ALL scene shadow casting and shadow-catching, but keep
+  // directional lighting and clipping. OrbitControls must also pan freely.
+  assert.ok(script.includes('renderer.shadowMap.enabled=false;'));
+  assert.ok(script.includes('key.castShadow=false;'));
+  assert.doesNotMatch(script,/new THREE\.ShadowMaterial|scene\.add\(floor\)|castShadow=true|receiveShadow=true/);
+  assert.ok(script.includes('controls.enablePan=true;'));
+  assert.ok(script.includes('controls.screenSpacePanning=true;'));
+  assert.ok(script.includes('RIGHT:THREE.MOUSE.PAN'));
+  assert.ok(script.includes('TWO:THREE.TOUCH.DOLLY_PAN'));
+  assert.ok(script.includes('controls.target.copy(focus)'),
+    'Preset/reset views must retain a predictable target after panning');
   assert.match(script,/studioAssets\+"mannequin-180\.glb"/);
   assert.match(script,/studioAssets\+"mannequin-180\.obj"/);
   assert.ok(script.includes('location.pathname==="/dev/kit-maker"'));
@@ -213,6 +227,8 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('KIT_CUFF_BORDER_METRES'));
   assert.ok(designJS.includes('kmTrimRegion'));
   assert.ok(designJS.includes('kmTrimCuffV'));
+  assert.ok(designJS.includes('kitCuffOuterTrimThreshold'));
+  assert.ok(designJS.includes('KIT_CUFF_FOLD_RETURN_METRES'));
   assert.ok(designJS.includes('vKmPatternV = uv.y'));
   assert.ok(designJS.includes('cachedKitStripeMetric'));
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);

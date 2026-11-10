@@ -94,6 +94,7 @@ test('KM-18: real Chrome shows curved-stripe slider and retains garment settings
             status,
             title:document.getElementById('km-title')?.textContent,
             canvas:!!canvas,
+            cameraMoveHint:document.querySelector('.km-camera-hint')?.textContent||'',
             pixels:metrics?{width:metrics.width,height:metrics.height}:null,
             panels:document.querySelectorAll('.km-layout > .app-panel').length,
             clubText:document.getElementById('km-club-value')?.textContent,
@@ -119,6 +120,8 @@ test('KM-18: real Chrome shows curved-stripe slider and retains garment settings
       assert.equal(sample?.loaded,true);
       assert.equal(sample?.title,'Kit Maker');
       assert.equal(sample?.panels,2);
+      assert.match(sample?.cameraMoveHint||'',/Right-drag to move/);
+      assert.match(sample?.cameraMoveHint||'',/two fingers move and zoom/);
       assert.equal(sample?.colorPanels,6);
       assert.equal(sample?.garmentButtons,3);
       assert.equal(sample?.styleButtons,2);

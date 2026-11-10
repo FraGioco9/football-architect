@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {KIT_PARTS,KIT_STYLES,KIT_STRIPE_WIDTH_RANGE,formatKitStripeWidth,isKitStripeWidthAllowed,KIT_NEUTRALS,kitColorChoices,
   createKitDesignStore,applySolidKitColors,applyKitDesign,KIT_STRIPE_SHADER_KEY,
   stripeSectionForMesh,measureKitStripeFabricMetric,
-  kitJerseyDetailRegion,KIT_CUFF_BORDER_METRES} from '../../kit-maker/lab/kit-design.mjs';
+  kitJerseyDetailRegion,KIT_CUFF_BORDER_METRES,
+  KIT_CUFF_FOLD_RETURN_METRES,kitCuffOuterTrimThreshold} from '../../kit-maker/lab/kit-design.mjs';
 
 // Minimal BufferGeometry-like fixture with a true flattened sewing-pattern UV
 // and 3D vertex positions. A metre on this cloth is independent of its shape
@@ -578,7 +579,7 @@ test('KM-21 live rendering isolates collar and both cuffs from body/stripes',()=
   assert.equal(uniforms[2].kmTrimColor.value.hex,'#111111');
   assert.equal(uniforms[3].kmTrimColor.value.hex,'#808080');
   assert.equal(uniforms[4].kmTrimColor.value.hex,'#808080');
-  assert.ok(Math.abs(uniforms[3].kmTrimCuffV.value-(.3-.012/1.52))<1e-10);
+  assert.ok(Math.abs(uniforms[3].kmTrimCuffV.value-(.3-.024/1.52))<1e-10);
   assert.equal(uniforms[3].kmTrimCuffV.value,uniforms[4].kmTrimCuffV.value);
   const shader={uniforms:{},
     vertexShader:'void main(){\n#include <begin_vertex>\n}',
@@ -611,4 +612,63 @@ test('KM-21 illegal detail colours reject atomically before touching materials',
   assert.throws(()=>applyKitDesign(outfit,state,{Color}),/Kit detail colours/);
   assert.ok(outfitParts.every(x=>x.material.color.hex==='#FFFFFF'));
   assert.ok(outfitParts.every(x=>!x.material.userData.kitStripeUniforms));
+});
+
+test('KM-22 source sleeve folded hem reaches the OUTER opening, not only inside tape',()=>{
+  assert.equal(KIT_CUFF_BORDER_METRES,.012);
+  assert.equal(KIT_CUFF_FOLD_RETURN_METRES,.012);
+  // Original private Alberto Sena GLB (both sleeve UV patterns):
+  // exterior fold starts near UV V=.8743; previous inner-only cut=.8815.
+  const sleeves=[
+    {highV:.88914585,lowV:.76853204,metresPerUvV:1.5772967},
+    {highV:.88914590,lowV:.76853216,metresPerUvV:1.5778716}
+  ];
+  for(const metric of sleeves){
+    const threshold=kitCuffOuterTrimThreshold(metric);
+    assert.ok(threshold<=.8743,
+      'Exterior fold must be coloured all the way out to the opening');
+    assert.ok(threshold>.871,
+      'The cuff must not recolour the entire sleeve');
+    assert.ok(.8891>threshold,'Inner return stays the same colour');
+    assert.ok(.8743>threshold,'Outer lip no longer remains unpainted');
+    const oldThreshold=metric.highV-KIT_CUFF_BORDER_METRES/metric.metresPerUvV;
+    assert.ok(oldThreshold>.881,'Regression: previous cut painted an inner line');
+    assert.ok(threshold<oldThreshold,
+      'Outer and folded-return segments must be one continuous region');
+  }
+  assert.throws(()=>kitCuffOuterTrimThreshold(null),/Invalid/);
+  assert.throws(()=>kitCuffOuterTrimThreshold({
+    highV:.8,lowV:.7,metresPerUvV:0
+  }),/Invalid/);
+  assert.throws(()=>kitCuffOuterTrimThreshold({
+    highV:.021,lowV:.02,metresPerUvV:1.57
+  }),/too short/);
+});
+
+test('KM-22 cuff trim shader includes the outer sewn edge in Solid and Stripes',()=>{
+  class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
+  const meshes=['FA_jersey__38','FA_jersey__62','FA_jersey__9',
+    'FA_shorts__sample','FA_socks__sample'].map(name=>({
+    name,isMesh:true,geometry:fabricGeometry(name),
+    material:{
+      name:(name.startsWith('FA_jersey__')?'km13-white-':'km14-white-')+name,
+      color:new Color('#FFFFFF'),userData:{}
+    }
+  }));
+  const outfit={traverse(fn){for(const m of meshes)fn(m);}};
+  const store=createKitDesignStore();
+  store.selectColorLayer('cuffs');
+  store.selectColor('neutral-black');
+  for(const style of ['solid','vertical-stripes']){
+    store.selectStyle(style);
+    applyKitDesign(outfit,store.getState(),{Color});
+    const cuffUniforms=meshes.slice(0,2).map(m=>m.material.userData.kitStripeUniforms);
+    for(const uniforms of cuffUniforms){
+      assert.equal(uniforms.kmTrimRegion.value,2);
+      assert.equal(uniforms.kmTrimColor.value.hex,'#111111');
+      assert.ok(Math.abs(uniforms.kmTrimCuffV.value-(.3-.024/1.52))<1e-10);
+      assert.equal(uniforms.kmStripeEnabled.value,style==='solid'?0:1);
+    }
+    assert.equal(meshes[2].material.userData.kitStripeUniforms.kmTrimRegion.value,0);
+  }
 });

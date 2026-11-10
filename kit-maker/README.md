@@ -957,3 +957,62 @@ switches. Full Node/CI, owner-local WebGL and Safari
 visual QA still require verification.
 
 PR #454 remains Draft/HOLD, with no merge/deploy/DB changes.
+
+## KM-22 — no mannequin shadow, camera panning and complete outer sleeve hem (2026-11-10)
+
+Owner QA requested three changes: **remove the mannequin shadow**,
+**be able to move rather than merely rotate the view**, and
+**recolour the outer sleeve edge instead of an interior stripe**.
+
+**Shadow-free viewer:** Disabled the Three.js shadow map globally,
+disabled imported body and outfit mesh shadow casting/receiving and
+the directional light's shadow casting, and deleted the transparent
+ground `ShadowMaterial` receiver entirely. Hemispheric and directional
+*lighting* remains so cloth detail and PBR shading are still visible.
+The same scene viewer powers the DEV Kit Maker and local mannequin
+studio; neither displays a projected/contact shadow after KM-22.
+
+**Navigation:** Enabled OrbitControls `enablePan` and
+`screenSpacePanning`. Desktop: left mouse drag **orbit**, right mouse
+drag or Shift+left drag **pan/translate**, wheel **zoom**. Touch:
+one finger **rotate**, two fingers **pan/pinch zoom**. Preset camera
+views still reset the orbit target to the original centre.
+The stage now includes visible, responsive controls guidance and a
+descriptive canvas accessible label.
+
+**Actual sleeve folded-hem diagnosis:** Read-only audited the
+original owner-private Alberto Sena GLB, SHA-256
+`985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8`.
+The sleeve ends are *folded* in the artist's flat pattern, so the
+KM-21 cutoff `highV - 12mm/metresPerUvV` included mostly an interior
+folded-return line, rather than the outside opening lip.
+The genuine right sleeve (`FA_jersey__38`) and left sleeve
+(`FA_jersey__62`) each have an exterior hem boundary loop of
+**155 vertices**, with pattern V ranging **0.874266–0.889082**.
+Original high V≈0.889146 and measured vertical metric ≈1.577m/UV.
+The KM-21 threshold **0.881538** reached only **51.6%** of the
+physical exterior boundary vertices. The new threshold **0.87393**
+covers **100% of those outer boundary vertices** on both arms.
+
+KM-22 therefore colours the existing 12mm visible cuff **and the
+matching 12mm turned-under return** as one contiguous strip. The
+shader uses the existing original `vKmPatternV`, `kmTrimCuffV`
+and antialiasing; only the cutoff is adjusted via
+`kitCuffOuterTrimThreshold(metric)`. It validates source geometry
+measurements before applying the trim and does not recolour the
+whole sleeve. Collar, base/stripe geometry, club/neutral palette,
+3–15cm width slider, black/white boots and white laces remain as
+previously approved. No private artist GLB or ZIP is redistributed.
+
+**QA:** 21 isolated Kit Maker design-state/shader tests PASS,
+including new regression cases for actual original left/right
+source hem boundaries, exterior coverage and Solid/Vertical stripes
+mode. Syntax preflight PASS for viewer/kit-design and associated
+test files. Page/server checks now require no shadow caster/catcher
+and active mouse/touch panning; browser smoke asserts visible
+controls guidance. Actual user Chrome/iPhone visual verification
+and full Node suite remain pending; **not** reported as completed.
+
+Changes committed as one grouped update to the existing **Draft/HOLD
+PR #454**. No merge, deploy, remote database writes, or changes to
+the underlying Match Engine PR #455.

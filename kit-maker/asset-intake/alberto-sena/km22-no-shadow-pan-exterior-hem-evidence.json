@@ -1,0 +1,63 @@
+{
+  "revision": "KM-22",
+  "date": "2026-11-10",
+  "pr": 454,
+  "request": [
+    "remove mannequin shadow",
+    "pan freely without just orbiting",
+    "colour exterior sleeve edge rather than internal fold line"
+  ],
+  "shadows": {
+    "shadowMap": false,
+    "directionalShadowCasting": false,
+    "modelAndOutfitCastShadow": false,
+    "modelAndOutfitReceiveShadow": false,
+    "shadowReceivingGroundRemoved": true,
+    "lightingStillOn": true
+  },
+  "camera": {
+    "orbit": "left drag",
+    "pan": "right drag or Shift+left drag",
+    "zoom": "wheel",
+    "touchOrbit": "one finger",
+    "touchPanZoom": "two fingers",
+    "screenSpacePanning": true
+  },
+  "originalArtistGLB": {
+    "sha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+    "assetPrivate": true,
+    "outerHemBoundaryVerticesPerSleeve": 155,
+    "boundaryUVV": [
+      0.874266,
+      0.889082
+    ],
+    "highV": 0.889146,
+    "metresPerUvVApprox": 1.5773
+  },
+  "cuff": {
+    "outerBandMeters": 0.012,
+    "foldedReturnMeters": 0.012,
+    "oldThresholdV": 0.881538,
+    "newThresholdV": 0.87393,
+    "oldOuterHemCoveragePct": 51.6,
+    "newOuterHemCoveragePct": 100,
+    "meshIds": [
+      "FA_jersey__38",
+      "FA_jersey__62"
+    ],
+    "textureAndGeometryUnchanged": true
+  },
+  "qa": {
+    "isolatedDesignTests": "21 PASS",
+    "sourceGLBExteriorCoverage": "PASS",
+    "syntaxStatic": "PASS",
+    "realChrome": "PENDING",
+    "fullNode": "PENDING"
+  },
+  "excluded": [
+    "merge",
+    "deploy",
+    "remote database",
+    "third-party asset upload"
+  ]
+}

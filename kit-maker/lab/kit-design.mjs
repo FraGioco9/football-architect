@@ -311,10 +311,26 @@ export function installKitStripeShader(material,THREE){
   material.needsUpdate=true;
   return uniforms;
 }
-// Creator's outer collar is a distinct mesh; sleeve cuffs are a band
-// on the distal edge of the flat sleeve pattern (12mm in fabric space).
-// The removed KM-12 inner printed collar strip must never reappear.
+// KM-22: the original sleeve hems fold back onto themselves. The
+// previous 12mm tail of the UV island recoloured only the INNER folded
+// return (an internal stripe), leaving the outside opening white.
+// Include both the 12mm exposed cuff and the approximately 12mm
+// turned-under return. The actual creator GLB's distal hem boundary
+// begins at V ~0.8743 and the inner fold ends at ~0.88915 on BOTH arms.
+// Apply one continuous colour through the complete folded lip.
 export const KIT_CUFF_BORDER_METRES=.012;
+export const KIT_CUFF_FOLD_RETURN_METRES=.012;
+export function kitCuffOuterTrimThreshold(metric){
+  if(!Number.isFinite(metric?.highV)||!Number.isFinite(metric?.lowV)||
+     !Number.isFinite(metric?.metresPerUvV)||metric.metresPerUvV<=0||
+     metric.highV<=metric.lowV)
+    throw new Error("Invalid original sleeve cuff fabric metric");
+  const outerBand=KIT_CUFF_BORDER_METRES+KIT_CUFF_FOLD_RETURN_METRES;
+  const threshold=metric.highV-outerBand/metric.metresPerUvV;
+  if(threshold<=metric.lowV)
+    throw new Error("Sleeve pattern is too short for the outer cuff band");
+  return threshold;
+}
 export function kitJerseyDetailRegion(name){
   if(/^FA_jersey__Pattern2D_3805002(?:_\d+)?$/i.test(name))return "collar";
   if(/^FA_jersey__(?:38|62)(?:_\d+)?$/i.test(name))return "cuffs";
@@ -359,7 +375,7 @@ export function applyKitDesign(outfit,state,THREE){
     uniforms.kmTrimRegion.value=region==="collar"?1:region==="cuffs"?2:0;
     uniforms.kmTrimColor.value.set(region?details[region]:"#FFFFFF");
     uniforms.kmTrimCuffV.value=region==="cuffs"
-      ?metric.highV-KIT_CUFF_BORDER_METRES/metric.metresPerUvV:0;
+      ?kitCuffOuterTrimThreshold(metric):0;
     uniforms.kmStripeFabricOrigin.value=metric.originU;
     uniforms.kmStripeFabricScale.value=metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"

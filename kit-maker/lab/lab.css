@@ -7,6 +7,7 @@
 .km-stage{width:100%;height:clamp(420px,72dvh,790px);overflow:hidden;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:var(--surface-raised)}
 .km-stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .km-stage canvas:active{cursor:grabbing}
+.km-camera-hint{margin:8px 2px 0;color:var(--muted);font-size:11px;line-height:1.45}
 .km-settings{display:grid;align-content:start;gap:var(--fa-space-4);min-width:0;overflow:visible}
 .km-field,.km-colors{min-width:0}
 .km-settings h2{margin:0 0 12px;font-size:var(--fa-text-panel-heading);line-height:1.3;letter-spacing:-.01em;color:var(--text)}
