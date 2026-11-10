@@ -131,6 +131,42 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.equal(before.nodes.filter(n=>n.active).length,1);
        const capture=width===1440&&theme==='dark'&&lang==='it'&&path==='/clubs'&&mode==='cold';
        const captureNav=async label=>{const clip=await run("(()=>{const r=document.querySelector('.fa-shell-sidebar').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FIRST_PAINT|'+label+'|'+i+'|'+chunks.length+'|'+chunk));};
+       // First-paint pixel geometry, not just HTML presence: each Clubs tile
+       // must have exactly one painted crest, plus three visible metadata bars.
+       if(path==='/clubs'&&mode==='cold'&&lang==='it'){
+        const tiles=await run(`(()=>{
+         const boxes=[...document.querySelectorAll('.nav01-grid>.nav01-skeleton-card')];
+         return boxes.map(card=>{
+          const crest=card.querySelector('.nav01-skeleton-crest');
+          const disc=crest?.querySelectorAll('.nav01-skeleton-crest-disc');
+          const read=selector=>{
+           const element=card.querySelector(selector),r=element?.getBoundingClientRect(),style=element?getComputedStyle(element):null;
+           return {width:r?.width||0,height:r?.height||0,x:r?.x||0,y:r?.y||0,display:style?.display,visibility:style?.visibility,background:style?.backgroundColor};
+          };
+          return {card:read('.nav01-skeleton-card'),discCount:disc?.length||0,
+           pseudoBefore:crest?getComputedStyle(crest,'::before').content:null,
+           pseudoAfter:crest?getComputedStyle(crest,'::after').content:null,
+           circle:read('.nav01-skeleton-crest-disc'),name:read('.nav01-skeleton-name'),
+           flag:read('.nav01-skeleton-flag'),city:read('.nav01-skeleton-city')};
+         });
+        })()`);
+        assert.equal(tiles.length,16,'16 anonymous cards must be present at first paint');
+        for(const [index,tile] of tiles.entries()){
+         assert.equal(tile.discCount,1,'single crest circle for card '+index);
+         assert.equal(tile.pseudoBefore,'none','no additional shield on crest '+index);
+         assert.equal(tile.pseudoAfter,'none','no additional overlay on crest '+index);
+         for(const id of ['circle','name','flag','city']){
+          const b=tile[id];
+          assert.ok(b.width>=10&&b.height>=10&&b.display!=='none'&&b.visibility==='visible',
+           'Visible '+id+' first-paint skeleton at card '+index+': '+JSON.stringify(b));
+          assert.ok(b.background!=='transparent'&&b.background!=='rgba(0, 0, 0, 0)',
+           'Painted '+id+' first-paint skeleton at card '+index+': '+JSON.stringify(b));
+         }
+         assert.ok(tile.flag.x+tile.flag.width<=tile.city.x,'Flag precedes city at card '+index);
+         assert.ok(Math.abs(tile.flag.y+tile.flag.height/2-tile.city.y-tile.city.height/2)<6,
+          'Flag and city share a line at card '+index);
+        }
+       }
        if(capture)await captureNav('before');
        holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
        await wait("document.readyState==='complete'");await delay(50);

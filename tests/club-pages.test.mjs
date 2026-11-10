@@ -318,6 +318,7 @@ test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons befo
  assert.equal(manifest.clubs.length,320);
  assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16,'one explicit crest circle per anonymous card');
  assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-location"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-flag"/g)||[]).length,16);
@@ -328,6 +329,18 @@ test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons befo
  assert.ok(html.includes('data-nav01-search-first-paint'),'static search input remains');
  assert.ok(html.includes('class="nav01-flag-sprite"'),'static flag definitions remain available');
  for(const c of manifest.clubs)assert.ok(!html.includes(c.fullName),'no pre-rendered club data: '+c.countryId+'-'+c.clubId);
+});
+test('PAGE-LOAD-04 B02: directory only paints one crest skeleton and visible name/flag/city bars',()=>{
+ const css=read('assets/clubs-directory.css'),html=read('clubs/index.html'),source=read('tools/generate-app-pages.mjs');
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::before,/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::after\{content:none;display:none\}/);
+ assert.match(css,/\.nav01-skeleton-crest-disc\{display:block;[^}]*border-radius:50%;background:/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-bar\{display:block;[^}]*background:/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-copy\{display:flex;/);
+ assert.ok(source.includes('nav01-skeleton-crest-disc'),'generator owns the checked-in HTML shape');
+ assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16);
+ for(const cls of ['nav01-skeleton-name','nav01-skeleton-flag','nav01-skeleton-city'])
+  assert.equal((html.match(new RegExp('class="nav01-skeleton-bar '+cls+'"','g'))||[]).length,16,cls);
 });
 test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loading primitive',()=>{
  const shell=read('clubs/_shared/index.html'),styles=read('assets/app.css'),club=read('assets/club-model.js');
