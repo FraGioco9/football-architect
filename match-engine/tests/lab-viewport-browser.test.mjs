@@ -126,6 +126,59 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
           panelHeight:Math.round(sample.advanced.height)})+'\n');
       }
     }
+    // ME-PLAYER-UI-01: 4-line current observer; no historical diagnostic clutter.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    const playersQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id),toggle=el('players-toggle'),controls=el('player-controls'),select=el('player-inspect-choice'),pitch=el('pitch');"+
+      "const initial={pressed:toggle.getAttribute('aria-pressed'),hidden:controls.hidden,rows:document.querySelectorAll('.me-player-readout>div').length,first:el('player-inspection').textContent,noControls:el('player-select')===null&&document.querySelectorAll('[data-player-direction]').length===0};"+
+      "toggle.click();const context={ball:el('player-ball-sector').textContent,press:el('player-pressing').textContent};"+
+      "select.value='home-10';select.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "const before=el('player-inspection').textContent,duty=el('player-inspection-duty').textContent;"+
+      "for(let i=0;i<120;i++)el('step').click();"+
+      "const after=el('player-inspection').textContent,time=el('tick').textContent,pressAfter=el('player-pressing').textContent;"+
+      "select.value='away-1';select.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "const away=el('player-inspection').textContent;"+
+      "select.value='home-10';select.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "const homeAgain=el('player-inspection').textContent;"+
+      "const noTimeOnFocus=el('tick').textContent===time;"+
+      "const rect=pitch.getBoundingClientRect(),scale=Math.min((pitch.width-44)/105,(pitch.height-44)/68);"+
+      "const coords=away.match(/\\((-?[0-9.]+), (-?[0-9.]+)\\) m/);"+
+      "const x=rect.left+(pitch.width/2+Number(coords[1])*scale)*rect.width/pitch.width;"+
+      "const y=rect.top+(pitch.height/2+Number(coords[2])*scale)*rect.height/pitch.height;"+
+      "pitch.dispatchEvent(new MouseEvent('click',{clientX:x,clientY:y,bubbles:true}));"+
+      "const tapped=select.value,clicked=el('player-inspection').textContent;"+
+      "pitch.dispatchEvent(new MouseEvent('click',{clientX:rect.left+1,clientY:rect.top+1,bubbles:true}));"+
+      "const emptyStable=tapped===select.value;"+
+      "document.dispatchEvent(new KeyboardEvent('keydown',{key:'w',bubbles:true}));"+
+      "const noKeyboardSteering=el('tick').textContent===time&&el('player-inspection').textContent===clicked;"+
+      "toggle.click();const hidden=controls.hidden;toggle.click();"+
+      "const toggleNoSteering=el('tick').textContent===time&&el('player-inspection').textContent===clicked;"+
+      "const pitchNotFocusable=!pitch.hasAttribute('tabindex');"+
+      "el('reset').click();"+
+      "const reset={time:el('tick').textContent,player:el('player-inspection').textContent,selected:select.value};"+
+      "toggle.click();return {initial,context,before,after,duty,time,pressAfter,away,homeAgain,noTimeOnFocus,tapped,clicked,emptyStable,noKeyboardSteering,hidden,toggleNoSteering,pitchNotFocusable,reset,closed:controls.hidden,options:select.options.length};"+
+    "})()");
+    assert.deepEqual(playersQa.initial,{
+      pressed:'false',hidden:true,rows:4,first:'Select a player',noControls:true
+    });
+    assert.deepEqual(playersQa.context,{
+      ball:'Middle third · Centre',press:'Home #10 · Away #10'
+    });
+    assert.match(playersQa.before,/^Home #10 · forward · \(-5\.00, 0\.00\) m · 0\.00 m\/s$/);
+    assert.match(playersQa.after,/^Home #10 · forward · /);
+    assert.notEqual(playersQa.after,playersQa.before,'actual autonomous 60Hz movement required');
+    assert.equal(playersQa.time,'2.00 s');
+    assert.match(playersQa.duty,/Pressing/);
+    assert.match(playersQa.pressAfter,/Home #\d+ · Away #\d+/);
+    assert.match(playersQa.away,/^Away #1 · goalkeeper · /);
+    assert.equal(playersQa.homeAgain,playersQa.after);
+    assert.equal(playersQa.tapped,'away-1');
+    assert.match(playersQa.clicked,/^Away #1 · goalkeeper · /);
+    for(const key of ['noTimeOnFocus','emptyStable','noKeyboardSteering','hidden','toggleNoSteering','pitchNotFocusable','closed'])
+      assert.equal(playersQa[key],true,key+' must remain observation-only');
+    assert.equal(playersQa.options,23);
+    assert.deepEqual(playersQa.reset,{time:'0.00 s',player:'Select a player',selected:''});
+    process.stdout.write('ME_PLAYER_UI_01_COMPACT_BROWSER '+JSON.stringify(playersQa)+'\n');
     // Exercise actual DOM inputs and custom site-chevron buttons in real Chrome.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     const numeric=await evaluate("(()=>{"+

@@ -21,8 +21,9 @@ try{
    await password.fill('synthetic-password-2026');await toggle.click();
    assert.equal(await password.getAttribute('type'),'text');assert.equal(await toggle.getAttribute('aria-pressed'),'true');
    assert.equal(await password.inputValue(),'synthetic-password-2026');
-   const nextLanguage=language==='en'?'it':'en';await page.locator('#account-language-trigger').click();
-   await page.locator('#account-language-menu [data-menu-value="'+nextLanguage+'"]').click();
+   const nextLanguage=language==='en'?'it':'en';
+   assert.equal(await page.locator('#account-language-trigger').count(),0,'Auth no longer shows a language control');
+   await page.evaluate(next=>window.faAccountUI.choose(next),nextLanguage);
    assert.equal(await password.getAttribute('type'),'text');assert.equal(await toggle.getAttribute('aria-label'),nextLanguage==='en'?'Hide password':'Nascondi password');
    assert.equal(await password.inputValue(),'synthetic-password-2026');
    assert.equal(await page.locator('[data-password-help]').getAttribute('data-met'),'true');

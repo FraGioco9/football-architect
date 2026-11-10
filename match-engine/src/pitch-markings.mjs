@@ -17,6 +17,29 @@ export function pitchProjection(width, height, padding = 22) {
   });
 }
 
+// ME-PLAYER-28: read-only hit testing against the SAME pitch projection
+// used to draw real players. Returns a body ID, never a motion instruction.
+export function pickObservedPlayerAtCanvasPixel(players,pixelX,pixelY,
+  width,height,radiusPx=14){
+ const projection=pitchProjection(width,height);
+ if(!Array.isArray(players)||players.length!==22||
+    ![pixelX,pixelY,radiusPx].every(Number.isFinite)||
+    radiusPx<=0||radiusPx>100)
+  throw new TypeError('22 actual bodies and finite canvas pointer/radius required');
+ if(pixelX<0||pixelY<0||pixelX>width||pixelY>height)return null;
+ let closestId=null,bestDist2=radiusPx*radiusPx;
+ for(const p of players){
+  if(!p||typeof p.id!=='string'||!['home','away'].includes(p.team)||
+     !Number.isFinite(p.x)||!Number.isFinite(p.y))
+   throw new TypeError('Finite real player XY required');
+  const dx=projection.X(p.x)-pixelX,dy=projection.Y(p.y)-pixelY;
+  const d=dx*dx+dy*dy;
+  if(d<=bestDist2){
+   bestDist2=d;closestId=p.id;
+  }
+ }
+ return closestId;
+}
 export function drawPitchMarkings(ctx, width, height) {
   const { X, Y, R } = pitchProjection(width, height);
   const centerX = X(0), centerY = Y(0);

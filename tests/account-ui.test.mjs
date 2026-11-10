@@ -47,7 +47,7 @@ test('authentication pages have no back button or embedded language selector',as
  const shared=await readFile(new URL('../assets/account-ui.js',import.meta.url),'utf8');
  assert.doesNotMatch(shared,/account-go-back|configureBack|account-language-trigger/);
  const theme=await readFile(new URL('../assets/theme.js',import.meta.url),'utf8');
- assert.match(theme,/peek\\(\\)/);
+ assert.match(theme,/peek\(\)/);
 });
 
 test('registration and recovery send the selected interface locale, not the browser default, to the mock delivery API',async()=>{

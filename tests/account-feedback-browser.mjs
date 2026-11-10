@@ -12,15 +12,15 @@ try{
   try{
    await context.addInitScript(language=>{
     localStorage.setItem('football-architect:language',language);window.accountFrames=[];
-    const sample=()=>{const el=document.getElementById('account-language-trigger');if(el&&getComputedStyle(document.body).visibility==='visible'){const r=el.getBoundingClientRect();window.accountFrames.push([r.x,r.y,r.width,r.height]);}requestAnimationFrame(sample);};requestAnimationFrame(sample);
+    const sample=()=>{const el=document.querySelector('.app-authentication-card');if(el&&getComputedStyle(document.body).visibility==='visible'){const r=el.getBoundingClientRect();window.accountFrames.push([r.x,r.y,r.width,r.height]);}requestAnimationFrame(sample);};requestAnimationFrame(sample);
    },lang);
    const page=await context.newPage();let writes=0;
    await page.route('**/api/player/**',r=>{if(r.request().method()==='POST')writes++;return r.fulfill({status:401,body:'{}',contentType:'application/json'});});
    await page.goto('http://app.localhost:2000/account/'+route+'/');
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true'&&window.accountFrames.length>1);
-   assert.equal(await page.locator('#account-language').isVisible(),false);
+   assert.equal(await page.locator('#account-language,#account-language-trigger').count(),0);
    const frames=await page.evaluate(()=>window.accountFrames);
-   assert.ok(frames.every(row=>row.every((value,i)=>Math.abs(value-frames[0][i])<1)),'Language menu does not change geometry after first visible paint');
+   assert.ok(frames.every(row=>row.every((value,i)=>Math.abs(value-frames[0][i])<1)),'Authentication panel does not change geometry after first visible paint');
    if(route==='login')assert.equal(await page.locator('#message').isVisible(),false,'An empty login status reserves no panel space');
    await page.locator('#submit').click();
    const message=page.locator('.account-field-error').first();await message.waitFor();
