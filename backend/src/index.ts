@@ -7,7 +7,7 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubOverview} from './public-sporting-read.ts';
+import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubOverview,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -52,6 +52,18 @@ export default {
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search||!Number.isSafeInteger(Number(sporting[2])))return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicSportingSeason(requireDatabase(env.DB),sporting[1],Number(sporting[2])))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
+        return json(503,{error:{code:'sporting_data_unavailable'}});
+      }
+    }
+    // All verified seasons for a single club in one anonymous read-only response.
+    // Keep source authority on the backend; no client fan-out to competitions.
+    const clubHistory=url.pathname.match(/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/history$/);
+    if(clubHistory){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicClubHistory(requireDatabase(env.DB),clubHistory[1]))}
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'sporting_data_unavailable'}});

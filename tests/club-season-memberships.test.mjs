@@ -110,7 +110,9 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
  const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs'),css=read('assets/club-page.css');
  const first=html.indexOf('<div class="club-overview-layout club-first-paint-overview"');
  assert.ok(first>0);
- const part=html.slice(first,html.indexOf('<section class="app-panel club-first-paint-panel club-first-paint-other"',first));
+ const end=html.indexOf('<section class="club-history club-first-paint-panel club-first-paint-other"',first);
+ assert.ok(end>first,'History first paint follows the overview identity and competitions');
+ const part=html.slice(first,end);
  assert.equal((part.match(/class="app-panel /g)||[]).length,3);
  assert.ok(part.includes('class="club-fp-bar"'));
  const facts=part.slice(part.indexOf('<dl class="club-facts">'),part.indexOf('</dl>',part.indexOf('<dl class="club-facts">'))+5);

@@ -13,7 +13,7 @@ import { once } from "node:events";
 import { runInNewContext } from "node:vm";
 const runWithModel=(source,context={})=>{context.debugEnabled??=()=>true;context.sharedPath??=false;return runInNewContext(source,Object.assign(context,{competitionModel,DEBUG_MAX_MATCHDAY:33,DEBUG_CONTROL_LIMITS}))};
 import { fileURLToPath } from "node:url";
-import { createPreviewStandings } from "../tools/dev-standings-preview-data.mjs";
+import { createPreviewStandings, createPreviewClubHistory } from "../tools/dev-standings-preview-data.mjs";
 import { createPreviewServer } from "../tools/dev-standings-preview.mjs";
 import { isAllowlistedPublicPath, planPublicFiles, stagePublicArtifact,
   assertPublicArtifact } from "../tools/publication-guard.mjs";
@@ -809,4 +809,44 @@ test('club entry without a season uses the Debug season before and after router 
  context.window.location.href+='?season=1';assert.equal(select(),1,'Explicit season is preserved');
  context.routeSeasonOverride=2;assert.equal(select(),2,'A later routed season wins over the initial URL');
  context.routeSeasonOverride=null;context.window.location.href='http://app.localhost:2000/competitions/it-1/standings';delete context.window.faCompetitionRoute;context.debugSeason=0;assert.equal(select(),1);
+});
+
+
+test("CLUB-HISTORY-09: protected DEV History uses real preview match totals for completed/current seasons",()=>{
+ const division=manifest.divisions.find(d=>d.id==='IT-1');
+ const id=division.clubs[0].clubId;
+ const blank=createPreviewClubHistory(division,id,{season:0,matchdays:0});
+ assert.equal(blank.source,'dev');
+ assert.equal(blank.coverage,'empty');
+ assert.deepEqual(blank.seasons,[]);
+ assert.deepEqual(blank.provenance,{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false});
+ const before=createPreviewClubHistory(division,id,{season:1,matchdays:0});
+ assert.equal(before.coverage,'empty');
+ assert.equal(before.seasons.length,1);
+ assert.equal(before.seasons[0].memberships[0].stats.played,0);
+ const live=createPreviewClubHistory(division,id,{season:2,matchdays:9});
+ assert.equal(live.currentSeason,2);
+ assert.deepEqual(live.seasons.map(row=>row.season),[1,2]);
+ assert.equal(live.seasons[0].memberships[0].stats.played,30);
+ assert.equal(live.seasons[1].memberships[0].stats.played,9);
+ assert.equal(live.seasons[1].ongoing,true);
+ for(const entry of live.seasons){
+  const m=entry.memberships[0],s=m.stats;
+  const league=createPreviewStandings(division,entry.season===2?9:30,entry.season);
+  const position=league.rows.findIndex(row=>row.club.clubId===id)+1;
+  assert.equal(m.position,position);
+  assert.equal(m.points,league.rows[position-1].pts);
+  assert.equal(s.won+s.drawn+s.lost,s.played);
+  assert.equal(s.goalsFor-s.goalsAgainst,s.goalDifference);
+ }
+ const postseason=createPreviewClubHistory(division,id,{season:2,matchdays:33});
+ assert.equal(postseason.seasons[1].ongoing,false);
+ assert.ok(postseason.seasons[1].memberships[0].stats.played>=30);
+ assert.equal(postseason.seasons[0].memberships[0].stats.played,live.seasons[0].memberships[0].stats.played);
+ assert.throws(()=>createPreviewClubHistory(division,id,{season:5,matchdays:0}),/Invalid DEV/);
+ const devClient=read("tools/dev-competition-stats-client.mjs").toString();
+ const publicClient=read("assets/club-page.js").toString();
+ assert.match(devClient,/fa:club-history-preview/,'the protected DEV client publishes this History view');
+ assert.match(publicClient,/fa:club-history-preview/,'the public Club shell receives only validated protected preview messages');
+ assert.doesNotMatch(publicClient,/__fa_dev__/,'public Club controller cannot import protected Debug files');
 });

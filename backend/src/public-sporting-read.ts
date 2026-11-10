@@ -149,10 +149,20 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
      .filter(f=>f.day>viewedWorld.day&&!storedResults.has(f.id)&&(f.homeClubId===clubKey||f.awayClubId===clubKey))
      .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'))[0]??null;
     const phase=future?competitionPlans.flatMap(p=>p.fixtures.map(x=>({id:x.fixture.id,phaseId:p.phaseId}))).find(x=>x.id===future.id)?.phaseId??'league':null;
+    // Reuse the same verified match receipts already loaded for this overview.
+    // Club History needs these match totals; returning them here avoids an
+    // additional full /api/competitions/... read for each membership.
+    const matchFixtures=[...leagueFixtures,...competitionPlans.flatMap(p=>p.fixtures.map(x=>x.fixture))];
+    const verifiedTeam=teamStatistics(binding.clubIds,matchFixtures,storedResults).teams.find(t=>t.clubId===clubKey);
+    if(!verifiedTeam||verifiedTeam.played<row.played)invalid();
+    const stats={played:verifiedTeam.played,won:verifiedTeam.won,drawn:verifiedTeam.drawn,lost:verifiedTeam.lost,
+     goalsFor:verifiedTeam.goalsFor,goalsAgainst:verifiedTeam.goalsAgainst,
+     goalDifference:verifiedTeam.goalDifference,cleanSheets:verifiedTeam.cleanSheets};
     return {competitionId:id,category:isInternational?'international' as const:'domestic' as const,season:selectedSeason,
      position:row.played?row.rank:null,points:row.points,
      cupStatus:isInternational?deriveInternationalClubStatus(clubKey,row.rank,leagueFixtures.every(f=>storedResults.has(f.id)),competitionPlans,storedResults):null,
-     nextMatch:future?{day:future.day,round:future.round,phaseId:phase,homeId:future.homeClubId,awayId:future.awayClubId}:null};
+     nextMatch:future?{day:future.day,round:future.round,phaseId:phase,homeId:future.homeClubId,awayId:future.awayClubId}:null,
+     stats};
    }));
    const data={season:selectedSeason,memberships};
    await unchanged(db,world);
@@ -202,4 +212,35 @@ export function readPublicCalendarDay(db:Database,selectedSeason:number,day:numb
 export function readPublicClubOverview(db:Database,clubKey:string,selectedSeason:number){
  if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
  return readPublicProjection(db,'club:'+clubKey,selectedSeason);
+}
+
+
+/** One read-only HTTP projection for a club's complete supported history.
+ * Reuses the same authoritative, per-season receipts and club projections as
+ * the public season endpoints; no independent score source or DB writes.
+ */
+export async function readPublicClubHistory(db:Database,clubKey:string){
+ if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
+ const world=await readWorld(db);
+ if(![0,1,2].includes(world.seasonNumber)){
+  await unchanged(db,world);
+  return {schemaVersion:1 as const,providerId:'authoritative-world' as const,clubKey,world,
+   status:'unavailable' as const,reason:'unsupported-world-season',
+   provenance:{kind:'none' as const,resultAuthority:null,sourceRef:null},data:null};
+ }
+ const overviews=await Promise.all(
+  Array.from({length:world.seasonNumber},(_,i)=>i+1)
+   .map(season=>readPublicClubOverview(db,clubKey,season))
+ );
+ // Do not combine season snapshots across a reset, new generation, or advance.
+ if(overviews.some(v=>v.world.generation!==world.generation||
+   v.world.revision!==world.revision||v.world.seasonNumber!==world.seasonNumber||
+   v.world.day!==world.day||v.world.phase!==world.phase))
+  throw new ApiError(409,'stale_world');
+ await unchanged(db,world);
+ return {schemaVersion:1 as const,providerId:'authoritative-world' as const,clubKey,world,
+  status:'available' as const,reason:null,
+  provenance:{kind:'authoritative' as const,resultAuthority:'temporary-score-v1' as const,
+   sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
+  data:{overviews}};
 }
