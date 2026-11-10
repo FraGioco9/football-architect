@@ -1320,6 +1320,7 @@
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
+    if (path === "/account" || path === "/account/index.html") return "profile";
     if (path === "/dashboard") return "dashboard";
     return "dashboard";
   }
@@ -1352,15 +1353,15 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {
     rewriteAppLinks();
     const current = activeView();
-    dashboard.hidden = current !== "dashboard";
-    calendar.hidden = current !== "calendar";
-    settings.hidden = current !== "settings";
+    if (dashboard) dashboard.hidden = current !== "dashboard";
+    if (calendar) calendar.hidden = current !== "calendar";
+    if (settings) settings.hidden = current !== "settings";
     if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;

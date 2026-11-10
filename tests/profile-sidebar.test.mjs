@@ -10,3 +10,11 @@ test('shared sidebar renders Profile directly below Settings',()=>{
  assert.equal((html.match(/id="app-nav-profile"/g)||[]).length,1);
  assert.match(html,/id="app-nav-profile" href="\/account"/);
 });
+
+test('account uses the shared app shell and keeps advanced security collapsed',()=>{
+ const html=readFileSync(new URL('../account/index.html',import.meta.url),'utf8');
+ assert.match(html,/<header class="fa-shell-topbar">/);
+ assert.match(html,/<nav class="fa-shell-nav" data-nav01-static/);
+ assert.match(html,/<h1[^>]*>Profile<\/h1>/);
+ assert.match(html,/<form method="post" id="change-form">[\s\S]*?<button[^>]*id="logout-button"[\s\S]*?<details id="security">[\s\S]*?id="delete-form"/);
+});

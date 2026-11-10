@@ -13,9 +13,12 @@ try{
   try{
    await context.addInitScript(lang=>localStorage.setItem('football-architect:language',lang),language);
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-   let sessions=0;
+   let sessions=0, sessionLists=0;
    await page.route('**/api/player/session',r=>{sessions++;return r.fulfill({status:authenticated?200:401,contentType:'application/json',body:authenticated?JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[]}):'{}'});});
-   await page.route('**/api/player/sessions',r=>r.fulfill({status:200,contentType:'application/json',body:'{"sessions":[]}'}));
+   await page.route('**/api/player/sessions',r=>{
+    sessionLists++;
+    return r.fulfill({status:200,contentType:'application/json',body:'{"sessions":[]}'});
+   });
    await page.goto('http://app.localhost:2000/dashboard');
    const profile=page.locator('#app-nav-profile');await profile.waitFor();
    assert.equal(await profile.getAttribute('aria-label'),labels[language]);
@@ -26,6 +29,18 @@ try{
    await profile.click();
    if(authenticated){
     await page.waitForURL(url=>url.pathname==='/account');await page.locator('#protected').waitFor();
+    assert.equal(await page.locator('.fa-shell-topbar').isVisible(),true);
+    assert.equal(await page.locator('.fa-shell-nav [aria-current="page"]').getAttribute('id'),'app-nav-profile');
+    assert.equal(await page.locator('h1').textContent(),labels[language]);
+    assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
+    assert.equal(await page.locator('#change-form').isVisible(),true);
+    assert.equal(await page.locator('#logout-button').isVisible(),true);
+    assert.equal(await page.locator('#delete-form').isVisible(),false);
+    assert.equal(sessionLists,0,'Session list is deferred until security is opened');
+    await page.locator('#security summary').click();
+    await page.locator('#sessions-summary').filter({hasText:': 0'}).waitFor();
+    assert.equal(sessionLists,1);
+    assert.equal(await page.locator('#delete-form').isVisible(),true);
    }else{
     await page.waitForURL(url=>url.pathname==='/account/login');
     assert.equal(new URL(page.url()).searchParams.get('next'),null);

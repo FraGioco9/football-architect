@@ -84,6 +84,7 @@ try{
   await page.route('**/api/player/sessions',r=>r.fulfill({status:200,body:'{"sessions":[]}'}));
   await page.goto('http://app.localhost:2000/account/');await page.locator('#protected').waitFor();
   for(const [formId,buttonId,path] of [['change-form','change-button','change-password'],['delete-form','delete-button','delete']]){
+   if(path==='delete')await page.locator('#security summary').click();
    const handshake=requestHandshake('account/'+path);
    let pending,calls=0;await page.route('**/api/player/account/'+path,r=>{calls++;pending=r;handshake.arrive(r);});
    const form=page.locator('#'+formId);

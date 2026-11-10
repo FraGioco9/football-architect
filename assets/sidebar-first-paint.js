@@ -6,7 +6,7 @@ const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],d
 const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
 const collapseLabels={en:'Collapse world navigation',de:'Weltnavigation zuklappen',es:'Contraer navegación del mundo',fr:'Réduire la navigation du monde',it:'Comprimi navigazione del mondo'};
 const button=nav.querySelector('.nav01-expand'),submenu=nav.querySelector('#nav01-children');
-try{const saved=localStorage.getItem('football-architect:language');if(Object.hasOwn(lang,saved))document.documentElement.lang=saved;}catch{}
+try{const saved=window.faAccountUI?.language||localStorage.getItem('football-architect:language');if(Object.hasOwn(lang,saved))document.documentElement.lang=saved;}catch{}
 function paint(){
  const locale=Object.hasOwn(lang,document.documentElement.lang)?document.documentElement.lang:'en';
  nav.querySelectorAll('[data-nav01]').forEach(el=>el.textContent=lang[locale][+el.dataset.nav01]);
@@ -25,7 +25,7 @@ function paint(){
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');
-const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':'dashboard'));
+const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':/^\/account(?:\/index\.html)?$/.test(path)?'profile':'dashboard'));
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
 function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
