@@ -347,7 +347,7 @@ test('PAGE-LOAD-04 B02: Club History renders only verified seasons without guess
  const html=model.render(manifest,selected,'en','',null,2,verified);
  assert.match(html,/data-club-history-season="1"/);
  assert.match(html,/data-history-competition="IT-1"/);
- assert.match(html,/standings\\?season=1/);
+ assert.match(html,/standings\?season=1/);
  assert.match(html,/56/);
  assert.doesNotMatch(html,/data-club-history-season="2"/);
  assert.match(model.render(manifest,selected,'it','',null,2,verified),/Stagione 1/);

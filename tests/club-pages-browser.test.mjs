@@ -404,10 +404,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("location.pathname==='/clubs/it/1/history'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
-    assert.equal(await run("document.querySelectorAll('.club-empty').length"),1);
+    assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('.club-empty')"),true);
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
