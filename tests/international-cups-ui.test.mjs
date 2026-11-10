@@ -96,24 +96,24 @@ test('INT-24: generated cup identity enters the same loader without a domestic i
  }
 });
 
-test('INT-24: Knockouts uses a localized cup empty state instead of domestic instructions',async()=>{
- const {runInNewContext}=await import('node:vm');
- const app=read('assets/app.js');
- const dictionaries=app.slice(app.indexOf('  const copies ='),app.indexOf('  const worldCountryNames'));
- // Keep the actual shell progress dependency inside the isolated language-refresh VM.
- const progress=app.slice(app.indexOf('  function renderWorldProgress()'),app.indexOf('  function activeView()'));
- const renderer=app.slice(app.indexOf('  function renderLanguage()'),app.indexOf('  function renderView()'));
+test('INT-24: Knockouts renders all rounds without controls while results are pending',()=>{
  for(const slug of names){
   const html=read('competitions/'+slug+'/index.html');
   const panel=html.split('id="competition-panel-postseason"')[1].split('id="competition-panel-fixtures"')[0];
-  assert.match(panel,/data-app-i18n="cupKnockoutsEmpty"/);
+  assert.doesNotMatch(panel,/data-postseason-(filter|help|outcome)|postseasonTie/);
+  assert.deepEqual([...panel.matchAll(/data-postseason-round="([^"]+)"/g)].map(match=>match[1]),['playoffs','quarterfinals','semifinals','final']);
+  assert.equal((panel.match(/data-postseason-config-tie=/g)||[]).length,11);
+  const [,playoffs,quarterfinals]=panel.split(/data-postseason-round="[^"]+"/);
+  const firstRound=[...playoffs.matchAll(/data-bracket-tie="([^"]+)"/g)].map(match=>match[1]);
+  const quarterfinalFeeders=[...quarterfinals.matchAll(/data-bracket-feeders="([^"]+)"/g)].map(match=>match[1]);
+  assert.deepEqual(firstRound,quarterfinalFeeders,'play-offs line up with their quarter-finals');
+  assert.equal((panel.match(/<path data-bracket-link=/g)||[]).length,10,'connections ship in the first HTML response');
+  assert.match(panel,/data-postseason-score="q1:0:first"/);
+  assert.match(panel,/data-postseason-score="q1:0:second"/);
+  assert.doesNotMatch(panel,/data-postseason-score="q1:0:aggregate"/);
   assert.doesNotMatch(panel,/data-app-i18n="postseasonNeutral"|Select a division/);
  }
- for(const [lang,expected] of Object.entries({en:'No knockout results available yet.',de:'Noch keine Ergebnisse der K.-o.-Phase verfügbar.',es:'Todavía no hay resultados de las eliminatorias.',fr:'Aucun résultat des phases à élimination directe disponible.',it:'Nessun risultato della fase a eliminazione diretta ancora disponibile.'})){
-  const message={dataset:{appI18n:'cupKnockoutsEmpty'},textContent:'old domestic instruction'};
-  runInNewContext(dictionaries+progress+renderer+'renderLanguage()',{window:{},language:()=>lang,words:()=>[message],accessible:()=>[],worldCountryNames:{},activeView:()=> 'divisions',document:{getElementById:()=>null,querySelectorAll:()=>[]}});
-  assert.equal(message.textContent,expected);
- }
+
 });
 
 test("QA-08: international mobile blank-state stays visible while unpublished",()=>{

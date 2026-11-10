@@ -14,7 +14,7 @@ assert.notEqual(baseline,current,"CSS parity must compare a changed stylesheet")
 const origin="http://app.localhost:2000";
 const routes=["/calendar","/competitions/it-1/history","/competitions/it-1/standings","/competitions/int-1/postseason"];
 const widths=[320,390,768,1440];
-const selectors=["#world-calendar #calendar-controls","#calendar-previous","#calendar-next","#calendar-week-trigger","#calendar-current-week",".app-competition-header",".app-history-dev-archive-head",".app-history-dev-archive-club",".app-postseason-grid",".app-knockout-result",".app-world-standing-table"];
+const selectors=["#world-calendar #calendar-controls","#calendar-previous","#calendar-next","#calendar-week-trigger","#calendar-current-week",".app-competition-header",".app-history-dev-archive-head",".app-history-dev-archive-club",".app-world-standing-table"];
 const cssProperties=["display","visibility","position","width","height","padding","margin","font-size","font-weight","line-height","color","background-color","border-color","border-width","border-radius","opacity","transform","transition","outline","box-shadow","gap","overflow","white-space","text-align"];
 const browser=await chromium.launch({headless:true});
 let compared=0;

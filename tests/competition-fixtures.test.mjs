@@ -36,6 +36,13 @@ test('CONFIG-PHASES: fixture choices derive domestic and international phase len
  }
 });
 
+test('POSTSEASON: domestic home-leg labels follow seed rank regardless of reference order',()=>{
+ const definition=structuredClone(definitions.find(d=>d.id==='IT-1'));
+ definition.rules.phases.find(phase=>phase.type==='knockout').ties[0].participants.reverse();
+ const html=rulesView.renderPostseason(definition);
+ assert.match(html,/data-postseason-position="13"[\s\S]*?postseasonHomeReturn[\s\S]*?data-postseason-position="14"[\s\S]*?postseasonHomeFirst/);
+});
+
 test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an honest empty state',()=>{
  for(const d of divisions){
   const html=read('competitions/'+d.id.toLowerCase()+'/index.html');

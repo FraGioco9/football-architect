@@ -75,7 +75,7 @@
       const historyBusy=Boolean(local.history)||historyPending;
       if(state.faStandingsLoading!==String(loading))state.faStandingsLoading=String(loading);
       if(state.faHistoryLoading!==String(historyBusy))state.faHistoryLoading=String(historyBusy);
-      for(const view of ['standings','fixtures',...views]){
+      for(const view of ['standings','fixtures','postseason',...views]){
         const busy=view==='history'?historyBusy:loading||Boolean(local[view]);
         root.document.getElementById('competition-panel-'+view)?.setAttribute('aria-busy',String(busy));
         if(views.includes(view))syncSkeleton(view,busy);

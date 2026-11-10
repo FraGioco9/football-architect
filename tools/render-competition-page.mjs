@@ -129,7 +129,7 @@ const competitionTabs = function competitionTabs(d,standings,neutral) {
  const panelMarkup=views.map(({id,key,label},i)=>{
   const attrs=`id="competition-panel-${id}" class="app-competition-panel" role="tabpanel" aria-labelledby="competition-tab-${id}" tabindex="0"${i===0?"":" hidden"}`;
   if(id==="standings")return `          <div ${attrs}>${standings}\n          </div>`;
-  if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n          </section>`;
+  if(id==="postseason")return `          <section ${attrs}>${postseasonContent(d,neutral)}\n            <script data-fa-postseason-first-paint-ready>if(document.documentElement.dataset.competitionView==="postseason"){document.getElementById("competition-panel-postseason").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>\n          </section>`;
   if(id==="history")return `          <section ${attrs}>${renderViewSkeleton(d,id)}\n            <script data-fa-history-first-paint-ready>if(document.documentElement.dataset.competitionView==="history"){document.getElementById("competition-panel-history").hidden=false;document.documentElement.removeAttribute("data-fa-competition-prepaint");}</script>${renderViewTemplates(d,id)}${historyEmptyContent().trimStart()}${viewSkeletonScript(id)}\n          </section>`;
   if(id==="fixtures")return `          <section ${attrs}>${fixturesContent(d)}\n          </section>`;
   if(id==="rules")return (neutral&&d.category!=="international"?"":"\n")+renderRules(d,neutral,attrs,key,label);
