@@ -199,14 +199,15 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('applySolidKitColors'));
   assert.ok(designJS.includes('applyKitDesign'));
   assert.ok(designJS.includes('KIT_STRIPE_WIDTH_RANGE'));
-  // KM-19 replaces KM-18 polar unwraps: straight, parallel bands
-  // with a small contour-aware displacement and no focal-point seams.
-  assert.ok(designJS.includes('kmTorsoStripeCoordinate'));
-  assert.ok(designJS.includes('kmSleeveStripeCoordinate'));
-  assert.ok(designJS.includes('kmParallelStripeCoordinate'));
-  assert.ok(designJS.includes('vKmClothPosition = position'));
-  assert.ok(designJS.includes('return p.x+drape'));
-  assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|vKmKitX/);
+  // KM-20 replaces approximate 3D-X warps with the artist's original
+  // 2D cloth pattern UVs, which preserve sewn stripe widths at the sides.
+  assert.ok(designJS.includes('measureKitStripeFabricMetric'));
+  assert.ok(designJS.includes('vKmPatternU = uv.x'));
+  assert.ok(designJS.includes('distanceOnFabric='));
+  assert.ok(designJS.includes('kmStripeFabricOrigin'));
+  assert.ok(designJS.includes('kmStripeFabricScale'));
+  assert.ok(designJS.includes('cachedKitStripeMetric'));
+  assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
   assert.doesNotMatch(designJS,/\bPOST\b|\bPUT\b|\bDELETE\b/);
   assert.ok(clubsJS.includes('item.className="language-option"'));

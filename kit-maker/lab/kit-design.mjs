@@ -151,7 +151,8 @@ function collectGarmentMaterials(outfit){
       typeof mat?.name!=="string"||!mat.name.startsWith(prefix)||
       typeof mat.color?.set!=="function"))
       throw new Error("Kit colour target is not a private neutral material: "+mesh.name);
-    for(const material of materials)result.push({material,part,meshName:mesh.name});
+    for(const material of materials)
+      result.push({material,part,meshName:mesh.name,geometry:mesh.geometry});
     present.add(part);
   });
   if(KIT_PARTS.some(part=>!present.has(part)))
@@ -159,17 +160,72 @@ function collectGarmentMaterials(outfit){
   return result;
 }
 
-// KM-19: near-vertical, PARALLEL bands with a bounded cloth-contour bend.
-// The prior angular atan unwrap made all bands appear to radiate from a
-// focal point, particularly near sleeves/collar. Do NOT use polar/angle
-// coordinates or a width normalization that approaches zero.
-// The bounded local displacement gently follows surface depth/shoulders,
-// while adjacent stripes retain consistent spacing across the shirt.
-export const KIT_STRIPE_SHADER_KEY="km19-parallel-curved-stripes-v1";
-export function stripeSectionForMesh(meshName){
-  if(/^FA_jersey__(?:38|39)$/i.test(meshName))return 1;
-  if(/^FA_jersey__(?:62|63)$/i.test(meshName))return -1;
+// KM-20: original flat sewing-pattern UVs provide equal sewn band widths
+// as the shirt curves around shoulders and hips. Projected model X
+// compresses width at the flanks; polar methods create focal points.
+// UV widths are measured in metres by sampling source mesh triangles.
+// Never edit artist vertices, texture atlas, normals, skinning or UVs.
+export const KIT_STRIPE_SHADER_KEY="km20-fabric-width-uv-stripes-v1";
+const stripeMetricCache=new WeakMap();
+export function stripeSectionForMesh(name){
+  if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
+  if(/^FA_jersey__(?:62|63)(?:_\d+)?$/i.test(name))return -1;
   return 0;
+}
+export function measureKitStripeFabricMetric(geometry){
+  const pos=geometry?.getAttribute?.("position");
+  const uv=geometry?.getAttribute?.("uv");
+  if(!pos||!uv||pos.count!==uv.count||pos.count<3)
+    throw new Error("Kit stripes require the original cloth position and pattern UVs");
+  const index=geometry.index;
+  if(index&&typeof index.getX!=="function")
+    throw new Error("Kit stripes require a readable triangle index");
+  let low=Infinity,high=-Infinity;
+  for(let i=0;i<uv.count;i++){
+    const u=uv.getX(i);
+    if(!Number.isFinite(u))throw new Error("Nonfinite kit pattern UV");
+    low=Math.min(low,u);
+    high=Math.max(high,u);
+  }
+  if(high-low<1e-5)throw new Error("Kit pattern UV has no horizontal extent");
+  const count=Math.floor((index?.count??pos.count)/3);
+  const stride=Math.max(1,Math.floor(count/512)),samples=[];
+  for(let tri=0;tri<count;tri+=stride){
+    const a=index?index.getX(tri*3):tri*3;
+    const b=index?index.getX(tri*3+1):tri*3+1;
+    const c=index?index.getX(tri*3+2):tri*3+2;
+    const du1=uv.getX(b)-uv.getX(a),dv1=uv.getY(b)-uv.getY(a);
+    const du2=uv.getX(c)-uv.getX(a),dv2=uv.getY(c)-uv.getY(a);
+    const determinant=du1*dv2-du2*dv1;
+    if(Math.abs(determinant)<1e-10)continue;
+    const dx1=pos.getX(b)-pos.getX(a),dx2=pos.getX(c)-pos.getX(a);
+    const dy1=pos.getY(b)-pos.getY(a),dy2=pos.getY(c)-pos.getY(a);
+    const dz1=pos.getZ(b)-pos.getZ(a),dz2=pos.getZ(c)-pos.getZ(a);
+    const scale=Math.hypot(
+      (dx1*dv2-dx2*dv1)/determinant,
+      (dy1*dv2-dy2*dv1)/determinant,
+      (dz1*dv2-dz2*dv1)/determinant
+    );
+    if(Number.isFinite(scale)&&scale>.1&&scale<10)samples.push(scale);
+  }
+  if(!samples.length)
+    throw new Error("No valid triangles for Kit Maker stripe UV calibration");
+  samples.sort((a,b)=>a-b);
+  const n=samples.length;
+  const metresPerUv=n%2?samples[(n-1)/2]
+    :(samples[n/2-1]+samples[n/2])/2;
+  return Object.freeze({
+    originU:(low+high)/2,metresPerUv,
+    sampledTriangles:n,rangeU:high-low
+  });
+}
+function cachedKitStripeMetric(geometry){
+  let metric=stripeMetricCache.get(geometry);
+  if(!metric){
+    metric=measureKitStripeFabricMetric(geometry);
+    stripeMetricCache.set(geometry,metric);
+  }
+  return metric;
 }
 export function installKitStripeShader(material,THREE){
   if(material.userData?.kitStripeUniforms)
@@ -182,6 +238,8 @@ export function installKitStripeShader(material,THREE){
     kmStripeEnabled:{value:0},
     kmStripeWidth:{value:.075},
     kmStripeSection:{value:0},
+    kmStripeFabricOrigin:{value:0},
+    kmStripeFabricScale:{value:1},
     kmStripeBase:{value:new THREE.Color("#FFFFFF")},
     kmStripeAccent:{value:new THREE.Color("#111111")}
   };
@@ -193,42 +251,23 @@ export function installKitStripeShader(material,THREE){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader="varying vec3 vKmClothPosition;\n"+shader.vertexShader
+    shader.vertexShader="varying float vKmPatternU;\n"+shader.vertexShader
       .replace("#include <begin_vertex>",
-        "#include <begin_vertex>\n vKmClothPosition = position;");
+        "#include <begin_vertex>\n vKmPatternU = uv.x;");
     shader.fragmentShader=[
-      "varying vec3 vKmClothPosition;",
+      "varying float vKmPatternU;",
       "uniform float kmStripeEnabled;",
       "uniform float kmStripeWidth;",
-      "uniform float kmStripeSection;",
+      "uniform float kmStripeFabricOrigin;",
+      "uniform float kmStripeFabricScale;",
       "uniform vec3 kmStripeBase;",
-      "uniform vec3 kmStripeAccent;",
-      // No singularity or focal point: d(horizontal)/dx stays > 0.93.
-      // A small z- and height-aware lateral warp makes every stripe
-      // softly follow the silhouette without fanning toward a pole.
-      "float kmTorsoStripeCoordinate(vec3 p){",
-      "  float height=smoothstep(1.12,1.62,p.y);",
-      "  float depth=smoothstep(0.015,0.145,abs(p.z));",
-      "  float drape=0.010*sin(p.x*7.0)*mix(0.35,0.85,depth)*(0.55+0.45*height);",
-      "  return p.x+drape;",
-      "}",
-      // Sleeves follow the sloping arm axis rather than radiating around
-      // a tube. The extra slope fades out at the upper sleeve seam.
-      "float kmSleeveStripeCoordinate(vec3 p,float side){",
-      "  float sleeveDrop=1.0-smoothstep(1.40,1.53,p.y);",
-      "  float sleeveTilt=side*0.18*(p.y-1.53)*sleeveDrop;",
-      "  return kmTorsoStripeCoordinate(p)+sleeveTilt;",
-      "}",
-      "float kmParallelStripeCoordinate(vec3 p){",
-      "  if(abs(kmStripeSection)<0.5)return kmTorsoStripeCoordinate(p);",
-      "  return kmSleeveStripeCoordinate(p,sign(kmStripeSection));",
-      "}"
+      "uniform vec3 kmStripeAccent;"
     ].join("\n")+"\n"+shader.fragmentShader.replace("#include <color_fragment>",
       [
         "#include <color_fragment>",
         "if(kmStripeEnabled > 0.5){",
-        "  float band=kmParallelStripeCoordinate(vKmClothPosition);",
-        "  float wave=cos(3.141592653589793*band/kmStripeWidth);",
+        "  float distanceOnFabric=(vKmPatternU-kmStripeFabricOrigin)*kmStripeFabricScale;",
+        "  float wave=cos(3.141592653589793*distanceOnFabric/kmStripeWidth);",
         "  float edge=max(fwidth(wave),0.002);",
         "  float alternate=smoothstep(-edge,edge,-wave);",
         "  diffuseColor.rgb=mix(kmStripeBase,kmStripeAccent,alternate);",
@@ -262,12 +301,17 @@ export function applyKitDesign(outfit,state,THREE){
   const targets=collectGarmentMaterials(outfit);
   if(typeof THREE?.Color!=="function")
     throw new Error("THREE.Color required for Kit Maker rendering");
-  // Validate all targets and state before mutating the scene.
-  for(const {material} of targets)
+  // Preflight every fabric panel before editing ANY material.
+  const prepared=targets.map(target=>({
+    ...target,metric:cachedKitStripeMetric(target.geometry)
+  }));
+  for(const {material} of prepared)
     if(!material.userData&&Object.isFrozen(material))
       throw new Error("Kit Maker material cannot be edited");
-  for(const {part,material,meshName} of targets){
+  for(const {part,material,meshName,metric} of prepared){
     const uniforms=installKitStripeShader(material,THREE);
+    uniforms.kmStripeFabricOrigin.value=metric.originU;
+    uniforms.kmStripeFabricScale.value=metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"
       ?stripeSectionForMesh(meshName):0;
     uniforms.kmStripeEnabled.value=state.styles[part]==="vertical-stripes"?1:0;

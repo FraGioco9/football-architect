@@ -1,0 +1,62 @@
+{
+  "revision": "KM-20",
+  "date": "2026-11-10",
+  "pr": 454,
+  "problem": "Vertical stripes had unequal visual widths at curved shirt flanks because projected model X is not surface-cloth distance",
+  "fix": "source glTF TEXCOORD_0 sewing pattern U; fragment distance=(uvU-centreU)*local physical metresPerUv; shader alternates bands at slider width",
+  "modelSha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+  "modelSource": "owner local original GLB, not committed",
+  "sourcePanels": [
+    {
+      "name": "FA_jersey__9",
+      "part": "front",
+      "metresPerUv": 1.51472,
+      "patternWidthCm": 48.68,
+      "centerU": 0.70213,
+      "samples": 517
+    },
+    {
+      "name": "FA_jersey__42",
+      "part": "back",
+      "metresPerUv": 1.51532,
+      "patternWidthCm": 48.7,
+      "centerU": 0.31534,
+      "samples": 517
+    },
+    {
+      "name": "FA_jersey__38",
+      "part": "right sleeve",
+      "metresPerUv": 1.52317,
+      "patternWidthCm": 38.7,
+      "centerU": 0.66847,
+      "samples": 542
+    },
+    {
+      "name": "FA_jersey__62",
+      "part": "left sleeve",
+      "metresPerUv": 1.52361,
+      "patternWidthCm": 38.71,
+      "centerU": 0.33224,
+      "samples": 541
+    }
+  ],
+  "algorithm": "sample up to ~512 nondegenerate triangles per mesh, horizontal UV physical tangent length median; preserve flat fabric U islands",
+  "shaderKey": "km20-fabric-width-uv-stripes-v1",
+  "preserves": [
+    "source geometry/UV/texture maps",
+    "fixed black/white boots and white laces",
+    "independent garment style selection",
+    "allowed club and neutral colours",
+    "3 to 15 cm slider step 0.5cm",
+    "no extra API request"
+  ],
+  "validation": "every garment source UV preflight before any material update, metric cached in WeakMap, update via shader uniforms",
+  "qa": {
+    "isolatedTests": "15 PASS",
+    "originalLocalGLBAudit": "PASS",
+    "syntax": "PASS",
+    "ChromeWebGL": "PENDING",
+    "fullNode": "PENDING"
+  },
+  "hold": true
+}

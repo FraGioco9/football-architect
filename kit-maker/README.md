@@ -832,3 +832,70 @@ styles and colours remain unchanged.
 
 PR #454 remains Draft/HOLD. No merge, production deployment, DB
 operation, or third-party 3D asset upload.
+
+## KM-20 — equal stripe width on the ACTUAL flattened cloth pattern (2026-11-10)
+
+**Owner visual feedback:** On the KM-19 version, vertical stripes
+still visibly changed apparent width at the curved shirt flanks.
+The remaining problem was projecting the pattern using garment
+**3D X** (`p.x + small drape`). Even a small 3D-space deformation
+cannot make stripe width constant in actual fabric distance when
+the surface curves away from camera and the X projection compresses.
+
+**Solution:** Use the original Alberto Sena glTF's **2D
+sewing-pattern `TEXCOORD_0`** as the vertical-stripe lateral
+coordinate. The author has already unwrapped the cloth panels into
+their actual flat pattern; `uv.x` is horizontal *on the fabric*,
+even around shoulders and hips. The shader now calculates
+`distanceOnFabric = (uv.x - centreU) * metresPerUv`
+and alternates colours every exact slider-requested number of
+metres along the flat pattern. This eliminates 3D-side compression
+from the stripe-width computation, without requiring angular
+projections, focus points, vertex movement, or extra textures.
+Ordinary camera foreshortening remains physically correct.
+
+**Measured genuine creator GLB** SHA-256
+`985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8`:
+
+- Jersey front `FA_jersey__9`: ~**1.51472 metres/UV**,
+  developed pattern width **48.68 cm**, central U≈0.70213.
+- Jersey back `FA_jersey__42`: ~**1.51532 metres/UV**,
+  developed pattern width **48.70 cm**, central U≈0.31534.
+- Right sleeve `FA_jersey__38`: ~**1.52317 metres/UV**,
+  developed pattern width **38.70 cm**, central U≈0.66847.
+- Left sleeve `FA_jersey__62`: ~**1.52361 metres/UV**,
+  developed pattern width **38.71 cm**, central U≈0.33224.
+
+This is not a guessed scaling factor: `measureKitStripeFabricMetric`
+samples up to approximately 512 source **triangles per garment
+geometry**, obtains physical metres/UV from the 3D tangent to
+the authored flat-pattern U axis, takes the robust median and
+centres each pattern island on its own U range. A WeakMap cache
+makes subsequent slider/club/colour inputs uniform-only.
+It validates the original `position` and `uv` attributes
+on *every* intended garment mesh before repainting anything.
+If the private GLB lacks those attributes, the style update
+fails atomically with a diagnostic, not a half-striped outfit.
+
+The Three.js r181 vertex program unconditionally declares
+`attribute vec2 uv`, so the KM-20 PBR shader uses
+`vKmPatternU=uv.x`, independent of the original source texture
+maps. The same lighting, `fwidth` antialiasing, existing
+`MeshStandardMaterial` objects, live uniforms, and **3–15 cm**
+slider remain. The new cache key is
+`km20-fabric-width-uv-stripes-v1`.
+
+**QA:** All **15 targeted JS model-design tests PASS** in the
+isolated test harness. New regressions assert physical stripe
+width on a curved 3D panel with regular flat UV intervals,
+show that old model-X projection would squash flank widths,
+validate front/back matching, and reject absent UV atomically.
+The DEV page/server test no longer asserts removed KM-19
+world-X shader functions. A separate read-only audit of the
+original private GLB confirms compatible UV layouts and the
+measurements above. Full Node/CI and owner's Chrome/iPhone
+WebGL visual QA are still pending; no visual pass is claimed.
+
+Scope: **Draft/HOLD PR #454**, no merge, deployment, remote DB
+write, saved kit state, or original artist asset upload. Boot
+black/white materials and shoe positioning remain unchanged.

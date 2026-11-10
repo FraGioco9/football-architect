@@ -1,7 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {KIT_PARTS,KIT_STYLES,KIT_STRIPE_WIDTH_RANGE,formatKitStripeWidth,isKitStripeWidthAllowed,KIT_NEUTRALS,kitColorChoices,
-  createKitDesignStore,applySolidKitColors,applyKitDesign,KIT_STRIPE_SHADER_KEY,stripeSectionForMesh} from '../../kit-maker/lab/kit-design.mjs';
+  createKitDesignStore,applySolidKitColors,applyKitDesign,KIT_STRIPE_SHADER_KEY,
+  stripeSectionForMesh,measureKitStripeFabricMetric} from '../../kit-maker/lab/kit-design.mjs';
+
+// Minimal BufferGeometry-like fixture with a true flattened sewing-pattern UV
+// and 3D vertex positions. A metre on this cloth is independent of its shape
+// after the original artist drapes it over a side seam.
+function fabricGeometry(tag,metresPerUV=1.52,offset=0,mirror=false){
+  const rawPairs=[[.1,.2],[.2,.2],[.1,.3],[.2,.2],[.2,.3],[.1,.3]];
+  const uvPairs=rawPairs.map(([u,v])=>[offset+(mirror?.3-u:u),v]);
+  const points=rawPairs.map(([u,v])=>[u*metresPerUV,v*metresPerUV,0]);
+  const uv={
+    count:uvPairs.length,
+    getX(i){return uvPairs[i][0];},
+    getY(i){return uvPairs[i][1];}
+  };
+  const position={
+    count:points.length,
+    getX(i){return points[i][0];},
+    getY(i){return points[i][1];},
+    getZ(i){return points[i][2];}
+  };
+  return {tag,index:null,getAttribute(key){
+    return key==='uv'?uv:key==='position'?position:null;
+  }};
+}
+
 
 test('KM-17 initial design shows Solid and Vertical stripes, three garments and allowed neutrals',()=>{
   assert.deepEqual(KIT_PARTS,['jersey','shorts','socks']);
@@ -202,7 +227,7 @@ test('KM-17 stripe roles follow published club colours, not draft palettes',()=>
   assert.equal(store.selectColor('primary'),false);
 });
 
-test('KM-19 near-vertical curved shader updates uniforms without moving geometry',()=>{
+test('KM-20 flat-fabric UV shader maintains even stripe widths on curved kit',()=>{
   class FakeColor {
     constructor(hex){this.hex=hex;}
     set(hex){this.hex=hex;return this;}
@@ -214,12 +239,12 @@ test('KM-19 near-vertical curved shader updates uniforms without moving geometry
   }
   const meshes=[
     {isMesh:true,name:'FA_jersey__body',material:privateMaterial('km13-white-','jersey'),
-      geometry:{id:'shirt'}},
+      geometry:fabricGeometry('shirt')},
     {isMesh:true,name:'FA_shorts__body',material:[
       privateMaterial('km14-white-','shortsA'),privateMaterial('km14-white-','shortsB')],
-      geometry:{id:'shorts'}},
+      geometry:fabricGeometry('shorts')},
     {isMesh:true,name:'FA_socks__left',material:privateMaterial('km14-white-','socks'),
-      geometry:{id:'socks'}},
+      geometry:fabricGeometry('socks')},
     {isMesh:true,name:'FA_boots__shoes_l001_1',material:{
       name:'km14-white-laces',color:new FakeColor('#FFFFFF')},geometry:{id:'boots'}}
   ];
@@ -240,6 +265,10 @@ test('KM-19 near-vertical curved shader updates uniforms without moving geometry
   assert.equal(shaderUniforms.kmStripeEnabled.value,1);
   assert.equal(shaderUniforms.kmStripeWidth.value,.11);
   assert.equal(shaderUniforms.kmStripeSection.value,0);
+  assert.ok(Math.abs(shaderUniforms.kmStripeFabricOrigin.value-.15)<1e-10);
+  assert.ok(Math.abs(shaderUniforms.kmStripeFabricScale.value-1.52)<1e-10);
+  assert.equal(shaderUniforms.kmStripeFabricScale.value,
+    measureKitStripeFabricMetric(meshes[0].geometry).metresPerUv);
   assert.equal(shaderUniforms.kmStripeBase.value.hex,'#173B65');
   assert.equal(shaderUniforms.kmStripeAccent.value.hex,'#FFFFFF');
   assert.equal(jersey.color.hex,'#FFFFFF',
@@ -251,18 +280,14 @@ test('KM-19 near-vertical curved shader updates uniforms without moving geometry
     fragmentShader:'void main() {\n#include <color_fragment>\n}'
   };
   jersey.onBeforeCompile(shader);
-  assert.match(shader.vertexShader,/vKmClothPosition = position/);
-  assert.ok(shader.fragmentShader.includes("kmTorsoStripeCoordinate"));
-  assert.ok(shader.fragmentShader.includes("kmSleeveStripeCoordinate"));
-  assert.ok(shader.fragmentShader.includes("kmParallelStripeCoordinate"));
-  assert.ok(shader.fragmentShader.includes("return p.x+drape"));
-  assert.ok(shader.fragmentShader.includes("sleeveTilt"));
-  assert.ok(shader.fragmentShader.includes("cos(3.141592653589793*band"));
-  assert.ok(!shader.fragmentShader.includes("atan(")&&
-    !shader.fragmentShader.includes("mod(")&&
-    !shader.fragmentShader.includes("theta"),
-    'Polar coordinates must never create stripe focal points');
-  assert.doesNotMatch(shader.fragmentShader,/vKmKitX/);
+  assert.match(shader.vertexShader,/vKmPatternU = uv\.x/);
+  assert.ok(shader.fragmentShader.includes('distanceOnFabric='));
+  assert.ok(shader.fragmentShader.includes('kmStripeFabricOrigin'));
+  assert.ok(shader.fragmentShader.includes('kmStripeFabricScale'));
+  assert.ok(shader.fragmentShader.includes('distanceOnFabric/kmStripeWidth'));
+  assert.doesNotMatch(shader.fragmentShader,/atan\(|theta|kmTorsoStripeCoordinate/,
+    'No angular/screen-X mapping or convergence');
+  assert.doesNotMatch(shader.vertexShader,/vKmClothPosition|vKmKitX/);
   assert.match(shader.fragmentShader,/fwidth\(wave\)/);
   assert.equal(shader.uniforms.kmStripeWidth,shaderUniforms.kmStripeWidth);
   assert.equal(meshes[3].material.color.hex,'#FFFFFF');
@@ -340,7 +365,7 @@ test('KM-18 right and left sleeve stripes use local arm-axis contour coordinates
     isMesh:true,name,
     material:{name:(name.startsWith('FA_jersey__')?'km13-white-':'km14-white-')+name,
       color:new Color('#FFFFFF'),userData:{},needsUpdate:false},
-    geometry:{id:name}
+    geometry:fabricGeometry(name)
   }));
   const store=createKitDesignStore();
   store.selectStyle('vertical-stripes');
@@ -354,77 +379,103 @@ test('KM-18 right and left sleeve stripes use local arm-axis contour coordinates
 });
 
 
-test('KM-19 torso stripe field has stable spacing and no focal convergence',()=>{
-  const smooth=(a,b,v)=>{
-    const t=Math.max(0,Math.min(1,(v-a)/(b-a)));
-    return t*t*(3-2*t);
-  };
-  const coord=(x,y,z)=>x+.010*Math.sin(x*7)*
-    (.35+.50*smooth(.015,.145,Math.abs(z)))*
-    (.55+.45*smooth(1.12,1.62,y));
 
-  for(const y of [1.03,1.13,1.27,1.39,1.53,1.67]){
-    for(const z of [-.145,-.1,-.025,0,.035,.12,.145]){
-      let previous=null;
-      for(let i=0;i<=92;i++){
-        const x=-.23+i*.005;
-        const phase=coord(x,y,z);
-        assert.ok(Number.isFinite(phase));
-        if(previous!==null){
-          const dx=phase-previous;
-          assert.ok(dx>.0046&&dx<.0054,
-            'Nearby stripes must retain near-uniform spacing without a pole');
-        }
-        previous=phase;
-      }
-      assert.ok(Math.abs(coord(0,y,z))<1e-12,
-        'Centre stripe remains vertical at every height and depth');
-    }
-  }
-  assert.ok(Math.abs(coord(.1,1.45,-.125)-coord(.1,1.45,-.018))>.001,
-    'The mild contour adjustment must still react to fabric depth');
-});
-
-test('KM-19 sleeve stripe field follows tilted sleeves without radial convergence',()=>{
-  const smooth=(a,b,v)=>{
-    const t=Math.max(0,Math.min(1,(v-a)/(b-a)));
-    return t*t*(3-2*t);
-  };
-  const torso=(x,y,z)=>x+.010*Math.sin(x*7)*
-    (.35+.5*smooth(.015,.145,Math.abs(z)))*
-    (.55+.45*smooth(1.12,1.62,y));
-  const sleeve=(x,y,z,side)=>torso(x,y,z)+
-    side*.18*(y-1.53)*(1-smooth(1.40,1.53,y));
-  for(const side of [-1,1]){
-    for(const y of [1.33,1.38,1.43,1.48,1.53]){
-      let previous=null;
-      for(let i=0;i<=25;i++){
-        const x=(side===1?.16:-.29)+.005*i;
-        const phase=sleeve(x,y,-.05,side);
-        if(previous!==null)
-          assert.ok(phase-previous>.0046&&phase-previous<.0054,
-            'Sleeve bands remain parallel through every sleeve height');
-        previous=phase;
-      }
-    }
-    for(const x of [side*.175,side*.205,side*.245])
-      assert.ok(Math.abs(sleeve(x,1.53,-.05,side)-torso(x,1.53,-.05))<1e-12,
-        'Sleeve stripes meet torso phase at shoulder seam');
+test('KM-20 calipers derive physical stripe width from source-pattern UV geometry',()=>{
+  const cloth=fabricGeometry('sample',1.52);
+  const metric=measureKitStripeFabricMetric(cloth);
+  assert.ok(Math.abs(metric.metresPerUv-1.52)<1e-10);
+  assert.ok(Math.abs(metric.originU-.15)<1e-10);
+  assert.ok(metric.sampledTriangles>=2);
+  assert.ok(Math.abs(metric.rangeU-.1)<1e-12);
+  for(const width of [.03,.045,.075,.1,.15]){
+    const deltaU=width/metric.metresPerUv;
+    const distanceOnCloth=deltaU*metric.metresPerUv;
+    assert.ok(Math.abs(distanceOnCloth-width)<1e-12,
+      'Every stripe must retain requested sewn width independent of x/z');
   }
 });
 
-test('KM-19 front/back and side seams never jump or reverse stripe order',()=>{
-  const smooth=(a,b,v)=>{
-    const t=Math.max(0,Math.min(1,(v-a)/(b-a)));
-    return t*t*(3-2*t);
-  };
-  const coord=(x,y,z)=>x+.010*Math.sin(x*7)*
-    (.35+.5*smooth(.015,.145,Math.abs(z)))*
-    (.55+.45*smooth(1.12,1.62,y));
-  for(const x of [-.2,-.1,0,.1,.2]){
-    for(const y of [1.05,1.35,1.60]){
-      assert.ok(Math.abs(coord(x,y,-.13)-coord(x,y,.13))<1e-12);
-      assert.ok(Math.abs(coord(x,y,-.0001)-coord(x,y,.0001))<1e-12);
+test('KM-20 a draped curved jersey keeps constant fabric stripe widths at flanks',()=>{
+  // Model a real shoulder-to-flank cross-section: horizontal x projection
+  // shrinks sharply at the flank, but equal U intervals stay equal on the
+  // fabric before draping. This is what author-supplied pattern UVs encode.
+  const SCALE=1.52,span=.30,radius=SCALE*span/2.5;
+  const nodes=[];
+  const count=41,rows=3;
+  for(let y=0;y<rows;y++){
+    for(let i=0;i<count;i++){
+      const u=span*i/(count-1);
+      const theta=(u-span/2)*SCALE/radius;
+      nodes.push({uv:[u,y*.05],p:[radius*Math.sin(theta),y*.08,
+        radius*(1-Math.cos(theta))]});
     }
   }
+  const faces=[];
+  for(let j=0;j<rows-1;j++){
+    for(let i=0;i<count-1;i++){
+      const a=j*count+i,b=a+1,c=(j+1)*count+i,d=c+1;
+      faces.push(a,b,c,b,d,c);
+    }
+  }
+  const pos={count:nodes.length,
+    getX(i){return nodes[i].p[0];},
+    getY(i){return nodes[i].p[1];},
+    getZ(i){return nodes[i].p[2];}};
+  const uv={count:nodes.length,
+    getX(i){return nodes[i].uv[0];},
+    getY(i){return nodes[i].uv[1];}};
+  const geometry={getAttribute(k){return k==='position'?pos:k==='uv'?uv:null;},
+    index:{count:faces.length,getX(i){return faces[i];}}};
+  const metric=measureKitStripeFabricMetric(geometry);
+  assert.ok(Math.abs(metric.metresPerUv-SCALE)<.005,
+    'Metric follows curved actual surface rather than compressed horizontal x');
+  assert.ok(Math.abs(metric.originU-.15)<1e-10);
+  const width=.045,deltaU=width/metric.metresPerUv;
+  // Uniform band widths in true sewn cloth:
+  for(let u=.035;u+.05<span;u+=.035){
+    const before=(u-metric.originU)*metric.metresPerUv;
+    const after=(u+deltaU-metric.originU)*metric.metresPerUv;
+    assert.ok(Math.abs(after-before-width)<1e-10);
+  }
+  // Yet these same two stripes would look compressed if projected along X.
+  const x=u=>radius*Math.sin((u-span/2)*SCALE/radius);
+  const middle=x(.15+deltaU)-x(.15);
+  const flank=x(.26+deltaU)-x(.26);
+  assert.ok(flank<middle*.75,
+    'Old model-X projection must demonstrably squash stripes at the sides');
+});
+
+test('KM-20 asymmetric front/back pattern islands keep equal widths',()=>{
+  // Both source torso panels have roughly identical scale but use
+  // different islands/orientations in the original artist's atlas.
+  const front=fabricGeometry('front',1.52);
+  const back=fabricGeometry('back',1.52,.4,true);
+  const a=measureKitStripeFabricMetric(front);
+  const b=measureKitStripeFabricMetric(back);
+  const width=.075;
+  assert.ok(Math.abs(width/a.metresPerUv-width/b.metresPerUv)<1e-12);
+  assert.ok(Math.abs(a.originU-b.originU)>.3,
+    'Pattern islands must have different U offsets but the same physical width');
+});
+
+test('KM-20 unknown or malformed UV panels fail atomically without recolouring',()=>{
+  class Color{constructor(value){this.hex=value;}set(value){this.hex=value;}}
+  const parts=['jersey','shorts','socks'].map((part,i)=>({
+    isMesh:true,name:'FA_'+part+'__valid',
+    material:{name:(i===0?'km13-white-':'km14-white-')+part,
+      color:new Color('#FFFFFF'),userData:{}},
+    geometry:fabricGeometry(part)
+  }));
+  // A single missing UV among several correct parts must not recolour any.
+  parts[2].geometry={getAttribute(key){
+    return key==='position'?{count:6,getX(){return 0;},
+      getY(){return 0;},getZ(){return 0;}}:null;
+  }};
+  const state=createKitDesignStore();
+  state.selectColor('neutral-black');
+  const outfit={traverse(fn){parts.forEach(fn);}};
+  assert.throws(()=>applyKitDesign(outfit,state.getState(),{Color}),/pattern UVs/);
+  assert.ok(parts.every(p=>!p.material.userData.kitStripeUniforms));
+  assert.ok(parts.every(p=>p.material.color.hex==='#FFFFFF'));
+  assert.throws(()=>measureKitStripeFabricMetric(null),/pattern UVs/);
 });
