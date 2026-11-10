@@ -802,22 +802,29 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .app-standings-legend-swatch{flex:none;width:12px;height:12px;border-radius:3px;background:var(--standing-outcome-color)}
 @media(max-width:620px){.app-standings-legend ul{gap:8px}.app-standings-legend{padding:10px}}
 
-/* Postseason bracket. The card contains only the two club rows and scores. */
-/* Fixed tracks match the coordinates of the server-rendered bracket links. */
+/* Postseason bracket: responsive card tracks and first-paint connections. */
+/* Keep at least ~260px per card including the 14px gap: 540/820/1100px container widths. */
+/* Every connector is anchored to its source round; row-wrapped rounds never connect. */
 .fa-bracket-layout{container-type:inline-size;overflow-x:auto}
-.fa-bracket-board{position:relative;display:grid;grid-template-columns:min(100%,320px);gap:20px 14px;min-width:0}
-.fa-bracket-links{display:none;position:absolute;top:0;left:0;pointer-events:none;fill:none;stroke:var(--border);stroke-width:1}
-@container (min-width:654px){
- .fa-bracket-board[data-bracket-columns="2"]{grid-template-columns:repeat(2,320px)}
- .fa-bracket-board[data-bracket-columns="2"]>.fa-bracket-links{display:block}
+.fa-bracket-board{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:20px 14px;width:100%;min-width:0}
+.fa-bracket-board[data-bracket-columns="1"]{max-width:520px}
+.fa-bracket-board[data-bracket-columns="2"]{max-width:974px}
+.fa-bracket-board[data-bracket-columns="3"]{max-width:1468px}
+.fa-bracket-board[data-bracket-columns="4"]{max-width:1962px}
+.fa-bracket-links{display:none;position:absolute;top:0;inset-inline-start:100%;width:14px;height:auto;overflow:visible;pointer-events:none;fill:none;stroke:var(--border);stroke-width:1}
+@container (min-width:540px){
+ .fa-bracket-board[data-bracket-columns="2"],.fa-bracket-board[data-bracket-columns="3"],.fa-bracket-board[data-bracket-columns="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fa-bracket-board .fa-bracket-links[data-bracket-layout="2"]{display:block}
 }
-@container (min-width:988px){
- .fa-bracket-board[data-bracket-columns="3"]{grid-template-columns:repeat(3,320px)}
- .fa-bracket-board[data-bracket-columns="3"]>.fa-bracket-links{display:block}
+@container (min-width:820px){
+ .fa-bracket-board[data-bracket-columns="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .fa-bracket-board[data-bracket-columns="3"] .fa-bracket-links[data-bracket-layout="2"]{display:none}
+ .fa-bracket-board[data-bracket-columns="3"] .fa-bracket-links[data-bracket-layout="3"]{display:block}
 }
-@container (min-width:1162px){
- .fa-bracket-board[data-bracket-columns="4"]{grid-template-columns:repeat(4,320px);width:max-content}
- .fa-bracket-board[data-bracket-columns="4"]>.fa-bracket-links{display:block}
+@container (min-width:1100px){
+ .fa-bracket-board[data-bracket-columns="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .fa-bracket-board[data-bracket-columns="4"] .fa-bracket-links[data-bracket-layout="2"]{display:none}
+ .fa-bracket-board[data-bracket-columns="4"] .fa-bracket-links[data-bracket-layout="4"]{display:block}
 }
 .fa-bracket-round{position:relative;display:grid;grid-template-rows:32px 1fr;min-width:0;gap:10px}
 .fa-bracket-round>h3{display:grid;place-items:center;min-height:28px;margin:0;padding:4px 6px;border-radius:4px;background:color-mix(in srgb,var(--surface) 70%,var(--border) 30%);color:var(--text);font-size:11px;font-weight:750;line-height:1.25;letter-spacing:.03em;text-align:center;text-transform:uppercase}

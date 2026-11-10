@@ -118,10 +118,32 @@ test("CLEAN-UI-03: safe CSS dedupes preserve repeated responsive competition-log
  assert.ok(css.includes("#world-calendar #calendar-controls :is(#calendar-previous,#calendar-next,#calendar-week-trigger,#calendar-current-week):not(:disabled){"));
 });
 
-test("Postseason cards have fixed dimensions and omit repeated labels and controls",()=>{
+test("Postseason generated first paint connects same-row brackets only",()=>{
+ for(const country of ["br","de","eng","es","fr","it","nl","pt"]){
+  const html=read("competitions/"+country+"-2/index.html");
+  assert.match(html,/<svg class="fa-bracket-links" data-bracket-layout="2"/,country);
+  assert.doesNotMatch(html,/<div class="fa-bracket-links"/,country);
+  assert.equal((html.match(/data-bracket-link=/g)||[]).length,2,country+" links");
+ }
+ for(const cup of ["int-1","int-2"]){
+  const html=read("competitions/"+cup+"/index.html");
+  assert.equal((html.match(/data-bracket-layout="2"/g)||[]).length,2,cup+" two-column row links");
+  assert.equal((html.match(/data-bracket-layout="4"/g)||[]).length,3,cup+" four-column links");
+  assert.equal((html.match(/data-bracket-link=/g)||[]).length,16,cup+" responsive variants");
+  assert.match(html,/data-bracket-link="s1:final" d="M 0 102 H 7 V 175 H 14"/,cup+" second row aligns");
+  assert.doesNotMatch(html,/<div class="fa-bracket-links"/,cup);
+ }
+});
+
+test("Postseason cards have fluid tracks, source-anchored links and no duplicate controls",()=>{
  const css=read("assets/app.css"),view=read("assets/competition-rules-view.js");
- assert.ok(/\.fa-bracket-card\{[^}]*height:120px/.test(css),"fixed card height");
- assert.ok(/\.fa-bracket-board\{[^}]*grid-template-columns:min\(100%,320px\)/.test(css),"fixed column width");
+ assert.ok(/\.fa-bracket-card\{[^}]*height:120px/.test(css),"stable card height");
+ assert.match(css,/\.fa-bracket-board\{[^}]*grid-template-columns:minmax\(0,1fr\)/,"fluid card tracks");
+ assert.match(css,/@container \(min-width:540px\)/,"at least ~260px per card before enabling two columns");
+ assert.match(css,/@container \(min-width:820px\)/,"three columns require readable cards");
+ assert.match(css,/@container \(min-width:1100px\)/,"four columns require readable cards");
+ assert.match(css,/\.fa-bracket-links\{[^}]*inset-inline-start:100%/,"connector anchored to source edge");
+ assert.match(view,/data-bracket-layout/,"links per responsive row layout");
  assert.doesNotMatch(view,/data-postseason-(filter|help|outcome)|postseasonTie/);
  assert.match(view,/data-bracket-feeders/);
  assert.match(css,/\.fa-bracket-card\{[^}]*padding-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\)/);

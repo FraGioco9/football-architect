@@ -107,7 +107,14 @@ test('INT-24: Knockouts renders all rounds without controls while results are pe
   const firstRound=[...playoffs.matchAll(/data-bracket-tie="([^"]+)"/g)].map(match=>match[1]);
   const quarterfinalFeeders=[...quarterfinals.matchAll(/data-bracket-feeders="([^"]+)"/g)].map(match=>match[1]);
   assert.deepEqual(firstRound,quarterfinalFeeders,'play-offs line up with their quarter-finals');
-  assert.equal((panel.match(/<path data-bracket-link=/g)||[]).length,10,'connections ship in the first HTML response');
+  // Responsive static markup stores the 4-column and 2-column connector variants.
+  // Only the variant for the active row configuration is visible at first paint.
+  const fourColumn=[...panel.matchAll(/<svg class="fa-bracket-links" data-bracket-layout="4"[^>]*>([\s\S]*?)<\/svg>/g)];
+  const twoColumn=[...panel.matchAll(/<svg class="fa-bracket-links" data-bracket-layout="2"[^>]*>([\s\S]*?)<\/svg>/g)];
+  assert.equal(fourColumn.length,3,'adjacent four-column rounds have a connector');
+  assert.equal(twoColumn.length,2,'both same-row two-column round pairs have a connector');
+  assert.equal(fourColumn.reduce((n,m)=>n+(m[1].match(/data-bracket-link=/g)||[]).length,0),10,'all desktop links are present at first paint');
+  assert.equal(twoColumn.reduce((n,m)=>n+(m[1].match(/data-bracket-link=/g)||[]).length,0),6,'both tablet row connections are present at first paint');
   assert.match(panel,/data-postseason-score="q1:0:first"/);
   assert.match(panel,/data-postseason-score="q1:0:second"/);
   assert.doesNotMatch(panel,/data-postseason-score="q1:0:aggregate"/);
