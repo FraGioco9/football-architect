@@ -98,13 +98,13 @@ try {
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
       '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name')].filter(visible).length,
      visiblePlaceholders:[...document.querySelectorAll(innerWidth<=620?
-      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
-      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]')].filter(visible).length,
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-name.app-skeleton-bar':
+      '.app-standings-skeleton [data-skeleton-row] > th .app-skeleton-bar')].filter(visible).length,
      staticIdentity:document.documentElement.dataset.faStandingsKnownIdentity,
      sportVisible:visible(document.querySelector('#competition-panel-standings > .app-world-standings #app-standings-body tr td:nth-child(10)')),
      firstNameLeft:(()=>{const n=document.querySelector(innerWidth<=620?
-      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
-      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]');
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-name.app-skeleton-bar':
+      '.app-standings-skeleton [data-skeleton-row] > th .app-skeleton-bar');
       return n?n.getBoundingClientRect().left+(innerWidth<=620?47:55):null})(),
      firstNameWeight:(()=>{const n=document.querySelector(innerWidth<=620?
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
