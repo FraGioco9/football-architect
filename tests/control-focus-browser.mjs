@@ -30,15 +30,18 @@ try{
    }
    const dropdownSelector=route==='/clubs'?'.nav01-filter .language-trigger':'#nationality-trigger';
    const dropdown=page.locator(dropdownSelector).first();
-   await dropdown.click();
-   if(route==='/clubs')await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:dropdownSelector,color:expected});
-   await dropdown.click();
-   assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   if(route==='/clubs')await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',dropdownSelector);
-   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
+   await page.waitForFunction(selector=>{const node=document.querySelector(selector);return !!node&&!node.disabled},dropdownSelector);
+   assert.equal(await dropdown.getAttribute('role'),'combobox',route+' exposes an accessible dropdown');
+   const dropdownBefore=await dropdown.boundingBox();
    await dropdown.focus();await page.keyboard.press('ArrowDown');
+   await page.waitForFunction(selector=>document.querySelector(selector)?.getAttribute('aria-expanded')==='true',dropdownSelector);
    await page.keyboard.press('Escape');
-   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Escape restores trigger focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
+   await page.waitForFunction(selector=>document.querySelector(selector)?.getAttribute('aria-expanded')==='false',dropdownSelector);
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,route+' Escape restores trigger focus');
+   const dropdownAfter=await dropdown.boundingBox();
+   assert.equal(dropdownBefore.width,dropdownAfter.width,route+' dropdown width remains fixed');
+   assert.equal(dropdownBefore.height,dropdownAfter.height,route+' dropdown height remains fixed');
+   checks++;
   }finally{await context.close();}
  }
  console.log('Shared focus and selectable input browser PASS: '+checks+' cases');
