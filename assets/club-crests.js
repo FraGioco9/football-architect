@@ -12,7 +12,7 @@
   const existing=host.querySelector?.('.app-club-crest-image');
   if(existing&&typeof asset==='string'&&existing.getAttribute('src')==='/'+asset){
    const loaded=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestFallback;host.dataset.clubCrestLoaded='true'}};
-   const failed=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest'))host.dataset.clubCrestFallback='true';existing.remove()}};
+   const failed=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';existing.remove()}};
    if(existing.complete){if(existing.naturalWidth>0)loaded();else failed();}
    else{host.dataset.clubCrestPending='true';existing.addEventListener('load',loaded,{once:true});existing.addEventListener('error',failed,{once:true});}
    return;
@@ -20,7 +20,7 @@
   for(const image of host.querySelectorAll('.app-club-crest-image'))image.remove();
   delete host.dataset.clubCrestLoaded;
   delete host.dataset.clubCrestPending;
-  if(typeof asset!=='string'){if(host.classList?.contains('club-crest'))host.dataset.clubCrestFallback='true';return;}
+  if(typeof asset!=='string'){if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';return;}
   const match=id.match(/^([A-Z]{2,3})-([1-9]\d*)$/);
   if(!match||asset!==`assets/clubs/${match[1]}/${match[2]}/crest.svg`)return;
   host.dataset.clubCrestPending='true';
@@ -31,7 +31,7 @@
    if(host.contains(image)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestFallback;host.dataset.clubCrestLoaded='true'}
   },{once:true});
   image.addEventListener('error',()=>{
-   if(host.contains(image)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest'))host.dataset.clubCrestFallback='true';image.remove()}
+   if(host.contains(image)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';image.remove()}
   },{once:true});
   host.append(image);image.src='/'+asset;
  }

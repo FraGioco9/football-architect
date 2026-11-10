@@ -117,7 +117,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
-   }else assert.ok(html.includes('club-empty'));
+   }else assert.ok(html.includes(view==='history'?'club-history-loading':'club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
   }
  }
@@ -313,19 +313,66 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });
 
-test('PAGE-LOAD-04 B01: club directory displays 6 anonymous card skeletons before catalog hydration',()=>{
+test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons before catalog hydration',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  assert.equal(manifest.clubs.length,320);
- assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-meta"/g)||[]).length,6);
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16,'one explicit crest circle per anonymous card');
+ assert.equal((html.match(/class="nav01-skeleton-name"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name-bar"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-club-location nav01-skeleton-location"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-flag"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-city"/g)||[]).length,16);
  assert.match(html,/class="nav01-skeleton-bar nav01-skeleton-count"/);
  assert.doesNotMatch(html,/data-nav01-filter-first-paint|data-nav01-loading-first-paint/);
  assert.doesNotMatch(html,/data-search="|<a class="nav01-card"/,'no catalog search keys or links until the manifest loads');
  assert.ok(html.includes('data-nav01-search-first-paint'),'static search input remains');
  assert.ok(html.includes('class="nav01-flag-sprite"'),'static flag definitions remain available');
  for(const c of manifest.clubs)assert.ok(!html.includes(c.fullName),'no pre-rendered club data: '+c.countryId+'-'+c.clubId);
+});
+test('PAGE-LOAD-04 B02: directory only paints one crest skeleton and visible name/flag/city bars',()=>{
+ const css=read('assets/clubs-directory.css'),html=read('clubs/index.html'),source=read('tools/generate-app-pages.mjs');
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::before,/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::after\{content:none;display:none\}/);
+ assert.match(css,/\.nav01-skeleton-crest-disc\{display:block;[^}]*border-radius:50%;background:/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-bar\{display:block;[^}]*background:/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-copy\{display:block;/);
+ assert.ok(source.includes('nav01-skeleton-crest-disc'),'generator owns the checked-in HTML shape');
+ assert.match(html,/<strong class="nav01-skeleton-name"><span class="nav01-skeleton-bar nav01-skeleton-name-bar"><\/span><\/strong>/,'name skeleton reserves the actual strong line box');
+ assert.match(html,/<small class="nav01-club-location nav01-skeleton-location">/,'flag/city skeleton reuses the actual small metadata row');
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-name\{display:flex;align-items:center;min-height:1\.35em/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-location\{display:flex;align-items:center;gap:8px;min-height:1\.6em;line-height:1\.6;margin-top:9px/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-city\{width:clamp\(38px,30%,72px\);max-width:72px;/,'short city bar, never longer than 72px');
+ assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16);
+ for(const cls of ['nav01-skeleton-name-bar','nav01-skeleton-flag','nav01-skeleton-city'])
+  assert.equal((html.match(new RegExp('class="nav01-skeleton-bar '+cls+'"','g'))||[]).length,16,cls);
+});
+test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loading primitive',()=>{
+ const shell=read('clubs/_shared/index.html'),styles=read('assets/app.css'),club=read('assets/club-model.js');
+ assert.match(shell,/club-crest fa-crest-loading/,'anonymous Club header reserves a shared circular crest');
+ assert.match(club,/club-crest fa-crest-loading/,'hydrated Club header keeps the loading slot');
+ assert.match(styles,/--fa-crest-skeleton-fill/,'shared token defines the circle');
+ assert.match(styles,/app-fixtures-skeleton-crest::before/,'Fixtures uses the same primitive');
+ assert.match(read('assets/competition-fixtures.js'),/app-world-club-crest-placeholder fa-crest-loading/,'loaded Fixtures use the same shape before the asset resolves');
+ assert.match(read('assets/club-crests.js'),/fa-crest-loading/,'missing crests fall back to a shield only on confirmed absence');
+});
+test('PAGE-LOAD-04 B02: Club History renders only verified seasons without guessed records',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/1/history'),clubKey='IT-1';
+ const pending=model.render(manifest,selected,'en','',null,2,{source:'loading'});
+ assert.match(pending,/class="club-history-loading"/);
+ assert.doesNotMatch(pending,/data-club-history-season=/);
+ const verified={source:'authoritative',clubKey,coverage:'complete',seasons:[{season:1,memberships:[{competitionId:'IT-1',category:'domestic',season:1,position:3,points:56,name:'IT-1'}]}]};
+ const html=model.render(manifest,selected,'en','',null,2,verified);
+ assert.match(html,/data-club-history-season="1"/);
+ assert.match(html,/data-history-competition="IT-1"/);
+ assert.match(html,/standings\?season=1/);
+ assert.match(html,/56/);
+ assert.doesNotMatch(html,/data-club-history-season="2"/);
+ assert.match(model.render(manifest,selected,'it','',null,2,verified),/Stagione 1/);
+ assert.match(model.render(manifest,selected,'en','',null,2,{source:'unavailable'}),/role="status"/);
 });
 test('club competition links open Standings with the displayed season and no fixture round',async()=>{
  const {default:model}=await import('../assets/club-model.js');
@@ -360,10 +407,25 @@ test('FE-03: directory filters reuse keyed cards once hydrated without parsing o
  assert.match(source,/out\.insertBefore/,'card identity must survive filtering and reorder');
 });
 
+test('PAGE-LOAD-04 B02: directory reserves name, flag, city skeletons and hydrates a clean metadata row',()=>{
+ const html=read('clubs/index.html'),js=read('assets/clubs-directory.js'),css=read('assets/clubs-directory.css'),generator=read('tools/generate-app-pages.mjs');
+ const cards=[...html.matchAll(/<div class="nav01-card nav01-skeleton-card" aria-hidden="true">([\s\S]*?)<\/div>/g)].map(m=>m[1]);
+ assert.equal(cards.length,16);
+ for(const card of cards){
+  for(const part of ['nav01-skeleton-name','nav01-skeleton-location','nav01-skeleton-flag','nav01-skeleton-city'])
+   assert.ok(card.includes(part),'Missing first-paint skeleton: '+part);
+  assert.doesNotMatch(card,/ · |nav01-country-flag|<svg/,'no visible identities while awaiting the manifest');
+ }
+ assert.ok(generator.includes('nav01-skeleton-flag')&&generator.includes('nav01-skeleton-city'),'HTML is generated from the same skeleton contract');
+ assert.ok(css.includes('.nav01-card.nav01-skeleton-card>.nav01-skeleton-copy{display:block'),'loading bars are not hidden by normal card styling');
+ assert.ok(js.includes('class="nav01-club-location"><svg'),'real flag is first on the metadata row');
+ assert.match(js,/class="nav01-club-city">'\+safe\(c\.city\)/,'city is the only visible metadata text');
+ assert.ok(!js.includes("safe(c.city)+' · ")&&!js.includes('dm.has(c.divisionId)'),'no separating dot or league name');
+});
 test('UI-409 PAGE-LOAD-04: anonymous crest slots are replaced only after the club manifest resolves',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
- assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6,'six anonymous directory cards');
- assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,6,'six reserved shield footprints');
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16,'sixteen anonymous directory cards');
+ assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16,'sixteen reserved crest footprints');
  assert.equal((html.match(/<img class="nav01-crest-image"/g)||[]).length,0,'no crest URL before manifest');
  assert.ok(Object.keys(manifest.clubCrests).length>0,'canonical crest mapping remains in fetched catalog');
  assert.match(read('assets/clubs-directory.js'),/m\.clubCrests\?\.\[c\.countryId/,'crests populated from fetched manifest');

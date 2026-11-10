@@ -75,7 +75,7 @@
   indexCache.set(manifest,index);
   return index;
  }
- function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null){
+ function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
   const index=getIndex(manifest),c=index.clubs.get(selected.countryId+'-'+selected.clubId);
   if(!c)throw Error('Unknown club identity');
@@ -89,7 +89,7 @@
    .replace(/href="#([^"]+)"/g,(_,id)=>'href="#club-'+placement+'-'+id+'"');
   const link=division?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'standings'}):null;
   const fact=(label,value)=>'<div><dt>'+escape(t[label])+'</dt><dd>'+value+'</dd></div>';
-  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
+  const crest=()=>'<span class="app-world-club-crest-placeholder club-crest fa-crest-loading" data-club-crest="'+escape(c.countryId+'-'+c.clubId)+'"'+(Object.hasOwn(manifest.clubCrests||{},c.countryId+'-'+c.clubId)?' data-club-crest-pending="true"':'')+' role="img" aria-label="'+escape(t.crest+' — '+c.primaryName)+'">'+(manifest.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="app-club-crest-image" src="/'+escape(manifest.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" decoding="sync">':'')+'</span>';
   const divisionLogo=division?'/assets/divisions/'+division.id.toLowerCase()+'-'+division.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg':null;
   const summary=division&&snapshot?.source==='dev'&&snapshot.divisionId===division.id&&snapshot.clubId===c.clubId&&
    Number.isInteger(snapshot.season)&&snapshot.season>=1&&snapshot.season<=4&&
@@ -200,6 +200,38 @@
     '</div><aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     effectiveCompetitionCard+'</section></div>';
+  }else if(selected.view==='history'){
+   const words={
+    en:['Season','Position','Pts','No competitions in this season.'],
+    de:['Saison','Platz','Pkt','Keine Wettbewerbe in dieser Saison.'],
+    es:['Temporada','Posición','Pts','Sin competiciones en esta temporada.'],
+    fr:['Saison','Position','Pts','Aucune compétition cette saison.'],
+    it:['Stagione','Posizione','Pt','Nessuna competizione in questa stagione.']
+   }[lang];
+   const verified=historySnapshot?.source==='authoritative'&&historySnapshot.clubKey===clubKey&&
+    ['complete','empty'].includes(historySnapshot.coverage)&&Array.isArray(historySnapshot.seasons);
+   let inner;
+   if(verified&&!historySnapshot.seasons.length)inner='<p class="club-history-status">'+escape(t.emptyHistory)+'</p>';
+   else if(verified){
+    inner='<ol class="club-history-seasons">'+[...historySnapshot.seasons].reverse().map(entry=>
+     '<li class="club-history-season" data-club-history-season="'+entry.season+'">'+
+      '<h3>'+escape(words[0])+' '+entry.season+'</h3>'+
+      (entry.memberships.length?'<div class="club-history-competitions">'+entry.memberships.map(m=>{
+       const def=index.divisions.get(m.competitionId),isDomestic=m.category==='domestic';
+       const title=isDomestic?(def?.name||m.name):m.name;
+       const url=routes.buildRoute({kind:isDomestic?'competition':'cup',id:m.competitionId.toLowerCase(),view:'standings'})+'?season='+entry.season;
+       const rank=isDomestic&&m.position!==null?words[1]+' '+ordinal(m.position,lang):!isDomestic&&internationalStatusLabels[lang][m.cupStatus]?internationalStatusLabels[lang][m.cupStatus]:null;
+       return '<div class="club-history-competition" data-history-competition="'+escape(m.competitionId)+'">'+
+        '<a class="app-link" href="'+escape(url)+'">'+escape(title)+'</a>'+
+        '<span class="club-history-result">'+(rank?'<span>'+escape(rank)+'</span>':'')+
+        '<span>'+escape(words[2])+' '+m.points+'</span></span></div>';
+      }).join('')+'</div>':'<p>'+escape(words[3])+'</p>')+'</li>'
+    ).join('')+'</ol>';
+   }else if(historySnapshot?.source==='unavailable')
+    inner='<p class="club-history-status" role="status">'+escape(t.error)+'</p>';
+   else inner='<div class="club-history-loading" aria-hidden="true"><span class="club-fp-bar"></span><span class="club-fp-bar"></span><span class="club-fp-bar"></span></div>';
+   content='<section class="app-panel club-history" aria-busy="'+(!verified&&historySnapshot?.source!=='unavailable')+'">'+
+    '<h2>'+escape(t.history)+'</h2>'+inner+'</section>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';

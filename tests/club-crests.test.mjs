@@ -152,7 +152,7 @@ test('FR-2 club pages suppress first-paint placeholder and label the real crest 
  for(const view of clubModel.views){
   for(const lang of ['en','de','es','fr','it']){
    const html=clubModel.render(base,{countryId:'FR',clubId:2,view,base:'/clubs/fr/2'},lang);
-   const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest"[^>]*>(?:<img[^>]*>)?<\/span>/g)].map(x=>x[0]);
+   const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest fa-crest-loading"[^>]*>(?:<img[^>]*>)?<\/span>/g)].map(x=>x[0]);
    assert.equal(hosts.length,1,view+' '+lang+' retains the single header crest');
    for(const crest of hosts){
     assert.match(crest,/data-club-crest="FR-2"/);
@@ -175,7 +175,7 @@ test('QA-15: known directory crests have a skeleton and missing or failed crests
  assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before,\s*\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(detail,/\.club-first-paint-header \.club-crest\{visibility:visible\}/);
- assert.match(detail,/\.club-first-paint-header \.club-crest:not\(\[data-club-crest\]\)::before\{display:none\}/);
+ assert.match(app,/\.app-world-club-crest-placeholder\.fa-crest-loading::before/,'shared anonymous crest loads as a circle');
  assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{[^}]*background:color-mix\([^}]*clip-path:none/);
  assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(directory,/\.nav01-crest-image\{position:absolute;inset:0;[^}]*object-fit:contain/);
@@ -193,7 +193,7 @@ test('QA-15: Clubs scales the Standings circular crest skeleton to its own logo 
  assert.match(standingsDesktop,/flex:0 0 48px;height:48px;border-radius:50%/);
  assert.match(standingsMobile,/flex:0 0 40px;height:40px;border-radius:50%/);
  for(const style of [standingsDesktop,standingsMobile,clubsPending])
-  assert.match(style,/background:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)/);
+  assert.match(style,/background:(?:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)|var\(--fa-crest-skeleton-fill\))/);
  assert.match(clubsPending,/left:50%;top:50%;width:100%;height:auto;max-height:100%;aspect-ratio:1;transform:translate\(-50%,-50%\)/);
  assert.match(clubsPending,/clip-path:none;border-radius:50%/);
  for(const slot of ['width:82px;height:88px','width:68px;height:74px','width:64px;height:70px'])
@@ -212,7 +212,7 @@ test('QA-15 PAGE-LOAD-04: shared country flag sprites are static, club flags are
   assert.ok(!html.includes('<use href="#fa-directory-flag-'+country+'"></use>'),'no per-club country flags before catalog: '+country);
  }
  assert.equal((html.match(/<svg class="nav01-country-flag"/g)||[]).length,0);
- assert.equal((html.match(/nav01-skeleton-card"/g)||[]).length,6,'six anonymous cards');
+ assert.equal((html.match(/nav01-skeleton-card"/g)||[]).length,16,'sixteen anonymous cards');
  assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-card nav01-skeleton-card'),'sprite precedes cards');
  assert.match(generator,/const directoryFlagSprite=/);
  assert.match(client,/<use href="#fa-directory-flag-/,'hydrated club cards reuse the same vectors');

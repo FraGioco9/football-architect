@@ -52,6 +52,14 @@ export function historyViewModel(context){
  return {season:history.season,champion,podium,semifinalLosers,records,teams:totals.map(r=>({club:r.club,won:r.won,gf:r.gf,pts:r.pts})),players:null,allTime:null};
 }
 
+// Every sealed season belongs to the archive: a two-season limit silently
+// dropped past champions and corrupted cumulative records beyond Season 2.
+export function closedHistorySeasonNumbers(world){
+ const last=world?.seasonNumber-(world?.phase==='closed'?0:1);
+ if(!Number.isSafeInteger(last)||last<0)return [];
+ return Array.from({length:last},(_,i)=>i+1);
+}
+
 export function historyAggregate(seasons){
  const records={},ordered=[...seasons].sort((a,b)=>a.season-b.season);
  for(const key of metricKeys){
@@ -212,8 +220,7 @@ export function mountAuthoritativeHistory(panel,{getContext,manifest,isDev=()=>f
   }
   const group=world.generation+':'+ctx.definition.id;
   if(generation!==group){stop();collection.clear();generation=group;ready='';}
-  const last=world.seasonNumber-(world.phase==='closed'?0:1);
-  const completed=Array.from({length:Math.max(0,Math.min(2,last))},(_,i)=>i+1);
+  const completed=closedHistorySeasonNumbers(world);
   // Distinct world revisions must cancel obsolete in-flight historical reads.
   const key=group+':'+world.revision+':'+completed.join(',');
   // Current-season data may be null: the canonical clock alone authorizes

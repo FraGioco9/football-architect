@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {historyViewModel,historyAggregate,mountAuthoritativeHistory} from '../assets/authoritative-history.mjs';
+import {historyViewModel,historyAggregate,mountAuthoritativeHistory,closedHistorySeasonNumbers} from '../assets/authoritative-history.mjs';
 const club={countryId:'IT',clubId:1,primaryName:'Test club'};
 const row={club,played:30,won:20,drawn:5,lost:5,gf:60,ga:20,gd:40,pts:65,recent:[]};
 const context=()=>({selectedSeason:1,definition:{id:'IT-1',category:'domestic'},seasonData:{season:1,provenance:{kind:'authoritative'},world:{phase:'closed'},participants:[club],history:{season:1,championClubId:'IT-1',archiveHash:'a'.repeat(64),closedAt:100},statistics:{standings:[row]}}});
@@ -26,6 +26,14 @@ test('verified History populates records without mounting a Hall or hiding Seaso
 });
 
 
+test('PAGE-LOAD-04 B02: History enumerates every closed season without truncating after two',()=>{
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:0,phase:'active'}),[]);
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:1,phase:'active'}),[]);
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:1,phase:'closed'}),[1]);
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:4,phase:'active'}),[1,2,3]);
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:4,phase:'closed'}),[1,2,3,4]);
+ assert.deepEqual(closedHistorySeasonNumbers({seasonNumber:NaN,phase:'active'}),[]);
+});
 test('QA-12: an active Season 2 has a completed Season 1 archive instead of treating active Season 2 as empty history',()=>{
  const previous=context(),closed=historyViewModel(previous);
  const current=context();current.selectedSeason=2;current.seasonData={season:2,provenance:{kind:'authoritative'},world:{generation:'g',seasonNumber:2,phase:'active',day:4},history:null};
@@ -91,7 +99,7 @@ test('QA-12: shared public History reads sealed prior seasons through anonymous 
  assert.match(history,/\/api\/competitions\//);
  assert.match(history,/validateAuthoritativeSeason\(input,target,manifest\)/);
  assert.match(history,/adaptAuthoritativeSeason\(checked,target,manifest\)/);
- assert.match(history,/const last=world\.seasonNumber-\(world\.phase==='closed'\?0:1\)/);
+ assert.match(history,/const completed=closedHistorySeasonNumbers\(world\)/);
  assert.match(history,/credentials:'omit'/);
  assert.doesNotMatch(history,/\/api\/admin\//);
  assert.match(page,/manifest,isDev:\(\)=>activeDebugSeason!==null/);

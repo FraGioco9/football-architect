@@ -171,7 +171,7 @@
   function identity(id,home){
     const club=clubs.get(id),item=element("span","app-fixture-club"+(home?" app-fixture-home":""));
     if(!club){item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),element("span","app-world-club-crest-placeholder"),element("span","app-fixture-name","TBD"));return item;}
-    const crest=element("span","app-world-club-crest-placeholder");
+    const crest=element("span","app-world-club-crest-placeholder fa-crest-loading");
     crest.dataset.clubCrest=rules.clubKey(club);crest.setAttribute("aria-hidden","true");
     item.append(word(home?"fixturesHome":"fixturesAway",home?"Home":"Away","sr-only"),crest,
       (()=>{const link=element("a","app-fixture-name app-world-standing-club-link",club.primaryName||club.abbr);link.href=window.faRoutesRegistry.buildRoute({kind:"club",country:club.countryId.toLowerCase(),id:club.clubId,view:"overview"});return link})());

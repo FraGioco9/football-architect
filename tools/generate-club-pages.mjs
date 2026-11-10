@@ -68,7 +68,7 @@ function bootstrapClubFirstPaint(){
 function buildClubShell(firstPaintScript){
  return '<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
   '<div id="club-page" aria-live="polite">'+
-  '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest"></span><div>'+
+  '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest fa-crest-loading"></span><div>'+
   '<h1 id="club-title" class="app-page-title"><span class="club-fp-bar club-fp-header-name" aria-hidden="true"></span></h1>'+
   '<p class="club-location"><span class="club-first-paint-flag" aria-hidden="true"></span><span data-club-first-paint-location><span class="club-fp-bar club-fp-header-location" aria-hidden="true"></span></span></p>'+
   '</div></header>'+
