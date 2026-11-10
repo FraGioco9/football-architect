@@ -228,8 +228,8 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('kitJerseyDetailRegion'));
   assert.ok(designJS.includes('KIT_CUFF_BORDER_METRES'));
   assert.ok(designJS.includes('kmTrimRegion'));
-  assert.ok(designJS.includes('kmTrimEdgeV'));
-  assert.ok(designJS.includes('kitOuterTrimThreshold'));
+  assert.ok(designJS.includes('kmTrimStartM'));
+  assert.ok(designJS.includes('measureKitPhysicalTrimProjection'));
   assert.ok(designJS.includes('KIT_CUFF_FOLD_RETURN_METRES'));
   assert.ok(designJS.includes('KIT_TORSO_HEM_METRES'));
   assert.ok(designJS.includes('38|39|62|63'));

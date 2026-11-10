@@ -1091,3 +1091,23 @@ be confirmed. No CI success is claimed.
 
 PR #454 stays **Draft/HOLD**. No merge, deploy, remote DB change
 or redistribution of the privately licensed artist model.
+
+## KM-24 — fitted physical sleeve and waist edges (2026-11-10)
+
+Owner QA found that the collar trim was correct but the two sleeve cuffs
+and bottom body hem were positioned incorrectly. UV V coordinates track
+the flattened texture atlas, not necessarily the real exterior opening.
+
+KM-24 measures both source sleeve primitives per arm together, fits a
+sloping outward XY direction and colours the last 24 mm of sleeve in
+3D garment space. Torso front/back meshes share a bottom 24 mm band
+along real vertical Y. A 99.5th-percentile distal cut limits outlier
+effects. The fitted projections are cached per outfit; colour/style
+changes reuse the same uniforms with no geometry or UV alteration.
+The outer collar, existing one-colour Jersey trims setting, even-width
+UV stripes, boots and original artist binary are unchanged.
+
+Targeted synthetic geometry and shader tests cover both cuff directions,
+whole sleeve opening and curved lower hem. Owner-local original GLB
+WebGL/Safari visual QA is still pending. PR #454 Draft/HOLD, no merge,
+deployment or remote database work.

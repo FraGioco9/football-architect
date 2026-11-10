@@ -1,0 +1,33 @@
+{
+  "revision": "KM-24",
+  "date": "2026-11-10",
+  "pr": 454,
+  "ownerFeedback": "Collar trim is correct but cuffs and lower hem appear in the wrong physical positions",
+  "diagnosis": "Flat atlas UV V does not reliably identify the exterior sewn opening",
+  "sourceMeshes": {
+    "right": [
+      "FA_jersey__38",
+      "FA_jersey__39"
+    ],
+    "left": [
+      "FA_jersey__62",
+      "FA_jersey__63"
+    ],
+    "torso": [
+      "FA_jersey__9",
+      "FA_jersey__10",
+      "FA_jersey__42",
+      "FA_jersey__43"
+    ]
+  },
+  "implementation": "3D XY sleeve principal axis and negative-Y waist, shared by same-region source material primitives, 24mm distal physical band, cached per outfit",
+  "sourceGeometryMutated": false,
+  "shaderKey": "km24-physical-exterior-trim-v1",
+  "qa": {
+    "syntheticGeometry": "new tests",
+    "originalOwnerLocalWebGL": "pending",
+    "fullNode": "pending"
+  },
+  "status": "Draft/HOLD",
+  "merge": false
+}
