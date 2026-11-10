@@ -79,21 +79,24 @@ export function summarizeTrimTopology(primitives){
  for(const [x,y] of [[v[0],v[1]],[v[1],v[2]],[v[2],v[0]]]){
  const lo=Math.min(x,y),hi=Math.max(x,y),key=lo+':'+hi;
  if(!edges.has(key))edges.set(key,{a:lo,b:hi,faces:[]});
- const e=edges.get(key);if(e.faces.length<3)e.faces.push({n,material:prim.material});}
+ const e=edges.get(key);if(e.faces.length<3)e.faces.push({n,material:prim.material,primitive:prim.name});}
  }
  inventory.push({name:prim.name,material:prim.material,triangles,areaM2:r(area)});
  }
- const exterior=[],material=[],folds=[],nonManifold=[];
+ const exterior=[],material=[],primitiveInterfaces=[],folds=[],nonManifold=[];
  for(const e of edges.values()){
  if(e.faces.length===1)exterior.push(e);
  else if(e.faces.length>2)nonManifold.push(e);
  else{const [a,b]=e.faces;
  if(a.material!==b.material)material.push(e);
+ if(a.primitive!==b.primitive)primitiveInterfaces.push(e);
  if(a.n.reduce((s,x,i)=>s+x*b.n[i],0)<.70710678)folds.push(e);}
  }
  return {primitives:inventory,uniqueVertices:points.length,
- edgeCounts:{exterior:exterior.length,material:material.length,folds:folds.length,nonManifold:nonManifold.length},
- openings:trace(exterior,points),materialBorders:trace(material,points),foldBorders:trace(folds,points)};
+ edgeCounts:{exterior:exterior.length,material:material.length,primitiveInterfaces:primitiveInterfaces.length,
+ folds:folds.length,nonManifold:nonManifold.length},
+ openings:trace(exterior,points),materialBorders:trace(material,points),
+ primitiveBorders:trace(primitiveInterfaces,points),foldBorders:trace(folds,points)};
 }
 export function inspectSenaTrimTopology(bytes){
  const {doc,bin}=load(Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes)),nodes=doc.nodes??[];

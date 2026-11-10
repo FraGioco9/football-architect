@@ -10,6 +10,7 @@ test('KM-26 identifies author open boundaries and material seams, without painte
   assert.equal(result.uniqueVertices,6);
   assert.equal(result.edgeCounts.exterior,6);
   assert.equal(result.edgeCounts.material,1);
+  assert.equal(result.edgeCounts.primitiveInterfaces,1);
   assert.equal(result.openings.length,1);
   assert.equal(result.openings[0].closed,true);
   assert.equal(result.openings[0].perimeterM,6);
@@ -22,4 +23,11 @@ test('KM-26 preserves disconnected physical openings independently',()=>{
 });
 test('KM-26 malformed private assets fail closed, without uploading geometry',()=>{
   assert.throws(()=>inspectSenaTrimTopology(Buffer.from('bad')),/Invalid GLB/);
+});
+
+test('KM-26 finds an original primitive interface even when material is reused',()=>{
+  const a=quad(0,'shared'),b=quad(1,'shared');
+  const result=summarizeTrimTopology([a,b]);
+  assert.equal(result.edgeCounts.material,0);
+  assert.equal(result.edgeCounts.primitiveInterfaces,1);
 });
