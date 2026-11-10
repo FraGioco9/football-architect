@@ -21,6 +21,10 @@ The sole approved club registry is [the canonical CSV](../../data/clubs-registry
 
 The stable identity is the pair `(countryId, clubId)`, independent of division, simulation state or names. No field is inferred or normalized. The only CSV-to-JSON type conversion is numeric `clubId`.
 
+## Owner-directed identity amendment (2026-11-10)
+
+The owner chose **Trafford United** for `ENG-2`, assigning its unique abbreviation **`TRA`**. The previously assigned `TRA` abbreviation on `IT-27` (Tramontana Calcio) is reassigned to **`TRM`**, which was unused. The club keys, cities, nicknames, stadiums, and social colors remain unchanged. The original English description and four translations substitute the former club name without altering its historical context. This later amendment does not replace the historical 2026-10-16 approval or its archival checksum. See [CLUB-COLORS #466](https://github.com/FraGioco9/football-architect/issues/466) for related but separate palette proposals.
+
 ## Approved source
 
 Imported from `football_architect_320_clubs_final_approved_offline(1).csv`, approved by the owner on 2026-10-16. Its SHA-256 is `6940d8bc1abebb6ef06c6d3f56077b4899877a66476b182d14f2fda097ae6d0f`. The checked-in CSV preserves those exact bytes. The regression suite fingerprints both the approved CSV and the full JSON payload, including every description and Unicode character.
