@@ -34,12 +34,14 @@ try{
     assert.equal(await page.locator('.fa-shell-nav [aria-current="page"]').getAttribute('id'),'app-nav-profile');
     assert.equal(await page.locator('h1').textContent(),labels[language]);
     assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
-    assert.equal(await page.locator('#username-row').isVisible(),width!==1440);
-    assert.equal(await page.locator('#location-row').isVisible(),width!==1440);
+    assert.equal(await page.locator('#username-row').isVisible(),true);
+    assert.equal(await page.locator('#nationality-row').isVisible(),true);
+    assert.equal(await page.locator('#city-row').isVisible(),true);
     if(width!==1440){
      assert.equal(await page.locator('#username-value').textContent(),'synthetic_player');
      const country=new Intl.DisplayNames([language],{type:'region'}).of('IT');
-     assert.equal(await page.locator('#location-value').textContent(),country+' · Rome');
+     assert.equal(await page.locator('#nationality-value').textContent(),country);
+     assert.equal(await page.locator('#city-value').textContent(),'Rome');
     }
     const table=await page.locator('.app-profile-table').boundingBox();
     const layout=await page.locator('.app-profile').boundingBox();
@@ -50,7 +52,8 @@ try{
     assert.ok(Math.abs((signOut.x+signOut.width)-(table.x+table.width))<1,'Sign out aligns with the table edge');
     assert.equal(await page.locator('#change-form').isVisible(),false);
     assert.equal(await page.locator('#profile-tab').getAttribute('aria-selected'),'true');
-    assert.equal(await page.locator('#edit-profile-title').isVisible(),true);
+    assert.equal(await page.locator('[data-profile-edit]').count(),3);
+    assert.equal(await page.locator('#edit-profile-form').isVisible(),false);
     await page.locator('#profile-tab').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#security-tab').getAttribute('aria-selected'),'true');
@@ -71,18 +74,28 @@ try{
      await page.locator('#status[data-kind=success]').filter({hasText:'both addresses'}).waitFor();
      await page.locator('#profile-tab').click();
      assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
-     await page.route('**/api/player/account/profile',async route=>{
-      const profile=route.request().postDataJSON();
-      assert.deepEqual(profile,{username:'renamed_player',nationality:'IT',city:'Milan'});
-      await route.fulfill({status:200,json:{profile}});
-     });
-     await page.locator('#edit-profile-title').click();
-     await page.locator('#edit-profile-form [name=username]').fill('renamed_player');
-     await page.locator('#edit-profile-form [name=city]').fill('Milan');
-     await page.locator('#save-profile-button').click();
-     await page.locator('#status[data-kind=success]').filter({hasText:'Profile updated'}).waitFor();
-     assert.equal(await page.locator('#username-value').textContent(),'renamed_player');
-     assert.equal(await page.locator('#location-value').textContent(),'Italy · Milan');
+     let current={username:'synthetic_player',nationality:'IT',city:'Rome'};
+     for(const [field,value,display] of [['username','renamed_player','renamed_player'],['city','Milan','Milan'],['nationality','FR','France']]){
+      const expected={...current,[field]:value};
+      await page.route('**/api/player/account/profile',async route=>{
+       assert.deepEqual(route.request().postDataJSON(),{[field]:value});
+       await route.fulfill({status:200,json:{profile:expected}});
+      },{times:1});
+      const pencil=page.locator(`[data-profile-edit="${field}"]`);
+      await pencil.click();
+      const form=page.locator(`#${field}-row #edit-profile-form`);
+      assert.equal(await form.locator('input:visible, select:visible').count(),1);
+      const input=form.locator(`[name="${field}"]`);
+      if(field==='nationality')await input.selectOption(value);else await input.fill(value);
+      await form.locator('#save-profile-button').click();
+      await page.locator(`#${field}-value`).filter({hasText:display}).waitFor();
+      assert.equal(await pencil.getAttribute('aria-expanded'),'false');
+      current=expected;
+     }
+     await page.locator('[data-profile-edit="city"]').click();
+     await page.locator('#edit-profile-form [name=city]').fill('Uncommitted');
+     await page.locator('#cancel-profile-button').click();
+     assert.equal(await page.locator('#city-value').textContent(),'Milan');
     }
     assert.equal(await page.locator('#security, #delete-form, #revoke-button').count(),0);
     assert.equal(sessionLists,0,'Profile does not request the session list');

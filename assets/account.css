@@ -107,3 +107,11 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .app-profile-password{min-width:0;width:min(100%,420px);justify-self:center}
 .app-profile-password summary{width:fit-content;max-width:100%;margin-inline:auto;cursor:pointer;color:var(--muted);font-size:var(--fa-text-control)}
 .app-profile-password summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+
+.app-profile-field{display:flex;align-items:center;justify-content:space-between;gap:var(--fa-space-2)}
+.app-profile-field span{min-width:0}
+.app-profile-pencil{display:grid;place-items:center;flex:none;width:36px;height:36px;border:0;border-radius:var(--fa-radius-control);background:transparent;color:var(--muted);cursor:pointer}
+.app-profile-pencil:hover,.app-profile-pencil[aria-expanded="true"]{color:var(--text);background:var(--surface-raised)}
+.app-profile-pencil:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-profile-pencil:disabled{opacity:.5;cursor:default}
+.app-profile-edit-actions{display:flex;gap:var(--fa-space-2);flex-wrap:wrap}

@@ -1,4 +1,4 @@
-import {parseRegistrationProfile} from './player-profile.ts';
+import {parseProfileLocation,parseRegistrationProfile} from './player-profile.ts';
 import {ApiError} from './errors.ts';
 import {abortUnless} from './atomic-guard.ts';
 import type {Database} from './database.ts';
@@ -65,13 +65,25 @@ export async function deletePlayerAccount(db:Database,session:Identity,body:unkn
 }
 
 export async function updatePlayerProfile(db:Database,session:Identity,input:unknown,now:number){
- const profile=parseRegistrationProfile(ensureObject(input,['username','nationality','city']));
- const updated=await db.prepare(`UPDATE player_accounts AS a SET username=?,nationality=?,city=?,updated_at=?
+ if(!input||typeof input!=='object'||Array.isArray(input))throw new ApiError(422,'invalid_account_request');
+ const keys=Object.keys(input);
+ if(!keys.length||keys.some(key=>!['username','nationality','city'].includes(key)))throw new ApiError(422,'invalid_account_request');
+ const fields=input as Record<string,unknown>;
+ const hasUsername=keys.includes('username');
+ const profile=hasUsername?parseRegistrationProfile(fields):{username:null,...parseProfileLocation(fields)};
+ const updated=await db.prepare(`UPDATE player_accounts AS a SET
+  username=CASE WHEN ? THEN ? ELSE username END,
+  nationality=CASE WHEN ? THEN ? ELSE nationality END,
+  city=CASE WHEN ? THEN ? ELSE city END,
+  updated_at=?
   WHERE a.id=? AND a.status='active' AND a.email_verified_at IS NOT NULL
    AND EXISTS(SELECT 1 FROM player_sessions s WHERE s.account_id=a.id AND s.token_digest=?
     AND s.credential_version=a.credential_version AND s.expires_at>? AND s.last_seen_at>?)
-   AND NOT EXISTS(SELECT 1 FROM player_accounts WHERE id<>a.id AND username=? COLLATE NOCASE)`)
-  .bind(profile.username,profile.nationality,profile.city,now,session.actor.id,session.digest,now,now-604800,profile.username).run();
- if(updated.meta.changes!==1)throw new ApiError(409,'profile_unavailable');
- return {profile};
+   AND NOT EXISTS(SELECT 1 FROM player_accounts WHERE id<>a.id AND username=? COLLATE NOCASE)
+  RETURNING username,nationality,city`)
+  .bind(Number(hasUsername),profile.username,Number(keys.includes('nationality')),profile.nationality,
+   Number(keys.includes('city')),profile.city,now,session.actor.id,session.digest,now,now-604800,profile.username)
+  .first<{username:string|null;nationality:string|null;city:string|null}>();
+ if(!updated)throw new ApiError(409,'profile_unavailable');
+ return {profile:updated};
 }

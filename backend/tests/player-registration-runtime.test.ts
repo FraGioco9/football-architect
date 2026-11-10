@@ -148,11 +148,21 @@ it('updates profile data and changes login email only after both addresses confi
  const write=(path:string,payload:unknown,csrf=csrfToken)=>worker.fetch(new Request(origin+'/api/player/account/'+path,{
   method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(payload)
  }),config);
+ await db.prepare('UPDATE player_accounts SET username=NULL WHERE email_normalized=?').bind(oldEmail).run();
+ const legacyProfile={username:null,nationality:'IT',city:'Rome'};
+ const legacyUpdate=await write('profile',{nationality:'IT',city:'Rome'});
+ expect(legacyUpdate.status).toBe(200);
+ expect(await legacyUpdate.json()).toEqual({profile:legacyProfile});
  const profile={username:'updated_user',nationality:'IT',city:'Rome'};
  expect((await write('profile',profile,'')).status).toBe(403);
  const updated=await write('profile',profile);
  expect(updated.status).toBe(200);
  expect(await updated.json()).toEqual({profile});
+ expect((await write('profile',legacyProfile)).status).toBe(422);
+ const [cityUpdate,countryUpdate]=await Promise.all([write('profile',{city:'Milan'}),write('profile',{nationality:'FR'})]);
+ expect([cityUpdate.status,countryUpdate.status]).toEqual([200,200]);
+ expect(await db.prepare('SELECT username,nationality,city FROM player_accounts WHERE email_normalized=?').bind(oldEmail).first())
+  .toEqual({username:'updated_user',nationality:'FR',city:'Milan'});
  expect((await write('profile',{...profile,role:'admin'})).status).toBe(422);
  expect((await write('change-email',{email:newEmail,currentPassword:password+'x'})).status).toBe(403);
  delivered.clear();

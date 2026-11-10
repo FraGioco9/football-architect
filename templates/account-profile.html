@@ -8,23 +8,25 @@
                 <button class="app-competition-tab" type="button" id="security-tab" role="tab" aria-selected="false" aria-controls="security-panel" tabindex="-1">Security</button>
               </div>
               <div class="app-profile-panel" id="profile-panel" role="tabpanel" aria-labelledby="profile-tab">
+              <span id="profile-edit-label" class="sr-only">Edit</span>
               <table class="app-profile-table" aria-labelledby="title">
                 <tbody>
-                  <tr id="username-row" hidden><th scope="row" id="username-label">Username</th><td id="username-value"></td></tr>
+                  <tr id="username-row"><th scope="row" id="username-label">Username</th><td><div class="app-profile-field"><span id="username-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="username" aria-labelledby="profile-edit-label username-label" aria-controls="edit-profile-form" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
                   <tr><th scope="row" id="profile-title">Email</th><td id="identity"></td></tr>
-                  <tr id="location-row" hidden><th scope="row" id="location-label">Location</th><td id="location-value"></td></tr>
+                  <tr id="nationality-row"><th scope="row" id="nationality-label">Country</th><td><div class="app-profile-field"><span id="nationality-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="nationality" aria-labelledby="profile-edit-label nationality-label" aria-controls="edit-profile-form" aria-expanded="false" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
+                  <tr id="city-row"><th scope="row" id="city-label">City</th><td><div class="app-profile-field"><span id="city-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="city" aria-labelledby="profile-edit-label city-label" aria-controls="edit-profile-form" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
                 </tbody>
               </table>
               <button class="cta cta-secondary" id="logout-button" type="button">Sign out</button>
-              <details class="app-profile-password">
-                <summary id="edit-profile-title">Edit profile</summary>
-                <form method="post" id="edit-profile-form">
-                  <label><span id="edit-username-label">Username</span><input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" autocomplete="username"></label>
-                  <label><span id="edit-nationality-label">Country</span><select name="nationality" id="profile-nationality" autocomplete="country" disabled><option value=""></option></select></label>
-                  <label><span id="edit-city-label">City</span><input name="city" maxlength="100" autocomplete="address-level2"></label>
+              <form method="post" id="edit-profile-form" hidden>
+                <input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" autocomplete="username" aria-labelledby="username-label" hidden disabled>
+                <select name="nationality" id="profile-nationality" autocomplete="country" aria-labelledby="nationality-label" hidden disabled><option value=""></option></select>
+                <input name="city" maxlength="100" autocomplete="address-level2" aria-labelledby="city-label" hidden disabled>
+                <div class="app-profile-edit-actions">
                   <button class="cta cta-primary" type="submit" id="save-profile-button">Save changes</button>
-                </form>
-              </details>
+                  <button class="cta cta-secondary" type="button" id="cancel-profile-button">Cancel</button>
+                </div>
+              </form>
               </div>
               <div class="app-profile-panel" id="security-panel" role="tabpanel" aria-labelledby="security-tab" hidden>
               <details class="app-profile-password">
