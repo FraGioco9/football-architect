@@ -2,7 +2,7 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
- let selected=model.route(location.pathname),competitionSnapshot=null;
+ let selected=model.route(location.pathname),competitionSnapshot={source:'loading'};
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const competitionSeason=()=>{
   const explicit=new URLSearchParams(location.search).get('season');
@@ -82,7 +82,7 @@
     }
     const title=header.querySelector('#club-title'),nextTitle=stagedHeader.querySelector('#club-title');
     if(title&&nextTitle&&title.textContent!==nextTitle.textContent)title.textContent=nextTitle.textContent;
-    for(const selector of ['.club-location','.club-header-division']){
+    for(const selector of ['.club-location']){
      const existing=header.querySelector(selector),next=stagedHeader.querySelector(selector);
      if(existing&&next&&existing.innerHTML!==next.innerHTML)existing.innerHTML=next.innerHTML;
     }
@@ -159,36 +159,110 @@
    }
    document.documentElement.dataset.clubReady='true';
   };
-  window.addEventListener('fa:club-competition-summary',event=>{
-   // Provider envelopes are selected explicitly; legacy summary payloads keep
-   // their established rendering path until the producer migrates.
-   const incoming=event.detail;
-   const previousSnapshot=JSON.stringify(competitionSnapshot);
-   if(incoming?.schemaVersion===1){
-    const selectors=window.faProviderSelectors;
-    if(!selectors)return;
-    const chosen=incoming.scope==='history'
-      ?selectors.selectHistoryData(incoming,incoming.competitionId,incoming.selectedSeason)
-      :selectors.selectSeasonData(incoming,incoming.competitionId,incoming.selectedSeason);
-    if(!chosen)return;
-    competitionSnapshot=chosen;
-   }else {
-    if(incoming!==null&&window.faDevPreviewMode!==true&&!document.querySelector('script[data-fa-dev-club-summary]'))return;
-    competitionSnapshot=incoming;
-   }
-   if(JSON.stringify(competitionSnapshot)===previousSnapshot)return;
+  const applyCompetitionSnapshot=incoming=>{
+   const previous=JSON.stringify(competitionSnapshot);
+   if(previous===JSON.stringify(incoming))return;
+   competitionSnapshot=incoming;
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
-   const staging=document.createElement('div');staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
+   const staging=document.createElement('div');
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
    const replacement=staging.querySelector('.club-competition');
+   if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    bindDivisionLinks(replacement);
    reuseCrests(panel,replacement);
    panel.replaceWith(replacement);
-   if(focused){const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
-    if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}}
+   if(focused){
+    const target=[...replacement.querySelectorAll('a')].find(link=>link.getAttribute('href')===href);
+    if(target)target.focus({preventScroll:true});else{replacement.tabIndex=-1;replacement.focus({preventScroll:true});}
+   }
+  };
+  // Isolated protected DEV summaries never override an authoritative snapshot.
+  window.addEventListener('fa:club-competition-summary',event=>{
+   if(window.faDebugEnabled===false||!window.faDevPreviewMode&&window.faWorldState?.get?.().source==='authoritative')return;
+   const incoming=event.detail;
+   if(incoming?.schemaVersion===1){
+    const selectors=window.faProviderSelectors;
+    if(!selectors)return;
+    const chosen=incoming.scope==='history'
+     ?selectors.selectHistoryData(incoming,incoming.competitionId,incoming.selectedSeason)
+     :selectors.selectSeasonData(incoming,incoming.competitionId,incoming.selectedSeason);
+    if(!chosen)return;
+    applyCompetitionSnapshot(chosen);
+   }else if(incoming===null){
+    applyCompetitionSnapshot(null);
+   }else if(incoming?.source==='dev'){
+    applyCompetitionSnapshot(incoming);
+   }
   });
   paint();
+  // Public source: exactly the club's two domestic candidates plus both cups.
+  // Shared world ownership, strict season validation and a reset fence prevent
+  // showing Season 1 memberships in Season 2 or on Debug source transitions.
+  let publicEpoch=0,publicAbort=null,lastWorldKey=null;
+  const publicJson=async(path,{signal}={})=>{
+   const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});
+   if(!response.ok)throw Error('Public club competition data unavailable');
+   return response.json();
+  };
+  const enablePublic=async()=>{
+   try{
+    const projection=await import('/assets/club-season-source.mjs');
+    // app.js imports the shared adapter asynchronously. A cold Club URL can
+    // resolve its manifest before that import finishes: subscribe only after
+    // the adapter has created faWorldState, or the skeleton never settles.
+    await import('/assets/world-clock-adapter.js');
+    const state=window.faWorldState;
+    if(!state)throw Error('Shared world state unavailable');
+    const sameWorld=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
+    const refresh=()=>{
+     const current=state.get(),dev=current.source==='dev'&&window.faDebugEnabled!==false;
+     if(dev){
+      lastWorldKey=null;publicAbort?.abort();++publicEpoch;
+      if(competitionSnapshot?.source!=='dev')applyCompetitionSnapshot({source:'loading'});
+      return;
+     }
+     if(current.source!=='authoritative')return;
+     const world=current.world;
+     const key=JSON.stringify([current.sourceRevision,current.readRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day]);
+     if(key===lastWorldKey)return;
+     lastWorldKey=key;
+     const epoch=++publicEpoch;
+     publicAbort?.abort();publicAbort=new AbortController();const {signal}=publicAbort;
+     if(!world||current.worldStatus!=='ready'){
+      applyCompetitionSnapshot({source:current.worldStatus==='unavailable'?'unavailable':'loading'});
+      return;
+     }
+     applyCompetitionSnapshot({source:'loading'});
+     void (async()=>{
+      try{
+       const clubKey=selected.countryId+'-'+selected.clubId;
+       // Only one compact overview API request per world revision.
+       const verified=await projection.readClubMemberships({clubKey,world,fetchJson:publicJson,signal});
+       const now=state.get();
+       if(signal.aborted||epoch!==publicEpoch||now.source!=='authoritative'||
+        now.sourceRevision!==current.sourceRevision||now.readRevision!==current.readRevision||
+        !sameWorld(now.world,world))return;
+       applyCompetitionSnapshot(verified);
+      }catch(error){
+       const now=state.get();
+       if(!signal.aborted&&epoch===publicEpoch&&now.source==='authoritative'&&
+        now.sourceRevision===current.sourceRevision&&now.readRevision===current.readRevision&&
+        sameWorld(now.world,world))
+        applyCompetitionSnapshot({source:'unavailable'});
+      }
+    })();
+    };
+    state.subscribe(refresh);
+    window.addEventListener('fa:source-change',()=>{lastWorldKey=null;refresh()});
+    window.addEventListener('pagehide',()=>{publicAbort?.abort();publicEpoch++});
+    refresh();
+   }catch{
+    if(window.faWorldState?.get?.().source!=='dev')applyCompetitionSnapshot({source:'unavailable'});
+   }
+  };
+  void enablePublic();
   // Ignore unrelated attribute mutations and retain focus, scroll and SVG/image
   // nodes when the user changes the interface language.
   let renderedLanguage=language();

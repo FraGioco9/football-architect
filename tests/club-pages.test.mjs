@@ -36,16 +36,15 @@ test('PAGE-LOAD-03A P17/P18: complete canonical identities and five tabs are in 
   assert.ok(script.includes(JSON.stringify(key)+':['+JSON.stringify(club.fullName)+','),key);
  }
  assert.equal(manifest.clubs.length,320);
- const countryFlags={it:'it',eng:'gb-eng',es:'es',de:'de',fr:'fr',pt:'pt',nl:'nl',br:'br'};
- for(const [country,asset] of Object.entries(countryFlags)){
-  assert.ok(script.includes(country+":'"+asset+"'"),'flag mapping for '+country);
-  const flagPath='assets/flags/'+asset+'.svg';
-  assert.equal(isAllowlistedPublicPath(flagPath),true,flagPath);
-  assert.match(read(flagPath),/<svg\b/,flagPath);
- }
- assert.ok(script.includes("'/assets/flags/'"),'only the visited country SVG is requested at first paint');
- assert.doesNotMatch(script,/fa-competition-flag-/,'never serialize all eight large inline SVG drawings');
- assert.ok(script.length<40000,'guard against re-embedding the entire flag catalog');
+ const countryCodes=['it','gb-eng','es','de','fr','pt','nl','br'];
+ for(const country of countryCodes)assert.ok(script.includes('fa-competition-flag-'+country),'canonical vector '+country);
+ assert.ok(script.includes('flags[country.toUpperCase()]'),'parser-time vector source');
+ assert.ok(script.includes("outerHTML=flagSvg"),'no flag image swap');
+ assert.ok(script.includes('const headings='),'localized panel headings');
+ assert.ok(script.includes('const factLabels='),'localized static label data');
+ assert.ok(script.includes('identityFlag'),'no API needed for country flag');
+ assert.ok(html.includes('club-first-paint-panel" aria-busy="true"'),'visible Overview panels');
+ assert.ok(brotliCompressSync(html).length<50000,'first-paint HTML compressed-size budget');
  console.log('PAGE-LOAD-03A HTML payload bytes: raw='+Buffer.byteLength(html)+' gzip='+gzipSync(html).length+' brotli='+brotliCompressSync(html).length);
 });
 
@@ -122,7 +121,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
    assert.ok(html.includes(base+'/fixtures?season=2&matchday=7'));
    if(view==='overview'){
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
-    if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,2);}
+    if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
    }else assert.ok(html.includes('club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
@@ -362,9 +361,9 @@ test('SAF-05 club league links open the selected season without an unparameteriz
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const selected=model.route('/clubs/it/1/overview');
  const html=model.render(manifest,selected,'en','',null,3);
- assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=3"/g)||[]).length,2);
+ assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=3"/g)||[]).length,1);
  const requested=model.render(manifest,selected,'en','?season=2',null,3);
- assert.equal((requested.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=2"/g)||[]).length,2);
+ assert.equal((requested.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=2"/g)||[]).length,1);
  assert.match(read('assets/club-page.js'),/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
 });
 

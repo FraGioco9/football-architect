@@ -405,7 +405,7 @@ test("CLUB-NAV-02 links competition views to approved club routes and seasons",(
  assert.ok(preview.includes('if(linked)name.href="/clubs/"+club.countryId.toLowerCase()+"/"+club.clubId+"/overview"'));
  const css=read("assets/club-page.css");
  assert.ok(css.includes("column-gap:16px;row-gap:8px"));
- assert.ok(css.includes(".club-color-value>.club-color{flex:none;margin:0}"));
+ assert.match(css,/\.club-color-value>\.club-color\{\s*display:block;box-sizing:border-box;inline-size:20px;/);
 });
 
 test("HISTORY-ARCHIVE-LINK-01 anchors have text-only hit areas and flags share native masks",()=>{
