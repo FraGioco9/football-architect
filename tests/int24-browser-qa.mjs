@@ -347,7 +347,7 @@ try {
     rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
     falseEmpty:!document.getElementById('app-fixtures-empty')?.hidden
    }));
-   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:16,falseEmpty:false},'confirmed failure '+kind);
+   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
    await page.unroute('**/competitions/_shared/manifest.json',broken);
    await page.reload({waitUntil:'networkidle'});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
