@@ -23,11 +23,11 @@ The stable identity is the pair `(countryId, clubId)`, independent of division, 
 
 ## Owner-directed identity amendment (2026-11-10)
 
-The owner chose **Trafford United** for `ENG-2`, assigning its unique abbreviation **`TRA`**. The previously assigned `TRA` abbreviation on `IT-27` (Tramontana Calcio) is reassigned to **`TRM`**, which was unused. The club keys, cities, nicknames, stadiums, and social colors remain unchanged. The original English description and four translations substitute the former club name without altering its historical context. This later amendment does not replace the historical 2026-10-16 approval or its archival checksum. See [CLUB-COLORS #466](https://github.com/FraGioco9/football-architect/issues/466) for related but separate palette proposals.
+The owner chose **Trafford United** for `ENG-2`, assigning its unique abbreviation **`TRA`**. The previously assigned `TRA` abbreviation on `IT-27` (Tramontana Calcio) is reassigned to **`TRM`**, which was unused. The club keys, cities, nicknames, and social colors remain unchanged. The owner subsequently confirmed **Manchester** as ENG-2's city and approved renaming its stadium from **Medlock Park** to **Foundry Park**. The original English description and four translations substitute the former club name without altering its historical context. This later amendment does not replace the historical 2026-10-16 approval or its archival checksum. See [CLUB-COLORS #466](https://github.com/FraGioco9/football-architect/issues/466) for related but separate palette proposals.
 
 ## Approved source
 
-Imported from `football_architect_320_clubs_final_approved_offline(1).csv`, approved by the owner on 2026-10-16. Its SHA-256 is `6940d8bc1abebb6ef06c6d3f56077b4899877a66476b182d14f2fda097ae6d0f`. The checked-in CSV preserves those exact bytes. The regression suite fingerprints both the approved CSV and the full JSON payload, including every description and Unicode character.
+Imported from `football_architect_320_clubs_final_approved_offline(1).csv`, approved by the owner on 2026-10-16. Its SHA-256 is `6940d8bc1abebb6ef06c6d3f56077b4899877a66476b182d14f2fda097ae6d0f`. That checksum documents the original approved import, not the subsequently owner-authorized amendments in the current CSV/JSON. Regression tests validate the current catalog's consistency.
 
 Competition pages and their generated manifest read primary names directly from this JSON. The [provisional allocation](../divisions/initial-club-allocation.md) remains separate: IDs 1–16 per country in tier 1, 17–32 in tier 2, and 33–40 outside the division lists. All 320 club records remain in the catalogue.
 
