@@ -10,7 +10,8 @@ export function createCompetitionRenderer({countryById,encode,inlineCountryFlag,
 // Decorative skeleton mirrors the real table and compact rows; no fake identities or crests.
 // Keep known Season 1 identities in the initial loading shell, not sporting values.
 const standingsSkeleton=(d,cols,neutral=false)=>{
- const known=!neutral&&d.category==='domestic'?clubsByDivision.get(d.id):null;
+ // Even a known Season 1 roster must not reveal names or crests before the data source resolves.
+ const known=null;
  const knownCrest=(club,size)=>{
   const id=club.countryId+'-'+club.clubId;
   const asset=Object.hasOwn(crestCatalog,id)?crestCatalog[id]:null;
@@ -41,7 +42,8 @@ const standingsSkeleton=(d,cols,neutral=false)=>{
 const detailAppend = function detailAppend(d,neutral){
  const cols=[["standingsPosition","Pos"],["standingsClub","Club"],["standingsPlayed","P"],["standingsWon","W"],["standingsDrawn","D"],["standingsLost","L"],["standingsFor","GF"],["standingsAgainst","GA"],["standingsDifference","GD"],["standingsPoints","Pts"],["standingsForm","Form"]]
  .map(([key,label],i)=>'                  <th scope="col"'+(i===1?' class="app-world-standing-name-head"':'')+' data-app-i18n="'+key+'">'+label+'</th>').join("\n");
- const preRenderedRows=neutral||d.category==="international"?"":clubsByDivision.get(d.id).map(club=>`                  <tr data-world-club="${encode(club.countryId)}-${club.clubId}"><td class="app-world-stat-unknown">—</td><th scope="row" class="app-world-standing-club"><span class="app-world-club-identity"><span class="app-world-club-crest-placeholder" data-club-crest="${encode(club.countryId)}-${club.clubId}"${Object.hasOwn(crestCatalog,club.countryId+"-"+club.clubId)?' data-club-crest-pending="true"':""} aria-hidden="true"></span><span class="app-world-club-name">${encode(club.primaryName||club.abbr)}</span></span></th>${Array(9).fill('<td class="app-world-stat-unknown">—</td>').join("")}</tr>`).join("\n");
+ // The canonical standing row identities are hydrated only after the manifest and season source resolve.
+ const preRenderedRows="";
  const legend=neutral&&d.category!=='international'?'':rulesView.renderStandingsLegend(d);
  return `
           <div class="app-world-standings">

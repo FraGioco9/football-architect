@@ -90,3 +90,13 @@ html[data-theme="light"] .nav01-filter .language-trigger[aria-expanded="true"]{b
 .nav01-crest:not([data-club-crest-loaded="true"])>.nav01-crest-image{visibility:hidden}
 .nav01-crest[data-club-crest-loaded="true"]::before{display:none}
 .nav01-crest-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;border:0;background:transparent}
+
+/* PAGE-LOAD-04 B01: six anonymous, fixed-height cards while the manifest is pending. */
+.nav01-skeleton-card{pointer-events:none;user-select:none}
+.nav01-skeleton-card .nav01-skeleton-copy{display:grid;gap:11px;align-content:center;min-width:0;flex:1}
+.nav01-skeleton-bar{display:block;height:15px;border-radius:4px;background:color-mix(in srgb,var(--muted) 15%,var(--surface-raised))}
+.nav01-skeleton-name{width:72%;height:18px}.nav01-skeleton-meta{width:55%;height:12px}.nav01-skeleton-count{width:73px;height:12px}
+.nav01-skeleton-crest{border-radius:12px;background:color-mix(in srgb,var(--muted) 10%,var(--surface-raised))}
+.nav01-skeleton-crest::before{display:none}
+@media(prefers-reduced-motion:no-preference){.nav01-skeleton-card .nav01-skeleton-bar,.nav01-skeleton-crest,.nav01-skeleton-count{animation:nav01-skeleton-pulse 1.45s ease-in-out infinite alternate}}
+@keyframes nav01-skeleton-pulse{from{opacity:.55}to{opacity:1}}

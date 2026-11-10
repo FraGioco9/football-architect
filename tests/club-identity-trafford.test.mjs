@@ -53,10 +53,12 @@ test('Foundry Park and Trafford United propagate to rivalry data and published s
  const entries=competitions.divisions.flatMap(d=>d.clubs||[]);
  assert.equal(entries.find(c=>c.countryId==='ENG'&&c.clubId===2).stadiumName,'Foundry Park');
  assert.equal(entries.find(c=>c.countryId==='IT'&&c.clubId===27).abbr,'TRM');
- assert.ok(load('clubs/_shared/index.html').includes('Trafford United Football Club'));
- assert.ok(!load('clubs/_shared/index.html').includes('Medlock United'));
- assert.ok(load('clubs/index.html').includes('Trafford United'));
- assert.ok(!load('clubs/index.html').includes('Medlock United'));
+ // Identity is fetched from the shared manifest, not embedded in generated HTML.
+ for(const htmlPath of ['clubs/_shared/index.html','clubs/index.html','competitions/eng-1/index.html']){
+  const html=load(htmlPath);
+  assert.ok(!html.includes('Trafford United'),htmlPath+' must wait for catalog hydration');
+  assert.ok(!html.includes('Medlock United'),htmlPath+' must not preload the superseded name');
+ }
 });
 
 test('ENG-2 owner-approved nickname and description match all sources and four translations',()=>{
@@ -84,15 +86,17 @@ test('ENG-2 owner-approved nickname and description match all sources and four t
 });
 
 
-test('Trafford first-paint directory searches canonically and preserves alphabetical order',()=>{
+test('Trafford directory first paint is anonymous and client search uses catalog identities',()=>{
  const html=load('clubs/index.html');
- const cards=[...html.matchAll(/<a class="nav01-card"[\s\S]*?<\/a>/g)].map(m=>m[0]);
- assert.equal(cards.length,320);
- assert.ok(cards.every(c=>!c.includes('medlock united')));
- const name=card=>card.match(/<strong>(.*?)<\/strong>/)[1];
- for(let i=1;i<cards.length;i++){
-  assert.ok(name(cards[i-1]).localeCompare(name(cards[i]),'en')<=0,name(cards[i-1])+' before '+name(cards[i]));
- }
- const trafford=cards.find(c=>c.includes('href="/clubs/eng/2/overview"'));
- assert.ok(trafford.includes('data-search="trafford united trafford united football club manchester"'));
+ const client=load('assets/clubs-directory.js');
+ const manifest=JSON.parse(load('clubs/_shared/manifest.json'));
+ const trafford=manifest.clubs.find(c=>c.countryId==='ENG'&&c.clubId===2);
+ assert.equal(trafford.primaryName,'Trafford United');
+ assert.equal(trafford.fullName,'Trafford United Football Club');
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6,'six reserved anonymous cards');
+ assert.equal((html.match(/<a class="nav01-card"/g)||[]).length,0,'no 320 prerendered clubs');
+ assert.ok(!html.includes('Trafford United'),'no name before manifest');
+ assert.ok(!html.includes('Medlock United'),'no obsolete name');
+ assert.match(client,/m\.clubs\.map\(c=>\[c,normalizeSearch\(\[c\.primaryName,c\.fullName,c\.city\]/,'search index built from fetched catalog');
+ assert.match(client,/a\.primaryName\.localeCompare\(b\.primaryName/,'fetched cards are sorted alphabetically');
 });

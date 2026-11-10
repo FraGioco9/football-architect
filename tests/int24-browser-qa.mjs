@@ -98,13 +98,13 @@ try {
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
       '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity] .app-world-club-name')].filter(visible).length,
      visiblePlaceholders:[...document.querySelectorAll(innerWidth<=620?
-      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
-      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]')].filter(visible).length,
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-name.app-skeleton-bar':
+      '.app-standings-skeleton [data-skeleton-row] > th .app-skeleton-bar')].filter(visible).length,
      staticIdentity:document.documentElement.dataset.faStandingsKnownIdentity,
      sportVisible:visible(document.querySelector('#competition-panel-standings > .app-world-standings #app-standings-body tr td:nth-child(10)')),
      firstNameLeft:(()=>{const n=document.querySelector(innerWidth<=620?
-      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity-placeholder]':
-      '.app-standings-skeleton [data-skeleton-row] [data-skeleton-identity-placeholder]');
+      '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-mobile] .app-world-mobile-name.app-skeleton-bar':
+      '.app-standings-skeleton [data-skeleton-row] > th .app-skeleton-bar');
       return n?n.getBoundingClientRect().left+(innerWidth<=620?47:55):null})(),
      firstNameWeight:(()=>{const n=document.querySelector(innerWidth<=620?
       '.app-standings-skeleton .app-skeleton-mobile [data-skeleton-identity] .app-world-mobile-club-name':
@@ -126,18 +126,16 @@ try {
    assert.deepEqual(pending.selected,['competition-tab-'+view],'correct active view '+route);
    assert.equal(pending.panel,true,'selected panel shown before manifest '+route);
    assert.equal(pending.season,true,'season control from first paint '+route);
-   assert.equal(pending.rows,16,'16 known club identities in DOM '+route);
+   assert.equal(pending.rows,0,'no club identity row before manifest '+route);
    assert.equal(pending.fixtureSlots,8,'eight reserved fixture slots '+route);
    assert.equal(pending.contextReady,false,'manifest genuinely held '+route);
    if(view==='standings'){
-    assert.equal(pending.staticIdentity,season==='1'?'true':'false','correct viewed-season first-paint gate '+route);
+    assert.equal(pending.staticIdentity,undefined,'no Season 1 identity fast-path before manifest '+route);
     assert.equal(pending.visibleNames,0,'ID-ordered identities must not paint before ranking '+route);
     assert.equal(pending.visiblePlaceholders,16,'16 neutral reserved club slots '+route);
     assert.equal(pending.sportVisible,false,'no premature sporting values '+route);
     assert.ok(pending.firstNameLeft>0,'reserve loaded club text X '+route);
-    if(['it-1','de-1'].includes(slug)&&season==='1'){
-     assert.ok(pending.crestProbe?.src?.startsWith('/assets/clubs/'),'SVG assets remain declared without false order '+route);
-    }
+    assert.equal(pending.crestProbe,null,'no club crest URL before manifest '+route);
    }
    if(view==='fixtures'){
     assert.equal(pending.round,'12','selected matchday at first paint '+route);
@@ -349,7 +347,7 @@ try {
     rows:document.querySelectorAll('#app-standings-body tr[data-world-club]').length,
     falseEmpty:!document.getElementById('app-fixtures-empty')?.hidden
    }));
-   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:16,falseEmpty:false},'confirmed failure '+kind);
+   assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
    await page.unroute('**/competitions/_shared/manifest.json',broken);
    await page.reload({waitUntil:'networkidle'});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
