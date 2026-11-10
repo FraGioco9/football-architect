@@ -1,7 +1,7 @@
         <section class="app-view app-authentication" aria-labelledby="title">
           <h1 class="app-page-title" id="title">Create an account</h1>
           <div class="account-body app-authentication-body">
-            <section class="app-panel app-authentication-card" aria-labelledby="title">
+            <section class="app-panel app-authentication-card" inert aria-labelledby="title">
               @@ACCOUNT_AUTH_LANGUAGE@@
               <a class="account-go-back" id="account-go-back" href="/dashboard"><span id="account-go-back-label">Go back</span></a>
 <form method="post" id="register-form"><label><span id="username-label">Username</span><input name="username" type="text" autocomplete="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" aria-describedby="username-help"><small id="username-help">3–24 letters, numbers or underscores. Your username is unique.</small></label><label><span id="email-label">Email</span><input name="email" type="email" autocomplete="email" maxlength="254" required></label>

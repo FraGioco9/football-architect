@@ -67,7 +67,7 @@ test('all authentication pages render the shared app shell and one language cont
   assert.match(html,/<header class="fa-shell-topbar">/);
   assert.match(html,/<main class="app-main" id="main-content"/);
   assert.match(html,/<h1 class="app-page-title"/);
-  assert.match(html,/<section class="app-panel app-authentication-card"/);
+  assert.match(html,/<section class="app-panel app-authentication-card" inert/);
   assert.equal((html.match(/id="account-language-trigger"/g)||[]).length,1);
   assert.match(html,/<meta name="referrer" content="no-referrer">/);
   assert.match(html,/<meta name="robots" content="noindex,nofollow">/);

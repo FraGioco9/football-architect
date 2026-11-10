@@ -210,6 +210,8 @@
    doc.addEventListener('pointerout',event=>{if(!event.relatedTarget)setHovered(null)},{passive:true});
    doc.addEventListener('pointerdown',()=>setHovered(null),{passive:true});
    configureBack();
+   const authPanel=doc.querySelector('.app-authentication-card[inert]');
+   if(authPanel)authPanel.inert=false;
    doc.documentElement.dataset.accountReady="true";
   }
   if(!redirecting){
