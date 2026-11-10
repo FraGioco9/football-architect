@@ -25,7 +25,14 @@
               <button class="cta cta-secondary" id="logout-button" type="button">Sign out</button>
               <form method="post" id="edit-profile-form" hidden>
                 <input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" autocomplete="username" aria-labelledby="username-label" hidden disabled>
-                <select name="nationality" id="profile-nationality" autocomplete="country" aria-labelledby="nationality-label" hidden disabled><option value=""></option></select>
+                <div class="language-control" id="profile-nationality-control" data-account-select-control hidden>
+                  <select name="nationality" id="profile-nationality" autocomplete="country" data-account-select aria-hidden="true" tabindex="-1" hidden disabled><option value=""></option></select>
+                  <button type="button" class="language-trigger" id="profile-nationality-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="profile-nationality-menu" aria-labelledby="nationality-label profile-nationality-value" disabled>
+                    <span id="profile-nationality-value"></span>
+                    <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="language-menu" id="profile-nationality-menu" role="listbox" aria-labelledby="nationality-label" hidden></div>
+                </div>
                 <input name="city" maxlength="100" autocomplete="address-level2" aria-labelledby="city-label" hidden disabled>
                 <div class="app-profile-edit-actions">
                   <button class="cta cta-secondary" type="button" id="cancel-profile-button">Cancel</button>

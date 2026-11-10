@@ -100,9 +100,21 @@ try{
       const pencil=page.locator(`[data-profile-edit="${field}"]`);
       await pencil.click();
       const form=page.locator(`#${field}-row #edit-profile-form`);
-      assert.equal(await form.locator('input:visible, select:visible').count(),1);
+      assert.equal(await form.locator('input:visible, [role=combobox]:visible').count(),1);
       const input=form.locator(`[name="${field}"]`);
-      if(field==='nationality')await input.selectOption(value);else await input.fill(value);
+      if(field==='nationality'){
+       const dropdown=form.getByRole('combobox');
+       assert.equal(await input.isVisible(),false);
+       await dropdown.click();
+       const list=form.getByRole('listbox');
+       await list.waitFor();
+       await page.keyboard.press('Escape');
+       assert.equal(await list.isVisible(),false);
+       assert.equal(await form.isVisible(),true);
+       await dropdown.click();
+       await list.locator('[data-menu-value="'+value+'"]').click();
+       assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
+      }else await input.fill(value);
       await form.locator('#save-profile-button').click();
       await page.locator(`#${field}-value`).filter({hasText:display}).waitFor();
       assert.equal(await pencil.getAttribute('aria-expanded'),'false');

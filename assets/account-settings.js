@@ -20,6 +20,9 @@ const settingsLabels={
  fr:['Sécurité','Modifier','Pays','Ville','Enregistrer','Modifier l’e-mail','Nouvel e-mail','Envoyer les liens de confirmation','Non précisé','Profil mis à jour.','Si l’adresse est disponible, confirmez les liens envoyés aux deux adresses.','Le nom d’utilisateur est indisponible ou le profil n’a pas pu être enregistré.','Saisissez à nouveau votre mot de passe actuel.','Contactez un administrateur pour modifier l’e-mail d’un compte opérateur.']
 };
 const editForm=document.getElementById('edit-profile-form'),countrySelect=editForm.elements.nationality;
+const countryControl=document.getElementById('profile-nationality-control');
+const countryTrigger=document.getElementById('profile-nationality-trigger');
+const countryMenu=document.getElementById('profile-nationality-menu');
 const pencils=[...document.querySelectorAll('[data-profile-edit]')];
 const saveProfile=document.getElementById('save-profile-button'),cancelProfile=document.getElementById('cancel-profile-button');
 const cancelLabels={en:'Cancel',it:'Annulla',de:'Abbrechen',es:'Cancelar',fr:'Annuler'};
@@ -29,6 +32,7 @@ function closeEditor(restoreFocus){
  const pencil=activePencil;
  activePencil=null;
  pencil.setAttribute('aria-expanded','false');
+ if(!countryMenu.hidden)countryTrigger.click();
  editForm.hidden=true;
  if(restoreFocus)pencil.focus();
 }
@@ -39,18 +43,21 @@ pencils.forEach(pencil=>pencil.addEventListener('click',()=>{
  populateProfileForm();
  activePencil=pencil;
  const name=pencil.dataset.profileEdit;
- for(const field of ['username','nationality','city']){
+ for(const field of ['username','city']){
   editForm.elements[field].hidden=field!==name;
   editForm.elements[field].disabled=field!==name;
  }
+ countryControl.hidden=name!=='nationality';
+ countrySelect.disabled=countryControl.hidden;
+ ui.refreshMenus();
  pencil.closest('td').append(editForm);
  pencil.setAttribute('aria-expanded','true');
  editForm.hidden=false;
- editForm.elements[name].focus();
+ (name==='nationality'?countryTrigger:editForm.elements[name]).focus();
 }));
 cancelProfile.addEventListener('click',()=>{if(!saveProfile.disabled)closeEditor(true)});
 editForm.addEventListener('keydown',event=>{
- if(event.key==='Escape'&&!saveProfile.disabled){event.preventDefault();closeEditor(true);}
+ if(event.key==='Escape'&&!event.defaultPrevented&&!saveProfile.disabled){event.preventDefault();closeEditor(true);}
 });
 let codes=[],profile,settings=settingsLabels[ui.language];
 function renderCountries(locale){
@@ -60,11 +67,13 @@ function renderCountries(locale){
  countrySelect.replaceChildren(new Option(settings[8],''));
  for(const [code,name] of options)countrySelect.add(new Option(name,code));
  countrySelect.value=selected;
+ ui.refreshMenus();
 }
 function populateProfileForm(){
  editForm.elements.username.value=profile?.username||'';
  editForm.elements.city.value=profile?.city||'';
  countrySelect.value=profile?.nationality||'';
+ ui.refreshMenus();
 }
 let t=translations[ui.language];
 const ids={title:0,'current-label':2,'new-label':3,'change-button':4,'logout-button':5,loading:6};
@@ -120,6 +129,7 @@ document.getElementById('change-form').addEventListener('submit',e=>{e.preventDe
 document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[7]);redirectToLogin()}));
 const tabs=[...document.querySelectorAll('.app-profile [role="tab"]')];
 function selectTab(selected){
+ if(selected.id==='security-tab'&&!saveProfile.disabled)closeEditor(false);
  if(selected.id==='profile-tab'&&!securityBusy())securityPencils.forEach(pencil=>closeSecurityEditor(pencil,false));
  for(const tab of tabs){
   const active=tab===selected;

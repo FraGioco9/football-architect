@@ -273,7 +273,7 @@ for(const page of outputPages){
  for(const [token,value] of Object.entries(replacements))html=html.replaceAll(token,value);
  html=html.replace("<title>Competitions", "<title>Profile")
   .replace('  <script src="/assets/theme.js">','  <script src="/assets/account-ui.js"></script>\n  <script src="/assets/theme.js">')
-  .replace("</head>",'  <meta name="referrer" content="no-referrer">\n  <meta name="robots" content="noindex,nofollow">\n  <link rel="stylesheet" href="/assets/account.css">\n  <script src="/assets/account-settings.js" defer></script>\n</head>');
+  .replace("</head>",'  <meta name="referrer" content="no-referrer">\n  <meta name="robots" content="noindex,nofollow">\n  <link rel="stylesheet" href="/assets/account.css">\n  <script src="/assets/competition-tabs.js" defer></script>\n  <script src="/assets/account-settings.js" defer></script>\n</head>');
  writeOutput("account/index.html",html);
 }
 for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments,countryFlags:Object.fromEntries(Object.values(countryById).map(country=>[country.id,inlineCountryFlag(country)]))}))

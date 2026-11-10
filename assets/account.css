@@ -84,9 +84,9 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 }
 @media(prefers-reduced-motion:reduce){.account-body :is(input,select,textarea,.language-trigger){transition:none}}
 
-.account-body #nationality-menu{width:100%;min-width:0;max-width:100%;max-height:min(260px,40svh);overflow-y:auto;box-sizing:border-box}
-#nationality-menu .language-option{overflow-wrap:anywhere}
-#nationality-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-body :is(#nationality-menu,#profile-nationality-menu){width:100%;min-width:0;max-width:100%;max-height:min(260px,40svh);overflow-y:auto;box-sizing:border-box}
+:is(#nationality-menu,#profile-nationality-menu) .language-option{overflow-wrap:anywhere}
+:is(#nationality-value,#profile-nationality-value){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Compact entry pages keep full-size fields and reveal feedback only when present. */
 .account-body main.app-panel{padding:18px}
@@ -112,6 +112,6 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .app-profile-pencil:hover,.app-profile-pencil[aria-expanded="true"]{color:var(--text);background:var(--surface-raised)}
 .app-profile-pencil:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-profile-pencil:disabled{opacity:.5;cursor:default}
-.app-profile-edit-actions{display:flex;justify-content:flex-end;gap:var(--fa-space-2)}
+.app-profile-edit-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;gap:var(--fa-space-2)}
 .app-profile-edit-actions .cta{width:auto;min-width:0;min-height:var(--fa-control-height-compact);padding:4px 8px;font-size:12px}
 .app-profile-table form{margin:var(--fa-space-3) 0 0}
