@@ -1356,3 +1356,42 @@ Solid-to-Vertical stripe shader reuse, and rejection of vertical or
 inclined side seams. Real original GLB visual inspection in
 owner-local Chrome is pending. PR #454 Draft/HOLD, no merge, deploy,
 remote DB access or artist-model publication.
+
+## KM-33 — prevent KM-32 shoulder analysis from blocking garment load (2026-11-10)
+
+**Regression reported by owner:** Kit Maker / original garment does not load
+following KM-32. Actual browser stack trace is unavailable, but the
+runtime inspection found a concrete load-blocking design: the full,
+synchronous front/back shoulder topology solver was invoked by
+`applyKitDesign` **on initial Solid first paint**, before the source
+GLB was attached to the scene. It can be expensive on the original
+detailed garment, even though no stripes are visible yet.
+
+**Repair:** The private source GLB can now load and be recoloured in
+Solid without running the KM-29/31/32 seam solver. Only selecting
+Vertical stripes triggers shoulder calibration. The existing
+MeshStandardMaterial hook uses a dynamically selected plain vs
+`kmStripeSewnMetres` shader variant; changing the variant marks
+`material.needsUpdate` and does NOT reload or modify the GLB.
+After the first calibration, source geometry measurements remain cached.
+The KM-32 front/back shared shoulder origin is retained for the
+striped style (not rolled back).
+
+**Bounded reference discovery:** KM-32's initial search for which front
+and back are sewn together now examines at most 192 sampled source
+boundary points per candidate pair. Once one plausible original
+shoulder has been identified, the complete seam is fitted precisely
+once, preserving the one-centimetre minimum width and the actual
+original stitched coordinate.
+
+**Verification:** 36/36 focused exact-source JS design/shoulder tests
+passed in V8, including new Solid-first-load/no-calibration,
+Solid-to-Vertical material shader upgrade, the unchanged shared
+front/back origin, and dense-mesh bounded discovery. The original
+proprietary GLB is owner-local, and original Chrome/Safari WebGL
+loading and visual QA still need owner confirmation; do not claim
+the full Node suite or live model was run here.
+
+No changes to original glTF geometry, sewn collar/cuff/waist trims,
+colours, slider minimum 1cm, frontend navigation, public assets,
+database, deployment or merge. PR #454 remains Draft/HOLD.

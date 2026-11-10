@@ -2,6 +2,7 @@
 // jersey stitches. Width stays in original cloth metres; no 3D planar
 // stripe projection, no UV/geometry mutation, no private model upload.
 const CELL=.008,MAX_GAP=.0027,WELD=.00002;
+const SHOULDER_REFERENCE_SAMPLE_BUDGET=192;
 const key=(x,y,z)=>x+":"+y+":"+z;
 const mid=v=>{const a=[...v].sort((x,y)=>x-y),n=a.length;
   if(!n)throw Error("Empty shoulder seam data");
@@ -90,9 +91,11 @@ function locateSamples(entry){
   }
   return {grid,samples:[...samples.values()],segments,segmentGrid};
 }
-function seamPairs(source,target){
+function seamPairs(source,target,maxSamples=Infinity){
   const pairs=[],seen=new Set();
-  for(const vertex of target.samples){
+  const stride=Math.max(1,Math.ceil(target.samples.length/maxSamples));
+  for(let i=0;i<target.samples.length;i+=stride){
+    const vertex=target.samples[i];
     if(!inShoulder(vertex.pos)||seen.has(vertex.i))continue;
     const candidates=source.segmentGrid.get(gridAt(vertex.pos))??[];
     let nearest,smallest=MAX_GAP;
@@ -237,7 +240,10 @@ function findShoulderReference(entries){
   let best=null;
   for(const source of front)for(const target of back){
     const points=new Map(target.samples.map(p=>[p.i,p]));
-    const candidates=seamPairs(source,target),sides=[];
+    // Front/back reference discovery is sampled and bounded. A complete
+    // source-segment match follows ONCE for the selected shoulder seam.
+    const candidates=seamPairs(source,target,
+      SHOULDER_REFERENCE_SAMPLE_BUDGET),sides=[];
     for(const side of [-1,1]){
       const sidePairs=candidates.filter(p=>{
         const point=points.get(p.bi);
@@ -342,7 +348,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
     // either sleeve is considered. This fixes both torso stripe starts.
     if(shoulderReference){
       const target=shoulderReference.target,
-        source=shoulderReference.source,pairs=shoulderReference.pairs,
+        source=shoulderReference.source,
+        pairs=seamPairs(source,target),
         rootCoordinates=coordinates.get(source.geometry),
         aligned=fit(pairs,rootCoordinates,target);
       if(aligned){

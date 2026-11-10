@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km32-shared-front-back-shoulder-origin-v1";
+export const KIT_STRIPE_SHADER_KEY="km33-lazy-shoulder-load-guard-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -248,8 +248,16 @@ function cachedKitStripeMetric(geometry){
   return metric;
 }
 export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
-  if(material.userData?.kitStripeUniforms)
+  // No 3D seam analysis while the Solid model is first loading.
+  // Upgrade the existing shader program when stripes are selected.
+  if(material.userData?.kitStripeUniforms){
+    const previous=Boolean(material.userData.kitStripeSewnCoordinates);
+    if(previous!==Boolean(hasSewnCoordinates)){
+      material.userData.kitStripeSewnCoordinates=Boolean(hasSewnCoordinates);
+      material.needsUpdate=true;
+    }
     return material.userData.kitStripeUniforms;
+  }
   if(typeof THREE?.Color!=="function")
     throw new Error("THREE.Color required for Kit Maker striped materials");
   if(typeof material?.color?.set!=="function")
@@ -274,12 +282,13 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader=(hasSewnCoordinates?
+    const useSewn=Boolean(this.userData?.kitStripeSewnCoordinates);
+    shader.vertexShader=(useSewn?
       "attribute float kmStripeSewnMetres;\n":"")+
       "varying float vKmPatternU;\n"+
       shader.vertexShader.replace("#include <begin_vertex>",
         "#include <begin_vertex>\n "+
-          (hasSewnCoordinates?"vKmPatternU = kmStripeSewnMetres;":
+          (useSewn?"vKmPatternU = kmStripeSewnMetres;":
             "vKmPatternU = uv.x;"));
     shader.fragmentShader=[
       "varying float vKmPatternU;",
@@ -306,9 +315,10 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
         "}"
       ].join("\n"));
   };
-  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+
-    (hasSewnCoordinates?"-sewn":"-plain");
   material.userData??={};
+  material.userData.kitStripeSewnCoordinates=Boolean(hasSewnCoordinates);
+  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+
+    (material.userData?.kitStripeSewnCoordinates?"-sewn":"-plain");
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
   return uniforms;
@@ -585,8 +595,10 @@ export function applyKitDesign(outfit,state,THREE){
   let shoulder={adjustments:new Map(),coordinates:new Map(),
     report:{status:"inactive"}};
   const canBindSewnCoordinates=typeof THREE?.Float32BufferAttribute==="function";
-  // Compile the correct shader from first paint, including Solid mode.
-  if(canBindSewnCoordinates||state.styles.jersey==="vertical-stripes"){
+  // The 20 MB author GLB must load before expensive shoulder matching.
+  // Solid first paint does not perform any KM-29/31/32 analysis.
+  // On stripe selection the material upgrades without a GLB reload.
+  if(canBindSewnCoordinates&&state.styles.jersey==="vertical-stripes"){
     try{
       shoulder=alignOriginalShoulderStripes(outfit,prepared);
       outfit.userData??={};

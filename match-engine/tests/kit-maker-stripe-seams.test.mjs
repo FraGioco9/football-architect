@@ -119,7 +119,7 @@ test('KM-30 continuation survives a 90-degree rotated sewn sleeve atlas',()=>{
   assert.ok(a&&b);
   for(let i=0;i<19;i++)assert.ok(Math.abs(a[i]-b[19+i])<1e-6);
 });
-test('KM-30 actual design pipeline binds one continuous shader attribute before style toggle',()=>{
+test('KM-33 Solid outfit loads without shoulder analysis and upgrades shader on stripes',()=>{
   const source=[
     panel('FA_jersey__9'),
     panel('FA_jersey__38',{lower:true,flip:true,offset:.8}),
@@ -145,8 +145,14 @@ test('KM-30 actual design pipeline binds one continuous shader attribute before 
   const outfit={userData:{},traverse(f){meshes.forEach(f);}};
   const store=createKitDesignStore(),THREE={Color,Float32BufferAttribute};
   applyKitDesign(outfit,store.getState(),THREE);
-  const shirt=meshes[0],sleeve=meshes[1],
-    a=shirt.geometry.getAttribute('kmStripeSewnMetres'),
+  const shirt=meshes[0],sleeve=meshes[1];
+  assert.equal(outfit.userData.km32ShoulderOriginReport,undefined,
+    'Initial Solid garment must never wait for KM-32 seam analysis');
+  assert.equal(shirt.geometry.getAttribute('kmStripeSewnMetres'),null);
+  assert.equal(sleeve.material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-plain');
+  store.selectStyle('vertical-stripes');store.selectStripeWidth(30);
+  applyKitDesign(outfit,store.getState(),THREE);
+  const a=shirt.geometry.getAttribute('kmStripeSewnMetres'),
     b=sleeve.geometry.getAttribute('kmStripeSewnMetres');
   assert.ok(a&&b);
   for(let i=0;i<19;i++)assert.ok(Math.abs(a.array[i]-b.array[19+i])<1e-6);
@@ -159,7 +165,6 @@ test('KM-30 actual design pipeline binds one continuous shader attribute before 
   const u=sleeve.material.userData.kitStripeUniforms;
   assert.equal(u.kmStripeFabricOrigin.value,0);
   assert.equal(u.kmStripeFabricScale.value,1);
-  store.selectStyle('vertical-stripes');store.selectStripeWidth(30);
   applyKitDesign(outfit,store.getState(),THREE);
   assert.equal(sleeve.geometry.getAttribute('kmStripeSewnMetres'),b);
   assert.equal(sleeve.material.userData.kitStripeUniforms,u);
@@ -354,7 +359,7 @@ test('KM-32 never mistakes a vertical side seam for a shared shoulder origin',()
   assert.equal(result.report.shoulderReference.innerEdgeZero,undefined);
 });
 
-test('KM-32 Kit Maker shader uses the one shared front/back start at first paint',()=>{
+test('KM-33 Kit Maker keeps Solid fast and shares front/back origin when striped',()=>{
   const front=shoulderSewnPanel('FA_jersey__9',{samples:19}),
     back=shoulderSewnPanel('FA_jersey__42',
       {samples:43,front:false,flip:true,atlasShift:.5}),
@@ -381,6 +386,15 @@ test('KM-32 Kit Maker shader uses the one shared front/back start at first paint
   const outfit={traverse(fn){meshes.forEach(fn);},userData:{}},
     store=createKitDesignStore(),THREE={Color,Float32BufferAttribute};
   applyKitDesign(outfit,store.getState(),THREE);
+  assert.equal(outfit.userData.km31ShoulderStripeReport,undefined);
+  assert.equal(back.geometry.getAttribute('kmStripeSewnMetres'),null);
+  const bodyMaterial=meshes.find(e=>e.name==='FA_jersey__9').material,
+    backMaterial=meshes.find(e=>e.name==='FA_jersey__42').material;
+  assert.equal(bodyMaterial.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-plain');
+  assert.equal(backMaterial.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-plain');
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(outfit,store.getState(),THREE);
   const origin=outfit.userData.km31ShoulderStripeReport.shoulderReference;
   assert.equal(origin.status,'front-back-anchored');
   const a=front.geometry.getAttribute('kmStripeSewnMetres'),
@@ -388,15 +402,11 @@ test('KM-32 Kit Maker shader uses the one shared front/back start at first paint
   assert.ok(a&&b);
   assert.ok(Math.abs(a.array[0])<.000005);
   assert.ok(Math.abs(b.array[0])<.000005);
-  const bodyMaterial=meshes.find(e=>e.name==='FA_jersey__9').material,
-    backMaterial=meshes.find(e=>e.name==='FA_jersey__42').material;
   for(const material of [bodyMaterial,backMaterial]){
     assert.equal(material.userData.kitStripeUniforms.kmStripeFabricOrigin.value,0);
     assert.equal(material.userData.kitStripeUniforms.kmStripeFabricScale.value,1);
     assert.equal(material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-sewn');
   }
-  store.selectStyle('vertical-stripes');
-  store.selectStripeWidth(10);
   applyKitDesign(outfit,store.getState(),THREE);
   assert.equal(bodyMaterial.userData.kitStripeUniforms.kmStripeWidth.value,.01);
   assert.equal(back.geometry.getAttribute('kmStripeSewnMetres'),b,
@@ -417,4 +427,18 @@ test('KM-32 tilted side seam cannot masquerade as an upper shoulder',()=>{
   }
   const r=alignOriginalShoulderStripes({},[back,front]);
   assert.equal(r.report.shoulderReference.status,'not-detected');
+});
+
+test('KM-33 shoulder reference discovery is bounded on dense private-source topology',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',{samples:620}),
+    back=shoulderSewnPanel('FA_jersey__42',{
+      samples:640,front:false,flip:true,atlasShift:.5});
+  const mapped=alignOriginalShoulderStripes({},[back,front]);
+  assert.equal(mapped.report.shoulderReference.status,'front-back-anchored');
+  assert.ok(mapped.report.shoulderReference.matchedStitches<=192,
+    'Only a bounded shoulder discovery sample may run before full fitting');
+  assert.ok(mapped.report.connections[0].matchedVertices>500,
+    'Selected actual front/back seam must still fit its full detail');
+  assert.ok(mapped.coordinates.has(front.geometry));
+  assert.ok(mapped.coordinates.has(back.geometry));
 });
