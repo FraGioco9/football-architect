@@ -35,7 +35,7 @@ try{
    const panel=page.locator('main.app-main .app-authentication-card');
    assert.equal(await panel.count(),1);
    assert.equal(await panel.evaluate(el=>getComputedStyle(el).borderTopStyle),'solid');
-   assert.equal(await page.locator('#account-language').isVisible(),false);
+   assert.equal(await page.locator('#account-language,#account-language-trigger,#account-go-back').count(),0);
    await page.locator('#nationality option[value="IT"]').waitFor({state:'attached'});
    await page.locator('[name=username]').fill('Francesco_9');
    await page.locator('[name=email]').fill('synthetic@example.invalid');
@@ -43,7 +43,6 @@ try{
    await page.locator('[name=city]').fill('Bologna');await chooseMenu(page,'nationality','IT');
    const longest=await page.locator('#nationality option').evaluateAll(options=>options.reduce((best,item)=>item.textContent.length>best.textContent.length?item:best).value);
    await chooseMenu(page,'nationality',longest);await chooseMenu(page,'nationality','IT');
-   const next=language==='it'?'de':'it';await chooseMenu(page,'account-language',next);
    assert.equal(await page.locator('[name=username]').inputValue(),'Francesco_9');
    assert.equal(await page.locator('[name=password]').inputValue(),'synthetic-test-password-2026');
    assert.equal(await page.locator('#nationality').inputValue(),'IT');
@@ -51,7 +50,7 @@ try{
    assert.deepEqual(payload,{email:'synthetic@example.invalid',password:'synthetic-test-password-2026',username:'Francesco_9',nationality:'IT',city:'Bologna'});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.locator('#login-link').click();await page.waitForURL(url=>url.pathname==='/account/login');
-   assert.equal(await page.locator('html').getAttribute('lang'),next);
+   assert.equal(await page.locator('html').getAttribute('lang'),language);
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close();}
  }
@@ -67,7 +66,7 @@ try{
   await page.route('**/api/player/verify-email',r=>{verified++;return r.fulfill({status:200,body:'{"verified":true}',contentType:'application/json'});});
   await page.goto('http://app.localhost:2000/account/verify-email/?token='+'a'.repeat(64));
   await page.waitForFunction(()=>document.getElementById('status').textContent.includes('vérifié'));
-  await chooseMenu(page,'account-language','it');
+  assert.equal(await page.locator('#account-language-trigger').count(),0);
   assert.equal(new URL(page.url()).searchParams.has('token'),false);assert.equal(verified,1);checks++;
   const resetHandshake=requestHandshake('password-reset/request');
   let release;
@@ -75,7 +74,7 @@ try{
   await page.goto('http://app.localhost:2000/account/recover/?lang=en');
   await page.locator('[name=email]').fill('synthetic@example.invalid');
   await page.locator('#request-button').click();await page.waitForFunction(()=>document.getElementById('request-button').disabled);
-  await chooseMenu(page,'account-language','it');
+  await page.evaluate(()=>window.faAccountUI.choose('it'));
   await resetHandshake.ready;await release();
   await page.waitForFunction(()=>!document.getElementById('request-button').disabled);
   assert.equal(await page.locator('#request-button').textContent(),'Invia email di recupero');checks++;

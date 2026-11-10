@@ -279,14 +279,13 @@ function accountTemplate(name){
  return readFileSync(new URL("../templates/"+name+".html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
 }
 writeOutput("account/index.html",renderAccountPage(accountTemplate("account-profile"),"Profile",["account-settings.js"]));
-const authLanguage=accountTemplate("account-auth-language").trim();
 for(const [route,title,...scripts] of [
  ["login","Sign in","account-login.js"],
  ["register","Create an account","local-dev-inbox-link.js","account-onboarding.js"],
  ["recover","Recover your password","local-dev-inbox-link.js","account-recovery.js"],
  ["verify-email","Verify your email","account-verification.js"]
 ]){
- const content=accountTemplate("account-auth-"+route).replace("@@ACCOUNT_AUTH_LANGUAGE@@",authLanguage);
+ const content=accountTemplate("account-auth-"+route);
  const html=renderAccountPage(content,title,scripts);
  const withRoutes=route==="login"||route==="register"
   ?html.replace('  <script src="/assets/theme.js">','  <script src="/assets/routes-registry.js"></script>\n  <script src="/assets/theme.js">')

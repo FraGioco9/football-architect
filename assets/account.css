@@ -1,12 +1,9 @@
 /* Account pages share the site's Graphite & Petrol tokens and brand assets. */
 html[data-account-redirecting="true"] body{visibility:hidden}
 .account-body,.account-body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.account-language{display:grid;gap:4px;font-size:12px;color:var(--muted);flex:none}
-.account-language .language-control{min-width:164px}
 .account-body form .language-control,.account-body form .language-trigger{width:100%;min-width:0}
 .account-body form .language-menu{width:100%;max-height:260px}
 .account-body .language-trigger{font-weight:400}
-.account-go-back{display:inline-block;margin-bottom:14px;font-size:14px;font-weight:400;line-height:normal;text-decoration:underline}
 .account-body h2{font-size:var(--fa-text-panel-heading);line-height:1.35}
 .account-body form{display:grid;gap:var(--fa-space-3);margin-block:16px 12px}
 .account-body label{display:grid;gap:5px;font-size:var(--fa-text-control);font-weight:600}
@@ -76,10 +73,8 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 /* The profile uses the career shell and the existing account controls. */
 .app-profile-body,.app-authentication-body{width:100%;max-width:640px;margin:var(--app-page-section-gap) auto 0}
 .app-authentication-body{max-width:460px}
-.app-authentication-card .account-language{width:max-content;max-width:100%;margin-inline-start:auto}
 .app-authentication-card>p+p{margin-top:8px}
 .app-authentication-card a:not(.cta){text-decoration:underline}
-.app-authentication-card .account-go-back{margin-bottom:8px}
 .app-profile .app-competition-tabs{margin:0 0 var(--fa-space-4)}
 .app-profile-panel:not([hidden]){display:grid;gap:var(--fa-space-3)}
 .app-profile-table{width:100%;table-layout:fixed;border:1px solid var(--border);border-spacing:0;border-radius:var(--fa-radius-panel);background:var(--surface);font-size:var(--fa-text-control)}

@@ -31,31 +31,10 @@ try{
     assert.deepEqual(await page.locator('a[href]').evaluateAll(links=>links.filter(a=>a.origin===location.origin&&a.pathname!=='/'&&a.pathname.endsWith('/')).map(a=>a.href)),[],'Internal links have no trailing slash');
     assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
-    if(route==='account'){
-     assert.equal(await page.locator('#account-language-trigger').count(),0,'Profile uses the shared app header');
-    }else{
-     // Language sits inside a label: moving from the button to its label must clear hover.
-     const trigger=page.locator('#account-language-trigger');
-     if(!mobile){
-      await trigger.hover();assert.equal(await trigger.getAttribute('data-field-pointer-hover'),'');
-      await page.locator('#account-language-label').hover();
-      assert.equal(await page.locator('[data-field-pointer-hover]').count(),0,'Label never highlights the nested dropdown');
-     }
-     if(route==='login'){
-       await page.locator('#email-label').click();
-       assert.equal(await page.locator('input[name="email"]').evaluate(el=>document.activeElement===el),true,'Native Email label activates its input');
-     }
-     const value=await page.locator('#account-language').inputValue();
-     await trigger.click();assert.equal(await trigger.getAttribute('aria-expanded'),'true');
-     await page.keyboard.press('Escape');
-     assert.equal(await trigger.getAttribute('aria-expanded'),'false');
-     assert.equal(await trigger.evaluate(el=>el===document.activeElement),true,'Escape restores keyboard focus to the trigger');
-     assert.equal(await page.locator('#account-language').inputValue(),value);
-     await trigger.click();await trigger.click();
-     assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
-     await trigger.click();await page.locator('#account-language-menu [data-menu-value="'+value+'"]').click();
-     await trigger.click();assert.equal(await trigger.getAttribute('aria-expanded'),'true','Reopens after selection');
-     await page.keyboard.press('Tab');assert.equal(await trigger.getAttribute('aria-expanded'),'false','Tab closes without trapping focus');
+    assert.equal(await page.locator('#account-language-trigger,#account-go-back').count(),0,'Account and authentication pages have no local language or back controls');
+    if(route==='login'){
+     await page.locator('#email-label').click();
+     assert.equal(await page.locator('input[name="email"]').evaluate(el=>document.activeElement===el),true,'Native Email label activates its input');
     }
     await page.locator('h1').click();
     if(route==='account'){

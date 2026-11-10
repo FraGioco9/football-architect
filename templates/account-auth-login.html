@@ -2,8 +2,6 @@
           <h1 class="app-page-title" id="heading">Sign in</h1>
           <div class="account-body app-authentication-body">
             <section class="app-panel app-authentication-card" inert aria-labelledby="heading">
-              @@ACCOUNT_AUTH_LANGUAGE@@
-              <a class="account-go-back" id="account-go-back" href="/dashboard"><span id="account-go-back-label">Go back</span></a>
 <form method="post" id="account-login" autocomplete="on"><label><span id="email-label">Email</span><input name="email" type="email" autocomplete="username" required maxlength="254"></label>
 <div class="account-field"><label for="account-password"><span id="password-label">Password</span></label><div class="account-password"><input name="password" type="password" autocomplete="current-password" required minlength="15" maxlength="128" id="account-password"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div></div>
 <button class="cta cta-primary" type="submit" id="submit">Sign in</button></form><p><a href="/account/recover" id="recovery-link">Forgot your password?</a></p><p><a href="/account/register" id="register-link">Create an account</a></p><p id="message" class="account-feedback" role="status" aria-live="polite"></p>

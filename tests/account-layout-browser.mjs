@@ -16,7 +16,7 @@ try{
     await page.goto('http://app.localhost:2000/account/'+route);await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
     const pane=page.locator('.fa-shell-content-scroll');
     assert.equal(await pane.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,`${route} fits the app pane at ${width}px`);
-    for(const id of route==='register'?['account-language','nationality']:['account-language']){
+    for(const id of route==='register'?['nationality']:[]){
      const trigger=page.locator('#'+id+'-trigger');await trigger.scrollIntoViewIfNeeded();
      const before=await pane.evaluate(el=>el.scrollTop);await trigger.click();
      const menu=page.locator('#'+id+'-menu'),bounds=await menu.boundingBox();
@@ -31,9 +31,8 @@ try{
    }
   }finally{await context.close();}
  }
- // Go back must preserve a valid hidden origin across login, register and locales.
- const translations={en:'Go back',de:'Zurück',es:'Volver',fr:'Retour',it:'Torna indietro'};
- for(const [language,label] of Object.entries(translations))for(const route of ['login','register']){
+ // Removing the visible back control must not consume the hidden post-sign-in destination.
+ for(const language of ['en','de','es','fr','it'])for(const route of ['login','register','recover','verify-email']){
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
    await context.addInitScript(({language})=>{
@@ -44,15 +43,10 @@ try{
    await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
    await page.goto('http://app.localhost:2000/account/'+route);
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
-   const goBack=page.locator('#account-go-back');
-   assert.equal((await goBack.textContent()).trim(),label,route+' '+language+' back label');
-   assert.equal(await goBack.getAttribute('href'),'/calendar?season=2&calendarView=week');
+   assert.equal(await page.locator('#account-go-back,#account-language-trigger').count(),0);
+   assert.equal(await page.locator('html').getAttribute('lang'),language);
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
-   assert.equal(await goBack.evaluate(el=>getComputedStyle(el).textDecorationLine.includes('underline')),true,'Go back uses the same underlined link treatment');
-   await goBack.click();
-   // Wait for Calendar hydration, so its canonicalization cannot race this assertion.
-   await page.waitForFunction(()=>document.documentElement.dataset.calendarView==='week'&&new URL(location.href).searchParams.get('calendarView')==='week');
-   await page.waitForURL('**/calendar?season=2&calendarView=week');
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:login-return')),'/calendar?season=2&calendarView=week');
    checks++;
   }finally{await context.close();}
  }

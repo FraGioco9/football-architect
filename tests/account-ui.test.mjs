@@ -36,19 +36,18 @@ test('public pages and templates emit internal links without trailing slashes',a
  for(const name of ['account','calendar','dashboard','settings','clubs','competitions','guide','templates'])await check(new URL('../'+name+'/',import.meta.url));
 });
 
-test('login and register provide localized Go back links without obsolete arrow icons or return URL parameters',async()=>{
+test('authentication pages have no back button or embedded language selector',async()=>{
  const {readFile}=await import('node:fs/promises');
- for(const page of ['login','register']){
-  const html=await readFile(new URL('../account/'+page+'/index.html',import.meta.url),'utf8');
-  assert.match(html,/<a class="account-go-back" id="account-go-back" href="\/dashboard"><span id="account-go-back-label">Go back<\/span><\/a>/);
-  assert.doesNotMatch(html,/<span aria-hidden="true">←<\/span>/);
-  assert.doesNotMatch(html,/[?&]next=/);
+ for(const route of ['login','register','recover','verify-email']){
+  for(const file of ['../account/'+route+'/index.html','../templates/account-auth-'+route+'.html']){
+   const html=await readFile(new URL(file,import.meta.url),'utf8');
+   assert.doesNotMatch(html,/account-go-back|account-language|@@ACCOUNT_AUTH_LANGUAGE@@/,file);
+  }
  }
  const shared=await readFile(new URL('../assets/account-ui.js',import.meta.url),'utf8');
- for(const label of ['Go back','Torna indietro','Zurück','Volver','Retour'])assert.ok(shared.includes(label));
- assert.match(shared,/faLoginReturn\?\.peek\?\.\(\)/);
+ assert.doesNotMatch(shared,/account-go-back|configureBack|account-language-trigger/);
  const theme=await readFile(new URL('../assets/theme.js',import.meta.url),'utf8');
- assert.match(theme,/peek\(\)/);
+ assert.match(theme,/peek\\(\\)/);
 });
 
 test('registration and recovery send the selected interface locale, not the browser default, to the mock delivery API',async()=>{
@@ -59,7 +58,7 @@ test('registration and recovery send the selected interface locale, not the brow
  }
 });
 
-test('all authentication pages render the shared app shell and one language control',async()=>{
+test('all authentication pages render the shared app shell without an embedded language control',async()=>{
  const {readFile}=await import('node:fs/promises');
  for(const route of ['login','register','recover','verify-email']){
   const html=await readFile(new URL('../account/'+route+'/index.html',import.meta.url),'utf8');
@@ -68,7 +67,7 @@ test('all authentication pages render the shared app shell and one language cont
   assert.match(html,/<main class="app-main" id="main-content"/);
   assert.match(html,/<h1 class="app-page-title"/);
   assert.match(html,/<section class="app-panel app-authentication-card" inert/);
-  assert.equal((html.match(/id="account-language-trigger"/g)||[]).length,1);
+  assert.equal((html.match(/id="account-language-trigger"/g)||[]).length,0);
   assert.match(html,/<meta name="referrer" content="no-referrer">/);
   assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
  }
