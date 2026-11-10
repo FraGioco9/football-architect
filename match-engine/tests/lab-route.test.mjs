@@ -31,7 +31,7 @@ async function fetchLocal(server,path,{host='app.localhost:2000',method='GET'}={
 test('ME-01 lab is accessible on local DEV app host with strict headers and assets',async()=>{
  const server=await getServer({subdomains:true});
  try{
-  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
+  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
    const r=await fetchLocal(server,path);
    assert.equal(r.status,200,path);
    assert.equal(r.headers['cache-control'],'private, no-store');
@@ -48,6 +48,15 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.match(page.body,/LAB-01/);
   assert.match(page.body,/LAB-04 · Ball Roll \(Grass\)/);
   assert.match(page.body,/LAB-05 · Ball Bounce \(2 m\)/);
+  assert.match(page.body,/id="players-toggle"/);
+  assert.match(page.body,/id="player-controls"[^>]*hidden/);
+  assert.match(page.body,/ME-PLAYER-01 autonomous team movement/);
+  assert.match(page.body,/id="player-inspect-choice"[^>]*aria-label="Read-only inspect autonomous player"/);
+  for(const id of ['player-ball-sector','player-pressing','player-inspection','player-inspection-duty'])
+    assert.match(page.body,new RegExp('id="'+id+'"'));
+  assert.doesNotMatch(page.body,/id="player-duty-pace"|id="player-duty-directions"|id="player-duty-travel"|id="player-duty-history"|id="player-recent-motion"|id="player-motion-vectors"|id="player-trails-toggle"|id="player-detour-progress"|id="player-support-width"/);
+  assert.match(page.body,/Players move automatically/);
+  assert.doesNotMatch(page.body,/id="player-select"|data-player-direction|Move selected player|WASD\/arrow keys/);
   assert.match(page.body,/id="bounce-result"/);
   assert.match(page.body,/id="measure" class="me-button"/);
   assert.match(page.body,/<dialog id="metrics-dialog" class="me-metrics-dialog"/);

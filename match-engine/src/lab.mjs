@@ -1,5 +1,6 @@
 import {createEngine, initializeRapier, PRESETS, canonicalSnapshot, FIXED_DT, toGroundClearance} from '/__fa_match_engine__/core.mjs';
-import {drawPitchMarkings} from '/__fa_match_engine__/pitch-markings.mjs';
+import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel} from '/__fa_match_engine__/pitch-markings.mjs';
+import {createPlayerMovement,currentObservedPlayerAssignments} from '/__fa_match_engine__/player-movement.mjs';
 import {measureBounceHistory,FIFA_TURF_QUALITY_PRO_REFERENCE_M} from '/__fa_match_engine__/rebound-metrics.mjs';
 import {formatNumericValue, stepNumericValue} from '/__fa_match_engine__/numeric-controls.mjs';
 import {runPhysicsDiagnostics,BOUNCE_OBSERVATION_SECONDS,ROLL_OBSERVATION_SECONDS,SPIN_OBSERVATION_SECONDS} from '/__fa_match_engine__/physics-diagnostics.mjs';
@@ -18,6 +19,10 @@ const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
 const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
+let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
+let playersShown=false;
+let inspectedPlayerId=null;
+
 const say = (message, error = false) => {
   byId('status').textContent = message;
   byId('status').classList.toggle('error', error);
@@ -91,6 +96,8 @@ function restart() {
   engine = next;
   history = [engine.snapshot()];
   physicsTickSnapshot = history[0];
+  playerWorld=createPlayerMovement();playerSnapshot=playerWorld.snapshot();
+  inspectedPlayerId=null;byId('player-inspect-choice').value='';
   accumulator = 0;
   playing = false;
   byId('compare-result').textContent = '';
@@ -101,14 +108,61 @@ function restart() {
 function advance() {
   const snapshot = engine.step();
   physicsTickSnapshot = snapshot;
+  playerSnapshot=playerWorld.step(snapshot.ball.position);
   history.push(snapshot);
   if (history.length > 1400) history.shift();
 }
 function play() { playing = true; say('Running'); }
 function pause() { playing = false; say('Paused'); }
+function drawPlayers(ctx,X,Y){
+  for(const p of playerSnapshot.players){
+    const x=X(p.x),y=Y(p.y),pressing=Object.values(playerSnapshot.pressers).includes(p.id);
+    const supporting=Object.values(playerSnapshot.supports).some(run=>run?.playerId===p.id);
+    const balancing=Object.values(playerSnapshot.balances).some(b=>b?.playerId===p.id);
+    const keeper=p.role==='goalkeeper';
+    ctx.beginPath();ctx.arc(x,y,pressing?8.7:keeper?8:7,0,Math.PI*2);
+    ctx.fillStyle=p.team==='home'?'#a8dfff':'#ffb39a';
+    ctx.fill();ctx.strokeStyle=pressing?'#ffdf71':supporting?'#c0f17a':balancing?'#ddbcff':keeper?'#fbdfaa':'#183f36';
+    ctx.lineWidth=pressing?2.6:supporting?2.6:balancing?2.6:keeper?2.2:1.4;ctx.stroke();
+    const pointerX=x+Math.cos(p.facingRad)*12,pointerY=y+Math.sin(p.facingRad)*12;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(pointerX,pointerY);
+    ctx.strokeStyle=pressing?'#ffdf71':'#142e29';
+    ctx.lineWidth=pressing?2.5:1.8;ctx.stroke();
+    ctx.fillStyle='#102d2e';ctx.font='bold 9px system-ui';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(String(p.number),x,y+0.5);
+    if(p.id===inspectedPlayerId){
+      ctx.beginPath();ctx.arc(x,y,13.5,0,Math.PI*2);
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=2.7;ctx.stroke();
+    }
+  }
+}
+function renderPlayerReadout(){
+  // Four current facts only: the simulation remains entirely autonomous.
+  const label=id=>id?id.replace('home-','Home #').replace('away-','Away #'):'None';
+  byId('player-pressing').textContent=label(playerSnapshot.pressers.home)+
+    ' · '+label(playerSnapshot.pressers.away);
+  const thirds={'home-third':'Home third','middle-third':'Middle third',
+    'away-third':'Away third'};
+  const lanes={'negative-y':'Left flank','central':'Centre','positive-y':'Right flank'};
+  const sector=playerSnapshot.ballSector;
+  byId('player-ball-sector').textContent=thirds[sector.third]+' · '+lanes[sector.lane];
+  const current=inspectedPlayerId?
+    playerSnapshot.players.find(p=>p.id===inspectedPlayerId):null;
+  byId('player-inspection').textContent=current?
+    (current.team==='home'?'Home #':'Away #')+current.number+
+    ' · '+current.role+' · ('+fmt(current.x)+', '+fmt(current.y)+') m'+
+    ' · '+fmt(Math.hypot(current.vx,current.vy))+' m/s':'Select a player';
+  const duty=current?currentObservedPlayerAssignments(playerSnapshot,current.id):null;
+  byId('player-inspection-duty').textContent=duty?
+    (duty.assignments.length?duty.assignments.join(' + '):duty.fallback):
+    'Select a player';
+}
+
 function topDown() {
   const c = pitch.getContext('2d'), w = pitch.width, h = pitch.height;
   const {X, Y} = drawPitchMarkings(c, w, h);
+  if(playersShown)drawPlayers(c,X,Y);
   if (!physicsTickSnapshot) return;
   c.strokeStyle = '#ffda84'; c.lineWidth = 2.6; c.beginPath();
   history.forEach((s, i) => {
@@ -154,6 +208,7 @@ function sideView() {
 function render() {
   if (!physicsTickSnapshot) return;
   topDown(); sideView();
+  if(playersShown)renderPlayerReadout();
   const s = physicsTickSnapshot, p = s.ball.position, v = s.ball.velocity;
   byId('tick').textContent = fmt(s.time) + ' s';
   byId('height').textContent = fmt(toGroundClearance(p.z)) + ' m';
@@ -1557,6 +1612,40 @@ function setupDropdowns() {
   }
 }
 
+// Managerial observation only. Players self-organize on each Rapier tick;
+// this button changes visibility, never movement or the ball's state.
+byId('players-toggle').addEventListener('click',()=>{
+  playersShown=!playersShown;
+  byId('players-toggle').setAttribute('aria-pressed',String(playersShown));
+  byId('player-controls').hidden=!playersShown;
+  if(playersShown)renderPlayerReadout();
+  topDown();
+});
+
+// ME-PLAYER-28: observation-only canvas selection; both mouse and tap use
+// CURRENT physical marker positions. Neither writes to the movement engine.
+byId('player-inspect-choice').addEventListener('change',()=>{
+ inspectedPlayerId=byId('player-inspect-choice').value||null;
+ if(playersShown)renderPlayerReadout();
+ topDown();
+});
+pitch.addEventListener('click',event=>{
+ if(!playersShown||!physicsTickSnapshot)return;
+ const rect=pitch.getBoundingClientRect();
+ if(rect.width<=0||rect.height<=0||
+   event.clientX<rect.left||event.clientX>rect.right||
+   event.clientY<rect.top||event.clientY>rect.bottom)return;
+ const x=(event.clientX-rect.left)*pitch.width/rect.width;
+ const y=(event.clientY-rect.top)*pitch.height/rect.height;
+ const radiusPx=(event.pointerType==='touch'?19:14)*pitch.width/rect.width;
+ const playerId=pickObservedPlayerAtCanvasPixel(playerSnapshot.players,x,y,
+   pitch.width,pitch.height,Math.min(radiusPx,100));
+ if(!playerId)return;
+ inspectedPlayerId=playerId;
+ byId('player-inspect-choice').value=playerId;
+ renderPlayerReadout();
+ topDown();
+});
 byId('preset').addEventListener('change', () => { loadPreset(); if (rapier) { try { restart(); } catch (e) { say(e.message, true); } } });
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
