@@ -23,7 +23,9 @@ test('account uses the shared app shell with a profile table and a collapsed pas
  assert.match(html,/id="profile-tab" role="tab" aria-selected="true"/);
  assert.match(html,/id="security-panel" role="tabpanel" aria-labelledby="security-tab" hidden/);
  assert.match(html,/id="edit-profile-form"[\s\S]*?id="security-panel"[\s\S]*?id="change-email-form"/);
- assert.match(html,/<details class="app-profile-password">\s*<summary id="change-title">[\s\S]*?<form method="post" id="change-form">/);
+ assert.match(html,/<symbol id="profile-pencil-icon" viewBox="0 0 24 24">/);
+ assert.match(html,/<table class="app-profile-table" aria-labelledby="security-tab">[\s\S]*?id="security-email-label"[\s\S]*?id="change-email-form" hidden[\s\S]*?id="security-password-label"[\s\S]*?id="security-password-mask" aria-hidden="true">\*{8}<\/span>[\s\S]*?id="change-form" hidden/);
+ assert.equal((html.match(/<use href="#profile-pencil-icon"/g)||[]).length,5);
  assert.doesNotMatch(html,/id="(?:security|sessions-summary|revoke-button|delete-form)"/);
  assert.match(html,/<button[^>]*id="logout-button"/);
 });

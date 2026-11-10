@@ -43,7 +43,7 @@ try{
      assert.equal(await page.locator('#nationality-value').textContent(),country);
      assert.equal(await page.locator('#city-value').textContent(),'Rome');
     }
-    const table=await page.locator('.app-profile-table').boundingBox();
+    const table=await page.locator('#profile-panel .app-profile-table').boundingBox();
     const layout=await page.locator('.app-profile').boundingBox();
     const title=await page.locator('#title').boundingBox();
     const signOut=await page.locator('#logout-button').boundingBox();
@@ -57,10 +57,21 @@ try{
     await page.locator('#profile-tab').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#security-tab').getAttribute('aria-selected'),'true');
-    assert.equal(await page.locator('.app-profile-table').isVisible(),false);
+    assert.equal(await page.locator('#profile-panel .app-profile-table').isVisible(),false);
+    const securityTable=page.locator('#security-panel .app-profile-table');
+    assert.deepEqual(await securityTable.locator('th').evaluateAll(cells=>cells.map(cell=>cell.id)),
+     ['security-email-label','security-password-label']);
+    assert.equal(await page.locator('#security-email-value').textContent(),'synthetic@example.invalid');
+    assert.equal(await page.locator('#security-password-mask').textContent(),'********');
+    const securityBounds=await securityTable.boundingBox();
+    assert.ok(Math.abs(securityBounds.x-table.x)<1&&Math.abs(securityBounds.width-table.width)<1);
+    assert.equal(await page.locator('#change-email-form').isVisible(),false);
     assert.equal(await page.locator('#change-email-title').isVisible(),true);
     await page.locator('#change-title').click();
     assert.equal(await page.locator('#change-form').isVisible(),true);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#change-form').isVisible(),false);
+    assert.equal(await page.locator('#change-title').getAttribute('aria-expanded'),'false');
     if(language==='en'&&width===390){
      await page.route('**/api/player/account/change-email',async route=>{
       assert.equal(route.request().headers()['x-csrf-token'],'a'.repeat(64));

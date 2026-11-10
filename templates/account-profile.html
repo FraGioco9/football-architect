@@ -3,6 +3,11 @@
           <div class="account-body">
             <p id="loading" role="status">Checking your session…</p>
             <div id="protected" hidden>
+              <svg class="app-profile-icons" width="0" height="0" aria-hidden="true" focusable="false">
+                <symbol id="profile-pencil-icon" viewBox="0 0 24 24">
+                  <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M13.8 6.2l4 4m-13.9 9.9 4.5-1 11-11a2.8 2.8 0 0 0-4-4l-11 11-1 4.5zM5.1 15.4l3.5 3.5"/>
+                </symbol>
+              </svg>
               <div class="app-competition-tabs" role="tablist" aria-labelledby="title">
                 <button class="app-competition-tab is-active" type="button" id="profile-tab" role="tab" aria-selected="true" aria-controls="profile-panel">Profile</button>
                 <button class="app-competition-tab" type="button" id="security-tab" role="tab" aria-selected="false" aria-controls="security-panel" tabindex="-1">Security</button>
@@ -11,10 +16,10 @@
               <span id="profile-edit-label" class="sr-only">Edit</span>
               <table class="app-profile-table" aria-labelledby="title">
                 <tbody>
-                  <tr id="username-row"><th scope="row" id="username-label">Username</th><td><div class="app-profile-field"><span id="username-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="username" aria-labelledby="profile-edit-label username-label" aria-controls="edit-profile-form" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
+                  <tr id="username-row"><th scope="row" id="username-label">Username</th><td><div class="app-profile-field"><span id="username-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="username" aria-labelledby="profile-edit-label username-label" aria-controls="edit-profile-form" aria-expanded="false"><svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#profile-pencil-icon"/></svg></button></div></td></tr>
                   <tr><th scope="row" id="profile-title">Email</th><td id="identity"></td></tr>
-                  <tr id="nationality-row"><th scope="row" id="nationality-label">Country</th><td><div class="app-profile-field"><span id="nationality-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="nationality" aria-labelledby="profile-edit-label nationality-label" aria-controls="edit-profile-form" aria-expanded="false" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
-                  <tr id="city-row"><th scope="row" id="city-label">City</th><td><div class="app-profile-field"><span id="city-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="city" aria-labelledby="profile-edit-label city-label" aria-controls="edit-profile-form" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 4 4M4 20l4-.8L20 7l-4-4L4.8 15.8z"/></svg></button></div></td></tr>
+                  <tr id="nationality-row"><th scope="row" id="nationality-label">Country</th><td><div class="app-profile-field"><span id="nationality-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="nationality" aria-labelledby="profile-edit-label nationality-label" aria-controls="edit-profile-form" aria-expanded="false" disabled><svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#profile-pencil-icon"/></svg></button></div></td></tr>
+                  <tr id="city-row"><th scope="row" id="city-label">City</th><td><div class="app-profile-field"><span id="city-value"></span><button type="button" class="app-profile-pencil" data-profile-edit="city" aria-labelledby="profile-edit-label city-label" aria-controls="edit-profile-form" aria-expanded="false"><svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#profile-pencil-icon"/></svg></button></div></td></tr>
                 </tbody>
               </table>
               <button class="cta cta-secondary" id="logout-button" type="button">Sign out</button>
@@ -29,21 +34,38 @@
               </form>
               </div>
               <div class="app-profile-panel" id="security-panel" role="tabpanel" aria-labelledby="security-tab" hidden>
-              <details class="app-profile-password">
-                <summary id="change-title">Change password</summary>
-                <form method="post" id="change-form">
-                <div class="account-field"><label for="account-currentPassword"><span id="current-label">Current password</span></label><div class="account-password"><input name="currentPassword" type="password" autocomplete="current-password" required id="account-currentPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-currentPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div></div>
-                <div class="account-field"><label for="account-newPassword"><span id="new-label">New password</span></label><div class="account-password"><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128" aria-describedby="account-newPassword-help" id="account-newPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-newPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div><small id="account-newPassword-help" data-password-help data-met="false">At least 15 characters.</small></div>
-                <button class="cta cta-primary" type="submit" id="change-button">Change password</button></form>
-              </details>
-              <details class="app-profile-password">
-                <summary id="change-email-title">Change email</summary>
-                <form method="post" id="change-email-form">
-                  <label><span id="new-email-label">New email</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
-                  <label><span id="email-password-label">Current password</span><input name="currentPassword" type="password" required autocomplete="current-password" maxlength="128"></label>
-                  <button class="cta cta-primary" type="submit" id="change-email-button">Send confirmation links</button>
-                </form>
-              </details>
+                <table class="app-profile-table" aria-labelledby="security-tab">
+                  <tbody>
+                  <tr>
+                    <th scope="row" id="security-email-label">Email</th>
+                    <td>
+                      <div class="app-profile-field">
+                        <span id="security-email-value"></span>
+                        <button type="button" class="app-profile-pencil" id="change-email-title" aria-label="Change email" aria-controls="change-email-form" aria-expanded="false"><svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#profile-pencil-icon"/></svg></button>
+                      </div>
+                      <form method="post" id="change-email-form" hidden>
+                        <label><span id="new-email-label">New email</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
+                        <label><span id="email-password-label">Current password</span><input name="currentPassword" type="password" required autocomplete="current-password" maxlength="128"></label>
+                        <button class="cta cta-primary" type="submit" id="change-email-button">Send confirmation links</button>
+                      </form>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row" id="security-password-label">Password</th>
+                    <td>
+                      <div class="app-profile-field">
+                        <span id="security-password-mask" aria-hidden="true">********</span><span id="security-password-hidden" class="sr-only">Password hidden</span>
+                        <button type="button" class="app-profile-pencil" id="change-title" aria-label="Change password" aria-controls="change-form" aria-expanded="false"><svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#profile-pencil-icon"/></svg></button>
+                      </div>
+                      <form method="post" id="change-form" hidden>
+                        <div class="account-field"><label for="account-currentPassword"><span id="current-label">Current password</span></label><div class="account-password"><input name="currentPassword" type="password" autocomplete="current-password" required id="account-currentPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-currentPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div></div>
+                        <div class="account-field"><label for="account-newPassword"><span id="new-label">New password</span></label><div class="account-password"><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128" aria-describedby="account-newPassword-help" id="account-newPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-newPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div><small id="account-newPassword-help" data-password-help data-met="false">At least 15 characters.</small></div>
+                        <button class="cta cta-primary" type="submit" id="change-button">Change password</button>
+                      </form>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <p id="status" role="status"></p>

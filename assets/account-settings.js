@@ -67,7 +67,11 @@ function populateProfileForm(){
  countrySelect.value=profile?.nationality||'';
 }
 let t=translations[ui.language];
-const ids=['title','change-title','current-label','new-label','change-button','logout-button','loading'];
+const ids={title:0,'current-label':2,'new-label':3,'change-button':4,'logout-button':5,loading:6};
+const passwordLabels={
+ en:['Password','Password hidden'],it:['Password','Password nascosta'],de:['Passwort','Passwort verborgen'],
+ es:['Contraseña','Contraseña oculta'],fr:['Mot de passe','Mot de passe masqué']
+};
 function renderProfile(locale){
  const username=profile?.username;
  document.getElementById('username-value').textContent=username||settings[8];
@@ -81,10 +85,15 @@ function renderProfile(locale){
 ui.bind(value=>{
  const next=translations[value],nextSettings=settingsLabels[value];
  ui.translateStatus(t,next);ui.translateStatus(settings,nextSettings);t=next;settings=nextSettings;
- ids.forEach((id,i)=>document.getElementById(id).textContent=t[i]);
+ Object.entries(ids).forEach(([id,i])=>document.getElementById(id).textContent=t[i]);
  ['username-label','profile-title'].forEach((id,i)=>document.getElementById(id).textContent=profileLabels[value][i]);
- const settingsIds=['security-tab','profile-edit-label','nationality-label','city-label','save-profile-button','change-email-title','new-email-label','change-email-button'];
- settingsIds.forEach((id,i)=>document.getElementById(id).textContent=settings[i]);
+ const settingsIds={'security-tab':0,'profile-edit-label':1,'nationality-label':2,'city-label':3,'save-profile-button':4,'new-email-label':6,'change-email-button':7};
+ Object.entries(settingsIds).forEach(([id,i])=>document.getElementById(id).textContent=settings[i]);
+ document.getElementById('security-email-label').textContent=profileLabels[value][1];
+ document.getElementById('security-password-label').textContent=passwordLabels[value][0];
+ document.getElementById('security-password-hidden').textContent=passwordLabels[value][1];
+ document.getElementById('change-title').setAttribute('aria-label',t[1]);
+ document.getElementById('change-email-title').setAttribute('aria-label',settings[5]);
  document.getElementById('profile-tab').textContent=t[0];
  cancelProfile.textContent=cancelLabels[value];
  document.getElementById('email-password-label').textContent=t[2];
@@ -99,7 +108,9 @@ function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidde
 async function init(){try{
  const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[9]);return;}
  const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'||!value.actor||typeof value.actor.email!=='string'){redirectToLogin();return;}
- csrf=value.csrfToken;document.getElementById('identity').textContent=value.actor.email;
+ csrf=value.csrfToken;
+ document.getElementById('identity').textContent=value.actor.email;
+ document.getElementById('security-email-value').textContent=value.actor.email;
  profile=value.profile;
  renderProfile(ui.language);populateProfileForm();
  protectedPanel.hidden=false;loading.hidden=true;
@@ -109,6 +120,7 @@ document.getElementById('change-form').addEventListener('submit',e=>{e.preventDe
 document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[7]);redirectToLogin()}));
 const tabs=[...document.querySelectorAll('.app-profile [role="tab"]')];
 function selectTab(selected){
+ if(selected.id==='profile-tab'&&!securityBusy())securityPencils.forEach(pencil=>closeSecurityEditor(pencil,false));
  for(const tab of tabs){
   const active=tab===selected;
   tab.classList.toggle('is-active',active);
@@ -141,12 +153,39 @@ editForm.addEventListener('submit',event=>{
   closeEditor(!document.getElementById('profile-panel').hidden);ui.feedback(status,settings[9],'success');
  });
 });
+const securityPencils=[...document.querySelectorAll('#security-panel .app-profile-pencil')];
+const securityForm=pencil=>document.getElementById(pencil.getAttribute('aria-controls'));
+const securityBusy=()=>securityPencils.some(pencil=>securityForm(pencil).querySelector('[type="submit"]').disabled);
+function closeSecurityEditor(pencil,restoreFocus){
+ const form=securityForm(pencil);
+ if(form.hidden)return;
+ form.reset();form.hidden=true;
+ pencil.setAttribute('aria-expanded','false');
+ if(restoreFocus)pencil.focus();
+}
+securityPencils.forEach(pencil=>{
+ const form=securityForm(pencil);
+ pencil.addEventListener('click',()=>{
+  if(securityBusy())return;
+  if(!form.hidden){closeSecurityEditor(pencil,true);return;}
+  securityPencils.forEach(button=>closeSecurityEditor(button,false));
+  ui.feedback(status,'');
+  form.hidden=false;pencil.setAttribute('aria-expanded','true');
+  form.querySelector('input').focus();
+ });
+ form.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!form.querySelector('[type="submit"]').disabled){
+   event.preventDefault();closeSecurityEditor(pencil,true);
+  }
+ });
+});
 const emailForm=document.getElementById('change-email-form');
 emailForm.addEventListener('submit',event=>{
  event.preventDefault();
  execute(emailForm.querySelector('[type="submit"]'),async()=>{
   await post('/api/player/account/change-email',Object.fromEntries(new FormData(emailForm)));
-  emailForm.reset();ui.feedback(status,settings[10],'success');
+  closeSecurityEditor(document.getElementById('change-email-title'),!document.getElementById('security-panel').hidden);
+  ui.feedback(status,settings[10],'success');
  });
 });
 init();
