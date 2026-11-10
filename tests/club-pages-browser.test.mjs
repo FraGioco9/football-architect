@@ -131,11 +131,83 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.equal(before.nodes.filter(n=>n.active).length,1);
        const capture=width===1440&&theme==='dark'&&lang==='it'&&path==='/clubs'&&mode==='cold';
        const captureNav=async label=>{const clip=await run("(()=>{const r=document.querySelector('.fa-shell-sidebar').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");const shot=await cmd('Page.captureScreenshot',{format:'jpeg',quality:85,clip});const chunks=shot.data.match(/.{1,6000}/g);chunks.forEach((chunk,i)=>console.log('NAV_FIRST_PAINT|'+label+'|'+i+'|'+chunks.length+'|'+chunk));};
+       // First-paint pixel geometry, not just HTML presence: each Clubs tile
+       // must have exactly one painted crest, plus three visible metadata bars.
+       let firstPaintClubs=null;
+       if(path==='/clubs'&&mode==='cold'&&lang==='it'){
+        const tiles=await run(`(()=>{
+         const boxes=[...document.querySelectorAll('.nav01-grid>.nav01-skeleton-card')];
+         return boxes.map(card=>{
+          const crest=card.querySelector('.nav01-skeleton-crest');
+          const disc=crest?.querySelectorAll('.nav01-skeleton-crest-disc');
+          const read=selector=>{
+           const element=selector===':self'?card:card.querySelector(selector),r=element?.getBoundingClientRect(),style=element?getComputedStyle(element):null;
+           return {width:r?.width||0,height:r?.height||0,x:r?.x||0,y:r?.y||0,display:style?.display,visibility:style?.visibility,background:style?.backgroundColor};
+          };
+          return {card:read(':self'),discCount:disc?.length||0,
+           pseudoBefore:crest?getComputedStyle(crest,'::before').content:null,
+           pseudoAfter:crest?getComputedStyle(crest,'::after').content:null,
+           circle:read('.nav01-skeleton-crest-disc'),name:read('.nav01-skeleton-name-bar'),nameSlot:read('.nav01-skeleton-name'),
+           flag:read('.nav01-skeleton-flag'),city:read('.nav01-skeleton-city')};
+         });
+        })()`);
+        firstPaintClubs=tiles;
+        assert.equal(tiles.length,16,'16 anonymous cards must be present at first paint');
+        for(const [index,tile] of tiles.entries()){
+         assert.equal(tile.discCount,1,'single crest circle for card '+index);
+         assert.equal(tile.pseudoBefore,'none','no additional shield on crest '+index);
+         assert.equal(tile.pseudoAfter,'none','no additional overlay on crest '+index);
+         for(const id of ['circle','name','flag','city']){
+          const b=tile[id];
+          assert.ok(b.width>=10&&b.height>=10&&b.display!=='none'&&b.visibility==='visible',
+           'Visible '+id+' first-paint skeleton at card '+index+': '+JSON.stringify(b));
+          assert.ok(b.background!=='transparent'&&b.background!=='rgba(0, 0, 0, 0)',
+           'Painted '+id+' first-paint skeleton at card '+index+': '+JSON.stringify(b));
+         }
+         assert.ok(tile.city.width<=72.5,'City skeleton must not exceed 72px at card '+index);
+         assert.equal(tile.flag.width,20,'Flag skeleton exactly matches the 20px real flag slot at card '+index);
+         assert.ok(tile.name.width<=180.5,'Name skeleton is a compact bar at card '+index);
+         assert.ok(tile.flag.x+tile.flag.width<=tile.city.x,'Flag precedes city at card '+index);
+         assert.ok(Math.abs(tile.flag.y+tile.flag.height/2-tile.city.y-tile.city.height/2)<6,
+          'Flag and city share a line at card '+index);
+        }
+       }
        if(capture)await captureNav('before');
        holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());
        await wait("document.readyState==='complete'");await delay(50);
        const after=await run(navSnapshot);assert.deepEqual(after,before,'Sidebar remains stable: '+JSON.stringify({width,theme,lang,path,mode,before,after}));
        if(capture)await captureNav('after');
+       if(firstPaintClubs){
+        await wait("document.querySelectorAll('.nav01-grid>a.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
+        const loaded=await run(`(()=>{
+         const cards=[...document.querySelectorAll('.nav01-grid>a.nav01-card')];
+         const coords=(node,card)=>{const a=node.getBoundingClientRect(),b=card.getBoundingClientRect();return {x:a.x-b.x,y:a.y-b.y,width:a.width,height:a.height}};
+         const candidate=cards.find(card=>{
+          const name=card.querySelector('strong'),city=card.querySelector('.nav01-club-city');
+          return name&&city&&name.getBoundingClientRect().height<=parseFloat(getComputedStyle(name).lineHeight)+1&&
+           city.getBoundingClientRect().height<=parseFloat(getComputedStyle(city).lineHeight)+1;
+         });
+         if(!candidate)return null;
+         return {card:coords(candidate,candidate),
+          nameSlot:coords(candidate.querySelector('strong'),candidate),
+          flag:coords(candidate.querySelector('.nav01-country-flag'),candidate),
+          city:coords(candidate.querySelector('.nav01-club-city'),candidate)};
+        })()`);
+        assert.ok(loaded,'At least one hydrated club has single-line name and city');
+        const skeleton=firstPaintClubs[0];
+        const relative=(part,axis)=>skeleton[part][axis]-skeleton.card[axis];
+        for(const axis of ['x','y']){
+         assert.ok(Math.abs(relative('flag',axis)-loaded.flag[axis])<2.5,
+          'Flag skeleton '+axis+' matches final country flag at '+width+'px: '+JSON.stringify({skeleton:skeleton.flag,actual:loaded.flag}));
+         if(axis==='x')assert.ok(Math.abs(relative('city','x')-loaded.city.x)<2.5,
+          'City skeleton horizontal origin matches final text at '+width+'px: '+JSON.stringify({skeleton:skeleton.city,actual:loaded.city}));
+        }
+        assert.ok(Math.abs(relative('city','y')+skeleton.city.height/2-(loaded.city.y+loaded.city.height/2))<3,
+         'City skeleton aligns with real text line center at '+width+'px: '+JSON.stringify({skeleton:skeleton.city,actual:loaded.city}));
+        assert.ok(Math.abs(relative('nameSlot','y')-loaded.nameSlot.y)<3,
+         'Name line skeleton sits at the real strong line at '+width+'px: '+JSON.stringify({skeleton:skeleton.nameSlot,actual:loaded.nameSlot}));
+       }
+
       }catch(error){throw new Error('NAV first paint '+JSON.stringify({width,theme,lang,path,mode})+': '+error.message,{cause:error});}finally{holdDeferred=false;deferredResponses.splice(0).forEach(send=>send());}
      }
     }
@@ -404,10 +476,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("location.pathname==='/clubs/it/1/history'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
-    assert.equal(await run("document.querySelectorAll('.club-empty').length"),1);
+    assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('.club-empty')"),true);
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');

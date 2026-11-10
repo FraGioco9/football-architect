@@ -93,7 +93,7 @@ test('Trafford directory first paint is anonymous and client search uses catalog
  const trafford=manifest.clubs.find(c=>c.countryId==='ENG'&&c.clubId===2);
  assert.equal(trafford.primaryName,'Trafford United');
  assert.equal(trafford.fullName,'Trafford United Football Club');
- assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6,'six reserved anonymous cards');
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16,'sixteen reserved anonymous cards');
  assert.equal((html.match(/<a class="nav01-card"/g)||[]).length,0,'no 320 prerendered clubs');
  assert.ok(!html.includes('Trafford United'),'no name before manifest');
  assert.ok(!html.includes('Medlock United'),'no obsolete name');

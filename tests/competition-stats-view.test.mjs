@@ -82,7 +82,7 @@ test('QA-11: Teams and Players loading crests match the Standings circular skele
   assert.equal((markup.match(/app-world-club-crest-placeholder/g)||[]).length,0,view+' loading never renders the no-logo shield');
  }
  const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
- assert.match(css,/\.app-view-skeleton-crest-slot\{[^}]*width:48px;height:48px;border-radius:50%;background:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)/,
+ assert.match(css,/\.app-view-skeleton-crest-slot\{[^}]*width:48px;height:48px;border-radius:50%;background:var\(--fa-crest-skeleton-fill\)/,
   'desktop crest skeleton must use the same shape, fill and geometry as Standings');
  assert.match(css,/@media\(max-width:620px\)\{\.app-view-skeleton-crest-slot\{flex-basis:40px;width:40px;height:40px\}\}/,
   'mobile crest skeleton must use the same 40px footprint as Standings');

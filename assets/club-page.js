@@ -2,7 +2,8 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
- let selected=model.route(location.pathname),competitionSnapshot={source:'loading'};
+ let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'};
+ let refreshClubHistory=()=>{};
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const competitionSeason=()=>{
   const explicit=new URLSearchParams(location.search).get('season');
@@ -67,7 +68,7 @@
    const previousTabs=host.querySelector(':scope > .club-tabs');
    const tabScrollLeft=previousTabs?.scrollLeft;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
    let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
    if(header&&stagedHeader){
@@ -125,7 +126,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-      selected=next;paint(true);
+      selected=next;paint(true);refreshClubHistory();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
      tabs.addEventListener('keydown',event=>{
@@ -167,7 +168,7 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
    const replacement=staging.querySelector('.club-competition');
    if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
@@ -264,6 +265,54 @@
    }
   };
   void enablePublic();
+  // Public club history reads only sealed years, only while History is viewed.
+  const enableClubHistory=async()=>{
+   try{
+    const {readClubHistory}=await import('/assets/club-history-source.mjs');
+    await import('/assets/world-clock-adapter.js');
+    const state=window.faWorldState;if(!state)throw Error('World state unavailable');
+    let epoch=0,abort=null,lastKey=null;
+    const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
+    const publish=value=>{historySnapshot=value;if(selected.view==='history')paint(true)};
+    const refresh=()=>{
+     if(selected.view!=='history'){abort?.abort();abort=null;epoch++;lastKey=null;return;}
+     const current=state.get();
+     if(current.source==='dev'){
+      abort?.abort();abort=null;epoch++;lastKey=null;
+      if(historySnapshot.source!=='unavailable')publish({source:'unavailable'});return;
+     }
+     if(current.source!=='authoritative')return;
+     const world=current.world;
+     const key=JSON.stringify([current.sourceRevision,current.readRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day,world?.phase,current.worldStatus]);
+     if(key===lastKey)return;lastKey=key;
+     const seq=++epoch;abort?.abort();abort=new AbortController();
+     if(!world||current.worldStatus!=='ready'){
+      publish({source:current.worldStatus==='unavailable'?'unavailable':'loading'});return;
+     }
+     const {signal}=abort,clubKey=selected.countryId+'-'+selected.clubId;
+     publish({source:'loading'});
+     void (async()=>{
+      try{
+       const result=await readClubHistory({clubKey,world,fetchJson:publicJson,signal});
+       const now=state.get();
+       if(signal.aborted||seq!==epoch||selected.view!=='history'||now.source!=='authoritative'||!same(now.world,world)||
+          now.sourceRevision!==current.sourceRevision||now.readRevision!==current.readRevision)return;
+       publish(result);
+      }catch{
+       const now=state.get();
+       if(!signal.aborted&&seq===epoch&&selected.view==='history'&&now.source==='authoritative'&&same(now.world,world))
+        publish({source:'unavailable'});
+      }
+     })();
+    };
+    refreshClubHistory=refresh;state.subscribe(refresh);
+    window.addEventListener('fa:source-change',()=>{lastKey=null;refresh()});
+    window.addEventListener('pagehide',()=>{abort?.abort();epoch++});
+    refresh();
+   }catch{historySnapshot={source:'unavailable'};if(selected.view==='history')paint(true)}
+  };
+  void enableClubHistory();
+
   // Ignore unrelated attribute mutations and retain focus, scroll and SVG/image
   // nodes when the user changes the interface language.
   let renderedLanguage=language();
@@ -275,7 +324,7 @@
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint(true);host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
+   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
