@@ -1316,3 +1316,43 @@ at 1cm/3cm/7.5cm from front, back and side before visual acceptance.
 Collar/cuff/waist trims, source artist binary, palettes, boots,
 shorts/socks and production assets remain untouched.
 PR #454 Draft/HOLD; no merge, production deploy or DB operation.
+
+## KM-32 — one front/back stripe origin on the physical shoulder seam (2026-11-10)
+
+Owner proposed starting the torso stripes at the sewn shoulder instead
+of independently centring front and back UV islands. KM-31 was using
+the largest body panel as an arbitrary root, allowing front/back
+stripes to begin from different positions even when sleeve joins were
+otherwise corrected.
+
+KM-32 searches for the ORIGINAL shared topological seam between
+front torso primitives 9/10 and back primitives 42/43 using the
+KM-31 3D source segment projection. Candidate seam segments must
+extend laterally at least 45mm from the neckline and be predominantly
+horizontal; pure or sloping vertical SIDE seams are rejected.
+The most medial, physically shared shoulder stitch becomes a single
+**zero-metre stripe start** on the front. The back inherits the exact
+same intrinsic physical stripe coordinate at each original sewn
+shoulder vertex BEFORE connecting either sleeve. Both sides are
+analysed where present; the chosen origin is consistent independent
+of glTF primitive traversal order or source UV centering.
+The subsequent original sleeve projection inherits the already
+shared torso stripe field. Mirrored atlas charts and differently
+tessellated front/back shoulder seams remain supported, including
+the 1cm stripe minimum added in KM-31.
+
+This is not a new mesh, a projected global-X stripe, an invented seam
+or a colour-contrast mask. The original source GLB, triangle positions,
+UVs, normals, body materials and collar/cuff/waist trims remain
+unchanged. The source-local report `km32ShoulderOriginReport` shows
+`front-back-anchored` and the matched front/back primitives when a
+genuine common shoulder was found; `not-detected` or
+`front-back-seam-found-but-unaligned` means the original private
+GLB must be inspected instead of claiming false alignment.
+
+Targeted regressions cover each shoulder, different front/back
+tessellation, inverted source UVs, arms joined only AFTER the torso,
+Solid-to-Vertical stripe shader reuse, and rejection of vertical or
+inclined side seams. Real original GLB visual inspection in
+owner-local Chrome is pending. PR #454 Draft/HOLD, no merge, deploy,
+remote DB access or artist-model publication.

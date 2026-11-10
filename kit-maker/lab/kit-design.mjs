@@ -175,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km31-segment-stitched-shoulder-and-10mm-stripes-v1";
+export const KIT_STRIPE_SHADER_KEY="km32-shared-front-back-shoulder-origin-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -592,6 +592,7 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData??={};
       outfit.userData.km29ShoulderStripeReport=shoulder.report;
       outfit.userData.km31ShoulderStripeReport=shoulder.report;
+      outfit.userData.km32ShoulderOriginReport=shoulder.report.shoulderReference;
       if(typeof THREE?.Mesh==="function"&&!outfit.userData.km31SeamLogged){
         outfit.userData.km31SeamLogged=true;
         console.info("Kit Maker shoulder seam coverage",shoulder.report);
@@ -603,6 +604,7 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData??={};
       outfit.userData.km29ShoulderStripeReport={status:"skipped",reason};
       outfit.userData.km31ShoulderStripeReport={status:"skipped",reason};
+      outfit.userData.km32ShoulderOriginReport={status:"skipped",reason};
     }
   }
   // Stitch-adjacent vertices inherit the same authored fabric-metre

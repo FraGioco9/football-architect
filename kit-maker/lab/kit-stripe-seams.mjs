@@ -225,6 +225,79 @@ function stitchedCoordinates(entry,pairs,fit,sourceCoords){
       1000*Math.max(...anchors.map(a=>Math.abs(a.delta))))};
 }
 
+// KM-32: establish the FIRST stripe at the actual front/back shoulder
+// stitching line, not at an arbitrary per-panel UV island centre.
+// A shoulder must span outward from the neck. Reject near-vertical
+// side seams and incidental overlapping vertices.
+const torsoFace=name=>/^FA_jersey__(?:9|10)(?:_\d+)?$/i.test(name)?"front":
+  /^FA_jersey__(?:42|43)(?:_\d+)?$/i.test(name)?"back":null;
+function findShoulderReference(entries){
+  const front=entries.filter(e=>torsoFace(e.meshName)==="front"),
+    back=entries.filter(e=>torsoFace(e.meshName)==="back");
+  let best=null;
+  for(const source of front)for(const target of back){
+    const points=new Map(target.samples.map(p=>[p.i,p]));
+    const candidates=seamPairs(source,target),sides=[];
+    for(const side of [-1,1]){
+      const sidePairs=candidates.filter(p=>{
+        const point=points.get(p.bi);
+        return point&&side*point.pos[0]>.105&&point.pos[1]>=1.385;
+      });
+      // Preserve only the uppermost sewn line in each radial slice:
+      // side seams can continue vertically below the same X.
+      const maxima=new Map();
+      for(const p of sidePairs){
+        const point=points.get(p.bi),
+          slice=Math.floor(Math.abs(point.pos[0])/.008);
+        maxima.set(slice,Math.max(maxima.get(slice)??-Infinity,point.pos[1]));
+      }
+      const shoulder=sidePairs.filter(p=>{
+        const point=points.get(p.bi),
+          slice=Math.floor(Math.abs(point.pos[0])/.008);
+        return point.pos[1]>=maxima.get(slice)-.006;
+      });
+      const radial=shoulder.map(p=>Math.abs(points.get(p.bi).pos[0])),
+        heights=shoulder.map(p=>points.get(p.bi).pos[1]),
+        horizontalSpan=Math.max(...radial)-Math.min(...radial),
+        verticalSpan=Math.max(...heights)-Math.min(...heights);
+      // A shoulder extends predominantly outwards from the neckline.
+      // An inclined SIDE seam may move in X too, but rises much more
+      // in Y than it progresses outwards.
+      if(shoulder.length<8||horizontalSpan<.045||
+         horizontalSpan<1.2*verticalSpan)continue;
+      sides.push({side,pairs:shoulder,radial});
+    }
+    if(!sides.length)continue;
+    // Both genuine shoulder lines share one torso pattern reference.
+    const selected=sides.flatMap(x=>x.pairs),
+      strongest=[...sides].sort((a,b)=>b.pairs.length-a.pairs.length)[0];
+    const anchor=[...strongest.pairs].sort((a,b)=>
+      Math.abs(points.get(a.bi).pos[0])-
+      Math.abs(points.get(b.bi).pos[0]))[0];
+    const farthest=[...strongest.pairs].sort((a,b)=>
+      Math.abs(points.get(b.bi).pos[0])-
+      Math.abs(points.get(a.bi).pos[0]))[0];
+    const srcUv=source.geometry.getAttribute("uv"),
+      authored=i=>(srcUv.getX(i)-source.metric.originU)*
+        source.metric.metresPerUv;
+    const original=Float32Array.from({length:srcUv.count},
+      (_,i)=>authored(i));
+    const inner=desiredValue(anchor,original),
+      outer=desiredValue(farthest,original),
+      direction=outer>=inner?1:-1,
+      radialSpan=Math.abs(points.get(farthest.bi).pos[0])-
+        Math.abs(points.get(anchor.bi).pos[0]);
+    if(radialSpan<.045||Math.abs(outer-inner)<.025)continue;
+    const anchorPoint=points.get(anchor.bi).pos;
+    const ref={source,target,pairs:selected,direction,origin:inner,
+      anchorPoint,
+      sides:sides.map(x=>x.side===1?"right":"left"),
+      distanceToEdgeM:radialSpan,matched:selected.length};
+    if(!best||ref.matched>best.matched)best=ref;
+  }
+  return best;
+}
+
 const alignmentCache=new WeakMap();
 export function alignOriginalShoulderStripes(outfit,prepared){
   const old=alignmentCache.get(outfit);
@@ -242,14 +315,58 @@ export function alignOriginalShoulderStripes(outfit,prepared){
   const solved=new Map(),coordinates=new Map(),
     report={status:"no-seam-match",matches:0,connections:[]};
   const body=entries.filter(x=>x.kind==="body");
+  const shoulderReference=findShoulderReference(entries);
+  report.shoulderReference=shoulderReference?{
+    status:"front-back-anchored",
+    panels:[shoulderReference.source.meshName,
+      shoulderReference.target.meshName],
+    side:shoulderReference.sides,
+    matchedStitches:shoulderReference.matched,
+    innerEdgeZero:true
+  }:{status:"not-detected",reason:"No verified front/back shoulder seam"};
   if(body.length){
-    const root=body.sort((a,b)=>b.grid.size-a.grid.size)[0];
-    solved.set(root.geometry,{sign:1,offset:0});
+    // Source front panel is always the root when a genuine upper
+    // front/back shoulder seam exists, regardless of mesh order.
+    const root=shoulderReference?.source??
+      [...body].sort((a,b)=>b.grid.size-a.grid.size)[0];
+    const sign=shoulderReference?.direction??1,
+      anchor=shoulderReference?.origin??0;
+    solved.set(root.geometry,{axis:"u",sign,offset:-sign*anchor});
     const rootUv=root.geometry.getAttribute("uv");
     coordinates.set(root.geometry,Float32Array.from(
-      {length:rootUv.count},(_,i)=>
-        (rootUv.getX(i)-root.metric.originU)*root.metric.metresPerUv));
+      {length:rootUv.count},(_,i)=>sign*
+        ((rootUv.getX(i)-root.metric.originU)*
+          root.metric.metresPerUv-anchor)));
     const pairCache=new Map();
+    // Anchor BACK onto FRONT at every upper shoulder stitch before
+    // either sleeve is considered. This fixes both torso stripe starts.
+    if(shoulderReference){
+      const target=shoulderReference.target,
+        source=shoulderReference.source,pairs=shoulderReference.pairs,
+        rootCoordinates=coordinates.get(source.geometry),
+        aligned=fit(pairs,rootCoordinates,target);
+      if(aligned){
+        const mapped=stitchedCoordinates(target,pairs,aligned,rootCoordinates);
+        solved.set(target.geometry,{
+          axis:aligned.axis,sign:aligned.sign,offset:aligned.offset});
+        coordinates.set(target.geometry,mapped.values);
+        report.matches+=pairs.length;
+        report.connections.push({
+          from:source.meshName,to:target.meshName,
+          role:"front-back-shoulder-origin",
+          matchedVertices:pairs.length,preciseAnchors:mapped.anchors,
+          segmentProjected:true,
+          maxSeamCorrectionMm:mapped.maxSeamCorrectionMm,
+          mirroredUV:aligned.sign===-1,
+          seamAcrossUvAxis:aligned.axis.toUpperCase()
+        });
+        report.shoulderReference.backConnected=true;
+      }else{
+        report.shoulderReference.status="front-back-seam-found-but-unaligned";
+        report.shoulderReference.backConnected=false;
+        report.shoulderReference.innerEdgeZero=false;
+      }
+    }
     while(solved.size<entries.length){
       let best=null;
       for(let i=0;i<entries.length;i++){
@@ -263,7 +380,11 @@ export function alignOriginalShoulderStripes(outfit,prepared){
           if(!pairCache.has(k))pairCache.set(k,seamPairs(a,b));
           const p=pairCache.get(k),candidate=fit(p,coordinates.get(a.geometry),b);
           if(!candidate)continue;
-          const score=candidate.matched/(1+candidate.error*1000);
+          // Finish joined torso panels before connecting either arm.
+          // The shirt's shoulder origin must never depend on sleeve order.
+          const torsoPriority=b.kind==="body"?2:1;
+          const score=torsoPriority*1e6+
+            candidate.matched/(1+candidate.error*1000);
           if(!best||score>best.score)best={a,b,candidate,score};
         }
       }

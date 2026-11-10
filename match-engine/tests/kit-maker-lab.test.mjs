@@ -252,6 +252,7 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('km29ShoulderStripeReport'));
   assert.ok(designJS.includes('kmStripeSewnMetres'));
   assert.ok(designJS.includes('km31ShoulderStripeReport'));
+  assert.ok(designJS.includes('km32ShoulderOriginReport'));
   assert.ok(designJS.includes('shoulder.coordinates'));
   assert.ok(designJS.includes('hasSewnCoordinates'));
   assert.ok(designJS.includes('new THREE.Float32BufferAttribute(metres,1)'));

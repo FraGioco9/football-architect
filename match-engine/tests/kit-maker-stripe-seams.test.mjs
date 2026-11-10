@@ -254,3 +254,167 @@ test('KM-31 left sleeve with rotated atlas and different mesh sampling joins the
   for(let i=0;i<47;i++)
     assert.ok(Math.abs(field[i]-(pos.getX(i)+.26))<.0001);
 });
+
+function shoulderSewnPanel(name,{samples=29,front=true,side=1,
+    flip=false,atlasShift=0,verticalOnly=false}={}){
+  const vertices=[],triangles=[];
+  for(let row=0;row<2;row++)for(let i=0;i<samples;i++){
+    const t=i/(samples-1),
+      x=verticalOnly?side*.32:side*(.12+.23*t),
+      y=verticalOnly?1.41+.16*t:
+        row?1.30:1.55-.04*t,
+      z=row?(front?.045:-.045):.008*Math.sin(Math.PI*t),
+      u=atlasShift+(flip?-x:x)/1.52+
+        ((!front&&row===0)?.006*Math.sin(Math.PI*t)/1.52:0);
+    vertices.push({p:[x,y,z],uv:[u,row*.08]});
+  }
+  for(let i=0;i<samples-1;i++){
+    const a=i,b=i+1,c=i+samples,d=c+1;
+    triangles.push(a,b,c,b,d,c);
+  }
+  const position={
+    count:vertices.length,
+    getX(i){return vertices[i].p[0]},
+    getY(i){return vertices[i].p[1]},
+    getZ(i){return vertices[i].p[2]}
+  },uv={
+    count:vertices.length,
+    getX(i){return vertices[i].uv[0]},
+    getY(i){return vertices[i].uv[1]}
+  };
+  const geometry={
+    index:{count:triangles.length,getX(i){return triangles[i]}},
+    getAttribute(k){return k==='position'?position:k==='uv'?uv:null}
+  };
+  return {part:'jersey',meshName:name,mesh:{name},geometry,
+    metric:{originU:(vertices[0].uv[0]+vertices[samples-1].uv[0])/2,
+      metresPerUv:1.52,metresPerUvV:1.52}};
+}
+test('KM-32 torso front/back stripes start together at the actual shoulder, both sides',()=>{
+  for(const side of [1,-1]){
+    const front=shoulderSewnPanel('FA_jersey__9',
+        {samples:21,front:true,side}),
+      back=shoulderSewnPanel('FA_jersey__42',
+        {samples:51,front:false,side,flip:true,atlasShift:.48});
+    // Deliberately list BACK first to reject arbitrary largest-panel root.
+    const result=alignOriginalShoulderStripes({},[back,front]),
+      reference=result.report.shoulderReference;
+    assert.equal(reference.status,'front-back-anchored');
+    assert.equal(reference.backConnected,true);
+    assert.deepEqual(reference.panels,['FA_jersey__9','FA_jersey__42']);
+    assert.ok(reference.side.includes(side===1?'right':'left'));
+    assert.ok(reference.matchedStitches>=40);
+    assert.equal(result.report.connections[0].role,'front-back-shoulder-origin');
+    const frontField=result.coordinates.get(front.geometry),
+      backField=result.coordinates.get(back.geometry);
+    assert.ok(frontField&&backField);
+    assert.ok(Math.abs(frontField[0])<.000005,
+      'First front stripe must start from the neck-side shoulder point');
+    assert.ok(Math.abs(backField[0])<.000005,
+      'First back stripe must start from the exact same physical point');
+    const backPositions=back.geometry.getAttribute('position');
+    for(let i=0;i<51;i++){
+      const physicalDistance=Math.abs(backPositions.getX(i))-.12;
+      assert.ok(Math.abs(backField[i]-physicalDistance)<.00002,
+        'Front/back stripe field must coincide along the entire shoulder');
+      for(const width of [.01,.015,.075,.15])
+        assert.ok(Math.abs(Math.cos(Math.PI*backField[i]/width)-
+          Math.cos(Math.PI*physicalDistance/width))<.007,
+          'One-centimetre stripe cannot begin at a different back position');
+    }
+  }
+});
+test('KM-32 front/back shared shoulder calibration precedes sleeve mapping',()=>{
+  const sleeve=shoulderSewnPanel('FA_jersey__38',
+      {samples:61,front:false,flip:true,atlasShift:.9}),
+    back=shoulderSewnPanel('FA_jersey__42',
+      {samples:47,front:false,flip:true,atlasShift:.48}),
+    front=shoulderSewnPanel('FA_jersey__9',{samples:19,front:true});
+  const result=alignOriginalShoulderStripes({},[sleeve,back,front]);
+  assert.equal(result.report.shoulderReference.status,'front-back-anchored');
+  assert.equal(result.report.connections[0].role,'front-back-shoulder-origin');
+  assert.equal(result.report.sleeves.right,true);
+  const body=result.coordinates.get(back.geometry),
+    sleeveMetres=result.coordinates.get(sleeve.geometry);
+  assert.ok(body&&sleeveMetres);
+  const positions=sleeve.geometry.getAttribute('position');
+  for(let i=0;i<61;i++){
+    const expected=positions.getX(i)-.12;
+    assert.ok(Math.abs(sleeveMetres[i]-expected)<.00002,
+      'The sleeve must inherit the shoulder-anchored torso phase');
+  }
+});
+test('KM-32 never mistakes a vertical side seam for a shared shoulder origin',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',
+      {front:true,verticalOnly:true}),
+    back=shoulderSewnPanel('FA_jersey__42',
+      {front:false,flip:true,verticalOnly:true});
+  const result=alignOriginalShoulderStripes({},[front,back]);
+  assert.equal(result.report.shoulderReference.status,'not-detected');
+  assert.equal(result.report.shoulderReference.innerEdgeZero,undefined);
+});
+
+test('KM-32 Kit Maker shader uses the one shared front/back start at first paint',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',{samples:19}),
+    back=shoulderSewnPanel('FA_jersey__42',
+      {samples:43,front:false,flip:true,atlasShift:.5}),
+    shorts=panel('FA_shorts__body'),
+    socks=panel('FA_socks__body');
+  const panels=[back,shorts,front,socks];
+  class Color{
+    constructor(value){this.hex=value;}
+    set(value){this.hex=value;return this;}
+  }
+  class Float32BufferAttribute{
+    constructor(array,itemSize){this.array=array;this.itemSize=itemSize;
+      this.count=array.length/itemSize;}
+  }
+  const meshes=panels.map(e=>{
+    const attrs=new Map(),previous=e.geometry.getAttribute.bind(e.geometry);
+    e.geometry.getAttribute=k=>attrs.get(k)??previous(k);
+    e.geometry.setAttribute=(k,value)=>{attrs.set(k,value);return e.geometry;};
+    return {isMesh:true,name:e.meshName,geometry:e.geometry,
+      material:{name:(e.meshName.startsWith('FA_jersey__')?
+        'km13-white-':'km14-white-')+e.meshName,
+        color:new Color('#FFFFFF'),userData:{}}};
+  });
+  const outfit={traverse(fn){meshes.forEach(fn);},userData:{}},
+    store=createKitDesignStore(),THREE={Color,Float32BufferAttribute};
+  applyKitDesign(outfit,store.getState(),THREE);
+  const origin=outfit.userData.km31ShoulderStripeReport.shoulderReference;
+  assert.equal(origin.status,'front-back-anchored');
+  const a=front.geometry.getAttribute('kmStripeSewnMetres'),
+    b=back.geometry.getAttribute('kmStripeSewnMetres');
+  assert.ok(a&&b);
+  assert.ok(Math.abs(a.array[0])<.000005);
+  assert.ok(Math.abs(b.array[0])<.000005);
+  const bodyMaterial=meshes.find(e=>e.name==='FA_jersey__9').material,
+    backMaterial=meshes.find(e=>e.name==='FA_jersey__42').material;
+  for(const material of [bodyMaterial,backMaterial]){
+    assert.equal(material.userData.kitStripeUniforms.kmStripeFabricOrigin.value,0);
+    assert.equal(material.userData.kitStripeUniforms.kmStripeFabricScale.value,1);
+    assert.equal(material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-sewn');
+  }
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(outfit,store.getState(),THREE);
+  assert.equal(bodyMaterial.userData.kitStripeUniforms.kmStripeWidth.value,.01);
+  assert.equal(back.geometry.getAttribute('kmStripeSewnMetres'),b,
+    'Changing the slider must not move the shared shoulder start');
+});
+
+test('KM-32 tilted side seam cannot masquerade as an upper shoulder',()=>{
+  const front=shoulderSewnPanel('FA_jersey__9',
+      {front:true,verticalOnly:true}),
+    back=shoulderSewnPanel('FA_jersey__42',
+      {front:false,flip:true,verticalOnly:true});
+  // Source side seam drifts outward 8cm while rising 16cm.
+  // Its horizontal span alone is NOT evidence of a shoulder.
+  for(const e of [front,back]){
+    const position=e.geometry.getAttribute('position'),
+      old=position.getX.bind(position);
+    position.getX=i=>old(i)+.08*(position.getY(i)-1.41)/.16;
+  }
+  const r=alignOriginalShoulderStripes({},[back,front]);
+  assert.equal(r.report.shoulderReference.status,'not-detected');
+});
