@@ -363,8 +363,10 @@ try {
  assert.equal(await firstPaint.evaluate(()=>Boolean(window.faCompetitionContext)),false);
  assert.ok(await firstPaint.locator('#competition-panel-postseason').isVisible());
  assert.ok(await firstPaint.locator('.fa-bracket-links').isVisible());
- assert.ok(await firstPaint.locator('[data-postseason-config-slot]').evaluateAll(nodes=>nodes.length===22&&nodes.every(node=>
-  getComputedStyle(node,'::before').height==='20px'&&getComputedStyle(node,'::after').height==='10px')),
+ assert.ok(await firstPaint.locator('[data-postseason-config-slot]').evaluateAll(nodes=>nodes.length===22&&nodes.every(node=>{
+  const crest=getComputedStyle(node,'::before'),name=getComputedStyle(node,'::after');
+  return crest.width==='28px'&&crest.height==='28px'&&name.width==='112px'&&name.height==='13px';
+ })),
   'First paint reserves the club crest and name');
  const misplacedLinks=await firstPaint.locator('[data-bracket-link]').evaluateAll(paths=>paths.filter(path=>{
   const [sourceId,targetId]=path.dataset.bracketLink.split(':');

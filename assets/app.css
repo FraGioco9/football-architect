@@ -811,19 +811,20 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 .fa-bracket-single{grid-template-columns:minmax(0,1fr) 18px}
 .fa-bracket-row+.fa-bracket-row{border-top:1px solid var(--line)}
 .fa-bracket-identity{min-width:0}
-.fa-bracket-team{display:flex;align-items:center;gap:5px;min-width:0;color:var(--text);font-size:12px;line-height:1.4;white-space:nowrap}
+.fa-bracket-team{--fa-bracket-crest-size:28px;display:flex;align-items:center;gap:8px;min-width:0;color:var(--text);font-size:15px;line-height:1.4;white-space:nowrap}
 .fa-bracket-team>:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .fa-bracket-team>strong{flex:none}
-.fa-bracket-team .app-world-club-crest-placeholder{flex:0 0 20px;width:20px;height:20px;box-sizing:border-box}
+.fa-bracket-team .app-world-club-crest-placeholder,
+html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::before{flex:0 0 var(--fa-bracket-crest-size);width:var(--fa-bracket-crest-size);height:var(--fa-bracket-crest-size)}
 html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))>*{display:none}
 html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::before,
 html .fa-bracket-team .app-world-club-crest-placeholder[data-club-crest-pending="true"]{border-radius:50%;background:color-mix(in srgb,var(--muted) 12%,var(--surface))}
-html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::before{content:"";flex:0 0 20px;height:20px}
-html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::after{content:"";width:88px;max-width:calc(100% - 25px);height:10px;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
-.fa-bracket-score{color:var(--text);font-size:12px;font-variant-numeric:tabular-nums;text-align:end}
+html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::before{content:""}
+html[data-fa-standings-loading="true"] .fa-bracket-team:not(:has([data-club-crest]))::after{content:"";flex:0 1 112px;min-width:0;height:13px;border-radius:4px;background:color-mix(in srgb,var(--muted) 22%,var(--surface))}
+.fa-bracket-score{color:var(--text);font-size:14px;font-variant-numeric:tabular-nums;text-align:end}
 .fa-bracket-row[data-postseason-winner="true"] .fa-bracket-team{font-weight:750}
 .fa-bracket-row[data-postseason-winner="true"] .fa-bracket-score{color:var(--focus)}
-.fa-bracket-resolution{margin:2px 0 0;margin-inline-end:var(--fa-bracket-score-inset);color:var(--muted);font-size:10px;line-height:1.3;text-align:end}
+.fa-bracket-resolution{margin:2px 0 0;margin-inline-end:var(--fa-bracket-score-inset);color:var(--muted);font-size:12px;line-height:1.3;text-align:end}
 .fa-bracket-resolution strong{margin-inline-start:5px;color:var(--text)}
 
 .app-fixture-stage{list-style:none;margin:14px 0 2px}
