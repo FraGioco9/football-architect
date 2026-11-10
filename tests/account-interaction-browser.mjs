@@ -56,7 +56,13 @@ try{
      await page.keyboard.press('Tab');assert.equal(await trigger.getAttribute('aria-expanded'),'false','Tab closes without trapping focus');
     }
     await page.locator('h1').click();
-    if(route==='account'){await page.locator('#security-tab').click();await page.locator('#change-title').click();}
+    if(route==='account'){
+     await page.locator('#security-tab').click();
+     await page.locator('#change-title').click();
+     const password=page.locator('#account-currentPassword');
+     assert.equal(await password.evaluate(el=>el===document.activeElement),true,'The pencil focuses the first password input');
+     await password.blur();
+    }
     const fields=page.locator('input:not([type=hidden]):visible');
     for(const field of await fields.all()){
      if(!mobile){
