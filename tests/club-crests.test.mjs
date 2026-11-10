@@ -213,7 +213,7 @@ test('QA-15 PAGE-LOAD-04: shared country flag sprites are static, club flags are
  }
  assert.equal((html.match(/<svg class="nav01-country-flag"/g)||[]).length,0);
  assert.equal((html.match(/nav01-skeleton-card"/g)||[]).length,6,'six anonymous cards');
- assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-skeleton-card'),'sprite precedes cards');
+ assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-card nav01-skeleton-card'),'sprite precedes cards');
  assert.match(generator,/const directoryFlagSprite=/);
  assert.match(client,/<use href="#fa-directory-flag-/,'hydrated club cards reuse the same vectors');
  assert.doesNotMatch(client,/<img class="nav01-country-flag"/);
