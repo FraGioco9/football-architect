@@ -61,20 +61,11 @@
    }
    const binding=win.faBindCompetitionMenu(trigger,menu,[],chosen=>{
     select.value=chosen;select.dispatchEvent(new win.Event('change',{bubbles:true}));refreshMenus();
-   },control,{fitViewport:true});
+   },control,{fitViewport:true,boundary:control.closest('.fa-shell-content-scroll')});
    selects.set(select,{trigger,menu,value,binding,fingerprint:null});
    select.addEventListener('change',refreshMenus);
    select.form?.addEventListener('reset',()=>win.queueMicrotask(refreshMenus));
    refreshMenus();
-  }
-  function configureBack(){
-   const back=doc.getElementById('account-go-back');if(!back)return;
-   back.href=win.faLoginReturn?.peek?.()||'/dashboard';
-   back.addEventListener('click',event=>{
-    if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-    // Navigation preserves the return destination for a later successful sign-in.
-    back.href=win.faLoginReturn?.peek?.()||'/dashboard';
-   });
   }
   function links(){
    for(const a of doc.querySelectorAll('a[href]')){
@@ -92,12 +83,7 @@
    // Keep reloads in the chosen language; one-time tokens are never reintroduced.
    const current=new URL(win.location.href);current.pathname=current.pathname.replace(/\/index\.html$/,'').replace(/\/+$/,'');current.searchParams.delete('next');if(language==='en')current.searchParams.delete('lang');else current.searchParams.set('lang',language);
    win.history.replaceState(null,'',current.pathname+current.search);
-   const select=doc.getElementById('account-language');if(select)select.value=language;
-   const label=doc.getElementById('account-language-label');
-   if(label)label.textContent={en:'Language',de:'Sprache',es:'Idioma',fr:'Langue',it:'Lingua'}[language];
    links();for(const callback of callbacks)callback(language);refreshMenus();refreshAssistance();
-   const backLabel=doc.getElementById('account-go-back-label');
-   if(backLabel)backLabel.textContent={en:'Go back',it:'Torna indietro',de:'Zurück',es:'Volver',fr:'Retour'}[language];
    for(const message of doc.querySelectorAll('[data-validation]'))message.textContent=validation[language][Number(message.dataset.validation)];
   }
   function feedback(node,text,kind='error'){
@@ -163,8 +149,6 @@
    fr:['Remplissez les champs obligatoires.','Saisissez une adresse e-mail valide.','Utilisez au moins 15 caractères pour le mot de passe.','Vérifiez le format des informations saisies.']
   };
   function ready(){
-   const select=doc.getElementById('account-language');
-   if(select)select.addEventListener('change',()=>choose(select.value));
    choose(language);
    for(const button of doc.querySelectorAll('[data-password-toggle]')){
     const field=doc.getElementById(button.getAttribute('aria-controls'));
@@ -209,7 +193,8 @@
    doc.addEventListener('pointermove',event=>setHovered(event.pointerType==='mouse'?event.target:null),{passive:true});
    doc.addEventListener('pointerout',event=>{if(!event.relatedTarget)setHovered(null)},{passive:true});
    doc.addEventListener('pointerdown',()=>setHovered(null),{passive:true});
-   configureBack();
+   const authPanel=doc.querySelector('.app-authentication-card[inert]');
+   if(authPanel)authPanel.inert=false;
    doc.documentElement.dataset.accountReady="true";
   }
   if(!redirecting){

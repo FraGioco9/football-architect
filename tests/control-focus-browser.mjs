@@ -22,15 +22,26 @@ try{
    if(await field.getAttribute('type')!=='email')assert.equal(style.selection,'Selectable text');assert.equal(await field.inputValue(),'Selectable text');assert.equal(style.select,'text');assert.ok(style.shadow.includes('inset'),'Focus uses a stronger inset border');
    const expected=await field.evaluate(el=>{const sample=document.createElement('span');sample.style.color='var(--muted)';el.after(sample);const color=getComputedStyle(sample).color;sample.remove();return color});
    await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filters>input':'[name=email]',color:expected});const after=await field.boundingBox();assert.equal(before.width,after.width);assert.equal(before.height,after.height);
-   const dropdown=page.locator(route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger').first();
-   await dropdown.click();
-   await page.waitForFunction(({selector,color})=>getComputedStyle(document.querySelector(selector)).borderTopColor===color,{selector:route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger',color:expected});
-   await dropdown.click();
-   assert.equal(await dropdown.getAttribute('aria-expanded'),'false');
-   await page.waitForFunction(selector=>getComputedStyle(document.querySelector(selector)).boxShadow==='none',route==='/clubs'?'.nav01-filter .language-trigger':'#account-language-trigger');assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Second click retains trigger focus');
+   if(route==='/account/login/'){
+    assert.equal(await page.locator('#account-language-trigger').count(),0,'Login has no language selector');
+    await page.keyboard.press('Tab');
+    assert.equal(await page.locator('[name=password]').evaluate(el=>el===document.activeElement),true,'Tab advances from Email to Password');
+    checks++;continue;
+   }
+   const dropdownSelector=route==='/clubs'?'.nav01-filter .language-trigger':'#nationality-trigger';
+   const dropdown=page.locator(dropdownSelector).first();
+   await page.waitForFunction(selector=>{const node=document.querySelector(selector);return !!node&&!node.disabled},dropdownSelector);
+   assert.equal(await dropdown.getAttribute('role'),'combobox',route+' exposes an accessible dropdown');
+   const dropdownBefore=await dropdown.boundingBox();
    await dropdown.focus();await page.keyboard.press('ArrowDown');
+   await page.waitForFunction(selector=>document.querySelector(selector)?.getAttribute('aria-expanded')==='true',dropdownSelector);
    await page.keyboard.press('Escape');
-   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,'Escape restores trigger focus');assert.equal(await dropdown.getAttribute('aria-expanded'),'false');checks++;
+   await page.waitForFunction(selector=>document.querySelector(selector)?.getAttribute('aria-expanded')==='false',dropdownSelector);
+   assert.equal(await dropdown.evaluate(el=>document.activeElement===el),true,route+' Escape restores trigger focus');
+   const dropdownAfter=await dropdown.boundingBox();
+   assert.equal(dropdownBefore.width,dropdownAfter.width,route+' dropdown width remains fixed');
+   assert.equal(dropdownBefore.height,dropdownAfter.height,route+' dropdown height remains fixed');
+   checks++;
   }finally{await context.close();}
  }
  console.log('Shared focus and selectable input browser PASS: '+checks+' cases');

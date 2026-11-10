@@ -34,9 +34,9 @@ export async function verifyFe04AccessibilityBrowser(browser){
   await page.waitForFunction(()=>document.documentElement.dataset.accountReady==="true");
   await page.locator("#email-label").click();
   assert.equal(await page.locator('input[name="email"]').evaluate(node=>document.activeElement===node),true,"Email label activates input");
-  const selector=page.locator("#account-language-trigger");await selector.click();await page.keyboard.press("Escape");
-  assert.equal(await selector.getAttribute("aria-expanded"),"false");
-  assert.equal(await selector.evaluate(node=>document.activeElement===node),true);
+  assert.equal(await page.locator("#account-language-trigger").count(),0,"Auth language selector is absent");
+  await page.keyboard.press("Tab");
+  assert.equal(await page.locator('input[name="password"]').evaluate(node=>document.activeElement===node),true,"Tab from email moves to password");
   cases++;
  }finally{await context.close()}
  console.log("FE-04 Chromium keyboard/locales PASS: "+cases+" scenarios");

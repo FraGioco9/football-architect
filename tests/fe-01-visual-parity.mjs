@@ -15,6 +15,9 @@ for(const file of files){
  if(older!==newer)changes.set("/"+file,{before:older,after:newer});
 }
 assert.ok(changes.size,"FE-01 CSS source was not changed");
+// Authentication is intentionally redesigned in PR #478: its first-paint, typography,
+// focus and interaction contracts are covered by the Account Chromium/WebKit matrices.
+// Comparing those new controls with pre-redesign CSS would falsely enforce obsolete UI.
 const routes=[
  {path:"/",site:true,selectors:[".site-header",".language-trigger",".cta"]},
  {path:"/guide/",site:true,selectors:[".site-header",".language-trigger",".guide-main"]},
@@ -24,9 +27,7 @@ const routes=[
  {path:"/competitions/it-1/standings",selectors:[".app-competition-header",".app-competition-tab",".app-competition-season .language-trigger"]},
  {path:"/competitions/int-1/fixtures",selectors:[".app-competition-header",".app-competition-tab",".app-fixtures-arrow"]},
  {path:"/clubs",selectors:[".nav01-filters>input",".nav01-filter .language-trigger",".nav01-card"]},
- {path:"/clubs/it/1/overview",selectors:[".club-tabs .app-competition-tab",".app-panel"]},
- {path:"/account/login/",selectors:[".account-body input",".account-body .language-trigger",".cta"]},
- {path:"/account/register/",selectors:[".account-body input",".account-body .account-password-toggle",".cta"]}
+ {path:"/clubs/it/1/overview",selectors:[".club-tabs .app-competition-tab",".app-panel"]}
 ];
 const profiles=[
  {width:320,theme:"dark",language:"en"},{width:390,theme:"light",language:"de"},

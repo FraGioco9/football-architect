@@ -1320,7 +1320,7 @@
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
-    if (path === "/account" || path === "/account/index.html") return "profile";
+    if (path === "/account" || path.startsWith("/account/")) return "profile";
     if (path === "/dashboard") return "dashboard";
     return "dashboard";
   }

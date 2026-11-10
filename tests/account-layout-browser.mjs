@@ -14,25 +14,25 @@ try{
    const page=await context.newPage();await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
    for(const route of ['register','login']){
     await page.goto('http://app.localhost:2000/account/'+route);await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
-    if(route==='login'||width>320)assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true,`${route} fits ${width}x${height} ${language}`);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    for(const id of route==='register'?['account-language','nationality']:['account-language']){
+    const pane=page.locator('.fa-shell-content-scroll');
+    assert.equal(await pane.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,`${route} fits the app pane at ${width}px`);
+    for(const id of route==='register'?['nationality']:[]){
      const trigger=page.locator('#'+id+'-trigger');await trigger.scrollIntoViewIfNeeded();
-     const before=await page.evaluate(()=>scrollY);await trigger.click();
+     const before=await pane.evaluate(el=>el.scrollTop);await trigger.click();
      const menu=page.locator('#'+id+'-menu'),bounds=await menu.boundingBox();
-     assert.ok(bounds.y>=7&&bounds.y+bounds.height<=height-7,`${id} remains inside viewport: ${JSON.stringify(bounds)}`);
+     const clip=await pane.boundingBox();
+     assert.ok(bounds.y>=clip.y+7&&bounds.y+bounds.height<=Math.min(height,clip.y+clip.height)-7,`${id} remains inside the app pane: ${JSON.stringify(bounds)}`);
      assert.ok(['above','below'].includes(await menu.getAttribute('data-menu-placement')));
-     assert.equal(await page.evaluate(()=>scrollY),before,'Opening a dropdown does not scroll the page');
-     await page.keyboard.press('End');assert.equal(await page.evaluate(()=>scrollY),before,'Keyboard navigation scrolls the menu only');
+     assert.equal(await pane.evaluate(el=>el.scrollTop),before,'Opening a dropdown does not scroll the page');
+     await page.keyboard.press('End');assert.equal(await pane.evaluate(el=>el.scrollTop),before,'Keyboard navigation scrolls the menu only');
      await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),true,'Escape restores dropdown trigger focus');
     }
     checks++;
    }
   }finally{await context.close();}
  }
- // Go back must preserve a valid hidden origin across login, register and locales.
- const translations={en:'Go back',de:'Zurück',es:'Volver',fr:'Retour',it:'Torna indietro'};
- for(const [language,label] of Object.entries(translations))for(const route of ['login','register']){
+ // Removing the visible back control must not consume the hidden post-sign-in destination.
+ for(const language of ['en','de','es','fr','it'])for(const route of ['login','register','recover','verify-email']){
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
    await context.addInitScript(({language})=>{
@@ -43,15 +43,45 @@ try{
    await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
    await page.goto('http://app.localhost:2000/account/'+route);
    await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
-   const goBack=page.locator('#account-go-back');
-   assert.equal((await goBack.textContent()).trim(),label,route+' '+language+' back label');
-   assert.equal(await goBack.getAttribute('href'),'/calendar?season=2&calendarView=week');
+   assert.equal(await page.locator('#account-go-back,#account-language-trigger').count(),0);
+   assert.equal(await page.locator('html').getAttribute('lang'),language);
+   if(language==='en'){
+    // Focus or hover may change a border, never letter spacing or glyph metrics.
+    const controls=page.locator('.app-authentication-card :is(input,button):visible');
+    for(const control of await controls.all()){
+     const sample=()=>control.evaluate(node=>{
+      const style=getComputedStyle(node);
+      return {family:style.fontFamily,size:style.fontSize,weight:style.fontWeight,
+       tracking:style.letterSpacing,lineHeight:style.lineHeight,stretch:style.fontStretch,
+       variant:style.fontVariantLigatures,kerning:style.fontKerning};
+     });
+     const before=await sample(),boxBefore=await control.boundingBox();
+     await control.focus();
+     assert.deepEqual(await sample(),before,route+' focus changes text metrics');
+     const boxAfter=await control.boundingBox();
+     assert.ok(Math.abs(boxBefore.width-boxAfter.width)<1&&Math.abs(boxBefore.height-boxAfter.height)<1,
+      route+' focus changes field geometry');
+     await control.blur();
+     assert.deepEqual(await sample(),before,route+' blur changes text metrics');
+    }
+   }
+   // All authentication text and native controls must match the app font across routes and hydration.
+   const typography=()=>page.evaluate(()=>{
+    const root=getComputedStyle(document.documentElement).fontFamily;
+    const selectors=['.fa-shell-sidebar','.fa-shell-topbar','.app-page-title','.app-authentication-card','.app-authentication-card label','.app-authentication-card input','.app-authentication-card button','.app-authentication-card select','.app-authentication-card a'];
+    return {root,styles:selectors.flatMap(selector=>{
+     const element=document.querySelector(selector);if(!element)return [];
+     const style=getComputedStyle(element);
+     return [{selector,family:style.fontFamily,size:style.fontSize,weight:style.fontWeight,spacing:style.letterSpacing}];
+    })};
+   });
+   const before=await typography();
+   for(const style of before.styles)assert.equal(style.family,before.root,route+' '+language+' '+style.selector+' font');
+   await page.evaluate(()=>window.faAccountUI.choose(document.documentElement.lang==='it'?'en':'it'));
+   assert.deepEqual(await typography(),before,route+' keeps identical typography after locale activation');
+   assert.equal(await page.locator('html').getAttribute('lang'),language==='it'?'en':'it');
    assert.equal(new URL(page.url()).searchParams.has('next'),false);
-   assert.equal(await goBack.evaluate(el=>getComputedStyle(el).textDecorationLine.includes('underline')),true,'Go back uses the same underlined link treatment');
-   await goBack.click();
-   // Wait for Calendar hydration, so its canonicalization cannot race this assertion.
-   await page.waitForFunction(()=>document.documentElement.dataset.calendarView==='week'&&new URL(location.href).searchParams.get('calendarView')==='week');
-   await page.waitForURL('**/calendar?season=2&calendarView=week');
+   assert.equal(await page.evaluate(()=>sessionStorage.getItem('football-architect:login-return')),'/calendar?season=2&calendarView=week');
    checks++;
   }finally{await context.close();}
  }
