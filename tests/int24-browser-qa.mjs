@@ -437,9 +437,9 @@ try {
      id:card.dataset.bracketTie,width:card.offsetWidth,height:card.offsetHeight,rows:card.children.length,
      scores:card.querySelectorAll('[data-postseason-score]').length
     })));
-    const boardWidth=await page.locator('#app-postseason-bracket').evaluate(board=>board.clientWidth);
+    const availableWidth=await page.locator('.fa-bracket-layout').evaluate(layout=>layout.clientWidth);
     for(const {id,...card} of cardLayout)assert.deepEqual(card,{
-     width:Math.min(280,boardWidth),height:100,rows:2,scores:id==='final'?2:4
+     width:Math.min(320,availableWidth),height:120,rows:2,scores:id==='final'?2:4
     },cup+' '+width+'px '+id+' card geometry and scores');
     const links=page.locator('.fa-bracket-links path');
     assert.equal(await links.count(),10);

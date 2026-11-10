@@ -143,7 +143,7 @@
  const phaseLabel=(key,locale='en')=>(copy[locale]||copy.en).phases[key]||'';
  function renderBracketLinks(rounds){
   // Keep these dimensions in sync with the fixed tracks in app.css.
-  const cardWidth=280,columnGap=14,headingHeight=42,slotPitch=126;
+  const cardWidth=320,columnGap=14,headingHeight=42,slotPitch=146;
   const width=rounds.length*(cardWidth+columnGap)-columnGap;
   const rows=Math.max(...rounds.map(round=>round.ties.length));
   const height=headingHeight+rows*slotPitch-8;

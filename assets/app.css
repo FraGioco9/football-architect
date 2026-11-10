@@ -787,26 +787,26 @@ html[data-theme] .app-world-standing-table tbody tr[data-standing-outcome]>:firs
 
 /* Postseason bracket. The card contains only the two club rows and scores. */
 /* Fixed tracks match the coordinates of the server-rendered bracket links. */
-.fa-bracket-layout{container-type:inline-size}
-.fa-bracket-board{position:relative;display:grid;grid-template-columns:min(100%,280px);gap:20px 14px;min-width:0}
+.fa-bracket-layout{container-type:inline-size;overflow-x:auto}
+.fa-bracket-board{position:relative;display:grid;grid-template-columns:min(100%,320px);gap:20px 14px;min-width:0}
 .fa-bracket-links{display:none;position:absolute;top:0;left:0;pointer-events:none;fill:none;stroke:var(--border);stroke-width:1}
-@container (min-width:574px){
- .fa-bracket-board[data-bracket-columns="2"]{grid-template-columns:repeat(2,280px)}
+@container (min-width:654px){
+ .fa-bracket-board[data-bracket-columns="2"]{grid-template-columns:repeat(2,320px)}
  .fa-bracket-board[data-bracket-columns="2"]>.fa-bracket-links{display:block}
 }
-@container (min-width:868px){
- .fa-bracket-board[data-bracket-columns="3"]{grid-template-columns:repeat(3,280px)}
+@container (min-width:988px){
+ .fa-bracket-board[data-bracket-columns="3"]{grid-template-columns:repeat(3,320px)}
  .fa-bracket-board[data-bracket-columns="3"]>.fa-bracket-links{display:block}
 }
 @container (min-width:1162px){
- .fa-bracket-board[data-bracket-columns="4"]{grid-template-columns:repeat(4,280px)}
+ .fa-bracket-board[data-bracket-columns="4"]{grid-template-columns:repeat(4,320px);width:max-content}
  .fa-bracket-board[data-bracket-columns="4"]>.fa-bracket-links{display:block}
 }
 .fa-bracket-round{position:relative;display:grid;grid-template-rows:32px 1fr;min-width:0;gap:10px}
 .fa-bracket-round>h3{display:grid;place-items:center;min-height:28px;margin:0;padding:4px 6px;border-radius:4px;background:color-mix(in srgb,var(--surface) 70%,var(--border) 30%);color:var(--text);font-size:11px;font-weight:750;line-height:1.25;letter-spacing:.03em;text-align:center;text-transform:uppercase}
 .fa-bracket-ties{display:grid;grid-auto-rows:1fr;gap:8px}
-.fa-bracket-tie{--fa-bracket-score-inset:18px;min-width:0;height:118px;align-self:center}
-.fa-bracket-card{box-sizing:border-box;height:100px;display:grid;grid-template-rows:repeat(2,1fr);padding-inline-start:10px;padding-inline-end:calc(var(--fa-bracket-score-inset) - 1px);border:1px solid var(--border);border-radius:5px;background:var(--surface)}
+.fa-bracket-tie{--fa-bracket-score-inset:18px;min-width:0;height:138px;align-self:center}
+.fa-bracket-card{box-sizing:border-box;height:120px;display:grid;grid-template-rows:repeat(2,1fr);padding-inline-start:10px;padding-inline-end:calc(var(--fa-bracket-score-inset) - 1px);border:1px solid var(--border);border-radius:5px;background:var(--surface)}
 .fa-bracket-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(2,18px);align-items:center;gap:4px;min-height:0}
 .fa-bracket-single{grid-template-columns:minmax(0,1fr) 18px}
 .fa-bracket-row+.fa-bracket-row{border-top:1px solid var(--line)}

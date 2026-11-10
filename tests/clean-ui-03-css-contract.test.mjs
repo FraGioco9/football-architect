@@ -120,8 +120,8 @@ test("CLEAN-UI-03: safe CSS dedupes preserve repeated responsive competition-log
 
 test("Postseason cards have fixed dimensions and omit repeated labels and controls",()=>{
  const css=read("assets/app.css"),view=read("assets/competition-rules-view.js");
- assert.ok(/\.fa-bracket-card\{[^}]*height:100px/.test(css),"fixed card height");
- assert.ok(/\.fa-bracket-board\{[^}]*grid-template-columns:min\(100%,280px\)/.test(css),"fixed column width");
+ assert.ok(/\.fa-bracket-card\{[^}]*height:120px/.test(css),"fixed card height");
+ assert.ok(/\.fa-bracket-board\{[^}]*grid-template-columns:min\(100%,320px\)/.test(css),"fixed column width");
  assert.doesNotMatch(view,/data-postseason-(filter|help|outcome)|postseasonTie/);
  assert.match(view,/data-bracket-feeders/);
  assert.match(css,/\.fa-bracket-card\{[^}]*padding-inline-end:calc\(var\(--fa-bracket-score-inset\) - 1px\)/);
