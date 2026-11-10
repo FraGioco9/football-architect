@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Football Architect — standalone 180 cm neutral male 3D mannequin study">
+<title>180 cm Mannequin Studio — Football Architect</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#e8eef0;background:#10191e}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;overflow-x:hidden}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid #9ce5db;outline-offset:3px}
+header{height:67px;padding:0 clamp(16px,3.4vw,42px);display:flex;align-items:center;justify-content:space-between;gap:14px;background:#121d22;border-bottom:1px solid #304149}
+.brand{font-size:14px;font-weight:800;letter-spacing:.09em;white-space:nowrap}.brand span{color:#85d0c7}
+.pill{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:#a5cac8;border:1px solid #47676b;border-radius:999px;padding:7px 12px;font-weight:700}
+main{display:grid;grid-template-columns:minmax(0,1fr) 285px;height:calc(100dvh - 67px);min-height:560px}
+.stage{position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 51% 40%,#34454d 0%,#1c2b32 57%,#111c22 100%)}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.stage-top{position:absolute;z-index:2;top:23px;left:clamp(20px,3.7vw,48px);right:16px;pointer-events:none}
+.eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#a8c4c8}
+h1{font-size:clamp(24px,3vw,37px);line-height:1.15;letter-spacing:-.035em;font-weight:670;margin:7px 0 0}
+.stage-top p{font-size:12px;color:#a8bdc6;margin:9px 0}
+.stage-bottom{position:absolute;bottom:19px;left:12px;right:12px;z-index:2;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.action{background:#17272ee5;color:#edf4f5;border:1px solid #5d7480;border-radius:8px;min-width:79px;padding:10px 12px;font-size:12px}
+.action[aria-pressed="true"]{border-color:#90ddd4;color:#a5eadd;background:#263e42}
+.action:hover{background:#30474d}
+.stage-hint{position:absolute;bottom:78px;left:15px;right:15px;text-align:center;color:#a6bfc7;font-size:11px;pointer-events:none}
+.panel{background:#18262c;border-left:1px solid #35464d;padding:26px 22px;display:flex;flex-direction:column;gap:19px}
+.panel h2{font-size:19px;margin:5px 0 8px}
+.panel p{margin:0;color:#aec0c5;font-size:12px;line-height:1.7}
+.section{border-top:1px solid #374b52;padding-top:16px}
+.section h3{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#d9e5e5;margin:0 0 12px}
+.metric{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #2d3f45;font-size:12px}
+.metric span{color:#abc0c6}.metric strong{font-weight:680;color:#edf4f3;text-align:right}
+button:disabled{cursor:not-allowed;opacity:.55}
+.rig-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rig-actions .action{min-width:0;padding:9px 7px}
+.rig-note{color:#a8c9cb!important;font-size:11px!important}
+input[type="file"]{max-width:100%;font-size:11px;color:#c4d4d6}
+input[type="file"]::file-selector-button{cursor:pointer;background:#263e42;color:#e7f6f3;border:1px solid #668c8d;border-radius:6px;padding:8px;margin-right:8px}
+input[type="file"]:focus-visible{outline:2px solid #9ce5db;outline-offset:3px}
+.preview-link{color:#9ce5db;text-decoration:underline}
+.preview-actions{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.preview-note{font-size:11px!important}
+#status{min-height:44px;font-size:11px;color:#a3d5d0;line-height:1.6}
+.footnote{font-size:10px!important;color:#8eabb3!important;margin-top:auto!important}
+@media(max-width:860px){main{grid-template-columns:1fr;height:auto;min-height:0}.stage{height:min(74dvh,680px);min-height:490px}.panel{border-left:0;border-top:1px solid #35464d;gap:12px;padding:20px 24px}.panel h2{font-size:18px}.section{padding-top:12px}}
+@media(max-width:420px){header{height:60px}.brand{font-size:11px}.pill{font-size:9px;padding:6px 9px}.stage{min-height:475px}.stage-top{top:18px}.stage-hint{bottom:71px}.stage-bottom{bottom:12px}.action{min-width:65px;padding:9px 9px;font-size:11px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header><div class="brand">FOOTBALL <span>ARCHITECT</span></div><div class="pill">Mannequin lab · local only</div></header>
+<main>
+<section class="stage" aria-label="3D mannequin viewer">
+  <div class="stage-top">
+    <div class="eyebrow">Anatomy study · 1:1 metre scale</div>
+    <h1>Neutral mannequin.</h1>
+    <p>Adult male · relaxed standing pose · no garments</p>
+  </div>
+  <canvas id="viewport" aria-label="Rotatable adult male 180 centimetre neutral mannequin without clothing"></canvas>
+  <div class="stage-hint">Drag to rotate · Scroll or pinch to zoom</div>
+  <div class="stage-bottom" role="group" aria-label="Camera views">
+    <button type="button" class="action" data-view="front" aria-pressed="true">Front</button>
+    <button type="button" class="action" data-view="back" aria-pressed="false">Back</button>
+    <button type="button" class="action" data-view="side" aria-pressed="false">Side</button>
+    <button type="button" class="action" data-view="reset" aria-pressed="false">Reset</button>
+  </div>
+</section>
+<aside class="panel" aria-labelledby="model-title">
+  <div><div class="eyebrow">MANNEQUIN-180</div><h2 id="model-title">Rigged anatomical base</h2>
+    <p id="model-description">The default CC0 rigged mannequin is posed with both arms beside the hips at 180 cm.</p>
+  </div>
+  <div class="section" id="base-anatomy-metrics"><h3>Measurements &amp; pose</h3>
+    <div class="metric"><span>Height</span><strong>180 cm</strong></div>
+    <div class="metric"><span>Type</span><strong>Adult male</strong></div>
+    <div class="metric"><span>Arms</span><strong>Along the sides</strong></div>
+    <div class="metric"><span>Head</span><strong>Featureless / smooth</strong></div>
+    <div class="metric"><span>Clothing</span><strong>None</strong></div>
+  </div>
+  <div class="section"><h3>Compare a local 3D reference</h3>
+    <p class="preview-note">Preferred rigged CC0 model: <a class="preview-link" href="https://www.innerscene.com/tools/library/3d-parts/male-base-mesh-3d-person-rigged-a-pose-380e6d89" target="_blank" rel="noopener noreferrer">Innerscene male A-pose GLB</a>. Download the GLB and select it below. The viewer lowers the arms using its skeleton. Alternative: <a class="preview-link" href="https://setpose.com/s/0961e1ef" target="_blank" rel="noopener noreferrer">SetPose reference</a>.</p>
+    <div class="preview-actions">
+      <label for="reference-file">Local GLB / OBJ file</label>
+      <input id="reference-file" type="file" accept=".glb,.obj,model/gltf-binary" aria-describedby="reference-privacy">
+      <div class="rig-actions" role="group" aria-label="Rigged arm pose controls">
+        <button type="button" class="action" id="relax-arms" disabled>Lower arms</button>
+        <button type="button" class="action" id="restore-rig-pose" disabled>Original A-pose</button>
+      </div>
+      <p id="rig-info" class="rig-note">Rig controls are available after loading a compatible rigged GLB.</p>
+      <button type="button" class="action" id="restore-base" disabled>Restore built-in mannequin</button>
+    </div>
+    <p id="reference-privacy" class="preview-note">Preview stays in this browser. Nothing is uploaded, saved to GitHub or published.</p>
+    <div class="metric"><span>Current source</span><strong id="preview-source">Innerscene CC0 · arms down</strong></div>
+  </div>
+  <div class="section"><h3>Model status</h3><div id="status" role="status" aria-live="polite">Loading the anatomical mesh… Three.js requires internet access.</div></div>
+  <p class="footnote">Development-only anatomical prototype · no kit editor, account data, backend access, persistence or publishing.</p>
+</aside>
+</main>
+<script type="module" src="./viewer.mjs"></script>
+</body>
+</html>

@@ -1,0 +1,834 @@
+# KM-02 — Kit Maker minimal DEV workspace
+
+The integrated Kit Maker lives at **http://app.localhost:2000/dev/kit-maker**,
+under **Development → Kit Maker** next to Match Engine. It shares the
+canonical app sidebar, topbar, site typography and light/dark themes.
+
+## Visible workspace
+
+- **Kit Maker** page title
+- Large, rotatable and zoomable 3D preview of the approved 180 cm,
+  skinned Innerscene/MakeHuman CC0 mannequin, arms relaxed slightly apart
+- Right-hand **Club** selector populated from the canonical
+  `/clubs/_shared/manifest.json` (320 real Football Architect clubs,
+  grouped by the eight nations)
+- Right-hand **Colors** section with non-editable **Primary** and
+  **Secondary** placeholders; their editing controls and garment designs
+  are deliberately deferred
+
+The club dropdown can be used now; its selection is reflected in the
+`?club=COUNTRY-ID` URL parameter and restored on reload. It does not
+modify the player's club, alter the mannequin's material, write world
+data or change any saved kit. The only club data request is a single,
+read-only GET of the same manifest the Clubs directory uses.
+
+No mannequin measurements, local 3D import, bone pose controls, camera
+preset buttons, laboratory descriptions, additional title or lab footer
+appear in the integrated page. Orbit/pinch/scroll camera controls remain.
+The older independent studio at **http://127.0.0.1:2100/** keeps its
+full model-comparison and anatomy tools for focused 3D development.
+Both views reuse the same exact CC0 GLB and Three.js viewer.
+
+## Local startup
+
+```powershell
+git fetch origin
+git switch --detach origin/feat/kit-designer-01-3d-mannequin-prototype
+npm --prefix backend ci
+npm --prefix match-engine ci
+node tools/dev.mjs
+```
+
+Open http://app.localhost:2000/dev/kit-maker without `--lan`.
+The DEV-only routes are allowlisted in `tools/dev-standings-preview.mjs`,
+restricted to loopback and the app.localhost host; no upload, remote DB,
+deployment or public publication occurs.
+
+## Validation
+
+```powershell
+npm --prefix match-engine test
+node --test tests/kit-designer-prototype.test.mjs
+```
+
+The targeted suite validates the streamlined page, real club catalogue,
+private route/CSP and fallback viewer. Manual browser QA should include
+the 320-club selection, URL refresh, desktop/mobile layout,
+light/dark theme and 3D orbit/zoom.
+
+PR #454 remains **Draft/HOLD**, stacked on Match Engine PR #455.
+Do not merge until the parent branch has been separately approved and
+merged and KM-02 visual QA is confirmed.
+
+## KM-02 style alignment — canonical controls (2026-11-09)
+
+The visible Kit Maker boxes use the site's existing `app-panel` markup,
+`--fa-radius-panel` and theme-backed surfaces, rather than a one-off
+card style. The Club selector uses the exact canonical
+`language-control` / `language-trigger` / `language-menu` /
+`language-option` pattern (including the standard chevron, hover,
+open/selected states and keyboard navigation) instead of the browser's
+native select styling. The existing 320-club manifest is still the sole
+data source. Group headings appear within the scrollable, native-looking
+menu; selection remains URL-backed and read-only.
+
+The first-paint trigger already reserves its final dimensions and shows
+only **Select club** until data is available. It is disabled while
+unready. No loading text, skeleton or spinner is shown. A catalogue
+error is reported only if loading actually fails. The preview and
+colors card use the same app panel and control design tokens in both
+light and dark themes. The unchanged standalone mannequin laboratory
+retains its older expert controls.
+
+## KM-03A — first neutral short-sleeve jersey (2026-11-09)
+
+The owner approved KM-02 and authorized the first 3D shirt. The first
+garment is **neutral matte white**, with **short sleeves, a small open
+round collar, sewn-look cuff edges and a hem**. It is an independently
+generated garment `THREE.Group`, not a recolor or slice of the
+Innerscene/MakeHuman CC0 anatomy and not baked into the GLB. The entire
+approved 180 cm, 163-bone mannequin, relaxed-arm pose, proportions and
+original GLB SHA remain unchanged.
+
+**Fitting:** `kit-maker/lab/jersey-geometry.mjs` reads actual posed
+`SkinnedMesh.getVertexPosition()` samples with bone weights. Excluding
+arm-dominant vertices, it constructs a 56-sector circumferential torso
+envelope with a **6 mm nominal outward clearance**, a minimal shaped
+hem allowance, smooth shoulder transition, open neckline and ribbing.
+Near the arm sockets, where the torso source has no complete samples,
+the upper-chest contour is inherited to avoid unnatural mesh collapse.
+The two tapered sleeve tubes follow the actual bilateral
+`upperarm01.L/R → lowerarm01.L/R` bones of the mannequin and end before
+the elbows. Geometry has UVs and normals, is double sided, casts and
+receives shadows. This is a **static pose-matched first garment**, not
+cloth physics, a complete size system or an animated skinned kit.
+
+**Scope isolation:** Only the integrated private
+`/dev/kit-maker` viewer dynamically imports the helper via the
+`/__fa_kit_maker__/jersey-geometry.mjs` allowlist. The separate
+mannequin anatomy studio (port 2100) continues to display just the
+original model and keeps its imported-model comparison tools. No extra
+Kit Maker controls, dropdowns, cards or colors appear. Primary and
+Secondary are still disabled and there is no logo, number, pattern,
+garment persistence, upload, world mutation, deploy or remote D1 write.
+
+**Safeguard:** a garment build error does not replace, remove or modify
+the approved mannequin; the error is recorded and the mannequin remains
+available. The resulting garment can be independently disposed/changed
+in later milestones without editing the GLB. A focused Node regression
+checks sampled radial skin clearance, separate torso/neck/sleeve/cuff/hem
+geometry, material roughness, safety boundary and source immutability.
+
+**Visual QA to be confirmed:** Front/Side/Back (orbit), shoulder-to-sleeve
+junctions, neckline opening, hem, no body/garment intersections, and
+desktop/mobile dark/light. Draft/HOLD stacked on Match Engine PR #455,
+no merge until separately authorized.
+
+## KM-03B — fitted jersey geometry rebuild (2026-11-10)
+
+The original KM-03A garment was too loose. This revision keeps the same
+approved rigged 180 cm CC0 mannequin, topology, pose, dev-only page and
+disabled color controls but **rebuilds the garment fit**:
+
+- The 56-sector torso scan now uses 6 mm nominal clearance (instead of
+  19 mm), narrower neighborhood sampling, and 2 mm shaped hem ease
+  instead of 11 mm additional waist flare. The shoulders still transition
+  to the open round neckline without collapsing at the armpits.
+- Each sleeve is measured separately from actual posed **arm-weighted
+  SkinnedMesh vertices**, ring by ring along the corresponding upper-arm
+  skeleton axis. A robust radial cross-section follows the real biceps
+  and tapers naturally to the cuff; the former fixed 127-to-70 mm sleeve
+  radius is removed. Small seam ease is maintained for separation.
+- The sleeve fitting has a deterministic synthetic geometry regression.
+  No skin mesh, skeleton, body pose or bundled GLB asset was modified.
+  A static pose-fit is not an animated fabric simulation.
+
+Visual sign-off is still needed in Chrome from front, side and back,
+including shoulder junction, underarm, collar and hem intersections.
+PR #454 stays stacked on #455, **Draft/HOLD**, without merge or deploy.
+
+## KM-03C — slim sleeves with real armhole seams (2026-11-10)
+
+Owner visual QA found that the KM-03B sleeves were both too wide and
+visibly detached from the shirt. This revision removes those standalone
+sleeve tubes and joins both arms to the bodice in one indexed fabric
+surface:
+
+- Two symmetrical lateral armhole patches are cut from the body/shoulder
+  lattice, removing the previously hidden solid bodice behind each arm.
+- The seam ring of each sleeve REUSES the exact vertex indices bordering
+  the opening, then transitions smoothly into its sampled posed-arm shape.
+  The shoulders, upper torso and sleeves therefore belong to one
+  topologically continuous mesh, not merely overlapping objects.
+- Sleeve ease is narrowed from 6 mm to 3.5 mm and the extra shoulder
+  radius is reduced. Radial profiles still sample real pose-deformed
+  arm skin and taper toward the biceps-height cuff.
+- The main shell contains only four intentional openings: neck, hem,
+  left cuff and right cuff. A structural test verifies one connected
+  component, manifold edges, and those four perimeter loops; geometry
+  is compacted to exclude vertices from the excised shoulder panels.
+
+Separate trim meshes remain only for collar rib, two narrow cuff rims and
+hem. The approved 180 cm rigged GLB, its pose and skin, studio UI,
+Club control, theme, private DEV routing and disabled color options
+are unchanged. This is a static fit; front/side/back visual QA and
+exact-head GitHub checks still apply. Draft/HOLD: no merge, publication
+or database mutation.
+
+## KM-03D — raise the neckline to the base of the neck (2026-11-10)
+
+Owner visual QA: the connected jersey did not reach the neck; its front
+edge sat at Y 1.502 m and the back at Y 1.522 m, leaving a wide opening
+low on the upper chest. This revision **raises and narrows the crew neck**:
+
+- Shirt edge now sits at **Y 1.562 m front / 1.579 m back** for the
+  180 cm anatomical base, following the neck's natural front/back slope.
+- Opening half-width is **74 mm** (down from 98 mm), with the neck ring
+  centred slightly forward (Z 48 mm, depth 80 mm) to follow the neck
+  silhouette more closely instead of using the chest-centred ellipse.
+- Collar rib begins exactly at the shell edge with **no 3 mm floating
+  gap**, then rises 10 mm and tapers gently around the neck.
+- Upper torso/shoulder fabric joins the collar in the same connected
+  indexed shell. Both attached sleeves, armholes, lower hem, mannequin
+  asset, rig, DEV UI and read-only club selection are unchanged.
+- Geometry regression verifies the raised front/back height, snug
+  opening, collar rise, and all 56 collar outer vertices matching the
+  main fabric border. The previous manifold/four-opening tests remain.
+
+These measurements are based on the existing 180 cm mannequin profile;
+real GLB appearance must still be checked in Chrome Front/Side/Back.
+PR #454 stays Draft/HOLD, no merge/deploy/remote database changes.
+
+## KM-03E — anatomical shoulder contour audit (2026-11-10)
+
+The owner requested a focused recheck of the shirt's shoulders after
+KM-03D. The previous shoulder panel merely interpolated between the
+torso's 1.435 m top ring and the raised neckline, even though the torso
+fitting explicitly excluded clavicle/shoulder/arm-influenced skin. This
+could leave a narrow, flat or intersecting shoulder cap.
+
+- Added an independent posed-skin scan of the real 180 cm GLB at shoulder
+  and trapezius height (1.38–1.595 m), including deltoid/clavicle skin
+  samples intentionally excluded from the torso envelope.
+- Shoulder panels retain the four topological openings and the exact
+  shared sleeve-armhole seam, but now locally expand to clear the
+  anatomically scanned shoulder contour with 6 mm nominal surface ease.
+  The correction tapers to zero at the torso and neckline connections,
+  preserving watertight continuity and the existing raised collar.
+- The shoulder height progression now lifts gradually from the upper
+  torso instead of starting from a flat smoothstep ledge. Both sides
+  use the same geometry and per-angle scan; there are no detached caps.
+- Regression checks cover the additional contour scan, bilateral shoulder
+  width, centre-chest overinflation, missing sample fallback, and existing
+  single-shell/four-openings/collar contracts.
+
+- Reduced each lateral upper armhole cut from eight to **six 56-sector
+  segments**, leaving more connected shoulder fabric above the deltoid
+  while preserving the actual shared-index sleeve seam. This prevents
+  the shoulder top from disappearing into an overly wide cut-out.
+- The new fixture uses synthetic bilateral shoulder skin with actual
+  arm-bone weights to prove that the finished shell increases its
+  upper-shoulder width without becoming oversized; prior manifold,
+  connected-shell, collar and four-boundary checks remain.
+
+This is a static fit refinement, not cloth animation. Mannequin GLB,
+skeleton, approved relaxed pose, short-sleeve cut, hem, and DEV-only UI
+are untouched. The rendered Front/Side/Back fit still needs owner QA.
+PR #454 stays Draft/HOLD; no merge, deploy or DB mutations.
+
+## KM-05 — Alberto Sena original kit received (2026-11-10)
+
+Owner-provided original ZIP has now been inspected. It includes the
+65.5 MB Blender source, the Draco-compressed 17-mesh glTF upper outfit,
+multiple texture atlases and original shoe objects in the Blender scene.
+The glTF alone lacks shoes/socks, and refers to textures with nonmatching
+paths: **use the Blender source as authoritative**.
+
+Added a Blender-local clothing-only exporter at
+`tools/kit-designer-prototype/export-sena-outfit.py`. It keeps the
+previously approved 180 cm Innerscene/MakeHuman mannequin and groups
+clothes independently as jersey, shorts, socks and football boots.
+A local-only, gitignored GLB is optionally loaded in the same Kit Maker
+viewer; the procedural jersey is no longer drawn in its place.
+Original garment materials and named mesh groups remain intact.
+
+**Important:** no explicit redistribution license was present in the
+uploaded ZIP. The creator's 3D models/textures are not in GitHub and
+must never be published without permission. The exporter has not been
+executed against the .blend in this environment because Blender is
+not installed. Detailed intake and PowerShell commands:
+`kit-maker/asset-intake/alberto-sena/README.md`.
+
+Pending: Blender audit/export, full garment groups confirmation,
+real WebGL front/side/back 180 cm fit QA, license, exact-head CI, and
+separate merge authorization. PR #454 remains Draft/HOLD.
+
+## KM-05B — completed owner-supplied outfit export
+
+## KM-05B — owner-uploaded kit extracted without Blender (2026-11-10)
+
+The original ZIP uploaded in this conversation was processed **directly from the Blender 4.0.4 binary format** using an offline geometry extractor. No Blender installation or PC-side export is needed.
+
+- **Real, complete private outfit GLB created:** 19,674,012 bytes; SHA-256 `985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8`. Uses all available genuine outfit geometry: **27 source mesh objects** (6 jersey, 11 shorts, 8 socks, 2 football boots), **313,206 vertices** and **599,124 triangles**. Source avatar and rig excluded.
+- Preserves eight original source textures in the standalone GLB, named group meshes (`FA_jersey__`, `FA_shorts__`, `FA_socks__`, `FA_boots__`) and correct boot scale inherited from Blender's 0.1-scaled parent node. Converted Blender Z-up to glTF Y-up; output bounds X ±0.283 m, Y 0–1.617 m, Z −0.138–0.175 m.
+- **Independent validation PASS:** GLB header/data, group inventory, load into `trimesh`, and texture-correct VTK 3D renderer from front/side/back. Geometry is static (not skinned). **Overlay on actual approved 180 cm rig in the Kit Maker browser is still NOT visually verified.**
+- The user's download in this conversation includes a ready-to-extract `alberto-sena-kit-maker-local.zip` containing `kit-maker/local-assets/alberto-sena-outfit.glb` and report. The binary remains **outside GitHub** (gitignored by design). With the bundle extracted into the repo root, the existing private `/dev/kit-maker` route will read it automatically. Do not attempt the optional Blender exporter unless a new source export is needed.
+- Also fixed the optional Blender fallback exporter to classify by **source Z height**, not Y, and detach the 0.1-scaled shoe hierarchy while preserving its world transform. No rig modifications or remote DB operations.
+- **Rights gate:** author's source ZIP did not provide explicit permission to redistribute. Keep third-party geometry/textures in private local QA; do not push to GitHub, deploy or merge before the rights are verified.
+
+
+## KM-06 — show the outfit alone, not the mannequin (2026-11-10)
+
+Owner QA found the approved mannequin still visible through the imported
+Alberto Sena outfit. The integrated `/dev/kit-maker` preview is now
+**clothing-only**. The anatomical mannequin remains internally loaded
+for scale/rig references, but its original meshes are hidden and do not
+cast shadows. **The mannequin's root/skeleton stay visible/active in
+the scene graph**, so the separately imported outfit is still visible.
+
+The body is hidden before the first scene render to avoid a mannequin
+flash during the optional private GLB fetch. A missing or malformed
+outfit leaves an intentionally **empty stage with status feedback**,
+not the original body. The legacy 2100 anatomical reference studio
+retains its mannequin-only behaviour. The viewer's page and canvas
+accessibility labels now describe the football outfit, not the model.
+
+Tests verify hide-before-first-frame, shadow suppression, keeping
+parent/bones intact, adding the outfit afterward, the private module
+route, and the absent-asset fallback. No asset, materials, physics,
+club selectors or production endpoints were changed. PR #454 remains
+Draft/HOLD; license verification and browser QA are still pending.
+
+## KM-07 — lower sock/boot alignment corrected (2026-11-10)
+
+Owner requested a focused alignment check for **socks and football boots**,
+with the mannequin already hidden in the KM-06 integrated viewer.
+
+- Direct numeric inspection of the genuine owner-supplied GLB confirms
+  both boots are mirror-aligned around X=0 (±0.00002 m), point forward,
+  and rest at the same sole height (**Y=0.000238 m**). The ankle/heel
+  positions were already correctly aligned; **do not shift either shoe**.
+- Zoomed textured VTK renders exposed a defect in four **lower sock
+  panels**: orange sock fabric extended inside the boot vamp and
+  appeared as irregular spikes near the laces and ankle opening.
+- Generated a corrected **private owner-only GLB** by clipping only
+  `Pattern2D_3586`, `3588`, `3592` and `3600` to a smooth
+  **Y=0.105 m** plane with vertex/UV edge interpolation. Shoes
+  still reach Y=0.118171 m, giving **13.171 mm vertical bounding overlap**.
+  An alternate Y=0.115 m trim was **rejected** because it left an
+  unacceptable visible air gap above the shoe.
+- Result: **27 original named garment meshes**, unchanged jersey,
+  shorts, all source textures and both football boots. Independently
+  confirmed that **only the four specified sock mesh geometries
+  changed**, with the other 47 glTF primitives unmodified.
+  Updated file: **19,508,596 bytes**, SHA-256
+  `8f929ab45ef51c7ce200b0f51514dff40854a2cd81ef68e82121533ca5942dca`; 310,203 vertices; 593,347 triangles.
+- The new corrected package was delivered in the conversation as
+  `alberto-sena-kit-maker-ankle-fit.zip`, with internal path
+  `kit-maker/local-assets/alberto-sena-outfit.glb`. Extract into the
+  repo root **with overwrite**; this is a private, gitignored
+  clothing asset. See `ankle-fit-evidence.json` for numeric QA.
+- The front/side renders show a cleaner, straighter ankle junction.
+  Remaining small rear-collar openings can only be assessed
+  definitively in the owner's Chrome viewer. **No browser PASS claimed**.
+  Distribution and commercial-use rights remain **unverified**.
+  PR #454 remains Draft/HOLD; no merge/deploy/DB.
+
+
+## KM-08 — raise clothing, align ankle socks to stationary boots (2026-11-10)
+
+Following owner visual QA, the KM-07 sock-to-boot fitting was still
+unsatisfactory. The owner explicitly requested **raising everything
+except the cleats**, and aligning both socks accurately to both boots.
+
+- **Maglia and shorts:** all vertices moved **+0.046 m in Y** without
+  deformation or changing any UVs or topology.
+- **Socks:** upper sock sections moved +0.046 m, with a smooth vertical
+  transition toward the original shoe openings. Lower cuff is anchored
+  at **Y=0.098 m** (not raised 4.6 cm and left floating above shoes).
+  Both ankle cuffs move **11 mm outward** and **25 mm heelward**,
+  symmetrically for the left/right feet. The correction fades to zero
+  by original sock height Y=0.28 m. Sock normals adjusted to the
+  deformation; triangles and UVs preserved.
+- **Football boots:** **no translation or geometry edits**. Their
+  position and vertex/normal/index accessor bytes were verified
+  identical to KM-07, and both soles remain at Y≈0.000238 m.
+  All eight original embedded texture blobs are byte-identical.
+- **Candidate selection:** compared +3.8 cm and +4.6 cm shifts in
+  textured three-quarter, lateral, rear views. Selected +4.6 cm,
+  with a lower ankle cuff and adjusted XZ position, because the
+  opening is visually more continuous from the side and rear.
+- **Corrected private GLB:** 19,508,584 bytes, SHA-256
+  `6c5968336bf359bca9157dfdaae20ea5b346679c3223be8ddf427ad6e4e2849d`. 27 original garment meshes
+  (6 jersey / 11 shorts / 8 socks / 2 boots); all four groups load in
+  trimesh, topology unchanged. No mannequin in GLB.
+- **Owner-only delivery:** `alberto-sena-kit-maker-km08.zip` in
+  the conversation with internal path
+  `kit-maker/local-assets/alberto-sena-outfit.glb`. Unzip over the
+  previous private local file (PowerShell `Expand-Archive ... -Force`).
+  See `km08-alignment-evidence.json`.
+- **Remaining QA:** precise fit in the owner's Chrome viewer is not
+  confirmed. Creator redistribution/commercial license is still
+  unverified: do not commit the original assets or deploy. PR #454
+  remains Draft/HOLD, no merge or DB changes.
+
+
+## KM-08 code-managed fit (2026-11-10)
+
+The repository **is public**. Alberto Sena makes the original kit downloadable and
+customizable but the user-provided ZIP and public project do not specify a license
+permitting republication of the model/textures. Do not push the 19.5 MB third-party
+binary to this public repository without such permission.
+
+To prevent repeated manual ZIP downloads, the **fit correction itself** is now
+versioned in `kit-maker/lab/sena-fit.mjs` (KM-08). The local Kit Maker computes
+SHA-256 of the original local GLB: for the verified KM-07 hash, it automatically
+applies GitHub-defined +46 mm jersey/shorts lift, smooth ankle/sock fit,
+11 mm outward and 25 mm heelward correction while leaving both boots untouched.
+Already KM-08 assets are recognized and remain unchanged. Unrecognized hashes
+fail closed rather than applying arbitrary or double transforms. Thus later fit
+adjustments are made in the repository code via the Draft PR and fetched through
+Git; the original author-supplied asset is only a local, untracked base.
+
+Owner needs **one existing KM-07 or KM-08 file** at
+`kit-maker/local-assets/alberto-sena-outfit.glb`; no fresh ZIP is needed when
+that file is already present. Nothing is publicly served outside the loopback
+DEV Kit Maker, and there is no deploy or merge permission.
+
+The first 19.67 MB user-exported GLB (SHA-256 `985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8`) is also accepted: the same fit parameters are applied, with GPU clipping of the four lower sock panels at Y=98 mm. This is an in-browser private preview approximation of the more exact KM-07 polygon trim and still requires owner fit QA; the original third-party file is not committed.
+
+## KM-10 — lift kit to 6 cm with the boots locked (2026-11-10)
+
+The owner authorized a further upward lift of **shirt, shorts and socks**
+without changing the shoes. This revision is a GitHub-managed runtime
+adjustment in `kit-maker/lab/sena-fit.mjs`; no GLB redistribution or ZIP
+download is needed. The owner already has a local copy of the genuine
+Alberto Sena outfit. Changes relative to KM-08:
+
+- Shirt and shorts: **+60 mm** above source (formerly +46 mm), an additional
+  +14 mm from the KM-08 appearance.
+- Upper socks: **+60 mm** above source (formerly +46 mm), also +14 mm higher.
+- Lower sock edge: **Y=102 mm** above the shoe sole (formerly Y=98 mm),
+  only +4 mm at the ankle. The movement transitions smoothly to +14 mm
+  higher at the upper calf, avoiding an abrupt sock/shoe gap.
+- Socks preserve the previously approved 11 mm mirrored outward and
+  25 mm heelward correction. These offsets are **not applied twice** to
+  an already KM-08 GLB.
+- Both football boots retain their original geometry, placement, UVs and
+  render materials. Shoe soles stay fixed.
+
+The model SHA-256 is checked on load: the initial owner export and KM-07
+receive the full KM-10 transform, while a pre-adjusted KM-08 file receives
+only the **incremental** (+14/+4 mm) lift. On an already-adjusted scene
+a repeated fit call is a no-op. For the original GLB only, browser clipping
+of the four lower sock panels is updated to the 102 mm seam.
+
+Two focused synthetic JS regression tests passed for original/KM-07/KM-08
+inputs, bilateral ankle positions, unchanged shoes/UVs and idempotency;
+JS module syntax passed. **Full Node suite, actual GLB browser rendering,
+and owner visual approval remain pending.** PR #454 remains Draft/HOLD;
+no binary asset committed, no merge, deploy or DB write.
+
+## KM-11 — increase vertical distance above fixed boots (2026-11-10)
+
+Owner requested **greater visible vertical separation** between the
+calzettoni and the fixed football boots. This revision changes only the
+GitHub-managed fitting transform in `kit-maker/lab/sena-fit.mjs`, not
+any artist-owned GLB binary.
+
+- **Jersey, shorts, upper socks:** +80 mm relative to source (KM-10: +60 mm),
+  an additional 20 mm upward move.
+- **Lower sock cuffs:** world Y=130 mm (KM-10: Y=102 mm), an additional
+  28 mm upward move. Vertical gap is now intentional. The previous QA
+  reported the boots' overall upper bound at Y=118.171 mm, implying
+  roughly **11.8 mm of vertical bound clearance**, not a formal contact
+  validation at each ankle.
+- **Football boots:** untouched (geometry, placement and materials).
+  Existing mirrored +11 mm outward and 25 mm heelward sock adjustments
+  are preserved, without applying twice to an already adjusted KM-08 GLB.
+- Full original / KM-07 and incremental KM-08 sources converge to the
+  same KM-11 displayed appearance via SHA-gated transforms. An unknown
+  GLB is rejected, and repeated fitting on the same scene is a no-op.
+  For the original asset, four lower sock panels have their private
+  viewer clipping plane at Y=130 mm (formerly 102 mm).
+
+Two focused synthetic geometry tests cover right/left cuffs, source
+versions, fixed boots, increased height and repeated calls. Actual
+browser appearance and complete Node CI remain to be confirmed.
+
+PR #454 is Draft/HOLD. No merge, deployment, DB change, or public
+third-party asset publication is authorized.
+
+## KM-12 — remove black-lettered tape inside jersey collar (2026-11-10)
+
+Owner approved KM-11 positioning and requested removal of the curved
+strip with black repeating text visible **inside the neck opening**.
+The original Alberto Sena GLB was inspected: the target is a unique,
+separate mesh named `FA_jersey__Pattern_2702362`, spanning approximately
+X=-98.2…+98.0 mm, Y=1594.2…1609.3 mm in the original model. Its UV
+island samples the thin grey band with dark repeated lettering on the
+jersey's embedded texture atlas (U≈0.3665–0.6023, V≈0.8875–0.8961).
+All owner-local original/KM-07/KM-08 GLBs contain exactly that mesh.
+
+The viewer calls `removeSenaInnerNeckPrint(outfit)` in the version-controlled
+`kit-maker/lab/sena-fit.mjs`, **after the SHA-gated fit transform and before
+the 3D scene attachment**. Exactly the printed inner tape is detached from
+the scene graph. It is not recoloured, texture-erased or redistributed.
+The actual knitted collar `FA_jersey__Pattern2D_3805002`, exterior shirt,
+sleeves, shorts, socks, and shoes remain unchanged.
+
+The original private GLB remains on the owner's PC and gitignored.
+No additional ZIP or GLB download is needed. Targeted synthetic test
+covers removal, collar preservation, exact mesh count, and a strict
+single-target guard. Full browser visual QA still pending; PR #454
+remains Draft/HOLD without merge or deployment.
+
+## KM-13 — neutral, pure-white jersey base (2026-11-10)
+
+Owner requested the Alberto Sena jersey as an entirely **solid-white
+design foundation**. After removing the separate black-lettered inner
+collar strip (KM-12), the private viewer applies
+`makeSenaJerseySolidWhite(outfit,THREE)` to every remaining mesh named
+`FA_jersey__*` (shirt body, sleeves, external collar and trim).
+Each jersey material slot becomes a fresh opaque PBR white material
+(`#FFFFFF`, roughness 0.85, metalness 0) **without albedo, normal or
+other texture maps**. Lighting may still produce natural grey shadows:
+the actual base material is solid white, not flat emissive white.
+
+The original materials and texture atlas are **not disposed or modified**,
+because other garments may share them. Shorts, socks, boots, geometry,
+UVs, mesh groups, 180 cm anatomical reference, KM-11 heights and
+fixed boot position are unchanged. The white override is safe to call
+repeatedly on the same model; no external asset is exported/uploaded,
+and no new GLB/ZIP download is necessary.
+
+Focused regression checks verify coverage of the collar/body/sleeves,
+multiple material slots, white colour and absence of texture bindings,
+preservation of source materials shared with shorts/socks/boots,
+unchanged geometries, repeat safety and strict integration order.
+Visual QA in the owner's Chrome viewer and the complete Node suite
+remain pending. PR #454 remains Draft/HOLD, no merge/deploy/DB.
+
+## KM-14 — white shorts, socks and separately-meshed shoe laces (2026-11-10)
+
+Owner requested extending the KM-13 solid-white base to **shorts,
+socks and shoe laces**, while keeping the actual football boots their
+original colours and geometry. The genuine creator GLB was inspected:
+**no mesh is named “laces”**. Instead both `FA_boots__shoes_l.001`
+and `FA_boots__shoes_r.001` contain five material-indexed primitives.
+On each shoe, **`FA_boots__material_1` (material slot 1)** consists of
+11 disconnected shoelace components (6960 triangles, 3700 vertices)
+restricted to the lace region on the shoe upper. Boot material slots
+0, 2, 3, and 4 are *not* laces and must remain unchanged. This was
+verified across all three supported original / KM-07 / KM-08 GLBs.
+
+The private viewer now applies `makeSenaShortsSocksSolidWhite`
+to all `FA_shorts__*` and `FA_socks__*` meshes, including every
+material group, with the same opaque `#FFFFFF` PBR settings as
+the shirt (roughness .85 / metalness 0, no texture maps).
+The separate `makeSenaBootLacesSolidWhite` changes **only material
+slot 1** on the two identified boot meshes, preserving all other
+material object references, textures, positions, shadows, soles and
+studs. It validates both boots before replacing any material and
+fails closed if the expected independent lace group is absent.
+All artist-owned original materials are retained undisposed.
+
+The KM-11 height adjustment, fixed boot geometry, KM-12 collar tape
+removal and KM-13 white jersey remain unchanged. The local GLB is
+still read from the owner's gitignored folder; no additional ZIP,
+source binary commit, public deployment, DB write or merge is needed.
+
+Targeted tests assert shorts/socks pure white (including multiple
+materials), boot material isolation, saved original shared texture,
+unchanged geometries, two-shoe guard and idempotence. Browser QA and
+full Node suite still require verification. PR #454 stays Draft/HOLD.
+
+## KM-14B — fix empty Kit Maker after white-lace update (2026-11-10)
+
+The KM-14 boot-lace implementation made the outfit fail to load. The root
+cause was a false assumption about the parsed glTF: each original boot has
+five glTF primitives with separate materials, but **THREE.GLTFLoader
+creates five individual child Mesh objects for each boot**, not a single
+Mesh containing an array of five material slots. The old validation
+threw and the clothing-only preview remained empty.
+
+The fixed code traverses the five single-material meshes per side,
+including the numbered primitive-name suffixes generated by GLTFLoader,
+and identifies **only the one with material `FA_boots__material_1`**
+(the shoelaces). Both shoes are validated before recolouring anything;
+all four other primitive materials, their colours, shoe geometry, laces
+source maps, and fixed boot positions remain unmodified. The shorts,
+socks and jersey still use their approved opaque white materials.
+
+An optional cosmetic lace-mapping problem is now nonfatal: the viewer
+shows the outfit with original laces and a specific status warning
+instead of blanking the entire stage. On other outfit-load exceptions,
+the DEV-only viewer status includes the error details for debugging.
+A regression test simulates the real GLTFLoader primitive layout and
+verifies both white laces, untouched shoe parts and atomic validation;
+viewer error behaviour is statically asserted. No original artist binary
+needs to be downloaded or committed. Complete Windows Node/browser QA
+is pending; PR #454 remains Draft/HOLD, no merge or deployment.
+
+Technical naming detail: Three.js `PropertyBinding.sanitizeNodeName()` removes the
+period in the source boot name `FA_boots__shoes_l.001`, so the rendered
+primitive child names are `FA_boots__shoes_l001`, `...l001_1` etc.; the
+same applies to `r001`. The corrected selector accepts sanitized names
+and the original unsanitized form, guarded by the exact lace material.
+
+## KM-15 — monochrome football boots, remove green studs (2026-11-10)
+
+Owner reported that the boot stud tips were still green after KM-14B.
+Inspected the actual original and KM-08 private GLBs: each boot has
+five material-indexed glTF primitives. Material 0 (shoe upper) uses
+texture image 6, which is **exactly grayscale** (RGB channel differences
+are zero throughout the 768×768 texture). Materials 1–4 share
+image 7, a **fluorescent green atlas**. The underside studs and outsole
+are primitive 4 (source geometry Y≈0.00024–0.0163 m).
+
+The approved neutral black/white boot style now is:
+
+- **Primitive 0:** keep the existing detailed grayscale/black upper;
+  no source atlas changes
+- **Primitive 1:** original laces, recoloured opaque white by KM-14B
+- **Primitive 2:** opaque white accent/detail, no green atlas
+- **Primitive 3:** dark black trim `#181818`, no green atlas
+- **Primitive 4:** outsole and studs black `#101010`, no green atlas
+
+`makeSenaBootsBlackAndWhite` validates exactly five named
+single-material boot primitives per foot using the same Three.js
+sanitized/source-name recognition as the lace code. Both feet are
+validated *before* replacement. It replaces only materials 2–4
+with independent untextured neutral PBR materials, preserving boot
+geometry, height, normals, UVs and source material objects.
+The original source grayscale upper texture is preserved. The viewer
+applies this before the KM-14B white-lace conversion, and treats
+cosmetic colour failures as nonfatal rather than emptying Kit Maker.
+
+No author binary is added to public GitHub, and no new GLB download
+is required. Focused synthetic tests cover two boots, neutral colours,
+unchanged uppers/laces/geometry, source textures, idempotence and atomic
+validation. Full Node/Chrome QA is still pending. PR #454 Draft/HOLD.
+
+## KM-16 — functional solid-colour kit designer (2026-11-10)
+
+The owner requested the first real kit customizer. The right-hand options
+panel now contains **Garment (Jersey / Shorts / Socks)**, **Style** and
+**Color**. Only **Solid** is currently permitted; no fictional pattern,
+gradients, number, logo, sponsor or export function is implied.
+
+A separate solid-colour selection is kept for each garment. With no club
+selected, the entire kit defaults to the already-approved neutral white,
+and the club-specific Primary and Secondary options are disabled.
+Select a club from the existing **320-club** canonical dropdown to enable
+its published `primaryColor` / `secondaryColor` from
+`/clubs/_shared/manifest.json`. This is the same **single, existing**
+read-only manifest request, no separate colour API or local hardcoded club
+colors. Proposed, unmerged CLUB-COLORS issue #466 selections are **not**
+silently used.
+
+The first **Kit Maker-only neutral allowlist** (not an official change to
+any club's colours) is: White `#FFFFFF`, Black `#111111`, Grey
+`#808080`, Ivory `#F5F1E9`. There is no arbitrary colour picker or
+hex entry. The six colour buttons and all static labels are on first
+paint; Primary and Secondary swatches only receive their actual hex
+values after the club manifest arrives. Changing club updates any
+garments that have Primary/Secondary *roles* selected; the selection of
+a particular garment remains independent. No page reload is needed,
+and the club URL parameter remains the only persisted Kit Maker state.
+
+**Render path:** The club picker and private viewer share the same
+`kit-maker/lab/kit-design.mjs` ES module. Its pure store calculates
+validated, role-based colours and immediately broadcasts changes. After
+the KM-11 fit, KM-12 printed neckband removal, KM-13/14 solid-white
+materials and KM-15 monochrome boots are set up, the viewer applies
+the current colours exclusively to private jersey/shorts/socks
+`MeshStandardMaterial.color` slots. Geometry/UVs/rig/boots and original
+artist textures are never edited. The viewer receives updates even if
+the user selects a palette before the private GLB finishes loading.
+The original standalone mannequin laboratory (port 2100) never imports
+this DEV-only design module.
+
+**Private hosting/security:** `/__fa_kit_maker__/kit-design.mjs` is
+explicitly served by the existing loopback/DEV allowlist, denied to
+non-DEV/public hosts and production publication. No write route, backend
+or remote database change is added. The private model remains gitignored,
+and no vendor GLB is committed to the public repository.
+
+**QA:** targeted `node --test match-engine/tests/kit-maker-design.test.mjs`
+validates the six authorised colours, canonical club role updates,
+independent garment colours, rejection of unsupported styles/custom
+hexes, subscriber lifecycle, atomically validated private-material
+recolouring and untouched shoes/geometry. The existing Kit Maker
+page/server test now checks six colour options, three garment choices,
+one style, the private module route, event integration and continued
+publication guards. The old Chrome smoke expectation for two
+disabled colours and the removed procedural-jacket message was updated.
+
+**Owner visual QA remaining:** desktop 1440/768 and iPhone 390/320,
+light/dark, first paint with no club, select any two clubs and check
+that Primary/Secondary follow the selected one, colour all three
+garments independently, switch garments without losing selection,
+confirm shoes stay monochrome, rotate/zoom before and during colour
+changes, refresh with `?club=...`, and verify standalone 2100 viewer
+still loads. Full browser/CI checks not yet confirmed.
+
+PR #454 stays **Draft/HOLD**, one grouped commit, no merge/deploy/remote
+DB modification. Match Engine parent PR #455 remains untouched.
+
+## KM-17 — Vertical Stripes: first geometric kit style (2026-11-10)
+
+The owner authorised proceeding with the previously recommended next
+style. **Vertical stripes** is added alongside **Solid** for jersey,
+shorts and socks, while retaining the existing 320-club selector and
+the six-role legal colour palette. Further styles (horizontal hoops,
+half-and-half, central stripe, sash, chevrons, etc.) are **not included**
+in this increment.
+
+Each garment has its own independent Solid/Vertical stripes choice.
+When Vertical stripes is selected, its first-paint sidebar exposes
+**Base / Stripe** colour layers and three stripe-width presets:
+Narrow **45 mm**, Regular **75 mm** (default), Wide **110 mm**.
+Base and Stripe colours are chosen *only* from the already-approved
+Kit Maker colour options (canonical club Primary / Secondary, or
+White/Black/Grey/Ivory neutral options). Defaults are solid white;
+upon first selecting stripes, base White and stripe Black. Returning
+to Solid retains the stripe colour and width for later use. Changing
+the selected club updates both role-selected layers automatically
+without replacing the other garment designs. Style options and
+static labels render immediately, before manifest or GLB loading;
+secondary controls are hidden while Solid is selected.
+
+**Geometry fidelity:** A Three.js MeshStandardMaterial
+`onBeforeCompile` variant uses the *source model-space X coordinate*
+instead of the GLB's printed texture-atlas UVs. Vertical bands are
+continuous across independently generated mesh panels; their width
+is defined in real metres instead of texture pixels. A
+`cos(pi*x/width)` mask with `fwidth`-based anti-aliasing sets the
+base/accent PBR diffuse colour in the fragment shader. Uniforms are
+updated in place when garment, style, width or club changes, so
+switching styles does not generate or upload new textures, move
+vertices, replace the boot meshes or re-request the private GLB.
+The Solid path disables stripes through a shader uniform and
+retains the existing untextured PBR material and lighting. The
+patterns extend to shorts and socks consistently with the selected
+garment's individual style.
+
+**Security / ownership:** the stripe renderer touches only KM-13/14
+private neutral garment materials and the DEV-only kit state. Third
+party geometry, UVs, local texture atlas, shoe materials, boots
+and sole height, and the KM-11 alignment remain untouched.
+The design module is still served only from `/dev/kit-maker`,
+no API writes, new persistence, deployments, merges, or third-party
+asset uploads. PR #454 is still Draft/HOLD, the base Match Engine
+PR #455 is not altered.
+
+**QA:** isolated unit regressions cover independent style/colour/width
+state by garment, club-role changes, rejection of unsupported styles
+and arbitrary colours, shader injection/antialiasing, uniform changes
+without recompilation, preservation of geometry and boot materials,
+plus the original KM-16 solid-only tests. The page/server assertions
+were updated for two styles and stripe options at first paint, with
+Chrome interaction smoke assertions for switching garments,
+adjusting stripe layers/width and reverting to solid. Actual owner
+private-GLB rendering on Chrome and iPhone Safari remains pending.
+
+## KM-18 — garment-contour stripes and continuous width slider (2026-11-10)
+
+Owner feedback: **the vertical stripes must follow the curves of the jersey**,
+and **Stripe width must be a slider** instead of three buttons.
+
+The KM-17 straight global `position.x` pattern is replaced with
+**surface-aware coordinates derived from the actual local garment
+geometry**. For the jersey torso, the shader interpolates an elliptical
+cross-section profile reflecting the creator's measured cloth shape:
+the half-width narrows to about 15.3 cm near the waist and expands to
+about 20.8 cm across the upper chest/shoulders. The stripe mask follows
+the angular/curvilinear path around that changing cross-section, rather
+than intersecting the fabric with global vertical planes. The wrap
+coordinate stays continuous across the visible centre-back; the
+mathematical angular seam is placed at the left underarm/side. The
+left/right upper-sleeve meshes each get a separate axis-aligned tube
+coordinate, so their stripes run along the tilted sleeve fabric instead
+of planar X slices. Shorts/socks retain a contour-based coordinate
+without special shirt-sleeve treatment.
+
+The existing Three.js `MeshStandardMaterial.onBeforeCompile` mask
+retains PBR shading, fragment derivative antialiasing and in-place
+uniform updates, so slider interactions do **not** recreate textures,
+recompile the shader, move vertices, re-export GLB, reload the viewer
+or touch the original imported UV/texture data. Only approved private
+garment material slots are modified. The monochrome shoes, white laces,
+KM-11 fitted height and KM-12 interior collar cleanup are unchanged.
+
+**UI:** `Stripe width` is now a native accessible HTML range slider,
+from **3 to 15 cm in 0.5 cm steps**, default **7.5 cm**. Its numeric
+readout is present at first paint; `input` events (drag/touch/keyboard)
+live-update the same design store used by the 3D viewer. Each garment
+remembers its individual width when switching between Jersey, Shorts,
+Socks and Solid/Vertical stripes. Club colour roles, two colour layers
+and four allowed neutrals work as before. The slider only appears when
+the active garment style is Vertical stripes.
+
+**QA:** 13 focused synthetic JS regressions PASS (including the original
+palette restrictions and geometric preservation, 25 slider steps,
+independent per-garment settings, curved torso and both sleeves,
+mathematical back-seam continuity, shader uniform reuse, and reverting
+to Solid). Kit Maker page and Chrome smoke expectations were updated
+to validate the actual range input, first-paint readout, and live
+`input` event with an 11.5 cm result. Actual Chrome WebGL / iPhone
+Safari visual inspection on the owner's private GLB and complete
+Node/CI execution remain pending.
+
+Scope: DEV-only Draft/HOLD PR #454. No merge, publication,
+persistent kit record, remote DB changes or artist GLB redistribution.
+
+## KM-19 — fix vertical stripes converging toward a common focal point (2026-11-10)
+
+The owner reported that the KM-18 curved stripe effect was **radial and
+converged in one point** rather than producing parallel, vertical shirt
+stripes. That regression came from the KM-18 shader's `atan(...)`
+angle-based unwrap and its polar sleeve mapping, which can yield
+visible fan/pole artifacts.
+
+KM-19 replaces that angular shader mask with a **non-singular,
+parallel horizontal garment phase**. It starts from the local
+left/right garment coordinate `p.x` and applies only a *bounded*
+`0.010*sin(p.x*7.0)` drape offset, modulated smoothly by fabric
+depth `abs(p.z)` and vertical height. This makes the projected
+vertical bands gently follow the actual shirt contour without
+fanning to the collar, shoulders, body centre or a discontinuous
+UV/angle seam. The horizontal derivative of the new phase is
+guaranteed to remain at least **0.9405**, which means adjacent
+stripes cannot collide, reverse, or meet at a singularity.
+The front and back use a symmetric depth response and the same
+phase through the side seam, with no angular branch cut.
+
+The sleeve meshes `FA_jersey__38/39` and `62/63` use the same
+non-singular base field plus a bounded, side-specific lateral offset
+along the **sloping garment sleeve axis**. This offset fades to zero
+near the shoulder seam, so each arm retains parallel stripes rather
+than projecting a radial/tubular swirl. The black/white boots and
+all shorts/socks retain their existing styles and colours.
+
+**Private source GLB geometry audit:** evaluated the new scalar field
+across all **50,792 front**, **46,628 back**, **8,484 right
+sleeve**, and **8,472 left sleeve** vertices. All values are finite;
+the shirt torso contour adjustment stays around ±7mm.
+The shader does not touch vertex positions, UVs, textures, clipping,
+or the KM-11 3D fit. A new shader cache key
+`km19-parallel-curved-stripes-v1` forces the renderer to replace
+its old polar shader after local refresh.
+
+**QA:** 14 focused JS tests PASS, including original palette/slider
+tests and new numeric monotonic-spacing tests for multiple garment
+heights, front/back/side continuity, and each sleeve's sloped-axis
+coordinate. JavaScript module/test parse checks PASS and the source
+GLB phase audit PASS. Full browser WebGL rendering with the owner's
+private GLB, iPhone Safari and complete Node/CI still require owner
+verification. The KM-18 slider remains 3–15 cm (0.5 cm steps);
+club Primary/Secondary, allowed neutrals, independent per-garment
+styles and colours remain unchanged.
+
+PR #454 remains Draft/HOLD. No merge, production deployment, DB
+operation, or third-party 3D asset upload.

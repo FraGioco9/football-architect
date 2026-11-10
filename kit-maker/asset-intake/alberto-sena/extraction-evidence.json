@@ -1,0 +1,27 @@
+{
+  "source": "Owner-uploaded soccer_kit-20261110T004805Z-1-001.zip",
+  "creator": "Alberto Sena",
+  "method": "Direct Blender 4.0.4 DNA CustomData geometry export; no Blender binary",
+  "asset_name": "alberto-sena-outfit.glb",
+  "sha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+  "size_bytes": 19674012,
+  "mesh_count": 27,
+  "triangles": 599124,
+  "vertices": 313206,
+  "groups": {
+    "jersey": 6,
+    "shorts": 11,
+    "socks": 8,
+    "boots": 2
+  },
+  "textures_embedded": 8,
+  "mannequin_included": false,
+  "technical_validation": {
+    "glb_parse": "pass",
+    "trimesh": "pass",
+    "vtk_textured_front_side_back": "pass"
+  },
+  "in_situ_mannequin_fit": "pending_browser_QA",
+  "license": "NOT VERIFIED",
+  "source_binary_in_git": false
+}

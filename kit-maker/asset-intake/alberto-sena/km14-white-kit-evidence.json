@@ -1,0 +1,48 @@
+{
+  "revision": "KM-14",
+  "date": "2026-11-10",
+  "request": "White shorts, white socks and white shoelaces, leave rest of boots unchanged",
+  "source": "Private creator GLB examined locally",
+  "materials": {
+    "whiteColor": "#FFFFFF",
+    "roughness": 0.85,
+    "metalness": 0,
+    "textureMaps": "none"
+  },
+  "garments": [
+    "FA_shorts__*",
+    "FA_socks__*"
+  ],
+  "laces": {
+    "meshNames": [
+      "FA_boots__shoes_l.001",
+      "FA_boots__shoes_r.001"
+    ],
+    "materialName": "FA_boots__material_1",
+    "materialSlot": 1,
+    "materialCountPerBoot": 5,
+    "connectedComponentsPerBoot": 11,
+    "triangleCountPerBoot": 6960,
+    "uniqueVerticesPerBoot": 3700,
+    "verifiedGLBs": [
+      "original",
+      "KM-07",
+      "KM-08"
+    ]
+  },
+  "preserved": [
+    "jersey already white",
+    "KM-11 fit and heights",
+    "KM-12 inner collar removal",
+    "all boot geometry",
+    "boot materials 0,2,3,4 and their textures",
+    "original shared materials",
+    "all garment geometry"
+  ],
+  "policy": "no artist binary committed into public repository",
+  "qa": {
+    "synthetic": "PENDING",
+    "fullNode": "PENDING",
+    "Chrome": "PENDING"
+  }
+}

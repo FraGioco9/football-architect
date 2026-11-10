@@ -1,0 +1,44 @@
+{
+  "revision": "KM-08",
+  "date": "2026-11-10",
+  "source": "Original Alberto Sena model supplied privately by owner",
+  "baseRevision": "KM-07",
+  "previousGlbSha256": "8f929ab45ef51c7ce200b0f51514dff40854a2cd81ef68e82121533ca5942dca",
+  "correctedGlbSha256": "6c5968336bf359bca9157dfdaae20ea5b346679c3223be8ddf427ad6e4e2849d",
+  "outputBytes": 19508584,
+  "originalMeshCount": 27,
+  "groups": {
+    "jersey": 6,
+    "shorts": 11,
+    "socks": 8,
+    "boots": 2
+  },
+  "transforms": {
+    "jersey_and_shorts_delta_y_m": 0.046,
+    "sock_upper_delta_y_m": 0.046,
+    "sock_lower_y_m": 0.098,
+    "sock_cuff_outward_each_m": 0.011,
+    "sock_cuff_heelward_z_m": -0.025,
+    "fade_correction_to_zero_above_original_y_m": 0.28,
+    "boots_transform": "unchanged"
+  },
+  "boots": {
+    "soleY_m": 0.000238,
+    "vertexGeometryUnchanged": true,
+    "normalsUnchanged": true,
+    "indexAccessorBytesUnchanged": true
+  },
+  "validation": {
+    "trimeshSceneLoad": "PASS",
+    "fourGarmentGroups": "PASS",
+    "bootAccessorBytesIdentical": "PASS",
+    "allEightTextureBlobsIdentical": "PASS",
+    "allFaceTopologyUnchanged": "PASS",
+    "glTFViewerSourceUnchanged": "PASS",
+    "vtkFrontSideBackCloseUp": "PASS",
+    "browserInSituVisualQA": "PENDING"
+  },
+  "thirdPartyBinaryInGithub": false,
+  "rights": "NOT VERIFIED; LOCAL OWNER QA ONLY",
+  "ownerDelivery": "alberto-sena-kit-maker-km08.zip"
+}

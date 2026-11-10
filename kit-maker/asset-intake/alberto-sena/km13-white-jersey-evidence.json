@@ -1,0 +1,38 @@
+{
+  "revision": "KM-13",
+  "date": "2026-11-10",
+  "goal": "Convert every jersey component to solid #FFFFFF with no artist patterns",
+  "code_owned": true,
+  "selection": "all meshes with names matching /^FA_jersey__/",
+  "sequence": [
+    "load private GLB",
+    "apply KM-11 anatomical fit",
+    "remove KM-12 inner neck lettering mesh",
+    "KM-13 set white PBR materials on remaining jersey only",
+    "attach outfit to viewer"
+  ],
+  "material": {
+    "color": "#FFFFFF",
+    "roughness": 0.85,
+    "metalness": 0,
+    "transparent": false,
+    "opacity": 1,
+    "textureMaps": "none",
+    "side": "retain each original slot setting"
+  },
+  "unaffected": [
+    "all non-jersey original materials and maps",
+    "shorts",
+    "socks",
+    "boots",
+    "all geometry",
+    "all UVs",
+    "KM-11 garment positioning",
+    "original mannequin skeleton"
+  ],
+  "safety": "no original shared material disposal; no GLB upload to public GitHub; idempotent on same scene",
+  "browserQA": "PENDING",
+  "fullNodeCI": "PENDING",
+  "ownerAsset": "private and untracked",
+  "license": "creator redistribution not verified"
+}

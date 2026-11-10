@@ -1,0 +1,39 @@
+{
+  "revision": "KM-11",
+  "date": "2026-11-10",
+  "goal": "Increase sock-to-boot vertical gap, keep boots fixed",
+  "target": {
+    "jersey_source_lift_m": 0.08,
+    "shorts_source_lift_m": 0.08,
+    "upper_sock_source_lift_m": 0.08,
+    "sock_cuff_world_y_m": 0.13
+  },
+  "previous_km10": {
+    "jersey_source_lift_m": 0.06,
+    "shorts_source_lift_m": 0.06,
+    "upper_sock_source_lift_m": 0.06,
+    "sock_cuff_world_y_m": 0.102
+  },
+  "delta_from_km10": {
+    "jersey_and_shorts_m": 0.02,
+    "upper_socks_m": 0.02,
+    "sock_cuffs_m": 0.028
+  },
+  "boots": {
+    "geometry": "UNCHANGED",
+    "placement": "UNCHANGED",
+    "max_world_y_m_from_KM07_evidence": 0.118171
+  },
+  "nominal_gap_to_max_boot_height_m": 0.011829,
+  "existing_sock_alignment": {
+    "outward_each_m": 0.011,
+    "heelward_m": -0.025
+  },
+  "supported_inputs": [
+    "original",
+    "KM-07",
+    "KM-08"
+  ],
+  "rights": "artist asset not redistributed",
+  "qa": "PENDING"
+}

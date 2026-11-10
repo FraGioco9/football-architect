@@ -1,0 +1,45 @@
+{
+  "revision": "KM-12",
+  "date": "2026-11-10",
+  "target_name": "FA_jersey__Pattern_2702362",
+  "target_group": "jersey",
+  "mesh_count_before": 27,
+  "mesh_count_after": 26,
+  "jersey_meshes_before": 6,
+  "jersey_meshes_after": 5,
+  "geometry_bounds_m": {
+    "x": [
+      -0.0982,
+      0.098
+    ],
+    "y": [
+      1.5942,
+      1.6093
+    ],
+    "z": [
+      -0.0861,
+      -0.0341
+    ]
+  },
+  "atlas_uv": {
+    "u": [
+      0.36649,
+      0.6023
+    ],
+    "v": [
+      0.88746,
+      0.89608
+    ]
+  },
+  "original_png_content": "Grey narrow strip with repeated black text, verified by source texture crop",
+  "owner_GLB_variants_checked": [
+    "original",
+    "KM-07",
+    "KM-08"
+  ],
+  "preserved": "other jersey panels and collar FA_jersey__Pattern2D_3805002; shorts, socks, boots and textures",
+  "runtime": "remove the single mesh from the glTF scene after fit, before adding to mannequin",
+  "asset_reexport_required": false,
+  "redistribution": "none",
+  "qa_browser": "PENDING"
+}

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101A1D">
+<title>Kit Maker — Football Architect</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/assets/theme.js"></script>
+<script src="/assets/sidebar-evolution.js" defer></script>
+<script src="/assets/profile-navigation.js" defer></script>
+<link rel="stylesheet" href="/assets/landing.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/sidebar-evolution.css">
+<link rel="stylesheet" href="/__fa_kit_maker__/lab.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"}}
+</script>
+</head>
+<body class="app-body km-lab-page">
+<a class="fa-skip-link" href="#main-content">Skip to Kit Maker</a>
+<div class="fa-career-shell">
+  <!-- KM-01_CANONICAL_SIDEBAR -->
+  <div class="fa-shell-workspace">
+    <header class="fa-shell-topbar">
+      <div class="fa-shell-club">
+        <span class="app-crest" aria-hidden="true">3D</span>
+        <strong>Development</strong>
+      </div>
+      <div class="km-theme-picker app-theme-choices" role="group" aria-label="Appearance">
+        <button type="button" class="app-theme-choice" data-theme-choice="dark" aria-pressed="true">Dark</button>
+        <button type="button" class="app-theme-choice" data-theme-choice="light" aria-pressed="false">Light</button>
+      </div>
+    </header>
+    <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+        <section class="app-view" aria-labelledby="km-title">
+          <h1 class="app-page-title" id="km-title">Kit Maker</h1>
+          <p id="status" class="km-sr-status" role="status" aria-live="polite">Loading 3D outfit…</p>
+          <div class="km-layout">
+            <section class="app-panel km-preview-panel" aria-label="3D football outfit preview">
+              <div class="km-stage">
+                <canvas id="viewport" aria-label="Rotatable football kit with jersey, shorts, socks and boots; no visible mannequin"></canvas>
+              </div>
+            </section>
+            <aside class="app-panel km-settings" aria-label="Kit Maker options">
+              <section class="km-field" aria-labelledby="km-club-label">
+                <h2 id="km-club-label">Club</h2>
+                <div class="language-control km-club-control">
+                  <select id="km-club-select" hidden aria-hidden="true" tabindex="-1">
+                    <option value="">Select club</option>
+                  </select>
+                  <button type="button" id="km-club-trigger" class="language-trigger"
+                    role="combobox" aria-labelledby="km-club-label km-club-value"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-controls="km-club-menu" disabled>
+                    <span id="km-club-value">Select club</span>
+                    <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                      <path d="m5 7 5 5 5-5" fill="none" stroke="currentColor"
+                        stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <div id="km-club-menu" class="language-menu" role="listbox"
+                    aria-labelledby="km-club-label" hidden></div>
+                </div>
+                <p id="km-club-status" class="km-field-status" role="status"
+                  aria-live="polite" hidden></p>
+              </section>
+              <section class="km-field km-parts" aria-labelledby="km-parts-title">
+                <h2 id="km-parts-title">Garment</h2>
+                <div class="km-part-choices" role="group" aria-label="Garment to customize">
+                  <button type="button" data-km-part="jersey" aria-pressed="true">Jersey</button>
+                  <button type="button" data-km-part="shorts" aria-pressed="false">Shorts</button>
+                  <button type="button" data-km-part="socks" aria-pressed="false">Socks</button>
+                </div>
+              </section>
+              <section class="km-field km-style" aria-labelledby="km-style-title">
+                <h2 id="km-style-title">Style</h2>
+                <div class="km-style-choices" role="group" aria-label="Available kit styles">
+                  <button type="button" class="km-style-option" data-km-style="solid"
+                    aria-pressed="true">Solid</button>
+                  <button type="button" class="km-style-option" data-km-style="vertical-stripes"
+                    aria-pressed="false">Vertical stripes</button>
+                </div>
+              </section>
+              <section class="km-stripe-settings" id="km-stripe-settings" aria-label="Stripe options" hidden>
+                <div class="km-stripe-setting">
+                  <h2 id="km-stripe-layer-title">Stripe colors</h2>
+                  <div class="km-stripe-layer-choices" role="group" aria-labelledby="km-stripe-layer-title">
+                    <button type="button" data-km-layer="base" aria-pressed="true">Base</button>
+                    <button type="button" data-km-layer="accent" aria-pressed="false">Stripe</button>
+                  </div>
+                </div>
+                <div class="km-stripe-setting">
+                  <div class="km-stripe-width-header">
+                    <label id="km-stripe-width-title" for="km-stripe-width">Stripe width</label>
+                    <output id="km-stripe-width-value" for="km-stripe-width">7.5 cm</output>
+                  </div>
+                  <input id="km-stripe-width" class="km-stripe-width-slider"
+                    type="range" min="30" max="150" step="5" value="75"
+                    aria-labelledby="km-stripe-width-title km-stripe-width-value">
+                  <div class="km-stripe-width-limits" aria-hidden="true">
+                    <span>3 cm</span><span>15 cm</span>
+                  </div>
+                </div>
+              </section>
+              <section class="km-colors" aria-labelledby="km-colors-title">
+                <h2 id="km-colors-title">Color</h2>
+                <div class="km-color-options" role="group" aria-label="Allowed colors for the selected garment">
+                  <button type="button" class="km-color-option" data-km-color="primary"
+                    aria-pressed="false" disabled>
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">Primary</span><span class="km-color-hex" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" class="km-color-option" data-km-color="secondary"
+                    aria-pressed="false" disabled>
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">Secondary</span><span class="km-color-hex" aria-hidden="true"></span>
+                  </button>
+                  <div class="km-color-group-title">Allowed neutrals</div>
+                  <button type="button" class="km-color-option" data-km-color="neutral-white"
+                    aria-pressed="true">
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">White</span><span class="km-color-hex" aria-hidden="true">#FFFFFF</span>
+                  </button>
+                  <button type="button" class="km-color-option" data-km-color="neutral-black"
+                    aria-pressed="false">
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">Black</span><span class="km-color-hex" aria-hidden="true">#111111</span>
+                  </button>
+                  <button type="button" class="km-color-option" data-km-color="neutral-grey"
+                    aria-pressed="false">
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">Grey</span><span class="km-color-hex" aria-hidden="true">#808080</span>
+                  </button>
+                  <button type="button" class="km-color-option" data-km-color="neutral-ivory"
+                    aria-pressed="false">
+                    <span class="km-color-swatch" aria-hidden="true"></span>
+                    <span class="km-color-label">Ivory</span><span class="km-color-hex" aria-hidden="true">#F5F1E9</span>
+                  </button>
+                </div>
+                <p class="km-color-note">Club colors come from the selected club. No custom colors.</p>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+<script type="module" src="/__fa_kit_maker__/viewer.mjs"></script>
+<script type="module" src="/__fa_kit_maker__/club-select.mjs"></script>
+</body>
+</html>

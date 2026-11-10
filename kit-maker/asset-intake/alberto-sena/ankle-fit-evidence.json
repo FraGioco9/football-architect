@@ -1,0 +1,47 @@
+{
+  "revision": "KM-07",
+  "date": "2026-11-10",
+  "baseline_sha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+  "corrected_sha256": "8f929ab45ef51c7ce200b0f51514dff40854a2cd81ef68e82121533ca5942dca",
+  "corrected_bytes": 19508596,
+  "corrected_meshes": 27,
+  "garment_groups": {
+    "jersey": 6,
+    "shorts": 11,
+    "socks": 8,
+    "boots": 2
+  },
+  "corrected_vertices": 310203,
+  "corrected_triangles": 593347,
+  "shoe_right_x_bounds_m": [
+    -0.186177,
+    -0.04365
+  ],
+  "shoe_left_x_bounds_m": [
+    0.043651,
+    0.186178
+  ],
+  "shoe_sole_y_m": 0.000238,
+  "shoe_upper_y_m": 0.118171,
+  "lower_sock_cut_y_m": 0.105,
+  "vertical_overlap_bounds_m": 0.013171,
+  "changed_meshes": [
+    "FA_socks__Pattern2D_3586",
+    "FA_socks__Pattern2D_3588",
+    "FA_socks__Pattern2D_3592",
+    "FA_socks__Pattern2D_3600"
+  ],
+  "full_source_gltf_primitives_unchanged": 47,
+  "checks": {
+    "boots_mirrored": true,
+    "boots_unmodified": true,
+    "shirt_and_shorts_unmodified": true,
+    "all_four_groups": true,
+    "corrected_gltf_trimesh_loaded": true,
+    "trim_115_rejected_due_visible_gap": true
+  },
+  "external_asset_in_git": false,
+  "browser_visual_QA": "PENDING",
+  "license": "NOT VERIFIED — PRIVATE OWNER LOCAL QA ONLY",
+  "notes": "Original shoe geometry and coordinates untouched. Foot sock sections trimmed with interpolated edges and UVs. The corrected owner-only file is delivered separately as a ZIP; do not commit artist binaries to GitHub."
+}

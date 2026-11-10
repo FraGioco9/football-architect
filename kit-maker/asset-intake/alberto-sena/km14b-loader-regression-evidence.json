@@ -1,0 +1,22 @@
+{
+  "revision": "KM-14B",
+  "date": "2026-11-10",
+  "issue": "Kit Maker blank after KM-14",
+  "cause": "Boot GLTF 5 primitives per shoe load as 5 child Mesh objects (single material each), not one Mesh with 5 materials; GLTFLoader sanitizes source '.001' into '001'",
+  "select": "FA_boots__shoes_[lr](.001|001)[_primitive suffix] with material.name FA_boots__material_1",
+  "shoeValidation": "5 per side and exactly one lace material each; before either material updated",
+  "safety": "Lace recolor errors are cosmetic warnings and do not prevent GLB display",
+  "originalGLBVariants": [
+    "original",
+    "KM-07",
+    "KM-08"
+  ],
+  "QA": {
+    "synthetic": "2 targeted tests PASS",
+    "syntax": "4 JS modules PASS",
+    "Chrome": "PENDING",
+    "fullNode": "PENDING"
+  },
+  "geometryAndMaterialPreservation": "boot geometry and other 4 boot primitives untouched",
+  "thirdPartyAssetsUploaded": false
+}

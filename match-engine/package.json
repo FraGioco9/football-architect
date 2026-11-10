@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/core.test.mjs tests/lab-route.test.mjs tests/physics-diagnostics.test.mjs",
+    "test": "node --test tests/core.test.mjs tests/lab-route.test.mjs tests/physics-diagnostics.test.mjs tests/kit-maker-lab.test.mjs",
     "bench": "node tools/bench.mjs"
   },
   "dependencies": {

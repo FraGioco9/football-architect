@@ -1,0 +1,38 @@
+{
+  "revision": "KM-16",
+  "date": "2026-11-10",
+  "scope": "functional solid-color kit maker sidebar",
+  "garments": [
+    "jersey",
+    "shorts",
+    "socks"
+  ],
+  "styles": [
+    "solid"
+  ],
+  "colorSources": [
+    "current published canonical club.primaryColor",
+    "current published canonical club.secondaryColor",
+    "local-scoped allowed neutral palette"
+  ],
+  "allowedNeutrals": {
+    "white": "#FFFFFF",
+    "black": "#111111",
+    "grey": "#808080",
+    "ivory": "#F5F1E9"
+  },
+  "clubManifest": "/clubs/_shared/manifest.json",
+  "fetchCount": "No additional requests beyond existing club-select manifest",
+  "designState": "in-memory; role based; independent per garment",
+  "initialState": "white jersey/shorts/socks; club palettes disabled until one is selected",
+  "renderStrategy": "Recolor only private neutral MeshStandardMaterial objects, preserve geometry, boot colors and shared third-party material atlases",
+  "rules": "Issue 466 draft palette selections not applied",
+  "qa": {
+    "pureUnit": "5 PASS via JS isolated execution",
+    "updatedStatic": "pending full Node run",
+    "browser": "pending owner Chrome and Safari QA"
+  },
+  "security": "DEV-only route, no external write/persistence, no GLB redistribution",
+  "pr": 454,
+  "status": "Draft/HOLD"
+}

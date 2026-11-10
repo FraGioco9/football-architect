@@ -1,0 +1,51 @@
+{
+  "revision": "KM-18",
+  "date": "2026-11-10",
+  "ownerRequest": "Vertical stripes must curve with the jersey; replace 3 width buttons with slider",
+  "slider": {
+    "type": "range",
+    "minMm": 30,
+    "maxMm": 150,
+    "stepMm": 5,
+    "defaultMm": 75,
+    "labels": "cm",
+    "liveEvent": "input",
+    "perGarment": true
+  },
+  "mapping": {
+    "torso": "elliptical angular surface coordinate adapted to changing waist/chest half-width along y",
+    "leftSleeve": "arm-axis cylindrical unwrap of FA_jersey__62 and 63",
+    "rightSleeve": "arm-axis cylindrical unwrap of FA_jersey__38 and 39",
+    "backSeam": "angle remapped so discontinuity falls at left side instead of rear center"
+  },
+  "measuredSourceTorso": {
+    "waistHalfWidthM": 0.153,
+    "chestHalfWidthM": 0.208,
+    "torsoFrontBackHalfDepthM": ".111-.133"
+  },
+  "shader": {
+    "version": "km18-curved-vertical-stripes-v1",
+    "feature": "preserve source GLB geometry/UV, PBR, fwidth AA, reusable uniforms",
+    "controls": [
+      "style",
+      "base/stripe colours",
+      "width slider"
+    ]
+  },
+  "nonGoals": [
+    "change boot materials",
+    "move shoes",
+    "change kit sizes",
+    "upload third-party 3D asset",
+    "persist kit in database",
+    "deploy or merge"
+  ],
+  "qa": {
+    "isolatedUnit": "13 PASS",
+    "syntax": "pending final audit",
+    "browser": "pending",
+    "fullNode": "pending"
+  },
+  "pr": 454,
+  "status": "Draft/HOLD"
+}

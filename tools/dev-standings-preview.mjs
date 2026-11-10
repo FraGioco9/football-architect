@@ -1,5 +1,5 @@
 import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
-import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
+import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap,renderKitMakerLab,kitFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
 import {readSharedPublicWorld} from './shared-nonproduction-proxy.mjs';
 import {request as httpRequest} from 'node:http';
 import {createRequire} from 'node:module';
@@ -54,6 +54,23 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/sidebar-first-paint.js': 'assets/sidebar-first-paint.js',
   '/__fa_match_engine__/rapier.es.js': 'match-engine/node_modules/@dimforge/rapier3d-deterministic-compat/dist/rapier.mjs'
 });
+// KM-03A private app.localhost-only Kit Maker assets; never published.
+const KIT_MAKER_LAB = Object.freeze({
+  '/dev/kit-maker': 'kit-maker/lab/index.html',
+  '/__fa_kit_maker__/lab.css': 'kit-maker/lab/lab.css',
+  '/__fa_kit_maker__/club-select.mjs': 'kit-maker/lab/club-select.mjs',
+  '/__fa_kit_maker__/kit-design.mjs': 'kit-maker/lab/kit-design.mjs',
+  '/__fa_kit_maker__/body-visibility.mjs': 'kit-maker/lab/body-visibility.mjs',
+  '/__fa_kit_maker__/sena-fit.mjs': 'kit-maker/lab/sena-fit.mjs',
+  '/__fa_kit_maker__/jersey-geometry.mjs': 'kit-maker/lab/jersey-geometry.mjs',
+  '/__fa_kit_maker__/viewer.mjs': 'tools/kit-designer-prototype/viewer.mjs',
+  '/__fa_kit_maker__/reference-import.mjs': 'tools/kit-designer-prototype/reference-import.mjs',
+  '/__fa_kit_maker__/rigged-arms.mjs': 'tools/kit-designer-prototype/rigged-arms.mjs',
+  '/__fa_kit_maker__/alberto-sena-outfit.glb': 'kit-maker/local-assets/alberto-sena-outfit.glb',
+  '/__fa_kit_maker__/mannequin-180.glb': 'tools/kit-designer-prototype/mannequin-180.glb',
+  '/__fa_kit_maker__/mannequin-180.obj': 'tools/kit-designer-prototype/mannequin-180.obj',
+  '/__fa_kit_maker__/sidebar-first-paint.js': 'assets/sidebar-first-paint.js'
+});
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -63,7 +80,9 @@ const TYPES = {
   ".json": "application/json; charset=utf-8",
   ".ico": "image/x-icon",
   ".png": "image/png",
-  ".webp": "image/webp"
+  ".webp": "image/webp",
+  ".glb": "model/gltf-binary",
+  ".obj": "text/plain; charset=utf-8"
 };
 const DETAIL = /^\/competitions\/(it|eng|es|de|fr|pt|nl|br)-[12](?:\/(?:overview|standings|postseason|fixtures|stats|history|rules|awards|teams|index\.html)?)?$/;
 const CUP_DETAIL = /^\/competitions\/(int-1|int-2)(?:\/(?:standings|postseason|fixtures|stats|history|rules|awards|index\.html)?)?$/;
@@ -171,18 +190,31 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           raw.includes("\\") || raw.includes("\0") || /\/\.{1,2}(?:\/|$)/.test(raw)) {
         return reject(res, 403);
       }
-      const labFile = MATCH_ENGINE_LAB[raw];
+      const isKitMaker = Object.hasOwn(KIT_MAKER_LAB,raw);
+      const labFile = isKitMaker ? KIT_MAKER_LAB[raw] : MATCH_ENGINE_LAB[raw];
       if (labFile) {
         // Deny the laboratory in LAN, shared Dev/Preview, non-app hosts and public mode.
         if (!devPreview || !subdomains || !isLoopback(remote) ||
             req.headers.host !== 'app.localhost:2000') return reject(res, 404);
-        let bytes = await safeFile(root, labFile);
-        if (raw === '/dev/match-engine') {
+        let bytes;
+        try {
+          bytes = await safeFile(root, labFile);
+        } catch (error) {
+          // The original artist's outfit is optional and ALWAYS gitignored.
+          // Missing local test assets are a quiet 404, not a server failure.
+          if(raw === '/__fa_kit_maker__/alberto-sena-outfit.glb' &&
+             error?.code === 'ENOENT') return reject(res, 404);
+          throw error;
+        }
+        if (raw === '/dev/match-engine' || raw === '/dev/kit-maker') {
           const canonicalDashboard = await safeFile(root, 'dashboard/index.html');
-          bytes = Buffer.from(renderMatchEngineLab(bytes.toString('utf8'), canonicalDashboard.toString('utf8')), 'utf8');
+          const render = isKitMaker ? renderKitMakerLab : renderMatchEngineLab;
+          bytes = Buffer.from(render(bytes.toString('utf8'), canonicalDashboard.toString('utf8')), 'utf8');
         }
         if (raw === '/__fa_match_engine__/sidebar-first-paint.js')
           bytes = Buffer.from(labFirstPaintBootstrap(bytes.toString('utf8')), 'utf8');
+        if (raw === '/__fa_kit_maker__/sidebar-first-paint.js')
+          bytes = Buffer.from(kitFirstPaintBootstrap(bytes.toString('utf8')), 'utf8');
         const type = TYPES[extname(labFile)];
         if (!type) return reject(res, 404);
         res.writeHead(200, {
@@ -191,7 +223,9 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           'X-Robots-Tag': 'noindex, nofollow',
           'X-Content-Type-Options': 'nosniff',
           'X-Frame-Options': 'DENY',
-          'Content-Security-Policy': "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+          'Content-Security-Policy': isKitMaker
+            ? "default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            : "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'"
         });
         res.end(req.method === 'HEAD' ? undefined : bytes);
         return;

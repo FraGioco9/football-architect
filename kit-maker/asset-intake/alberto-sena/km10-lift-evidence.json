@@ -1,0 +1,34 @@
+{
+  "revision": "KM-10",
+  "date": "2026-11-10",
+  "asset_policy": "owner-local, gitignored; code edits in public GitHub",
+  "inputs": [
+    "original",
+    "KM-07",
+    "KM-08"
+  ],
+  "final_positions_m": {
+    "shirt_shorts_lift": 0.06,
+    "sock_upper_lift": 0.06,
+    "sock_cuff_height": 0.102
+  },
+  "previous_KM08_m": {
+    "shirt_shorts_lift": 0.046,
+    "sock_upper_lift": 0.046,
+    "sock_cuff_height": 0.098
+  },
+  "increment_from_KM08_m": {
+    "shirt_shorts_lift": 0.014,
+    "sock_upper_lift": 0.014,
+    "sock_cuff_height": 0.004
+  },
+  "retained_alignment_m": {
+    "mirrored_sock_cuff_outward": 0.011,
+    "sock_cuff_heelward": -0.025
+  },
+  "boots": "geometry/transform/height unchanged",
+  "visual_qa": "PENDING",
+  "run_validation": "two focused synthetic fit regression tests passed; full Node suite not run",
+  "third_party_assets_committed": false,
+  "license": "NOT VERIFIED, no redistribution"
+}

@@ -1,0 +1,43 @@
+{
+  "revision": "KM-19",
+  "date": "2026-11-10",
+  "ownerProblem": "Vertical jersey stripes fan/converge at a point",
+  "rootCause": "KM-18 torso/sleeve polar atan unwrap creates a singularity/branch cut and radial-looking stripes",
+  "shader": {
+    "key": "km19-parallel-curved-stripes-v1",
+    "horizontalPhase": "p.x + bounded lateral drape sin(p.x*7) based on garment y and |z|",
+    "sleevePhase": "base phase plus bounded side-specific tilt along sleeve axis, zero at shoulder seam",
+    "atan": false,
+    "angularWrap": false,
+    "derivativeMinGuaranteed": 0.9405,
+    "pattern": "uniform-period parallel vertical bands, anti-aliased",
+    "widthSlider": "preserved 30-150mm step 5mm"
+  },
+  "actualSourceGeometry": {
+    "frontVertices": 50792,
+    "backVertices": 46628,
+    "rightSleeveVertices": 8484,
+    "leftSleeveVertices": 8472,
+    "allPhaseFinite": true,
+    "torsoMaxLateralCorrectionM": 0.007,
+    "sleeveCorrectionM": "about +/-0.033, aligned to sloping sleeve axis"
+  },
+  "preserved": [
+    "all third-party GLB geometry",
+    "material maps and UVs",
+    "approved kit palette and slider",
+    "independent garment design state",
+    "fixed black/white shoes and laces",
+    "fit/height adjustments",
+    "existing DEV-only boundary"
+  ],
+  "qa": {
+    "isolatedTests": "14 PASS",
+    "syntax": "PASS",
+    "actualGlbPhaseAudit": "PASS",
+    "ChromeWebGL": "PENDING",
+    "fullNode": "PENDING"
+  },
+  "merge": "HOLD",
+  "pr": 454
+}

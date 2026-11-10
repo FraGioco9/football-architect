@@ -1,0 +1,46 @@
+{
+  "revision": "KM-15",
+  "date": "2026-11-10",
+  "request": "No green football boot studs: black and white boots",
+  "observations": {
+    "originalSha256": "985a459664dbbbea061a5126ba1765acc208e4480091a2882f441379926110c8",
+    "km08Sha256": "6c5968336bf359bca9157dfdaae20ea5b346679c3223be8ddf427ad6e4e2849d",
+    "fivePrimitivesEach": true,
+    "shoeUpperTextureImage": 6,
+    "shoeUpperGrayscale": true,
+    "shoeGreenTextureImage": 7,
+    "greenUsedByMaterialSlots": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "studsPrimitive": 4,
+    "studsHeightBoundsM": [
+      0.000238,
+      0.016299
+    ]
+  },
+  "finalStyle": {
+    "0": "retain original achromatic dark shoe upper",
+    "1": "white laces (KM-14B)",
+    "2": "#FFFFFF accent",
+    "3": "#181818 trim",
+    "4": "#101010 sole and studs"
+  },
+  "preserves": [
+    "shoe mesh topology",
+    "shoe height and placement",
+    "normals and UVs",
+    "original embedded image files",
+    "source boot materials in GLB",
+    "all other garments"
+  ],
+  "implementation": "GitHub-managed in-memory material overrides only",
+  "qa": {
+    "targeted": "PENDING",
+    "completeNode": "PENDING",
+    "Chrome": "PENDING"
+  },
+  "rights": "Original third-party binary remains local, not published"
+}

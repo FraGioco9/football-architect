@@ -1,0 +1,43 @@
+{
+  "revision": "KM-17",
+  "date": "2026-11-10",
+  "scope": "Vertical stripe style alongside solid",
+  "garments": [
+    "jersey",
+    "shorts",
+    "socks"
+  ],
+  "styles": [
+    "solid",
+    "vertical-stripes"
+  ],
+  "stripeWidthsMeters": {
+    "narrow": 0.045,
+    "regular": 0.075,
+    "wide": 0.11
+  },
+  "stripeLayers": [
+    "base",
+    "accent"
+  ],
+  "paletteSources": [
+    "existing club primary",
+    "existing club secondary",
+    "allowed white/black/grey/ivory neutrals"
+  ],
+  "rendering": "PBR shader onBeforeCompile based on local X, anti-aliased cosine pattern, uniform updates without texture atlas",
+  "safety": [
+    "source GLB/texture unchanged",
+    "boots and laces remain black/white",
+    "no network writes",
+    "no new API request",
+    "DEV-only route"
+  ],
+  "qa": {
+    "isolatedUnit": "9 tests pass",
+    "pageAndBrowser": "updated but not run",
+    "ownerVisual": "pending"
+  },
+  "pr": 454,
+  "status": "Draft/HOLD"
+}
