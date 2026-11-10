@@ -319,8 +319,9 @@ test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons befo
  assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16,'one explicit crest circle per anonymous card');
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,16);
- assert.equal((html.match(/class="nav01-skeleton-location"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-name"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name-bar"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-club-location nav01-skeleton-location"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-flag"/g)||[]).length,16);
  assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-city"/g)||[]).length,16);
  assert.match(html,/class="nav01-skeleton-bar nav01-skeleton-count"/);
@@ -336,10 +337,15 @@ test('PAGE-LOAD-04 B02: directory only paints one crest skeleton and visible nam
  assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::after\{content:none;display:none\}/);
  assert.match(css,/\.nav01-skeleton-crest-disc\{display:block;[^}]*border-radius:50%;background:/);
  assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-bar\{display:block;[^}]*background:/);
- assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-copy\{display:flex;/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-copy\{display:block;/);
  assert.ok(source.includes('nav01-skeleton-crest-disc'),'generator owns the checked-in HTML shape');
+ assert.match(html,/<strong class="nav01-skeleton-name"><span class="nav01-skeleton-bar nav01-skeleton-name-bar"><\/span><\/strong>/,'name skeleton reserves the actual strong line box');
+ assert.match(html,/<small class="nav01-club-location nav01-skeleton-location">/,'flag/city skeleton reuses the actual small metadata row');
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-name\{display:flex;align-items:center;min-height:1\.35em/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-location\{display:flex;align-items:center;gap:8px;min-height:1\.6em;line-height:1\.6;margin-top:9px/);
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card \.nav01-skeleton-city\{width:clamp\(38px,30%,72px\);max-width:72px;/,'short city bar, never longer than 72px');
  assert.equal((html.match(/class="nav01-skeleton-crest-disc"/g)||[]).length,16);
- for(const cls of ['nav01-skeleton-name','nav01-skeleton-flag','nav01-skeleton-city'])
+ for(const cls of ['nav01-skeleton-name-bar','nav01-skeleton-flag','nav01-skeleton-city'])
   assert.equal((html.match(new RegExp('class="nav01-skeleton-bar '+cls+'"','g'))||[]).length,16,cls);
 });
 test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loading primitive',()=>{
@@ -411,7 +417,7 @@ test('PAGE-LOAD-04 B02: directory reserves name, flag, city skeletons and hydrat
   assert.doesNotMatch(card,/ · |nav01-country-flag|<svg/,'no visible identities while awaiting the manifest');
  }
  assert.ok(generator.includes('nav01-skeleton-flag')&&generator.includes('nav01-skeleton-city'),'HTML is generated from the same skeleton contract');
- assert.ok(css.includes('.nav01-card.nav01-skeleton-card>.nav01-skeleton-copy{display:flex'),'loading bars are not hidden by normal card styling');
+ assert.ok(css.includes('.nav01-card.nav01-skeleton-card>.nav01-skeleton-copy{display:block'),'loading bars are not hidden by normal card styling');
  assert.ok(js.includes('class="nav01-club-location"><svg'),'real flag is first on the metadata row');
  assert.match(js,/class="nav01-club-city">'\+safe\(c\.city\)/,'city is the only visible metadata text');
  assert.ok(!js.includes("safe(c.city)+' · ")&&!js.includes('dm.has(c.divisionId)'),'no separating dot or league name');
