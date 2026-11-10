@@ -6,6 +6,7 @@ import {hashText} from './auth.ts';
 const policies={
  login:{prefix:'',windowSeconds:900,sourceLimit:30,accountLimit:5,error:'login_throttled'},
  registration:{prefix:'registration-',windowSeconds:3600,sourceLimit:10,accountLimit:3,error:'registration_throttled'},
+ emailChange:{prefix:'email-change-',windowSeconds:3600,sourceLimit:10,accountLimit:3,error:'email_change_throttled'},
  reset:{prefix:'reset-',windowSeconds:3600,sourceLimit:10,accountLimit:3,error:'reset_throttled'}
 } as const;
 export type PlayerThrottlePurpose=keyof typeof policies;

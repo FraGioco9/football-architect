@@ -1,44 +1,203 @@
 (()=>{
 'use strict';
 const ui=window.faAccountUI;if(!ui||ui.redirecting)return;
-let lang=ui.language;
 const translations={
-en:['Your account','Change password','Current password','New password','Change password','Sessions','Sign out other devices','Sign out','Delete account','Password','Type DELETE MY ACCOUNT','Delete account','Checking your session…','Please sign in.','Password updated. Sign in again.','Other sessions revoked.','Account deleted.','Action unsuccessful.','Administrator access must be transferred before deletion.','Sign in'],
-it:['Il tuo account','Cambia password','Password attuale','Nuova password','Cambia password','Sessioni','Disconnetti gli altri dispositivi','Esci','Elimina account','Password','Digita DELETE MY ACCOUNT','Elimina account','Verifica della sessione…','Accedi per continuare.','Password cambiata. Accedi nuovamente.','Altre sessioni revocate.','Account eliminato.','Operazione non riuscita.','Trasferisci prima l’accesso amministrativo.','Accedi'],
-de:['Dein Konto','Passwort ändern','Aktuelles Passwort','Neues Passwort','Passwort ändern','Sitzungen','Andere Geräte abmelden','Abmelden','Konto löschen','Passwort','DELETE MY ACCOUNT eingeben','Konto löschen','Sitzung wird geprüft…','Bitte anmelden.','Passwort geändert. Bitte erneut anmelden.','Andere Sitzungen beendet.','Konto gelöscht.','Vorgang fehlgeschlagen.','Administratorzugang muss vorher übertragen werden.','Anmelden'],
-es:['Tu cuenta','Cambiar contraseña','Contraseña actual','Nueva contraseña','Cambiar contraseña','Sesiones','Cerrar sesión en otros dispositivos','Cerrar sesión','Eliminar cuenta','Contraseña','Escribe DELETE MY ACCOUNT','Eliminar cuenta','Comprobando sesión…','Inicia sesión.','Contraseña cambiada. Vuelve a iniciar sesión.','Otras sesiones cerradas.','Cuenta eliminada.','La operación ha fallado.','Primero debes transferir el acceso de administrador.','Acceder'],
-fr:['Votre compte','Modifier le mot de passe','Mot de passe actuel','Nouveau mot de passe','Modifier le mot de passe','Sessions','Déconnecter les autres appareils','Se déconnecter','Supprimer le compte','Mot de passe','Saisissez DELETE MY ACCOUNT','Supprimer le compte','Vérification de la session…','Veuillez vous connecter.','Mot de passe modifié. Reconnectez-vous.','Autres sessions révoquées.','Compte supprimé.','Opération impossible.','Transférez d’abord les droits administrateur.','Se connecter']};
-const landingCopies={en:['Welcome to Football Architect','You can browse the shared football world and manage your account. Gameplay and club management are not available yet.','Browse clubs','Competitions','Guide','World administration','Account information'],it:['Benvenuto in Football Architect','Puoi esplorare il mondo calcistico condiviso e gestire il tuo account. Gameplay e gestione dei club non sono ancora disponibili.','Esplora i club','Competizioni','Guida','Amministrazione del mondo','Informazioni account'],de:['Willkommen bei Football Architect','Du kannst die gemeinsame Fußballwelt erkunden und dein Konto verwalten. Gameplay und Vereinsmanagement sind noch nicht verfügbar.','Vereine entdecken','Wettbewerbe','Anleitung','Weltverwaltung','Kontoinformationen'],es:['Bienvenido a Football Architect','Puedes explorar el mundo de fútbol compartido y gestionar tu cuenta. El juego y la gestión de clubes aún no están disponibles.','Explorar clubes','Competiciones','Guía','Administración del mundo','Información de cuenta'],fr:['Bienvenue sur Football Architect','Vous pouvez explorer le monde du football partagé et gérer votre compte. Le jeu et la gestion de clubs ne sont pas encore disponibles.','Explorer les clubs','Compétitions','Guide','Administration du monde','Informations du compte']};
-const sessionCopies={en:'Active sessions',it:'Sessioni attive',de:'Aktive Sitzungen',es:'Sesiones activas',fr:'Sessions actives'};
-let t=translations[lang],sessionsText=sessionCopies[lang];
-const ids=['title','change-title','current-label','new-label','change-button','sessions-title','revoke-button','logout-button','delete-title','delete-password-label','confirm-label','delete-button','loading'];
-ui.bind(value=>{
- const next=translations[value];ui.translateStatus(t,next);t=next;lang=value;
- ids.forEach((id,i)=>document.getElementById(id).textContent=t[i]);
- ['welcome-title','welcome-description','clubs-link','competitions-link','guide-link','admin-link','profile-title'].forEach((id,i)=>document.getElementById(id).textContent=landingCopies[lang][i]);
- const summary=document.getElementById('sessions-summary');
- if(summary.textContent.startsWith(sessionsText+':'))summary.textContent=sessionCopies[lang]+summary.textContent.slice(sessionsText.length);
- sessionsText=sessionCopies[lang];document.querySelector('#login-link a').textContent=t[19];document.title=t[0]+' — Football Architect';
+en:["Profile","Change password","Current password","New password","Change password","Sign out","Please sign in.","Password updated. Sign in again.","Action unsuccessful.","Sign in"],
+it:["Profilo","Cambia password","Password attuale","Nuova password","Cambia password","Esci","Accedi per continuare.","Password cambiata. Accedi nuovamente.","Operazione non riuscita.","Accedi"],
+de:["Profil","Passwort ändern","Aktuelles Passwort","Neues Passwort","Passwort ändern","Abmelden","Bitte anmelden.","Passwort geändert. Bitte erneut anmelden.","Vorgang fehlgeschlagen.","Anmelden"],
+es:["Perfil","Cambiar contraseña","Contraseña actual","Nueva contraseña","Cambiar contraseña","Cerrar sesión","Inicia sesión.","Contraseña cambiada. Vuelve a iniciar sesión.","La operación ha fallado.","Acceder"],
+fr:["Profil","Modifier le mot de passe","Mot de passe actuel","Nouveau mot de passe","Modifier le mot de passe","Se déconnecter","Veuillez vous connecter.","Mot de passe modifié. Reconnectez-vous.","Opération impossible.","Se connecter"]};
+const profileLabels={
+ en:['Username','Email'],it:['Nome utente','Email'],
+ de:['Benutzername','E-Mail'],es:['Nombre de usuario','Correo electrónico'],
+ fr:['Nom d’utilisateur','E-mail']
+};
+const settingsLabels={
+ en:['Security','Edit','Country','City','Save','Change email','New email','Send confirmation links','Not specified','Profile updated.','If the address is available, confirm the links sent to both addresses.','This username is unavailable or the profile could not be saved.','Enter your current password again.','Contact an administrator to change an operator account email.'],
+ it:['Sicurezza','Modifica','Paese','Città','Salva','Cambia email','Nuova email','Invia link di conferma','Non specificato','Profilo aggiornato.','Se l’indirizzo è disponibile, conferma i link inviati a entrambi gli indirizzi.','Il nome utente non è disponibile oppure il profilo non è stato salvato.','Inserisci di nuovo la password attuale.','Contatta un amministratore per cambiare l’email di un account operatore.'],
+ de:['Sicherheit','Bearbeiten','Land','Stadt','Speichern','E-Mail ändern','Neue E-Mail','Bestätigungslinks senden','Keine Angabe','Profil aktualisiert.','Wenn die Adresse verfügbar ist, bestätige die Links an beide Adressen.','Der Benutzername ist nicht verfügbar oder das Profil konnte nicht gespeichert werden.','Gib dein aktuelles Passwort erneut ein.','Wende dich für die E-Mail-Änderung eines Betreiberkontos an einen Administrator.'],
+ es:['Seguridad','Editar','País','Ciudad','Guardar','Cambiar correo','Nuevo correo','Enviar enlaces de confirmación','Sin especificar','Perfil actualizado.','Si la dirección está disponible, confirma los enlaces enviados a ambas direcciones.','El nombre de usuario no está disponible o el perfil no se pudo guardar.','Vuelve a introducir tu contraseña actual.','Contacta con un administrador para cambiar el correo de una cuenta de operador.'],
+ fr:['Sécurité','Modifier','Pays','Ville','Enregistrer','Modifier l’e-mail','Nouvel e-mail','Envoyer les liens de confirmation','Non précisé','Profil mis à jour.','Si l’adresse est disponible, confirmez les liens envoyés aux deux adresses.','Le nom d’utilisateur est indisponible ou le profil n’a pas pu être enregistré.','Saisissez à nouveau votre mot de passe actuel.','Contactez un administrateur pour modifier l’e-mail d’un compte opérateur.']
+};
+const editForm=document.getElementById('edit-profile-form'),countrySelect=editForm.elements.nationality;
+const countryControl=document.getElementById('profile-nationality-control');
+const countryTrigger=document.getElementById('profile-nationality-trigger');
+const countryMenu=document.getElementById('profile-nationality-menu');
+const pencils=[...document.querySelectorAll('[data-profile-edit]')];
+const saveProfile=document.getElementById('save-profile-button'),cancelProfile=document.getElementById('cancel-profile-button');
+const cancelLabels={en:'Cancel',it:'Annulla',de:'Abbrechen',es:'Cancelar',fr:'Annuler'};
+let activePencil;
+function closeEditor(restoreFocus){
+ if(!activePencil)return;
+ const pencil=activePencil;
+ activePencil=null;
+ pencil.setAttribute('aria-expanded','false');
+ if(!countryMenu.hidden)countryTrigger.click();
+ editForm.hidden=true;
+ if(restoreFocus)pencil.focus();
+}
+pencils.forEach(pencil=>pencil.addEventListener('click',()=>{
+ if(saveProfile.disabled)return;
+ if(activePencil===pencil){closeEditor(true);return;}
+ closeEditor(false);
+ populateProfileForm();
+ activePencil=pencil;
+ const name=pencil.dataset.profileEdit;
+ for(const field of ['username','city']){
+  editForm.elements[field].hidden=field!==name;
+  editForm.elements[field].disabled=field!==name;
+ }
+ countryControl.hidden=name!=='nationality';
+ countrySelect.disabled=countryControl.hidden;
+ ui.refreshMenus();
+ pencil.closest('td').append(editForm);
+ pencil.setAttribute('aria-expanded','true');
+ editForm.hidden=false;
+ (name==='nationality'?countryTrigger:editForm.elements[name]).focus();
+}));
+cancelProfile.addEventListener('click',()=>{if(!saveProfile.disabled)closeEditor(true)});
+editForm.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!event.defaultPrevented&&!saveProfile.disabled){event.preventDefault();closeEditor(true);}
 });
-const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link'),loading=document.getElementById('loading');
+let codes=[],profile,settings=settingsLabels[ui.language];
+function renderCountries(locale){
+ const selected=countrySelect.value||(!codes.length?profile?.nationality:'')||'';
+ const names=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames([locale],{type:'region'}):null;
+ const options=codes.map(code=>[code,names?.of(code)||code]).sort((a,b)=>a[1].localeCompare(b[1],locale));
+ countrySelect.replaceChildren(new Option(settings[8],''));
+ for(const [code,name] of options)countrySelect.add(new Option(name,code));
+ countrySelect.value=selected;
+ ui.refreshMenus();
+}
+function populateProfileForm(){
+ editForm.elements.username.value=profile?.username||'';
+ editForm.elements.city.value=profile?.city||'';
+ countrySelect.value=profile?.nationality||'';
+ ui.refreshMenus();
+}
+let t=translations[ui.language];
+const ids={title:0,'current-label':2,'new-label':3,'change-button':4,'logout-button':5};
+const passwordLabels={
+ en:['Password','Password hidden'],it:['Password','Password nascosta'],de:['Passwort','Passwort verborgen'],
+ es:['Contraseña','Contraseña oculta'],fr:['Mot de passe','Mot de passe masqué']
+};
+function renderProfile(locale){
+ const username=profile?.username;
+ document.getElementById('username-value').textContent=username||settings[8];
+ const nationality=profile?.nationality;
+ const region=typeof nationality==='string'&&/^[A-Z]{2}$/.test(nationality)?nationality:'';
+ const country=region&&typeof Intl.DisplayNames==='function'
+  ?new Intl.DisplayNames([locale],{type:'region'}).of(region):region;
+ document.getElementById('nationality-value').textContent=country||settings[8];
+ document.getElementById('city-value').textContent=profile?.city||settings[8];
+}
+ui.bind(value=>{
+ const next=translations[value],nextSettings=settingsLabels[value];
+ ui.translateStatus(t,next);ui.translateStatus(settings,nextSettings);t=next;settings=nextSettings;
+ Object.entries(ids).forEach(([id,i])=>document.getElementById(id).textContent=t[i]);
+ ['username-label','profile-title'].forEach((id,i)=>document.getElementById(id).textContent=profileLabels[value][i]);
+ const settingsIds={'security-tab':0,'profile-edit-label':1,'nationality-label':2,'city-label':3,'save-profile-button':4,'new-email-label':6,'change-email-button':7};
+ Object.entries(settingsIds).forEach(([id,i])=>document.getElementById(id).textContent=settings[i]);
+ document.getElementById('security-email-label').textContent=profileLabels[value][1];
+ document.getElementById('security-password-label').textContent=passwordLabels[value][0];
+ document.getElementById('security-password-hidden').textContent=passwordLabels[value][1];
+ document.getElementById('change-title').setAttribute('aria-label',t[1]);
+ document.getElementById('change-email-title').setAttribute('aria-label',settings[5]);
+ document.getElementById('profile-tab').textContent=t[0];
+ cancelProfile.textContent=cancelLabels[value];
+ document.getElementById('email-password-label').textContent=t[2];
+ if(profile)renderProfile(value);
+ renderCountries(value);
+ document.querySelector('#login-link a').textContent=t[9];document.title=t[0]+' — Football Architect';
+});
+const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link');
 let csrf='';
-const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(body)});const value=await r.json().catch(()=>({}));if(!r.ok)throw {status:r.status,code:value?.error?.code};return value};
+const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'Accept-Language':ui.language},body:JSON.stringify(body)});const result=await r.json().catch(()=>null);if(!r.ok)throw {status:r.status,code:result?.error?.code};return result};
 function redirectToLogin(){window.faLoginReturn.remember();location.replace('/account/login')}
-function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;loading.hidden=true;ui.feedback(status,message);}
+function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;ui.feedback(status,message);}
 async function init(){try{
- const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[17]);return;}
+ const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[8]);return;}
  const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'||!value.actor||typeof value.actor.email!=='string'){redirectToLogin();return;}
- csrf=value.csrfToken;document.getElementById('identity').textContent=value.actor.email;
- const permissions=Array.isArray(value.permissions)?value.permissions:[];
- document.getElementById('admin-entry').hidden=!(permissions.includes('admin.access')&&permissions.includes('admin.world.read'));
- protectedPanel.hidden=false;loading.hidden=true;
- await refreshSessions();
-}catch{unauthenticated(t[17])}}
-async function refreshSessions(){try{const response=await fetch('/api/player/sessions',{credentials:'same-origin',cache:'no-store'});if(!response.ok)return;const data=await response.json();const active=Array.isArray(data.sessions)?data.sessions.length:0;document.getElementById('sessions-summary').textContent=sessionsText+': '+active;}catch{/* Session summary is non-authoritative UI only. */}}
-async function execute(button,fn){if(button.disabled)return;button.disabled=true;ui.feedback(status,'');try{await fn()}catch(error){if(error?.status===401){redirectToLogin();return;}ui.feedback(status,error?.code==='admin_transfer_required'?t[18]:t[17]);}finally{button.disabled=false}}
-document.getElementById('change-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('[type="submit"]'),async()=>{const fd=new FormData(form);await post('/api/player/account/change-password',{currentPassword:String(fd.get('currentPassword')),newPassword:String(fd.get('newPassword'))});form.reset();unauthenticated(t[14]);redirectToLogin()})});
-document.getElementById('revoke-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/account/revoke-other-sessions',{});ui.feedback(status,t[15],'success');await refreshSessions()}));
-document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[13]);redirectToLogin()}));
-document.getElementById('delete-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('[type="submit"]'),async()=>{const fd=new FormData(form);await post('/api/player/account/delete',{password:String(fd.get('password')),confirmation:String(fd.get('confirmation'))});form.reset();unauthenticated(t[16]);redirectToLogin()})});
+ csrf=value.csrfToken;
+ document.getElementById('identity').textContent=value.actor.email;
+ document.getElementById('security-email-value').textContent=value.actor.email;
+ profile=value.profile??{};
+ renderProfile(ui.language);populateProfileForm();
+ protectedPanel.setAttribute('aria-busy','false');protectedPanel.inert=false;
+}catch{unauthenticated(t[8])}}
+async function execute(button,fn){if(button.disabled)return;button.disabled=true;ui.feedback(status,'');try{await fn()}catch(error){if(error?.status===401){redirectToLogin();return;}ui.feedback(status,({profile_unavailable:settings[11],invalid_credentials:settings[12],admin_transfer_required:settings[13]})[error?.code]||t[8]);}finally{button.disabled=false}}
+document.getElementById('change-form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;execute(form.querySelector('[type="submit"]'),async()=>{const fd=new FormData(form);await post('/api/player/account/change-password',{currentPassword:String(fd.get('currentPassword')),newPassword:String(fd.get('newPassword'))});form.reset();unauthenticated(t[7]);redirectToLogin()})});
+document.getElementById('logout-button').addEventListener('click',e=>execute(e.currentTarget,async()=>{await post('/api/player/logout',{});unauthenticated(t[6]);redirectToLogin()}));
+const tabs=[...document.querySelectorAll('.app-profile [role="tab"]')];
+function selectTab(selected){
+ if(selected.id==='security-tab'&&!saveProfile.disabled)closeEditor(false);
+ if(selected.id==='profile-tab'&&!securityBusy())securityPencils.forEach(pencil=>closeSecurityEditor(pencil,false));
+ for(const tab of tabs){
+  const active=tab===selected;
+  tab.classList.toggle('is-active',active);
+  tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;
+  document.getElementById(tab.getAttribute('aria-controls')).hidden=!active;
+ }
+ ui.feedback(status,'');
+}
+tabs.forEach((tab,i)=>{
+ tab.addEventListener('click',()=>selectTab(tab));
+ tab.addEventListener('keydown',event=>{
+  const next={ArrowLeft:tabs[1-i],ArrowRight:tabs[1-i],Home:tabs[0],End:tabs[1]}[event.key];
+  if(!next)return;
+  event.preventDefault();selectTab(next);next.focus();
+ });
+});
+fetch('/data/country-codes.json',{cache:'force-cache'}).then(response=>response.ok?response.json():null).then(value=>{
+ if(!Array.isArray(value)||!value.every(code=>typeof code==='string'&&/^[A-Z]{2}$/.test(code)))return;
+ codes=value;renderCountries(ui.language);
+ countrySelect.value=profile?.nationality||'';
+ document.querySelector('[data-profile-edit="nationality"]').disabled=false;
+}).catch(()=>{/* Preserve the saved country if the list is unavailable. */});
+editForm.addEventListener('submit',event=>{
+ event.preventDefault();
+ if(!activePencil)return;
+ execute(saveProfile,async()=>{
+  const name=activePencil.dataset.profileEdit;
+  const result=await post('/api/player/account/profile',{[name]:editForm.elements[name].value});
+  profile=result.profile;renderProfile(ui.language);populateProfileForm();
+  closeEditor(!document.getElementById('profile-panel').hidden);ui.feedback(status,settings[9],'success');
+ });
+});
+const securityPencils=[...document.querySelectorAll('#security-panel .app-profile-pencil')];
+const securityForm=pencil=>document.getElementById(pencil.getAttribute('aria-controls'));
+const securityBusy=()=>securityPencils.some(pencil=>securityForm(pencil).querySelector('[type="submit"]').disabled);
+function closeSecurityEditor(pencil,restoreFocus){
+ const form=securityForm(pencil);
+ if(form.hidden)return;
+ form.reset();form.hidden=true;
+ pencil.setAttribute('aria-expanded','false');
+ if(restoreFocus)pencil.focus();
+}
+securityPencils.forEach(pencil=>{
+ const form=securityForm(pencil);
+ pencil.addEventListener('click',()=>{
+  if(securityBusy())return;
+  if(!form.hidden){closeSecurityEditor(pencil,true);return;}
+  securityPencils.forEach(button=>closeSecurityEditor(button,false));
+  ui.feedback(status,'');
+  form.hidden=false;pencil.setAttribute('aria-expanded','true');
+  form.querySelector('input').focus();
+ });
+ form.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!form.querySelector('[type="submit"]').disabled){
+   event.preventDefault();closeSecurityEditor(pencil,true);
+  }
+ });
+});
+const emailForm=document.getElementById('change-email-form');
+emailForm.addEventListener('submit',event=>{
+ event.preventDefault();
+ execute(emailForm.querySelector('[type="submit"]'),async()=>{
+  await post('/api/player/account/change-email',Object.fromEntries(new FormData(emailForm)));
+  closeSecurityEditor(document.getElementById('change-email-title'),!document.getElementById('security-panel').hidden);
+  ui.feedback(status,settings[10],'success');
+ });
+});
 init();
 })();

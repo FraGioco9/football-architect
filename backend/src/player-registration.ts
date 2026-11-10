@@ -1,3 +1,4 @@
+import {confirmPlayerEmailChange} from './player-email-change.ts';
 import {abortUnless} from './atomic-guard.ts';
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
@@ -55,6 +56,8 @@ export async function verifyPlayerEmail(db:Database,raw:unknown,now:number){
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw as object).join(',')!=='token')
   throw new ApiError(422,'invalid_verification');
  let digest:string;try{digest=await digestOpaqueToken((raw as {token:string}).token)}catch{throw new ApiError(422,'invalid_verification')}
+ const emailChange=await confirmPlayerEmailChange(db,digest,now);
+ if(emailChange)return emailChange;
  const record=await db.prepare(`SELECT t.account_id FROM player_one_time_tokens t
  JOIN player_accounts a ON a.id=t.account_id
  WHERE t.token_digest=? AND t.purpose='verify_email' AND t.consumed_at IS NULL

@@ -84,8 +84,8 @@
     return {close,update(next){close();options=next;active=0;bindOptions();if(search){search.value='';filter();}},sync(value){trigger.value=value;options.forEach(option=>option.setAttribute('aria-selected',String(option.dataset.menuValue===value)))}};
   };
   const tablist=document.querySelector(".app-competition-tabs");
-  if(!tablist)return;
   const model=window.faCompetitionModel;
+  if(!tablist||!model)return;
   const views=model.views.map(view=>view.id);
   const tabs=[...tablist.querySelectorAll('[role="tab"]')];
   // Safari may briefly restore touch focus to the active tab when a modal closes.

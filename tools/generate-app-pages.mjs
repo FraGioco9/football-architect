@@ -265,6 +265,17 @@ for(const page of outputPages){
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,html);
 }
+// The signed-in profile shares the career shell with its own main content.
+{
+ const content=readFileSync(new URL("../templates/account-profile.html",import.meta.url),"utf8").replace(/\r\n/g,"\n");
+ const replacements=worldPageReplacements();
+ let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,start,end)=>start+content+end);
+ for(const [token,value] of Object.entries(replacements))html=html.replaceAll(token,value);
+ html=html.replace("<title>Competitions", "<title>Profile")
+  .replace('  <script src="/assets/theme.js">','  <script src="/assets/account-ui.js"></script>\n  <script src="/assets/theme.js">')
+  .replace("</head>",'  <meta name="referrer" content="no-referrer">\n  <meta name="robots" content="noindex,nofollow">\n  <link rel="stylesheet" href="/assets/account.css">\n  <script src="/assets/competition-tabs.js" defer></script>\n  <script src="/assets/account-settings.js" defer></script>\n</head>');
+ writeOutput("account/index.html",html);
+}
 for(const output of clubOutputs({template,replacements:worldPageReplacements(),clubs:clubData,divisions:divisionData,allocations:provisionalAssignments,countryFlags:Object.fromEntries(Object.values(countryById).map(country=>[country.id,inlineCountryFlag(country)]))}))
  writeOutput(output.path,output.content);
 // NAV-01B: produce directory from the same canonical generated competitions shell.
