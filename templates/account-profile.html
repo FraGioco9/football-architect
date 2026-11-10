@@ -15,21 +15,6 @@
                 <button class="cta cta-primary" type="submit" id="change-button">Change password</button></form>
               </section>
               <button class="cta cta-secondary" id="logout-button" type="button">Sign out</button>
-              <details id="security">
-                <summary id="security-title">Security</summary>
-                <section aria-labelledby="sessions-title">
-                  <h2 id="sessions-title">Sessions</h2>
-                  <p id="sessions-summary" aria-live="polite"></p>
-                  <button class="cta cta-secondary" id="revoke-button" type="button">Sign out other devices</button>
-                </section>
-                <section aria-labelledby="delete-title">
-                  <h2 id="delete-title">Delete account</h2>
-                  <form method="post" id="delete-form">
-                  <div class="account-field"><label for="account-password"><span id="delete-password-label">Password</span></label><div class="account-password"><input name="password" type="password" autocomplete="current-password" required id="account-password"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div></div>
-                  <label><span id="confirm-label">Type DELETE MY ACCOUNT</span><input name="confirmation" type="text" autocomplete="off" required></label>
-                  <button class="cta cta-primary" type="submit" id="delete-button">Delete account</button></form>
-                </section>
-              </details>
             </div>
             <p id="status" role="status"></p>
             <p id="login-link" hidden><a href="/account/login">Sign in</a></p>

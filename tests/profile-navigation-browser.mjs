@@ -35,12 +35,8 @@ try{
     assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
     assert.equal(await page.locator('#change-form').isVisible(),true);
     assert.equal(await page.locator('#logout-button').isVisible(),true);
-    assert.equal(await page.locator('#delete-form').isVisible(),false);
-    assert.equal(sessionLists,0,'Session list is deferred until security is opened');
-    await page.locator('#security summary').click();
-    await page.locator('#sessions-summary').filter({hasText:': 0'}).waitFor();
-    assert.equal(sessionLists,1);
-    assert.equal(await page.locator('#delete-form').isVisible(),true);
+    assert.equal(await page.locator('#security, #delete-form, #revoke-button').count(),0);
+    assert.equal(sessionLists,0,'Profile does not request the session list');
    }else{
     await page.waitForURL(url=>url.pathname==='/account/login');
     assert.equal(new URL(page.url()).searchParams.get('next'),null);

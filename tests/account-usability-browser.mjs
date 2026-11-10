@@ -81,23 +81,22 @@ try{
  try{
   const page=await account.newPage();
   await page.route('**/api/player/session',r=>r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[]})}));
-  await page.route('**/api/player/sessions',r=>r.fulfill({status:200,body:'{"sessions":[]}'}));
   await page.goto('http://app.localhost:2000/account/');await page.locator('#protected').waitFor();
-  for(const [formId,buttonId,path] of [['change-form','change-button','change-password'],['delete-form','delete-button','delete']]){
-   if(path==='delete')await page.locator('#security summary').click();
-   const handshake=requestHandshake('account/'+path);
-   let pending,calls=0;await page.route('**/api/player/account/'+path,r=>{calls++;pending=r;handshake.arrive(r);});
-   const form=page.locator('#'+formId);
-   for(const input of await form.locator('input').all())await input.fill((await input.getAttribute('name'))==='confirmation'?'DELETE MY ACCOUNT':'synthetic-password-2026');
-   await page.locator('#'+buttonId).click();
-   await handshake.ready;
-   assert.equal(calls,1,'The pending request has reached the handler');
-   assert.equal(await page.locator('#'+buttonId).isDisabled(),true,'Actual submit is disabled while pending');
-   assert.equal(await form.locator('[data-password-toggle]').first().isDisabled(),false);
-   await form.evaluate(el=>el.requestSubmit());assert.equal(calls,1,'Repeated submissions are single-flight');
-   await pending.fulfill({status:503,contentType:'application/json',body:'{}'});
-   await page.waitForFunction(id=>!document.getElementById(id).disabled,buttonId);checks++;
-  }
+  const handshake=requestHandshake('account/change-password');
+  let pending,calls=0;
+  await page.route('**/api/player/account/change-password',r=>{calls++;pending=r;handshake.arrive(r);});
+  const form=page.locator('#change-form');
+  const button=page.locator('#change-button');
+  for(const input of await form.locator('input').all())await input.fill('synthetic-password-2026');
+  await button.click();
+  await handshake.ready;
+  assert.equal(calls,1,'The pending request has reached the handler');
+  assert.equal(await button.isDisabled(),true,'Actual submit is disabled while pending');
+  assert.equal(await form.locator('[data-password-toggle]').first().isDisabled(),false);
+  await form.evaluate(el=>el.requestSubmit());assert.equal(calls,1,'Repeated submissions are single-flight');
+  await pending.fulfill({status:503,contentType:'application/json',body:'{}'});
+  await page.waitForFunction(()=>!document.getElementById('change-button').disabled);
+  checks++;
  }finally{await account.close()}
  console.log('Account usability browser PASS: '+checks+' cases');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));await browser.close()}
