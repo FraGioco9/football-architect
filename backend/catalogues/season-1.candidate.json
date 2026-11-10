@@ -7,7 +7,7 @@
   "sources": [
     {
       "path": "data/clubs.json",
-      "sha256": "48a8e2ba8299ef49455630c052ac038b19bebafdab4ba134deb95da23dcf05b7"
+      "sha256": "d20b8d92bbf7c252d59058bdc02da938703d3d0b5366f5ff3be8436dab318181"
     },
     {
       "path": "data/divisions.json",

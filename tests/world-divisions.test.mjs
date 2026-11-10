@@ -287,10 +287,9 @@ test("STANDINGS-LOGO-01 keeps one shared, responsive crest placeholder per club"
  for(const {division,file} of routes){
   const html=read(file);
   assert.ok(html.includes('data-division-variant="compact"'),division.id);
-  assert.equal((html.match(/<tr data-world-club=/g)||[]).length,16,division.id);
-  const renderedRows=[...html.matchAll(/<tr data-world-club=[^>]*>[\s\S]*?<\/tr>/g)];
-  assert.equal(renderedRows.length,16,division.id+' canonical club rows');
-  for(const row of renderedRows)assert.equal((row[0].match(/class="app-world-club-crest-placeholder"/g)||[]).length,1,division.id+' crest per club');
+  assert.equal((html.match(/<tr data-world-club=/g)||[]).length,0,division.id+' waits for canonical data');
+  const pendingBody=html.match(/<tbody id="app-standings-body">([\s\S]*?)<\/tbody>/)?.[1];
+  assert.ok(pendingBody!==undefined&&!pendingBody.trim(),division.id+' empty real-data body before hydration');
  }
 });
 
@@ -460,11 +459,7 @@ test('every competition serves a sporting-value-free desktop and mobile standing
   assert.equal((skeleton.match(/data-skeleton-row/g)||[]).length,capacity,id+' desktop rows');
   assert.equal((skeleton.match(/data-skeleton-mobile/g)||[]).length,capacity,id+' mobile rows');
   assert.doesNotMatch(skeleton,/data-world-club|id="/,id+' never renders confirmed sporting rows in the reserved shell');
-  if(id.startsWith('int-')){
-   assert.doesNotMatch(skeleton,/<img|data-club-crest|data-skeleton-identity(?=[\s>])/,id+' keeps anonymous cup slots');
-  }else{
-   assert.equal((skeleton.match(/data-skeleton-identity(?=[\s>])/g)||[]).length,capacity*2,id+' preserves known club names in both static projections');
-  }
+  assert.doesNotMatch(skeleton,/<img|data-club-crest|data-skeleton-identity(?=[\s>])/,id+' anonymizes all club identities before API');
   assert.ok(html.indexOf('standings-loading.js')<html.indexOf('competition-page.js'));
   assert.ok(html.indexOf('data-fa-standings-first-paint-ready')>html.indexOf('<!-- standings-skeleton-end -->'));
   assert.ok(html.includes('id="competition-panel-standings" aria-busy="true"'));

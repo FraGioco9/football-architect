@@ -275,21 +275,8 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  const finish=source.indexOf("\n      </main>",begin);
  if(begin<0||finish<0)throw Error("Clubs source shell missing");
  const content="<section id=\"app-divisions\" class=\"app-view nav01-directory\" aria-labelledby=\"nav01-title\"><div id=\"nav01-clubs\"><h1 id=\"nav01-title\" class=\"app-page-title\">Clubs</h1><div class=\"nav01-filters\"><input type=\"search\" aria-label=\"Search clubs\" placeholder=\"Search clubs or cities\"><script data-nav01-search-first-paint>(()=>{const input=document.currentScript.previousElementSibling;const placeholders={en:\"Search clubs or cities\",de:\"Vereine oder Städte suchen\",es:\"Buscar clubes o ciudades\",fr:\"Rechercher clubs ou villes\",it:\"Cerca club o città\"};const value=placeholders[document.documentElement.lang]||placeholders.en;input.placeholder=value;input.setAttribute(\"aria-label\",value)})();</script><div class=\"language-control nav01-filter\"><select hidden aria-label=\"Country\"><option value=\"\">All countries</option></select><button type=\"button\" id=\"nav01-country-trigger\" class=\"language-trigger\" role=\"combobox\" aria-label=\"Country\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"nav01-country-menu\" disabled><span class=\"nav01-filter-value\">All countries</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"nav01-country-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"nav01-country-trigger\" hidden></div></div><div class=\"language-control nav01-filter\"><select hidden aria-label=\"Division\"><option value=\"\">All divisions</option></select><button type=\"button\" id=\"nav01-division-trigger\" class=\"language-trigger\" role=\"combobox\" aria-label=\"Division\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"nav01-division-menu\" disabled><span class=\"nav01-filter-value\">All divisions</span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"nav01-division-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"nav01-division-trigger\" hidden></div></div></div><p class=\"nav01-count\" aria-live=\"polite\"></p><div class=\"nav01-grid\" aria-busy=\"true\"><p class=\"nav01-load-status\" role=\"status\">Loading clubs…</p></div><script data-nav01-loading-first-paint>(()=>{const grid=document.currentScript.previousElementSibling;const labels={en:\"Loading clubs…\",de:\"Vereine werden geladen…\",es:\"Cargando clubes…\",fr:\"Chargement des clubs…\",it:\"Caricamento club…\"};grid.querySelector(\"p\").textContent=labels[document.documentElement.lang]||labels.en})();</script></div></section>";
-// PAGE-LOAD-02 P16: canonical identities/crests are already known at build time.
- // The grid is real static HTML, not a client-generated or API-gated placeholder.
- const firstPaintDivisionById=new Map(divisionData.map(d=>[d.id,d]));
- // Club identities are permanent; provisional division membership is separate.
- // Resolve the assignment explicitly rather than reading a nonexistent club.divisionId.
- const firstPaintDivisionByClub=new Map(provisionalAssignments.allocations.flatMap(a=>{
-  const division=firstPaintDivisionById.get(a.divisionId);
-  return a.clubIds.map(clubId=>[division.countryId+'-'+clubId,division]);
- }));
- // Render flags at parser time using the exact SVG vectors from /competitions.
- // Eight shared symbol definitions avoid duplicating artwork across 320 cards.
- const directoryFlagUse=countryId=>{
-  const code=countryId==='ENG'?'gb-eng':countryId.toLowerCase();
-  return '<svg class="nav01-country-flag" role="img" aria-label="'+encode(countryId)+'" width="20" height="16" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><use href="#fa-directory-flag-'+code+'"></use></svg>';
- };
+// PAGE-LOAD-04 B01: the directory shell has labels and shape-only cards, no embedded club identities.
+ // Stable country-flag artwork is a reusable sprite; club identities arrive with the manifest.
  const directoryFlagSprite='<svg class="nav01-flag-sprite" aria-hidden="true" focusable="false" width="0" height="0" xmlns="http://www.w3.org/2000/svg" style="position:absolute;overflow:hidden"><defs>'+
   ["IT","ENG","ES","DE","FR","PT","NL","BR"].map(countryId=>{
    const code=countryId==='ENG'?'gb-eng':countryId.toLowerCase();
@@ -297,14 +284,11 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
    const content=svg.slice(svg.indexOf(">",svg.indexOf("<svg"))+1,svg.lastIndexOf("</svg>"));
    return '<symbol id="fa-directory-flag-'+code+'" viewBox="0 0 5 4">'+content+'</symbol>';
   }).join('')+'</defs></svg>';
- const firstPaintCrests=clubCrestAssets().catalog;
- const firstPaintCards=clubData.slice().sort((a,b)=>a.primaryName.localeCompare(b.primaryName,'en')||a.countryId.localeCompare(b.countryId)||a.clubId-b.clubId).map(c=>{
-  const id=c.countryId+'-'+c.clubId,crest=firstPaintCrests[id],division=firstPaintDivisionByClub.get(id);
-  return '<a class="nav01-card" href="/clubs/'+c.countryId.toLowerCase()+'/'+c.clubId+'/overview"'+' data-country="'+c.countryId+'" data-tier="'+(division?.tier||0)+'" data-search="'+encode([c.primaryName,c.fullName,c.city].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/gu,' '))+'"'+'>'+'<span class="nav01-crest" aria-hidden="true">'+(crest?'<img class="nav01-crest-image" src="/'+encode(crest)+'" alt="" loading="lazy" decoding="async">':'')+'</span>'+'<span><strong>'+encode(c.primaryName)+'</strong><small>'+encode(c.city)+' · '+directoryFlagUse(c.countryId)+(division?' · '+encode(division.name):'')+'</small></span></a>';
- }).join('');
- const firstPaintContent=content.replace('<div class="nav01-grid" aria-busy="true">',directoryFlagSprite+'<div class="nav01-grid" aria-busy="true">').replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite">320 clubs</p>').replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards).replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');
- const filterScript="<script data-nav01-filter-first-paint>(()=>{const grid=document.currentScript.previousElementSibling;if(!grid)return;const params=new URLSearchParams(location.search);const compact=v=>String(v||'').trim().replace(/\\s+/gu,' ');const norm=v=>compact(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();const q=params.getAll('q').map(compact).find(Boolean)?.slice(0,100)||'';const country=params.getAll('country').map(v=>v.trim().toUpperCase()).find(v=>['BR','DE','ENG','ES','FR','IT','NL','PT'].includes(v))||'';const division=params.getAll('division').map(v=>v.trim().toLowerCase()).find(v=>v==='first'||v==='second')||'';if(!q&&!country&&!division)return;let count=0;for(const card of grid.querySelectorAll('a.nav01-card')){if((q&&!card.dataset.search.includes(norm(q)))||(country&&card.dataset.country!==country)||(division&&card.dataset.tier!==(division==='first'?'1':'2')))card.remove();else count++}const label=grid.parentElement.querySelector('.nav01-count');if(label)label.textContent=count+' clubs'})();</script>";
- const filteredFirstPaint=firstPaintContent.replace('</div></div></section>','</div>'+filterScript+'</div></section>');
+ const firstPaintCards="<div class=\"nav01-card nav01-skeleton-card\" aria-hidden=\"true\"><span class=\"nav01-crest nav01-skeleton-crest\"></span><span class=\"nav01-skeleton-copy\"><span class=\"nav01-skeleton-bar nav01-skeleton-name\"></span><span class=\"nav01-skeleton-bar nav01-skeleton-meta\"></span></span></div>".repeat(6);
+ const filteredFirstPaint=content.replace('<div class="nav01-grid" aria-busy="true">',directoryFlagSprite+'<div class="nav01-grid" aria-busy="true">')
+  .replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite"><span class="nav01-skeleton-bar nav01-skeleton-count" aria-hidden="true"></span></p>')
+  .replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards)
+  .replace(/<script data-nav01-loading-first-paint>[\s\S]*?<\/script>/,'');
  let html=source.slice(0,begin)+filteredFirstPaint+source.slice(finish);
  html=html.replace("<title>Competitions — Football Architect</title>","<title>Clubs — Football Architect</title>");
 

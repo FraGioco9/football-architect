@@ -81,7 +81,7 @@ try{
   await page.route('**/clubs/_shared/manifest.json',handler);
   try{
    await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view,{waitUntil:'domcontentloaded'});
-   await page.waitForFunction(()=>document.documentElement.dataset.clubIdentityReady==='true');
+   await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
    const identity=manifest.clubs.find(c=>c.countryId===country.toUpperCase()&&c.clubId===id);
    assert.ok(identity);
    const pending=await page.evaluate(()=>({
@@ -93,8 +93,8 @@ try{
     ready:document.documentElement.dataset.clubReady==='true',
     visible:document.querySelector('#club-page > .club-header')?.getAttribute('aria-hidden')!=='true'
    }));
-   assert.equal(pending.title,identity.fullName);
-   assert.ok(pending.place.includes(identity.city));
+   assert.equal(pending.title,'','club name remains an anonymous skeleton until the catalog responds');
+   assert.equal(pending.place,'','city and country remain anonymous until catalog response');
    assert.equal(pending.tabs.length,5);
    assert.equal(pending.tabs.filter(tab=>tab.selected==='page').length,1);
    assert.equal(pending.tabs.find(tab=>tab.selected==='page').href,'/clubs/'+country+'/'+id+'/'+view);
@@ -107,10 +107,10 @@ try{
     crest:document.querySelector('.club-header .club-crest'),
     image:document.querySelector('.club-header .app-club-crest-image')
    });
-   const flag=page.locator('.club-header svg.club-country-flag');
-   assert.equal(await flag.count(),1,'one canonical header SVG');
+   const flag=page.locator('.club-header .club-first-paint-flag');
+   assert.equal(await page.locator('.club-header svg.club-country-flag').count(),0,'no club flag before catalog');
    const flagBox=await flag.boundingBox();
-   assert.ok(flagBox&&Math.abs(flagBox.width-25)<0.1&&Math.abs(flagBox.height-20)<0.1,'first-paint flag 25×20');
+   assert.ok(flagBox&&Math.abs(flagBox.width-25)<0.1&&Math.abs(flagBox.height-20)<0.1,'reserved flag track 25×20');
    const colorGeometry=()=>page.evaluate(()=>{
     const colors=document.querySelector('.club-identity .club-colors');
     if(!colors)return null;
@@ -150,7 +150,7 @@ try{
     });
     assert.equal(initial.labels.length,9,'all labels appear before API');
     assert.ok(initial.labels.every(x=>x.text.length>0&&x.bars===0),'no skeleton for a label');
-    assert.equal(initial.totalBars,10,'skeletons only for fetched text and HEX values');
+    assert.equal(initial.totalBars,13,'identity name/country/city join the other data skeletons');
     assert.ok(initial.abbreviation>10&&initial.abbreviation<45,'abbreviation skeleton predicts three characters');
     assert.equal(initial.colors?.swatches.length,2,'two expected color boxes');
     assert.ok(initial.colors.swatches.every(({width,height})=>Math.abs(width-20)<0.1&&Math.abs(height-20)<0.1),'color swatches are 20×20px');
@@ -163,12 +163,10 @@ try{
     assert.ok(pendingColors.pairs.every(pair=>Math.abs(pair.valueY-pair.swatchY)<1),'each placeholder HEX is centered beside its swatch');
     assert.equal(initial.kitBars,0,'static kit text has no skeleton');
     assert.ok(initial.kits?.length>0&&initial.status?.length>0&&initial.next?.length>0,'static panel texts visible');
-    assert.equal(initial.values.find(x=>x.key==='nameLabel')?.text,identity.primaryName);
-    assert.equal(initial.values.find(x=>x.key==='city')?.text,identity.city);
-    assert.ok(initial.values.find(x=>x.key==='country')?.text.length>0);
+    for(const field of ['nameLabel','city','country'])assert.equal(initial.values.find(x=>x.key===field)?.text,'','field remains empty before catalog: '+field);
    }
    const asset=manifest.clubCrests[country.toUpperCase()+'-'+id];
-   if(asset)assert.equal(await page.locator('.club-header .app-club-crest-image').getAttribute('src'),'/'+asset);
+   assert.equal(await page.locator('.club-header .app-club-crest-image').count(),0,'no crest URL is loaded before catalog');
    release();
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
    const final=await page.evaluate(()=>({
@@ -178,7 +176,13 @@ try{
     crest:window.clubFirstPaintNodes.crest===document.querySelector('.club-header .club-crest'),
     image:window.clubFirstPaintNodes.image===document.querySelector('.club-header .app-club-crest-image')
    }));
-   assert.deepEqual(final,{header:true,title:true,tabs:true,crest:true,image:true},'preserve static nodes '+view);
+   assert.equal(final.header,true,'preserve header node '+view);
+   assert.equal(final.title,true,'preserve header title node '+view);
+   assert.equal(final.tabs,true,'preserve tabs node '+view);
+   assert.equal(final.crest,false,'replace anonymous crest slot with canonical crest on hydrate');
+   assert.equal(await page.locator('#club-title').textContent(),identity.fullName,'hydrate club name only from manifest');
+   assert.ok((await page.locator('.club-header .club-location').textContent()).includes(identity.city),'hydrate city from manifest');
+   if(asset)assert.equal(await page.locator('.club-header .app-club-crest-image').getAttribute('src'),'/'+asset);
    if(view==='overview'){
     const hydratedColors=await colorGeometry();
     assert.equal(hydratedColors?.pairs.length,2,'both hydrated club colors are present');
@@ -197,7 +201,7 @@ try{
    }
   }finally{release();await page.unroute('**/clubs/_shared/manifest.json',handler);await page.close()}
  }
- // Failed, malformed and missing manifests preserve valid permanent identity and tabs.
+ // Failed, malformed and missing manifests retain the skeleton shell and tabs, not guessed identities.
  for(const mode of ['503','bad-json','empty-json']){
   const page=await browser.newPage({viewport:{width:390,height:900}});
   const handler=route=>route.fulfill({status:mode==='503'?503:200,contentType:'application/json',

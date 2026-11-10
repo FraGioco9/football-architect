@@ -25,10 +25,10 @@ test('CONFIG-TIES: cup quarterfinal seeds remain 1/4/2/3 and missing winners sta
 const divisions=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url))).divisions;
 
 test('CONFIG-PARITY: canonical DEV scores, tables and brackets retain their pre-migration bytes',()=>{
- // New rules metadata is tested separately; every pre-existing result field
- // still has to match the original byte-for-byte sporting-data baseline.
+ // Sporting logic and results remain unchanged; the owner-authorized ENG-2 name alters display labels
+ // in the serialized DEV snapshot, so the identity-inclusive fixture hash has been rebaselined.
  const records=divisions.map(d=>{const {rulesVersion,rulesSnapshot,...sporting}=data.createPreviewStandings(d,30,1);return [sporting,data.createPreviewPostseason(d,33,1)]});
- assert.equal(createHash('sha256').update(JSON.stringify(records)).digest('hex'),'a9acc31158aaca590f956a8d0c9c7cd5e1b40a21a77aaa918acb9b947a2353d6');
+ assert.equal(createHash('sha256').update(JSON.stringify(records)).digest('hex'),'d2bf39303d92cfd3fc14e65b8652b20c0cdfe6de9165afeedae5a0f173830419');
 });
 
 test('CONFIG-DEV: configured semifinal ranks drive participants without tier inference',()=>{

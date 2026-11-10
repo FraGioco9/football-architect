@@ -44,6 +44,7 @@ test("SH-04: all 18 competition shells preserve first paint and view hosts",()=>
    '/assets/competition-page.js','data-nav01-static'])assert.ok(html.includes(part),id+" missing "+part);
  }
  const html=read("clubs/index.html");
- assert.ok(html.includes("data-nav01-filter-first-paint"));
+ assert.ok(html.includes('class="nav01-card nav01-skeleton-card"'),'directory starts anonymous');
+ assert.ok(!html.includes('data-nav01-filter-first-paint'),'legacy preloaded club filtering removed');
  assert.ok(html.includes('class="nav01-grid" aria-busy="true"'));
 });

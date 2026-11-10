@@ -202,23 +202,20 @@ test('QA-15: Clubs scales the Standings circular crest skeleton to its own logo 
   'skeleton follows its host instead of hard-coding Standings widths');
  assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
 });
-test('QA-15: Clubs first-paint flags share eight /competitions inline SVG artworks',()=>{
+test('QA-15 PAGE-LOAD-04: shared country flag sprites are static, club flags are hydrated from manifest',()=>{
  const html=read('clubs/index.html'),generator=read('tools/generate-app-pages.mjs'),client=read('assets/clubs-directory.js');
  const countries=['it','gb-eng','es','de','fr','pt','nl','br'];
  const symbols=[...html.matchAll(/<symbol id="fa-directory-flag-([a-z-]+)" viewBox="0 0 5 4">/g)].map(m=>m[1]);
- assert.deepEqual(symbols,countries,'exactly eight shared flag definitions');
+ assert.deepEqual(symbols,countries,'all eight reusable vectors are ready at first paint');
  for(const country of countries){
-  assert.ok(html.includes('<use href="#fa-directory-flag-'+country+'"></use>'),'local symbol used: '+country);
-  assert.ok(html.includes('id="fa-competition-flag-'+country+'"'),'same vector as Competitions: '+country);
+  assert.ok(html.includes('id="fa-competition-flag-'+country+'"'),'same vector artwork as Competitions: '+country);
+  assert.ok(!html.includes('<use href="#fa-directory-flag-'+country+'"></use>'),'no per-club country flags before catalog: '+country);
  }
- const flags=[...html.matchAll(/<svg class="nav01-country-flag" role="img" aria-label="([A-Z]+)" width="20" height="16" viewBox="0 0 5 4" xmlns="http:\/\/www\.w3\.org\/2000\/svg"><use href="#fa-directory-flag-([a-z-]+)"><\/use><\/svg>/g)];
- assert.equal(flags.length,320,'all static cards provide a first-paint vector flag');
- assert.equal(new Set(flags.map(m=>m[1])).size,8);
- assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-card"'),'symbols are declared ahead of cards');
- assert.doesNotMatch(html,/<img class="nav01-country-flag"/,'no network/lazy flags at first paint');
+ assert.equal((html.match(/<svg class="nav01-country-flag"/g)||[]).length,0);
+ assert.equal((html.match(/nav01-skeleton-card"/g)||[]).length,6,'six anonymous cards');
+ assert.ok(html.indexOf('class="nav01-flag-sprite"')<html.indexOf('class="nav01-card nav01-skeleton-card'),'sprite precedes cards');
  assert.match(generator,/const directoryFlagSprite=/);
- assert.match(generator,/const directoryFlagUse=/);
- assert.match(client,/<use href="#fa-directory-flag-/,'filtered cards retain vector flags');
+ assert.match(client,/<use href="#fa-directory-flag-/,'hydrated club cards reuse the same vectors');
  assert.doesNotMatch(client,/<img class="nav01-country-flag"/);
 });
 test('UI-409: directory image state is idempotent and failed requests retain the shield',()=>{

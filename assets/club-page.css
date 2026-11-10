@@ -377,3 +377,9 @@
  animation:club-fp-pulse 1.5s ease-in-out infinite alternate;
 }
 @media(prefers-reduced-motion:reduce){.club-first-paint-panel .club-fp-color-swatch{animation:none}}
+
+/* PAGE-LOAD-04 B01: anonymous identity placeholders reserve the final header geometry. */
+.club-first-paint-header .club-fp-header-name{display:block;width:min(58%,320px);height:.88em;min-height:22px;margin:.12em 0 .1em}
+.club-first-paint-header .club-fp-header-location{display:block;width:min(52%,210px);height:14px;min-height:14px}
+.club-first-paint-header .club-crest:not([data-club-crest])::after{content:"";display:block;position:absolute;inset:12% 15%;border-radius:12px;background:color-mix(in srgb,var(--muted) 14%,var(--surface));pointer-events:none}
+.club-first-paint-header .club-crest[data-club-crest]::after{display:none}
