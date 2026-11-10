@@ -235,7 +235,12 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('38|39|62|63'));
   assert.ok(designJS.includes('9|10|42|43'));
   assert.doesNotMatch(designJS,/kmTrimCuffV|kitCuffOuterTrimThreshold/);
-  assert.ok(designJS.includes('vKmPatternV = uv.y'));
+  // KM-25: the flattened sewing UV remains exclusive to vertical stripes;
+  // sleeve/waist trims use the original 3D rim-distance vertex attribute.
+  assert.ok(designJS.includes('vKmRimDistance = '));
+  assert.ok(designJS.includes('attribute float kmRimDistance;'));
+  assert.ok(designJS.includes('smoothstep(0.024-edgeAA'));
+  assert.doesNotMatch(designJS,/vKmPatternV\s*=\s*uv\.y/);
   assert.ok(designJS.includes('cachedKitStripeMetric'));
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
