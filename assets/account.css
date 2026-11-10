@@ -78,6 +78,7 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .app-authentication-body{max-width:460px}
 .app-authentication-card .account-language{width:max-content;max-width:100%;margin-inline-start:auto}
 .app-authentication-card>p+p{margin-top:8px}
+.app-authentication-card a:not(.cta){text-decoration:underline}
 .app-authentication-card .account-go-back{margin-bottom:8px}
 .app-profile .app-competition-tabs{margin:0 0 var(--fa-space-4)}
 .app-profile-panel:not([hidden]){display:grid;gap:var(--fa-space-3)}

@@ -30,10 +30,11 @@ try{
    assert.equal(await page.locator('#nationality-search').count(),0,'Nationality menu has no search field');
    assert.equal(await page.locator('html').getAttribute('lang'),language);
    if(language==='en')assert.equal(new URL(page.url()).searchParams.has('lang'),false);
-   assert.equal(new URL(await page.locator('[data-account-home]').getAttribute('href'),page.url()).pathname,'/dashboard');
-   assert.equal(await page.locator('main').evaluate(el=>getComputedStyle(el).borderTopColor),'rgba(0, 0, 0, 0)');
+   assert.equal(new URL(await page.locator('.fa-shell-sidebar .app-brand').getAttribute('href'),page.url()).pathname,'/dashboard');
    assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
-   assert.equal(await page.locator('main.app-main .app-authentication-card').count(),1);
+   const panel=page.locator('main.app-main .app-authentication-card');
+   assert.equal(await panel.count(),1);
+   assert.equal(await panel.evaluate(el=>getComputedStyle(el).borderTopStyle),'solid');
    assert.equal(await page.locator('#account-language').isVisible(),false);
    await page.locator('#nationality option[value="IT"]').waitFor({state:'attached'});
    await page.locator('[name=username]').fill('Francesco_9');
