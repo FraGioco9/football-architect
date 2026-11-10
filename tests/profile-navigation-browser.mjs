@@ -54,6 +54,11 @@ try{
     assert.equal(await page.locator('#profile-tab').getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('[data-profile-edit]').count(),3);
     assert.equal(await page.locator('#edit-profile-form').isVisible(),false);
+    await page.locator('[data-profile-edit="city"]').click();
+    const cancel=await page.locator('#cancel-profile-button').boundingBox();
+    const save=await page.locator('#save-profile-button').boundingBox();
+    assert.ok(Math.abs(cancel.y-save.y)<1&&cancel.x+cancel.width<=save.x);
+    await page.locator('#cancel-profile-button').click();
     await page.locator('#profile-tab').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#security-tab').getAttribute('aria-selected'),'true');

@@ -112,5 +112,6 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .app-profile-pencil:hover,.app-profile-pencil[aria-expanded="true"]{color:var(--text);background:var(--surface-raised)}
 .app-profile-pencil:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-profile-pencil:disabled{opacity:.5;cursor:default}
-.app-profile-edit-actions{display:flex;gap:var(--fa-space-2);flex-wrap:wrap}
+.app-profile-edit-actions{display:flex;justify-content:flex-end;gap:var(--fa-space-2)}
+.app-profile-edit-actions .cta{width:auto;min-width:0;min-height:var(--fa-control-height-compact);padding:4px 8px;font-size:12px}
 .app-profile-table form{margin:var(--fa-space-3) 0 0}
