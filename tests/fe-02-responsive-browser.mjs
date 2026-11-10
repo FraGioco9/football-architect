@@ -249,9 +249,7 @@ try{
    await page.locator('.club-tabs a[href*="/fixtures"]').click();
    const offset=await page.locator(".club-tabs").evaluate(el=>el.scrollLeft);
    assert.ok(offset>40,"SAF-04 club tab offset must survive view switch: "+offset);
-   const league=page.locator(".club-header-division a[data-club-division-link]");
-   assert.equal(await league.count(),1);
-   await league.click();await page.waitForURL("**/competitions/it-1/standings**");
+   assert.equal(await page.locator(".club-header-division").count(),0,"No obsolete league row in the header");
   });
   await visit(profile,"/clubs/it/1/overview",async page=>{
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==="true");

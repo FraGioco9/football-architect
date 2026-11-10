@@ -16,6 +16,7 @@ import type {Fixture} from './initial-schedule.ts';
 import {readSeasonDayOutcomes,readSeasonKnockoutTies,readSeasonCalendarHash,countSeasonDayOutcomes,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
 interface Archive {generation:string;calendar_hash:string;results_hash:string;knockout_hash:string;archive_hash:string;results_count:number;days_count:number;ties_count:number;created_at:number}
 const competitionPattern=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
+const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
 function invalid():never{throw new ApiError(503,'sporting_data_unavailable')}
 async function unchanged(db:Database,before:WorldV1){
  const after=await readWorld(db);
@@ -49,10 +50,36 @@ function projectFixtures(fixtures:readonly Fixture[],plans:readonly KnockoutTie[
  const metadata=new Map(plans.flatMap(plan=>plan.fixtures.map(item=>[item.fixture.id,{phaseId:plan.phaseId,tieId:plan.tieId,leg:item.leg,neutral:item.neutral}] as const)));
  return fixtures.map(f=>({...f,...(metadata.get(f.id)??{phaseId:'league',tieId:null,leg:null,neutral:false}),result:results.has(f.id)?publicScore(results.get(f.id)!):null}));
 }
+/** Verified INT-24 progress. A round is completed only by its decisive last-leg receipt.
+ * Elimination freezes the attained phase; champion/runner-up require a played final. */
+export function deriveInternationalClubStatus(
+ clubKey:string,rank:number,leagueComplete:boolean,
+ plans:readonly KnockoutTie[],results:ReadonlyMap<string,TemporaryResult>
+):'groupStage'|'playoffs'|'quarterfinals'|'semifinals'|'final'|'winner'|'runnerUp'|null{
+ if(!leagueComplete)return null;
+ if(!Number.isSafeInteger(rank)||rank<1||rank>24)invalid();
+ if(rank>12)return 'groupStage';
+ const phases=['playoffs','quarterfinals','semifinals','final'] as const;
+ let stage:typeof phases[number]=rank<=4?'quarterfinals':'playoffs';
+ for(;;){
+  const tie=plans.find(p=>p.phaseId===stage&&p.fixtures.some(f=>
+   [f.fixture.homeClubId,f.fixture.awayClubId].includes(clubKey)));
+  if(!tie)return stage;
+  const decisive=tie.fixtures[tie.fixtures.length-1]?.fixture;
+  if(!decisive)invalid();
+  const result=results.get(decisive.id);
+  if(!result)return stage;
+  if(!result.winnerClubId||![decisive.homeClubId,decisive.awayClubId].includes(result.winnerClubId))invalid();
+  if(result.winnerClubId!==clubKey)return stage==='final'?'runnerUp':stage;
+  if(stage==='final')return 'winner';
+  stage=phases[phases.indexOf(stage)+1];
+ }
+}
 async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
- if((competitionId!=='world'&&!competitionPattern.test(competitionId))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
+ const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
+ if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey)))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
  const world=await readWorld(db);
- const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:{competitionId}),selectedSeason,world};
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:clubKey?{clubKey}:{competitionId}),selectedSeason,world};
  const empty=async(status:'empty'|'unavailable',reason:string)=>{
   await unchanged(db,world);
   return {...base,status,reason,provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
@@ -105,6 +132,33 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
   }else if(archive){
    if(viewedWorld.day!==56||archive.generation!==world.generation)invalid();
   }
+  // One validated snapshot/progression reconstructs every current club membership.
+  // Avoid four independent full competition projections and their repeated D1 reads.
+  if(clubKey){
+   const plans=[...state.ties.values()];
+   const affiliations=evidence.snapshot.bindings.filter(b=>b.clubIds.includes(clubKey));
+   const domestic=affiliations.filter(b=>!b.competitionId.startsWith('int-'));
+   if((affiliations.length>0&&domestic.length!==1)||affiliations.length>2||new Set(affiliations.map(b=>b.competitionId)).size!==affiliations.length)invalid();
+   const memberships=await Promise.all(affiliations.map(async binding=>{
+    const id=binding.competitionId,isInternational=id.startsWith('int-');
+    const leagueFixtures=evidence.schedule.fixtures.filter(f=>f.competitionId===id);
+    const competitionPlans=plans.filter(p=>p.competitionId===id);
+    const table=await rankLeagueTable(id,binding.clubIds,leagueFixtures,storedResults,evidence.schedule.seed,{throughDay:viewedWorld.day});
+    const row=table.find(r=>r.clubId===clubKey);if(!row)invalid();
+    const future=[...leagueFixtures,...competitionPlans.flatMap(p=>p.fixtures.map(x=>x.fixture))]
+     .filter(f=>f.day>viewedWorld.day&&!storedResults.has(f.id)&&(f.homeClubId===clubKey||f.awayClubId===clubKey))
+     .sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'))[0]??null;
+    const phase=future?competitionPlans.flatMap(p=>p.fixtures.map(x=>({id:x.fixture.id,phaseId:p.phaseId}))).find(x=>x.id===future.id)?.phaseId??'league':null;
+    return {competitionId:id,category:isInternational?'international' as const:'domestic' as const,season:selectedSeason,
+     position:row.played?row.rank:null,points:row.points,
+     cupStatus:isInternational?deriveInternationalClubStatus(clubKey,row.rank,leagueFixtures.every(f=>storedResults.has(f.id)),competitionPlans,storedResults):null,
+     nextMatch:future?{day:future.day,round:future.round,phaseId:phase,homeId:future.homeClubId,awayId:future.awayClubId}:null};
+   }));
+   const data={season:selectedSeason,memberships};
+   await unchanged(db,world);
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`club:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};
+  }
   if(competitionId==='world'){
    const plans=[...state.ties.values()];
    const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))].filter(f=>f.day===calendarDay);
@@ -143,3 +197,9 @@ export function readPublicSportingSeason(db:Database,competitionId:string,select
  return readPublicProjection(db,competitionId,selectedSeason);
 }
 export function readPublicCalendarDay(db:Database,selectedSeason:number,day:number){return readPublicProjection(db,'world',selectedSeason,day)}
+
+/** Compact, validated club overview: exactly one public HTTP request per selected season. */
+export function readPublicClubOverview(db:Database,clubKey:string,selectedSeason:number){
+ if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
+ return readPublicProjection(db,'club:'+clubKey,selectedSeason);
+}

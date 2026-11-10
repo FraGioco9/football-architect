@@ -196,18 +196,25 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("document.querySelectorAll('.fa-shell-nav [aria-current=\"page\"]').length===1&&document.querySelector('[data-nav01-clubs][aria-current=\"page\"]')?.getAttribute('href')==='/clubs'&&!document.querySelector('#app-nav-divisions').hasAttribute('aria-current')"),true,'Club pages select only the NAV-01 Clubs sidebar destination');
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,index===0?{width:25,height:20,fit:'contain'}:{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
-     assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
-     const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1&&next.left>=status.right-2,stacked:status.top>=identity.bottom-2&&next.top>=identity.bottom-2&&next.left>=status.right-2}})()");
-     assert.equal(cardLayout.full,true,'Competition spans the Overview width');
-     const valueSelectors=['[data-club-position]','.club-competition-next-empty'];
-     const valueBaselines=await run(`(${measureBaselines.toString()})(${JSON.stringify(valueSelectors)})`);
-     assert.ok(valueBaselines.every(Number.isFinite),'Competition status and Next Match retain measurable visible values: '+JSON.stringify({width,theme,lang,valueBaselines}));
-     assert.equal(await run("(()=>{const logo=document.querySelector('.club-competition-logo').getBoundingClientRect(),identity=document.querySelector('.club-competition-identity').getBoundingClientRect();return Math.abs((logo.top+logo.bottom)-(identity.top+identity.bottom))<2})()"),true,'Competition logo is centered within its row');
-     if(width===1440)assert.equal(await run("(()=>{const layout=document.querySelector('.club-competition-layout').getBoundingClientRect(),league=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return league.left>=layout.left-2&&league.right<=status.left+2&&status.right<=next.left+2&&next.right<=layout.right+2&&[league,status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Competition league, status and next match occupy ordered non-overlapping columns inside the full-width band');
-     assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-name a')).fontSize"),width>760?'17px':width>480?'14px':'14px','League link uses the compact responsive font size');
-     assert.equal(await run("(()=>{const status=document.querySelector('.club-competition-metrics dt').getBoundingClientRect(),next=document.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return status.width>0&&next.width>0&&Math.abs(status.top-next.top)<1&&[status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Status and Next Match labels share the same row at '+width);
-     assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No provisional allocation label');
-     assert.equal(width>480?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses three columns above 480px and a shared Status/Next Match row on narrow screens');
+     // Public QA has no source: do not assert a fabricated league/fixture card.
+     const verifiedCard=await run("!!document.querySelector('.club-competition-logo')");
+     if(verifiedCard){
+      assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
+      const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1&&next.left>=status.right-2,stacked:status.top>=identity.bottom-2&&next.top>=identity.bottom-2&&next.left>=status.right-2}})()");
+      assert.equal(cardLayout.full,true,'Competition spans the Overview width');
+      const valueSelectors=['[data-club-position]','.club-competition-next-empty'];
+      const valueBaselines=await run(`(${measureBaselines.toString()})(${JSON.stringify(valueSelectors)})`);
+      assert.ok(valueBaselines.every(Number.isFinite),'Competition status and Next Match retain measurable visible values: '+JSON.stringify({width,theme,lang,valueBaselines}));
+      assert.equal(await run("(()=>{const logo=document.querySelector('.club-competition-logo').getBoundingClientRect(),identity=document.querySelector('.club-competition-identity').getBoundingClientRect();return Math.abs((logo.top+logo.bottom)-(identity.top+identity.bottom))<2})()"),true,'Competition logo is centered within its row');
+      if(width===1440)assert.equal(await run("(()=>{const layout=document.querySelector('.club-competition-layout').getBoundingClientRect(),league=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return league.left>=layout.left-2&&league.right<=status.left+2&&status.right<=next.left+2&&next.right<=layout.right+2&&[league,status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Competition league, status and next match occupy ordered non-overlapping columns inside the full-width band');
+      assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-name a')).fontSize"),width>760?'17px':width>480?'14px':'14px','League link uses the compact responsive font size');
+      assert.equal(await run("(()=>{const status=document.querySelector('.club-competition-metrics dt').getBoundingClientRect(),next=document.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return status.width>0&&next.width>0&&Math.abs(status.top-next.top)<1&&[status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Status and Next Match labels share the same row at '+width);
+      assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No provisional allocation label');
+      assert.equal(width>480?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses three columns above 480px and a shared Status/Next Match row on narrow screens');
+     }else{
+      assert.equal(await run("document.querySelectorAll('.club-competition-entry').length"),0,'unverified membership must not be rendered');
+      assert.equal(await run("Boolean(document.querySelector('.club-competition .club-fp-bar,.club-competition .club-competition-empty'))"),true,'pending or unavailable data is explicit');
+     }
      assert.equal(await run("document.querySelector('.club-description').textContent===document.querySelector('.club-description').dataset.originalDescription"),true);
      assert.equal(await run("document.querySelector('.club-kits').textContent.trim().length>0"),true);
      if(lang!=='it'){
@@ -404,7 +411,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
-    assert.equal(await run("document.querySelector('.club-competition a').getAttribute('href')"),'/competitions/it-1/standings?season=1','Club league links include the selected season without an unparameterized stop');
+    const publicLink=await run("document.querySelector('.club-competition a')?.getAttribute('href')??null");
+    assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings?season=1','Only verified source may replace initial season link');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
@@ -447,8 +455,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelectorAll('.app-club-crest-image').length===0&&document.querySelector('[data-club-crest-pending]')===null");
     assert.equal(await run("getComputedStyle(document.querySelector('.club-crest'),'::before').display"),'block');
     refuseCrests=false;
-    await visit('/clubs/br/40/overview');assert.equal(await run("document.querySelector('.club-competition a')"),null);
-    assert.equal(await run("document.querySelectorAll('.club-competition .club-competition-empty').length"),1);
+    await visit('/clubs/br/40/overview');
+    await wait("document.querySelector('.club-competition .club-competition-empty,.club-competition .club-fp-bar')!==null");
+    assert.equal(await run("document.querySelector('.club-competition a')"),null);
+    assert.equal(await run("document.querySelectorAll('.club-competition .club-competition-empty,.club-competition .club-fp-competition').length"),1);
     assert.equal(await run("document.querySelector('.club-competition img,.club-competition .club-competition-status')"),null);
     await visit('/clubs/it/1/overview',devOrigin);
     await wait("document.querySelector('.fa-dev-widget')!==null");
@@ -554,7 +564,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('.fa-dev-widget')!==null");
     await visit('/clubs/it/1/overview');
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
-    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—','Public club pages never load fictional results');
+    const publicSummary=await run("(()=>{const panel=document.querySelector('.club-competition');return {positions:[...panel.querySelectorAll('[data-club-position]')].map(el=>el.textContent.trim()),nextLinks:panel.querySelectorAll('.club-competition-next a').length,verifiedEntries:panel.querySelectorAll('.club-competition-entry').length,seasonOneLink:!!panel.querySelector('a[href^=\"/competitions/it-1/standings?season=1\"]'),loading:!!panel.querySelector('.club-fp-bar'),unavailable:!!panel.querySelector('.club-competition-empty')}})()");
+    assert.deepEqual(publicSummary.positions.filter(value=>value!=='—'),[],'Public club cannot reuse fictional standings');
+    assert.equal(publicSummary.nextLinks,0,'Public club must not leak a fictional next fixture');
+    assert.equal(publicSummary.verifiedEntries,0,'No verified public world means no fabricated membership');
+    assert.equal(publicSummary.seasonOneLink,false,'Do not fall back to Season 1 division in a public read');
+    assert.ok(publicSummary.loading||publicSummary.unavailable,'Keep a truthful public loading/unavailable state');
     assert.equal(await run("document.querySelector('.fa-dev-widget')"),null,'Public club pages never load Debug Settings');
     await cmd('Page.navigate',{url:origin+'/competitions/it-1/overview'});
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");

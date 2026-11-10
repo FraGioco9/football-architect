@@ -17,10 +17,14 @@ import {canonicalHash} from '../src/catalogue-snapshot.ts';
 import {type AdminSession} from '../src/auth.ts';
 import {rankLeagueTable} from '../src/league-standings.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
+import {deriveInternationalClubStatus} from '../src/public-sporting-read.ts';
+// @ts-expect-error Frontend .mjs contract is intentionally JavaScript-only.
+import {projectClubMemberships} from '../../assets/club-season-source.mjs';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.fetch(new Request('https://example.invalid/api/competitions/'+competition+'/seasons/'+season,{method}),{DB:database});
+const clubOverview=(club='IT-1',season='1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/seasons/'+season+'/overview',{method}),{DB:db});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
@@ -30,6 +34,42 @@ beforeEach(async()=>{
 async function prepare(){world=(await prepareSeason(db,session,meta(),'public-prepare-0001',await loadApprovedSnapshot(),now)).world}
 async function calendar(){await prepare();world=(await generateSeasonCalendar(db,session,meta(),'public-calendar-0001',now)).world}
 async function through(day:number){world=(await executeLifecycle(db,session,'start',meta(),'public-start-0001',now)).world;while(world.day<day)world=(await executeLifecycle(db,session,'advance',meta(),'public-day-'+(world.day+1)+'-0001',now)).world}
+it('tracks INT-24 elimination and advancement only through decisive knockout results',()=>{
+ const club='IT-1',opponent='ENG-1';
+ const tie=(phaseId:string)=>({phaseId,fixtures:[
+  {fixture:{id:phaseId+':1',homeClubId:club,awayClubId:opponent}},
+  {fixture:{id:phaseId+':2',homeClubId:opponent,awayClubId:club}}
+ ]}) as any;
+ const final={phaseId:'final',fixtures:[{fixture:{id:'final:1',homeClubId:club,awayClubId:opponent}}]} as any;
+ const playoff=tie('playoffs'),quarter=tie('quarterfinals'),semi=tie('semifinals');
+ const results=new Map<string,any>();
+ const resolve=(id:string,winnerClubId:string|null)=>results.set(id,{winnerClubId});
+ const get=(rank:number,complete=true,plans:any[]=[playoff,quarter,semi,final])=>
+  deriveInternationalClubStatus(club,rank,complete,plans,results);
+ expect(get(3,false)).toBe(null);
+ expect(get(13)).toBe('groupStage');
+ expect(get(3,true,[])).toBe('quarterfinals');
+ expect(get(7,true,[])).toBe('playoffs');
+ resolve('playoffs:1',club);
+ expect(get(7)).toBe('playoffs'); // First leg is not the deciding result.
+ resolve('playoffs:2',opponent);
+ expect(get(7)).toBe('playoffs'); // Eliminated; never advance to quarter-finals.
+ resolve('playoffs:2',club);
+ expect(get(7)).toBe('quarterfinals');
+ resolve('quarterfinals:2',club);
+ expect(get(7)).toBe('semifinals');
+ resolve('semifinals:2',club);
+ expect(get(7)).toBe('final');
+ resolve('final:1',opponent);
+ expect(get(7)).toBe('runnerUp');
+ resolve('final:1',club);
+ expect(get(7)).toBe('winner');
+ resolve('final:1',null);
+ expect(()=>get(7)).toThrow(); // A played final without a winner is invalid.
+ results.clear();
+ resolve('quarterfinals:2',opponent);
+ expect(get(3)).toBe('quarterfinals'); // Direct qualifier eliminated in quarter-finals.
+});
 it('keeps public competition reads independent of malformed Player cookies and disabled auth configuration',async()=>{
  const url='https://example.invalid/api/competitions/IT-1/seasons/1';
  const anonymous=await worker.fetch(new Request(url),{DB:db});
@@ -46,6 +86,15 @@ it('reads anonymously with explicit empty and unsupported viewed-season states',
  expect((await request('ZZ-1')).status).toBe(404);
  expect((await request('IT-1','0')).status).toBe(404);
  expect(r.headers.get('cache-control')).toBe('no-store');
+ const club=await clubOverview();
+ expect(club.status).toBe(200);
+ const unpublishedClub=await club.json() as any;
+ expect(unpublishedClub).toMatchObject({clubKey:'IT-1',status:'empty',data:null});
+ expect(projectClubMemberships(unpublishedClub,'IT-1',1,world).coverage).toBe('unpublished');
+ expect((await clubOverview('IT-1','1','POST')).status).toBe(405);
+ expect((await clubOverview('IT-41')).status).toBe(404);
+ expect((await clubOverview('IT-1','0')).status).toBe(404);
+ expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/overview?all=true'),{DB:db})).status).toBe(422);
 });
 it('returns published future fixtures with no fabricated results or player stats',async()=>{
  await calendar();const r=await request(),body=await r.json() as any;
@@ -55,6 +104,21 @@ it('returns published future fixtures with no fabricated results or player stats
  expect(body.data.calendar).toHaveLength(56);
  expect(JSON.stringify(body)).not.toMatch(/password|csrf|token|operationId|sourceSeedHash|"seed"|approvalReference/);
  expect(body.provenance.kind).toBe('authoritative');
+ const overview=await (await clubOverview()).json() as any;
+ expect(overview).toMatchObject({schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,status:'partial'});
+ expect(overview.provenance.kind).toBe('authoritative');
+ expect(overview.data.memberships).toHaveLength(2);
+ expect(overview.data.memberships.filter((m:any)=>m.category==='domestic').map((m:any)=>m.competitionId)).toEqual(['IT-1']);
+ expect(overview.data.memberships.filter((m:any)=>m.category==='international')).toHaveLength(1);
+ expect(overview.data.memberships.every((m:any)=>m.position===null&&m.points===0&&m.nextMatch?.day>0)).toBe(true);
+ const projected=projectClubMemberships(overview,'IT-1',1,world);
+ expect(projected.coverage).toBe('complete');
+ expect(projected.memberships).toHaveLength(2);
+ expect(projected.memberships.every((m:any)=>m.nextMatch?.day>0)).toBe(true);
+ expect(JSON.stringify(overview)).not.toMatch(/password|csrf|token|operationId|sourceSeedHash|"seed"|approvalReference/);
+ const inactive=await (await clubOverview('IT-40')).json() as any;
+ expect(inactive.data.memberships).toEqual([]);
+ expect(inactive.status).toBe('partial');
 });
 it('uses saved day13 results for partial standings and score-only statistics',async()=>{
  await calendar();await through(13);
@@ -66,6 +130,15 @@ it('uses saved day13 results for partial standings and score-only statistics',as
  expect(body.data.statistics.totalGoals).toBe(played.reduce((sum:number,f:any)=>sum+f.result.homeGoals+f.result.awayGoals,0));
  expect(body.data.statistics.teams.reduce((sum:number,r:any)=>sum+r.goalsFor,0)).toBe(body.data.statistics.totalGoals);
  expect(body.data.calendar.find((d:any)=>d.day===13).played).toBe(8);
+ const overview13=await (await clubOverview()).json() as any;
+ const domestic=overview13.data.memberships.find((m:any)=>m.competitionId==='IT-1');
+ const ranked=body.data.standings.rows.find((r:any)=>r.clubId==='IT-1');
+ expect(domestic).toMatchObject({season:1,position:ranked.rank,points:ranked.points});
+ const projected=projectClubMemberships(overview13,'IT-1',1,world);
+ expect(projected.coverage).toBe('complete');
+ expect(projected.memberships.find((m:any)=>m.competitionId==='IT-1')?.points).toBe(ranked.points);
+ expect(domestic.nextMatch===null||domestic.nextMatch.day>13).toBe(true);
+ expect(overview13.world).toEqual(body.world);
  const cup=await (await request('int-1')).json() as any;
  expect(cup.data.fixtures).toHaveLength(72);expect(cup.data.statistics.matchesPlayed).toBe(0);
  expect(cup.data.standings.rows.every((r:any)=>r.played===0)).toBe(true);
@@ -83,12 +156,16 @@ it('makes real future Playoff pairings public immediately after I06 without scor
  expect(planned).toHaveLength(8);
  expect(planned.every((f:any)=>f.day>finalDay&&f.result===null&&f.tieId!==null)).toBe(true);
  expect(cup.data.fixtures.filter((f:any)=>['quarterfinals','semifinals','final'].includes(f.phaseId))).toHaveLength(0);
+ const topClub=cup.data.standings.rows[0].clubId;
+ const clubCup=await (await clubOverview(topClub)).json() as any;
+ expect(clubCup.data.memberships.find((m:any)=>m.competitionId==='int-1').cupStatus).toBe('quarterfinals');
 },120000);
 
 it('fails closed on a missing daily receipt without advancing the shared world',async()=>{
  await calendar();await through(13);
  await db.prepare('DELETE FROM season_day_outcomes WHERE day=12').run();
  const r=await request();expect(r.status).toBe(503);expect(await r.json()).toEqual({error:{code:'sporting_data_unavailable'}});
+ expect((await clubOverview()).status).toBe(503);
  expect(await readWorld(db)).toEqual(world);
 });
 it('does not combine old sporting data with a newly reset generation',async()=>{
@@ -124,6 +201,8 @@ it('returns canonical final league tables and history only after actual closure'
  expect(cup.data.fixtures.find((f:any)=>f.marker==='SOVEREIGN-FINAL')).toMatchObject({phaseId:'final',tieId:'final',leg:1,neutral:true});
  expect(cup.data.standings.rows.every((r:any)=>r.played===6)).toBe(true);
  expect(cup.data.history.championClubId).toBe(cup.data.fixtures.find((f:any)=>f.marker==='SOVEREIGN-FINAL').result.winnerClubId);
+ const winnerCup=await (await clubOverview(cup.data.history.championClubId)).json() as any;
+ expect(winnerCup.data.memberships.find((m:any)=>m.competitionId==='int-1').cupStatus).toBe('winner');
 },120000);
 
 it('clears public sporting data after a real protected generation reset',async()=>{

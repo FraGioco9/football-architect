@@ -25,8 +25,26 @@
   it:['Stato','Prossima partita','Nessuna partita programmata disponibile.','Nessuna prossima partita.','Stagione','Giornata','Playoff','Playout','Anteprima']
  };
  for(const [lang,values] of Object.entries(summaryLabels))values.forEach((value,i)=>copies[lang][['statusLabel','nextMatchLabel','noScheduledMatch','noUpcomingMatch','seasonLabel','matchdayLabel','playoffsLabel','playoutLabel','previewLabel'][i]]=value);
+ const competitionAvailability={
+  en:['Competition information is temporarily unavailable. Please reload the page.','Competition data has not yet been published for this season.'],
+  de:['Wettbewerbsinformationen sind vorübergehend nicht verfügbar. Bitte lade die Seite erneut.','Für diese Saison wurden noch keine Wettbewerbsdaten veröffentlicht.'],
+  es:['La información de las competiciones no está disponible temporalmente. Recarga la página.','Todavía no se han publicado datos de competiciones para esta temporada.'],
+  fr:['Les informations sur les compétitions sont temporairement indisponibles. Rechargez la page.','Les données des compétitions ne sont pas encore publiées pour cette saison.'],
+  it:['Le informazioni sulle competizioni sono temporaneamente non disponibili. Ricarica la pagina.','I dati delle competizioni non sono ancora stati pubblicati per questa stagione.']
+ };
+ for(const [lang,values] of Object.entries(competitionAvailability)){
+  copies[lang].competitionUnavailable=values[0];
+  copies[lang].competitionUnpublished=values[1];
+ }
+ const internationalStatusLabels={
+  en:{groupStage:'Group Stage',playoffs:'Playoffs',quarterfinals:'Quarter-finals',semifinals:'Semi-finals',final:'Final',winner:'Winner',runnerUp:'Runner-up'},
+  de:{groupStage:'Gruppenphase',playoffs:'Playoffs',quarterfinals:'Viertelfinale',semifinals:'Halbfinale',final:'Finale',winner:'Sieger',runnerUp:'Zweiter'},
+  es:{groupStage:'Fase de grupos',playoffs:'Playoffs',quarterfinals:'Cuartos de final',semifinals:'Semifinales',final:'Final',winner:'Campeón',runnerUp:'Subcampeón'},
+  fr:{groupStage:'Phase de groupes',playoffs:'Barrages',quarterfinals:'Quarts de finale',semifinals:'Demi-finales',final:'Finale',winner:'Vainqueur',runnerUp:'Finaliste'},
+  it:{groupStage:'Fase a gironi',playoffs:'Playoff',quarterfinals:'Quarti di finale',semifinals:'Semifinali',final:'Finale',winner:'Vincitore',runnerUp:'Finalista'}
+ };
  function ordinal(position,lang){
-  if(!Number.isInteger(position)||position<1||position>16)return '—';
+  if(!Number.isInteger(position)||position<1||position>24)return '—';
   if(lang==='en'){const suffix=position%100>=11&&position%100<=13?'th':({1:'st',2:'nd',3:'rd'}[position%10]||'th');return position+suffix;}
   if(lang==='de')return position+'.';
   if(lang==='fr')return position===1?'1er':position+'e';
@@ -81,7 +99,22 @@
   const requestedSeason=params.get('season');
   const competitionSeason=summary?.season||(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null)||(Number.isInteger(activeSeason)&&activeSeason>=1&&activeSeason<=999999999?activeSeason:null);
   const competitionLink=link+(competitionSeason?'?season='+competitionSeason:'');
-  const divisionValue=division?'<a class="app-link" data-club-division-link href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
+  // A verified season membership replaces the build-time Season 1 division. The
+  // fallback is retained only for legacy isolated DEV/tests, never while a
+  // public source is loading or after authoritative season hydration.
+  const clubKey=c.countryId+'-'+c.clubId;
+  const publicMemberships=snapshot?.source==='authoritative'&&snapshot.clubKey===clubKey&&
+   (snapshot.season===activeSeason||snapshot.season===0)&&['complete','unstarted','unpublished'].includes(snapshot.coverage)&&Array.isArray(snapshot.memberships)?
+    snapshot.memberships:null;
+  const publicPending=snapshot?.source==='loading';
+  const publicUnavailable=snapshot?.source==='unavailable';
+  const publicUnpublished=publicMemberships!==null&&snapshot?.coverage==='unpublished';
+  const currentDomestic=publicMemberships?.find(m=>m.category==='domestic')||null;
+  const shownDomestic=currentDomestic?index.divisions.get(currentDomestic.competitionId):null;
+  const divisionValue=publicMemberships
+   ?shownDomestic?'<a class="app-link" data-club-division-link href="'+routes.buildRoute({kind:'competition',id:shownDomestic.id.toLowerCase(),view:'standings'})+'?season='+snapshot.season+'">'+escape(shownDomestic.name)+'</a>':escape(t.outside)
+   :publicPending?'<span class="club-fp-bar" style="--club-fp-width:55%"></span>':publicUnavailable?'—'
+    :division?'<a class="app-link" data-club-division-link href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
   const next=summary?.nextMatch;
   const homeCandidate=next&&index.clubs.get(c.countryId+'-'+next.homeId);
   const home=homeCandidate&&homeCandidate.divisionId===c.divisionId?homeCandidate:null;
@@ -100,6 +133,37 @@
    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+rank+'</dd></div></dl>'+
    '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextContent+'</div></div></div></div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
+
+  const memberCard=membership=>{
+   const def=index.divisions.get(membership.competitionId),isDomestic=membership.category==='domestic';
+   const title=isDomestic?(def?.name||membership.name):membership.name;
+   const target=routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'standings'})+'?season='+membership.season;
+   const badge=isDomestic&&def?'<img class="club-competition-logo" src="/assets/divisions/'+escape(def.id.toLowerCase()+'-'+def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg')+'" width="64" height="64" alt="">':
+    '<span class="club-competition-cup-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg></span>';
+   const next=membership.nextMatch;
+   const home=next&&index.clubs.get(next.homeId),away=next&&index.clubs.get(next.awayId);
+   const valid=!!(home&&away&&home!==away&&[next.homeId,next.awayId].includes(clubKey));
+   const phase=isDomestic?(next?.phaseId==='playout'?'playout':next?.phaseId==='promotionPlayoffs'?'playoffs':next?.round<=30?next.round:null)
+     :(next?.phaseId==='league'?next.round:next?.phaseId);
+   const fixtureUrl=valid&&phase!==null&&phase!==undefined?
+    routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'fixtures'})+'?season='+membership.season+'&matchday='+phase:null;
+   const nextInfo=fixtureUrl
+    ?'<a class="app-link" href="'+escape(fixtureUrl)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(typeof phase==='number'?t.matchdayLabel+' '+phase:
+      phase==='playout'?t.playoutLabel:phase==='playoffs'?t.playoffsLabel:phase==='quarterfinals'?'Quarter-finals':phase==='semifinals'?'Semi-finals':'Final')+'</small>'
+    :'<span class="club-competition-next-empty">'+escape(t.noUpcomingMatch)+'</span>';
+   const tier=isDomestic?(def?.tier===1?t.tier1Label:t.tier2Label):t.competition;
+   return '<div class="club-competition-layout club-competition-entry" data-club-competition-id="'+escape(membership.competitionId)+'">'+
+    '<div class="club-competition-identity">'+badge+'<div class="club-competition-copy"><strong class="club-competition-name"><a class="app-link" data-club-division-link href="'+escape(target)+'">'+escape(title)+'</a></strong>'+
+    '<span class="club-competition-tier">'+escape(tier)+'</span></div></div>'+
+    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+
+     (isDomestic||!internationalStatusLabels[lang][membership.cupStatus]?membership.position===null?'—':ordinal(membership.position,lang):escape(internationalStatusLabels[lang][membership.cupStatus]))+'</dd></div></dl>'+
+    '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div></div>';
+  };
+  const effectiveCompetitionCard=publicUnavailable?'<p class="club-competition-empty" role="status">'+escape(t.competitionUnavailable)+'</p>':publicUnpublished?
+   '<p class="club-competition-empty" role="status">'+escape(t.competitionUnpublished)+'</p>':publicMemberships?
+   (publicMemberships.length?'<div class="club-competition-list">'+publicMemberships.map(memberCard).join('')+'</div>':'<p class="club-competition-empty">'+escape(t.outside)+'</p>'):
+   publicPending?'<div class="club-competition-layout club-fp-competition" aria-busy="true"><div class="club-competition-identity"><span class="club-fp-bar" style="--club-fp-width:65%"></span></div><div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd><span class="club-fp-bar" style="--club-fp-width:45%"></span></dd></div></dl><div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><span class="club-fp-bar" style="--club-fp-width:68%"></span></div></div></div>':
+   competitionCard;
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));
@@ -135,12 +199,12 @@
     (translationAvailable?'<button type="button" class="club-translate-button" data-translate-club aria-pressed="false">'+escape(t.translateLabel)+'</button>':'')+'</dd></div></dl></section>'+
     '</div><aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
-    competitionCard+'</section></div>';
+    effectiveCompetitionCard+'</section></div>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
-  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p><p class="club-header-division">'+divisionValue+'</p></div></header>'+tabs+
+  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.fullName)+'</h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
  return {views,copies,route,render};

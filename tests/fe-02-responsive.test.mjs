@@ -75,11 +75,14 @@ test("SAF-05 selectors retain centered labels and right-edge chevrons",()=>{
  assert.match(app,/#world-calendar #calendar-controls #calendar-week-trigger>\.language-chevron\{position:absolute;inset-inline-end:8px/);
  assert.match(app,/#world-calendar #calendar-controls #calendar-week-value\{display:block;flex:1 1 auto/);
 });
-test("SAF-05 club first paint reserves layout without decorative skeletons",()=>{
- const html=read("clubs/_shared/index.html");
+test("QA-16 club first paint visibly reserves panels with anonymous skeletons",()=>{
+ const html=read("clubs/_shared/index.html"),css=read("assets/club-page.css");
  const club=html.slice(html.indexOf('<div id="club-page"'),html.indexOf("</div><noscript>"));
- assert.doesNotMatch(club,/app-skeleton-bar/);
- assert.match(read("assets/club-page.css"),/\.club-first-paint-panel\{min-height:160px;margin-top:14px;visibility:hidden\}/);
+ assert.match(club,/club-first-paint-overview/);
+ assert.match(club,/club-first-paint-panel" aria-busy="true"/);
+ assert.match(club,/class="club-fp-bar"/);
+ assert.match(css,/\.club-first-paint-panel\{min-height:160px;visibility:visible\}/);
+ assert.doesNotMatch(css,/\.club-first-paint-panel\{[^}]*visibility:hidden/);
 });
 test("SAF-05 competition tab refresh preserves the saved horizontal offset",()=>{
  const tabs=read("assets/competition-tabs.js");
