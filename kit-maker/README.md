@@ -1215,3 +1215,36 @@ hem halves remain coloured across the lateral joins.
 
 Real original Alberto Sena GLB WebGL QA remains pending; PR #454
 Draft/HOLD. No merge, deploy, remote DB or third-party asset export.
+
+## KM-29 — align vertical stripe PHASE at existing shoulder seams (2026-11-10)
+
+A separate audit found that KM-20 accurately measures stripe WIDTH
+in physical flat-pattern UV metres, but individually centres each
+glTF primitive's UV island. This independently chosen origin means
+the fabric stripes can jump out of phase where the original bust and
+sleeve panels meet at the shoulders. KM-29 does **not** replace the
+flat-fabric stripe shader with a projected 3D coordinate.
+
+The DEV-only `kit-stripe-seams.mjs` collects boundary vertices from
+the owner's already loaded original fabric positions/UVs. Near the
+upper armhole/shoulder (excluding collar, waist and cuffs) it pairs
+geometrically coincident original author vertices within 2.7mm,
+finds both original fabric-U alignment and mirrored UV sign, and
+robustly fits a stripe-PHASE shift against the connected bust panel.
+All connected torso and sleeve primitives share that phase. It
+retains the exact absolute metres-per-UV scale, the chosen stripe
+width (30–150mm), all approved palette choices and fabric pattern
+UVs. The correction is cached per outfit and does not rerun when
+the slider or club colour changes. If fewer than 8 genuine seam
+correspondences or high-residual matches exist, it leaves the UV
+island untouched rather than inventing a connection.
+
+The public-facing renderer and original author mesh/material/texture
+data are unchanged. Existing original sewn cuff/waist overlays, one
+Jersey trims selector, collar, shorts/socks, shoes and laces remain
+untouched. A diagnostic `outfit.userData.km29ShoulderStripeReport`
+reports only matched seam counts and residuals; no 3D positions
+or third-party GLB are exported. Focused tests include the
+mirrored front/back UV atlas and sleeve with unmatched cases.
+Real owner-local Chrome GLB shoulder visual QA remains pending.
+PR #454 Draft/HOLD, no merge/deploy/DB/asset redistribution.

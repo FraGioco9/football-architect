@@ -1,4 +1,5 @@
 import {findOriginalSewnTrimFaces} from './kit-trim-geometry.mjs';
+import {alignOriginalShoulderStripes} from './kit-stripe-seams.mjs';
 // KM-17: DEV-only kit geometry styles. All colours are canonical club roles
 // or the fixed local neutral allowlist. No arbitrary colour picker or writes.
 export const KIT_PARTS=Object.freeze(["jersey","shorts","socks"]);
@@ -174,7 +175,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km27-original-source-fold-overlays-v1";
+export const KIT_STRIPE_SHADER_KEY="km29-original-uv-shoulder-seam-phase-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -573,15 +574,33 @@ export function applyKitDesign(outfit,state,THREE){
       throw new Error("Kit Maker material cannot be edited");
   // Install narrow overlays on actual sewn faces, never create a fake rim mask.
   colourOriginalSewnTrims(outfit,prepared,THREE,details.trim);
-  for(const {part,material,meshName,metric} of prepared){
+  // KM-29: source UV islands have independent origins. At real shoulder
+  // stitches, align their stripe phase while retaining physical UV width.
+  // A missing/unreliable seam leaves the existing source mapping intact.
+  let shoulder={adjustments:new Map(),report:{status:"inactive"}};
+  if(state.styles.jersey==="vertical-stripes"){
+    try{
+      shoulder=alignOriginalShoulderStripes(outfit,prepared);
+      outfit.userData??={};
+      outfit.userData.km29ShoulderStripeReport=shoulder.report;
+    }catch(error){
+      const reason=String(error?.message??error);
+      if(typeof THREE?.Mesh==="function")
+        console.warn("Kit Maker shoulder stripe calibration skipped:",reason);
+      outfit.userData??={};
+      outfit.userData.km29ShoulderStripeReport={status:"skipped",reason};
+    }
+  }
+  for(const {part,material,meshName,metric,geometry} of prepared){
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
     const uniforms=installKitStripeShader(material,THREE);
     uniforms.kmTrimRegion.value=region==="collar"?1:
       region==="cuffs"?2:region==="hem"?3:0;
     uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");
 
-    uniforms.kmStripeFabricOrigin.value=metric.originU;
-    uniforms.kmStripeFabricScale.value=metric.metresPerUv;
+    const aligned=part==="jersey"?shoulder.adjustments.get(geometry):null;
+    uniforms.kmStripeFabricOrigin.value=aligned?.originU??metric.originU;
+    uniforms.kmStripeFabricScale.value=aligned?.metresPerUv??metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"
       ?stripeSectionForMesh(meshName):0;
     uniforms.kmStripeEnabled.value=state.styles[part]==="vertical-stripes"?1:0;

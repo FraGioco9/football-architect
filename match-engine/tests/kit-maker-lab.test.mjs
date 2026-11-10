@@ -248,6 +248,11 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.equal(topologyModule.status,200,'Source trim geometry must be served in DEV');
   assert.ok(topologyModule.body.toString('utf8').includes('findOriginalSewnTrimFaces'));
   assert.ok(designJS.includes('cachedKitStripeMetric'));
+  assert.ok(designJS.includes('alignOriginalShoulderStripes'));
+  assert.ok(designJS.includes('km29ShoulderStripeReport'));
+  const seamsModule=await get(server,'/__fa_kit_maker__/kit-stripe-seams.mjs');
+  assert.equal(seamsModule.status,200,'Private DEV shoulder seam calibration must load');
+  assert.ok(seamsModule.body.toString('utf8').includes('alignOriginalShoulderStripes'));
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
   assert.doesNotMatch(designJS,/\bPOST\b|\bPUT\b|\bDELETE\b/);
