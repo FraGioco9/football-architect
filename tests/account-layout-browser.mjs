@@ -14,16 +14,17 @@ try{
    const page=await context.newPage();await page.route('**/api/player/**',r=>r.fulfill({status:401,body:'{}',contentType:'application/json'}));
    for(const route of ['register','login']){
     await page.goto('http://app.localhost:2000/account/'+route);await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
-    if(route==='login'||width>320)assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1),true,`${route} fits ${width}x${height} ${language}`);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const pane=page.locator('.fa-shell-content-scroll');
+    assert.equal(await pane.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,`${route} fits the app pane at ${width}px`);
     for(const id of route==='register'?['account-language','nationality']:['account-language']){
      const trigger=page.locator('#'+id+'-trigger');await trigger.scrollIntoViewIfNeeded();
-     const before=await page.evaluate(()=>scrollY);await trigger.click();
+     const before=await pane.evaluate(el=>el.scrollTop);await trigger.click();
      const menu=page.locator('#'+id+'-menu'),bounds=await menu.boundingBox();
-     assert.ok(bounds.y>=7&&bounds.y+bounds.height<=height-7,`${id} remains inside viewport: ${JSON.stringify(bounds)}`);
+     const clip=await pane.boundingBox();
+     assert.ok(bounds.y>=clip.y+7&&bounds.y+bounds.height<=Math.min(height,clip.y+clip.height)-7,`${id} remains inside the app pane: ${JSON.stringify(bounds)}`);
      assert.ok(['above','below'].includes(await menu.getAttribute('data-menu-placement')));
-     assert.equal(await page.evaluate(()=>scrollY),before,'Opening a dropdown does not scroll the page');
-     await page.keyboard.press('End');assert.equal(await page.evaluate(()=>scrollY),before,'Keyboard navigation scrolls the menu only');
+     assert.equal(await pane.evaluate(el=>el.scrollTop),before,'Opening a dropdown does not scroll the page');
+     await page.keyboard.press('End');assert.equal(await pane.evaluate(el=>el.scrollTop),before,'Keyboard navigation scrolls the menu only');
      await page.keyboard.press('Escape');assert.equal(await trigger.getAttribute('aria-expanded'),'false');assert.equal(await trigger.evaluate(el=>el===document.activeElement),true,'Escape restores dropdown trigger focus');
     }
     checks++;

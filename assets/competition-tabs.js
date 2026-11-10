@@ -4,14 +4,16 @@
   // Match the Settings language combobox interaction and shared CSS classes.
   window.faBindCompetitionMenu=(trigger,menu,options,choose,control,config={})=>{
     let active=0;
-    const {search,empty}=config;
+    const {search,empty,boundary}=config;
     const visible=()=>options.filter(option=>!option.hidden);
     const normalize=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase(document.documentElement.lang).trim();
     function position(){
       if(!config.fitViewport||menu.hidden)return;
       menu.style.maxHeight='';
       const bounds=trigger.getBoundingClientRect(),viewport=window.visualViewport;
-      const top=viewport?.offsetTop||0,bottom=top+(viewport?.height||window.innerHeight),gap=6,edge=8;
+      const viewportTop=viewport?.offsetTop||0,viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
+      const clip=boundary?.getBoundingClientRect();
+      const top=Math.max(viewportTop,clip?.top??viewportTop),bottom=Math.min(viewportBottom,clip?.bottom??viewportBottom),gap=6,edge=8;
       const below=Math.max(0,bottom-bounds.bottom-gap-edge),above=Math.max(0,bounds.top-top-gap-edge);
       const cssLimit=parseFloat(getComputedStyle(menu).maxHeight);
       const desired=Math.min(menu.scrollHeight+menu.offsetHeight-menu.clientHeight,Number.isFinite(cssLimit)?cssLimit:Infinity);
@@ -53,7 +55,7 @@
       menu.hidden=false;trigger.setAttribute('aria-expanded','true');(search||trigger).focus({preventScroll:!!config.fitViewport});position();highlight();
     }
     function select(){const option=visible()[active];if(option){choose(option.dataset.menuValue);close(true)}}
-    if(config.fitViewport){window.addEventListener('resize',position,{passive:true});window.addEventListener('scroll',position,{passive:true});window.visualViewport?.addEventListener('resize',position,{passive:true});window.visualViewport?.addEventListener('scroll',position,{passive:true});}
+    if(config.fitViewport){boundary?.addEventListener('scroll',position,{passive:true});window.addEventListener('resize',position,{passive:true});window.addEventListener('scroll',position,{passive:true});window.visualViewport?.addEventListener('resize',position,{passive:true});window.visualViewport?.addEventListener('scroll',position,{passive:true});}
     trigger.addEventListener('click',()=>{if(menu.hidden)open();else close(true);});
     function keydown(event){
       const key=event.key;

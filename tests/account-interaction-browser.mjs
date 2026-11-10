@@ -26,6 +26,8 @@ try{
     await page.waitForFunction(()=>document.documentElement.dataset.accountReady==='true');
     if(route==='account')await page.locator('#protected[aria-busy=false]').waitFor();
     assert.equal(new URL(page.url()).pathname.endsWith('/'),false,'Account URL is canonical');
+    assert.equal(await page.locator('.fa-shell-topbar').count(),1);
+    assert.equal(await page.locator('#app-nav-profile[aria-current=page]').count(),1);
     assert.deepEqual(await page.locator('a[href]').evaluateAll(links=>links.filter(a=>a.origin===location.origin&&a.pathname!=='/'&&a.pathname.endsWith('/')).map(a=>a.href)),[],'Internal links have no trailing slash');
     assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.locator('html').getAttribute('data-theme'),theme);

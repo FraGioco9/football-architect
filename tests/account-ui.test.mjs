@@ -58,3 +58,18 @@ test('registration and recovery send the selected interface locale, not the brow
   assert.match(source,/'Accept-Language':ui\.language/,file);
  }
 });
+
+test('all authentication pages render the shared app shell and one language control',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ for(const route of ['login','register','recover','verify-email']){
+  const html=await readFile(new URL('../account/'+route+'/index.html',import.meta.url),'utf8');
+  assert.match(html,/<aside class="fa-shell-sidebar"/);
+  assert.match(html,/<header class="fa-shell-topbar">/);
+  assert.match(html,/<main class="app-main" id="main-content"/);
+  assert.match(html,/<h1 class="app-page-title"/);
+  assert.match(html,/<section class="app-panel app-authentication-card"/);
+  assert.equal((html.match(/id="account-language-trigger"/g)||[]).length,1);
+  assert.match(html,/<meta name="referrer" content="no-referrer">/);
+  assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
+ }
+});

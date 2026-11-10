@@ -33,7 +33,7 @@ try{
    assert.equal(new URL(await page.locator('[data-account-home]').getAttribute('href'),page.url()).pathname,'/dashboard');
    assert.equal(await page.locator('main').evaluate(el=>getComputedStyle(el).borderTopColor),'rgba(0, 0, 0, 0)');
    assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
-   assert.equal(await page.locator('main.app-panel').count(),1);
+   assert.equal(await page.locator('main.app-main .app-authentication-card').count(),1);
    assert.equal(await page.locator('#account-language').isVisible(),false);
    await page.locator('#nationality option[value="IT"]').waitFor({state:'attached'});
    await page.locator('[name=username]').fill('Francesco_9');
