@@ -173,7 +173,7 @@ function collectGarmentMaterials(outfit){
 // compresses width at the flanks; polar methods create focal points.
 // UV widths are measured in metres by sampling source mesh triangles.
 // Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km24-physical-exterior-trim-v1";
+export const KIT_STRIPE_SHADER_KEY="km25-contour-rim-distance-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -245,7 +245,7 @@ function cachedKitStripeMetric(geometry){
   }
   return metric;
 }
-export function installKitStripeShader(material,THREE){
+export function installKitStripeShader(material,THREE,hasPhysicalRim=false){
   if(material.userData?.kitStripeUniforms)
     return material.userData.kitStripeUniforms;
   if(typeof THREE?.Color!=="function")
@@ -259,9 +259,7 @@ export function installKitStripeShader(material,THREE){
     kmStripeFabricOrigin:{value:0},
     kmStripeFabricScale:{value:1},
     kmTrimRegion:{value:0},
-    kmTrimAxisX:{value:0},
-    kmTrimAxisY:{value:0},
-    kmTrimStartM:{value:0},
+
     kmTrimColor:{value:new THREE.Color("#FFFFFF")},
     kmStripeBase:{value:new THREE.Color("#FFFFFF")},
     kmStripeAccent:{value:new THREE.Color("#111111")}
@@ -276,16 +274,15 @@ export function installKitStripeShader(material,THREE){
     Object.assign(shader.uniforms,uniforms);
     shader.vertexShader=[
       "varying float vKmPatternU;",
-      "varying float vKmTrimProjection;",
-      "uniform float kmTrimAxisX;",
-      "uniform float kmTrimAxisY;"
+      "varying float vKmRimDistance;",
+      ...(hasPhysicalRim?["attribute float kmRimDistance;"]:[])
     ].join("\n")+"\n"+shader.vertexShader.replace("#include <begin_vertex>",
-      "#include <begin_vertex>\n vKmPatternU = uv.x;\n vKmTrimProjection = position.x*kmTrimAxisX + position.y*kmTrimAxisY;");
+      "#include <begin_vertex>\n vKmPatternU = uv.x;\n vKmRimDistance = "+
+        (hasPhysicalRim?"kmRimDistance;":"1000.0;"));
     shader.fragmentShader=[
       "varying float vKmPatternU;",
-      "varying float vKmTrimProjection;",
+      "varying float vKmRimDistance;",
       "uniform float kmTrimRegion;",
-      "uniform float kmTrimStartM;",
       "uniform vec3 kmTrimColor;",
       "uniform float kmStripeEnabled;",
       "uniform float kmStripeWidth;",
@@ -306,63 +303,129 @@ export function installKitStripeShader(material,THREE){
         "if(kmTrimRegion > 0.5 && kmTrimRegion < 1.5){",
         "  diffuseColor.rgb=kmTrimColor;",
         "}else if(kmTrimRegion > 1.5){",
-        "  float edgeAA=max(fwidth(vKmTrimProjection),0.0005);",
-        "  float exteriorMask=smoothstep(kmTrimStartM-edgeAA,kmTrimStartM+edgeAA,vKmTrimProjection);",
+        "  float edgeAA=max(fwidth(vKmRimDistance),0.0004);",
+        "  float exteriorMask=1.0-smoothstep(0.024-edgeAA,0.024+edgeAA,vKmRimDistance);",
         "  diffuseColor.rgb=mix(diffuseColor.rgb,kmTrimColor,exteriorMask);",
         "}"
       ].join("\n"));
   };
-  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY;
+  material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+(hasPhysicalRim?'-rim':'-plain');
   material.userData??={};
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
   return uniforms;
 }
-// KM-24: physical 3D garment openings, not ambiguous flat pattern UV V.
-// Both source material primitives on an arm share the same measured axis.
+// KM-25: The actual cuff and waist edges are curved 3D contours, not
+// global planes or atlas-V cuts. A new shader attribute holds the 3D
+// distance from each garment's local rim. All original buffers are intact.
 export const KIT_CUFF_BORDER_METRES=.012;
 export const KIT_CUFF_FOLD_RETURN_METRES=.012;
 export const KIT_TORSO_HEM_METRES=.024;
-const physicalTrimCache=new WeakMap();
-export function measureKitPhysicalTrimProjection(geometries,region,side=0){
+const RIM_BINS=360,TAU=2*Math.PI;
+const rimCache=new WeakMap();
+function sector(angle){
+  return Math.min(RIM_BINS-1,Math.floor(((angle/TAU+1)%1)*RIM_BINS));
+}
+function contour(raw,isMaximum){
+  const populated=[];
+  for(let i=0;i<RIM_BINS;i++)if(Number.isFinite(raw[i]))populated.push(i);
+  if(populated.length<2)throw new Error("Insufficient physical rim coverage");
+  for(let i=0;i<RIM_BINS;i++){
+    if(Number.isFinite(raw[i]))continue;
+    let best=Infinity,near=populated[0];
+    for(const j of populated){
+      const d=Math.min(Math.abs(j-i),RIM_BINS-Math.abs(j-i));
+      if(d<best){best=d;near=j;}
+    }
+    raw[i]=raw[near];
+  }
+  return raw.map((_,i)=>{
+    const prev=raw[(i+RIM_BINS-1)%RIM_BINS],next=raw[(i+1)%RIM_BINS];
+    return isMaximum?Math.max(prev,raw[i],next):Math.min(prev,raw[i],next);
+  });
+}
+function average3(points){
+  const sum=[0,0,0];
+  for(const p of points)for(let i=0;i<3;i++)sum[i]+=p[i];
+  return sum.map(x=>x/points.length);
+}
+function normalize3(p){
+  const size=Math.hypot(...p);
+  if(size<.01)throw new Error("Degenerate sleeve physical axis");
+  return p.map(x=>x/size);
+}
+export function measureKitPhysicalRimDistances(geometries,region){
   if(!Array.isArray(geometries)||!geometries.length||
-     !["cuffs","hem"].includes(region)||
-     (region==="cuffs"&&side!==1&&side!==-1))
-    throw new Error("Invalid shirt physical edge selection");
-  const points=[];
-  let sx=0,sy=0,sxx=0,sxy=0,syy=0;
+      !["cuffs","hem"].includes(region))
+    throw new Error("Invalid physical jersey rim region");
+  const perMesh=new Map(),samples=[];
   for(const geometry of new Set(geometries)){
     const pos=geometry?.getAttribute?.("position");
-    if(!pos||pos.count<3)
-      throw new Error("Physical trim requires original garment positions");
+    if(!pos||pos.count<3)throw new Error("Physical rim requires original positions");
+    const points=[];
     for(let i=0;i<pos.count;i++){
-      const x=pos.getX(i),y=pos.getY(i);
-      if(!Number.isFinite(x)||!Number.isFinite(y))
-        throw new Error("Nonfinite garment positions for physical trim");
-      points.push([x,y]);sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;syy+=y*y;
+      const p=[pos.getX(i),pos.getY(i),pos.getZ(i)];
+      if(!p.every(Number.isFinite))throw new Error("Nonfinite jersey rim point");
+      points.push(p);samples.push(p);
     }
+    perMesh.set(geometry,points);
   }
-  const n=points.length;
-  let axisX=0,axisY=-1;
-  if(region==="cuffs"){
-    const xx=sxx/n-(sx/n)**2,xy=sxy/n-sx*sy/(n*n),yy=syy/n-(sy/n)**2;
-    if(xx+yy<1e-5)throw new Error("Sleeve too small to fit physical axis");
-    const theta=.5*Math.atan2(2*xy,xx-yy);
-    axisX=Math.cos(theta);axisY=Math.sin(theta);
-    if(axisX*side<0){axisX=-axisX;axisY=-axisY;}
-    if(axisX*side<.2)throw new Error("Sleeve axis must point outward");
+  if(samples.length<6)throw new Error("Insufficient physical rim vertices");
+  const centre=average3(samples),bins=Array(RIM_BINS).fill(
+    region==="cuffs"?-Infinity:Infinity);
+  let coordinate,angular,isMaximum;
+  if(region==="hem"){
+    let xmin=Infinity,xmax=-Infinity,zmin=Infinity,zmax=-Infinity;
+    for(const p of samples){
+      xmin=Math.min(xmin,p[0]);xmax=Math.max(xmax,p[0]);
+      zmin=Math.min(zmin,p[2]);zmax=Math.max(zmax,p[2]);
+    }
+    const cx=(xmin+xmax)/2,cz=(zmin+zmax)/2;
+    coordinate=p=>p[1];
+    angular=p=>sector(Math.atan2(p[2]-cz,p[0]-cx));
+    isMaximum=false;
+  }else{
+    // Use the arm's physical sign: original L/R labels may be reversed
+    // relative to the camera and cannot determine its outward direction.
+    const sign=centre[0]>=0?1:-1;
+    const xs=samples.map(p=>sign*p[0]).sort((a,b)=>a-b);
+    const near=xs[Math.floor((xs.length-1)*.12)];
+    const far=xs[Math.floor((xs.length-1)*.88)];
+    const shoulder=samples.filter(p=>sign*p[0]<=near);
+    const distal=samples.filter(p=>sign*p[0]>=far);
+    if(shoulder.length<3||distal.length<3)
+      throw new Error("Insufficient sleeve samples");
+    const a=average3(shoulder),b=average3(distal),
+      axis=normalize3(b.map((v,i)=>v-a[i]));
+    if(axis[0]*sign<.3)throw new Error("Sleeve direction not outward");
+    const u=normalize3([-axis[1],axis[0],0]);
+    const v=[-axis[2]*u[1],axis[2]*u[0],axis[0]*u[1]-axis[1]*u[0]];
+    const dot=(p,q)=>p[0]*q[0]+p[1]*q[1]+p[2]*q[2];
+    coordinate=p=>dot(p,axis);
+    angular=p=>{
+      const relative=p.map((x,i)=>x-centre[i]);
+      return sector(Math.atan2(dot(relative,v),dot(relative,u)));
+    };
+    isMaximum=true;
   }
-  const projected=points.map(([x,y])=>x*axisX+y*axisY).sort((a,b)=>a-b);
-  const low=projected[0],outer=projected[Math.floor((n-1)*.995)];
-  const width=region==="cuffs"
-    ?KIT_CUFF_BORDER_METRES+KIT_CUFF_FOLD_RETURN_METRES:KIT_TORSO_HEM_METRES;
-  if(outer-low<width*2)throw new Error("Shirt physical panel too short for trim");
-  return Object.freeze({axisX,axisY,startM:outer-width,outerM:outer,
-    spanM:outer-low,count:n});
+  for(const p of samples){
+    const k=angular(p),c=coordinate(p);
+    bins[k]=isMaximum?Math.max(bins[k],c):Math.min(bins[k],c);
+  }
+  const border=contour(bins,isMaximum),result=new Map();
+  for(const [geometry,points] of perMesh){
+    const d=new Float32Array(points.length);
+    for(let i=0;i<points.length;i++){
+      const q=coordinate(points[i]),edge=border[angular(points[i])];
+      d[i]=Math.max(0,isMaximum?edge-q:q-edge);
+    }
+    result.set(geometry,d);
+  }
+  return result;
 }
-function cachedKitPhysicalTrims(outfit,prepared){
-  const prior=physicalTrimCache.get(outfit);
-  if(prior)return prior;
+function cachedKitPhysicalRimDistances(outfit,prepared){
+  const found=rimCache.get(outfit);
+  if(found)return found;
   const groups={right:[],left:[],hem:[]};
   for(const {part,meshName,geometry} of prepared){
     if(part!=="jersey")continue;
@@ -371,14 +434,19 @@ function cachedKitPhysicalTrims(outfit,prepared){
       groups[stripeSectionForMesh(meshName)===1?"right":"left"].push(geometry);
     else if(region==="hem")groups.hem.push(geometry);
   }
-  const out={};
-  for(const [group,geometries] of Object.entries(groups)){
-    if(geometries.length)
-      out[group]=measureKitPhysicalTrimProjection(geometries,
-        group==="hem"?"hem":"cuffs",group==="right"?1:-1);
+  const result=new Map();
+  for(const [key,geometries] of Object.entries(groups)){
+    if(!geometries.length)continue;
+    const samples=measureKitPhysicalRimDistances(geometries,
+      key==="hem"?"hem":"cuffs");
+    for(const [geometry,distances] of samples){
+      if(result.has(geometry))
+        throw new Error("Shared geometry overlaps different trim regions");
+      result.set(geometry,distances);
+    }
   }
-  physicalTrimCache.set(outfit,out);
-  return out;
+  rimCache.set(outfit,result);
+  return result;
 }
 // Strictly identify garment shell primitives, not shoes, inner collar print,
 // or other decorative pieces. Both author material primitives are necessary.
@@ -424,19 +492,23 @@ export function applyKitDesign(outfit,state,THREE){
   for(const {material} of prepared)
     if(!material.userData&&Object.isFrozen(material))
       throw new Error("Kit Maker material cannot be edited");
-  const physicalTrims=cachedKitPhysicalTrims(outfit,prepared);
-  for(const {part,material,meshName,metric} of prepared){
-    const uniforms=installKitStripeShader(material,THREE);
+  const rimDistances=cachedKitPhysicalRimDistances(outfit,prepared);
+  if(rimDistances.size&&typeof THREE.Float32BufferAttribute!=="function")
+    throw new Error("THREE.Float32BufferAttribute required for physical rim");
+  for(const [geometry,distances] of rimDistances){
+    if(typeof geometry?.setAttribute!=="function")
+      throw new Error("Jersey geometry cannot receive rim attribute");
+    if(geometry.getAttribute("kmRimDistance")?.count!==distances.length)
+      geometry.setAttribute("kmRimDistance",
+        new THREE.Float32BufferAttribute(distances,1));
+  }
+  for(const {part,material,meshName,metric,geometry} of prepared){
     const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
+    const uniforms=installKitStripeShader(material,THREE,rimDistances.has(geometry));
     uniforms.kmTrimRegion.value=region==="collar"?1:
       region==="cuffs"?2:region==="hem"?3:0;
     uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");
-    const physical=region==="hem"?physicalTrims.hem:
-      region==="cuffs"?physicalTrims[
-        stripeSectionForMesh(meshName)===1?"right":"left"]:null;
-    uniforms.kmTrimAxisX.value=physical?.axisX??0;
-    uniforms.kmTrimAxisY.value=physical?.axisY??0;
-    uniforms.kmTrimStartM.value=physical?.startM??0;
+
     uniforms.kmStripeFabricOrigin.value=metric.originU;
     uniforms.kmStripeFabricScale.value=metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"

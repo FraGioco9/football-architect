@@ -5,7 +5,11 @@ import {KIT_PARTS,KIT_STYLES,KIT_STRIPE_WIDTH_RANGE,formatKitStripeWidth,isKitSt
   stripeSectionForMesh,measureKitStripeFabricMetric,
   kitJerseyDetailRegion,KIT_CUFF_BORDER_METRES,
   KIT_CUFF_FOLD_RETURN_METRES,KIT_TORSO_HEM_METRES,
-  measureKitPhysicalTrimProjection} from '../../kit-maker/lab/kit-design.mjs';
+  measureKitPhysicalRimDistances} from '../../kit-maker/lab/kit-design.mjs';
+
+class FakeRimAttribute {
+  constructor(array,itemSize){this.array=array;this.itemSize=itemSize;this.count=array.length/itemSize;}
+}
 
 // Minimal BufferGeometry-like fixture with a true flattened sewing-pattern UV
 // and 3D vertex positions. A metre on this cloth is independent of its shape
@@ -25,9 +29,11 @@ function fabricGeometry(tag,metresPerUV=1.52,offset=0,mirror=false){
     getY(i){return points[i][1];},
     getZ(i){return points[i][2];}
   };
-  return {tag,index:null,getAttribute(key){
-    return key==='uv'?uv:key==='position'?position:null;
-  }};
+  const attrs={uv,position};
+  return {tag,index:null,
+    getAttribute(key){return attrs[key]||null;},
+    setAttribute(key,value){attrs[key]=value;return this;}
+  };
 }
 
 
@@ -276,7 +282,7 @@ test('KM-20 flat-fabric UV shader maintains even stripe widths on curved kit',()
   assert.equal(shaderUniforms.kmStripeAccent.value.hex,'#FFFFFF');
   assert.equal(jersey.color.hex,'#FFFFFF',
     'The shader supplies PBR stripe colours; material must not tint them');
-  assert.equal(jersey.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY);
+  assert.equal(jersey.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-plain');
   const shader={
     uniforms:{},
     vertexShader:'void main() {\n#include <begin_vertex>\n}',
@@ -374,7 +380,8 @@ test('KM-18 right and left sleeve stripes use local arm-axis contour coordinates
   store.selectStyle('vertical-stripes');
   store.selectStripeWidth(85);
   const before=meshes.map(m=>m.geometry);
-  applyKitDesign({traverse(fn){meshes.forEach(fn)}},store.getState(),{Color});
+  applyKitDesign({traverse(fn){meshes.forEach(fn)}},store.getState(),
+    {Color,Float32BufferAttribute:FakeRimAttribute});
   const sections=meshes.map(m=>m.material.userData.kitStripeUniforms.kmStripeSection.value);
   assert.deepEqual(sections,[1,-1,0,0,0]);
   assert.equal(meshes[0].material.userData.kitStripeUniforms.kmStripeWidth.value,.085);
@@ -546,40 +553,53 @@ function slopingSleevePoints(side){
   }
   return points;
 }
-test('KM-24 physical 3D edges cover both distal sleeve rings, excluding the shoulder',()=>{
-  assert.equal(KIT_CUFF_BORDER_METRES,.012);
-  assert.equal(KIT_CUFF_FOLD_RETURN_METRES,.012);
-  assert.equal(KIT_TORSO_HEM_METRES,.024);
-  for(const side of [-1,1]){
-    const points=slopingSleevePoints(side);
-    const metric=measureKitPhysicalTrimProjection([
-      physicalPositionCloud(points.slice(0,240)),
-      physicalPositionCloud(points.slice(192))],"cuffs",side);
-    assert.ok(metric.axisX*side>.5);
-    assert.ok(metric.axisY<-.5);
-    assert.ok(Math.abs(metric.outerM-metric.startM-.024)<1e-10);
-    const project=p=>p[0]*metric.axisX+p[1]*metric.axisY;
-    assert.ok(points.filter(p=>p[3]===1).every(p=>project(p)>metric.startM),
-      "Full outer cuff circumference must be trimmed");
-    assert.ok(points.filter(p=>p[3]===0).every(p=>project(p)<metric.startM),
-      "Inner shoulder must remain unchanged");
+test('KM-25 left and right physical cuff bands trace the distal sleeve opening',()=>{
+  assert.equal(KIT_CUFF_BORDER_METRES+KIT_CUFF_FOLD_RETURN_METRES,.024);
+  for(const sign of [-1,1]){
+    const samples=[],rows=20,sides=72,axis=[sign*.18,-.15,.02];
+    const magnitude=Math.hypot(axis[0],axis[1]);
+    for(let row=0;row<=rows;row++)for(let j=0;j<sides;j++){
+      const a=2*Math.PI*j/sides,r=.032*Math.cos(a);
+      const t=row/rows*(1+(.008*Math.sin(a)+.004*Math.cos(3*a))/.25);
+      samples.push([
+        sign*.21+axis[0]*t-axis[1]/magnitude*r,
+        1.56+axis[1]*t+axis[0]/magnitude*r,
+        axis[2]*t+.032*Math.sin(a),row
+      ]);
+    }
+    const parts=[
+      physicalPositionCloud(samples.filter((_,i)=>i%2===0)),
+      physicalPositionCloud(samples.filter((_,i)=>i%2===1))
+    ];
+    const data=measureKitPhysicalRimDistances(parts,'cuffs');
+    for(let i=0;i<samples.length;i++){
+      const distance=data.get(parts[i%2])[Math.floor(i/2)];
+      if(samples[i][3]===rows)
+        assert.ok(distance<.024,'Distal exterior sleeve lip missed');
+      if(samples[i][3]===0)
+        assert.ok(distance>.024,'Shoulder incorrectly coloured');
+    }
   }
 });
-test('KM-24 lowest real 3D waist Y governs hem even for curved cloth',()=>{
-  const points=[];
-  for(let row=0;row<=8;row++)for(let i=0;i<=20;i++){
-    const x=(i/20-.5)*.42;
-    points.push([x,.965+.008*Math.sin(i/20*2*Math.PI)+row*.05,0]);
+test('KM-25 lower trim follows a 3D curved waist rather than a flat plane',()=>{
+  const pts=[],sides=144,rows=20;
+  for(let row=0;row<=rows;row++)for(let j=0;j<sides;j++){
+    const a=2*Math.PI*j/sides,bottom=.96+.012*Math.sin(2*a)+.005*Math.cos(5*a);
+    pts.push([.2*Math.cos(a),bottom+row*.025,.15*Math.sin(a),row]);
   }
-  const metric=measureKitPhysicalTrimProjection([
-    physicalPositionCloud(points.slice(0,90)),
-    physicalPositionCloud(points.slice(90))],"hem");
-  assert.equal(metric.axisX,0);assert.equal(metric.axisY,-1);
-  assert.ok(points.filter(p=>p[1]<.98).every(p=>-p[1]>metric.startM));
-  assert.ok(points.filter(p=>p[1]>1.15).every(p=>-p[1]<metric.startM));
-  assert.throws(()=>measureKitPhysicalTrimProjection([],"hem"),/Invalid/);
-  assert.throws(()=>measureKitPhysicalTrimProjection([
-    physicalPositionCloud([[0,0],[0,.01],[0,.02]])],"hem"),/too short/);
+  const pair=[
+    physicalPositionCloud(pts.filter((_,i)=>i%2===0)),
+    physicalPositionCloud(pts.filter((_,i)=>i%2===1))
+  ];
+  const profiles=measureKitPhysicalRimDistances(pair,'hem');
+  for(let i=0;i<pts.length;i++){
+    const d=profiles.get(pair[i%2])[Math.floor(i/2)];
+    if(pts[i][3]===0)assert.ok(d<.006,'Missed curved lower border');
+    if(pts[i][3]>2)assert.ok(d>.024,'Middle shirt incorrectly coloured');
+  }
+  assert.throws(()=>measureKitPhysicalRimDistances([],'hem'),/Invalid/);
+  assert.throws(()=>measureKitPhysicalRimDistances([
+    physicalPositionCloud([[0,0,0],[0,0,0],[0,0,0]])],'cuffs'),/Insufficient|Degenerate/);
 });
 test('KM-23 the same trim color overrides collar sleeves AND torso bottom in both styles',()=>{
   class Color{constructor(hex){this.hex=hex;}set(hex){this.hex=hex;return this;}}
@@ -598,13 +618,14 @@ test('KM-23 the same trim color overrides collar sleeves AND torso bottom in bot
       ?{tag:'original boots'}:fabricGeometry(name)
   }));
   const geometries=meshes.map(x=>x.geometry),boot=meshes.at(-1).material;
+  const THREE={Color,Float32BufferAttribute:FakeRimAttribute};
   const outfit={traverse(fn){meshes.forEach(fn);}};
   const store=createKitDesignStore();
   store.selectColorLayer('base');store.selectColor('neutral-grey');
   store.selectColorLayer('trim');store.selectColor('neutral-black');
   for(const style of ['solid','vertical-stripes']){
     store.selectStyle(style);
-    const result=applyKitDesign(outfit,store.getState(),{Color});
+    const result=applyKitDesign(outfit,store.getState(),THREE);
     assert.equal(result.changedMaterials,12);
     for(let i=0;i<sourceNames.length-1;i++){
       const region=kitJerseyDetailRegion(sourceNames[i]);
@@ -614,12 +635,10 @@ test('KM-23 the same trim color overrides collar sleeves AND torso bottom in bot
       if(region){
         assert.equal(uniforms.kmTrimColor.value.hex,'#111111');
         if(region!=='collar'){
-          assert.ok(Number.isFinite(uniforms.kmTrimStartM.value));
-          assert.ok(Math.hypot(uniforms.kmTrimAxisX.value,
-            uniforms.kmTrimAxisY.value)>.99);
-          if(region==='hem')assert.equal(uniforms.kmTrimAxisY.value,-1);
-          else assert.ok(uniforms.kmTrimAxisX.value*
-            (sourceNames[i].includes('__38')||sourceNames[i].includes('__39')?1:-1)>0);
+          const attr=meshes[i].geometry.getAttribute('kmRimDistance');
+          assert.ok(attr,'No physical distance on one of the author primitives');
+          assert.equal(attr.count,meshes[i].geometry.getAttribute('position').count);
+          assert.ok([...attr.array].every(d=>Number.isFinite(d)&&d>=0));
         }
       }
       assert.equal(uniforms.kmStripeEnabled.value,
@@ -633,9 +652,9 @@ test('KM-23 the same trim color overrides collar sleeves AND torso bottom in bot
     vertexShader:'void main(){\n#include <begin_vertex>\n}',
     fragmentShader:'void main(){\n#include <color_fragment>\n}'};
   meshes[2].material.onBeforeCompile(shader);
-  assert.match(shader.vertexShader,/vKmTrimProjection = position.x/);
-  assert.match(shader.fragmentShader,/kmTrimStartM/);
-  assert.match(shader.fragmentShader,/smoothstep\(kmTrimStartM/);
+  assert.match(shader.vertexShader,/attribute float kmRimDistance/);
+  assert.match(shader.vertexShader,/vKmRimDistance = kmRimDistance/);
+  assert.match(shader.fragmentShader,/smoothstep\(0.024-edgeAA/);
   assert.match(shader.fragmentShader,/exteriorMask/);
   assert.doesNotMatch(shader.fragmentShader,/vKmPatternV|kmTrimEdgeV/);
   assert.match(shader.fragmentShader,/diffuseColor.rgb=kmTrimColor/);

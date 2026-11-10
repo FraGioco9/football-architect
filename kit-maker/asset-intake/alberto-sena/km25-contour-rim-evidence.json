@@ -1,0 +1,34 @@
+{
+  "revision": "KM-25",
+  "date": "2026-11-10",
+  "pr": 454,
+  "feedback": "Sleeves do not work; waist hem inaccurate",
+  "reason": "Global 3D plane cuts cannot follow irregular exterior garment contour",
+  "method": "360-sector physical contour per arm/torso, per-vertex rim distance supplied to standard PBR shader",
+  "groupMeshNames": {
+    "right": [
+      "FA_jersey__38",
+      "FA_jersey__39"
+    ],
+    "left": [
+      "FA_jersey__62",
+      "FA_jersey__63"
+    ],
+    "waist": [
+      "FA_jersey__9",
+      "FA_jersey__10",
+      "FA_jersey__42",
+      "FA_jersey__43"
+    ]
+  },
+  "bandMetres": 0.024,
+  "newGeometryAttribute": "kmRimDistance",
+  "originalPositionUvNormalIndexUnchanged": true,
+  "originalPrivateGlbInGit": false,
+  "QA": {
+    "synthetic": "evaluated",
+    "actualPrivateGlbChromeSafari": "pending"
+  },
+  "status": "Draft/HOLD",
+  "merge": false
+}

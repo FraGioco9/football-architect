@@ -1111,3 +1111,24 @@ Targeted synthetic geometry and shader tests cover both cuff directions,
 whole sleeve opening and curved lower hem. Owner-local original GLB
 WebGL/Safari visual QA is still pending. PR #454 Draft/HOLD, no merge,
 deployment or remote database work.
+
+## KM-25 — contour-following outer Jersey trims (2026-11-10)
+
+The owner found both sleeve cuffs still incorrect and the waist border
+imprecise after KM-24. A single 3D projection plane cannot represent
+the actual nonplanar distal openings. KM-25 measures one circumferential
+physical rim profile from the **combined material primitives** on each
+arm (38/39 and 62/63), plus a 360-sector wavy lower contour across
+all four front/back torso primitives (9/10/42/43). Every source vertex
+receives its **local metric distance to that external rim** through a
+new shader attribute; the shared allowed Jersey trims colour fills the
+outermost 24mm with antialiasing.
+
+The artist's original vertex positions, UVs, normal/index data, textures
+and local GLB remain unchanged; only new renderer attribute data is
+added after fit, cached once per loaded outfit. The collar, KM-20
+equal-width stripes, boots, shorts, socks and one-colour trim control
+are preserved. Synthetic QA verifies asymmetric sleeves and curved
+waist, but this is **not visual certification** of the private model.
+Real desktop and iPhone Safari QA is still pending. Draft/HOLD, no
+merge/deploy/DB/private binary redistribution.
