@@ -1,4 +1,5 @@
 import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
+import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
 import {readSharedPublicWorld} from './shared-nonproduction-proxy.mjs';
 import {request as httpRequest} from 'node:http';
 import {createRequire} from 'node:module';
@@ -31,6 +32,33 @@ const VIRTUAL = Object.freeze({
   "/__fa_dev__/standings-client.mjs": "dev-standings-preview-client.mjs",
   "/__fa_dev__/stats-data.mjs": "dev-competition-stats-data.mjs",
   "/__fa_dev__/stats-client.mjs": "dev-competition-stats-client.mjs"
+});
+// ME-01: explicit loopback + app-host only. Never listed in public artifacts.
+const MATCH_ENGINE_LAB = Object.freeze({
+  '/dev/match-engine': 'match-engine/lab/index.html',
+  '/__fa_match_engine__/core.mjs': 'match-engine/src/core.mjs',
+  '/__fa_match_engine__/aerodynamics.mjs': 'match-engine/src/aerodynamics.mjs',
+  '/__fa_match_engine__/magnus.mjs': 'match-engine/src/magnus.mjs',
+  '/__fa_match_engine__/calibration-evidence.mjs': 'match-engine/src/calibration-evidence.mjs',
+  '/__fa_match_engine__/universal-ball-readiness.mjs': 'match-engine/src/universal-ball-readiness.mjs',
+  '/__fa_match_engine__/calibration-dataset-intake.mjs': 'match-engine/src/calibration-dataset-intake.mjs',
+  '/__fa_match_engine__/ball3d-trajectory-adapter.mjs': 'match-engine/src/ball3d-trajectory-adapter.mjs',
+  '/__fa_match_engine__/literature-aero-candidate.mjs': 'match-engine/src/literature-aero-candidate.mjs',
+  '/__fa_match_engine__/flight-playback.mjs': 'match-engine/src/flight-playback.mjs',
+  '/__fa_match_engine__/aero-model-review.mjs': 'match-engine/src/aero-model-review.mjs',
+  '/__fa_match_engine__/spin-axis-qa.mjs': 'match-engine/src/spin-axis-qa.mjs',
+  '/__fa_match_engine__/spin-decay-qa.mjs': 'match-engine/src/spin-decay-qa.mjs',
+  '/__fa_match_engine__/spin-retention-evidence.mjs': 'match-engine/src/spin-retention-evidence.mjs',
+  '/__fa_match_engine__/lift-input-qa.mjs': 'match-engine/src/lift-input-qa.mjs',
+  '/__fa_match_engine__/contact-impact-qa.mjs': 'match-engine/src/contact-impact-qa.mjs',
+  '/__fa_match_engine__/lab.mjs': 'match-engine/src/lab.mjs',
+  '/__fa_match_engine__/pitch-markings.mjs': 'match-engine/src/pitch-markings.mjs',
+  '/__fa_match_engine__/numeric-controls.mjs': 'match-engine/src/numeric-controls.mjs',
+  '/__fa_match_engine__/rebound-metrics.mjs': 'match-engine/src/rebound-metrics.mjs',
+  '/__fa_match_engine__/physics-diagnostics.mjs': 'match-engine/src/physics-diagnostics.mjs',
+  '/__fa_match_engine__/lab.css': 'match-engine/lab/lab.css',
+  '/__fa_match_engine__/sidebar-first-paint.js': 'assets/sidebar-first-paint.js',
+  '/__fa_match_engine__/rapier.es.js': 'match-engine/node_modules/@dimforge/rapier3d-deterministic-compat/dist/rapier.mjs'
 });
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -148,6 +176,31 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("%") ||
           raw.includes("\\") || raw.includes("\0") || /\/\.{1,2}(?:\/|$)/.test(raw)) {
         return reject(res, 403);
+      }
+      const labFile = MATCH_ENGINE_LAB[raw];
+      if (labFile) {
+        // Deny the laboratory in LAN, shared Dev/Preview, non-app hosts and public mode.
+        if (!devPreview || !subdomains || !isLoopback(remote) ||
+            req.headers.host !== 'app.localhost:2000') return reject(res, 404);
+        let bytes = await safeFile(root, labFile);
+        if (raw === '/dev/match-engine') {
+          const canonicalDashboard = await safeFile(root, 'dashboard/index.html');
+          bytes = Buffer.from(renderMatchEngineLab(bytes.toString('utf8'), canonicalDashboard.toString('utf8')), 'utf8');
+        }
+        if (raw === '/__fa_match_engine__/sidebar-first-paint.js')
+          bytes = Buffer.from(labFirstPaintBootstrap(bytes.toString('utf8')), 'utf8');
+        const type = TYPES[extname(labFile)];
+        if (!type) return reject(res, 404);
+        res.writeHead(200, {
+          'Content-Type': type,
+          'Cache-Control': 'private, no-store',
+          'X-Robots-Tag': 'noindex, nofollow',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+          'Content-Security-Policy': "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+        });
+        res.end(req.method === 'HEAD' ? undefined : bytes);
+        return;
       }
       // Club aliases share ROUTE-02 validation; temporal parameters belong only to Fixtures/Stats.
       const clubPath=raw.replace(/\/index\.html$/,"");
@@ -269,6 +322,12 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",DEBUG_MODE_BOOTSTRAP+'\n</head>'),"utf8");
+      // Add the DEV-only entry to the existing generated navigation, without changing
+      // any other sidebar group or the underlying public/generated HTML.
+      if (devPreview && subdomains && isLoopback(remote) &&
+          req.headers.host === 'app.localhost:2000' && type === TYPES[".html"] &&
+          body.includes('<nav class="fa-shell-nav"'))
+        body = Buffer.from(addDevelopmentToAppHtml(body.toString('utf8')), 'utf8');
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": raw === "/favicon.ico" || raw === "/favicon.svg" ? "public, max-age=86400" : "no-store",

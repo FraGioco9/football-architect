@@ -1,0 +1,142 @@
+/* ME-01 — compact local laboratory using canonical Football Architect design tokens. */
+.me-page-heading .app-page-title{margin:0;color:var(--text);font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2}
+.me-subtitle{margin:6px 0 0;color:var(--muted);font-size:12px}
+.me-theme-picker{flex:none}
+.me-theme-picker .app-theme-choice{min-width:64px;min-height:36px;padding:6px 10px;font-size:11px}
+.me-status{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.3;min-height:15px}
+.me-status.error{color:#c68f8f;font-weight:650}
+html[data-theme="light"] .me-status.error{color:#8a4040}
+.me-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start;gap:12px;margin-top:12px}
+.me-panel{min-width:0;padding:clamp(10px,1.2vw,14px)}
+.me-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:7px 10px;margin-bottom:10px}
+.me-preset-control{display:grid;gap:5px;flex:1 1 205px;min-width:160px}
+.me-speed-control{display:grid;gap:5px;flex:0 0 92px}
+.me-field-label{display:block;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
+.me-dropdown{min-width:0;width:100%;z-index:auto}
+.me-dropdown:has(.language-menu:not([hidden])){z-index:35}
+.me-dropdown .language-trigger{min-width:0;width:100%;min-height:36px;font-size:12px;font-weight:650}
+.me-dropdown .language-menu{inset-inline-start:0;inset-inline-end:auto;width:100%;min-width:100%;max-height:min(250px,40svh)}
+.me-dropdown .language-option{font-size:12px;font-weight:650;min-height:38px}
+.me-dropdown .language-option:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.me-button-group{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.me-button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;cursor:pointer}
+.me-button:hover:not(:disabled){background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.me-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.me-button.me-button-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.me-button.me-button-primary:hover:not(:disabled){background:var(--primary-hover);border-color:var(--primary-hover)}
+.me-button:disabled{opacity:.45;cursor:not-allowed}
+.me-canvas-frame{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:#18533b}
+.me-canvas-frame canvas{display:block;width:100%;height:auto;aspect-ratio:1050/680;background:#18533b}
+/* Maximize the pitch within available desktop height: 105:68 aspect and fixed
+ * vertical workspace overhead. Short viewports need a shallower slope.
+ * Width also respects the actual grid column; never clip on mobile. */
+.me-pitch-frame{display:flex;align-items:center;justify-content:center;border:0;background:transparent;overflow:visible}
+.me-pitch-frame canvas{box-sizing:border-box;display:block;width:min(100%, 1200px, calc(154dvh - 540px));max-width:100%;height:auto;aspect-ratio:105/68;border:1px solid var(--line);border-radius:var(--fa-radius-control)}
+.me-elevation-frame{display:flex;align-items:center;justify-content:center;background:#152a34}
+.me-elevation-frame canvas{width:min(100%, 36.6dvh);height:auto;aspect-ratio:560/260;background:#152a34}
+.me-at-a-glance{display:flex;align-items:center;flex-wrap:wrap;gap:5px 18px;margin-top:9px;color:var(--muted);font-size:11px}
+.me-at-a-glance strong{margin-left:5px;color:var(--text);font-weight:750;font-variant-numeric:tabular-nums}
+.me-side{display:grid;align-content:start;gap:12px;min-width:0}
+.me-elevation-panel{padding-block:10px}.me-elevation-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;margin-bottom:8px}
+.me-elevation-panel h2{margin:0;font-size:14px}
+.me-bounce-result{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;font-weight:700}
+.me-bounce-result[hidden]{display:none}
+.me-advanced{min-width:0;padding:10px 12px}
+.me-advanced summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;font-size:13px;font-weight:750;color:var(--text)}
+.me-advanced summary::-webkit-details-marker{display:none}
+.me-advanced summary::marker{content:""}
+.me-advanced summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.me-details-chevron{flex:none;color:var(--muted)}
+.me-advanced[open] .me-details-chevron{transform:rotate(180deg)}
+.me-advanced-body{display:grid;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+.me-hint{margin:0!important;color:var(--muted)!important;font-size:11px!important;line-height:1.55!important}
+.me-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.me-field{display:grid;gap:3px;min-width:0;color:var(--muted);font-size:10px;font-weight:700;line-height:1.3}
+.me-field input{display:block;width:100%;min-width:0;min-height:32px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:550;font-variant-numeric:tabular-nums}
+
+/* Two-decimal spinners: the site chevron/palette, never native browser arrows.
+ * Captions are inert text; only the input box and arrow buttons have interaction. */
+.me-field-caption{display:block;color:var(--muted);font-size:10px;font-weight:700;line-height:1.3;cursor:default;user-select:none;transition:none;animation:none}
+.me-number-control{display:grid;grid-template-columns:minmax(0,1fr) 22px;align-items:stretch;height:32px;min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);transition:var(--fa-field-transition)}
+.me-number-control:hover{background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.me-number-control:focus-within{border-color:var(--fa-field-focus-border);box-shadow:inset 0 0 0 1px var(--fa-field-focus-border)}
+.me-number-control input,.me-number-control input:hover,.me-number-control input:focus,.me-number-control input:focus-visible{display:block;width:100%;height:100%;min-height:0;min-width:0;padding:0 3px 0 7px;margin:0;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;outline:0!important;appearance:textfield;-moz-appearance:textfield;font-variant-numeric:tabular-nums;font-size:11px}
+.me-number-control input::-webkit-outer-spin-button,.me-number-control input::-webkit-inner-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+.me-number-arrows{display:grid;grid-template-rows:1fr 1fr;min-width:0;border-left:1px solid var(--line)}
+.me-number-arrow{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:0;padding:0;margin:0;border:0;border-radius:0;background:var(--surface);color:var(--muted);font:inherit;cursor:pointer;touch-action:manipulation}
+.me-number-arrow:first-child{border-bottom:1px solid var(--line)}
+.me-number-arrow:hover:not(:disabled){background:var(--fa-field-hover-bg);color:var(--text)}
+.me-number-arrow:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.me-number-arrow:disabled{opacity:.35;cursor:default}
+.me-number-chevron{pointer-events:none;transition:none}
+.me-number-up{transform:rotate(180deg)}
+.me-field input:hover{background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.me-field input:focus-visible{border-color:var(--fa-field-focus-border)}
+.me-advanced-actions{flex-wrap:nowrap;gap:6px}.me-advanced-actions .me-button{flex:1 1 0;min-width:0;min-height:34px;padding:6px 5px;font-size:11px}
+/* Read-only A/B metrics live in a modal instead of increasing the lab page height. */
+.me-metrics-dialog{box-sizing:border-box;position:fixed;width:min(640px,calc(100vw - 28px));max-width:calc(100vw - 28px);max-height:calc(100dvh - 36px);margin:auto;padding:18px;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);color:var(--text);box-shadow:var(--fa-dropdown-shadow);overflow:auto;overscroll-behavior:contain}
+.me-metrics-dialog::backdrop{background:rgba(0,0,0,.65)}
+.me-metrics-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
+.me-metrics-header h2{font-size:18px;line-height:1.3;margin:0 0 3px}
+.me-metrics-header .me-button{flex:none;min-height:32px}
+.me-metrics-dialog section+section{border-top:1px solid var(--line);margin-top:15px;padding-top:12px}
+.me-metrics-dialog h3{font-size:13px;line-height:1.4;margin:0 0 6px;font-weight:750}
+.me-metrics-dialog section>.me-hint{margin:5px 0!important}
+.me-metrics-table-scroll{max-width:100%;overflow-x:auto}
+.me-metrics-table{width:100%;border-collapse:collapse;text-align:right;font-size:11px;font-variant-numeric:tabular-nums}
+.me-metrics-table th,.me-metrics-table td{padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.me-metrics-table th{color:var(--muted);font-weight:700}
+.me-metrics-table th:first-child,.me-metrics-table td:first-child{text-align:left}
+.me-metrics-chart{display:block;width:100%;height:auto;aspect-ratio:560/166;max-height:180px;margin:8px 0 5px;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:#152a34}
+
+/* ME-PHYS-18 read-only pre-impact flight comparison. One native selector;
+   the chart's explicit px/m ratio prevents lateral curve exaggeration. */
+.me-metrics-flight-select{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 4px}
+.me-metrics-flight-select label{color:var(--muted);font-size:11px;font-weight:700}
+.me-metrics-flight-select select{font:inherit;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-control);padding:6px 24px 6px 9px;min-height:32px}
+.me-metrics-flight-select select:focus-visible{outline:2px solid var(--fa-field-focus-border);outline-offset:2px}
+.me-metrics-chart.me-metrics-trajectory-top{aspect-ratio:560/320;max-height:none}
+.me-metrics-chart.me-metrics-trajectory-side{aspect-ratio:560/235;max-height:none}
+
+/* ME-PHYS-19: explicit controls for prerecorded side-by-side ball motion.
+   Range/transport operate only within the diagnostics modal. */
+.me-metrics-animation-options{display:flex;flex-wrap:wrap;gap:5px 18px;align-items:center}
+.me-metrics-animation-transport{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.me-metrics-animation-transport .me-button{min-width:64px}
+.me-metrics-animation-transport label{color:var(--muted);font-size:11px;font-weight:700}
+.me-metrics-animation-transport input[type=range]{flex:1 1 160px;min-width:100px;accent-color:var(--fa-field-focus-border)}
+.me-metrics-animation-transport output{min-width:56px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+#metrics-animation-topdown{aspect-ratio:560/300;max-height:none}
+#metrics-animation-elevation{aspect-ratio:560/200;max-height:none}
+.me-a11y-announcement{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:390px){
+  .me-metrics-animation-transport input[type=range]{flex-basis:100%;order:2}
+}
+
+.me-metrics-dialog>.me-hint:last-child{border-top:1px solid var(--line);padding-top:10px;margin-top:12px!important}
+.me-diagnostics{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:8px;font-size:10px}
+.me-diagnostics>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px}
+.me-diagnostics span{color:var(--muted)}
+.me-diagnostics strong{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+
+/* Only the lab uses compact workspace spacing. Keep normal app pages untouched. */
+.me-lab-page .app-main{padding-top:clamp(10px,1.6dvh,18px);padding-bottom:clamp(10px,1.5dvh,16px)}
+.me-lab-page .app-footer{padding-block:7px}
+.me-parameter-group{display:block;min-width:0;margin:0;padding:0;border:0}
+.me-parameter-group legend{margin:0 0 5px;padding:0;color:var(--muted);font-size:11px;font-weight:700;line-height:1.25}
+.me-advanced .me-hint[hidden]{display:none!important}
+.me-seed-field{max-width:none}
+@media(min-width:901px) and (min-height:1000px){
+ /* Keep the footer visible on tall desktop viewports, too. */
+ .me-pitch-frame canvas{width:min(100%, 1200px, calc(154dvh - 550px))}
+}
+@media(min-width:901px) and (max-height:768px){
+ .me-lab-page .app-main{padding-top:8px;padding-bottom:8px}
+ .me-lab-page .app-footer{padding-block:4px}
+ .me-pitch-frame canvas{width:min(100%, 1200px, calc(113dvh - 218px))}
+ .me-elevation-frame canvas{width:min(100%, 32.3dvh)}
+}
+@media(max-width:900px){.me-layout{grid-template-columns:1fr}.me-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.me-side{grid-template-columns:1fr}.me-theme-picker .app-theme-choice{min-width:54px;padding-inline:9px}.me-page-heading .app-page-title{font-size:clamp(26px,6vw,36px)}}
+@media(max-width:510px){.me-toolbar>.me-button-group{flex:1 1 100%;order:2}.me-toolbar>.me-button-group .me-button{flex:1 1 auto}.me-preset-control{flex:1 1 100%;order:0}.me-speed-control{order:1;flex:1 1 100%}.me-at-a-glance{gap:8px 16px}.me-field-grid{gap:6px}.fa-shell-topbar{gap:7px}.me-theme-picker{gap:4px}.me-theme-picker .app-theme-choice{min-width:42px;padding-inline:6px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.me-details-chevron{transition:none}}
