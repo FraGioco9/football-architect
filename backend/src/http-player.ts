@@ -61,7 +61,7 @@ export async function handlePlayer(request:Request,env:PlayerEnv):Promise<Respon
    return json(200,{sessions:rows.results.map(row=>({current:row.token_digest===session.digest,createdAt:row.created_at,lastSeenAt:row.last_seen_at,expiresAt:row.expires_at}))});
   }
   if(path==='/api/player/permissions')return json(200,{permissions:await readAccountPermissions(db,session.actor.id)});
-  return json(200,{actor:session.actor,authenticated:true,csrfToken:await playerCsrfFor(token),permissions:await readAccountPermissions(db,session.actor.id)});
+  return json(200,{actor:session.actor,profile:session.profile,authenticated:true,csrfToken:await playerCsrfFor(token),permissions:await readAccountPermissions(db,session.actor.id)});
  }catch(error){
   return httpError('account',error,'player_unavailable');
  }

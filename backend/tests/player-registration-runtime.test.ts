@@ -112,7 +112,7 @@ it('propagates the registration request language to simulated delivery',async()=
 it('completes simulated registration, one-time verification and authenticated login without outbound email',async()=>{
  let message:{to:string;token:string;locale?:string}|undefined;
  const config={...base,PLAYER_VERIFICATION_DELIVERY:async(to:string,token:string,locale?:string)=>{message={to,token,locale}}};
- const payload={email:'journey@example.invalid',password,username:'journey_player'};
+ const payload={email:'journey@example.invalid',password,username:'journey_player',nationality:'IT',city:'Rome'};
  const response=await worker.fetch(new Request(origin+'/api/player/register',{
   method:'POST',headers:{Origin:origin,'Content-Type':'application/json','Accept-Language':'it-IT'},
   body:JSON.stringify(payload)
@@ -130,5 +130,8 @@ it('completes simulated registration, one-time verification and authenticated lo
  const sessionCookie=signed.headers.get('set-cookie')!.split(';')[0];
  const restored=await worker.fetch(new Request(origin+'/api/player/session',{headers:{Origin:origin,Cookie:sessionCookie}}),base);
  expect(restored.status).toBe(200);
- expect((await restored.json() as any).authenticated).toBe(true);
+ expect(await restored.json()).toMatchObject({
+  authenticated:true,actor:{email:payload.email},
+  profile:{username:payload.username,nationality:payload.nationality,city:payload.city}
+ });
 });

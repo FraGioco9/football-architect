@@ -78,7 +78,9 @@
   }
   function links(){
    for(const a of doc.querySelectorAll('a[href]')){
-    const href=new URL(a.getAttribute('href'),url);
+    const target=a.getAttribute('href');
+    if(target.startsWith('#'))continue;
+    const href=new URL(target,url);
     if(href.origin!==url.origin)continue;
     if(href.pathname.startsWith('/account'))a.href=accountTarget(href.href,language);
     else{href.pathname=href.pathname.replace(/\/+$/,'')||'/';a.href=href.href;}

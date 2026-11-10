@@ -11,12 +11,13 @@ test('shared sidebar renders Profile directly below Settings',()=>{
  assert.match(html,/id="app-nav-profile" href="\/account"/);
 });
 
-test('account uses the shared app shell and shows email, password change and sign out',()=>{
+test('account uses the shared app shell with a profile table and a collapsed password form',()=>{
  const html=readFileSync(new URL('../account/index.html',import.meta.url),'utf8');
  assert.match(html,/<header class="fa-shell-topbar">/);
  assert.match(html,/<nav class="fa-shell-nav" data-nav01-static/);
  assert.match(html,/<h1[^>]*>Profile<\/h1>/);
- assert.match(html,/<p id="identity">/);
+ assert.match(html,/<table class="app-profile-table"[\s\S]*?<th scope="row" id="username-label">[\s\S]*?<td id="identity">[\s\S]*?<tr id="location-row" hidden>/);
+ assert.match(html,/<details class="app-profile-password">\s*<summary id="change-title">[\s\S]*?<form method="post" id="change-form">/);
  assert.doesNotMatch(html,/id="(?:security|sessions-summary|revoke-button|delete-form)"/);
- assert.match(html,/<form method="post" id="change-form">[\s\S]*?<button[^>]*id="logout-button"/);
+ assert.match(html,/<button[^>]*id="logout-button"/);
 });

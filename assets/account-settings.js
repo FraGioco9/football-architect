@@ -7,13 +7,31 @@ it:["Profilo","Cambia password","Password attuale","Nuova password","Cambia pass
 de:["Profil","Passwort ändern","Aktuelles Passwort","Neues Passwort","Passwort ändern","Abmelden","Sitzung wird geprüft…","Bitte anmelden.","Passwort geändert. Bitte erneut anmelden.","Vorgang fehlgeschlagen.","Anmelden"],
 es:["Perfil","Cambiar contraseña","Contraseña actual","Nueva contraseña","Cambiar contraseña","Cerrar sesión","Comprobando sesión…","Inicia sesión.","Contraseña cambiada. Vuelve a iniciar sesión.","La operación ha fallado.","Acceder"],
 fr:["Profil","Modifier le mot de passe","Mot de passe actuel","Nouveau mot de passe","Modifier le mot de passe","Se déconnecter","Vérification de la session…","Veuillez vous connecter.","Mot de passe modifié. Reconnectez-vous.","Opération impossible.","Se connecter"]};
-const emailLabels={en:'Email',it:'Email',de:'E-Mail',es:'Correo electrónico',fr:'E-mail'};
+const profileLabels={
+ en:['Username','Email','Location'],it:['Nome utente','Email','Località'],
+ de:['Benutzername','E-Mail','Ort'],es:['Nombre de usuario','Correo electrónico','Ubicación'],
+ fr:['Nom d’utilisateur','E-mail','Localisation']
+};
+let profile;
 let t=translations[ui.language];
 const ids=['title','change-title','current-label','new-label','change-button','logout-button','loading'];
+function renderProfile(locale){
+ const username=profile?.username;
+ document.getElementById('username-value').textContent=username||'';
+ document.getElementById('username-row').hidden=!username;
+ const nationality=profile?.nationality;
+ const region=typeof nationality==='string'&&/^[A-Z]{2}$/.test(nationality)?nationality:'';
+ const country=region&&typeof Intl.DisplayNames==='function'
+  ?new Intl.DisplayNames([locale],{type:'region'}).of(region):region;
+ const location=[country,profile?.city].filter(Boolean).join(' · ');
+ document.getElementById('location-value').textContent=location;
+ document.getElementById('location-row').hidden=!location;
+}
 ui.bind(value=>{
  const next=translations[value];ui.translateStatus(t,next);t=next;
  ids.forEach((id,i)=>document.getElementById(id).textContent=t[i]);
- document.getElementById('profile-title').textContent=emailLabels[value];
+ ['username-label','profile-title','location-label'].forEach((id,i)=>document.getElementById(id).textContent=profileLabels[value][i]);
+ renderProfile(value);
  document.querySelector('#login-link a').textContent=t[10];document.title=t[0]+' — Football Architect';
 });
 const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link'),loading=document.getElementById('loading');
@@ -25,6 +43,8 @@ async function init(){try{
  const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[9]);return;}
  const value=await r.json();if(!value?.authenticated||typeof value.csrfToken!=='string'||!value.actor||typeof value.actor.email!=='string'){redirectToLogin();return;}
  csrf=value.csrfToken;document.getElementById('identity').textContent=value.actor.email;
+ profile=value.profile;
+ renderProfile(ui.language);
  protectedPanel.hidden=false;loading.hidden=true;
 }catch{unauthenticated(t[9])}}
 async function execute(button,fn){if(button.disabled)return;button.disabled=true;ui.feedback(status,'');try{await fn()}catch(error){if(error?.status===401){redirectToLogin();return;}ui.feedback(status,t[9]);}finally{button.disabled=false}}

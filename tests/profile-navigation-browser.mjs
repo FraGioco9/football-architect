@@ -8,13 +8,13 @@ let checks=0;
 try{
  preview.listen(2000,'127.0.0.1');await once(preview,'listening');
  const labels={en:'Profile',de:'Profil',es:'Perfil',fr:'Profil',it:'Profilo'};
- for(const language of Object.keys(labels))for(const width of [390,1440])for(const authenticated of [false,true]){
+ for(const language of Object.keys(labels))for(const width of [320,390,1440])for(const authenticated of [false,true]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    await context.addInitScript(lang=>localStorage.setItem('football-architect:language',lang),language);
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    let sessions=0, sessionLists=0;
-   await page.route('**/api/player/session',r=>{sessions++;return r.fulfill({status:authenticated?200:401,contentType:'application/json',body:authenticated?JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[]}):'{}'});});
+   await page.route('**/api/player/session',r=>{sessions++;return r.fulfill({status:authenticated?200:401,contentType:'application/json',body:authenticated?JSON.stringify({authenticated:true,actor:{id:'synthetic-player',email:'synthetic@example.invalid'},csrfToken:'a'.repeat(64),permissions:[],profile:width===1440?{username:null,nationality:null,city:null}:{username:'synthetic_player',nationality:'IT',city:'Rome'}}):'{}'});});
    await page.route('**/api/player/sessions',r=>{
     sessionLists++;
     return r.fulfill({status:200,contentType:'application/json',body:'{"sessions":[]}'});
@@ -30,11 +30,27 @@ try{
    if(authenticated){
     await page.waitForURL(url=>url.pathname==='/account');await page.locator('#protected').waitFor();
     assert.equal(await page.locator('.fa-shell-topbar').isVisible(),true);
+    assert.equal(await page.locator('#fa-skip-link').getAttribute('href'),'#main-content');
     assert.equal(await page.locator('.fa-shell-nav [aria-current="page"]').getAttribute('id'),'app-nav-profile');
     assert.equal(await page.locator('h1').textContent(),labels[language]);
     assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
+    assert.equal(await page.locator('#username-row').isVisible(),width!==1440);
+    assert.equal(await page.locator('#location-row').isVisible(),width!==1440);
+    if(width!==1440){
+     assert.equal(await page.locator('#username-value').textContent(),'synthetic_player');
+     const country=new Intl.DisplayNames([language],{type:'region'}).of('IT');
+     assert.equal(await page.locator('#location-value').textContent(),country+' · Rome');
+    }
+    const table=await page.locator('.app-profile-table').boundingBox();
+    const layout=await page.locator('.app-profile').boundingBox();
+    const title=await page.locator('#title').boundingBox();
+    const signOut=await page.locator('#logout-button').boundingBox();
+    assert.ok(Math.abs((table.x+table.width/2)-(layout.x+layout.width/2))<1,'Table is centered');
+    assert.ok(Math.abs(title.x-layout.x)<1,'Title stays at the start of the page');
+    assert.ok(Math.abs((signOut.x+signOut.width)-(table.x+table.width))<1,'Sign out aligns with the table edge');
+    assert.equal(await page.locator('#change-form').isVisible(),false);
+    await page.locator('#change-title').click();
     assert.equal(await page.locator('#change-form').isVisible(),true);
-    assert.equal(await page.locator('#logout-button').isVisible(),true);
     assert.equal(await page.locator('#security, #delete-form, #revoke-button').count(),0);
     assert.equal(sessionLists,0,'Profile does not request the session list');
    }else{

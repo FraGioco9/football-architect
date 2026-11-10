@@ -83,7 +83,7 @@
     skip.className = "fa-skip-link";
     skip.href = "#main-content";
     skip.dataset.i18n = "skipMain";
-    skip.textContent = "Skip to main content";
+    skip.textContent = (messages[document.documentElement.lang] || messages.en).skipMain;
     // Keep the resting geometry identical under both old and new CSS. FE-01
     // visual parity compares HEAD scripts under two stylesheet baselines.
     if (skip.style) {
@@ -98,6 +98,7 @@
   const trigger = document.getElementById("site-language");
   const languageValue = document.getElementById("language-value");
   const menu = document.getElementById("language-options");
+  if (!languageControl || !trigger || !languageValue || !menu) return;
   const options = [...document.querySelectorAll("[data-language]")];
   const labels = [...document.querySelectorAll("[data-i18n]")];
   const accessible = [...document.querySelectorAll("[data-i18n-aria]")];

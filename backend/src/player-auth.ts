@@ -44,9 +44,9 @@ export async function playerLogin(db:Database,input:unknown,source:string,now:nu
 }
 export async function playerAuthenticate(db:Database,token:string,now:number){
  let digest:string;try{digest=await digestOpaqueToken(token)}catch{throw new ApiError(401,'unauthorized')}
- const row=await db.prepare(`SELECT s.account_id,a.email_normalized,s.credential_version,a.credential_version AS account_version,
+ const row=await db.prepare(`SELECT s.account_id,a.email_normalized,a.username,a.nationality,a.city,s.credential_version,a.credential_version AS account_version,
  a.status,a.email_verified_at,s.csrf_digest,s.created_at,s.last_seen_at,s.expires_at
- FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=?`).bind(digest).first<Session>();
+ FROM player_sessions s JOIN player_accounts a ON a.id=s.account_id WHERE s.token_digest=?`).bind(digest).first<Session & {username:string|null;nationality:string|null;city:string|null}>();
  if(!playerSessionValid(row,now))throw new ApiError(401,'unauthorized');
  const result=await db.prepare(`UPDATE player_sessions SET last_seen_at=MAX(last_seen_at,?) WHERE token_digest=? AND expires_at>?
  AND last_seen_at>? AND last_seen_at<=? AND created_at>0 AND created_at<=?
@@ -55,7 +55,11 @@ export async function playerAuthenticate(db:Database,token:string,now:number){
  AND a.status='active' AND a.email_verified_at IS NOT NULL AND a.credential_version=player_sessions.credential_version)`)
  .bind(now,digest,now,now-IDLE,now,now).run();
  if(result.meta.changes!==1)throw new ApiError(401,'unauthorized');
- return {actor:{id:row!.account_id,email:row!.email_normalized},digest,csrfDigest:row!.csrf_digest};
+ return {
+  actor:{id:row!.account_id,email:row!.email_normalized},
+  profile:{username:row!.username,nationality:row!.nationality,city:row!.city},
+  digest,csrfDigest:row!.csrf_digest
+ };
 }
 export async function playerRequireCsrf(digest:string,token:string|null){
  await requireCsrfDigest(digest,token);

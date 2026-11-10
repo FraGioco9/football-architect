@@ -95,8 +95,14 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 .account-body .language-menu[data-menu-placement="above"]{top:auto;bottom:calc(100% + 6px)}
 
 /* The profile uses the career shell and the existing account controls. */
-.app-profile .account-body{display:block;min-height:0;max-width:640px;margin-top:var(--app-page-section-gap)}
-.app-profile #protected:not([hidden]){display:grid;justify-items:start;gap:var(--fa-space-4)}
-.app-profile #protected>.app-panel{width:100%;margin:0}
-.app-profile #identity{margin-bottom:0}
-.app-profile form{max-width:420px}
+.app-profile .account-body{display:block;min-height:0;width:100%;max-width:640px;margin:var(--app-page-section-gap) auto 0}
+.app-profile #protected:not([hidden]){display:grid;gap:var(--fa-space-3)}
+.app-profile-table{width:100%;table-layout:fixed;border:1px solid var(--border);border-spacing:0;border-radius:var(--fa-radius-panel);background:var(--surface);font-size:var(--fa-text-control)}
+.app-profile-table th,.app-profile-table td{padding:var(--fa-space-3) var(--fa-space-4);text-align:start;overflow-wrap:anywhere}
+.app-profile-table th{width:40%;font-weight:600;color:var(--muted)}
+.app-profile-table tr:not([hidden])~tr:not([hidden])>*{border-top:1px solid var(--line)}
+.app-profile-table td{user-select:text;-webkit-user-select:text}
+.app-profile #logout-button{justify-self:end}
+.app-profile-password{min-width:0;width:min(100%,420px);justify-self:center}
+.app-profile-password summary{width:fit-content;max-width:100%;margin-inline:auto;cursor:pointer;color:var(--muted);font-size:var(--fa-text-control)}
+.app-profile-password summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}

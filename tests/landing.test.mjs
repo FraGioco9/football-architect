@@ -260,3 +260,19 @@ test("TITLE-FIX-01 preserves the Landing browser title in all five languages at 
     assert.equal(stored.document.title, "Football Architect", "saved " + lang);
   }
 });
+
+test("an app shell without the site language menu still gets its keyboard skip link", () => {
+  const main = element(), skip = element();
+  const inserted = [];
+  const document = {
+    documentElement: {lang: "it"},
+    getElementById: id => id === "main-content" ? main : null,
+    createElement: () => skip,
+    body: {insertBefore: node => inserted.push(node)},
+    querySelectorAll: () => []
+  };
+  runInNewContext(js, {document});
+  assert.deepEqual(inserted, [skip]);
+  assert.equal(skip.href, "#main-content");
+  assert.equal(skip.textContent, "Vai al contenuto principale");
+});
