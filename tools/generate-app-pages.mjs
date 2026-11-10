@@ -284,7 +284,7 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
    const content=svg.slice(svg.indexOf(">",svg.indexOf("<svg"))+1,svg.lastIndexOf("</svg>"));
    return '<symbol id="fa-directory-flag-'+code+'" viewBox="0 0 5 4">'+content+'</symbol>';
   }).join('')+'</defs></svg>';
- const firstPaintCards="<div class=\"nav01-card nav01-skeleton-card\" aria-hidden=\"true\"><span class=\"nav01-crest nav01-skeleton-crest\"></span><span class=\"nav01-skeleton-copy\"><span class=\"nav01-skeleton-bar nav01-skeleton-name\"></span><span class=\"nav01-skeleton-bar nav01-skeleton-meta\"></span></span></div>".repeat(6);
+ const firstPaintCards="<div class=\"nav01-card nav01-skeleton-card\" aria-hidden=\"true\"><span class=\"nav01-crest nav01-skeleton-crest\"></span><span class=\"nav01-skeleton-copy\"><span class=\"nav01-skeleton-bar nav01-skeleton-name\"></span><span class=\"nav01-skeleton-bar nav01-skeleton-meta\"></span></span></div>".repeat(16);
  const filteredFirstPaint=content.replace('<div class="nav01-grid" aria-busy="true">',directoryFlagSprite+'<div class="nav01-grid" aria-busy="true">')
   .replace('<p class="nav01-count" aria-live="polite"></p>','<p class="nav01-count" aria-live="polite"><span class="nav01-skeleton-bar nav01-skeleton-count" aria-hidden="true"></span></p>')
   .replace('<p class="nav01-load-status" role="status">Loading clubs…</p>',firstPaintCards)

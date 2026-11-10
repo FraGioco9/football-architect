@@ -761,6 +761,23 @@ html .app-world-club-crest-placeholder[data-club-crest-pending="true"],
 html .app-world-club-crest-placeholder[data-club-crest-loaded="true"]{border-color:transparent;background:transparent}
 .app-world-club-crest-placeholder[data-club-crest-pending="true"]::before,
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]::before{display:none}
+/* PAGE-LOAD-04 B02: one crest loading primitive for Standings, Clubs,
+   Fixtures and Stats. Geometry is set by each containing slot. */
+:root{--fa-crest-skeleton-fill:color-mix(in srgb,var(--muted) 12%,var(--surface))}
+.app-world-club-crest-placeholder.fa-crest-loading,
+#competition-panel-fixtures .app-fixtures-skeleton-crest{display:grid;place-items:center}
+.app-world-club-crest-placeholder.fa-crest-loading::before,
+.app-world-club-crest-placeholder.fa-crest-loading[data-club-crest-pending="true"]::before,
+#competition-panel-fixtures .app-fixtures-skeleton-crest::before{
+ content:"";display:block;width:85%;height:auto;aspect-ratio:1;border-radius:50%;
+ clip-path:none;background:var(--fa-crest-skeleton-fill);opacity:1;
+}
+.app-world-club-crest-placeholder.fa-crest-loading[data-club-crest-loaded="true"]::before{display:none}
+.app-world-club-crest-placeholder.fa-crest-loading[data-club-crest-fallback="true"]::before{
+ display:block;width:85%;height:90%;aspect-ratio:auto;border-radius:0;
+ clip-path:var(--fa-crest-shield-shape);background:var(--fa-crest-shield-fill);opacity:.78;
+}
+
 /* Respect hidden standings while DEV prepares the reordered rows on refresh. */
 .app-world-club-crest-placeholder[data-club-crest-loaded="true"]>.app-club-crest-image{visibility:inherit}
 
@@ -1158,7 +1175,7 @@ svg.site-chevron>path{translate:0 .5px}
 }
 .app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::before{
  content:"";flex:0 0 48px;height:48px;border-radius:50%;
- background:color-mix(in srgb,var(--muted) 12%,var(--surface));
+ background:var(--fa-crest-skeleton-fill);
 }
 .app-standings-skeleton tr>:nth-child(2) :is([data-skeleton-identity-placeholder],.app-skeleton-bar)::after{
  content:"";flex:1 1 auto;min-width:0;height:10px;border-radius:4px;
@@ -1280,7 +1297,7 @@ html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[d
 .app-competition-view-skeleton .app-competition-stat-value{display:flex;align-items:center;min-height:1.25em}
 .app-competition-view-skeleton .app-competition-stat-value>.app-skeleton-bar{width:5ch;height:12px}
 /* Stats loading uses the same anonymous circular crest skeleton as Standings, not the missing-logo shield. */
-.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px;border-radius:50%;background:color-mix(in srgb,var(--muted) 12%,var(--surface))}
+.app-view-skeleton-crest-slot{display:block;flex:0 0 48px;width:48px;height:48px;border-radius:50%;background:var(--fa-crest-skeleton-fill)}
 .app-competition-view-skeleton .fa-dev-stats-team-name{width:110px;max-width:100%;min-width:0}
 .app-competition-view-skeleton .fa-dev-stats-rank{width:12px}
 .app-competition-view-skeleton .fa-dev-stats-top li>strong{width:3.5ch;display:flex;align-items:center;min-height:1.3em}

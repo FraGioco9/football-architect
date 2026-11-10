@@ -56,7 +56,7 @@ test('CLUB-01 derived manifest preserves canonical fields and provisional placem
   const allocation=allocations.allocations.find(a=>a.divisionId.startsWith(c.countryId+'-')&&a.clubIds.includes(c.clubId));
   assert.equal(derived.divisionId,allocation?.divisionId??null);
  }
- assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,64);
+ assert.equal(manifest.clubs.filter(c=>c.divisionId===null).length,164);
 });
 test('CLUB-01 DEV redirects legacy URLs and serves all club views with shared Debug Settings and the DEV summary',async()=>{
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -313,19 +313,28 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });
 
-test('PAGE-LOAD-04 B01: club directory displays 6 anonymous card skeletons before catalog hydration',()=>{
+test('PAGE-LOAD-04 B02: club directory displays 16 anonymous card skeletons before catalog hydration',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  assert.equal(manifest.clubs.length,320);
- assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,6);
- assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-meta"/g)||[]).length,6);
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-name"/g)||[]).length,16);
+ assert.equal((html.match(/class="nav01-skeleton-bar nav01-skeleton-meta"/g)||[]).length,16);
  assert.match(html,/class="nav01-skeleton-bar nav01-skeleton-count"/);
  assert.doesNotMatch(html,/data-nav01-filter-first-paint|data-nav01-loading-first-paint/);
  assert.doesNotMatch(html,/data-search="|<a class="nav01-card"/,'no catalog search keys or links until the manifest loads');
  assert.ok(html.includes('data-nav01-search-first-paint'),'static search input remains');
  assert.ok(html.includes('class="nav01-flag-sprite"'),'static flag definitions remain available');
  for(const c of manifest.clubs)assert.ok(!html.includes(c.fullName),'no pre-rendered club data: '+c.countryId+'-'+c.clubId);
+});
+test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loading primitive',()=>{
+ const shell=read('clubs/_shared/index.html'),styles=read('assets/app.css'),club=read('assets/club-model.js');
+ assert.match(shell,/club-crest fa-crest-loading/,'anonymous Club header reserves a shared circular crest');
+ assert.match(club,/club-crest fa-crest-loading/,'hydrated Club header keeps the loading slot');
+ assert.match(styles,/--fa-crest-skeleton-fill/,'shared token defines the circle');
+ assert.match(styles,/app-fixtures-skeleton-crest::before/,'Fixtures uses the same primitive');
+ assert.match(read('assets/competition-fixtures.js'),/app-world-club-crest-placeholder fa-crest-loading/,'loaded Fixtures use the same shape before the asset resolves');
+ assert.match(read('assets/club-crests.js'),/fa-crest-loading/,'missing crests fall back to a shield only on confirmed absence');
 });
 test('club competition links open Standings with the displayed season and no fixture round',async()=>{
  const {default:model}=await import('../assets/club-model.js');
@@ -362,8 +371,8 @@ test('FE-03: directory filters reuse keyed cards once hydrated without parsing o
 
 test('UI-409 PAGE-LOAD-04: anonymous crest slots are replaced only after the club manifest resolves',()=>{
  const html=read('clubs/index.html'),manifest=JSON.parse(read('clubs/_shared/manifest.json'));
- assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,6,'six anonymous directory cards');
- assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,6,'six reserved shield footprints');
+ assert.equal((html.match(/class="nav01-card nav01-skeleton-card"/g)||[]).length,16,'sixteen anonymous directory cards');
+ assert.equal((html.match(/class="nav01-crest nav01-skeleton-crest"/g)||[]).length,16,'sixteen reserved crest footprints');
  assert.equal((html.match(/<img class="nav01-crest-image"/g)||[]).length,0,'no crest URL before manifest');
  assert.ok(Object.keys(manifest.clubCrests).length>0,'canonical crest mapping remains in fetched catalog');
  assert.match(read('assets/clubs-directory.js'),/m\.clubCrests\?\.\[c\.countryId/,'crests populated from fetched manifest');
