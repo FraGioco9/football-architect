@@ -142,25 +142,31 @@
  }
  const phaseLabel=(key,locale='en')=>(copy[locale]||copy.en).phases[key]||'';
  function renderBracketLinks(rounds){
-  // Keep these dimensions in sync with the fixed tracks in app.css.
-  const cardWidth=320,columnGap=14,headingHeight=42,slotPitch=146;
-  const width=rounds.length*(cardWidth+columnGap)-columnGap;
-  const rows=Math.max(...rounds.map(round=>round.ties.length));
-  const height=headingHeight+rows*slotPitch-8;
-  const center=(row,count)=>headingHeight+rows*slotPitch*(row+.5)/count-13;
-  const ties=new Map(rounds.flatMap((round,column)=>round.ties.map((tie,row)=>[tie.id,{column,y:center(row,round.ties.length)}])));
-  const paths=[];
-  for(const round of rounds)for(const tie of round.ties){
-   const target=ties.get(tie.id);
-   for(const ref of tie.participants){
-    const source=ties.get(ref.tieId);
-    if(!source||source.column+1!==target.column)continue;
-    const x=target.column*(cardWidth+columnGap);
-    const d=`M ${x-columnGap} ${source.y} H ${x-columnGap/2} V ${target.y} H ${x}`;
-    paths.push(`<path data-bracket-link="${escape(ref.tieId)}:${escape(tie.id)}" d="${d}"/>`);
+  // Pre-render the paths for each responsive row configuration. Each SVG is
+  // positioned at its source round's right edge, so wrapped rounds never link.
+  const gap=14,heading=42,pitch=146;
+  const result=rounds.map(()=>[]);
+  for(const columns of [2,3,4]){
+   if(columns>rounds.length||rounds.length===4&&columns===3)continue;
+   for(let index=0;index<rounds.length-1;index++){
+    if(Math.floor(index/columns)!==Math.floor((index+1)/columns))continue;
+    const start=Math.floor(index/columns)*columns;
+    const maxTies=Math.max(...rounds.slice(start,start+columns).map(round=>round.ties.length));
+    const center=(slot,count)=>heading+maxTies*pitch*(slot+.5)/count-13;
+    const sources=new Map(rounds[index].ties.map((tie,slot)=>[tie.id,center(slot,rounds[index].ties.length)]));
+    const paths=[];
+    for(const [slot,tie] of rounds[index+1].ties.entries())for(const ref of tie.participants){
+     if(!sources.has(ref.tieId))continue;
+     const d=`M 0 ${sources.get(ref.tieId)} H ${gap/2} V ${center(slot,rounds[index+1].ties.length)} H ${gap}`;
+     paths.push(`<path data-bracket-link="${escape(ref.tieId)}:${escape(tie.id)}" d="${d}"/>`);
+    }
+    if(paths.length){
+     const height=heading+maxTies*pitch-8;
+     result[index].push(`<svg class="fa-bracket-links" data-bracket-layout="${columns}" width="${gap}" height="${height}" viewBox="0 0 ${gap} ${height}" aria-hidden="true" focusable="false">${paths.join('')}</svg>`);
+    }
    }
   }
-  return paths.length?`<svg class="fa-bracket-links" width="${width}" height="${height}" aria-hidden="true" focusable="false">${paths.join('')}</svg>`:'';
+  return result.map(variants=>variants.join(''));
  }
  function renderPostseason(input,neutral=false){
   const d=definition(input);
@@ -199,7 +205,8 @@
    return `<span>${word('postseasonWinner','Winner')} · <span data-competition-phase="${escape(source.labelKey)}">${phaseLabel(source.labelKey)}</span> ${index}</span>`;
   };
   const phaseTitle=(round,tag,attrs)=>`<${tag} ${attrs} data-competition-phase="${escape(round.labelKey)}">${phaseLabel(round.labelKey)}</${tag}>`;
-  return `<div class="fa-bracket-layout"><div id="app-postseason-bracket" class="fa-bracket-board" data-bracket-columns="${rounds.length}">${renderBracketLinks(rounds)}${rounds.map(round=>{
+  const links=renderBracketLinks(rounds);
+  return `<div class="fa-bracket-layout"><div id="app-postseason-bracket" class="fa-bracket-board" data-bracket-columns="${rounds.length}">${rounds.map((round,index)=>{
    const heading='postseason-round-'+round.id;
    const ties=round.ties.map(tie=>{
     const single=tie.legs===1;
@@ -217,7 +224,7 @@
     const feeders=tie.participants.flatMap(ref=>ref.tieId?[ref.tieId]:[]).join(' ');
     return `<div class="fa-bracket-tie"${domestic?'':` data-postseason-config-tie="${escape(tie.id)}"`}><div class="fa-bracket-card" data-bracket-tie="${escape(tie.id)}" data-bracket-feeders="${escape(feeders)}" role="table" aria-labelledby="${escape(heading)}">${teams.join('')}</div><p class="fa-bracket-resolution" data-postseason-resolution="${escape(id)}" hidden></p></div>`;
    }).join('');
-   return `<section class="fa-bracket-round" data-postseason-round="${escape(round.id)}" aria-labelledby="${escape(heading)}">${phaseTitle(round,'h3','id="'+escape(heading)+'"')}<div class="fa-bracket-ties">${ties}</div></section>`;
+   return `<section class="fa-bracket-round" data-postseason-round="${escape(round.id)}" aria-labelledby="${escape(heading)}">${links[index]}${phaseTitle(round,'h3','id="'+escape(heading)+'"')}<div class="fa-bracket-ties">${ties}</div></section>`;
   }).join('')}</div></div>`;
  }
  // Qualification colors decorate neutral league places; configured sporting outcomes always win.

@@ -360,13 +360,13 @@ try {
  await firstPaint.goto(base+'/competitions/int-1/postseason',{waitUntil:'domcontentloaded'});
  assert.equal(await firstPaint.evaluate(()=>Boolean(window.faCompetitionContext)),false);
  assert.ok(await firstPaint.locator('#competition-panel-postseason').isVisible());
- assert.ok(await firstPaint.locator('.fa-bracket-links').isVisible());
+ assert.ok(await firstPaint.locator('.fa-bracket-links:visible').count()>0);
  assert.ok(await firstPaint.locator('[data-postseason-config-slot]').evaluateAll(nodes=>nodes.length===22&&nodes.every(node=>{
   const crest=getComputedStyle(node,'::before'),name=getComputedStyle(node,'::after');
   return crest.width==='28px'&&crest.height==='28px'&&name.width==='112px'&&name.height==='13px';
  })),
   'First paint reserves the club crest and name');
- const misplacedLinks=await firstPaint.locator('[data-bracket-link]').evaluateAll(paths=>paths.filter(path=>{
+ const misplacedLinks=await firstPaint.locator('.fa-bracket-links:visible [data-bracket-link]').evaluateAll(paths=>paths.filter(path=>{
   const [sourceId,targetId]=path.dataset.bracketLink.split(':');
   const source=document.querySelector('[data-bracket-tie="'+sourceId+'"]').getBoundingClientRect();
   const target=document.querySelector('[data-bracket-tie="'+targetId+'"]').getBoundingClientRect();
@@ -376,6 +376,35 @@ try {
     Math.abs(origin.left+end.x-target.left)>1||Math.abs(origin.top+end.y-target.top-target.height/2)>1;
  }).map(path=>path.dataset.bracketLink));
  assert.deepEqual(misplacedLinks,[],'Static links touch the center edges of the correct cards');
+ for(const width of [320,390,620,768,1440]){
+  await firstPaint.setViewportSize({width,height:900});
+  const connectors=await firstPaint.evaluate(()=>{
+   const cards=new Map([...document.querySelectorAll('[data-bracket-tie]')].map(node=>[node.dataset.bracketTie,node]));
+   const all=[...document.querySelectorAll('[data-bracket-link]')];
+   const visible=all.filter(path=>getComputedStyle(path.ownerSVGElement).display!=='none');
+   const expected=[...new Set(all.map(path=>path.dataset.bracketLink))].filter(link=>{
+    const [source,target]=link.split(':');
+    const a=cards.get(source)?.closest('.fa-bracket-round')?.getBoundingClientRect();
+    const b=cards.get(target)?.closest('.fa-bracket-round')?.getBoundingClientRect();
+    return a&&b&&Math.abs(a.top-b.top)<=1&&b.left>a.left;
+   });
+   const missing=expected.filter(link=>!visible.some(path=>path.dataset.bracketLink===link));
+   const unexpected=visible.filter(path=>!expected.includes(path.dataset.bracketLink)).map(path=>path.dataset.bracketLink);
+   const misplaced=visible.filter(path=>{
+    const [sourceId,targetId]=path.dataset.bracketLink.split(':');
+    const source=cards.get(sourceId).getBoundingClientRect();
+    const target=cards.get(targetId).getBoundingClientRect();
+    const origin=path.ownerSVGElement.getBoundingClientRect();
+    const start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());
+    return Math.abs(origin.left+start.x-source.right)>1||Math.abs(origin.top+start.y-source.top-source.height/2)>1||
+      Math.abs(origin.left+end.x-target.left)>1||Math.abs(origin.top+end.y-target.top-target.height/2)>1;
+   }).map(path=>path.dataset.bracketLink);
+   return {total:visible.length,expected:expected.length,missing,unexpected,misplaced};
+  });
+  assert.deepEqual(connectors,{total:width<=620?0:width===1440?10:6,
+   expected:width<=620?0:width===1440?10:6,missing:[],unexpected:[],misplaced:[]},
+   'First-paint connections match exactly the same-row round pairs at '+width+'px');
+ }
  await firstPaint.close();
  for(const cup of cups)for(const width of widths){
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
@@ -437,15 +466,24 @@ try {
      id:card.dataset.bracketTie,width:card.offsetWidth,height:card.offsetHeight,rows:card.children.length,
      scores:card.querySelectorAll('[data-postseason-score]').length
     })));
-    const availableWidth=await page.locator('.fa-bracket-layout').evaluate(layout=>layout.clientWidth);
+    const geometry=await page.locator('.fa-bracket-board').evaluate(board=>{
+     const rounds=[...board.querySelectorAll('.fa-bracket-round')].map(node=>node.getBoundingClientRect());
+     return {trackWidths:rounds.map(rect=>rect.width),
+      columnCount:new Set(rounds.map(rect=>Math.round(rect.left))).size};
+    });
+    const expectedColumns=width<=390?1:width===768?2:4;
+    assert.equal(geometry.columnCount,expectedColumns,'responsive columns '+cup+' '+width);
     for(const {id,...card} of cardLayout)assert.deepEqual(card,{
-     width:Math.min(320,availableWidth),height:120,rows:2,scores:id==='final'?2:4
-    },cup+' '+width+'px '+id+' card geometry and scores');
-    const links=page.locator('.fa-bracket-links path');
-    assert.equal(await links.count(),10);
+     width:Math.round(geometry.trackWidths[0]),height:120,rows:2,scores:id==='final'?2:4
+    },cup+' '+width+'px '+id+' fluid card geometry and scores');
+    if(width===1440)assert.notEqual(geometry.trackWidths[0],320,'desktop cards adapt to available width');
+    if(expectedColumns>1)assert.ok(geometry.trackWidths.every(cardWidth=>cardWidth>=260),
+      'multi-column cards keep at least 260px for crest, name and scores at '+width+'px');
+    const links=page.locator('.fa-bracket-links:visible [data-bracket-link]');
+    assert.equal(await links.count(),width<=390?0:width===1440?10:6,'Only same-row connections visible');
     assert.equal(await page.locator('[data-postseason-config-slot]').first().evaluate(node=>getComputedStyle(node,'::before').content),'none','Unassigned slots become readable when loading settles');
-    if(width===1440)assert.ok(await page.locator('.fa-bracket-links').isVisible(),'Desktop shows the rendered connections');
-    if(width<=390)assert.equal(await page.locator('.fa-bracket-links').isVisible(),false,'Stacked rounds have no crossing lines');
+    if(width===1440||width===768)assert.ok(await links.count()>0,'Adjacent rounds show connectors');
+    if(width<=390)assert.equal(await links.count(),0,'Single-column rounds have no connector');
     const rounds=page.locator('[data-postseason-round]:visible');
     assert.deepEqual(await rounds.evaluateAll(nodes=>nodes.map(node=>node.dataset.postseasonRound)),['playoffs','quarterfinals','semifinals','final']);
     const columns=await rounds.evaluateAll(nodes=>nodes.map(node=>{
@@ -453,7 +491,8 @@ try {
       return {left:box.left,top:box.top,width:box.width};
     }));
     if(width===1440)assert.ok(columns.every((column,i)=>i===0||column.left>columns[i-1].left&&Math.abs(column.top-columns[0].top)<=1),'Desktop displays one column per round');
-    if(width<=390)assert.ok(columns.every(column=>Math.abs(column.left-columns[0].left)<=1),'Phone stacks rounds vertically');
+    if(width<=390)assert.ok(columns.every(column=>Math.abs(column.left-columns[0].left)<=1),'Small screens stack all rounds');
+    if(width===768)assert.ok(Math.abs(columns[0].top-columns[1].top)<=1&&columns[2].top>columns[0].top&&Math.abs(columns[0].left-columns[2].left)<=1,'Two columns preserve round order at '+width);
     const brokenRanks=await page.locator('[data-postseason-position] strong').evaluateAll(nodes=>nodes.filter(node=>node.getBoundingClientRect().height>parseFloat(getComputedStyle(node).lineHeight)*1.2).map(node=>node.textContent));
     assert.deepEqual(brokenRanks,[],'seed rank digits must stay on one line at '+width+'px');
    }
