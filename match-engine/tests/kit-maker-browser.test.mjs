@@ -142,13 +142,28 @@ test('KM-18: real Chrome shows curved-stripe slider and retains garment settings
         const stripeColor=find('[data-km-color="neutral-ivory"]').getAttribute('aria-pressed');
         const stripeWidth=slider.value;
         const stripeTitle=find('#km-colors-title').textContent;
+        find('[data-km-layer="collar"]').click();
+        find('[data-km-color="neutral-black"]').click();
+        const collarTitle=find('#km-colors-title').textContent;
+        const collarColor=find('[data-km-color="neutral-black"]').getAttribute('aria-pressed');
+        find('[data-km-layer="cuffs"]').click();
+        find('[data-km-color="neutral-grey"]').click();
+        const cuffTitle=find('#km-colors-title').textContent;
+        const cuffColor=find('[data-km-color="neutral-grey"]').getAttribute('aria-pressed');
         find('[data-km-part="shorts"]').click();
+        const detailsHidden=find('[data-km-layer="collar"]').hidden&&
+          find('[data-km-layer="cuffs"]').hidden;
         const shortsSolid=find('[data-km-style="solid"]').getAttribute('aria-pressed');
         const shortsStripeHidden=document.getElementById('km-stripe-settings').hidden;
         find('[data-km-part="jersey"]').click();
         const jerseyRemembered=find('[data-km-style="vertical-stripes"]').getAttribute('aria-pressed');
+        find('[data-km-layer="collar"]').click();
+        const collarRemembered=find('[data-km-color="neutral-black"]').getAttribute('aria-pressed');
         find('[data-km-style="solid"]').click();
+        const collarAvailableInSolid=!find('[data-km-layer="collar"]').hidden;
         return {shown,stripeColor,stripeWidth,sliderReadout,sliderAria,stripeTitle,shortsSolid,
+          collarTitle,collarColor,cuffTitle,cuffColor,detailsHidden,
+          collarRemembered,collarAvailableInSolid,
           shortsStripeHidden,jerseyRemembered,backToSolid:
           document.getElementById('km-stripe-settings').hidden};
       })()`);
@@ -156,6 +171,9 @@ test('KM-18: real Chrome shows curved-stripe slider and retains garment settings
         shown:true,stripeColor:'true',stripeWidth:'115',
         sliderReadout:'11.5 cm',sliderAria:'11.5 cm',
         stripeTitle:'Stripe color',shortsSolid:'true',
+        collarTitle:'Collar color',collarColor:'true',
+        cuffTitle:'Sleeve cuff color',cuffColor:'true',detailsHidden:true,
+        collarRemembered:'true',collarAvailableInSolid:true,
         shortsStripeHidden:true,jerseyRemembered:'true',backToSolid:true
       });
       assert.ok(sample?.pixels?.width>300&&sample?.pixels?.height>400);

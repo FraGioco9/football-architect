@@ -86,13 +86,6 @@
               </section>
               <section class="km-stripe-settings" id="km-stripe-settings" aria-label="Stripe options" hidden>
                 <div class="km-stripe-setting">
-                  <h2 id="km-stripe-layer-title">Stripe colors</h2>
-                  <div class="km-stripe-layer-choices" role="group" aria-labelledby="km-stripe-layer-title">
-                    <button type="button" data-km-layer="base" aria-pressed="true">Base</button>
-                    <button type="button" data-km-layer="accent" aria-pressed="false">Stripe</button>
-                  </div>
-                </div>
-                <div class="km-stripe-setting">
                   <div class="km-stripe-width-header">
                     <label id="km-stripe-width-title" for="km-stripe-width">Stripe width</label>
                     <output id="km-stripe-width-value" for="km-stripe-width">7.5 cm</output>
@@ -103,6 +96,15 @@
                   <div class="km-stripe-width-limits" aria-hidden="true">
                     <span>3 cm</span><span>15 cm</span>
                   </div>
+                </div>
+              </section>
+              <section class="km-color-target" id="km-color-target" aria-labelledby="km-color-target-title">
+                <h2 id="km-color-target-title">Color area</h2>
+                <div class="km-stripe-layer-choices" role="group" aria-labelledby="km-color-target-title">
+                  <button type="button" data-km-layer="base" aria-pressed="true">Body</button>
+                  <button type="button" data-km-layer="accent" aria-pressed="false" hidden>Stripes</button>
+                  <button type="button" data-km-layer="collar" aria-pressed="false">Collar</button>
+                  <button type="button" data-km-layer="cuffs" aria-pressed="false">Sleeve cuffs</button>
                 </div>
               </section>
               <section class="km-colors" aria-labelledby="km-colors-title">

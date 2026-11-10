@@ -198,7 +198,7 @@ export function initKitMakerControls(doc=document,store=kitDesignStore){
   const stripePanel=doc.getElementById("km-stripe-settings");
   const colorHeading=doc.getElementById("km-colors-title");
   if(parts.length!==3||colors.length!==6||styles.length!==2||
-     layers.length!==2||!widthSlider||widthSlider.type!=="range"||
+     layers.length!==4||!widthSlider||widthSlider.type!=="range"||
      !widthValue||!stripePanel||!colorHeading)
     throw new Error("Kit Maker design panel is incomplete");
   for(const button of parts)
@@ -218,22 +218,29 @@ export function initKitMakerControls(doc=document,store=kitDesignStore){
   function render(state){
     const striped=state.style==="vertical-stripes";
     stripePanel.hidden=!striped;
-    colorHeading.textContent=striped
-      ?state.activeLayer==="base"?"Base color":"Stripe color"
-      :"Color";
+    colorHeading.textContent={
+      base:"Body color",accent:"Stripe color",
+      collar:"Collar color",cuffs:"Sleeve cuff color"
+    }[state.activeLayer]||"Color";
     for(const button of parts)
       button.setAttribute("aria-pressed",String(button.dataset.kmPart===state.activePart));
     for(const button of styles)
       button.setAttribute("aria-pressed",String(button.dataset.kmStyle===state.style));
-    for(const button of layers)
-      button.setAttribute("aria-pressed",String(button.dataset.kmLayer===state.activeLayer));
+    for(const button of layers){
+      const layer=button.dataset.kmLayer;
+      button.hidden=(layer==="accent"&&!striped)||
+        ((layer==="collar"||layer==="cuffs")&&state.activePart!=="jersey");
+      button.setAttribute("aria-pressed",String(layer===state.activeLayer));
+    }
     const widthMm=state.stripeWidths[state.activePart];
     widthSlider.value=String(widthMm);
     widthValue.textContent=formatKitStripeWidth(widthMm);
     widthSlider.setAttribute("aria-valuetext",formatKitStripeWidth(widthMm));
-    const selectedRole=state.activeLayer==="accent"
-      ?state.accentSelections[state.activePart]
-      :state.selections[state.activePart];
+    const selectedRole=state.activeLayer==="collar"||state.activeLayer==="cuffs"
+      ?state.detailSelections[state.activeLayer]
+      :state.activeLayer==="accent"
+        ?state.accentSelections[state.activePart]
+        :state.selections[state.activePart];
     const choices=new Map(state.choices.map(choice=>[choice.id,choice]));
     for(const button of colors){
       const role=button.dataset.kmColor,choice=choices.get(role);

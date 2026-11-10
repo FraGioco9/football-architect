@@ -899,3 +899,61 @@ WebGL visual QA are still pending; no visual pass is claimed.
 Scope: **Draft/HOLD PR #454**, no merge, deployment, remote DB
 write, saved kit state, or original artist asset upload. Boot
 black/white materials and shoe positioning remain unchanged.
+
+## KM-21 — independent collar and sleeve cuff colours (2026-11-10)
+
+At the owner's request, the Kit Maker now lets users set two new,
+independent **Jersey** colour targets: **Collar** and **Sleeve cuffs**.
+Both use *exactly* the existing canonical club **Primary/Secondary**
+and the current allowed neutral roles (White, Black, Grey, Ivory);
+there is no custom hex entry, new proposal palette, or API call.
+The in-memory state remembers these roles independently of the body
+and vertical-stripe colours, including when switching between
+Solid/Vertical stripes, garment tabs and clubs. Default remains
+white collar and white cuffs. Changing club updates any selected
+Primary/Secondary detail roles automatically.
+
+The sidebar shows a dedicated first-paint **Color area** control.
+For Jersey it offers Body, optional Stripes (only when vertical
+stripes are selected), Collar and Sleeve cuffs. For Shorts and
+Socks only the applicable Body/Stripes controls are shown. Selecting
+any target reuses the same six permitted colour swatches and
+updates the preview immediately. The slider and the KM-20
+equal-width patterned cloth UV mapping are unaffected.
+
+**Author-source GLB topology was inspected before implementation:**
+`FA_jersey__Pattern2D_3805002` is a separate **outer collar**
+mesh (and its two material primitives become two loader meshes).
+The former printed *inner* neck strip
+`FA_jersey__Pattern_2702362` remains excluded by KM-12.
+The actual sleeve shells are `FA_jersey__38` and
+`FA_jersey__62`; **their hems are not independent meshes**.
+The sleeve pattern has a distal flat-pattern V edge near 0.8891459.
+A **12 mm wide fabric band**, calculated using the source's
+vertical UV tangent scale (approximately **1.577 m per V** on
+both sleeves), marks the last ~0.0076 UV units at that distal
+edge. This band follows the natural sleeve circumference, without
+creating geometry, deforming the cuff or recolouring the full sleeve.
+
+The existing private `MeshStandardMaterial.onBeforeCompile`
+shader gains two independent trim uniforms: an outer-collar
+region that overrides the body/stripe colour for the collar
+mesh, and an antialiased cloth-V band for both sleeve cuffs.
+Only garment materials are affected. The already approved
+black/white boots and white laces, GLB geometry, UVs, source
+textures, fit and object transforms remain unchanged.
+The new checks validate the club/neutral role selection
+before mutating any shader uniforms. No artist binary is
+committed to public GitHub.
+
+**QA:** the focused design suite covers independent choices,
+club-role changes, supported detail mesh IDs, the 12mm fabric
+cuff threshold, 3D shader uniforms in solid and stripe modes,
+unchanged boots and geometry, and atomic rejection of illegal
+detail colours. The page/server assertions now expect four
+colour targets; Chrome's interaction smoke exercises the
+two detail colours and persistence across garment/style
+switches. Full Node/CI, owner-local WebGL and Safari
+visual QA still require verification.
+
+PR #454 remains Draft/HOLD, with no merge/deploy/DB changes.

@@ -38,6 +38,7 @@ export function createKitDesignStore(){
   let clubId=null,club=null,activePart="jersey",activeLayer="base";
   const selections={jersey:"neutral-white",shorts:"neutral-white",socks:"neutral-white"};
   const accentSelections={jersey:"neutral-black",shorts:"neutral-black",socks:"neutral-black"};
+  const detailSelections={collar:"neutral-white",cuffs:"neutral-white"};
   const styles={jersey:"solid",shorts:"solid",socks:"solid"};
   const stripeWidths={jersey:75,shorts:75,socks:75};
   const listeners=new Set();
@@ -51,6 +52,7 @@ export function createKitDesignStore(){
       clubId,style:styles[activePart],activePart,activeLayer,
       selections:{...selections},
       accentSelections:{...accentSelections},
+      detailSelections:{...detailSelections},
       styles:{...styles},
       stripeWidths:{...stripeWidths},
       widths:Object.fromEntries(KIT_PARTS.map(part=>[
@@ -58,7 +60,9 @@ export function createKitDesignStore(){
       ])),
       choices:choices.map(c=>({...c,enabled:Boolean(c.hex)})),
       colors:resolve(selections),
-      accentColors:resolve(accentSelections)
+      accentColors:resolve(accentSelections),
+      detailColors:Object.fromEntries(Object.entries(detailSelections)
+        .map(([part,role])=>[part,byId.get(role)||"#FFFFFF"]))
     };
   };
   const announce=()=>{
@@ -92,14 +96,16 @@ export function createKitDesignStore(){
       if(!KIT_STYLES.some(s=>s.id===style))
         throw new Error("Unsupported Kit Maker style");
       styles[activePart]=style;
-      if(style==="solid")activeLayer="base";
+      if(style==="solid"&&activeLayer==="accent")activeLayer="base";
       return announce();
     },
     selectColorLayer(layer){
-      if(!["base","accent"].includes(layer))
+      if(!["base","accent","collar","cuffs"].includes(layer))
         throw new Error("Unsupported Kit Maker colour layer");
       if(layer==="accent"&&styles[activePart]!=="vertical-stripes")
         throw new Error("Stripe colour is unavailable for solid kits");
+      if((layer==="collar"||layer==="cuffs")&&activePart!=="jersey")
+        throw new Error("Jersey details are unavailable for other garments");
       activeLayer=layer;
       return announce();
     },
@@ -116,7 +122,8 @@ export function createKitDesignStore(){
     },
     selectColor(id){
       if(!kitColorChoices(club).some(c=>c.id===id&&c.hex))return false;
-      (activeLayer==="accent"?accentSelections:selections)[activePart]=id;
+      if(activeLayer==="collar"||activeLayer==="cuffs")detailSelections[activeLayer]=id;
+      else (activeLayer==="accent"?accentSelections:selections)[activePart]=id;
       announce();
       return true;
     }
@@ -180,16 +187,17 @@ export function measureKitStripeFabricMetric(geometry){
   const index=geometry.index;
   if(index&&typeof index.getX!=="function")
     throw new Error("Kit stripes require a readable triangle index");
-  let low=Infinity,high=-Infinity;
+  let low=Infinity,high=-Infinity,lowV=Infinity,highV=-Infinity;
   for(let i=0;i<uv.count;i++){
-    const u=uv.getX(i);
-    if(!Number.isFinite(u))throw new Error("Nonfinite kit pattern UV");
-    low=Math.min(low,u);
-    high=Math.max(high,u);
+    const u=uv.getX(i),v=uv.getY(i);
+    if(!Number.isFinite(u)||!Number.isFinite(v))
+      throw new Error("Nonfinite kit pattern UV");
+    low=Math.min(low,u);high=Math.max(high,u);
+    lowV=Math.min(lowV,v);highV=Math.max(highV,v);
   }
   if(high-low<1e-5)throw new Error("Kit pattern UV has no horizontal extent");
   const count=Math.floor((index?.count??pos.count)/3);
-  const stride=Math.max(1,Math.floor(count/512)),samples=[];
+  const stride=Math.max(1,Math.floor(count/512)),samples=[],samplesV=[];
   for(let tri=0;tri<count;tri+=stride){
     const a=index?index.getX(tri*3):tri*3;
     const b=index?index.getX(tri*3+1):tri*3+1;
@@ -206,16 +214,25 @@ export function measureKitStripeFabricMetric(geometry){
       (dy1*dv2-dy2*dv1)/determinant,
       (dz1*dv2-dz2*dv1)/determinant
     );
-    if(Number.isFinite(scale)&&scale>.1&&scale<10)samples.push(scale);
+    const scaleV=Math.hypot(
+      (dx2*du1-dx1*du2)/determinant,
+      (dy2*du1-dy1*du2)/determinant,
+      (dz2*du1-dz1*du2)/determinant
+    );
+    if(Number.isFinite(scale)&&scale>.1&&scale<10&&
+       Number.isFinite(scaleV)&&scaleV>.1&&scaleV<10){
+      samples.push(scale);samplesV.push(scaleV);
+    }
   }
   if(!samples.length)
     throw new Error("No valid triangles for Kit Maker stripe UV calibration");
-  samples.sort((a,b)=>a-b);
+  samples.sort((a,b)=>a-b);samplesV.sort((a,b)=>a-b);
   const n=samples.length;
-  const metresPerUv=n%2?samples[(n-1)/2]
-    :(samples[n/2-1]+samples[n/2])/2;
+  const median=values=>n%2?values[(n-1)/2]
+    :(values[n/2-1]+values[n/2])/2;
   return Object.freeze({
-    originU:(low+high)/2,metresPerUv,
+    originU:(low+high)/2,metresPerUv:median(samples),
+    metresPerUvV:median(samplesV),lowV,highV,
     sampledTriangles:n,rangeU:high-low
   });
 }
@@ -240,6 +257,9 @@ export function installKitStripeShader(material,THREE){
     kmStripeSection:{value:0},
     kmStripeFabricOrigin:{value:0},
     kmStripeFabricScale:{value:1},
+    kmTrimRegion:{value:0},
+    kmTrimCuffV:{value:0},
+    kmTrimColor:{value:new THREE.Color("#FFFFFF")},
     kmStripeBase:{value:new THREE.Color("#FFFFFF")},
     kmStripeAccent:{value:new THREE.Color("#111111")}
   };
@@ -251,11 +271,15 @@ export function installKitStripeShader(material,THREE){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    shader.vertexShader="varying float vKmPatternU;\n"+shader.vertexShader
-      .replace("#include <begin_vertex>",
-        "#include <begin_vertex>\n vKmPatternU = uv.x;");
+    shader.vertexShader="varying float vKmPatternU;\nvarying float vKmPatternV;\n"+
+      shader.vertexShader.replace("#include <begin_vertex>",
+        "#include <begin_vertex>\n vKmPatternU = uv.x;\n vKmPatternV = uv.y;");
     shader.fragmentShader=[
       "varying float vKmPatternU;",
+      "varying float vKmPatternV;",
+      "uniform float kmTrimRegion;",
+      "uniform float kmTrimCuffV;",
+      "uniform vec3 kmTrimColor;",
       "uniform float kmStripeEnabled;",
       "uniform float kmStripeWidth;",
       "uniform float kmStripeFabricOrigin;",
@@ -271,6 +295,13 @@ export function installKitStripeShader(material,THREE){
         "  float edge=max(fwidth(wave),0.002);",
         "  float alternate=smoothstep(-edge,edge,-wave);",
         "  diffuseColor.rgb=mix(kmStripeBase,kmStripeAccent,alternate);",
+        "}",
+        "if(kmTrimRegion > 0.5 && kmTrimRegion < 1.5){",
+        "  diffuseColor.rgb=kmTrimColor;",
+        "}else if(kmTrimRegion > 1.5){",
+        "  float cuffEdge=max(fwidth(vKmPatternV),0.0001);",
+        "  float cuffBlend=smoothstep(kmTrimCuffV-cuffEdge,kmTrimCuffV+cuffEdge,vKmPatternV);",
+        "  diffuseColor.rgb=mix(diffuseColor.rgb,kmTrimColor,cuffBlend);",
         "}"
       ].join("\n"));
   };
@@ -279,6 +310,15 @@ export function installKitStripeShader(material,THREE){
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
   return uniforms;
+}
+// Creator's outer collar is a distinct mesh; sleeve cuffs are a band
+// on the distal edge of the flat sleeve pattern (12mm in fabric space).
+// The removed KM-12 inner printed collar strip must never reappear.
+export const KIT_CUFF_BORDER_METRES=.012;
+export function kitJerseyDetailRegion(name){
+  if(/^FA_jersey__Pattern2D_3805002(?:_\d+)?$/i.test(name))return "collar";
+  if(/^FA_jersey__(?:38|62)(?:_\d+)?$/i.test(name))return "cuffs";
+  return null;
 }
 // Applies validated UI design state to only the existing private garment
 // materials. The two stripe colours are restricted to active palette choices.
@@ -290,13 +330,18 @@ export function applyKitDesign(outfit,state,THREE){
     throw new Error("Invalid kit style or stripe width");
   const allowed=new Set((state.choices||[])
     .filter(c=>c.enabled&&hexOrNull(c.hex)).map(c=>hexOrNull(c.hex)));
-  const base={},accent={};
+  const base={},accent={},details={};
   for(const part of KIT_PARTS){
     base[part]=hexOrNull(state.colors?.[part]);
     accent[part]=hexOrNull(state.accentColors?.[part]);
     if(!base[part]||!accent[part]||
        !allowed.has(base[part])||!allowed.has(accent[part]))
       throw new Error("Kit colours must use club colours or allowed neutrals");
+  }
+  for(const detail of ["collar","cuffs"]){
+    details[detail]=hexOrNull(state.detailColors?.[detail]);
+    if(!details[detail]||!allowed.has(details[detail]))
+      throw new Error("Kit detail colours must use club colours or allowed neutrals");
   }
   const targets=collectGarmentMaterials(outfit);
   if(typeof THREE?.Color!=="function")
@@ -310,6 +355,11 @@ export function applyKitDesign(outfit,state,THREE){
       throw new Error("Kit Maker material cannot be edited");
   for(const {part,material,meshName,metric} of prepared){
     const uniforms=installKitStripeShader(material,THREE);
+    const region=part==="jersey"?kitJerseyDetailRegion(meshName):null;
+    uniforms.kmTrimRegion.value=region==="collar"?1:region==="cuffs"?2:0;
+    uniforms.kmTrimColor.value.set(region?details[region]:"#FFFFFF");
+    uniforms.kmTrimCuffV.value=region==="cuffs"
+      ?metric.highV-KIT_CUFF_BORDER_METRES/metric.metresPerUvV:0;
     uniforms.kmStripeFabricOrigin.value=metric.originU;
     uniforms.kmStripeFabricScale.value=metric.metresPerUv;
     uniforms.kmStripeSection.value=part==="jersey"

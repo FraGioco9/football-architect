@@ -1,0 +1,41 @@
+{
+  "revision": "KM-21",
+  "date": "2026-11-10",
+  "request": "Choose collar and sleeve cuff colours independently",
+  "choices": [
+    "canonical club primary",
+    "canonical club secondary",
+    "neutral white",
+    "neutral black",
+    "neutral grey",
+    "neutral ivory"
+  ],
+  "initialRoles": {
+    "collar": "neutral-white",
+    "cuffs": "neutral-white"
+  },
+  "meshes": {
+    "outerCollar": "FA_jersey__Pattern2D_3805002",
+    "leftSleeve": "FA_jersey__62",
+    "rightSleeve": "FA_jersey__38",
+    "excludedInnerCollar": "FA_jersey__Pattern_2702362"
+  },
+  "cuff": {
+    "widthMeters": 0.012,
+    "upperUVV": 0.8891459,
+    "measuredMetersPerUVV": {
+      "left": 1.5778716,
+      "right": 1.5772967
+    },
+    "computedBandV": 0.0076055
+  },
+  "materialProcessing": "private PBR shader uniforms per mesh; collar full override, cuff measured distal V strip with smooth antialias; preserve body/stripe geometry and KM-20 UV metric",
+  "ui": "Jersey Body/Stripes(if active)/Collar/Sleeve cuffs; Shorts/Socks Body/Stripes(if active)",
+  "qa": {
+    "isolatedTests": "19 PASS",
+    "browser": "updated pending owner or CI",
+    "fullNode": "PENDING"
+  },
+  "status": "Draft/HOLD",
+  "merge": false
+}

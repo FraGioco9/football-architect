@@ -76,7 +76,10 @@ test('KM-01 canonical DEV lab and both Development sidebar links work on app.loc
   assert.equal((html.match(/class="km-color-option"/g)||[]).length,6);
   assert.equal((html.match(/data-km-part=/g)||[]).length,3);
   assert.equal((html.match(/data-km-style=/g)||[]).length,2);
-  assert.equal((html.match(/data-km-layer=/g)||[]).length,2);
+  assert.equal((html.match(/data-km-layer=/g)||[]).length,4);
+  assert.match(html,/data-km-layer="collar"/);
+  assert.match(html,/data-km-layer="cuffs"/);
+  assert.match(html,/id="km-color-target"/);
   assert.doesNotMatch(html,/data-km-stripe-width=/);
   assert.match(html,/id="km-stripe-width"[^>]*type="range"[^>]*min="30" max="150" step="5" value="75"/);
   assert.match(html,/id="km-stripe-width-value"[^>]*>7\.5 cm</);
@@ -206,6 +209,11 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('distanceOnFabric='));
   assert.ok(designJS.includes('kmStripeFabricOrigin'));
   assert.ok(designJS.includes('kmStripeFabricScale'));
+  assert.ok(designJS.includes('kitJerseyDetailRegion'));
+  assert.ok(designJS.includes('KIT_CUFF_BORDER_METRES'));
+  assert.ok(designJS.includes('kmTrimRegion'));
+  assert.ok(designJS.includes('kmTrimCuffV'));
+  assert.ok(designJS.includes('vKmPatternV = uv.y'));
   assert.ok(designJS.includes('cachedKitStripeMetric'));
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
