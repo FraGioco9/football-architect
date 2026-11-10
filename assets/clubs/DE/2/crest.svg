@@ -1,10 +1,10 @@
 <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
 	<title>SV Reinickendorf</title>
-	<desc>Club crest of SV Reinickendorf, featuring an oak tree with exposed roots, a waterway, and concentric borders in green, rose, and ivory.</desc>
+	<desc>Club crest of SV Reinickendorf, featuring an oak tree with exposed roots, a waterway, and concentric borders in official forest green and white.</desc>
 	<style>
-		.s0 { fill: #437b64 } 
-		.s1 { fill: #b55c70 } 
-		.s2 { fill: #f2ebdd } 
+		.s0 { fill: #235F4A } 
+		.s1 { fill: #FFFFFF } 
+		.s2 { fill: #FFFFFF } 
 	</style>
 	<g id="border-concentric-rings">
 		<path fill-rule="evenodd" class="s0" d="m509 965c-247.19 0-447-202.49-447-453 0-250.51 199.81-453 447-453 247.19 0 447 202.49 447 453 0 250.51-199.81 453-447 453z"/>
