@@ -96,7 +96,8 @@ html[data-theme="light"] .account-body .language-trigger:hover{background:var(--
 
 /* The profile uses the career shell and the existing account controls. */
 .app-profile .account-body{display:block;min-height:0;width:100%;max-width:640px;margin:var(--app-page-section-gap) auto 0}
-.app-profile #protected:not([hidden]){display:grid;gap:var(--fa-space-3)}
+.app-profile .app-competition-tabs{margin:0 0 var(--fa-space-4)}
+.app-profile-panel:not([hidden]){display:grid;gap:var(--fa-space-3)}
 .app-profile-table{width:100%;table-layout:fixed;border:1px solid var(--border);border-spacing:0;border-radius:var(--fa-radius-panel);background:var(--surface);font-size:var(--fa-text-control)}
 .app-profile-table th,.app-profile-table td{padding:var(--fa-space-3) var(--fa-space-4);text-align:start;overflow-wrap:anywhere}
 .app-profile-table th{width:40%;font-weight:600;color:var(--muted)}

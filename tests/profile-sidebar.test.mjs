@@ -17,6 +17,9 @@ test('account uses the shared app shell with a profile table and a collapsed pas
  assert.match(html,/<nav class="fa-shell-nav" data-nav01-static/);
  assert.match(html,/<h1[^>]*>Profile<\/h1>/);
  assert.match(html,/<table class="app-profile-table"[\s\S]*?<th scope="row" id="username-label">[\s\S]*?<td id="identity">[\s\S]*?<tr id="location-row" hidden>/);
+ assert.match(html,/id="profile-tab" role="tab" aria-selected="true"/);
+ assert.match(html,/id="security-panel" role="tabpanel" aria-labelledby="security-tab" hidden/);
+ assert.match(html,/id="edit-profile-form"[\s\S]*?id="security-panel"[\s\S]*?id="change-email-form"/);
  assert.match(html,/<details class="app-profile-password">\s*<summary id="change-title">[\s\S]*?<form method="post" id="change-form">/);
  assert.doesNotMatch(html,/id="(?:security|sessions-summary|revoke-button|delete-form)"/);
  assert.match(html,/<button[^>]*id="logout-button"/);

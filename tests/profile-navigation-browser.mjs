@@ -49,8 +49,41 @@ try{
     assert.ok(Math.abs(title.x-layout.x)<1,'Title stays at the start of the page');
     assert.ok(Math.abs((signOut.x+signOut.width)-(table.x+table.width))<1,'Sign out aligns with the table edge');
     assert.equal(await page.locator('#change-form').isVisible(),false);
+    assert.equal(await page.locator('#profile-tab').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('#edit-profile-title').isVisible(),true);
+    await page.locator('#profile-tab').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#security-tab').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('.app-profile-table').isVisible(),false);
+    assert.equal(await page.locator('#change-email-title').isVisible(),true);
     await page.locator('#change-title').click();
     assert.equal(await page.locator('#change-form').isVisible(),true);
+    if(language==='en'&&width===390){
+     await page.route('**/api/player/account/change-email',async route=>{
+      assert.equal(route.request().headers()['x-csrf-token'],'a'.repeat(64));
+      assert.deepEqual(route.request().postDataJSON(),{email:'updated@example.invalid',currentPassword:'current-password-2026'});
+      await route.fulfill({status:202,json:{accepted:true,verificationRequired:true}});
+     });
+     await page.locator('#change-email-title').click();
+     await page.locator('#change-email-form [name=email]').fill('updated@example.invalid');
+     await page.locator('#change-email-form [name=currentPassword]').fill('current-password-2026');
+     await page.locator('#change-email-button').click();
+     await page.locator('#status[data-kind=success]').filter({hasText:'both addresses'}).waitFor();
+     await page.locator('#profile-tab').click();
+     assert.equal(await page.locator('#identity').textContent(),'synthetic@example.invalid');
+     await page.route('**/api/player/account/profile',async route=>{
+      const profile=route.request().postDataJSON();
+      assert.deepEqual(profile,{username:'renamed_player',nationality:'IT',city:'Milan'});
+      await route.fulfill({status:200,json:{profile}});
+     });
+     await page.locator('#edit-profile-title').click();
+     await page.locator('#edit-profile-form [name=username]').fill('renamed_player');
+     await page.locator('#edit-profile-form [name=city]').fill('Milan');
+     await page.locator('#save-profile-button').click();
+     await page.locator('#status[data-kind=success]').filter({hasText:'Profile updated'}).waitFor();
+     assert.equal(await page.locator('#username-value').textContent(),'renamed_player');
+     assert.equal(await page.locator('#location-value').textContent(),'Italy · Milan');
+    }
     assert.equal(await page.locator('#security, #delete-form, #revoke-button').count(),0);
     assert.equal(sessionLists,0,'Profile does not request the session list');
    }else{

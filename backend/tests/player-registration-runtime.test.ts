@@ -135,3 +135,39 @@ it('completes simulated registration, one-time verification and authenticated lo
   profile:{username:payload.username,nationality:payload.nationality,city:payload.city}
  });
 });
+
+it('updates profile data and changes login email only after both addresses confirm',async()=>{
+ const oldEmail='old@example.invalid',newEmail='new-address@example.invalid';
+ const delivered=new Map<string,string>();
+ const config={...base,PLAYER_VERIFICATION_DELIVERY:async(email:string,token:string)=>{delivered.set(email,token)}};
+ const verify=(token:string)=>send('/api/player/verify-email',{token},config);
+ expect((await send('/api/player/register',{email:oldEmail,password,username:'original_user'},config)).status).toBe(202);
+ expect((await verify(delivered.get(oldEmail)!)).status).toBe(200);
+ const signed=await send('/api/player/login',{email:oldEmail,password},config);
+ const cookie=signed.headers.get('set-cookie')!.split(';')[0],{csrfToken}=await signed.json() as {csrfToken:string};
+ const write=(path:string,payload:unknown,csrf=csrfToken)=>worker.fetch(new Request(origin+'/api/player/account/'+path,{
+  method:'POST',headers:{Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(payload)
+ }),config);
+ const profile={username:'updated_user',nationality:'IT',city:'Rome'};
+ expect((await write('profile',profile,'')).status).toBe(403);
+ const updated=await write('profile',profile);
+ expect(updated.status).toBe(200);
+ expect(await updated.json()).toEqual({profile});
+ expect((await write('profile',{...profile,role:'admin'})).status).toBe(422);
+ expect((await write('change-email',{email:newEmail,currentPassword:password+'x'})).status).toBe(403);
+ delivered.clear();
+ expect((await write('change-email',{email:newEmail,currentPassword:password})).status).toBe(202);
+ expect([...delivered.keys()].sort()).toEqual([newEmail,oldEmail].sort());
+ const first=await verify(delivered.get(newEmail)!);
+ expect(first.status).toBe(200);
+ expect(await first.json()).toEqual({verified:false,remainingConfirmation:true});
+ expect((await verify(delivered.get(newEmail)!)).status).toBe(400);
+ expect((await db.prepare('SELECT email_normalized FROM player_accounts').first())?.email_normalized).toBe(oldEmail);
+ expect((await verify(delivered.get(oldEmail)!)).status).toBe(200);
+ expect((await verify(delivered.get(oldEmail)!)).status).toBe(400);
+ const restored=await worker.fetch(new Request(origin+'/api/player/session',{headers:{Origin:origin,Cookie:cookie}}),config);
+ expect(restored.status).toBe(401);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM player_sessions').first())?.n).toBe(0);
+ expect((await send('/api/player/login',{email:oldEmail,password},config)).status).toBe(401);
+ expect((await send('/api/player/login',{email:newEmail,password},config)).status).toBe(200);
+});

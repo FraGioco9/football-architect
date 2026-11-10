@@ -1,3 +1,4 @@
+import {parseRegistrationProfile} from './player-profile.ts';
 import {ApiError} from './errors.ts';
 import {abortUnless} from './atomic-guard.ts';
 import type {Database} from './database.ts';
@@ -5,7 +6,7 @@ import {validatePasswordShape} from './password-policy.ts';
 import {verifyPassword,hashPassword} from './passwords.ts';
 
 type Identity={actor:{id:string;email:string};digest:string;csrfDigest:string};
-function ensureObject(value:unknown,fields:string[]):Record<string,unknown>{
+export function ensureObject(value:unknown,fields:string[]):Record<string,unknown>{
  if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(422,'invalid_account_request');
  const body=value as Record<string,unknown>;
  if(Object.keys(body).sort().join(',')!==fields.sort().join(','))throw new ApiError(422,'invalid_account_request');
@@ -61,4 +62,16 @@ export async function deletePlayerAccount(db:Database,session:Identity,body:unkn
  ]);
  if(changes[1].meta.changes!==1)throw new ApiError(409,'account_changed');
  return {deleted:true};
+}
+
+export async function updatePlayerProfile(db:Database,session:Identity,input:unknown,now:number){
+ const profile=parseRegistrationProfile(ensureObject(input,['username','nationality','city']));
+ const updated=await db.prepare(`UPDATE player_accounts AS a SET username=?,nationality=?,city=?,updated_at=?
+  WHERE a.id=? AND a.status='active' AND a.email_verified_at IS NOT NULL
+   AND EXISTS(SELECT 1 FROM player_sessions s WHERE s.account_id=a.id AND s.token_digest=?
+    AND s.credential_version=a.credential_version AND s.expires_at>? AND s.last_seen_at>?)
+   AND NOT EXISTS(SELECT 1 FROM player_accounts WHERE id<>a.id AND username=? COLLATE NOCASE)`)
+  .bind(profile.username,profile.nationality,profile.city,now,session.actor.id,session.digest,now,now-604800,profile.username).run();
+ if(updated.meta.changes!==1)throw new ApiError(409,'profile_unavailable');
+ return {profile};
 }

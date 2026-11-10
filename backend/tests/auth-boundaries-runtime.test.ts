@@ -22,7 +22,7 @@ const adminWrites=[
  '/api/admin/seasons/archive','/api/admin/seasons/close','/api/admin/world/reset'
 ];
 const playerReads=['/api/player/session','/api/player/sessions','/api/player/permissions','/api/player/admin/world'];
-const playerWrites=['/api/player/logout','/api/player/account/change-password','/api/player/account/revoke-other-sessions','/api/player/account/delete'];
+const playerWrites=['/api/player/logout','/api/player/account/change-password','/api/player/account/profile','/api/player/account/change-email','/api/player/account/revoke-other-sessions','/api/player/account/delete'];
 function send(path:string,method:'GET'|'POST',cookie?:string,headers:Record<string,string>={}){
  return worker.fetch(new Request(origin+path,{
   method,headers:{Origin:origin,...(cookie?{Cookie:cookie}:{}),...(method==='POST'?{'Content-Type':'application/json'}:{}),...headers},

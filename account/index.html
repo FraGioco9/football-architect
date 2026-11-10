@@ -153,6 +153,11 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           <div class="account-body">
             <p id="loading" role="status">Checking your session…</p>
             <div id="protected" hidden>
+              <div class="app-competition-tabs" role="tablist" aria-labelledby="title">
+                <button class="app-competition-tab is-active" type="button" id="profile-tab" role="tab" aria-selected="true" aria-controls="profile-panel">Profile</button>
+                <button class="app-competition-tab" type="button" id="security-tab" role="tab" aria-selected="false" aria-controls="security-panel" tabindex="-1">Security</button>
+              </div>
+              <div class="app-profile-panel" id="profile-panel" role="tabpanel" aria-labelledby="profile-tab">
               <table class="app-profile-table" aria-labelledby="title">
                 <tbody>
                   <tr id="username-row" hidden><th scope="row" id="username-label">Username</th><td id="username-value"></td></tr>
@@ -162,12 +167,32 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               </table>
               <button class="cta cta-secondary" id="logout-button" type="button">Sign out</button>
               <details class="app-profile-password">
+                <summary id="edit-profile-title">Edit profile</summary>
+                <form method="post" id="edit-profile-form">
+                  <label><span id="edit-username-label">Username</span><input name="username" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" autocomplete="username"></label>
+                  <label><span id="edit-nationality-label">Country</span><select name="nationality" id="profile-nationality" autocomplete="country" disabled><option value=""></option></select></label>
+                  <label><span id="edit-city-label">City</span><input name="city" maxlength="100" autocomplete="address-level2"></label>
+                  <button class="cta cta-primary" type="submit" id="save-profile-button">Save changes</button>
+                </form>
+              </details>
+              </div>
+              <div class="app-profile-panel" id="security-panel" role="tabpanel" aria-labelledby="security-tab" hidden>
+              <details class="app-profile-password">
                 <summary id="change-title">Change password</summary>
                 <form method="post" id="change-form">
                 <div class="account-field"><label for="account-currentPassword"><span id="current-label">Current password</span></label><div class="account-password"><input name="currentPassword" type="password" autocomplete="current-password" required id="account-currentPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-currentPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div></div>
                 <div class="account-field"><label for="account-newPassword"><span id="new-label">New password</span></label><div class="account-password"><input name="newPassword" type="password" autocomplete="new-password" required minlength="15" maxlength="128" aria-describedby="account-newPassword-help" id="account-newPassword"><button type="button" class="account-password-toggle" data-password-toggle aria-controls="account-newPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m4 4 16 16" hidden/></svg></button></div><small id="account-newPassword-help" data-password-help data-met="false">At least 15 characters.</small></div>
                 <button class="cta cta-primary" type="submit" id="change-button">Change password</button></form>
               </details>
+              <details class="app-profile-password">
+                <summary id="change-email-title">Change email</summary>
+                <form method="post" id="change-email-form">
+                  <label><span id="new-email-label">New email</span><input name="email" type="email" required autocomplete="email" maxlength="254"></label>
+                  <label><span id="email-password-label">Current password</span><input name="currentPassword" type="password" required autocomplete="current-password" maxlength="128"></label>
+                  <button class="cta cta-primary" type="submit" id="change-email-button">Send confirmation links</button>
+                </form>
+              </details>
+              </div>
             </div>
             <p id="status" role="status"></p>
             <p id="login-link" hidden><a href="/account/login">Sign in</a></p>
