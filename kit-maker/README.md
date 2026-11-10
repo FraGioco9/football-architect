@@ -1132,3 +1132,26 @@ are preserved. Synthetic QA verifies asymmetric sleeves and curved
 waist, but this is **not visual certification** of the private model.
 Real desktop and iPhone Safari QA is still pending. Draft/HOLD, no
 merge/deploy/DB/private binary redistribution.
+
+## KM-26 — identify existing shirt borders from the original local GLB (2026-11-10)
+
+Owner reports that both KM-25 sleeve trims are inaccurate and the
+waist trim is likely too thick. An existing sewn border may already
+be modelled. Stop guessing UV bands, 3D masks and artificial 24mm widths.
+
+Read-only local diagnostic `inspect-sena-trim-topology.mjs` reads the
+private GLB, recognizes actual open perimeter loops, original material
+boundaries and modeled sharp folds, combining both sleeve primitives
+and the four torso primitives with a 20-micron weld tolerance.
+No geometry is changed, uploaded or shared. Only aggregate counts,
+perimeters, centres, bounds and original material names are reported.
+
+From PowerShell project root:
+```powershell
+node tools/kit-designer-prototype/inspect-sena-trim-topology.mjs > "$env:TEMP/fa-kit-trim-topology.json"
+```
+Examine `sections.rightSleeve`, `sections.leftSleeve` and
+`sections.waist`. Colour only the existing physical hem mesh or
+folded fabric faces once source topology identifies them. The current
+shader is not yet approved by real-model visual QA. PR Draft/HOLD;
+no merge, deployment, remote DB change or artist GLB redistribution.
