@@ -136,11 +136,13 @@ test("HOME-01 keeps five localized language options only in Settings and does no
       assert.match(js,new RegExp('(?:^|\\s)'+lang+': \\{'));
     }
     assert.match(markup,/id="app-language-heading"/);
-    assert.match(markup,/id="app-career-heading"/);
-    assert.match(markup,/id="app-data-heading"/);
-    assert.match(markup,/id="app-about-heading"/);
+    assert.match(markup,/id="app-theme-heading"/);
+    assert.doesNotMatch(markup,/id="app-career-heading"/);
+    assert.doesNotMatch(markup,/id="app-data-heading"/);
+    assert.doesNotMatch(markup,/id="app-about-heading"/);
   }
   assert.doesNotMatch(js,/indexedDB|fetch\(|localStorage\.setItem|simulateMatch/);
+  assert.match(pages.settings,/<template data-settings-admin>\s*<section[^>]*data-admin-settings/);
   assert.doesNotMatch(pages.settings,/data-action="(?:import|export|delete-career)"/);
 });
 

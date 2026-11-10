@@ -80,7 +80,12 @@ try{
     },{selectors:route.selectors,props:properties});
     const regular=await collect(),target=page.locator(route.selectors[0]).first();
     let focused=null;
-    if(await target.count()&&await target.isVisible()){await target.focus();focused=await collect()}
+    if(await target.count()&&await target.isVisible()){
+     await target.focus();
+     // Sample after the reduced-motion focus transition has painted in both contexts.
+     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+     focused=await collect();
+    }
     const screenshot=route.path==="/"&&profile.width===390&&profile.theme==="light"
      ?await page.screenshot({animations:"disabled",clip:{x:0,y:0,width:390,height:96}}):null;
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);

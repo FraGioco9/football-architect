@@ -53,7 +53,7 @@ test("SEARCH-01 responsive and accessible animation contracts",()=>{
 
 test("SEARCH-01 search destinations are limited to real internal routes and heading anchors",()=>{
   const destinations=[...script.matchAll(/\["(page|section)","([^"]+)","([^"]+)","([^"]+)"\]/g)];
-  assert.equal(destinations.length,10);
+  assert.equal(destinations.length,8);
   const known=new Set([...pages,"competitions/index.html"]);
   for(const [,kind,id,description,url] of destinations){
     assert.match(url,/^\/(?:dashboard|calendar|settings|competitions)(?:\/[a-z0-9-]+)?(?:#[a-z-]+)?$/);
@@ -105,21 +105,19 @@ function simulate(language="en",worldCatalogue=null){
   const ids=["app-search-trigger","app-search-dialog","app-search-input","app-search-results",
     "app-search-status","app-search-empty","app-search-close","app-search-heading","app-search-scope",
     "dashboard-title","calendar-title","settings-title","divisions-title","career-status-heading","world-heading",
-    "app-language-heading","app-career-heading","app-data-heading","app-about-heading"];
+    "app-language-heading","app-theme-heading"];
   const nodes=Object.fromEntries(ids.map(id=>[id,el(id)]));
   const labels={
     "dashboard-title":"Dashboard","calendar-title":"Calendar","settings-title":"Settings","divisions-title":"Competitions",
     "career-status-heading":"Career status","world-heading":"World foundations",
-    "app-language-heading":"Language","app-career-heading":"Your career",
-    "app-data-heading":"Data management","app-about-heading":"About the game"
+    "app-language-heading":"Language","app-theme-heading":"Appearance"
   };
   const descriptions={
     careerStatusText:"No active career. Club selection is not available.",
     calendarStatusText:"Match scheduling is not available.",
     languageHelp:"Choose the interface language.",
     worldText:"8 countries, 16 divisions and 320 documented clubs.",
-    dataText:"Save export and import are not available.",
-    aboutText:"Football Architect is a fictional football universe."
+    themeHelp:"Choose the site theme."
   };
   Object.entries(labels).forEach(([key,value])=>nodes[key].textContent=value);
   const document={

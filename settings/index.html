@@ -17,6 +17,7 @@
   <script src="/assets/landing.js" defer></script>
   <script src="/assets/app.js" defer></script>
   <script src="/assets/app-search.js" defer></script>
+  <script>if(new URLSearchParams(location.search).get("view")==="admin")document.documentElement.dataset.settingsView="admin"</script>
   <link rel="stylesheet" href="/assets/admin-settings.css">
   <script src="/assets/admin-settings.js" defer></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
@@ -212,7 +213,8 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                 </div>
               </div>
             </section>
-            <section class="app-panel app-settings-panel admin-settings" data-admin-settings aria-labelledby="admin-heading">
+          </div>
+          <template data-settings-admin><section class="app-panel app-settings-panel admin-settings" data-admin-settings aria-labelledby="admin-heading">
  <h2 id="admin-heading" data-admin-copy="title">World administration</h2>
  <div class="app-settings-panel-content">
  <p data-admin-copy="intro">Public access does not require an account. Operators sign in here to manage the shared world.</p>
@@ -269,29 +271,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  </section>
  </div>
 
- </div></section>
-            <section class="app-panel app-settings-panel" aria-labelledby="app-career-heading">
-              <h2 id="app-career-heading" data-app-i18n="careerPanel">Your career</h2>
-              <div class="app-settings-panel-content">
-                <div class="app-setting-fact"><span data-app-i18n="saveStatus">Saves</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
-                <div class="app-setting-fact"><span data-app-i18n="account">Account</span><strong data-app-i18n="noAccount">Not required</strong></div>
-                <div class="app-setting-fact"><span data-app-i18n="gameplayStatus">Game runtime</span><strong data-app-i18n="notAvailable">Not available yet</strong></div>
-              </div>
-            </section>
-            <section class="app-panel app-settings-panel" aria-labelledby="app-data-heading">
-              <h2 id="app-data-heading" data-app-i18n="dataHeading">Data management</h2>
-              <div class="app-settings-panel-content">
-                <p data-app-i18n="dataText">Import, export and career management will be available only when the save system is implemented. This preview does not create or modify careers.</p>
-              </div>
-            </section>
-            <section class="app-panel app-settings-panel" aria-labelledby="app-about-heading">
-              <h2 id="app-about-heading" data-app-i18n="aboutHeading">About the game</h2>
-              <div class="app-settings-panel-content">
-                <p data-app-i18n="aboutText">Football Architect features an alternative football world with real countries and fictional clubs and divisions. This page is a UI preview, not a playable game.</p>
-                <a class="app-link app-link-secondary app-about-guide" href="/guide" data-app-i18n="openGuide">Explore the game guide</a>
-              </div>
-            </section>
-          </div>
+ </div></section></template>
         </section>
         <section id="app-divisions" class="app-view app-world-view" aria-labelledby="divisions-title" hidden>
           <h1 class="app-page-title" id="divisions-title" data-app-i18n="navCompetitions">Competitions</h1>

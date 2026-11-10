@@ -1,6 +1,6 @@
 // Pairwise coverage, not a Cartesian matrix or physical Safari certification.
 import assert from 'node:assert/strict';
-export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/settings'});
+export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/settings?view=admin'});
 export function browserCases(){
  return ['en','de','es','fr','it'].flatMap((language,i)=>[320,390,768,1440].map((width,j)=>{
   const theme=['dark','light'][(i+j)%2];

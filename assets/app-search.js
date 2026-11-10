@@ -27,9 +27,7 @@
     ["section","career-status-heading","careerStatusText","/dashboard#career-status-heading"],
     ["section","world-heading","worldText","/dashboard#world-heading"],
     ["section","app-language-heading","languageHelp","/settings#app-language-heading"],
-    ["section","app-career-heading","dataText","/settings#app-career-heading"],
-    ["section","app-data-heading","dataText","/settings#app-data-heading"],
-    ["section","app-about-heading","aboutText","/settings#app-about-heading"]
+    ["section","app-theme-heading","themeHelp","/settings#app-theme-heading"]
   ];
   // Read canonical division identities from the same-origin static catalogue.
   if (document.getElementById("divisions-title")) entries.push(["page","divisions-title","navCompetitions","/competitions"]);
