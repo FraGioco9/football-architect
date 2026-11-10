@@ -25,6 +25,7 @@ let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.fetch(new Request('https://example.invalid/api/competitions/'+competition+'/seasons/'+season,{method}),{DB:database});
 const clubOverview=(club='IT-1',season='1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/seasons/'+season+'/overview',{method}),{DB:db});
+const clubHistory=(club='IT-1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/history',{method}),{DB:db});
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
@@ -79,6 +80,8 @@ it('keeps public competition reads independent of malformed Player cookies and d
  expect(await malformedCookie.json()).toEqual(await anonymous.json());
 });
 it('reads anonymously with explicit empty and unsupported viewed-season states',async()=>{
+ const seasonZeroHistory=await (await clubHistory()).json() as any;
+ expect(seasonZeroHistory).toMatchObject({schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',status:'available',data:{overviews:[]}});
  let r=await request();expect(r.status).toBe(200);expect(await r.json()).toMatchObject({status:'empty',selectedSeason:1,data:null});
  await prepare();r=await request();expect(await r.json()).toMatchObject({status:'empty',reason:'calendar-unpublished',data:null});
  const future=await request('IT-1','2');expect(await future.json()).toMatchObject({status:'empty',selectedSeason:2,reason:'season-not-prepared',data:null});
@@ -94,6 +97,11 @@ it('reads anonymously with explicit empty and unsupported viewed-season states',
  expect((await clubOverview('IT-1','1','POST')).status).toBe(405);
  expect((await clubOverview('IT-41')).status).toBe(404);
  expect((await clubOverview('IT-1','0')).status).toBe(404);
+ const preparingHistory=await (await clubHistory()).json() as any;
+ expect(preparingHistory).toMatchObject({status:'available',data:{overviews:[{selectedSeason:1,status:'empty',reason:'calendar-unpublished',data:null}]}});
+ expect((await clubHistory('IT-1','POST')).status).toBe(405);
+ expect((await clubHistory('IT-41')).status).toBe(404);
+ expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/history?all=true'),{DB:db})).status).toBe(422);
  expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/overview?all=true'),{DB:db})).status).toBe(422);
 });
 it('returns published future fixtures with no fabricated results or player stats',async()=>{
@@ -111,6 +119,10 @@ it('returns published future fixtures with no fabricated results or player stats
  expect(overview.data.memberships.filter((m:any)=>m.category==='domestic').map((m:any)=>m.competitionId)).toEqual(['IT-1']);
  expect(overview.data.memberships.filter((m:any)=>m.category==='international')).toHaveLength(1);
  expect(overview.data.memberships.every((m:any)=>m.position===null&&m.points===0&&m.nextMatch?.day>0)).toBe(true);
+ expect(overview.data.memberships.every((m:any)=>m.stats?.played===0&&
+  m.stats.won===0&&m.stats.drawn===0&&m.stats.lost===0&&
+  m.stats.goalsFor===0&&m.stats.goalsAgainst===0&&m.stats.goalDifference===0))
+  .toBe(true); // No future scores are included in compact Club History totals.
  const projected=projectClubMemberships(overview,'IT-1',1,world);
  expect(projected.coverage).toBe('complete');
  expect(projected.memberships).toHaveLength(2);
@@ -134,14 +146,34 @@ it('uses saved day13 results for partial standings and score-only statistics',as
  const domestic=overview13.data.memberships.find((m:any)=>m.competitionId==='IT-1');
  const ranked=body.data.standings.rows.find((r:any)=>r.clubId==='IT-1');
  expect(domestic).toMatchObject({season:1,position:ranked.rank,points:ranked.points});
+ expect(domestic.stats).toEqual((({clubId,...stats}:any)=>stats)(
+  body.data.statistics.teams.find((team:any)=>team.clubId==='IT-1'))); // Exact same verified persisted score totals.
+ expect(Object.hasOwn(domestic.stats,'clubId')).toBe(false);
+ expect(domestic.stats.played).toBe(1);
  const projected=projectClubMemberships(overview13,'IT-1',1,world);
  expect(projected.coverage).toBe('complete');
  expect(projected.memberships.find((m:any)=>m.competitionId==='IT-1')?.points).toBe(ranked.points);
  expect(domestic.nextMatch===null||domestic.nextMatch.day>13).toBe(true);
  expect(overview13.world).toEqual(body.world);
+ // One club-level History GET contains every supported season, with no
+ // per-competition HTTP requests required by the browser.
+ const historyResponse=await clubHistory();
+ expect(historyResponse.status).toBe(200);
+ const oneGet=await historyResponse.json() as any;
+ expect(oneGet).toMatchObject({schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',
+  status:'available',reason:null,
+  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1'}});
+ expect(oneGet.world).toEqual(body.world);
+ expect(oneGet.data.overviews).toHaveLength(1);
+ expect(oneGet.data.overviews[0]).toEqual(overview13);
+ expect(oneGet.data.overviews[0].data.memberships.every((m:any)=>
+  m.stats&&Number.isSafeInteger(m.stats.played))).toBe(true);
  const cup=await (await request('int-1')).json() as any;
  expect(cup.data.fixtures).toHaveLength(72);expect(cup.data.statistics.matchesPlayed).toBe(0);
  expect(cup.data.standings.rows.every((r:any)=>r.played===0)).toBe(true);
+ const compactCup=overview13.data.memberships.find((m:any)=>m.competitionId==='int-1');
+ expect(compactCup.stats).toEqual((({clubId,...stats}:any)=>stats)(
+  cup.data.statistics.teams.find((team:any)=>team.clubId==='IT-1')));
 });
 it('makes real future Playoff pairings public immediately after I06 without scores',async()=>{
  await calendar();

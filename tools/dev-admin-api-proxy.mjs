@@ -32,7 +32,8 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  if(!shared&&!/^http:\/\/(?:127\.0\.0\.1|\[::1\]):[1-9][0-9]{0,4}\/?$/.test(target))return reply(res,503,'admin_unavailable');
  let url;try{url=new URL(target)}catch{return reply(res,503,'admin_unavailable')}
  const clubOverview=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/[1-9][0-9]{0,8}\/overview$/.test(raw);
- const publicRead=clubOverview||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
+ const clubHistory=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/history$/.test(raw);
+ const publicRead=clubOverview||clubHistory||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
  const anonymousRead=publicRead||raw==='/api/world';
  const localClient=loopback(req.socket.remoteAddress)&&hostPattern.test(req.headers.host||'');
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);

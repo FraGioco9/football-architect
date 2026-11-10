@@ -117,7 +117,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
-   }else assert.ok(html.includes(view==='history'?'club-history-loading':'club-empty'));
+   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':'club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
   }
  }
@@ -362,16 +362,21 @@ test('PAGE-LOAD-04 B02: Club History renders only verified seasons without guess
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const selected=model.route('/clubs/it/1/history'),clubKey='IT-1';
  const pending=model.render(manifest,selected,'en','',null,2,{source:'loading'});
- assert.match(pending,/class="club-history-loading"/);
- assert.doesNotMatch(pending,/data-club-history-season=/);
- const verified={source:'authoritative',clubKey,coverage:'complete',seasons:[{season:1,memberships:[{competitionId:'IT-1',category:'domestic',season:1,position:3,points:56,name:'IT-1'}]}]};
+ assert.match(pending,/club-history-row-loading/);
+ assert.doesNotMatch(pending,/data-club-history-summary=/);
+ const verified={source:'authoritative',clubKey,coverage:'complete',seasons:[{season:1,memberships:[{
+  competitionId:'IT-1',category:'domestic',season:1,position:3,points:56,name:'IT-1',
+  stats:{played:30,won:17,drawn:5,lost:8,goalsFor:53,goalsAgainst:35,goalDifference:18,cleanSheets:9}
+ }]}]};
  const html=model.render(manifest,selected,'en','',null,2,verified);
- assert.match(html,/data-club-history-season="1"/);
- assert.match(html,/data-history-competition="IT-1"/);
+ assert.match(html,/data-club-history-summary="1"/);
+ assert.match(html,/data-history-competition-row="IT-1"/);
  assert.match(html,/standings\?season=1/);
  assert.match(html,/56/);
- assert.doesNotMatch(html,/data-club-history-season="2"/);
- assert.match(model.render(manifest,selected,'it','',null,2,verified),/Stagione 1/);
+ assert.doesNotMatch(html,/data-club-history-summary="2"/);
+ assert.match(model.render(manifest,selected,'it','',null,2,verified),
+  /<th scope="col" class="club-history-season-col" aria-label="Stagione"><\/th>/,
+  'Season heading remains accessible but visually blank');
  assert.match(model.render(manifest,selected,'en','',null,2,{source:'unavailable'}),/role="status"/);
 });
 test('club competition links open Standings with the displayed season and no fixture round',async()=>{
@@ -430,4 +435,222 @@ test('UI-409 PAGE-LOAD-04: anonymous crest slots are replaced only after the clu
  assert.ok(Object.keys(manifest.clubCrests).length>0,'canonical crest mapping remains in fetched catalog');
  assert.match(read('assets/clubs-directory.js'),/m\.clubCrests\?\.\[c\.countryId/,'crests populated from fetched manifest');
  assert.match(read('assets/clubs-directory.css'),/\.nav01-skeleton-crest/,'shape preserved while loading');
+});
+
+
+
+
+
+test('CLUB-HISTORY-04: each season has one expandable total row and hidden competition details',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/1/history');
+ const stats={played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11};
+ const memberships=[
+  {competitionId:'IT-1',category:'domestic',name:'Italy First',season:1,position:5,points:45,cupStatus:null,nextMatch:null,stats},
+  {competitionId:'int-1',category:'international',name:'Sovereign Cup',season:1,position:8,points:9,cupStatus:'quarterfinals',nextMatch:null,
+   stats:{played:8,won:4,drawn:2,lost:2,goalsFor:12,goalsAgainst:8,goalDifference:4,cleanSheets:3}}
+ ];
+ const second={competitionId:'IT-2',category:'domestic',name:'Italy Second',season:2,position:2,points:62,cupStatus:null,nextMatch:null,stats};
+ const verified={source:'authoritative',clubKey:'IT-1',coverage:'complete',
+  seasons:[{season:1,memberships},{season:2,memberships:[second]}]};
+ const html=model.render(manifest,selected,'it','',null,2,verified);
+ assert.equal((html.match(/<table /g)||[]).length,1,'one table with all seasons');
+ assert.doesNotMatch(html,/<h2>Storia<\/h2>/,'History heading removed');
+ assert.doesNotMatch(html,/<h2>History<\/h2>/);
+ const liveStats={played:2,won:1,drawn:1,lost:0,goalsFor:3,goalsAgainst:1,goalDifference:2,cleanSheets:1};
+ const active={...verified,seasons:[...verified.seasons,{season:3,ongoing:true,memberships:[{
+  competitionId:'IT-1',category:'domestic',name:'Italy First',position:4,points:4,stats:liveStats,
+  cupStatus:null,nextMatch:null
+ }]}]};
+ const live=model.render(manifest,selected,'en','',null,3,active);
+ const devHistory={...active,source:'dev',schemaVersion:1,provenance:{
+  kind:'fictional',sourceRef:'dev-fictional-preview',approved:false
+ }};
+ const dev=model.render(manifest,selected,'en','',null,3,devHistory);
+ assert.match(dev,/data-club-history-summary="3"/,'valid isolated DEV history is rendered');
+ const untrusted=model.render(manifest,selected,'en','',null,3,{
+  ...devHistory,provenance:{kind:'fictional',sourceRef:'public-spoof',approved:false}
+ });
+ assert.doesNotMatch(untrusted,/data-club-history-summary="3"/,'untrusted DEV history must be rejected');
+
+ assert.deepEqual([...live.matchAll(/data-club-history-summary="(\d+)"/g)].map(m=>Number(m[1])),[3,2,1],
+  'live season appears first, ahead of sealed history');
+ assert.match(live,/data-history-competition-row="IT-1" hidden/);
+ const liveCup=model.render(manifest,selected,'en','',null,3,{
+  ...verified,seasons:[{season:3,ongoing:true,memberships:[{
+   competitionId:'int-1',category:'international',name:'Sovereign Cup',position:4,points:4,
+   cupStatus:null,nextMatch:null,stats:liveStats
+  }]}]});
+ assert.match(liveCup,/<td title="Group Stage">Group Stage<\/td>/,'ongoing international phase is Group Stage when no result stage has been reached');
+ const noGames=model.render(manifest,selected,'en','',null,1,{
+  source:'authoritative',clubKey:'IT-1',coverage:'empty',seasons:[{season:1,ongoing:true,memberships:[{
+   competitionId:'IT-1',category:'domestic',name:'Italy First',position:null,points:0,cupStatus:null,
+   stats:{played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0},nextMatch:null
+  }]}]});
+ assert.match(noGames,/>No games played<\/p>/);
+ assert.doesNotMatch(noGames,/<table /,'empty history has no fake zero-game rows');
+
+ assert.match(html,/<section class="club-history" aria-busy="false">/,'History has no surrounding app-panel box');
+ assert.doesNotMatch(html,/app-panel club-history|Match totals include|Spielstatistiken aus allen Phasen|Estadísticas de todas las fases|Statistiques de toutes les phases|Statistiche di tutte le fasi/,'no footnote or box');
+ assert.match(html,/<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">/);
+ assert.equal((html.match(/<col class="club-history-col-number">/g)||[]).length,8,'exactly eight aligned numeric statistic columns');
+ assert.equal((html.match(/data-club-history-summary="/g)||[]).length,2,'exactly one total per closed season');
+ assert.equal((html.match(/data-history-competition-row="/g)||[]).length,3,'all official competitions are included');
+ assert.equal((html.match(/data-club-history-toggle="/g)||[]).length,2,'one disclosure per season');
+ assert.equal((html.match(/data-club-history-detail="1"/g)||[]).length,2);
+ assert.equal((html.match(/data-club-history-detail="2"/g)||[]).length,1);
+ assert.equal((html.match(/data-history-competition-row="[^"]+" hidden/g)||[]).length,3,'every competition row is collapsed initially');
+ assert.match(html,/data-club-history-toggle="1" aria-expanded="false"/);
+ assert.match(html,/data-history-competition-row="int-1" hidden/);
+ for(const [cls,accessible] of [['season','Stagione'],['name','Competizione'],['position','Pos.']]){
+  const head=html.match(new RegExp('<th scope="col" class="club-history-'+cls+'-col" aria-label="([^"]+)"></th>'));
+  assert.equal(head?.[1],accessible,'first three headings are visually empty but remain accessible');
+ }
+ assert.doesNotMatch(html,/<th scope="col"[^>]*>(Stagione|Competizione|Pos\.)<\/th>/,'remove visible first three labels');
+ assert.match(html,/<th scope="col"[^>]*>PG<\/th>/);
+ assert.match(html,/<th scope="col"[^>]*>GS<\/th>/);
+ assert.doesNotMatch(html,/<th scope="col">(CS|PP)<\/th>/);
+ assert.doesNotMatch(html,/<select|data-club-history-select|club-history-choice|class="club-history-summary"/);
+ const yearRows=[...html.matchAll(/data-club-history-summary="(\d+)"/g)].map(match=>Number(match[1]));
+ assert.deepEqual(yearRows,[2,1],'most recent season shown first');
+ const seasonOne=html.match(/<tr class="club-history-season-row" data-club-history-summary="1">([\s\S]*?)<\/tr>/)?.[1];
+ assert.ok(seasonOne,'Season 1 aggregate row');
+ assert.match(seasonOne,/>Stagione 1<\/button>/);
+ assert.match(seasonOne,/>Totale<\/td><td><\/td>/,'aggregate position is blank');
+ for(const number of ['40','22','10','8','71','39','+32'])
+  assert.ok(seasonOne.includes('>'+number+'</td>'),'Season 1 verified total '+number);
+ assert.ok(seasonOne.endsWith('<td>+32</td><td></td>'),'aggregate points must remain blank');
+ assert.doesNotMatch(seasonOne,/Sovereign Cup|Italy First|Quarti di finale/,'club competition names only in expansion');
+ const seasonWithNoMemberships=model.render(manifest,selected,'en','',null,3,{
+  ...verified,seasons:[{season:1,memberships},{season:3,ongoing:true,memberships:[]}]
+ });
+ const emptySeason=seasonWithNoMemberships.match(/<tr data-club-history-summary="3" class="club-history-season-row">([\s\S]*?)<\/tr>/)?.[1];
+ assert.ok(emptySeason?.includes('No games played'),'unplayed current season remains visible after a played season');
+ assert.equal((emptySeason.match(/<td><\/td>/g)||[]).length,9,'all absent statistic cells stay blank');
+ const historySection=html.match(/<section class="club-history"[^>]*>([\s\S]*?)<\/section>/)?.[1];
+ assert.ok(historySection,'History renders its own section');
+ assert.ok(!historySection.includes('—'),'no dash placeholders remain anywhere in History');
+ assert.match(html,/data-history-competition-row="IT-1" hidden/);
+ assert.match(html,/data-history-competition-row="int-1" hidden/);
+ assert.match(html,/\/competitions\/int-1\/standings\?season=1/);
+ assert.match(html,/class="club-history-competition-link"/,'competition names use a dedicated plain-text link');
+ assert.doesNotMatch(html,/<th scope="row" class="club-history-competition-value"><a class="app-link"/,'no globally boxed app-link for competition rows');
+ const styles=read('assets/club-page.css');
+ assert.match(styles,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline;min-width:0;min-height:0;margin:0;padding:0;border:0/,'competition links remain unboxed without nested overflow clipping');
+ assert.match(styles,/\.club-history-table \.club-history-competition-row:hover \.club-history-competition-text/,'row hover underlines the inner competition text');
+ assert.match(styles,/text-decoration-line:underline;text-underline-offset:3px/,'match regular site link behavior');
+ assert.match(html,/<td title="Quarti di finale">Quarti di finale<\/td>/,'international Pos. is the verified knockout stage, not the league position');
+ assert.doesNotMatch(html,/<td>8º<\/td>/,'international position must never display the league stage rank');
+ assert.doesNotMatch(html,/Historical overview|Seasons played|Best league finish/);
+ const loading=model.render(manifest,selected,'it','',null,2,{source:'loading'});
+ assert.match(loading,/aria-busy="true"/);
+ assert.match(loading,/club-history-row-loading/);
+ const loadingRow=loading.match(/<tr class="club-history-season-row club-history-row-loading" aria-hidden="true">([\s\S]*?)<\/tr>/)?.[1];
+ assert.ok(loadingRow,'loading uses the identical row type as the final Season X total');
+ assert.match(loadingRow,/<th scope="row" class="club-history-season-value"><span class="club-history-expand club-history-skeleton-label"><span class="club-history-chevron-space" aria-hidden="true"><\/span>/,
+  'loading reserves the chevron position without drawing the arrow');
+ assert.doesNotMatch(loadingRow,/class="club-history-chevron"/,'the chevron must not appear before the season is loaded');
+ assert.match(seasonOne,/<span class="club-history-chevron" aria-hidden="true"><\/span>/,
+  'the chevron appears only on a loaded expandable season');
+ assert.match(loadingRow,/<td class="club-history-total-label"><span class="club-fp-bar"/,
+  'the Total skeleton occupies the real left-aligned cell');
+ assert.equal((loadingRow.match(/<td><\/td>/g)||[]).length,2,'Pos. and season Pts remain blank while loading');
+ assert.equal((loadingRow.match(/<td><span class="club-fp-bar"/g)||[]).length,7,'exactly seven real numeric totals have centered skeleton bars');
+ assert.equal((loadingRow.match(/club-fp-bar/g)||[]).length,9,'one Season, one Total and seven aggregate values');
+ assert.ok(loadingRow.endsWith('<td></td>'),'season Pts has no placeholder even while pending');
+ assert.equal((loading.match(/<table /g)||[]).length,1);
+ assert.doesNotMatch(loading,/>0<\/td>/);
+ const empty=model.render(manifest,selected,'it','',null,1,{...verified,coverage:'empty',seasons:[]});
+ assert.match(empty,/Nessuna partita giocata/);
+ assert.doesNotMatch(empty,/club-history-row-loading/);
+ const absent=model.render(manifest,selected,'it','',null,2,
+  {...verified,seasons:[{season:1,memberships:[]}]});
+ assert.match(absent,/Nessuna partita giocata/);
+ assert.doesNotMatch(absent,/data-club-history-toggle/);
+ const unavailable=model.render(manifest,selected,'it','',null,2,{source:'unavailable'});
+ assert.match(unavailable,/temporaneamente non disponibile/);
+ assert.doesNotMatch(unavailable,/club-history-row-loading/);
+ for(const lang of ['en','de','es','fr','it']){
+  const localized=model.render(manifest,selected,lang,'',null,2,verified);
+  assert.equal((localized.match(/<table /g)||[]).length,1);
+  assert.equal((localized.match(/data-club-history-summary="/g)||[]).length,2);
+  assert.equal((localized.match(/data-history-competition-row="/g)||[]).length,3);
+  assert.doesNotMatch(localized,/<select/);
+ }
+ const firstPaint=read('clubs/_shared/index.html'),script=read('assets/club-page.js'),css=read('assets/club-page.css');
+ for(const key of ['season','competition','position','played','won','drawn','lost','gf','ga','gd','points'])
+  assert.match(firstPaint,new RegExp('data-club-history-label="'+key+'"'));
+ assert.match(firstPaint,/club-history-row-loading/);
+ const parserRow=firstPaint.match(/<tr class="club-history-season-row club-history-row-loading" aria-hidden="true">([\s\S]*?)<\/tr>/)?.[1];
+ assert.equal(parserRow,loadingRow,'parser-time skeleton is identical to hydrated pending row, cell-for-cell');
+ assert.doesNotMatch(parserRow,/class="club-history-chevron"/,'the parser-time shell does not flash the chevron');
+ assert.equal((parserRow.match(/<td><\/td>/g)||[]).length,2,'the parser-time Position and Pts cells are empty');
+ assert.equal((firstPaint.match(/<table class="club-history-table"/g)||[]).length,1);
+ assert.match(firstPaint,/<section class="club-history club-first-paint-panel club-first-paint-other"/,'first paint has the same flat layout');
+ assert.doesNotMatch(firstPaint,/app-panel club-history/,'first paint has no extra box');
+ assert.equal((firstPaint.match(/<col class="club-history-col-number">/g)||[]).length,8,'first-paint columns match hydrated layout');
+ for(const [key,accessible] of [['season','Season'],['competition','Competition'],['position','Pos.']])
+  assert.match(firstPaint,new RegExp('data-club-history-label="'+key+'" aria-label="'+accessible+'"></th>'),
+   'first paint reserves an empty accessible header for '+key);
+ assert.match(firstPaint,/if\(index<3\)\{label\.textContent='';label\.setAttribute\('aria-label',historyLabels\[locale\]\[index\]\);\}/,
+  'first paint localizes nonvisual header labels without making text appear');
+ assert.match(css,/table-layout:fixed/);
+ assert.match(css,/--club-history-row-height:56px/,'fixed uniform height token');
+ assert.match(css,/\.club-history-chevron,\.club-history-chevron-space\{box-sizing:border-box;width:8px;height:8px;flex:none\}/,
+  'placeholder and loaded chevron reserve identical width and height');
+ assert.match(css,/\.club-history-chevron-space\{border:0;visibility:hidden\}/,
+  'loading chevron placeholder never renders an arrow');
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-skeleton-label \.club-fp-bar\{width:62px;min-width:0;margin:0\}/,
+  'Season bar starts after its real chevron instead of the cell edge');
+ assert.match(css,/\.club-history-table \.club-history-row-loading \.club-history-total-label \.club-fp-bar\{width:42px;min-width:0;margin-inline-start:0\}/,
+  'Total skeleton starts at the same left edge as the loaded label');
+ assert.match(css,/\.club-history-table tr\{height:var\(--club-history-row-height\)\}/,'all header, season, competition and loading rows share height');
+ assert.match(css,/\.club-history-table th,\.club-history-table td\{box-sizing:border-box;height:var\(--club-history-row-height\)/,'table cells cannot increase the row height');
+ assert.match(css,/\.club-history-table \.club-history-competition-value\{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis/,'long competition names cannot wrap rows');
+ assert.match(css,/\.club-history-table \.club-history-competition-row td:nth-child\(3\)\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis/,'long international stages cannot wrap rows');
+ assert.doesNotMatch(css,/\.club-history>h2\{/,'History title CSS removed');
+ assert.match(firstPaint,/<section class="club-history club-first-paint-panel club-first-paint-other"[^>]*><div class="club-history-table-wrap">/,'first-paint table starts without a History heading');
+ assert.doesNotMatch(firstPaint,/<h2 data-club-history-label="title">/,'no first-paint History title');
+ assert.doesNotMatch(firstPaint,/data-club-history-shell/,'no nested first-paint wrapper to shift heading');
+ const generator=read('tools/generate-club-pages.mjs');
+ assert.doesNotMatch(generator,/data-club-history-shell/,'no regenerated wrapper');
+ assert.match(generator,/other\.hidden=view!=='history'/,'History does not flash on the Roster, Fixtures or Stats first paint');
+ assert.match(firstPaint,/other\.hidden=view!=='history'/,'generated first-paint bootstrap keeps History hidden outside its view');
+ assert.match(html,/<section class="club-history" aria-busy="false"><div class="club-history-table-wrap">/,'hydrated table starts without a History heading');
+ assert.doesNotMatch(html,/<section class="club-history"[^>]*><h2>/,'no hydrated History title');
+ assert.match(html,/<a class="club-history-competition-link" href="[^"]+" title="[^"]+"><span class="club-history-competition-text">/,'inner text retains native underline without link overflow clipping');
+
+ for(const width of ['club-history-col-season','club-history-col-name','club-history-col-position','club-history-col-number'])
+  assert.match(css,new RegExp('\\.'+width+'\\{width:'),'one fixed width per aligned table column');
+ assert.doesNotMatch(firstPaint,/data-club-history-label="cleanSheets"|<select|data-club-history-season="1"/);
+ assert.doesNotMatch(firstPaint,/data-club-history-label="title"/,'first-paint translation has no title key');
+ assert.doesNotMatch(generator,/data-club-history-label="title"/,'generated shell also has no History title');
+ assert.match(script,/openHistorySeasons=new Set/);
+ assert.match(script,/data-club-history-toggle/);
+ assert.match(script,/data-club-history-detail/);
+ assert.match(script,/historyTableScroll/);
+ assert.match(script,/if\(selected\.view!=='overview'\)return;/,'non-Overview Club views do not fetch Overview APIs');
+ assert.match(script,/createClubPublicReadCache/,'both Club readers reuse canonical per-world HTTP results');
+ assert.match(script,/preferBatch:true/,'History prefers one aggregate club HTTP request');
+ assert.match(read('backend/src/index.ts'),/readPublicClubHistory/,'backend exposes a dedicated club History projection');
+ assert.match(read('assets/club-history-source.mjs'),/api\/clubs\/.*\/history/,'client reads the dedicated club History route');
+ assert.match(script,/refreshClubHistory\(\);refreshClubOverview\(\)/,
+  'tab navigation restores both data readers without redundant requests');
+ assert.match(script,/if\(selected\.view!=='history'\)return;/,
+  'leaving History does not abort/restart its in-flight world-verified read');
+ const cacheSource=read('assets/club-public-read-cache.mjs');
+ assert.match(cacheSource,/sourceRevision,w\.generation,w\.revision,w\.seasonNumber,w\.day,w\.phase/,
+  'per-world caching fences generation, revision, sporting day and source switches');
+ assert.match(read('assets/club-history-source.mjs'),/projectClubOverviewStats\(raw,clubKey,membership,season,world\)/,
+  'History reuses verified totals in Club Overview instead of downloading each competition');
+ assert.match(script,/current\.current\?\.season===0/,'DEV Season 0 immediately shows verified no-games notice');
+ const devSeasonZero=model.render(manifest,selected,'en','',null,0,{
+  source:'dev',schemaVersion:1,clubKey:'IT-1',coverage:'empty',seasons:[],
+  provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}
+ });
+ assert.match(devSeasonZero,/role="status">No games played<\/p>/);
+ assert.doesNotMatch(devSeasonZero,/<table /,'Season 0 has a notice, not an empty table');
+ assert.match(css,/margin:0 0 14px/,'desktop name/location spacing');
+ assert.match(css,/font-size:clamp\(1\.2rem,4\.8vw,1\.5rem\);margin-bottom:10px/,'mobile name/location spacing');
 });

@@ -31,7 +31,7 @@ test('HTTPS activation is explicit and rejects ambiguous, local and credentialed
  const res=await run(req(),()=>{throw Error('must not send')},{pool:undefined});assert.equal(res.status,503);
 });
 test('public world, seasons, fixtures/results and calendar reads never forward credentials or set cookies',async()=>{
- for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13']){
+ for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history']){
   let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{n++;if(n===1)return context();assert.deepEqual(options.headers,{'x-fa-expected-pool':'dev-preview'});return {status:200,headers:{'set-cookie':['evil=1']},body:Buffer.from('{"world":{}}')}});
   assert.equal(res.status,200);assert.equal(res.headers['set-cookie'],undefined);
  }

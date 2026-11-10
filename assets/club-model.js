@@ -202,36 +202,79 @@
     effectiveCompetitionCard+'</section></div>';
   }else if(selected.view==='history'){
    const words={
-    en:['Season','Position','Pts','No competitions in this season.'],
-    de:['Saison','Platz','Pkt','Keine Wettbewerbe in dieser Saison.'],
-    es:['Temporada','Posición','Pts','Sin competiciones en esta temporada.'],
-    fr:['Saison','Position','Pts','Aucune compétition cette saison.'],
-    it:['Stagione','Posizione','Pt','Nessuna competizione in questa stagione.']
+    en:{season:'Season',competition:'Competition',position:'Pos.',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},
+    de:{season:'Saison',competition:'Wettbewerb',position:'Pl.',played:'Sp',won:'S',drawn:'U',lost:'N',gf:'T+',ga:'T−',gd:'TD',points:'Pkt',total:'Gesamt',show:'Wettbewerbe anzeigen für',empty:'Noch keine Spiele gespielt',without:'Keine Wettbewerbe in dieser Saison.',unavailable:'Die Vereinshistorie ist vorübergehend nicht verfügbar.'},
+    es:{season:'Temporada',competition:'Competición',position:'Pos.',played:'PJ',won:'G',drawn:'E',lost:'P',gf:'GF',ga:'GC',gd:'DG',points:'Pts',total:'Total',show:'Mostrar competiciones de',empty:'No se han jugado partidos',without:'Sin competiciones esta temporada.',unavailable:'El historial del club no está disponible temporalmente.'},
+    fr:{season:'Saison',competition:'Compétition',position:'Pl.',played:'MJ',won:'V',drawn:'N',lost:'D',gf:'BP',ga:'BC',gd:'DB',points:'Pts',total:'Total',show:'Afficher les compétitions de',empty:'Aucun match joué',without:'Aucune compétition cette saison.',unavailable:'L’historique du club est temporairement indisponible.'},
+    it:{season:'Stagione',competition:'Competizione',position:'Pos.',played:'PG',won:'V',drawn:'N',lost:'P',gf:'GF',ga:'GS',gd:'DR',points:'Pt',total:'Totale',show:'Mostra competizioni della',empty:'Nessuna partita giocata',without:'Nessuna competizione in questa stagione.',unavailable:'La storia del club è temporaneamente non disponibile.'}
    }[lang];
-   const verified=historySnapshot?.source==='authoritative'&&historySnapshot.clubKey===clubKey&&
+   const historySourceVerified=historySnapshot?.source==='authoritative'||
+    historySnapshot?.source==='dev'&&historySnapshot.provenance?.kind==='fictional'&&
+    historySnapshot.provenance.sourceRef==='dev-fictional-preview'&&historySnapshot.provenance.approved===false;
+   const verified=historySourceVerified&&historySnapshot.clubKey===clubKey&&
     ['complete','empty'].includes(historySnapshot.coverage)&&Array.isArray(historySnapshot.seasons);
-   let inner;
-   if(verified&&!historySnapshot.seasons.length)inner='<p class="club-history-status">'+escape(t.emptyHistory)+'</p>';
-   else if(verified){
-    inner='<ol class="club-history-seasons">'+[...historySnapshot.seasons].reverse().map(entry=>
-     '<li class="club-history-season" data-club-history-season="'+entry.season+'">'+
-      '<h3>'+escape(words[0])+' '+entry.season+'</h3>'+
-      (entry.memberships.length?'<div class="club-history-competitions">'+entry.memberships.map(m=>{
-       const def=index.divisions.get(m.competitionId),isDomestic=m.category==='domestic';
-       const title=isDomestic?(def?.name||m.name):m.name;
-       const url=routes.buildRoute({kind:isDomestic?'competition':'cup',id:m.competitionId.toLowerCase(),view:'standings'})+'?season='+entry.season;
-       const rank=isDomestic&&m.position!==null?words[1]+' '+ordinal(m.position,lang):!isDomestic&&internationalStatusLabels[lang][m.cupStatus]?internationalStatusLabels[lang][m.cupStatus]:null;
-       return '<div class="club-history-competition" data-history-competition="'+escape(m.competitionId)+'">'+
-        '<a class="app-link" href="'+escape(url)+'">'+escape(title)+'</a>'+
-        '<span class="club-history-result">'+(rank?'<span>'+escape(rank)+'</span>':'')+
-        '<span>'+escape(words[2])+' '+m.points+'</span></span></div>';
-      }).join('')+'</div>':'<p>'+escape(words[3])+'</p>')+'</li>'
-    ).join('')+'</ol>';
-   }else if(historySnapshot?.source==='unavailable')
-    inner='<p class="club-history-status" role="status">'+escape(t.error)+'</p>';
-   else inner='<div class="club-history-loading" aria-hidden="true"><span class="club-fp-bar"></span><span class="club-fp-bar"></span><span class="club-fp-bar"></span></div>';
-   content='<section class="app-panel club-history" aria-busy="'+(!verified&&historySnapshot?.source!=='unavailable')+'">'+
-    '<h2>'+escape(t.history)+'</h2>'+inner+'</section>';
+   const pending=!verified&&historySnapshot?.source!=='unavailable';
+   const columns=[words.season,words.competition,words.position,words.played,words.won,words.drawn,words.lost,words.gf,words.ga,words.gd,words.points];
+   const heading='<thead><tr>'+columns.map((label,i)=>
+    '<th scope="col" class="'+(i===0?'club-history-season-col':i===1?'club-history-name-col':i===2?'club-history-position-col':'club-history-number-col')+'"'+
+    (i<3?' aria-label="'+escape(label)+'"':'')+'>'+(i<3?'':escape(label))+'</th>').join('')+'</tr></thead>';
+   const columnWidths='<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
+    Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>';
+   const bar='<span class="club-fp-bar" aria-hidden="true"></span>';
+   const displayNumber=value=>value>0&&typeof value==='number'?'+'+value:String(value);
+   let body='';
+   if(verified&&!historySnapshot.seasons.some(entry=>entry.memberships.some(m=>m.stats?.played>0)))
+    body='<p class="club-history-status" role="status">'+escape(words.empty)+'</p>';
+   else if(!pending&&!verified)
+    body='<p class="club-history-status" role="status">'+escape(words.unavailable)+'</p>';
+   else{
+    let rows;
+    if(pending)rows='<tr class="club-history-season-row club-history-row-loading" aria-hidden="true">'+
+     '<th scope="row" class="club-history-season-value"><span class="club-history-expand club-history-skeleton-label">'+
+     '<span class="club-history-chevron-space" aria-hidden="true"></span>'+bar+'</span></th>'+
+     '<td class="club-history-total-label">'+bar+'</td><td></td>'+
+     Array.from({length:7},()=>'<td>'+bar+'</td>').join('')+'<td></td></tr>';
+    else rows=[...historySnapshot.seasons].reverse().map(entry=>{
+     const year=entry.season;
+     const members=[...entry.memberships].sort((a,b)=>
+      a.category===b.category?a.competitionId.localeCompare(b.competitionId,'en'):a.category==='domestic'?-1:1);
+     if(!members.length)return '<tr data-club-history-summary="'+year+'" class="club-history-season-row">'+
+      '<th scope="row" class="club-history-season-value">'+escape(words.season)+' '+year+'</th>'+
+      '<td class="club-history-empty-season">'+escape(words.empty)+'</td>'+
+      '<td></td>'+Array.from({length:8},()=>'<td></td>').join('')+'</tr>';
+     const totals=members.reduce((sum,m)=>{
+      for(const key of ['played','won','drawn','lost','goalsFor','goalsAgainst','goalDifference'])sum[key]+=m.stats[key];
+      return sum;
+     },{played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
+     const numeric=[totals.played,totals.won,totals.drawn,totals.lost,totals.goalsFor,
+      totals.goalsAgainst,displayNumber(totals.goalDifference),''];
+     const summary='<tr class="club-history-season-row" data-club-history-summary="'+year+'">'+
+      '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand"'+
+      ' data-club-history-toggle="'+year+'" aria-expanded="false" aria-label="'+escape(words.show+' '+words.season+' '+year)+'">'+
+      '<span class="club-history-chevron" aria-hidden="true"></span>'+escape(words.season)+' '+year+'</button></th>'+
+      '<td class="club-history-total-label">'+escape(words.total)+'</td><td></td>'+
+      numeric.map(value=>'<td>'+escape(value)+'</td>').join('')+'</tr>';
+     const details=members.map(m=>{
+      const domestic=m.category==='domestic',def=index.divisions.get(m.competitionId);
+      const title=domestic?(def?.name||m.name):m.name;
+      const href=routes.buildRoute({kind:domestic?'competition':'cup',id:m.competitionId.toLowerCase(),view:'standings'})+'?season='+year;
+      const position=domestic?(m.position===null?'':ordinal(m.position,lang)):
+       (internationalStatusLabels[lang][m.cupStatus]||
+        (entry.ongoing&&m.stats.played>0?internationalStatusLabels[lang].groupStage:''));
+      const stats=m.stats;
+      const values=[position,stats.played,stats.won,stats.drawn,stats.lost,stats.goalsFor,stats.goalsAgainst,
+       displayNumber(stats.goalDifference),m.points];
+      return '<tr class="club-history-competition-row" data-club-history-detail="'+year+'"'+
+       ' data-history-competition-row="'+escape(m.competitionId)+'" hidden>'+
+       '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="'+escape(href)+'" title="'+escape(title)+'"><span class="club-history-competition-text">'+escape(title)+'</span></a></th>'+
+       values.map((value,i)=>i===0?'<td'+(value?' title="'+escape(value)+'"':'')+'>'+escape(value)+'</td>':'<td>'+escape(value)+'</td>').join('')+'</tr>';
+     }).join('');
+     return summary+details;
+    }).join('');
+    body='<div class="club-history-table-wrap"><table class="club-history-table" aria-label="'+escape(t.history)+'">'+columnWidths+heading+
+     '<tbody>'+rows+'</tbody></table></div>';
+   }
+   content='<section class="club-history" aria-busy="'+pending+'">'+body+'</section>';
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';

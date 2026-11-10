@@ -1,15 +1,20 @@
-import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPreviewClubSummary,readPreviewClubProgress} from "./dev-standings-preview-data.mjs";
+import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPreviewClubSummary,createPreviewClubHistory,readPreviewClubProgress} from "./dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 async function startClubSummary(){
 const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
 let catalogue,revision=0;
 const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
+const publishHistory=snapshot=>{
+ window.faDevClubHistoryPublished=true;
+ window.faDevClubHistorySnapshot=snapshot;
+ window.dispatchEvent(new CustomEvent('fa:club-history-preview',{detail:snapshot}));
+};
 async function refresh(){
  const version=++revision;
  const route=window.faClubModel?.route(location.pathname),progress=readPreviewClubProgress(sessionStorage);
  const identity=JSON.stringify([location.pathname,progress]);
- if(!enabled()||!route){publish(null);return;}
+ if(!enabled()||!route){publish(null);publishHistory(null);return;}
  try{
   catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'same-origin',cache:'no-store'}).then(async response=>{
    if(!response.ok)throw Error('Unavailable club competition data');
@@ -18,8 +23,13 @@ async function refresh(){
   const data=await catalogue;
   if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,readPreviewClubProgress(sessionStorage)]))return;
   const division=data.divisions.find(d=>d.countryId===route.countryId&&d.clubs.some(c=>c.clubId===route.clubId));
-  publish(division?createPreviewClubSummary(division,route.clubId,progress):null);
- }catch{if(version===revision)publish(null);}
+  const summary=division?createPreviewClubSummary(division,route.clubId,progress):null;
+  const history=division?createPreviewClubHistory(division,route.clubId,progress):null;
+  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,readPreviewClubProgress(sessionStorage)]))return;
+  publish(summary);
+  const clock=window.faWorldState?.get?.();
+  publishHistory(history?{...history,worldDay:clock?.source==='dev'?clock.current?.day:null}:null);
+ }catch{if(version===revision){publish(null);publishHistory(null);}}
 }
 await new Promise(resolve=>{
  if(document.documentElement.dataset.clubReady==='true')return resolve();

@@ -3,7 +3,7 @@
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
  let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'};
- let refreshClubHistory=()=>{};
+ let refreshClubHistory=()=>{},refreshClubOverview=()=>{};
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const competitionSeason=()=>{
   const explicit=new URLSearchParams(location.search).get('season');
@@ -60,13 +60,37 @@
     });
    }
   };
+  // One accessible disclosure per completed season; no competition filter.
+  // Expanded rows persist on language change and world/source redraws.
+  const openHistorySeasons=new Set();
+  const syncHistoryRows=()=>{
+   const buttons=host.querySelectorAll('[data-club-history-toggle]');
+   for(const button of buttons){
+    const season=button.dataset.clubHistoryToggle;
+    const expanded=openHistorySeasons.has(season);
+    button.setAttribute('aria-expanded',String(expanded));
+    for(const row of host.querySelectorAll('[data-club-history-detail]'))
+     if(row.dataset.clubHistoryDetail===season)row.hidden=!expanded;
+   }
+  };
+  host.addEventListener('click',event=>{
+   if(selected.view!=='history'||event.target.closest?.('a,input,select,textarea'))return;
+   const row=event.target.closest?.('[data-club-history-summary]');
+   const button=row?.querySelector('[data-club-history-toggle]');
+   if(!button||!host.contains(row))return;
+   const key=button.dataset.clubHistoryToggle;
+   if(openHistorySeasons.has(key))openHistorySeasons.delete(key);else openHistorySeasons.add(key);
+   syncHistoryRows();
+  });
   const paint=(preserveCrest=false,preserveFocus=false)=>{
    const active=preserveFocus&&host.contains(document.activeElement)?document.activeElement:null;
    const activeHref=active?.getAttribute('href');
    const activeTranslate=active?.hasAttribute('data-translate-club');
+   const activeHistoryToggle=active?.getAttribute('data-club-history-toggle');
    const scrollX=window.scrollX,scrollY=window.scrollY;
    const previousTabs=host.querySelector(':scope > .club-tabs');
    const tabScrollLeft=previousTabs?.scrollLeft;
+   const historyTableScroll=host.querySelector('.club-history-table-wrap')?.scrollLeft;
    const staging=document.createElement('div');
    staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
@@ -106,6 +130,8 @@
    reuseCrests(host,staging,true);
    for(const child of [...host.childNodes])if(child!==header&&child!==tabs)child.remove();
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs)host.append(child);
+   if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
+   syncHistoryRows();
    host.dataset.clubBase=selected.base;
    if(tabs){
     const key='football-architect:club-tabs-scroll:'+selected.base;
@@ -126,7 +152,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-      selected=next;paint(true);refreshClubHistory();
+      selected=next;paint(true);refreshClubHistory();refreshClubOverview();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
      tabs.addEventListener('keydown',event=>{
@@ -154,6 +180,7 @@
    });
    if(active){
     const replacement=activeTranslate?host.querySelector('[data-translate-club]')
+     :activeHistoryToggle?host.querySelector('[data-club-history-toggle="'+activeHistoryToggle+'"]')
      :activeHref?[...host.querySelectorAll('a')].find(link=>link.getAttribute('href')===activeHref):null;
     replacement?.focus({preventScroll:true});
     if(window.scrollX!==scrollX||window.scrollY!==scrollY)window.scrollTo(scrollX,scrollY);
@@ -203,11 +230,18 @@
   // Shared world ownership, strict season validation and a reset fence prevent
   // showing Season 1 memberships in Season 2 or on Debug source transitions.
   let publicEpoch=0,publicAbort=null,lastWorldKey=null;
-  const publicJson=async(path,{signal}={})=>{
-   const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});
-   if(!response.ok)throw Error('Public club competition data unavailable');
-   return response.json();
-  };
+  const {createClubPublicReadCache}=await import('/assets/club-public-read-cache.mjs');
+  const publicReadCache=createClubPublicReadCache({
+   getState:()=>window.faWorldState?.get?.(),
+   fetchJson:async(path,{signal}={})=>{
+    const response=await fetch(path,{signal,credentials:'omit',cache:'no-store',redirect:'error'});
+    if(!response.ok){const error=Error('Public club competition data unavailable');error.status=response.status;throw error;}
+    return response.json();
+   }
+  });
+  const publicJson=publicReadCache.read;
+  window.addEventListener('fa:source-change',publicReadCache.clear);
+  window.addEventListener('pagehide',publicReadCache.clear);
   const enablePublic=async()=>{
    try{
     const projection=await import('/assets/club-season-source.mjs');
@@ -219,6 +253,9 @@
     if(!state)throw Error('Shared world state unavailable');
     const sameWorld=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
     const refresh=()=>{
+     // Other Club views have no competition overview panel. Keep a completed
+     // or in-flight result for when the user returns instead of refetching.
+     if(selected.view!=='overview')return;
      const current=state.get(),dev=current.source==='dev'&&window.faDebugEnabled!==false;
      if(dev){
       lastWorldKey=null;publicAbort?.abort();++publicEpoch;
@@ -227,7 +264,7 @@
      }
      if(current.source!=='authoritative')return;
      const world=current.world;
-     const key=JSON.stringify([current.sourceRevision,current.readRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day]);
+     const key=JSON.stringify([current.sourceRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day,world?.phase]);
      if(key===lastWorldKey)return;
      lastWorldKey=key;
      const epoch=++publicEpoch;
@@ -244,18 +281,19 @@
        const verified=await projection.readClubMemberships({clubKey,world,fetchJson:publicJson,signal});
        const now=state.get();
        if(signal.aborted||epoch!==publicEpoch||now.source!=='authoritative'||
-        now.sourceRevision!==current.sourceRevision||now.readRevision!==current.readRevision||
+        now.sourceRevision!==current.sourceRevision||
         !sameWorld(now.world,world))return;
        applyCompetitionSnapshot(verified);
       }catch(error){
        const now=state.get();
        if(!signal.aborted&&epoch===publicEpoch&&now.source==='authoritative'&&
-        now.sourceRevision===current.sourceRevision&&now.readRevision===current.readRevision&&
+        now.sourceRevision===current.sourceRevision&&
         sameWorld(now.world,world))
         applyCompetitionSnapshot({source:'unavailable'});
       }
     })();
     };
+    refreshClubOverview=refresh;
     state.subscribe(refresh);
     window.addEventListener('fa:source-change',()=>{lastWorldKey=null;refresh()});
     window.addEventListener('pagehide',()=>{publicAbort?.abort();publicEpoch++});
@@ -265,7 +303,8 @@
    }
   };
   void enablePublic();
-  // Public club history reads only sealed years, only while History is viewed.
+  // Club History includes the current verified season and sealed prior seasons,
+  // while reading only when the History tab is viewed.
   const enableClubHistory=async()=>{
    try{
     const {readClubHistory}=await import('/assets/club-history-source.mjs');
@@ -274,16 +313,48 @@
     let epoch=0,abort=null,lastKey=null;
     const same=(a,b)=>['generation','revision','seasonNumber','day','phase'].every(k=>a?.[k]===b?.[k]);
     const publish=value=>{historySnapshot=value;if(selected.view==='history')paint(true)};
+    // DEV-only preview arrives from the protected local client, never through
+    // the public HTTP reader. Validate its provenance and current source/day.
+    const devHistory=value=>{
+     const current=state.get(),key=selected.countryId+'-'+selected.clubId;
+     return window.faDevPreviewMode===true&&window.faDebugEnabled!==false&&
+      current.source==='dev'&&value?.schemaVersion===1&&value.source==='dev'&&
+      value.clubKey===key&&value.currentSeason===current.current?.season&&
+      value.worldDay===current.current?.day&&value.provenance?.kind==='fictional'&&
+      value.provenance.sourceRef==='dev-fictional-preview'&&value.provenance.approved===false&&
+      ['empty','complete'].includes(value.coverage)&&Array.isArray(value.seasons);
+    };
+    window.addEventListener('fa:club-history-preview',event=>{
+     if(state.get().source!=='dev'||window.faDevPreviewMode!==true||window.faDebugEnabled===false)return;
+     if(devHistory(event.detail))publish(event.detail);
+     else if(event.detail===null)publish({source:'unavailable'});
+    });
     const refresh=()=>{
-     if(selected.view!=='history'){abort?.abort();abort=null;epoch++;lastKey=null;return;}
+     // Switching tabs does not invalidate a verified world snapshot. Finish
+     // in-flight History reads and reuse them when returning to this tab.
+     if(selected.view!=='history')return;
      const current=state.get();
      if(current.source==='dev'){
       abort?.abort();abort=null;epoch++;lastKey=null;
-      if(historySnapshot.source!=='unavailable')publish({source:'unavailable'});return;
+      // Season 0 has no sporting fixtures by construction, even before the
+      // protected DEV preview reader completes. Never expose stale season data.
+      if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false&&current.current?.season===0){
+       const empty={schemaVersion:1,source:'dev',clubKey:selected.countryId+'-'+selected.clubId,
+        currentSeason:0,worldDay:0,matchdays:0,coverage:'empty',seasons:[],
+        provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}};
+       if(historySnapshot.source!=='dev'||historySnapshot.currentSeason!==0||historySnapshot.coverage!=='empty')publish(empty);
+       return;
+      }
+      const cached=window.faDevClubHistorySnapshot;
+      if(devHistory(cached)){if(historySnapshot!==cached)publish(cached);}
+      else if(window.faDevClubHistoryPublished===true&&cached===null)
+       publish({source:'unavailable'});
+      else if(historySnapshot.source!=='loading')publish({source:'loading'});
+      return;
      }
      if(current.source!=='authoritative')return;
      const world=current.world;
-     const key=JSON.stringify([current.sourceRevision,current.readRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day,world?.phase,current.worldStatus]);
+     const key=JSON.stringify([current.sourceRevision,world?.generation,world?.revision,world?.seasonNumber,world?.day,world?.phase,current.worldStatus]);
      if(key===lastKey)return;lastKey=key;
      const seq=++epoch;abort?.abort();abort=new AbortController();
      if(!world||current.worldStatus!=='ready'){
@@ -293,14 +364,14 @@
      publish({source:'loading'});
      void (async()=>{
       try{
-       const result=await readClubHistory({clubKey,world,fetchJson:publicJson,signal});
+       const result=await readClubHistory({clubKey,world,fetchJson:publicJson,signal,preferBatch:true});
        const now=state.get();
-       if(signal.aborted||seq!==epoch||selected.view!=='history'||now.source!=='authoritative'||!same(now.world,world)||
-          now.sourceRevision!==current.sourceRevision||now.readRevision!==current.readRevision)return;
+       if(signal.aborted||seq!==epoch||now.source!=='authoritative'||!same(now.world,world)||
+          now.sourceRevision!==current.sourceRevision)return;
        publish(result);
       }catch{
        const now=state.get();
-       if(!signal.aborted&&seq===epoch&&selected.view==='history'&&now.source==='authoritative'&&same(now.world,world))
+       if(!signal.aborted&&seq===epoch&&now.source==='authoritative'&&same(now.world,world))
         publish({source:'unavailable'});
       }
      })();
@@ -324,7 +395,7 @@
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
+   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();refreshClubOverview();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
