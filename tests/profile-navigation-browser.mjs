@@ -57,7 +57,12 @@ try{
     await page.locator('[data-profile-edit="city"]').click();
     const cancel=await page.locator('#cancel-profile-button').boundingBox();
     const save=await page.locator('#save-profile-button').boundingBox();
-    assert.ok(Math.abs(cancel.y-save.y)<1&&cancel.x+cancel.width<=save.x);
+    assert.ok(Math.abs(cancel.y-save.y)<1&&save.x-(cancel.x+cancel.width)>=12);
+    assert.ok(Math.abs(cancel.width-save.width)<1&&Math.abs(cancel.height-save.height)<1);
+    if(language==='en'){
+     assert.equal(await page.locator('#cancel-profile-button').textContent(),'Cancel');
+     assert.equal(await page.locator('#save-profile-button').textContent(),'Save');
+    }
     await page.locator('#cancel-profile-button').click();
     await page.locator('#profile-tab').focus();
     await page.keyboard.press('ArrowRight');
