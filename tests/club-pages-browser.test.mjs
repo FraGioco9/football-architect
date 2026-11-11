@@ -644,8 +644,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await visit('/clubs/it/1/overview',devOrigin);
     await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings?season=3'");
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
-    await wait("document.querySelector('[data-club-position]')?.textContent==='—'&&document.querySelector('.club-competition-next a')===null");
-    assert.equal(await run("document.querySelector('[data-club-position]').textContent"),'—');
+    await wait("document.querySelector('.club-competition-next a')===null&&[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')");
+    assert.equal(await run("[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')"),true,'Reset cannot leave a fabricated club position');
+    assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Reset cannot leave a fictional next fixture');
     await visit('/clubs/br/40/history',devOrigin);
     await wait("document.querySelector('.fa-dev-widget')!==null");
     await visit('/clubs/it/1/overview');
