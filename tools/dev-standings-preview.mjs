@@ -217,8 +217,21 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           res.writeHead(308,{"Location":target,"Cache-Control":"no-store"});res.end();return;
         }
       }
-      const parsedDivision=parseRoute(raw);
-      const rootDivision=parsedDivision?.kind==="competition"&&raw.replace(/\/$/,"")===parsedDivision.base
+      // ROUTING-08: normalize known Account aliases; never redirect unknown paths.
+      const accountAlias=raw.replace(/\/index\.html$/,'').replace(/\/+$/,'');
+      if(raw!==accountAlias&&new Set(['/account','/account/login','/account/register',
+        '/account/recover','/account/verify-email']).has(accountAlias)){
+        const query=req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'';
+        res.writeHead(308,{'Location':accountAlias+query,'Cache-Control':'no-store'});res.end();return;
+      }
+      // Canonical cup entry is Standings (the hosted Preview rule).
+      const cupBase=raw.replace(/\/index\.html$/,'').replace(/\/+$/,'');
+      if(/^\/competitions\/int-[12]$/.test(cupBase)){
+        const query=req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'';
+        res.writeHead(308,{'Location':cupBase+'/standings'+query,'Cache-Control':'no-store'});res.end();return;
+      }
+      const parsedDivision=parseRoute(raw.replace(/\/index\.html$/,''));
+      const rootDivision=parsedDivision?.kind==="competition"&&raw.replace(/\/index\.html$/,'').replace(/\/$/,"")===parsedDivision.base
         ? [raw,parsedDivision.base.slice("/competitions/".length)] : null;
       if(rootDivision){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";
@@ -230,8 +243,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         const suffix=legacy.toString();
         res.writeHead(308,{"Location":buildRoute({kind:"competition",id:rootDivision[1],view:next})+(suffix?"?"+suffix:""),"Cache-Control":"no-store"});res.end();return;
       }
-      const parsedView=parseRoute(raw);
-      const viewSlash=parsedView?.kind==="competition"&&parsedView.redirect&&raw.endsWith("/")&&raw!==parsedView.base+"/"
+      const parsedView=parseRoute(raw.replace(/\/index\.html$/,''));
+      const viewSlash=(parsedView?.kind==="competition"||parsedView?.kind==="cup")&&
+        (parsedView.redirect||raw.endsWith('/index.html'))&&
+        raw.replace(/\/index\.html$/,'')!==parsedView.base
         ? parsedView : null;
       if(viewSlash){
         const query=req.url.includes("?")?req.url.slice(req.url.indexOf("?")):"";

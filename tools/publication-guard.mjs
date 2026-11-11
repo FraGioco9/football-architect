@@ -110,8 +110,9 @@ export function publicRequestFile(pathname) {
   if(pathname==="/clubs"||pathname==="/clubs/")return "clubs/index.html";
   const club=resolveSubpage(pathname);
   if(club?.kind==="club"&&!club.redirect)return "clubs/_shared/index.html";
-  const detail=pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12]|int-1|int-2)\/(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)\/?$/);
-  if(detail)return "competitions/"+detail[1]+"/index.html";
+  const domestic=pathname.match(/^\/competitions\/((?:it|eng|es|de|fr|pt|nl|br)-[12])\/(overview|standings|postseason|fixtures|stats|history|rules|awards|teams)\/?$/);
+  const cup=pathname.match(/^\/competitions\/(int-[12])\/(standings|postseason|fixtures|stats|history|rules|awards)\/?$/);
+  if(domestic||cup)return "competitions/"+(domestic||cup)[1]+"/index.html";
   return (pathname.endsWith("/") ? pathname + "index.html"
     : /\.[a-z0-9]+$/i.test(pathname) ? pathname : pathname + "/index.html").slice(1);
 }

@@ -17,6 +17,25 @@ it('canonical redirects preserve approved season/query state and remove legacy v
   const r=await call(path);expect(r.status).toBe(308);expect(r.headers.get('location')).toBe(target);
  }
 });
+it('ROUTING-08: hosted Preview canonical aliases and binding-level 404',async()=>{
+ for(const [path,target] of [
+  ['/competitions/int-2/index.html?season=1','/competitions/int-2/standings?season=1'],
+  ['/competitions/int-1/fixtures/?season=2','/competitions/int-1/fixtures?season=2'],
+  ['/competitions/int-2/history/index.html?season=2','/competitions/int-2/history?season=2'],
+  ['/account/verify-email/?token=abc','/account/verify-email?token=abc'],
+  ['/account/login/?next=https%3A%2F%2Fevil.example','/account/login?next=https%3A%2F%2Fevil.example']
+ ]){
+  const value=await call(path);expect(value.status,path).toBe(308);
+  expect(value.headers.get('location'),path).toBe(target);
+  expect(value.headers.get('cache-control')).toContain('no-store');
+ }
+ const missing=await call('/not-a-real-page',{},{
+  ...config,ASSETS:{fetch:async()=>new Response('Missing',{status:404})}
+ });
+ expect(missing.status).toBe(404);
+ expect(missing.headers.get('cache-control')).toContain('no-store');
+});
+
 it('API requests never fall through to assets, even for browser navigation',async()=>{
  const before=seen.length;const r=await call('/api/player/session',{headers:{'Sec-Fetch-Mode':'navigate'}});expect(r.status).toBe(503);expect(seen.length).toBe(before);
  expect((await call('/api/unknown')).status).toBe(503);expect(seen.length).toBe(before);

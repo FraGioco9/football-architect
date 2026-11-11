@@ -76,3 +76,45 @@ test('DEV rejects removed app paths while canonical routes still load', async ()
       assert.equal(await get(path),200,path);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+
+test('ROUTING-08: real loopback HTTP matrix, canonical redirects, invalid IDs and 404',async()=>{
+ const server=createPreviewServer({devPreview:false});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,method,headers:{host:'127.0.0.1:2000'}},res=>{
+   const chunks=[];res.on('data',chunk=>chunks.push(chunk));
+   res.on('end',()=>resolve({status:res.statusCode,location:res.headers.location??null,
+    body:Buffer.concat(chunks).toString()}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  for(const [path,target] of [
+   ['/competitions/int-1','/competitions/int-1/standings'],
+   ['/competitions/int-1/?season=2','/competitions/int-1/standings?season=2'],
+   ['/competitions/int-2/index.html?season=1','/competitions/int-2/standings?season=1'],
+   ['/competitions/int-1/fixtures/?season=2','/competitions/int-1/fixtures?season=2'],
+   ['/competitions/int-2/history/index.html?season=1','/competitions/int-2/history?season=1'],
+   ['/competitions/it-1/index.html?season=2','/competitions/it-1/overview?season=2'],
+   ['/account/login/?lang=it&next=%2Fdashboard','/account/login?lang=it&next=%2Fdashboard'],
+   ['/account/register/index.html?lang=it','/account/register?lang=it'],
+   ['/account/verify-email/?token=abc','/account/verify-email?token=abc'],
+   ['/account/login/?next=https%3A%2F%2Fevil.example','/account/login?next=https%3A%2F%2Fevil.example']
+  ]){
+   const v=await get(path);assert.equal(v.status,308,path);
+   assert.equal(v.location,target,path);assert.equal(v.body,'',path+' must have no HTML body');
+   assert.equal(new URL(v.location,'http://localhost:2000').origin,'http://localhost:2000',path);
+  }
+  const head=await get('/competitions/int-1','HEAD');
+  assert.equal(head.status,308);assert.equal(head.location,'/competitions/int-1/standings');
+  assert.equal(head.body,'');
+  for(const path of ['/competitions/int-1/standings','/competitions/int-2/history',
+   '/account/login','/account/register','/settings?view=admin'])
+   assert.equal((await get(path)).status,200,path);
+  for(const path of ['/not-a-page/','/clubs/it/41/overview',
+   '/competitions/int-1/overview','/competitions/int-2/teams','/app']){
+   const v=await get(path);assert.equal(v.status,404,path);assert.equal(v.location,null,path);
+  }
+  assert.equal((await get('/assets/a%2fb')).status,403);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
