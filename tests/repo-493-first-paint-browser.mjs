@@ -97,6 +97,109 @@ try{
   }catch(error){record(route,width,'club-first-paint','FAIL',String(error));throw error;}
   finally{release();await page.close();}
  }
+ // Exercise the real shared CSS/renderer in a clean DOM, holding a known SVG
+ // request to inspect neutral fallback, circular skeleton, resolved image and error.
+ const harness='/__fa_repo493_crest_harness';
+ const crestPage=await browser.newPage({viewport:{width:390,height:640}});
+ let releaseCrest;
+ const crestGate=new Promise(resolve=>{releaseCrest=resolve;});
+ let deRequests=0;
+ await crestPage.route('**/assets/clubs/DE/1/crest.svg',async request=>{
+  deRequests++;
+  await crestGate;
+  if(crestPage.isClosed())return;
+  try{await request.continue();}
+  catch(error){if(!crestPage.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;}
+ });
+ await crestPage.route('**/assets/clubs/BR/1/crest.svg',async request=>{
+  await request.abort('failed');
+ });
+ await crestPage.route('**/__fa_repo493_crest_harness',async request=>{
+  await request.fulfill({status:200,contentType:'text/html',body:[
+   '<!doctype html><html lang="en"><head><meta charset="utf-8">',
+   '<link rel="stylesheet" href="/assets/landing.css">',
+   '<link rel="stylesheet" href="/assets/app.css">',
+   '<script>window.faClubCrests={"DE-1":"assets/clubs/DE/1/crest.svg","BR-1":"assets/clubs/BR/1/crest.svg"};</script>',
+   '<script src="/assets/club-crests.js" defer></script>',
+   '</head><body class="app-body">',
+   '<span id="fa493-crest" class="app-world-club-crest-placeholder fa-crest-loading"',
+   ' style="width:64px;height:64px" data-club-crest="IT-1"></span>',
+   '</body></html>'
+  ].join('')});
+ });
+ try{
+  assert.equal((await crestPage.goto(origin+harness,{waitUntil:'domcontentloaded',timeout:30000}))?.status(),200);
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestFallback==='true');
+  const absent=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return {fallback:host.dataset.clubCrestFallback,
+    pending:host.dataset.clubCrestPending??null,images:host.querySelectorAll('img').length};
+  });
+  assert.equal(absent.fallback,'true');
+  assert.equal(absent.pending,null);
+  assert.equal(absent.images,0);
+  record(harness,390,'real-dom-absent-crest','PASS',absent);
+  await crestPage.evaluate(()=>document.querySelector('#fa493-crest').dataset.clubCrest='DE-1');
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestPending==='true');
+  const pending=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   const pseudo=getComputedStyle(host,'::before');
+   return {fallback:host.dataset.clubCrestFallback??null,
+    pending:host.dataset.clubCrestPending,
+    loaded:host.dataset.clubCrestLoaded??null,
+    circleDisplay:pseudo.display,circleRadius:pseudo.borderRadius,
+    imageCount:host.querySelectorAll('img').length,
+    imageVisibility:getComputedStyle(host.querySelector('img')).visibility};
+  });
+  assert.equal(pending.fallback,null,'known SVG must clear previous neutral fallback immediately');
+  assert.equal(pending.pending,'true');
+  assert.equal(pending.loaded,null);
+  assert.equal(pending.imageCount,1);
+  assert.equal(pending.circleDisplay,'block');
+  assert.equal(pending.circleRadius,'50%','shared skeleton is circular');
+  assert.equal(pending.imageVisibility,'hidden','known SVG is not revealed before load');
+  assert.equal(deRequests,1,'one in-flight request for known SVG');
+  record(harness,390,'real-dom-known-pending','PASS',pending);
+  releaseCrest();
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestLoaded==='true');
+  const loaded=await crestPage.evaluate(async()=>{
+   const host=document.querySelector('#fa493-crest');
+   const img=host.querySelector('img');
+   const visibility=getComputedStyle(img).visibility;
+   host.setAttribute('data-club-crest','DE-1');
+   await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+   return {fallback:host.dataset.clubCrestFallback??null,
+    loaded:host.dataset.clubCrestLoaded,
+    pending:host.dataset.clubCrestPending??null,
+    visible:visibility,
+    imageStable:host.querySelector('img')===img,
+    imageCount:host.querySelectorAll('img').length};
+  });
+  assert.equal(loaded.loaded,'true');
+  assert.equal(loaded.fallback,null);
+  assert.equal(loaded.pending,null);
+  assert.equal(loaded.visible,'visible');
+  assert.equal(loaded.imageStable,true,'re-observation preserves existing image node');
+  assert.equal(loaded.imageCount,1);
+  assert.equal(deRequests,1,'no redundant request when identity remains unchanged');
+  record(harness,390,'real-dom-loaded-and-reused','PASS',loaded);
+  await crestPage.evaluate(()=>document.querySelector('#fa493-crest').dataset.clubCrest='BR-1');
+  await crestPage.waitForFunction(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return host?.dataset.clubCrestFallback==='true'&&host.querySelector('img')===null;
+  });
+  const failed=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return {fallback:host.dataset.clubCrestFallback,loaded:host.dataset.clubCrestLoaded??null,
+    pending:host.dataset.clubCrestPending??null,images:host.querySelectorAll('img').length};
+  });
+  assert.equal(failed.fallback,'true','failed SVG may use the neutral fallback');
+  assert.equal(failed.pending,null);
+  assert.equal(failed.loaded,null);
+  assert.equal(failed.images,0);
+  record(harness,390,'real-dom-failed-svg','PASS',failed);
+ }catch(error){record(harness,390,'real-dom-crest-lifecycle','FAIL',String(error));throw error;}
+ finally{releaseCrest();await crestPage.close();}
  console.log('REPO-493 browser '+engine+': '+evidence.filter(e=>e.status==='PASS').length+
   ' PASS assertions; remaining matrix states UNKNOWN.');
 }finally{

@@ -81,6 +81,12 @@ This is a **targeted browser sample**, not proof for the whole 7,136-case matrix
 
 Do not mark step 05 complete until the exact-head run finishes and its evidence has been reviewed.
 
+## Step 06 — Real-browser crest lifecycle verification
+
+The existing first-paint browser suite now exercises real DOM and the shared `app.css` and `club-crests.js` resources, holding a known SVG URL to observe four stages: missing club → neutral fallback; known SVG pending → circular skeleton with no shield and hidden image; loaded SVG → visible image, stable DOM node and no duplicate request; failed SVG → neutral fallback.
+
+The test document is intercepted by Playwright on the loopback origin and **not** exposed through the production publication allowlist. This is a deterministic representative case, not a PASS for unrelated routes, locales, modes or physical Safari.
+
 ## Step 06 first crest-loading defect (Draft/HOLD)
 
 Source review found `data-club-crest-fallback="true"` could linger on an existing crest host changing from a missing/failed identity to a known SVG. Under `.fa-crest-loading`, the neutral fallback shield could appear while the real crest was still pending, contrary to the agreed first-paint policy.
