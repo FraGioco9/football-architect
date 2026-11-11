@@ -74,6 +74,7 @@
     "backend/tests/prepare-runtime.test.ts": "backend-runtime",
     "backend/tests/preview-package.test.mts": "backend-operator",
     "backend/tests/production-bundle.test.mts": "backend-operator",
+    "backend/tests/public-players-directory-runtime.test.ts": "backend-runtime",
     "backend/tests/public-sporting-runtime.test.ts": "backend-runtime",
     "backend/tests/qualification-review-packet.test.ts": "backend-contract",
     "backend/tests/reset-world-runtime.test.ts": "backend-runtime",
