@@ -68,3 +68,14 @@ test('Players two views retain shared canonical rows and approved four skill gro
  assert.match(css,/\.app-players-tabs \.app-competition-tab\[aria-selected="true"\]::after/);
  assert.match(generator,/data-players-first-paint/);
 });
+
+test('Players attribute group controls stay all visible without horizontal scrolling at desktop and mobile sizes',()=>{
+ const css=read('assets/app.css');
+ const html=read('players/index.html');
+ assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,160px\)\)/);
+ assert.match(css,/\.app-players-groups\{[^}]*overflow:visible/);
+ assert.match(css,/@media\(max-width:620px\)\{[^}]*\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
+ for(const group of ['physical','technical','mental','goalkeeping'])
+  assert.match(html,new RegExp('data-players-group="'+group+'"'));
+});
