@@ -1,4 +1,4 @@
-// QA-16: one public club overview read, validated against the shared world.
+// Club Competitions uses the same aggregate public History read as the History tab.
 // All memberships come from one server-verified season snapshot; no speculative
 // division, qualification, opponent, score, or DEV data is accepted.
 import {validPublicWorld} from './authoritative-season.mjs';
@@ -69,6 +69,28 @@ export function projectClubMemberships(payload,clubKey,season,world){
  return Object.freeze({source:'authoritative',clubKey,season,world,coverage:'complete',memberships:Object.freeze(out)});
 }
 
+// Validate all seasons in the batch before selecting the current one.
+export function projectClubHistoryOverviews(payload,clubKey,world){
+ competitionIdsForClub(clubKey);
+ if(!validPublicWorld(world)||world.seasonNumber>2||!isObject(payload)||
+  payload.schemaVersion!==1||payload.providerId!=='authoritative-world'||
+  payload.clubKey!==clubKey||!sameWorld(payload.world,world)||
+  payload.status!=='available'||payload.reason!==null||
+  !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
+  payload.provenance.resultAuthority!=='temporary-score-v1'||
+  payload.provenance.sourceRef!=='club-history:'+world.generation+':revision:'+world.revision||
+  !isObject(payload.data)||!Array.isArray(payload.data.overviews)||
+  payload.data.overviews.length!==world.seasonNumber)
+  throw TypeError('Unverified aggregate Club History response');
+ return Object.freeze(payload.data.overviews.map((raw,index)=>{
+  const season=index+1,closed=season<world.seasonNumber||world.phase==='closed';
+  if(raw?.status!==(closed?'available':'partial')&&
+    !(raw?.status==='empty'&&!closed))throw TypeError('Unverified club season status');
+  projectClubMemberships(raw,clubKey,season,world);
+  return raw;
+ }));
+}
+
 export async function readClubMemberships({clubKey,world,fetchJson,signal}){
  competitionIdsForClub(clubKey);
  if(!validPublicWorld(world)||typeof fetchJson!=='function')throw TypeError('Invalid canonical club read');
@@ -76,7 +98,8 @@ export async function readClubMemberships({clubKey,world,fetchJson,signal}){
   return Object.freeze({source:'authoritative',clubKey,season:0,world,coverage:'unstarted',memberships:Object.freeze([])});
  const season=world.seasonNumber;
  if(season>2)throw TypeError('Unsupported public season');
- const payload=await fetchJson('/api/clubs/'+clubKey+'/seasons/'+season+'/overview',{signal});
+ const batch=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});
  if(signal?.aborted)throw Error('Club read cancelled');
- return projectClubMemberships(payload,clubKey,season,world);
+ const overviews=projectClubHistoryOverviews(batch,clubKey,world);
+ return projectClubMemberships(overviews[season-1],clubKey,season,world);
 }

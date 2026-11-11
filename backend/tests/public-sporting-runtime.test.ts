@@ -24,8 +24,16 @@ const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.fetch(new Request('https://example.invalid/api/competitions/'+competition+'/seasons/'+season,{method}),{DB:database});
-const clubOverview=(club='IT-1',season='1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/seasons/'+season+'/overview',{method}),{DB:db});
 const clubHistory=(club='IT-1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/history',{method}),{DB:db});
+// Read each season's projection from the one canonical History HTTP response.
+const clubOverview=async(club='IT-1',season='1',method='GET')=>{
+ const response=await clubHistory(club,method);
+ if(!response.ok)return response;
+ const batch=await response.json() as any;
+ const selected=batch.data?.overviews?.find((row:any)=>row.selectedSeason===Number(season));
+ return new Response(JSON.stringify(selected??{error:{code:'not_found'}}),
+  {status:selected?200:404,headers:{'content-type':'application/json'}});
+};
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
@@ -102,7 +110,7 @@ it('reads anonymously with explicit empty and unsupported viewed-season states',
  expect((await clubHistory('IT-1','POST')).status).toBe(405);
  expect((await clubHistory('IT-41')).status).toBe(404);
  expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/history?all=true'),{DB:db})).status).toBe(422);
- expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/overview?all=true'),{DB:db})).status).toBe(422);
+ expect((await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/overview'),{DB:db})).status).toBe(404);
 });
 it('returns published future fixtures with no fabricated results or player stats',async()=>{
  await calendar();const r=await request(),body=await r.json() as any;

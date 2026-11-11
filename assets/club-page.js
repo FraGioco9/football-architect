@@ -277,7 +277,7 @@
      void (async()=>{
       try{
        const clubKey=selected.countryId+'-'+selected.clubId;
-       // Only one compact overview API request per world revision.
+       // The shared History endpoint supplies the current competition snapshot.
        const verified=await projection.readClubMemberships({clubKey,world,fetchJson:publicJson,signal});
        const now=state.get();
        if(signal.aborted||epoch!==publicEpoch||now.source!=='authoritative'||
@@ -364,7 +364,7 @@
      publish({source:'loading'});
      void (async()=>{
       try{
-       const result=await readClubHistory({clubKey,world,fetchJson:publicJson,signal,preferBatch:true});
+       const result=await readClubHistory({clubKey,world,fetchJson:publicJson,signal});
        const now=state.get();
        if(signal.aborted||seq!==epoch||now.source!=='authoritative'||!same(now.world,world)||
           now.sourceRevision!==current.sourceRevision)return;

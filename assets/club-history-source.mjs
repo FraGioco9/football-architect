@@ -1,7 +1,7 @@
 // Club History reads only official public memberships and per-season competition
 // statistics; the active season is partial, while earlier seasons are sealed.
 import {validPublicWorld} from './authoritative-season.mjs';
-import {competitionIdsForClub,projectClubMemberships} from './club-season-source.mjs';
+import {competitionIdsForClub,projectClubMemberships,projectClubHistoryOverviews} from './club-season-source.mjs';
 
 const safe=n=>Number.isSafeInteger(n)&&n>=0;
 const isObject=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -79,10 +79,8 @@ export function projectClubCompetitionStats(payload,clubKey,membership,season,wo
 }
 export const projectClosedClubCompetition=projectClubCompetitionStats;
 
-// CLUB-HISTORY-13: The server's club overview now carries the verified
-// per-competition match totals it has already reconstructed from saved receipts.
-// An older overview lacking this additive field may still use the separate
-// competition endpoint; a present but malformed field must never fall back.
+// Verify the match totals embedded in each authoritative History overview.
+// Missing or malformed evidence must never cause a second HTTP request.
 export function projectClubOverviewStats(payload,clubKey,membership,season,world){
  const current=season===world.seasonNumber,closed=!current||world.phase==='closed';
  if(!isObject(payload)||payload.schemaVersion!==1||payload.providerId!=='authoritative-world'||
@@ -97,7 +95,7 @@ export function projectClubOverviewStats(payload,clubKey,membership,season,world
  const matches=payload.data.memberships.filter(m=>m?.competitionId===membership.competitionId);
  if(matches.length!==1)throw TypeError('Duplicate club history membership');
  const raw=matches[0];
- if(raw.stats===undefined)return null; // Backward-compatible older public response.
+ if(raw.stats===undefined)return null; // The aggregate must contain complete verified stats.
  const stats=raw.stats;
  if(!isObject(stats)||Object.hasOwn(stats,'clubId')||
    !['played','won','drawn','lost','goalsFor','goalsAgainst','cleanSheets'].every(key=>safe(stats[key]))||
@@ -112,62 +110,29 @@ export function projectClubOverviewStats(payload,clubKey,membership,season,world
   goalDifference:stats.goalDifference,cleanSheets:stats.cleanSheets});
 }
 
-// One aggregate club History endpoint replaces per-season browser fan-out.
-// Fall back only when an older backend does not support the route (404/405).
-// Never treat a corrupted or unavailable authoritative response as legacy.
-export async function readClubHistory({clubKey,world,fetchJson,signal,preferBatch=false}){
+// Both Club views use the same verified aggregate and per-world HTTP cache.
+export async function readClubHistory({clubKey,world,fetchJson,signal}){
  competitionIdsForClub(clubKey);
  if(typeof fetchJson!=='function')throw TypeError('Invalid club history reader');
  const seasons=clubHistorySeasons(world);
- const projectSeason=async(raw,season,requireCompact)=>{
-  const current=season===world.seasonNumber,closed=!current||world.phase==='closed';
+ if(seasons.length===0)return Object.freeze({source:'authoritative',clubKey,world,
+  coverage:'empty',seasons:Object.freeze([])});
+ const batch=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});
+ if(signal?.aborted)throw Error('Club history read cancelled');
+ const overviews=projectClubHistoryOverviews(batch,clubKey,world);
+ const records=overviews.map((raw,index)=>{
+  const season=index+1,current=season===world.seasonNumber,closed=!current||world.phase==='closed';
   const entry=projectClubMemberships(raw,clubKey,season,world);
   if(entry.coverage==='unpublished'&&current&&!closed)
    return Object.freeze({season,ongoing:true,memberships:Object.freeze([])});
   if(entry.coverage!=='complete')throw TypeError('Unverified club season');
-  const memberships=await Promise.all(entry.memberships.map(async membership=>{
-   const compact=projectClubOverviewStats(raw,clubKey,membership,season,world);
-   if(compact)return Object.freeze({...membership,stats:compact});
-   if(requireCompact)throw TypeError('Incomplete aggregate Club History evidence');
-   // Legacy endpoint compatibility only, until the backend is deployed with
-   // verified compact match totals. No silently substituted statistics.
-   const detailed=await fetchJson('/api/competitions/'+membership.competitionId+'/seasons/'+season,{signal});
-   if(signal?.aborted)throw Error('Club history read cancelled');
-   return Object.freeze({...membership,
-    stats:projectClubCompetitionStats(detailed,clubKey,membership,season,world)});
-  }));
+  const memberships=entry.memberships.map(membership=>{
+   const stats=projectClubOverviewStats(raw,clubKey,membership,season,world);
+   if(!stats)throw TypeError('Incomplete aggregate Club History evidence');
+   return Object.freeze({...membership,stats});
+  });
   return Object.freeze({season,ongoing:!closed,memberships:Object.freeze(memberships)});
- };
- let aggregate=null;
- if(preferBatch){
-  try{aggregate=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});}
-  catch(error){
-   if(error?.status!==404&&error?.status!==405)throw error;
-  }
-  if(signal?.aborted)throw Error('Club history read cancelled');
- }
- let records;
- if(aggregate!==null){
-  if(!isObject(aggregate)||aggregate.schemaVersion!==1||
-   aggregate.providerId!=='authoritative-world'||aggregate.clubKey!==clubKey||
-   !sameWorld(aggregate.world,world)||aggregate.status!=='available'||
-   aggregate.reason!==null||!isObject(aggregate.provenance)||
-   aggregate.provenance.kind!=='authoritative'||
-   aggregate.provenance.resultAuthority!=='temporary-score-v1'||
-   aggregate.provenance.sourceRef!==
-    'club-history:'+world.generation+':revision:'+world.revision||
-   !isObject(aggregate.data)||!Array.isArray(aggregate.data.overviews)||
-   aggregate.data.overviews.length!==seasons.length)
-   throw TypeError('Unverified aggregate Club History response');
-  records=await Promise.all(seasons.map((season,i)=>
-   projectSeason(aggregate.data.overviews[i],season,true)));
- }else{
-  records=await Promise.all(seasons.map(async season=>{
-   const raw=await fetchJson('/api/clubs/'+clubKey+'/seasons/'+season+'/overview',{signal});
-   if(signal?.aborted)throw Error('Club history read cancelled');
-   return projectSeason(raw,season,false);
-  }));
- }
+ });
  if(signal?.aborted)throw Error('Club history read cancelled');
  const played=records.some(entry=>entry.memberships.some(m=>m.stats.played>0));
  return Object.freeze({source:'authoritative',clubKey,world,

@@ -96,9 +96,18 @@ test('QA-16: Debug ON and OFF use identical competition row markup with one or t
 
 test('QA-16: single-request protocol validates authoritative data, future matches and ownership',async()=>{
  const calls=[];
- const readJson=async url=>{calls.push(url);return payload()};
+ const readJson=async url=>{
+  calls.push(url);
+  const previous={...payload([]),selectedSeason:1,status:'available',
+   provenance:{...payload().provenance,sourceRef:'club:'+world.generation+':season:1:verified'},
+   data:{season:1,memberships:[]}};
+  return {schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world,
+   status:'available',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+    sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
+   data:{overviews:[previous,payload()]}};
+ };
  const loaded=await readClubMemberships({clubKey:'IT-17',world,fetchJson:readJson});
- assert.deepEqual(calls,['/api/clubs/IT-17/seasons/2/overview']);
+ assert.deepEqual(calls,['/api/clubs/IT-17/history']);
  assert.deepEqual(loaded.memberships.map(m=>m.competitionId),['IT-1','int-1']);
  assert.throws(()=>projectClubMemberships({...payload(),world:{...world,revision:18}},'IT-17',2,world),/Invalid authoritative/);
  assert.throws(()=>projectClubMemberships(payload([entry('IT-1'),entry('IT-2')]),'IT-17',2,world),/Incomplete or duplicate/);
@@ -204,14 +213,14 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
 test('QA-16: no parallel competition or redundant world requests; publication gate remains',()=>{
  const client=read('assets/club-page.js'),source=read('assets/club-season-source.mjs'),guard=read('tools/publication-guard.mjs');
  const backend=read('backend/src/public-sporting-read.ts'),route=read('backend/src/index.ts');
- assert.match(source,/\/api\/clubs\/.*\/seasons\/.*\/overview/);
+ assert.match(source,/\/api\/clubs\/.*\/history/);
  assert.doesNotMatch(source,/\/api\/competitions\//);
  assert.doesNotMatch(client,/publicManifest\(\)/);
  assert.doesNotMatch(client,/publicJson\('\/api\/world'/);
  assert.match(client,/now\.sourceRevision!==current\.sourceRevision/);
  assert.match(client,/applyCompetitionSnapshot\(verified\)/);
  assert.match(client,/await import\('\/assets\/world-clock-adapter\.js'\)/);
- assert.match(backend,/readPublicClubOverview/);
- assert.match(route,/readPublicClubOverview\(requireDatabase\(env\.DB\)/);
+ assert.match(backend,/readPublicClubHistory/);
+ assert.match(route,/readPublicClubHistory\(requireDatabase\(env\.DB\)/);
  assert.ok(guard.includes('"club-season-source.mjs"'));
 });

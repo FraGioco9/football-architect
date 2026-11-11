@@ -482,7 +482,10 @@ try {
    if(view==="awards"){
     assert.equal(await page.locator('#competition-panel-awards > .fa-awards .fa-awards-card').count(),11,
       'Rendered awards must be mounted directly, never trapped in the aria-hidden skeleton');
-    assert.equal(await page.locator('.fa-awards-card').count(),11);
+    assert.equal(await page.locator('#competition-panel-awards .fa-awards-card').count(),11,
+      'Only the 11 live awards cards may remain inside the mounted Awards panel');
+    assert.equal(await page.locator('#competition-panel-awards [data-competition-skeleton-root]').count(),0,
+      'The mounted Awards panel must discard its first-paint skeleton');
     assert.equal(await page.locator('.fa-awards-card-promotion,.fa-awards-card-playoff').count(),0);
     assert.equal(await page.locator('[data-award-status="available"]').count(),0);
    }
