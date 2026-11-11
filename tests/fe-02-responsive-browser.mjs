@@ -243,6 +243,9 @@ try{
    // Scroll the actual strip: pagehide persists its real offset on reload.
    await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
    await page.reload({waitUntil:"domcontentloaded"});
+   // The first-paint and deferred tab restorers may complete after the parse
+   // event. Assert the real retained offset, not a transient zero.
+   await page.waitForFunction(()=>document.querySelector(".app-competition-tabs")?.scrollLeft>65);
    const restored=await page.locator(".app-competition-tabs").evaluate(el=>el.scrollLeft);
    assert.ok(restored>65,"SAF-02 parser-time tab offset "+width+": "+restored);
   });
