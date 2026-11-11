@@ -116,3 +116,8 @@ The existing Browser FULL suite now checks **six additional real HTML/CSS first-
 
 This specifically covers **the unresolved pre-hydration state**, not completed data hydration, Admin, Debug ON/OFF, real public-season history results, complex postseason schedule or physical Safari. Their acceptance checks remain open. Results are recorded per case in the existing `repo-493-first-paint-chromium.json` artifact. Until exact-head Browser QA completes, these cases must be treated as **UNVERIFIED**, not PASS.
 
+## Step 07 exact-head test correction
+
+[Browser QA run #43079689335](https://github.com/FraGioco9/football-architect/actions/runs/43079689335) failed the **new test** at `/competitions/it-1/fixtures?season=1` on `d3e6e431bc09ae43cb99d8b4f4291910194f5d6c`, where a generic Stats/History `[data-competition-skeleton-root]` was incorrectly assumed to exist for Fixtures. Fixtures has a dedicated match skeleton (`#app-fixtures-skeleton`) whose CSS visibility is controlled by global loading state and a permanently reserved matchday toolbar (`#app-fixtures-toolbar`). The failed height measurement was of a nonexistent generic selector, **not evidence of a production regression**. The corrected assertion now measures the actual visible static fixture toolbar; fixture skeleton rows, their paired crest slots and absence of invented identities are checked separately. Do not mistake presence of dormant rows for their verified visible loading state—broader hydration/first-paint QA remains open.
+
+No UI/source renderer change, CI bypass or additional workflow; acceptance awaits new exact HEAD.

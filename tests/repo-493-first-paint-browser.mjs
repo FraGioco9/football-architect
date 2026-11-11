@@ -127,6 +127,9 @@ try{
      const other=[...document.querySelectorAll('#app-divisions > .app-competition-panel')]
       .filter(p=>p!==panel&&!p.hidden).map(p=>p.id);
      const root=panel?.querySelector('[data-competition-skeleton-root]');
+     // Fixtures has its own static toolbar and dedicated match skeleton,
+     // not a generic Stats/History data-competition-skeleton-root.
+     const reserved=view==='fixtures'?panel?.querySelector('#app-fixtures-toolbar'):root;
      const elements={
       view:document.documentElement.dataset.competitionView,
       panelHidden:panel?.hidden,
@@ -134,7 +137,8 @@ try{
       tabs:tabs.length,
       active:tabs.filter(t=>t.getAttribute('aria-selected')==='true').map(t=>t.id),
       skeleton:root?.dataset.competitionSkeletonRoot??null,
-      skeletonHeight:root?.getBoundingClientRect().height??0,
+      reservedHeight:reserved?.getBoundingClientRect().height??0,
+      reservationTarget:view==='fixtures'?'fixture-round-toolbar':'view-skeleton',
       panelBusy:panel?.getAttribute('aria-busy'),
       scoreRows:panel?.querySelectorAll('[data-fixture-match]').length??0
      };
@@ -161,7 +165,7 @@ try{
     assert.deepEqual(before.otherVisible,[],route+' no unrelated panel');
     assert.equal(before.tabs,7);
     assert.deepEqual(before.active,['competition-tab-'+view]);
-    assert.ok(before.skeletonHeight>0,route+' reserves measured layout space');
+    assert.ok(before.reservedHeight>0,route+' reserves measured '+before.reservationTarget+' geometry');
     assert.equal(before.panelBusy,'true','unresolved provider must remain busy');
     assert.equal(before.scoreRows,0,'never invent fixture results during first paint');
     if(view==='history'){
