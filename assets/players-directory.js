@@ -1,4 +1,4 @@
-/* Public Players directory: canonical D1 profile projection, server-side filters and two views. */
+/* Public Players directory: approved public D1 projection and stable two-view layout. */
 (() => {
  'use strict';
  const flags=Object.freeze({
@@ -15,7 +15,6 @@
   mental:['vision','positioning','decisions','composure'],
   goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
  });
- const positions='GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' ');
  const allAttrs=Object.values(groups).flat();
  const attrLabels={
   en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|GK positioning|Aerial',
@@ -25,23 +24,21 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement gardien|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Physical','Technical','Mental','Goalkeeping'],filter:['Nationality','Primary position'],all:['All nationalities','All primary positions'],columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Fisici','Tecnici','Mentali','Portiere'],filter:['Nazionalità','Posizione primaria'],all:['Tutte le nazionalità','Tutte le posizioni primarie'],columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Physisch','Technisch','Mental','Torwart'],filter:['Nationalität','Hauptposition'],all:['Alle Nationalitäten','Alle Hauptpositionen'],columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Físicos','Técnicos','Mentales','Portero'],filter:['Nacionalidad','Posición principal'],all:['Todas las nacionalidades','Todas las posiciones principales'],columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Physiques','Techniques','Mentaux','Gardien'],filter:['Nationalité','Poste principal'],all:['Toutes les nationalités','Tous les postes principaux'],columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Physical','Technical','Mental','Goalkeeping'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Fisici','Tecnici','Mentali','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Physisch','Technisch','Mental','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Físicos','Técnicos','Mentales','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Physiques','Techniques','Mentaux','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
  const attributeName=key=>(attrLabels[language()]||attrLabels.en).split('|')[allAttrs.indexOf(key)]||key;
  function parseLocation(){
   const p=new URLSearchParams(location.search);
-  const country=p.get('nationality'),position=p.get('position'),rawPage=Number(p.get('page')||'1');
+  const rawPage=Number(p.get('page')||'1');
   return {
    view:p.get('view')==='attributes'?'attributes':'overview',
    group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'physical',
-   nationality:country&&Object.hasOwn(flags,country)?country:'',
-   position:position&&positions.includes(position)?position:'',
    page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1
   };
  }
@@ -50,14 +47,10 @@
   if(!table||!table.tBodies.length||!scroll)return;
   const body=table.tBodies[0],countNode=document.querySelector('[data-players-count]');
   const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
-  const selects=[...document.querySelectorAll('[data-players-filter]')];
   const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
   const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
   previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
   counter.className='app-players-page-count';counter.setAttribute('aria-live','polite');pager.append(previous,counter,next);scroll.after(pager);
-  const nationality=selects.find(x=>x.dataset.playersFilter==='nationality'),position=selects.find(x=>x.dataset.playersFilter==='position');
-  for(const code of Object.keys(flags).sort())nationality.add(new Option(code,code));
-  for(const code of positions)position.add(new Option(code,code));
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
   const cols=()=>state.view==='attributes'?2+groups[state.group].length:6;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
@@ -71,8 +64,6 @@
    for(const name of ['view','group','nationality','position','page'])url.searchParams.delete(name);
    if(state.view!=='overview')url.searchParams.set('view',state.view);
    if(state.view==='attributes'&&state.group!=='physical')url.searchParams.set('group',state.group);
-   if(state.nationality)url.searchParams.set('nationality',state.nationality);
-   if(state.position)url.searchParams.set('position',state.position);
    if(state.page>1)url.searchParams.set('page',String(state.page));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
@@ -83,11 +74,10 @@
    document.documentElement.dataset.playersGroup=state.group;
    tabs.forEach((tab,i)=>{const active=tab.dataset.playersView===state.view;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.tabs[i]});
    groupTabs.forEach((tab,i)=>{const active=tab.dataset.playersGroup===state.group;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.groups[i]});
-   selects.forEach((select,i)=>{select.value=i===0?state.nationality:state.position;select.options[0].textContent=t.all[i];select.setAttribute('aria-label',t.filter[i]);select.closest('label')?.querySelector('[data-players-filter-copy]')?.replaceChildren(document.createTextNode(t.filter[i]))});
   }
   function renderHead(){
    const t=locale(),row=document.createElement('tr');
-   const th=(value,isFlag=false)=>{const node=document.createElement('th');node.scope='col';if(isFlag){node.className='app-players-flag-col';const a=document.createElement('span');a.className='sr-only';a.textContent=t.filter[0];node.append(a)}else node.textContent=value;row.append(node)};
+   const th=(value,isFlag=false)=>{const node=document.createElement('th');node.scope='col';if(isFlag){node.className='app-players-flag-col';const a=document.createElement('span');a.className='sr-only';a.textContent=t.nationality;node.append(a)}else node.textContent=value;row.append(node)};
    th('',true);th(t.columns[0]);
    if(state.view==='overview')for(const name of t.columns.slice(1))th(name);
    else for(const key of groups[state.group])th(attributeName(key));
@@ -134,11 +124,8 @@
   async function load(page){
    const seq=++ticket;state.page=page;current=null;status='loading';
    scroll.setAttribute('aria-busy','true');renderHead();message(locale().loading);
-   const params=new URLSearchParams();
-   if(state.nationality)params.set('nationality',state.nationality);
-   if(state.position)params.set('position',state.position);
    try{
-    const response=await fetch('/api/players/page/'+page+(params.size?'?'+params.toString():''),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+    const response=await fetch('/api/players/page/'+page,{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
     if(!response.ok)throw new Error('http_'+response.status);
     const data=await response.json();
     if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||!Number.isSafeInteger(data.totalPages)||data.totalPages<1)
@@ -169,24 +156,12 @@
   const tabsBar=document.querySelector('.app-players-tabs'),groupBar=document.querySelector('.app-players-groups');
   tabsBar?.addEventListener('keydown',event=>keyboardTab(event,tabs,changeView,'playersView'));
   groupBar?.addEventListener('keydown',event=>keyboardTab(event,groupTabs,changeGroup,'playersGroup'));
-  function clearCount(){
-   lastCount=null;
-   if(!countNode)return;
-   const skeleton=document.createElement('span');skeleton.className='app-players-count-skeleton';skeleton.setAttribute('aria-hidden','true');
-   countNode.replaceChildren(skeleton);
-  }
-  selects.forEach(select=>select.addEventListener('change',()=>{
-   const nextCountry=nationality.value,nextPosition=position.value;
-   state.nationality=Object.hasOwn(flags,nextCountry)?nextCountry:'';
-   state.position=positions.includes(nextPosition)?nextPosition:'';
-   state.page=1;clearCount();syncUrl();load(1);
-  }));
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
-   const next=parseLocation(),changed=next.nationality!==state.nationality||next.position!==state.position||next.page!==state.page;
+   const next=parseLocation(),changed=next.page!==state.page;
    state=next;syncControls();
-   if(changed){clearCount();load(state.page)}else paint(current);
+   if(changed)load(state.page);else paint(current);
   });
   new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();message(locale()[status]);if(lastCount!==null)renderCount(lastCount)}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

@@ -45,23 +45,23 @@ test('public page uses persisted numeric IDs, includes approved JSON and exclude
  assert.deepEqual(Object.keys(player.attributes),PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS);
  assert.doesNotMatch(JSON.stringify(player),/initial_age|development_aptitude|seed|preview_id|known_as/);
 });
-test('public nationality and primary-position filters apply to SQL count AND page, with parameters bound',async()=>{
+
+test('public directory count and pagination use only current world generation and bounded page size',async()=>{
  const {db,calls}=mockDb();
- await readPublicPlayers(db,1,{nationality:'ITA',position:'CM'});
+ await readPublicPlayers(db,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
  const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
- for(const entry of [count,page]){
-  assert.match(entry.sql,/world_generation=\?/);
-  assert.match(entry.sql,/json_extract\(payload_json, '\$.nationality'\)=\?/);
-  assert.match(entry.sql,/json_extract\(payload_json, '\$.primary_position'\)=\?/);
-  assert.deepEqual(entry.params.slice(0,3),[generation,'ITA','CM']);
- }
- assert.deepEqual(page.params.slice(-2),[50,0]);
+ assert.match(count.sql,/WHERE world_generation=\?/);
+ assert.match(page.sql,/WHERE world_generation=\?/);
+ assert.doesNotMatch(count.sql,/json_extract/);
+ assert.doesNotMatch(page.sql,/json_extract/);
+ assert.deepEqual(count.params,[generation]);
+ assert.deepEqual(page.params,[generation,50,0]);
 });
-test('public filtered read rejects unsafe filter values before database access',async()=>{
+test('public directory rejects invalid page numbers before database reads',async()=>{
  const {db,calls}=mockDb();
- for(const filters of [{nationality:"ITA' OR 1=1"},{nationality:'ita'},{position:'INVALID'},{position:'ST;DROP'}]){
-  await assert.rejects(readPublicPlayers(db,1,filters),{status:422,code:'invalid_public_request'});
+ for(const page of [0,-1,1.5,10000,Number.NaN]){
+  await assert.rejects(readPublicPlayers(db,page),/invalid_public_request/);
  }
  assert.equal(calls.length,0);
 });

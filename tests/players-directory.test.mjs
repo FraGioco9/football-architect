@@ -32,10 +32,14 @@ test('Players script is served by the local allowlist and included in publicatio
  assert.equal(isAllowlistedPublicPath('assets/players-directory-private.js'),false,'no broad assets/* allowance');
 });
 
-test('Players #505 header reserves the API-backed total on first paint without empty view tabs',()=>{
+test('Players #505 toolbar reserves the API-backed total beside the attribute groups',()=>{
  const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
  const code=read('assets/players-directory.js'),css=read('assets/app.css');
- assert.match(html,/<header class="app-players-header">[\s\S]*?id="players-title"[\s\S]*?data-players-count aria-live="polite"/);
+ assert.match(html,/<header class="app-players-header">[\s\S]*?id="players-title"[\s\S]*?<\/header>/);
+ assert.match(html,/<div class="app-players-toolbar">[\s\S]*?class="app-players-groups"[\s\S]*?data-players-group="goalkeeping"[\s\S]*?data-players-count aria-live="polite"/);
+ const header=html.match(/<header class="app-players-header">([\s\S]*?)<\/header>/)?.[1];
+ assert.ok(header,'title header exists');
+ assert.doesNotMatch(header,/data-players-count/);
  assert.match(html,/class="app-players-count-skeleton" aria-hidden="true"/);
  assert.match(generator,/app-players-header/);
  assert.match(generator,/data-players-count/);
@@ -46,8 +50,9 @@ test('Players #505 header reserves the API-backed total on first paint without e
  assert.match(code,/lastCount=data\.count;renderCount\(lastCount\)/);
  assert.match(code,/new Intl\.NumberFormat/);
  for(const locale of ['en','de','es','fr','it'])assert.ok(code.includes(locale+":{one:'"),locale);
- assert.match(css,/\.app-players-header\{display:flex/);
- assert.match(css,/@media\(max-width:620px\)\{\.app-players-header/);
+ assert.match(css,/\.app-players-header\{min-width:0\}/);
+ assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
+ assert.match(css,/\.app-players-toolbar\{height:96px/);
 });
 
 test('Players two views retain shared canonical rows and approved four skill groups',()=>{
@@ -57,27 +62,31 @@ test('Players two views retain shared canonical rows and approved four skill gro
   assert.ok(html.includes('data-players-group="'+group+'"'),group);
   assert.ok(renderer.includes(group+':['),group);
  }
- assert.match(html,/data-players-filter="nationality"/);
- assert.match(html,/data-players-filter="position"/);
+ assert.doesNotMatch(html,/data-players-filter|app-players-filters/);
+ assert.doesNotMatch(renderer,/data-players-filter|state\.nationality|state\.position/);
  assert.match(html,/class="app-players-table"/);
  assert.match(renderer,/history\[mode\]/);
  assert.match(renderer,/window\.addEventListener\('popstate'/);
- assert.match(renderer,/new URLSearchParams\(\)/);
+ assert.match(renderer,/new URLSearchParams\(location\.search\)/);
  assert.match(renderer,/groups\[state\.group\]/);
  assert.match(renderer,/data\.count/);
- assert.match(css,/\.app-players-filter-control select\{/);
- assert.match(css,/\.app-players-tabs \.app-competition-tab\[aria-selected="true"\]::after/);
+ assert.doesNotMatch(css,/\.app-players-filters|\.app-players-filter-control/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*transition:background-color/);
+ assert.doesNotMatch(css,/\.app-players-tabs \.app-competition-tab\[aria-selected="true"\]::after/);
  assert.match(generator,/data-players-first-paint/);
 });
 
 test('Players attribute group controls stay all visible without horizontal scrolling at desktop and mobile sizes',()=>{
  const css=read('assets/app.css');
  const html=read('players/index.html');
- assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,160px\)\)/);
- assert.match(css,/\.app-players-groups\{[^}]*overflow:visible/);
- assert.match(css,/@media\(max-width:620px\)\{\.app-players-filters/);
- assert.ok(css.includes(".app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr))}"),"four tabs must be laid out as two columns on mobile");
+ assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);grid-auto-rows:44px/);
+ assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
+ assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
+ assert.match(css,/\.app-players-toolbar\{height:96px/);
+ assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:44px/);
  assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
+ assert.match(html,/class="app-competition-tab app-players-group/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{/);
  for(const group of ['physical','technical','mental','goalkeeping'])
   assert.match(html,new RegExp('data-players-group="'+group+'"'));
 });
@@ -127,4 +136,16 @@ test('Players first paint never selects or replaces the html root despite its st
   assert.equal(groups[3].textContent,'Goalkeeping');
   if(search)assert.equal(table.dataset.playersTableMode,'attributes');
  }
+});
+
+test('Players toolbar remains in document flow across main views and count is outside the hidden group',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),code=read('assets/players-directory.js');
+ const toolbar=html.slice(html.indexOf('<div class="app-players-toolbar">'),html.indexOf('<div class="app-players-table-scroll"'));
+ assert.equal((toolbar.match(/data-players-count/g)||[]).length,1);
+ assert.equal((toolbar.match(/data-players-group="/g)||[]).length,4);
+ assert.ok(toolbar.indexOf('</nav>')<toolbar.indexOf('data-players-count'),'count must be sibling of the view-specific group nav');
+ assert.ok(css.includes('html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}'));
+ assert.doesNotMatch(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{display:none/);
+ assert.match(code,/function changeView\(view\)\{[^}]*state\.view=view;syncUrl\(\);refresh\(\)/);
+ assert.doesNotMatch(code,/data-players-filter|state\.nationality|state\.position/);
 });

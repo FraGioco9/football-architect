@@ -137,7 +137,12 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
   expect(Number.isSafeInteger(player.id)&&player.id>0).toBe(true);
   expect(player).toMatchObject({nationality:'ITA',primary_position:'ST',age:expect.any(Number),height_cm:expect.any(Number)});
   expect(player.display_name).toContain(' ');
-  for(const privateField of ['first_name','last_name','attributes','initial_age','development_aptitude','batch_id','seed','preview_id','identity_sources']){
+  expect(player.first_name).toEqual(expect.any(String));
+  expect(player.last_name).toEqual(expect.any(String));
+  expect(player.secondary_nationality===null||typeof player.secondary_nationality==='string').toBe(true);
+  expect(Object.keys(player.attributes)).toHaveLength(20);
+  for(const value of Object.values(player.attributes) as number[])expect(Number.isInteger(value)&&value>=1&&value<=99).toBe(true);
+  for(const privateField of ['initial_age','development_aptitude','batch_id','seed','preview_id','identity_sources']){
    expect(player).not.toHaveProperty(privateField);
   }
  }

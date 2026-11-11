@@ -1544,12 +1544,12 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 
 /* Explore Players uses the same inline SVG presentation as the other sidebar icons. */
 /* Players header: stable first-paint count, aligned with the other Explore directories. */
-.app-players-header{display:flex;align-items:center;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;min-width:0}
+.app-players-header{min-width:0}
 .app-players-header>.app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;text-align:left}
 html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
-.app-players-count{margin:0;min-width:110px;min-height:20px;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
+.app-players-count{flex:0 0 auto;margin:0;min-width:116px;min-height:20px;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
 .app-players-count-skeleton{display:inline-block;width:88px;height:12px;border-radius:4px;background:var(--line);vertical-align:middle}
-@media(max-width:620px){.app-players-header{align-items:flex-start;flex-direction:column;gap:8px}.app-players-count{text-align:start}}
+
 /* Player directory: fixed six-column full-width table with an accessible blank flag heading. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-players-table-scroll:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
@@ -1578,25 +1578,26 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 .app-players-page-button:not(:disabled):hover{border-color:var(--focus)}
 .app-players-page-button:disabled{opacity:.45;cursor:default}
 
-/* PLAYERS-505: two static views, canonical site controls and responsive attribute table. */
+/* PLAYERS-505: same active-tab treatment as Standings, with an always-reserved toolbar.
+ * Group tabs remain in flow while visually hidden in Overview, so the table never shifts. */
 .app-players-tabs{margin-top:var(--app-page-section-gap);min-height:44px}
-.app-players-tabs .app-competition-tab{position:relative;text-decoration:none}
-.app-players-tabs .app-competition-tab[aria-selected="true"]::after{content:"";height:2px;position:absolute;inset-inline:8px;bottom:0;background:var(--fa-shell-accent);border-radius:2px}
-.app-players-tabs .app-competition-tab:focus-visible,.app-players-group:focus-visible,.app-players-filter-control select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-players-filters{display:grid;grid-template-columns:repeat(2,minmax(160px,220px));align-items:stretch;gap:12px;margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:var(--fa-radius-panel);background:var(--surface);min-width:0}
-.app-players-filter-label{display:flex;flex-direction:column;gap:8px;min-width:0;color:var(--muted);font-size:12px;font-weight:650}
-.app-players-filter-control{position:relative;display:block;min-width:0}
-.app-players-filter-control select{box-sizing:border-box;width:100%;min-width:0;height:var(--fa-control-height-filter);appearance:none;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface-raised);color:var(--text);font:inherit;font-size:13px;font-weight:600;padding:10px 34px 10px 12px;cursor:pointer}
-.app-players-filter-control .language-chevron{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted)}
-.app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,160px));align-items:stretch;gap:8px;margin-top:14px;width:100%;max-width:100%;min-width:0;overflow:visible}
-html:not([data-players-view="attributes"]) .app-players-groups{display:none}
-.app-players-group{box-sizing:border-box;width:100%;min-width:0;white-space:normal;text-align:center;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--muted);padding:10px 14px;min-height:var(--fa-control-height-regular);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
-.app-players-group:hover{color:var(--text);border-color:var(--focus)}
-.app-players-group[aria-selected="true"]{color:var(--text);background:var(--surface-raised);border-color:var(--fa-shell-accent)}
-.app-players-tabs~.app-players-table-scroll{margin-top:14px}
+.app-players-tabs .app-competition-tab{position:relative;text-decoration:none;transition:background-color .18s ease,color .18s ease}
+.app-players-tabs .app-competition-tab:focus-visible,.app-players-group:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0;margin-top:14px}
+.app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:44px;flex:1 1 auto;gap:8px;max-width:664px;min-width:0}
+html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}
+.app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:44px;min-height:44px;padding:7px 6px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
+.app-players-toolbar+.app-players-table-scroll{margin-top:14px}
 .app-players-table[data-players-table-mode="attributes"]{min-width:760px}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:220px;text-align:left}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){width:120px;text-align:center}
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1250px}
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+3){font-variant-numeric:tabular-nums}
-@media(max-width:620px){.app-players-filters{grid-template-columns:minmax(0,1fr);padding:12px}.app-players-tabs{margin-top:18px}.app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr))}.app-players-group{padding:8px 11px;min-height:44px}.app-players-filter-control select{min-height:44px}}
+@media(max-width:620px){
+ .app-players-tabs{margin-top:18px}
+ .app-players-toolbar{height:96px;align-items:flex-start;gap:8px}
+ .app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:44px}
+ .app-players-group{min-height:44px;height:44px;padding:6px 3px;font-size:11px}
+ .app-players-count{align-self:flex-start;min-width:102px;margin-top:12px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.app-players-tabs .app-competition-tab,.app-players-group{transition:none}}

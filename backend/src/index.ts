@@ -51,15 +51,8 @@ export default {
     const playersPage=url.pathname.match(/^\/api\/players(?:\/page\/([1-9][0-9]{0,3}))?$/);
     if(playersPage){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
-      const query=url.searchParams,allowed=new Set(['nationality','position']);
-      if([...query.keys()].some(key=>!allowed.has(key)||query.getAll(key).length!==1))
-       return json(422,{error:{code:'invalid_public_request'}});
-      const nationality=query.get('nationality')??undefined;
-      const position=query.get('position')??undefined;
-      if((nationality!==undefined&&!/^[A-Z]{3}$/.test(nationality))||
-         (position!==undefined&&!new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' ')).has(position)))
-       return json(422,{error:{code:'invalid_public_request'}});
-      try{return json(200,await readPublicPlayers(requireDatabase(env.DB),Number(playersPage[1]??'1'),{nationality,position}))}
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayers(requireDatabase(env.DB),Number(playersPage[1]??'1')))}
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'players_unavailable'}});
