@@ -229,6 +229,7 @@
     "tests/fe-05-visual-browser.mjs": "browser",
     "tests/fe-05-visual-contract.test.mjs": "site-node",
     "tests/fe-05-visual-fixtures.mjs": "support",
+    "tests/fixtures-crest-skeleton-alignment.test.mjs": "site-node",
     "tests/fixtures/a03-browser-routes.json": "support",
     "tests/fixtures/it-1-demo.mjs": "support",
     "tests/g10-access-03.test.mjs": "site-node",
