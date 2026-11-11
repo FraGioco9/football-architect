@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 
@@ -79,4 +80,51 @@ test('Players attribute group controls stay all visible without horizontal scrol
  assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
  for(const group of ['physical','technical','mental','goalkeeping'])
   assert.match(html,new RegExp('data-players-group="'+group+'"'));
+});
+
+test('Players first paint never selects or replaces the html root despite its state data attributes',()=>{
+ const html=read('players/index.html');
+ const generator=read('tools/generate-app-pages.mjs');
+ const renderer=read('assets/players-directory.js');
+ const script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script,'first paint script must be part of the parser-created shell');
+ for(const source of [script,renderer]){
+  assert.doesNotMatch(source,/document\.querySelectorAll\(['"]\[data-players-(?:view|group)\]/);
+  assert.ok(source.includes(".app-players-tabs [data-players-view]"));
+  assert.ok(source.includes(".app-players-groups [data-players-group]"));
+ }
+ assert.ok(generator.includes('.app-players-tabs [data-players-view]'));
+ assert.ok(generator.includes('.app-players-groups [data-players-group]'));
+ for(const search of ['', '?view=attributes&group=goalkeeping']){
+  const root={
+   lang:'en',dataset:{},
+   set textContent(_value){throw Error('Changing HTML root textContent deletes sidebar, styles and table')},
+  };
+  const element=(dataset={})=>({
+   dataset,classList:{toggle(){}},setAttribute(){},textContent:'',options:[{textContent:''}]
+  });
+  const views=['overview','attributes'].map(playersView=>element({playersView}));
+  const groups=['physical','technical','mental','goalkeeping'].map(playersGroup=>element({playersGroup}));
+  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
+  const table={tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};
+  const document={
+   documentElement:root,
+   querySelectorAll(selector){
+    if(selector==='[data-players-view]')return [root,...views];
+    if(selector==='[data-players-group]')return [root,...groups];
+    if(selector==='.app-players-tabs [data-players-view]')return views;
+    if(selector==='.app-players-groups [data-players-group]')return groups;
+    return [];
+   },
+   querySelector(selector){if(selector==='.app-players-table')return table;throw Error('Unexpected query '+selector)},
+   createElement(){return {scope:'',textContent:''}}
+  };
+  runInNewContext(script,{document,location:{search},URLSearchParams});
+  assert.equal(root.dataset.playersView,search?'attributes':'overview');
+  assert.equal(root.dataset.playersGroup,search?'goalkeeping':'physical');
+  assert.equal(views[0].textContent,'Overview');
+  assert.equal(groups[0].textContent,'Physical');
+  assert.equal(groups[3].textContent,'Goalkeeping');
+  if(search)assert.equal(table.dataset.playersTableMode,'attributes');
+ }
 });

@@ -49,7 +49,7 @@
   const table=document.querySelector('.app-players-table'),scroll=table?.closest('.app-players-table-scroll');
   if(!table||!table.tBodies.length||!scroll)return;
   const body=table.tBodies[0],countNode=document.querySelector('[data-players-count]');
-  const tabs=[...document.querySelectorAll('[data-players-view]')],groupTabs=[...document.querySelectorAll('[data-players-group]')];
+  const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
   const selects=[...document.querySelectorAll('[data-players-filter]')];
   const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
   const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
