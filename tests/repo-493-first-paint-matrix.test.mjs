@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {createAuditInventory,createAuditMatrix,auditStates,auditActions,competitionTabs} from '../tools/repo-493-first-paint-matrix.mjs';
 
 test('REPO-493: inventory includes every canonical competition tab and all 320x5 club routes',()=>{
@@ -21,4 +23,11 @@ test('REPO-493: four distinct world/Debug states and eight actions are inventori
  assert.equal(new Set(rows.map(r=>r.route+'|'+r.state+'|'+r.action)).size,rows.length);
  assert.ok(rows.every(r=>r.status==='UNKNOWN'&&r.evidence.includes('Not browser-verified')));
  assert.ok(rows.some(r=>r.route==='/admin/players'&&r.note.includes('Authentication')));
+});
+
+test('REPO-493: browser module must parse before expensive Chromium QA',()=>{
+ const browserFile=fileURLToPath(new URL('./repo-493-first-paint-browser.mjs',import.meta.url));
+ const checked=spawnSync(process.execPath,['--check',browserFile],{encoding:'utf8',timeout:15000});
+ assert.equal(checked.error,undefined,checked.error?.message);
+ assert.equal(checked.status,0,checked.stderr||'Browser module syntax invalid');
 });
