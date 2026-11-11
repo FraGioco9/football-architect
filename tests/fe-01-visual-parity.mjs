@@ -27,7 +27,10 @@ const routes=[
  {path:"/competitions/it-1/standings",selectors:[".app-competition-header",".app-competition-tab",".app-competition-season .language-trigger"]},
  {path:"/competitions/int-1/fixtures",selectors:[".app-competition-header",".app-competition-tab",".app-fixtures-arrow"]},
  {path:"/clubs",selectors:[".nav01-filters>input",".nav01-filter .language-trigger",".nav01-card"]},
- {path:"/clubs/it/1/overview",selectors:[".club-tabs .app-competition-tab",".app-panel"]}
+ // The Club page is intentionally redesigned in this PR. Its inner layout,
+ // first paint, typography and mobile hit areas have dedicated Club QA.
+ // FE-01 still checks the unchanged shell chrome on the Club route.
+ {path:"/clubs/it/1/overview",selectors:[".fa-shell-topbar",".fa-shell-sidebar"]}
 ];
 const profiles=[
  {width:320,theme:"dark",language:"en"},{width:390,theme:"light",language:"de"},
@@ -104,7 +107,6 @@ try{
     if(route.path.startsWith("/competitions/")){
      ignore.add(".app-competition-tab");ignore.add(".app-fixtures-arrow");
     }
-    if(route.path==="/clubs/it/1/overview")ignore.add(".club-tabs .app-competition-tab");
     for(const key of ["regular","focused"]){
      const obj=copy[key];if(!obj)continue;
      for(const name of ignore){
@@ -112,8 +114,6 @@ try{
        "FE-02 mobile hit height "+route.path+" "+name);
       delete obj[name];
      }
-     if(route.path==="/clubs/it/1/overview"&&obj[".app-panel"])
-      for(const panel of obj[".app-panel"])panel.rect[1]=0;
     }
    }
    return copy;
