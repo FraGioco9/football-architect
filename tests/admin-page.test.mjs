@@ -56,6 +56,8 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
+ assert.equal((home.match(/class="app-panel admin-directory-card"/g)||[]).length,2,'Two separate Admin boxes');
+ assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,2,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
@@ -66,8 +68,17 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const players=readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8');
  assert.ok(players.includes(renderAdminPlayers()));
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
+ for(const html of [home,calendar,players]){
+  assert.doesNotMatch(html,/<a[^>]*id="app-nav-divisions"[^>]*(?:is-active|aria-current="page")/,'No unrelated sidebar selection at first paint');
+ }
+ const css=readFileSync(new URL('../assets/admin-settings.css',import.meta.url),'utf8');
+ assert.match(css,/\.app-admin-view\{[^}]*max-width:none/,'Admin pages must use the whole content width');
+ assert.match(css,/\.admin-players-dropdown[^}]*\{/,'Players dropdowns must use the site styling');
  for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
   assert.ok(players.includes('data-players-option="attribute.'+a+'"'),a);
+ const autos=players.match(/data-players-option="(?:count|seed|primarySuitability)"[^>]+/g)||[];
+ assert.equal(autos.length,3,'No Players field begins with a manual value');
+ assert.ok(autos.every(field=>!field.includes('value=')),autos.join('\n'));
 });

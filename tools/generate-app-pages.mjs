@@ -263,13 +263,16 @@ for(const page of outputPages){
 }
 // Admin directory and two dedicated subpages share the existing app shell.
 for(const [route,title,content,scripts] of [
- ['admin','Admin','<div class="admin-directory" data-admin-directory><a class="admin-directory-card" href="/admin/calendar" data-admin-card="calendar"><strong data-admin-directory-copy="calendar">Calendar</strong><span data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</span></a><a class="admin-directory-card" href="/admin/players" data-admin-card="players"><strong data-admin-directory-copy="players">Players</strong><span data-admin-directory-copy="playersDescription">Configure player generation</span></a></div>',['/assets/admin-players.js']],
+ ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section></div>',['/assets/admin-players.js']],
  ['admin/calendar','Admin — Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-settings.js']],
  ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-players.js']]
 ]){
  const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">'+(route==='admin'?'Admin':route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          '+(route==='admin'?'':('<a class="admin-back" href="/admin" data-admin-back>Admin</a>'))+'\n          '+content+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
+ // At first paint, Admin must not highlight a different sidebar destination.
+ html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"')
+  .replace('id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page"','id="app-nav-divisions" href="/competitions" data-app-view="divisions"');
  html=html.replace('<title>Competitions','<title>'+title);
  html=html.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
  html=html.replace('</head>',

@@ -6,7 +6,7 @@
 
 
 .app-admin-view[hidden]{display:none}
-.app-admin-view{display:grid;gap:var(--app-page-section-gap);max-width:800px}
+.app-admin-view{display:grid;gap:var(--app-page-section-gap);width:100%;max-width:none;min-width:0;box-sizing:border-box}
 .app-admin-view .admin-settings{width:100%;min-width:0}
 .app-admin-view .admin-settings p{margin:0 0 12px}
 .app-admin-view [data-admin-status]{min-height:1.65em;margin:0}
@@ -53,3 +53,28 @@
 @media(max-width:620px){.admin-players .admin-players-fields{grid-template-columns:1fr}.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .app-admin-view .admin-directory-card[hidden],.app-admin-view [data-admin-players][hidden]{display:none!important}
+
+/* Admin directory: separate cards with actual navigation buttons. */
+.app-admin-view .admin-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-space-4);min-width:0}
+.app-admin-view .admin-directory-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0;min-height:160px;box-sizing:border-box}
+.app-admin-view .admin-directory-card h2{font-size:var(--fa-text-panel-heading);margin:0}
+.app-admin-view .admin-directory-card p{flex:1;line-height:1.55}
+.app-admin-view .admin-directory-card .app-link{min-width:125px;text-align:center}
+.app-admin-view .admin-directory-card[hidden]{display:none!important}
+.app-admin-view .admin-back{display:inline-flex;width:max-content;margin:0 0 8px;color:inherit;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:620px){.app-admin-view .admin-directory{grid-template-columns:1fr}}
+
+/* Same combobox primitives as Settings/Calendar. */
+.app-admin-view .admin-players-dropdown{position:relative;display:flex;min-width:0;width:100%;z-index:30}
+.app-admin-view .admin-players-fields select[data-players-option][hidden]{display:none!important}
+.app-admin-view .admin-players .admin-players-dropdown .language-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;width:100%;height:42px;min-height:42px;max-width:none;margin:0;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-control);font:inherit;text-align:left;color:var(--text)}
+.app-admin-view .admin-players-dropdown .language-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-admin-view .admin-players-dropdown .language-menu{left:0;right:auto;width:100%;min-width:0;box-sizing:border-box;max-height:min(320px,calc(100svh - 120px))}
+.app-admin-view .admin-players-dropdown[data-menu-placement="above"] .language-menu{top:auto;bottom:calc(100% + 6px)}
+.app-admin-view .admin-players-dropdown:has(.language-trigger[aria-expanded="true"]){z-index:100}
+.app-admin-view .admin-players-dropdown .admin-players-dropdown-search{position:sticky;top:0;z-index:2;display:block;min-width:0;width:100%;height:38px;min-height:38px;box-sizing:border-box;margin:0 0 4px;padding:7px 10px;background:var(--background);border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font:inherit}
+.app-admin-view .admin-players-dropdown .language-option[hidden]{display:none!important}
+.app-admin-view .admin-players-dropdown .language-option{min-height:36px;font-size:var(--fa-text-control)}
+.app-admin-view .admin-players-fields label[hidden]{display:none!important}
+
+.app-admin-view .admin-players-hint{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.45;margin-top:3px}

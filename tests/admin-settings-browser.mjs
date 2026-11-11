@@ -156,19 +156,40 @@ try{
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
    await page.goto('http://app.localhost:2000/admin');
    await page.locator('#app-admin[data-admin-access="'+(permissionSet.includes('admin.world.read')?'granted':'denied')+'"]').waitFor({state:'attached'});
+   if(permissionSet.includes('admin.world.read')){
+    const widths=await page.evaluate(()=>{const main=document.querySelector('#main-content'),view=document.querySelector('#app-admin'),css=getComputedStyle(main);
+     return {available:main.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight),actual:view.getBoundingClientRect().width}});
+    assert.ok(Math.abs(widths.available-widths.actual)<=2,JSON.stringify(widths));
+   }
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('[data-admin-card="calendar"]').isVisible(),true);
-    assert.equal(await page.locator('[data-admin-card="players"]').isVisible(),writer);
+    assert.equal(await page.locator('.admin-directory-card').count(),2);
+    assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
+    assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
+    assert.equal(await page.locator('[data-admin-panel="players"]').isVisible(),writer);
+    assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
    }
    await page.goto('http://app.localhost:2000/admin/players');
    await page.locator('#app-admin[data-admin-access="'+(writer?'granted':'denied')+'"]').waitFor({state:'attached'});
    if(writer){
+    assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
+    assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
+    const empty=await page.locator('[data-admin-players-command]').innerText();
+    assert.match(empty,/--options-base64 e30 --out/);
+    assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
+    await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').click();
+    assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'true');
+    await page.locator('[data-players-dropdown="primaryNationality"] .admin-players-dropdown-search').fill('Italy');
+    await page.locator('[data-players-dropdown="primaryNationality"] .language-option[data-menu-value="ITA"]').click();
+    assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
+    await page.locator('[data-players-dropdown="primaryPosition"] .language-trigger').click();
+    await page.locator('[data-players-dropdown="primaryPosition"] .language-option[data-menu-value="ST"]').click();
+    assert.equal(await page.locator('[data-players-option="primaryPosition"]').inputValue(),'ST');
     await page.locator('[data-players-option="count"]').fill('2');
     await page.locator('[data-players-option="seed"]').fill('admin-trial');
-    await page.locator('[data-players-option="primaryNationality"]').selectOption('ITA');
-    await page.locator('[data-players-option="primaryPosition"]').selectOption('ST');
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-players-option="attribute.shooting"]').fill('65:80');
     const command=await page.locator('[data-admin-players-command]').innerText();

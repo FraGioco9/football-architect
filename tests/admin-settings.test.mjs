@@ -454,6 +454,11 @@ test('Players local trial command uses bounded inputs and never calls world muta
 
 test('Admin Players encodes all stable generator controls without PowerShell interpolation',()=>{
  const playerForm=require('../assets/admin-players.js');
+ // An untouched form emits no overrides. The CLI's generator uses its own defaults.
+ assert.deepEqual(playerForm.makeOptions({}),{});
+ assert.deepEqual(playerForm.makeOptions({count:'',seed:'',primarySuitability:'',secondaryMode:'automatic'}),{});
+ assert.deepEqual(playerForm.makeOptions({count:'auto',seed:'AUTO',age:'Auto'}),{});
+ assert.match(playerForm.commandFromRaw({}),/--options-base64 e30 --out/);
  const raw={
   count:'2',seed:'seed with spaces; $env:SECRET',primarySuitability:'65:80',
   primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'FRA',
@@ -482,7 +487,7 @@ test('Admin Players encodes all stable generator controls without PowerShell int
  assert.equal(runtime.sample[0].secondary_nationality,null);
  assert.equal(runtime.sample[0].initial_age,18);
  const invalid=[
-  {count:'0',seed:'ok'},{count:'1001',seed:'ok'},{count:'3',seed:''},
+  {count:'0',seed:'ok'},{count:'1001',seed:'ok'},{count:'3',seed:'bad\nseed'},
   {count:'3',seed:'ok',age:'20'},
   {count:'3',seed:'ok',primaryNationality:'NOT'},
   {count:'3',seed:'ok',primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'ITA'},
