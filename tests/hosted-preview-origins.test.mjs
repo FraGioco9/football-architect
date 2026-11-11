@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {runInNewContext} from 'node:vm';import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),ui=require('../assets/account-ui.js');
-const origin='https://football-architect-preview.giocolifrancesco.workers.dev';
+const origin='https://preview.football-architect.workers.dev';
 test('workers.dev account routes preserve their exact HTTPS host instead of inventing app.*',()=>{
  for(const path of ['/account/login','/account/register/','/account/recover','/account/verify-email'])assert.equal(new URL(ui.accountTarget(origin+path,'it')).origin,origin);
  assert.equal(new URL(ui.accountTarget('https://example.com/account/login','en')).hostname,'app.example.com');

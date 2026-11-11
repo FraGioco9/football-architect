@@ -69,7 +69,7 @@ jobs:
             --output "$PACKAGE_DIR" \
             --account-id e20c88bb42826f59efea469af0f82f96 \
             --database-id 6a6c7803-56d3-4e7f-bd01-752d06a32341 \
-            --origin https://football-architect-preview.giocolifrancesco.workers.dev
+            --origin https://preview.football-architect.workers.dev
           node --experimental-strip-types --input-type=module <<'NODE'
           import {verifyPreviewPackage} from './backend/tools/prepare-preview.mts';
           import {execFileSync} from 'node:child_process';
@@ -92,7 +92,7 @@ jobs:
     env:
       EXPECTED_SHA: ${{ inputs.expected_sha }}
       CLOUDFLARE_ACCOUNT_ID: e20c88bb42826f59efea469af0f82f96
-      PREVIEW_ORIGIN: https://football-architect-preview.giocolifrancesco.workers.dev
+      PREVIEW_ORIGIN: https://preview.football-architect.workers.dev
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -128,7 +128,7 @@ jobs:
             const bytes=readFileSync(join(root,f.path));
             if(bytes.length!==f.bytes||createHash('sha256').update(bytes).digest('hex')!==f.sha256)throw Error('Artifact hash mismatch');
           }
-          if(c.name!=='football-architect-preview'||c.account_id!==process.env.CLOUDFLARE_ACCOUNT_ID||c.main!=='./bundle/preview.js'||c.no_bundle!==true||c.workers_dev!==true)throw Error('Wrong Worker name');
+          if(c.name!=='preview'||c.account_id!==process.env.CLOUDFLARE_ACCOUNT_ID||c.main!=='./bundle/preview.js'||c.no_bundle!==true||c.workers_dev!==true)throw Error('Wrong Worker name');
           if(c.vars?.PLAYER_MODE!=='preview'||c.vars?.PLAYER_ORIGIN!==process.env.PREVIEW_ORIGIN||c.vars?.PLAYER_TRUSTED_SOURCE!=='cloudflare'||c.vars?.PREVIEW_SOURCE_SHA!==process.env.EXPECTED_SHA)throw Error('Wrong runtime origin');
           if(c.d1_databases?.length!==1||c.d1_databases[0].binding!=='DB'||c.d1_databases[0].database_id!==db)throw Error('Wrong D1 binding');
           if(c.assets?.binding!=='ASSETS'||c.assets?.run_worker_first!==true||c.assets?.directory!=='./assets')throw Error('Missing same-origin assets');

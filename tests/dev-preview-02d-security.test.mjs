@@ -4,8 +4,8 @@ import {mkdtempSync,readFileSync,writeFileSync,rmSync,mkdirSync,symlinkSync} fro
 import {createHash} from "node:crypto";
 import {spawnSync} from "node:child_process";
 import {tmpdir} from "node:os";
-import {join,dirname} from "node:path";
-import {repositoryRoot,listFiles,stagePublicArtifact,assertPublicArtifact} from "../tools/publication-guard.mjs";
+import {join} from "node:path";
+import {repositoryRoot,stagePublicArtifact,assertPublicArtifact} from "../tools/publication-guard.mjs";
 import {stageProtectedDebugArtifact,assertProtectedDebugArtifact} from "../tools/dev-preview-artifact.mjs";
 
 function sandbox(fn) {
@@ -55,43 +55,54 @@ test("02D: protected source symlinks and absent sources fail before artifact cre
   assert.throws(()=>stageProtectedDebugArtifact(repositoryRoot,join(root,"debug"),{debugRoot:source}),/Missing or unsafe protected Debug source/);
  });
 });
-test("02D: downloaded public and Debug payloads fail closed",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
- const code=workflow.match(/\/\/ PUBLIC03_VERIFY_ARTIFACT_BEGIN\n([\s\S]*?)\n\s*\/\/ PUBLIC03_VERIFY_ARTIFACT_END/)?.[1]?.replace(/^          /gm,"");
- assert.ok(code,"Workflow must contain independent post-download verifier");
- for(const contract of ["public","protected_debug"]){
-  function attempt(mutate,expected=true){sandbox(root=>{
-   const site=join(root,"site");
-   (contract==="public"?stagePublicArtifact:stageProtectedDebugArtifact)(repositoryRoot,site);
-   const hash=bytes=>createHash("sha256").update(bytes).digest("hex");
-   const debugHash=contract==="protected_debug"?hash(readFileSync(join(site,"__fa_dev__/artifact-manifest.json"))):"";
-   const manifest={schemaVersion:1,contract,sourceSha:"a".repeat(40),files:listFiles(site).map(path=>({path,sha256:hash(readFileSync(join(site,path)))}))};
-   const env={...process.env,ARTIFACT_ROOT:site,INVENTORY_PATH:join(root,"publication-manifest.json"),EXPECTED_SHA:manifest.sourceSha,ARTIFACT_CONTRACT:contract,EXPECTED_DEBUG_MANIFEST_SHA256:debugHash};
-   function inventory(){writeFileSync(env.INVENTORY_PATH,JSON.stringify(manifest)+"\n");env.EXPECTED_INVENTORY_SHA256=hash(readFileSync(env.INVENTORY_PATH));}
-   inventory();
-   if(mutate)mutate({site,manifest,env,inventory,hash,root});
-   const result=spawnSync(process.execPath,["--input-type=module","-e",code],{env,encoding:"utf8"});
-   assert.equal(result.status===0,expected,contract+": "+result.stderr);
-  });}
-  attempt();
-  attempt(({site})=>writeFileSync(join(site,"index.html"),"tampered"),false);
-  attempt(({site})=>rmSync(join(site,"assets/competition-page.js")),false);
-  attempt(({site})=>writeFileSync(join(site,"extra.txt"),"extra"),false);
-  attempt(({site})=>{rmSync(join(site,"index.html"));symlinkSync(join(repositoryRoot,"index.html"),join(site,"index.html"));},false);
-  attempt(({env})=>env.EXPECTED_INVENTORY_SHA256="b".repeat(64),false);
-  attempt(({env})=>env.EXPECTED_SHA="b".repeat(40),false);
-  attempt(({env})=>env.ARTIFACT_CONTRACT="production",false);
-  attempt(({manifest,inventory})=>{manifest.files.push(manifest.files[0]);inventory();},false);
-  attempt(({manifest,inventory})=>{manifest.files[0].path="../escape";inventory();},false);
-  attempt(({site,manifest,inventory,hash})=>{mkdirSync(join(site,".vercel"));writeFileSync(join(site,".vercel/project.json"),"{}");manifest.files.push({path:".vercel/project.json",sha256:hash("{}")});manifest.files.sort((a,b)=>a.path<b.path?-1:1);inventory();},false);
-  if(contract==="protected_debug"){
-   // A forged transport inventory must still fail against the owner-approved internal manifest.
-   attempt(({site,manifest,inventory,hash})=>{const path="__fa_dev__/debug-settings.mjs";writeFileSync(join(site,path),"tampered");manifest.files.find(f=>f.path===path).sha256=hash("tampered");inventory();},false);
-   attempt(({env})=>env.EXPECTED_DEBUG_MANIFEST_SHA256="",false);
-   attempt(({env})=>env.EXPECTED_DEBUG_MANIFEST_SHA256="b".repeat(64),false);
-   attempt(({site,manifest,inventory,hash})=>{const path="__fa_dev__/artifact-manifest.json";writeFileSync(join(site,path),"{}");manifest.files.find(f=>f.path===path).sha256=hash("{}");inventory();},false);
-  }else{
-   attempt(({site,manifest,inventory,hash})=>{const bytes="<script src='/__fa_dev__/debug-settings.mjs'></script>";writeFileSync(join(site,"index.html"),bytes);manifest.files.find(f=>f.path==="index.html").sha256=hash(bytes);inventory();},false);
-  }
- }
+test("02D: downloaded canonical Cloudflare Preview package fails closed on tampering",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-cloudflare-dev-preview.yml"),"utf8");
+ const code=workflow.match(/      - name: Independently verify artifact hashes and Worker\/D1 binding \(no credentials used\)\n        run: \|\n          set -euo pipefail\n          node --input-type=module <<'NODE'\n([\s\S]*?)\n          NODE/)?.[1]?.replace(/^          /gm,"");
+ assert.ok(code,"Extract the exact, credential-free publishing verifier from the workflow");
+ const sha="a".repeat(40),origin="https://preview.football-architect.workers.dev";
+ const account="e20c88bb42826f59efea469af0f82f96",db="6a6c7803-56d3-4e7f-bd01-752d06a32341";
+ const hash=data=>createHash("sha256").update(data).digest("hex");
+ function attempt(mutate,expected=true){sandbox(root=>{
+  const target=join(root,"cloudflare-package");
+  mkdirSync(join(target,"bundle"),{recursive:true});
+  mkdirSync(join(target,"assets/account/login"),{recursive:true});
+  mkdirSync(join(target,"assets/players"),{recursive:true});
+  const sources={
+   "bundle/preview.js":"export default {fetch(){return new Response('ok')}};",
+   "assets/account/login/index.html":"<html>Football Architect login</html>",
+   "assets/players/index.html":"<html>Football Architect Players</html>"
+  };
+  for(let i=0;i<20;i++)sources["assets/fixture-"+i+".txt"]="fixture "+i;
+  const config={name:"preview",account_id:account,main:"./bundle/preview.js",
+   no_bundle:true,workers_dev:true,vars:{PLAYER_MODE:"preview",PLAYER_ORIGIN:origin,
+    PLAYER_TRUSTED_SOURCE:"cloudflare",PREVIEW_SOURCE_SHA:sha},
+   d1_databases:[{binding:"DB",database_name:"football-architect-dev",database_id:db}],
+   assets:{directory:"./assets",binding:"ASSETS",run_worker_first:true}};
+  sources["wrangler.json"]=JSON.stringify(config);
+  for(const [path,data] of Object.entries(sources))writeFileSync(join(target,path),data);
+  const manifest={schemaVersion:1,sourceSha:sha,pool:"dev-preview",publicationAuthorized:false,
+   origin,target:{accountId:account,databaseId:db},
+   files:Object.entries(sources).map(([path,data])=>({path,sha256:hash(data),bytes:Buffer.byteLength(data)}))};
+  const save=()=>writeFileSync(join(target,"manifest.json"),JSON.stringify(manifest));
+  save();
+  if(mutate)mutate({target,manifest,config,save});
+  const result=spawnSync(process.execPath,["--input-type=module","-e",code],{
+   cwd:root,encoding:"utf8",env:{...process.env,EXPECTED_SHA:sha,PREVIEW_ORIGIN:origin,CLOUDFLARE_ACCOUNT_ID:account}});
+  assert.equal(result.status===0,expected,result.stderr+"\n"+result.stdout);
+ });}
+ attempt();
+ attempt(({target})=>writeFileSync(join(target,"bundle/preview.js"),"tampered"),false);
+ attempt(({target})=>writeFileSync(join(target,"assets/extra.js"),"unlisted"),false);
+ attempt(({target})=>rmSync(join(target,"assets/players/index.html")),false);
+ attempt(({target})=>{const path=join(target,"bundle/preview.js");rmSync(path);symlinkSync(join(repositoryRoot,"index.html"),path);},false);
+ attempt(({manifest,save})=>{manifest.sourceSha="b".repeat(40);save();},false);
+ attempt(({manifest,save})=>{manifest.origin="https://production.example.invalid";save();},false);
+ attempt(({manifest,save})=>{manifest.pool="production";save();},false);
+ attempt(({manifest,save})=>{manifest.publicationAuthorized=true;save();},false);
+ attempt(({manifest,save})=>{manifest.target.databaseId="00000000-0000-4000-8000-000000000001";save();},false);
+ attempt(({manifest,save})=>{manifest.files[0].sha256="b".repeat(64);save();},false);
+ attempt(({manifest,save})=>{manifest.files[0].path="../escape";save();},false);
+ attempt(({target,config})=>{config.name="football-architect-preview";writeFileSync(join(target,"wrangler.json"),JSON.stringify(config));},false);
+ attempt(({target,config})=>{config.d1_databases[0].database_id="00000000-0000-4000-8000-000000000001";writeFileSync(join(target,"wrangler.json"),JSON.stringify(config));},false);
+ attempt(({target,config})=>{config.assets.run_worker_first=false;writeFileSync(join(target,"wrangler.json"),JSON.stringify(config));},false);
 });

@@ -1,10 +1,10 @@
-# Manual Vercel Preview — Football Architect
+# Archived Manual Vercel Preview — Football Architect (retired)
 
 > **Living operational boundary — REPO-04 #358 (2026-11-06).** Current behavior is summarized first. The original implementation-phase notes, dates, approvals and status labels below are preserved as historical evidence; do not infer deployed remote state.
 
-## Current publishing stop rule
+## Historical Vercel publishing stop rule (workflow removed)
 
-`.github/workflows/manual-vercel-preview.yml` is an **explicitly dispatched Preview publisher**, distinct from automatic test workflows. REPO-04 does not invoke it or grant deployment approval. The older example alias, blocked deployment reference and third-party project status below are **dated procedure observations**, not a live-state attestation. Before any separately approved use, verify exact PR/source SHA, owner, target, existing alias, provider secrets and external authorization; never promote to Production or mutate remote D1 from a documentation workflow. [Architecture](architecture/overview.md), [CI/QA](ci/README.md).
+The former `.github/workflows/manual-vercel-preview.yml` has been **removed**. This page is retained for historical records only. The sole approved Preview publisher is `.github/workflows/manual-cloudflare-dev-preview.yml`, targeting `https://preview.football-architect.workers.dev`. REPO-04 does not invoke it or grant deployment approval. The older example alias, blocked deployment reference and third-party project status below are **dated procedure observations**, not a live-state attestation. Before any separately approved use, verify exact PR/source SHA, owner, target, existing alias, provider secrets and external authorization; never promote to Production or mutate remote D1 from a documentation workflow. [Architecture](architecture/overview.md), [CI/QA](ci/README.md).
 
 ## Original implementation record (historical)
 

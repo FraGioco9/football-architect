@@ -67,7 +67,7 @@ jobs:
             --output "$PACKAGE_OUTPUT" \
             --account-id e20c88bb42826f59efea469af0f82f96 \
             --database-id 6a6c7803-56d3-4e7f-bd01-752d06a32341 \
-            --origin https://football-architect-preview.giocolifrancesco.workers.dev
+            --origin https://preview.football-architect.workers.dev
       - name: Verify compiled package and Players routes
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
@@ -83,7 +83,7 @@ jobs:
           const manifest=await verifyPreviewPackage(root);
           const expected=process.env.EXPECTED_SHA;
           if(manifest.sourceSha!==expected||manifest.sourceTree!==execFileSync('git',['rev-parse',expected+'^{tree}'],{encoding:'utf8'}).trim())throw Error('Exact source manifest mismatch');
-          if(manifest.pool!=='dev-preview'||manifest.origin!=='https://football-architect-preview.giocolifrancesco.workers.dev'||manifest.publicationAuthorized!==false)throw Error('Nonproduction publication policy mismatch');
+          if(manifest.pool!=='dev-preview'||manifest.origin!=='https://preview.football-architect.workers.dev'||manifest.publicationAuthorized!==false)throw Error('Nonproduction publication policy mismatch');
           if(manifest.target.accountId!=='e20c88bb42826f59efea469af0f82f96'||manifest.target.databaseId!=='6a6c7803-56d3-4e7f-bd01-752d06a32341')throw Error('Wrong Cloudflare target');
           const required=['manifest.json','wrangler.json','bundle/preview.js','assets/players/index.html','assets/assets/players-directory.js'];
           for(const file of required)if(!existsSync(join(root,file)))throw Error('Missing required compiled asset: '+file);

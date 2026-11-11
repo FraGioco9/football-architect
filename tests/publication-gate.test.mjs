@@ -1,4 +1,3 @@
-import {spawnSync} from "node:child_process";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {existsSync,mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,readdirSync,unlinkSync} from "node:fs";
@@ -100,29 +99,10 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
  for(const file of configs)
   assert.ok(!existsSync(join(repositoryRoot,file)),"inspect new deployment config: "+file);
  const dir=join(repositoryRoot,".github","workflows");
+ assert.ok(!existsSync(join(dir,"manual-vercel-preview.yml")),"Retired Vercel publisher must be absent");
  for(const file of readdirSync(dir).filter(f=>/\.ya?ml$/.test(f))){
   const source=readFileSync(join(dir,file),"utf8");
-  if(file==="manual-vercel-preview.yml"){
-   // An explicit, owner-triggered Preview is the only audited publication exception.
-   assert.match(source,/^  workflow_dispatch:$/m);
-   assert.doesNotMatch(source,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
-   for(const gate of [
-    /GITHUB_ACTOR/,/inputs\.expected_sha/,/\$SOURCE/,/current_main/,
-    /\.merge_commit_sha == \$sha/,/PR_HEAD_SHA|pr_head_sha/,
-    /landing-checks\.yml\/runs\?head_sha=/,/node --test tests\/\*\.test\.mjs/,
-    /stagePublicArtifact/,/assertPublicArtifact/,/artifact_contract:/,
-     /stage-preview:/,/expected_debug_manifest_sha256:/,
-     /actions\/upload-artifact@v4/,
-    /needs: stage-preview/,/actions\/download-artifact@v4/,
-    /secrets\.VERCEL_TOKEN/,/--target=preview/,/VERCEL_PROJECT_ID/,
-    /readyState == "READY"/,/vercel alias set/,
-    /STABLE_PREVIEW_ALIAS: football-architect-preview\.vercel\.app/,
-    /alias_status/,/Alias belongs to another project/,
-    /\.deploymentId == \$deployment/
-   ])assert.match(source,gate,"Manual preview gate missing: "+gate);
-   assert.doesNotMatch(source,/--prod\b|--target=production|vercel\s+promote|vercel\s+rollback/i);
-   assert.doesNotMatch(source,/deploy-pages|upload-pages-artifact|actions\/deploy-pages/i);
-  }else if(file==="cloudflare-preview-package.yml"){
+  if(file==="cloudflare-preview-package.yml"){
    // Explicitly audited read-only exception: it stages a hashed Worker + allowlisted
    // public assets, but cannot publish, deploy, or access Cloudflare credentials.
    for(const required of [
@@ -133,7 +113,7 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
     /verifyPreviewPackage/,
     /publicationAuthorized!==false/,
     /actions\/upload-artifact@v4/,
-    /football-architect-preview\.giocolifrancesco\.workers\.dev/,
+    /preview\.football-architect\.workers\.dev/,
     /6a6c7803-56d3-4e7f-bd01-752d06a32341/
    ])assert.match(source,required,"Cloudflare package gate missing: "+required);
    assert.doesNotMatch(source,/^  (?:push|workflow_dispatch|schedule|workflow_run|repository_dispatch):/m);
@@ -150,10 +130,10 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
     /persist-credentials: false/,/backend\/tools\/prepare-preview\.mts/,
     /verifyPreviewPackage/,/publicationAuthorized!==false/,
     /actions\/upload-artifact@v4/,/actions\/download-artifact@v4/,
-    /football-architect-preview\.giocolifrancesco\.workers\.dev/,
+    /preview\.football-architect\.workers\.dev/,
     /e20c88bb42826f59efea469af0f82f96/,
     /6a6c7803-56d3-4e7f-bd01-752d06a32341/,
-    /CLOUDFLARE_PREVIEW_API_TOKEN/,/wrangler@4\.153\.0/,
+    /CLOUDFLARE_PREVIEW_API_TOKEN/,/wrangler@4\.153\.0/,/c\.name!=='preview'/,
     /--no-autoconfig --keep-vars/,/Read-only same-origin smoke checks/
    ])assert.match(source,required,"Cloudflare manual release gate missing: "+required);
    const stage=source.split("  package:")[1]?.split("\n  deploy:")[0];
@@ -178,53 +158,47 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
 });
 
 
-test("PUBLIC-03: publication job verifies downloaded bytes before credential exposure",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
- const publisher=workflow.split("  publish-preview:")[1];
- assert.ok(publisher);
- assert.doesNotMatch(publisher,/actions\/checkout|import .*tools\/|node --test/);
- const verify=publisher.indexOf("PUBLIC03_VERIFY_ARTIFACT_BEGIN");
- const token=publisher.indexOf("secrets.VERCEL_TOKEN");
- assert.ok(verify>=0&&token>verify);
- assert.match(publisher,/EXPECTED_INVENTORY_SHA256: \$\{\{ needs.stage-preview.outputs.inventory_sha256 \}\}/);
- assert.match(publisher,/npm install --global vercel@64\.5\.0/);
- assert.doesNotMatch(workflow,/--token\b|vercel@latest/);
- assert.match(workflow,/GITHUB_EVENT_NAME.*workflow_dispatch/);
- assert.match(workflow,/default: public/);
- assert.match(workflow,/bash "\$RUNNER_TEMP\/preview-source-gate.sh"/);
+test("PUBLIC-03: only Cloudflare manual Preview uses the canonical origin and Worker",()=>{
+ const dir=join(repositoryRoot,".github","workflows");
+ assert.equal(existsSync(join(dir,"manual-vercel-preview.yml")),false);
+ const source=readFileSync(join(dir,"manual-cloudflare-dev-preview.yml"),"utf8");
+ assert.match(source,/^  workflow_dispatch:$/m);
+ assert.doesNotMatch(source,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
+ for(const gate of [/GITHUB_ACTOR/,/GITHUB_TRIGGERING_ACTOR/,/GITHUB_REF/,/commits\/main/,/landing-checks\.yml/,/int24-browser-qa\.yml/])
+  assert.match(source,gate);
+ assert.match(source,/--origin https:\/\/preview\.football-architect\.workers\.dev/);
+ assert.match(source,/PREVIEW_ORIGIN: https:\/\/preview\.football-architect\.workers\.dev/);
+ assert.match(source,/c\.name!=='preview'/);
+ assert.doesNotMatch(source,/football-architect-preview\.giocolifrancesco\.workers\.dev|football-architect-preview\.football-architect\.workers\.dev|VERCEL_TOKEN|vercel alias set|--prod\b/);
 });
-
-
-test("PUBLIC-03: publisher accepts only the fixed static routing configuration",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
- const predicate=workflow.match(/jq -e '([^{\n]*\. == \{[^\n]+)' preview-bundle\/site\/vercel.json/)?.[1];
- assert.ok(predicate,"Exact static routing predicate must exist");
- const config=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
- const run=value=>spawnSync("jq",["-e",predicate],{input:JSON.stringify(value),encoding:"utf8"}).status;
- assert.equal(run(config),0);
- for(const extra of [{public:true},{builds:[{use:"@vercel/node",src:"index.js"}]},{target:"production"},{functions:{"api.js":{}}},{rewrites:[]}])
-  assert.notEqual(run({...config,...extra}),0,JSON.stringify(extra));
+test("PUBLIC-03: Cloudflare release verifies downloaded bytes before token exposure",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-cloudflare-dev-preview.yml"),"utf8");
+ const stage=workflow.split("\n  package:")[1]?.split("\n  deploy:")[0];
+ const publisher=workflow.split("\n  deploy:")[1];
+ assert.ok(stage&&publisher,"Credential-free stage and separate publisher required");
+ assert.match(stage,/verifyPreviewPackage/);
+ assert.match(stage,/actions\/upload-artifact@v4/);
+ assert.doesNotMatch(stage,/secrets\.|CLOUDFLARE_API_TOKEN/);
+ assert.doesNotMatch(publisher,/actions\/checkout|git clone|npm ci/);
+ const verify=publisher.indexOf("Independently verify artifact hashes and Worker/D1 binding");
+ const token=publisher.indexOf("secrets.CLOUDFLARE_PREVIEW_API_TOKEN");
+ const deploy=publisher.indexOf("Deploy only to existing DEV/Preview Worker");
+ assert.ok(verify>=0&&token>verify&&deploy>verify,"Verify all package bytes before credentials and deploy");
+ for(const gate of [/sha256/,/f\.sha256/,/c\.d1_databases\[0\]\.database_id!==db/,/c\.name!=='preview'/,/c\.vars\?\.PLAYER_ORIGIN!==process\.env\.PREVIEW_ORIGIN/,/--no-autoconfig --keep-vars/])
+  assert.match(publisher,gate);
+ assert.doesNotMatch(workflow,/\bwrangler\s+d1\b|\bd1\s+migrations\s+apply\b|--prod\b|--target=production/i);
 });
-
-test("PUBLIC-03: provider checks reject Production, wrong project and alias identity",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
- const stageGate=workflow.match(/# PUBLIC03_SOURCE_GATE_BEGIN\n([\s\S]*?)\n\s*# PUBLIC03_SOURCE_GATE_END/)[1].replace(/^          /gm,"");
- const publisherGate=workflow.match(/<<'SOURCE_GATE'\n([\s\S]*?)\n\s*SOURCE_GATE/)[1].replace(/^          /gm,"");
- assert.equal(stageGate,publisherGate,"Both jobs must enforce the same source and latest-CI policy");
- const target=workflow.match(/jq -e --arg id "\$VERCEL_PROJECT_ID" '([\s\S]*?)' <<< "\$info"/)[1];
- const alias=workflow.match(/'(\.projectId == \$id and \.alias == \$alias and \.deploymentId == \$deployment)'/)[1];
- const accepts=(predicate,value)=>spawnSync("jq",["-e","--arg","id","project","--arg","alias","preview.vercel.app","--arg","deployment","deployment",predicate],{input:JSON.stringify(value),encoding:"utf8"}).status===0;
- for(const contract of ["public","protected_debug"]){
-  const ready={projectId:"project",target:"preview",readyState:"READY",meta:{artifact_contract:contract}};
-  assert.equal(accepts(target,ready),true);
-  assert.equal(accepts(target,{...ready,target:"production"}),false);
-  assert.equal(accepts(target,{...ready,projectId:"other"}),false);
-  assert.equal(accepts(target,{...ready,readyState:"ERROR"}),false);
- }
- const correct={projectId:"project",alias:"preview.vercel.app",deploymentId:"deployment"};
- assert.equal(accepts(alias,correct),true);
- for(const wrong of [{projectId:"other"},{alias:"other.vercel.app"},{deploymentId:"old"}])
-  assert.equal(accepts(alias,{...correct,...wrong}),false);
+test("PUBLIC-03: same-origin Worker serves native login, world and public assets",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-cloudflare-dev-preview.yml"),"utf8");
+ const builder=readFileSync(join(repositoryRoot,"backend/tools/prepare-preview.mts"),"utf8");
+ const launcher=readFileSync(join(repositoryRoot,"tools/dev.mjs"),"utf8");
+ assert.match(builder,/t\.origin!=='https:\/\/preview\.football-architect\.workers\.dev'/);
+ assert.match(builder,/name:'preview'/);
+ assert.doesNotMatch(builder,/name:t\.origin===|football-architect-preview/);
+ assert.match(launcher,/SHARED_PREVIEW_TARGET='https:\/\/preview\.football-architect\.workers\.dev'/);
+ assert.match(workflow,/\/api\/environment \/api\/world \/api\/players\/page\/1 \/account\/login \/players/);
+ assert.match(workflow,/\/api\/player\/session \/api\/player\/permissions/);
+ assert.match(workflow,/c\.assets\?\.run_worker_first!==true/);
 });
 
 test('A03-04D: public staging includes only the pure classic route core, never its Node facade',()=>{

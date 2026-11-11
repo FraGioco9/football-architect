@@ -111,19 +111,21 @@ test("DEBUG-INFRA-04: missing DEV entry, bad roots, and overwrite are rejected",
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
-test("DEBUG-INFRA-05: both contracts use isolated staging and approved transfer inventory",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github","workflows","manual-vercel-preview.yml"),"utf8");
- assert.match(workflow,/artifact_contract:/);
- assert.match(workflow,/stage-preview:/);
- assert.match(workflow,/expected_debug_manifest_sha256:/);
- assert.match(workflow,/stageProtectedDebugArtifact/);
- assert.match(workflow,/assertProtectedDebugArtifact/);
- assert.match(workflow,/exit 1/);
- assert.match(workflow,/approved-preview-bundle/);
- assert.match(workflow,/--target=preview/);
+test("DEBUG-INFRA-05: Cloudflare publishes only the public contract, not protected Debug assets",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-cloudflare-dev-preview.yml"),"utf8");
+ const builder=readFileSync(join(repositoryRoot,"backend/tools/prepare-preview.mts"),"utf8");
+ assert.match(workflow,/^  workflow_dispatch:$/m);
+ assert.match(workflow,/backend\/tools\/prepare-preview\.mts/);
+ assert.match(workflow,/verifyPreviewPackage/);
+ assert.match(workflow,/actions\/upload-artifact@v4/);
+ assert.match(workflow,/actions\/download-artifact@v4/);
+ assert.match(builder,/guard\.stagePublicArtifact\(source,join\(output,'assets'\)\)/);
+ assert.doesNotMatch(workflow,/artifact_contract:|expected_debug_manifest_sha256:|stageProtectedDebugArtifact|assertProtectedDebugArtifact|protected_debug/);
+ assert.doesNotMatch(builder,/stageProtectedDebugArtifact|assertProtectedDebugArtifact|__fa_dev__/);
+ assert.ok(planProtectedDebugFiles().some(p=>p.startsWith("__fa_dev__/")));
+ assert.ok(!planPublicFiles().some(p=>p.startsWith("__fa_dev__/")));
  assert.doesNotMatch(workflow,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
 });
-
 
 test("DEBUG-RUNTIME-01: protected browser imports resolve within artifact",()=>{
  const {root,debugRoot,protectedPath}=sandbox();
@@ -234,35 +236,31 @@ test("DEBUG-SEASONS-02: standings route resolver preserves Seasons 1–4 for the
 });
 
 
-test("PUBLIC-03: execute the actual staging script for both approval contracts",()=>{
- const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-vercel-preview.yml"),"utf8");
- const code=workflow.match(/# PUBLIC03_STAGE_BEGIN\n([\s\S]*?)\n\s*# PUBLIC03_STAGE_END/)?.[1]?.replace(/^          /gm,"");
- assert.ok(code);
- const root=mkdtempSync(join(tmpdir(),"fa-workflow-stage-"));
+test("PUBLIC-03: canonical Cloudflare staging uses guarded public assets, never protected Debug",()=>{
+ const workflow=readFileSync(join(repositoryRoot,".github/workflows/manual-cloudflare-dev-preview.yml"),"utf8");
+ const builder=readFileSync(join(repositoryRoot,"backend/tools/prepare-preview.mts"),"utf8");
+ assert.match(workflow,/--source-sha "\$EXPECTED_SHA"/);
+ assert.match(workflow,/--output "\$PACKAGE_DIR"/);
+ assert.match(workflow,/--origin https:\/\/preview\.football-architect\.workers\.dev/);
+ assert.match(workflow,/verifyPreviewPackage/);
+ assert.match(builder,/git\('archive',t\.sourceSha/);
+ assert.match(builder,/guard\.stagePublicArtifact/);
+ assert.match(builder,/verifyPreviewPackage\(output\)/);
+ assert.doesNotMatch(workflow,/stageProtectedDebugArtifact|protected_debug|secrets\..*?CLOUDFLARE_PREVIEW_API_TOKEN[\s\S]*?name: Compile and verify/s);
+ const {root,protectedPath,publicPath}=sandbox();
  try{
-  const source=join(root,"source");mkdirSync(source);
-  // Copy a source fixture; the staging script must import real builders and verify their output.
-  for(const path of ["assets","admin","dashboard","calendar","settings","competitions","players","clubs","account","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
-   fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
-  const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
-  const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");
-  const output=join(root,"outputs");
-  function run(contract,hash=""){
-   rmSync(join(source,"preview-bundle"),{recursive:true,force:true});
-   return spawnSync("bash",["-c",code],{cwd:source,encoding:"utf8",env:{...process.env,ARTIFACT_CONTRACT:contract,EXPECTED_SHA:"a".repeat(40),EXPECTED_DEBUG_MANIFEST_SHA256:hash,GITHUB_OUTPUT:output}});
-  }
-  for(const [contract,hash,count] of [["public","",planPublicFiles().length],["protected_debug",approved,planProtectedDebugFiles().length]]){
-   const result=run(contract,hash);assert.equal(result.status,0,result.stderr);
-   const bytes=readFileSync(join(source,"preview-bundle/publication-manifest.json"));
-   const manifest=JSON.parse(bytes);assert.equal(manifest.contract,contract);assert.equal(manifest.files.length,count);
-   assert.ok(readFileSync(output,"utf8").includes("inventory_sha256="+createHash("sha256").update(bytes).digest("hex")));
-   if(contract==="public")assert.equal(fs.existsSync(join(source,"preview-bundle/site/__fa_dev__")),false);
-  }
-  for(const [contract,hash] of [["protected_debug",""],["protected_debug","b".repeat(64)],["public",approved],["production",""],["unknown",""]])
-   assert.notEqual(run(contract,hash).status,0,contract+" must reject invalid approval");
+  stagePublicArtifact(repositoryRoot,publicPath);
+  stageProtectedDebugArtifact(repositoryRoot,protectedPath);
+  assert.deepEqual(assertPublicArtifact(publicPath),planPublicFiles());
+  assert.deepEqual(assertProtectedDebugArtifact(protectedPath),planProtectedDebugFiles());
+  assert.equal(existsSync(join(publicPath,"__fa_dev__")),false);
+  assert.ok(existsSync(join(protectedPath,"__fa_dev__/debug-settings.mjs")));
+  writeFileSync(join(publicPath,"assets/competition-page.js"),"tampered");
+  assert.throws(()=>assertPublicArtifact(publicPath),/source mismatch|mismatch|fixture/i);
+  writeFileSync(join(protectedPath,"__fa_dev__/debug-settings.mjs"),"tampered");
+  assert.throws(()=>assertProtectedDebugArtifact(protectedPath),/mismatch|manifest|source/i);
  }finally{rmSync(root,{recursive:true,force:true});}
 });
-
 
 test('Club competition summaries are injected only into DEV/protected club HTML',()=>{
  const {root,debugRoot,protectedPath,publicPath}=sandbox();

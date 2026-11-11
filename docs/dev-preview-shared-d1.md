@@ -1,6 +1,8 @@
 # Shared DEV/Preview D1 — read-only preparation and activation gate
 
-Status: **Draft/HOLD**. No remote D1 migration, write, import, Worker deploy, or GitHub merge is authorized by this change. This runbook prepares a future approved cutover; it does not synchronize two separate databases automatically.
+> **Current canonical Preview (November 11, 2026):** `https://preview.football-architect.workers.dev` on Cloudflare Worker `preview`. This document retains historical migration plans; the nonproduction D1 is already migrated through `0021_player_numeric_ids.sql` and holds 11 numeric-ID players. No migration or import is required for a code/asset Preview deployment. Manual Cloudflare DEV Preview is the only Preview publication workflow.
+
+Status: **Historical preparation / read-only gate**. No remote D1 migration, write, import, Worker deploy, or GitHub merge is authorized by this change. This runbook prepares a future approved cutover; it does not synchronize two separate databases automatically.
 
 ## Existing infrastructure (verified read-only on 2026-11-11)
 
@@ -20,7 +22,7 @@ Starts the loopback frontend and local Wrangler Worker/D1. Does not access cloud
 
 **Shared DEV/Preview Worker (only after approved remote schema/deployment):**
 ```powershell
-node tools/dev.mjs --shared https://football-architect-preview.giocolifrancesco.workers.dev
+node tools/dev.mjs --shared https://preview.football-architect.workers.dev
 ```
 Starts **only** the loopback site/app frontend. The destination is locked to the *exact* verified Cloudflare Worker hostname, never an arbitrary Workers.dev tenant. Before starting, performs anonymous read-only GET checks of:
 1. `/api/environment`: exact origin, `pool=dev-preview`, `sharedWorld=true`, `separateSignIn=true`;

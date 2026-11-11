@@ -5,10 +5,11 @@ import {readD1Migrations} from '@cloudflare/vitest-plugin';
 import {createHash} from 'node:crypto';
 import {preparePreview,verifyPreviewPackage,validatePreviewTarget} from '../tools/prepare-preview.mts';
 const repository=fileURLToPath(new URL('../../',import.meta.url));
-const target={accountId:'1'.repeat(32),databaseId:'11111111-1111-4111-8111-111111111111',origin:'https://football-architect-preview.example.workers.dev'};
+const target={accountId:'1'.repeat(32),databaseId:'11111111-1111-4111-8111-111111111111',origin:'https://preview.football-architect.workers.dev'};
 test('Preview target rejects Production/arbitrary origins, local UUIDs and incomplete provenance',()=>{
  assert.doesNotThrow(()=>validatePreviewTarget({...target,sourceSha:'a'.repeat(40)}));
- assert.doesNotThrow(()=>validatePreviewTarget({...target,origin:'https://preview.football-architect.workers.dev',sourceSha:'a'.repeat(40)}));
+ assert.throws(()=>validatePreviewTarget({...target,origin:'https://football-architect-preview.football-architect.workers.dev',sourceSha:'a'.repeat(40)}));
+ assert.throws(()=>validatePreviewTarget({...target,origin:'https://football-architect-preview.giocolifrancesco.workers.dev',sourceSha:'a'.repeat(40)}));
  for(const extra of [{origin:'https://preview.football-architect.workers.dev.evil.invalid'},{origin:'https://production.example.com'},{origin:target.origin+'/'},{origin:'http://football-architect-preview.example.workers.dev'},{origin:'https://user:pass@football-architect-preview.example.workers.dev'},{databaseId:'00000000-0000-4000-8000-000000000001'},{accountId:'bad'},{sourceSha:'HEAD'}])assert.throws(()=>validatePreviewTarget({...target,sourceSha:'a'.repeat(40),...extra}));
 });
 test('offline exact-snapshot preparation compiles a standalone guarded package and detects tampering',{timeout:90000},async()=>{
@@ -23,7 +24,7 @@ test('offline exact-snapshot preparation compiles a standalone guarded package a
   const sourceSha=git('rev-parse','HEAD').trim();
   const manifest=await preparePreview({...target,repository:source,sourceSha,output});
   assert.equal(manifest.sourceSha,sourceSha);assert.ok(manifest.files.some(x=>x.path==='assets/account/login/index.html'));assert.ok(manifest.files.some(x=>/^bundle\/.*\.wasm$/.test(x.path)));
-  const config=JSON.parse(await readFile(join(output,'wrangler.json'),'utf8'));assert.equal(config.vars.PLAYER_MODE,'preview');assert.equal(config.vars.PLAYER_ORIGIN,target.origin);assert.equal(config.assets.run_worker_first,true);assert.equal(config.assets.html_handling,'none');assert.equal(config.no_bundle,true);assert.equal(config.d1_databases[0].database_id,target.databaseId);
+  const config=JSON.parse(await readFile(join(output,'wrangler.json'),'utf8'));assert.equal(config.name,'preview');assert.equal(config.vars.PLAYER_MODE,'preview');assert.equal(config.vars.PLAYER_ORIGIN,target.origin);assert.equal(config.assets.run_worker_first,true);assert.equal(config.assets.html_handling,'none');assert.equal(config.no_bundle,true);assert.equal(config.d1_databases[0].database_id,target.databaseId);
   for(const path of manifest.files.map(x=>x.path))assert.doesNotMatch(path,/^assets\/(?:backend|tools|tests|\.git|\.wrangler|__fa_dev__)\//);
   assert.equal(await readFile(join(output,'assets/account/login/index.html'),'utf8'),await readFile(join(source,'account/login/index.html'),'utf8'));
   assert.doesNotMatch(await readFile(join(output,config.main),'utf8'),/synthetic-operator-password|fixture@example\.invalid|season-one-review-candidate/);
