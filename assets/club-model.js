@@ -36,6 +36,8 @@
   copies[lang].competitionUnavailable=values[0];
   copies[lang].competitionUnpublished=values[1];
  }
+ const internationalCategoryLabels={en:'International',de:'International',es:'Internacional',fr:'International',it:'Internazionale'};
+ for(const [lang,label] of Object.entries(internationalCategoryLabels))copies[lang].internationalLabel=label;
  const internationalStatusLabels={
   en:{groupStage:'Group Stage',playoffs:'Playoffs',quarterfinals:'Quarter-finals',semifinals:'Semi-finals',final:'Final',winner:'Winner',runnerUp:'Runner-up'},
   de:{groupStage:'Gruppenphase',playoffs:'Playoffs',quarterfinals:'Viertelfinale',semifinals:'Halbfinale',final:'Finale',winner:'Sieger',runnerUp:'Zweiter'},
@@ -125,13 +127,19 @@
   const rank=summary?.position===null||!summary?'—':ordinal(summary.position,lang);
   const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
    '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
-  const competitionCard=division?'<div class="club-competition-layout"><div class="club-competition-identity">'+
-   '<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">'+
-   '<div class="club-competition-copy"><strong class="club-competition-name">'+divisionValue+'</strong>'+
-   '<span class="club-competition-tier">'+escape(division.tier===1?t.tier1Label:t.tier2Label)+'</span>'+
-   '</div></div>'+
-   '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+rank+'</dd></div></dl>'+
-   '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextContent+'</div></div></div></div>':
+  // One canonical DOM row for DEV and authoritative membership data. Debug
+  // Settings must affect only the values, never the competition layout.
+  const competitionRow=({id,badge,name,tier,status,nextInfo})=>
+   '<div class="club-competition-layout club-competition-entry" data-club-competition-id="'+escape(id)+'">'+
+   '<div class="club-competition-identity">'+badge+'<div class="club-competition-copy"><strong class="club-competition-name">'+name+'</strong>'+
+   '<span class="club-competition-tier">'+escape(tier)+'</span></div></div>'+
+   '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+status+'</dd></div></dl>'+
+   '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div></div>';
+  const competitionCard=division?'<div class="club-competition-list">'+competitionRow({
+   id:division.id,badge:'<img class="club-competition-logo" src="'+escape(divisionLogo)+'" width="64" height="64" alt="">',
+   name:divisionValue,tier:division.tier===1?t.tier1Label:t.tier2Label,
+   status:rank,nextInfo:nextContent
+  })+'</div>':
    '<p class="club-competition-empty">'+escape(t.outside)+'</p>';
 
   const memberCard=membership=>{
@@ -151,18 +159,21 @@
     ?'<a class="app-link" href="'+escape(fixtureUrl)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(typeof phase==='number'?t.matchdayLabel+' '+phase:
       phase==='playout'?t.playoutLabel:phase==='playoffs'?t.playoffsLabel:phase==='quarterfinals'?'Quarter-finals':phase==='semifinals'?'Semi-finals':'Final')+'</small>'
     :'<span class="club-competition-next-empty">'+escape(t.noUpcomingMatch)+'</span>';
-   const tier=isDomestic?(def?.tier===1?t.tier1Label:t.tier2Label):t.competition;
-   return '<div class="club-competition-layout club-competition-entry" data-club-competition-id="'+escape(membership.competitionId)+'">'+
-    '<div class="club-competition-identity">'+badge+'<div class="club-competition-copy"><strong class="club-competition-name"><a class="app-link" data-club-division-link href="'+escape(target)+'">'+escape(title)+'</a></strong>'+
-    '<span class="club-competition-tier">'+escape(tier)+'</span></div></div>'+
-    '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd data-club-position>'+
-     (isDomestic||!internationalStatusLabels[lang][membership.cupStatus]?membership.position===null?'—':ordinal(membership.position,lang):escape(internationalStatusLabels[lang][membership.cupStatus]))+'</dd></div></dl>'+
-    '<div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div></div>';
+   const tier=isDomestic?(def?.tier===1?t.tier1Label:t.tier2Label):t.internationalLabel;
+   return competitionRow({
+    id:membership.competitionId,badge,
+    name:'<a class="app-link" data-club-division-link href="'+escape(target)+'">'+escape(title)+'</a>',
+    tier,
+    status:isDomestic||!internationalStatusLabels[lang][membership.cupStatus]
+     ?membership.position===null?'—':ordinal(membership.position,lang)
+     :escape(internationalStatusLabels[lang][membership.cupStatus]),
+    nextInfo
+   });
   };
   const effectiveCompetitionCard=publicUnavailable?'<p class="club-competition-empty" role="status">'+escape(t.competitionUnavailable)+'</p>':publicUnpublished?
    '<p class="club-competition-empty" role="status">'+escape(t.competitionUnpublished)+'</p>':publicMemberships?
    (publicMemberships.length?'<div class="club-competition-list">'+publicMemberships.map(memberCard).join('')+'</div>':'<p class="club-competition-empty">'+escape(t.outside)+'</p>'):
-   publicPending?'<div class="club-competition-layout club-fp-competition" aria-busy="true"><div class="club-competition-identity"><span class="club-fp-bar" style="--club-fp-width:65%"></span></div><div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd><span class="club-fp-bar" style="--club-fp-width:45%"></span></dd></div></dl><div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><span class="club-fp-bar" style="--club-fp-width:68%"></span></div></div></div>':
+   publicPending?'<div class="club-competition-list club-fp-competition" aria-busy="true"><div class="club-competition-layout club-competition-entry"><div class="club-competition-identity"><span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span><div class="club-competition-copy"><strong class="club-competition-name"><span class="club-fp-bar club-fp-competition-name" aria-hidden="true"></span></strong><span class="club-competition-tier"><span class="club-fp-bar club-fp-competition-tier" aria-hidden="true"></span></span></div></div><div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+escape(t.statusLabel)+'</dt><dd><span class="club-fp-bar club-fp-competition-position" aria-hidden="true"></span></dd></div></dl><div class="club-competition-next"><span class="club-competition-label">'+escape(t.nextMatchLabel)+'</span><div class="club-competition-next-content"><span class="club-fp-bar club-fp-competition-fixture" aria-hidden="true"></span><span class="club-fp-bar club-fp-competition-round" aria-hidden="true"></span></div></div></div></div></div>':
    competitionCard;
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();

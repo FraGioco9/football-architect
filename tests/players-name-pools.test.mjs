@@ -59,6 +59,49 @@ test('weighted given names and uniform compound surnames from synthetic 439 cont
  assert.equal(sampleGivenName(pools,'ENG',()=>0.15),'John');
  assert.equal(sampleGivenName(pools,'ENG',()=>0.50),'David');
 }));
+test('archived uppercase surname tokens are display-cased without changing sampling order',()=>withFixture(ctx=>{
+ const cfg=catalogs(ctx);
+ const source=['MCDONALD','ABDALLAH','van der PLAAT','GALLI-McROSTIE',"O'BRIEN",
+  'K-A','da Silva','I'];
+ ctx.write('surname/countries/ITA.json',{code:'ITA',kind:'surnames',selection_policy:'uniform',
+  surnames:source.map(value=>({value}))});
+ ctx.write('surname/countries/ENG.json',{code:'ENG',kind:'surnames',selection_policy:'uniform',
+  surnames:[{value:'Smith'}]});
+ ctx.write('surname/catalog-v1.json',{kind:'surnames',selection_policy:'uniform',countries:[
+  {code:'ITA',path:'data/players/surnames/countries/ITA.json',actual_count:source.length},
+  {code:'ENG',path:'data/players/surnames/countries/ENG.json',actual_count:1}
+ ]});
+ const pools=loadPlayerNamePools({...cfg,expectedCodes:cfg.countries});
+ assert.deepEqual(pools.surnames.get('ITA'),['McDonald','Abdallah','van der Plaat',
+  'Galli-McRostie',"O'Brien",'K-A','da Silva','I']);
+ assert.equal(sampleSurname(pools,'ITA',()=>0),'McDonald');
+ assert.equal(sampleSurname(pools,'ITA',()=>0.99),'I');
+ assert.deepEqual(source,['MCDONALD','ABDALLAH','van der PLAAT','GALLI-McROSTIE',
+  "O'BRIEN",'K-A','da Silva','I'],'source records are not mutated');
+}));
+
+test('all national runtime surname pools avoid two-or-more-letter ALL-CAPS tokens',()=>{
+ const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
+ assert.equal(pools.surnames.size,50);
+ for(const c of COUNTRIES){
+  const values=pools.surnames.get(c.code);
+  assert.ok(values.length>0,c.code);
+  assert.equal(new Set(values.map(v=>v.toLocaleLowerCase('und'))).size,values.length,c.code);
+  for(const value of values){
+   for(const [token] of value.matchAll(/[\p{L}\p{M}]+/gu))
+    assert.ok([...token].length<2 || token!==token.toLocaleUpperCase('und') ||
+     token===token.toLocaleLowerCase('und'),c.code+': '+value);
+  }
+ }
+ assert.ok(pools.surnames.get('AUS').includes('Lamerton'));
+ assert.ok(pools.surnames.get('AUS').includes('van der Plaat'));
+ assert.ok(pools.surnames.get('AUS').includes('Galli-McRostie'));
+ assert.ok(pools.surnames.get('CMR').includes('Abdallah'));
+ assert.ok(pools.surnames.get('COD').includes('Abdallah'));
+ assert.ok(pools.surnames.get('BRA').includes('da Silva'));
+ assert.ok(pools.surnames.get('KOR').includes('I'));
+});
+
 test('missing 439 catalog only: explicit test/demo fallback',()=>withFixture(ctx=>{
  const cfg=catalogs(ctx),pools=loadPlayerNamePools({...cfg,expectedCodes:cfg.countries});
  assert.equal(pools.surnameSource,'temporary-demo-fallback');

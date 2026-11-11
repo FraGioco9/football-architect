@@ -41,6 +41,59 @@ test('QA-16: promoted club has current domestic and international competition in
  assert.ok(!header.includes('club-header-division'),'Header must not render the domestic league');
  assert.ok(!header.includes('/competitions/it-1/standings'),'Current league belongs only to Competitions');
 });
+test('QA-16: Sovereign and Federation Cup use International, never Competitions, as category',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/17/overview');
+ const expected={en:'International',de:'International',es:'Internacional',fr:'International',it:'Internazionale'};
+ for(const [lang,label] of Object.entries(expected)){
+  for(const [id,name] of [['int-1','Sovereign Cup'],['int-2','Federation Cup']]){
+   const projection=projectClubMemberships(payload([entry('IT-1'),entry(id,'international',false)]),'IT-17',2,world);
+   const html=model.render(manifest,selected,lang,'',projection,2);
+   const row=html.match(new RegExp('<div class="club-competition-layout club-competition-entry" data-club-competition-id="'+id+'"[^]*?(?=<div class="club-competition-layout club-competition-entry"|<\\/section>)'))?.[0];
+   assert.ok(row,lang+' '+id+' row exists');
+   assert.ok(row.includes(name),lang+' '+id+' shows the correct cup');
+   assert.ok(row.includes('<span class="club-competition-tier">'+label+'</span>'),lang+' '+id+' has correct international category');
+   assert.ok(!row.includes('<span class="club-competition-tier">'+model.copies[lang].competition+'</span>'),lang+' '+id+' does not reuse the section title');
+  }
+ }
+});
+
+test('QA-16: Debug ON and OFF use identical competition row markup with one or two memberships',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected=model.route('/clubs/it/17/overview');
+ const dev={source:'dev',divisionId:'IT-2',clubId:17,season:2,position:4,points:12,
+  nextMatch:{round:7,homeId:17,awayId:2}};
+ const publicOne=projectClubMemberships(payload([entry('IT-2')]),'IT-17',2,world);
+ const publicTwo=projectClubMemberships(payload([entry('IT-2'),entry('int-1','international')]),'IT-17',2,world);
+ const cases=[['debug-on',model.render(manifest,selected,'en','',dev,2),1],
+  ['debug-off-one',model.render(manifest,selected,'en','',publicOne,2),1],
+  ['debug-off-two',model.render(manifest,selected,'en','',publicTwo,2),2]];
+ const panel=html=>{
+  const begin=html.indexOf('<section class="app-panel club-competition"');
+  const end=html.indexOf('</section>',begin);
+  assert.ok(begin>=0&&end>begin,'Competitions panel exists');
+  return html.slice(begin,end);
+ };
+ const rowIds=html=>[...panel(html).matchAll(/class="club-competition-layout club-competition-entry" data-club-competition-id="([^"]+)"/g)].map(x=>x[1]);
+ for(const [source,html,count] of cases){
+  const htmlPanel=panel(html);
+  assert.equal((htmlPanel.match(/class="club-competition-list"/g)||[]).length,1,source+' must use canonical list');
+  assert.equal(rowIds(html).length,count,source+' has correct membership count');
+  for(const className of ['club-competition-identity','club-competition-name','club-competition-summary',
+   'club-competition-metrics','club-competition-next','club-competition-next-content'])
+   assert.equal((htmlPanel.match(new RegExp('class="'+className+'"','g'))||[]).length,count,
+    source+' uses the identical '+className+' markup');
+  assert.doesNotMatch(htmlPanel,/class="club-competition-layout"/,'legacy unstyled singleton forbidden');
+ }
+ assert.deepEqual(rowIds(cases[0][1]),['IT-2']);
+ assert.deepEqual(rowIds(cases[1][1]),['IT-2']);
+ assert.deepEqual(rowIds(cases[2][1]),['IT-2','int-1']);
+ assert.match(panel(cases[0][1]),/data-club-position>4th<\/dd>/,'DEV position retained');
+ assert.match(panel(cases[2][1]),/data-club-competition-id="int-1"/,'authoritative international membership retained');
+});
+
 test('QA-16: single-request protocol validates authoritative data, future matches and ownership',async()=>{
  const calls=[];
  const readJson=async url=>{calls.push(url);return payload()};
@@ -120,7 +173,7 @@ test('QA-16: first paint panels, flags and short anonymous skeletons are preserv
  assert.equal(labels.length,9,'All nine identity labels are static before manifest');
  assert.deepEqual(labels.map(x=>x[1]),['nameLabel','country','city','abbr','colorsLabel','nickname','stadium','rivalriesLabel','descriptionLabel']);
  assert.doesNotMatch(part,/<dt[^>]*><span class="club-fp-bar"/,'Never skeleton a label');
- assert.equal((part.match(/class="club-fp-bar(?: |")/g)||[]).length,13,'Anonymous name/country/city add three shape-aware identity skeletons');
+ assert.equal((part.match(/class="club-fp-bar(?: |")/g)||[]).length,15,'Anonymous identity and competition values reserve the final row geometry');
  assert.match(part,/<dt data-club-first-paint-label="abbr">Abbreviation<\/dt><dd><span class="club-fp-bar club-fp-abbr" aria-hidden="true"><\/span>/);
  const colors=part.match(/<dd><span class="club-colors club-fp-colors" aria-hidden="true">([\s\S]*?)<\/span><\/dd>/)?.[1];
  assert.ok(colors,'Colors reserve the final two-swatch layout');

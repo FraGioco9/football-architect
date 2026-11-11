@@ -176,7 +176,9 @@ test('QA-15: known directory crests have a skeleton and missing or failed crests
  assert.match(app,/\.app-world-club-crest-placeholder\[data-club-crest-pending="true"\]::before,\s*\.app-world-club-crest-placeholder\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(detail,/\.club-first-paint-header \.club-crest\{visibility:visible\}/);
  assert.match(app,/\.app-world-club-crest-placeholder\.fa-crest-loading::before/,'shared anonymous crest loads as a circle');
- assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{[^}]*background:color-mix\([^}]*clip-path:none/);
+ assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{display:block;left:50%;top:50%;transform:translate\(-50%,-50%\);clip-path:none\}/);
+ assert.match(directory,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before,\s*\.nav01-skeleton-crest-disc\{[^}]*background:var\(--fa-crest-skeleton-fill\)/);
+ assert.match(directory,/\.nav01-crest\[data-club-crest-fallback="true"\]::before\{display:block;/,'only missing/failed crests may show a shield');
  assert.match(directory,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/);
  assert.match(directory,/\.nav01-crest-image\{position:absolute;inset:0;[^}]*object-fit:contain/);
  for(const selector of ['app-fixtures-skeleton-crest','app-view-skeleton-crest-slot'])
@@ -189,13 +191,14 @@ test('QA-15: Clubs scales the Standings circular crest skeleton to its own logo 
  const standingsDesktop=app.match(/\.app-standings-skeleton tr>:nth-child\(2\) :is\([^}]+\)::before\{([^}]*)\}/)?.[1];
  const standingsMobile=app.match(/\.app-standings-skeleton \.app-world-mobile-name:is\([^}]+\)::before\{([^}]*)\}/)?.[1];
  const clubsPending=directory.match(/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{([^}]*)\}/)?.[1];
- assert.ok(standingsDesktop&&standingsMobile&&clubsPending,'both pages expose crest skeleton styles');
+ const clubsShared=directory.match(/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before,\s*\.nav01-skeleton-crest-disc\{([^}]*)\}/)?.[1];
+ assert.ok(standingsDesktop&&standingsMobile&&clubsPending&&clubsShared,'both pages expose crest skeleton styles');
  assert.match(standingsDesktop,/flex:0 0 48px;height:48px;border-radius:50%/);
  assert.match(standingsMobile,/flex:0 0 40px;height:40px;border-radius:50%/);
- for(const style of [standingsDesktop,standingsMobile,clubsPending])
+ for(const style of [standingsDesktop,standingsMobile,clubsShared])
   assert.match(style,/background:(?:color-mix\(in srgb,var\(--muted\) 12%,var\(--surface\)\)|var\(--fa-crest-skeleton-fill\))/);
- assert.match(clubsPending,/left:50%;top:50%;width:100%;height:auto;max-height:100%;aspect-ratio:1;transform:translate\(-50%,-50%\)/);
- assert.match(clubsPending,/clip-path:none;border-radius:50%/);
+ assert.match(clubsPending,/left:50%;top:50%;transform:translate\(-50%,-50%\);clip-path:none/);
+ assert.match(clubsShared,/width:85%;height:auto;max-height:100%;aspect-ratio:1;border-radius:50%/);
  for(const slot of ['width:82px;height:88px','width:68px;height:74px','width:64px;height:70px'])
   assert.ok(directory.includes('.nav01-crest{'+slot),'directory crest slots remain responsive: '+slot);
  assert.doesNotMatch(directory,/@media\(max-width:620px\)\{\.nav01-crest:has\(>\.nav01-crest-image\)/,
@@ -236,4 +239,16 @@ test('UI-409: directory image state is idempotent and failed requests retain the
  settle(failed,true);
  assert.equal(slot.dataset.clubCrestLoaded,undefined,'failed image must reveal the shared shield');
  assert.equal(failed.removed,1,'broken image icon is removed without reloading');
+});
+
+
+test('ENG-5 Southwark Athletic approved crest is registered in both public manifests',()=>{
+ const path='assets/clubs/ENG/5/crest.svg';
+ assert.equal(manifest().clubCrests['ENG-5'],path);
+ assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['ENG-5'],path);
+ assert.equal(isAllowlistedPublicPath(path),true);
+ const source=read(path);
+ assert.match(source,/<title id="crest-title">Southwark Athletic<\/title>/);
+ for(const color of ['#862932','#161616','#ffffff'])assert.ok(source.includes(color),color);
+ for(const tag of ['image','text','linearGradient','radialGradient'])assert.equal(source.includes('<'+tag),false,tag);
 });

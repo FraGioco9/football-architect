@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolveSubpage} from '../assets/subpage-routes.mjs';
-import {publicRequestFile} from '../tools/publication-guard.mjs';
+import {publicRequestFile,isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
 const directory=readFileSync(new URL('../assets/clubs-directory.js',import.meta.url),'utf8');
 const sidebar=readFileSync(new URL('../assets/sidebar-evolution.js',import.meta.url),'utf8');
 test('NAV-01B directory links use canonical country/id/overview paths',()=>{
@@ -51,10 +51,10 @@ test('NAV-01C public server resolves the extensionless directory route',()=>{
 });
 
 test('NAV-01 first paint ships complete navigation before deferred scripts',()=>{
- for(const file of ['dashboard/index.html','calendar/index.html','settings/index.html','competitions/index.html','competitions/_shared/index.html','clubs/index.html','clubs/_shared/index.html']){
+ for(const file of ['dashboard/index.html','calendar/index.html','settings/index.html','competitions/index.html','competitions/_shared/index.html','players/index.html','clubs/index.html','clubs/_shared/index.html']){
   const html=readFileSync(new URL('../'+file,import.meta.url),'utf8');
   const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
-  for(const href of ['/clubs','/guide','/competitions#domestic','/competitions#international'])assert.ok(nav.includes('href="'+href+'"'),file+' lacks initial '+href);
+  for(const href of ['/players','/clubs','/guide','/competitions#domestic','/competitions#international'])assert.ok(nav.includes('href="'+href+'"'),file+' lacks initial '+href);
   assert.match(nav,/aria-expanded="false"[^>]*aria-controls="nav01-children"/);
   assert.ok(html.indexOf('<script data-nav01-bootstrap>')>html.indexOf('</nav>'));
   assert.ok(html.indexOf('<script data-nav01-bootstrap>')<html.indexOf('<main'));
@@ -89,4 +89,35 @@ test('Site chevrons and Clubs filters are present in initial HTML',()=>{
   assert.match(html,new RegExp('id="nav01-'+name+'-menu"[^>]+role="listbox"'));
  }
  assert.ok(html.indexOf('/assets/competition-tabs.js')<html.indexOf('/assets/clubs-directory.js'));
+});
+
+test('Explore Players comes before Clubs and opens the public directory (not Admin)',()=>{
+ const html=readFileSync(new URL('../players/index.html',import.meta.url),'utf8');
+ const nav=html.slice(html.indexOf('<nav class="fa-shell-nav"'),html.indexOf('</nav>'));
+ assert.ok(nav.indexOf('href="/players" data-nav01-players')>=0);
+ assert.ok(nav.indexOf('href="/players"')<nav.indexOf('href="/clubs"'));
+ assert.match(nav,/data-nav01="7">Players/);
+ assert.match(html,/<title>Players — Football Architect<\/title>/);
+ assert.match(html,/id="players-title"[^>]*data-app-i18n="statsDevPlayers"/);
+ assert.doesNotMatch(html,/playersDirectoryEmpty|Player profiles will appear here/);
+ const css=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.equal(css.includes('.fa-shell-link[data-nav01-players]::before'),false,'No CSS pseudo-element icon');
+ assert.equal(css.includes('players-sidebar.svg'),false,'No external mask request');
+ const playersLink=nav.slice(nav.indexOf('href="/players" data-nav01-players>'));
+ const inlineIcon=playersLink.slice(playersLink.indexOf('<svg'),playersLink.indexOf('</svg>')+6);
+ assert.ok(inlineIcon.startsWith('<svg'),'Players SVG must be embedded in the sidebar HTML');
+ assert.ok(inlineIcon.includes('width="18" height="18" viewBox="-51.2 -51.2 614.4 614.4"'));
+ assert.ok(inlineIcon.includes('fill="currentColor"'));
+ const icon=readFileSync(new URL('../assets/brand/players-sidebar.svg',import.meta.url),'utf8');
+ assert.match(icon,/viewBox="0 0 512 512"/);
+ assert.match(icon,/fill-rule="evenodd"/);
+ assert.match(icon,/M245,0/);
+ assert.ok(inlineIcon.includes('d="'+icon.match(/ d="([^"]+)"/)[1]+'"'),'Unmodified original artwork embedded inline');
+ assert.ok(html.includes('<th scope="col" class="app-players-flag-col"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span></th>'));
+ const columns=[...html.matchAll(/<th scope="col" data-app-i18n="playersColumn[^"]+">([^<]+)<\/th>/g)].map(m=>m[1]);
+ assert.deepEqual(columns,['Player','Age','Positions','Height','Foot']);
+ assert.ok(html.includes('<td colspan="6">'));
+ assert.doesNotMatch(html,/\/admin\/players/);
+ assert.equal(publicRequestFile('/players'),'players/index.html');
+ assert.equal(isAllowlistedPublicPath('players/index.html'),true);
 });
