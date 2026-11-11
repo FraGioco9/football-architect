@@ -105,16 +105,34 @@ function compile(material){
   material.onBeforeCompile(shader);
   return shader;
 }
-function flankMeters(x,radius){
-  const ax=Math.abs(x);
-  if(radius<=0)return x;
-  const start=Math.min(.095,.42*radius),cap=.96,
-    arc=radius*Math.asin(Math.min(ax/radius,cap))+
-      Math.max(ax-radius*cap,0)/Math.sqrt(1-cap*cap),
-    begin=radius*Math.asin(start/radius)-start,
-    t=Math.max(0,Math.min(1,(ax-start)/.035)),
-    w=t*t*(3-2*t);
-  return Math.sign(x)*(ax*(1-w)+(arc-begin)*w);
+// Exact CPU mirror of KM-40's compact elliptical fragment projection.
+function smoothstep(a,b,x){
+  const t=Math.max(0,Math.min(1,(x-a)/(b-a)));
+  return t*t*(3-2*t);
+}
+function flankPhase(x,z,y,sections,width,centerX=0){
+  if(!sections)return x-centerX;
+  const low=sections.low,high=sections.high,
+    t=Math.max(0,Math.min(1,(y-low.y)/Math.max(high.y-low.y,.001))),
+    rx=low.rx+(high.rx-low.rx)*t,
+    rz=low.rz+(high.rz-low.rz)*t,
+    cz=low.cz+(high.cz-low.cz)*t,
+    theta=Math.atan2((x-centerX)/rx,(z-cz)/rz),
+    refX=.5*(low.rx+high.rx),refZ=.5*(low.rz+high.rz),
+    meanRadius=.5*(refX+refZ),
+    directX=x-centerX;
+  let arc=theta*meanRadius+.25*(refX-refZ)*Math.sin(2*theta);
+  const blend=Math.max(smoothstep(.095,.13,Math.abs(directX)),
+    smoothstep(Math.PI/2,1.69,Math.abs(theta)));
+  arc=directX*(1-blend)+arc*blend;
+  const halfArc=Math.PI*meanRadius,
+    evenBands=2*Math.max(1,Math.floor(halfArc/(2*width)+.5)),
+    shift=evenBands*width-halfArc;
+  return arc+Math.sign(arc)*shift*smoothstep(.5*halfArc,halfArc,Math.abs(arc));
+}
+function ellipsePoint(theta,section){
+  return {x:section.rx*Math.sin(theta),
+    z:section.cz+section.rz*Math.cos(theta),y:section.y};
 }
 
 test('KM-39 source normals distinguish outer torso from inner shell',()=>{
@@ -194,53 +212,106 @@ test('KM-39 renderer preserves inside white in Solid and Vertical stripes',()=>{
     assert.match(compile(material).fragmentShader,/diffuseColor.rgb=vec3\(1.0\)/);
   }
 });
-test('KM-39 flanks expand fabric distance without touching central stripe',()=>{
+test('KM-40 front/flank/back uses both X and Z, not capped asin(X)',()=>{
   const m=scene(),store=createKitDesignStore();
   store.selectStyle('vertical-stripes');
   store.selectStripeWidth(10);
   applyKitDesign(m.outfit,store.getState(),THREE);
-  const r=m.outfit.userData.km37StripeReport,
-    radius=r.torsoShoulderStart.sideRadiusM;
-  assert.ok(radius>.20&&radius<.35,'Source radius should be garment-derived');
-  assert.equal(r.torsoShoulderStart.sideCorrection,
-    'arc-distance-beyond-center-band');
+  const report=m.outfit.userData.km37StripeReport.torsoShoulderStart,
+    sections=report.torsoSections;
+  assert.ok(sections&&sections.reference.rx>.20&&sections.reference.rx<.35);
+  assert.ok(sections.reference.rz>.06&&sections.reference.rz<.2);
+  assert.equal(report.sideCorrection,'continuous-front-side-back-ellipse');
   for(const panel of [m.front,m.back]){
-    const uniform=panel.material.userData.kitStripeUniforms;
-    assert.equal(uniform.kmStripeSideRadius.value,radius);
-    const shader=compile(panel.material);
-    assert.match(shader.fragmentShader,/asin\(min\(x\/radius,cap\)\)/);
-    assert.match(shader.fragmentShader,/smoothstep\(start,start\+0\.035,x\)/);
-    assert.match(shader.fragmentShader,/distanceOnFabric=sign\(distanceOnFabric\)\*mix/);
+    const u=panel.material.userData.kitStripeUniforms,
+      shader=compile(panel.material);
+    assert.equal(u.kmStripeSideRadius.value,report.sideRadiusM);
+    assert.ok(u.kmStripeTorsoLow.value[0]>0);
+    assert.ok(u.kmStripeTorsoHigh.value[1]>0);
+    assert.match(shader.vertexShader,/vKmTorsoWorld = \(modelMatrix \* vec4\(position, 1\.0\)\)\.xyz/);
+    assert.match(shader.fragmentShader,/float theta=atan\(/);
+    assert.match(shader.fragmentShader,/float rearShift=evenBands\*kmStripeWidth-halfArc/);
+    assert.doesNotMatch(shader.fragmentShader,/asin\(min\(x\/radius,cap\)\)/);
   }
   for(const panel of [m.sleeve,m.left,m.collar]){
-    assert.equal(panel.material.userData.kitStripeUniforms.kmStripeSideRadius.value,0);
+    const u=panel.material.userData.kitStripeUniforms,
+      shader=compile(panel.material);
+    assert.equal(u.kmStripeSideRadius.value,0);
+    assert.equal(u.kmStripeTorsoLow.value[0],0);
+    assert.equal(u.kmStripeTorsoHigh.value[1],0);
+    assert.doesNotMatch(shader.vertexShader,/vKmTorsoWorld/);
+    assert.doesNotMatch(shader.fragmentShader,/vKmTorsoWorld/);
   }
-  for(const width of [.01,.015,.03,.075,.15])
+  const z=sections.reference.rz+sections.low.cz,y=sections.low.y;
+  for(const width of [.01,.015,.03,.075,.15]){
+    assert.ok(Math.abs(flankPhase(0,z,y,sections,width))<1e-7);
     for(const sign of [-1,1]){
-      const center=sign*width/2;
-      assert.ok(Math.abs(flankMeters(center,radius)-center)<1e-7,
-        'Center stripe must remain the original exact width');
+      const edge=sign*width/2;
+      assert.ok(Math.abs(flankPhase(edge,z,y,sections,width)-edge)<1e-7,
+        'Front center stripe edges must keep the actual selected width');
     }
-  for(const x of [.12,.16,.20,.24,.27]){
-    const y=flankMeters(x,radius);
-    assert.ok(y>=x);
-    assert.ok(Math.abs(flankMeters(-x,radius)+y)<1e-8);
   }
-  assert.ok(flankMeters(.27,radius)-flankMeters(.23,radius)>.04,
-    'Fabric distance must grow faster than projected chord on flank');
 });
-test('KM-39 flank mapping is continuous, monotonic, and safe past the radius',()=>{
-  const m=scene(),
-    mapped=alignOriginalShoulderStripes(m.outfit,m.parts),
-    radius=mapped.report.torsoShoulderStart.sideRadiusM;
-  assert.ok(radius>0);
-  let last=-Infinity;
-  for(let i=-600;i<=600;i++){
-    const x=i/1000,y=flankMeters(x,radius);
-    assert.ok(Number.isFinite(y));
-    assert.ok(y>last,'Flank mapping must not fold or plateau at extremes');
-    last=y;
+test('KM-40 stripes advance through each flank and join front/back',()=>{
+  const m=scene(),r=alignOriginalShoulderStripes(m.outfit,m.parts),
+    shape=r.report.torsoShoulderStart.torsoSections;
+  assert.ok(shape);
+  for(const side of [-1,1]){
+    const y=shape.low.y,w=.03,low=shape.low;
+    const mk=t=>ellipsePoint(side*t,low);
+    const samples=[Math.PI/2-.075,Math.PI/2-.025,
+      Math.PI/2,Math.PI/2+.025,Math.PI/2+.075]
+      .map(theta=>{
+        const p=mk(theta);
+        return flankPhase(p.x,p.z,y,shape,w);
+      });
+    const monotonic=side===1?samples:samples.map(x=>-x);
+    for(let i=1;i<monotonic.length;i++)
+      assert.ok(monotonic[i]>monotonic[i-1],
+        'Stripe phase must continue across the real front-to-back side');
+    const before=mk(Math.PI/2-.025),after=mk(Math.PI/2+.025);
+    assert.ok(Math.abs(before.x-after.x)<.0001,
+      'Adversarial points have almost identical X on each side');
+    const a=flankPhase(before.x,before.z,y,shape,w),
+      b=flankPhase(after.x,after.z,y,shape,w);
+    assert.ok(Math.abs(b-a)>.003,
+      'XZ mapping must prevent a repeated/folded stripe at the side');
+    const at=mk(Math.PI/2);
+    assert.ok(Number.isFinite(flankPhase(at.x,at.z,y,shape,w)));
   }
+});
+test('KM-40 full circumference has no discontinuity at rear center',()=>{
+  const m=scene(),r=alignOriginalShoulderStripes(m.outfit,m.parts),
+    shape=r.report.torsoShoulderStart.torsoSections;
+  assert.ok(shape);
+  for(const width of [.01,.015,.03,.075,.15]){
+    const high=shape.high;
+    const left=ellipsePoint(-Math.PI+1e-6,high),
+      right=ellipsePoint(Math.PI-1e-6,high);
+    const a=flankPhase(left.x,left.z,left.y,shape,width),
+      b=flankPhase(right.x,right.z,right.y,shape,width);
+    assert.ok(Math.abs(a+b)<.00001);
+    assert.ok(Math.abs(Math.cos(Math.PI*a/width)-1)<1e-5,
+      'Rear center band must finish at primary colour');
+    assert.ok(Math.abs(Math.cos(Math.PI*b/width)-1)<1e-5);
+    assert.ok(Math.abs(Math.cos(Math.PI*a/width)-
+      Math.cos(Math.PI*b/width))<1e-7);
+  }
+});
+test('KM-40 taper does not make stripes twist around shoulder or waist',()=>{
+  const m=scene(),r=alignOriginalShoulderStripes(m.outfit,m.parts),
+    shape=r.report.torsoShoulderStart.torsoSections;
+  assert.ok(shape);
+  for(const width of [.01,.03,.075,.15])
+    for(const theta of [Math.PI/2,Math.PI*.67,Math.PI*.85])
+      for(const side of [-1,1]){
+        const lo=ellipsePoint(theta*side,shape.low),
+          hi=ellipsePoint(theta*side,shape.high),
+          a=flankPhase(lo.x,lo.z,lo.y,shape,width),
+          b=flankPhase(hi.x,hi.z,hi.y,shape,width);
+        assert.ok(Math.abs(a-b)<1e-7,
+          'Same normalized angular source curve must carry one vertical stripe');
+      }
 });
 test('KM-39 independent sleeves and untouched original trims, color controls',()=>{
   const m=scene(),store=createKitDesignStore();

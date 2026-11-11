@@ -1,13 +1,11 @@
-// KM-39 — centered torso with flank arc compensation and independent sleeves.
+// KM-40 — seam-continuous front/flank/back circumferential torso stripes.
 //
-// Both torso sides use the same SIGNED world-X reference at the rig's
-// central vertical axis. KM-37 mistakenly used abs(X)-shoulderRadius,
-// making the center stripe phase arbitrary and creating a nonaffine
-// interpolation cusp in triangles straddling X=0. The signed field is
-// linear across the front/back, so the central primary-colour stripe
-// is exactly one selected band wide and the neighbouring bands have
-// the same pitch at every height. Both sleeve patterns intentionally keep their original
-// independent cloth UVs and do not inherit a torso seam/phase.
+// Front/back share the fitted rig's SIGNED X centerline for their
+// exactly centred main stripe. At the flanks a source-fitted X/Z
+// ellipse supplies a circumference coordinate rather than a mirrored
+// X-only arc: there is no phase reversal on the side seam. The fitted
+// lower/upper sections also compensate for normal torso taper.
+// Sleeves deliberately keep their OWN original cloth UV patterns.
 //
 // Read-only source geometry sampling; no GLB, vertex, UV, normal, or
 // source material mutation. Renderer adds one scalar shader attribute
@@ -60,28 +58,55 @@ function torsoPanel(item){
     sampledShoulderPoints:top.length};
 }
 
-// The raw projected X pattern loses cloth distance on curved sides.
-// Estimate the fitted body's side half-radius from lower-torso SOURCE
-// cross sections (not shoulder/collar extremes), then expand X to an
-// approximated arc distance in the fragment shader. A single shared
-// radius keeps front and back phase synchronized through side seams.
-function estimateTorsoSideRadius(panels,centerX){
-  const rings=new Map();
+// A correction based only on world X (KM-39's capped asin()) cannot
+// carry a stripe around the maximum left/right side: dx/ds approaches
+// zero there, so it folds the bands over the flank. We need X AND Z.
+// Sample lower original torso cross sections and fit TWO robust ellipses
+// at different heights, so the shader can follow the garment taper
+// without twisting bands along the sides. Both source panels share
+// exactly the same x/z center and cross-section measurements.
+function estimateTorsoSections(panels,centerX){
+  const bins=new Map();
   for(const panel of panels){
-    const xyz=panel.positions;
-    for(let i=0;i<xyz.length;i+=3){
-      const x=Math.abs(xyz[i]-centerX),y=xyz[i+1];
-      if(y<1.06||y>1.40||!Number.isFinite(x))continue;
-      const ring=Math.floor(y/.025);
-      rings.set(ring,Math.max(rings.get(ring)??0,x));
+    const points=panel.positions;
+    for(let i=0;i<points.length;i+=3){
+      const x=points[i],y=points[i+1],z=points[i+2];
+      if(y<1.045||y>1.405||!Number.isFinite(x)||!Number.isFinite(z))continue;
+      const key=Math.floor(y/.035);
+      let record=bins.get(key);
+      if(!record){
+        record={count:0,minX:Infinity,maxX:-Infinity,
+          minZ:Infinity,maxZ:-Infinity,ySum:0,
+          front:0,back:0};
+        bins.set(key,record);
+      }
+      record.count++;
+      record.ySum+=y;
+      record.minX=Math.min(record.minX,x);
+      record.maxX=Math.max(record.maxX,x);
+      record.minZ=Math.min(record.minZ,z);
+      record.maxZ=Math.max(record.maxZ,z);
+      if(FRONT.test(panel.item.meshName))record.front++;
+      if(BACK.test(panel.item.meshName))record.back++;
     }
   }
-  const widths=[...rings.values()].filter(w=>w>.08).sort((a,b)=>a-b);
-  if(!widths.length)return 0;
-  // Average the central waist/chest width, not a single stray shoulder
-  // vertex. Never allow pathological curvature on a narrow source.
-  const r=widths[Math.floor((widths.length-1)*.60)];
-  return r>.1&&r<.8?r:0;
+  const sections=[...bins.values()].filter(b=>b.count>=16&&b.front>=4&&b.back>=4)
+    .map(b=>({
+      rx:Math.max(Math.abs(b.minX-centerX),Math.abs(b.maxX-centerX)),
+      rz:(b.maxZ-b.minZ)/2,cz:(b.maxZ+b.minZ)/2,
+      y:b.ySum/b.count
+    }))
+    .filter(p=>p.rx>.10&&p.rx<.8&&p.rz>.04&&p.rz<.7)
+    .sort((a,b)=>a.y-b.y);
+  if(!sections.length)return null;
+  // Low/high bins are chosen far enough apart to avoid a single slice
+  // driving the phase; source with only one usable bin is valid and
+  // uses constant radii rather than a fabricated height gradient.
+  const low=sections[Math.floor((sections.length-1)*.15)],
+    high=sections[Math.ceil((sections.length-1)*.85)];
+  return {low,high,reference:{
+    rx:(low.rx+high.rx)/2,rz:(low.rz+high.rz)/2},
+    sectionCount:sections.length};
 }
 
 export function alignOriginalShoulderStripes(outfit,prepared){
@@ -120,7 +145,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       throw Error('Invalid original kit torso centerline');
     const shoulderRadius=Math.min(...[...referenceFront,...referenceBack]
       .map(p=>p.radialMin));
-    const sideRadius=estimateTorsoSideRadius(panels,rigCenterX);
+    const torsoSections=estimateTorsoSections(panels,rigCenterX);
+    const sideRadius=torsoSections?.reference.rx??0;
     for(const panel of panels){
       const result=new Float32Array(panel.positions.length/3);
       for(let i=0;i<result.length;i++)
@@ -140,7 +166,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       centerStripe:'base-color-full-width',
       continuousAcrossMidline:true,
       sideRadiusM:sideRadius,
-      sideCorrection:sideRadius>0?'arc-distance-beyond-center-band':'disabled-no-suitable-source',
+      sideCorrection:torsoSections?'continuous-front-side-back-ellipse':'disabled-no-suitable-source',
+      torsoSections,
       sourcePanels:panels.map(p=>p.item.meshName),
       noVerticalBlend:true
     };

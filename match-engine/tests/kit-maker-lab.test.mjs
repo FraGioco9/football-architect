@@ -276,8 +276,13 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('kmStripeSideRadius'));
   assert.ok(designJS.includes('diffuseColor.rgb=vec3(1.0)'));
   assert.ok(designJS.includes('vKmTrimExterior'));
-  assert.ok(designJS.includes('km39-exterior-only-flank-arc-v1'));
-  assert.ok(designJS.includes('zero Y-dependence'));
+  assert.ok(designJS.includes('km40-continuous-flank-ellipse-v1'));
+  assert.ok(designJS.includes('km40FlankStripeReport'));
+  assert.ok(designJS.includes('vKmTorsoWorld'));
+  assert.ok(designJS.includes('kmStripeTorsoLow'));
+  assert.ok(designJS.includes('kmStripeTorsoHigh'));
+  assert.ok(designJS.includes('float theta=atan('));
+  assert.ok(designJS.includes('evenBands*kmStripeWidth-halfArc'));
   assert.ok(designJS.includes('(?:9|10|42|43)'));
   assert.ok(designJS.includes('vKmPatternU = uv.x'));
   assert.ok(designJS.includes('shoulder.coordinates'));
@@ -296,6 +301,8 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(seamsJS.includes("status:'shared-centered-torso-axis'"));
   assert.ok(seamsJS.includes("centerStripe:'base-color-full-width'"));
   assert.ok(seamsJS.includes("mode:'independent-source-uv'"));
+  assert.ok(seamsJS.includes('estimateTorsoSections'));
+  assert.ok(seamsJS.includes('continuous-front-side-back-ellipse'));
   assert.doesNotMatch(seamsJS,/result\[i\]=Math\.abs\(panel\.positions\[i\*3\]\)/);
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));

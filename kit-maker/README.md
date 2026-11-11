@@ -1741,3 +1741,81 @@ marking the visual gate passed.
 
 Status: PR #454 Draft/HOLD. No merge, deployment,
 remote database writes or unlicensed source model publication.
+
+## KM-40 — true front → flank → back stripe travel (2026-11-11)
+
+**Owner QA:** Recheck the torso stripes along both flanks. KM-39's
+`asin(abs(X)/sideRadius)` correction was still based on world X
+alone. Near the widest side, `dX/ds` approaches zero along the
+garment surface. Capping `asin()` at 96% of the nominal radius
+made the problem worse: even with a finite gradient in X, the
+stripe phase slowed down or duplicated as the mesh turned from
+front to rear. The two source meshes might have the same X
+around the side but are on opposite sides of the Z axis.
+
+**KM-40 implementation:** Instead of trying to "fix" a single
+X-projection with a capped trigonometric function, the renderer
+fits low/high body **XZ ellipse cross sections from real original
+front and back torso source vertices** at mid-to-lower torso heights
+(1.045–1.405 m). It requires both original front and back panels,
+reasonable X/Z dimensions, and enough original samples per ring.
+On insufficient original geometry it explicitly reports
+`disabled-no-suitable-source` and falls back to KM-38's stable,
+signed-X stripes rather than invent a seam.
+
+The front, both flanks and back now use one CONTINUOUS
+circumferential phase calculated in the FRAGMENT shader from
+`modelMatrix * position`, normalized by the fitted section
+interpolated at the fragment's torso height. A compact
+elliptical-arc approximation allows the phase to **advance** past
+the right/left side extremes, rather than turn back as world X
+starts decreasing. The mapping is common to every original
+torso primitive (9/10/42/43), no source UVs/vertices or private
+GLB contents are changed, and the shader reads original world
+X *and* Z per fragment to prevent triangle/interpolation steps.
+
+The center FRONT area (±9.5cm) keeps KM-38's exact signed-X
+metric, so the selected 1–15cm primary center band stays
+precisely centered and nominal-width. The transition to
+elliptical arc completes before the flanks. The **rear half**
+of the approximate circumference gets a small, smooth phase
+correction which finishes at the nearest EVEN number of
+alternating bands, while keeping the FRONT and SIDE phase
+untouched. That guarantees no jump or false doubled band at
+the rear midline, and keeps a centered primary stripe on the
+back as well. Due to that closure correction, stripe spacing
+on the rear curves is slightly adjusted at some widths; it is
+not a claim that a 15cm nominal stripe stays exactly 15cm
+at every point around a noncircular cloth perimeter.
+
+Two calibrated low/high rings normalize different body
+cross sections over height, reducing stripe twisting caused
+by the natural torso taper. Both sleeve patterns **remain
+independent** in source UV, their own stripe origins and
+physical-metre calibration. KM-39's neutral INSIDE shader
+and source-fold cuff/waist overlay mask remain unchanged.
+
+**Diagnostics:**
+`outfit.userData.km40FlankStripeReport.status` should be
+`continuous-front-side-back-ellipse` when the original GLB
+provides suitable body data. Its `sections` field includes
+actual selected low/high ellipse values and the reference
+horizontal/longitudinal radii. This is a source-fit diagnostic,
+not a claim that the real garment was available remotely.
+
+**Focused QA:** New KM-40 cases use front/back source sections
+with the SAME X but DIFFERENT Z near each flank and assert that
+the band phase continues strictly through both side seams.
+They also test exact front central band at 1/1.5/3/7.5/15cm,
+rear-center seam-free closure with a primary stripe, tapered
+low/high section invariance, current neutral lining, independent
+sleeves and existing source-trim tests. The original proprietary
+GLB is owner-local and Chrome/WebGL visual review is still
+pending. Check both sides and rear at 1cm, 3cm and 7.5cm
+after syncing. If `km40FlankStripeReport.status` is
+`disabled-no-suitable-source`, send that console report
+or upload the original GLB privately for geometry-specific
+follow-up.
+
+PR #454 remains Draft/HOLD. No merge, deployment,
+remote database edits, new GLB publication or manual CI run.
