@@ -4,7 +4,7 @@ import {EventEmitter} from 'node:events';
 import {sharedDevPlan,startSharedDev,validateSharedPreviewTarget} from '../tools/dev.mjs';
 import {verifySharedPreviewReadiness} from '../tools/shared-nonproduction-proxy.mjs';
 
-const target='https://football-architect-preview.giocolifrancesco.workers.dev';
+const target='https://preview.football-architect.workers.dev';
 function payload(value,status=200){
  return {status,headers:{'content-type':'application/json'},body:Buffer.from(JSON.stringify(value))};
 }
@@ -22,7 +22,7 @@ test('shared mode requires exact nonproduction HTTPS Worker origin, never Produc
  for(const bad of ['','http://'+target.slice(8),'https://example.com','https://production.example.workers.dev',
   target+'/api/world',target+'/',target+'?x=1',target+'#x',target.replace('https://','https://user@'),
   target+'.evil.invalid','https://localhost','https://127.0.0.1', 'https://preview.example.invalid',
-  target.replace('giocolifrancesco','another-account')])
+  target.replace('football-architect','another-account')])
   assert.throws(()=>validateSharedPreviewTarget(bad),/Shared DEV/);
 });
 

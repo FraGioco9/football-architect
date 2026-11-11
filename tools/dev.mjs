@@ -35,7 +35,7 @@ export function localDevPlan({platform=process.platform,execPath=process.execPat
 
 /** The approved, read-only verified Preview Worker. Never relay account cookies to
  * other .workers.dev tenants: a self-declared pool handshake is not ownership proof. */
-export const SHARED_PREVIEW_TARGET='https://football-architect-preview.giocolifrancesco.workers.dev';
+export const SHARED_PREVIEW_TARGET='https://preview.football-architect.workers.dev';
 export function validateSharedPreviewTarget(target){
  if(target!==SHARED_PREVIEW_TARGET)
   throw Error('Shared DEV requires the exact approved nonproduction Workers Preview HTTPS origin');
