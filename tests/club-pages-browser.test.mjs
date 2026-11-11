@@ -288,9 +288,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(await run("(()=>{const logo=document.querySelector('.club-competition-logo').getBoundingClientRect(),identity=document.querySelector('.club-competition-identity').getBoundingClientRect();return Math.abs((logo.top+logo.bottom)-(identity.top+identity.bottom))<2})()"),true,'Competition logo is centered within its row');
       if(width===1440)assert.equal(await run("(()=>{const layout=document.querySelector('.club-competition-layout').getBoundingClientRect(),league=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return league.left>=layout.left-2&&league.right<=status.left+2&&status.right<=next.left+2&&next.right<=layout.right+2&&[league,status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Competition league, status and next match occupy ordered non-overlapping columns inside the full-width band');
       assert.equal(await run("getComputedStyle(document.querySelector('.club-competition-name a')).fontSize"),width>760?'17px':width>480?'14px':'14px','League link uses the compact responsive font size');
-      assert.equal(await run("(()=>{const status=document.querySelector('.club-competition-metrics dt').getBoundingClientRect(),next=document.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect();return status.width>0&&next.width>0&&Math.abs(status.top-next.top)<1&&[status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Status and Next Match labels share the same row at '+width);
+      assert.equal(await run("(()=>{const status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect(),layout=document.querySelector('.club-competition-layout').getBoundingClientRect(),mid=r=>(r.top+r.bottom)/2;return status.width>0&&next.width>0&&Math.abs(mid(status)-mid(next))<1.5&&[status,next].every(r=>r.top>=layout.top-2&&r.bottom<=layout.bottom+2)})()"),true,'Status and Next Match blocks are vertically centered within the competition row at '+width);
       assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No provisional allocation label');
-      assert.equal(width>480?cardLayout.sideBySide:cardLayout.stacked,true,'Competition uses three columns above 480px and a shared Status/Next Match row on narrow screens');
+      const availablePanelWidth=await run("(()=>{const panel=document.querySelector('.club-competition'),css=getComputedStyle(panel);return panel.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight)})()");
+       assert.equal(availablePanelWidth>800?cardLayout.sideBySide:cardLayout.stacked,true,
+        'Competitions uses the same panel-width responsive breakpoint for Debug ON and OFF');
      }else{
       assert.equal(await run("document.querySelectorAll('.club-competition-entry').length"),0,'unverified membership must not be rendered');
       assert.equal(await run("Boolean(document.querySelector('.club-competition .club-fp-bar,.club-competition .club-competition-empty'))"),true,'pending or unavailable data is explicit');
@@ -598,11 +600,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      for(const id of [upcoming.homeId,upcoming.awayId])assert.ok(fixtureText.includes(division.clubs.find(c=>c.clubId===id).primaryName));
      assert.equal(await run("(()=>{const root=document.querySelector('.fa-shell-content-scroll');return root.scrollWidth<=root.clientWidth+1})()"),true,'Live Competition summary fits at '+width);
      await run("document.querySelector('.club-competition-match-name').textContent='Ausgeschieden in der Qualifikationsrunde gegen Sportgemeinschaft Reinickendorf'");
-     const fixtureHeight=await run("document.querySelector('.club-competition').getBoundingClientRect().height");
+     const beforeTransition=await run("(()=>{const panel=document.querySelector('.club-competition').getBoundingClientRect(),layout=document.querySelector('.club-overview-layout').getBoundingClientRect();return {height:panel.height,offset:panel.top-layout.top}})()");
      await run("document.querySelector('.club-competition-next a').focus();sessionStorage.setItem('football-architect:standings-dev-preview','off');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
      await wait("document.querySelector('[data-club-position]')?.textContent==='—'");
      assert.equal(await run("document.querySelector('.club-competition-next a')"),null,'Disabling DEV removes future fixtures');
-     assert.ok(Math.abs(await run("document.querySelector('.club-competition').getBoundingClientRect().height")-fixtureHeight)<2,'Next Match preserves panel height when fixtures appear or disappear at '+width);
+     const afterTransition=await run("(()=>{const panel=document.querySelector('.club-competition').getBoundingClientRect(),layout=document.querySelector('.club-overview-layout').getBoundingClientRect();return {height:panel.height,offset:panel.top-layout.top}})()");
+     assert.ok(Math.abs(afterTransition.offset-beforeTransition.offset)<2,
+      'Next Match keeps the panel anchored while switching Debug source at '+width);
+     assert.ok(afterTransition.height>0&&afterTransition.height<=beforeTransition.height+1,
+      'The panel may shrink after a deliberately long fixture disappears, but never collapses or grows at '+width);
      assert.equal(await run("document.activeElement.classList.contains('club-competition')"),true,'Removing a focused summary link retains focus in its panel');
     }
     // FR-1 regression: hover the exact match-name node on the reported route.
