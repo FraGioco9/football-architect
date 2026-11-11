@@ -1271,7 +1271,7 @@ html:is([data-fa-standings-loading="true"],[data-fa-dev-standings-pending="true"
 #competition-panel-fixtures .app-fixtures-trigger-label{display:inline-flex;justify-content:center;align-items:center;gap:4px;min-width:0}
 #competition-panel-fixtures :is(.app-fixtures-picker .language-option,#app-fixtures-round-number){white-space:nowrap}
 #competition-panel-fixtures .app-fixtures-skeleton{display:none}
-#competition-panel-fixtures .app-fixtures-skeleton-crest{display:block;flex:0 0 64px;width:64px;height:64px}
+#competition-panel-fixtures .app-fixtures-skeleton-crest{display:grid;place-items:center;flex:0 0 64px;width:64px;height:64px}
 .app-fixture-score{line-height:1.55;min-height:1.55em;align-items:center}
 #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name{display:flex;align-items:center;min-height:1.55em;width:140px;max-width:calc(100% - 72px)}
 #competition-panel-fixtures .app-fixtures-skeleton .app-fixture-name>.app-skeleton-bar{width:100%;margin:0}
