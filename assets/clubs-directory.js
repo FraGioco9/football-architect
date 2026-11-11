@@ -4,8 +4,8 @@ const settleCrest=(image,failed=false)=>{
  if(!image?.matches?.('img.nav01-crest-image'))return;
  const slot=image.parentElement;
  if(!slot?.classList?.contains('nav01-crest'))return;
- if(failed||(image.complete&&image.naturalWidth===0)){delete slot.dataset.clubCrestLoaded;image.remove();}
- else if(image.complete&&image.naturalWidth>0)slot.dataset.clubCrestLoaded='true';
+ if(failed||(image.complete&&image.naturalWidth===0)){delete slot.dataset.clubCrestLoaded;slot.dataset.clubCrestFallback='true';image.remove();}
+ else if(image.complete&&image.naturalWidth>0){delete slot.dataset.clubCrestFallback;slot.dataset.clubCrestLoaded='true';}
 };
 grid.addEventListener('load',event=>settleCrest(event.target),true);
 grid.addEventListener('error',event=>settleCrest(event.target,true),true);
@@ -16,7 +16,7 @@ let state='loading',pending=false;const setStatus=next=>{state=next;grid.setAttr
 const cacheHits=typeof cardCache==='undefined'?[]:hits.map(c=>cardCache.get(window.faRoutesRegistry.buildRoute({kind:'club',country:c.countryId.toLowerCase(),id:c.clubId,view:'overview'})));
 const reuseCached=hits.length>0&&cacheHits.length===hits.length&&cacheHits.every(Boolean);
 const staging=reuseCached?null:typeof document.createElement==='function'?document.createElement('div'):out;
-if(staging)staging.innerHTML=hits.length?hits.map(c=>'<a class="nav01-card" href="'+window.faRoutesRegistry.buildRoute({kind:'club',country:c.countryId.toLowerCase(),id:c.clubId,view:'overview'})+'">'+'<span class="nav01-crest" aria-hidden="true">'+(m.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="nav01-crest-image" src="/'+safe(m.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" loading="lazy" decoding="async">':'')+'</span>'+'<span><strong>'+safe(c.primaryName)+'</strong><small class="nav01-club-location"><svg class="nav01-country-flag" role="img" aria-label="'+safe(c.countryId)+'" width="20" height="16" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><use href="#fa-directory-flag-'+safe(c.countryId==='ENG'?'gb-eng':c.countryId.toLowerCase())+'"></use></svg><span class="nav01-club-city">'+safe(c.city)+'</span></small></span></a>').join(''):'<p>'+labels[8]+'</p>';if(staging!==out){const nodes=reuseCached?cacheHits.map(card=>{
+if(staging)staging.innerHTML=hits.length?hits.map(c=>'<a class="nav01-card" href="'+window.faRoutesRegistry.buildRoute({kind:'club',country:c.countryId.toLowerCase(),id:c.clubId,view:'overview'})+'">'+'<span class="nav01-crest"'+(m.clubCrests?.[c.countryId+'-'+c.clubId]?'':' data-club-crest-fallback="true"')+' aria-hidden="true">'+(m.clubCrests?.[c.countryId+'-'+c.clubId]?'<img class="nav01-crest-image" src="/'+safe(m.clubCrests[c.countryId+'-'+c.clubId])+'" alt="" loading="lazy" decoding="async">':'')+'</span>'+'<span><strong>'+safe(c.primaryName)+'</strong><small class="nav01-club-location"><svg class="nav01-country-flag" role="img" aria-label="'+safe(c.countryId)+'" width="20" height="16" viewBox="0 0 5 4" xmlns="http://www.w3.org/2000/svg"><use href="#fa-directory-flag-'+safe(c.countryId==='ENG'?'gb-eng':c.countryId.toLowerCase())+'"></use></svg><span class="nav01-club-city">'+safe(c.city)+'</span></small></span></a>').join(''):'<p>'+labels[8]+'</p>';if(staging!==out){const nodes=reuseCached?cacheHits.map(card=>{
 if(window.faAppHref)card.href=window.faAppHref(card.getAttribute('href'));
 return card;
 }):[...staging.children].map(node=>{

@@ -348,6 +348,30 @@ test('PAGE-LOAD-04 B02: directory only paints one crest skeleton and visible nam
  for(const cls of ['nav01-skeleton-name-bar','nav01-skeleton-flag','nav01-skeleton-city'])
   assert.equal((html.match(new RegExp('class="nav01-skeleton-bar '+cls+'"','g'))||[]).length,16,cls);
 });
+test('CLUBS-CREST: first-paint and image-pending logos use the same circular skeleton',()=>{
+ const css=read('assets/clubs-directory.css');
+ const shared=css.match(/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before,\s*\.nav01-skeleton-crest-disc\{([^}]+)\}/)?.[1];
+ assert.ok(shared,'one CSS rule must style both crest loading phases');
+ for(const declaration of ['width:85%','aspect-ratio:1','border-radius:50%','background:var(--fa-crest-skeleton-fill)','opacity:1'])
+  assert.ok(shared.includes(declaration),'shared crest skeleton missing '+declaration);
+ assert.match(css,/\.nav01-crest\[data-club-crest-loaded="true"\]::before\{display:none\}/,'loaded crest must hide skeleton');
+ assert.match(css,/\.nav01-card\.nav01-skeleton-card>\.nav01-skeleton-crest::after\{content:none;display:none\}/,'anonymous cards must not draw a second layer');
+});
+test('CLUBS-CREST: shield fallback is only shown for absent or failed crest assets',()=>{
+ const css=read('assets/clubs-directory.css'),js=read('assets/clubs-directory.js');
+ assert.match(css,/\.nav01-crest::before\{content:"";position:absolute;display:none\}/,
+  'default crest slot must not show a shield while the SVG is being resolved');
+ assert.match(css,/\.nav01-crest\[data-club-crest-fallback="true"\]::before\{display:block;/,
+  'only explicit fallback state enables the neutral shield');
+ assert.match(css,/\.nav01-crest:has\(>\.nav01-crest-image\):not\(\[data-club-crest-loaded="true"\]\)::before\{display:block;/,
+  'known SVGs show only the shared circular loading skeleton');
+ assert.ok(js.includes(' data-club-crest-fallback="true"'),
+  'cards with no catalogued asset are explicitly marked for fallback');
+ assert.ok(js.includes("slot.dataset.clubCrestFallback='true';image.remove()"),
+  'failed image loads enable fallback');
+ assert.ok(js.includes('delete slot.dataset.clubCrestFallback;slot.dataset.clubCrestLoaded'),
+  'successful image loads clear fallback');
+});
 test('PAGE-LOAD-04 B02: Club and Fixtures reuse the standings circular crest loading primitive',()=>{
  const shell=read('clubs/_shared/index.html'),styles=read('assets/app.css'),club=read('assets/club-model.js');
  assert.match(shell,/club-crest fa-crest-loading/,'anonymous Club header reserves a shared circular crest');

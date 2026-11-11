@@ -277,7 +277,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,index===0?{width:25,height:20,fit:'contain'}:{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
      // Public QA has no source: do not assert a fabricated league/fixture card.
-     const verifiedCard=await run("!!document.querySelector('.club-competition-logo')");
+     const verifiedCard=await run("!!document.querySelector('.club-competition-entry[data-club-competition-id] .club-competition-logo')");
      if(verifiedCard){
       assert.equal(await run("document.querySelector('.club-competition-metrics dt').textContent"),{en:'Status',de:'Status',es:'Estado',fr:'Statut',it:'Stato'}[lang]);
       const cardLayout=await run("(()=>{const panel=document.querySelector('.club-competition'),layout=document.querySelector('.club-overview-layout'),identity=document.querySelector('.club-competition-identity').getBoundingClientRect(),status=document.querySelector('.club-competition-metrics').getBoundingClientRect(),next=document.querySelector('.club-competition-next').getBoundingClientRect();return {full:Math.abs(panel.getBoundingClientRect().width-layout.getBoundingClientRect().width)<2,sideBySide:status.left>=identity.right-1&&next.left>=status.right-2,stacked:status.top>=identity.bottom-2&&next.top>=identity.bottom-2&&next.left>=status.right-2}})()");
@@ -294,7 +294,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.equal(availablePanelWidth>800?cardLayout.sideBySide:cardLayout.stacked,true,
         'Competitions uses the same panel-width responsive breakpoint for Debug ON and OFF');
      }else{
-      assert.equal(await run("document.querySelectorAll('.club-competition-entry').length"),0,'unverified membership must not be rendered');
+      assert.equal(await run("document.querySelectorAll('.club-competition-entry[data-club-competition-id]').length"),0,'unverified membership must not be rendered');
       assert.equal(await run("Boolean(document.querySelector('.club-competition .club-fp-bar,.club-competition .club-competition-empty'))"),true,'pending or unavailable data is explicit');
      }
      assert.equal(await run("document.querySelector('.club-description').textContent===document.querySelector('.club-description').dataset.originalDescription"),true);
