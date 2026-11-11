@@ -74,7 +74,8 @@ test('Players attribute group controls stay all visible without horizontal scrol
  const html=read('players/index.html');
  assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,160px\)\)/);
  assert.match(css,/\.app-players-groups\{[^}]*overflow:visible/);
- assert.match(css,/@media\(max-width:620px\)\{[^}]*\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:620px\)\{\.app-players-filters/);
+ assert.ok(css.includes(".app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr))}"),"four tabs must be laid out as two columns on mobile");
  assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
  for(const group of ['physical','technical','mental','goalkeeping'])
   assert.match(html,new RegExp('data-players-group="'+group+'"'));
