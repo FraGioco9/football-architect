@@ -9,6 +9,11 @@ This feature extends `/admin/players` with server-owned previews and explicit ap
 4. Successful players are stored in `generated_players`, with permanent UUIDs, initial/current age, all attributes, and development aptitude. `entry_season` is stored as row metadata, and `club_id` is deliberately deferred. `GET /api/admin/players` returns count and the latest 100 generated players to authorized Admins.
 5. Editing any option invalidates the browser draft; expiration, authorization revocation, world reset/season change or mismatched preview identity prevent a commit. A Season 0 reset purges all generated players and outstanding drafts.
 
+## Local development preview troubleshooting
+- `/admin/players` requires the DEV API bridge to forward `POST /api/admin/players/preview`, `POST /api/admin/players/commit` and `GET /api/admin/players` to the **running local Worker**; the bridge must support large, bounded player previews. Ordinary private APIs retain their 64 KiB response cap.
+- If the backend returns `players_preview_unavailable`, verify that the **local-only** `0020_player_generation.sql` migration has been applied to the same persisted D1 database used by the Worker. Never apply it remotely without separate authorization.
+- The Admin must have `admin.access`, `admin.world.read` and `admin.world.write`, an authenticated Player session and a valid CSRF token. The page shows the API error code after the preview error label.
+
 ## Deployment boundary
 - D1 migration: `backend/migrations/0020_player_generation.sql`. **No remote migration, database write or deploy is performed by this PR.** Apply the migration to the explicitly selected environment only after authorization, before deploying a Worker serving this interface.
 - The Worker uses the environment's existing `DB` binding and Player authentication pool. No cross-environment copy is permitted. Local DEV and remote preview/production pools remain isolated by existing environment configuration.

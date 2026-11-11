@@ -69,3 +69,31 @@ test('shared-mode Dev pages use authoritative sporting loaders without fictional
   }
  }finally{if(saved===undefined)delete process.env.FA_ADMIN_API_POOL;else process.env.FA_ADMIN_API_POOL=saved;server.closeAllConnections();await new Promise(r=>server.close(r))}
 });
+
+test('shared preview supports large authenticated player cohorts without widening ordinary response caps',async()=>{
+ for(const [path,method,payload] of [
+  ['/api/admin/players/preview','POST',{options:{count:100}}],
+  ['/api/admin/players','GET',null]
+ ]){
+  const big=Buffer.from(JSON.stringify({candidates:[{display_name:'A'.repeat(95000)}]}));
+  let count=0;
+  const r=req({path,method,body:payload?JSON.stringify(payload):'',headers:{
+   origin:'http://app.localhost:2000',cookie:`fa_player_local=${token}`,
+   'content-type':'application/json','x-csrf-token':'valid-csrf'}});
+  const res=await run(r,async(url,options)=>{
+   if(++count===1)return context();
+   assert.equal(url.pathname,path);
+   assert.equal(options.limit,2097152,'Only the two large player read routes get the 2 MiB cap');
+   assert.equal(options.headers.cookie,`__Host-fa_player=${token}`);
+   assert.equal(options.headers.origin,origin);
+   return {status:200,headers:{},body:big};
+  });
+  assert.equal(count,2);assert.equal(res.status,200);assert.equal(res.body.length,big.length);
+ }
+ // Other private routes still reject responses over the original 64 KiB bound.
+ let count=0;
+ const res=await run(req({path:'/api/admin/world'}),async()=>++count===1?context():{
+  status:200,headers:{},body:Buffer.from(JSON.stringify({data:'x'.repeat(70000)}))
+ });
+ assert.equal(res.status,503);
+});
