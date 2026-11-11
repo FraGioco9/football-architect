@@ -10,7 +10,7 @@ export const visualProfiles=Object.freeze([
   {id:'clubs-directory',path:'/clubs',width:768,height:900,language:'es',theme:'light',frame:'.nav01-filters',ready:'.nav01-filters'},
   {id:'calendar',path:'/calendar?calendarView=week',width:320,height:844,language:'it',theme:'dark',frame:'#calendar-controls',ready:'#calendar-controls'},
   {id:'login',path:'/account/login/',width:390,height:844,language:'es',theme:'light',frame:'.fa-shell-topbar',ready:'.account-body input'},
-  {id:'admin-anonymous',path:'/settings?view=admin',width:1440,height:900,language:'en',theme:'dark',frame:'.fa-shell-topbar',ready:'[data-admin-signin-link] a'}
+  {id:'admin-anonymous',path:'/admin',width:1440,height:900,language:'en',theme:'dark',frame:'.fa-shell-topbar',ready:'.fa-shell-topbar'}
 ]);
 
 export function frameDrift(before,after,{geometryTolerance=1.5}={}){

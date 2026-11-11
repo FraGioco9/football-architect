@@ -28,8 +28,17 @@ try{
    try{
     await context.route("**/assets/app.css",r=>r.fulfill({status:200,contentType:"text/css",body:useBaseline?baseline:current}));
     const page=await context.newPage();
-    const response=await page.goto(origin+route,{waitUntil:"networkidle",timeout:25000});
+    const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
+    if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    // Compare the hydrated state, not an arbitrary instant during asynchronous
+    // standings first paint. The real table may legitimately be concealed by
+    // the skeleton while the data provider is pending.
+    if(route==='/competitions/it-1/standings')await page.waitForFunction(()=>{
+     const state=document.documentElement.dataset;
+     return state.faStandingsLoading==='false'&&
+      !['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
+    });
     await page.evaluate(async()=>{await document.fonts.ready});
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
@@ -38,7 +47,12 @@ try{
       // phase can differ without changing any rendered surface.
       const elements=[...document.querySelectorAll(selector)].filter(e=>
        !e.closest('.app-competition-panel[hidden]')&&
-       !(selector==='.app-world-standing-table'&&e.closest('.app-standings-skeleton'))).slice(0,12);
+       !(selector==='.app-world-standing-table'&&e.closest('.app-standings-skeleton'))&&
+       // The desktop table occupies zero pixels on mobile. Its temporary
+       // visibility state during hydration is not observable and is verified
+       // separately by the responsive browser suite.
+       !(selector==='.app-world-standing-table'&&
+         e.getBoundingClientRect().width===0&&e.getBoundingClientRect().height===0)).slice(0,12);
       result[selector]=elements.map(e=>{
        const s=getComputedStyle(e);
        const props=Object.fromEntries(cssProperties.map(p=>[p,s.getPropertyValue(p)]));

@@ -147,10 +147,10 @@ test('operator status reports backend prerequisite and clears authority on revok
  revoked=true;await c.refresh();
  assert.equal(c.state().actor,null);assert.equal(c.state().operation,'idle');
 });
-test('settings markup includes accessible authoritative operation and backend error fields',()=>{
+test('Admin exposes accessible operation feedback without technical diagnostics',()=>{
  const html=renderAdminSettings();
- assert.match(html,/data-admin-operation/);
- assert.match(html,/data-admin-error-code/);
+ assert.match(html,/data-admin-status/);
+ assert.doesNotMatch(html,/data-admin-operation(?:\s|=|>)|data-admin-error-code/);
  assert.match(html,/aria-live="polite"/);
 });
 
@@ -204,8 +204,8 @@ test('action availability is derived exclusively from matching authenticated wor
  assert.equal(canRunCommand('publish',active,drawn),false);
  assert.equal(canRunCommand('confirm',active,drawn),false);
  assert.equal(canRunCommand('draw',active,{...drawn,worldGeneration:'650e8400-e29b-41d4-a716-446655440000'}),false);
- assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),true);
- assert.equal(canRunCommand('eventAdvance',active,drawn),true);
+ assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),false);
+ assert.equal(canRunCommand('eventAdvance',active,drawn),false);
  const last={...active,day:56};
  assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),false);
  assert.equal(canRunCommand('advance',last,{...drawn,mode:'legacy'}),false);
@@ -380,4 +380,124 @@ test('revocation while prepared events load cannot restore authority or prepared
  pending.resolve({world:current,mode:'legacy',events:[],calendarReady:false});await preparing;
  assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().events,null);
  assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'signedOut');
+});
+
+test('permission-denied mutations clear access and cannot be retried with cached grants',async()=>{
+ let writes=0;
+ const c=createAdminController(async(path,options)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world};
+  if(path.endsWith('/events'))return {world,mode:'uninitialized',events:[]};
+  writes++;throw error(403,'permission_denied');
+ },()=>{});
+ await c.refresh();assert.equal(c.state().actor.id,'operator');
+ await c.prepare();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'forbidden');
+ await c.prepare();assert.equal(writes,1);
+});
+
+test('permission loss on event reads clears the authenticated world instead of retaining controls',async()=>{
+ const c=createAdminController(async path=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world};
+  throw error(403,'permission_denied');
+ },()=>{});
+ await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'forbidden');
+});
+
+const calendarModel=require('../assets/world-calendar-model.js');
+test('next-day simulation preview uses the destination day and shared sporting calendar',()=>{
+ const {nextDaySimulation}=require('../assets/admin-settings.js');
+ assert.equal(typeof nextDaySimulation,'function');
+ const active={...world,seasonNumber:1,phase:'active',revision:12,day:15};
+ const events={mode:'sporting',worldGeneration:active.generation,worldRevision:12,calendarReady:true,rows:[]};
+ assert.deepEqual(nextDaySimulation(active,events,calendarModel),{day:16,rounds:['I-1','D-4']});
+ for(const [day,rounds] of [[16,['D-5']],[31,[]],[52,['I-13','D-32']],[53,['I-13','D-33']],[55,[]]])assert.deepEqual(nextDaySimulation({...active,day},events,calendarModel),{day:day+1,rounds});
+ assert.equal(nextDaySimulation({...active,day:56},events,calendarModel),null);
+ assert.equal(nextDaySimulation(active,{...events,worldRevision:11},calendarModel),null);
+ assert.equal(nextDaySimulation(active,{...events,calendarReady:false},calendarModel),null);
+ assert.equal(nextDaySimulation(active,events,null),null);
+ assert.equal(nextDaySimulation({...active,phase:'closed'},events,calendarModel),null);
+ const administrative={...events,mode:'administrative',calendarReady:false};
+ assert.deepEqual(nextDaySimulation({...active,day:4},administrative,calendarModel),{day:5,rounds:[]});
+ assert.equal(nextDaySimulation({...active,day:12},administrative,calendarModel),null);
+});
+
+test('Advance day is unavailable until all actions due today or earlier are completed',()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3};
+ for(const mode of ['administrative','sporting','legacy']){
+  const action=mode==='administrative'?'eventAdvance':'advance';
+  const events={worldGeneration:active.generation,worldRevision:0,mode,calendarReady:true,rows:[
+   {id:'draw',kind:'draw-international',status:'scheduled',day:3,order:1},
+   {id:'publish',kind:'generate-international-calendar',status:'scheduled',day:3,order:2}
+  ]};
+  assert.equal(canRunCommand(action,active,events),false);
+  events.rows[0].status='completed';assert.equal(canRunCommand(action,active,events),false);
+  events.rows[1].status='completed';assert.equal(canRunCommand(action,active,events),true);
+  events.rows.push({id:'later',kind:'later',status:'scheduled',day:4,order:1});
+  assert.equal(canRunCommand(action,active,events),true);
+  events.rows.push({id:'overdue',kind:'overdue',status:'scheduled',day:2,order:1});
+  assert.equal(canRunCommand(action,active,events),false);
+ }
+});
+
+test('Players local trial command uses bounded inputs and never calls world mutations',()=>{
+ const {playersTrialCommand}=require('../assets/admin-settings.js');
+ const command=playersTrialCommand({count:'100',seed:'fa-official-trial-01',suitability:'auto'});
+ assert.equal(command,'node tools/players-generation-trial.mjs --count 100 --seed fa-official-trial-01 --primary-suitability auto --out .\\players-trial.json');
+ assert.match(playersTrialCommand({count:'1000',seed:'seed_2',suitability:'65:80'}),/--count 1000.*--primary-suitability 65:80/);
+ for(const invalid of [{count:'0',seed:'ok',suitability:'auto'},{count:'1001',seed:'ok',suitability:'auto'},{count:'1.5',seed:'ok',suitability:'auto'},{count:'10',seed:'bad;Remove-Item',suitability:'auto'},{count:'10',seed:'ok',suitability:'999'}])assert.equal(playersTrialCommand(invalid),null);
+});
+
+test('Admin Players encodes all stable generator controls without PowerShell interpolation',()=>{
+ const playerForm=require('../assets/admin-players.js');
+ // An untouched form emits no overrides. The CLI's generator uses its own defaults.
+ assert.deepEqual(playerForm.makeOptions({}),{});
+ assert.deepEqual(playerForm.makeOptions({count:'',seed:'',primarySuitability:'',secondaryMode:'automatic'}),{});
+ assert.deepEqual(playerForm.makeOptions({count:'auto',seed:'AUTO',age:'Auto'}),{});
+ assert.match(playerForm.commandFromRaw({}),/--options-base64 e30 --out/);
+ const raw={
+  count:'2',seed:'seed with spaces; $env:SECRET',primarySuitability:'65:80',
+  primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'FRA',
+  firstName:'Émile',lastName:'De Luca',primaryPosition:'ST',preferredFoot:'right',
+  secondaryPositions:'AM',age:'18',height:'175:185',developmentAptitude:'50',
+  'attribute.shooting':'64:83','attribute.vision':'70'
+ };
+ const opts=playerForm.makeOptions(raw);
+ assert.equal(opts.seed,raw.seed);
+ assert.deepEqual(opts.primarySuitability,[65,80]);
+ assert.deepEqual(opts.attributes,{shooting:[64,83],vision:70});
+ assert.deepEqual(opts.secondaryPositions,['AM']);
+ assert.deepEqual(opts.height,[175,185]);
+ const command=playerForm.commandFromRaw(raw);
+ assert.match(command,/^node tools\/players-generation-trial\.mjs --options-base64 [A-Za-z0-9_-]+ --out \.\\players-trial\.json$/);
+ assert.doesNotMatch(command,/\$env:SECRET/);
+ const encoded=command.match(/--options-base64 ([A-Za-z0-9_-]+)/)[1];
+ assert.deepEqual(JSON.parse(Buffer.from(encoded,'base64url').toString('utf8')),opts);
+ const {execFileSync}=require('node:child_process');
+ const {fileURLToPath}=require('node:url');
+ const runtime=JSON.parse(execFileSync(process.execPath,[fileURLToPath(new URL('../tools/players-generation-trial.mjs',import.meta.url)),'--options-base64',
+  playerForm.commandFromRaw({count:'1',seed:'admin-test',primaryNationality:'ITA',primaryPosition:'ST',secondaryMode:'none',firstName:'Luca',age:'18'}).match(/--options-base64 ([A-Za-z0-9_-]+)/)[1]],{encoding:'utf8'}));
+ assert.equal(runtime.summary.count,1);
+ assert.equal(runtime.sample[0].first_name,'Luca');
+ assert.equal(runtime.sample[0].nationality,'ITA');
+ assert.equal(runtime.sample[0].secondary_nationality,null);
+ assert.equal(runtime.sample[0].initial_age,18);
+ const invalid=[
+  {count:'0',seed:'ok'},{count:'1001',seed:'ok'},{count:'3',seed:'bad\nseed'},
+  {count:'3',seed:'ok',age:'20'},
+  {count:'3',seed:'ok',primaryNationality:'NOT'},
+  {count:'3',seed:'ok',primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'ITA'},
+  {count:'3',seed:'ok',secondaryMode:'allowed',secondaryAllowed:'ITA,ITA'},
+  {count:'3',seed:'ok',primaryPosition:'GK',secondaryPositions:'RB'},
+  {count:'3',seed:'ok','attribute.shooting':'100'},
+  {count:'3',seed:'ok','attribute.speed':'90:20'},
+  {count:'3',seed:'ok',secondaryPositions:'RB,RB'}
+ ];
+ for(const obj of invalid)assert.throws(()=>playerForm.makeOptions(obj),undefined,JSON.stringify(obj));
+ const bad=Buffer.from(JSON.stringify({count:1,seed:'x',experimentalLegacySecondaryModel:true})).toString('base64url');
+ assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('../tools/players-generation-trial.mjs',import.meta.url)),'--options-base64',bad],{stdio:'pipe'}));
 });

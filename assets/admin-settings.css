@@ -1,7 +1,164 @@
-.admin-settings form{display:grid;gap:.65rem;max-width:30rem}.admin-settings input{box-sizing:border-box;max-width:100%;width:100%;min-height:var(--fa-control-height-regular);border:1px solid var(--line,#647478);border-radius:.5rem;padding:.65rem;background:var(--surface,#162329);color:inherit;font:inherit}.admin-settings button{min-height:var(--fa-control-height-regular);max-width:100%;padding:.6rem .9rem;margin:.3rem .3rem .3rem 0;border:1px solid var(--line,#647478);border-radius:.5rem;background:transparent;color:inherit;font:inherit;cursor:pointer}.admin-settings button:disabled{opacity:.55;cursor:default}.admin-settings :focus-visible{outline:2px solid currentColor;outline-offset:3px}.admin-settings p{overflow-wrap:anywhere}.admin-settings [hidden]{display:none!important}
+.admin-settings form{display:grid;gap:.65rem;max-width:30rem}.admin-settings input{box-sizing:border-box;max-width:100%;width:100%;min-height:var(--fa-control-height-regular);border:1px solid var(--line,#647478);border-radius:.5rem;padding:.65rem;background:var(--surface,#162329);color:inherit;font:inherit}.admin-settings button{min-height:var(--fa-control-height-regular);max-width:100%;padding:.6rem .9rem;margin:.3rem .3rem .3rem 0;border:1px solid var(--line,#647478);border-radius:.5rem;background:transparent;color:inherit;font:inherit;cursor:pointer}.admin-settings button:disabled{opacity:.55;cursor:default}.admin-settings :is(input,select,textarea,button,a,[role="option"]):focus-visible{outline:2px solid currentColor;outline-offset:3px}.admin-settings p{overflow-wrap:anywhere}.admin-settings [hidden]{display:none!important}
 
 .admin-settings [data-admin-reset-section]{margin-top:1.3rem;padding-top:1rem;border-top:1px solid var(--line,#647478)}.admin-settings [data-admin-reset-section] button{border-color:#b45656}.admin-settings [data-admin-reset-section] h3{font-size:1.05rem;margin:0 0 .5rem}
 
 .admin-settings [data-admin-reschedule-section]{margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line,#647478)}.admin-settings [data-admin-reschedule-section] select{box-sizing:border-box;display:block;width:100%;max-width:30rem;min-height:var(--fa-control-height-regular);padding:.55rem;border:1px solid var(--line,#647478);border-radius:.5rem;background:var(--surface,#162329);color:inherit;font:inherit}.admin-settings [data-admin-reschedule-section] h3{font-size:1.05rem;margin:0 0 .7rem}
 
-html[data-settings-view="admin"] #app-settings>.app-settings-grid{display:none}
+
+.app-admin-view[hidden]{display:none}
+.app-admin-view{display:grid;gap:var(--app-page-section-gap);width:100%;max-width:none;min-width:0;box-sizing:border-box}
+.app-admin-view .admin-settings{width:100%;min-width:0}
+.app-admin-view .admin-settings p{margin:0 0 12px}
+.app-admin-view [data-admin-status]{min-height:1.65em;margin:0}
+.app-admin-view [data-admin-signed-in]{min-width:0}
+.app-admin-view [data-admin-operations]{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.app-admin-view [data-admin-operations] button{margin:0;text-align:start;line-height:1.4}
+.app-admin-view .admin-settings input{display:block;max-width:30rem;margin:8px 0}
+.app-admin-view .admin-settings label{display:block;margin-top:12px}
+.app-admin-view .admin-settings button:hover:not(:disabled){border-color:var(--text);background:var(--surface)}
+.app-admin-view .admin-settings [data-admin-next-season]{margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.app-admin-view .admin-settings h3{font-size:17px;line-height:1.4}
+.app-admin-view .admin-settings li,.app-admin-view .admin-settings code{overflow-wrap:anywhere}
+@media(max-width:620px){.app-admin-view [data-admin-operations]{grid-template-columns:1fr}.app-admin-view .admin-settings button{width:100%;margin-inline:0}}
+
+.app-admin-view .admin-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.app-admin-view .admin-summary p{margin:0;font-weight:600}
+.app-admin-view .admin-summary button{margin:0}
+
+.app-admin-view [data-admin-next-day]{font-weight:600;overflow-wrap:anywhere}
+
+.app-admin-view .admin-summary-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.app-admin-view [data-admin-working]{font-size:13px;color:var(--muted)}
+
+/* Separate, compact Players panel: trial command only; no browser/server mutation. */
+.app-admin-view .admin-players{min-width:0}
+.app-admin-view .admin-players-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin:12px 0}
+.app-admin-view .admin-players-fields label{margin:0;min-width:0}
+.app-admin-view .admin-players-fields input,.app-admin-view .admin-players-fields select{display:block;box-sizing:border-box;width:100%;max-width:none;min-height:var(--fa-control-height-regular);margin:6px 0 0;padding:.55rem .65rem;border:1px solid var(--line,#647478);border-radius:.5rem;background:var(--surface,#162329);color:inherit;font:inherit}
+.app-admin-view .admin-players-command{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0;padding:12px;border:1px solid var(--line,#647478);border-radius:.5rem;font-size:.87rem}
+.app-admin-view .admin-players-command code{white-space:inherit}
+@media(max-width:620px){.app-admin-view .admin-players-fields{grid-template-columns:1fr}}
+
+.admin-players form{display:grid;gap:12px}
+.admin-players .admin-players-group{min-width:0;padding:14px;border:1px solid var(--border,var(--line));border-radius:10px}
+.admin-players .admin-players-group legend{font-size:15px;font-weight:600;padding:0 8px}
+.admin-players .admin-players-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(4,minmax(0,1fr))}
+.admin-players .admin-players-fields label{display:flex;flex-direction:column;min-width:0;margin:0;font-size:13px;gap:4px}
+.admin-players .admin-players-fields input,.admin-players .admin-players-fields select{width:100%;max-width:none;box-sizing:border-box;min-height:42px;margin:0;padding:8px;border:1px solid var(--line,#647478);border-radius:7px;background:var(--surface,#162329);color:inherit;font:inherit}
+.admin-players .admin-players-fields input::placeholder{color:var(--muted)}
+.admin-players .admin-players-fields [hidden]{display:none!important}
+.admin-players .admin-players-command{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px;border:1px solid var(--line,#647478);border-radius:8px;font-size:12px}
+@media(max-width:800px){.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.admin-players .admin-players-fields{grid-template-columns:1fr}.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.app-admin-view .admin-directory-card[hidden],.app-admin-view [data-admin-players][hidden]{display:none!important}
+
+/* Admin directory: separate cards with actual navigation buttons. */
+.app-admin-view .admin-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-space-4);min-width:0}
+.app-admin-view .admin-directory-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0;min-height:160px;box-sizing:border-box}
+.app-admin-view .admin-directory-card h2{font-size:var(--fa-text-panel-heading);margin:0}
+.app-admin-view .admin-directory-card p{flex:1;line-height:1.55}
+.app-admin-view .admin-directory-card .app-link{min-width:125px;text-align:center}
+.app-admin-view .admin-directory-card[hidden]{display:none!important}
+.app-admin-view .admin-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;flex-wrap:wrap}
+.app-admin-view .admin-page-heading .app-page-title{margin:0}
+.app-admin-view .admin-back{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:0;min-height:var(--fa-control-height-regular);padding:9px 14px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text)!important;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.app-admin-view .admin-back .fa-icon{flex:none}
+.app-admin-view .admin-back:hover{background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.app-admin-view .admin-back:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(max-width:620px){.app-admin-view .admin-directory{grid-template-columns:1fr}}
+
+/* Same combobox primitives as Settings/Calendar. */
+.app-admin-view .admin-players-dropdown{position:relative;display:flex;min-width:0;width:100%;z-index:30}
+.app-admin-view .admin-players-fields select[data-players-option][hidden]{display:none!important}
+.app-admin-view .admin-players .admin-players-dropdown .language-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;width:100%;height:42px;min-height:42px;max-width:none;margin:0;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-control);font:inherit;text-align:left;color:var(--text)}
+.app-admin-view .admin-players-dropdown .language-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-admin-view .admin-players-dropdown .language-menu{left:0;right:auto;width:100%;min-width:0;box-sizing:border-box;max-height:min(320px,calc(100svh - 120px))}
+.app-admin-view .admin-players-dropdown[data-menu-placement="above"] .language-menu{top:auto;bottom:calc(100% + 6px)}
+.app-admin-view .admin-players-dropdown:has(.language-trigger[aria-expanded="true"]){z-index:100}
+.app-admin-view .admin-players-dropdown .admin-players-dropdown-search{position:sticky;top:0;z-index:2;display:block;min-width:0;width:100%;height:38px;min-height:38px;box-sizing:border-box;margin:0 0 4px;padding:7px 10px;background:var(--background);border:1px solid var(--border);border-radius:var(--fa-radius-control);color:var(--text);font:inherit}
+.app-admin-view .admin-players-dropdown .language-option[hidden]{display:none!important}
+.app-admin-view .admin-players-dropdown .language-option{min-height:36px;font-size:var(--fa-text-control)}
+.app-admin-view .admin-players-fields label[hidden]{display:none!important}
+
+
+/* Override legacy 30rem form cap for the dedicated full-width Players page. */
+.app-admin-view .admin-players form{width:100%;max-width:none;min-width:0}
+
+/* Full-width section and inner form: no implicit grid min-content/max-width constraints. */
+.app-admin-view{grid-template-columns:minmax(0,1fr)}
+.app-admin-view > .admin-players,
+.app-admin-view > .admin-settings,
+.app-admin-view .admin-players > .app-settings-panel-content,
+.app-admin-view .admin-players form,
+.app-admin-view .admin-players .admin-players-group{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+.app-admin-view .admin-players > .app-settings-panel-content,
+.app-admin-view .admin-players form{grid-template-columns:minmax(0,1fr)}
+
+/* Focus/highlight belongs to the interactive box, never to its caption/label. */
+.app-admin-view .admin-players-fields label,
+.app-admin-view .admin-players-fields [data-admin-players-label]{background:transparent;outline:none;box-shadow:none;border-color:transparent}
+.app-admin-view .admin-players-fields :is(input[data-players-option],.language-trigger):hover:not(:disabled){border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-players-fields :is(input[data-players-option],.language-trigger):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--fa-field-focus-border)}
+.app-admin-view .admin-directory-card:hover{border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-directory-card:hover :is(h2,p),.app-admin-view .admin-directory-card:focus-within :is(h2,p){background:transparent;outline:none;box-shadow:none}
+
+/* The native field label and its caption are never part of the interactive highlight. */
+.app-admin-view .admin-players-fields label,
+.app-admin-view .admin-players-fields label > [data-admin-players-label],
+.app-admin-view .admin-players-fields label:hover,
+.app-admin-view .admin-players-fields label:focus-within,
+.app-admin-view .admin-players-fields label > [data-admin-players-label]:hover{
+  background:transparent;
+  background-image:none;
+  outline:none;
+  box-shadow:none;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;
+  user-select:none;
+}
+/* Keep option captions a fixed color: the selected/hover highlight is on the menu row box. */
+.app-admin-view .admin-players-dropdown .language-option,
+.app-admin-view .admin-players-dropdown .language-option[aria-selected="true"],
+.app-admin-view .admin-players-dropdown .language-option[data-active="true"],
+.app-admin-view .admin-players-dropdown .language-option:hover{
+  color:var(--text);
+}
+/* Only editable/selectable boxes signal focus; never change the adjacent field caption. */
+.app-admin-view .admin-players-fields :is(input[data-players-option],.language-trigger):focus-visible,
+.app-admin-view .admin-players-fields .language-trigger[aria-expanded="true"]{
+  border-color:var(--fa-field-focus-border);
+  box-shadow:inset 0 0 0 1px var(--fa-field-focus-border);
+}
+
+/* Hover must decorate the actual field box, never the wrapping label or caption. */
+.app-admin-view .admin-players-fields label:is(:hover,:focus-within),
+.app-admin-view .admin-players-fields label > [data-admin-players-label]:hover,
+.app-admin-view .admin-players-fields label > [data-admin-players-label]:focus{
+  background:transparent;
+  background-image:none;
+  outline:none;
+  box-shadow:none;
+  text-decoration:none;
+  color:inherit;
+}
+
+/* Two-stage server preview and explicitly approved environment persistence. */
+.app-admin-view .admin-players-preview{display:grid;gap:12px;min-width:0;padding:20px;border-top:1px solid var(--border)}
+.app-admin-view .admin-players-preview[hidden],.app-admin-view .admin-players-commit-status[hidden]{display:none!important}
+.app-admin-view .admin-players-preview h3{font-size:var(--fa-text-panel-heading);font-weight:700;line-height:1.3;margin:0}
+.app-admin-view .admin-players-preview p{margin:0}
+.app-admin-view .admin-players-preview-scroll{max-width:100%;overflow-x:auto;overflow-y:auto;max-height:480px;border:1px solid var(--border);border-radius:var(--fa-radius-control)}
+.app-admin-view .admin-players-preview-table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}
+.app-admin-view .admin-players-preview-table :is(td,th){padding:9px 12px;text-align:start;border-bottom:1px solid var(--line)}
+.app-admin-view .admin-players-preview-table th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:12px}
+.app-admin-view .admin-players-preview-table tr:last-child td{border-bottom:0}
+.app-admin-view .admin-players-preview-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.app-admin-view .admin-players-preview-pagination button{min-width:40px;height:40px;margin:0;padding:6px}
+.app-admin-view .admin-players-approval{display:flex;flex-wrap:wrap;align-items:end;gap:12px;min-width:0;border-top:1px solid var(--line);padding-top:14px}
+.app-admin-view .admin-players-approval label{display:flex;flex-direction:column;gap:6px;min-width:220px;flex:1 1 280px;margin:0}
+.app-admin-view .admin-players-approval input{width:100%;max-width:none;margin:0}
+.app-admin-view .admin-players-actions button,.app-admin-view .admin-players-approval button{margin:0}
+.app-admin-view .admin-players-feedback,.app-admin-view .admin-players-commit-status{min-height:1.4em;margin:0;overflow-wrap:anywhere}
+.app-admin-view .admin-players-commit-status{padding:12px 20px}

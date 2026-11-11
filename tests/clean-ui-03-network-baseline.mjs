@@ -3,7 +3,7 @@ import {chromium} from "playwright";
 import {mkdirSync,writeFileSync} from "node:fs";
 import assert from "node:assert/strict";
 const origin="http://app.localhost:2000";
-const routes=["/dashboard","/calendar","/settings","/competitions","/clubs","/competitions/it-1/standings","/guide"];
+const routes=["/dashboard","/calendar","/settings","/admin","/competitions","/clubs","/competitions/it-1/standings","/guide"];
 const browser=await chromium.launch({headless:true});
 const results=[];
 try{
@@ -24,16 +24,18 @@ try{
 }finally{await browser.close()}
 mkdirSync("int24-browser-artifacts",{recursive:true});
 writeFileSync("int24-browser-artifacts/clean-ui-03-network-baseline.json",JSON.stringify({measurement:"Chromium loopback DEV, cold context per route; transferSize may be 0 due to browser timing restrictions/cache",results},null,2));
-// The standalone loopback preview intentionally has no Admin Worker attached.
-// Settings may probe its own session route; the preview's 404 is an expected
-// unavailable auth endpoint, not a failed static resource or broken page.
-// All other HTTP failures remain strict, including any other Admin API route.
+// The standalone loopback preview has no account/Admin Worker attached.
+// One unavailable account-permissions read is expected for Admin navigation;
+// only the dedicated Admin page may additionally probe its Admin session.
+// Every static resource and all other HTTP failures remain strict.
 for(const x of results){
- const unavailableAdminSession=x.failed.filter(r=>x.route==="/settings"&&
-   r.url===origin+"/api/admin/session"&&r.status===404&&r.type==="fetch");
+ const unavailablePermissions=x.failed.filter(r=>r.url===origin+"/api/player/permissions"&&r.status===404&&r.type==="fetch");
+ const unavailableAdminSession=x.failed.filter(r=>x.route==="/admin"&&r.url===origin+"/api/admin/session"&&r.status===404&&r.type==="fetch");
+ assert.ok(unavailablePermissions.length<=1,"unexpected repeated permission probe "+x.route);
  assert.ok(unavailableAdminSession.length<=1,"unexpected repeated Admin session probe "+x.route);
- const unexpected=x.failed.filter(r=>!unavailableAdminSession.includes(r));
+ const unavailableAuth=[...unavailablePermissions,...unavailableAdminSession];
+ const unexpected=x.failed.filter(r=>!unavailableAuth.includes(r));
  assert.deepEqual(unexpected,[],x.route);
  assert.ok(x.requests>=1,x.route);
- console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}, unavailable Admin session: ${unavailableAdminSession.length}`);
+ console.log(`${x.route}: ${x.requests} responses, ${x.transferBytes} transfer bytes, ${x.decodedBytes} decoded bytes, unknown transfer: ${x.unknownTransfer}, unavailable auth endpoints: ${unavailableAuth.length}`);
 }

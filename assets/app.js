@@ -1356,6 +1356,7 @@
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
     if (path === "/settings") return "settings";
+    if (path === "/admin" || path.startsWith("/admin/")) return "admin";
     if (path === "/account" || path.startsWith("/account/")) return "profile";
     if (path === "/dashboard") return "dashboard";
     return "dashboard";
@@ -1389,7 +1390,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {

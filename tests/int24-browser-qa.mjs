@@ -26,8 +26,16 @@ try {
  const routePage=await browser.newPage({viewport:{width:390,height:900}});
  try{
   for(const slug of allRoutes){
-   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"networkidle"});
+   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,"shared route "+slug);
+   // Avoid unrelated background polling/network requests blocking the navigation gate.
+   // Assert the actual competition context and statistics content instead.
+   await routePage.waitForFunction(slug=>{
+    const context=window.faCompetitionContext;
+    return context?.definition?.id?.toLowerCase()===slug&&
+     context.selectedSeason===1&&
+     document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card').length===3;
+   },slug);
    await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
    const actual=await routePage.evaluate(()=>({
     id:window.faCompetitionContext?.definition?.id?.toLowerCase(),
@@ -36,8 +44,15 @@ try {
     stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
    }));
    assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
-   // SH-02: traverse all seven real views for all 18 competitions. The
-   // declarative tab/panel/crest identities must outlive same-document routing.
+   // SH-02: activate Standings once before snapshotting its hydrated
+   // crest host. The first transition from Stats may still mount data;
+   // later navigation must preserve the stable DOM identity.
+   await routePage.locator("#competition-tab-standings").click();
+   await routePage.waitForFunction(()=>{
+    const active=document.querySelector("#competition-tab-standings[aria-selected='true']");
+    const panel=document.querySelector("#competition-panel-standings");
+    return !!active&&!!panel&&!panel.hidden;
+   });
    await routePage.evaluate(()=>{
     window.__sh02Tabs=[...document.querySelectorAll(".app-competition-tabs [role=tab]")];
     window.__sh02Panels=window.__sh02Tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
@@ -264,10 +279,13 @@ try {
   await page.addInitScript(language=>localStorage.setItem('football-architect:language',language),lang);
   const path='/competitions/'+slug+'/'+view+'?season=1';
   try{
-   const response=await page.goto(base+path,{waitUntil:'networkidle'});
+   const response=await page.goto(base+path,{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,path);
    await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id?.toLowerCase()===id&&
     !!window.faCompetitionContextApi?.selectSeason,slug);
+   // Wait for semantic Stats/Awards state after initial hydration, not network idle.
+   if(view==='stats'||view==='awards')await page.waitForFunction(view=>
+    !!document.getElementById('competition-panel-'+view)?.dataset.faContentState,view);
    const state=await page.evaluate(view=>{
     const header=document.querySelector('.app-competition-header');
     const tabs=document.querySelector('.app-competition-tabs');
@@ -324,7 +342,7 @@ try {
    assert.equal(await page.locator('#competition-panel-'+view).count(),1,'failed manifest retains selected panel '+path);
    if(view==='rules')assert.ok(await page.locator('#competition-panel-rules [data-rule-definition]').count()>0,'canonical Rules survive manifest failure');
    await page.unroute('**/competitions/_shared/manifest.json',failure);
-   await page.reload({waitUntil:'networkidle'});
+   await page.reload({waitUntil:"domcontentloaded"});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
    assert.equal(await page.locator('[data-competition-load-error]').count(),0,'hard refresh recovers '+path);
    checks++;
@@ -338,7 +356,7 @@ try {
   const broken=route=>route.fulfill({status,contentType:'application/json',body});
   await page.route('**/competitions/_shared/manifest.json',broken);
   try{
-   await page.goto(base+'/competitions/it-1/fixtures?season=1&matchday=12',{waitUntil:'networkidle'});
+   await page.goto(base+'/competitions/it-1/fixtures?season=1&matchday=12',{waitUntil:"domcontentloaded"});
    await page.locator('[data-competition-load-error] [role=alert]').waitFor();
    const state=await page.evaluate(()=>({
     shell:!!document.getElementById('app-divisions'),
@@ -349,7 +367,7 @@ try {
    }));
    assert.deepEqual(state,{shell:true,title:true,tabs:7,rows:0,falseEmpty:false},'confirmed failure leaves anonymous standings until catalog recovers: '+kind);
    await page.unroute('**/competitions/_shared/manifest.json',broken);
-   await page.reload({waitUntil:'networkidle'});
+   await page.reload({waitUntil:"domcontentloaded"});
    await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1');
    assert.equal(await page.locator('[data-competition-load-error]').count(),0,'recover on hard refresh '+kind);
    checks++;
@@ -412,9 +430,25 @@ try {
   page.on("pageerror",e=>errors.push(e.message));
   for(const view of views){
    const url=base+"/competitions/"+cup+"/"+view;
-   const response=await page.goto(url,{waitUntil:"networkidle"});
+   const response=await page.goto(url,{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,url);
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id&&
+    window.faCompetitionContext?.selectedSeason===1,cup);
+   // DOMContentLoaded exposes the permanent tabs before each view's dynamic
+   // content is ready. Confirm the view's own semantic state, not network idle.
+   await page.waitForFunction(view=>{
+    const panel=document.getElementById('competition-panel-'+view);
+    if(!panel||panel.hidden)return false;
+    if(view==='fixtures'){
+     const toolbar=document.getElementById('app-fixtures-toolbar');
+     return !!panel.dataset.faContentState&&!!toolbar&&!toolbar.getClientRects().length;
+    }
+    if(view==='stats')return panel.querySelectorAll('.fa-dev-stats-card').length===3;
+    if(view==='awards')return document.querySelectorAll('#competition-panel-awards > .fa-awards .fa-awards-card').length===11;
+    if(view==='postseason')return panel.querySelectorAll('[data-bracket-tie]').length===11;
+    return true;
+   },view);
    const visible=await page.locator("#competition-panel-"+view).isVisible();
    if(!visible){
     const probe=await page.evaluate(view=>({
@@ -513,7 +547,10 @@ try {
    }
    checks++;
   }
-  await page.goto(base+"/competitions/"+cup,{waitUntil:"networkidle"});
+  await page.goto(base+"/competitions/"+cup,{waitUntil:"domcontentloaded"});
+  await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,cup);
+  await page.waitForFunction(()=>Boolean(window.faCompetitionStats)&&
+   document.querySelectorAll('#fa-dev-stats [data-stats-view]').length===3);
   for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
@@ -526,9 +563,11 @@ try {
   }
   for(const theme of ["dark","light"]){
    await page.evaluate(value=>localStorage.setItem("football-architect:theme",value),theme);
-   await page.reload({waitUntil:"networkidle"});
+   await page.reload({waitUntil:"domcontentloaded"});
    assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,cup);
    await page.locator('#competition-tab-postseason').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#competition-panel-postseason [data-bracket-tie]').length===11);
    await screenshot(page,cup+"-"+width+"-"+theme+".png");
    checks++;
   }
@@ -597,10 +636,10 @@ try {
   assert.equal(await tabs.nth(1).evaluate(el=>document.activeElement===el),true);
   await page.keyboard.press("End");
   await page.waitForURL("**/awards?season=1");
-  await page.reload({waitUntil:"networkidle"});
-  assert.equal(await page.locator("#competition-panel-awards").isVisible(),true);
-  await page.goBack({waitUntil:"networkidle"});
-  assert.equal(await page.locator("#competition-panel-postseason").isVisible(),true);
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#competition-panel-awards").waitFor({state:"visible"});
+  await page.goBack({waitUntil:"domcontentloaded"});
+  await page.locator("#competition-panel-postseason").waitFor({state:"visible"});
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
@@ -613,7 +652,7 @@ try {
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
  for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
-  await page.goto(base+route,{waitUntil:"networkidle"});
+  await page.goto(base+route,{waitUntil:"domcontentloaded"});
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
@@ -637,7 +676,7 @@ try {
    assert.equal(await page.locator('#calendar-season-picker').isDisabled(),false);
    assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
   }
-  await page.reload({waitUntil:'networkidle'});
+  await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForSelector('.fa-dev-widget-button');
   assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
   if(route.startsWith('/competitions/')){
@@ -686,7 +725,7 @@ try {
    }
    await route.fulfill({response,json});
   });
-  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:'networkidle'});
+  await historyPage.goto(base+'/competitions/'+id.toLowerCase()+'/rules',{waitUntil:"domcontentloaded"});
   await historyPage.waitForFunction(()=>document.querySelector('[data-rule-metric="points.win"]')?.textContent==='2');
   const historical=await historyPage.evaluate(()=>{
    const context=window.faCompetitionContext,definition=context.definition;
@@ -737,7 +776,7 @@ try {
  }
  // PR 318: shared domestic qualification bands, localized legends and centered form letters.
  const formPage=await browser.newPage({viewport:{width:1440,height:900}});
- await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:'networkidle'});
+ await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:"domcontentloaded"});
  await formPage.evaluate(()=>{
   sessionStorage.setItem('football-architect:standings-dev-preview','on');
   sessionStorage.setItem('football-architect:standings-dev-season','2');
@@ -745,7 +784,7 @@ try {
   sessionStorage.removeItem('football-architect:calendar-dev-world-day');
   window.dispatchEvent(new Event('fa:fictional-standings-change'));
  });
- await formPage.reload({waitUntil:'networkidle'});
+ await formPage.reload({waitUntil:"domcontentloaded"});
  await formPage.waitForSelector('.app-world-form-glyph');
  for(const width of widths)for(const theme of ['dark','light'])for(const lang of Object.keys(languages)){
   await formPage.setViewportSize({width,height:900});

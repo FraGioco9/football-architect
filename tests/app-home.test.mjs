@@ -77,7 +77,7 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
     assert.ok(css.includes(token),token);
   }
   assert.match(css,/\.app-main\{width:100%;max-width:none/);
-  assert.match(css,/\.app-view>\.app-page-title\{[^}]*text-align:left/);
+  assert.match(css,/\.app-view>\.app-page-title(?:,[^{]+)?\{[^}]*text-align:left/);
   assert.match(css,/\.app-panels\{[^}]*margin-top:var\(--app-page-section-gap\)/);
   assert.match(css,/\.app-calendar-empty\{[^}]*margin-top:var\(--app-page-section-gap\)/);
   assert.match(css,/\.app-settings-grid\{[^}]*margin-top:var\(--app-page-section-gap\)/);
@@ -142,7 +142,7 @@ test("HOME-01 keeps five localized language options only in Settings and does no
     assert.doesNotMatch(markup,/id="app-about-heading"/);
   }
   assert.doesNotMatch(js,/indexedDB|fetch\(|localStorage\.setItem|simulateMatch/);
-  assert.match(pages.settings,/<template data-settings-admin>\s*<section[^>]*data-admin-settings/);
+  assert.doesNotMatch(pages.settings,/data-settings-admin|data-admin-settings|admin-settings\.js/);
   assert.doesNotMatch(pages.settings,/data-action="(?:import|export|delete-career)"/);
 });
 

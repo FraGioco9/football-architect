@@ -1,5 +1,5 @@
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
-import {renderAdminSettings} from './render-admin-settings.mjs';
+import {renderAdminSettings,renderAdminPlayers} from './render-admin-settings.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {buildRoute} from "../assets/routes-registry.mjs";
@@ -228,6 +228,9 @@ const writeOutput=(path,content)=>{
  if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
  // One normalization after the sidebar is inserted also covers generated sidebar links.
  if(path.endsWith('.html'))content=normalizeRouteLinks(renderSidebar(content),path);
+  // Admin routes have a neutral first paint: never select Dashboard.
+  // The sidebar bootstrap is injected only by renderSidebar; patch it afterwards.
+  if(path.startsWith('admin/')&&path.endsWith('.html'))content=content.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -256,14 +259,27 @@ for(const page of outputPages){
   if(/@@FA_(?:LINE_|WORLD_|CALENDAR_)/.test(html))throw Error("Unresolved template token in "+page.path);
   if(page.name==="competition-shared")html=html.replace('<script src="/assets/landing.js"','<link rel="stylesheet" href="/assets/competition-awards.css">\n  <script src="/assets/competition-model.js" defer></script>\n  <script src="/assets/landing.js"');
  }
- html=html.replace('          <!-- settings-admin-view -->\n',page.name==="settings"?'          <template data-settings-admin>'+renderAdminSettings()+'</template>\n':'');
- if(page.name==="settings")html=html.replace('</head>',
-  '  <script>if(new URLSearchParams(location.search).get("view")==="admin")document.documentElement.dataset.settingsView="admin"</script>\n'+
-  '  <link rel="stylesheet" href="/assets/admin-settings.css">\n  <script src="/assets/admin-settings.js" defer></script>\n</head>');
  if(page.name==="competitions")html=html.replace("</head>","  <script src=\"/assets/international-cups.js\" defer></script>\n</head>");
  if(page.name==="calendar")html=html.replace('<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>','<h1 class="app-page-title" id="calendar-title" data-app-i18n="calendar">Calendar</h1>\n          '+"<div class=\"calendar-season-picker app-competition-season\"><span id=\"calendar-season-label\">Season</span><div class=\"language-control\" id=\"calendar-season-control\"><button type=\"button\" id=\"calendar-season-picker\" class=\"language-trigger\" role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"calendar-season-menu\" aria-labelledby=\"calendar-season-label calendar-season-value\"><span id=\"calendar-season-value\"></span><svg class=\"language-chevron\" viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path d=\"m5 7 5 5 5-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div id=\"calendar-season-menu\" class=\"language-menu\" role=\"listbox\" aria-labelledby=\"calendar-season-label\" hidden></div></div></div>"+"\n          "+"<script data-calendar-season-first-paint>(()=>{const n=document.documentElement.dataset.calendarSeason||'';const value=document.getElementById('calendar-season-value');if(value)value.textContent=n})();</script>") ;
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,html);
+}
+// Admin directory and two dedicated subpages share the existing app shell.
+for(const [route,title,content,scripts] of [
+ ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section></div>',['/assets/admin-players.js']],
+ ['admin/calendar','Admin — Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-settings.js']],
+ ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-players.js']]
+]){
+ const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          '+(route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="/admin" data-admin-back aria-label="Back to Admin"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
+ let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
+ for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
+ // At first paint, Admin must not highlight a different sidebar destination.
+ html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"')
+  .replace('id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page"','id="app-nav-divisions" href="/competitions" data-app-view="divisions"');
+ html=html.replace('<title>Competitions','<title>'+title);
+ html=html.replace('</head>',
+  '  <meta name="robots" content="noindex,nofollow">\n  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
+ writeOutput(route+'/index.html',html);
 }
 // Account and authentication routes use the same career shell.
 function renderAccountPage(content,title,scripts){
@@ -322,6 +338,9 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  html=html.replace('  <link rel="stylesheet" href="/assets/sidebar-evolution.css">', "  <link rel=\"stylesheet\" href=\"/assets/clubs-directory.css\">\n  <script src=\"/assets/competition-tabs.js\" defer></script>\n  <script src=\"/assets/clubs-directory.js\" defer></script>\n  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">");
  writeOutput("clubs/index.html",html);
 }
+writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
+if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 19 Competitions), 1 neutral snapshot structurally audited, 1 competition manifest, 1 club template and 1 club manifest");
+
 // Explore: public Players directory has its own canonical page, separate from Admin's generator.
 {
  const file=new URL("../competitions/index.html",import.meta.url);
@@ -335,5 +354,3 @@ for(const output of clubOutputs({template,replacements:worldPageReplacements(),c
  html=html.replace('  <script src="/assets/international-cups.js" defer></script>\n','');
  writeOutput("players/index.html",html);
 }
-writeOutput("competitions/_shared/manifest.json",JSON.stringify(competitionManifest,null,2)+"\n");
-if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length+"/"+outputPages.length+" (3 existing + 19 Competitions), 1 neutral snapshot structurally audited, 1 competition manifest, 1 club template and 1 club manifest");

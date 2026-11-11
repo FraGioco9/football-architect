@@ -38,6 +38,11 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
    const pathname=new URL(req.url,"http://127.0.0.1").pathname;
    if(pathname.includes("%")||pathname.includes("\\")||pathname.includes("\0"))throw Error("encoded path");
    const route=pathname;
+   // Anonymous permission probes are read-only APIs, never public static assets.
+   if(route==='/api/player/permissions'){
+    res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    res.end('{"error":{"code":"permission_denied"}}');return;
+   }
    const file=publicRequestFile(route);
    if(!allow.has(file))throw Error("path not in artifact");
    const type=mime[extname(file)];

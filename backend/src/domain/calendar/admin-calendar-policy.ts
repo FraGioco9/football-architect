@@ -73,6 +73,12 @@ export function rescheduleAdministrativeMilestone(
  validate(next);
  return Object.freeze(next.map(e=>Object.freeze(e)));
 }
+/** Time cannot leave a day while any current or overdue action remains pending. */
+export function assertAdministrativeDayComplete(events:readonly AdministrativeMilestone[],day:number):void {
+ validate(events);
+ if(!Number.isSafeInteger(day)||day<0||day>56)invalid();
+ if(events.some(event=>event.day<=day&&event.status!=='completed'))blocked();
+}
 export function dueAdministrativeMilestones(events:readonly AdministrativeMilestone[],day:number):readonly AdministrativeMilestone[]{
  validate(events);
  if(!Number.isSafeInteger(day)||day<1||day>56)invalid();

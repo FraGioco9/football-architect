@@ -23,7 +23,7 @@ try{
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   try{
-   await page.goto(origin+'/clubs/it/1/overview',{waitUntil:'networkidle'});
+   await page.goto(origin+'/clubs/it/1/overview',{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
    assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
     '8px','Club page top padding remains 8px after hydration at '+width+'px');

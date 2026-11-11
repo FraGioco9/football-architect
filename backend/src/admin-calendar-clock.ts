@@ -1,11 +1,11 @@
-/** Complete current-day milestones and advance world time in one guarded D1 batch. */
+/** Advance only after every current-day milestone has its own completed receipt. */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import type {Database} from './database.ts';
 import {parsePrepareRequest,parseIdempotencyKey,type PrepareRequest} from './command-contract.ts';
 import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts';
 import {readWorld} from './world-repository.ts';
-import {proposeAdministrativeMilestones,proposeEndSeasonMilestones} from './domain/calendar/admin-calendar-policy.ts';
+import {proposeAdministrativeMilestones,proposeEndSeasonMilestones,assertAdministrativeDayComplete} from './domain/calendar/admin-calendar-policy.ts';
 import {planAdministrativeAdvance,type AdvanceEventRow} from './admin-calendar-advance-plan.ts';
 
 export async function advanceAdministrativeClock(db:Database,session:AdminSession,action:'start'|'advance',input:PrepareRequest,keyInput:string,now:number):Promise<Outcome>{
@@ -26,6 +26,7 @@ export async function advanceAdministrativeClock(db:Database,session:AdminSessio
  if(await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first()||
     await db.prepare('SELECT day FROM season_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first()||
     await db.prepare('SELECT tie_id FROM season_knockout_ties WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first())throw new ApiError(409,'calendar_event_prerequisites');
+ assertAdministrativeDayComplete(events,world.day);
  const plan=await planAdministrativeAdvance(db,world,rows,world.day+1,now);
  const after={...world,phase:'active' as const,day:world.day+1,revision:world.revision+1};
  const operationId=crypto.randomUUID(),result:Outcome={world:after,operationId};

@@ -6,6 +6,7 @@ import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
+import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {readAdministrativeCalendar} from '../src/admin-calendar-read.ts';
@@ -40,7 +41,9 @@ it('activates at day 1 without inventing schedules; confirms both entrants and m
  }
  world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day2-synthetic-0001',now)).world;
  expect(world.day).toBe(2);
- world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day3-automatic-stage',now)).world;
+ await expect(advanceAdministrativeClock(db,session,'advance',cmd(),'clock-blocked-day3',now)).rejects.toMatchObject({status:409});
+ world=(await stageDomesticCalendar(db,session,cmd(),'clock-explicit-stage',now)).world;
+ world=(await advanceAdministrativeClock(db,session,'advance',cmd(),'clock-day3-after-stage',now)).world;
  expect(world.day).toBe(3);
  expect((await db.prepare('SELECT count(*) n FROM season_domestic_stages').first()).n).toBe(1);
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);

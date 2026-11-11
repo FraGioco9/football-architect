@@ -138,3 +138,53 @@ test('Player bridge preserves validated app host and session cookie for Worker o
   });assert.equal(result.status,200);assert.equal(JSON.parse(result.body).authenticated,true);
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);}
 });
+
+
+test('Admin Players preview/commit/list bridge preserves authorization and accepts bounded full cohorts',async()=>{
+ const preview=JSON.stringify({draftId:'synthetic-draft',candidates:[{display_name:'A'.repeat(95000)}],summary:{count:1}});
+ const stored=JSON.stringify({count:100,players:[{display_name:'B'.repeat(95000)}]});
+ const observed=[];
+ const upstream=createServer(async(r,res)=>{
+  const chunks=[];for await(const chunk of r)chunks.push(chunk);
+  observed.push({path:r.url,method:r.method,body:Buffer.concat(chunks).toString()});
+  assert.equal(r.headers.host,'app.localhost:2000');
+  assert.equal(r.headers.origin,'http://app.localhost:2000');
+  assert.equal(r.headers.cookie,'fa_player_local=synthetic');
+  assert.equal(r.headers['x-csrf-token'],'synthetic-csrf');
+  res.writeHead(200,{'Content-Type':'application/json'});
+  res.end(r.url==='/api/admin/players/preview'?preview:r.url==='/api/admin/players'?stored:'{"count":1,"alreadyCommitted":false}');
+ });
+ upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const bridge=createServer((r,res)=>proxyAdminApi(r,res,{target:'http://127.0.0.1:'+upstream.address().port}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET',payload=null)=>new Promise((resolve,reject)=>{
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,
+   headers:{Host:'app.localhost:2000',Origin:'http://app.localhost:2000',Cookie:'fa_player_local=synthetic',
+    'X-CSRF-Token':'synthetic-csrf','Content-Type':'application/json'}},res=>{
+   const parts=[];res.on('data',part=>parts.push(part));
+   res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));
+  });
+  r.on('error',reject);r.end(payload===null?undefined:JSON.stringify(payload));
+ });
+ try{
+  for(const path of ['/api/admin/players','/api/admin/players/preview','/api/admin/players/commit']){
+   const badMethod=path==='/api/admin/players'?'POST':'GET';
+   const denied=response();await proxyAdminApi({...req(path,'127.0.0.1','app.localhost:2000'),method:badMethod},denied,{target:'http://127.0.0.1:'+upstream.address().port});
+   assert.equal(denied.status,405,path);
+  }
+  assert.equal((await send('/api/admin/players/preview','POST',{options:{count:100}})).body,preview);
+  assert.equal((await send('/api/admin/players')).body,stored);
+  assert.equal((await send('/api/admin/players/commit','POST',{draftId:'synthetic-draft',confirmation:'GENERATE PLAYERS'})).status,200);
+  assert.deepEqual(observed.map(r=>[r.path,r.method]),[
+   ['/api/admin/players/preview','POST'],['/api/admin/players','GET'],['/api/admin/players/commit','POST']]);
+  assert.deepEqual(JSON.parse(observed[0].body),{options:{count:100}});
+  assert.equal((await send('/api/admin/players/preview?unsafe=1','POST',{})).status,403);
+  assert.equal((await send('/api/admin/players/unknown')).status,404);
+  const blocked=response();await proxyAdminApi({...req('/api/admin/players','192.168.1.30','192.168.1.10:2000'),method:'GET'},blocked,
+   {target:'http://127.0.0.1:'+upstream.address().port,lanEnabled:true,lanHosts:['192.168.1.10']});
+  assert.equal(blocked.status,403,'Player records must never be public over LAN');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});

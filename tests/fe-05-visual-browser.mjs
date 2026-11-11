@@ -26,7 +26,7 @@ const settled=async(page,config)=>{
   // post-hydration. Preserve the strict frame and pixel assertions below.
   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.category==='international'&&
    !!window.faFixtures,null,{timeout:15000});
-  await page.waitForLoadState('networkidle',{timeout:15000});
+  // Wait for the explicit standings loader state below.
   await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading!=='true',
    null,{timeout:15000});
  }
@@ -183,7 +183,8 @@ try{
   const context=await fixtureContext(config),page=await context.newPage();
   try{
    await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
-   await page.waitForLoadState('networkidle',{timeout:15000});
+   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1'&&
+    document.documentElement.dataset.faHistoryLoading!=='true',null,{timeout:15000});
    const m=await page.evaluate(()=>{
     const host=document.querySelector('.fa-shell-content-scroll');
     const panel=document.querySelector('#competition-panel-history');
@@ -217,7 +218,8 @@ try{
   try{
    const response=await page.goto(originFor(config)+config.path,{waitUntil:'load',timeout:30000});
    assert.equal(response?.status(),200);
-   await page.waitForLoadState('networkidle',{timeout:15000});
+   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1'&&
+    document.documentElement.dataset.faStandingsLoading!=='true',null,{timeout:15000});
    const manifestReads=reads.filter(path=>path==='/competitions/_shared/manifest.json').length;
    const worldReads=reads.filter(path=>path==='/api/world').length;
    assert.equal(manifestReads,1,'one shared manifest request per cold History document');
@@ -227,7 +229,8 @@ try{
     await page.locator('#competition-tab-'+view).click();
     await page.waitForURL(url=>url.pathname.endsWith('/'+view)&&url.searchParams.get('season')==='1');
    }
-   await page.waitForLoadState('networkidle',{timeout:15000});
+   await page.waitForFunction(()=>window.faCompetitionRoute?.get()?.view==='history');
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    assert.deepEqual(reads.slice(before),[],'view-only tabs must not refetch manifest or world');
    results.push({head,scenario:'qa-05-history-network-per-document',status:'PASS',manifestReads,worldReads});
   }finally{await context.close();}

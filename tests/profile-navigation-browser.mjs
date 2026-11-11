@@ -187,9 +187,9 @@ try{
   await tabs.route('**/api/admin/**',r=>r.fulfill({status:401,contentType:'application/json',body:'{}'}));
   await tabs.route('**/api/player/login',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
   const pages=[];
-  for(const route of ['/calendar?season=1&week=3','/clubs?q=Rome','/settings?view=admin']){
+  for(const route of ['/calendar?season=1&week=3','/clubs?q=Rome','/admin']){
    const page=await tabs.newPage();await page.goto('http://app.localhost:2000'+route);const previous=page.url();
-   if(route==='/settings?view=admin')await page.locator('[data-admin-signin-link] a').click();else await page.locator('#app-nav-profile').click();
+   await page.locator('#app-nav-profile').click();
    await page.waitForURL(url=>/^\/account\/login\/?$/.test(url.pathname));
    assert.equal(new URL(page.url()).searchParams.has('next'),false);pages.push([page,previous]);
   }

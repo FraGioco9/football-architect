@@ -16,8 +16,10 @@ try{
    const page=await context.newPage();
    const errors=[];
    page.on("pageerror",e=>errors.push(e.message));
-   const response=await page.goto(origin+route,{waitUntil:"networkidle",timeout:30000});
+   const response=await page.goto(origin+route,{waitUntil:"domcontentloaded",timeout:30000});
    assert.equal(response?.status(),200,route);
+   if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+   if(route==='/clubs')await page.waitForFunction(()=>!document.getElementById('nav01-country-trigger')?.disabled);
    const state=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,body:!!document.body,theme:document.documentElement.dataset.theme||""}));
    assert.ok(state.body,route);
    assert.ok(state.scrollWidth<=state.width+2,route+" horizontal overflow: "+JSON.stringify(state));

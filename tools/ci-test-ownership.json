@@ -1,14 +1,14 @@
 {
   "owners": {
-    "site-node": "Site checks FULL (Node tests, including embedded Chromium contracts)",
-    "browser": "Browser QA or Admin full browser command; see workflow commands",
     "backend-contract": "Admin Node pure contracts",
-    "backend-runtime": "Admin Vitest Worker/D1",
-    "backend-operator": "Admin operator-final Node tests",
     "backend-import": "Admin import graph node:test",
+    "backend-operator": "Admin operator-final Node tests",
+    "backend-runtime": "Admin Vitest Worker/D1",
+    "browser": "Browser QA or Admin full browser command; see workflow commands",
+    "manual": "Explicit diagnostic/development scenario; not claimed as required FULL coverage",
     "migration": "Admin Python SQLite migrations",
-    "support": "Fixture/helper; imported by owning tests, not independently executable",
-    "manual": "Explicit diagnostic/development scenario; not claimed as required FULL coverage"
+    "site-node": "Site checks FULL (Node tests, including embedded Chromium contracts)",
+    "support": "Fixture/helper; imported by owning tests, not independently executable"
   },
   "tests": {
     "backend/tests/admin-calendar-automatic-runtime.test.ts": "backend-runtime",
@@ -69,6 +69,7 @@
     "backend/tests/player-password-reset-runtime.test.ts": "backend-runtime",
     "backend/tests/player-profile.test.ts": "backend-contract",
     "backend/tests/player-registration-runtime.test.ts": "backend-runtime",
+    "backend/tests/players-generation-runtime.test.ts": "backend-runtime",
     "backend/tests/prepare-persistence.test.mts": "backend-operator",
     "backend/tests/prepare-runtime.test.ts": "backend-runtime",
     "backend/tests/preview-package.test.mts": "backend-operator",
@@ -132,6 +133,7 @@
     "tests/account-pages-browser.mjs": "browser",
     "tests/account-ui.test.mjs": "site-node",
     "tests/account-usability-browser.mjs": "browser",
+    "tests/admin-page.test.mjs": "site-node",
     "tests/admin-public-preview.test.mjs": "site-node",
     "tests/admin-settings-browser.mjs": "browser",
     "tests/admin-settings.test.mjs": "site-node",
@@ -245,6 +247,7 @@
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
     "tests/page-load-04-club-html.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
+    "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/players-name-pools.test.mjs": "site-node",
     "tests/players-names-catalog.test.mjs": "site-node",
     "tests/postseason-preview.test.mjs": "site-node",

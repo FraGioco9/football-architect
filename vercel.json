@@ -11,13 +11,23 @@
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions|players)/",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)/",
       "destination": "/:page",
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions|players)/index.html",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)/index.html",
       "destination": "/:page",
+      "permanent": true
+    },
+    {
+      "source": "/admin/:section(calendar|players)/",
+      "destination": "/admin/:section",
+      "permanent": true
+    },
+    {
+      "source": "/admin/:section(calendar|players)/index.html",
+      "destination": "/admin/:section",
       "permanent": true
     },
     {
@@ -257,8 +267,12 @@
       "destination": "/clubs/index.html"
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions|players)",
+      "source": "/:page(dashboard|calendar|settings|admin|competitions|players)",
       "destination": "/:page/index.html"
+    },
+    {
+      "source": "/admin/:section(calendar|players)",
+      "destination": "/admin/:section/index.html"
     },
     {
       "source": "/competitions/_shared/:file(index.html|manifest.json)",

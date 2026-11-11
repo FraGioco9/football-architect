@@ -17,7 +17,7 @@ export async function runArea(browser,area,engine='chromium'){
    },config);
    const errors=[];
    page.on('pageerror',e=>errors.push(e.message));
-   const response=await page.goto('http://app.localhost:2000'+areaRoutes[area],{waitUntil:'networkidle',timeout:30000});
+   const response=await page.goto('http://app.localhost:2000'+areaRoutes[area],{waitUntil:'domcontentloaded',timeout:30000});
    assert.equal(response?.status(),200,area);
    const state=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:innerWidth,language:document.documentElement.lang,theme:document.documentElement.dataset.theme}));
    assert.ok(state.scroll<=state.width+2,JSON.stringify({area,config,state}));

@@ -28,8 +28,9 @@ async function visit(profile,path,verify){
  const page=await context.newPage(),errors=[];
  page.on("pageerror",error=>errors.push(String(error)));
  try{
-  const response=await page.goto("http://app.localhost:2000"+path,{waitUntil:"networkidle",timeout:30000});
+  const response=await page.goto("http://app.localhost:2000"+path,{waitUntil:"domcontentloaded",timeout:30000});
   assert.equal(response?.status(),200,engine+" "+path);
+  if(path.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
   await verify(page);
   const overflow=await page.evaluate(()=>{
    const pane=document.querySelector(".fa-shell-content-scroll");
@@ -148,6 +149,7 @@ try{
  // Same CSS/DOM class structure as live Fixtures; no sporting data mutation.
  for(const width of [621,768,800]){
   await visit({width,height:900,language:"en",theme:"dark"},"/competitions/it-1/fixtures",async page=>{
+   await page.waitForFunction(()=>[...document.querySelectorAll('.app-fixture-club>.app-fixture-name.app-world-standing-club-link')].some(node=>node.getClientRects().length>0));
    const realClubs=await page.evaluate(()=>{
     const links=[...document.querySelectorAll(".app-fixture-club>.app-fixture-name.app-world-standing-club-link")].filter(el=>el.getClientRects().length);
     return {count:links.length,offenders:links.flatMap(el=>{
@@ -238,9 +240,22 @@ try{
     }
     await page.setViewportSize({width,height:844});
    }
-   // Scroll the actual strip: pagehide persists its real offset on reload.
+   // The restoration-complete marker is written only after the delayed
+   // two-frame restorer has stopped ignoring user scroll events.
+   await page.waitForFunction(()=>{
+    const strip=document.querySelector(".app-competition-tabs");
+    return document.documentElement.dataset.faTabsRestored==="true"&&
+     strip&&strip.scrollWidth-strip.clientWidth>120;
+   });
    await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
+   const storageKey="football-architect:competition-tabs-scroll:/competitions/it-1";
+   await page.waitForFunction(key=>{
+    const strip=document.querySelector(".app-competition-tabs");
+    return strip?.scrollLeft>65&&Number(sessionStorage.getItem(key))>65;
+   },storageKey);
    await page.reload({waitUntil:"domcontentloaded"});
+   // Assert persisted real position, not an intermediate first-paint zero.
+   await page.waitForFunction(()=>document.querySelector(".app-competition-tabs")?.scrollLeft>65);
    const restored=await page.locator(".app-competition-tabs").evaluate(el=>el.scrollLeft);
    assert.ok(restored>65,"SAF-02 parser-time tab offset "+width+": "+restored);
   });

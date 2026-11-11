@@ -1,6 +1,10 @@
 // Server-only opt-in bridge to the single shared nonproduction account/world DB.
 import {request as httpsRequest} from 'node:https';
 import {isIP} from 'node:net';
+// Keep ordinary private responses tightly bounded. Player previews contain up to
+// 1000 full player records, so only these exact protected routes get a larger cap.
+export const protectedResponseLimit=(path,publicRead=false)=>publicRead?524288:
+ (path==='/api/admin/players'||path==='/api/admin/players/preview')?2097152:65536;
 const fail=res=>{res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"environment_unavailable"}}');return true};
 const forbidden=res=>{res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"forbidden"}}');return true};
 export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0),limit=65536,timeoutMs=15000}={}){
@@ -77,7 +81,8 @@ export async function proxySharedNonproduction(req,res,{target,path,body,publicR
    if(session)headers.cookie=session;
   }
   if(body.length)headers['content-length']=body.length;
-  const result=validResponse(await send(new URL(path,url),{method:req.method,headers,body,limit:publicRead?524288:65536}),publicRead?524288:65536);
+  const maxResponseBytes=protectedResponseLimit(path,publicRead);
+  const result=validResponse(await send(new URL(path,url),{method:req.method,headers,body,limit:maxResponseBytes}),maxResponseBytes);
   JSON.parse(result.body.toString('utf8'));
   const out={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
   if(!publicRead){
