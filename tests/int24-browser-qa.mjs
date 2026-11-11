@@ -48,11 +48,18 @@ try {
    // crest host. The first transition from Stats may still mount data;
    // later navigation must preserve the stable DOM identity.
    await routePage.locator("#competition-tab-standings").click();
-   await routePage.waitForFunction(()=>{
+   await routePage.waitForFunction(slug=>{
     const active=document.querySelector("#competition-tab-standings[aria-selected='true']");
     const panel=document.querySelector("#competition-panel-standings");
-    return !!active&&!!panel&&!panel.hidden;
-   });
+    if(!active||!panel||panel.hidden)return false;
+    // The active tab is not sufficient proof of hydrated Standings data:
+    // a delayed public/source transition may still replace its club rows.
+    if(document.documentElement.dataset.faStandingsLoading!=='false')return false;
+    if(window.faCompetitionContext?.definition?.id?.toLowerCase()!==slug)return false;
+    if(slug.startsWith('int-'))return true; // International tables have no fixed club host before supplied data.
+    const rows=document.querySelectorAll('#app-standings-body tr[data-world-club]');
+    return rows.length===16&&!!rows[0].querySelector('[data-club-crest]');
+   },slug,{timeout:20000});
    await routePage.evaluate(()=>{
     window.__sh02Tabs=[...document.querySelectorAll(".app-competition-tabs [role=tab]")];
     window.__sh02Panels=window.__sh02Tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
