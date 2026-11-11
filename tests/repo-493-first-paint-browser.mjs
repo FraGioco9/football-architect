@@ -217,6 +217,74 @@ try{
    }finally{releaseApp();await page.close();}
   }
  }
+ // Step 07: a controlled pre-hydration History clock probe. The local Debug
+ // flag/clock are injected into a real browser before the inline parser script
+ // runs. This does NOT stand in for a complete runtime Debug toggle/E2E test.
+ const historyClockCases=[
+  {name:'public-unknown-stale-debug-zero',debug:false,devSeason:0,
+   progress:null,expectedRows:1,staticEmpty:false},
+  {name:'local-debug-season-zero',debug:true,devSeason:0,
+   progress:null,expectedRows:0,staticEmpty:true},
+  {name:'public-confirmed-season-three-day-one',debug:false,devSeason:0,
+   progress:{currentSeason:3,day:1,matchdays:0},expectedRows:2,staticEmpty:false}
+ ];
+ for(const [competitionId,width] of [['it-1',390],['int-1',1440]]){
+  for(const clock of historyClockCases){
+   const route='/competitions/'+competitionId+'/history?season=1';
+   const page=await browser.newPage({viewport:{width,height:900}});
+   let releaseApp;
+   const blocked=new Promise(resolve=>{releaseApp=resolve});
+   await page.addInitScript(({debug,devSeason,progress})=>{
+    window.faDebugEnabled=debug;
+    document.documentElement.dataset.faDevSeasons='0,1,2,3,4,5';
+    document.documentElement.dataset.faDevCurrentSeason=String(devSeason);
+    if(progress)window.faFixturesInitialProgress=progress;
+   },clock);
+   await page.route('**/assets/competition-page.js',async request=>{
+    await blocked;
+    if(page.isClosed())return;
+    try{await request.continue();}
+    catch(error){
+     if(!page.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;
+    }
+   });
+   try{
+    const response=await page.goto(origin+route,{waitUntil:'commit',timeout:30000});
+    assert.equal(response?.status(),200,route+' prepaint HTML');
+    await page.waitForSelector('script[data-fa-competition-selected-panel-first-paint]',
+      {state:'attached',timeout:25000});
+    const state=await page.evaluate(()=>{
+     const panel=document.getElementById('competition-panel-history');
+     const root=panel.querySelector('[data-competition-skeleton-root]');
+     const archiveEmpty=panel.querySelector('[data-history-archive-empty]');
+     const staticEmpty=panel.querySelector('[data-history-empty]');
+     return {
+      active:document.documentElement.dataset.competitionView,
+      panelHidden:panel.hidden,
+      skeletonRoot:root?.dataset.competitionSkeletonRoot??null,
+      visibleArchiveSkeletonRows:panel.querySelectorAll('[data-skeleton-archive-row]:not([hidden])').length,
+      staticEmptyPresent:!!staticEmpty,
+      archiveEmptyConfirmed:archiveEmpty?.hasAttribute('hidden')===false,
+      spinnerBusy:panel.getAttribute('aria-busy'),
+      realClubLinks:root?.querySelectorAll('[data-club-crest]').length??0
+     };
+    });
+    assert.equal(state.active,'history');
+    assert.equal(state.panelHidden,false);
+    assert.equal(state.staticEmptyPresent,true,'permanent static History structure exists');
+    assert.equal(state.visibleArchiveSkeletonRows,clock.expectedRows,
+     clock.name+' reserves only supported archive rows');
+    assert.equal(state.archiveEmptyConfirmed,clock.staticEmpty,
+     clock.name+' cannot claim empty outside confirmed local Season 0');
+    assert.equal(state.skeletonRoot,clock.staticEmpty?null:'history-preview');
+    assert.equal(state.realClubLinks,0,'prepaint clock must not invent archive club identities');
+    record(route,width,'step-07-history-clock-'+clock.name,'PASS',state);
+   }catch(error){
+    record(route,width,'step-07-history-clock-'+clock.name,'FAIL',String(error));
+    throw error;
+   }finally{releaseApp();await page.close();}
+  }
+ }
  // Exercise the real shared CSS/renderer in a clean DOM, holding a known SVG
  // request to inspect neutral fallback, circular skeleton, resolved image and error.
  const harness='/__fa_repo493_crest_harness';

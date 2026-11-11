@@ -121,3 +121,14 @@ This specifically covers **the unresolved pre-hydration state**, not completed d
 [Browser QA run #43079689335](https://github.com/FraGioco9/football-architect/actions/runs/43079689335) failed the **new test** at `/competitions/it-1/fixtures?season=1` on `d3e6e431bc09ae43cb99d8b4f4291910194f5d6c`, where a generic Stats/History `[data-competition-skeleton-root]` was incorrectly assumed to exist for Fixtures. Fixtures has a dedicated match skeleton (`#app-fixtures-skeleton`) whose CSS visibility is controlled by global loading state and a permanently reserved matchday toolbar (`#app-fixtures-toolbar`). The failed height measurement was of a nonexistent generic selector, **not evidence of a production regression**. The corrected assertion now measures the actual visible static fixture toolbar; fixture skeleton rows, their paired crest slots and absence of invented identities are checked separately. Do not mistake presence of dormant rows for their verified visible loading state—broader hydration/first-paint QA remains open.
 
 No UI/source renderer change, CI bypass or additional workflow; acceptance awaits new exact HEAD.
+
+## Step 07 — controlled History clock probe (six cases)
+
+The browser QA now covers **IT-1 and INT-1 × three pre-hydration clock states** by injecting the local Debug flag and clock before the actual inline History bootstrap, while the external competition runtime is held:
+
+- **Debug OFF, stale local Season 0, unknown public clock:** exactly one reserved archive row, no confirmed empty state.
+- **Debug ON, explicitly isolated Season 0:** no pending History archive skeleton, static empty archive confirmation is permitted.
+- **Debug OFF, confirmed public Season 3 at day 1:** exactly two completed-season placeholders, without invented club identities or a false empty state.
+
+These assertions inspect **real browser DOM with controlled clock inputs**, not a user-end-to-end Debug Settings workflow, authoritative API completion, or real generated sporting history. They do not imply public Seasons 3+ are published. Runtime source switching, historic record values, invalid sources, 320px and physical iPhone Safari remain **UNKNOWN / OPEN** until separately exercised. The cases write individual PASS/FAIL records to the same existing Browser QA artifact. Acceptance requires the exact-head Site/Browser/Admin/FULL gates.
+
