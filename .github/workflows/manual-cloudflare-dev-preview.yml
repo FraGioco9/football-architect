@@ -1,0 +1,167 @@
+name: Manual Cloudflare DEV Preview
+
+# Owner-only, exact-head, nonproduction Worker + static assets.
+# No push/PR/scheduled release and no D1 migrations, imports, or resets.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Approved exact 40-character main commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: manual-cloudflare-dev-preview
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Verify main CI and build immutable public Worker package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Validate owner, current main and latest exact-head CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REPOSITORY" == FraGioco9/football-architect && "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          [[ "$GITHUB_ACTOR" == FraGioco9 && "$GITHUB_TRIGGERING_ACTOR" == FraGioco9 ]] || exit 1
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          [[ "$EXPECTED_SHA" == "$GITHUB_SHA" ]] || { echo "Dispatch must target main HEAD"; exit 1; }
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')" == "$EXPECTED_SHA" ]] || { echo "main advanced"; exit 1; }
+          for wf in landing-checks.yml int24-browser-qa.yml; do
+            runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?head_sha=$EXPECTED_SHA&event=push&per_page=100")"
+            jq -e --arg sha "$EXPECTED_SHA" '
+              [.workflow_runs[] | select(.head_sha == $sha and .event == "push" and .head_branch == "main")]
+              | sort_by(.run_number, .id) | last
+              | .status == "completed" and .conclusion == "success"
+            ' <<< "$runs" >/dev/null || { echo "Exact-head CI unavailable: $wf"; exit 1; }
+          done
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install exact pinned Worker toolchain
+        run: |
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --no-audit --no-fund
+      - name: Compile and verify fixed nonproduction package (no Cloudflare credentials)
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          PACKAGE_DIR: ${{ runner.temp }}/fa-cloudflare-preview-package
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          node --experimental-strip-types backend/tools/prepare-preview.mts \
+            --source-sha "$EXPECTED_SHA" \
+            --output "$PACKAGE_DIR" \
+            --account-id e20c88bb42826f59efea469af0f82f96 \
+            --database-id 6a6c7803-56d3-4e7f-bd01-752d06a32341 \
+            --origin https://football-architect-preview.giocolifrancesco.workers.dev
+          node --experimental-strip-types --input-type=module <<'NODE'
+          import {verifyPreviewPackage} from './backend/tools/prepare-preview.mts';
+          import {execFileSync} from 'node:child_process';
+          const m=await verifyPreviewPackage(process.env.PACKAGE_DIR);
+          if(m.sourceSha!==process.env.EXPECTED_SHA||m.sourceTree!==execFileSync('git',['rev-parse','HEAD^{tree}'],{encoding:'utf8'}).trim()||m.pool!=='dev-preview'||m.publicationAuthorized!==false)throw Error('Package source/authority mismatch');
+          console.log('Exact source + pool + immutability verified; no remote writes');
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: approved-cloudflare-dev-preview
+          path: ${{ runner.temp }}/fa-cloudflare-preview-package/
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    name: Publish Worker and static assets (fixed nonproduction only)
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      CLOUDFLARE_ACCOUNT_ID: e20c88bb42826f59efea469af0f82f96
+      PREVIEW_ORIGIN: https://football-architect-preview.giocolifrancesco.workers.dev
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: approved-cloudflare-dev-preview
+          path: cloudflare-package
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independently verify artifact hashes and Worker/D1 binding (no credentials used)
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readdirSync,readFileSync,lstatSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {createHash} from 'node:crypto';
+          const root='cloudflare-package',actual=[];
+          function list(p=''){
+            for(const e of readdirSync(join(root,p),{withFileTypes:true})){
+              const rel=p?p+'/'+e.name:e.name,full=join(root,rel);
+              if(e.isSymbolicLink()||lstatSync(full).isSymbolicLink())throw Error('Unsafe symlink');
+              if(e.isDirectory())list(rel);else if(e.isFile())actual.push(rel);else throw Error('Unexpected file');
+            }
+          }
+          list();
+          const m=JSON.parse(readFileSync(join(root,'manifest.json'),'utf8'));
+          const c=JSON.parse(readFileSync(join(root,'wrangler.json'),'utf8'));
+          const db='6a6c7803-56d3-4e7f-bd01-752d06a32341';
+          if(m.schemaVersion!==1||m.sourceSha!==process.env.EXPECTED_SHA||!Array.isArray(m.files)||m.files.length<20||m.pool!=='dev-preview'||m.publicationAuthorized!==false||m.origin!==process.env.PREVIEW_ORIGIN)throw Error('Manifest mismatch');
+          if(m.target?.accountId!==process.env.CLOUDFLARE_ACCOUNT_ID||m.target?.databaseId!==db)throw Error('Cloudflare target mismatch');
+          if(JSON.stringify(actual.filter(p=>p!=='manifest.json').sort())!==JSON.stringify(m.files.map(x=>x.path).sort()))throw Error('Inventory mismatch');
+          for(const f of m.files){
+            if(typeof f.path!=='string'||f.path.includes('..')||f.path.startsWith('/')||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Invalid file');
+            const bytes=readFileSync(join(root,f.path));
+            if(bytes.length!==f.bytes||createHash('sha256').update(bytes).digest('hex')!==f.sha256)throw Error('Artifact hash mismatch');
+          }
+          if(c.name!=='football-architect-preview'||c.account_id!==process.env.CLOUDFLARE_ACCOUNT_ID||c.main!=='./bundle/preview.js'||c.no_bundle!==true||c.workers_dev!==true)throw Error('Wrong Worker name');
+          if(c.vars?.PLAYER_MODE!=='preview'||c.vars?.PLAYER_ORIGIN!==process.env.PREVIEW_ORIGIN||c.vars?.PLAYER_TRUSTED_SOURCE!=='cloudflare'||c.vars?.PREVIEW_SOURCE_SHA!==process.env.EXPECTED_SHA)throw Error('Wrong runtime origin');
+          if(c.d1_databases?.length!==1||c.d1_databases[0].binding!=='DB'||c.d1_databases[0].database_id!==db)throw Error('Wrong D1 binding');
+          if(c.assets?.binding!=='ASSETS'||c.assets?.run_worker_first!==true||c.assets?.directory!=='./assets')throw Error('Missing same-origin assets');
+          if(!actual.includes('bundle/preview.js')||!actual.includes('assets/account/login/index.html')||!actual.includes('assets/players/index.html'))throw Error('Missing app');
+          console.log('Verified immutable package, nonproduction Worker, D1 and frontend');
+          NODE
+      - name: Install pinned Wrangler outside public artifact
+        run: npm install --prefix "$RUNNER_TEMP/fa-wrangler" wrangler@4.153.0 --no-audit --no-fund
+      - name: Deploy only to existing DEV/Preview Worker (never execute migrations)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ -n "$CLOUDFLARE_API_TOKEN" ]] || { echo "Configure secret CLOUDFLARE_PREVIEW_API_TOKEN"; exit 1; }
+          "$RUNNER_TEMP/fa-wrangler/node_modules/.bin/wrangler" deploy \
+            --config "$GITHUB_WORKSPACE/cloudflare-package/wrangler.json" --no-autoconfig --keep-vars
+      - name: Read-only same-origin smoke checks
+        run: |
+          set -euo pipefail
+          for path in /api/environment /api/world /api/players/page/1 /account/login /players; do
+            status="$(curl --silent --show-error --max-time 25 --max-redirs 0 --output "$RUNNER_TEMP/fa-response.json" --write-out '%{http_code}' "$PREVIEW_ORIGIN$path")"
+            [[ "$status" == 200 ]] || { echo "Unhealthy Preview $path: HTTP $status"; exit 1; }
+            if [[ "$path" == /api/environment ]]; then
+              jq -e --arg o "$PREVIEW_ORIGIN" '.pool=="dev-preview" and .origin==$o and .sharedWorld==true and .separateSignIn==true' "$RUNNER_TEMP/fa-response.json" >/dev/null
+            elif [[ "$path" == /api/world ]]; then
+              jq -e '.world.schemaVersion==1 and (.world.generation|type=="string")' "$RUNNER_TEMP/fa-response.json" >/dev/null
+            elif [[ "$path" == /api/players/page/1 ]]; then
+              jq -e '.count>=11 and .page==1 and (.players|type=="array")' "$RUNNER_TEMP/fa-response.json" >/dev/null
+            fi
+            echo "PASS $path"
+          done
+          for path in /api/player/session /api/player/permissions; do
+            status="$(curl --silent --show-error --max-time 25 --max-redirs 0 --output "$RUNNER_TEMP/fa-response.json" --write-out '%{http_code}' "$PREVIEW_ORIGIN$path")"
+            [[ "$status" == 401 ]] || { echo "Expected native auth 401 (no cookie): $path, got $status"; exit 1; }
+            echo "PASS $path (unauthenticated)"
+          done

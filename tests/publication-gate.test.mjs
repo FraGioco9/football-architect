@@ -138,6 +138,38 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
    ])assert.match(source,required,"Cloudflare package gate missing: "+required);
    assert.doesNotMatch(source,/^  (?:push|workflow_dispatch|schedule|workflow_run|repository_dispatch):/m);
    assert.doesNotMatch(source,/secrets\.|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|--remote\b|npm.*wrangler.*deploy|npx.*wrangler.*deploy|\bwrangler\s+deploy\s+(?!.*--dry-run)/i);
+  }else if(file==="manual-cloudflare-dev-preview.yml"){
+   // Explicit nonproduction Worker + static-assets release, audited under
+   // PUBLIC-03. All other unaudited publishing workflows still fail closed.
+   assert.match(source,/^  workflow_dispatch:$/m);
+   assert.doesNotMatch(source,/^  (?:push|pull_request|schedule|workflow_run|repository_dispatch):/m);
+   for(const required of [
+    /GITHUB_ACTOR/,/GITHUB_TRIGGERING_ACTOR/,/GITHUB_REF/,
+    /inputs\.expected_sha/,/GITHUB_SHA/,/commits\/main/,
+    /landing-checks\.yml/,/int24-browser-qa\.yml/,
+    /persist-credentials: false/,/backend\/tools\/prepare-preview\.mts/,
+    /verifyPreviewPackage/,/publicationAuthorized!==false/,
+    /actions\/upload-artifact@v4/,/actions\/download-artifact@v4/,
+    /football-architect-preview\.giocolifrancesco\.workers\.dev/,
+    /e20c88bb42826f59efea469af0f82f96/,
+    /6a6c7803-56d3-4e7f-bd01-752d06a32341/,
+    /CLOUDFLARE_PREVIEW_API_TOKEN/,/wrangler@4\.153\.0/,
+    /--no-autoconfig --keep-vars/,/Read-only same-origin smoke checks/
+   ])assert.match(source,required,"Cloudflare manual release gate missing: "+required);
+   const stage=source.split("  package:")[1]?.split("\n  deploy:")[0];
+   const publish=source.split("  deploy:")[1];
+   assert.ok(stage&&publish,"Cloudflare manual release must have distinct staging and publishing jobs");
+   assert.doesNotMatch(stage,/secrets\.|CLOUDFLARE_API_TOKEN|wrangler\s+deploy\s+(?!.*--dry-run)/i);
+   assert.doesNotMatch(publish,/actions\/checkout@|git\s+clone\b|npm\s+ci\b/i);
+   const verify=publish.indexOf("Independently verify artifact hashes");
+   const token=publish.indexOf("secrets.CLOUDFLARE_PREVIEW_API_TOKEN");
+   const release=publish.indexOf("Deploy only to existing DEV/Preview Worker");
+   assert.ok(verify>=0&&token>verify&&release>verify,"Verify package integrity before credentials and release");
+   assert.match(publish,/c\.d1_databases\[0\]\.database_id!==db/);
+   assert.match(publish,/c\.assets\?\.run_worker_first!==true/);
+   assert.match(publish,/\/api\/environment \/api\/world \/api\/players\/page\/1 \/account\/login \/players/);
+   assert.match(publish,/\/api\/player\/session \/api\/player\/permissions/);
+   assert.doesNotMatch(source,/--prod\b|--target=production|\bwrangler\s+d1\b|d1\s+execute\b|d1\s+migrations\s+apply\b|db\.prepare\(/i);
   }else{
    assert.doesNotMatch(source,/\b(deploy|publish|upload-pages-artifact|actions\/deploy-pages)\b/i,
     "Workflow must use audited public artifact: "+file);
