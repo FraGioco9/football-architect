@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - tools/players-generation-trial.mjs
+      - tools/build-players-runtime.mjs
+      - backend/src/players-generator-core.mjs
+      - backend/src/players-catalog.mjs
+      - tests/players-generator-runtime-parity.test.mjs
       - tools/players-name-pools.mjs
       - tests/players-name-pools.test.mjs
       - data/players/names/**
@@ -39,6 +43,7 @@ jobs:
           node --check tools/players-name-pools.mjs
           node --test tests/players-name-pools.test.mjs
           node --check tools/players-generation-trial.mjs
+          node --test tests/players-generator-runtime-parity.test.mjs
           node --check tools/players-generation-audit.mjs
           node tools/players-generation-audit.mjs --self-test > "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-self-test.json"
           node tools/players-generation-audit.mjs --count 1000 > "$RUNNER_TEMP/fa-ci-artifacts/players-role-audit-3000.json"

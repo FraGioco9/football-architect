@@ -1,4 +1,4 @@
-/* Restricted Admin directory and local Players trial controls. No Admin/D1 writes. */
+/* Restricted Admin directory and two-stage server-authorized Players generation. */
 ((root,factory)=>{
  const api=factory();
  if(typeof module==='object'&&module.exports)module.exports=api;
@@ -14,6 +14,28 @@
   de:{calendar:'Kalender',players:'Spieler',calendarDescription:'Weltkalender und Spielbetrieb verwalten',playersDescription:'Spielergenerierung konfigurieren',title:'Spielergenerierung','group.base':'Generierung','group.nationalities':'Nationalitäten und Namen','group.positions':'Positionen','group.physical':'Alter und Körperdaten','group.attributes':'Attributvorgaben',count:'Anzahl Spieler (1–1000)',seed:'Seed',primarySuitability:'Eignung für Hauptposition (1–90)',primaryNationality:'Erste Nationalität',secondaryMode:'Zweite Nationalität',secondaryCountry:'Bestimmte zweite Nationalität',secondaryAllowed:'Zulässige zweite Nationalitäten',firstName:'Vorname vorgeben',lastName:'Nachname vorgeben',primaryPosition:'Hauptposition',allowedPositions:'Zulässige Hauptpositionen',preferredFoot:'Bevorzugter Fuß',secondaryCount:'Anzahl Nebenpositionen',secondaryPositions:'Bestimmte Nebenpositionen',allowedSecondaries:'Zulässige Nebenpositionen',age:'Anfangsalter (16–19)',height:'Körpergröße in cm (160–205)',developmentAptitude:'Entwicklungspotenzial (1–99)',copy:'PowerShell-Befehl kopieren',run:'Der Befehl erstellt nur eine lokale JSON-Vorschau (players-trial.json). In PowerShell im Repository-Stammverzeichnis ausführen.',invalid:'Ungültige Option',copied:'Befehl kopiert. In PowerShell im Repository-Stammverzeichnis ausführen.',manual:'Befehl aus dem Feld manuell kopieren.',automatic:'Auto',none:'Keine',exact:'Bestimmt',allowed:'Zulässige Länder',choose:'Auswählen',left:'Links',right:'Rechts'},
   es:{calendar:'Calendario',players:'Jugadores',calendarDescription:'Gestionar el calendario y la progresión del mundo',playersDescription:'Configurar la generación de jugadores',title:'Generación de jugadores','group.base':'Generación','group.nationalities':'Nacionalidades y nombres','group.positions':'Posiciones','group.physical':'Edad y físico','group.attributes':'Atributos personalizados',count:'Número de jugadores (1–1000)',seed:'Semilla',primarySuitability:'Aptitud para posición principal (1–90)',primaryNationality:'Nacionalidad principal',secondaryMode:'Segunda nacionalidad',secondaryCountry:'Segunda nacionalidad exacta',secondaryAllowed:'Segundas nacionalidades permitidas',firstName:'Nombre personalizado',lastName:'Apellido personalizado',primaryPosition:'Posición principal',allowedPositions:'Posiciones principales permitidas',preferredFoot:'Pie preferido',secondaryCount:'Número de posiciones secundarias',secondaryPositions:'Posiciones secundarias exactas',allowedSecondaries:'Posiciones secundarias permitidas',age:'Edad inicial (16–19)',height:'Altura en cm (160–205)',developmentAptitude:'Aptitud de desarrollo (1–99)',copy:'Copiar comando PowerShell',run:'El comando solo crea una vista previa JSON local (players-trial.json). Ejecútalo en PowerShell desde la raíz del repositorio.',invalid:'Opción no válida',copied:'Comando copiado. Ejecútalo en PowerShell desde la raíz del repositorio.',manual:'Copia manualmente el comando del recuadro.',automatic:'Auto',none:'Ninguna',exact:'Exacta',allowed:'Países permitidos',choose:'Elegir',left:'Izquierdo',right:'Derecho'},
   fr:{calendar:'Calendrier',players:'Joueurs',calendarDescription:'Gérer le calendrier mondial et la progression sportive',playersDescription:'Configurer la génération de joueurs',title:'Génération de joueurs','group.base':'Génération','group.nationalities':'Nationalités et noms','group.positions':'Postes','group.physical':'Âge et caractéristiques physiques','group.attributes':'Attributs personnalisés',count:'Nombre de joueurs (1–1000)',seed:'Graine',primarySuitability:'Aptitude au poste principal (1–90)',primaryNationality:'Nationalité principale',secondaryMode:'Deuxième nationalité',secondaryCountry:'Deuxième nationalité précise',secondaryAllowed:'Deuxièmes nationalités autorisées',firstName:'Prénom personnalisé',lastName:'Nom personnalisé',primaryPosition:'Poste principal',allowedPositions:'Postes principaux autorisés',preferredFoot:'Pied préféré',secondaryCount:'Nombre de postes secondaires',secondaryPositions:'Postes secondaires précis',allowedSecondaries:'Postes secondaires autorisés',age:'Âge initial (16–19)',height:'Taille en cm (160–205)',developmentAptitude:'Potentiel de développement (1–99)',copy:'Copier la commande PowerShell',run:'La commande crée seulement un aperçu JSON local (players-trial.json). Exécutez-la dans PowerShell depuis la racine du dépôt.',invalid:'Option invalide',copied:'Commande copiée. Exécutez-la dans PowerShell depuis la racine du dépôt.',manual:'Copiez manuellement la commande du cadre.',automatic:'Auto',none:'Aucune',exact:'Précise',allowed:'Pays autorisés',choose:'Choisir',left:'Gauche',right:'Droit'}
+ };
+ const stageTranslations={
+  en:{preview:'Preview players',previewHeading:'Player preview',commit:'Generate in environment',approvalPrompt:'Type GENERATE PLAYERS to approve this preview',
+   colIndex:'#',colName:'Name',colNationality:'Nationality',colAge:'Age',colPosition:'Position',colFoot:'Foot',colHeight:'Height',
+   previewBusy:'Generating preview…',commitBusy:'Saving approved players…',previewReady:'Review these players before approval.',page:'Page',of:'of',
+   stored:'Players saved in this environment',previewError:'Unable to generate preview',commitError:'Unable to save players',expired:'Preview expired or world changed. Generate a new preview.'},
+  it:{preview:'Anteprima giocatori',previewHeading:'Anteprima giocatori',commit:'Genera nell’environment',approvalPrompt:'Scrivi GENERATE PLAYERS per approvare questa anteprima',
+   colIndex:'#',colName:'Nome',colNationality:'Nazionalità',colAge:'Età',colPosition:'Ruolo',colFoot:'Piede',colHeight:'Altezza',
+   previewBusy:'Generazione anteprima…',commitBusy:'Salvataggio dei giocatori approvati…',previewReady:'Controlla i giocatori prima di approvarli.',page:'Pagina',of:'di',
+   stored:'Giocatori salvati nell’environment',previewError:'Impossibile generare l’anteprima',commitError:'Impossibile salvare i giocatori',expired:'Anteprima scaduta o mondo modificato. Genera una nuova anteprima.'},
+  de:{preview:'Spielervorschau',previewHeading:'Spielervorschau',commit:'In Umgebung generieren',approvalPrompt:'Zum Bestätigen GENERATE PLAYERS eingeben',
+   colIndex:'#',colName:'Name',colNationality:'Nationalität',colAge:'Alter',colPosition:'Position',colFoot:'Fuß',colHeight:'Größe',
+   previewBusy:'Vorschau wird erstellt…',commitBusy:'Genehmigte Spieler werden gespeichert…',previewReady:'Spieler vor Freigabe prüfen.',page:'Seite',of:'von',
+   stored:'Spieler in dieser Umgebung gespeichert',previewError:'Vorschau fehlgeschlagen',commitError:'Speichern fehlgeschlagen',expired:'Vorschau abgelaufen oder Welt geändert. Neue Vorschau erstellen.'},
+  es:{preview:'Vista previa de jugadores',previewHeading:'Vista previa de jugadores',commit:'Generar en el entorno',approvalPrompt:'Escribe GENERATE PLAYERS para aprobar esta vista previa',
+   colIndex:'#',colName:'Nombre',colNationality:'Nacionalidad',colAge:'Edad',colPosition:'Posición',colFoot:'Pie',colHeight:'Altura',
+   previewBusy:'Generando vista previa…',commitBusy:'Guardando jugadores aprobados…',previewReady:'Revisa los jugadores antes de aprobar.',page:'Página',of:'de',
+   stored:'Jugadores guardados en este entorno',previewError:'No se pudo generar la vista previa',commitError:'No se pudieron guardar los jugadores',expired:'Vista previa caducada o mundo modificado. Genera otra.'},
+  fr:{preview:'Aperçu des joueurs',previewHeading:'Aperçu des joueurs',commit:'Générer dans l’environnement',approvalPrompt:'Saisissez GENERATE PLAYERS pour approuver cet aperçu',
+   colIndex:'#',colName:'Nom',colNationality:'Nationalité',colAge:'Âge',colPosition:'Poste',colFoot:'Pied',colHeight:'Taille',
+   previewBusy:'Création de l’aperçu…',commitBusy:'Enregistrement des joueurs approuvés…',previewReady:'Vérifiez les joueurs avant de confirmer.',page:'Page',of:'sur',
+   stored:'Joueurs enregistrés dans cet environnement',previewError:'Impossible de générer l’aperçu',commitError:'Impossible d’enregistrer les joueurs',expired:'Aperçu expiré ou monde modifié. Créez un nouvel aperçu.'}
  };
  function range(raw,min,max,field){
   if(raw===undefined||raw===null||String(raw).trim()===''||String(raw).trim().toLowerCase()==='auto')return undefined;
@@ -98,10 +120,16 @@
   const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-players],[data-admin-directory]');
   if(!root)return;
   const isPlayers=root.hasAttribute('data-admin-players');
-  const form=root.querySelector('[data-admin-players-form]'),button=root.querySelector('[data-admin-players-copy]');
-  const commandNode=root.querySelector('[data-admin-players-command]'),feedback=root.querySelector('[data-admin-players-feedback]');
-  const tr=()=>translations[doc.documentElement.lang]||translations.en;
-  let allowed=false,canWrite=false,validation=null,command='',ticket=0;
+  const form=root.querySelector('[data-admin-players-form]'),previewButton=root.querySelector('[data-admin-players-preview]');
+  const commitButton=root.querySelector('[data-admin-players-commit]'),confirmation=root.querySelector('[data-admin-players-confirmation]');
+  const result=root.querySelector('[data-admin-players-result]'),feedback=root.querySelector('[data-admin-players-feedback]');
+  const summary=root.querySelector('[data-admin-players-summary]'),rows=root.querySelector('[data-admin-players-rows]');
+  const pagination=root.querySelector('[data-admin-players-page]'),previous=root.querySelector('[data-admin-players-prev]'),next=root.querySelector('[data-admin-players-next]');
+  const committed=root.querySelector('[data-admin-players-commit-status]');
+  const tr=()=>({...(translations[doc.documentElement.lang]||translations.en),...(stageTranslations[doc.documentElement.lang]||stageTranslations.en)});
+  let allowed=false,canWrite=false,validation=null,options=null,signature='',ticket=0;
+  let pending=false,draft=null,draftPage=0,operation=0,saved=false;
+
   // Keep native selects as the data model; render the same custom listbox pattern as the site.
   function mountDropdowns(){
    if(!form)return [];
@@ -228,23 +256,44 @@
    const raw={};form.querySelectorAll('[data-players-option]').forEach(node=>raw[node.dataset.playersOption]=node.value);
    return raw;
   }
+  const pageSize=25;
+  function invalidateDraft(){
+   ++operation;
+   pending=false;
+   draft=null;draftPage=0;saved=false;
+   if(result)result.hidden=true;
+   if(committed){committed.hidden=true;committed.textContent='';}
+   if(confirmation)confirmation.value='';
+   if(feedback)feedback.textContent='';
+  }
+  function renderPage(){
+   if(!draft)return;
+   const text=tr(),all=draft.candidates||[];
+   const maxPage=Math.max(0,Math.ceil(all.length/pageSize)-1);
+   draftPage=Math.max(0,Math.min(draftPage,maxPage));
+   rows.replaceChildren();
+   for(const [i,player] of all.slice(draftPage*pageSize,(draftPage+1)*pageSize).entries()){
+    const tr=doc.createElement('tr');
+    const values=[draftPage*pageSize+i+1,player.display_name,player.nationality,player.initial_age,player.primary_position,player.preferred_foot,player.height_cm];
+    for(const value of values){const td=doc.createElement('td');td.textContent=String(value??'');tr.append(td);}
+    rows.append(tr);
+   }
+   pagination.textContent=text.page+' '+(draftPage+1)+' '+text.of+' '+(maxPage+1);
+   previous.disabled=draftPage===0;next.disabled=draftPage===maxPage;
+   summary.textContent=draft.summary.count+' '+text.players+' · '+Object.keys(draft.summary.countries||{}).length+' '+text.colNationality+' · '+draft.summary.seed;
+  }
   function update(){
    const text=tr();
-   root.querySelectorAll('[data-admin-players-label]').forEach(node=>{const key=node.dataset.adminPlayersLabel;node.textContent=text[key]||translations.en[key]||node.textContent});
-   doc.querySelectorAll('[data-admin-directory-copy]').forEach(node=>{const key=node.dataset.adminDirectoryCopy;node.textContent=text[key]||translations.en[key]||node.textContent});
+   root.querySelectorAll('[data-admin-players-label]').forEach(node=>{const key=node.dataset.adminPlayersLabel;node.textContent=text[key]||node.textContent});
+   doc.querySelectorAll('[data-admin-directory-copy]').forEach(node=>{const key=node.dataset.adminDirectoryCopy;node.textContent=text[key]||node.textContent});
    if(!isPlayers)return;
-   // Every unset field must show Auto, never a preselected numeric/personality value.
-   form.querySelectorAll('input[data-players-option]').forEach(input=>{
-    input.placeholder=text.automatic;
-   });
+   form.querySelectorAll('input[data-players-option]').forEach(input=>{input.placeholder=text.automatic});
    const mode=form.querySelector('[data-players-option="secondaryMode"]').value;
    for(const [field,show] of [['secondaryCountry',mode==='exact'],['secondaryAllowed',mode==='allowed']]){
-    const node=form.querySelector('[data-players-option="'+field+'"]');
-    node.closest('label').hidden=!show;
+    form.querySelector('[data-players-option="'+field+'"]').closest('label').hidden=!show;
    }
    for(const node of form.querySelectorAll('select option')){
-    if(node.value==='')node.textContent=text.automatic;
-    if(node.value==='automatic')node.textContent=text.automatic;
+    if(node.value===''||node.value==='automatic')node.textContent=text.automatic;
     if(node.value==='none')node.textContent=text.none;
     if(node.value==='exact')node.textContent=text.exact;
     if(node.value==='allowed')node.textContent=text.allowed;
@@ -254,13 +303,67 @@
    const choose=form.querySelector('[data-players-option="secondaryCountry"] option[value=""]');
    if(choose)choose.textContent=text.choose;
    dropdowns.forEach(dropdown=>dropdown.sync());
-   try{command=commandFromRaw(rawValues());validation=null}
-   catch(error){command='';validation=error.message}
-   commandNode.textContent=command;
-   button.disabled=!allowed||!canWrite||!command;
-   feedback.textContent=validation?text.invalid+': '+validation:text.run;
+   let nextSignature='';
+   try{options=makeOptions(rawValues());nextSignature=JSON.stringify(options);validation=null}
+   catch(error){options=null;validation=error.message}
+   if(nextSignature!==signature){signature=nextSignature;invalidateDraft();}
+   if(draft){renderPage();if(!saved&&!pending)feedback.textContent=text.previewReady;}
+   if(validation&&!pending)feedback.textContent=text.invalid+': '+validation;
+   previewButton.disabled=!allowed||!canWrite||!options||pending;
+   commitButton.disabled=!allowed||!canWrite||!draft||pending||saved||confirmation.value!=='GENERATE PLAYERS';
+  }
+  async function authorizedPost(path,payload){
+   const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
+   if(!session.ok)throw Error('authorization_'+session.status);
+   const state=await session.json();
+   if(typeof state.csrfToken!=='string'||!state.csrfToken)throw Error('csrf_unavailable');
+   const response=await win.fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':state.csrfToken},body:JSON.stringify(payload)});
+   const data=await response.json();
+   if(!response.ok)throw Error(data?.error?.code||'http_'+response.status);
+   return data;
+  }
+  async function previewPlayers(){
+   if(!allowed||!canWrite||pending||!options)return;
+   const expected=signature,selected=options;
+   invalidateDraft();pending=true;
+   // invalidateDraft increments operation, retain the new active ticket.
+   const active=++operation;
+   feedback.textContent=tr().previewBusy;update();
+   try{
+    const data=await authorizedPost('/api/admin/players/preview',{options:selected});
+    if(active!==operation||signature!==expected||!allowed||!canWrite)return;
+    if(!data||!Array.isArray(data.candidates)||data.candidates.length!==data.summary?.count||
+      typeof data.draftId!=='string')throw Error('invalid_preview');
+    draft=data;draftPage=0;result.hidden=false;renderPage();
+    feedback.textContent=tr().previewReady;
+   }catch(error){
+    if(active!==operation)return;
+    feedback.textContent=tr().previewError+': '+error.message;
+    if(error.message.startsWith('authorization_'))paint(false,false);
+   }finally{if(active===operation){pending=false;update();}}
+  }
+  async function commitPlayers(){
+   if(!allowed||!canWrite||pending||!draft||saved||confirmation.value!=='GENERATE PLAYERS')return;
+   const id=draft.draftId,active=++operation;
+   pending=true;feedback.textContent=tr().commitBusy;update();
+   try{
+    const answer=await authorizedPost('/api/admin/players/commit',{draftId:id,confirmation:'GENERATE PLAYERS'});
+    if(active!==operation||!allowed||!canWrite)return;
+    if(answer.batchId!==id||answer.count!==draft.summary.count)throw Error('invalid_commit_result');
+    saved=true;
+    committed.hidden=false;
+    committed.textContent=answer.count+' '+tr().stored+' · '+answer.batchId;
+    feedback.textContent='';
+   }catch(error){
+    if(active!==operation)return;
+    feedback.textContent=tr().commitError+': '+error.message;
+    if(error.message==='players_preview_expired'||error.message==='stale_players_preview'){invalidateDraft();feedback.textContent=tr().expired;}
+    else if(error.message.startsWith('authorization_')||error.message==='permission_denied')paint(false,false);
+   }finally{if(active===operation){pending=false;update();}}
   }
   function paint(base,writer){
+   if(!base||!writer){if(draft||saved)invalidateDraft();}
    allowed=base;canWrite=writer;
    host.hidden=!(base&&(!isPlayers||writer));
    if(isPlayers)root.hidden=!(base&&writer);
@@ -285,12 +388,11 @@
   }
   if(form){
    form.addEventListener('input',update);form.addEventListener('change',update);
-   button.addEventListener('click',async()=>{
-    if(!allowed||!canWrite||!command)return;
-    const text=tr();
-    try{await win.navigator.clipboard.writeText(command);feedback.textContent=text.copied}
-    catch{feedback.textContent=text.manual}
-   });
+   confirmation.addEventListener('input',update);
+   previewButton.addEventListener('click',()=>{void previewPlayers()});
+   commitButton.addEventListener('click',()=>{void commitPlayers()});
+   previous.addEventListener('click',()=>{if(draft){draftPage--;renderPage()}});
+   next.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
   }
   new MutationObserver(update).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   win.addEventListener('pageshow',event=>{if(event.persisted)void check()});

@@ -150,10 +150,30 @@ try{
  for(const permissionSet of [[],['admin.access','admin.world.read'],['admin.access','admin.world.read','admin.world.write']]){
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
-   const page=await context.newPage(),errors=[];let adminCalls=0,permissionReads=0;
+   const page=await context.newPage(),errors=[];let adminCalls=0,permissionReads=0,previewCalls=0,commitCalls=0,sessionReads=0;
    page.on('pageerror',error=>errors.push(error.message));
    await page.route('**/api/player/permissions',route=>{permissionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({permissions:permissionSet})})});
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
+   // An isolated API fixture; the real Worker/D1 transactions are tested separately.
+   await page.route('**/api/admin/session',route=>{sessionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({actor:{id:'admin'},csrfToken:'fixture-csrf'})})});
+   await page.route('**/api/admin/players/preview',route=>{
+    previewCalls++;
+    assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    const {options}=route.request().postDataJSON();
+    assert.equal(options.count,2);assert.equal(options.seed,'admin-trial');
+    assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
+    assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
+    const candidates=[0,1].map(i=>({id:'example-'+i,preview_id:'trial-000'+(i+1),
+     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',initial_age:18,
+     primary_position:'ST',preferred_foot:'right',height_cm:180}));
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({draftId:'11111111-1111-4111-8111-111111111111',
+     summary:{count:2,seed:options.seed,countries:{ITA:2}},candidates})});
+   });
+   await page.route('**/api/admin/players/commit',route=>{
+    commitCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111',confirmation:'GENERATE PLAYERS'});
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({batchId:'11111111-1111-4111-8111-111111111111',count:2,alreadyCommitted:false})});
+   });
    await page.goto('http://app.localhost:2000/admin');
    await page.locator('#app-admin[data-admin-access="'+(permissionSet.includes('admin.world.read')?'granted':'denied')+'"]').waitFor({state:'attached'});
    if(permissionSet.includes('admin.world.read')){
@@ -217,8 +237,8 @@ try{
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
-    const empty=await page.locator('[data-admin-players-command]').innerText();
-    assert.match(empty,/--options-base64 e30 --out/);
+    assert.equal(await page.locator('[data-admin-players-copy],[data-admin-players-command]').count(),0,'No legacy CLI-only form controls');
+    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
     await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').click();
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'true');
@@ -227,22 +247,31 @@ try{
     assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
     await page.locator('[data-players-dropdown="primaryPosition"] .language-trigger').click();
     await page.locator('[data-players-dropdown="primaryPosition"] .language-option[data-menu-value="ST"]').click();
-    assert.equal(await page.locator('[data-players-option="primaryPosition"]').inputValue(),'ST');
     await page.locator('[data-players-option="count"]').fill('2');
     await page.locator('[data-players-option="seed"]').fill('admin-trial');
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-players-option="attribute.shooting"]').fill('65:80');
-    const command=await page.locator('[data-admin-players-command]').innerText();
-    const packed=command.match(/--options-base64 ([A-Za-z0-9_-]+)/)?.[1];
-    assert.ok(packed);
-    const options=JSON.parse(Buffer.from(packed,'base64url').toString('utf8'));
-    assert.equal(options.count,2);assert.equal(options.seed,'admin-trial');
-    assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
-    assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
+    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true);
+    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false);
+    await page.locator('[data-admin-players-preview]').click();
+    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-players-rows] tr').count(),2);
+    assert.match(await page.locator('[data-admin-players-summary]').innerText(),/2/);
+    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Preview alone never approves');
+    // Editing any generation input invalidates the old preview before commit.
     await page.locator('[data-players-option="age"]').fill('20');
-    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),false);
+    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
+    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false);
     await page.locator('[data-players-option="age"]').fill('18');
-    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),true);
+    await page.locator('[data-admin-players-preview]').click();
+    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
+    await page.locator('[data-admin-players-confirmation]').fill('GENERATE PLAYERS');
+    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true);
+    await page.locator('[data-admin-players-commit]').click();
+    await page.locator('[data-admin-players-commit-status]').waitFor({state:'visible'});
+    assert.match(await page.locator('[data-admin-players-commit-status]').innerText(),/2/);
+    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Approved preview cannot be committed twice');
+    assert.equal(previewCalls,2);assert.equal(commitCalls,1);assert.equal(sessionReads,3);
    }else assert.equal(await page.locator('#main-content').innerText(),'');
    assert.equal(permissionReads,2);
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');

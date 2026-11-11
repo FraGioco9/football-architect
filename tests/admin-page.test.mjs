@@ -74,6 +74,13 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const {renderAdminPlayers}=await import('../tools/render-admin-settings.mjs');
  const players=readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8');
  assert.ok(players.includes(renderAdminPlayers()));
+ assert.match(players,/data-admin-players-preview/);
+ assert.match(players,/data-admin-players-result/);
+ assert.match(players,/data-admin-players-confirmation/);
+ assert.match(players,/data-admin-players-commit/);
+ assert.match(players,/data-admin-players-rows/);
+ assert.doesNotMatch(players,/data-admin-players-copy|data-admin-players-command|Copy PowerShell command/,'Preview/approval replaces manual CLI copy');
+
  assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');
  assert.doesNotMatch(players,/data-players-seed-help|admin-players-seed-help|Same seed and options/,'Remove seed explanation');
  const playersScript=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');

@@ -10,11 +10,11 @@ const local={...binding,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
 const password='auth-boundaries-test-password-2026';
 const email='boundary-player@example.invalid';
 const adminReads=[
- '/api/admin/session','/api/admin/world','/api/admin/seasons/events','/api/admin/seasons/archives',
+ '/api/admin/players','/api/admin/session','/api/admin/world','/api/admin/seasons/events','/api/admin/seasons/archives',
  '/api/admin/seasons/history','/api/admin/seasons/next-candidate'
 ];
 const adminWrites=[
- '/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare','/api/admin/seasons/prepare',
+ '/api/admin/players/preview','/api/admin/players/commit','/api/admin/seasons/next-approve','/api/admin/seasons/next-prepare','/api/admin/seasons/prepare',
  '/api/admin/seasons/calendar','/api/admin/seasons/start','/api/admin/seasons/advance',
  '/api/admin/seasons/events/reschedule','/api/admin/seasons/events/initialize','/api/admin/seasons/events/confirm',
  '/api/admin/seasons/events/start','/api/admin/seasons/events/advance','/api/admin/seasons/events/domestic-calendar',
