@@ -87,3 +87,15 @@ test('FULL WebKit and Chromium jobs use the pinned official browser image with n
  }
  assert.doesNotMatch(account+full,/PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD/);
 });
+
+test('pinned Playwright containers trust only exact checkout workspace for git ownership',()=>{
+ const browser=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ const browserStep=browser.split('      - name: Assert exact PR checkout')[1]?.split('      - name:')[0];
+ const adminStep=workflow.split('  account-browser:')[1]?.split('      - name: Verify exact head')[1]?.split('      - name:')[0];
+ for(const block of [browserStep,adminStep]){
+  assert.ok(block);
+  assert.match(block,/git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/);
+  assert.match(block,/git rev-parse HEAD/);
+ }
+ assert.doesNotMatch(browserStep+adminStep,/safe\.directory '\*'/);
+});

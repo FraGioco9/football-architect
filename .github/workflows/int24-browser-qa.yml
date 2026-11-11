@@ -82,6 +82,8 @@ jobs:
         env:
           EXPECTED: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+          # The official browser image runs as a different uid from the checkout.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if [ -n "$EXPECTED" ]; then
             test "$(git rev-parse HEAD)" = "$EXPECTED"
           fi
