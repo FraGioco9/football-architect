@@ -42,3 +42,22 @@ test('proposed new-season milestones mirror approved independently movable day 1
  const changed=rescheduleAdministrativeMilestone(plan,'international:draw',2,2,0);
  assert.equal(changed[3].day,2);
 });
+
+test('advancement requires every current and overdue milestone to be explicitly completed',async()=>{
+ const policy=await import('../src/domain/calendar/admin-calendar-policy.ts');
+ assert.equal(typeof policy.assertAdministrativeDayComplete,'function');
+ const events=proposeAdministrativeMilestones();
+ const before=JSON.stringify(events);
+ policy.assertAdministrativeDayComplete(events,0);
+ assert.throws(()=>policy.assertAdministrativeDayComplete(events,1),{status:409,code:'calendar_event_prerequisites'});
+ const one=events.map(e=>e.id==='domestic:entrants'?{...e,status:'completed' as const}:e);
+ assert.throws(()=>policy.assertAdministrativeDayComplete(one,1),{status:409});
+ const both=events.map(e=>e.day===1?{...e,status:'completed' as const}:e);
+ policy.assertAdministrativeDayComplete(both,1);
+ assert.throws(()=>policy.assertAdministrativeDayComplete(both,2),{status:409});
+ assert.throws(()=>policy.assertAdministrativeDayComplete(events,2),{status:409});
+ const throughTwo=events.map(e=>e.day<=2?{...e,status:'completed' as const}:e);
+ policy.assertAdministrativeDayComplete(throughTwo,2);
+ assert.throws(()=>policy.assertAdministrativeDayComplete(throughTwo,57),{status:422});
+ assert.equal(JSON.stringify(events),before);
+});

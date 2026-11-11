@@ -174,10 +174,10 @@ jobs:
           for suite in tests/player-safe-return-browser.mjs tests/account-pages-browser.mjs tests/account-feedback-browser.mjs tests/account-usability-browser.mjs tests/control-focus-browser.mjs tests/profile-navigation-browser.mjs tests/account-interaction-browser.mjs tests/account-layout-browser.mjs tests/competition-season-zero-club-links-browser.mjs; do
             node tools/ci-run.mjs "account-${{ matrix.engine }}-${suite##*/}" -- node "$suite"
           done
-      - name: Verify signed-out unified Settings and public-page isolation
-        if: ${{ matrix.engine == 'chromium' && !needs.scope.outputs.reuse }}
+      - name: Verify dedicated Admin access and Settings isolation
+        if: ${{ !needs.scope.outputs.reuse }}
         timeout-minutes: 20
-        run: FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs admin-settings -- node --experimental-strip-types tests/admin-settings-browser.mjs
+        run: FA_ADMIN_ENGINE="${{ matrix.engine }}" FA_ADMIN_PLAYWRIGHT="$RUNNER_TEMP/fa-player-browser/node_modules/playwright/index.mjs" node tools/ci-run.mjs admin-settings -- node --experimental-strip-types tests/admin-settings-browser.mjs
       - name: FULL account coverage completed
         run: echo 'All account source checks completed for this engine on exact HEAD.'
       - name: Upload account diagnostic evidence

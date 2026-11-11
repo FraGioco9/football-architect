@@ -28,3 +28,5 @@ data/divisions.json text eol=lf
 data/international-competitions.json text eol=lf
 backend/catalogues/season-1.participants.json text eol=lf
 assets/world-calendar-model.js text eol=lf
+
+admin/index.html text eol=lf

@@ -147,10 +147,10 @@ test('operator status reports backend prerequisite and clears authority on revok
  revoked=true;await c.refresh();
  assert.equal(c.state().actor,null);assert.equal(c.state().operation,'idle');
 });
-test('settings markup includes accessible authoritative operation and backend error fields',()=>{
+test('Admin exposes accessible operation feedback without technical diagnostics',()=>{
  const html=renderAdminSettings();
- assert.match(html,/data-admin-operation/);
- assert.match(html,/data-admin-error-code/);
+ assert.match(html,/data-admin-status/);
+ assert.doesNotMatch(html,/data-admin-operation(?:\s|=|>)|data-admin-error-code/);
  assert.match(html,/aria-live="polite"/);
 });
 
@@ -204,8 +204,8 @@ test('action availability is derived exclusively from matching authenticated wor
  assert.equal(canRunCommand('publish',active,drawn),false);
  assert.equal(canRunCommand('confirm',active,drawn),false);
  assert.equal(canRunCommand('draw',active,{...drawn,worldGeneration:'650e8400-e29b-41d4-a716-446655440000'}),false);
- assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),true);
- assert.equal(canRunCommand('eventAdvance',active,drawn),true);
+ assert.equal(canRunCommand('advance',active,{...drawn,mode:'legacy'}),false);
+ assert.equal(canRunCommand('eventAdvance',active,drawn),false);
  const last={...active,day:56};
  assert.equal(canRunCommand('close',last,{...drawn,mode:'legacy'}),false);
  assert.equal(canRunCommand('advance',last,{...drawn,mode:'legacy'}),false);
@@ -380,4 +380,66 @@ test('revocation while prepared events load cannot restore authority or prepared
  pending.resolve({world:current,mode:'legacy',events:[],calendarReady:false});await preparing;
  assert.equal(c.state().actor,null);assert.equal(c.state().world,null);assert.equal(c.state().events,null);
  assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'signedOut');
+});
+
+test('permission-denied mutations clear access and cannot be retried with cached grants',async()=>{
+ let writes=0;
+ const c=createAdminController(async(path,options)=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world};
+  if(path.endsWith('/events'))return {world,mode:'uninitialized',events:[]};
+  writes++;throw error(403,'permission_denied');
+ },()=>{});
+ await c.refresh();assert.equal(c.state().actor.id,'operator');
+ await c.prepare();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'forbidden');
+ await c.prepare();assert.equal(writes,1);
+});
+
+test('permission loss on event reads clears the authenticated world instead of retaining controls',async()=>{
+ const c=createAdminController(async path=>{
+  if(path.endsWith('/session'))return session;
+  if(path.endsWith('/world'))return {world};
+  throw error(403,'permission_denied');
+ },()=>{});
+ await c.refresh();
+ assert.equal(c.state().actor,null);assert.equal(c.state().world,null);
+ assert.deepEqual(c.state().permissions,[]);assert.equal(c.state().message,'forbidden');
+});
+
+const calendarModel=require('../assets/world-calendar-model.js');
+test('next-day simulation preview uses the destination day and shared sporting calendar',()=>{
+ const {nextDaySimulation}=require('../assets/admin-settings.js');
+ assert.equal(typeof nextDaySimulation,'function');
+ const active={...world,seasonNumber:1,phase:'active',revision:12,day:15};
+ const events={mode:'sporting',worldGeneration:active.generation,worldRevision:12,calendarReady:true,rows:[]};
+ assert.deepEqual(nextDaySimulation(active,events,calendarModel),{day:16,rounds:['I-1','D-4']});
+ for(const [day,rounds] of [[16,['D-5']],[31,[]],[52,['I-13','D-32']],[53,['I-13','D-33']],[55,[]]])assert.deepEqual(nextDaySimulation({...active,day},events,calendarModel),{day:day+1,rounds});
+ assert.equal(nextDaySimulation({...active,day:56},events,calendarModel),null);
+ assert.equal(nextDaySimulation(active,{...events,worldRevision:11},calendarModel),null);
+ assert.equal(nextDaySimulation(active,{...events,calendarReady:false},calendarModel),null);
+ assert.equal(nextDaySimulation(active,events,null),null);
+ assert.equal(nextDaySimulation({...active,phase:'closed'},events,calendarModel),null);
+ const administrative={...events,mode:'administrative',calendarReady:false};
+ assert.deepEqual(nextDaySimulation({...active,day:4},administrative,calendarModel),{day:5,rounds:[]});
+ assert.equal(nextDaySimulation({...active,day:12},administrative,calendarModel),null);
+});
+
+test('Advance day is unavailable until all actions due today or earlier are completed',()=>{
+ const active={...world,seasonNumber:1,phase:'active',day:3};
+ for(const mode of ['administrative','sporting','legacy']){
+  const action=mode==='administrative'?'eventAdvance':'advance';
+  const events={worldGeneration:active.generation,worldRevision:0,mode,calendarReady:true,rows:[
+   {id:'draw',kind:'draw-international',status:'scheduled',day:3,order:1},
+   {id:'publish',kind:'generate-international-calendar',status:'scheduled',day:3,order:2}
+  ]};
+  assert.equal(canRunCommand(action,active,events),false);
+  events.rows[0].status='completed';assert.equal(canRunCommand(action,active,events),false);
+  events.rows[1].status='completed';assert.equal(canRunCommand(action,active,events),true);
+  events.rows.push({id:'later',kind:'later',status:'scheduled',day:4,order:1});
+  assert.equal(canRunCommand(action,active,events),true);
+  events.rows.push({id:'overdue',kind:'overdue',status:'scheduled',day:2,order:1});
+  assert.equal(canRunCommand(action,active,events),false);
+ }
 });

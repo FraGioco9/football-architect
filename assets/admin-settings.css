@@ -4,4 +4,28 @@
 
 .admin-settings [data-admin-reschedule-section]{margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line,#647478)}.admin-settings [data-admin-reschedule-section] select{box-sizing:border-box;display:block;width:100%;max-width:30rem;min-height:var(--fa-control-height-regular);padding:.55rem;border:1px solid var(--line,#647478);border-radius:.5rem;background:var(--surface,#162329);color:inherit;font:inherit}.admin-settings [data-admin-reschedule-section] h3{font-size:1.05rem;margin:0 0 .7rem}
 
-html[data-settings-view="admin"] #app-settings>.app-settings-grid{display:none}
+
+.app-admin-view[hidden]{display:none}
+.app-admin-view{display:grid;gap:var(--app-page-section-gap);max-width:800px}
+.app-admin-view .admin-settings{width:100%;min-width:0}
+.app-admin-view .admin-settings p{margin:0 0 12px}
+.app-admin-view [data-admin-status]{min-height:1.65em;margin:0}
+.app-admin-view [data-admin-signed-in]{min-width:0}
+.app-admin-view [data-admin-operations]{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.app-admin-view [data-admin-operations] button{margin:0;text-align:start;line-height:1.4}
+.app-admin-view .admin-settings input{display:block;max-width:30rem;margin:8px 0}
+.app-admin-view .admin-settings label{display:block;margin-top:12px}
+.app-admin-view .admin-settings button:hover:not(:disabled){border-color:var(--text);background:var(--surface)}
+.app-admin-view .admin-settings [data-admin-next-season]{margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.app-admin-view .admin-settings h3{font-size:17px;line-height:1.4}
+.app-admin-view .admin-settings li,.app-admin-view .admin-settings code{overflow-wrap:anywhere}
+@media(max-width:620px){.app-admin-view [data-admin-operations]{grid-template-columns:1fr}.app-admin-view .admin-settings button{width:100%;margin-inline:0}}
+
+.app-admin-view .admin-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.app-admin-view .admin-summary p{margin:0;font-weight:600}
+.app-admin-view .admin-summary button{margin:0}
+
+.app-admin-view [data-admin-next-day]{font-weight:600;overflow-wrap:anywhere}
+
+.app-admin-view .admin-summary-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.app-admin-view [data-admin-working]{font-size:13px;color:var(--muted)}

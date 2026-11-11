@@ -1,6 +1,6 @@
 // Pairwise coverage, not a Cartesian matrix or physical Safari certification.
 import assert from 'node:assert/strict';
-export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/settings?view=admin'});
+export const areaRoutes=Object.freeze({calendar:'/calendar',clubs:'/clubs/it/1/overview',competitions:'/competitions/it-1/standings',guide:'/guide',admin:'/admin'});
 export function browserCases(){
  return ['en','de','es','fr','it'].flatMap((language,i)=>[320,390,768,1440].map((width,j)=>{
   const theme=['dark','light'][(i+j)%2];
@@ -10,20 +10,15 @@ export function browserCases(){
 export async function verifyArea(page,area,{touch}){
  const activate=async locator=>touch?locator.tap():locator.click();
  if(area==='admin'){
-  const login=page.locator('[data-admin-signin-link] a');
-  await login.waitFor({state:'visible'});
-  assert.equal(await page.locator('[data-admin-login],#admin-email,#admin-password').count(),0,'Retired Admin login stays removed');
-  assert.equal(new URL(await login.getAttribute('href'),page.url()).pathname,'/account/login');
-  assert.equal(await page.locator('[data-admin-reset-section]').isVisible(),false);
-  assert.equal(await page.locator('[data-admin-prepare]').isVisible(),false);
+  await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+  assert.equal(await page.locator('#main-content').innerText(),'');
+  assert.equal(await page.locator('[data-admin-signin-link] a').isVisible(),false);
   assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
-  await activate(login);await page.waitForURL(url=>url.pathname==='/account/login');
-  const email=page.locator('[name=email]'),password=page.locator('[name=password]');
-  assert.equal(await email.getAttribute('autocomplete'),'username');
-  assert.equal(await password.getAttribute('autocomplete'),'current-password');
+  await activate(page.locator('#app-nav-profile'));await page.waitForURL(url=>url.pathname==='/account/login');
   assert.equal(new URL(page.url()).searchParams.has('next'),false);
-  await email.focus();assert.equal(await email.evaluate(el=>el===document.activeElement),true);
-  await page.goBack({waitUntil:'networkidle'});await login.waitFor({state:'visible'});
+  await page.goBack({waitUntil:'networkidle'});
+  await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+  assert.equal(await page.locator('#main-content').innerText(),'');
  }else if(area==='calendar'){
   const picker=page.locator('#calendar-season-picker');
   await activate(picker);

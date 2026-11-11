@@ -52,7 +52,7 @@ function debugHtml(bytes,path) {
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');
   return Buffer.from(html.replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
  }
- if(!/^(?:dashboard|calendar|settings|competitions|clubs)\//.test(path)||!path.endsWith("/index.html"))return bytes;
+ if(!/^(?:dashboard|calendar|settings|admin|competitions|clubs)\//.test(path)||!path.endsWith("/index.html"))return bytes;
  let html=bytes.toString("utf8");
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);

@@ -142,7 +142,7 @@ test("HOME-01 keeps five localized language options only in Settings and does no
     assert.doesNotMatch(markup,/id="app-about-heading"/);
   }
   assert.doesNotMatch(js,/indexedDB|fetch\(|localStorage\.setItem|simulateMatch/);
-  assert.match(pages.settings,/<template data-settings-admin>\s*<section[^>]*data-admin-settings/);
+  assert.doesNotMatch(pages.settings,/data-settings-admin|data-admin-settings|admin-settings\.js/);
   assert.doesNotMatch(pages.settings,/data-action="(?:import|export|delete-career)"/);
 });
 

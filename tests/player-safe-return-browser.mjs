@@ -25,7 +25,7 @@ const server=createServer((request,response)=>{
   response.writeHead(request.headers.cookie==='anonymous=1'?401:200,{'Content-Type':'application/json','Cache-Control':'no-store'});
   response.end(JSON.stringify({authenticated:true,actor:{id:'synthetic-player'}}));return;
  }
- if(['/account','/settings','/calendar','/clubs','/competitions/it-1/fixtures'].includes(pathname)){
+ if(['/account','/settings','/calendar','/clubs','/admin','/competitions/it-1/fixtures'].includes(pathname)){
   response.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
   response.end('<!doctype html><title>Safe destination</title><main id="destination">Allowed</main>');return;
  }
@@ -42,7 +42,7 @@ try{
   ['/calendar?season=1&week=3#round','/calendar?season=1&week=3#round'],
   ['/clubs?q=Rome','/clubs?q=Rome'],['/competitions/it-1/fixtures','/competitions/it-1/fixtures'],
   ['https://example.invalid/','/account'],['//example.invalid','/account'],
-  ['/api/player/session','/account'],['/admin/','/account'],
+  ['/api/player/session','/account'],['/admin/','/admin'],
   ['/account/%2e%2e/api/admin','/account'],
   ['/%2f%2fexample.invalid','/account'],
   ['/account/login/','/account'],

@@ -6,11 +6,12 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
  try{
   const admin=await operator.newPage(),publicPage=await visitor.newPage(),errors=[];
   for(const page of [admin,publicPage])page.on('pageerror',e=>errors.push(e.message));
-  await admin.goto(origin+'/settings?view=admin');
+  await admin.goto(origin+'/admin');
   assert.equal(await admin.locator('#admin-email,#admin-password,[data-admin-login]').count(),0);
   assert.equal(await admin.evaluate(()=>fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.status)),410);
-  const signIn=admin.locator('[data-admin-signin-link] a');
-  await signIn.waitFor({state:'visible'});await signIn.click();
+  await admin.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
+  assert.equal(await admin.locator('#main-content').innerText(),'');
+  await admin.locator('#app-nav-profile').click();
   await admin.waitForURL(url=>url.pathname==='/account/login');
   assert.equal(new URL(admin.url()).origin,origin);
   assert.equal(new URL(admin.url()).searchParams.has('next'),false);
@@ -19,7 +20,7 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   await admin.locator('#account-login input[name="email"]').fill(email);
   await admin.locator('#account-login input[name="password"]').fill(password);
   await admin.locator('#account-login button[type="submit"]').click();
-  await admin.waitForURL(url=>url.pathname==='/settings'&&url.searchParams.get('view')==='admin');
+  await admin.waitForURL(url=>url.pathname==='/admin');
   const cookies=await operator.cookies(origin);
   assert.ok(cookies.some(cookie=>cookie.name==='fa_player_local'&&cookie.httpOnly));
   assert.ok(!cookies.some(cookie=>cookie.name.includes('fa_admin')));
@@ -44,7 +45,14 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   console.log('Unified Admin browser: Player sign-in and Season 1 preparation PASS');
   await click('initialize','/api/admin/seasons/events/initialize');
   await click('eventStart','/api/admin/seasons/events/start');
-  for(let day=2;day<=4;day++)await click('eventAdvance','/api/admin/seasons/events/advance');
+  assert.equal(await admin.locator('[data-admin-command="eventAdvance"]').isEnabled(),false);
+  await click('confirm','/api/admin/seasons/events/confirm');await click('confirm','/api/admin/seasons/events/confirm');
+  await click('eventAdvance','/api/admin/seasons/events/advance');
+  await click('domestic','/api/admin/seasons/events/domestic-calendar');
+  await click('eventAdvance','/api/admin/seasons/events/advance');
+  await click('draw','/api/admin/seasons/events/international-draw');
+  await click('publish','/api/admin/seasons/events/international-calendar');
+  await click('advance','/api/admin/seasons/advance');
   world=await read();assert.equal(world.day,4);
   for(let day=5;day<=56;day++)world=await command('/api/admin/seasons/advance');
   await admin.reload();await click('archive','/api/admin/seasons/archive');
@@ -56,7 +64,14 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   world=await click('nextPrepare','/api/admin/seasons/next-prepare');
   assert.equal(world.seasonNumber,2);assert.equal(world.day,0);assert.equal(world.phase,'preparing');
   await click('initialize','/api/admin/seasons/events/initialize');await click('eventStart','/api/admin/seasons/events/start');
-  for(let day=2;day<=4;day++)await click('eventAdvance','/api/admin/seasons/events/advance');
+  assert.equal(await admin.locator('[data-admin-command="eventAdvance"]').isEnabled(),false);
+  await click('confirm','/api/admin/seasons/events/confirm');await click('confirm','/api/admin/seasons/events/confirm');
+  await click('eventAdvance','/api/admin/seasons/events/advance');
+  await click('domestic','/api/admin/seasons/events/domestic-calendar');
+  await click('eventAdvance','/api/admin/seasons/events/advance');
+  await click('draw','/api/admin/seasons/events/international-draw');
+  await click('publish','/api/admin/seasons/events/international-calendar');
+  await click('advance','/api/admin/seasons/advance');
   // A separate cookie jar reads exactly the same world but has no administrative authority.
   console.log('Unified Admin browser: approved Season 2 initialization PASS');
   await publicPage.goto(origin+'/dashboard');

@@ -19,7 +19,7 @@ const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='
 let world:Awaited<ReturnType<typeof readWorld>>,session:AdminSession,csrf:string;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_player_local='+token,Origin:config.PLAYER_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
-async function command(path:string){const r=await call(path,meta());expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
+async function command(path:string,extra:Record<string,unknown>={}){const r=await call(path,{...meta(),...extra});expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
 const publicRead=(path:string)=>worker.fetch(new Request('http://localhost:2000'+path),{DB:db});
 async function enrollTerminalEvents(season:number){for(const e of proposeEndSeasonMilestones())await db.prepare('INSERT INTO season_admin_events(season_number,event_id,kind,scope,scheduled_day,event_order,created_at) VALUES(?,?,?,?,?,?,?)').bind(season,e.id,e.kind,e.scope,e.day,e.order,now).run()}
 beforeAll(async()=>{
@@ -59,7 +59,13 @@ it('runs approved Season2 through administrative events and sporting closure whi
  const saved=await r.json() as any;world=saved.world;expect(world).toMatchObject({seasonNumber:2,phase:'preparing',day:0});
  expect(await (await call('/api/admin/seasons/next-prepare',old,{'Idempotency-Key':key})).json()).toEqual(saved);
  await command('/api/admin/seasons/events/initialize');await command('/api/admin/seasons/events/start');
- for(let n=2;n<=4;n++)await command('/api/admin/seasons/events/advance');
+ for(const eventId of ['domestic:entrants','international:entrants'])await command('/api/admin/seasons/events/confirm',{eventId});
+ await command('/api/admin/seasons/events/advance');
+ await command('/api/admin/seasons/events/domestic-calendar');
+ await command('/api/admin/seasons/events/advance');
+ await command('/api/admin/seasons/events/international-draw');
+ await command('/api/admin/seasons/events/international-calendar');
+ await command('/api/admin/seasons/advance');
  expect(world).toMatchObject({seasonNumber:2,phase:'active',day:4});
  const second=await (await publicRead('/api/competitions/IT-1/seasons/2')).json() as any;
  expect(second).toMatchObject({selectedSeason:2,world:{seasonNumber:2,day:4},data:{season:2,seasonState:{phase:'active',day:4},history:null}});
