@@ -69,6 +69,23 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(read.players.map((p:any)=>p.id).sort()).toEqual(actual.map((p:any)=>p.id).sort());
  expect(await readWorld(db)).toEqual(oldWorld);
 });
+it('Auto seeds are fresh per preview; manually supplied seeds remain reproducible',async()=>{
+ const options={count:2,primaryNationality:'ITA',primaryPosition:'ST'};
+ const first=await createPreview(options),second=await createPreview(options);
+ expect(first.summary.seed).toMatch(/^fa-auto-[0-9a-f-]{36}$/);
+ expect(second.summary.seed).toMatch(/^fa-auto-[0-9a-f-]{36}$/);
+ expect(second.summary.seed).not.toBe(first.summary.seed);
+ const saved=await db.prepare('SELECT seed,options_json FROM player_generation_drafts WHERE id=?').bind(first.draftId).first<{seed:string;options_json:string}>();
+ expect(saved?.seed).toBe(first.summary.seed);
+ expect(JSON.parse(saved!.options_json).seed).toBe(first.summary.seed);
+ const selected={...options,seed:'repeatable-manual-seed'};
+ const manual1=await createPreview(selected),manual2=await createPreview(selected);
+ expect(manual1.summary.seed).toBe(selected.seed);
+ expect(manual2.summary.seed).toBe(selected.seed);
+ const withoutIdentifiers=(players:any[])=>players.map(({id,preview_id,...rest})=>rest);
+ expect(withoutIdentifiers(manual1.candidates)).toEqual(withoutIdentifiers(manual2.candidates));
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
+});
 it('fails closed on missing/invalid approval, invalid options, missing CSRF and revoked grants',async()=>{
  const bad=await request('/preview',{options:{count:2,experimentalLegacySecondaryModel:true}});
  expect(bad.status).toBe(422);

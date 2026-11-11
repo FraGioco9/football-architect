@@ -351,9 +351,14 @@
     const answer=await authorizedPost('/api/admin/players/commit',{draftId:id,confirmation:'GENERATE PLAYERS'});
     if(active!==operation||!allowed||!canWrite)return;
     if(answer.batchId!==id||answer.count!==draft.summary.count)throw Error('invalid_commit_result');
-    saved=true;
+    // Successful commits advance the visible seed for the next cohort. The
+    // approved draft was already persisted unchanged; its UUID makes this
+    // follow-up seed distinct without requiring any extra server mutation.
+    const receipt=answer.count+' '+tr().stored+' · '+answer.batchId;
+    form.querySelector('[data-players-option="seed"]').value='fa-next-'+answer.batchId;
+    update(); // New signature invalidates the old draft and unlocks Preview.
     committed.hidden=false;
-    committed.textContent=answer.count+' '+tr().stored+' · '+answer.batchId;
+    committed.textContent=receipt;
     feedback.textContent='';
    }catch(error){
     if(active!==operation)return;

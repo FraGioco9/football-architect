@@ -160,7 +160,9 @@ try{
     previewCalls++;
     assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     const {options}=route.request().postDataJSON();
-    assert.equal(options.count,2);assert.equal(options.seed,'admin-trial');
+    assert.equal(options.count,2);
+    if(previewCalls<=2)assert.equal(options.seed,'admin-trial');
+    else assert.match(options.seed,/^fa-next-11111111-1111-4111-8111-111111111111$/);
     assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
     assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
     const candidates=[0,1].map(i=>({id:'example-'+i,preview_id:'trial-000'+(i+1),
@@ -272,8 +274,14 @@ try{
     await page.locator('[data-admin-players-commit]').click();
     await page.locator('[data-admin-players-commit-status]').waitFor({state:'visible'});
     assert.match(await page.locator('[data-admin-players-commit-status]').innerText(),/2/);
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Approved preview cannot be committed twice');
-    assert.equal(previewCalls,2);assert.equal(commitCalls,1);assert.equal(sessionReads,3);
+    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false,'Committed draft must not remain approvable');
+    assert.equal(await page.locator('[data-admin-players-confirmation]').inputValue(),'');
+    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
+    await page.locator('[data-admin-players-preview]').click();
+    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
+    assert.equal(previewCalls,3);assert.equal(commitCalls,1);assert.equal(sessionReads,4);
    }else assert.equal(await page.locator('#main-content').innerText(),'');
    assert.equal(permissionReads,2);
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');

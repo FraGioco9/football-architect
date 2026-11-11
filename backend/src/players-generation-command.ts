@@ -68,7 +68,11 @@ export function safePlayerOptions(input:unknown){
  return normalizeOptions((input as Data).options);
 }
 export async function previewPlayerGeneration(db:Database,session:AdminSession,input:unknown,now:number){
- const options=safePlayerOptions(input),world=await readWorld(db);
+ const requested=safePlayerOptions(input);
+ // Auto is a fresh cryptographically random seed per preview, not the CLI's fixed
+ // reproducibility fixture. A manually provided seed remains fully deterministic.
+ const options={...requested,seed:requested.seed??'fa-auto-'+crypto.randomUUID()};
+ const world=await readWorld(db);
  let trial:ReturnType<typeof generateTrialWithCatalog>;
  try{trial=generateTrialWithCatalog(options,catalog??(catalog=loadRuntimePlayerCatalog()));}
  catch{throw invalid();}
