@@ -561,8 +561,8 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(html,/class="club-history-competition-link"/,'competition names use a dedicated plain-text link');
  assert.doesNotMatch(html,/<th scope="row" class="club-history-competition-value"><a class="app-link"/,'no globally boxed app-link for competition rows');
  const styles=read('assets/club-page.css');
- assert.match(styles,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline;min-width:0;min-height:0;margin:0;padding:0;border:0/,'competition links remain unboxed without nested overflow clipping');
- assert.match(styles,/\.club-history-table \.club-history-competition-row:hover \.club-history-competition-text/,'row hover underlines the inner competition text');
+ assert.match(styles,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0/,'competition links remain text-sized and unboxed instead of occupying the full cell');
+ assert.doesNotMatch(styles,/\.club-history-table \.club-history-competition-row:hover \.club-history-competition-text/,'row hover must not underline the competition text');
  assert.match(styles,/text-decoration-line:underline;text-underline-offset:3px/,'match regular site link behavior');
  assert.match(html,/<td title="Quarti di finale">Quarti di finale<\/td>/,'international Pos. is the verified knockout stage, not the league position');
  assert.doesNotMatch(html,/<td>8º<\/td>/,'international position must never display the league stage rank');
@@ -644,6 +644,14 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(html,/<section class="club-history" aria-busy="false"><div class="club-history-table-wrap">/,'hydrated table starts without a History heading');
  assert.doesNotMatch(html,/<section class="club-history"[^>]*><h2>/,'no hydrated History title');
  assert.match(html,/<a class="club-history-competition-link" href="[^"]+" title="[^"]+"><span class="club-history-competition-text">/,'inner text retains native underline without link overflow clipping');
+ assert.match(css,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{display:inline-block;width:fit-content;max-width:100%;[^}]*padding:0;[^}]*text-overflow:ellipsis;/,
+  'the clickable area is a text-sized inline-block rather than the complete table cell');
+ assert.match(css,/a\.club-history-competition-link:is\(:hover,:focus-visible\) \.club-history-competition-text\{text-decoration-line:underline;/,
+  'competition hover and focus styling belongs only to its actual link');
+ assert.doesNotMatch(css,/\.club-history-competition-row:(?:hover|focus-within) \.club-history-competition-text/,
+  'hovering the row or the empty competition cell must never underline the name');
+ assert.ok(script.includes("const row=event.target.closest?.('[data-club-history-summary]');"),
+  'only season summary rows have delegated click handling');
 
  for(const width of ['club-history-col-season','club-history-col-name','club-history-col-position','club-history-col-number'])
   assert.match(css,new RegExp('\\.'+width+'\\{width:'),'one fixed width per aligned table column');
