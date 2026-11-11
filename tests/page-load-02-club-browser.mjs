@@ -25,6 +25,8 @@ try{
   try{
    await page.goto(origin+'/clubs/it/1/overview',{waitUntil:'networkidle'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
+   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
+    '8px','Club page top padding remains 8px after hydration at '+width+'px');
    await page.waitForFunction(()=>document.querySelector('.club-header [data-club-crest] .app-club-crest-image')?.complete);
    await page.evaluate(()=>{
     window.pageLoad02Crest=document.querySelector('.club-header [data-club-crest] .app-club-crest-image');
@@ -82,6 +84,8 @@ try{
   try{
    await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view,{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
+   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
+    '8px','Club page top padding is 8px at first paint for '+view+' '+width+'px');
    const identity=manifest.clubs.find(c=>c.countryId===country.toUpperCase()&&c.clubId===id);
    assert.ok(identity);
    const pending=await page.evaluate(()=>({
@@ -150,7 +154,7 @@ try{
     });
     assert.equal(initial.labels.length,9,'all labels appear before API');
     assert.ok(initial.labels.every(x=>x.text.length>0&&x.bars===0),'no skeleton for a label');
-    assert.equal(initial.totalBars,13,'identity name/country/city join the other data skeletons');
+    assert.equal(initial.totalBars,15,'competition logo slot and five text-value skeletons mirror the final membership row');
     assert.ok(initial.abbreviation>10&&initial.abbreviation<45,'abbreviation skeleton predicts three characters');
     assert.equal(initial.colors?.swatches.length,2,'two expected color boxes');
     assert.ok(initial.colors.swatches.every(({width,height})=>Math.abs(width-20)<0.1&&Math.abs(height-20)<0.1),'color swatches are 20×20px');
@@ -163,6 +167,188 @@ try{
     assert.ok(pendingColors.pairs.every(pair=>Math.abs(pair.valueY-pair.swatchY)<1),'each placeholder HEX is centered beside its swatch');
     assert.equal(initial.kitBars,0,'static kit text has no skeleton');
     assert.ok(initial.kits?.length>0&&initial.status?.length>0&&initial.next?.length>0,'static panel texts visible');
+    const comp=await page.evaluate(()=>{
+     const panel=document.querySelector('.club-fp-competition'),row=panel?.querySelector('.club-competition-entry');
+     if(!row)return null;
+     const rect=selector=>{const node=row.querySelector(selector),r=node?.getBoundingClientRect();return r?{left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}:null};
+     return {availableWidth:parseFloat(getComputedStyle(panel.closest('.club-competition')).width),
+       rowPadding:['Top','Right','Bottom','Left'].map(side=>parseFloat(getComputedStyle(row)['padding'+side])),
+       row:row.getBoundingClientRect().toJSON(),
+      identity:rect('.club-competition-identity'),logo:rect('.club-fp-competition-logo'),
+      copy:rect('.club-competition-copy'),name:rect('.club-fp-competition-name'),
+      tier:rect('.club-fp-competition-tier'),summary:rect('.club-competition-summary'),
+      status:rect('.club-competition-metrics'),statusValue:rect('.club-competition-metrics dd'),
+      statusBar:rect('.club-fp-competition-position'),
+      next:rect('.club-competition-next'),nextContent:rect('.club-competition-next-content'),
+      fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round')};
+    });
+    assert.ok(comp&&Object.values(comp).every(Boolean),'first-paint competition has all final membership slots');
+    assert.deepEqual(comp.rowPadding,[0,0,0,0],'competition rows are padding-free at first paint and all viewport widths');
+    assert.ok(Math.abs(comp.name.left-comp.copy.left)<2&&Math.abs(comp.tier.left-comp.copy.left)<2,
+     'name and tier skeletons begin exactly where hydrated league text begins');
+    assert.ok(Math.abs(comp.statusBar.left-comp.statusValue.left)<2&&Math.abs(comp.fixtureBar.left-comp.nextContent.left)<2,
+     'status and fixture skeletons use the hydrated value origins');
+    assert.ok(comp.logo.width===comp.logo.height&&Math.abs(comp.logo.width-(width<=760?44:60))<1,
+     'anonymous division crest matches the singleton 60px desktop / 44px mobile size');
+    // Compare singleton division and multi-membership identities in the same
+    // panel at each viewport: number of rows must never change logo or font.
+    const identityParity=await page.evaluate(()=>{
+     const panel=document.querySelector('.club-competition');
+     const list=panel.querySelector('.club-fp-competition');
+     const logo=list.querySelector('.club-competition-logo');
+     const name=list.querySelector('.club-competition-name');
+     const sample=document.createElement('div');
+     sample.className='club-competition-list';
+     sample.style.cssText='position:absolute;left:-10000px;top:0;width:100%;pointer-events:none';
+     sample.innerHTML='<div class="club-competition-layout club-competition-entry"><div class="club-competition-identity"><span class="club-competition-logo"></span><div class="club-competition-copy"><strong class="club-competition-name">Example league</strong></div></div></div>';
+     panel.append(sample);
+     const singletonLogo=sample.querySelector('.club-competition-logo').getBoundingClientRect();
+     const singletonFont=parseFloat(getComputedStyle(sample.querySelector('.club-competition-name')).fontSize);
+     const multiLogo=logo.getBoundingClientRect();
+     const multiFont=parseFloat(getComputedStyle(name).fontSize);
+     sample.remove();
+     return {single:{width:singletonLogo.width,height:singletonLogo.height,font:singletonFont},
+      multi:{width:multiLogo.width,height:multiLogo.height,font:multiFont}};
+    });
+    for(const dimension of ['width','height','font'])
+     assert.ok(Math.abs(identityParity.single[dimension]-identityParity.multi[dimension])<.1,
+      'one vs two competitions must have identical '+dimension+' at '+width+'px: '+JSON.stringify(identityParity));
+
+    // Render Status and Next match in both real DOM layout classes. Measure
+    // text sizes/line heights for two rows, including a missing next match.
+    const summaryParity=await page.evaluate(()=>{
+     const panel=document.querySelector('.club-competition');
+     const probe=document.createElement('div');
+     probe.style.cssText='position:absolute;left:-10000px;top:0;width:100%;pointer-events:none';
+     const rowHtml=empty=>'<div class="club-competition-identity"><span class="club-competition-logo"></span>'+
+      '<div class="club-competition-copy"><strong class="club-competition-name">International Cup</strong><span class="club-competition-tier">International</span></div></div>'+
+      '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>Status</dt><dd>Group Stage</dd></div></dl>'+
+      '<div class="club-competition-next"><span class="club-competition-label">Next match</span>'+
+      '<div class="club-competition-next-content">'+(empty?'<span class="club-competition-next-empty">No upcoming match</span>':
+       '<a class="app-link">Metropolitan Northumberland Athletic – Greater Westchester Borough</a><small>Matchday 5</small>')+
+      '</div></div></div>';
+     probe.innerHTML='<div class="club-competition-list"><div class="club-competition-layout club-competition-entry">'+rowHtml(false)+'</div></div>'+
+      '<div class="club-competition-list"><div class="club-competition-layout club-competition-entry">'+rowHtml(true)+'</div></div>'+
+      '<div class="club-competition-list"><div class="club-competition-layout club-competition-entry">'+rowHtml(false)+'</div>'+
+      '<div class="club-competition-layout club-competition-entry">'+rowHtml(true)+'</div></div>';
+     panel.append(probe);
+     try{
+      const rows=[...probe.children];
+      const styles=row=>{
+       const look=selector=>{
+        const el=row.querySelector(selector),computed=getComputedStyle(el);
+        return {size:parseFloat(computed.fontSize),line:parseFloat(computed.lineHeight),weight:computed.fontWeight};
+       };
+       return {
+        statusLabel:look('.club-competition-metrics dt'),
+        statusValue:look('.club-competition-metrics dd'),
+        nextLabel:look('.club-competition-next>.club-competition-label'),
+        nextValue:look('.club-competition-next-content>*'),
+        round:row.querySelector('.club-competition-next small')?look('.club-competition-next small'):null
+       };
+      };
+      return {single:rows.slice(0,2).map(list=>styles(list.firstElementChild)),
+       multi:[...rows[2].children].map(styles)};
+     }finally{probe.remove()}
+    });
+    for(let i=0;i<2;i++)for(const field of ['statusLabel','statusValue','nextLabel','nextValue','round']){
+     const a=summaryParity.single[i][field],b=summaryParity.multi[i][field];
+     if(a===null){assert.equal(b,null,'Round hidden in both layouts');continue}
+     for(const key of ['size','line','weight'])assert.equal(b[key],a[key],
+      'Status/Next match '+field+'.'+key+' must match singleton at '+width+'px, membership '+(i+1));
+    }
+    assert.equal(summaryParity.multi[0].statusValue.size,width<=760?19:24,
+     'Status uses singleton large desktop/mobile value');
+    assert.equal(summaryParity.multi[0].nextValue.size,width<=760?13:14,
+     'Next match uses singleton desktop/mobile fixture size');
+
+    assert.ok(comp.roundBar.top>comp.fixtureBar.top,'fixture round remains on the final secondary line');
+    if(comp.availableWidth>800)assert.ok(comp.status.left>=comp.identity.right-2&&comp.next.left>=comp.status.right-2,
+     'with space, status and next match stay grouped to the right');
+    else assert.ok(comp.summary.top>=comp.identity.bottom-2&&comp.next.left>=comp.status.right-2,
+     'in narrow panels, summary moves below identity but status and next remain side by side');
+    assert.ok(comp.row.right<=width+1,'competition placeholder causes no viewport overflow');
+    const mid=r=>(r.top+r.bottom)/2;
+    assert.ok(Math.abs(mid(comp.status)-mid(comp.next))<1.5,
+     'Status and Next match share the same vertical center at first paint');
+    assert.ok(Math.abs(mid(comp.status)-mid(comp.summary))<1.5,
+     'Status remains centered within the summary');
+    if(comp.availableWidth>800){
+     assert.ok(Math.abs(mid(comp.identity)-mid(comp.summary))<1.5,
+      'wide competition row centers crest/name, Status and Next match together');
+    }else{
+     assert.ok(comp.summary.top>=comp.identity.bottom-1.5,
+      'compact competition row centers the summary beneath the identity');
+    }
+
+    // Same row, two states: the parser-time skeleton and a verified membership
+    // with long team names. Measure both before releasing the held manifest.
+    const parity=await page.evaluate(()=>{
+     const row=document.querySelector('.club-fp-competition .club-competition-entry'),initial=row.innerHTML;
+     const list=row.closest('.club-competition-list'),initialListClass=list.className;
+     const statusLabel=row.querySelector('.club-competition-metrics dt').textContent;
+     const nextLabel=row.querySelector('.club-competition-next>.club-competition-label').textContent;
+     const box=sel=>{const r=row.querySelector(sel).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};
+     const before={identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
+      status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label')};
+     const states=[];
+     try{
+      // Hydration replaces the anonymous skeleton list with a verified list.
+      // Remove the skeleton class before injecting fixture data, otherwise
+      // its 59px reserved placeholder height falsely offsets empty match text.
+      list.classList.remove('club-fp-competition');
+      // Verify the center of *visible* text, including the empty fixture state:
+      // a reserved min-height used to make that text appear too high.
+      for(const value of ['Group Stage','Gruppenphase','Fase de grupos','Phase de groupes','Quarts de finale','No upcoming match']){
+       const empty=value==='No upcoming match';
+       const fixture='Metropolitan Northumberland Athletic & Southwark International Football Club – Greater Westchester Borough Association & Port of South River United';
+       const nextInfo=empty?'<span class="club-competition-next-empty">No upcoming match</span>':
+        '<a class="app-link"><span class="club-competition-match-name">'+fixture+'</span></a><small>Matchday 5</small>';
+       row.innerHTML='<div class="club-competition-identity"><span class="club-competition-logo"></span><div class="club-competition-copy"><strong class="club-competition-name"><a class="app-link">Sovereign Cup</a></strong><span class="club-competition-tier">International</span></div></div>'+
+        '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+statusLabel+'</dt><dd data-club-position>'+(empty?'4th':value)+'</dd></div></dl>'+
+        '<div class="club-competition-next"><span class="club-competition-label">'+nextLabel+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div>';
+       const dd=row.querySelector('.club-competition-metrics dd'),match=row.querySelector('.club-competition-match-name');
+       const panel=row.closest('.club-competition').getBoundingClientRect(),summary=row.querySelector('.club-competition-summary').getBoundingClientRect();
+       const label=row.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect();
+       const nextContent=row.querySelector('.club-competition-next-content');
+       const lastChild=nextContent.lastElementChild.getBoundingClientRect();
+       const minHeight=getComputedStyle(nextContent).minHeight;
+       const matchRect=match?.getBoundingClientRect();
+       states.push({value,identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
+        status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label'),
+        statusBlock:box('.club-competition-metrics'),nextBlock:box('.club-competition-next'),
+        summary:box('.club-competition-summary'),visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
+        single:dd.scrollHeight<=parseFloat(getComputedStyle(dd).lineHeight)+1&&dd.scrollWidth<=dd.clientWidth+1,
+        statusVisible:dd.scrollHeight<=dd.clientHeight+1&&dd.scrollWidth<=dd.clientWidth+1,
+        visible:empty||match.scrollHeight<=match.clientHeight+1&&match.scrollWidth<=match.clientWidth+1,
+        contained:summary.right<=panel.right+1&&(empty||matchRect.right<=panel.right+1),
+        lineCount:empty?0:matchRect.height/parseFloat(getComputedStyle(match).lineHeight)});
+      }
+     }finally{row.innerHTML=initial;list.className=initialListClass}
+     return {before,states};
+    });
+    for(const state of parity.states){
+     for(const key of ['identity','logo','status','next'])
+      assert.ok(Math.abs(state[key].x-parity.before[key].x)<1.5,
+       'First paint '+key+' horizontal slot moved at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
+     const centered=rect=>rect.y+rect.height/2;
+     assert.ok(Math.abs(centered(state.statusBlock)-centered(state.nextBlock))<1.5,
+      'Status and longer Next match are vertically centered on the same row at '+width+'px');
+     assert.ok(Math.abs(centered(state.statusBlock)-centered(state.summary))<1.5,
+      'Status remains centered within the grown row summary at '+width+'px');
+     assert.equal(state.minHeight,'0px','Hydrated Next match is not a skeleton at '+width+'px for '+state.value);
+     assert.ok(Math.abs(state.visibleCenter-centered(state.statusBlock))<1.5,
+      'visible Next match text (not its empty reserved box) is vertically centered with Status at '+width+'px for '+state.value);
+     if(comp.availableWidth>800)assert.ok(Math.abs(centered(state.identity)-centered(state.summary))<1.5,
+      'wide row centers the crest/name and both summary blocks together at '+width+'px');
+     assert.ok(state.visible&&state.contained,'Long fixture must wrap completely inside panel: '+JSON.stringify({width,...state}));
+     assert.ok(state.statusVisible,'Localized Status must be fully visible without clipping at '+width+'px: '+state.value);
+     if(comp.availableWidth>500&&state.value==='Group Stage')
+      assert.ok(state.single,'Group Stage must fit on one line where the panel has space at '+width+'px');
+    }
+    assert.ok(parity.states[0].lineCount>=2,'long fixture names wrap rather than truncate');
+
+
     for(const field of ['nameLabel','city','country'])assert.equal(initial.values.find(x=>x.key===field)?.text,'','field remains empty before catalog: '+field);
    }
    const asset=manifest.clubCrests[country.toUpperCase()+'-'+id];
