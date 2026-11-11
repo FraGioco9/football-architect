@@ -90,7 +90,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
    }
   }
   // Read-only Admin uses the same world contract without granting any write capability.
-  admin=true;await page.goto(origin+'/admin',{waitUntil:'networkidle'});
+  admin=true;await page.goto(origin+'/admin/calendar',{waitUntil:'networkidle'});
   await page.waitForFunction(()=>document.querySelector('[data-admin-world]')?.textContent.includes('20'));
   assert.equal(await page.locator('[data-admin-prepare]').isEnabled(),false);checks++;
   apiWorld={...world,generation:'12345678-1234-4123-8123-123456789abc',revision:0,seasonNumber:0,day:0,phase:'unstarted'};

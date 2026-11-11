@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script data-nav01-fragment-state>history.scrollRestoration=location.hash?"manual":"auto";if(location.hash)document.documentElement.dataset.nav01Fragment="pending";</script>
+  <style data-nav01-fragment-visibility>html[data-nav01-fragment="pending"] .fa-shell-content-scroll{visibility:hidden}</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101A1D">
+  <meta name="description" content="Football Architect — career workspace shell.">
+  <title>Admin — Players — Football Architect</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="/assets/landing.css">
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/landing.js" defer></script>
+  <script src="/assets/app.js" defer></script>
+  <script src="/assets/app-search.js" defer></script>
+  <meta name="robots" content="noindex,nofollow">
+  <script src="/assets/routes-registry.js" defer></script>
+  <link rel="stylesheet" href="/assets/admin-settings.css">
+  <script src="/assets/admin-players.js" defer></script>
+  <link rel="stylesheet" href="/assets/sidebar-evolution.css">
+  <script src="/assets/sidebar-evolution.js" defer></script>
+  <script src="/assets/profile-navigation.js" defer></script>
+</head>
+<body class="app-body">
+  <div class="fa-career-shell">
+    <aside class="fa-shell-sidebar" aria-label="Career navigation" data-app-aria="sidebarLabel">
+      <div class="fa-shell-sidebar-head">
+        <a class="app-brand" href="/" aria-label="Football Architect home" data-app-aria="brandHome">
+          <img src="/assets/brand/symbol-dark.svg" class="app-brand-symbol" width="512" height="512" alt="">
+          <span class="app-brand-copy">FOOTBALL <b>ARCHITECT</b><small>MANAGER</small></span>
+        </a>
+      </div>
+      <nav class="fa-shell-nav" data-nav01-static aria-label="Career pages" data-app-aria="pagesLabel">
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-home-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-home-title" data-app-i18n="navHome">Home</h2>
+          <div class="fa-shell-nav-group-items">
+            <a class="fa-shell-link" id="app-nav-dashboard" href="/dashboard" data-app-view="dashboard" aria-label="Dashboard" data-app-aria="dashboard">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span data-app-i18n="dashboard">Dashboard</span>
+            </a>
+            <a class="fa-shell-link" id="app-nav-calendar" href="/calendar" data-app-view="calendar" aria-label="Calendar" data-app-aria="calendar">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span data-app-i18n="calendar">Calendar</span>
+            </a>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group" aria-labelledby="app-nav-world-title">
+          <h2 class="fa-shell-nav-group-title" id="app-nav-world-title" data-nav01="0">World</h2>
+          <div class="fa-shell-nav-group-items">
+            <div class="nav01-row"><a class="fa-shell-link is-active" id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page" aria-label="Competitions">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 14v4M8 21h8M9 18h6v3H9Z"/></svg>
+              <span data-nav01="6">Competitions</span>
+            </a><button type="button" class="nav01-expand" aria-expanded="false" aria-controls="nav01-children" aria-label="Expand world navigation"><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="nav01-children" id="nav01-children" hidden><a href="/competitions#domestic"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v11H3zM9 21v-7h6v7"/></svg><span data-nav01="1">Domestic</span></a><a href="/competitions#international"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg><span data-nav01="2">International</span></a></div>
+          </div>
+        </section>
+        <section class="fa-shell-nav-group" aria-labelledby="nav01-world-title"><h2 class="fa-shell-nav-group-title" id="nav01-world-title" data-nav01="3">Explore</h2><div class="fa-shell-nav-group-items"><a class="fa-shell-link" href="/clubs" data-nav01-clubs><svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><path d="m12 2 8 4v6c0 5-3 8-8 10-5-2-8-5-8-10V6z"/></svg><span data-nav01="4">Clubs</span></a></div></section><section class="fa-shell-nav-group fa-shell-nav-secondary">
+          <div class="fa-shell-nav-group-items"><a class="fa-shell-link" href="/guide" data-nav01-guide><svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><path d="M12 6Q7 3 3 5v14q5-2 9 1 4-3 9-1V5q-5-2-9 1Zm0 0v14"/></svg><span data-nav01="5">Guide</span></a>
+            <a class="fa-shell-link" id="app-nav-settings" href="/settings" data-app-view="settings" aria-label="Settings" data-app-aria="settings">
+              <svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.96 4.37 L10.44 2.12 L13.56 2.12 L14.04 4.37 L15.95 5.16 L17.88 3.91 L20.09 6.12 L18.84 8.05 L19.63 9.96 L21.88 10.44 L21.88 13.56 L19.63 14.04 L18.84 15.95 L20.09 17.88 L17.88 20.09 L15.95 18.84 L14.04 19.63 L13.56 21.88 L10.44 21.88 L9.96 19.63 L8.05 18.84 L6.12 20.09 L3.91 17.88 L5.16 15.95 L4.37 14.04 L2.12 13.56 L2.12 10.44 L4.37 9.96 L5.16 8.05 L3.91 6.12 L6.12 3.91 L8.05 5.16 Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+              <span data-app-i18n="settings">Settings</span>
+            </a>
+            <a class="fa-shell-link" id="app-nav-profile" href="/account" data-app-profile><svg class="fa-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span data-nav01-profile>Profile</span></a>
+          </div>
+        </section>
+      </nav>
+      <script data-nav01-bootstrap>/* NAV-01: initialize static navigation before first paint; no career writes. */
+(()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
+if(nav.dataset.nav01Bound==='true'){for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));window.faSidebarPaint?.();return;}
+const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni']};
+const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],de:['Start','Dashboard','Kalender','Einstellungen','Karriereseiten'],es:['Inicio','Panel','Calendario','Ajustes','Páginas de carrera'],fr:['Accueil','Tableau de bord','Calendrier','Paramètres','Pages de carrière'],it:['Inizio','Dashboard','Calendario','Impostazioni','Pagine della carriera']};
+const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
+const collapseLabels={en:'Collapse world navigation',de:'Weltnavigation zuklappen',es:'Contraer navegación del mundo',fr:'Réduire la navigation du monde',it:'Comprimi navigazione del mondo'};
+const button=nav.querySelector('.nav01-expand'),submenu=nav.querySelector('#nav01-children');
+try{const saved=window.faAccountUI?.language||localStorage.getItem('football-architect:language');if(Object.hasOwn(lang,saved))document.documentElement.lang=saved;}catch{}
+function paint(){
+ const locale=Object.hasOwn(lang,document.documentElement.lang)?document.documentElement.lang:'en';
+ nav.querySelectorAll('[data-nav01]').forEach(el=>el.textContent=lang[locale][+el.dataset.nav01]);
+ document.querySelectorAll('[data-nav01-section]').forEach(el=>el.textContent=lang[locale][+el.dataset.nav01Section]);
+ const pending={en:'International competition pages are being prepared.',de:'Die Seiten der internationalen Wettbewerbe werden vorbereitet.',es:'Las páginas de las competiciones internacionales están en preparación.',fr:'Les pages des compétitions internationales sont en préparation.',it:'Le pagine delle competizioni internazionali sono in preparazione.'};
+ document.querySelectorAll('[data-nav01-pending]').forEach(el=>el.textContent=pending[locale]);
+ const labels=baseLabels[locale];
+ const profileLabels={en:'Profile',de:'Profil',es:'Perfil',fr:'Profil',it:'Profilo'};
+ nav.querySelectorAll('[data-nav01-profile]').forEach(el=>el.textContent=profileLabels[locale]);
+ nav.querySelector('#app-nav-profile')?.setAttribute('aria-label',profileLabels[locale]);
+ ['navHome','dashboard','calendar','settings'].forEach((key,i)=>nav.querySelectorAll('[data-app-i18n="'+key+'"]').forEach(el=>el.textContent=labels[i]));
+ ['dashboard','calendar','settings'].forEach((key,i)=>nav.querySelector('[data-app-aria="'+key+'"]')?.setAttribute('aria-label',labels[i+1]));
+ nav.setAttribute('aria-label',labels[4]);nav.querySelector('#app-nav-divisions').setAttribute('aria-label',lang[locale][6]);
+ button.setAttribute('aria-label',(button.getAttribute('aria-expanded')==='true'?collapseLabels:expandLabels)[locale]);
+}
+const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
+const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
+const onClubs=path==='/clubs'||path.startsWith('/clubs/');
+const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':path.startsWith('/admin')?'admin':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
+for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
+let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
+function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
+button.addEventListener('click',()=>expand(button.getAttribute('aria-expanded')!=='true'));
+button.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(button.getAttribute('aria-expanded')!=='true');}});
+expand(opened);
+const brand=document.querySelector('.fa-shell-sidebar .app-brand-symbol');if(brand){const source=brand.getAttribute('src');if(source)brand.setAttribute('src',source.replace(/-(?:dark|light)\.svg$/,'-'+(document.documentElement.dataset.theme==='light'?'light':'dark')+'.svg'));}
+// Fragment targets live in the central scroll pane, not in the document viewport.
+let fragmentFrame=0;
+function alignFragment(){
+ let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}if(!id)return;
+ const pane=document.querySelector('.fa-shell-content-scroll'),target=document.getElementById(id);
+ if(!pane||!target||!pane.contains(target))return;
+ const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;
+ pane.scrollTo({top:pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding,behavior:'instant'});
+}
+function syncFragment(){cancelAnimationFrame(fragmentFrame);fragmentFrame=requestAnimationFrame(alignFragment);}
+window.faSidebarAlignFragment=alignFragment;
+window.addEventListener('hashchange',syncFragment);
+window.addEventListener('load',syncFragment,{once:true});window.addEventListener('pageshow',syncFragment);
+document.addEventListener('DOMContentLoaded',syncFragment,{once:true});
+nav.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;const url=new URL(link.href,location.href);if(url.pathname===location.pathname&&url.hash)syncFragment();});
+window.faSidebarPaint=paint;nav.dataset.nav01Bound='true';
+new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});paint();
+})();</script>
+    </aside>
+    <div class="fa-shell-workspace">
+      <header class="fa-shell-topbar">
+        <div class="fa-shell-club">
+          <span class="app-crest" aria-hidden="true">—</span>
+          <strong data-app-i18n="noClub">No club selected</strong>
+        </div>
+        <div class="fa-shell-search">
+          <button id="app-search-trigger" class="app-search-trigger" type="button" aria-label="Search the app" aria-haspopup="dialog" aria-controls="app-search-dialog">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+            <span aria-hidden="true">Search the app</span>
+          </button>
+        </div>
+        <div class="fa-shell-time" aria-label="Career date and phase" data-app-aria="timeLabel">
+          <svg class="fa-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>
+          <span class="fa-shell-date-full" data-app-i18n="noSeason">No active season</span>
+          <span class="fa-shell-date-short" aria-hidden="true">—</span>
+        </div>
+                <div class="fa-shell-primary">
+          <button class="app-continue" type="button" disabled aria-label="Continue unavailable: no active career" data-app-aria="continueDisabled">
+            <svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+            <span data-app-i18n="continue">Continue</span>
+          </button>
+        </div>
+      </header>
+      <div class="fa-shell-content-scroll">
+      <main class="app-main" id="main-content" tabindex="-1">
+<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>
+          <h1 id="admin-title" class="app-page-title">Players</h1>
+          <a class="admin-back" href="/admin" data-admin-back>Admin</a>
+          <section class="app-panel app-settings-panel admin-settings admin-players" data-admin-players aria-labelledby="admin-players-heading" hidden>
+ <h2 id="admin-players-heading" data-admin-players-label="title">Player generation</h2>
+ <div class="app-settings-panel-content">
+ <p data-admin-players-label="intro">Configure a local generator trial. No players are saved to the world or database.</p>
+ <form data-admin-players-form novalidate>
+ <fieldset class="admin-players-group" data-players-group="base"><legend data-admin-players-label="group.base">Batch</legend><div class="admin-players-fields"><label><span data-admin-players-label="count">Number of players (1–1000)</span><input data-players-option="count" type="text" placeholder="" value="100" inputmode="numeric"></label><label><span data-admin-players-label="seed">Seed</span><input data-players-option="seed" type="text" placeholder="" value="fa-official-trial-01" maxlength="64"></label><label><span data-admin-players-label="primarySuitability">Primary suitability (1–90)</span><input data-players-option="primarySuitability" type="text" placeholder="auto / 75 / 65:80" value="auto"></label></div></fieldset>
+<fieldset class="admin-players-group" data-players-group="nationalities"><legend data-admin-players-label="group.nationalities">Nationalities and names</legend><div class="admin-players-fields"><label><span data-admin-players-label="primaryNationality">Primary nationality</span><select data-players-option="primaryNationality"><option value="">Automatic</option><option value="ESP">ESP — Spain</option><option value="ARG">ARG — Argentina</option><option value="FRA">FRA — France</option><option value="ENG">ENG — England</option><option value="POR">POR — Portugal</option><option value="BRA">BRA — Brazil</option><option value="MAR">MAR — Morocco</option><option value="BEL">BEL — Belgium</option><option value="NED">NED — Netherlands</option><option value="MEX">MEX — Mexico</option><option value="COL">COL — Colombia</option><option value="SUI">SUI — Switzerland</option><option value="GER">GER — Germany</option><option value="CRO">CRO — Croatia</option><option value="ITA">ITA — Italy</option><option value="USA">USA — United States</option><option value="JPN">JPN — Japan</option><option value="SEN">SEN — Senegal</option><option value="NOR">NOR — Norway</option><option value="URU">URU — Uruguay</option><option value="DEN">DEN — Denmark</option><option value="AUT">AUT — Austria</option><option value="IRN">IRN — Iran</option><option value="ECU">ECU — Ecuador</option><option value="EGY">EGY — Egypt</option><option value="AUS">AUS — Australia</option><option value="CAN">CAN — Canada</option><option value="ALG">ALG — Algeria</option><option value="CIV">CIV — Côte d'Ivoire</option><option value="NGA">NGA — Nigeria</option><option value="TUR">TUR — Türkiye</option><option value="KOR">KOR — South Korea</option><option value="PAR">PAR — Paraguay</option><option value="SWE">SWE — Sweden</option><option value="RUS">RUS — Russia</option><option value="UKR">UKR — Ukraine</option><option value="POL">POL — Poland</option><option value="HUN">HUN — Hungary</option><option value="WAL">WAL — Wales</option><option value="COD">COD — DR Congo</option><option value="GRE">GRE — Greece</option><option value="CMR">CMR — Cameroon</option><option value="SCO">SCO — Scotland</option><option value="SRB">SRB — Serbia</option><option value="SVK">SVK — Slovakia</option><option value="PAN">PAN — Panama</option><option value="MLI">MLI — Mali</option><option value="RSA">RSA — South Africa</option><option value="VEN">VEN — Venezuela</option><option value="CHI">CHI — Chile</option></select></label><label><span data-admin-players-label="secondaryMode">Second nationality</span><select data-players-option="secondaryMode"><option value="automatic">Automatic</option><option value="none">None</option><option value="exact">Exact</option><option value="allowed">Allowed countries</option></select></label><label><span data-admin-players-label="secondaryCountry">Exact second nationality</span><select data-players-option="secondaryCountry"><option value="">Choose</option><option value="ESP">ESP — Spain</option><option value="ARG">ARG — Argentina</option><option value="FRA">FRA — France</option><option value="ENG">ENG — England</option><option value="POR">POR — Portugal</option><option value="BRA">BRA — Brazil</option><option value="MAR">MAR — Morocco</option><option value="BEL">BEL — Belgium</option><option value="NED">NED — Netherlands</option><option value="MEX">MEX — Mexico</option><option value="COL">COL — Colombia</option><option value="SUI">SUI — Switzerland</option><option value="GER">GER — Germany</option><option value="CRO">CRO — Croatia</option><option value="ITA">ITA — Italy</option><option value="USA">USA — United States</option><option value="JPN">JPN — Japan</option><option value="SEN">SEN — Senegal</option><option value="NOR">NOR — Norway</option><option value="URU">URU — Uruguay</option><option value="DEN">DEN — Denmark</option><option value="AUT">AUT — Austria</option><option value="IRN">IRN — Iran</option><option value="ECU">ECU — Ecuador</option><option value="EGY">EGY — Egypt</option><option value="AUS">AUS — Australia</option><option value="CAN">CAN — Canada</option><option value="ALG">ALG — Algeria</option><option value="CIV">CIV — Côte d'Ivoire</option><option value="NGA">NGA — Nigeria</option><option value="TUR">TUR — Türkiye</option><option value="KOR">KOR — South Korea</option><option value="PAR">PAR — Paraguay</option><option value="SWE">SWE — Sweden</option><option value="RUS">RUS — Russia</option><option value="UKR">UKR — Ukraine</option><option value="POL">POL — Poland</option><option value="HUN">HUN — Hungary</option><option value="WAL">WAL — Wales</option><option value="COD">COD — DR Congo</option><option value="GRE">GRE — Greece</option><option value="CMR">CMR — Cameroon</option><option value="SCO">SCO — Scotland</option><option value="SRB">SRB — Serbia</option><option value="SVK">SVK — Slovakia</option><option value="PAN">PAN — Panama</option><option value="MLI">MLI — Mali</option><option value="RSA">RSA — South Africa</option><option value="VEN">VEN — Venezuela</option><option value="CHI">CHI — Chile</option></select></label><label><span data-admin-players-label="secondaryAllowed">Allowed second nationalities</span><input data-players-option="secondaryAllowed" type="text" placeholder="ITA,ENG" ></label><label><span data-admin-players-label="firstName">First name override</span><input data-players-option="firstName" type="text" placeholder="Automatic" ></label><label><span data-admin-players-label="lastName">Last name override</span><input data-players-option="lastName" type="text" placeholder="Automatic" ></label></div></fieldset>
+<fieldset class="admin-players-group" data-players-group="positions"><legend data-admin-players-label="group.positions">Positions</legend><div class="admin-players-fields"><label><span data-admin-players-label="primaryPosition">Primary position</span><select data-players-option="primaryPosition"><option value="">Automatic</option><option value="GK">GK</option><option value="RB">RB</option><option value="CB">CB</option><option value="LB">LB</option><option value="RWB">RWB</option><option value="LWB">LWB</option><option value="DM">DM</option><option value="CM">CM</option><option value="AM">AM</option><option value="RM">RM</option><option value="LM">LM</option><option value="RW">RW</option><option value="LW">LW</option><option value="ST">ST</option></select></label><label><span data-admin-players-label="allowedPositions">Allowed primary positions</span><input data-players-option="allowedPositions" type="text" placeholder="GK,CB,CM,ST" ></label><label><span data-admin-players-label="preferredFoot">Preferred foot</span><select data-players-option="preferredFoot"><option value="">Automatic</option><option value="right">Right</option><option value="left">Left</option></select></label><label><span data-admin-players-label="secondaryCount">Secondary positions count</span><select data-players-option="secondaryCount"><option value="">Automatic</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label><label><span data-admin-players-label="secondaryPositions">Exact secondary positions</span><input data-players-option="secondaryPositions" type="text" placeholder="RB,RM" ></label><label><span data-admin-players-label="allowedSecondaries">Allowed secondary positions</span><input data-players-option="allowedSecondaries" type="text" placeholder="RB,RM,LW" ></label></div></fieldset>
+<fieldset class="admin-players-group" data-players-group="physical"><legend data-admin-players-label="group.physical">Age and physical</legend><div class="admin-players-fields"><label><span data-admin-players-label="age">Initial age (16–19)</span><input data-players-option="age" type="text" placeholder="auto / 18 / 17:19" ></label><label><span data-admin-players-label="height">Height in cm (160–205)</span><input data-players-option="height" type="text" placeholder="auto / 180 / 175:190" ></label><label><span data-admin-players-label="developmentAptitude">Development aptitude (1–99)</span><input data-players-option="developmentAptitude" type="text" placeholder="auto / 50 / 40:65" ></label></div></fieldset>
+<fieldset class="admin-players-group" data-players-group="attributes"><legend data-admin-players-label="group.attributes">Attribute overrides</legend><div class="admin-players-fields is-attributes"><label><span data-admin-players-label="attribute.speed">Speed</span><input data-players-option="attribute.speed" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.strength">Strength</span><input data-players-option="attribute.strength" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.stamina">Stamina</span><input data-players-option="attribute.stamina" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.agility">Agility</span><input data-players-option="attribute.agility" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.passing">Passing</span><input data-players-option="attribute.passing" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.technique">Technique</span><input data-players-option="attribute.technique" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.dribbling">Dribbling</span><input data-players-option="attribute.dribbling" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.shooting">Shooting</span><input data-players-option="attribute.shooting" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.crossing">Crossing</span><input data-players-option="attribute.crossing" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.tackling">Tackling</span><input data-players-option="attribute.tackling" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.marking">Marking</span><input data-players-option="attribute.marking" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.heading">Heading</span><input data-players-option="attribute.heading" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.vision">Vision</span><input data-players-option="attribute.vision" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.positioning">Positioning</span><input data-players-option="attribute.positioning" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.decisions">Decisions</span><input data-players-option="attribute.decisions" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.composure">Composure</span><input data-players-option="attribute.composure" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.gk_reflexes">Gk Reflexes</span><input data-players-option="attribute.gk_reflexes" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.gk_handling">Gk Handling</span><input data-players-option="attribute.gk_handling" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.gk_positioning">Gk Positioning</span><input data-players-option="attribute.gk_positioning" type="text" placeholder="Auto / 50 / 40:65" ></label>
+<label><span data-admin-players-label="attribute.gk_aerial">Gk Aerial</span><input data-players-option="attribute.gk_aerial" type="text" placeholder="Auto / 50 / 40:65" ></label></div></fieldset>
+ <div class="admin-players-actions">
+ <button type="button" data-admin-players-copy disabled data-admin-players-label="copy">Copy PowerShell command</button>
+ </div>
+ <p data-admin-players-feedback role="status" aria-live="polite"></p>
+ <pre class="admin-players-command"><code data-admin-players-command></code></pre>
+ </form>
+ </div>
+</section>
+        </section>
+      </main>
+      <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
+      </div>
+    </div>
+  </div>
+  <dialog id="app-search-dialog" class="app-search-dialog" aria-labelledby="app-search-heading" aria-describedby="app-search-scope">
+    <section class="app-search-panel">
+      <h2 id="app-search-heading" class="sr-only">Search the app</h2>
+      <div class="app-search-input-row">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4.2 4.2"/></svg>
+        <input id="app-search-input" type="search" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search the app" placeholder="Find a page or setting…">
+        <button id="app-search-close" class="app-search-close" type="button" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <p id="app-search-scope" class="sr-only">Search available app pages and sections only.</p>
+      <p id="app-search-status" class="app-search-status" role="status" aria-live="polite"></p>
+      <ul id="app-search-results" class="app-search-results" aria-label="Search the app"></ul>
+      <p id="app-search-empty" class="app-search-empty" hidden>No matching pages or sections.</p>
+    </section>
+  </dialog>
+
+<script data-nav01-fragment-align>window.faSidebarPaint?.();window.faSidebarAlignFragment?.();delete document.documentElement.dataset.nav01Fragment;</script>
+</body>
+</html>

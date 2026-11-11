@@ -20,8 +20,7 @@
   <meta name="robots" content="noindex,nofollow">
   <script src="/assets/routes-registry.js" defer></script>
   <link rel="stylesheet" href="/assets/admin-settings.css">
-  <script src="/assets/world-calendar-model.js" defer></script>
-  <script src="/assets/admin-settings.js" defer></script>
+  <script src="/assets/admin-players.js" defer></script>
   <link rel="stylesheet" href="/assets/sidebar-evolution.css">
   <script src="/assets/sidebar-evolution.js" defer></script>
   <script src="/assets/profile-navigation.js" defer></script>
@@ -95,7 +94,7 @@ function paint(){
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');
-const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':path==='/admin'?'admin':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
+const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':path.startsWith('/admin')?'admin':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
 function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
@@ -150,63 +149,8 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
       <main class="app-main" id="main-content" tabindex="-1">
 <section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>
           <h1 id="admin-title" class="app-page-title">Admin</h1>
-          <section class="app-panel app-settings-panel admin-settings" data-admin-settings aria-labelledby="admin-heading">
- <h2 id="admin-heading" data-admin-copy="title">Calendar</h2>
- <div class="app-settings-panel-content">
- <p data-admin-status role="status" aria-live="polite">Checking access…</p>
- <p data-admin-no-permission hidden></p>
- <p data-admin-signin-link><a href="/account/login" data-admin-copy="accountSignIn">Sign in with your Football Architect account</a></p>
- <div data-admin-signed-in hidden>
- <div class="admin-summary"><p data-admin-world></p><div class="admin-summary-actions"><button type="button" data-admin-refresh data-admin-copy="refresh">Refresh</button><span data-admin-working role="status" aria-live="polite" hidden></span></div></div>
- <button type="button" data-admin-prepare data-admin-copy="prepare">Prepare season</button>
- <p data-admin-next-event role="status" aria-live="polite"></p>
- <p data-admin-next-day role="status" aria-live="polite" hidden></p>
- <div data-admin-operations role="group" aria-labelledby="admin-heading">
- <button type="button" data-admin-command="nextPrepare" data-admin-copy="cmdnextPrepare" disabled>Prepare Season 2</button>
- <button type="button" data-admin-command="initialize" data-admin-copy="cmdinitialize" disabled>Initialize events</button>
- <button type="button" data-admin-command="confirm" data-admin-copy="cmdconfirm" disabled>Confirm entrants</button>
- <button type="button" data-admin-command="domestic" data-admin-copy="cmddomestic" disabled>Generate domestic calendar</button>
- <button type="button" data-admin-command="draw" data-admin-copy="cmddraw" disabled>Draw international cups</button>
- <button type="button" data-admin-command="publish" data-admin-copy="cmdpublish" disabled>Publish international calendar</button>
- <button type="button" data-admin-command="start" data-admin-copy="cmdstart" disabled>Start season</button>
- <button type="button" data-admin-command="advance" data-admin-copy="cmdadvance" disabled>Advance day</button>
- <button type="button" data-admin-command="archive" data-admin-copy="cmdarchive" disabled>Archive season</button>
- <button type="button" data-admin-command="close" data-admin-copy="cmdclose" disabled>Close season</button>
- <button type="button" data-admin-command="eventStart" data-admin-copy="cmdeventStart" disabled>Start event calendar</button>
- <button type="button" data-admin-command="eventAdvance" data-admin-copy="cmdeventAdvance" disabled>Advance event calendar</button>
- </div>
- <section data-admin-next-season aria-labelledby="admin-next-season-heading" hidden>
- <h3 id="admin-next-season-heading" data-admin-copy="nextHeading">Season 2 — qualification review</h3>
- <p data-admin-next-season-summary role="status" aria-live="polite"></p>
- <ul data-admin-next-season-holders></ul>
- <label for="admin-next-season-confirm" data-admin-copy="approvalPrompt">Type APPROVE SEASON 2 to confirm the exact membership snapshot</label>
- <input id="admin-next-season-confirm" data-admin-next-season-confirm type="text" autocomplete="off" spellcheck="false">
- <button type="button" data-admin-next-season-approve data-admin-copy="approvalButton" disabled>Approve Season 2 participants</button>
- </section>
- <section data-admin-reset-section aria-labelledby="admin-reset-heading" hidden>
- <h3 id="admin-reset-heading" data-admin-copy="resetTitle">Reset world to Season 0</h3>
- <p data-admin-copy="resetSummary">Permanently deletes all season calendars, draws, match results, statistics, playoff records, administrative events and history. Club catalogues, rules and administrator access remain.</p>
- <label for="admin-reset-confirm" data-admin-copy="resetPrompt">Type RESET SEASON 0 to confirm</label>
- <input id="admin-reset-confirm" data-admin-reset-confirm type="text" autocomplete="off" spellcheck="false" maxlength="14" aria-describedby="admin-reset-heading">
- <button type="button" data-admin-reset data-admin-copy="resetButton" disabled>Delete all seasons</button>
- </section>
- </div>
-
- </div></section>
-          <section class="app-panel app-settings-panel admin-settings admin-players" data-admin-players aria-labelledby="admin-players-heading" hidden>
- <h2 id="admin-players-heading" data-admin-player-copy="title">Players</h2>
- <div class="app-settings-panel-content">
- <p id="admin-players-description" data-admin-player-copy="intro">Prepare a local trial with the existing player generator. This does not save players to the world or database.</p>
- <div class="admin-players-fields">
- <label for="admin-players-count"><span data-admin-player-copy="count">Number of players (1–1000)</span><input id="admin-players-count" data-admin-players-count data-admin-player-param type="number" min="1" max="1000" step="1" value="100" inputmode="numeric"></label>
- <label for="admin-players-seed"><span data-admin-player-copy="seed">Seed</span><input id="admin-players-seed" data-admin-players-seed data-admin-player-param type="text" maxlength="64" value="fa-official-trial-01" spellcheck="false" autocomplete="off"></label>
- <label for="admin-players-suitability"><span data-admin-player-copy="suitability">Primary position suitability</span><select id="admin-players-suitability" data-admin-players-suitability data-admin-player-param><option value="auto" data-admin-player-copy="auto">Automatic</option><option value="75" data-admin-player-copy="fixed">Fixed (75)</option><option value="65:80" data-admin-player-copy="range">Range (65–80)</option></select></label>
- </div>
- <button type="button" data-admin-players-copy data-admin-player-copy="copy" disabled>Copy generation command</button>
- <p data-admin-players-feedback role="status" aria-live="polite"></p>
- <pre class="admin-players-command"><code data-admin-players-command></code></pre>
- </div>
-</section>
+          
+          <div class="admin-directory" data-admin-directory><a class="admin-directory-card" href="/admin/calendar" data-admin-card="calendar"><strong data-admin-directory-copy="calendar">Calendar</strong><span data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</span></a><a class="admin-directory-card" href="/admin/players" data-admin-card="players"><strong data-admin-directory-copy="players">Players</strong><span data-admin-directory-copy="playersDescription">Configure player generation</span></a></div>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>

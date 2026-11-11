@@ -21,6 +21,8 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   await admin.locator('#account-login input[name="password"]').fill(password);
   await admin.locator('#account-login button[type="submit"]').click();
   await admin.waitForURL(url=>url.pathname==='/admin');
+  await admin.locator('[data-admin-card="calendar"]').click();
+  await admin.waitForURL(url=>url.pathname==='/admin/calendar');
   const cookies=await operator.cookies(origin);
   assert.ok(cookies.some(cookie=>cookie.name==='fa_player_local'&&cookie.httpOnly));
   assert.ok(!cookies.some(cookie=>cookie.name.includes('fa_admin')));

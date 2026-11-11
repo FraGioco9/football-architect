@@ -13,7 +13,7 @@ export async function verifyArea(page,area,{touch}){
   await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
   assert.equal(await page.locator('#main-content').innerText(),'');
   assert.equal(await page.locator('[data-admin-signin-link] a').isVisible(),false);
-  assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
+  assert.equal(await page.locator('[data-admin-reset]').count(),0);
   await activate(page.locator('#app-nav-profile'));await page.waitForURL(url=>url.pathname==='/account/login');
   assert.equal(new URL(page.url()).searchParams.has('next'),false);
   await page.goBack({waitUntil:'domcontentloaded'});
@@ -26,10 +26,15 @@ export async function verifyArea(page,area,{touch}){
   assert.equal(await page.locator('#calendar-season-menu [role=option]').count(),1);
   await activate(picker);
  }else if(area==='competitions'){
+  // DOM-first navigation can precede async competition route activation.
+  // Wait for the real interaction controller rather than a network-idle heuristic.
+  await page.waitForFunction(()=>typeof window.faCompetitionRoute?.set==='function');
   const tab=page.locator('#competition-tab-fixtures');
   await activate(tab);
+  await page.waitForFunction(()=>document.querySelector('#competition-tab-fixtures')?.getAttribute('aria-selected')==='true');
   assert.equal(await tab.getAttribute('aria-selected'),'true');
   await tab.focus();await page.keyboard.press('Home');
+  await page.waitForFunction(()=>document.querySelector('#competition-tab-standings')?.getAttribute('aria-selected')==='true');
   assert.equal(await page.locator('#competition-tab-standings').getAttribute('aria-selected'),'true');
  }else if(area==='clubs'){
   const tab=page.locator('.club-tabs a[href$="/history"]');

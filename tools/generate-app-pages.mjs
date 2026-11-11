@@ -261,14 +261,20 @@ for(const page of outputPages){
  if(page.name==="calendar")html=html.replace('  <script src="/assets/theme.js">','  <script data-calendar-bootstrap>'+calendarBootstrap+'</script>\n  <script src="/assets/theme.js">').replace('</head>','  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/world-clock-adapter.js" defer></script>\n  <script src="/assets/world-calendar.js" defer></script>\n  <script src="/assets/calendar-simplified.js" defer></script>\n  <style data-calendar-critical>html:has(#world-calendar) #world-calendar>.calendar-heading,html:has(#world-calendar) #world-calendar>.calendar-clock,html:has(#world-calendar) #world-calendar>.calendar-details,html:has(#world-calendar) #world-calendar>.calendar-selected,html:has(#world-calendar) #world-calendar>.calendar-note,html:has(#world-calendar) #world-calendar>.calendar-key{display:none!important}</style>\n</head>');
  writeOutput(page.path,html);
 }
-// Dedicated Admin route: no administration markup or scripts are loaded by Settings.
-{
- const content='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">Admin</h1>\n          '+renderAdminSettings()+'\n          '+renderAdminPlayers()+'\n        </section>\n';
- let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,start,end)=>start+content+end);
+// Admin directory and two dedicated subpages share the existing app shell.
+for(const [route,title,content,scripts] of [
+ ['admin','Admin','<div class="admin-directory" data-admin-directory><a class="admin-directory-card" href="/admin/calendar" data-admin-card="calendar"><strong data-admin-directory-copy="calendar">Calendar</strong><span data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</span></a><a class="admin-directory-card" href="/admin/players" data-admin-card="players"><strong data-admin-directory-copy="players">Players</strong><span data-admin-directory-copy="playersDescription">Configure player generation</span></a></div>',['/assets/admin-players.js']],
+ ['admin/calendar','Admin — Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-settings.js']],
+ ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-players.js']]
+]){
+ const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">'+(route==='admin'?'Admin':route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          '+(route==='admin'?'':('<a class="admin-back" href="/admin" data-admin-back>Admin</a>'))+'\n          '+content+'\n        </section>\n';
+ let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
- html=html.replace('<title>Competitions','<title>Admin').replace('</head>',
-  '  <meta name="robots" content="noindex,nofollow">\n  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n  <script src="/assets/world-calendar-model.js" defer></script>\n  <script src="/assets/admin-settings.js" defer></script>\n</head>');
- writeOutput('admin/index.html',html);
+ html=html.replace('<title>Competitions','<title>'+title);
+ html=html.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
+ html=html.replace('</head>',
+  '  <meta name="robots" content="noindex,nofollow">\n  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
+ writeOutput(route+'/index.html',html);
 }
 // Account and authentication routes use the same career shell.
 function renderAccountPage(content,title,scripts){

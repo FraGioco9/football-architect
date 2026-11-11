@@ -854,18 +854,31 @@ export function selfTest(){
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
   const args=process.argv.slice(2);const get=name=>{const i=args.indexOf(name);return i<0?undefined:args[i+1]};
-  if(args.includes('--help')){console.log('Usage: node tools/players-generation-trial.mjs [--self-test] [--count 100|1000] [--seed NAME] [--primary-suitability 75|65:80|auto] (maximum 90) [--out LOCAL_JSON_PATH]\nNo D1/Worker/remote writes. Output is a preview fixture, never persisted players.');process.exit(0)}
+  if(args.includes('--help')){console.log('Usage: node tools/players-generation-trial.mjs [--self-test] [--count 100|1000] [--seed NAME] [--primary-suitability 75|65:80|auto] (maximum 90) [--options-base64 BASE64URL] [--out LOCAL_JSON_PATH]\nNo D1/Worker/remote writes. Output is a preview fixture, never persisted players.');process.exit(0)}
   if(args.includes('--self-test'))console.log(JSON.stringify(selfTest(),null,2));
   else{
-   const n=get('--count')??'100';if(!/^\d+$/.test(n))throw Error('Count must be a positive integer');
-   const rawSuitability=get('--primary-suitability');
+   const encoded=get('--options-base64');
+   let trialOptions;
+   if(encoded!==undefined){
+    if(args.some(a=>['--count','--seed','--primary-suitability','--self-test'].includes(a)))throw Error('Do not mix --options-base64 with individual generation flags');
+    if(typeof encoded!=='string'||!(/^[A-Za-z0-9_-]{1,8192}$/).test(encoded))throw Error('Invalid encoded generation options');
+    const bytes=Buffer.from(encoded,'base64url');
+    if(bytes.toString('base64url')!==encoded)throw Error('Noncanonical encoded generation options');
+    const opts=JSON.parse(bytes.toString('utf8'));
+    const allowed=['count','seed','firstName','lastName','primaryNationality','secondaryNationality','age','height','preferredFoot','primaryPosition','allowedPositions','secondaryCount','secondaryPositions','allowedSecondaries','developmentAptitude','primarySuitability','attributes'];
+    if(!opts||Array.isArray(opts)||typeof opts!=='object'||Object.keys(opts).some(k=>!allowed.includes(k)))throw Error('Unsupported generation option');
+    trialOptions=opts;
+   }else{
+    const n=get('--count')??'100';if(!/^\d+$/.test(n))throw Error('Count must be a positive integer');
+    const rawSuitability=get('--primary-suitability');
     const primarySuitability=rawSuitability===undefined?undefined:
      /^\d+$/.test(rawSuitability)?Number(rawSuitability):
      /^\d+:\d+$/.test(rawSuitability)?rawSuitability.split(':').map(Number):
      ['auto','automatic'].includes(rawSuitability)?'auto':
      (()=>{throw Error('Invalid --primary-suitability: use 75, 65:80 or auto')})();
-    const trial=generateTrial({count:Number(n),seed:get('--seed')??'fa-official-trial-01',
-     primarySuitability});
+    trialOptions={count:Number(n),seed:get('--seed')??'fa-official-trial-01',primarySuitability};
+   }
+   const trial=generateTrial(trialOptions);
    const output=get('--out');if(output){writeFileSync(resolve(output),JSON.stringify(trial,null,2)+'\n',{flag:'w'});}
    console.log(JSON.stringify({summary:summarize(trial),sample:trial.candidates.slice(0,3),output:output?resolve(output):null},null,2));
   }

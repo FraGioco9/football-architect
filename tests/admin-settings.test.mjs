@@ -451,3 +451,48 @@ test('Players local trial command uses bounded inputs and never calls world muta
  assert.match(playersTrialCommand({count:'1000',seed:'seed_2',suitability:'65:80'}),/--count 1000.*--primary-suitability 65:80/);
  for(const invalid of [{count:'0',seed:'ok',suitability:'auto'},{count:'1001',seed:'ok',suitability:'auto'},{count:'1.5',seed:'ok',suitability:'auto'},{count:'10',seed:'bad;Remove-Item',suitability:'auto'},{count:'10',seed:'ok',suitability:'999'}])assert.equal(playersTrialCommand(invalid),null);
 });
+
+test('Admin Players encodes all stable generator controls without PowerShell interpolation',()=>{
+ const playerForm=require('../assets/admin-players.js');
+ const raw={
+  count:'2',seed:'seed with spaces; $env:SECRET',primarySuitability:'65:80',
+  primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'FRA',
+  firstName:'Émile',lastName:'De Luca',primaryPosition:'ST',preferredFoot:'right',
+  secondaryPositions:'AM',age:'18',height:'175:185',developmentAptitude:'50',
+  'attribute.shooting':'64:83','attribute.vision':'70'
+ };
+ const opts=playerForm.makeOptions(raw);
+ assert.equal(opts.seed,raw.seed);
+ assert.deepEqual(opts.primarySuitability,[65,80]);
+ assert.deepEqual(opts.attributes,{shooting:[64,83],vision:70});
+ assert.deepEqual(opts.secondaryPositions,['AM']);
+ assert.deepEqual(opts.height,[175,185]);
+ const command=playerForm.commandFromRaw(raw);
+ assert.match(command,/^node tools\/players-generation-trial\.mjs --options-base64 [A-Za-z0-9_-]+ --out \.\\players-trial\.json$/);
+ assert.doesNotMatch(command,/\$env:SECRET/);
+ const encoded=command.match(/--options-base64 ([A-Za-z0-9_-]+)/)[1];
+ assert.deepEqual(JSON.parse(Buffer.from(encoded,'base64url').toString('utf8')),opts);
+ const {execFileSync}=require('node:child_process');
+ const {fileURLToPath}=require('node:url');
+ const runtime=JSON.parse(execFileSync(process.execPath,[fileURLToPath(new URL('../tools/players-generation-trial.mjs',import.meta.url)),'--options-base64',
+  playerForm.commandFromRaw({count:'1',seed:'admin-test',primaryNationality:'ITA',primaryPosition:'ST',secondaryMode:'none',firstName:'Luca',age:'18'}).match(/--options-base64 ([A-Za-z0-9_-]+)/)[1]],{encoding:'utf8'}));
+ assert.equal(runtime.summary.count,1);
+ assert.equal(runtime.sample[0].first_name,'Luca');
+ assert.equal(runtime.sample[0].nationality,'ITA');
+ assert.equal(runtime.sample[0].secondary_nationality,null);
+ assert.equal(runtime.sample[0].initial_age,18);
+ const invalid=[
+  {count:'0',seed:'ok'},{count:'1001',seed:'ok'},{count:'3',seed:''},
+  {count:'3',seed:'ok',age:'20'},
+  {count:'3',seed:'ok',primaryNationality:'NOT'},
+  {count:'3',seed:'ok',primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'ITA'},
+  {count:'3',seed:'ok',secondaryMode:'allowed',secondaryAllowed:'ITA,ITA'},
+  {count:'3',seed:'ok',primaryPosition:'GK',secondaryPositions:'RB'},
+  {count:'3',seed:'ok','attribute.shooting':'100'},
+  {count:'3',seed:'ok','attribute.speed':'90:20'},
+  {count:'3',seed:'ok',secondaryPositions:'RB,RB'}
+ ];
+ for(const obj of invalid)assert.throws(()=>playerForm.makeOptions(obj),undefined,JSON.stringify(obj));
+ const bad=Buffer.from(JSON.stringify({count:1,seed:'x',experimentalLegacySecondaryModel:true})).toString('base64url');
+ assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('../tools/players-generation-trial.mjs',import.meta.url)),'--options-base64',bad],{stdio:'pipe'}));
+});

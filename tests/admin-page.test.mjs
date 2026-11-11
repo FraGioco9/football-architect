@@ -43,15 +43,31 @@ test('Admin removes Details and retains inline protected reset with a next-day p
  assert.match(html,/data-admin-next-day/);
 });
 
-test('Players is a separate, permission-hidden Admin panel tied to the existing local trial',async()=>{
+
+test('Admin directory and child pages have isolated, protected markup',async()=>{
+ for(const id of ['admin','admin/calendar','admin/players']){
+  const path='/'+id,file=id+'/index.html';
+  assert.equal(parseRoute(path)?.canonical,path);
+  assert.equal(buildRoute({kind:'page',id}),path);
+  assert.equal(publicRequestFile(path),file);
+  assert.ok(isAllowlistedPublicPath(file),file);
+  assert.ok(planPublicFiles().includes(file));
+  assert.match(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
+ }
+ const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
+ assert.match(home,/data-admin-directory/);
+ assert.match(home,/href="\/admin\/calendar"/);
+ assert.match(home,/href="\/admin\/players"/);
+ assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
+ const calendar=readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8');
+ assert.match(calendar,/data-admin-world/);
+ assert.doesNotMatch(calendar,/data-admin-players-form|\/assets\/admin-players\.js/);
  const {renderAdminPlayers}=await import('../tools/render-admin-settings.mjs');
- const html=renderAdminPlayers();
- assert.match(html,/<section[^>]*data-admin-players[^>]*hidden/);
- assert.match(html,/data-admin-players-count/);
- assert.match(html,/data-admin-players-seed/);
- assert.match(html,/data-admin-players-suitability/);
- assert.match(html,/data-admin-players-copy/);
- assert.doesNotMatch(html,/data-admin-command=|data-admin-login|<details/);
- const generated=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
- assert.ok(generated.includes(html),'Generated Admin page must contain the exact Players panel');
+ const players=readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8');
+ assert.ok(players.includes(renderAdminPlayers()));
+ assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
+ for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
+  assert.ok(players.includes('data-players-option="'+name+'"'),name);
+ for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
+  assert.ok(players.includes('data-players-option="attribute.'+a+'"'),a);
 });

@@ -33,7 +33,7 @@ try{
    assert.equal(await page.locator('.app-settings-grid').isVisible(),true);
    assert.equal(await page.locator('[data-admin-settings]').count(),0);
    assert.equal(adminCalls,0,'The retired Settings query never mounts Admin');
-   await page.goto('http://app.localhost:2000/admin');
+   await page.goto('http://app.localhost:2000/admin/calendar');
    assert.equal(await page.locator('#app-settings').count(),0);
    assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-settings.is-active').count(),0);
    await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
@@ -89,24 +89,17 @@ try{
    assert.equal(permissionReads,1,'One fresh permission read per public document');
    if(allowed){
     await page.locator('#app-nav-admin').click();await page.waitForURL('**/admin');
-   }else await page.goto('http://app.localhost:2000/admin');
+    await page.locator('#app-admin[data-admin-access="granted"]').waitFor({state:'visible'});
+    await page.locator('[data-admin-card="calendar"]').click();
+    await page.waitForURL('**/admin/calendar');
+   }else await page.goto('http://app.localhost:2000/admin/calendar');
    await page.waitForLoadState('networkidle');
    assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),allowed);
    assert.equal(await page.locator('#app-admin').isVisible(),allowed);
    if(!allowed)assert.equal(await page.locator('#main-content').innerText(),'');
    assert.equal(await page.locator('#app-nav-admin[aria-current="page"]').count(),allowed?1:0);
    assert.equal(await page.locator('[data-admin-prepare]').isEnabled(),['write','revoked-write'].includes(grant));
-   assert.equal(await page.locator('[data-admin-players]').isVisible(),allowed&&['write','revoked-write'].includes(grant));
-   if(grant==='write'){
-    await page.locator('[data-admin-players-count]').fill('32');
-    await page.locator('[data-admin-players-seed]').fill('local-seed');
-    assert.match(await page.locator('[data-admin-players-command]').innerText(),/--count 32 --seed local-seed/);
-    await page.locator('[data-admin-players-seed]').fill('invalid;seed');
-    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),false);
-    await page.locator('[data-admin-players-seed]').fill('local-seed');
-    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),true);
-    assert.equal(writes,0,'Trial command builder must not call Admin APIs');
-   }
+   assert.equal(await page.locator('[data-admin-players]').count(),0,'Calendar page contains no Players form');
    assert.equal(writes,0,'Navigation and hydration never mutate the world');
    if(grant==='revoked-write'){
     writeDenied=true;await page.locator('[data-admin-prepare]').click();
@@ -137,7 +130,7 @@ try{
     assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false,'Reset still requires its typed confirmation');
    }
    if(allowed&&grant!=='revoked-write'){
-    assert.equal(permissionReads,2,'Admin reuses its controller permission read for navigation');
+    assert.equal(permissionReads,3,'Settings, Admin directory and Calendar each check permissions once');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     assert.equal(await page.locator('[data-admin-world]').isVisible(),true);
     revoked=true;
@@ -153,6 +146,48 @@ try{
   }finally{await context.close();}
  }
 
+ // Admin directory and Players are permission checked but do not call the World Admin API.
+ for(const permissionSet of [[],['admin.access','admin.world.read'],['admin.access','admin.world.read','admin.world.write']]){
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   const page=await context.newPage(),errors=[];let adminCalls=0,permissionReads=0;
+   page.on('pageerror',error=>errors.push(error.message));
+   await page.route('**/api/player/permissions',route=>{permissionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({permissions:permissionSet})})});
+   await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
+   await page.goto('http://app.localhost:2000/admin');
+   await page.locator('#app-admin[data-admin-access="'+(permissionSet.includes('admin.world.read')?'granted':'denied')+'"]').waitFor({state:'attached'});
+   const writer=permissionSet.includes('admin.world.write');
+   if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
+   else{
+    assert.equal(await page.locator('[data-admin-card="calendar"]').isVisible(),true);
+    assert.equal(await page.locator('[data-admin-card="players"]').isVisible(),writer);
+   }
+   await page.goto('http://app.localhost:2000/admin/players');
+   await page.locator('#app-admin[data-admin-access="'+(writer?'granted':'denied')+'"]').waitFor({state:'attached'});
+   if(writer){
+    await page.locator('[data-players-option="count"]').fill('2');
+    await page.locator('[data-players-option="seed"]').fill('admin-trial');
+    await page.locator('[data-players-option="primaryNationality"]').selectOption('ITA');
+    await page.locator('[data-players-option="primaryPosition"]').selectOption('ST');
+    await page.locator('[data-players-option="age"]').fill('18');
+    await page.locator('[data-players-option="attribute.shooting"]').fill('65:80');
+    const command=await page.locator('[data-admin-players-command]').innerText();
+    const packed=command.match(/--options-base64 ([A-Za-z0-9_-]+)/)?.[1];
+    assert.ok(packed);
+    const options=JSON.parse(Buffer.from(packed,'base64url').toString('utf8'));
+    assert.equal(options.count,2);assert.equal(options.seed,'admin-trial');
+    assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
+    assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
+    await page.locator('[data-players-option="age"]').fill('20');
+    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),false);
+    await page.locator('[data-players-option="age"]').fill('18');
+    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),true);
+   }else assert.equal(await page.locator('#main-content').innerText(),'');
+   assert.equal(permissionReads,2);
+   assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
  // Destination-day preview updates after the simulated command's authoritative
  // response. This is an isolated HTTP fixture, never a remote world mutation.
  {
@@ -173,7 +208,7 @@ try{
     }else throw Error('Unexpected preview request '+path);
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
    });
-   await page.goto('http://app.localhost:2000/admin');
+   await page.goto('http://app.localhost:2000/admin/calendar');
    const preview=page.locator('[data-admin-next-day]');await preview.waitFor({state:'visible'});
    assert.ok((await preview.innerText()).includes('day 16: I-1 · D-4'));
    assert.equal(await page.locator('[data-admin-details],[data-admin-reschedule-section]').count(),0);

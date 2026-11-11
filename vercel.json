@@ -21,6 +21,16 @@
       "permanent": true
     },
     {
+      "source": "/admin/:section(calendar|players)/",
+      "destination": "/admin/:section",
+      "permanent": true
+    },
+    {
+      "source": "/admin/:section(calendar|players)/index.html",
+      "destination": "/admin/:section",
+      "permanent": true
+    },
+    {
       "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/",
       "destination": "/competitions/:division",
       "permanent": true
@@ -259,6 +269,10 @@
     {
       "source": "/:page(dashboard|calendar|settings|admin|competitions)",
       "destination": "/:page/index.html"
+    },
+    {
+      "source": "/admin/:section(calendar|players)",
+      "destination": "/admin/:section/index.html"
     },
     {
       "source": "/competitions/_shared/:file(index.html|manifest.json)",
