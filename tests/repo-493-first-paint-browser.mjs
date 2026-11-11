@@ -234,12 +234,193 @@ try{
    const page=await browser.newPage({viewport:{width,height:900}});
    let releaseApp;
    const blocked=new Promise(resolve=>{releaseApp=resolve});
-   await page.addInitScript(({debug,devSeason,progress})=>{
-    window.faDebugEnabled=debug;
-    document.documentElement.dataset.faDevSeasons='0,1,2,3,4,5';
-    document.documentElement.dataset.faDevCurrentSeason=String(devSeason);
-    if(progress)window.faFixturesInitialProgress=progress;
-   },clock);
+   // addInitScript may execute before <html> exists: seed the controlled
+   // clock directly before the actual inline History first-paint bootstrap.
+   let clockInjected=0;
+   await page.route(new RegExp('/competitions/'+competitionId+'/history\\?season=1
+   await page.route('**/assets/competition-page.js',async request=>{
+    await blocked;
+    if(page.isClosed())return;
+    try{await request.continue();}
+    catch(error){
+     if(!page.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;
+    }
+   });
+   try{
+    const response=await page.goto(origin+route,{waitUntil:'commit',timeout:30000});
+    assert.equal(response?.status(),200,route+' prepaint HTML');
+    await page.waitForSelector('script[data-fa-competition-selected-panel-first-paint]',
+      {state:'attached',timeout:25000});
+    const state=await page.evaluate(()=>{
+     const panel=document.getElementById('competition-panel-history');
+     const root=panel.querySelector('[data-competition-skeleton-root]');
+     const archiveEmpty=panel.querySelector('[data-history-archive-empty]');
+     const staticEmpty=panel.querySelector('[data-history-empty]');
+     return {
+      clockInjected:document.documentElement.dataset.faRepo493ClockInjected??null,
+      injectedDebug:window.faDebugEnabled,
+      injectedDevSeason:document.documentElement.dataset.faDevCurrentSeason,
+      active:document.documentElement.dataset.competitionView,
+      panelHidden:panel.hidden,
+      skeletonRoot:root?.dataset.competitionSkeletonRoot??null,
+      visibleArchiveSkeletonRows:panel.querySelectorAll('[data-skeleton-archive-row]:not([hidden])').length,
+      staticEmptyPresent:!!staticEmpty,
+      archiveEmptyConfirmed:archiveEmpty?.hasAttribute('hidden')===false,
+      spinnerBusy:panel.getAttribute('aria-busy'),
+      realClubLinks:root?.querySelectorAll('[data-club-crest]').length??0
+     };
+    });
+    assert.equal(clockInjected,1,'single injected document');
+    assert.equal(state.clockInjected,'true','script executed after HTML root exists');
+    assert.equal(state.injectedDebug,clock.debug);
+    assert.equal(state.injectedDevSeason,String(clock.devSeason));
+    assert.equal(state.active,'history');
+    assert.equal(state.panelHidden,false);
+    assert.equal(state.staticEmptyPresent,true,'permanent static History structure exists');
+    assert.equal(state.visibleArchiveSkeletonRows,clock.expectedRows,
+     clock.name+' reserves only supported archive rows');
+    assert.equal(state.archiveEmptyConfirmed,clock.staticEmpty,
+     clock.name+' cannot claim empty outside confirmed local Season 0');
+    assert.equal(state.skeletonRoot,clock.staticEmpty?null:'history-preview');
+    assert.equal(state.realClubLinks,0,'prepaint clock must not invent archive club identities');
+    record(route,width,'step-07-history-clock-'+clock.name,'PASS',state);
+   }catch(error){
+    record(route,width,'step-07-history-clock-'+clock.name,'FAIL',String(error));
+    throw error;
+   }finally{releaseApp();await page.close();}
+  }
+ }
+ // Exercise the real shared CSS/renderer in a clean DOM, holding a known SVG
+ // request to inspect neutral fallback, circular skeleton, resolved image and error.
+ const harness='/__fa_repo493_crest_harness';
+ const crestPage=await browser.newPage({viewport:{width:390,height:640}});
+ let releaseCrest;
+ const crestGate=new Promise(resolve=>{releaseCrest=resolve;});
+ let deRequests=0;
+ await crestPage.route('**/assets/clubs/DE/1/crest.svg',async request=>{
+  deRequests++;
+  await crestGate;
+  if(crestPage.isClosed())return;
+  try{await request.continue();}
+  catch(error){if(!crestPage.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;}
+ });
+ await crestPage.route('**/assets/clubs/BR/1/crest.svg',async request=>{
+  await request.abort('failed');
+ });
+ await crestPage.route('**/__fa_repo493_crest_harness',async request=>{
+  await request.fulfill({status:200,contentType:'text/html',body:[
+   '<!doctype html><html lang="en"><head><meta charset="utf-8">',
+   '<link rel="stylesheet" href="/assets/landing.css">',
+   '<link rel="stylesheet" href="/assets/app.css">',
+   '<script>window.faClubCrests={"DE-1":"assets/clubs/DE/1/crest.svg","BR-1":"assets/clubs/BR/1/crest.svg"};</script>',
+   '<script src="/assets/club-crests.js" defer></script>',
+   '</head><body class="app-body">',
+   '<span id="fa493-crest" class="app-world-club-crest-placeholder fa-crest-loading"',
+   ' style="width:64px;height:64px" data-club-crest="IT-1"></span>',
+   '</body></html>'
+  ].join('')});
+ });
+ try{
+  assert.equal((await crestPage.goto(origin+harness,{waitUntil:'domcontentloaded',timeout:30000}))?.status(),200);
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestFallback==='true');
+  const absent=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return {fallback:host.dataset.clubCrestFallback,
+    pending:host.dataset.clubCrestPending??null,images:host.querySelectorAll('img').length};
+  });
+  assert.equal(absent.fallback,'true');
+  assert.equal(absent.pending,null);
+  assert.equal(absent.images,0);
+  record(harness,390,'real-dom-absent-crest','PASS',absent);
+  await crestPage.evaluate(()=>document.querySelector('#fa493-crest').dataset.clubCrest='DE-1');
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestPending==='true');
+  const pending=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   const pseudo=getComputedStyle(host,'::before');
+   return {fallback:host.dataset.clubCrestFallback??null,
+    pending:host.dataset.clubCrestPending,
+    loaded:host.dataset.clubCrestLoaded??null,
+    circleDisplay:pseudo.display,circleRadius:pseudo.borderRadius,
+    imageCount:host.querySelectorAll('img').length,
+    imageVisibility:getComputedStyle(host.querySelector('img')).visibility};
+  });
+  assert.equal(pending.fallback,null,'known SVG must clear previous neutral fallback immediately');
+  assert.equal(pending.pending,'true');
+  assert.equal(pending.loaded,null);
+  assert.equal(pending.imageCount,1);
+  assert.equal(pending.circleDisplay,'block');
+  assert.equal(pending.circleRadius,'50%','shared skeleton is circular');
+  assert.equal(pending.imageVisibility,'hidden','known SVG is not revealed before load');
+  assert.equal(deRequests,1,'one in-flight request for known SVG');
+  record(harness,390,'real-dom-known-pending','PASS',pending);
+  releaseCrest();
+  await crestPage.waitForFunction(()=>document.querySelector('#fa493-crest')?.dataset.clubCrestLoaded==='true');
+  const loaded=await crestPage.evaluate(async()=>{
+   const host=document.querySelector('#fa493-crest');
+   const img=host.querySelector('img');
+   const visibility=getComputedStyle(img).visibility;
+   host.setAttribute('data-club-crest','DE-1');
+   await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+   return {fallback:host.dataset.clubCrestFallback??null,
+    loaded:host.dataset.clubCrestLoaded,
+    pending:host.dataset.clubCrestPending??null,
+    visible:visibility,
+    imageStable:host.querySelector('img')===img,
+    imageCount:host.querySelectorAll('img').length};
+  });
+  assert.equal(loaded.loaded,'true');
+  assert.equal(loaded.fallback,null);
+  assert.equal(loaded.pending,null);
+  assert.equal(loaded.visible,'visible');
+  assert.equal(loaded.imageStable,true,'re-observation preserves existing image node');
+  assert.equal(loaded.imageCount,1);
+  assert.equal(deRequests,1,'no redundant request when identity remains unchanged');
+  record(harness,390,'real-dom-loaded-and-reused','PASS',loaded);
+  await crestPage.evaluate(()=>document.querySelector('#fa493-crest').dataset.clubCrest='BR-1');
+  await crestPage.waitForFunction(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return host?.dataset.clubCrestFallback==='true'&&host.querySelector('img')===null;
+  });
+  const failed=await crestPage.evaluate(()=>{
+   const host=document.querySelector('#fa493-crest');
+   return {fallback:host.dataset.clubCrestFallback,loaded:host.dataset.clubCrestLoaded??null,
+    pending:host.dataset.clubCrestPending??null,images:host.querySelectorAll('img').length};
+  });
+  assert.equal(failed.fallback,'true','failed SVG may use the neutral fallback');
+  assert.equal(failed.pending,null);
+  assert.equal(failed.loaded,null);
+  assert.equal(failed.images,0);
+  record(harness,390,'real-dom-failed-svg','PASS',failed);
+ }catch(error){record(harness,390,'real-dom-crest-lifecycle','FAIL',String(error));throw error;}
+ finally{releaseCrest();await crestPage.close();}
+ console.log('REPO-493 browser '+engine+': '+evidence.filter(e=>e.status==='PASS').length+
+  ' PASS assertions; remaining matrix states UNKNOWN.');
+}finally{
+ mkdirSync('int24-browser-artifacts',{recursive:true});
+ writeFileSync('int24-browser-artifacts/repo-493-first-paint-'+engine+'.json',
+  JSON.stringify({issue:493,engine,sha:process.env.GITHUB_SHA||'local',scope:'risk-based sample only',evidence},null,2)+'\n');
+ if(browser)await browser.close();
+ server.closeAllConnections?.();
+ await new Promise(resolve=>server.close(resolve));
+}
+),async request=>{
+    const response=await request.fetch();
+    const html=await response.text();
+    const marker='<script data-view-skeleton-first-paint="history">';
+    if(response.status()!==200||html.split(marker).length!==2){
+     await request.fulfill({status:500,contentType:'text/plain',
+      body:'REPO-493: unexpected competition HTML or missing History bootstrap'});
+     return;
+    }
+    const seed='<script data-repo493-history-clock-probe>'+
+     'window.faDebugEnabled='+JSON.stringify(clock.debug)+';'+
+     'document.documentElement.dataset.faDevSeasons="0,1,2,3,4,5";'+
+     'document.documentElement.dataset.faDevCurrentSeason='+JSON.stringify(String(clock.devSeason))+';'+
+     (clock.progress?'window.faFixturesInitialProgress='+JSON.stringify(clock.progress)+';':'')+
+     'document.documentElement.dataset.faRepo493ClockInjected="true";</script>';
+    clockInjected++;
+    await request.fulfill({response,body:html.replace(marker,seed+marker)});
+   });
    await page.route('**/assets/competition-page.js',async request=>{
     await blocked;
     if(page.isClosed())return;

@@ -132,3 +132,10 @@ The browser QA now covers **IT-1 and INT-1 × three pre-hydration clock states**
 
 These assertions inspect **real browser DOM with controlled clock inputs**, not a user-end-to-end Debug Settings workflow, authoritative API completion, or real generated sporting history. They do not imply public Seasons 3+ are published. Runtime source switching, historic record values, invalid sources, 320px and physical iPhone Safari remain **UNKNOWN / OPEN** until separately exercised. The cases write individual PASS/FAIL records to the same existing Browser QA artifact. Acceptance requires the exact-head Site/Browser/Admin/FULL gates.
 
+## Step 07 clock probe injection correction — failed synthetic setup
+
+[Browser QA #43083880632](https://github.com/FraGioco9/football-architect/actions/runs/43083880632) failed the new `local-debug-season-zero` synthetic History case: one archive row remained instead of zero. The test used Playwright `page.addInitScript` to set `window.faDebugEnabled` and immediately access `document.documentElement.dataset`. Browser initialization can happen before the HTML root exists, leaving the clock probe partially configured; the error alone does **not** establish an app regression.
+
+The probe now intercepts its own loopback document response and inserts an inline synthetic state script immediately before the existing History first-paint bootstrap, after the HTML root has been parsed. New assertions explicitly confirm one injection, the chosen Debug flag and season. Original application HTML, production routes, data providers, sporting records and remote D1 are unchanged. Real Settings Debug ON/OFF/Reset still requires separate browser QA.
+
+**Corrected CI exact-head verification: pending.**
