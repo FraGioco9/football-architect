@@ -58,7 +58,7 @@ try{
    try{
     const page=await context.newPage();
     const origin=route.site?"http://localhost:2000":"http://app.localhost:2000";
-    const response=await page.goto(origin+route.path,{waitUntil:route.path.startsWith("/account/")?"load":"networkidle",timeout:30000});
+    const response=await page.goto(origin+route.path,{waitUntil:"load",timeout:30000});
     if(route.path.startsWith("/account/")){
      await page.waitForFunction(()=>document.documentElement.dataset.accountReady==="true",null,{timeout:10000});
      // Account controls may be mounted/painted after the initial ready flag.
@@ -66,6 +66,9 @@ try{
      await page.locator(route.selectors[0]).first().waitFor({state:"visible",timeout:10000});
     }
     assert.equal(response?.status(),200,route.path+" "+stage);
+    if(route.path.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    if(route.path.startsWith('/clubs/')&&route.path!='/clubs')await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
+    if(route.path==='/clubs')await page.waitForFunction(()=>!document.getElementById('nav01-country-trigger')?.disabled);
     await page.evaluate(async()=>{await document.fonts.ready});
     const collect=()=>page.evaluate(data=>{
      const result={};

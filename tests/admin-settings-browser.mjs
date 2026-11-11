@@ -263,7 +263,17 @@ try{
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false);
     await page.locator('[data-admin-players-preview]').click();
-    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
+    try{
+     await page.locator('[data-admin-players-result]').waitFor({state:'visible',timeout:12000});
+    }catch(error){
+     const diagnostic=await page.evaluate(()=>({
+      feedback:document.querySelector('[data-admin-players-feedback]')?.textContent,
+      previewDisabled:document.querySelector('[data-admin-players-preview]')?.disabled,
+      status:document.querySelector('#app-admin')?.dataset.adminAccess,
+      previewHidden:document.querySelector('[data-admin-players-result]')?.hidden
+     }));
+     throw new Error('Admin Players preview did not render '+JSON.stringify({...diagnostic,previewCalls,sessionReads,adminCalls,errors}),{cause:error});
+    }
     assert.equal(await page.locator('[data-admin-players-rows] tr').count(),2);
     assert.match(await page.locator('[data-admin-players-summary]').innerText(),/2/);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Preview alone never approves');

@@ -28,8 +28,9 @@ try{
    try{
     await context.route("**/assets/app.css",r=>r.fulfill({status:200,contentType:"text/css",body:useBaseline?baseline:current}));
     const page=await context.newPage();
-    const response=await page.goto(origin+route,{waitUntil:"networkidle",timeout:25000});
+    const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
+    if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
     await page.evaluate(async()=>{await document.fonts.ready});
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
