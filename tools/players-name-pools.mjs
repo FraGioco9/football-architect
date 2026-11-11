@@ -52,12 +52,12 @@ function displayCaseSurname(value){
   const lower=word.toLocaleLowerCase('und');
   return [...lower][0].toLocaleUpperCase('und')+[...lower].slice(1).join('');
  };
- return value.replace(/[\\p{L}\\p{M}]+/gu,word=>{
+ return value.replace(/[\p{L}\p{M}]+/gu,word=>{
   if([...word].length<2)return word;
-  if(/^Mc\\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  if(/^Mc\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
   if(word!==word.toLocaleUpperCase('und')||word===word.toLocaleLowerCase('und'))
    return word;
-  if(/^MC\\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  if(/^MC\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
   return title(word);
  });
 }
