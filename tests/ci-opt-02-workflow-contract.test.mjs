@@ -73,3 +73,17 @@ test('CI browser provisioning limits OS mirror stalls but still runs real pinned
  assert.match(admin,/"\$RUNNER_TEMP\/fa-lifecycle-browser\/node_modules\/\.bin\/playwright" install chromium/);
  assert.doesNotMatch(admin+browser,/PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD|continue-on-error:\s*true/);
 });
+
+test('FULL WebKit and Chromium jobs use the pinned official browser image with native dependencies',()=>{
+ const browser=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ const account=workflow.split('\n  account-browser:')[1]?.split('\n  operator-final:')[0];
+ const full=browser.split('\n  chromium:')[1]?.split('\n  [a-z][a-z-]*:')[0];
+ for(const block of [account,full]){
+  assert.ok(block);
+  assert.match(block,/runs-on: ubuntu-24\.04/);
+  assert.match(block,/container: mcr\.microsoft\.com\/playwright:v1\.58\.2-noble/);
+  assert.match(block,/PLAYWRIGHT_BROWSERS_PATH: \/ms-playwright/);
+  assert.match(block,/npx playwright install chromium webkit|playwright" install "\$ENGINE"/);
+ }
+ assert.doesNotMatch(account+full,/PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD/);
+});

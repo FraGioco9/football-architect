@@ -132,6 +132,11 @@ jobs:
     name: Account UI (${{ matrix.engine }})
     if: ${{ needs.scope.outputs.mode == 'full' }}
     runs-on: ubuntu-24.04
+    # Playwright's official image includes WebKit's libwoff2dec and all native deps.
+    # Avoid runner APT mirrors, which intermittently fail DNS resolution.
+    container: mcr.microsoft.com/playwright:v1.58.2-noble
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     strategy:
       fail-fast: false
       matrix:
@@ -163,7 +168,10 @@ jobs:
           ENGINE: ${{ matrix.engine }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          if ! timeout 120s "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"; then
+          if [ "$PLAYWRIGHT_BROWSERS_PATH" = /ms-playwright ]; then
+            # Official Playwright image has native libraries and binaries preinstalled.
+            "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install "$ENGINE"
+          elif ! timeout 120s "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"; then
             echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned browser without retrying OS packages"
             "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install "$ENGINE"
           fi

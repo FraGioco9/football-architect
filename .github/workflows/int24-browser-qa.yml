@@ -64,6 +64,10 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft || !contains(github.event.pull_request.body, '<!-- admin-world-focused-verification -->') }}
     needs: scope
     runs-on: ubuntu-24.04
+    # Official image supplies Chromium + WebKit system libraries for FULL QA.
+    container: mcr.microsoft.com/playwright:v1.58.2-noble
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     concurrency:
       group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' && format('pr-{0}-{1}', github.event.pull_request.number, needs.scope.outputs.mode) || format('main-{0}', github.run_id) }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' && needs.scope.outputs.mode != 'full' }}
@@ -105,7 +109,9 @@ jobs:
           fi
           # Install both engines and native dependencies in one pass.
           # Slow Ubuntu mirrors previously exhausted the 20-minute job budget.
-          if ! timeout 120s npx playwright install --with-deps chromium webkit; then
+          if [ "$PLAYWRIGHT_BROWSERS_PATH" = /ms-playwright ]; then
+            npx playwright install chromium webkit
+          elif ! timeout 120s npx playwright install --with-deps chromium webkit; then
             echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned browsers without retrying OS packages"
             npx playwright install chromium webkit
           fi
