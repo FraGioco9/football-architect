@@ -435,6 +435,20 @@ try {
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
    await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id&&
     window.faCompetitionContext?.selectedSeason===1,cup);
+   // DOMContentLoaded exposes the permanent tabs before each view's dynamic
+   // content is ready. Confirm the view's own semantic state, not network idle.
+   await page.waitForFunction(view=>{
+    const panel=document.getElementById('competition-panel-'+view);
+    if(!panel||panel.hidden)return false;
+    if(view==='fixtures'){
+     const toolbar=document.getElementById('app-fixtures-toolbar');
+     return !!panel.dataset.faContentState&&!!toolbar&&!toolbar.getClientRects().length;
+    }
+    if(view==='stats')return panel.querySelectorAll('.fa-dev-stats-card').length===3;
+    if(view==='awards')return panel.querySelectorAll('.fa-awards-card').length===11;
+    if(view==='postseason')return panel.querySelectorAll('[data-bracket-tie]').length===11;
+    return true;
+   },view);
    const visible=await page.locator("#competition-panel-"+view).isVisible();
    if(!visible){
     const probe=await page.evaluate(view=>({
