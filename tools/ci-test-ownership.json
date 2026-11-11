@@ -281,6 +281,8 @@
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
     "tests/world-divisions.test.mjs": "site-node",
-    "tests/admin-page.test.mjs": "site-node"
+    "tests/admin-page.test.mjs": "site-node",
+    "backend/tests/players-generation-runtime.test.ts": "backend-runtime",
+    "tests/players-generator-runtime-parity.test.mjs": "site-node"
   }
 }
