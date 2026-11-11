@@ -7,8 +7,10 @@ import '../assets/world-clock-adapter.js';
 const hosting=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 
 test('ARCH-CLEAN-02 security: approved hosting route cardinalities are unchanged',()=>{
-  assert.equal(hosting.redirects.length,29);
-  assert.equal(hosting.rewrites.length,7);
+  assert.equal(hosting.redirects.length,31);
+  assert.equal(hosting.rewrites.length,8);
+  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players)')).length,2);
+  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players)').length,1);
   assert.equal(hosting.rewrites.some(r=>r.destination.includes('/app/')),false);
 });
 

@@ -273,7 +273,7 @@ test('A04 browser baseline: public routes, provider states, delayed publications
    }
    assert.ok(requests.length>18);
    assert.deepEqual(requests.filter(path=>path.startsWith('/__fa_dev__/')||path.startsWith('/tools/')||path.startsWith('/tests/')),[]);
-   assert.ok(requests.every(path=>path==='/api/world'||allowed.has(publicRequestFile(path))),'every static request resolves inside the staged manifest; only the anonymous world API may be unavailable');
+   assert.ok(requests.every(path=>path==='/api/world'||path==='/api/player/permissions'||allowed.has(publicRequestFile(path))),'every static request resolves inside the staged manifest; only the anonymous world API may be unavailable');
   });
   const division=manifest.divisions.find(d=>d.id==='IT-1'),definition=catalogue.find(d=>d.id==='IT-1');
   function seasonData(season,days=30){

@@ -222,9 +222,11 @@ try{
     });
     const beforeFocus=await readLabel();
     const age=page.locator('[data-players-option="age"]');
-    const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    await page.waitForTimeout(220); // Settle border transitions before comparing.
+     const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
     await page.locator('[data-admin-players-label="age"]').hover();
-    assert.deepEqual(await readLabel(),beforeFocus,'Hover on field label must not highlight the label');
+    await page.waitForTimeout(220);
+     assert.deepEqual(await readLabel(),beforeFocus,'Hover on field label must not highlight the label');
     assert.deepEqual(await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor})),inputBeforeHover,'Hover on field label must not highlight input box');
     await age.hover();
     assert.deepEqual(await readLabel(),beforeFocus,'Hover on input box must leave label unchanged');
@@ -323,8 +325,10 @@ try{
   page.on('request',request=>pending.add(request.url()));page.on('requestfinished',request=>pending.delete(request.url()));page.on('requestfailed',request=>pending.delete(request.url()));
   await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"admin_unavailable"}}'});});
   await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":{"code":"world_unavailable"}}'}));
-  await page.goto('http://localhost:2000/dashboard');
-  try{await page.waitForLoadState('networkidle')}catch(error){console.error('Anonymous dashboard pending requests: '+JSON.stringify([...pending]));throw error}
+  const unavailableWorld=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/world'&&response.status()===503);
+  await page.goto('http://localhost:2000/dashboard',{waitUntil:'domcontentloaded'});
+  await unavailableWorld;
+  await page.waitForFunction(()=>document.readyState==='complete'&&window.faWorldState?.get().current===null);
   assert.equal(adminCalls,0,'Anonymous public browsing must not invoke Admin APIs');
   assert.equal(await page.evaluate(()=>window.faWorldState?.get().current),null,'Unavailable world data must not fabricate current progress');
   checks++;

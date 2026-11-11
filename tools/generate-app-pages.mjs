@@ -228,6 +228,9 @@ const writeOutput=(path,content)=>{
  if(path.endsWith(".html")&&!content.includes("/assets/sidebar-evolution.js"))content=content.replace("</head>","  <link rel=\"stylesheet\" href=\"/assets/sidebar-evolution.css\">\n  <script src=\"/assets/sidebar-evolution.js\" defer></script>\n"+"</head>");
  // One normalization after the sidebar is inserted also covers generated sidebar links.
  if(path.endsWith('.html'))content=normalizeRouteLinks(renderSidebar(content),path);
+  // Admin routes have a neutral first paint: never select Dashboard.
+  // The sidebar bootstrap is injected only by renderSidebar; patch it afterwards.
+  if(path.startsWith('admin/')&&path.endsWith('.html'))content=content.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
  const file=new URL("../"+path,import.meta.url);
  if(check){
   const current=readFileSync(file,"utf8");
@@ -274,7 +277,6 @@ for(const [route,title,content,scripts] of [
  html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"')
   .replace('id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page"','id="app-nav-divisions" href="/competitions" data-app-view="divisions"');
  html=html.replace('<title>Competitions','<title>'+title);
- html=html.replace("path==='/admin'?'admin'","path.startsWith('/admin')?'admin'");
  html=html.replace('</head>',
   '  <meta name="robots" content="noindex,nofollow">\n  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
  writeOutput(route+'/index.html',html);

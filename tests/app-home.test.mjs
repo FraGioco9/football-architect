@@ -77,7 +77,7 @@ test("HOME-01 has one global title and spacing system, with no page pretitle or 
     assert.ok(css.includes(token),token);
   }
   assert.match(css,/\.app-main\{width:100%;max-width:none/);
-  assert.match(css,/\.app-view>\.app-page-title\{[^}]*text-align:left/);
+  assert.match(css,/\.app-view>\.app-page-title(?:,[^{]+)?\{[^}]*text-align:left/);
   assert.match(css,/\.app-panels\{[^}]*margin-top:var\(--app-page-section-gap\)/);
   assert.match(css,/\.app-calendar-empty\{[^}]*margin-top:var\(--app-page-section-gap\)/);
   assert.match(css,/\.app-settings-grid\{[^}]*margin-top:var\(--app-page-section-gap\)/);
