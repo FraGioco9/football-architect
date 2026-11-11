@@ -240,11 +240,17 @@ try{
     }
     await page.setViewportSize({width,height:844});
    }
-   // Scroll the actual strip: pagehide persists its real offset on reload.
+   // Await the two-frame initial restorer before setting a user scroll.
+   // The app intentionally omits pagehide persistence while still restoring.
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
+   const storageKey="football-architect:competition-tabs-scroll:/competitions/it-1";
+   await page.waitForFunction(key=>{
+    const strip=document.querySelector(".app-competition-tabs");
+    return strip?.scrollLeft>65&&Number(sessionStorage.getItem(key))>65;
+   },storageKey);
    await page.reload({waitUntil:"domcontentloaded"});
-   // The first-paint and deferred tab restorers may complete after the parse
-   // event. Assert the real retained offset, not a transient zero.
+   // Assert persisted real position, not an intermediate first-paint zero.
    await page.waitForFunction(()=>document.querySelector(".app-competition-tabs")?.scrollLeft>65);
    const restored=await page.locator(".app-competition-tabs").evaluate(el=>el.scrollLeft);
    assert.ok(restored>65,"SAF-02 parser-time tab offset "+width+": "+restored);
