@@ -10,7 +10,7 @@ import {digestOpaqueToken} from '../src/session-tokens.ts';
 import type {Database} from '../src/database.ts';
 const bindings=env as any,db=bindings.DB as Database;
 const origin='http://app.localhost:2000';
-const actor='players-generation-operator',email='players-generation@example.invalid',token='p'.repeat(64);
+const actor='players-generation-operator',email='players-generation@example.invalid',token='a'.repeat(64);
 const now=Math.floor(Date.now()/1000);
 let csrf='',playerId='';
 const service={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};
