@@ -216,7 +216,10 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </div>
         </section>
         <section id="app-divisions" class="app-view nav01-directory" aria-labelledby="players-title">
-          <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
+          <header class="app-players-header">
+            <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
+            <p class="app-players-count" data-players-count aria-live="polite"><span class="app-players-count-skeleton" aria-hidden="true"></span></p>
+          </header>
           <div class="app-players-table-scroll" role="region" aria-label="Players directory" tabindex="0">
             <table class="app-players-table">
               <thead>

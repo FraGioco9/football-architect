@@ -30,3 +30,18 @@ test('Players script is served by the local allowlist and included in publicatio
  assert.ok(planPublicFiles().includes(asset),'public static bundle must include Players renderer');
  assert.equal(isAllowlistedPublicPath('assets/players-directory-private.js'),false,'no broad assets/* allowance');
 });
+
+test('Players #505 header reserves the API-backed total on first paint without empty view tabs',()=>{
+ const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
+ const code=read('assets/players-directory.js'),css=read('assets/app.css');
+ assert.match(html,/<header class="app-players-header">[\s\S]*?id="players-title"[\s\S]*?data-players-count aria-live="polite"/);
+ assert.match(html,/class="app-players-count-skeleton" aria-hidden="true"/);
+ assert.match(generator,/app-players-header/);
+ assert.match(generator,/data-players-count/);
+ assert.doesNotMatch(html,/app-players-tabs|data-players-view/);
+ assert.match(code,/lastCount=data\.count;renderCount\(lastCount\)/);
+ assert.match(code,/new Intl\.NumberFormat/);
+ for(const locale of ['en','de','es','fr','it'])assert.ok(code.includes(locale+":{one:'"),locale);
+ assert.match(css,/\.app-players-header\{display:flex/);
+ assert.match(css,/@media\(max-width:620px\)\{\.app-players-header/);
+});

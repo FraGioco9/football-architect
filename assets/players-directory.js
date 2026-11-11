@@ -9,16 +9,16 @@
   GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'
  });
  const labels={
-  en:{loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right'},
-  it:{loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro'},
-  de:{loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts'},
-  es:{loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho'},
-  fr:{loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit'}
+  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right'},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro'},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts'},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho'},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit'}
  };
  function init(){
   const table=document.querySelector('.app-players-table');
   if(!table||!table.tBodies.length)return;
-  const body=table.tBodies[0],scroll=table.closest('.app-players-table-scroll');
+  const body=table.tBodies[0],scroll=table.closest('.app-players-table-scroll'),countNode=document.querySelector('[data-players-count]');
   if(!scroll)return;
   const pager=document.createElement('nav');
   pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');pager.hidden=true;
@@ -26,8 +26,13 @@
   previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
   counter.className='app-players-page-count';counter.setAttribute('aria-live','polite');
   pager.append(previous,counter,next);scroll.after(pager);
-  let ticket=0,current=null;
+  let ticket=0,current=null,lastCount=null;
   const language=()=>labels[document.documentElement.lang]||labels.en;
+  const renderCount=count=>{
+   if(!countNode)return;
+   const t=language();
+   countNode.textContent=new Intl.NumberFormat(document.documentElement.lang||'en').format(count)+' '+(count===1?t.one:t.many);
+  };
   const cell=(row,value)=>{const td=document.createElement('td');td.textContent=value;row.append(td);return td};
   function message(value){
    const tr=document.createElement('tr');tr.className='app-players-empty-row';
@@ -38,6 +43,7 @@
   }
   function paint(data){
    const t=language();
+   lastCount=data.count;renderCount(lastCount);
    if(!data.players.length){message(t.empty);return}
    const fragment=document.createDocumentFragment();
    for(const player of data.players){
@@ -79,12 +85,12 @@
     if(seq!==ticket)return;
     current=data;paint(current);
    }catch{
-    if(seq===ticket)message(language().error);
+    if(seq===ticket){message(language().error);if(lastCount===null&&countNode)countNode.replaceChildren();}
    }
   }
   previous.addEventListener('click',()=>{if(current&&current.page>1)load(current.page-1)});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages)load(current.page+1)});
-  new MutationObserver(()=>{if(current)paint(current);else message(language().loading)})
+  new MutationObserver(()=>{if(current)paint(current);else{if(lastCount!==null)renderCount(lastCount);message(language().loading)}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   load(1);
  }
