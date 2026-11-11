@@ -118,6 +118,13 @@
       statsDevOverview:"Overview",
       statsDevTeams:"Teams",
       statsDevPlayers:"Players",
+      playersNationality:"Nationality",
+      playersColumnPlayer:"Player",
+      playersColumnAge:"Age",
+      playersColumnPositions:"Positions",
+      playersColumnHeight:"Height",
+      playersColumnFoot:"Foot",
+      playersDirectoryHeading:"No players available",
       statsDevGoals:"Goals",
       statsDevAssists:"Assists",
       statsDevAverageRating:"Average rating",
@@ -357,6 +364,13 @@
       statsDevOverview:"Übersicht",
       statsDevTeams:"Teams",
       statsDevPlayers:"Spieler",
+      playersNationality:"Nationalität",
+      playersColumnPlayer:"Spieler",
+      playersColumnAge:"Alter",
+      playersColumnPositions:"Positionen",
+      playersColumnHeight:"Größe",
+      playersColumnFoot:"Fuß",
+      playersDirectoryHeading:"Noch keine Spieler verfügbar",
       statsDevGoals:"Tore",
       statsDevAssists:"Vorlagen",
       statsDevAverageRating:"Durchschnittsnote",
@@ -596,6 +610,13 @@
       statsDevOverview:"Resumen",
       statsDevTeams:"Equipos",
       statsDevPlayers:"Jugadores",
+      playersNationality:"Nacionalidad",
+      playersColumnPlayer:"Jugador",
+      playersColumnAge:"Edad",
+      playersColumnPositions:"Posiciones",
+      playersColumnHeight:"Altura",
+      playersColumnFoot:"Pie",
+      playersDirectoryHeading:"Aún no hay jugadores disponibles",
       statsDevGoals:"Goles",
       statsDevAssists:"Asistencias",
       statsDevAverageRating:"Valoración media",
@@ -835,6 +856,13 @@
       statsDevOverview:"Vue d’ensemble",
       statsDevTeams:"Équipes",
       statsDevPlayers:"Joueurs",
+      playersNationality:"Nationalité",
+      playersColumnPlayer:"Joueur",
+      playersColumnAge:"Âge",
+      playersColumnPositions:"Postes",
+      playersColumnHeight:"Taille",
+      playersColumnFoot:"Pied",
+      playersDirectoryHeading:"Aucun joueur disponible",
       statsDevGoals:"Buts",
       statsDevAssists:"Passes décisives",
       statsDevAverageRating:"Note moyenne",
@@ -1074,6 +1102,13 @@
       statsDevOverview:"Panoramica",
       statsDevTeams:"Squadre",
       statsDevPlayers:"Giocatori",
+      playersNationality:"Nazionalità",
+      playersColumnPlayer:"Giocatore",
+      playersColumnAge:"Età",
+      playersColumnPositions:"Posizioni",
+      playersColumnHeight:"Altezza",
+      playersColumnFoot:"Piede",
+      playersDirectoryHeading:"Nessun giocatore disponibile",
       statsDevGoals:"Gol",
       statsDevAssists:"Assist",
       statsDevAverageRating:"Voto medio",
@@ -1316,6 +1351,7 @@
   function activeView() {
     // Each page has its own static document for direct loading and refresh.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
+    if (path === "/players") return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";
@@ -1353,7 +1389,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {
@@ -1362,7 +1398,7 @@
     if (dashboard) dashboard.hidden = current !== "dashboard";
     if (calendar) calendar.hidden = current !== "calendar";
     if (settings) settings.hidden = current !== "settings";
-    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs";
+    if (divisions) divisions.hidden = current !== "divisions" && current !== "clubs" && current !== "players";
     for (const [view, link] of Object.entries(links)) {
       if (!link) continue;
       const selected = current === view;

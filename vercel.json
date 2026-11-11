@@ -11,12 +11,12 @@
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions)/",
+      "source": "/:page(dashboard|calendar|settings|competitions|players)/",
       "destination": "/:page",
       "permanent": true
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions)/index.html",
+      "source": "/:page(dashboard|calendar|settings|competitions|players)/index.html",
       "destination": "/:page",
       "permanent": true
     },
@@ -257,7 +257,7 @@
       "destination": "/clubs/index.html"
     },
     {
-      "source": "/:page(dashboard|calendar|settings|competitions)",
+      "source": "/:page(dashboard|calendar|settings|competitions|players)",
       "destination": "/:page/index.html"
     },
     {
