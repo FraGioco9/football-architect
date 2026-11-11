@@ -487,6 +487,42 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // Regression: a spare part of the History competition cell must not behave
+    // like the text link (hover underline OR click). Test the actual browser
+    // hit areas, not only stylesheet selector strings.
+    const historyHitBoxes=await run(`(()=>{
+      const probe=document.createElement('div');
+      probe.id='club-history-link-hitbox-probe';
+      const width=Math.min(380,window.innerWidth-24);
+      probe.style.cssText='position:fixed;top:96px;left:12px;z-index:2147483647;background:var(--surface);width:'+width+'px';
+      probe.innerHTML='<table class="club-history-table" style="width:100%;min-width:0"><colgroup><col style="width:44px"><col></colgroup><tbody><tr class="club-history-competition-row"><td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings"><span class="club-history-competition-text">League A</span></a></th></tr></tbody></table>';
+      document.body.append(probe);
+      const link=probe.querySelector('a'),cell=probe.querySelector('th'),label=probe.querySelector('.club-history-competition-text');
+      window.__historyProbeClickCount=0;
+      link.addEventListener('click',e=>{e.preventDefault();window.__historyProbeClickCount++});
+      const a=link.getBoundingClientRect(),c=cell.getBoundingClientRect(),t=label.getBoundingClientRect();
+      if(c.right-a.right<24)throw Error('History competition link unexpectedly occupies its empty cell');
+      return {
+        blank:{x:Math.floor((a.right+c.right)/2),y:Math.floor((a.top+a.bottom)/2)},
+        label:{x:Math.floor((t.left+t.right)/2),y:Math.floor((t.top+t.bottom)/2)}
+      };
+    })()`);
+    const moveToHistory=async({x,y})=>cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'none'});
+    const clickHistory=async({x,y})=>{
+      await cmd('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
+      await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
+    };
+    await moveToHistory(historyHitBoxes.blank);
+    assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'none',
+      'the empty cell must not underline competition text');
+    await clickHistory(historyHitBoxes.blank);
+    assert.equal(await run('window.__historyProbeClickCount'),0,'the empty cell is not clickable');
+    await moveToHistory(historyHitBoxes.label);
+    assert.equal(await run("getComputedStyle(document.querySelector('#club-history-link-hitbox-probe .club-history-competition-text')).textDecorationLine"),'underline',
+      'hovering the actual name underlines only that name');
+    await clickHistory(historyHitBoxes.label);
+    assert.equal(await run('window.__historyProbeClickCount'),1,'clicking the actual text activates the link');
+    await run("document.getElementById('club-history-link-hitbox-probe').remove()");
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':'.club-empty')+"')"),true);

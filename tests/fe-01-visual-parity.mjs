@@ -79,8 +79,16 @@ try{
       }).slice(0,3);
       result[selector]=elements.map(el=>{
        const css=getComputedStyle(el),rect=el.getBoundingClientRect();
+       // Fixtures intentionally use a compact 36px visual control with a
+       // transparent ::before extending the real pointer target to 44px.
+       // Measure both, rather than treating visual height as hit-target height.
+       const pseudo=selector===".app-fixtures-arrow"?getComputedStyle(el,"::before"):null;
+       const expanded=pseudo?.position==="absolute"&&pseudo.pointerEvents==="auto";
+       const top=expanded?Math.max(0,-parseFloat(pseudo.top)||0):0;
+       const bottom=expanded?Math.max(0,-parseFloat(pseudo.bottom)||0):0;
        return {css:Object.fromEntries(data.props.map(key=>[key,css.getPropertyValue(key)])),
-        rect:[rect.x,rect.y,rect.width,rect.height].map(v=>Math.round(v*10)/10)};
+        rect:[rect.x,rect.y,rect.width,rect.height].map(v=>Math.round(v*10)/10),
+        hitHeight:Math.round((rect.height+top+bottom)*10)/10};
       });
      }
      return result;
@@ -113,8 +121,8 @@ try{
     for(const key of ["regular","focused"]){
      const obj=copy[key];if(!obj)continue;
      for(const name of ignore){
-      if(updated&&obj[name])for(const el of obj[name])assert.ok(el.rect[3]>=43.9,
-       "FE-02 mobile hit height "+route.path+" "+name);
+      if(updated&&obj[name])for(const el of obj[name])assert.ok(el.hitHeight>=43.9,
+       "FE-02 mobile effective pointer hit height "+route.path+" "+name);
       delete obj[name];
      }
     }

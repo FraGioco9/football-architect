@@ -435,9 +435,9 @@ body.app-body{--app-page-pad-top:8px}
 .club-history-table .club-history-season-value{text-align:left}
 .club-history-table .club-history-total-label{text-align:left;color:var(--muted)}
 .club-history-table .club-history-competition-value{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-inline-start:18px}
-.club-history-table .club-history-competition-value a.club-history-competition-link{display:inline;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:inherit;overflow:visible;vertical-align:baseline}
+.club-history-table .club-history-competition-value a.club-history-competition-link{display:inline-block;width:fit-content;max-width:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:inherit;font:inherit;font-weight:500;text-align:left;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:baseline}
 .club-history-table .club-history-competition-text{text-decoration:none}
-.club-history-table .club-history-competition-value a.club-history-competition-link:hover .club-history-competition-text,.club-history-table .club-history-competition-value a.club-history-competition-link:focus-visible .club-history-competition-text,.club-history-table .club-history-competition-row:hover .club-history-competition-text,.club-history-table .club-history-competition-row:focus-within .club-history-competition-text{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
+.club-history-table .club-history-competition-value a.club-history-competition-link:is(:hover,:focus-visible) .club-history-competition-text{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
 .club-history-table .club-history-competition-value a.club-history-competition-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;outline-style:solid}
 .club-history-table .club-history-competition-row td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .club-history-table .club-history-empty-season{text-align:left;color:var(--muted);font-weight:400}
