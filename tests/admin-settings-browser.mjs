@@ -193,6 +193,7 @@ try{
     const back=page.locator('[data-admin-back]');
     assert.equal(await back.getAttribute('href'),'/admin');
     assert.ok((await back.getAttribute('class')).includes('app-link'));
+    assert.equal(await page.locator('[data-admin-players-label="intro"],[data-players-seed-help]').count(),0,'Removed intro and seed note stay absent');
     const label=page.locator('[data-players-option="age"]').locator('xpath=..');
     const readLabel=()=>label.evaluate(node=>{
      const span=node.querySelector('[data-admin-players-label]'),css=getComputedStyle(node),caption=getComputedStyle(span);
@@ -200,6 +201,14 @@ try{
       textColor:caption.color,textBackground:caption.backgroundColor,textOutline:caption.outlineStyle,textShadow:caption.boxShadow};
     });
     const beforeFocus=await readLabel();
+    const age=page.locator('[data-players-option="age"]');
+    const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    await page.locator('[data-admin-players-label="age"]').hover();
+    assert.deepEqual(await readLabel(),beforeFocus,'Hover on field label must not highlight the label');
+    assert.deepEqual(await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor})),inputBeforeHover,'Hover on field label must not highlight input box');
+    await age.hover();
+    assert.deepEqual(await readLabel(),beforeFocus,'Hover on input box must leave label unchanged');
+
     await page.locator('[data-players-option="age"]').focus();
     const afterFocus=await readLabel();
     assert.deepEqual(afterFocus,beforeFocus,'Label and label text must remain unchanged on input focus');

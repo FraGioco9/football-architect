@@ -74,6 +74,11 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const {renderAdminPlayers}=await import('../tools/render-admin-settings.mjs');
  const players=readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8');
  assert.ok(players.includes(renderAdminPlayers()));
+ assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');
+ assert.doesNotMatch(players,/data-players-seed-help|admin-players-seed-help|Same seed and options/,'Remove seed explanation');
+ const playersScript=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
+ assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
+
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
  for(const html of [home,calendar,players]){
   assert.doesNotMatch(html,/<a[^>]*id="app-nav-divisions"[^>]*(?:is-active|aria-current="page")/,'No unrelated sidebar selection at first paint');
@@ -92,6 +97,8 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.admin-settings :is\(input,select,textarea,button,a,\[role="option"\]\):focus-visible/,'Only interactive elements receive focus decoration');
  assert.match(css,/\.app-admin-view \.admin-players-fields label > \[data-admin-players-label\],/,'Label text must remain visually neutral');
  assert.match(css,/\.app-admin-view \.admin-players-dropdown \.language-option\[aria-selected="true"\],/,'Menu label color must not change on selection');
+ assert.match(css,/\.app-admin-view \.admin-players-fields label:is\(:hover,:focus-within\)/,'Hovering a label must not produce a highlight');
+ assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):hover:not\(:disabled\)/,'Hover highlight belongs only to inputs and dropdown boxes');
  for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
