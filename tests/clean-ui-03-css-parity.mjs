@@ -31,6 +31,14 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
     if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    // Compare the hydrated state, not an arbitrary instant during asynchronous
+    // standings first paint. The real table may legitimately be concealed by
+    // the skeleton while the data provider is pending.
+    if(route==='/competitions/it-1/standings')await page.waitForFunction(()=>{
+     const state=document.documentElement.dataset;
+     return state.faStandingsLoading==='false'&&
+      !['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
+    });
     await page.evaluate(async()=>{await document.fonts.ready});
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
