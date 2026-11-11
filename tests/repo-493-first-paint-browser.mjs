@@ -97,6 +97,122 @@ try{
   }catch(error){record(route,width,'club-first-paint','FAIL',String(error));throw error;}
   finally{release();await page.close();}
  }
+ // Step 07: keep the real runtime entrypoint pending while parser-time UI settles.
+ // This checks actual HTML/CSS and inline first-paint logic before any app data
+ // can hydrate, rather than extracting/rewriting the bootstrap in a fake DOM.
+ for(const [competitionId,width] of [['it-1',390],['int-1',1440]]){
+  for(const view of ['history','fixtures','stats']){
+   const route='/competitions/'+competitionId+'/'+view+'?season=1';
+   const page=await browser.newPage({viewport:{width,height:900}});
+   let releaseApp;
+   const appGate=new Promise(resolve=>{releaseApp=resolve;});
+   await page.route('**/assets/competition-page.js',async request=>{
+    await appGate;
+    if(page.isClosed())return;
+    try{await request.continue();}
+    catch(error){
+     if(!page.isClosed()&&!/Route is already handled|Target closed/i.test(String(error)))throw error;
+    }
+   });
+   try{
+    // A blocked defer script prevents DOMContentLoaded by design. The parser
+    // still creates static panels and runs inline first-paint scripts.
+    const response=await page.goto(origin+route,{waitUntil:'commit',timeout:30000});
+    assert.equal(response?.status(),200,route+' public static document');
+    await page.waitForSelector('script[data-fa-competition-selected-panel-first-paint]',
+     {state:'attached',timeout:25000});
+    const before=await page.evaluate(view=>{
+     const panel=document.getElementById('competition-panel-'+view);
+     const tabs=[...document.querySelectorAll('#app-divisions .app-competition-tab')];
+     const other=[...document.querySelectorAll('#app-divisions > .app-competition-panel')]
+      .filter(p=>p!==panel&&!p.hidden).map(p=>p.id);
+     const root=panel?.querySelector('[data-competition-skeleton-root]');
+     const elements={
+      view:document.documentElement.dataset.competitionView,
+      panelHidden:panel?.hidden,
+      otherVisible:other,
+      tabs:tabs.length,
+      active:tabs.filter(t=>t.getAttribute('aria-selected')==='true').map(t=>t.id),
+      skeleton:root?.dataset.competitionSkeletonRoot??null,
+      skeletonHeight:root?.getBoundingClientRect().height??0,
+      panelBusy:panel?.getAttribute('aria-busy'),
+      scoreRows:panel?.querySelectorAll('[data-fixture-match]').length??0
+     };
+     if(view==='history'){
+      elements.archiveRows=panel.querySelectorAll('[data-skeleton-archive-row]:not([hidden])').length;
+      elements.recordGroups=panel.querySelectorAll('[data-history-team-records], [data-history-player-records]').length;
+      elements.emptyVisible=[...panel.querySelectorAll('[data-history-archive-empty],[data-history-team-empty],[data-history-player-empty]')]
+       .filter(n=>n.getClientRects().length>0&&getComputedStyle(n).visibility!=='hidden').length;
+     }else if(view==='fixtures'){
+      const rows=[...panel.querySelectorAll('#app-fixtures-skeleton [data-skeleton-fixture]')];
+      elements.fixtureRows=rows.length;
+      elements.crestPairs=rows.filter(row=>row.querySelectorAll('.app-fixtures-skeleton-crest').length===2).length;
+      elements.fakeClubNames=panel.querySelectorAll('#app-fixtures-skeleton [data-club-crest]').length;
+      elements.selectedRound=document.getElementById('app-fixtures-round-number')?.textContent?.trim();
+     }else if(view==='stats'){
+      elements.statsNavigation=[...panel.querySelectorAll('[data-competition-skeleton-root] [data-stats-view]')]
+       .map(n=>n.dataset.statsView);
+      elements.initialCards=panel.querySelectorAll('[data-competition-skeleton-root] .fa-dev-stats-card').length;
+     }
+     return elements;
+    },view);
+    assert.equal(before.view,view,route+' view at first paint');
+    assert.equal(before.panelHidden,false,route+' selected panel must be visible');
+    assert.deepEqual(before.otherVisible,[],route+' no unrelated panel');
+    assert.equal(before.tabs,7);
+    assert.deepEqual(before.active,['competition-tab-'+view]);
+    assert.ok(before.skeletonHeight>0,route+' reserves measured layout space');
+    assert.equal(before.panelBusy,'true','unresolved provider must remain busy');
+    assert.equal(before.scoreRows,0,'never invent fixture results during first paint');
+    if(view==='history'){
+     assert.equal(before.skeleton,'history-preview');
+     assert.ok(before.archiveRows>=1,'unknown public completed-season count reserves an archive row');
+     assert.equal(before.emptyVisible,0,'unverified History must not claim empty');
+    }else if(view==='fixtures'){
+     assert.ok(before.fixtureRows>0,'fixture skeleton rows exist without schedule');
+     assert.equal(before.crestPairs,before.fixtureRows,'every fixture row has two placeholder crest slots');
+     assert.equal(before.fakeClubNames,0,'fixtures skeleton does not invent club identities');
+     assert.equal(before.selectedRound,'1','season 1 no-matchday URL reserves first choice');
+    }else{
+     assert.equal(before.skeleton,'stats-overview');
+     assert.deepEqual(before.statsNavigation,['overview','teams','players']);
+     assert.equal(before.initialCards,3);
+     // Inline controls must function even with the external runtime blocked.
+     await page.evaluate(()=>{
+      document.querySelector('#competition-panel-stats [data-competition-skeleton-root] [data-stats-view="teams"]').click();
+     });
+     const teams=await page.evaluate(()=>{
+      const panel=document.getElementById('competition-panel-stats'),root=panel.querySelector('[data-competition-skeleton-root]');
+      return {chosen:root.dataset.competitionSkeletonRoot,
+       cards:root.querySelectorAll('.fa-dev-stats-team-card').length,
+       circles:root.querySelectorAll('.app-view-skeleton-crest-slot').length,
+       selected:panel.dataset.faStatsSelectedView};
+     });
+     assert.equal(teams.chosen,'stats-teams');
+     assert.equal(teams.cards,7);
+     assert.equal(teams.circles,35,'7 top-five lists reserve authentic crest circles');
+     assert.equal(teams.selected,'teams');
+     await page.evaluate(()=>{
+      const button=document.querySelector('#competition-panel-stats [data-competition-skeleton-root] [data-stats-view="teams"]');
+      button.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+     });
+     const players=await page.evaluate(()=>{
+      const panel=document.getElementById('competition-panel-stats'),root=panel.querySelector('[data-competition-skeleton-root]');
+      return {chosen:root.dataset.competitionSkeletonRoot,cards:root.querySelectorAll('.fa-dev-stats-leader-card').length,
+       circles:root.querySelectorAll('.app-view-skeleton-crest-slot').length,selected:panel.dataset.faStatsSelectedView};
+     });
+     assert.equal(players.chosen,'stats-players');
+     assert.equal(players.cards,4);
+     assert.equal(players.circles,20);
+     assert.equal(players.selected,'players');
+     before.statsAfterInteractions={teams,players};
+    }
+    record(route,width,'step-07-parser-time-'+view,'PASS',before);
+   }catch(error){
+    record(route,width,'step-07-parser-time-'+view,'FAIL',String(error));throw error;
+   }finally{releaseApp();await page.close();}
+  }
+ }
  // Exercise the real shared CSS/renderer in a clean DOM, holding a known SVG
  // request to inspect neutral fallback, circular skeleton, resolved image and error.
  const harness='/__fa_repo493_crest_harness';

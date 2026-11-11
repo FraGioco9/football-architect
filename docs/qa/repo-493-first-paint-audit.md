@@ -104,3 +104,15 @@ Source review found `data-club-crest-fallback="true"` could linger on an existin
 - This patch updates the expected exact command order (and corresponding SHA-bearing command indices), and asserts that a failure in the new audit stops the shell before later suites. No suite, security guard, exact-head requirement, or fail-closed behavior is removed.
 
 **Status: regression repair committed; do not mark acceptance green until the new exact-head checks finish.**
+
+## Step 07 — Risk-based parser-time browser checks
+
+The existing Browser FULL suite now checks **six additional real HTML/CSS first-paint cases** on a domestic competition and an INT-24 cup at 390px / 1440px: History, Fixtures and Stats. The Playwright test deliberately holds the external competition runtime script while browser parsing and inline first-paint bootstrap finish; it uses `waitUntil:'commit'` rather than waiting for `DOMContentLoaded`, which cannot occur until the held deferred script is released.
+
+- History: selected and reserved panel, unknown archive count represented by a skeleton row, no falsely confirmed empty state
+- Fixtures: reserved match rows with two crest slots each, no fabricated club identity/result, initial selector label
+- Stats: Overview's three cards; parser-time click to Teams (seven top-five lists) and ArrowRight to Players (four top-five lists), preserving view selection before hydration
+- All cases: visible selected tab only, panel busy state and measurable skeleton geometry
+
+This specifically covers **the unresolved pre-hydration state**, not completed data hydration, Admin, Debug ON/OFF, real public-season history results, complex postseason schedule or physical Safari. Their acceptance checks remain open. Results are recorded per case in the existing `repo-493-first-paint-chromium.json` artifact. Until exact-head Browser QA completes, these cases must be treated as **UNVERIFIED**, not PASS.
+
