@@ -43,6 +43,25 @@ function weightedBank(bank,code){
   throw new Error('Duplicate given name: '+code);
  return Object.freeze({values:Object.freeze(values),cumulative:Object.freeze(cumulative),total});
 }
+// Keep the historical source values (and their verified Git blobs) unchanged.
+// Some surname sources encode entire names or individual tokens in uppercase.
+// Normalize only those tokens when preparing the runtime sampling pool; retain
+// genuine one-letter surnames and existing mixed/lowercase particles verbatim.
+function displayCaseSurname(value){
+ const title=word=>{
+  const lower=word.toLocaleLowerCase('und');
+  return [...lower][0].toLocaleUpperCase('und')+[...lower].slice(1).join('');
+ };
+ return value.replace(/[\\p{L}\\p{M}]+/gu,word=>{
+  if([...word].length<2)return word;
+  if(/^Mc\\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  if(word!==word.toLocaleUpperCase('und')||word===word.toLocaleLowerCase('und'))
+   return word;
+  if(/^MC\\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  return title(word);
+ });
+}
+
 function uniformBank(bank,code){
  if(bank?.code!==code||bank.kind!=='surnames'||bank.selection_policy!=='uniform'||
    !Array.isArray(bank.surnames)||!bank.surnames.length)
@@ -51,7 +70,7 @@ function uniformBank(bank,code){
   if(!entry||Object.keys(entry).length!==1||typeof entry.value!=='string'||
     !entry.value||entry.value!==entry.value.normalize('NFC'))
    throw new Error('Invalid unweighted surname entry: '+code);
-  return entry.value;
+  return displayCaseSurname(entry.value);
  });
  if(new Set(values.map(value=>value.toLocaleLowerCase('und'))).size!==values.length)
   throw new Error('Duplicate surname: '+code);
