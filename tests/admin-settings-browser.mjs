@@ -226,7 +226,7 @@ try{
     const age=page.locator('[data-players-option="age"]');
     await page.waitForTimeout(220); // Settle border transitions before comparing.
      const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
-    await page.locator('[data-admin-players-label="age"]').hover();
+    await page.locator('[data-admin-players-label="age"]').hover({position:{x:3,y:3}});
     await page.waitForTimeout(220);
      assert.deepEqual(await readLabel(),beforeFocus,'Hover on field label must not highlight the label');
     assert.deepEqual(await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor})),inputBeforeHover,'Hover on field label must not highlight input box');

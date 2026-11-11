@@ -99,6 +99,21 @@ import given48 from '../../data/players/names/countries/VEN.json' with {type:'js
 import surname48 from '../../data/players/surnames/countries/VEN.json' with {type:'json'};
 import given49 from '../../data/players/names/countries/CHI.json' with {type:'json'};
 import surname49 from '../../data/players/surnames/countries/CHI.json' with {type:'json'};
+// Keep display casing equivalent to the canonical PLAYERS-03 CLI name sampler.
+function displayCaseSurname(value){
+ const title=word=>{
+  const lower=word.toLocaleLowerCase('und');
+  return [...lower][0].toLocaleUpperCase('und')+[...lower].slice(1).join('');
+ };
+ return value.replace(/[\p{L}\p{M}]+/gu,word=>{
+  if([...word].length<2)return word;
+  if(/^Mc\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  if(word!==word.toLocaleUpperCase('und')||word===word.toLocaleLowerCase('und'))
+   return word;
+  if(/^MC\p{Lu}{2,}$/u.test(word))return 'Mc'+title(word.slice(2));
+  return title(word);
+ });
+}
 export function loadRuntimePlayerCatalog(){
  const given=new Map(),surnames=new Map();
  const banks=[
@@ -161,7 +176,8 @@ export function loadRuntimePlayerCatalog(){
    total+=item.weight;values.push(item.value);cumulative.push(total);
   }
   given.set(code,{values,cumulative,total});
-  surnames.set(code,last.surnames.map(item=>item.value));
+  surnames.set(code,last.surnames.map(item=>displayCaseSurname(item.value)));
+
  }
  return {given,surnames,surnameSource:'SURNAMES-01 uniform catalog'};
 }
