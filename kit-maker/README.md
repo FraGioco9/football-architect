@@ -1600,3 +1600,63 @@ is directly tested after Solid→Vertical stripes and slider updates.
 Full Node/browser visual QA with the owner's local third-party GLB
 is still required before approval. PR #454 remains Draft/HOLD;
 no merge, deployment, remote DB or upload of proprietary assets.
+
+## KM-38 — review center stripe and torso band distribution (2026-11-11)
+
+**Owner QA request:** Recheck the **central stripe** and the other
+vertical stripes along the torso, following the KM-37 straight-torso
+mapping and separate left/right sleeve patterns.
+
+**Root cause found in the exact source:** KM-37 assigned every torso
+vertex the metre value `abs(worldX)-collarSideRadius`.
+The absolute value made the field **nonlinear at the body centerline**.
+Triangles spanning x=0 had matching positive stripe coordinates at
+both sides of the center, creating a false flat spot / mirrored band
+instead of a regular full-width central stripe. The collar-side
+subtraction also made the **central colour/phase depend unpredictably
+on stripe width**. Front/back were synchronized, but that alone did
+not guarantee correct stripe distribution around the middle.
+
+**KM-38 correction:** Each genuine original torso vertex now gets the
+**signed physical-metre worldX minus the fitted outfit root's center
+world X**. Both front/back (source primitives 9/10/42/43) therefore
+share exactly the same continuous, linear coordinate, without `abs()`,
+vertical UV blending or independent per-island phase. The shader's
+existing `cos(pi * signedMeters / selectedWidth)` places the
+**primary-colour central band symmetrically on the body's vertical
+midline**; its boundaries are at ±half the selected band width, so
+its full physical X-width equals every other alternating band.
+This holds for 1, 1.5, 3, 7.5 and 15 cm and across the entire torso
+height. The new diagnostic `km38TorsoCenterlineReport` explicitly
+reports `shared-centered-torso-axis`, `signed-source-world-x`,
+`base-color-full-width` and `continuousAcrossMidline: true`.
+The verified upper-front/back envelope still gates the known original
+torso meshes; the former collar-side radial distance remains in
+diagnostics only, no longer defines the color phase.
+
+**Sleeves intentionally unchanged:** Right and left sleeves continue
+to use their own original UV U axis and independent pattern origins,
+shader variant `plain`; they are not required to match the torso
+seam. The source third-party GLB, geometry, UVs, mesh transforms,
+collar/cuff/waist trims, boots, shorts, socks, palette, licensing,
+and browser/private release access remain untouched. Physical
+pattern width can still vary across highly curved side surfaces
+under a world-X mapping; KM-38 specifically ensures regular, centered
+bands across the torso's visible horizontal projection and removes
+the centerline cusp.
+
+**Focused regression checks:** 15 current center/torso/sleeve tests
+(including four KM-38 cases with coarse triangles crossing X=0,
+front/back with separate UV atlases, true full-width center band
+at all allowed representative widths, and actual shader wiring)
+plus 21 existing design tests. The center-crossing regression
+deliberately uses **no mesh vertex exactly at X=0**, so it catches
+false central plateaus that simple vertex-only tests miss.
+
+This change remains source-level synthetic QA only: the original
+Alberto Sena source GLB resides in the owner's browser/local files
+and was not made available to this tool invocation. Full owner
+Chrome front/back/side visual verification at 1 cm, 3 cm, 7.5 cm
+and 15 cm and the complete Node/CI suite are still pending.
+PR #454 remains Draft/HOLD; no merge, deployment, DB mutation
+or upload of the third-party asset.

@@ -269,6 +269,8 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('km36TorsoStartReport'));
   assert.ok(designJS.includes('shoulder.report.status==="torso-straight"'));
   assert.ok(designJS.includes('km37StripeReport'));
+  assert.ok(designJS.includes('km38TorsoCenterlineReport'));
+  assert.ok(designJS.includes('km38-centered-signed-torso-independent-sleeve-v1'));
   assert.ok(designJS.includes('zero Y-dependence'));
   assert.ok(designJS.includes('(?:9|10|42|43)'));
   assert.ok(designJS.includes('vKmPatternU = uv.x'));
@@ -277,7 +279,13 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('new THREE.Float32BufferAttribute(metres,1)'));
   const seamsModule=await get(server,'/__fa_kit_maker__/kit-stripe-seams.mjs');
   assert.equal(seamsModule.status,200,'Private DEV shoulder seam calibration must load');
-  assert.ok(seamsModule.body.toString('utf8').includes('alignOriginalShoulderStripes'));
+  const seamsJS=seamsModule.body.toString('utf8');
+  assert.ok(seamsJS.includes('alignOriginalShoulderStripes'));
+  assert.ok(seamsJS.includes('result[i]=panel.positions[i*3]-rigCenterX'));
+  assert.ok(seamsJS.includes("status:'shared-centered-torso-axis'"));
+  assert.ok(seamsJS.includes("centerStripe:'base-color-full-width'"));
+  assert.ok(seamsJS.includes("mode:'independent-source-uv'"));
+  assert.doesNotMatch(seamsJS,/result\[i\]=Math\.abs\(panel\.positions\[i\*3\]\)/);
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));
   assert.doesNotMatch(designJS,/\bPOST\b|\bPUT\b|\bDELETE\b/);

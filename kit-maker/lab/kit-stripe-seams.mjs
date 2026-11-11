@@ -1,9 +1,12 @@
-// KM-37 — straight, common-origin torso stripes; autonomous sleeves.
+// KM-38 — centered, signed, straight torso stripes; autonomous sleeves.
 //
-// The torso front and back use one physical shoulder-side X reference
-// throughout their FULL height. No KM-36 vertical blending: mixing a
-// flat-pattern UV gradient with world X made every stripe bend near
-// the chest. Both sleeve patterns intentionally keep their original
+// Both torso sides use the same SIGNED world-X reference at the rig's
+// central vertical axis. KM-37 mistakenly used abs(X)-shoulderRadius,
+// making the center stripe phase arbitrary and creating a nonaffine
+// interpolation cusp in triangles straddling X=0. The signed field is
+// linear across the front/back, so the central primary-colour stripe
+// is exactly one selected band wide and the neighbouring bands have
+// the same pitch at every height. Both sleeve patterns intentionally keep their original
 // independent cloth UVs and do not inherit a torso seam/phase.
 //
 // Read-only source geometry sampling; no GLB, vertex, UV, normal, or
@@ -83,13 +86,20 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       shoulderReference:{status:'not-used',
         reason:'Sleeve seams are intentionally independent of torso stripes'}};
   if(referenceFront.length&&referenceBack.length){
-    // One and ONLY one radius for both front/back torso patterns.
-    const origin=Math.min(...[...referenceFront,...referenceBack]
+    // Use the ORIGINAL rig centerline instead of starting at the
+    // shoulder radius. The shader's cos(pi * x / width) centers ONE
+    // full primary-colour band on x=0 for all allowed stripe widths.
+    // Signed coordinates also interpolate continuously over triangles
+    // spanning the midline; abs(x) created a false plateau there.
+    const rigCenterX=outfit?.matrixWorld?.elements?.[12]??0;
+    if(!Number.isFinite(rigCenterX))
+      throw Error('Invalid original kit torso centerline');
+    const shoulderRadius=Math.min(...[...referenceFront,...referenceBack]
       .map(p=>p.radialMin));
     for(const panel of panels){
       const result=new Float32Array(panel.positions.length/3);
       for(let i=0;i<result.length;i++)
-        result[i]=Math.abs(panel.positions[i*3])-origin;
+        result[i]=panel.positions[i*3]-rigCenterX;
       coordinates.set(panel.item.geometry,result);
     }
     report.status='torso-straight';
@@ -98,9 +108,12 @@ export function alignOriginalShoulderStripes(outfit,prepared){
     report.mappedTorsoPanels=panels.map(p=>p.item.meshName);
     report.unmatchedPanels=[];
     report.torsoShoulderStart={
-      status:'shared-physical-upper-start',
-      method:'constant-source-world-x',
-      originRadialM:Math.round(origin*10000)/10000,
+      status:'shared-centered-torso-axis',
+      method:'signed-source-world-x',
+      centerWorldXM:Math.round(rigCenterX*10000)/10000,
+      collarSideReferenceRadialM:Math.round(shoulderRadius*10000)/10000,
+      centerStripe:'base-color-full-width',
+      continuousAcrossMidline:true,
       sourcePanels:panels.map(p=>p.item.meshName),
       noVerticalBlend:true
     };

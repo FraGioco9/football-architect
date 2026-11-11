@@ -6,12 +6,12 @@ import {applyKitDesign,createKitDesignStore,KIT_STRIPE_SHADER_KEY,
 
 function garment(name,{side=1,n=31,front=true,z=0,
   patternOffset=0,flip=false,warpedUv=false,
-  nonindexed=false,verticalOnly=false,translateX=0,
+  nonindexed=false,verticalOnly=false,spansCenter=false,translateX=0,
   lowerY=1.05}={}){
   const rows=5,original=[],indices=[];
   for(let row=0;row<rows;row++)for(let i=0;i<n;i++){
     const t=i/(n-1),r=row/(rows-1),
-      x=side*(verticalOnly?.25:.12+.24*t),
+      x=side*(verticalOnly?.25:spansCenter?-.30+.60*t:.12+.24*t),
       y=verticalOnly?1.38+.19*t:1.55-.04*t-(1.55-lowerY)*r,
       uvX=patternOffset+(flip?-x:x)/1.52+
         (warpedUv?.075*r*Math.sin(t*Math.PI):0);
@@ -55,20 +55,22 @@ const meter=(panel,i)=>panel.geometry.getAttribute('kmStripeSewnMetres')?.array[
 const worldX=(panel,i)=>panel.geometry.getAttribute('position').getX(i)+
   panel.translateX;
 
-test('KM-37 front and back stripes use one shoulder start with no vertical bending',()=>{
+test('KM-38 front and back use one signed centerline with no vertical bending',()=>{
   const chest=front(),rear=back();
   const result=alignOriginalShoulderStripes({},[rear,chest]);
   assert.equal(result.report.status,'torso-straight');
-  assert.equal(result.report.torsoShoulderStart.method,'constant-source-world-x');
+  assert.equal(result.report.torsoShoulderStart.method,'signed-source-world-x');
   assert.equal(result.report.torsoShoulderStart.noVerticalBlend,true);
-  const expectedOrigin=.12;
-  assert.equal(result.report.torsoShoulderStart.originRadialM,expectedOrigin);
+  const expectedCenterX=0;
+  assert.equal(result.report.torsoShoulderStart.centerWorldXM,expectedCenterX);
+  assert.equal(result.report.torsoShoulderStart.centerStripe,'base-color-full-width');
+  assert.equal(result.report.torsoShoulderStart.continuousAcrossMidline,true);
   for(const panel of [chest,rear]){
     const field=result.coordinates.get(panel.geometry);
     assert.ok(field);
     const n=panel.geometry.getAttribute('position').count;
     for(let i=0;i<n;i++){
-      const expected=Math.abs(worldX(panel,i))-expectedOrigin;
+      const expected=worldX(panel,i)-expectedCenterX;
       assert.ok(Math.abs(field[i]-expected)<3e-8,
         'Vertical stripe bends with the y-coordinate');
     }
@@ -81,7 +83,7 @@ test('KM-37 front and back stripes use one shoulder start with no vertical bendi
       const d=Math.abs(a[i]-b[j]);
       assert.ok(d<.0044,'Torso origin differs at corresponding world X');
       assert.ok(Math.abs(Math.cos(Math.PI*a[i]/width)-
-        Math.cos(Math.PI*(x-.12)/width))<.0001);
+        Math.cos(Math.PI*x/width))<.0001);
     }
   }
 });
@@ -92,12 +94,12 @@ test('KM-37 left and right of torso both stay straight at 1 cm',()=>{
         n:47,patternOffset:.55,flip:true,warpedUv:true});
     const r=alignOriginalShoulderStripes({},[rear,chest]);
     assert.equal(r.report.status,'torso-straight');
-    assert.equal(r.report.torsoShoulderStart.originRadialM,.12);
+    assert.equal(r.report.torsoShoulderStart.centerWorldXM,0);
     for(const panel of [chest,rear]){
       const values=r.coordinates.get(panel.geometry);
       const n=panel.geometry.getAttribute('position').count;
       for(let i=0;i<n;i++)
-        assert.ok(Math.abs(values[i]-(Math.abs(worldX(panel,i))-.12))<3e-8);
+        assert.ok(Math.abs(values[i]-worldX(panel,i))<3e-8);
     }
   }
 });
@@ -114,7 +116,7 @@ test('KM-37 all four original torso primitives receive the SAME stripe origin',(
   for(const p of panels)
     for(let i=0;i<p.geometry.getAttribute('position').count;i++)
       assert.ok(Math.abs(r.coordinates.get(p.geometry)[i]-
-        (Math.abs(worldX(p,i))-.12))<3e-8);
+        worldX(p,i))<3e-8);
 });
 test('KM-37 sleeves use independent original UVs even if physically adjacent',()=>{
   const chest=front(),rear=back(),
@@ -157,20 +159,22 @@ test('KM-37 indexed and nonindexed original torso triangles map identically',()=
   for(const p of [a,b]){
     const field=r.coordinates.get(p.geometry);
     for(let i=0;i<field.length;i++)
-      assert.ok(Math.abs(field[i]-(Math.abs(worldX(p,i))-.12))<3e-8);
+      assert.ok(Math.abs(field[i]-worldX(p,i))<3e-8);
   }
 });
 test('KM-37 source world transform produces straight reference without editing local vertices',()=>{
   const a=garment('FA_jersey__9',{translateX:.04}),
     b=garment('FA_jersey__42',{front:false,translateX:.04,
       flip:true,patternOffset:.45});
-  const r=alignOriginalShoulderStripes({},[a,b]);
+  const shiftedRoot={matrixWorld:{elements:[1,0,0,0,0,1,0,0,
+    0,0,1,0,.04,0,0,1]}};
+  const r=alignOriginalShoulderStripes(shiftedRoot,[a,b]);
   assert.equal(r.report.status,'torso-straight');
-  assert.equal(r.report.torsoShoulderStart.originRadialM,.16);
+  assert.equal(r.report.torsoShoulderStart.centerWorldXM,.04);
   for(const p of [a,b]){
     const field=r.coordinates.get(p.geometry);
     for(let i=0;i<field.length;i++)
-      assert.ok(Math.abs(field[i]-(worldX(p,i)-.16))<3e-8);
+      assert.ok(Math.abs(field[i]-(worldX(p,i)-.04))<3e-8);
   }
 });
 test('KM-37 vertical side seams without shoulders do not fabricate a shared start',()=>{
@@ -244,7 +248,7 @@ test('KM-37 renderer: Solid fast, torso sewn shader, sleeves plain independent s
     assert.match(shader.vertexShader,/attribute float kmStripeSewnMetres/);
     const n=p.geometry.getAttribute('position').count;
     for(let i=0;i<n;i++)
-      assert.ok(Math.abs(meter(p,i)-(Math.abs(worldX(p,i))-.12))<3e-8);
+      assert.ok(Math.abs(meter(p,i)-worldX(p,i))<3e-8);
   }
   for(const p of [left,right]){
     const material=p.mesh.material,u=material.userData.kitStripeUniforms;
@@ -288,4 +292,136 @@ test('KM-37 jersey torso geometry never influences sleeve phase or shade on upda
     sleeveUniforms.kmStripeFabricScale.value],before);
   assert.equal(sleeveUniforms.kmStripeWidth.value,.015);
   assert.equal(arm.geometry.getAttribute('kmStripeSewnMetres'),null);
+});
+
+function sampleTorsoBandAtX(panel,metres,x,row=0){
+  const p=panel.geometry.getAttribute('position');
+  const n=panel.original.length/5;
+  const from=row*n;
+  for(let i=from;i<from+n-1;i++){
+    const x1=p.getX(i)+panel.translateX,
+      x2=p.getX(i+1)+panel.translateX;
+    const lo=Math.min(x1,x2),hi=Math.max(x1,x2);
+    if(x>=lo-1e-9&&x<=hi+1e-9){
+      const t=(x-x1)/(x2-x1);
+      return metres[i]*(1-t)+metres[i+1]*t;
+    }
+  }
+  throw Error('Stripe sample outside source torso range: '+x);
+}
+
+test('KM-38 center stripe stays centered and full width for all slider widths',()=>{
+  // Even vertex count deliberately leaves NO vertex at X=0. This catches
+  // old abs(X) shader fields that form a broad mirrored plateau across
+  // the two triangles straddling the central line.
+  const chest=garment('FA_jersey__9',{n:62,spansCenter:true}),
+    rear=garment('FA_jersey__42',{n:74,front:false,
+      spansCenter:true,flip:true,patternOffset:.91,warpedUv:true}),
+    r=alignOriginalShoulderStripes({},[rear,chest]);
+  assert.equal(r.report.status,'torso-straight');
+  assert.equal(r.report.torsoShoulderStart.status,'shared-centered-torso-axis');
+  assert.equal(r.report.torsoShoulderStart.centerWorldXM,0);
+  for(const panel of [chest,rear]){
+    const field=r.coordinates.get(panel.geometry);
+    assert.ok(field);
+    for(let row=0;row<5;row++){
+      const center=sampleTorsoBandAtX(panel,field,0,row);
+      assert.ok(Math.abs(center)<1e-7,'Center x=0 must interpolate to stripe phase zero');
+      for(const width of [.01,.015,.03,.075,.15]){
+        const left=sampleTorsoBandAtX(panel,field,-width,row),
+          right=sampleTorsoBandAtX(panel,field,width,row),
+          leftBorder=sampleTorsoBandAtX(panel,field,-width/2,row),
+          rightBorder=sampleTorsoBandAtX(panel,field,width/2,row);
+        assert.ok(Math.abs(left+width)<1e-7);
+        assert.ok(Math.abs(right-width)<1e-7);
+        assert.ok(Math.abs(leftBorder+width/2)<1e-7);
+        assert.ok(Math.abs(rightBorder-width/2)<1e-7);
+        // The actual shader uses cos(pi * sewnMetres / width):
+        // primary centre band is [-w/2,+w/2], exactly w wide.
+        assert.ok(Math.abs(Math.cos(Math.PI*center/width)-1)<1e-7);
+        assert.ok(Math.abs(Math.cos(Math.PI*left/width)+1)<1e-7);
+        assert.ok(Math.abs(Math.cos(Math.PI*right/width)+1)<1e-7);
+        assert.ok(Math.abs(Math.cos(Math.PI*leftBorder/width))<1e-6);
+        assert.ok(Math.abs(Math.cos(Math.PI*rightBorder/width))<1e-6);
+      }
+    }
+  }
+});
+
+test('KM-38 signed interpolation crosses physical torso midline monotonically',()=>{
+  const a=garment('FA_jersey__9',{n:62,spansCenter:true}),
+    b=garment('FA_jersey__42',{n:62,front:false,
+      spansCenter:true,flip:true,patternOffset:1.7}),
+    r=alignOriginalShoulderStripes({},[a,b]);
+  for(const panel of [a,b]){
+    const field=r.coordinates.get(panel.geometry),p=panel.geometry.getAttribute('position');
+    const n=panel.original.length/5;
+    const mid=n/2-1;
+    for(let row=0;row<5;row++){
+      const i=row*n+mid;
+      assert.ok(p.getX(i)<0&&p.getX(i+1)>0);
+      assert.ok(field[i]<0&&field[i+1]>0,
+        'Signed phase must change monotonically across the center triangle');
+      const center=field[i]+(field[i+1]-field[i])*
+        (-p.getX(i))/(p.getX(i+1)-p.getX(i));
+      assert.ok(Math.abs(center)<1e-7);
+      assert.ok(Math.abs(field[i+1]-field[i]-
+        (p.getX(i+1)-p.getX(i)))<1e-7);
+    }
+  }
+});
+
+test('KM-38 front/back bands remain identical at matched X along full torso height',()=>{
+  const front=garment('FA_jersey__9',{n:62,spansCenter:true}),
+    back=garment('FA_jersey__42',{n:88,spansCenter:true,
+      front:false,flip:true,patternOffset:.71,warpedUv:true}),
+    r=alignOriginalShoulderStripes({},[front,back]),
+    a=r.coordinates.get(front.geometry),b=r.coordinates.get(back.geometry);
+  for(let row=0;row<5;row++)
+    for(let k=-30;k<=30;k++){
+      const x=k/100;
+      const first=sampleTorsoBandAtX(front,a,x,row),
+        second=sampleTorsoBandAtX(back,b,x,row);
+      assert.ok(Math.abs(first-second)<1e-7,
+        'Body front/back phase differs for the same physical X and height');
+      assert.ok(Math.abs(first-x)<1e-7);
+    }
+});
+
+test('KM-38 renderer uses signed centerline from Solid to 1cm and 15cm stripes',()=>{
+  const front=garment('FA_jersey__9',{n:62,spansCenter:true}),
+    back=garment('FA_jersey__42',{n:74,spansCenter:true,
+      front:false,flip:true,patternOffset:1.4,warpedUv:true}),
+    right=sleeve('FA_jersey__38',.5),
+    left=sleeve('FA_jersey__62',1.2),
+    model=scene([front,back,right,left]),
+    store=createKitDesignStore();
+  applyKitDesign(model.outfit,store.getState(),THREE);
+  assert.equal(front.geometry.getAttribute('kmStripeSewnMetres'),null);
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(model.outfit,store.getState(),THREE);
+  const frontAttr=front.geometry.getAttribute('kmStripeSewnMetres'),
+    backAttr=back.geometry.getAttribute('kmStripeSewnMetres');
+  for(const panel of [front,back]){
+    const shader={uniforms:{},
+      vertexShader:'void main(){\n#include <begin_vertex>\n}',
+      fragmentShader:'void main(){\n#include <color_fragment>\n}'};
+    panel.mesh.material.onBeforeCompile(shader);
+    assert.match(shader.vertexShader,/vKmPatternU = kmStripeSewnMetres/);
+    assert.match(shader.fragmentShader,/cos\(3\.141592653589793\*distanceOnFabric\/kmStripeWidth\)/);
+    const attr=panel.geometry.getAttribute('kmStripeSewnMetres');
+    assert.ok(Math.abs(sampleTorsoBandAtX(panel,attr.array,0))<1e-7);
+    assert.equal(panel.mesh.material.userData.kitStripeUniforms.kmStripeWidth.value,.01);
+  }
+  for(const panel of [right,left]){
+    assert.equal(panel.geometry.getAttribute('kmStripeSewnMetres'),null);
+    assert.equal(panel.mesh.material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-plain');
+  }
+  store.selectStripeWidth(150);
+  applyKitDesign(model.outfit,store.getState(),THREE);
+  assert.equal(front.geometry.getAttribute('kmStripeSewnMetres'),frontAttr);
+  assert.equal(back.geometry.getAttribute('kmStripeSewnMetres'),backAttr);
+  assert.equal(front.mesh.material.userData.kitStripeUniforms.kmStripeWidth.value,.15);
+  assert.ok(Math.abs(sampleTorsoBandAtX(front,frontAttr.array,0))<1e-7);
 });

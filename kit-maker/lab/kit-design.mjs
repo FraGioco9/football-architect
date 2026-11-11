@@ -170,12 +170,12 @@ function collectGarmentMaterials(outfit){
   return result;
 }
 
-// KM-20: original flat sewing-pattern UVs provide equal sewn band widths
-// as the shirt curves around shoulders and hips. Projected model X
-// compresses width at the flanks; polar methods create focal points.
-// UV widths are measured in metres by sampling source mesh triangles.
-// Never edit artist vertices, texture atlas, normals, skinning or UVs.
-export const KIT_STRIPE_SHADER_KEY="km37-straight-torso-independent-sleeve-v1";
+// Original cloth UV metrics retain physical-band widths on sleeves,
+// shorts and socks. KM-38's torso uses a signed X-based centerline
+// stripe coordinate for uniform, straight, symmetric front/back bands.
+// Planar X compresses cloth width on curved flanks; the original
+// source UV, vertex positions, normals and GLB are never altered.
+export const KIT_STRIPE_SHADER_KEY="km38-centered-signed-torso-independent-sleeve-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -589,9 +589,10 @@ export function applyKitDesign(outfit,state,THREE){
       throw new Error("Kit Maker material cannot be edited");
   // Install narrow overlays on actual sewn faces, never create a fake rim mask.
   colourOriginalSewnTrims(outfit,prepared,THREE,details.trim);
-  // KM-37: both torso sides share one source-geometry X start along the
-  // ENTIRE chest/abdomen. Sleeves intentionally keep independent UV
-  // stripes: their phase is not forced to meet the torso at the seam.
+  // KM-38: center the primary-colour torso stripe on the ORIGINAL rig's
+  // vertical axis. Signed X remains linear even across triangles that
+  // straddle the center; front and back share one phase at every height.
+  // Left/right sleeves keep independent original UV-based stripe fields.
   let shoulder={adjustments:new Map(),coordinates:new Map(),
     report:{status:"inactive"}};
   const canBindSewnCoordinates=typeof THREE?.Float32BufferAttribute==="function";
@@ -607,9 +608,10 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km32ShoulderOriginReport=shoulder.report.shoulderReference;
       outfit.userData.km36TorsoStartReport=shoulder.report.torsoShoulderStart;
       outfit.userData.km37StripeReport=shoulder.report;
-      if(typeof THREE?.Mesh==="function"&&!outfit.userData.km31SeamLogged){
-        outfit.userData.km31SeamLogged=true;
-        console.info("Kit Maker torso/sleeve stripe mapping",shoulder.report);
+      outfit.userData.km38TorsoCenterlineReport=shoulder.report.torsoShoulderStart;
+      if(typeof THREE?.Mesh==="function"&&!outfit.userData.km38StripeLogged){
+        outfit.userData.km38StripeLogged=true;
+        console.info("Kit Maker centered torso/sleeve stripes",shoulder.report);
       }
     }catch(error){
       const reason=String(error?.message??error);
@@ -620,11 +622,14 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km31ShoulderStripeReport={status:"skipped",reason};
       outfit.userData.km32ShoulderOriginReport={status:"skipped",reason};
       outfit.userData.km37StripeReport={status:"skipped",reason};
+      outfit.userData.km38TorsoCenterlineReport={status:"skipped",reason};
     }
   }
-  // Add a source-geometry X coordinate only to torso fabric. This field
-  // has zero Y-dependence, so stripes cannot veer on the chest.
-  // Sleeve geometry keeps its original UV shader attribute unchanged.
+  // A single signed torso world-X attribute centers one full-width
+  // primary stripe at the rig midline. The field has zero Y-dependence,
+  // so stripes remain vertical along the ENTIRE torso, including
+  // triangles that span the midline.
+  // Both sleeves use their independent original UV shader variant.
   if(canBindSewnCoordinates&&shoulder.report.status==="torso-straight"){
     for(const [geometry,metres] of shoulder.coordinates){
       const p=geometry.getAttribute?.("position");
