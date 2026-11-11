@@ -9,6 +9,7 @@ import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubOverview,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
+import {readPublicPlayers} from './public-players-read.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
 export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv, GmailDeliveryEnv, LocalInboxEnv {
@@ -45,6 +46,16 @@ export default {
       } catch (error) {
         if (error instanceof ApiError) return json(error.status, { error: { code: error.code } });
         return json(503, { error: { code: 'world_unavailable' } });
+      }
+    }
+    const playersPage=url.pathname.match(/^\/api\/players(?:\/page\/([1-9][0-9]{0,3}))?$/);
+    if(playersPage){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayers(requireDatabase(env.DB),Number(playersPage[1]??'1')))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
+        return json(503,{error:{code:'players_unavailable'}});
       }
     }
     const sporting=url.pathname.match(/^\/api\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))\/seasons\/([1-9][0-9]*)$/);

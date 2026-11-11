@@ -163,7 +163,10 @@ jobs:
           ENGINE: ${{ matrix.engine }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"
+          if ! timeout 120s "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"; then
+            echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned browser without retrying OS packages"
+            "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install "$ENGINE"
+          fi
       - name: Verify account matrix
         if: ${{ !needs.scope.outputs.reuse }}
         env:
@@ -229,7 +232,10 @@ jobs:
         if: ${{ !needs.scope.outputs.reuse }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-lifecycle-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium
+          if ! timeout 120s "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium; then
+            echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned Chromium without retrying OS packages"
+            "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install chromium
+          fi
       - name: Verify unified Admin two-season lifecycle with real local Worker and D1
         if: ${{ !needs.scope.outputs.reuse }}
         timeout-minutes: 10

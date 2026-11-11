@@ -48,3 +48,28 @@ test('browser FULL runner provisions both Playwright engines once and tolerates 
  assert.doesNotMatch(block,/npx playwright install chromium\s*\n/);
  assert.doesNotMatch(block,/npx playwright install --with-deps webkit\b/);
 });
+
+test('explicit final verification on a Draft PR opts Site and Browser into full coverage without changing ordinary Draft impact mode',()=>{
+ for(const path of ['landing-checks.yml','int24-browser-qa.yml']){
+  const source=readFileSync(new URL('../.github/workflows/'+path,import.meta.url),'utf8');
+  const classifier=source.split('      - name: Classify fast-safe changes')[1]?.split('      - name:')[0];
+  assert.ok(classifier,'missing classifier '+path);
+  assert.match(classifier,/github\.event_name.*pull_request/);
+  assert.match(classifier,/github\.event\.pull_request\.draft/);
+  assert.ok(classifier.includes("contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->')"),path);
+  assert.match(classifier,/node tools\/ci-opt-01-impact\.mjs/);
+  assert.match(classifier,/mode=full/);
+ }
+});
+
+test('CI browser provisioning limits OS mirror stalls but still runs real pinned engines',()=>{
+ const admin=workflow;
+ const browser=readFileSync(new URL('../.github/workflows/int24-browser-qa.yml',import.meta.url),'utf8');
+ assert.match(admin,/timeout 120s "\$RUNNER_TEMP\/fa-player-browser\/node_modules\/\.bin\/playwright" install --with-deps "\$ENGINE"/);
+ assert.match(admin,/timeout 120s "\$RUNNER_TEMP\/fa-lifecycle-browser\/node_modules\/\.bin\/playwright" install --with-deps chromium/);
+ assert.match(browser,/timeout 120s npx playwright install --with-deps chromium webkit/);
+ assert.match(browser,/npx playwright install chromium webkit/);
+ assert.match(admin,/"\$RUNNER_TEMP\/fa-player-browser\/node_modules\/\.bin\/playwright" install "\$ENGINE"/);
+ assert.match(admin,/"\$RUNNER_TEMP\/fa-lifecycle-browser\/node_modules\/\.bin\/playwright" install chromium/);
+ assert.doesNotMatch(admin+browser,/PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD|continue-on-error:\s*true/);
+});

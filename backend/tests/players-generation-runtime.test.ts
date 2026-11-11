@@ -4,6 +4,7 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {handleAdmin} from '../src/http-admin.ts';
+import worker from '../src/index.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {commitPlayerGeneration} from '../src/players-generation-command.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
@@ -42,7 +43,8 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(preview.candidates).toHaveLength(2);
  expect(preview.candidates[0].nationality).toBe('ITA');
  expect(preview.candidates[0].primary_position).toBe('ST');
- expect(preview.candidates[0].id).toMatch(/^[0-9a-f-]{36}$/);
+ expect(preview.candidates[0].id).toBeUndefined();
+ expect(preview.candidates[0].preview_id).toMatch(/^trial-[0-9]{4}$/);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
  expect((await db.prepare('SELECT status,count FROM player_generation_drafts WHERE id=?').bind(preview.draftId).first())).toMatchObject({status:'preview',count:2});
  const confirm={draftId:preview.draftId,confirmation:'GENERATE PLAYERS'};
@@ -56,11 +58,13 @@ it('shows a server-generated preview but creates zero permanent players until ex
  const records=(await db.prepare('SELECT id,payload_json,world_generation,entry_season FROM generated_players ORDER BY id').all<any>()).results;
  expect(records).toHaveLength(2);
  const actual=records.map(row=>JSON.parse(row.payload_json));
- for(const row of actual){
-  const item=preview.candidates.find((candidate:any)=>candidate.id===row.id);
-  expect(item).toBeTruthy();
-  expect(row).toMatchObject({id:item.id,first_name:item.first_name,last_name:item.last_name,
+ expect(records.every(row=>Number.isSafeInteger(row.id)&&row.id>0)).toBe(true);
+ expect(records[1].id).toBe(records[0].id+1);
+ for(const [i,row] of actual.entries()){
+  const item=preview.candidates[i];
+  expect(row).toMatchObject({id:records[i].id,first_name:item.first_name,last_name:item.last_name,
    age:item.initial_age,career_status:'active',primary_position:'ST',nationality:'ITA'});
+  expect(typeof row.id).toBe('number');
   expect('preview_id' in row).toBe(false);
  }
  expect(records.every(row=>row.world_generation===oldWorld.generation&&row.entry_season===oldWorld.seasonNumber)).toBe(true);
@@ -82,7 +86,7 @@ it('Auto seeds are fresh per preview; manually supplied seeds remain reproducibl
  const manual1=await createPreview(selected),manual2=await createPreview(selected);
  expect(manual1.summary.seed).toBe(selected.seed);
  expect(manual2.summary.seed).toBe(selected.seed);
- const withoutIdentifiers=(players:any[])=>players.map(({id,preview_id,...rest})=>rest);
+ const withoutIdentifiers=(players:any[])=>players.map(({preview_id,...rest})=>rest);
  expect(withoutIdentifiers(manual1.candidates)).toEqual(withoutIdentifiers(manual2.candidates));
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
 });
@@ -113,4 +117,34 @@ it('stale world and expired draft cannot create players',async()=>{
   credentialVersion:1,unified:{playerId,sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
  await expect(commitPlayerGeneration(db,session as any,{draftId:live.draftId,confirmation:'GENERATE PLAYERS'},now+2)).rejects.toMatchObject({status:409});
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
+});
+
+it('anonymous /api/players lists approved records only, with safe fields and pagination',async()=>{
+ const empty=await worker.fetch(new Request(origin+'/api/players/page/1'),service);
+ expect(empty.status).toBe(200);
+ expect((await empty.json() as any).count).toBe(0);
+ const preview=await createPreview({count:51,seed:'directory-public-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ const before=await worker.fetch(new Request(origin+'/api/players'),service);
+ expect((await before.json() as any).players).toHaveLength(0);
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ const first=await worker.fetch(new Request(origin+'/api/players'),service);
+ expect(first.status).toBe(200);
+ expect(first.headers.get('Cache-Control')).toBe('no-store');
+ const a=await first.json() as any;
+ expect(a).toMatchObject({count:51,page:1,pageSize:50,totalPages:2});
+ expect(a.players).toHaveLength(50);
+ for(const player of a.players){
+  expect(Number.isSafeInteger(player.id)&&player.id>0).toBe(true);
+  expect(player).toMatchObject({nationality:'ITA',primary_position:'ST',age:expect.any(Number),height_cm:expect.any(Number)});
+  expect(player.display_name).toContain(' ');
+  for(const privateField of ['first_name','last_name','attributes','initial_age','development_aptitude','batch_id','seed','preview_id','identity_sources']){
+   expect(player).not.toHaveProperty(privateField);
+  }
+ }
+ const second=await worker.fetch(new Request(origin+'/api/players/page/2'),service);
+ expect((await second.json() as any).players).toHaveLength(1);
+ const invalid=await worker.fetch(new Request(origin+'/api/players?page=2'),service);
+ expect(invalid.status).toBe(422);
+ const post=await worker.fetch(new Request(origin+'/api/players',{method:'POST'}),service);
+ expect(post.status).toBe(405);
 });

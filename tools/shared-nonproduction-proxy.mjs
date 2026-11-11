@@ -59,6 +59,33 @@ export async function readSharedPublicWorld(target,{send=sendSharedHttps,timeout
   return response.status===200?JSON.parse(response.body.toString('utf8'))?.world??null:null;
  }catch{return null}
 }
+/** Read-only preflight used by the opt-in shared DEV launcher: never starts a
+ * frontend pointed at an incompatible/missing Players API or an unsafe pool.
+ * It sends no cookies, CSRF tokens, credentials or writes. */
+export async function verifySharedPreviewReadiness(target,{send=sendSharedHttps,timeoutMs=5000}={}){
+ try{
+  const url=targetOrigin(target),headers={'x-fa-expected-pool':'dev-preview'};
+  const probe=async(path,limit)=>{
+   const reply=validResponse(await send(new URL(path,url),{method:'GET',headers,limit,timeoutMs}),limit);
+   if(reply.status!==200)return null;
+   return JSON.parse(reply.body.toString('utf8'));
+  };
+  const env=await probe('/api/environment',1024);
+  if(!env||env.schemaVersion!==1||env.pool!=='dev-preview'||env.origin!==url.origin||
+     env.sharedWorld!==true||env.separateSignIn!==true)
+   return {ready:false,reason:'environment_handshake_unavailable'};
+  const world=await probe('/api/world',4096);
+  if(!world||!world.world||typeof world.world!=='object'||typeof world.world.generation!=='string')
+   return {ready:false,reason:'world_api_unavailable'};
+  const directory=await probe('/api/players/page/1',524288);
+  if(!directory||!Number.isSafeInteger(directory.count)||directory.count<0||
+     directory.page!==1||!Array.isArray(directory.players)||
+     directory.players.length!==Math.min(directory.count,50)||
+     directory.players.some(player=>!Number.isSafeInteger(player?.id)||player.id<1))
+   return {ready:false,reason:'players_api_unavailable'};
+  return {ready:true,count:directory.count};
+ }catch{return {ready:false,reason:'shared_preview_unreachable'}}
+}
 export async function proxySharedNonproduction(req,res,{target,path,body,publicRead,send=sendSharedHttps}){
  let url,session;
  try{url=targetOrigin(target)}catch{return fail(res)}

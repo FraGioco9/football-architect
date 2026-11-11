@@ -42,7 +42,7 @@ jobs:
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
             node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
@@ -105,7 +105,10 @@ jobs:
           fi
           # Install both engines and native dependencies in one pass.
           # Slow Ubuntu mirrors previously exhausted the 20-minute job budget.
-          npx playwright install --with-deps chromium webkit
+          if ! timeout 120s npx playwright install --with-deps chromium webkit; then
+            echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned browsers without retrying OS packages"
+            npx playwright install chromium webkit
+          fi
       - name: Run loopback preview and browser checks
         if: ${{ (needs.scope.outputs.mode != 'fast') && !needs.scope.outputs.reuse }}
         run: |
