@@ -7,7 +7,7 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubOverview,readPublicClubHistory} from './public-sporting-read.ts';
+import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers} from './public-players-read.ts';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
@@ -75,17 +75,6 @@ export default {
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search)return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicClubHistory(requireDatabase(env.DB),clubHistory[1]))}
-      catch(error){
-        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
-        return json(503,{error:{code:'sporting_data_unavailable'}});
-      }
-    }
-    // One public, read-only projection replaces four per-competition Club Overview requests.
-    const club=url.pathname.match(/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/([1-9][0-9]*)\/overview$/);
-    if(club){
-      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
-      if(url.search||!Number.isSafeInteger(Number(club[2])))return json(422,{error:{code:'invalid_public_request'}});
-      try{return json(200,await readPublicClubOverview(requireDatabase(env.DB),club[1],Number(club[2])))}
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'sporting_data_unavailable'}});

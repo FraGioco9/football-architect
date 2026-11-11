@@ -664,7 +664,7 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.match(script,/historyTableScroll/);
  assert.match(script,/if\(selected\.view!=='overview'\)return;/,'non-Overview Club views do not fetch Overview APIs');
  assert.match(script,/createClubPublicReadCache/,'both Club readers reuse canonical per-world HTTP results');
- assert.match(script,/preferBatch:true/,'History prefers one aggregate club HTTP request');
+ assert.doesNotMatch(script,/preferBatch|\/seasons\/.*\/overview/,'Club views use only the shared History endpoint');
  assert.match(read('backend/src/index.ts'),/readPublicClubHistory/,'backend exposes a dedicated club History projection');
  assert.match(read('assets/club-history-source.mjs'),/api\/clubs\/.*\/history/,'client reads the dedicated club History route');
  assert.match(script,/refreshClubHistory\(\);refreshClubOverview\(\)/,

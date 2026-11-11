@@ -49,35 +49,14 @@ test('CLUB-HISTORY-08: include current season, season zero and reject unsupporte
  assert.throws(()=>clubHistorySeasons({...world,seasonNumber:3}),/Unsupported authoritative/);
 });
 
-test('CLUB-HISTORY-08: reads verified closed and current competitions without future scores',async()=>{
- const urls=[];
- const result=await readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>{
-  urls.push(path);
-  if(path.endsWith('/overview'))return path.includes('/seasons/1/')?
-   overview(1,'IT-17',[membership(1),membership(1,'int-1')]):
-   overview(2,'IT-17',[liveMembership]);
-  return path.endsWith('/seasons/2')?liveCompetition():
-   competition(1,path.includes('/int-1/')?'int-1':'IT-1');
- }});
- assert.deepEqual([...urls].sort(),[
-  '/api/clubs/IT-17/seasons/1/overview',
-  '/api/clubs/IT-17/seasons/2/overview',
-  '/api/competitions/IT-1/seasons/1',
-  '/api/competitions/IT-1/seasons/2',
-  '/api/competitions/int-1/seasons/1'
- ].sort());
- assert.equal(result.source,'authoritative');
- assert.equal(result.coverage,'complete');
- assert.deepEqual(result.seasons.map(v=>[v.season,v.ongoing,v.memberships.length]),[[1,false,2],[2,true,1]]);
- assert.equal(result.seasons[0].memberships[0].stats.played,32);
- assert.deepEqual(result.seasons[1].memberships[0].stats,{
-  played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDifference:1,cleanSheets:0
- });
- assert.equal(Object.isFrozen(result.seasons[1].memberships[0].stats),true);
- await assert.rejects(()=>readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>
-  path.endsWith('/overview')?overview(1,'IT-18'):competition(1)}),/Invalid authoritative/);
+const compact={played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDifference:1,cleanSheets:0};
+const historyBatch=(overviews,at=world)=>({
+ schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world:at,
+ status:'available',reason:null,
+ provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+  sourceRef:'club-history:'+at.generation+':revision:'+at.revision},
+ data:{overviews}
 });
-
 test('CLUB-HISTORY-08: closed-season and active-season evidence cannot be confused',()=>{
  const old=membership(1),sealed=competition(1);
  assert.equal(projectClosedClubCompetition(sealed,'IT-17',old,1,world).played,32);
@@ -106,92 +85,60 @@ test('CLUB-HISTORY-08: closed-season and active-season evidence cannot be confus
  ])assert.throws(()=>projectClubCompetitionStats(sample,'IT-17',liveMembership,2,world),/Unverified|Invalid|Future|disagree/);
 });
 
-test('CLUB-HISTORY-08: no games and unpublished current season do not invent matches',async()=>{
- const current={...world,seasonNumber:1,phase:'active'};
- const zeroOverview={...overview(2,'IT-17',[membership(2,'IT-1',null,0)]),
-  selectedSeason:1,world:current,status:'partial',data:{season:1,memberships:[membership(1,'IT-1',null,0)]},
-  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:1:verified'}};
- const zeroCompetition={...pendingCurrent(),selectedSeason:1,world:current,
-  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'world:'+world.generation+':season:1:verified'}};
- zeroCompetition.data.season=1;
- const noGames=await readClubHistory({clubKey:'IT-17',world:current,fetchJson:async path=>
-  path.endsWith('/overview')?zeroOverview:zeroCompetition});
- assert.equal(noGames.coverage,'empty');
- assert.equal(noGames.seasons[0].ongoing,true);
- assert.equal(noGames.seasons[0].memberships[0].stats.played,0);
- const unpublished={...zeroOverview,status:'empty',reason:'calendar-unpublished',
-  provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
- const noCalendar=await readClubHistory({clubKey:'IT-17',world:current,fetchJson:async path=>{
-  assert.ok(path.endsWith('/overview'),'unpublished season does not request competition results');
-  return unpublished;
- }});
- assert.equal(noCalendar.coverage,'empty');
- assert.equal(noCalendar.seasons[0].memberships.length,0);
- assert.equal(noCalendar.seasons[0].ongoing,true);
- let calls=0;
- const season0=await readClubHistory({clubKey:'IT-17',world:{...world,seasonNumber:0,day:0,revision:0,phase:'unstarted'},
-  fetchJson:async()=>{calls++;throw Error('unexpected')}});
- assert.equal(season0.coverage,'empty');
- assert.deepEqual(season0.seasons,[]);
- assert.equal(calls,0);
-});
-
-
-test('CLUB-API-02: complete compact overview stats reduce History to one API GET per season',async()=>{
- const overview1=overview(1,'IT-17',[
-  {...membership(1),stats:{played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11}},
-  {...membership(1,'int-1'),stats:{played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11}}
- ]);
- const overview2=overview(2,'IT-17',[{...liveMembership,stats:{
-  played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDifference:1,cleanSheets:0
+test('CLUB-HISTORY: ongoing and archived seasons use one verified aggregate read',async()=>{
+ const previous=overview(1,'IT-17',[{...membership(1),stats:{
+  played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11
  }}]);
- const visited=[];
+ const current=overview(2,'IT-17',[{...liveMembership,stats:compact}]);
+ const paths=[];
  const result=await readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>{
-  visited.push(path);
-  if(path==='/api/clubs/IT-17/seasons/1/overview')return overview1;
-  if(path==='/api/clubs/IT-17/seasons/2/overview')return overview2;
-  throw Error('Forbidden redundant competition request: '+path);
+  paths.push(path);return historyBatch([previous,current]);
  }});
- assert.deepEqual([...visited].sort(),[
-  '/api/clubs/IT-17/seasons/1/overview',
-  '/api/clubs/IT-17/seasons/2/overview'
- ]);
+ assert.deepEqual(paths,['/api/clubs/IT-17/history']);
  assert.equal(result.coverage,'complete');
- assert.deepEqual(result.seasons.map(s=>[s.season,s.memberships.length]),[[1,2],[2,1]]);
- assert.equal(result.seasons[0].memberships[1].stats.played,32);
- assert.deepEqual(result.seasons[1].memberships[0].stats,{
-  played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDifference:1,cleanSheets:0
- });
- assert.ok(Object.isFrozen(result.seasons[0].memberships[0].stats));
+ assert.deepEqual(result.seasons.map(s=>[s.season,s.ongoing,s.memberships.length]),[[1,false,1],[2,true,1]]);
+ assert.equal(result.seasons[1].memberships[0].stats.played,1);
+ assert.ok(Object.isFrozen(result.seasons[1].memberships[0].stats));
 });
 
-test('CLUB-API-02: compact totals are validated, malformed stats fail closed instead of falling back',async()=>{
- const m=liveMembership,p=overview(2,'IT-17',[{...m,stats:{
-  played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDifference:1,cleanSheets:0
- }}]);
- const stats=projectClubOverviewStats(p,'IT-17',m,2,world);
- assert.equal(stats.played,1);
- assert.equal(projectClubOverviewStats(overview(2,'IT-17',[m]),'IT-17',m,2,world),null,
-  'old public deployments still use the original competition projection fallback');
- for(const tamper of [
-  {...p,status:'available'},
-  {...p,world:{...world,revision:21}},
-  {...p,provenance:{...p.provenance,kind:'none'}},
-  {...p,data:{...p.data,memberships:[{...m,stats:{...stats,played:2}}]}},
-  {...p,data:{...p.data,memberships:[{...m,stats:{...stats,goalDifference:2}}]}},
-  {...p,data:{...p.data,memberships:[{...m,stats:{...stats,cleanSheets:2}}]}},
-  {...p,data:{...p.data,memberships:[{...m,stats:{...stats,clubId:'IT-18'}}]}},
-  {...p,data:{...p.data,memberships:[{...m,stats:{...stats,played:0}}]}}
- ])assert.throws(()=>projectClubOverviewStats(tamper,'IT-17',m,2,world),/Unverified|Invalid/);
+test('CLUB-HISTORY: unpublished, zero-game and Season 0 states stay distinct',async()=>{
+ const one={...world,seasonNumber:1,revision:20,day:0,phase:'preparing'};
+ const unpublished={...overview(1,'IT-17'),world:one,status:'empty',reason:'calendar-unpublished',
+  provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
+ const result=await readClubHistory({clubKey:'IT-17',world:one,
+  fetchJson:async()=>historyBatch([unpublished],one)});
+ assert.equal(result.coverage,'empty');
+ assert.equal(result.seasons[0].ongoing,true);
+ assert.deepEqual(result.seasons[0].memberships,[]);
+ const before={...one,seasonNumber:0,revision:0,phase:'unstarted'};
  let calls=0;
- await assert.rejects(()=>readClubHistory({clubKey:'IT-17',world:{...world,seasonNumber:2},fetchJson:async path=>{
-  calls++;if(path.includes('/seasons/1/'))return overview(1,'IT-17',[]);
-  if(!path.endsWith('/overview'))throw Error('Never fetch after malformed embedded stats');
-  return {...p,data:{...p.data,memberships:[{...m,stats:{...stats,won:2}}]}};
- }}),/Invalid verified compact match totals/);
- assert.equal(calls,2,'no extra competition GET on malformed compact payload');
+ const zero=await readClubHistory({clubKey:'IT-17',world:before,fetchJson:async()=>{calls++;throw Error('not expected')}});
+ assert.equal(calls,0);
+ assert.deepEqual(zero.seasons,[]);
 });
 
+test('CLUB-HISTORY: missing aggregate never calls the retired per-season endpoint',async()=>{
+ const paths=[];
+ await assert.rejects(readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>{
+  paths.push(path);throw Object.assign(Error('not_found'),{status:404});
+ }}),/not_found/);
+ assert.deepEqual(paths,['/api/clubs/IT-17/history']);
+ let calls=0;
+ await assert.rejects(readClubHistory({clubKey:'IT-17',world,fetchJson:async()=>{
+  calls++;throw Object.assign(Error('backend unavailable'),{status:503});
+ }}),/backend unavailable/);
+ assert.equal(calls,1);
+});
+
+test('CLUB-HISTORY: malformed embedded statistics fail closed without extra requests',async()=>{
+ const tampered=overview(2,'IT-17',[{...liveMembership,stats:{...compact,won:2}}]);
+ const previous=overview(1,'IT-17',[]);
+ let requests=0;
+ await assert.rejects(readClubHistory({clubKey:'IT-17',world,fetchJson:async()=>{
+  requests++;return historyBatch([previous,tampered]);
+ }}),/Invalid verified compact match totals/);
+ assert.equal(requests,1);
+});
 
 test('CLUB-API-03: single aggregate Club History GET returns every verified season',async()=>{
  const compact={played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11};
@@ -207,7 +154,7 @@ test('CLUB-API-03: single aggregate Club History GET returns every verified seas
   data:{overviews:[summary1,summary2]}
  };
  const paths=[];
- const loaded=await readClubHistory({clubKey:'IT-17',world,preferBatch:true,fetchJson:async path=>{
+ const loaded=await readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>{
   paths.push(path);
   if(path==='/api/clubs/IT-17/history')return batch;
   throw Error('Illegal extra HTTP request '+path);
@@ -229,32 +176,10 @@ test('CLUB-API-03: single aggregate Club History GET returns every verified seas
    memberships:[liveMembership]}}]}}
  ]){
   const seen=[];
-  await assert.rejects(()=>readClubHistory({clubKey:'IT-17',world,preferBatch:true,fetchJson:async path=>{
+  await assert.rejects(()=>readClubHistory({clubKey:'IT-17',world,fetchJson:async path=>{
    seen.push(path);return changed;
   }}),/Unverified|Incomplete|Invalid/);
   assert.deepEqual(seen,['/api/clubs/IT-17/history'],'invalid aggregate cannot trigger competition fan-out');
  }
 });
 
-test('CLUB-API-03: legacy 404 fallback is explicit, but 503 never triggers competition requests',async()=>{
- const compact={played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11};
- const visits=[];
- const legacy=await readClubHistory({clubKey:'IT-17',world,preferBatch:true,fetchJson:async path=>{
-  visits.push(path);
-  if(path==='/api/clubs/IT-17/history')throw Object.assign(Error('not_found'),{status:404});
-  const match=path.match(/\/seasons\/(\d+)\/overview$/);
-  if(match)return overview(Number(match[1]),'IT-17',[{...membership(Number(match[1])),stats:compact}]);
-  throw Error('Unexpected competition HTTP request '+path);
- }});
- assert.deepEqual(visits.slice().sort(),[
-  '/api/clubs/IT-17/history',
-  '/api/clubs/IT-17/seasons/1/overview',
-  '/api/clubs/IT-17/seasons/2/overview'
- ].sort());
- assert.equal(legacy.seasons.length,2);
- let count=0;
- await assert.rejects(()=>readClubHistory({clubKey:'IT-17',world,preferBatch:true,fetchJson:async()=>{
-  count++;throw Object.assign(Error('upstream unavailable'),{status:503});
- }}),/upstream unavailable/);
- assert.equal(count,1,'a real backend error cannot cause a waterfall of fallback requests');
-});
