@@ -283,6 +283,9 @@ try {
    assert.equal(response?.status(),200,path);
    await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id?.toLowerCase()===id&&
     !!window.faCompetitionContextApi?.selectSeason,slug);
+   // Wait for semantic Stats/Awards state after initial hydration, not network idle.
+   if(view==='stats'||view==='awards')await page.waitForFunction(view=>
+    !!document.getElementById('competition-panel-'+view)?.dataset.faContentState,view);
    const state=await page.evaluate(view=>{
     const header=document.querySelector('.app-competition-header');
     const tabs=document.querySelector('.app-competition-tabs');
@@ -430,6 +433,8 @@ try {
    const response=await page.goto(url,{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,url);
    await page.waitForSelector('#competition-tab-'+view+'[aria-selected="true"]');
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id&&
+    window.faCompetitionContext?.selectedSeason===1,cup);
    const visible=await page.locator("#competition-panel-"+view).isVisible();
    if(!visible){
     const probe=await page.evaluate(view=>({
@@ -529,6 +534,7 @@ try {
    checks++;
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"domcontentloaded"});
+  await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,cup);
   for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
@@ -613,9 +619,9 @@ try {
   await page.keyboard.press("End");
   await page.waitForURL("**/awards?season=1");
   await page.reload({waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator("#competition-panel-awards").isVisible(),true);
+  await page.locator("#competition-panel-awards").waitFor({state:"visible"});
   await page.goBack({waitUntil:"domcontentloaded"});
-  assert.equal(await page.locator("#competition-panel-postseason").isVisible(),true);
+  await page.locator("#competition-panel-postseason").waitFor({state:"visible"});
   checks++;
   assert.deepEqual(errors,[],"JS errors "+cup+" "+width);
   await page.close();
