@@ -149,7 +149,7 @@ try{
  // Same CSS/DOM class structure as live Fixtures; no sporting data mutation.
  for(const width of [621,768,800]){
   await visit({width,height:900,language:"en",theme:"dark"},"/competitions/it-1/fixtures",async page=>{
-   await page.waitForFunction(()=>document.querySelectorAll('.app-fixture-club>.app-fixture-name.app-world-standing-club-link').length>0);
+   await page.waitForFunction(()=>[...document.querySelectorAll('.app-fixture-club>.app-fixture-name.app-world-standing-club-link')].some(node=>node.getClientRects().length>0));
    const realClubs=await page.evaluate(()=>{
     const links=[...document.querySelectorAll(".app-fixture-club>.app-fixture-name.app-world-standing-club-link")].filter(el=>el.getClientRects().length);
     return {count:links.length,offenders:links.flatMap(el=>{

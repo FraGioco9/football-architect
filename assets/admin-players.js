@@ -309,8 +309,12 @@
    if(nextSignature!==signature){signature=nextSignature;invalidateDraft();}
    if(draft){renderPage();if(!saved&&!pending)feedback.textContent=text.previewReady;}
    if(validation&&!pending)feedback.textContent=text.invalid+': '+validation;
-   previewButton.disabled=!allowed||!canWrite||!options||pending;
-   commitButton.disabled=!allowed||!canWrite||!draft||pending||saved||confirmation.value!=='GENERATE PLAYERS';
+   const previewDisabled=!allowed||!canWrite||!options||pending;
+   const commitDisabled=!allowed||!canWrite||!draft||pending||saved||confirmation.value!=='GENERATE PLAYERS';
+   // Preserve the enabled button throughout pointerdown/click. WebKit may
+   // suppress a click after an unnecessary disabled-property assignment.
+   if(previewButton.disabled!==previewDisabled)previewButton.disabled=previewDisabled;
+   if(commitButton.disabled!==commitDisabled)commitButton.disabled=commitDisabled;
   }
   async function authorizedPost(path,payload){
    const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
@@ -392,7 +396,13 @@
    }catch{if(current===ticket)paint(false,false)}finally{win.clearTimeout(timeout)}
   }
   if(form){
-   form.addEventListener('input',update);form.addEventListener('change',update);
+   form.addEventListener('input',update);
+   // Text inputs update immediately on input. Their subsequent blur/change
+   // events need not re-render the form during a Safari pointer gesture.
+   // Native select changes continue to update dependent dropdown fields.
+   form.addEventListener('change',event=>{
+    if(event.target?.matches?.('select[data-players-option]'))update();
+   });
    confirmation.addEventListener('input',update);
    previewButton.addEventListener('click',()=>{void previewPlayers()});
    commitButton.addEventListener('click',()=>{void commitPlayers()});
