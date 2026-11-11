@@ -39,7 +39,12 @@ try{
       // phase can differ without changing any rendered surface.
       const elements=[...document.querySelectorAll(selector)].filter(e=>
        !e.closest('.app-competition-panel[hidden]')&&
-       !(selector==='.app-world-standing-table'&&e.closest('.app-standings-skeleton'))).slice(0,12);
+       !(selector==='.app-world-standing-table'&&e.closest('.app-standings-skeleton'))&&
+       // The desktop table occupies zero pixels on mobile. Its temporary
+       // visibility state during hydration is not observable and is verified
+       // separately by the responsive browser suite.
+       !(selector==='.app-world-standing-table'&&
+         e.getBoundingClientRect().width===0&&e.getBoundingClientRect().height===0)).slice(0,12);
       result[selector]=elements.map(e=>{
        const s=getComputedStyle(e);
        const props=Object.fromEntries(cssProperties.map(p=>[p,s.getPropertyValue(p)]));
