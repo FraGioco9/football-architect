@@ -1,13 +1,21 @@
 // REPO-493 step 05: focused real-browser evidence, not the entire audit matrix.
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
+import {createServer} from 'node:http';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 
 const engine=process.env.FA_REPO_493_ENGINE||'chromium';
 assert.ok(['chromium','webkit'].includes(engine));
 const playwright=await import('playwright');
-const server=createPreviewServer({devPreview:true});
+// The DEV server deliberately accepts only Host on port 2000.
+// Adapt the ephemeral test port to that canonical Host, as PAGE-LOAD-02 does;
+// never weaken the server's Host validation for tests.
+const preview=createPreviewServer({devPreview:true});
+const server=createServer((req,res)=>{
+ req.headers.host='127.0.0.1:2000';
+ preview.emit('request',req,res);
+});
 server.listen(0,'127.0.0.1');
 await once(server,'listening');
 const origin='http://127.0.0.1:'+server.address().port;
