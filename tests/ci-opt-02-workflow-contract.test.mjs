@@ -81,7 +81,8 @@ test('FULL WebKit and Chromium jobs use the pinned official browser image with n
  for(const block of [account,full]){
   assert.ok(block);
   assert.match(block,/runs-on: ubuntu-24\.04/);
-  assert.match(block,/container: mcr\.microsoft\.com\/playwright:v1\.58\.2-noble/);
+  assert.match(block,/image: mcr\.microsoft\.com\/playwright:v1\.58\.2-noble/);
+  assert.match(block,/options: --add-host=app\.localhost:127\.0\.0\.1/);
   assert.match(block,/PLAYWRIGHT_BROWSERS_PATH: \/ms-playwright/);
   assert.match(block,/npx playwright install chromium webkit|playwright" install "\$ENGINE"/);
  }

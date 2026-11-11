@@ -134,7 +134,9 @@ jobs:
     runs-on: ubuntu-24.04
     # Playwright's official image includes WebKit's libwoff2dec and all native deps.
     # Avoid runner APT mirrors, which intermittently fail DNS resolution.
-    container: mcr.microsoft.com/playwright:v1.58.2-noble
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --add-host=app.localhost:127.0.0.1
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     strategy:
