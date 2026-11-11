@@ -63,6 +63,13 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
  const calendar=readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8');
  assert.match(calendar,/data-admin-world/);
+ for(const child of [calendar,readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8')]){
+  assert.match(child,/class="admin-page-heading"/);
+  assert.match(child,/class="app-link app-link-secondary admin-back"/);
+  assert.match(child,/href="\/admin" data-admin-back/);
+  assert.match(child,/aria-label="Back to Admin"/);
+  assert.match(child,/<svg[^>]*class="fa-icon"[^>]*>/);
+ }
  assert.doesNotMatch(calendar,/data-admin-players-form|\/assets\/admin-players\.js/);
  const {renderAdminPlayers}=await import('../tools/render-admin-settings.mjs');
  const players=readFileSync(new URL('../admin/players/index.html',import.meta.url),'utf8');
@@ -75,6 +82,10 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.app-admin-view\{[^}]*max-width:none/,'Admin pages must use the whole content width');
  assert.match(css,/\.admin-players-dropdown[^}]*\{/,'Players dropdowns must use the site styling');
  assert.match(css,/\.app-admin-view \.admin-players form\{[^}]*max-width:none/,'Players form must not inherit the legacy 30rem limit');
+ assert.match(css,/\.app-admin-view\{grid-template-columns:minmax\(0,1fr\)\}/);
+ assert.match(css,/\.app-admin-view > \.admin-players,[^}]*width:100%/);
+ assert.match(css,/\.app-admin-view \.admin-players-fields label,[^}]*outline:none/);
+ assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):focus-visible/);
  for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))

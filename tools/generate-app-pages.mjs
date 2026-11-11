@@ -267,7 +267,7 @@ for(const [route,title,content,scripts] of [
  ['admin/calendar','Admin — Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-settings.js']],
  ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-players.js']]
 ]){
- const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">'+(route==='admin'?'Admin':route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          '+(route==='admin'?'':('<a class="admin-back" href="/admin" data-admin-back>Admin</a>'))+'\n          '+content+'\n        </section>\n';
+ const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          '+(route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="/admin" data-admin-back aria-label="Back to Admin"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
  // At first paint, Admin must not highlight a different sidebar destination.

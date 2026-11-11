@@ -61,7 +61,12 @@
 .app-admin-view .admin-directory-card p{flex:1;line-height:1.55}
 .app-admin-view .admin-directory-card .app-link{min-width:125px;text-align:center}
 .app-admin-view .admin-directory-card[hidden]{display:none!important}
-.app-admin-view .admin-back{display:inline-flex;width:max-content;margin:0 0 8px;color:inherit;text-decoration:underline;text-underline-offset:3px}
+.app-admin-view .admin-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;flex-wrap:wrap}
+.app-admin-view .admin-page-heading .app-page-title{margin:0}
+.app-admin-view .admin-back{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:0;min-height:var(--fa-control-height-regular);padding:9px 14px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text)!important;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.app-admin-view .admin-back .fa-icon{flex:none}
+.app-admin-view .admin-back:hover{background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.app-admin-view .admin-back:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media(max-width:620px){.app-admin-view .admin-directory{grid-template-columns:1fr}}
 
 /* Same combobox primitives as Settings/Calendar. */
@@ -81,3 +86,21 @@
 
 /* Override legacy 30rem form cap for the dedicated full-width Players page. */
 .app-admin-view .admin-players form{width:100%;max-width:none;min-width:0}
+
+/* Full-width section and inner form: no implicit grid min-content/max-width constraints. */
+.app-admin-view{grid-template-columns:minmax(0,1fr)}
+.app-admin-view > .admin-players,
+.app-admin-view > .admin-settings,
+.app-admin-view .admin-players > .app-settings-panel-content,
+.app-admin-view .admin-players form,
+.app-admin-view .admin-players .admin-players-group{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+.app-admin-view .admin-players > .app-settings-panel-content,
+.app-admin-view .admin-players form{grid-template-columns:minmax(0,1fr)}
+
+/* Focus/highlight belongs to the interactive box, never to its caption/label. */
+.app-admin-view .admin-players-fields label,
+.app-admin-view .admin-players-fields [data-admin-players-label]{background:transparent;outline:none;box-shadow:none;border-color:transparent}
+.app-admin-view .admin-players-fields :is(input[data-players-option],.language-trigger):hover:not(:disabled){border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-players-fields :is(input[data-players-option],.language-trigger):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--fa-field-focus-border)}
+.app-admin-view .admin-directory-card:hover{border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-directory-card:hover :is(h2,p),.app-admin-view .admin-directory-card:focus-within :is(h2,p){background:transparent;outline:none;box-shadow:none}
