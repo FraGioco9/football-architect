@@ -72,3 +72,11 @@ node tools/generate-app-pages.mjs --check
 - **19–20** Profile before optimization; final exact-head QA and report once prerequisite work is ready.
 
 **Safety:** No merge, deploy, remote DB/D1 read or write, migration, production operation, real player generation or change to official sporting outcomes is authorized by this audit.
+
+## Step 05 focused browser verification
+
+The new `tests/repo-493-first-paint-browser.mjs` is included once in the existing **Browser FULL** workflow. It checks initial active panels, tabs and control reservations on **4 representative competitions × 7 views (28 loads)**, plus **4 club routes** under an intentionally delayed club identity manifest, followed by verified hydration. It writes detailed status evidence to the already-uploaded `int24-browser-artifacts/repo-493-first-paint-chromium.json`.
+
+This is a **targeted browser sample**, not proof for the whole 7,136-case matrix. All other season/Debug, slow/error/retry, locale/theme, physical Safari and real hosted cases remain UNKNOWN until verified. Run manually on an isolated local checkout with Playwright installed: `node tests/repo-493-first-paint-browser.mjs`; optional WebKit: set `FA_REPO_493_ENGINE=webkit`.
+
+Do not mark step 05 complete until the exact-head run finishes and its evidence has been reviewed.
