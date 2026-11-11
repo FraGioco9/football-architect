@@ -264,6 +264,7 @@
     "tests/provider-contract.test.mjs": "site-node",
     "tests/provider-selectors.test.mjs": "site-node",
     "tests/publication-gate.test.mjs": "site-node",
+    "tests/repo-493-first-paint-matrix.test.mjs": "site-node",
     "tests/routes-compatibility.test.mjs": "site-node",
     "tests/routes-registry.test.mjs": "site-node",
     "tests/rules-registry-integration.test.mjs": "site-node",

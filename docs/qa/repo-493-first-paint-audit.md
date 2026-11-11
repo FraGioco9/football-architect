@@ -1,0 +1,74 @@
+# REPO-IMPROVEMENT-01 — Step 05: first-paint audit inventory (Draft/HOLD)
+
+**Issue:** [#493](https://github.com/FraGioco9/football-architect/issues/493) · **Related:** [#408](https://github.com/FraGioco9/football-architect/issues/408), [#469](https://github.com/FraGioco9/football-architect/issues/469), [#471](https://github.com/FraGioco9/football-architect/issues/471), [#485](https://github.com/FraGioco9/football-architect/issues/485).
+
+**Source baseline when this work began:** main `b60ce0f58c84208cfdcec52679e7c4702808f14a`, 2026-11-11. Always compare with live main and the exact HEAD before testing. This is an **audit foundation, not completed visual QA**. Nothing here proves Production, Preview, local Worker/D1, Safari or real browser outcomes.
+
+## Reconciliation before starting
+
+- #483 (Admin) merged on 2026-11-11; generated Admin and protected Players pages now belong in QA.
+- #492 (Fixtures crest skeleton centering) merged on 2026-11-11; do not duplicate its implementation. Its tests still need risk-based runtime verification (step 06).
+- #491 (D1 public directory) closed **without merge**. Inspect actual merged implementation rather than presuming that original PR head was integrated; step 13 is dependent on this check.
+- #474 (shared crest/History) merged on 2026-11-10. #471 still has unchecked QA: implementation does not prove physical QA acceptance.
+- #481 and #454 remain independent experimental Draft/HOLD workstreams, excluded from authorized feature implementation in #493.
+
+## Coverage model
+
+The read-only generator `tools/repo-493-first-paint-matrix.mjs` inventories authoritative competition and club identities from **current source**, not a hand-typed team list. The generated matrix is intentionally **all UNKNOWN** until actual per-case evidence is recorded. Its statuses are not CI passes.
+
+| Surface | Exhaustive source inventory | Representative browser matrix |
+| --- | ---: | --- |
+| Domestic competitions | 16 competitions; seven visible shared competition tabs each | All 16 × seven views |
+| International cups | 2 competitions; seven supported tabs each | Both × seven views |
+| Club detail | 320 clubs × five canonical views = 1,600 URLs | 2 club IDs per nation (IDs 1 and 40) × five views |
+| Primary/shell/account/Admin | 17 explicit paths including calendar season/week and Admin children | All 17 |
+| State variants | Season 0/1 × Debug OFF/ON (local-only Debug) | Four states per representative route |
+| Actions | Direct load, refresh, in-app view switch, season switch, rapid view switch, Back/Forward, slow/failing data, retry/reset | Eight actions per representative state |
+
+Additional tests must cover public Season 2+ or unavailable years, postseason/knockout phases, unknown participants, selected matchday 0/15/30 where meaningful, revoked Admin rights, denied access, invalid URLs and public no-Debug behavior. Mark not-applicable situations N/A **with the reason**, rather than forcing a PASS. Source-only checks are different from Chromium/WebKit, and emulated WebKit is different from **physical iPhone Safari**.
+
+### Commands (read-only; Node 22)
+
+```powershell
+node tools/repo-493-first-paint-matrix.mjs
+node tools/repo-493-first-paint-matrix.mjs --csv
+node --test tests/repo-493-first-paint-matrix.test.mjs
+node tools/ci-discovery.mjs
+node tools/generate-app-pages.mjs --check
+```
+
+`--csv` prints the case table to stdout and **does not write files**. Manually record the exact run SHA, environment, browser, viewport, locale, theme, data mode, actual outcome, reproduction steps and evidence URL when moving a row out of UNKNOWN.
+
+## Existing source-level evidence (not re-run by this document)
+
+| Area / obligation | Existing source or test | Classification |
+| --- | --- | --- |
+| 18 generated routes: static tabs, Rules and reserved Stats/History/Awards | `tests/page-load-03c-first-paint.test.mjs` | **Source test exists; result on this HEAD not executed here** |
+| Anonymous identities for 28 static HTML shells | `tests/page-load-04-club-html.test.mjs` | Source test exists; visual hydration UNKNOWN |
+| 320 club IDs and five canonical views; anonymous detail first paint | `tests/club-pages.test.mjs` | Source test exists; full browser/slow/error matrix UNKNOWN |
+| Fixtures skeleton slots and sizes | `tests/fixtures-crest-skeleton-alignment.test.mjs` | Source test exists; real computed layout/visual UNKNOWN |
+| History skeleton/archive row updates | `tests/history-archive-skeleton-rows.test.mjs` | Source test exists; season and provider-switch browser QA UNKNOWN |
+| Stats rendering, supplied results, nonfabricated player metrics | `tests/competition-stats-view.test.mjs` | Source test exists; selected mode/per-view runtime UNKNOWN |
+| Competition URL/season/Back-Forward | `tests/competition-navigation.test.mjs` | Source test exists; full browser route matrix UNKNOWN |
+| Admin hidden until verified authorization | `tests/admin-page.test.mjs` | Source test exists; live permission and refresh QA UNKNOWN |
+| Canonical URL and public preview host | `tests/app-canonical-routes.test.mjs` | Source test exists; unknown route HTTP 404 still in #485 |
+
+### Required acceptance evidence for every selected browser case
+
+1. **First paint (before API/manifest settles):** static heading/tabs, view controls, season/matchday selectors and space reservations visible; no guessed names, crests, standings or scores.
+2. **Hydration:** real data from the authorized provider replaces placeholders at stable geometry; verify identity and source, not only element count.
+3. **Refresh/state change:** preserve selected season, view, day and resolved image nodes where valid; reject stale/late responses; never flicker to unrelated season.
+4. **Verified empty/error/retry:** distinguish empty versus unavailable/error; no false zero/placeholder shield while a known crest is pending.
+5. **Isolation:** Debug ON only in local DEV; Debug OFF uses the genuine world; public and protected endpoints never leak fictional or private data.
+6. **Visual/accessibility:** 320, 390, 768, 1440px; Dark/Light; EN/DE/ES/FR/IT; keyboard focus, no overflow, physical Safari listed UNKNOWN until actually tested.
+
+## Next implementation buckets — not yet PASS
+
+- **05** Execute/record browser matrix, prioritize reproducible failures; no shotgun rewrites.
+- **06–07** Use the smallest shared-component fixes for confirmed crest/loading, History/Fixtures/Stats issues; keep one coherent Frontend Draft/HOLD branch where possible.
+- **08** Separate routing/404 Draft/HOLD only after redirect matrix and owner's UI review. HTTP 404 vs 401/403 is a required acceptance criterion.
+- **09–12** CI/test/documentation improvements in a separate grouped workstream; avoid coupling CI edits to UI behavior.
+- **13–15** Players E2E only after checking merged source; player–club relationship is **design-only** until explicit contract approval.
+- **19–20** Profile before optimization; final exact-head QA and report once prerequisite work is ready.
+
+**Safety:** No merge, deploy, remote DB/D1 read or write, migration, production operation, real player generation or change to official sporting outcomes is authorized by this audit.
