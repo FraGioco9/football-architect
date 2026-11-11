@@ -232,7 +232,7 @@ test('Lab-first-paint script keeps canonical navigation logic except active DEV 
   const adapted=labFirstPaintBootstrap(original);
   assert.ok(adapted.includes("const selected=path==='/dev/match-engine'"));
   assert.ok(adapted.includes("nav.querySelector('[data-me-dev-link]')"));
-  assert.equal(adapted.replace("const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onClubs?","const selected=onClubs?"),original);
+  assert.equal(adapted.replace("const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onPlayers?","const selected=onPlayers?"),original);
 });
 
 
