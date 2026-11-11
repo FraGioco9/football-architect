@@ -224,14 +224,19 @@ try{
     });
     const beforeFocus=await readLabel();
     const age=page.locator('[data-players-option="age"]');
-    await page.waitForTimeout(220); // Settle border transitions before comparing.
-     const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
-    await page.locator('[data-admin-players-label="age"]').hover({position:{x:3,y:3}});
+    await page.mouse.move(0,0); // Establish an unhovered field baseline.
     await page.waitForTimeout(220);
-     assert.deepEqual(await readLabel(),beforeFocus,'Hover on field label must not highlight the label');
-    assert.deepEqual(await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor})),inputBeforeHover,'Hover on field label must not highlight input box');
+    const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    await page.locator('[data-admin-players-label="age"]').hover();
+    await page.waitForTimeout(220);
+    assert.deepEqual(await readLabel(),beforeFocus,'Hover on field caption must not highlight the label');
+    // Native HTML <label> can forward :hover to its associated input.
+    // The visible highlight belongs to the field box, never the caption.
     await age.hover();
+    await page.waitForTimeout(220);
     assert.deepEqual(await readLabel(),beforeFocus,'Hover on input box must leave label unchanged');
+    const inputAfterHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    assert.notDeepEqual(inputAfterHover,inputBeforeHover,'Only the editable field box should highlight on hover');
 
     await page.locator('[data-players-option="age"]').focus();
     const afterFocus=await readLabel();

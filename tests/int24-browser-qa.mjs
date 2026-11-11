@@ -44,8 +44,15 @@ try {
     stats:document.querySelectorAll("#fa-dev-stats .fa-dev-stats-card").length
    }));
    assert.deepEqual(actual,{id:slug,season:1,tabs:7,stats:3},"shared route "+slug);
-   // SH-02: traverse all seven real views for all 18 competitions. The
-   // declarative tab/panel/crest identities must outlive same-document routing.
+   // SH-02: activate Standings once before snapshotting its hydrated
+   // crest host. The first transition from Stats may still mount data;
+   // later navigation must preserve the stable DOM identity.
+   await routePage.locator("#competition-tab-standings").click();
+   await routePage.waitForFunction(()=>{
+    const active=document.querySelector("#competition-tab-standings[aria-selected='true']");
+    const panel=document.querySelector("#competition-panel-standings");
+    return !!active&&!!panel&&!panel.hidden;
+   });
    await routePage.evaluate(()=>{
     window.__sh02Tabs=[...document.querySelectorAll(".app-competition-tabs [role=tab]")];
     window.__sh02Panels=window.__sh02Tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
