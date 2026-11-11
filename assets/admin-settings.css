@@ -78,3 +78,6 @@
 .app-admin-view .admin-players-fields label[hidden]{display:none!important}
 
 .app-admin-view .admin-players-hint{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.45;margin-top:3px}
+
+/* Override legacy 30rem form cap for the dedicated full-width Players page. */
+.app-admin-view .admin-players form{width:100%;max-width:none;min-width:0}

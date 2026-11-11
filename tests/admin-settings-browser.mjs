@@ -174,6 +174,9 @@ try{
    await page.locator('#app-admin[data-admin-access="'+(writer?'granted':'denied')+'"]').waitFor({state:'attached'});
    if(writer){
     assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
+    const formWidth=await page.evaluate(()=>{const form=document.querySelector('[data-admin-players-form]'),panel=document.querySelector('[data-admin-players] .app-settings-panel-content');
+     const styles=getComputedStyle(panel);return {available:panel.clientWidth-parseFloat(styles.paddingLeft)-parseFloat(styles.paddingRight),actual:form.getBoundingClientRect().width}});
+    assert.ok(Math.abs(formWidth.available-formWidth.actual)<=2,JSON.stringify(formWidth));
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');

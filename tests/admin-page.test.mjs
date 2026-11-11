@@ -74,6 +74,7 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const css=readFileSync(new URL('../assets/admin-settings.css',import.meta.url),'utf8');
  assert.match(css,/\.app-admin-view\{[^}]*max-width:none/,'Admin pages must use the whole content width');
  assert.match(css,/\.admin-players-dropdown[^}]*\{/,'Players dropdowns must use the site styling');
+ assert.match(css,/\.app-admin-view \.admin-players form\{[^}]*max-width:none/,'Players form must not inherit the legacy 30rem limit');
  for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
