@@ -1,7 +1,7 @@
 /* NAV-01: initialize static navigation before first paint; no career writes. */
 (()=>{'use strict';const nav=document.querySelector('.fa-shell-nav[data-nav01-static]');if(!nav)return;
 if(nav.dataset.nav01Bound==='true'){for(const link of nav.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));window.faSidebarPaint?.();return;}
-const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni']};
+const lang={en:['World','Domestic','International','Explore','Clubs','Guide','Competitions','Players'],de:['Welt','National','International','Entdecken','Vereine','Handbuch','Wettbewerbe','Spieler'],es:['Mundo','Nacionales','Internacionales','Explorar','Clubes','Guía','Competiciones','Jugadores'],fr:['Monde','Nationales','Internationales','Explorer','Clubs','Guide','Compétitions','Joueurs'],it:['Mondo','Nazionali','Internazionali','Esplora','Club','Guida','Competizioni','Giocatori']};
 const baseLabels={en:['Home','Dashboard','Calendar','Settings','Career pages'],de:['Start','Dashboard','Kalender','Einstellungen','Karriereseiten'],es:['Inicio','Panel','Calendario','Ajustes','Páginas de carrera'],fr:['Accueil','Tableau de bord','Calendrier','Paramètres','Pages de carrière'],it:['Inizio','Dashboard','Calendario','Impostazioni','Pagine della carriera']};
 const expandLabels={en:'Expand world navigation',de:'Weltnavigation aufklappen',es:'Expandir navegación del mundo',fr:'Développer la navigation du monde',it:'Espandi navigazione del mondo'};
 const collapseLabels={en:'Collapse world navigation',de:'Weltnavigation zuklappen',es:'Contraer navegación del mundo',fr:'Réduire la navigation du monde',it:'Comprimi navigazione del mondo'};
@@ -25,7 +25,8 @@ function paint(){
 const path=location.pathname.replace(/^\/app(?=\/)/,'').replace(/\/+$/,'');
 const onCompetition=path==='/competitions'||path.startsWith('/competitions/');
 const onClubs=path==='/clubs'||path.startsWith('/clubs/');
-const selected=onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
+const onPlayers=path==='/players';
+const selected=onPlayers?nav.querySelector('[data-nav01-players]'):onClubs?nav.querySelector('[data-nav01-clubs]'):nav.querySelector('#app-nav-'+(onCompetition?'divisions':path==='/calendar'?'calendar':path==='/settings'?'settings':(path==='/account'||path.startsWith('/account/'))?'profile':'dashboard'));
 for(const link of nav.querySelectorAll('.fa-shell-link')){const active=link===selected;link.classList.toggle('is-active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
 let opened=false;try{opened=sessionStorage.getItem('fa-nav01-expanded')==='true';}catch{}
 function expand(state){button.setAttribute('aria-expanded',String(state));submenu.hidden=!state;try{sessionStorage.setItem('fa-nav01-expanded',String(state));}catch{}paint();}
