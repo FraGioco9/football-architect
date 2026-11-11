@@ -337,7 +337,7 @@
       restoringTabScroll=false;
       // A saved scroll offset wins over automatic active-tab visibility on refresh.
       if(savedTabScroll===null)revealSelectedTab();else syncTabOverflow();
-      if(document.documentElement.dataset.faDevSeasons)document.documentElement.dataset.faTabsRestored="true";
+      document.documentElement.dataset.faTabsRestored="true";
     });
   });
 })();

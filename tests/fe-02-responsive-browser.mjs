@@ -240,9 +240,13 @@ try{
     }
     await page.setViewportSize({width,height:844});
    }
-   // Await the two-frame initial restorer before setting a user scroll.
-   // The app intentionally omits pagehide persistence while still restoring.
-   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   // The restoration-complete marker is written only after the delayed
+   // two-frame restorer has stopped ignoring user scroll events.
+   await page.waitForFunction(()=>{
+    const strip=document.querySelector(".app-competition-tabs");
+    return document.documentElement.dataset.faTabsRestored==="true"&&
+     strip&&strip.scrollWidth-strip.clientWidth>120;
+   });
    await page.locator(".app-competition-tabs").evaluate(el=>{el.scrollLeft=120});
    const storageKey="football-architect:competition-tabs-scroll:/competitions/it-1";
    await page.waitForFunction(key=>{
