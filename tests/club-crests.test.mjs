@@ -237,3 +237,15 @@ test('UI-409: directory image state is idempotent and failed requests retain the
  assert.equal(slot.dataset.clubCrestLoaded,undefined,'failed image must reveal the shared shield');
  assert.equal(failed.removed,1,'broken image icon is removed without reloading');
 });
+
+
+test('ENG-5 Southwark Athletic approved crest is registered in both public manifests',()=>{
+ const path='assets/clubs/ENG/5/crest.svg';
+ assert.equal(manifest().clubCrests['ENG-5'],path);
+ assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['ENG-5'],path);
+ assert.equal(isAllowlistedPublicPath(path),true);
+ const source=read(path);
+ assert.match(source,/<title id="crest-title">Southwark Athletic<\/title>/);
+ for(const color of ['#862932','#161616','#ffffff'])assert.ok(source.includes(color),color);
+ for(const tag of ['image','text','linearGradient','radialGradient'])assert.equal(source.includes('<'+tag),false,tag);
+});
