@@ -91,6 +91,24 @@ test('known crests reserve a blank slot while loading; missing or failed images 
  pt.children[0].events.load();assert.equal(pt.dataset.clubCrestLoaded,'true');
 });
 
+test('missing crest becomes known: no stale fallback shield before SVG resolves',()=>{
+ const s=setup(),node=s.hosts[3];
+ node.classList={contains:name=>name==='fa-crest-loading'};
+ node.dataset.clubCrestFallback='true'; // Previously absent club identity.
+ s.change(node,'DE-1');
+ assert.equal(node.dataset.clubCrestPending,'true');
+ assert.equal(node.dataset.clubCrestFallback,undefined,'known pending crest must not show old shield');
+ assert.equal(node.children[0].src,'/assets/clubs/DE/1/crest.svg');
+ node.children[0].events.error();
+ assert.equal(node.dataset.clubCrestFallback,'true','failed asset may reveal neutral shield');
+ s.change(node,'BR-1');
+ assert.equal(node.dataset.clubCrestFallback,undefined,'next real crest clears failed state immediately');
+ assert.equal(node.dataset.clubCrestPending,'true');
+ node.children[0].events.load();
+ assert.equal(node.dataset.clubCrestLoaded,'true');
+ assert.equal(node.dataset.clubCrestFallback,undefined);
+});
+
 test('crests also render in dynamically inserted fixtures, Stats and History content',()=>{
  const s=setup();
  for(const view of ['fixtures','stats','history']){

@@ -11,6 +11,8 @@
   rendered.set(host,asset);
   const existing=host.querySelector?.('.app-club-crest-image');
   if(existing&&typeof asset==='string'&&existing.getAttribute('src')==='/'+asset){
+   // A prior missing identity must not leave a fallback shield while the SVG resolves.
+   delete host.dataset.clubCrestFallback;
    const loaded=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestFallback;host.dataset.clubCrestLoaded='true'}};
    const failed=()=>{if(host.contains(existing)){delete host.dataset.clubCrestPending;delete host.dataset.clubCrestLoaded;if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';existing.remove()}};
    if(existing.complete){if(existing.naturalWidth>0)loaded();else failed();}
@@ -22,7 +24,12 @@
   delete host.dataset.clubCrestPending;
   if(typeof asset!=='string'){if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';return;}
   const match=id.match(/^([A-Z]{2,3})-([1-9]\d*)$/);
-  if(!match||asset!==`assets/clubs/${match[1]}/${match[2]}/crest.svg`)return;
+  if(!match||asset!==`assets/clubs/${match[1]}/${match[2]}/crest.svg`){
+   if(host.classList?.contains('club-crest')||host.classList?.contains('fa-crest-loading'))host.dataset.clubCrestFallback='true';
+   return;
+  }
+  // Remove stale missing/failed state at acceptance, not after image load.
+  delete host.dataset.clubCrestFallback;
   host.dataset.clubCrestPending='true';
   const image=document.createElement('img');
   image.className='app-club-crest-image';image.alt='';image.draggable=false;

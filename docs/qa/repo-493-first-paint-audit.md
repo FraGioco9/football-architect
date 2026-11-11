@@ -80,3 +80,11 @@ The new `tests/repo-493-first-paint-browser.mjs` is included once in the existin
 This is a **targeted browser sample**, not proof for the whole 7,136-case matrix. All other season/Debug, slow/error/retry, locale/theme, physical Safari and real hosted cases remain UNKNOWN until verified. Run manually on an isolated local checkout with Playwright installed: `node tests/repo-493-first-paint-browser.mjs`; optional WebKit: set `FA_REPO_493_ENGINE=webkit`.
 
 Do not mark step 05 complete until the exact-head run finishes and its evidence has been reviewed.
+
+## Step 06 first crest-loading defect (Draft/HOLD)
+
+Source review found `data-club-crest-fallback="true"` could linger on an existing crest host changing from a missing/failed identity to a known SVG. Under `.fa-crest-loading`, the neutral fallback shield could appear while the real crest was still pending, contrary to the agreed first-paint policy.
+
+**Minimal correction:** clear the old fallback immediately when accepting a known crest (also when reusing a pre-existing prepaint image); keep fallback for missing, malformed or failed assets. A new `tests/club-crests.test.mjs` regression checks missing → known → failed → different known → loaded, including pending/fallback/loaded flags. No CSS, club logo asset/palette, sporting logic, D1 or deployment change.
+
+**Evidence:** source-level finding and specific regression committed; targeted Node/Browser/FULL acceptance awaits exact-head checks. Step 06 overall remains open pending broader loading/error/refresh QA.
