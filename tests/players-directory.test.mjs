@@ -38,10 +38,33 @@ test('Players #505 header reserves the API-backed total on first paint without e
  assert.match(html,/class="app-players-count-skeleton" aria-hidden="true"/);
  assert.match(generator,/app-players-header/);
  assert.match(generator,/data-players-count/);
- assert.doesNotMatch(html,/app-players-tabs|data-players-view/);
+ assert.match(html,/class="app-competition-tabs app-players-tabs"/);
+ assert.match(html,/data-players-view="overview"/);
+ assert.match(html,/data-players-view="attributes"/);
+ assert.match(html,/data-players-first-paint/);
  assert.match(code,/lastCount=data\.count;renderCount\(lastCount\)/);
  assert.match(code,/new Intl\.NumberFormat/);
  for(const locale of ['en','de','es','fr','it'])assert.ok(code.includes(locale+":{one:'"),locale);
  assert.match(css,/\.app-players-header\{display:flex/);
  assert.match(css,/@media\(max-width:620px\)\{\.app-players-header/);
+});
+
+test('Players two views retain shared canonical rows and approved four skill groups',()=>{
+ const html=read('players/index.html'),renderer=read('assets/players-directory.js'),css=read('assets/app.css');
+ const generator=read('tools/generate-app-pages.mjs');
+ for(const group of ['physical','technical','mental','goalkeeping']){
+  assert.ok(html.includes('data-players-group="'+group+'"'),group);
+  assert.ok(renderer.includes(group+':['),group);
+ }
+ assert.match(html,/data-players-filter="nationality"/);
+ assert.match(html,/data-players-filter="position"/);
+ assert.match(html,/class="app-players-table"/);
+ assert.match(renderer,/history\[mode\]/);
+ assert.match(renderer,/window\.addEventListener\('popstate'/);
+ assert.match(renderer,/new URLSearchParams\(\)/);
+ assert.match(renderer,/groups\[state\.group\]/);
+ assert.match(renderer,/data\.count/);
+ assert.match(css,/\.app-players-filter-control select\{/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\[aria-selected="true"\]::after/);
+ assert.match(generator,/data-players-first-paint/);
 });

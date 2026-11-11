@@ -4,7 +4,7 @@
  * Internal generation records may contain unpublished abilities, aptitude,
  * seed/replay metadata and future private fields. This module constructs
  * NEW public objects by explicit allowlist, never by spreading player data.
- * No public footballer API exists yet; apply at that API boundary when added.
+ * Directory records have a separate approved explicit public allowlist.
  */
 export interface InternalFootballer {
   first_name: string;
@@ -107,4 +107,61 @@ export function projectPublicFootballerProfile(
   }
   Object.freeze(out.secondary_positions);
   return Object.freeze(out);
+}
+
+/** Approved public directory JSON, explicitly excluding initial_age, development_aptitude
+ * and all administrative generator metadata. Never spread raw player payloads.
+ */
+export const PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS = Object.freeze([
+ 'speed','strength','stamina','agility',
+ 'passing','technique','dribbling','shooting','crossing','tackling','marking','heading',
+ 'vision','positioning','decisions','composure',
+ 'gk_reflexes','gk_handling','gk_positioning','gk_aerial'
+] as const);
+export type PublicFootballerAttribute = typeof PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS[number];
+export interface PublicFootballerDirectoryRecord {
+ readonly id:number;
+ readonly first_name:string;
+ readonly last_name:string;
+ readonly display_name:string;
+ readonly nationality:string;
+ readonly secondary_nationality:string|null;
+ readonly age:number;
+ readonly career_status:string;
+ readonly height_cm:number;
+ readonly preferred_foot:'left'|'right';
+ readonly primary_position:string;
+ readonly secondary_positions:readonly string[];
+ readonly attributes:Readonly<Record<PublicFootballerAttribute,number>>;
+}
+export function projectPublicFootballerDirectoryRecord(
+ player:InternalFootballer,context:FootballerPublicContext
+):Readonly<PublicFootballerDirectoryRecord>{
+ const raw=record(player),base=projectPublicFootballerProfile(player,context);
+ if(base.id===undefined||base.age===undefined||base.height_cm===undefined||base.preferred_foot===undefined||base.career_status===undefined)
+  throw new TypeError('missing_public_player_fields');
+ const rawAttributes=record(raw.attributes);
+ const attributes={} as Record<PublicFootballerAttribute,number>;
+ for(const key of PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS){
+  const value=rawAttributes[key];
+  if(typeof value!=='number'||!Number.isInteger(value)||value<1||value>99)
+   throw new TypeError('invalid_footballer_attribute_'+key);
+  attributes[key]=value;
+ }
+ const out:PublicFootballerDirectoryRecord={
+  id:base.id,
+  first_name:requiredText(raw.first_name,'first_name'),
+  last_name:requiredText(raw.last_name,'last_name'),
+  display_name:base.display_name,
+  nationality:base.nationality,
+  secondary_nationality:optionalText(raw.secondary_nationality,'secondary_nationality')??null,
+  age:base.age,
+  career_status:base.career_status,
+  height_cm:base.height_cm,
+  preferred_foot:base.preferred_foot,
+  primary_position:base.primary_position,
+  secondary_positions:base.secondary_positions,
+  attributes:Object.freeze(attributes)
+ };
+ return Object.freeze(out);
 }
