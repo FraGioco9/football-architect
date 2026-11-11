@@ -445,7 +445,7 @@ try {
      return !!panel.dataset.faContentState&&!!toolbar&&!toolbar.getClientRects().length;
     }
     if(view==='stats')return panel.querySelectorAll('.fa-dev-stats-card').length===3;
-    if(view==='awards')return panel.querySelectorAll('.fa-awards-card').length===11;
+    if(view==='awards')return document.querySelectorAll('#competition-panel-awards > .fa-awards .fa-awards-card').length===11;
     if(view==='postseason')return panel.querySelectorAll('[data-bracket-tie]').length===11;
     return true;
    },view);
@@ -549,6 +549,8 @@ try {
   }
   await page.goto(base+"/competitions/"+cup,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,cup);
+  await page.waitForFunction(()=>Boolean(window.faCompetitionStats)&&
+   document.querySelectorAll('#fa-dev-stats [data-stats-view]').length===3);
   for(const [lang,label] of Object.entries(languages)){
    await page.evaluate(lang=>{document.documentElement.lang=lang},lang);
    await page.waitForFunction(expected=>document.querySelector("#competition-tab-standings")?.textContent===expected,label);
@@ -563,7 +565,9 @@ try {
    await page.evaluate(value=>localStorage.setItem("football-architect:theme",value),theme);
    await page.reload({waitUntil:"domcontentloaded"});
    assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
+   await page.waitForFunction(id=>window.faCompetitionContext?.definition?.id===id,cup);
    await page.locator('#competition-tab-postseason').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#competition-panel-postseason [data-bracket-tie]').length===11);
    await screenshot(page,cup+"-"+width+"-"+theme+".png");
    checks++;
   }
