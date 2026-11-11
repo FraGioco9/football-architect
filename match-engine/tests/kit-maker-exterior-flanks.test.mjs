@@ -330,3 +330,133 @@ test('KM-39 independent sleeves and untouched original trims, color controls',()
   assert.equal(m.front.geometry.getAttribute('kmJerseyExteriorMask'),mask);
   assert.equal(m.front.material.userData.kitStripeUniforms.kmStripeWidth.value,.15);
 });
+
+function seamFragmentPhase(x,z,y,sections,width,topY,centerX=0){
+  // CPU replica of the one added KM-41 shader stage. The only
+  // attenuation is ORIGINAL upper-source edge height in metres, NOT
+  // the vertex/interpolated 0-1 seam mask.
+  const full=flankPhase(x,z,y,sections,width,centerX);
+  if(topY<=0)return full;
+  const depth=Math.max(0,topY-y);
+  const near=1-smoothstep(.003,.025,depth);
+  return full*(1-near)+(x-centerX)*near;
+}
+test('KM-41 original FRONT and BACK panels start together on the actual upper shoulder',()=>{
+  const m=scene(),store=createKitDesignStore();
+  applyKitDesign(m.outfit,store.getState(),THREE);
+  // Initial Solid model does not run seam extraction or allocate any
+  // stripe-only attributes, preserving the original first load.
+  assert.equal(m.front.geometry.getAttribute('kmStripeShoulderTopY'),null);
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(m.outfit,store.getState(),THREE);
+  const report=m.outfit.userData.km41ShoulderSeamReport;
+  assert.equal(report.status,'upper-source-edge-anchored');
+  assert.equal(report.mode,'front-back-shared-signed-x');
+  assert.equal(report.seamReturnDepthM,.025);
+  assert.equal(report.shaderDistance,'per-fragment-from-source-topY');
+  assert.ok(report.sourceEdgeVertices>30);
+  const fp=m.front.geometry.getAttribute('position'),
+    bp=m.back.geometry.getAttribute('position'),
+    frontTop=m.front.geometry.getAttribute('kmStripeShoulderTopY'),
+    backTop=m.back.geometry.getAttribute('kmStripeShoulderTopY');
+  assert.ok(frontTop&&backTop);
+  const section=m.outfit.userData.km37StripeReport.torsoShoulderStart.torsoSections;
+  for(let i=0;i<31;i++){
+    const x=fp.getX(i);
+    if(Math.abs(x)<.105)continue;
+    assert.ok(Math.abs(bp.getX(i)-x)<1e-7);
+    assert.ok(Math.abs(frontTop.array[i]-fp.getY(i))<1e-7);
+    assert.ok(Math.abs(backTop.array[i]-bp.getY(i))<1e-7);
+    for(const width of [.01,.015,.03,.075,.15]){
+      // Source front/back have different Z, and KM-40's raw
+      // circumference phases differ there. KM-41 restores one X
+      // pattern EXACTLY on the original top stitching edge.
+      const f=seamFragmentPhase(x,fp.getZ(i),fp.getY(i),
+        section,width,frontTop.array[i]),
+        b=seamFragmentPhase(x,bp.getZ(i),bp.getY(i),
+          section,width,backTop.array[i]);
+      assert.ok(Math.abs(f-x)<1e-7);
+      assert.ok(Math.abs(f-b)<1e-7,
+        'Body stripes must have one colour phase on the sewn shoulder');
+      assert.ok(Math.abs(Math.cos(Math.PI*f/width)-
+        Math.cos(Math.PI*b/width))<1e-7);
+    }
+  }
+  for(const p of [m.front,m.back]){
+    const shader=compile(p.material);
+    assert.match(shader.vertexShader,/attribute float kmStripeShoulderTopY/);
+    assert.match(shader.vertexShader,/vKmStripeShoulderTopY = kmStripeShoulderTopY/);
+    assert.match(shader.fragmentShader,/float seamDepth=max\(0\.0,vKmStripeShoulderTopY-vKmTorsoWorld\.y\)/);
+    assert.match(shader.fragmentShader,/smoothstep\(0\.003,0\.025,seamDepth\)/);
+    assert.match(shader.fragmentShader,/distanceOnFabric=mix\(distanceOnFabric,vKmPatternU,seamWeight\)/);
+  }
+});
+test('KM-41 shoulder return ends after 25mm even on coarse 13cm tessellation',()=>{
+  const m=scene(),store=createKitDesignStore();
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(30);
+  applyKitDesign(m.outfit,store.getState(),THREE);
+  const shape=m.outfit.userData.km37StripeReport.torsoShoulderStart.torsoSections;
+  const front=m.front,back=m.back,
+    i=22; // Outward shoulder, not the center where X is already exact.
+  const fp=front.geometry.getAttribute('position'),
+    bp=back.geometry.getAttribute('position'),
+    top=front.geometry.getAttribute('kmStripeShoulderTopY').array[i];
+  const x=fp.getX(i),yf=fp.getY(i),zf=fp.getZ(i),zb=bp.getZ(i);
+  assert.ok(Math.abs(top-yf)<1e-7);
+  const fRaw=flankPhase(x,zf,yf,shape,.03),
+    bRaw=flankPhase(x,zb,yf,shape,.03);
+  assert.ok(Math.abs(fRaw-bRaw)>.005,
+    'Test fixture must expose the previous wrong shoulder phase');
+  const atTop=seamFragmentPhase(x,zf,yf,shape,.03,top),
+    nearMid=seamFragmentPhase(x,zf,top-.014,shape,.03,top),
+    below=seamFragmentPhase(x,zf,top-.025,shape,.03,top);
+  assert.ok(Math.abs(atTop-x)<1e-7);
+  assert.ok(Math.abs(nearMid-x)>1e-5);
+  assert.ok(Math.abs(nearMid-flankPhase(x,zf,top-.014,shape,.03))>1e-5);
+  assert.ok(Math.abs(below-flankPhase(x,zf,top-.025,shape,.03))<1e-7,
+    'No seam adjustment should remain after 25mm of real fabric');
+  const pos=front.geometry.getAttribute('position');
+  assert.ok(pos.getY(i)-pos.getY(i+31)>.1,
+    'Only two distant mesh rows: must NOT spread seam return 13cm');
+  assert.equal(front.geometry.getAttribute('kmStripeShoulderTopY').array[i+31],top,
+    'Interpolated ATTRIBUTE is the SOURCE HEIGHT, not a 1->0 blend mask');
+});
+test('KM-41 shirt shoulder mask is separate on left and right, sleeves stay independent',()=>{
+  const m=scene(),store=createKitDesignStore();
+  store.selectStyle('vertical-stripes');
+  applyKitDesign(m.outfit,store.getState(),THREE);
+  const report=m.outfit.userData.km41ShoulderSeamReport;
+  assert.equal(report.distinctLeftRightEnvelopes,true);
+  for(const panel of [m.front,m.back]){
+    const arr=panel.geometry.getAttribute('kmStripeShoulderTopY').array;
+    assert.ok(arr[2]>0&&arr[28]>0);
+    const top=panel.geometry.getAttribute('position').getY(2);
+    assert.ok(Math.abs(arr[2]-top)<1e-7);
+    assert.ok(Math.abs(arr[28]-top)<1e-7);
+    assert.equal(panel.material.customProgramCacheKey(),KIT_STRIPE_SHADER_KEY+'-sewn-exterior');
+  }
+  for(const panel of [m.sleeve,m.left,m.collar]){
+    assert.equal(panel.geometry.getAttribute('kmStripeShoulderTopY'),null);
+    const shader=compile(panel.material);
+    assert.doesNotMatch(shader.vertexShader,/kmStripeShoulderTopY/);
+    assert.doesNotMatch(shader.fragmentShader,/vKmStripeShoulderTopY/);
+    assert.equal(panel.material.userData.kitStripeUniforms.kmStripeTorsoLow.value[0],0);
+  }
+});
+test('KM-41 shoulder anchor remains stable while width and colours change',()=>{
+  const m=scene(),store=createKitDesignStore();
+  store.selectStyle('vertical-stripes');
+  store.selectStripeWidth(10);
+  applyKitDesign(m.outfit,store.getState(),THREE);
+  const before=m.front.geometry.getAttribute('kmStripeShoulderTopY'),
+    report=m.outfit.userData.km41ShoulderSeamReport;
+  for(const width of [15,30,75,150,10]){
+    store.selectStripeWidth(width);
+    applyKitDesign(m.outfit,store.getState(),THREE);
+    assert.equal(m.front.geometry.getAttribute('kmStripeShoulderTopY'),before);
+    assert.equal(m.outfit.userData.km41ShoulderSeamReport,report);
+    assert.equal(m.sleeve.geometry.getAttribute('kmStripeShoulderTopY'),null);
+  }
+});

@@ -1,4 +1,4 @@
-// KM-40 — seam-continuous front/flank/back circumferential torso stripes.
+// KM-41 — shoulder-seam anchored start with KM-40 continuous torso flanks.
 //
 // Front/back share the fitted rig's SIGNED X centerline for their
 // exactly centred main stripe. At the flanks a source-fitted X/Z
@@ -43,19 +43,64 @@ function torsoPanel(item){
     positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;
     const radial=Math.abs(x);
     if(radial<NECK_RADIUS_MIN||y<HEIGHT_MIN)continue;
-    const key=Math.floor(radial/RADIAL_CELL);
+    // Keep left and right shoulder contours separate. Joining both
+    // by abs(X) alone can borrow the OTHER shoulder's top height,
+    // causing a white/offset stripe start on asymmetric source cloth.
+    const key=(x<0?"L":"R")+Math.floor(radial/RADIAL_CELL);
     const previous=topByRadial.get(key);
-    if(!previous||y>previous.y)topByRadial.set(key,{x,y});
+    if(!previous||y>previous.y)topByRadial.set(key,{x,y,r:radial});
   }
   const top=[...topByRadial.values()];
-  if(top.length<8)return {item,positions,validShoulder:false};
+  if(top.length<8)
+    return {item,positions,topByRadial,validShoulder:false};
   const xs=top.map(p=>Math.abs(p.x)),ys=top.map(p=>p.y);
   const dx=Math.max(...xs)-Math.min(...xs),
     dy=Math.max(...ys)-Math.min(...ys);
-  return {item,positions,
+  return {item,positions,topByRadial,
     validShoulder:dx>=.045&&dx>=1.2*dy,
     radialMin:Math.min(...xs),
     sampledShoulderPoints:top.length};
+}
+
+// KM-41: The upper source boundary is the shoulder stitching START,
+// not the lower-torso ellipse. KM-40 stopped using the actual shoulder
+// envelope after measuring it, so a different front/back Z angle could
+// paint different colour phases where those panels meet. Restore one
+// common signed-X stripe phase ONLY within the original upper 25mm
+// seam return. Do not blend over the chest: KM-36's 10cm vertical blend
+// caused visibly bending torso bands.
+//
+// Store the original source top-edge HEIGHT, NOT a per-vertex blended
+// phase weight. A low-poly torso can have only one row of vertices at
+// Y=1.56 and the next at Y=1.43; interpolating a 1->0 mask across
+// them falsely stretches a 25mm seam fade across 130mm! Fragment
+// shader instead computes (topY - interpolated worldY) per pixel.
+// Missing top-edge matches use -10m sentinel (disabled).
+function shoulderTopHeights(panel){
+  const top=panel.topByRadial;
+  if(!panel.validShoulder||!top?.size)return null;
+  const vertices=panel.positions,
+    out=new Float32Array(vertices.length/3).fill(-10);
+  let sampled=0,atSeam=0;
+  for(let i=0;i<out.length;i++){
+    const x=vertices[i*3],y=vertices[i*3+1],
+      radial=Math.abs(x);
+    if(radial<NECK_RADIUS_MIN)continue;
+    const bin=Math.floor(radial/RADIAL_CELL),
+      side=x<0?"L":"R";
+    let nearest=null,gap=Infinity;
+    for(let step=-2;step<=2;step++){
+      const p=top.get(side+(bin+step));
+      if(!p)continue;
+      const distance=Math.abs(radial-p.r);
+      if(distance<gap){gap=distance;nearest=p;}
+    }
+    if(!nearest||gap>.022)continue;
+    out[i]=nearest.y;
+    sampled++;
+    if(Math.abs(nearest.y-y)<.003)atSeam++;
+  }
+  return {values:out,sampled,atSeam};
 }
 
 // A correction based only on world X (KM-39's capped asin()) cannot
@@ -127,7 +172,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
   }
   const referenceFront=panels.filter(p=>FRONT.test(p.item.meshName)&&p.validShoulder),
     referenceBack=panels.filter(p=>BACK.test(p.item.meshName)&&p.validShoulder);
-  const coordinates=new Map(),adjustments=new Map(),
+  const coordinates=new Map(),shoulderTopHeightsByGeometry=new Map(),
+    adjustments=new Map(),
     report={status:'no-common-shoulder-start',
       matches:0,connections:[],connectedPanels:[],
       unmatchedPanels:panels.map(p=>p.item.meshName),
@@ -147,11 +193,20 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       .map(p=>p.radialMin));
     const torsoSections=estimateTorsoSections(panels,rigCenterX);
     const sideRadius=torsoSections?.reference.rx??0;
+    let sampledVertices=0,exactEdgeVertices=0;
+    const shoulderAnchoredPanels=[];
     for(const panel of panels){
       const result=new Float32Array(panel.positions.length/3);
       for(let i=0;i<result.length;i++)
         result[i]=panel.positions[i*3]-rigCenterX;
       coordinates.set(panel.item.geometry,result);
+      const shoulder=shoulderTopHeights(panel);
+      if(shoulder?.atSeam){
+        shoulderTopHeightsByGeometry.set(panel.item.geometry,shoulder.values);
+        shoulderAnchoredPanels.push(panel.item.meshName);
+        sampledVertices+=shoulder.sampled;
+        exactEdgeVertices+=shoulder.atSeam;
+      }
     }
     report.status='torso-straight';
     // The two torso sides share physical X, but that does not imply
@@ -169,6 +224,19 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       sideCorrection:torsoSections?'continuous-front-side-back-ellipse':'disabled-no-suitable-source',
       torsoSections,
       sourcePanels:panels.map(p=>p.item.meshName),
+      shoulderSeam:{
+        status:shoulderAnchoredPanels.some(x=>FRONT.test(x))&&
+          shoulderAnchoredPanels.some(x=>BACK.test(x))?
+          "upper-source-edge-anchored":"unverified-shoulder-contour",
+        mode:"front-back-shared-signed-x",
+        seamReturnDepthM:.025,
+        fullStrengthWithinM:.003,
+        panels:shoulderAnchoredPanels,
+        sampledPanelVertices:sampledVertices,
+        sourceEdgeVertices:exactEdgeVertices,
+        shaderDistance:"per-fragment-from-source-topY",
+        distinctLeftRightEnvelopes:true
+      },
       noVerticalBlend:true
     };
   }else{
@@ -177,7 +245,7 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       reason:'Original source has no recognizable front/back shoulder envelope'
     };
   }
-  const output={coordinates,adjustments,report};
+  const output={coordinates,shoulderTopHeightsByGeometry,adjustments,report};
   cache.set(outfit,output);
   return output;
 }

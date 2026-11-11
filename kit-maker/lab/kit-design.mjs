@@ -176,7 +176,7 @@ function collectGarmentMaterials(outfit){
 // stripe coordinate for uniform, straight, symmetric front/back bands.
 // Planar X compresses cloth width on curved flanks; the original
 // source UV, vertex positions, normals and GLB are never altered.
-export const KIT_STRIPE_SHADER_KEY="km40-continuous-flank-ellipse-v1";
+export const KIT_STRIPE_SHADER_KEY="km41-original-shoulder-edge-return-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -295,19 +295,22 @@ export function installKitStripeShader(material,THREE,
       protectInterior=Boolean(this.userData?.kitStripeExteriorMask),
       doubleSided=Number.isInteger(THREE?.DoubleSide)&&this.side===THREE.DoubleSide;
     shader.vertexShader=(useSewn?
-      "attribute float kmStripeSewnMetres;\nvarying vec3 vKmTorsoWorld;\n":"")+
+      "attribute float kmStripeSewnMetres;\nvarying vec3 vKmTorsoWorld;\n"+
+      "attribute float kmStripeShoulderTopY;\nvarying float vKmStripeShoulderTopY;\n":"")+
       (protectInterior?
         "attribute float kmJerseyExteriorMask;\nvarying float vKmJerseyExteriorMask;\n":"")+
       "varying float vKmPatternU;\n"+
       shader.vertexShader.replace("#include <begin_vertex>",
         "#include <begin_vertex>\n "+
           (useSewn?"vKmPatternU = kmStripeSewnMetres;\n"+
-            "vKmTorsoWorld = (modelMatrix * vec4(position, 1.0)).xyz;":
+            "vKmTorsoWorld = (modelMatrix * vec4(position, 1.0)).xyz;\n"+
+            "vKmStripeShoulderTopY = kmStripeShoulderTopY;":
             "vKmPatternU = uv.x;")+
           (protectInterior?"\nvKmJerseyExteriorMask = kmJerseyExteriorMask;":""));
     shader.fragmentShader=[
       "varying float vKmPatternU;",
-      ...(useSewn?["varying vec3 vKmTorsoWorld;"]:[]),
+      ...(useSewn?["varying vec3 vKmTorsoWorld;",
+        "varying float vKmStripeShoulderTopY;"]:[]),
       ...(protectInterior?["varying float vKmJerseyExteriorMask;"]:[]),
       "uniform float kmTrimRegion;",
       "uniform vec3 kmTrimColor;",
@@ -356,6 +359,16 @@ export function installKitStripeShader(material,THREE,
         "    float rearShift=evenBands*kmStripeWidth-halfArc;",
         "    float rearBlend=smoothstep(0.5*halfArc,halfArc,abs(arc));",
         "    distanceOnFabric=arc+sign(arc)*rearShift*rearBlend;",
+        "  }",
+        // Fragment-space distance from the original upper shoulder
+        // edge. Blend over exactly 3-25mm of physical Y even on coarse
+        // triangles: vertex-interpolated weights would extend too far
+        // down the chest. This corrects the original front/back seam
+        // only; sleeves retain untouched UV pattern.
+        "  if(vKmStripeShoulderTopY > 0.0){",
+        "    float seamDepth=max(0.0,vKmStripeShoulderTopY-vKmTorsoWorld.y);",
+        "    float seamWeight=1.0-smoothstep(0.003,0.025,seamDepth);",
+        "    distanceOnFabric=mix(distanceOnFabric,vKmPatternU,seamWeight);",
         "  }"
         ]:[]),
         "  float wave=cos(3.141592653589793*distanceOnFabric/kmStripeWidth);",
@@ -720,6 +733,9 @@ export function applyKitDesign(outfit,state,THREE){
         status:shoulder.report.torsoShoulderStart?.sideCorrection??"not-detected",
         sections:shoulder.report.torsoShoulderStart?.torsoSections??null
       };
+      outfit.userData.km41ShoulderSeamReport=
+        shoulder.report.torsoShoulderStart?.shoulderSeam??{
+          status:"unverified-shoulder-contour"};
       if(typeof THREE?.Mesh==="function"&&!outfit.userData.km38StripeLogged){
         outfit.userData.km38StripeLogged=true;
         console.info("Kit Maker torso side-seam stripes",shoulder.report);
@@ -735,6 +751,7 @@ export function applyKitDesign(outfit,state,THREE){
       outfit.userData.km37StripeReport={status:"skipped",reason};
       outfit.userData.km38TorsoCenterlineReport={status:"skipped",reason};
       outfit.userData.km40FlankStripeReport={status:"skipped",reason};
+      outfit.userData.km41ShoulderSeamReport={status:"skipped",reason};
     }
   }
   // Signed torso X keeps the central primary stripe straight and
@@ -749,6 +766,12 @@ export function applyKitDesign(outfit,state,THREE){
       if(!geometry.getAttribute("kmStripeSewnMetres"))
         geometry.setAttribute("kmStripeSewnMetres",
           new THREE.Float32BufferAttribute(metres,1));
+      if(!geometry.getAttribute("kmStripeShoulderTopY")){
+        const top=shoulder.shoulderTopHeightsByGeometry?.get(geometry)??
+          new Float32Array(metres.length).fill(-10);
+        geometry.setAttribute("kmStripeShoulderTopY",
+          new THREE.Float32BufferAttribute(top,1));
+      }
     }
   }
   for(const {part,material,meshName,metric,geometry} of prepared){

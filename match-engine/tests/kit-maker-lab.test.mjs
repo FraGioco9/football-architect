@@ -276,7 +276,12 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('kmStripeSideRadius'));
   assert.ok(designJS.includes('diffuseColor.rgb=vec3(1.0)'));
   assert.ok(designJS.includes('vKmTrimExterior'));
-  assert.ok(designJS.includes('km40-continuous-flank-ellipse-v1'));
+  assert.ok(designJS.includes('km41-original-shoulder-edge-return-v1'));
+  assert.ok(designJS.includes('km41ShoulderSeamReport'));
+  assert.ok(designJS.includes('kmStripeShoulderTopY'));
+  assert.ok(designJS.includes('vKmStripeShoulderTopY'));
+  assert.ok(designJS.includes('smoothstep(0.003,0.025,seamDepth)'));
+  assert.ok(designJS.includes('distanceOnFabric=mix(distanceOnFabric,vKmPatternU,seamWeight)'));
   assert.ok(designJS.includes('km40FlankStripeReport'));
   assert.ok(designJS.includes('vKmTorsoWorld'));
   assert.ok(designJS.includes('kmStripeTorsoLow'));
@@ -303,6 +308,9 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(seamsJS.includes("mode:'independent-source-uv'"));
   assert.ok(seamsJS.includes('estimateTorsoSections'));
   assert.ok(seamsJS.includes('continuous-front-side-back-ellipse'));
+  assert.ok(seamsJS.includes('shoulderTopHeightsByGeometry'));
+  assert.ok(seamsJS.includes('front-back-shared-signed-x'));
+  assert.ok(seamsJS.includes('shaderDistance:"per-fragment-from-source-topY"'));
   assert.doesNotMatch(seamsJS,/result\[i\]=Math\.abs\(panel\.positions\[i\*3\]\)/);
   assert.doesNotMatch(designJS,/kmTorsoStripeArc|kmSleeveStripeArc|kmTorsoStripeCoordinate|kmParallelStripeCoordinate|vKmKitX/);
   assert.ok(clubsJS.includes('widthSlider.addEventListener("input"'));

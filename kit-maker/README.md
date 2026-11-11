@@ -1819,3 +1819,78 @@ follow-up.
 
 PR #454 remains Draft/HOLD. No merge, deployment,
 remote database edits, new GLB publication or manual CI run.
+
+## KM-41 — restore start of stripes at original shoulder stitching (2026-11-11)
+
+**Owner visual QA:** After KM-40 fixed stripes travelling continuously
+around the flanks, the original front and rear torso stripes no longer
+started together at the shoulder seam.
+
+**Regression in source:** KM-40 detected the upper shoulder contour but
+used ONLY the lower torso's XZ ellipses to paint the stripes. Because
+the original garment exports front and back as different material
+primitives with different Z at the shoulder, these charts could have
+different cosine phases exactly on the source upper border.
+A previous 10cm vertex-blended correction (KM-36) had caused visible
+torso bending, so simply reinstating that interpolation would regress
+another owner-approved requirement.
+
+**KM-41 fix:** For each original torso body mesh (9/10/42/43),
+collect the uppermost SOURCE shoulder envelope in 8mm radial slices,
+keeping left and right separate and rejecting vertically dominated
+side seams. Store the HEIGHT of the local upper shoulder stitching
+per original vertex in a shader attribute `kmStripeShoulderTopY`;
+when an upper edge is not recognized, store a negative disabled
+sentinel. Do not edit the artist's positions/UVs/normals.
+
+The torso fragment shader measures `max(0,sourceTopY-worldY)` on
+**every fragment**, so the physical return from the original upper
+edge is EXACTLY 3–25mm even if the source glTF has 130mm gaps
+between vertex rows. Directly ON the upper shoulder edge, the
+fabric coordinate uses KM-38's **shared signed body-X reference**,
+ensuring the **same stripe phase in FRONT and BACK for the same X**,
+regardless of the original front/back depth-Z material split.
+From 3mm below the upper seam the shader smoothly blends into
+KM-40's full circumferential X/Z phase; at 25mm below it the
+corrected top-edge phase has completely disappeared. The centrally
+located primary stripe continues to use the exact original selected
+width. There is no upper 10cm torso blend, no lower-torso stripe
+change and no front/back duplication at the flanks.
+
+**Sleeves** remain independent UV patterns; no special shoulder
+attribute, seam phase, torso ellipse or branch is added to
+either sleeve. The KM-39 neutral interior, original folded
+cuff/hem/collar trims, private GLB loading, material palettes,
+Solid initial display and shorts/socks/shoes are unchanged.
+
+**Honest diagnostics:** `outfit.userData.km41ShoulderSeamReport`
+exposes `status: "upper-source-edge-anchored"` only when original
+front AND back upper contours are recognizable. Otherwise it
+returns `unverified-shoulder-contour` (or `skipped` on an
+analysis error), rather than claiming a physically welded
+stitch. The report includes `sourceEdgeVertices`, panel names,
+`shaderDistance: "per-fragment-from-source-topY"`,
+`seamReturnDepthM: .025`, and
+`distinctLeftRightEnvelopes: true`. The model's source
+uppermost contour is an approximate seam proxy; without inspecting
+the actual private GLB it cannot prove exact stitch topology.
+
+**Tests:** Four KM-41 regression tests added to the 50
+existing targeted design/flank/lining/sewn-trim source tests:
+matched front and back phase on the physical top edge for widths
+1cm, 1.5cm, 3cm, 7.5cm and 15cm; an intentionally
+coarse 13cm-tessellated torso showing the shader's seam blend
+still ends after 25mm; separate left/right shoulder contours;
+no sleeve shader change; preserved attribute identity and
+origin across slider updates. Focused isolated V8 run PASS
+54/54. **Actual owner Chrome visual check on the private original
+GLB and complete Node CI are still pending**.
+
+Owner should inspect the full original upper seam from collar-side
+to armhole on both front and back at 1cm and 3cm, then verify
+stripes don't kink 25mm below the seam. If the top contour is
+unrecognized, the diagnostic explains why and the mapping falls
+back safely to KM-40 rather than inventing shoulder geometry.
+
+PR #454 Draft/HOLD. No merge, deploy, DB changes, CI reruns,
+licensed asset redistribution or original GLB mutation.
