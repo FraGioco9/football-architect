@@ -53,9 +53,9 @@ function normalizeOptions(value:unknown){
  return options;
 }
 function playerRecord(candidate:any){
- // Stable internal export order; immutable id is minted at preview and carried into commit.
+ // Preview has no permanent player ID: D1 allocates it only at approval.
  return {
-  id:crypto.randomUUID(),first_name:candidate.first_name,last_name:candidate.last_name,display_name:candidate.display_name,
+  first_name:candidate.first_name,last_name:candidate.last_name,display_name:candidate.display_name,
   nationality:candidate.nationality,secondary_nationality:candidate.secondary_nationality,
   initial_age:candidate.initial_age,age:candidate.initial_age,career_status:candidate.career_status,
   height_cm:candidate.height_cm,preferred_foot:candidate.preferred_foot,primary_position:candidate.primary_position,
@@ -113,19 +113,23 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
  if(draft.status!=='preview'||draft.expires_at<=now)throw new ApiError(409,'players_preview_expired');
  try{
   // One D1 transaction: live session guard + unchanged world/draft + ALL player inserts + status.
-  // The persisted JSON is the exact approved preview (except its temporary preview_id).
+  // All approved gameplay fields persist unchanged; D1 adds the permanent positive integer ID.
   const result=await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='preview' AND expires_at>? AND world_generation=? AND season_number=?",
     [id,session.unified!.playerId,now,world.generation,world.seasonNumber]),
-   db.prepare(`INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at)
-    SELECT json_extract(j.value,'$.id'),?, ?,?,json_remove(j.value,'$.preview_id'),?
-    FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j`)
+   db.prepare(`INSERT INTO generated_players(batch_id,world_generation,entry_season,payload_json,created_at)
+    SELECT ?, ?,?,json_remove(j.value,'$.id','$.preview_id'),?
+    FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j
+    ORDER BY CAST(j.key AS INTEGER)`)
     .bind(id,world.generation,world.seasonNumber,now,id),
+   // Keep the allocated integer in the persisted internal JSON within this same D1 transaction.
+   db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.id',id) WHERE batch_id=? AND world_generation=?")
+    .bind(id,world.generation),
    db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'").bind(now,id,session.unified!.playerId)
   ]);
-  if(result[3].meta.changes!==draft.count||result[4].meta.changes!==1)throw Error('Uncommitted player count');
+  if(result[3].meta.changes!==draft.count||result[4].meta.changes!==draft.count||result[5].meta.changes!==1)throw Error('Uncommitted player count');
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{
   // A raced retry may have been committed; read back exact count and return idempotently.

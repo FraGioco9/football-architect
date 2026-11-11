@@ -1560,3 +1560,13 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 .app-players-empty-row strong{display:block;font-size:14px;font-weight:700;line-height:1.5}
 html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#31594A}
 @media(max-width:720px){.app-players-table th,.app-players-table td{padding-inline:10px}}
+
+/* D1-backed Players directory: matching row heights, country flags and optional pagination. */
+.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650}
+.app-players-nationality-flag{display:block;width:24px;height:18px;object-fit:contain;margin-inline:auto}
+.app-players-pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px}
+.app-players-pagination[hidden]{display:none}
+.app-players-page-count{min-width:88px;text-align:center;font-size:13px;color:var(--muted)}
+.app-players-page-button{font:inherit;font-size:13px;font-weight:650;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-panel);padding:7px 12px;cursor:pointer}
+.app-players-page-button:not(:disabled):hover{border-color:var(--focus)}
+.app-players-page-button:disabled{opacity:.45;cursor:default}

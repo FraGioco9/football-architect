@@ -18,12 +18,12 @@ export interface InternalFootballer {
 }
 export interface FootballerPublicContext {
   /** Authoritative persistent identifier (never a preview_id). */
-  publicId?: string;
+  publicId?: number;
   /** Age at the season/date being viewed (never raw initial_age). */
   currentAge?: number;
 }
 export interface PublicFootballerCard {
-  id?: string;
+  id?: number;
   display_name: string;
   nationality: string;
   primary_position: string;
@@ -59,8 +59,12 @@ function publicFields(value: unknown, context: FootballerPublicContext): PublicF
     nationality,
     primary_position:position
   };
-  const id=optionalText(ctx.publicId,'id');
-  if(id!==undefined)out.id=id;
+  const id=ctx.publicId;
+  if(id!==undefined){
+    if(typeof id!=='number'||!Number.isSafeInteger(id)||id<1)
+      throw new TypeError('invalid_footballer_id');
+    out.id=id;
+  }
   if(ctx.currentAge!==undefined){
     const age=ctx.currentAge;
     if(typeof age!=='number'||!Number.isSafeInteger(age)||age<0)
