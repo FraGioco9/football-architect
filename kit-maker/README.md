@@ -1660,3 +1660,84 @@ Chrome front/back/side visual verification at 1 cm, 3 cm, 7.5 cm
 and 15 cm and the complete Node/CI suite are still pending.
 PR #454 remains Draft/HOLD; no merge, deployment, DB mutation
 or upload of the third-party asset.
+
+## KM-39 — neutral lining and compensated flank stripe pitch (2026-11-11)
+
+**Owner QA:** Keep the INSIDE of the shirt uncoloured, and
+recheck the vertically striped fabric around the TORSO FLANKS.
+The centered chest band and independently patterned sleeves from
+KM-38 are retained.
+
+**Inside / outside:** The original author GLB contains source mesh
+positions and normals for the jersey. `classifyOriginalJerseySurfaces`
+reads those unchanged normals and derives a scalar
+`kmJerseyExteriorMask` for original torso, sleeve, and collar
+primitives. Normals facing **inwards towards the local garment core**
+(including a separately estimated local left/right sleeve axis)
+identify the inner fabric shell. Ambiguous normal directions retain
+the source outside rather than falsely erase surfaces.
+When original jersey normals are absent the module records the
+missing source and does not pretend that it classified the lining.
+
+The material's shader now preserves the original neutral WHITE on
+the inward-facing source shell in **Solid and Vertical stripes**.
+If the source authored fabric is DoubleSide, its visible backfaces
+are also neutral instead of receiving exterior colour. All selected
+stripe, Solid, collar trim, cuff and waist colour effects target
+outward-facing garment surfaces. Source sewn-fold trim overlays
+inherit the exact source exterior mask and use the same neutral
+interior/backface handling, without discarding any previously
+approved original 3D fold triangles. This changes only private
+render-time shader attributes; source geometry, UVs, normals and
+source asset remain untouched.
+
+**Flanks:** KM-38 used the original model's `signed worldX`, which
+is ideal for centered and perfectly vertical front/back stripes,
+but physically compresses band widths as the shirt curves out of
+the frontal plane. KM-39 measures an approximately stable side
+half-radius from the REAL lower-torso cross sections (1.06–1.40m)
+of both source body surfaces, excluding broad upper shoulder
+outliers. It keeps the inner ~9.5cm central stripes EXACTLY
+unchanged (including a fully centered 15cm primary band), then
+smoothly unwraps the horizontal measure toward a capped circular
+arc distance on BOTH sides. Its expansion is computed **per GLSL
+fragment**, not per original vertex, preventing triangular steps.
+A linear continuation after 96% of the nominal radius prevents
+plateaus or infinities around highly curved side vertices. One
+radius is shared by front/back for consistent lateral pitch,
+while the source signed X coordinate remains independent of Y;
+there is no return of KM-36's height-dependent distortion.
+For an unusual source without a suitable lower torso, the arc
+correction is disabled and the existing straight-X mapping is
+used instead of inventing a radius. This is an *approximate* circular
+cloth-distance compensation, NOT an assertion of exact arclength
+along unknown artist mesh topology.
+
+**Sleeves** remain completely independent of torso stripe phase
+and curvature expansion: their own source UV charts, scale and
+colour/width controls are unchanged. Only their inner lining is
+masked like the rest of the jersey. The existing original sewn
+trims, palette choices, shorts/socks/shoes, private GLB licensing
+and Solid-first-load requirements are retained.
+
+**Diagnostics:** `outfit.userData.km39ExteriorReport` gives counts
+for source exterior/inner/ambiguous vertices and missing normals.
+`km38TorsoCenterlineReport.sideRadiusM` and
+`sideCorrection="arc-distance-beyond-center-band"` expose the
+chosen physical side correction. The DEV console logs the
+source normals report once on an actual original Three.js mesh.
+
+**Targeted QA:** Tests cover actual separated inner/outer synthetic
+source shells, front/back torso, left/right independent sleeve axes,
+original collar, Solid and striped shader masking, DoubleSide
+reverse faces, zero geometry/UV/normal mutations, central bands at
+1/1.5/3/7.5/15cm, side correction monotonicity (even past the
+radius), source-based shared front/back side radius and reuse of
+attributes across slider updates. No private third-party GLB was
+available to this agent for Chrome WebGL pixel QA. Owner must
+confirm the outer chest, both flanks, underarms, visible neck
+interior and inside fold trim at 1cm and 3cm widths before
+marking the visual gate passed.
+
+Status: PR #454 Draft/HOLD. No merge, deployment,
+remote database writes or unlicensed source model publication.

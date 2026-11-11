@@ -270,7 +270,13 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('shoulder.report.status==="torso-straight"'));
   assert.ok(designJS.includes('km37StripeReport'));
   assert.ok(designJS.includes('km38TorsoCenterlineReport'));
-  assert.ok(designJS.includes('km38-centered-signed-torso-independent-sleeve-v1'));
+  assert.ok(designJS.includes('classifyOriginalJerseySurfaces'));
+  assert.ok(designJS.includes('km39ExteriorReport'));
+  assert.ok(designJS.includes('kmJerseyExteriorMask'));
+  assert.ok(designJS.includes('kmStripeSideRadius'));
+  assert.ok(designJS.includes('diffuseColor.rgb=vec3(1.0)'));
+  assert.ok(designJS.includes('vKmTrimExterior'));
+  assert.ok(designJS.includes('km39-exterior-only-flank-arc-v1'));
   assert.ok(designJS.includes('zero Y-dependence'));
   assert.ok(designJS.includes('(?:9|10|42|43)'));
   assert.ok(designJS.includes('vKmPatternU = uv.x'));
@@ -279,6 +285,11 @@ test('KM-05 uses only whitelisted private WebGL assets and the new outfit loader
   assert.ok(designJS.includes('new THREE.Float32BufferAttribute(metres,1)'));
   const seamsModule=await get(server,'/__fa_kit_maker__/kit-stripe-seams.mjs');
   assert.equal(seamsModule.status,200,'Private DEV shoulder seam calibration must load');
+  const surfacesModule=await get(server,'/__fa_kit_maker__/kit-stripe-surfaces.mjs');
+  assert.equal(surfacesModule.status,200,
+    'Source exterior/lining classifier must load only in DEV Kit Maker');
+  assert.ok(surfacesModule.body.toString('utf8')
+    .includes('classifyOriginalJerseySurfaces'));
   const seamsJS=seamsModule.body.toString('utf8');
   assert.ok(seamsJS.includes('alignOriginalShoulderStripes'));
   assert.ok(seamsJS.includes('result[i]=panel.positions[i*3]-rigCenterX'));

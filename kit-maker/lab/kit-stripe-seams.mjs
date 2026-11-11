@@ -1,4 +1,4 @@
-// KM-38 — centered, signed, straight torso stripes; autonomous sleeves.
+// KM-39 — centered torso with flank arc compensation and independent sleeves.
 //
 // Both torso sides use the same SIGNED world-X reference at the rig's
 // central vertical axis. KM-37 mistakenly used abs(X)-shoulderRadius,
@@ -60,6 +60,30 @@ function torsoPanel(item){
     sampledShoulderPoints:top.length};
 }
 
+// The raw projected X pattern loses cloth distance on curved sides.
+// Estimate the fitted body's side half-radius from lower-torso SOURCE
+// cross sections (not shoulder/collar extremes), then expand X to an
+// approximated arc distance in the fragment shader. A single shared
+// radius keeps front and back phase synchronized through side seams.
+function estimateTorsoSideRadius(panels,centerX){
+  const rings=new Map();
+  for(const panel of panels){
+    const xyz=panel.positions;
+    for(let i=0;i<xyz.length;i+=3){
+      const x=Math.abs(xyz[i]-centerX),y=xyz[i+1];
+      if(y<1.06||y>1.40||!Number.isFinite(x))continue;
+      const ring=Math.floor(y/.025);
+      rings.set(ring,Math.max(rings.get(ring)??0,x));
+    }
+  }
+  const widths=[...rings.values()].filter(w=>w>.08).sort((a,b)=>a-b);
+  if(!widths.length)return 0;
+  // Average the central waist/chest width, not a single stray shoulder
+  // vertex. Never allow pathological curvature on a narrow source.
+  const r=widths[Math.floor((widths.length-1)*.60)];
+  return r>.1&&r<.8?r:0;
+}
+
 export function alignOriginalShoulderStripes(outfit,prepared){
   const previous=cache.get(outfit);
   if(previous)return previous;
@@ -96,6 +120,7 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       throw Error('Invalid original kit torso centerline');
     const shoulderRadius=Math.min(...[...referenceFront,...referenceBack]
       .map(p=>p.radialMin));
+    const sideRadius=estimateTorsoSideRadius(panels,rigCenterX);
     for(const panel of panels){
       const result=new Float32Array(panel.positions.length/3);
       for(let i=0;i<result.length;i++)
@@ -114,6 +139,8 @@ export function alignOriginalShoulderStripes(outfit,prepared){
       collarSideReferenceRadialM:Math.round(shoulderRadius*10000)/10000,
       centerStripe:'base-color-full-width',
       continuousAcrossMidline:true,
+      sideRadiusM:sideRadius,
+      sideCorrection:sideRadius>0?'arc-distance-beyond-center-band':'disabled-no-suitable-source',
       sourcePanels:panels.map(p=>p.item.meshName),
       noVerticalBlend:true
     };

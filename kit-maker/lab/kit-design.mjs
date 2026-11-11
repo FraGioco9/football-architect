@@ -1,5 +1,6 @@
 import {findOriginalSewnTrimFaces} from './kit-trim-geometry.mjs';
 import {alignOriginalShoulderStripes} from './kit-stripe-seams.mjs';
+import {classifyOriginalJerseySurfaces} from './kit-stripe-surfaces.mjs';
 // KM-17: DEV-only kit geometry styles. All colours are canonical club roles
 // or the fixed local neutral allowlist. No arbitrary colour picker or writes.
 export const KIT_PARTS=Object.freeze(["jersey","shorts","socks"]);
@@ -175,7 +176,7 @@ function collectGarmentMaterials(outfit){
 // stripe coordinate for uniform, straight, symmetric front/back bands.
 // Planar X compresses cloth width on curved flanks; the original
 // source UV, vertex positions, normals and GLB are never altered.
-export const KIT_STRIPE_SHADER_KEY="km38-centered-signed-torso-independent-sleeve-v1";
+export const KIT_STRIPE_SHADER_KEY="km39-exterior-only-flank-arc-v1";
 const stripeMetricCache=new WeakMap();
 export function stripeSectionForMesh(name){
   if(/^FA_jersey__(?:38|39)(?:_\d+)?$/i.test(name))return 1;
@@ -247,13 +248,17 @@ function cachedKitStripeMetric(geometry){
   }
   return metric;
 }
-export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
+export function installKitStripeShader(material,THREE,
+  hasSewnCoordinates=false,hasExteriorMask=false){
   // No 3D seam analysis while the Solid model is first loading.
   // Upgrade the existing shader program when stripes are selected.
   if(material.userData?.kitStripeUniforms){
-    const previous=Boolean(material.userData.kitStripeSewnCoordinates);
-    if(previous!==Boolean(hasSewnCoordinates)){
+    const previous=Boolean(material.userData.kitStripeSewnCoordinates),
+      previousExterior=Boolean(material.userData.kitStripeExteriorMask);
+    if(previous!==Boolean(hasSewnCoordinates)||
+       previousExterior!==Boolean(hasExteriorMask)){
       material.userData.kitStripeSewnCoordinates=Boolean(hasSewnCoordinates);
+      material.userData.kitStripeExteriorMask=Boolean(hasExteriorMask);
       material.needsUpdate=true;
     }
     return material.userData.kitStripeUniforms;
@@ -268,6 +273,7 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
     kmStripeSection:{value:0},
     kmStripeFabricOrigin:{value:0},
     kmStripeFabricScale:{value:1},
+    kmStripeSideRadius:{value:0},
     kmTrimRegion:{value:0},
 
     kmTrimColor:{value:new THREE.Color("#FFFFFF")},
@@ -282,22 +288,29 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
     if(!shader.fragmentShader.includes("#include <color_fragment>"))
       throw new Error("Kit striped fragment shader hook missing");
     Object.assign(shader.uniforms,uniforms);
-    const useSewn=Boolean(this.userData?.kitStripeSewnCoordinates);
+    const useSewn=Boolean(this.userData?.kitStripeSewnCoordinates),
+      protectInterior=Boolean(this.userData?.kitStripeExteriorMask),
+      doubleSided=Number.isInteger(THREE?.DoubleSide)&&this.side===THREE.DoubleSide;
     shader.vertexShader=(useSewn?
       "attribute float kmStripeSewnMetres;\n":"")+
+      (protectInterior?
+        "attribute float kmJerseyExteriorMask;\nvarying float vKmJerseyExteriorMask;\n":"")+
       "varying float vKmPatternU;\n"+
       shader.vertexShader.replace("#include <begin_vertex>",
         "#include <begin_vertex>\n "+
           (useSewn?"vKmPatternU = kmStripeSewnMetres;":
-            "vKmPatternU = uv.x;"));
+            "vKmPatternU = uv.x;")+
+          (protectInterior?"\nvKmJerseyExteriorMask = kmJerseyExteriorMask;":""));
     shader.fragmentShader=[
       "varying float vKmPatternU;",
+      ...(protectInterior?["varying float vKmJerseyExteriorMask;"]:[]),
       "uniform float kmTrimRegion;",
       "uniform vec3 kmTrimColor;",
       "uniform float kmStripeEnabled;",
       "uniform float kmStripeWidth;",
       "uniform float kmStripeFabricOrigin;",
       "uniform float kmStripeFabricScale;",
+      "uniform float kmStripeSideRadius;",
       "uniform vec3 kmStripeBase;",
       "uniform vec3 kmStripeAccent;"
     ].join("\n")+"\n"+shader.fragmentShader.replace("#include <color_fragment>",
@@ -305,6 +318,19 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
         "#include <color_fragment>",
         "if(kmStripeEnabled > 0.5){",
         "  float distanceOnFabric=(vKmPatternU-kmStripeFabricOrigin)*kmStripeFabricScale;",
+        // Flat center + arc-corrected side, computed per fragment (not
+        // per vertex): no faceting, derivative cusp or central-width drift.
+        "  if(kmStripeSideRadius > 0.0){",
+        "    float radius=kmStripeSideRadius;",
+        "    float x=abs(distanceOnFabric);",
+        "    float start=min(0.095,0.42*radius);",
+        "    float cap=0.96;",
+        "    float capX=radius*cap;",
+        "    float curved=radius*asin(min(x/radius,cap)) + max(x-capX,0.0)/sqrt(1.0-cap*cap);",
+        "    float beginArc=radius*asin(start/radius)-start;",
+        "    float sideBlend=smoothstep(start,start+0.035,x);",
+        "    distanceOnFabric=sign(distanceOnFabric)*mix(x,curved-beginArc,sideBlend);",
+        "  }",
         "  float wave=cos(3.141592653589793*distanceOnFabric/kmStripeWidth);",
         "  float edge=max(fwidth(wave),0.002);",
         "  float alternate=smoothstep(-edge,edge,-wave);",
@@ -312,13 +338,24 @@ export function installKitStripeShader(material,THREE,hasSewnCoordinates=false){
         "}",
         "if(kmTrimRegion > 0.5 && kmTrimRegion < 1.5){",
         "  diffuseColor.rgb=kmTrimColor;",
-        "}"
+        "}",
+        ...(protectInterior?[
+          // White means the model's ORIGINAL neutral inside. Both Solid
+          // and stripes must paint only OUTSIDE. The original two-sided
+          // cloth may expose its reverse face when viewed through collar.
+          "if(vKmJerseyExteriorMask < 0.5"+
+            (doubleSided?" || !gl_FrontFacing":"")+"){",
+          "  diffuseColor.rgb=vec3(1.0);",
+          "}"
+        ]:[])
       ].join("\n"));
   };
   material.userData??={};
   material.userData.kitStripeSewnCoordinates=Boolean(hasSewnCoordinates);
+  material.userData.kitStripeExteriorMask=Boolean(hasExteriorMask);
   material.customProgramCacheKey=()=>KIT_STRIPE_SHADER_KEY+
-    (material.userData?.kitStripeSewnCoordinates?"-sewn":"-plain");
+    (material.userData?.kitStripeSewnCoordinates?"-sewn":"-plain")+
+    (material.userData?.kitStripeExteriorMask?"-exterior":"");
   material.userData.kitStripeUniforms=uniforms;
   material.needsUpdate=true;
   return uniforms;
@@ -330,17 +367,21 @@ const authorTrimOverlayCache=new WeakMap();
 function makeOriginalTrimOverlay(entry,triangles,THREE,name){
   if(!triangles.length)return null;
   const geometry=entry.geometry,position=geometry.getAttribute("position"),
-    normal=geometry.getAttribute("normal"),index=geometry.index;
-  const positions=[],normals=[];
+    normal=geometry.getAttribute("normal"),index=geometry.index,
+    exteriorMask=geometry.getAttribute?.("kmJerseyExteriorMask");
+  const positions=[],normals=[],exterior=[];
   for(const tri of triangles)for(let corner=0;corner<3;corner++){
     const i=index?index.getX(tri*3+corner):tri*3+corner;
     positions.push(position.getX(i),position.getY(i),position.getZ(i));
     if(normal)normals.push(normal.getX(i),normal.getY(i),normal.getZ(i));
+    if(exteriorMask)exterior.push(exteriorMask.getX(i));
   }
   const buffer=new THREE.BufferGeometry();
   buffer.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
   if(normal)buffer.setAttribute("normal",new THREE.Float32BufferAttribute(normals,3));
   else buffer.computeVertexNormals();
+  if(exteriorMask)buffer.setAttribute("kmJerseyExteriorMask",
+    new THREE.Float32BufferAttribute(exterior,1));
   const material=new THREE.MeshStandardMaterial({
     name:"km27-sewn-trim-overlay-"+name,
     color:"#FFFFFF",roughness:.85,metalness:0,
@@ -348,6 +389,24 @@ function makeOriginalTrimOverlay(entry,triangles,THREE,name){
     polygonOffsetFactor:-1,polygonOffsetUnits:-1,
     depthWrite:false
   });
+  if(exteriorMask){
+    // Original trim fold overlays also have a visible RETURN/lining.
+    // Protect their reverse sides just like the shirt fabric, without
+    // removing the approved curved original cuff/hem contours.
+    material.onBeforeCompile=shader=>{
+      shader.vertexShader=
+        "attribute float kmJerseyExteriorMask;\nvarying float vKmTrimExterior;\n"+
+        shader.vertexShader.replace("#include <begin_vertex>",
+          "#include <begin_vertex>\nvKmTrimExterior=kmJerseyExteriorMask;");
+      shader.fragmentShader="varying float vKmTrimExterior;\n"+
+        shader.fragmentShader.replace("#include <color_fragment>",
+          "#include <color_fragment>\n"+
+          "if(vKmTrimExterior < 0.5 || !gl_FrontFacing) "+
+          "diffuseColor.rgb=vec3(1.0);");
+    };
+    material.customProgramCacheKey=()=>
+      "km39-exterior-source-fold-trim-v1";
+  }
   const overlay=new THREE.Mesh(buffer,material);
   overlay.name="km27-author-sewn-fold-"+name;
   overlay.frustumCulled=false;
@@ -587,6 +646,26 @@ export function applyKitDesign(outfit,state,THREE){
   for(const {material} of prepared)
     if(!material.userData&&Object.isFrozen(material))
       throw new Error("Kit Maker material cannot be edited");
+  // First classify original jersey OUTSIDE vs lining by the source
+  // normal orientation, including on sleeves and collar. This is cheap
+  // and cached, so Solid first paint does not wait for seam fitting.
+  const garmentSurfaces=classifyOriginalJerseySurfaces(outfit,prepared);
+  outfit.userData??={};
+  outfit.userData.km39ExteriorReport=garmentSurfaces.report;
+  if(typeof THREE?.Mesh==="function"&&!outfit.userData.km39ExteriorLogged){
+    outfit.userData.km39ExteriorLogged=true;
+    console.info("Kit Maker original exterior/lining normals",garmentSurfaces.report);
+    if(garmentSurfaces.report.missingNormals.length)
+      console.warn("Kit Maker: jersey surfaces without source normals",
+        garmentSurfaces.report.missingNormals);
+  }
+  if(typeof THREE?.Float32BufferAttribute==="function"){
+    for(const [geometry,mask] of garmentSurfaces.masks)
+      if(typeof geometry.setAttribute==="function"&&
+         !geometry.getAttribute?.("kmJerseyExteriorMask"))
+        geometry.setAttribute("kmJerseyExteriorMask",
+          new THREE.Float32BufferAttribute(mask,1));
+  }
   // Install narrow overlays on actual sewn faces, never create a fake rim mask.
   colourOriginalSewnTrims(outfit,prepared,THREE,details.trim);
   // KM-38: center the primary-colour torso stripe on the ORIGINAL rig's
@@ -645,7 +724,9 @@ export function applyKitDesign(outfit,state,THREE){
     const sewn=part==="jersey"&&
       /^FA_jersey__(?:9|10|42|43)(?:_\d+)?$/i.test(meshName)&&
       Boolean(geometry.getAttribute?.("kmStripeSewnMetres"));
-    const uniforms=installKitStripeShader(material,THREE,sewn);
+    const exterior=part==="jersey"&&
+      Boolean(geometry.getAttribute?.("kmJerseyExteriorMask"));
+    const uniforms=installKitStripeShader(material,THREE,sewn,exterior);
     uniforms.kmTrimRegion.value=region==="collar"?1:
       region==="cuffs"?2:region==="hem"?3:0;
     uniforms.kmTrimColor.value.set(region?details.trim:"#FFFFFF");
@@ -654,6 +735,8 @@ export function applyKitDesign(outfit,state,THREE){
     uniforms.kmStripeFabricOrigin.value=sewn?0:(aligned?.originU??metric.originU);
     uniforms.kmStripeFabricScale.value=sewn?1:
       (aligned?.metresPerUv??metric.metresPerUv);
+    uniforms.kmStripeSideRadius.value=sewn?
+      (shoulder.report.torsoShoulderStart?.sideRadiusM??0):0;
     uniforms.kmStripeSection.value=part==="jersey"
       ?stripeSectionForMesh(meshName):0;
     uniforms.kmStripeEnabled.value=state.styles[part]==="vertical-stripes"?1:0;
