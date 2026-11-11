@@ -86,6 +86,12 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.app-admin-view > \.admin-players,[^}]*width:100%/);
  assert.match(css,/\.app-admin-view \.admin-players-fields label,[^}]*outline:none/);
  assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):focus-visible/);
+ const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
+ assert.match(appCss,/\.app-view>\.app-page-title,\.app-admin-view>\.admin-page-heading>\.app-page-title\{/,'Both Admin headings must use the standard page title rule');
+ assert.match(appCss,/html\[data-theme="light"\] \.app-admin-view>\.admin-page-heading>\.app-page-title/,'Admin headings must match standard titles in light theme');
+ assert.match(css,/\.admin-settings :is\(input,select,textarea,button,a,\[role="option"\]\):focus-visible/,'Only interactive elements receive focus decoration');
+ assert.match(css,/\.app-admin-view \.admin-players-fields label > \[data-admin-players-label\],/,'Label text must remain visually neutral');
+ assert.match(css,/\.app-admin-view \.admin-players-dropdown \.language-option\[aria-selected="true"\],/,'Menu label color must not change on selection');
  for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))

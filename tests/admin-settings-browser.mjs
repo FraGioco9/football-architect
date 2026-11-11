@@ -180,14 +180,29 @@ try{
     const panelWidth=await page.evaluate(()=>{const view=document.getElementById('app-admin'),panel=document.querySelector('[data-admin-players]');
      return {view:view.getBoundingClientRect().width,panel:panel.getBoundingClientRect().width}});
     assert.ok(Math.abs(panelWidth.view-panelWidth.panel)<=2,'Players panel must span full width: '+JSON.stringify(panelWidth));
+    // Compare the rendered Admin title against the site's direct-child page title.
+    const titleTypography=await page.evaluate(()=>{
+     const current=document.getElementById('admin-title');
+     const reference=document.createElement('section');reference.className='app-view';
+     const title=document.createElement('h1');title.className='app-page-title';title.textContent='Reference';
+     reference.append(title);document.body.append(reference);
+     const sample=node=>{const css=getComputedStyle(node);return {fontSize:css.fontSize,fontWeight:css.fontWeight,letterSpacing:css.letterSpacing,lineHeight:css.lineHeight,color:css.color,textAlign:css.textAlign}};
+     const result={actual:sample(current),expected:sample(title)};reference.remove();return result;
+    });
+    assert.deepEqual(titleTypography.actual,titleTypography.expected,'Players h1 must exactly match the standard page title');
     const back=page.locator('[data-admin-back]');
     assert.equal(await back.getAttribute('href'),'/admin');
     assert.ok((await back.getAttribute('class')).includes('app-link'));
     const label=page.locator('[data-players-option="age"]').locator('xpath=..');
-    const beforeFocus=await label.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,outline:getComputedStyle(node).outlineStyle}));
+    const readLabel=()=>label.evaluate(node=>{
+     const span=node.querySelector('[data-admin-players-label]'),css=getComputedStyle(node),caption=getComputedStyle(span);
+     return {bg:css.backgroundColor,outline:css.outlineStyle,shadow:css.boxShadow,tap:css.webkitTapHighlightColor,
+      textColor:caption.color,textBackground:caption.backgroundColor,textOutline:caption.outlineStyle,textShadow:caption.boxShadow};
+    });
+    const beforeFocus=await readLabel();
     await page.locator('[data-players-option="age"]').focus();
-    const afterFocus=await label.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,outline:getComputedStyle(node).outlineStyle}));
-    assert.deepEqual(afterFocus,beforeFocus,'Label highlight must not change when the input box is focused');
+    const afterFocus=await readLabel();
+    assert.deepEqual(afterFocus,beforeFocus,'Label and label text must remain unchanged on input focus');
     const focused=await page.locator('[data-players-option="age"]').evaluate(node=>({border:getComputedStyle(node).borderColor,shadow:getComputedStyle(node).boxShadow}));
     assert.notEqual(focused.shadow,'none','Focus highlight must remain visible on the input box');
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
