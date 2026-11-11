@@ -10,7 +10,11 @@ export async function verifyFe04AccessibilityBrowser(browser){
   try{
    await context.addInitScript(({lang,theme})=>{localStorage.setItem("football-architect:language",lang);localStorage.setItem("football-architect:theme",theme)},profile);
    const page=await context.newPage();
-   const response=await page.goto("http://app.localhost:2000/competitions/it-1/standings",{waitUntil:"networkidle",timeout:30000});assert.equal(response?.status(),200);
+   // Dynamic app polling can keep the network busy indefinitely. The test verifies
+   // actual UI hydration below instead of waiting for a global network idle.
+   const response=await page.goto("http://app.localhost:2000/competitions/it-1/standings",{waitUntil:"domcontentloaded",timeout:30000});assert.equal(response?.status(),200);
+   await page.waitForFunction(()=>window.faCompetitionContext?.definition?.id==='IT-1'&&
+    !!window.faCompetitionRoute?.get&&document.getElementById("app-competition-season")?.disabled===false);
    const skip=page.locator("#fa-skip-link");await skip.waitFor({state:"attached"});
    assert.equal(await skip.textContent(),skips[profile.lang]);
    await skip.focus();await page.keyboard.press("Enter");
