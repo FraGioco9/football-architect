@@ -26,8 +26,16 @@ try {
  const routePage=await browser.newPage({viewport:{width:390,height:900}});
  try{
   for(const slug of allRoutes){
-   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"networkidle"});
+   const response=await routePage.goto(base+"/competitions/"+slug+"/stats",{waitUntil:"domcontentloaded"});
    assert.equal(response?.status(),200,"shared route "+slug);
+   // Avoid unrelated background polling/network requests blocking the navigation gate.
+   // Assert the actual competition context and statistics content instead.
+   await routePage.waitForFunction(slug=>{
+    const context=window.faCompetitionContext;
+    return context?.definition?.id?.toLowerCase()===slug&&
+     context.selectedSeason===1&&
+     document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card').length===3;
+   },slug);
    await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
    const actual=await routePage.evaluate(()=>({
     id:window.faCompetitionContext?.definition?.id?.toLowerCase(),
