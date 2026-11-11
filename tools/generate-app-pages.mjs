@@ -1,5 +1,5 @@
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
-import {renderAdminSettings} from './render-admin-settings.mjs';
+import {renderAdminSettings,renderAdminPlayers} from './render-admin-settings.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {buildRoute} from "../assets/routes-registry.mjs";
@@ -263,7 +263,7 @@ for(const page of outputPages){
 }
 // Dedicated Admin route: no administration markup or scripts are loaded by Settings.
 {
- const content='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">Admin</h1>\n          '+renderAdminSettings()+'\n        </section>\n';
+ const content='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          <h1 id="admin-title" class="app-page-title">Admin</h1>\n          '+renderAdminSettings()+'\n          '+renderAdminPlayers()+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,start,end)=>start+content+end);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
  html=html.replace('<title>Competitions','<title>Admin').replace('</head>',

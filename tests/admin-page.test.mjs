@@ -42,3 +42,16 @@ test('Admin removes Details and retains inline protected reset with a next-day p
  assert.doesNotMatch(html,/data-admin-copy="intro"|data-admin-copy="endSeasonFlow"/);
  assert.match(html,/data-admin-next-day/);
 });
+
+test('Players is a separate, permission-hidden Admin panel tied to the existing local trial',async()=>{
+ const {renderAdminPlayers}=await import('../tools/render-admin-settings.mjs');
+ const html=renderAdminPlayers();
+ assert.match(html,/<section[^>]*data-admin-players[^>]*hidden/);
+ assert.match(html,/data-admin-players-count/);
+ assert.match(html,/data-admin-players-seed/);
+ assert.match(html,/data-admin-players-suitability/);
+ assert.match(html,/data-admin-players-copy/);
+ assert.doesNotMatch(html,/data-admin-command=|data-admin-login|<details/);
+ const generated=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
+ assert.ok(generated.includes(html),'Generated Admin page must contain the exact Players panel');
+});

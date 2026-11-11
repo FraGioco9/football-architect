@@ -96,6 +96,17 @@ try{
    if(!allowed)assert.equal(await page.locator('#main-content').innerText(),'');
    assert.equal(await page.locator('#app-nav-admin[aria-current="page"]').count(),allowed?1:0);
    assert.equal(await page.locator('[data-admin-prepare]').isEnabled(),['write','revoked-write'].includes(grant));
+   assert.equal(await page.locator('[data-admin-players]').isVisible(),allowed&&['write','revoked-write'].includes(grant));
+   if(grant==='write'){
+    await page.locator('[data-admin-players-count]').fill('32');
+    await page.locator('[data-admin-players-seed]').fill('local-seed');
+    assert.match(await page.locator('[data-admin-players-command]').innerText(),/--count 32 --seed local-seed/);
+    await page.locator('[data-admin-players-seed]').fill('invalid;seed');
+    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),false);
+    await page.locator('[data-admin-players-seed]').fill('local-seed');
+    assert.equal(await page.locator('[data-admin-players-copy]').isEnabled(),true);
+    assert.equal(writes,0,'Trial command builder must not call Admin APIs');
+   }
    assert.equal(writes,0,'Navigation and hydration never mutate the world');
    if(grant==='revoked-write'){
     writeDenied=true;await page.locator('[data-admin-prepare]').click();

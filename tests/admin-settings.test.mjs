@@ -443,3 +443,11 @@ test('Advance day is unavailable until all actions due today or earlier are comp
   assert.equal(canRunCommand(action,active,events),false);
  }
 });
+
+test('Players local trial command uses bounded inputs and never calls world mutations',()=>{
+ const {playersTrialCommand}=require('../assets/admin-settings.js');
+ const command=playersTrialCommand({count:'100',seed:'fa-official-trial-01',suitability:'auto'});
+ assert.equal(command,'node tools/players-generation-trial.mjs --count 100 --seed fa-official-trial-01 --primary-suitability auto --out .\\players-trial.json');
+ assert.match(playersTrialCommand({count:'1000',seed:'seed_2',suitability:'65:80'}),/--count 1000.*--primary-suitability 65:80/);
+ for(const invalid of [{count:'0',seed:'ok',suitability:'auto'},{count:'1001',seed:'ok',suitability:'auto'},{count:'1.5',seed:'ok',suitability:'auto'},{count:'10',seed:'bad;Remove-Item',suitability:'auto'},{count:'10',seed:'ok',suitability:'999'}])assert.equal(playersTrialCommand(invalid),null);
+});

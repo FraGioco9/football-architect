@@ -29,3 +29,12 @@
 
 .app-admin-view .admin-summary-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .app-admin-view [data-admin-working]{font-size:13px;color:var(--muted)}
+
+/* Separate, compact Players panel: trial command only; no browser/server mutation. */
+.app-admin-view .admin-players{min-width:0}
+.app-admin-view .admin-players-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin:12px 0}
+.app-admin-view .admin-players-fields label{margin:0;min-width:0}
+.app-admin-view .admin-players-fields input,.app-admin-view .admin-players-fields select{display:block;box-sizing:border-box;width:100%;max-width:none;min-height:var(--fa-control-height-regular);margin:6px 0 0;padding:.55rem .65rem;border:1px solid var(--line,#647478);border-radius:.5rem;background:var(--surface,#162329);color:inherit;font:inherit}
+.app-admin-view .admin-players-command{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0;padding:12px;border:1px solid var(--line,#647478);border-radius:.5rem;font-size:.87rem}
+.app-admin-view .admin-players-command code{white-space:inherit}
+@media(max-width:620px){.app-admin-view .admin-players-fields{grid-template-columns:1fr}}

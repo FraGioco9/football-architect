@@ -16,12 +16,13 @@ export async function verifyArea(page,area,{touch}){
   assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false);
   await activate(page.locator('#app-nav-profile'));await page.waitForURL(url=>url.pathname==='/account/login');
   assert.equal(new URL(page.url()).searchParams.has('next'),false);
-  await page.goBack({waitUntil:'networkidle'});
+  await page.goBack({waitUntil:'domcontentloaded'});
   await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
   assert.equal(await page.locator('#main-content').innerText(),'');
  }else if(area==='calendar'){
   const picker=page.locator('#calendar-season-picker');
   await activate(picker);
+  await page.locator('#calendar-season-menu [role=option]').first().waitFor({state:'attached'});
   assert.equal(await page.locator('#calendar-season-menu [role=option]').count(),1);
   await activate(picker);
  }else if(area==='competitions'){

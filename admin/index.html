@@ -193,6 +193,20 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  </div>
 
  </div></section>
+          <section class="app-panel app-settings-panel admin-settings admin-players" data-admin-players aria-labelledby="admin-players-heading" hidden>
+ <h2 id="admin-players-heading" data-admin-player-copy="title">Players</h2>
+ <div class="app-settings-panel-content">
+ <p id="admin-players-description" data-admin-player-copy="intro">Prepare a local trial with the existing player generator. This does not save players to the world or database.</p>
+ <div class="admin-players-fields">
+ <label for="admin-players-count"><span data-admin-player-copy="count">Number of players (1–1000)</span><input id="admin-players-count" data-admin-players-count data-admin-player-param type="number" min="1" max="1000" step="1" value="100" inputmode="numeric"></label>
+ <label for="admin-players-seed"><span data-admin-player-copy="seed">Seed</span><input id="admin-players-seed" data-admin-players-seed data-admin-player-param type="text" maxlength="64" value="fa-official-trial-01" spellcheck="false" autocomplete="off"></label>
+ <label for="admin-players-suitability"><span data-admin-player-copy="suitability">Primary position suitability</span><select id="admin-players-suitability" data-admin-players-suitability data-admin-player-param><option value="auto" data-admin-player-copy="auto">Automatic</option><option value="75" data-admin-player-copy="fixed">Fixed (75)</option><option value="65:80" data-admin-player-copy="range">Range (65–80)</option></select></label>
+ </div>
+ <button type="button" data-admin-players-copy data-admin-player-copy="copy" disabled>Copy generation command</button>
+ <p data-admin-players-feedback role="status" aria-live="polite"></p>
+ <pre class="admin-players-command"><code data-admin-players-command></code></pre>
+ </div>
+</section>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
