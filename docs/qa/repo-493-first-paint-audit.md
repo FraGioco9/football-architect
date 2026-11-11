@@ -88,3 +88,13 @@ Source review found `data-club-crest-fallback="true"` could linger on an existin
 **Minimal correction:** clear the old fallback immediately when accepting a known crest (also when reusing a pre-existing prepaint image); keep fallback for missing, malformed or failed assets. A new `tests/club-crests.test.mjs` regression checks missing → known → failed → different known → loaded, including pending/fallback/loaded flags. No CSS, club logo asset/palette, sporting logic, D1 or deployment change.
 
 **Evidence:** source-level finding and specific regression committed; targeted Node/Browser/FULL acceptance awaits exact-head checks. Step 06 overall remains open pending broader loading/error/refresh QA.
+
+## CI reconciliation — exact HEAD 5841879037bd423b991c6f66ff8c6e4e21d04317
+
+- [Browser QA run 43072760226](https://github.com/FraGioco9/football-architect/actions/runs/43072760226): **PASS**; risk-based 493 suite and existing browser regressions ran.
+- [Admin World run 43072760713](https://github.com/FraGioco9/football-architect/actions/runs/43072760713): **PASS**.
+- [Site Checks run 43072760575](https://github.com/FraGioco9/football-architect/actions/runs/43072760575): **FAIL**, 4 out of 1,138 reported Node tests, all in `tests/ci-opt-01-workflow-events.test.mjs`. Cause: fixed expected FULL browser command arrays omitted the **newly and intentionally inserted** `tests/repo-493-first-paint-browser.mjs` invocation. The additional suite shifted CSS parity command indices by one. This is **CI contract fixture drift**, not evidence of a UI regression.
+- [FULL evidence run 43072760342](https://github.com/FraGioco9/football-architect/actions/runs/43072760342): **FAIL** because it correctly observed Site Checks failure (not an independent app failure).
+- This patch updates the expected exact command order (and corresponding SHA-bearing command indices), and asserts that a failure in the new audit stops the shell before later suites. No suite, security guard, exact-head requirement, or fail-closed behavior is removed.
+
+**Status: regression repair committed; do not mark acceptance green until the new exact-head checks finish.**

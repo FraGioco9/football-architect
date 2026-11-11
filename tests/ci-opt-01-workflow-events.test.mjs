@@ -9,6 +9,8 @@ import {spawnSync,execFileSync} from 'node:child_process';
 const workflows=['landing-checks.yml','int24-browser-qa.yml'];
 const fe02Browsers=['tests/fe-02-responsive-browser.mjs','tests/fe-02-responsive-browser.mjs'];
 const fe05Browsers=['tests/fe-05-visual-browser.mjs'];
+// The first-paint audit is an intentional, blocking Browser FULL suite.
+const repo493Browsers=['tests/repo-493-first-paint-browser.mjs'];
 const read=name=>readFileSync(new URL('../.github/workflows/'+name,import.meta.url),'utf8');
 function stepScript(source,name){
  const lines=source.split('\n');
@@ -85,7 +87,7 @@ for(const workflow of workflows){
  }));
 }
 
-function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false}={}){
+function browserCommands({event='pull_request',mode='full',area='',css=false,base='a'.repeat(40),failFull=false,failRepo493=false}={}){
  return temporary(root=>{
   const bin=join(root,'bin'),record=join(root,'calls');mkdirSync(bin);writeFileSync(record,'');
   const executable=(name,source)=>writeFileSync(join(bin,name),'#!/bin/sh\n'+source,{mode:0o755});
@@ -96,6 +98,7 @@ if [ "$1" = tests/clean-ui-03-css-parity.mjs ]; then
   [ "\${PR_BASE_SHA:-}" = "$FA_EXPECTED_BASE" ] || exit 77
 fi
 if [ "$1" = tests/int24-browser-qa.mjs ] && [ "$FA_FAIL_FULL" = 1 ]; then exit 42; fi
+if [ "$1" = tests/repo-493-first-paint-browser.mjs ] && [ "$FA_FAIL_493" = 1 ]; then exit 43; fi
 `);
   executable('curl','exit 0\n');
   executable('git',`for arg do
@@ -109,7 +112,7 @@ exit 0
   }).replaceAll('/tmp/int24-preview.log',join(root,'preview.log'));
   const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,encoding:'utf8',env:{
    ...process.env,PATH:bin+':'+process.env.PATH,PR_BASE_SHA:'',FA_RECORD:record,
-   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0'
+   FA_EXPECTED_BASE:base,FA_CSS_CHANGED:css?'1':'0',FA_FAIL_FULL:failFull?'1':'0',FA_FAIL_493:failRepo493?'1':'0'
   }});
   return {result,calls:readFileSync(record,'utf8').trim().split('\n').filter(Boolean).map(line=>{
    const [command,engine,area,base]=line.split('|');return {command,engine,area,base};
@@ -120,18 +123,18 @@ exit 0
 test('push/main runs ordinary Chromium and WebKit without requiring a PR base or CSS parity',()=>{
  const {result,calls}=browserCommands({event:'push',base:'',css:true});
  assert.equal(result.status,0,result.stderr);
- assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers,...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-webkit-iphone.mjs']);
 });
 test('PR CSS parity receives exactly the trusted base SHA',()=>{
  const base='b'.repeat(40);const {result,calls}=browserCommands({css:true,base});
  assert.equal(result.status,0,result.stderr);
- assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
- assert.equal(calls[5].base,base);
+ assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers,...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
  assert.equal(calls[6].base,base);
+ assert.equal(calls[7].base,base);
 });
 test('PR without CSS retains full browsers and omits screenshot parity',()=>{
  const {result,calls}=browserCommands();assert.equal(result.status,0,result.stderr);
- assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(calls.map(x=>x.command),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers,...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-webkit-iphone.mjs']);
 });
 test('PR with missing base fails closed instead of reporting successful FULL',()=>{
  assert.notEqual(browserCommands({base:'',css:true}).result.status,0);
@@ -145,6 +148,14 @@ for(const area of ['calendar','clubs','competitions','guide']){
   ]);
  });
 }
+test('a failing REPO-493 browser audit cannot be masked by later visual suites',()=>{
+ const {result,calls}=browserCommands({failRepo493:true});
+ assert.equal(result.status,43);
+ assert.deepEqual(calls.map(x=>x.command),[
+  'tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers
+ ]);
+});
+
 test('a failing Chromium suite fails the shell gate and cannot be masked by a later command',()=>{
  const {result,calls}=browserCommands({failFull:true});
  assert.equal(result.status,42);
@@ -167,9 +178,9 @@ test('real Git CSS diff scopes app.css parity while retaining FULL Chromium/WebK
   const result=spawnSync('bash',['-e','-o','pipefail','-c',script],{cwd:root,env:{...process.env,PATH:bin+':'+process.env.PATH,FA_RECORD:record},encoding:'utf8'});
   assert.equal(result.status,0,result.stderr);return readFileSync(record,'utf8').trim().split('\n');
  };
- assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers,...fe05Browsers,...fe02Browsers,'tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
  writeFileSync(join(root,'assets/app.css'),'body{color:blue}');git(root,'add','.');git(root,'commit','-qm','app stylesheet');
- assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
+ assert.deepEqual(execute(),['tests/int24-browser-qa.mjs','tests/page-load-02-club-browser.mjs',...repo493Browsers,...fe05Browsers,...fe02Browsers,'tests/clean-ui-03-css-parity.mjs','tests/fe-01-visual-parity.mjs','tests/clean-ui-03-webkit-iphone.mjs']);
 }));
 
 for(const engine of ['chromium','webkit'])test('independent account '+engine+' dispatches the original nine suites and preserves failure exit',()=>temporary(root=>{
