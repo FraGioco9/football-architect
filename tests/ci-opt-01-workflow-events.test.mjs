@@ -53,15 +53,18 @@ for(const workflow of workflows){
   writeFileSync(join(root,'tools/ci-opt-01-impact.mjs'),readFileSync(new URL('../tools/ci-opt-01-impact.mjs',import.meta.url)));
   const script=stepScript(read(workflow),'Classify fast-safe changes');
   const output=join(root,'output');
-  for(const [event,draft,baseSha,expected] of [
-   ['pull_request','true',base,'targeted'],
-   ['pull_request','false',base,'full'],
-   ['push','', '', 'full'],
-   ['pull_request','true','invalid','full']
+  for(const [event,draft,baseSha,expected,finalVerification] of [
+   ['pull_request','true',base,'targeted',false],
+   ['pull_request','true',base,'full',true],
+   ['pull_request','false',base,'full',false],
+   ['push','', '', 'full',false],
+   ['pull_request','true','invalid','full',false]
   ]){
    writeFileSync(output,'');
    const result=spawnSync('bash',['-e','-o','pipefail','-c',render(script,{
-    'github.event_name':event,'github.event.pull_request.draft':draft
+    'github.event_name':event,
+    'github.event.pull_request.draft':draft,
+    "contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->')":finalVerification?'true':'false'
    })],{cwd:root,env:{...process.env,GITHUB_EVENT_NAME:event,PR_BASE_SHA:baseSha,GITHUB_OUTPUT:output},encoding:'utf8'});
    assert.equal(result.status,0,result.stderr);
    const fields=Object.fromEntries(readFileSync(output,'utf8').trim().split('\n').map(x=>x.split('=')));
@@ -72,7 +75,10 @@ for(const workflow of workflows){
   const docsBase=git(root,'rev-parse','HEAD');
   mkdirSync(join(root,'docs'));writeFileSync(join(root,'docs/check.md'),'fixture');git(root,'add','docs');git(root,'commit','-qm','docs');
   writeFileSync(output,'');
-  execFileSync('bash',['-e','-o','pipefail','-c',render(script,{'github.event_name':'pull_request','github.event.pull_request.draft':'true'})],{
+  execFileSync('bash',['-e','-o','pipefail','-c',render(script,{
+   'github.event_name':'pull_request','github.event.pull_request.draft':'true',
+   "contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->')":'false'
+  })],{
    cwd:root,env:{...process.env,GITHUB_EVENT_NAME:'pull_request',PR_BASE_SHA:docsBase,GITHUB_OUTPUT:output}
   });
   assert.match(readFileSync(output,'utf8'),/^mode=fast$/m);

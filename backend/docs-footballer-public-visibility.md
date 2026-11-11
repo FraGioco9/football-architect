@@ -84,3 +84,6 @@ by default.
 
 The internal generator, research exports and protected persistence schema are
 unchanged. No production endpoint, DB write or deploy is authorized.
+
+
+Permanent player IDs are positive, monotonically increasing integers allocated by D1 at approval time. Preview candidates have no permanent ID; unrelated world/draft/session identifiers remain opaque.

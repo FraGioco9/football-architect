@@ -132,6 +132,13 @@ jobs:
     name: Account UI (${{ matrix.engine }})
     if: ${{ needs.scope.outputs.mode == 'full' }}
     runs-on: ubuntu-24.04
+    # Playwright's official image includes WebKit's libwoff2dec and all native deps.
+    # Avoid runner APT mirrors, which intermittently fail DNS resolution.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --add-host=app.localhost:127.0.0.1
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     strategy:
       fail-fast: false
       matrix:
@@ -145,7 +152,10 @@ jobs:
       - name: Verify exact head
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+        run: |
+          # Checkout ownership differs in the pinned Playwright job container.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -163,7 +173,13 @@ jobs:
           ENGINE: ${{ matrix.engine }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-player-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"
+          if [ "$PLAYWRIGHT_BROWSERS_PATH" = /ms-playwright ]; then
+            # Official Playwright image has native libraries and binaries preinstalled.
+            "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install "$ENGINE"
+          elif ! timeout 120s "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install --with-deps "$ENGINE"; then
+            echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned browser without retrying OS packages"
+            "$RUNNER_TEMP/fa-player-browser/node_modules/.bin/playwright" install "$ENGINE"
+          fi
       - name: Verify account matrix
         if: ${{ !needs.scope.outputs.reuse }}
         env:
@@ -229,7 +245,10 @@ jobs:
         if: ${{ !needs.scope.outputs.reuse }}
         run: |
           npm install --prefix "$RUNNER_TEMP/fa-lifecycle-browser" --no-package-lock --no-audit --no-fund playwright@1.58.2
-          "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium
+          if ! timeout 120s "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install --with-deps chromium; then
+            echo "::warning::Ubuntu APT bootstrap unavailable; installing pinned Chromium without retrying OS packages"
+            "$RUNNER_TEMP/fa-lifecycle-browser/node_modules/.bin/playwright" install chromium
+          fi
       - name: Verify unified Admin two-season lifecycle with real local Worker and D1
         if: ${{ !needs.scope.outputs.reuse }}
         timeout-minutes: 10

@@ -4,6 +4,7 @@ import {spawn} from 'node:child_process';
 import {networkInterfaces} from 'node:os';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {verifySharedPreviewReadiness} from './shared-nonproduction-proxy.mjs';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const LOCAL_API='http://127.0.0.1:8787';
@@ -30,6 +31,50 @@ export function localDevPlan({platform=process.platform,execPath=process.execPat
   {name:'backend',command:platform==='win32'?'npm.cmd':'npm',args:['run','dev','--prefix','backend'],options:{cwd:ROOT,env:localEnv,stdio:'inherit',shell:platform==='win32'}},
   {name:'frontend',command:execPath,args:['tools/dev-app-preview.mjs'],options:{cwd:ROOT,env:frontendEnv,stdio:'inherit'}}
  ];
+}
+
+/** The approved, read-only verified Preview Worker. Never relay account cookies to
+ * other .workers.dev tenants: a self-declared pool handshake is not ownership proof. */
+export const SHARED_PREVIEW_TARGET='https://football-architect-preview.giocolifrancesco.workers.dev';
+export function validateSharedPreviewTarget(target){
+ if(target!==SHARED_PREVIEW_TARGET)
+  throw Error('Shared DEV requires the exact approved nonproduction Workers Preview HTTPS origin');
+ const url=new URL(target);
+ if(url.origin!==target||url.pathname!=='/'||url.search||url.hash||url.username||url.password)
+  throw Error('Shared DEV target must be an exact HTTPS origin without credentials, paths or parameters');
+ return target;
+}
+
+export function sharedDevPlan({target,execPath=process.execPath,env=process.env}={}){
+ const origin=validateSharedPreviewTarget(target);
+ const sharedEnv={...env,FA_ADMIN_API_TARGET:origin,FA_ADMIN_API_POOL:'dev-preview',
+  FA_DEV_LAN:'',FA_DEV_LAN_HOST:''};
+ return [{name:'frontend',command:execPath,args:['tools/dev-app-preview.mjs'],
+  options:{cwd:ROOT,env:sharedEnv,stdio:'inherit'}}];
+}
+
+/** Handshake before spawning anything: incompatible Preview must never fall back
+ * to local D1 or accidentally proxy private operations to another environment. */
+export async function startSharedDev({proc=process,spawnChild=spawn,verify=verifySharedPreviewReadiness}={}){
+ const flags=proc.argv.slice(2);
+ if(flags.length!==2||flags[0]!=='--shared')
+  throw Error('Shared DEV requires: node tools/dev.mjs --shared '+SHARED_PREVIEW_TARGET);
+ const target=validateSharedPreviewTarget(flags[1]);
+ const readiness=await verify(target);
+ if(!readiness||readiness.ready!==true)
+  throw Error('Shared DEV refused: '+(readiness?.reason??'unavailable')+'; no local server started and no D1 was changed');
+ const [spec]=sharedDevPlan({target,execPath:proc.execPath,env:proc.env});
+ const child=spawnChild(spec.command,spec.args,spec.options);
+ let stopping=false;
+ const stop=()=>{if(stopping)return;stopping=true;if(child.pid&&!child.killed)child.kill()};
+ const fail=error=>{if(stopping)return;proc.stderr.write('Shared DEV frontend stopped: '+error+'\n');proc.exitCode=1;stop()};
+ proc.on('SIGINT',stop);proc.on('SIGTERM',stop);
+ child.on('error',error=>fail(error.message));
+ child.on('exit',(code,signal)=>fail('exit '+(code??signal??'unknown')));
+ proc.stdout.write('Shared DEV frontend: http://app.localhost:2000/players\n');
+ proc.stdout.write('API source: verified DEV/Preview Worker '+target+' (D1 online; no local Worker/D1)\n');
+ proc.stdout.write('Existing online players: '+readiness.count+'; remote writes require separately authorized operations.\n');
+ return {children:[child],stop};
 }
 
 export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkInterfaces}={}){
@@ -72,4 +117,10 @@ export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkI
  return {children,stop};
 }
 
-if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))startLocalDev();
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ if(process.argv[2]==='--shared')startSharedDev().catch(error=>{
+  process.stderr.write('Shared DEV startup denied: '+error.message+'\n');
+  process.exitCode=1;
+ });
+ else startLocalDev();
+}

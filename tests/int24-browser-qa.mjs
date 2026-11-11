@@ -515,6 +515,9 @@ try {
       'multi-column cards keep at least 260px for crest, name and scores at '+width+'px');
     const links=page.locator('.fa-bracket-links:visible [data-bracket-link]');
     assert.equal(await links.count(),width<=390?0:width===1440?10:6,'Only same-row connections visible');
+    // Postseason shell mounts before the asynchronous API source finishes.
+    // Preserve the first-paint skeleton but assert its release only after loading settles.
+    await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='false',null,{timeout:10000});
     assert.equal(await page.locator('[data-postseason-config-slot]').first().evaluate(node=>getComputedStyle(node,'::before').content),'none','Unassigned slots become readable when loading settles');
     if(width===1440||width===768)assert.ok(await links.count()>0,'Adjacent rounds show connectors');
     if(width<=390)assert.equal(await links.count(),0,'Single-column rounds have no connector');

@@ -43,9 +43,9 @@ test('internal stored player is a strict allowlist of gameplay state',()=>{
 });
 test('internal gameplay state can be projected to public without leaking attributes',()=>{
  const internal=projectInternalFootballerRecord(source);
- const publicProfile=projectPublicFootballerProfile(internal,{publicId:'footballer-1',currentAge:18});
+ const publicProfile=projectPublicFootballerProfile(internal,{publicId:1,currentAge:18});
  assert.equal(publicProfile.display_name,'Joao da Silva');
- assert.equal(publicProfile.id,'footballer-1');
+ assert.equal(publicProfile.id,1);
  assert.equal(Object.hasOwn(publicProfile,'attributes'),false);
  assert.equal(Object.hasOwn(publicProfile,'development_aptitude'),false);
  assert.equal(Object.hasOwn(publicProfile,'trial_role_profile'),false);

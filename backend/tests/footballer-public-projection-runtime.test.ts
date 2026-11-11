@@ -29,10 +29,10 @@ const internal={
   future_internal_field:'must stay private'
 };
 test('roster view is an exact allowlist and ignores arbitrary internal fields',()=>{
- const output=projectPublicFootballerCard(internal,{publicId:'footballer-123',currentAge:19});
+ const output=projectPublicFootballerCard(internal,{publicId:123,currentAge:19});
  assert.deepEqual(output,{
   display_name:'Joao da Silva',nationality:'BRA',primary_position:'ST',
-  id:'footballer-123',age:19,career_status:'active'
+  id:123,age:19,career_status:'active'
  });
  assert.equal(Object.isFrozen(output),true);
  for(const phrase of ['known_as','Joaozinho','internal-do-not-send','trial-0001',
@@ -40,10 +40,10 @@ test('roster view is an exact allowlist and ignores arbitrary internal fields',(
   assert.equal(JSON.stringify(output).includes(phrase),false,phrase+' leaked');
 });
 test('profile view adds only public physical and position fields, never abilities',()=>{
- const output=projectPublicFootballerProfile(internal,{publicId:'footballer-123',currentAge:19});
+ const output=projectPublicFootballerProfile(internal,{publicId:123,currentAge:19});
  assert.deepEqual(output,{
   display_name:'Joao da Silva',nationality:'BRA',primary_position:'ST',
-  id:'footballer-123',age:19,career_status:'active',
+  id:123,age:19,career_status:'active',
   secondary_positions:['RW','LW'],height_cm:181,preferred_foot:'right'
  });
  assert.equal(Object.isFrozen(output),true);
@@ -62,8 +62,8 @@ test('reject invalid source fields and untrusted authoritative context',()=>{
  for(const p of [null,[],{...internal,first_name:''},{...internal,last_name:' SurName'},
  {...internal,nationality:null}])
   assert.throws(()=>projectPublicFootballerCard(p as any),TypeError);
- for(const ctx of [{publicId:''},{currentAge:-1},{currentAge:18.5}])
-  assert.throws(()=>projectPublicFootballerCard(internal,ctx),TypeError);
+ for(const ctx of [{publicId:''},{publicId:0},{publicId:-1},{publicId:1.5},{currentAge:-1},{currentAge:18.5}])
+  assert.throws(()=>projectPublicFootballerCard(internal,ctx as any),TypeError);
  assert.throws(()=>projectPublicFootballerProfile({...internal,secondary_positions:'ST'} as any),TypeError);
  assert.throws(()=>projectPublicFootballerProfile({...internal,preferred_foot:'both'}),TypeError);
 });

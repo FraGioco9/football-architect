@@ -34,20 +34,20 @@ test('forwards bounded same-origin API requests, Origin and cookies, without red
 });
 test('public sporting bridge permits only canonical GET paths and strips operator credentials',async()=>{
  const upstream=createServer((req,res)=>{
-  assert.ok(['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history'].includes(req.url));
+  assert.ok(['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players/page/1'].includes(req.url));
   for(const key of ['cookie','x-csrf-token','idempotency-key','origin'])assert.equal(req.headers[key],undefined);
   res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['must-not-cross=1']});res.end(JSON.stringify({data:'x'.repeat(80000)}));
  });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
  const target='http://127.0.0.1:'+upstream.address().port;
  const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
  try{
-  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra']){
+  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/players/page/0','/api/players/page/1?bad=1','/api/players/page/10000']){
    const res=response();await proxyAdminApi(req(path),res,{target});assert.equal(res.status,path.includes('?')?403:404);
   }
   const denied=response();await proxyAdminApi({...req('/api/competitions/IT-1/seasons/1'),method:'POST'},denied,{target});assert.equal(denied.status,405);
   const deniedClub=response();await proxyAdminApi({...req('/api/clubs/IT-1/seasons/1/overview'),method:'POST'},deniedClub,{target});assert.equal(deniedClub.status,405);
   const deniedHistory=response();await proxyAdminApi({...req('/api/clubs/IT-1/history'),method:'POST'},deniedHistory,{target});assert.equal(deniedHistory.status,405);
-  for(const path of ['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history']){
+  for(const path of ['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players/page/1']){
   const result=await new Promise((resolve,reject)=>{
    const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,headers:{Host:'localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}))});r.on('error',reject);r.end();
   });assert.equal(result.status,200);assert.equal(JSON.parse(result.body).data.length,80000);assert.equal(result.cookie,undefined);

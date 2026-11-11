@@ -122,6 +122,22 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
    ])assert.match(source,gate,"Manual preview gate missing: "+gate);
    assert.doesNotMatch(source,/--prod\b|--target=production|vercel\s+promote|vercel\s+rollback/i);
    assert.doesNotMatch(source,/deploy-pages|upload-pages-artifact|actions\/deploy-pages/i);
+  }else if(file==="cloudflare-preview-package.yml"){
+   // Explicitly audited read-only exception: it stages a hashed Worker + allowlisted
+   // public assets, but cannot publish, deploy, or access Cloudflare credentials.
+   for(const required of [
+    /^  pull_request:$/m,
+    /github\.event\.pull_request\.head\.sha/,
+    /persist-credentials: false/,
+    /backend\/tools\/prepare-preview\.mts/,
+    /verifyPreviewPackage/,
+    /publicationAuthorized!==false/,
+    /actions\/upload-artifact@v4/,
+    /football-architect-preview\.giocolifrancesco\.workers\.dev/,
+    /6a6c7803-56d3-4e7f-bd01-752d06a32341/
+   ])assert.match(source,required,"Cloudflare package gate missing: "+required);
+   assert.doesNotMatch(source,/^  (?:push|workflow_dispatch|schedule|workflow_run|repository_dispatch):/m);
+   assert.doesNotMatch(source,/secrets\.|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|--remote\b|npm.*wrangler.*deploy|npx.*wrangler.*deploy|\bwrangler\s+deploy\s+(?!.*--dry-run)/i);
   }else{
    assert.doesNotMatch(source,/\b(deploy|publish|upload-pages-artifact|actions\/deploy-pages)\b/i,
     "Workflow must use audited public artifact: "+file);

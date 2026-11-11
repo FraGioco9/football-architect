@@ -1,0 +1,101 @@
+name: Cloudflare Preview package (no deployment)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/cloudflare-preview-package.yml'
+      - 'backend/**'
+      - 'assets/**'
+      - 'players/**'
+      - 'tools/publication-guard.mjs'
+      - 'tools/generate-app-pages.mjs'
+      - 'docs/dev-preview-shared-d1.md'
+
+# No API keys or environments are available in this workflow.
+permissions:
+  contents: read
+
+concurrency:
+  group: fa-cloudflare-package-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Compile & verify immutable DEV/Preview package
+    if: >-
+      github.repository == 'FraGioco9/football-architect' &&
+      github.event.pull_request.head.repo.full_name == 'FraGioco9/football-architect' &&
+      github.event.pull_request.head.ref == 'feat/dev-preview-shared-d1' &&
+      (github.event.pull_request.base.ref == 'main' ||
+       github.event.pull_request.base.ref == 'feat/players-directory-d1-read')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR head without credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify immutable source identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse "HEAD^{tree}")" = "$(git rev-parse "$EXPECTED_SHA^{tree}")"
+          test "$(git cat-file -t "$EXPECTED_SHA")" = commit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install exact Worker toolchain
+        run: |
+          set -euo pipefail
+          npm install -g npm@11.6.2 --no-audit --no-fund
+          npm --prefix backend ci --no-audit --no-fund
+      - name: Build offline Preview package (never publish)
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+          PACKAGE_OUTPUT: ${{ runner.temp }}/football-architect-cloudflare-package
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types backend/tools/prepare-preview.mts \
+            --source-sha "$EXPECTED_SHA" \
+            --output "$PACKAGE_OUTPUT" \
+            --account-id e20c88bb42826f59efea469af0f82f96 \
+            --database-id 6a6c7803-56d3-4e7f-bd01-752d06a32341 \
+            --origin https://football-architect-preview.giocolifrancesco.workers.dev
+      - name: Verify compiled package and Players routes
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+          PACKAGE_OUTPUT: ${{ runner.temp }}/football-architect-cloudflare-package
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types --input-type=module <<'NODE'
+          import {verifyPreviewPackage} from './backend/tools/prepare-preview.mts';
+          import {execFileSync} from 'node:child_process';
+          import {readFileSync,existsSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root=process.env.PACKAGE_OUTPUT;
+          const manifest=await verifyPreviewPackage(root);
+          const expected=process.env.EXPECTED_SHA;
+          if(manifest.sourceSha!==expected||manifest.sourceTree!==execFileSync('git',['rev-parse',expected+'^{tree}'],{encoding:'utf8'}).trim())throw Error('Exact source manifest mismatch');
+          if(manifest.pool!=='dev-preview'||manifest.origin!=='https://football-architect-preview.giocolifrancesco.workers.dev'||manifest.publicationAuthorized!==false)throw Error('Nonproduction publication policy mismatch');
+          if(manifest.target.accountId!=='e20c88bb42826f59efea469af0f82f96'||manifest.target.databaseId!=='6a6c7803-56d3-4e7f-bd01-752d06a32341')throw Error('Wrong Cloudflare target');
+          const required=['manifest.json','wrangler.json','bundle/preview.js','assets/players/index.html','assets/assets/players-directory.js'];
+          for(const file of required)if(!existsSync(join(root,file)))throw Error('Missing required compiled asset: '+file);
+          const cfg=JSON.parse(readFileSync(join(root,'wrangler.json'),'utf8'));
+          if(cfg.vars.PLAYER_MODE!=='preview'||cfg.vars.PREVIEW_SOURCE_SHA!==expected||cfg.no_bundle!==true||cfg.assets.run_worker_first!==true)throw Error('Preview Worker configuration drift');
+          console.log('VERIFIED: exact-HEAD Cloudflare Preview package, files:',manifest.files.length,'source:',manifest.sourceSha,'published: false');
+          NODE
+      - name: Upload verified artifact for separate approved release
+        uses: actions/upload-artifact@v4
+        with:
+          name: fa-cloudflare-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/football-architect-cloudflare-package/
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 6
