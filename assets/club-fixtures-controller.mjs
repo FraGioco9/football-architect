@@ -14,7 +14,7 @@ export function mountClubFixtures({host,manifest}){
  const season=()=>{
   const value=new URLSearchParams(location.search).get('season');
   if(value!==null&&/^(0|[1-9]\d{0,8})$/.test(value)){rememberedSeason=Number(value);return rememberedSeason;}
-  return rememberedSeason??state?.get?.().current?.season??1;
+  return rememberedSeason??state?.get?.().current?.season??null;
  };
  const lang=()=>document.documentElement.lang;
  const cache=createClubPublicReadCache({getState:()=>state.get(),fetchJson:async(path,{signal}={})=>{
@@ -39,8 +39,8 @@ export function mountClubFixtures({host,manifest}){
   if(route()?.view!=='fixtures')return;
   const chosen=season(),current=state?.get?.().current?.season;
   const max=Number.isInteger(current)?current:chosen;
-  const seasons=Array.from({length:Math.min(max+1,5)},(_,i)=>i);
-  if(!seasons.includes(chosen))seasons.push(chosen);
+  const seasons=Number.isInteger(max)?Array.from({length:Math.min(max+1,5)},(_,i)=>i):[];
+  if(Number.isInteger(chosen)&&!seasons.includes(chosen))seasons.push(chosen);
   const requested=new URLSearchParams(location.search).get('competition');
   filter=requested&&snapshot.competitions?.some(d=>d.id===requested)?requested:'all';
   const focused=panel?.contains(document.activeElement)?document.activeElement:null;
@@ -72,7 +72,7 @@ export function mountClubFixtures({host,manifest}){
     const id=control.dataset.clubFixtureControl,next=incoming.querySelector('[data-club-fixture-control="'+id+'"]');
     const menu=control.querySelector('[role=listbox]'),nextMenu=next.querySelector('[role=listbox]');
     menu.replaceChildren(...nextMenu.childNodes);menu.setAttribute('aria-label',nextMenu.getAttribute('aria-label'));
-    control.querySelector('[data-club-fixture-value]').textContent=next.querySelector('[data-club-fixture-value]').textContent;
+    control.querySelector('[data-club-fixture-value]').replaceChildren(...next.querySelector('[data-club-fixture-value]').childNodes);
     control.querySelector('button').setAttribute('aria-label',next.querySelector('button').getAttribute('aria-label'));
     next.replaceWith(control);
    }

@@ -726,3 +726,14 @@ test('CLUB-FIXTURES: parser-time loading notice and region label are localized b
  assert.match(ui.render(),/data-club-fixture-text="loading"/);
  assert.match(read('tools/generate-club-pages.mjs'),/fixtures\.setAttribute\('aria-label',fixtureLabels\.competition\)/);
 });
+
+test('CLUB-FIXTURES: unknown canonical season reserves a value instead of guessing Season 1',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ const markup=ui.render();assert.ok(!markup.includes('Season 1'));assert.match(markup,/club-fixture-season-loading/);
+});
+
+test('CLUB-FIXTURES: confirmed source failure does not retain a season loading skeleton',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ const markup=ui.render({season:null,snapshot:{coverage:'unavailable',rows:[],competitions:[]}});
+ assert.ok(!markup.includes('club-fixture-season-loading'));assert.ok(markup.includes('Fixture data is unavailable.'));
+});

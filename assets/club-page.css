@@ -501,3 +501,5 @@ body.app-body{--app-page-pad-top:8px}
 .calendar-marker-tooltip.club-fixture-tooltip{display:block!important}.calendar-marker-tooltip.club-fixture-tooltip[hidden]{display:none!important}
 
 @media(max-width:620px){.club-fixture-select .language-trigger{font-size:13px;padding-inline:10px;gap:6px}.club-fixture-select [data-club-fixture-value]{white-space:nowrap}}
+
+.club-fixture-season-loading{width:1ch;min-width:1ch;vertical-align:middle}

@@ -33,8 +33,8 @@ function bootstrapClubFirstPaint(){
  const fixtureLabels=JSON.parse(fixtures.dataset.labels)[locale];
  fixtures.setAttribute('aria-label',fixtureLabels.competition);
  for(const node of fixtures.querySelectorAll('[data-club-fixture-text]'))node.textContent=fixtureLabels[node.dataset.clubFixtureText];
- const requested=params.get('season');const initial=/^(0|[1-9]\d{0,8})$/.test(requested||'')?requested:'1';
- for(const control of fixtures.querySelectorAll('[data-club-fixture-control]')){const id=control.dataset.clubFixtureControl,label=fixtureLabels[id];control.querySelector('button').setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);control.querySelector('[data-club-fixture-value]').textContent=id==='season'?fixtureLabels.season+' '+initial:fixtureLabels.all;}
+ const requested=params.get('season');const initial=/^(0|[1-9]\d{0,8})$/.test(requested||'')?requested:null;
+ for(const control of fixtures.querySelectorAll('[data-club-fixture-control]')){const id=control.dataset.clubFixtureControl,label=fixtureLabels[id];control.querySelector('button').setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);const value=control.querySelector('[data-club-fixture-value]');value.textContent=id==='season'?fixtureLabels.season+(initial===null?' ':' '+initial):fixtureLabels.all;if(id==='season'&&initial===null){const placeholder=document.createElement('span');placeholder.className='club-fp-bar club-fixture-season-loading';placeholder.setAttribute('aria-hidden','true');value.append(placeholder);}}
  other.setAttribute('aria-hidden',String(view!=='history'));
  if(view==='overview'){overview.removeAttribute('aria-hidden');overview.setAttribute('aria-busy','true');}
  const keyScroll='football-architect:club-tabs-scroll:/clubs/'+country+'/'+clubId;
