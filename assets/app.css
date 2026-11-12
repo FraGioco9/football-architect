@@ -1635,7 +1635,7 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-filter-close{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:transparent;color:var(--text);cursor:pointer}
 .app-players-filter-close:hover{border-color:var(--focus)}
 .app-players-filter-form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin:0}
-.app-players-filters{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:10px;flex:1 1 auto;min-height:0;padding:16px 16px 24px;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+.app-players-filters{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:10px;flex:1 1 auto;min-height:0;padding:16px 16px 24px;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
 .app-players-filter-control{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:650;color:var(--muted)}
 
 /* Expandable sections preserve panel geometry; only their internal content scrolls. */

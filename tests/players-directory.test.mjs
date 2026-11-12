@@ -533,3 +533,12 @@ test('Players first paint initializes name, attributes and the applied-count whi
  assert.match(script,/key!=='attributes'&&!key\.endsWith\('Scope'\)/);
  assert.match(script,/filters\.attributes\.split\(','\)\.filter\(Boolean\)\.length/);
 });
+
+
+test('Players filter drawer permanently reserves its own scrollbar gutter without shifting the site shell',()=>{
+ const css=read('assets/app.css'),js=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-filters\{[^}]*overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin/);
+ assert.match(css,/\.app-players-filter-dialog\{[^}]*overflow:hidden/,'the scrollable region owns the scrollbar, not the top-layer dialog');
+ assert.doesNotMatch(css,/html:has\(\.app-players-filter-dialog/,'opening the drawer must not alter root scrollbar gutter');
+ assert.doesNotMatch(js,/document\.documentElement\.style\.overflow/,'the background scroll state stays untouched');
+});
