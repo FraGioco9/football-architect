@@ -305,3 +305,16 @@ test('Attributes widths remain proportional after 54px flag, 248px player and fi
   }
  }
 });
+
+
+test('Positions is left-aligned in Overview and all Attributes groups; stats remain centered',()=>{
+ const css=read('assets/app.css'),renderer=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-table:not\(\[data-players-table-mode="attributes"\]\) :is\(th,td\):nth-child\(4\)\{text-align:left\}/,'Overview header and body including static first paint');
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(n\+3\)\{text-align:center\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(3\)\{text-align:left\}/,'third column Positions overrides centered attribute defaults');
+ assert.ok(css.indexOf(':is(th,td):nth-child(3){text-align:left}')>css.indexOf(':is(th,td):nth-child(n+3){text-align:center}'),'Positions override follows general numeric rule');
+ assert.match(renderer,/else \{th\(t\.columns\[2\]\);for\(const key of groups\[state\.group\]\)th\(attributeName\(key\)\);\}/);
+ assert.match(renderer,/cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
+ assert.match(css,/\.app-players-table th:nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
+ assert.match(css,/\.app-players-table th:nth-child\(4\)\{width:calc\(/,'column widths retained');
+});

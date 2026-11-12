@@ -1565,6 +1565,8 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
 .app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
 .app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
+/* Positions contains position codes and is left-aligned like Player, including the static Overview header. */
+.app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4){text-align:left}
 .app-players-table tbody tr:last-child td{border-bottom:0}
 .app-players-empty-row td{height:148px;padding:26px 18px;text-align:center;white-space:normal}
 .app-players-empty-row strong{display:block;font-size:14px;font-weight:700;line-height:1.5}
@@ -1594,6 +1596,7 @@ html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden
 .app-players-table[data-players-table-mode="attributes"]{min-width:982px}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){text-align:center}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(3){text-align:left}
 .app-players-table[data-players-table-mode="attributes"] th:nth-child(3){width:var(--app-players-positions-width)}
 .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 4)}
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1462px}
