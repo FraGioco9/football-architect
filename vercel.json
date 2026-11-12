@@ -31,6 +31,16 @@
       "permanent": true
     },
     {
+      "source": "/admin/players/preview/",
+      "destination": "/admin/players/preview",
+      "permanent": true
+    },
+    {
+      "source": "/admin/players/preview/index.html",
+      "destination": "/admin/players/preview",
+      "permanent": true
+    },
+    {
       "source": "/competitions/:division((?:it|eng|es|de|fr|pt|nl|br)-[12])/",
       "destination": "/competitions/:division",
       "permanent": true

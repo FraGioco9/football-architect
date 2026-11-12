@@ -241,3 +241,35 @@ test('Players pagination query is forwarded only for canonical GET pages and str
   await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
  }
 });
+
+test('Admin preview draft reload forwards a CSRF-protected POST only on the exact loopback route',async()=>{
+ const draftId='11111111-1111-4111-8111-111111111111';
+ const upstream=createServer(async(request,res)=>{
+  assert.equal(request.url,'/api/admin/players/draft');
+  assert.equal(request.method,'POST');
+  assert.equal(request.headers.host,'app.localhost:2000');
+  assert.equal(request.headers.origin,'http://app.localhost:2000');
+  assert.equal(request.headers['x-csrf-token'],'test-csrf');
+  assert.equal(request.headers.cookie,'fa_player_local=test-session');
+  let body='';for await(const part of request)body+=part;
+  assert.deepEqual(JSON.parse(body),{draftId});
+  res.writeHead(200,{'Content-Type':'application/json'});res.end('{"candidates":[]}');
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((request,res)=>proxyAdminApi(request,res,{target}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ try{
+  const send=(path,method,body)=>new Promise((resolve,reject)=>{
+   const req2=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,
+    headers:{Host:'app.localhost:2000',Origin:'http://app.localhost:2000',
+     'Content-Type':'application/json','X-CSRF-Token':'test-csrf',Cookie:'fa_player_local=test-session'}},
+    res=>{let responseBody='';res.on('data',c=>responseBody+=c);res.on('end',()=>resolve({status:res.statusCode,body:responseBody}))});
+   req2.on('error',reject);req2.end(body?JSON.stringify(body):undefined);
+  });
+  assert.equal((await send('/api/admin/players/draft','GET')).status,405);
+  assert.equal((await send('/api/admin/players/draft?draftId='+draftId,'POST',{draftId})).status,403);
+  const ok=await send('/api/admin/players/draft','POST',{draftId});
+  assert.equal(ok.status,200);assert.deepEqual(JSON.parse(ok.body),{candidates:[]});
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);}
+});

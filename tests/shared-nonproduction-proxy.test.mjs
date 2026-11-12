@@ -73,6 +73,7 @@ test('shared-mode Dev pages use authoritative sporting loaders without fictional
 test('shared preview supports large authenticated player cohorts without widening ordinary response caps',async()=>{
  for(const [path,method,payload] of [
   ['/api/admin/players/preview','POST',{options:{count:100}}],
+  ['/api/admin/players/draft','POST',{draftId:'11111111-1111-4111-8111-111111111111'}],
   ['/api/admin/players','GET',null]
  ]){
   const big=Buffer.from(JSON.stringify({candidates:[{display_name:'A'.repeat(95000)}]}));
@@ -83,7 +84,7 @@ test('shared preview supports large authenticated player cohorts without widenin
   const res=await run(r,async(url,options)=>{
    if(++count===1)return context();
    assert.equal(url.pathname,path);
-   assert.equal(options.limit,2097152,'Only the two large player read routes get the 2 MiB cap');
+   assert.equal(options.limit,2097152,'Only the three exact Admin player cohort routes get the 2 MiB cap');
    assert.equal(options.headers.cookie,`__Host-fa_player=${token}`);
    assert.equal(options.headers.origin,origin);
    return {status:200,headers:{},body:big};

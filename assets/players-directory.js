@@ -360,7 +360,7 @@
   }
   function flagCell(tr,player){
    const td=document.createElement('td'),flag=Object.hasOwn(flags,player.nationality)?flags[player.nationality]:null;
-   if(flag){const image=document.createElement('img');image.className='app-players-nationality-flag';image.width=24;image.height=18;image.alt=player.nationality;image.src='/assets/flags/'+flag+'.svg';td.append(image)}
+   if(flag){const image=document.createElement('img');image.className='app-players-nationality-flag';image.width=24;image.height=18;image.alt=window.faPlayersNationality?.name(player.nationality)||player.nationality;image.dataset.playerCountry=player.nationality;image.tabIndex=0;image.src='/assets/flags/'+flag+'.svg';td.append(image)}
    else td.textContent=player.nationality||'';
    tr.append(td);
   }

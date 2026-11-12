@@ -91,6 +91,26 @@ export async function previewPlayerGeneration(db:Database,session:AdminSession,i
  return {draftId:batchId,worldGeneration:world.generation,seasonNumber:world.seasonNumber,
   expiresAt,summary:summarize(trial),candidates:candidates.map((p,i)=>({...p,preview_id:trial.candidates[i].preview_id}))};
 }
+
+/** Reload a server-owned preview for its original Admin actor. No public access or permanent IDs. */
+export async function readPlayerGenerationDraft(db:Database,session:AdminSession,draftId:string,now:number){
+ if(typeof draftId!=='string'||!pattern.test(draftId))throw invalid();
+ const draft=await db.prepare('SELECT id,world_generation,season_number,account_id,count,seed,status,expires_at,candidates_json,options_json FROM player_generation_drafts WHERE id=? AND account_id=?')
+  .bind(draftId,session.unified!.playerId).first<Draft & {options_json:string}>();
+ if(!draft)throw new ApiError(404,'players_preview_not_found');
+ if(draft.status!=='preview'||draft.expires_at<=now)throw new ApiError(409,'players_preview_expired');
+ const world=await readWorld(db);
+ if(world.generation!==draft.world_generation||world.seasonNumber!==draft.season_number)
+  throw new ApiError(409,'stale_players_preview');
+ const candidates=JSON.parse(draft.candidates_json) as Data[];
+ if(!Array.isArray(candidates)||candidates.length!==draft.count)throw new ApiError(503,'players_preview_unavailable');
+ const countries:Record<string,number>={};
+ for(const item of candidates){const code=String(item.nationality??'');countries[code]=(countries[code]??0)+1;}
+ return {draftId:draft.id,worldGeneration:draft.world_generation,seasonNumber:draft.season_number,
+  expiresAt:draft.expires_at,summary:{count:draft.count,seed:draft.seed,countries},
+  options:JSON.parse(draft.options_json),candidates};
+}
+
 function parseApproval(input:unknown){
  if(!input||typeof input!=='object'||Array.isArray(input))throw new ApiError(422,'players_approval_required');
  const data=input as Data;
