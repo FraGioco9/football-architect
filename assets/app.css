@@ -1550,20 +1550,20 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-count{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;flex:0 0 132px;width:132px;height:44px;margin:0;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
 .app-players-count-skeleton{display:block;flex:0 0 98px;width:98px;height:14px;margin-inline-start:auto;border-radius:4px;background:var(--line)}
 
-/* Player directory: fixed six-column full-width table with an accessible blank flag heading. */
+/* Player directory: fixed flag/name columns; every remaining column receives a share of the available width. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-players-table-scroll:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:690px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:782px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
 .app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
-.app-players-table th:nth-child(3){width:12%}
-.app-players-table th:nth-child(4){width:20%}
-.app-players-table th:nth-child(5){width:15%}
-.app-players-table th:nth-child(6){width:auto}
+.app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
+.app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
+.app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
+.app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
 .app-players-table tbody tr:last-child td{border-bottom:0}
 .app-players-empty-row td{height:148px;padding:26px 18px;text-align:center;white-space:normal}
 .app-players-empty-row strong{display:block;font-size:14px;font-weight:700;line-height:1.5}
@@ -1590,10 +1590,12 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}
 .app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:34px;min-height:34px;padding:6px 5px;font-size:11px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
 .app-players-toolbar+.app-players-table-scroll{margin-top:14px}
-.app-players-table[data-players-table-mode="attributes"]{min-width:760px}
+.app-players-table[data-players-table-mode="attributes"]{min-width:782px}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:var(--app-players-name-width);text-align:left}
-.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){width:120px;text-align:center}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){text-align:center}
+.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) / 4)}
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1262px}
+html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) / 8)}
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+3){font-variant-numeric:tabular-nums}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}

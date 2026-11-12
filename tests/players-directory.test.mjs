@@ -224,3 +224,32 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/);
  assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
 });
+
+test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css');
+ const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
+ assert.match(html,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><\/colgroup>/);
+ assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:782px/);
+ assert.match(css,/col\.app-players-flag-column\{width:var\(--app-players-flag-width\)\}/);
+ assert.match(css,/col\.app-players-name-column\{width:var\(--app-players-name-width\)\}/);
+ const overview=[['Age',3,0.17],['Positions',4,0.42],['Height',5,0.21],['Foot',6,0.20]];
+ for(const [name,column,fraction] of overview)
+  assert.ok(css.includes('.app-players-table th:nth-child('+column+'){width:calc(('+fixed+') * '+fraction.toFixed(2)+')}'),name+' must use a percentage of the flexible portion, not a percent of the whole table');
+ assert.equal(overview.reduce((total,[,,fraction])=>total+Math.round(fraction*100),0),100);
+ const attrSelector='.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+3)';
+ assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"]{min-width:782px}'));
+ assert.ok(css.includes(attrSelector+'{width:calc(('+fixed+') / 4)}'));
+ assert.ok(css.includes('html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1262px}'));
+ assert.ok(css.includes('html[data-players-group="technical"] '+attrSelector+'{width:calc(('+fixed+') / 8)}'));
+ assert.doesNotMatch(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(n\+3\)\{width:120px/);
+ for(const total of [782,1262,1440,1920]){
+  const variable=total-54-248;
+  assert.ok(variable>=480);
+  const widths=overview.map(([, ,fraction])=>variable*fraction);
+  assert.ok(Math.abs(widths.reduce((sum,width)=>sum+width,0)-variable)<1e-8);
+  assert.ok(Math.abs(variable/4*4-variable)<1e-8);
+  assert.ok(Math.abs(variable/8*8-variable)<1e-8);
+ }
+ assert.equal(54+248+4*120,782,'four-attribute minimum remains readable');
+ assert.equal(54+248+8*120,1262,'technical minimum avoids compressed headings');
+});
