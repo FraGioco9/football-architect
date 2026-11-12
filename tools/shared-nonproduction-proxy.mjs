@@ -77,7 +77,7 @@ export async function verifySharedPreviewReadiness(target,{send=sendSharedHttps,
   const world=await probe('/api/world',4096);
   if(!world||!world.world||typeof world.world!=='object'||typeof world.world.generation!=='string')
    return {ready:false,reason:'world_api_unavailable'};
-  const directory=await probe('/api/players/page/1',524288);
+  const directory=await probe('/api/players?page=1',524288);
   if(!directory||!Number.isSafeInteger(directory.count)||directory.count<0||
      directory.page!==1||!Array.isArray(directory.players)||
      directory.players.length!==Math.min(directory.count,50)||
