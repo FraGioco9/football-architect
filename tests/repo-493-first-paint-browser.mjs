@@ -434,6 +434,21 @@ try{
      sidebar:!!document.querySelector('.fa-shell-sidebar'),topbar:!!document.querySelector('.fa-shell-topbar'),dashboardVisible:dashboard?.getClientRects().length>0,
      localizedTextVisible:localeText?getComputedStyle(localeText).display!=='none':false,
      mainWidth:main?.getBoundingClientRect().width??0,
+     centering:(()=>{
+       const mainRect=main?.getBoundingClientRect();
+       const pieces=['.fa404-code','#fa404-title','#fa404-description','.fa404-action']
+         .map(selector=>document.querySelector(selector)?.getBoundingClientRect()).filter(Boolean);
+       if(!mainRect||pieces.length!==4)return null;
+       const centerX=mainRect.left+mainRect.width/2;
+       const centerY=mainRect.top+mainRect.height/2;
+       const groupTop=Math.min(...pieces.map(rect=>rect.top));
+       const groupBottom=Math.max(...pieces.map(rect=>rect.bottom));
+       return {
+         horizontalOffsets:pieces.map(rect=>Math.abs(rect.left+rect.width/2-centerX)),
+         verticalOffset:Math.abs((groupTop+groupBottom)/2-centerY),
+         fits:groupBottom-groupTop<=mainRect.height
+       };
+     })(),
      horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth,
      controls:document.querySelectorAll('main select,main button,main [data-theme-choice]').length,
      hint:document.querySelector('.fa404-hint')!==null,
@@ -447,6 +462,10 @@ try{
    assert.equal(state.topbar,true);
    assert.equal(state.horizontalOverflow,false,'404 must fit without horizontal scrolling');
    assert.ok(state.mainWidth>0&&state.mainWidth<=width,'404 main geometry');
+   assert.ok(state.centering?.horizontalOffsets.every(offset=>offset<4),
+    '404 code, title, description and action centered horizontally');
+   if(state.centering?.fits)assert.ok(state.centering.verticalOffset<4,
+    '404 group centered vertically in the main area');
    assert.equal(state.localizedTextVisible,true,'translated copy visible');
    assert.equal(state.controls,0,'no language or theme controls');
    assert.equal(state.hint,false,'no address-check hint');
@@ -457,7 +476,7 @@ try{
    const persisted=await page.evaluate(()=>({
     language:document.documentElement.lang,
     localizedText:getComputedStyle(document.querySelector('[data-fa404-locale="es"]')).display,
-    controls:document.querySelectorAll('select,button,[data-theme-choice]').length,
+    controls:document.querySelectorAll('main select,main button,main [data-theme-choice]').length,
     links:[...document.querySelectorAll('main a[href]')].map(x=>x.getAttribute('href'))
    }));
    assert.equal(persisted.language,'es');
