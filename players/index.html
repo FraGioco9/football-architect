@@ -265,20 +265,20 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               <colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"></colgroup>
               <thead>
                 <tr>
-                  <th scope="col" class="app-players-flag-col"><button type="button" class="app-players-sort-button" data-players-sort="nationality" aria-label="Sort by Nationality"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
-                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="name" aria-label="Sort by Player"><span data-app-i18n="playersColumnPlayer">Player</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
-                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="age" aria-label="Sort by Age"><span data-app-i18n="playersColumnAge">Age</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
-                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="positions" aria-label="Sort by Positions"><span data-app-i18n="playersColumnPositions">Positions</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
-                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="height" aria-label="Sort by Height"><span data-app-i18n="playersColumnHeight">Height</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
-                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="foot" aria-label="Sort by Foot"><span data-app-i18n="playersColumnFoot">Foot</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col" class="app-players-flag-col"><button type="button" class="app-players-sort-button" data-players-sort="nationality" aria-label="Sort by Nationality"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="name" aria-label="Sort by Player"><span data-app-i18n="playersColumnPlayer">Player</span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="age" aria-label="Sort by Age"><span data-app-i18n="playersColumnAge">Age</span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="positions" aria-label="Sort by Positions"><span data-app-i18n="playersColumnPositions">Positions</span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="height" aria-label="Sort by Height"><span data-app-i18n="playersColumnHeight">Height</span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="foot" aria-label="Sort by Foot"><span data-app-i18n="playersColumnFoot">Foot</span></button></th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="app-players-skeleton-row" aria-hidden="false"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span><span class="sr-only" data-players-status role="status" aria-live="polite">Loading players…</span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
-                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
-                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
-                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
-                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="false"><td colspan="6"><span class="app-players-skeleton-line" aria-hidden="true"></span><span class="sr-only" data-players-status role="status" aria-live="polite">Loading players…</span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td colspan="6"><span class="app-players-skeleton-line" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td colspan="6"><span class="app-players-skeleton-line" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td colspan="6"><span class="app-players-skeleton-line" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td colspan="6"><span class="app-players-skeleton-line" aria-hidden="true"></span></td></tr>
               </tbody>
             </table>
           </div>
@@ -371,19 +371,15 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             const positions=document.createElement('th');positions.scope='col';
             const addSort=(th,key,label)=>{
              const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';button.dataset.playersSort=key;button.textContent=label;
-             const arrow=document.createElement('span');arrow.className='app-players-sort-icon';arrow.setAttribute('aria-hidden','true');button.append(arrow);th.append(button);
+             th.append(button);
             };
             addSort(positions,'positions',{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'}[locale]||'Positions');
             row.append(positions);
             for(const key of keys){const th=document.createElement('th');th.scope='col';addSort(th,key,labels[keysAll.indexOf(key)]);row.append(th);}
             table.dataset.playersTableMode='attributes';
             const rows=table.tBodies[0].rows;
-            for(const skeleton of rows){
-             if(skeleton.classList?.contains('app-players-skeleton-row')){
-              while(skeleton.cells.length>3)skeleton.deleteCell(skeleton.cells.length-1);
-              for(const key of keys){const td=document.createElement('td');const bar=document.createElement('span');bar.className='app-players-skeleton-bar';bar.setAttribute('aria-hidden','true');td.append(bar);skeleton.append(td);}
-             }else skeleton.cells[0].colSpan=keys.length+3;
-            }
+            // One neutral placeholder cell spans every column in either table view.
+            for(const skeleton of rows)skeleton.cells[0].colSpan=keys.length+3;
            }
            for(const button of document.querySelectorAll('.app-players-table [data-players-sort]')){
             const th=button.closest('th'),active=sort===button.dataset.playersSort;

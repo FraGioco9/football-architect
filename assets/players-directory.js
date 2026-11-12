@@ -309,8 +309,8 @@
     button.dataset.playersSort=key;
     const text=document.createElement('span');text.textContent=label;
     if(flag)text.className='sr-only';
-    const arrow=document.createElement('span');arrow.className='app-players-sort-icon';arrow.setAttribute('aria-hidden','true');
-    button.append(text,arrow);node.append(button);
+    // Keep sortable headers as plain labels: no arrows or click-selection effect.
+    button.append(text);node.append(button);
     node.setAttribute('aria-sort',state.sort===key?(state.order==='desc'?'descending':'ascending'):'none');
     row.append(node);
    };
@@ -331,10 +331,16 @@
    for(let n=0;n<5;n++){
     const tr=document.createElement('tr');tr.className='app-players-skeleton-row';
     tr.setAttribute('aria-hidden','true');
-    for(let i=0;i<columns;i++){
-     const td=document.createElement('td'),bar=document.createElement('span');
-     bar.className='app-players-skeleton-bar';bar.setAttribute('aria-hidden','true');td.append(bar);tr.append(td);
+    // One full-width placeholder per row, not a separate skeleton for each cell.
+    const td=document.createElement('td');td.colSpan=columns;
+    const line=document.createElement('span');line.className='app-players-skeleton-line';
+    line.setAttribute('aria-hidden','true');td.append(line);
+    if(n===0){
+     const live=document.createElement('span');live.className='sr-only';live.dataset.playersStatus='';
+     live.setAttribute('role','status');live.setAttribute('aria-live','polite');live.textContent=locale().loading;
+     td.append(live);tr.setAttribute('aria-hidden','false');
     }
+    tr.append(td);
     fragment.append(tr);
    }
    body.replaceChildren(fragment);pager.hidden=true;scroll.setAttribute('aria-busy','true');

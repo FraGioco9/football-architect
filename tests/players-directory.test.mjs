@@ -592,22 +592,25 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
 });
 
 
-test('Players renders five cell-aligned skeleton rows on first paint with progressively lower opacity',()=>{
+test('Players first paint and refresh use five row-wide placeholders matching data row heights',()=>{
  const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
  const tbody=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
  assert.equal((tbody.match(/class="app-players-skeleton-row"/g)||[]).length,5);
- assert.equal((tbody.match(/class="app-players-skeleton-bar"/g)||[]).length,30);
- assert.match(tbody,/class="sr-only" data-players-status role="status"/,'text remains only for screen readers');
- assert.doesNotMatch(tbody,/class="app-players-empty-row"/,'no visible loading message');
- assert.match(css,/\.app-players-table \.app-players-skeleton-row td\{height:40px/);
- for(const value of ['.9','.78','.66','.54','.42'])assert.ok(css.includes('--players-skeleton-opacity:'+value),value);
+ assert.equal((tbody.match(/class="app-players-skeleton-line"/g)||[]).length,5,'one placeholder per row, never per column');
+ assert.equal((tbody.match(/colspan="6"/g)||[]).length,5);
+ assert.match(tbody,/class="sr-only" data-players-status role="status"/,'screen-reader status retained');
+ assert.doesNotMatch(tbody,/class="app-players-empty-row"|app-players-skeleton-bar/,'no text loading row or per-cell bars');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/,'loaded and placeholder rows share height');
+ assert.match(css,/\.app-players-table \.app-players-skeleton-row td\{height:44px;padding:0 16px\}/);
+ for(const value of ['.34','.28','.22','.17','.12'])assert.ok(css.includes('--players-skeleton-opacity:'+value),value);
  assert.match(js,/function showSkeleton\(\)/);
  assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
+ assert.match(js,/td\.colSpan=columns/);
+ assert.match(js,/line\.className='app-players-skeleton-line'/);
  assert.match(js,/scroll\.setAttribute\('aria-busy','true'\);renderHead\(\);showSkeleton\(\)/);
  assert.match(js,/if\(status==='loading'\)showSkeleton\(\);else message/);
  const fp=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
- assert.match(fp,/if\(skeleton\.classList\?\.contains\('app-players-skeleton-row'\)\)/);
- assert.match(fp,/for\(const key of keys\)\{const td=document\.createElement\('td'\)/);
+ assert.match(fp,/for\(const skeleton of rows\)skeleton\.cells\[0\]\.colSpan=keys\.length\+3/,'Attributes adjusts spanning cell without adding placeholders');
  assert.doesNotMatch(js,/message\(locale\(\)\.loading\)/);
 });
 test('Players column buttons provide persistent URL ordering on complete server-side datasets',async()=>{
@@ -624,7 +627,14 @@ test('Players column buttons provide persistent URL ordering on complete server-
   assert.throws(()=>parser.parsePublicPlayerQuery(bad),{name:'TypeError'},bad);
  }
  assert.match(css,/\.app-players-sort-button\{display:inline-flex;[^}]*cursor:pointer/);
- assert.match(css,/\.app-players-sort-button:focus-visible/);
+ assert.match(css,/\.app-players-sort-button:focus-visible\{text-decoration:underline/);
+ assert.match(css,/\.app-players-sort-button:focus\{outline:none\}/);
+ assert.match(css,/user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent/);
+ assert.doesNotMatch(css,/\.app-players-sort-button:hover\{color:var\(--focus\)/,'hover does not highlight sortable labels');
+ assert.match(css,/\.app-players-sort-button:hover,\.app-players-sort-button:active,\.app-players-sort-button:focus\{color:inherit;background:transparent;box-shadow:none;outline:none/,'mouse interaction cannot paint a selection box');
+ assert.doesNotMatch(css,/\.app-players-sort-icon|\.app-players-skeleton-bar/,'no sort arrow or per-cell skeleton CSS');
+ assert.doesNotMatch(js,/app-players-sort-icon/,'sorting stays operational with plain labels');
+ assert.doesNotMatch(html,/app-players-sort-icon/,'first paint has no arrow icons');
  assert.match(js,/table\.tHead\.addEventListener\('click',event=>/);
  assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/);
  assert.match(js,/if\(state\.sort\)\{query\.set\('sort',state\.sort\);query\.set\('order',state\.order\);\}/);
@@ -641,4 +651,18 @@ test('Players search clear X uses a pointer cursor on supported WebKit/Blink bro
  const html=read('players/index.html'),css=read('assets/app.css');
  assert.match(html,/data-players-filter="name" maxlength="80"/);
  assert.match(css,/\.app-players-name-control input::-webkit-search-cancel-button\{cursor:pointer\}/);
+});
+
+test('Players drawer uses section separators rather than nested outlined cards',()=>{
+ const css=read('assets/app.css'),html=read('players/index.html');
+ assert.match(css,/\.app-players-filter-section\{display:block;min-width:0;border:0;border-bottom:1px solid var\(--border\);border-radius:0;background:transparent/);
+ assert.match(css,/\.app-players-attribute-category\{min-width:0;border:0;border-bottom:1px solid var\(--line\);border-radius:0;background:transparent/);
+ assert.match(css,/\.app-players-attribute-category:last-child\{border-bottom:0\}/);
+ assert.match(css,/\.app-players-filter-section-body\{display:grid;[^}]*border-top:0\}/);
+ assert.match(css,/\.app-players-attribute-options\{display:grid;[^}]*border-top:0\}/);
+ assert.match(css,/\.app-players-filters\{[^}]*scrollbar-gutter:stable/);
+ for(const key of ['nationality','position','age','height','foot','attributes'])
+  assert.ok(html.includes('data-players-filter-section="'+key+'"'),key);
+ for(const key of ['technical','mental','physical','goalkeeping'])
+  assert.ok(html.includes('data-players-attribute-category="'+key+'"'),key);
 });
