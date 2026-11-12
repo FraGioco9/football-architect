@@ -9,7 +9,7 @@ import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const definitions=loadCompetitionCatalogue();
 const source=readFileSync(new URL('../assets/competition-tabs.js',import.meta.url),'utf8');
 const views=['standings','postseason','fixtures','stats','history','rules','awards'];
-function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null,initialPublicSeason=null){
+function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,restoredScroll=null,initialPublicSeason=null,prebootSnapshot=null){
  const contextSeasons=[],scrollKeys=[];const fields=new Map(),events={},stack=[new URL(path,'https://example.test')];let cursor=0;
  const item=()=>({hidden:false,value:'',dataset:{},events:{},attrs:{},classList:{toggle(){}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=v},addEventListener(k,fn){this.events[k]=fn},focus(){this.focused=true},scrollIntoView(){}});
@@ -32,13 +32,26 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
- const window={faCompetitionInitialSeason:initialPublicSeason,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faCompetitionInitialSeason:initialPublicSeason,faCompetitionPrebootTabs:prebootSnapshot?{snapshot:()=>prebootSnapshot,dispose(){this.disposed=true}}:undefined,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};
  runInNewContext(source,{document,window,URL,sessionStorage:{getItem(key){scrollKeys.push(key);return key.startsWith('football-architect:competition-tabs-scroll:')&&restoredScroll!==null?String(restoredScroll):null},setItem(){}},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail}}});
  return {window,tabs,fields,tablist,events,contextSeasons,scrollKeys,back(){cursor--;events.popstate()},forward(){cursor++;events.popstate()},count:()=>stack.length};
 }
+test('COMPETITIONS #516: a parser-time selection hands fixture context to the full router without extra navigation',()=>{
+ const prebootSnapshot={fixtureRound:'quarterfinals',calendarReturn:'/calendar?season=1&day=3&calendarView=week&competition=all'};
+ const s=setup('/competitions/int-1/stats?season=1',null,routeRegistry,null,null,prebootSnapshot);
+ assert.equal(s.window.faCompetitionPrebootTabs.disposed,true);
+ assert.equal(s.window.faCompetitionRoute.get().view,'stats');
+ assert.equal(s.window.faCompetitionRoute.get().matchday,'quarterfinals:1');
+ assert.equal(s.window.location.pathname,'/competitions/int-1/stats');
+ s.tabs[2].events.click();
+ assert.equal(s.window.location.pathname,'/competitions/int-1/fixtures');
+ assert.match(s.window.location.search,/matchday=quarterfinals/);
+ assert.match(s.window.location.search,/calendarReturn=/);
+});
+
 test('CONFIG-URL: cup routes use phase-only links with Back/Forward',()=>{
  const s=setup('/competitions/int-1/fixtures?season=1&matchday=30');
  assert.equal(s.window.faCompetitionRoute.get().matchday,1);
