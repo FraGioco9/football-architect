@@ -295,11 +295,66 @@ try{
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true,'Generate opens confirmation rather than saving immediately');
     assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
     assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
+    // Pairwise responsive/i18n checks in the existing Chromium + WebKit Admin
+    // browser suite. Preview data is already loaded: no additional API reads.
+    const previewCases=[
+     {lang:'en',width:320,theme:'dark',generate:'Generate',overview:'Overview',attributes:'Attributes'},
+     {lang:'it',width:390,theme:'light',generate:'Genera',overview:'Panoramica',attributes:'Attributi'},
+     {lang:'de',width:430,theme:'dark',generate:'Generieren',overview:'Übersicht',attributes:'Attribute'},
+     {lang:'es',width:768,theme:'light',generate:'Generar',overview:'Resumen',attributes:'Atributos'},
+     {lang:'fr',width:1440,theme:'dark',generate:'Générer',overview:'Vue d’ensemble',attributes:'Attributs'}
+    ];
+    for(const variant of previewCases){
+     await page.setViewportSize({width:variant.width,height:844});
+     await page.evaluate(({lang,theme})=>{
+      document.documentElement.lang=lang;document.documentElement.dataset.theme=theme;
+     },variant);
+     await page.waitForFunction(expected=>document.querySelector('[data-admin-players-commit]')?.textContent===expected,variant.generate);
+     assert.equal(await page.locator('[data-admin-preview-view="overview"]').innerText(),variant.overview);
+     assert.equal(await page.locator('[data-admin-preview-view="attributes"]').innerText(),variant.attributes);
+     const layout=await page.evaluate(()=>{
+      const root=document.querySelector('[data-admin-players-preview-page]');
+      const bar=root.querySelector('.app-players-preview-actions');
+      const scroll=root.querySelector('.app-players-table-scroll');
+      const nav=root.querySelector('[data-admin-preview-pagination]');
+      // The fixture has two players: expose the shared pager only to measure
+      // actual CSS geometry, then restore its original hidden state.
+      const originallyHidden=nav.hidden;nav.hidden=false;
+      const left=nav.querySelector('[data-admin-preview-prev]').getBoundingClientRect();
+      const right=nav.querySelector('[data-admin-preview-next]').getBoundingClientRect();
+      const widths={previous:left.width,next:right.width,heightPrev:left.height,heightNext:right.height};
+      nav.hidden=originallyHidden;
+      return {
+       viewport:innerWidth,document:document.documentElement.scrollWidth,
+       actions:[...bar.querySelectorAll(':scope > button,:scope > a')].map(node=>({
+        text:node.textContent.trim(),visible:node.getBoundingClientRect().width>0,
+        right:node.getBoundingClientRect().right
+       })),
+       tableViewport:scroll.getBoundingClientRect().width,
+       widths
+      };
+     });
+     assert.ok(layout.document<=layout.viewport+1,variant.lang+' '+variant.width+' page overflow: '+JSON.stringify(layout));
+     assert.equal(layout.actions.length,3,'Only Generate, Regenerate and Back may appear');
+     assert.ok(layout.actions.every(x=>x.visible&&x.right<=layout.viewport+1),'Visible actions must fit the viewport: '+JSON.stringify(layout));
+     assert.ok(layout.tableViewport>0&&layout.tableViewport<=layout.viewport+1,'Only the table may scroll horizontally');
+     assert.ok(Math.abs(layout.widths.previous-layout.widths.next)<.5,'Previous/Next widths must match');
+     assert.ok(Math.abs(layout.widths.heightPrev-layout.widths.heightNext)<.5,'Previous/Next heights must match');
+     assert.equal(layout.widths.previous,variant.width<=420?88:112,'Shared pager width at this breakpoint');
+    }
+    await page.setViewportSize({width:390,height:844});
+    await page.evaluate(()=>{document.documentElement.lang='en';document.documentElement.dataset.theme='dark'});
+    await page.waitForFunction(()=>document.querySelector('[data-admin-players-commit]')?.textContent==='Generate');
     await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().hover();
     await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
     assert.match(await page.locator('#app-players-nationality-tooltip').innerText(),/Italy/);
     assert.equal(await page.locator('#app-players-nationality-tooltip').getAttribute('data-placement'),'above');
     assert.equal(await page.locator('#app-players-nationality-tooltip').evaluate(node=>getComputedStyle(node).animationName),'app-world-tooltip-in');
+    await page.mouse.move(0,0);
+    await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().focus();
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+    await page.keyboard.press('Escape');
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
     await page.locator('[data-admin-preview-view="attributes"]').click();
     assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');
@@ -321,6 +376,11 @@ try{
     await page.locator('[data-admin-players-commit]').click();
     await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'visible'});
     assert.equal(commitCalls,0,'Opening confirmation never saves players');
+    await page.keyboard.press('Escape');
+    await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'hidden'});
+    assert.equal(commitCalls,0,'Closing the confirmation cannot save a player');
+    await page.locator('[data-admin-players-commit]').click();
+    await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-admin-preview-confirm-action]').isEnabled(),false);
     await page.locator('[data-admin-players-confirmation]').fill('GENERATE PLAYERS');
     assert.equal(await page.locator('[data-admin-preview-confirm-action]').isEnabled(),true);
