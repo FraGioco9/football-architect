@@ -4,7 +4,7 @@
 
 ## Canonical DEV command and boundary (current)
 
-PowerShell from repository root, Node 22: `npm --prefix backend ci` once, then `node tools/dev.mjs`. Local site `http://localhost:2000/`, app `http://app.localhost:2000/dashboard`, local Wrangler Worker/D1 `http://127.0.0.1:8787`. `tools/dev.mjs` explicitly clears inherited shared-pool target variables and uses `backend/wrangler.toml` with `wrangler dev --local`; it never auto-applies migrations, grants permissions, sends real external email or touches remote D1. Use `node tools/dev.mjs --lan <PC-owned-private-IPv4>` only on trusted Wi-Fi for a separate **frontend-only** listener; `/api/*` is blocked for LAN clients. Keep first-run database initialization and owner permission grants separate. [Architecture](overview.md), [local auth](../../backend/docs-player-local-dev.md), [README](../../README.md).
+PowerShell from repository root, Node 22: `npm --prefix backend ci` once, then `node tools/dev.mjs`. **Default shared DEV:** localhost frontend, HTTPS API bridge to the exact approved Cloudflare Preview Worker and shared nonproduction D1; no local Worker starts. It checks the pool/origin, sporting world and current Players API before launch and refuses stale Preview builds without fallback. **Isolated local DEV:** `node tools/dev.mjs --local` starts a local Wrangler Worker/D1 at `127.0.0.1:8787`; use `node tools/dev.mjs --local --lan <PC-owned-private-IPv4>` for trusted Wi-Fi frontend-only Safari QA. No mode automatically migrates, deploys, changes permissions or copies databases. The default shared mode may make authorized writes to the online nonproduction D1; avoid destructive testing there. [Architecture](overview.md), [local auth](../../backend/docs-player-local-dev.md), [README](../../README.md).
 
 ## Historical implementation audit (retained)
 
@@ -43,7 +43,7 @@ The main dependency chain is `dev.mjs` → frontend `dev-app-preview.mjs` → `c
 
 ```powershell
 npm --prefix backend ci
-node tools/dev.mjs
+node tools/dev.mjs --local
 ```
 
 From a second terminal, `Invoke-WebRequest http://app.localhost:2000/api/world` should return the local Worker's JSON after readiness; `/competitions/it-1/standings?season=1` must load on direct navigation and refresh. Site/app links retain separate origins; Player endpoints require `app.localhost` and operator state is governed by the Worker.

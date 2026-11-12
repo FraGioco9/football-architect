@@ -4,7 +4,9 @@
 
 ## Current local versus shared Dev/Preview topology
 
-The **default** `node tools/dev.mjs` is isolated local Worker/D1 and clears inherited remote/shared-pool environment variables. An **explicitly configured** Dev bridge and hosted Preview can share one `dev-preview` nonproduction Worker/D1/accounts/world with exact origin, pool-marker and separate login checks; this cannot be confused with Production (a distinct Worker/D1/accounts). This document's historic line saying no hosted resources had been changed is a dated implementation checkpoint, **not current live-cloud evidence**. Confirm external deployment state independently before touching any remote backend. [Local DEV](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md), [architecture](../docs/architecture/overview.md).
+The **default** `node tools/dev.mjs` uses the verified Cloudflare Preview HTTPS API bridge with the shared `dev-preview` nonproduction D1 (no local backend process). `node tools/dev.mjs --local` explicitly selects isolated local Worker/D1, clearing inherited shared-pool target variables. Shared mode checks exact Preview origin, pool marker, world and Players API before launch; it fails closed if the hosted Preview code is outdated rather than silently using a different database. Preview and local DEV require separate login sessions; Production must retain distinct Worker/D1/accounts. Neither command deploys or runs migrations. Confirm the online Preview version and schema before writing shared data. This document's historic lines below are dated implementation records, not current live-cloud evidence. [Local DEV](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md), [architecture](../docs/architecture/overview.md).
+
+PowerShell (repo root): `node tools/dev.mjs` for shared DEV, or `node tools/dev.mjs --local` for isolated tests. The formerly explicit `--shared https://preview.football-architect.workers.dev` command remains a backwards-compatible alias.
 
 ## Original implementation record (historical)
 

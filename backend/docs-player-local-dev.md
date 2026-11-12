@@ -4,7 +4,7 @@
 
 ## Current local authentication boundary
 
-`backend/wrangler.toml` opts in to `PLAYER_LOCAL_INBOX_ENABLED = "true"`; `backend/src/index.ts` chooses `localInboxDeliveries` when `PLAYER_MODE=local`. With Node 22 run `npm --prefix backend ci`, then `node tools/dev.mjs` from the repository root. Worker/D1/account/inbox endpoints remain **loopback-only**; the optional LAN preview is **frontend-only** and rejects `/api/*`. Local D1 initialization and owner-only Admin grant/revoke are independent manual operations; never infer that the first-run persistence warnings from the old #334 implementation-plan section below are current CI results. There are **no** remote database, real external email or Production side effects. [DEV-ENV-01](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md).
+`backend/wrangler.toml` opts in to `PLAYER_LOCAL_INBOX_ENABLED = "true"`; `backend/src/index.ts` chooses `localInboxDeliveries` when `PLAYER_MODE=local`. With Node 22 run `npm --prefix backend ci`, then **`node tools/dev.mjs --local`** from the repository root; the unflagged launcher now connects to shared Cloudflare Preview/D1. Worker/D1/account/inbox endpoints remain **loopback-only**; the optional LAN preview is **frontend-only** and rejects `/api/*`. Local D1 initialization and owner-only Admin grant/revoke are independent manual operations; never infer that the first-run persistence warnings from the old #334 implementation-plan section below are current CI results. There are **no** remote database, real external email or Production side effects. [DEV-ENV-01](../docs/architecture/dev-env-01-startup.md), [Auth](docs-auth-security-be-05.md).
 
 ## Original implementation record (historical)
 
@@ -27,7 +27,7 @@ Use Node.js 22 and install backend dependencies first. From the repository root:
 
 ```powershell
 npm --prefix backend ci
-node tools/dev.mjs
+node tools/dev.mjs --local
 ```
 
 Visit `http://app.localhost:2000/account/register`, register a throwaway LOCAL identity, then use the link shown in the form to open `http://app.localhost:2000/api/local-dev/inbox` and verify it. Login at `/account/login`; recover at `/account/recover`. The canonical launcher (legacy `dev-auth-local.mjs` remains an alias) starts the localhost static site plus the loopback Worker with `FA_ADMIN_API_TARGET=http://127.0.0.1:8787`. The proxy forwards only allowlisted API routes; the inbox remains restricted to `app.localhost`, exact `PLAYER_ORIGIN`, and local Worker mode. No remote D1 or Gmail connection is performed.
