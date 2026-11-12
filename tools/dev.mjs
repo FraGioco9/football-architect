@@ -1,5 +1,5 @@
-// Canonical loopback-only local development launcher (site + local Worker/D1).
-// Never points at a remote database or the shared Dev/Preview account pool.
+// DEV launcher: verified shared Cloudflare Preview/D1 by default.
+// Isolated local Worker/D1 remains available only through explicit --local.
 import {spawn} from 'node:child_process';
 import {networkInterfaces} from 'node:os';
 import {dirname, resolve} from 'node:path';
@@ -36,6 +36,14 @@ export function localDevPlan({platform=process.platform,execPath=process.execPat
 /** The approved, read-only verified Preview Worker. Never relay account cookies to
  * other .workers.dev tenants: a self-declared pool handshake is not ownership proof. */
 export const SHARED_PREVIEW_TARGET='https://preview.football-architect.workers.dev';
+/** Parse before starting any children; never fall back to a different database. */
+export function selectDevMode(flags=[]){
+ if(flags.length===0)return {mode:'shared',target:SHARED_PREVIEW_TARGET};
+ if(flags.length===2&&flags[0]==='--shared')return {mode:'shared',target:validateSharedPreviewTarget(flags[1])};
+ if(flags.length===1&&flags[0]==='--local')return {mode:'local',lanAddress:null};
+ if(flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan')return {mode:'local',lanAddress:flags[2]};
+ throw Error('DEV usage: node tools/dev.mjs [--local [--lan <private IPv4>] | --shared '+SHARED_PREVIEW_TARGET+']');
+}
 export function validateSharedPreviewTarget(target){
  if(target!==SHARED_PREVIEW_TARGET)
   throw Error('Shared DEV requires the exact approved nonproduction Workers Preview HTTPS origin');
@@ -56,13 +64,17 @@ export function sharedDevPlan({target,execPath=process.execPath,env=process.env}
 /** Handshake before spawning anything: incompatible Preview must never fall back
  * to local D1 or accidentally proxy private operations to another environment. */
 export async function startSharedDev({proc=process,spawnChild=spawn,verify=verifySharedPreviewReadiness}={}){
- const flags=proc.argv.slice(2);
- if(flags.length!==2||flags[0]!=='--shared')
-  throw Error('Shared DEV requires: node tools/dev.mjs --shared '+SHARED_PREVIEW_TARGET);
- const target=validateSharedPreviewTarget(flags[1]);
+ const choice=selectDevMode(proc.argv.slice(2));
+ if(choice.mode!=='shared')throw Error('Shared DEV requires the default invocation or explicit --shared URL');
+ const target=validateSharedPreviewTarget(choice.target);
  const readiness=await verify(target);
- if(!readiness||readiness.ready!==true)
-  throw Error('Shared DEV refused: '+(readiness?.reason??'unavailable')+'; no local server started and no D1 was changed');
+ if(!readiness||readiness.ready!==true){
+  const reason=readiness?.reason??'unavailable';
+  const hint=reason==='players_api_unavailable'
+   ? ' (Preview needs the current GET /api/players?page=1 endpoint; publish an approved Preview build first)'
+   : '';
+  throw Error('Shared DEV refused: '+reason+hint+'; no local server started and no D1 was changed');
+ }
  const [spec]=sharedDevPlan({target,execPath:proc.execPath,env:proc.env});
  const child=spawnChild(spec.command,spec.args,spec.options);
  let stopping=false;
@@ -79,9 +91,14 @@ export async function startSharedDev({proc=process,spawnChild=spawn,verify=verif
 
 export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkInterfaces}={}){
  const flags=proc.argv.slice(2);
- if(flags.length&&!(flags.length===2&&flags[0]==='--lan'))
-  throw Error('Canonical DEV launcher accepts only --lan <private IPv4> as optional flags');
- const lanAddress=flags.length?validateLanAddress(flags[1],interfaces()):null;
+ // Empty flags support only the legacy dev-auth-local.mjs alias and direct fixtures.
+ // The canonical dev.mjs CLI defaults to shared.
+ const legacyLan=flags.length===2&&flags[0]==='--lan';
+ const explicitLocal=flags.length===1&&flags[0]==='--local';
+ const explicitLan=flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan';
+ if(flags.length&&!(legacyLan||explicitLocal||explicitLan))
+  throw Error('Isolated local DEV requires --local [--lan <private IPv4>]');
+ const lanAddress=legacyLan||explicitLan?validateLanAddress(flags[flags.length-1],interfaces()):null;
  const children=[];
  let stopping=false;
  const stop=()=>{
@@ -118,9 +135,15 @@ export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkI
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- if(process.argv[2]==='--shared')startSharedDev().catch(error=>{
-  process.stderr.write('Shared DEV startup denied: '+error.message+'\n');
+ try{
+  const choice=selectDevMode(process.argv.slice(2));
+  if(choice.mode==='shared')startSharedDev().catch(error=>{
+   process.stderr.write('Shared DEV startup denied: '+error.message+'\n');
+   process.exitCode=1;
+  });
+  else startLocalDev();
+ }catch(error){
+  process.stderr.write('DEV startup denied: '+error.message+'\n');
   process.exitCode=1;
- });
- else startLocalDev();
+ }
 }

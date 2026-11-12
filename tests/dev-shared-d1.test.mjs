@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {sharedDevPlan,startSharedDev,validateSharedPreviewTarget} from '../tools/dev.mjs';
+import {sharedDevPlan,startSharedDev,validateSharedPreviewTarget,selectDevMode} from '../tools/dev.mjs';
 import {verifySharedPreviewReadiness} from '../tools/shared-nonproduction-proxy.mjs';
 
 const target='https://preview.football-architect.workers.dev';
@@ -16,6 +16,15 @@ function fakeProcess(flags){
   stdout:{write:s=>messages.push(s)},stderr:{write:s=>messages.push(s)},exitCode:0});
  return {proc,messages};
 }
+test('canonical DEV defaults to shared Preview and isolated D1 requires --local',()=>{
+ assert.deepEqual(selectDevMode([]),{mode:'shared',target});
+ assert.deepEqual(selectDevMode(['--shared',target]),{mode:'shared',target});
+ assert.deepEqual(selectDevMode(['--local']),{mode:'local',lanAddress:null});
+ assert.deepEqual(selectDevMode(['--local','--lan','192.168.1.90']),{mode:'local',lanAddress:'192.168.1.90'});
+ for(const flags of [['--lan','192.168.1.90'],['--remote'],['--shared'],['--shared','https://example.invalid'],['--local','--shared'],['--local','--lan'],['--local','--lan','192.168.1.90','extra']])
+  assert.throws(()=>selectDevMode(flags),/DEV usage|Shared DEV/);
+});
+
 test('shared mode requires exact nonproduction HTTPS Worker origin, never Production or arbitrary URLs',()=>{
  assert.equal(validateSharedPreviewTarget(target),target);
  assert.throws(()=>validateSharedPreviewTarget('https://football-architect-preview.example.workers.dev'),/Shared DEV/);
@@ -76,13 +85,13 @@ test('missing tables, stale Worker and wrong pool fail closed before launching a
   }});
   assert.equal(readiness.ready,false);
  }
- const {proc}=fakeProcess(['--shared',target]),spawned=[];
- await assert.rejects(()=>startSharedDev({proc,spawnChild:(...x)=>{spawned.push(x)},verify:async()=>({ready:false,reason:'players_api_unavailable'})}),/players_api_unavailable/);
+ const {proc}=fakeProcess([]),spawned=[];
+ await assert.rejects(()=>startSharedDev({proc,spawnChild:(...x)=>{spawned.push(x)},verify:async()=>({ready:false,reason:'players_api_unavailable'})}),/players_api_unavailable.*publish an approved Preview build first/);
  assert.equal(spawned.length,0);
 });
 
 test('explicit shared mode performs a successful read-only preflight then launches exactly one frontend',async()=>{
- const {proc,messages}=fakeProcess(['--shared',target]),spawned=[],seen=[];
+ const {proc,messages}=fakeProcess([]),spawned=[],seen=[];
  const spawnChild=(command,args,options)=>{
   const child=new EventEmitter();
   Object.assign(child,{pid:100,killed:false,kill(){this.killed=true}});
@@ -102,5 +111,7 @@ test('explicit shared mode performs a successful read-only preflight then launch
  result.children[0].emit('exit',0,null);
  assert.equal(proc.exitCode,0,'normal Ctrl+C is not a shared DEV failure');
  const {proc:invalid}=fakeProcess(['--shared',target,'--lan']);
- await assert.rejects(()=>startSharedDev({proc:invalid,spawnChild}),/Shared DEV requires/);
+ await assert.rejects(()=>startSharedDev({proc:invalid,spawnChild}),/DEV usage/);
+ const {proc:local}=fakeProcess(['--local']);
+ await assert.rejects(()=>startSharedDev({proc:local,spawnChild}),/Shared DEV requires/);
 });

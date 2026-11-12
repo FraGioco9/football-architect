@@ -17,7 +17,7 @@ function get(port,path,host,method='GET'){
 async function listen(server){server.listen(0,'127.0.0.1');await once(server,'listening');return server.address().port;}
 async function close(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 
-test('canonical launcher forces local Worker, dedicated origins and no remote/shared pool',()=>{
+test('explicit local DEV plan forces isolated Worker, dedicated origins and no remote/shared pool',()=>{
  for(const platform of ['win32','linux']){
   const [backend,frontend]=localDevPlan({platform,execPath:'/node',env:{FA_ADMIN_API_TARGET:'https://production.example.invalid',FA_ADMIN_API_POOL:'dev-preview',FA_DEV_LAN:'1',EXTRA:'retained'}});
   assert.equal(backend.command,platform==='win32'?'npm.cmd':'npm');
@@ -36,9 +36,9 @@ test('canonical launcher forces local Worker, dedicated origins and no remote/sh
  }
 });
 
-test('canonical launcher starts both children, stops together and rejects extra CLI flags',()=>{
+test('explicit local DEV starts both children, stops together and rejects extra CLI flags',()=>{
  const proc=new EventEmitter();const out=[];const spawned=[];
- Object.assign(proc,{argv:['node','tools/dev.mjs'],platform:'linux',execPath:'/node',env:{},stdout:{write:s=>out.push(s)},stderr:{write:s=>out.push(s)},exitCode:0});
+ Object.assign(proc,{argv:['node','tools/dev.mjs','--local'],platform:'linux',execPath:'/node',env:{},stdout:{write:s=>out.push(s)},stderr:{write:s=>out.push(s)},exitCode:0});
  const spawnChild=(command,args,options)=>{
   const child=new EventEmitter();Object.assign(child,{pid:123+spawned.length,killed:false,kill(){this.killed=true;return true;}});
   spawned.push({command,args,options,child});return child;
@@ -50,7 +50,7 @@ test('canonical launcher starts both children, stops together and rejects extra 
  proc.emit('SIGINT');
  assert.ok(children.every(child=>child.killed));
  const bad=new EventEmitter();Object.assign(bad,{argv:['node','tools/dev.mjs','--remote']});
- assert.throws(()=>startLocalDev({proc:bad,spawnChild}),/only --lan/);
+ assert.throws(()=>startLocalDev({proc:bad,spawnChild}),/requires --local/);
 });
 
 test('explicit Safari QA LAN binds only an owned RFC1918 interface and never exposes backend LAN',()=>{
@@ -70,7 +70,7 @@ test('explicit Safari QA LAN binds only an owned RFC1918 interface and never exp
  assert.equal(frontend.options.env.FA_DEV_LAN_HOST,'192.168.1.90');
  const out=[],spawned=[];
  const proc=new EventEmitter();
- Object.assign(proc,{argv:['node','tools/dev.mjs','--lan','192.168.1.90'],platform:'linux',execPath:'/node',env:{},stdout:{write:s=>out.push(s)},stderr:{write:s=>out.push(s)},exitCode:0});
+ Object.assign(proc,{argv:['node','tools/dev.mjs','--local','--lan','192.168.1.90'],platform:'linux',execPath:'/node',env:{},stdout:{write:s=>out.push(s)},stderr:{write:s=>out.push(s)},exitCode:0});
  const spawnChild=(command,args,options)=>{
   const child=new EventEmitter();
   Object.assign(child,{pid:300+spawned.length,killed:false,kill(){this.killed=true;return true;}});
