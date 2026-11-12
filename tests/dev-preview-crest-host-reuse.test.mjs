@@ -87,8 +87,8 @@ test('#521 identical or empty source lists are no-ops',()=>{
 });
 
 test('#521 DEV commit and restore protect both the desktop and mobile rows',()=>{
- assert.match(client,/reuseCrestHosts\(canonicalRows,\[\.\.\.fragment\.childNodes\]\);\s*tbody\.replaceChildren\(fragment\)/);
+ assert.match(client,/tbody\.replaceChildren\(fragment\);\s*reuseCrestHosts\(canonicalRows,\[\.\.\.tbody\.children\]\)/);
  assert.match(client,/commitMobile\(\);\s*reuseCrestHosts\(canonicalMobile,\[\.\.\.mobileList\.children\]\)/);
- assert.match(client,/reuseCrestHosts\(\[\.\.\.tbody\.children\],canonicalRows\)/);
- assert.match(client,/reuseCrestHosts\(\[\.\.\.mobileList\.children\],canonicalMobile\)/);
+ assert.match(client,/attempt\(\(\)=>tbody\.replaceChildren\(\.\.\.canonicalRows\)\);\s*attempt\(\(\)=>reuseCrestHosts\(previousDesktop,canonicalRows\)\)/);
+ assert.match(client,/attempt\(\(\)=>mobileList\.replaceChildren\(\.\.\.canonicalMobile\)\);\s*attempt\(\(\)=>reuseCrestHosts\(previousMobile,canonicalMobile\)\)/);
 });

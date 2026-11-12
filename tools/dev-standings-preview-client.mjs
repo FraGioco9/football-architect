@@ -869,10 +869,12 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       if(committed){
        if(restoreFixtures)attempt(restoreFixtures);
        if(restorePostseason)attempt(restorePostseason);
-       attempt(()=>reuseCrestHosts([...tbody.children],canonicalRows));
+       const previousDesktop=[...tbody.children];
        attempt(()=>tbody.replaceChildren(...canonicalRows));
-       attempt(()=>reuseCrestHosts([...mobileList.children],canonicalMobile));
+       attempt(()=>reuseCrestHosts(previousDesktop,canonicalRows));
+       const previousMobile=[...mobileList.children];
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
+       attempt(()=>reuseCrestHosts(previousMobile,canonicalMobile));
        attempt(()=>{
         if(captionI18n===null)caption.removeAttribute("data-app-i18n");
         else caption.setAttribute("data-app-i18n",captionI18n);
@@ -887,8 +889,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     committed=true;
     // Commit to DOM only after all integrity checks and node construction passed.
     if(commitFixtures)commitFixtures();
-    reuseCrestHosts(canonicalRows,[...fragment.childNodes]);
+    // Mount before swapping: new placeholders are never connected after this
+    // synchronous task, so the crest MutationObserver cannot load them twice.
     tbody.replaceChildren(fragment);
+    reuseCrestHosts(canonicalRows,[...tbody.children]);
     commitMobile();
     reuseCrestHosts(canonicalMobile,[...mobileList.children]);
     if(commitPostseason)commitPostseason();
