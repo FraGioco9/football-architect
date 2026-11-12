@@ -246,7 +246,7 @@
    let countries;
    try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
    const labelKeys=['name','nationality','position','ageMin','ageMax','heightMin','heightMax','foot'];
-   const labels=[t.name,t.sections[0],t.sections[1],t.names[2],t.names[3],...t.heights,t.names[4]];
+   const labels=[t.name,t.sections[0],t.sections[1],t.min,t.max,t.min,t.max,t.names[4]];
    for(const field of filterFields){
     const key=field.dataset.playersFilter,selected=state.filters?.[key]||'';
     if(field.type==='checkbox')field.checked=selected==='any';
@@ -256,7 +256,7 @@
     if(field.tagName==='SELECT'){
      field.options[0].textContent=t.all;
      if(key==='foot'){field.options[1].textContent=main.left;field.options[2].textContent=main.right;}
-    }else if(field.type==='number')field.placeholder=t.all;
+    }else if(field.type==='number')field.placeholder='';
     else if(key==='name')field.placeholder=t.searchName;
    }
    for(const wrapper of dropdowns){
@@ -309,8 +309,17 @@
     button.dataset.playersSort=key;
     const text=document.createElement('span');text.textContent=label;
     if(flag)text.className='sr-only';
-    // Keep sortable headers as plain labels: no arrows or click-selection effect.
-    button.append(text);node.append(button);
+    button.append(text);
+    // The chevron reserves its position beside the title; only an active sort reveals it.
+    const chev=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    chev.classList.add('app-players-sort-chevron');chev.setAttribute('viewBox','0 0 20 20');
+    chev.setAttribute('width','12');chev.setAttribute('height','12');chev.setAttribute('aria-hidden','true');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','m5 7 5 5 5-5');path.setAttribute('fill','none');
+    path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width','1.75');
+    path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');
+    chev.append(path);button.append(chev);
+    node.append(button);
     node.setAttribute('aria-sort',state.sort===key?(state.order==='desc'?'descending':'ascending'):'none');
     row.append(node);
    };
@@ -326,22 +335,19 @@
    table.tHead.replaceChildren(row);
    table.dataset.playersTableMode=state.view;
   }
-  function showSkeleton(){
+  function showLoadingRows(){
    const fragment=document.createDocumentFragment(),columns=cols();
    for(let n=0;n<5;n++){
-    const tr=document.createElement('tr');tr.className='app-players-skeleton-row';
+    const tr=document.createElement('tr');tr.className='app-players-loading-row';
     tr.setAttribute('aria-hidden','true');
-    // One full-width placeholder per row, not a separate skeleton for each cell.
+    // Reserve exactly the real row geometry without drawing placeholder data.
     const td=document.createElement('td');td.colSpan=columns;
-    const line=document.createElement('span');line.className='app-players-skeleton-line';
-    line.setAttribute('aria-hidden','true');td.append(line);
     if(n===0){
      const live=document.createElement('span');live.className='sr-only';live.dataset.playersStatus='';
      live.setAttribute('role','status');live.setAttribute('aria-live','polite');live.textContent=locale().loading;
      td.append(live);tr.setAttribute('aria-hidden','false');
     }
-    tr.append(td);
-    fragment.append(tr);
+    tr.append(td);fragment.append(tr);
    }
    body.replaceChildren(fragment);pager.hidden=true;scroll.setAttribute('aria-busy','true');
   }
@@ -360,7 +366,7 @@
   function paint(data){
    renderHead();
    const t=locale();
-   if(!data){if(status==='loading')showSkeleton();else message(t[status]);return}
+   if(!data){if(status==='loading')showLoadingRows();else message(t[status]);return}
    lastCount=data.count;renderCount(lastCount);
    if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
    const fragment=document.createDocumentFragment();
@@ -387,9 +393,9 @@
   function refresh(){syncControls();paint(current)}
   async function load(page){
    const seq=++ticket;state.page=page;current=null;status='loading';
-   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));
+   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
    scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
-   scroll.setAttribute('aria-busy','true');renderHead();showSkeleton();
+   scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
    const query=new URLSearchParams({page:String(page)});
    for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
    if(state.sort){query.set('sort',state.sort);query.set('order',state.order);}
@@ -677,12 +683,16 @@
   tabsBar?.addEventListener('keydown',event=>keyboardTab(event,tabs,changeView,'playersView'));
   groupBar?.addEventListener('keydown',event=>keyboardTab(event,groupTabs,changeGroup,'playersGroup'));
   // Delegate to the table header, which is recreated on view and locale changes.
+  function cycleSort(key){
+   if(!key||!allowedSort(state.view,state.group,key))return;
+   if(state.sort!==key){state.sort=key;state.order='desc';}
+   else if(state.order==='desc')state.order='asc';
+   else{state.sort='';state.order='';}
+   state.page=1;syncUrl();load(1);
+  }
   table.tHead.addEventListener('click',event=>{
    const key=event.target.closest?.('[data-players-sort]')?.dataset.playersSort;
-   if(!key||!allowedSort(state.view,state.group,key))return;
-   if(state.sort===key)state.order=state.order==='asc'?'desc':'asc';
-   else{state.sort=key;state.order=preferredOrder(key);}
-   state.page=1;syncUrl();load(1);
+   cycleSort(key);
   });
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
@@ -692,7 +702,7 @@
    state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);
   });
-  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();if(status==='loading')showSkeleton();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));}})
+  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   syncControls();syncUrl('replaceState');load(state.page);
  }

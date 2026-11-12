@@ -41,7 +41,7 @@ test('Players #505 toolbar reserves the API-backed total beside the attribute gr
  const header=html.match(/<header class="app-players-header">([\s\S]*?)<\/header>/)?.[1];
  assert.ok(header,'title header exists');
  assert.doesNotMatch(header,/data-players-count/);
- assert.match(html,/class="app-players-count-skeleton" aria-hidden="true"/);
+ assert.match(html,/class="app-players-count-placeholder" aria-hidden="true"/);
  assert.match(generator,/app-players-header/);
  assert.match(generator,/data-players-count/);
  assert.match(html,/class="app-competition-tabs app-players-tabs"/);
@@ -127,7 +127,8 @@ test('Players first paint never selects or replaces the html root despite its st
     return [];
    },
    querySelector(selector){if(selector==='.app-players-table')return table;throw Error('Unexpected query '+selector)},
-   createElement(){return {scope:'',textContent:''}}
+   createElement(){return {scope:'',textContent:'',dataset:{},append(child){this.textContent+=child?.textContent||'';},setAttribute(){},classList:{add(){}}}},
+   createElementNS(){return {textContent:'',append(){},setAttribute(){},classList:{add(){}}}}
   };
   runInNewContext(script,{document,location:{search},URLSearchParams});
   assert.equal(root.dataset.playersView,search?'attributes':'overview');
@@ -154,9 +155,9 @@ test('Players toolbar remains in document flow across main views and count is ou
  assert.ok(toolbar.indexOf('</nav>')<toolbar.indexOf('data-players-count'),'count must be sibling of the view-specific group nav');
  assert.ok(css.includes('html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}'));
  assert.doesNotMatch(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{display:none/);
- assert.match(code,/function changeView\(view\)\{[^}]*state\.view=view;syncUrl\(\);refresh\(\)/);
+ assert.match(code,/function changeView\(view\)\{/);assert.match(code,/state\.view=view;/);assert.match(code,/if\(sortCleared\)load\(1\);else refresh\(\)/);
  assert.match(code,/function applyFilters\(\)/);
- assert.match(code,/fields\[key\]=String\(Number\(fields\[key\]\)\)/,'age query values must be canonical');
+ assert.match(code,/const canonicalNumber=\(raw,min,max\)=>/,'age and height queries are canonicalized before Apply');
 });
 
 test('Players groups use Technical, Mental, Physical, Goalkeeper order while attribute names keep their historical field mapping',()=>{
@@ -166,7 +167,7 @@ test('Players groups use Technical, Mental, Physical, Goalkeeper order while att
  assert.match(html,/data-players-group="technical">Technical<\/button>/);
  assert.match(html,/data-players-group="goalkeeping">Goalkeeper<\/button>/);
  assert.match(html,/group=Object\.hasOwn\(groups,params\.get\('group'\)\)\?params\.get\('group'\):'technical'/);
- assert.match(renderer,/group:Object\.hasOwn\(groups,p\.get\('group'\)\)\?p\.get\('group'\):'technical'/);
+ assert.match(renderer,/group=Object\.hasOwn\(groups,p\.get\('group'\)\)\?p\.get\('group'\):'technical'/);
  assert.match(renderer,/if\(state\.view==='attributes'\)url\.searchParams\.set\('group',state\.group\)/);
  assert.match(html,/const keysAll=\['speed','strength','stamina','agility','passing'/i);
  assert.match(renderer,/const allAttrs=\['speed','strength','stamina','agility','passing'/i);
@@ -185,7 +186,7 @@ test('Players public shell reserves exact common flag and name widths in every v
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
  assert.doesNotMatch(css,/\.app-players-table th:nth-child\(2\)\{width:35%/);
  assert.match(css,/\.app-players-count\{[^}]*display:flex;align-items:center;justify-content:flex-end;[^}]*width:132px;height:44px/);
- assert.match(css,/\.app-players-count-skeleton\{[^}]*width:98px;height:14px/);
+ assert.match(css,/\.app-players-count-placeholder\{[^}]*width:98px;height:14px/);
  assert.match(css,/\.app-players-count\{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0/);
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
 });
@@ -273,11 +274,11 @@ test('Players approved hybrid widths retain exact flag/name columns and distribu
 test('Players Attributes always show fixed-width Positions after the name without changing public skill keys',()=>{
  const html=read('players/index.html'),css=read('assets/app.css'),renderer=read('assets/players-directory.js'),generator=read('tools/generate-app-pages.mjs');
  assert.match(html,/class="app-players-view-third-column"/,'third slot must be reserved in static colgroup');
- assert.match(html,/positions\.textContent=\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'/);
+ assert.match(html,/addSort\(positions,'positions',\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'\)/);
  assert.match(html,/row\.append\(positions\);\s*for\(const key of keys\)/,'Positions must precede stats on first paint');
  assert.match(html,/colSpan=keys\.length\+3/);
  assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:6/);
- assert.match(renderer,/else \{th\(t\.columns\[2\]\);for\(const key of groups\[state\.group\]\)th\(attributeName\(key\)\);\}/);
+ assert.match(renderer,/addHeader\(t\.columns\[2\],'positions'\);\s*for\(const key of groups\[state\.group\]\)addHeader\(attributeName\(key\),key\)/);
  assert.match(renderer,/const positionsShown=\[player\.primary_position,\.\.\.\(Array\.isArray\(player\.secondary_positions\)\?player\.secondary_positions:\[\]\)\]\.filter\(Boolean\)/);
  assert.match(renderer,/else \{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\);\s*for\(const key of groups\[state\.group\]\)/);
  assert.match(css,/--app-players-positions-width:200px/);
@@ -317,7 +318,7 @@ test('Positions is left-aligned in Overview and all Attributes groups; stats rem
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(n\+3\)\{text-align:center\}/);
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(3\)\{text-align:left\}/,'third column Positions overrides centered attribute defaults');
  assert.ok(css.indexOf(':is(th,td):nth-child(3){text-align:left}')>css.indexOf(':is(th,td):nth-child(n+3){text-align:center}'),'Positions override follows general numeric rule');
- assert.match(renderer,/else \{th\(t\.columns\[2\]\);for\(const key of groups\[state\.group\]\)th\(attributeName\(key\)\);\}/);
+ assert.match(renderer,/addHeader\(t\.columns\[2\],'positions'\);\s*for\(const key of groups\[state\.group\]\)addHeader\(attributeName\(key\),key\)/);
  assert.match(renderer,/cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
  assert.match(css,/\.app-players-table th:nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
  assert.match(css,/\.app-players-table th:nth-child\(4\)\{width:calc\(/,'column widths retained');
@@ -592,26 +593,26 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
 });
 
 
-test('Players first paint and refresh use five row-wide placeholders matching data row heights',()=>{
+test('Players reserve five completely empty, full-height rows while loading',()=>{
  const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
- const tbody=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
- assert.equal((tbody.match(/class="app-players-skeleton-row"/g)||[]).length,5);
- assert.equal((tbody.match(/class="app-players-skeleton-line"/g)||[]).length,5,'one placeholder per row, never per column');
- assert.equal((tbody.match(/colspan="6"/g)||[]).length,5);
- assert.match(tbody,/class="sr-only" data-players-status role="status"/,'screen-reader status retained');
- assert.doesNotMatch(tbody,/class="app-players-empty-row"|app-players-skeleton-bar/,'no text loading row or per-cell bars');
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/,'loaded and placeholder rows share height');
- assert.match(css,/\.app-players-table \.app-players-skeleton-row td\{height:44px;padding:0 16px\}/);
- for(const value of ['.34','.28','.22','.17','.12'])assert.ok(css.includes('--players-skeleton-opacity:'+value),value);
- assert.match(js,/function showSkeleton\(\)/);
+ const table=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
+ assert.equal((table.match(/class="app-players-loading-row"/g)||[]).length,5);
+ assert.equal((table.match(/colspan="6"/g)||[]).length,5);
+ assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
+ assert.match(table,/class="sr-only" data-players-status role="status"/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:44px;padding:0 16px\}/);
+ assert.doesNotMatch(css,/\.app-players-skeleton-line|\.app-players-skeleton-row/);
+ assert.match(js,/function showLoadingRows\(\)/);
  assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
  assert.match(js,/td\.colSpan=columns/);
- assert.match(js,/line\.className='app-players-skeleton-line'/);
- assert.match(js,/scroll\.setAttribute\('aria-busy','true'\);renderHead\(\);showSkeleton\(\)/);
- assert.match(js,/if\(status==='loading'\)showSkeleton\(\);else message/);
+ assert.match(js,/scroll\.setAttribute\('aria-busy','true'\);renderHead\(\);showLoadingRows\(\)/);
+ assert.match(js,/if\(status==='loading'\)showLoadingRows\(\);else message/);
  const fp=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
- assert.match(fp,/for\(const skeleton of rows\)skeleton\.cells\[0\]\.colSpan=keys\.length\+3/,'Attributes adjusts spanning cell without adding placeholders');
- assert.doesNotMatch(js,/message\(locale\(\)\.loading\)/);
+ assert.match(fp,/for\(const loadingRow of rows\)loadingRow\.cells\[0\]\.colSpan=keys\.length\+3/);
+ assert.match(html,/app-players-count-placeholder/);
+ assert.match(css,/\.app-players-count-placeholder\{[^}]*background:transparent/);
+ assert.doesNotMatch(html,/app-players-count-skeleton/);
 });
 test('Players column buttons provide persistent URL ordering on complete server-side datasets',async()=>{
  const html=read('players/index.html'),js=read('assets/players-directory.js'),css=read('assets/app.css'),sql=read('backend/src/public-players-read.ts');
@@ -628,14 +629,19 @@ test('Players column buttons provide persistent URL ordering on complete server-
  }
  assert.match(css,/\.app-players-sort-button\{display:inline-flex;[^}]*cursor:pointer/);
  assert.match(css,/\.app-players-sort-button:focus-visible\{text-decoration:underline/);
- assert.match(css,/\.app-players-sort-button:focus\{outline:none\}/);
+ assert.match(css,/\.app-players-sort-button:hover,\.app-players-sort-button:active,\.app-players-sort-button:focus\{color:inherit;background:transparent/);
  assert.match(css,/user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent/);
  assert.doesNotMatch(css,/\.app-players-sort-button:hover\{color:var\(--focus\)/,'hover does not highlight sortable labels');
  assert.match(css,/\.app-players-sort-button:hover,\.app-players-sort-button:active,\.app-players-sort-button:focus\{color:inherit;background:transparent;box-shadow:none;outline:none/,'mouse interaction cannot paint a selection box');
- assert.doesNotMatch(css,/\.app-players-sort-icon|\.app-players-skeleton-bar/,'no sort arrow or per-cell skeleton CSS');
- assert.doesNotMatch(js,/app-players-sort-icon/,'sorting stays operational with plain labels');
- assert.doesNotMatch(html,/app-players-sort-icon/,'first paint has no arrow icons');
  assert.match(js,/table\.tHead\.addEventListener\('click',event=>/);
+ assert.match(js,/function cycleSort\(key\)/);
+ assert.match(js,/if\(state\.sort!==key\)\{state\.sort=key;state\.order='desc';\}/);
+ assert.match(js,/else if\(state\.order==='desc'\)state\.order='asc'/);
+ assert.match(js,/else\{state\.sort='';state\.order='';\}/);
+ assert.match(css,/\.app-players-sort-chevron\{[^}]*visibility:hidden;opacity:0;transform:rotate\(0deg\);transform-origin:50% 50%/);
+ assert.match(css,/\.app-players-table th\[aria-sort="ascending"\] \.app-players-sort-chevron\{transform:rotate\(180deg\)\}/);
+ assert.match(html,/class="app-players-sort-chevron"/);
+ assert.match(js,/classList\.add\('app-players-sort-chevron'\)/);
  assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/);
  assert.match(js,/if\(state\.sort\)\{query\.set\('sort',state\.sort\);query\.set\('order',state\.order\);\}/);
  assert.match(js,/next\.sort!==state\.sort\|\|next\.order!==state\.order/);
@@ -665,4 +671,40 @@ test('Players drawer uses section separators rather than nested outlined cards',
   assert.ok(html.includes('data-players-filter-section="'+key+'"'),key);
  for(const key of ['technical','mental','physical','goalkeeping'])
   assert.ok(html.includes('data-players-attribute-category="'+key+'"'),key);
+});
+
+test('Players sortable header cycles descending, ascending, then resets sorting',()=>{
+ const js=read('assets/players-directory.js');
+ const i=js.indexOf('  function cycleSort(key){'),j=js.indexOf("  table.tHead.addEventListener('click'",i);
+ assert.ok(i>0&&j>i);
+ const source=js.slice(i,j);
+ const state={view:'overview',group:'technical',sort:'',order:'',page:4},loads=[],history=[];
+ const cycle=new Function('state','allowedSort','syncUrl','load',source+';return cycleSort;')(
+  state,(_v,_g,key)=>['age','name'].includes(key),
+  ()=>history.push({sort:state.sort,order:state.order}),page=>loads.push(page));
+ cycle('age');assert.deepEqual([state.sort,state.order,state.page],['age','desc',1]);
+ cycle('age');assert.deepEqual([state.sort,state.order],['age','asc']);
+ cycle('age');assert.deepEqual([state.sort,state.order],['','']);
+ cycle('name');assert.deepEqual([state.sort,state.order],['name','desc']);
+ cycle('none');assert.equal(loads.length,4,'invalid column cannot trigger fetch');
+ assert.deepEqual(loads,[1,1,1,1]);
+ assert.deepEqual(history[2],{sort:'',order:''},'reset leaves no sort URL values');
+});
+test('Players filter labels are compact, counters circular and chevrons rotate in place',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
+ const range=html.slice(html.indexOf('data-players-filter-section="age"'),html.indexOf('data-players-filter-section="foot"'));
+ for(const key of ['ageMin','heightMin'])assert.match(range,new RegExp('data-players-filter-label="'+key+'">Min</span>'));
+ for(const key of ['ageMax','heightMax'])assert.match(range,new RegExp('data-players-filter-label="'+key+'">Max</span>'));
+ assert.doesNotMatch(range,/Min age|Max age|Min height|Max height|placeholder="All"/);
+ assert.match(js,/const labels=\[t\.name,t\.sections\[0\],t\.sections\[1\],t\.min,t\.max,t\.min,t\.max/);
+ assert.match(js,/field\.type==='number'\)field\.placeholder=''/);
+ assert.doesNotMatch(html,/players-filter-foot-label/);
+ assert.match(html,/id="players-filter-foot-heading" data-players-section-label="foot"/);
+ assert.match(html,/aria-labelledby="players-filter-foot-heading players-filter-foot-value"/);
+ for(const selector of ['app-players-filter-active','app-players-filter-section-count','app-players-attribute-count'])
+  assert.match(css,new RegExp('\\.'+selector+'\\{[^}]*border-radius:50%'));
+ assert.match(css,/\.app-players-filter-section-header>\.language-chevron,\.app-players-attribute-category>summary>\.language-chevron\{[^}]*transform-origin:50% 50%/);
+ assert.match(css,/\.app-players-filter-section-header:hover,\.app-players-filter-section-header:active/);
+ assert.match(css,/user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent/);
+ assert.match(css,/\.app-players-filters\{[^}]*scrollbar-gutter:stable/);
 });
