@@ -239,12 +239,28 @@
   // Shared site combobox presentation (language-trigger / language-menu / language-option).
   // Keep focus on the trigger and expose the active option via aria-activedescendant.
   let openDropdown=null;
-  const dropdownParts=wrapper=>({
+  const dropdownCache=new Map(dropdowns.map(wrapper=>[wrapper,{
    field:wrapper.querySelector('[data-players-filter]'),
    trigger:wrapper.querySelector('.language-trigger'),
    menu:wrapper.querySelector('.language-menu'),
    options:[...wrapper.querySelectorAll('[data-players-filter-option]')]
-  });
+  }]));
+  const dropdownParts=wrapper=>dropdownCache.get(wrapper);
+  // Keep the listbox inside the top-layer panel, outside its scrolling region.
+  function positionDropdown(wrapper){
+   if(!filterDialog||!wrapper)return;
+   const {trigger,menu}=dropdownParts(wrapper);
+   const panel=filterDialog.getBoundingClientRect(),rect=trigger.getBoundingClientRect();
+   const below=Math.max(0,panel.bottom-rect.bottom-12);
+   const above=Math.max(0,rect.top-panel.top-12);
+   const up=below<175&&above>below;
+   const room=up?above:below;
+   const height=Math.max(44,Math.min(280,room));
+   menu.style.left=Math.round(rect.left-panel.left)+'px';
+   menu.style.width=Math.round(rect.width)+'px';
+   menu.style.maxHeight=Math.floor(height)+'px';
+   menu.style.top=Math.round((up?rect.top-panel.top-height-6:rect.bottom-panel.top+6))+'px';
+  }
   function highlightDropdown(wrapper,index){
    const {trigger,menu,options}=dropdownParts(wrapper);
    if(!options.length)return;
@@ -260,13 +276,19 @@
    trigger.setAttribute('aria-expanded','false');
    trigger.removeAttribute('aria-activedescendant');
    options.forEach(option=>delete option.dataset.active);
+   if(menu.parentElement!==wrapper)wrapper.append(menu);
+   for(const property of ['left','top','width','max-height'])menu.style.removeProperty(property);
    if(openDropdown===wrapper)openDropdown=null;
    if(restoreFocus)trigger.focus({preventScroll:true});
   }
   function openDropdownMenu(wrapper){
    if(openDropdown&&openDropdown!==wrapper)closeDropdown(openDropdown);
    const {field,trigger,menu,options}=dropdownParts(wrapper);
-   openDropdown=wrapper;menu.hidden=false;trigger.setAttribute('aria-expanded','true');
+   openDropdown=wrapper;
+   filterDialog.append(menu);
+   menu.hidden=false;
+   positionDropdown(wrapper);
+   trigger.setAttribute('aria-expanded','true');
    const current=options.findIndex(option=>option.dataset.playersFilterOption===field.value);
    highlightDropdown(wrapper,Math.max(0,current));
   }
@@ -299,8 +321,14 @@
    });
   }
   filterDialog?.addEventListener('click',event=>{
-   if(openDropdown&&!openDropdown.contains(event.target))closeDropdown(openDropdown);
+   if(!openDropdown)return;
+   const {menu}=dropdownParts(openDropdown);
+   if(!openDropdown.contains(event.target)&&!menu.contains(event.target))closeDropdown(openDropdown);
   });
+  filterPanel?.addEventListener('scroll',()=>{
+   // Do not let a detached listbox cover the scrolling controls.
+   if(openDropdown)closeDropdown(openDropdown);
+  },{passive:true});
   function applyFilters(){
    const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.value]));
    for(const field of filterFields){
@@ -327,55 +355,60 @@
    state.page=1;syncUrl();syncControls();closeFilterDialog();
    if(changed)load(1);
   });
-  let previousOverflow='',closeFallback=null;
+  let closeFallback=null,restoreTriggerFocus=true;
+  const drawerOpen=()=>!!filterDialog?.matches(':popover-open');
   function syncDrawerTop(){
    const header=document.querySelector('.fa-shell-topbar');
    const bottom=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom??60));
-   document.documentElement.style.setProperty('--players-filter-top',bottom+'px');
+   filterDialog?.style.setProperty('--players-filter-top',bottom+'px');
   }
   function finishFilterClose(){
    if(closeFallback!==null){clearTimeout(closeFallback);closeFallback=null;}
-   if(filterDialog?.open)closeFilterDialog();
+   if(!filterDialog)return;
+   closeDropdown(openDropdown);
+   if(drawerOpen())filterDialog.hidePopover();
+   filterDialog.classList.remove('is-closing');
+   filterTrigger?.setAttribute('aria-expanded','false');
+   for(const field of filterFields)field.setCustomValidity('');
+   if(restoreTriggerFocus)filterTrigger?.focus({preventScroll:true});
   }
-  function closeFilterDialog(){
-   if(!filterDialog?.open||filterDialog.classList.contains('is-closing'))return;
+  function closeFilterDialog(restoreFocus=true){
+   if(!drawerOpen()||filterDialog.classList.contains('is-closing'))return;
+   restoreTriggerFocus=restoreFocus;
    closeDropdown(openDropdown);
    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finishFilterClose();return;}
    filterDialog.classList.add('is-closing');
-   // Safari/Chromium: event drives closure; fallback handles throttled animations.
    closeFallback=setTimeout(finishFilterClose,280);
   }
   filterTrigger?.addEventListener('click',()=>{
-   if(!filterDialog||filterDialog.open)return;
-   syncFilterControls(); // Reopen from applied state; discard unsubmitted draft edits.
+   if(!filterDialog||drawerOpen())return;
+   syncFilterControls(); // Discard any previously unsubmitted edits.
    syncDrawerTop();
-   previousOverflow=document.documentElement.style.overflow;
+   restoreTriggerFocus=true;
    filterDialog.classList.remove('is-closing');
-   filterDialog.showModal(); // Native focus containment; drawer begins below the fixed header.
-   document.documentElement.style.overflow='hidden';
+   // Manual top-layer popover: the app shell and its scrollbar are not made inert.
+   filterDialog.showPopover();
    filterTrigger.setAttribute('aria-expanded','true');
    dropdowns[0]?.querySelector('.language-trigger')?.focus({preventScroll:true});
   });
-  filterClose?.addEventListener('click',closeFilterDialog);
-  filterDialog?.addEventListener('cancel',event=>{event.preventDefault();closeFilterDialog()});
+  filterClose?.addEventListener('click',()=>closeFilterDialog());
   filterDialog?.addEventListener('animationend',event=>{
    if(event.target===filterDialog&&event.animationName==='players-filter-slide-out')finishFilterClose();
   });
-  filterDialog?.addEventListener('click',event=>{
-   if(event.target!==filterDialog)return;
-   const bounds=filterDialog.getBoundingClientRect();
-   if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)closeFilterDialog();
+  // A click outside closes the drawer, but still reaches the original target.
+  document.addEventListener('pointerdown',event=>{
+   if(drawerOpen()&&!filterDialog.contains(event.target)&&!filterTrigger?.contains(event.target))
+    closeFilterDialog(false);
+  },true);
+  document.addEventListener('keydown',event=>{
+   if(!drawerOpen()||event.key!=='Escape')return;
+   event.preventDefault();
+   if(openDropdown){closeDropdown(openDropdown,true);return;}
+   closeFilterDialog();
   });
-  filterDialog?.addEventListener('close',()=>{
-   if(closeFallback!==null){clearTimeout(closeFallback);closeFallback=null;}
-   filterDialog.classList.remove('is-closing');
-   closeDropdown(openDropdown);
-   document.documentElement.style.overflow=previousOverflow;
-   filterTrigger?.setAttribute('aria-expanded','false');
-   for(const field of filterFields)field.setCustomValidity('');
-   filterTrigger?.focus({preventScroll:true});
+  window.addEventListener('resize',()=>{
+   if(drawerOpen()){syncDrawerTop();closeDropdown(openDropdown);}
   });
-  window.addEventListener('resize',()=>{if(filterDialog?.open)syncDrawerTop()});
   tabs.forEach(tab=>tab.addEventListener('click',event=>{event.preventDefault();changeView(tab.dataset.playersView)}));
   groupTabs.forEach(tab=>tab.addEventListener('click',()=>changeGroup(tab.dataset.playersGroup)));
   function keyboardTab(event,nodes,change,key){
@@ -391,7 +424,7 @@
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
-   if(filterDialog?.open)filterDialog.close();
+   if(drawerOpen()){restoreTriggerFocus=false;finishFilterClose();}
    const next=parseLocation(),changed=next.page!==state.page||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);

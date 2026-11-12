@@ -375,7 +375,7 @@ test('PLAYERS-FILTERS-01 has five stable accessible controls, first-paint URL st
  assert.ok(html.includes('data-players-reset'));
  assert.ok(html.includes("const filters={nationality:countryCodes.has(params.get('nationality'))"),'static script initializes selections before first paint');
  assert.match(css,/\.app-players-filters\{display:grid/);
- assert.match(css,/\.app-players-filter-dialog\[open\]\{display:flex;flex-direction:column;animation:players-filter-slide-in/);
+ assert.match(css,/\.app-players-filter-dialog:popover-open\{display:flex;flex-direction:column;animation:players-filter-slide-in/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(code,/function applyFilters\(\)/);
  assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
@@ -423,7 +423,7 @@ test('Players first paint selects URL filter values without changing table/view 
 test('Players Filters button opens an accessible drawer; selections stay draft-only until Apply',()=>{
  const html=read('players/index.html'),code=read('assets/players-directory.js'),css=read('assets/app.css');
  assert.match(html,/<button[^>]+data-players-filter-open[^>]+aria-haspopup="dialog"[^>]+aria-expanded="false"/);
- assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" aria-labelledby="players-filter-title" aria-describedby="players-filter-description">/);
+ assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" popover="manual" aria-modal="false" aria-labelledby="players-filter-title" aria-describedby="players-filter-description">/);
  assert.match(html,/<form class="app-players-filter-form" data-players-filter-form novalidate>/);
  assert.match(html,/<button type="button" class="app-players-filter-close" data-players-filter-close/);
  assert.match(html,/<button type="submit" class="app-players-apply" data-players-apply>/);
@@ -433,8 +433,8 @@ test('Players Filters button opens an accessible drawer; selections stay draft-o
  assert.match(css,/\.app-players-filter-dialog::backdrop\{background:/);
  assert.match(css,/\.app-players-filter-dialog\{[^}]*width:min\(420px,100vw\)/);
  assert.match(css,/\.app-players-filter-dialog\+\.[a-z-]+\{margin-top:0\}/);
- assert.match(code,/filterDialog\.showModal\(\)/,'use native modal focus containment');
- assert.match(code,/filterDialog\?\.addEventListener\('close'/);
+ assert.match(code,/filterDialog\.showPopover\(\)/,'use native top-layer popover without making the document inert');
+ assert.match(code,/if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
  assert.match(code,/filterClose\?\.addEventListener\('click'/);
  assert.match(code,/filterTrigger\?\.focus\(\{preventScroll:true\}\)/,'closing returns focus to trigger');
  assert.match(code,/filterForm\?\.addEventListener\('submit',event=>\{event\.preventDefault\(\);applyFilters\(\)\}\)/);
@@ -449,18 +449,18 @@ test('Players filter drawer is offset below the actual shell header, animates bo
  const css=read('assets/app.css'),js=read('assets/players-directory.js');
  assert.match(css,/\.app-players-filter-dialog\{position:fixed;inset:var\(--players-filter-top,60px\) 0 0 auto/);
  assert.match(css,/height:calc\(100dvh - var\(--players-filter-top,60px\)\)/);
- assert.match(css,/\.app-players-filter-dialog::backdrop\{background:linear-gradient\(to bottom,transparent 0,transparent var\(--players-filter-top,60px\)/);
+ assert.match(css,/\.app-players-filter-dialog::backdrop\{background:transparent;pointer-events:none\}/);
  assert.match(css,/@keyframes players-filter-slide-in\{from\{transform:translate3d\(100%,0,0\)\}/);
  assert.match(css,/@keyframes players-filter-slide-out\{from\{transform:translate3d\(0,0,0\)\}/);
- assert.match(css,/\.app-players-filter-dialog\[open\]\.is-closing\{animation:players-filter-slide-out/);
+ assert.match(css,/\.app-players-filter-dialog:popover-open\.is-closing\{animation:players-filter-slide-out/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^}]*animation:none!important/);
  assert.match(js,/document\.querySelector\('\.fa-shell-topbar'\)/);
  assert.match(js,/header\?\.getBoundingClientRect\(\)\.bottom\?\?60/);
- assert.match(js,/document\.documentElement\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
- assert.match(js,/syncDrawerTop\(\);[\s\S]*filterDialog\.showModal\(\)/);
+ assert.match(js,/filterDialog\?\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
+ assert.match(js,/syncDrawerTop\(\);[\s\S]*filterDialog\.showPopover\(\)/);
  assert.match(js,/filterDialog\?\.addEventListener\('animationend'/);
- assert.match(js,/filterDialog\?\.addEventListener\('cancel',event=>\{event\.preventDefault\(\);closeFilterDialog\(\)\}\)/);
- assert.match(js,/window\.addEventListener\('resize',\(\)=>\{if\(filterDialog\?\.open\)syncDrawerTop\(\)\}\)/);
+ assert.match(js,/document\.addEventListener\('keydown',event=>\{[\s\S]*event\.key!=='Escape'/);
+ assert.match(js,/window\.addEventListener\('resize',\(\)=>\{[\s\S]*if\(drawerOpen\(\)\)\{syncDrawerTop\(\);closeDropdown\(openDropdown\);\}/);
 });
 test('Players nationality, position and foot share the site language-trigger dropdown patterns',()=>{
  const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
@@ -487,4 +487,36 @@ test('Players nationality, position and foot share the site language-trigger dro
  assert.match(code,/field\.value=options\[index\]\.dataset\.playersFilterOption/);
  assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
  assert.match(html,/for\(const select of document\.querySelectorAll\('\.app-players-filter-native'\)\)/);
+});
+
+
+test('Players drawer never blocks the underlying scrollbars or changes the shared shell',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
+ assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" popover="manual" aria-modal="false"/);
+ assert.match(css,/\.app-players-filter-dialog:popover-open\{display:flex;flex-direction:column/);
+ assert.match(css,/\.app-players-filter-dialog::backdrop\{background:transparent;pointer-events:none\}/);
+ assert.match(css,/\.fa-shell-content-scroll\{[^}]*overflow-y:auto;scrollbar-gutter:stable/);
+ assert.match(js,/filterDialog\.showPopover\(\)/);
+ assert.match(js,/if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
+ assert.doesNotMatch(js,/filterDialog\.showModal\(\)/,'modal dialogs make the rest of the page inert');
+ assert.doesNotMatch(js,/document\.documentElement\.style\.overflow/,'do not mutate the shell scroll lock');
+ assert.doesNotMatch(css,/html:has\(\.app-players-filter-dialog/,'do not change the root scrollbar gutter');
+ assert.match(js,/document\.addEventListener\('pointerdown',event=>\{/);
+ assert.match(js,/!filterDialog\.contains\(event\.target\)&&!filterTrigger\?\.contains\(event\.target\)/);
+ assert.match(js,/closeFilterDialog\(false\)/,'outside click must not steal focus or cancel the original click');
+ assert.match(js,/filterDialog\?\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
+ assert.doesNotMatch(js,/document\.documentElement\.style\.setProperty\('--players-filter-top'/);
+});
+test('Players menu portal prevents clipped or scrollbar-blocked option clicks',()=>{
+ const css=read('assets/app.css'),js=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-filter-dialog>\.app-players-filter-menu\{position:absolute;inset:auto;z-index:100/);
+ assert.match(js,/const dropdownCache=new Map\(dropdowns\.map\(wrapper=>\[wrapper,/);
+ assert.match(js,/filterDialog\.append\(menu\)/,'menu is moved out of the scroll region while open');
+ assert.match(js,/positionDropdown\(wrapper\)/);
+ assert.match(js,/menu\.style\.maxHeight=Math\.floor\(height\)\+'px'/);
+ assert.match(js,/if\(menu\.parentElement!==wrapper\)wrapper\.append\(menu\)/);
+ assert.match(js,/if\(!openDropdown\.contains\(event\.target\)&&!menu\.contains\(event\.target\)\)closeDropdown\(openDropdown\)/,'portal clicks count as inside the dropdown');
+ assert.match(js,/filterPanel\?\.addEventListener\('scroll',\(\)=>\{/);
+ assert.match(js,/if\(openDropdown\)closeDropdown\(openDropdown\)/,'drawer scroll does not leave a menu over its scrollbar');
+ assert.match(js,/function finishFilterClose\(\)\{[\s\S]*if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
 });
