@@ -36,7 +36,7 @@
 - [x] Extend existing Club Chromium test for season/filter/navigation/loading/venue focus and responsive locale/theme coverage.
 - [x] Run targeted browser and regression checks. Inspect final diff; fix material findings with reproducing tests.
 - [x] Add docs/clubs/club-fixtures-qa.md separating automatic evidence from manual physical Safari/VoiceOver checks and unavailable coverage.
-- [ ] Commit QA; update #504; push once and create one English Draft/HOLD PR; inspect automatic CI without redispatch.
+- [x] Commit QA; update #504; push once and create one English Draft/HOLD PR; inspect automatic CI without redispatch.
 
 ## Execution ledger
 - Preflight complete: remote main fetched, AGENTS.md read, two open PR file lists inspected. Native worktree tools unavailable; isolated worktree created at /workspace/football-architect-504.
@@ -47,5 +47,7 @@
 - Independent final review: two P2 findings (focus loss during redraw and parser-time locale labels), both fixed with RED→GREEN tests. Screenshot review additionally found repeated opponent crest-host reuse; fixed with 15-vs-30 reproducer and passing Chromium rerun.
 - Scope clarification: public API currently supports seasons 1–2; DEV adapter exposes domestic fixtures/postseason only. Missing international DEV snapshots stay explicit partial coverage. No new draw, fixture or result authority introduced.
 
-- Task 3 QA: final targeted Node 118/118 and dedicated Chromium 1/1 PASS; generator/discovery/syntax/diff checks PASS. Existing broader Club browser test hit its 300-second timeout; unchanged-main comparison pending. Physical Safari, VoiceOver and hosted/owner acceptance remain UNKNOWN.
+- Task 3 QA: final targeted Node 118/118 and dedicated Chromium 1/1 PASS; generator/discovery/syntax/diff checks PASS. Existing broader Club browser test hit its 300-second timeout; unchanged main ff83a2a also timed out at the same 300-second limit. Physical Safari, VoiceOver and hosted/owner acceptance remain UNKNOWN.
 - Final source-read audit: unknown canonical season uses reserved placeholder, never guessed Season 1; confirmed unavailable state removes loading placeholder. Both cases covered by RED→GREEN tests.
+
+- Delivered one Draft/HOLD PR #529. Final icon audit corrected the away glyph to an actual airplane; unchanged-main browser comparison confirmed the same 300-second timeout. This follow-up is a fourth grouped venue/evidence correction; its automatic CI cycle supersedes the initial PR head, with no manual rerun.

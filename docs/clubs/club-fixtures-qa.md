@@ -59,6 +59,8 @@ No merge, deploy/publication, remote D1 write, secret change or unattended task 
 - Stable final source: **118/118** targeted Node checks PASS across the source, Club presentation/history/loading, Fixtures, public cache and publication/layout suites.
 - Dedicated Chromium Club Fixtures scenario: **1/1 PASS**, including public/DEV source transition, delayed tab changes, focus/crest retention, responsive locale/theme matrix, navigation, errors and Season 0.
 - Generator `--check`, CI discovery, modified JavaScript syntax and scoped `git diff --check`: PASS.
-- Broader pre-existing Club browser scenario: **TIMEOUT at 300 seconds** locally; not PASS. A separate unchanged `main@ff83a2a` comparison is in progress at this record. This does not establish a feature regression or certify FULL.
+- Broader pre-existing Club browser scenario: **TIMEOUT at 300 seconds** locally; not PASS. The same unchanged `main@ff83a2a` scenario also timed out at 300 seconds in this Cloud environment. This establishes a baseline timeout too; it does not certify FULL or establish the cause of either timeout.
 - Automatic PR exact-head CI: PENDING when preparing the QA commit; observe in GitHub before any future merge decision. No workflow was manually dispatched/rerun.
 - Manual acceptance remains UNKNOWN regardless of automatic status.
+
+Final venue audit: the away glyph uses an actual monochrome airplane silhouette. This small approved-requirement correction follows the initial PR creation, so its normal push starts a new exact-head CI cycle; no manual CI dispatch/rerun is used.
