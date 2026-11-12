@@ -300,7 +300,9 @@
    catch{playerFind('[data-admin-players-feedback]').textContent=messages.manual;}
   });
   new MutationObserver(()=>render()).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  window.addEventListener('pageshow',event=>{if(event.persisted)void controller.refresh()});
+  // A full page load/refresh (or an explicit Admin Refresh click) rechecks
+  // permissions. Navigating back via BFCache does not trigger another request.
+  // Server-side guards remain authoritative for all protected operations.
   render();void controller.refresh();
  }
  return {createAdminController,mount,canRunCommand,nextDaySimulation,playersTrialCommand};

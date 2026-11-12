@@ -12,7 +12,7 @@ Eight countries, 16 domestic divisions, two international cups (Sovereign and Fe
 
 Use Node.js **22**. From the repository root:
 
-The launcher also starts the frontend through `node tools/dev-app-preview.mjs` internally; there is no need to run this second command by hand.
+The launcher also starts the frontend through `node tools/dev-app-preview.mjs` internally; there is no need to run this second command by hand. Site: `http://localhost:2000/`; app: `http://app.localhost:2000/dashboard`; competitions: `http://app.localhost:2000/competitions`.
 
 ```powershell
 npm --prefix backend ci

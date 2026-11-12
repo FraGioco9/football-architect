@@ -84,6 +84,12 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');
  assert.doesNotMatch(players,/data-players-seed-help|admin-players-seed-help|Same seed and options/,'Remove seed explanation');
  const playersScript=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
+ // Permissions requests run on full page load/refresh only, never BFCache restore.
+ assert.match(playersScript,/update\(\);void check\(\);/);
+ assert.doesNotMatch(playersScript,/pageshow[^\n]*check\(/);
+ const calendarScript=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
+ assert.match(calendarScript,/render\(\);void controller\.refresh\(\);/);
+ assert.doesNotMatch(calendarScript,/pageshow[^\n]*controller\.refresh\(/);
  assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
 
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);

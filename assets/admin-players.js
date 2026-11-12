@@ -410,7 +410,8 @@
    next.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
   }
   new MutationObserver(update).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  win.addEventListener('pageshow',event=>{if(event.persisted)void check()});
+  // One permissions request per full document load/refresh, not on BFCache.
+  // Every privileged API request still enforces fresh server authorization.
   update();void check();
  }
  return {makeOptions,commandFromRaw,mount};
