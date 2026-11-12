@@ -1,4 +1,4 @@
-// DEV launcher: verified shared Cloudflare Preview/D1 by default.
+// DEV launcher: local Worker code with a verified remote DEV/Preview D1 by default.
 // Isolated local Worker/D1 remains available only through explicit --local.
 import {spawn} from 'node:child_process';
 import {networkInterfaces} from 'node:os';
@@ -24,11 +24,11 @@ export function validateLanAddress(value,interfaces=networkInterfaces()){
  return value;
 }
 
-export function localDevPlan({platform=process.platform,execPath=process.execPath,env=process.env,lanAddress=null}={}){
+export function localDevPlan({platform=process.platform,execPath=process.execPath,env=process.env,lanAddress=null,sharedD1=false}={}){
  const localEnv={...env,FA_ADMIN_API_TARGET:LOCAL_API,FA_ADMIN_API_POOL:'',FA_DEV_LAN:'',FA_DEV_LAN_HOST:''};
  const frontendEnv=lanAddress?{...localEnv,FA_DEV_LAN:'1',FA_DEV_LAN_HOST:lanAddress}:localEnv;
  return [
-  {name:'backend',command:platform==='win32'?'npm.cmd':'npm',args:['run','dev','--prefix','backend'],options:{cwd:ROOT,env:localEnv,stdio:'inherit',shell:platform==='win32'}},
+  {name:'backend',command:platform==='win32'?'npm.cmd':'npm',args:['run',sharedD1?'dev:shared':'dev','--prefix','backend'],options:{cwd:ROOT,env:localEnv,stdio:'inherit',shell:platform==='win32'}},
   {name:'frontend',command:execPath,args:['tools/dev-app-preview.mjs'],options:{cwd:ROOT,env:frontendEnv,stdio:'inherit'}}
  ];
 }
@@ -38,7 +38,7 @@ export function localDevPlan({platform=process.platform,execPath=process.execPat
 export const SHARED_PREVIEW_TARGET='https://preview.football-architect.workers.dev';
 /** Parse before starting any children; never fall back to a different database. */
 export function selectDevMode(flags=[]){
- if(flags.length===0)return {mode:'shared',target:SHARED_PREVIEW_TARGET};
+ if(flags.length===0)return {mode:'remote-d1'};
  if(flags.length===2&&flags[0]==='--shared')return {mode:'shared',target:validateSharedPreviewTarget(flags[1])};
  if(flags.length===1&&flags[0]==='--local')return {mode:'local',lanAddress:null};
  if(flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan')return {mode:'local',lanAddress:flags[2]};
@@ -89,14 +89,15 @@ export async function startSharedDev({proc=process,spawnChild=spawn,verify=verif
  return {children:[child],stop};
 }
 
-export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkInterfaces}={}){
+export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkInterfaces,sharedD1=false}={}){
  const flags=proc.argv.slice(2);
  // Empty flags support only the legacy dev-auth-local.mjs alias and direct fixtures.
  // The canonical dev.mjs CLI defaults to shared.
  const legacyLan=flags.length===2&&flags[0]==='--lan';
  const explicitLocal=flags.length===1&&flags[0]==='--local';
  const explicitLan=flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan';
- if(flags.length&&!(legacyLan||explicitLocal||explicitLan))
+ if(sharedD1&&flags.length)throw Error('Shared D1 DEV is the no-flags default; use --local for isolated D1');
+ if(!sharedD1&&flags.length&&!(legacyLan||explicitLocal||explicitLan))
   throw Error('Isolated local DEV requires --local [--lan <private IPv4>]');
  const lanAddress=legacyLan||explicitLan?validateLanAddress(flags[flags.length-1],interfaces()):null;
  const children=[];
@@ -115,7 +116,7 @@ export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkI
  proc.on('SIGINT',stop);
  proc.on('SIGTERM',stop);
  try{
-  for(const spec of localDevPlan({platform:proc.platform,execPath:proc.execPath,env:proc.env,lanAddress})){
+  for(const spec of localDevPlan({platform:proc.platform,execPath:proc.execPath,env:proc.env,lanAddress,sharedD1})){
    const child=spawnChild(spec.command,spec.args,spec.options);
    children.push(child);
    child.on('error',error=>fail(spec.name,error.message));
@@ -127,10 +128,16 @@ export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkI
  }
  proc.stdout.write('Local DEV: Site http://localhost:2000/ | App http://app.localhost:2000/dashboard\n');
  if(lanAddress)proc.stdout.write('LAN Safari QA frontend: http://'+lanAddress+':2000/dashboard (landing at /; backend/API unavailable over LAN)\n');
- proc.stdout.write('Local Worker/D1: http://127.0.0.1:8787 (GET /api/world through app.localhost:2000)\n');
- proc.stdout.write('Player registration: http://app.localhost:2000/account/register\n');
- proc.stdout.write('Dev inbox: http://app.localhost:2000/api/local-dev/inbox\n');
- proc.stdout.write('Stop with Ctrl+C. No remote D1, shared Preview account pool, deploy or emails.\n');
+ if(sharedD1){
+  proc.stdout.write('Local Worker: http://127.0.0.1:8787; remote binding: football-architect-dev D1 (shared with Preview)\n');
+  proc.stdout.write('Account sign-in: http://app.localhost:2000/account/login (separate session from hosted Preview)\n');
+  proc.stdout.write('No deploy, schema migrations or database copy. Actions on this DEV may write to shared D1.\n');
+ }else{
+  proc.stdout.write('Local Worker/D1: http://127.0.0.1:8787 (GET /api/world through app.localhost:2000)\n');
+  proc.stdout.write('Player registration: http://app.localhost:2000/account/register\n');
+  proc.stdout.write('Dev inbox: http://app.localhost:2000/api/local-dev/inbox\n');
+  proc.stdout.write('Stop with Ctrl+C. No remote D1, shared Preview account pool, deploy or emails.\n');
+ }
  return {children,stop};
 }
 
@@ -138,10 +145,10 @@ if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
   const choice=selectDevMode(process.argv.slice(2));
   if(choice.mode==='shared')startSharedDev().catch(error=>{
-   process.stderr.write('Shared DEV startup denied: '+error.message+'\n');
+   process.stderr.write('Hosted Preview bridge denied: '+error.message+'\n');
    process.exitCode=1;
   });
-  else startLocalDev();
+  else startLocalDev({sharedD1:choice.mode==='remote-d1'});
  }catch(error){
   process.stderr.write('DEV startup denied: '+error.message+'\n');
   process.exitCode=1;

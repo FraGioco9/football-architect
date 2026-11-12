@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter, once} from 'node:events';
 import {createServer, request} from 'node:http';
-import {localDevPlan, startLocalDev, validateLanAddress} from '../tools/dev.mjs';
+import {localDevPlan, startLocalDev, validateLanAddress, selectDevMode} from '../tools/dev.mjs';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 
 function get(port,path,host,method='GET'){
@@ -16,6 +16,11 @@ function get(port,path,host,method='GET'){
 }
 async function listen(server){server.listen(0,'127.0.0.1');await once(server,'listening');return server.address().port;}
 async function close(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+
+test('default selected mode uses shared remote D1, explicit --local keeps isolated DB',()=>{
+ assert.deepEqual(selectDevMode([]),{mode:'remote-d1'});
+ assert.equal(selectDevMode(['--local']).mode,'local');
+});
 
 test('explicit local DEV plan forces isolated Worker, dedicated origins and no remote/shared pool',()=>{
  for(const platform of ['win32','linux']){

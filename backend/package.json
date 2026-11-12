@@ -7,6 +7,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "dev": "wrangler dev --local",
+    "dev:shared": "wrangler dev --config wrangler.shared-dev.toml",
     "test:contracts": "node tools/run-contracts.mjs",
     "test:operator": "node --experimental-strip-types --test tests/operator-local.test.mts tests/worker-restart.test.mts tests/prepare-persistence.test.mts tests/production-bundle.test.mts tests/season-one-candidate.test.mts tests/owner-permissions-local.test.mts tests/preview-package.test.mts",
     "admin:account": "node --experimental-strip-types tools/admin-account.mts",
