@@ -15,17 +15,33 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  const before=await readWorld(db);
  const predicates=['world_generation=?'],values:(string|number)[]=[before.generation];
  // Dynamic values are bound; SQL expressions are fixed and cannot be supplied by clients.
- if(filters.nationality!==undefined){
-  predicates.push("json_extract(payload_json,'$.nationality')=?");values.push(filters.nationality);
+ if(filters.nationality?.length){
+  const inList=filters.nationality.map(()=>'?').join(',');
+  const primary="json_extract(payload_json,'$.nationality') IN ("+inList+")";
+  if(filters.nationalityScope==='any'){
+   predicates.push("("+primary+" OR json_extract(payload_json,'$.secondary_nationality') IN ("+inList+"))");
+   values.push(...filters.nationality,...filters.nationality);
+  }else{predicates.push(primary);values.push(...filters.nationality);}
  }
- if(filters.position!==undefined){
-  predicates.push("json_extract(payload_json,'$.primary_position')=?");values.push(filters.position);
+ if(filters.position?.length){
+  const inList=filters.position.map(()=>'?').join(',');
+  const primary="json_extract(payload_json,'$.primary_position') IN ("+inList+")";
+  if(filters.positionScope==='any'){
+   predicates.push("("+primary+" OR EXISTS (SELECT 1 FROM json_each(payload_json,'$.secondary_positions') AS secondary WHERE secondary.value IN ("+inList+")))");
+   values.push(...filters.position,...filters.position);
+  }else{predicates.push(primary);values.push(...filters.position);}
  }
  if(filters.ageMin!==undefined){
   predicates.push("json_extract(payload_json,'$.age')>=?");values.push(filters.ageMin);
  }
  if(filters.ageMax!==undefined){
   predicates.push("json_extract(payload_json,'$.age')<=?");values.push(filters.ageMax);
+ }
+ if(filters.heightMin!==undefined){
+  predicates.push("json_extract(payload_json,'$.height_cm')>=?");values.push(filters.heightMin);
+ }
+ if(filters.heightMax!==undefined){
+  predicates.push("json_extract(payload_json,'$.height_cm')<=?");values.push(filters.heightMax);
  }
  if(filters.foot!==undefined){
   predicates.push("json_extract(payload_json,'$.preferred_foot')=?");values.push(filters.foot);

@@ -365,35 +365,37 @@ test('Players collection uses a validated page query, without changing the publi
  assert.ok(integration.includes('count:51,page:2,pageSize:50,totalPages:2'));
 });
 
-test('PLAYERS-FILTERS-01 has five stable accessible controls, first-paint URL state, and no client-only filtering',()=>{
- const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
- const css=read('assets/app.css'),code=read('assets/players-directory.js');
- for(const key of ['nationality','position','ageMin','ageMax','foot']){
-  assert.ok(html.includes('data-players-filter="'+key+'"'),key);
-  assert.ok(generator.includes('data-players-filter=\\\"'+key+'\\\"'),key);
+
+test('PLAYERS-FILTERS-01 uses five expandable sections, multi-select scopes, and steppers without changing the directory table',()=>{
+ const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),code=read('assets/players-directory.js');
+ for(const section of ['nationality','position','age','height','foot']){
+  assert.ok(html.includes('data-players-filter-section="'+section+'"'),section);
+  assert.ok(generator.includes('data-players-filter-section=\\\"'+section+'\\\"'),section+' canonical generator');
  }
- assert.ok(html.includes('data-players-reset'));
- assert.ok(html.includes("const filters={nationality:countryCodes.has(params.get('nationality'))"),'static script initializes selections before first paint');
- assert.match(css,/\.app-players-filters\{display:grid/);
- assert.match(css,/\.app-players-filter-dialog:popover-open\{display:flex;flex-direction:column;animation:players-filter-slide-in/);
- assert.match(css,/@media\(max-width:620px\)/);
- assert.match(code,/function applyFilters\(\)/);
+ for(const key of ['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'])
+  assert.ok(html.includes('data-players-filter="'+key+'"'),key);
+ assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,5);
+ assert.equal((html.match(/class="app-players-stepper"/g)||[]).length,4);
+ assert.equal((html.match(/class="app-players-stepper-button"/g)||[]).length,0,'stepper inherits fixtures arrow styling with its own class');
+ assert.equal((html.match(/data-players-step="(ageMin|ageMax|heightMin|heightMax)"/g)||[]).length,8);
+ assert.doesNotMatch(html,/Select filters and press Apply to update the list/);
+ assert.doesNotMatch(html,/data-players-filter-description/);
+ assert.match(css,/\.app-players-filter-section-header\{display:flex/);
+ assert.match(css,/\.app-players-stepper\{display:grid/);
+ assert.match(css,/\.app-players-stepper input::-webkit-inner-spin-button/);
  assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
  assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
- assert.match(code,/if\(state\.view===view\)return/);
  assert.match(code,/renderCount\(lastCount\)/);
- assert.match(code,/noMatches/);
- for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{button:'),lng);
+ for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{sections:'),lng);
  assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px/);
 });
-test('Players first paint selects URL filter values without changing table/view DOM',()=>{
+test('Players first paint reads comma-separated multi values and scopes without changing table geometry',()=>{
  const html=read('players/index.html'),script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
  assert.ok(script);
- const selections={};
- const make=(key)=>({dataset:{playersFilter:key},value:''});
- const fields=['nationality','position','ageMin','ageMax','foot'].map(make);
+ const keys=['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
+ const fields=keys.map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'text',checked:false}));
  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
  const pill={hidden:true,textContent:''},trigger={label:'',setAttribute(name,value){if(name==='aria-label')this.label=value}},title={textContent:''};
  const doc={
@@ -403,120 +405,84 @@ test('Players first paint selects URL filter values without changing table/view 
    if(selector==='[data-players-filter-active]')return [pill];
    if(selector==='[data-players-filter-open]')return [trigger];
    if(selector==='[data-players-filter-trigger-label]')return [title];
-   if(selector==='.app-players-tabs [data-players-view]'||selector==='.app-players-groups [data-players-group]')return [];
    return [];
   },
   querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};throw Error(selector)},
   createElement(){return {scope:'',textContent:''}}
  };
- runInNewContext(script,{document:doc,location:{search:'?nationality=ITA&position=ST&ageMin=18&ageMax=29&foot=left'},URLSearchParams});
- for(const field of fields)selections[field.dataset.playersFilter]=field.value;
- assert.deepEqual(selections,{nationality:'ITA',position:'ST',ageMin:'18',ageMax:'29',foot:'left'});
- assert.equal(pill.textContent,'5','five URL-applied filters are visible immediately');
- assert.equal(pill.hidden,false);
+ runInNewContext(script,{document:doc,location:{search:'?nationality=ITA%2CENG&nationalityScope=any&position=RW%2CST&positionScope=any&ageMin=18&ageMax=29&heightMin=170&heightMax=195&foot=left'},URLSearchParams});
+ const actual=Object.fromEntries(fields.map(f=>[f.dataset.playersFilter,f.type==='checkbox'?(f.checked?'any':''):f.value]));
+ assert.deepEqual(actual,{nationality:'ITA,ENG',nationalityScope:'any',position:'RW,ST',positionScope:'any',ageMin:'18',ageMax:'29',heightMin:'170',heightMax:'195',foot:'left'});
+ assert.equal(pill.textContent,'9','URL applies all fields before hydration');
  assert.equal(title.textContent,'Filters');
- assert.equal(trigger.label,'Filters: 5 active');
- assert.equal(row.cells.length,6,'overview geometry stays static');
+ assert.equal(trigger.label,'Filters: 9 active');
+ assert.equal(row.cells.length,6,'overview geometry remains stable');
 });
-
-
-test('Players Filters button opens an accessible drawer; selections stay draft-only until Apply',()=>{
+test('Players native top-layer drawer and portaled dropdowns preserve outside clicks and scrollbars',()=>{
  const html=read('players/index.html'),code=read('assets/players-directory.js'),css=read('assets/app.css');
  assert.match(html,/<button[^>]+data-players-filter-open[^>]+aria-haspopup="dialog"[^>]+aria-expanded="false"/);
- assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" popover="manual" aria-modal="false" aria-labelledby="players-filter-title" aria-describedby="players-filter-description">/);
- assert.match(html,/<form class="app-players-filter-form" data-players-filter-form novalidate>/);
- assert.match(html,/<button type="button" class="app-players-filter-close" data-players-filter-close/);
- assert.match(html,/<button type="submit" class="app-players-apply" data-players-apply>/);
- assert.match(html,/data-players-reset/);
- const filters=html.slice(html.indexOf('<dialog id="players-filter-dialog"'),html.indexOf('<div class="app-players-table-scroll"'));
- assert.equal((filters.match(/data-players-filter="(nationality|position|ageMin|ageMax|foot)"/g)||[]).length,5);
- assert.match(css,/\.app-players-filter-dialog::backdrop\{background:/);
- assert.match(css,/\.app-players-filter-dialog\{[^}]*width:min\(420px,100vw\)/);
- assert.match(css,/\.app-players-filter-dialog\+\.[a-z-]+\{margin-top:0\}/);
- assert.match(code,/filterDialog\.showPopover\(\)/,'use native top-layer popover without making the document inert');
- assert.match(code,/if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
- assert.match(code,/filterClose\?\.addEventListener\('click'/);
- assert.match(code,/filterTrigger\?\.focus\(\{preventScroll:true\}\)/,'closing returns focus to trigger');
- assert.match(code,/filterForm\?\.addEventListener\('submit',event=>\{event\.preventDefault\(\);applyFilters\(\)\}\)/);
- assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/,'changing a draft control must not fetch');
- assert.match(code,/if\(filterSignature\(nextFilters\)===filterSignature\(state\.filters\)\)\{closeFilterDialog\(\);return;\}/,'no GET when no filters changed');
- assert.match(code,/if\(changed\)load\(1\)/,'Reset causes at most one GET');
- assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/,'Back/Forward still restores applied query');
- assert.match(css,/@media\(max-width:620px\)/);
-});
-
-test('Players filter drawer is offset below the actual shell header, animates both ways, and honors reduced motion',()=>{
- const css=read('assets/app.css'),js=read('assets/players-directory.js');
- assert.match(css,/\.app-players-filter-dialog\{position:fixed;inset:var\(--players-filter-top,60px\) 0 0 auto/);
- assert.match(css,/height:calc\(100dvh - var\(--players-filter-top,60px\)\)/);
- assert.match(css,/\.app-players-filter-dialog::backdrop\{background:transparent;pointer-events:none\}/);
- assert.match(css,/@keyframes players-filter-slide-in\{from\{transform:translate3d\(100%,0,0\)\}/);
- assert.match(css,/@keyframes players-filter-slide-out\{from\{transform:translate3d\(0,0,0\)\}/);
- assert.match(css,/\.app-players-filter-dialog:popover-open\.is-closing\{animation:players-filter-slide-out/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^}]*animation:none!important/);
- assert.match(js,/document\.querySelector\('\.fa-shell-topbar'\)/);
- assert.match(js,/header\?\.getBoundingClientRect\(\)\.bottom\?\?60/);
- assert.match(js,/filterDialog\?\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
- assert.match(js,/syncDrawerTop\(\);[\s\S]*filterDialog\.showPopover\(\)/);
- assert.match(js,/filterDialog\?\.addEventListener\('animationend'/);
- assert.match(js,/document\.addEventListener\('keydown',event=>\{[\s\S]*event\.key!=='Escape'/);
- assert.match(js,/window\.addEventListener\('resize',\(\)=>\{[\s\S]*if\(drawerOpen\(\)\)\{syncDrawerTop\(\);closeDropdown\(openDropdown\);\}/);
-});
-test('Players nationality, position and foot share the site language-trigger dropdown patterns',()=>{
- const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
- const css=read('assets/app.css'),code=read('assets/players-directory.js');
- const panel=html.slice(html.indexOf('<dialog id="players-filter-dialog"'),html.indexOf('<div class="app-players-table-scroll"'));
- for(const key of ['nationality','position','foot']){
-  assert.ok(panel.includes('class="language-control app-players-filter-select" data-players-filter-select="'+key+'"'),key);
-  assert.ok(panel.includes('data-players-filter="'+key+'" tabindex="-1" aria-hidden="true" hidden'),key+' native state');
-  assert.ok(panel.includes('class="language-trigger app-players-filter-dropdown-trigger" role="combobox" aria-haspopup="listbox"'),key+' trigger');
-  assert.ok(panel.includes('role="listbox" aria-labelledby="players-filter-'+key+'-label" hidden'),key+' menu');
-  assert.ok(generator.includes('data-players-filter-select=\\\"'+key+'\\\"'),key+' generator');
- }
- assert.equal((panel.match(/class="language-control app-players-filter-select"/g)||[]).length,3);
- assert.equal((panel.match(/data-players-filter="(nationality|position|ageMin|ageMax|foot)"/g)||[]).length,5);
- assert.match(css,/\.app-players-filter-select \.language-trigger\{box-sizing:border-box;width:100%/);
- assert.match(css,/\.app-players-filter-select \.language-menu\{box-sizing:border-box/);
- assert.match(css,/\.app-players-filter-native\[hidden\]\{display:none!important\}/);
- assert.match(code,/function openDropdownMenu\(wrapper\)/);
- assert.match(code,/function chooseDropdown\(wrapper,index\)/);
- assert.match(code,/function closeDropdown\(wrapper,restoreFocus=false\)/);
- assert.match(code,/trigger\.setAttribute\('aria-activedescendant',options\[selected\]\.id\)/);
- assert.match(code,/if\(k==='Escape'&&!menu\.hidden\)\{event\.preventDefault\(\);event\.stopPropagation\(\);closeDropdown\(wrapper\);return;\}/);
- assert.match(code,/const next=k==='Home'\?0:k==='End'\?options\.length-1/);
- assert.match(code,/field\.value=options\[index\]\.dataset\.playersFilterOption/);
- assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
- assert.match(html,/for\(const select of document\.querySelectorAll\('\.app-players-filter-native'\)\)/);
-});
-
-
-test('Players drawer never blocks the underlying scrollbars or changes the shared shell',()=>{
- const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
  assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" popover="manual" aria-modal="false"/);
- assert.match(css,/\.app-players-filter-dialog:popover-open\{display:flex;flex-direction:column/);
+ assert.match(html,/<form class="app-players-filter-form" data-players-filter-form novalidate>/);
+ assert.match(html,/<button type="submit" class="app-players-apply" data-players-apply>/);
+ assert.match(css,/\.app-players-filter-dialog:popover-open\{display:flex;flex-direction:column;animation:players-filter-slide-in/);
  assert.match(css,/\.app-players-filter-dialog::backdrop\{background:transparent;pointer-events:none\}/);
  assert.match(css,/\.fa-shell-content-scroll\{[^}]*overflow-y:auto;scrollbar-gutter:stable/);
- assert.match(js,/filterDialog\.showPopover\(\)/);
- assert.match(js,/if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
- assert.doesNotMatch(js,/filterDialog\.showModal\(\)/,'modal dialogs make the rest of the page inert');
- assert.doesNotMatch(js,/document\.documentElement\.style\.overflow/,'do not mutate the shell scroll lock');
- assert.doesNotMatch(css,/html:has\(\.app-players-filter-dialog/,'do not change the root scrollbar gutter');
- assert.match(js,/document\.addEventListener\('pointerdown',event=>\{/);
- assert.match(js,/!filterDialog\.contains\(event\.target\)&&!filterTrigger\?\.contains\(event\.target\)/);
- assert.match(js,/closeFilterDialog\(false\)/,'outside click must not steal focus or cancel the original click');
- assert.match(js,/filterDialog\?\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
- assert.doesNotMatch(js,/document\.documentElement\.style\.setProperty\('--players-filter-top'/);
+ assert.match(code,/filterDialog\.showPopover\(\)/);
+ assert.match(code,/if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
+ assert.doesNotMatch(code,/filterDialog\.showModal\(\)/);
+ assert.doesNotMatch(code,/document\.documentElement\.style\.overflow/);
+ assert.match(code,/filterDialog\.append\(menu\)/);
+ assert.match(code,/if\(menu\.parentElement!==wrapper\)wrapper\.append\(menu\)/);
+ assert.match(code,/document\.addEventListener\('pointerdown',event=>\{/);
+ assert.match(code,/!filterDialog\.contains\(event\.target\)&&!filterTrigger\?\.contains\(event\.target\)/);
+ assert.match(code,/closeFilterDialog\(false\)/);
+ assert.match(code,/document\.querySelector\('\.fa-shell-topbar'\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
-test('Players menu portal prevents clipped or scrollbar-blocked option clicks',()=>{
- const css=read('assets/app.css'),js=read('assets/players-directory.js');
- assert.match(css,/\.app-players-filter-dialog>\.app-players-filter-menu\{position:absolute;inset:auto;z-index:100/);
- assert.match(js,/const dropdownCache=new Map\(dropdowns\.map\(wrapper=>\[wrapper,/);
- assert.match(js,/filterDialog\.append\(menu\)/,'menu is moved out of the scroll region while open');
- assert.match(js,/positionDropdown\(wrapper\)/);
- assert.match(js,/menu\.style\.maxHeight=Math\.floor\(height\)\+'px'/);
- assert.match(js,/if\(menu\.parentElement!==wrapper\)wrapper\.append\(menu\)/);
- assert.match(js,/if\(!openDropdown\.contains\(event\.target\)&&!menu\.contains\(event\.target\)\)closeDropdown\(openDropdown\)/,'portal clicks count as inside the dropdown');
- assert.match(js,/filterPanel\?\.addEventListener\('scroll',\(\)=>\{/);
- assert.match(js,/if\(openDropdown\)closeDropdown\(openDropdown\)/,'drawer scroll does not leave a menu over its scrollbar');
- assert.match(js,/function finishFilterClose\(\)\{[\s\S]*if\(drawerOpen\(\)\)filterDialog\.hidePopover\(\)/);
+test('Players nationality and positions use searchable multi-select with secondary scopes and keyboard activation',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),code=read('assets/players-directory.js');
+ const panel=html.slice(html.indexOf('<dialog id="players-filter-dialog"'),html.indexOf('<div class="app-players-table-scroll"'));
+ for(const key of ['nationality','position']){
+  assert.ok(panel.includes('class="app-players-filter-multi" data-players-filter="'+key+'"'),key);
+  assert.ok(panel.includes('data-players-filter-search="'+key+'"'),key+' searchable');
+  assert.ok(panel.includes('aria-multiselectable="true" aria-labelledby="players-filter-'+key+'-label"'),key);
+  assert.ok(panel.includes('data-players-filter="'+key+'Scope" value="any"'),key+' secondary scope');
+ }
+ assert.ok(panel.includes('data-players-filter="foot" tabindex="-1" aria-hidden="true" hidden'));
+ assert.equal((panel.match(/class="language-control app-players-filter-select"/g)||[]).length,3);
+ assert.equal((panel.match(/data-players-filter-option="(ALG|ENG|ITA|ST|LW|RW)"/g)||[]).length,6);
+ assert.match(css,/\.app-players-filter-menu \.language-option\[hidden\]\{display:none\}/);
+ assert.match(code,/function chooseDropdown\(wrapper,index\)/);
+ assert.match(code,/const codes=new Set\(field\.value\.split\(','\)\.filter\(Boolean\)\)/);
+ assert.match(code,/else if\(codes\.has\(chosen\)\)codes\.delete\(chosen\)/);
+ assert.match(code,/field\.value=\[\.\.\.codes\]\.sort\(\)\.join\(','\)/);
+ assert.match(code,/const search=menu\.querySelector\('\[data-players-filter-search\]'\)/);
+ assert.match(code,/normalize\('NFD'\)/);
+ assert.match(code,/if\(k==='Escape'&&!menu\.hidden\)/);
+ assert.match(code,/const visible=options\.filter\(option=>!option\.hidden\)/);
+ assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
+});
+test('Players parser validates safe multiple nationality/position values, secondary scopes and height ranges',async()=>{
+ const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
+ const query=parsePublicPlayerQuery('?nationality=ITA%2CENG&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=165&heightMax=195&ageMin=18&foot=left&page=3');
+ assert.deepEqual(query,{page:3,filters:{nationality:['ITA','ENG'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',ageMin:18,heightMin:165,heightMax:195,foot:'left'}});
+ assert.ok(isAllowedPublicPlayersPath('/api/players?nationality=ITA%2CENG&nationalityScope=any'));
+ for(const invalid of ['?nationalityScope=any','?positionScope=any','?nationality=ITA%2CITA','?nationality=ITA%2CXYZ','?position=ST%2CST','?position=ST%2CXX','?heightMin=90','?heightMax=251','?ageMin=30&ageMax=20','?heightMin=220&heightMax=190','?nationality=%49TA','?position=ST%2cRW','?nationality=ITA&nationality=ENG','?foot=up']){
+  assert.throws(()=>parsePublicPlayerQuery(invalid),{name:'TypeError'},invalid);
+  assert.equal(isAllowedPublicPlayersPath('/api/players'+invalid),false,invalid);
+ }
+ assert.deepEqual(parsePublicPlayerQuery('?nationality=ITA,ENG&position=ST,RW').filters,{nationality:['ITA','ENG'],position:['ST','RW']});
+});
+test('Players SQL count/page share identical secondary and multiple filters without weakening projection',()=>{
+ const sql=read('backend/src/public-players-read.ts'),types=read('backend/src/public-players-filters.d.mts'),integration=read('backend/tests/players-generation-runtime.test.ts');
+ assert.match(sql,/json_extract\(payload_json,'\$\.secondary_nationality'\) IN/);
+ assert.match(sql,/EXISTS \(SELECT 1 FROM json_each\(payload_json,'\$\.secondary_positions'\)/);
+ assert.match(sql,/const where=predicates\.join\(' AND '\)/);
+ assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players WHERE/);
+ assert.match(sql,/SELECT id,payload_json FROM generated_players WHERE/);
+ assert.match(sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
+ assert.match(sql,/json_extract\(payload_json,'\$\.height_cm'\)>=\?/);
+ assert.match(types,/nationality\?:string\[\]/);
+ assert.match(types,/positionScope\?:'any'/);
+ assert.match(integration,/public Players filters support multiselect and opt-in secondary matches across full generations/);
 });

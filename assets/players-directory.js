@@ -10,15 +10,20 @@
  });
 
 
- const filterKeys=['nationality','position','ageMin','ageMax','foot'];
+ const filterKeys=['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
+ const selectedCodes=(value,allowed)=>{
+  const codes=(value||'').split(',').filter(Boolean);
+  return codes.length&&new Set(codes).size===codes.length&&codes.every(code=>allowed.has(code))?codes.sort().join(','):'';
+ };
+ const integerValue=(value,min,max)=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)>=min&&Number(value)<=max?value:'';
  const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
  const ageValue=value=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)<=120?value:'';
  const filterLabels={
-  en:{button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
-  it:{button:'Filtri',active:'attivi',description:'Seleziona i filtri e premi Applica per aggiornare l\'elenco.',close:'Chiudi filtri',apply:'Applica filtri',ageRange:'Intervallo di età',title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
-  de:{button:'Filter',active:'aktiv',description:'Wähle Filter aus und klicke auf Anwenden, um die Liste zu aktualisieren.',close:'Filter schließen',apply:'Filter anwenden',ageRange:'Altersspanne',title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
-  es:{button:'Filtros',active:'activos',description:'Selecciona los filtros y pulsa Aplicar para actualizar la lista.',close:'Cerrar filtros',apply:'Aplicar filtros',ageRange:'Rango de edad',title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
-  fr:{button:'Filtres',active:'actifs',description:'Sélectionnez les filtres et appuyez sur Appliquer pour actualiser la liste.',close:'Fermer les filtres',apply:'Appliquer les filtres',ageRange:'Tranche d’âge',title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
+  en:{sections:["Nationality","Positions","Age","Height","Preferred foot"],multi:"Select multiple",picked:"selected",scopeN:"Include secondary nationality",scopeP:"Include secondary positions",search:"Search…",heightRange:"Height range",heights:["Min height (cm)","Max height (cm)"],stepMinus:"Decrease",stepPlus:"Increase",button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
+  it:{sections:["Nazionalità","Posizioni","Età","Altezza","Piede preferito"],multi:"Selezione multipla",picked:"selezionati",scopeN:"Includi nazionalità secondaria",scopeP:"Includi posizioni secondarie",search:"Cerca…",heightRange:"Intervallo di altezza",heights:["Altezza min. (cm)","Altezza max. (cm)"],stepMinus:"Diminuisci",stepPlus:"Aumenta",button:'Filtri',active:'attivi',description:'Seleziona i filtri e premi Applica per aggiornare l\'elenco.',close:'Chiudi filtri',apply:'Applica filtri',ageRange:'Intervallo di età',title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
+  de:{sections:["Nationalität","Positionen","Alter","Größe","Starker Fuß"],multi:"Mehrfachauswahl",picked:"ausgewählt",scopeN:"Auch zweite Nationalität",scopeP:"Auch Nebenpositionen",search:"Suchen…",heightRange:"Größenbereich",heights:["Mindestgröße (cm)","Höchstgröße (cm)"],stepMinus:"Verringern",stepPlus:"Erhöhen",button:'Filter',active:'aktiv',description:'Wähle Filter aus und klicke auf Anwenden, um die Liste zu aktualisieren.',close:'Filter schließen',apply:'Filter anwenden',ageRange:'Altersspanne',title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
+  es:{sections:["Nacionalidad","Posiciones","Edad","Altura","Pie preferido"],multi:"Selección múltiple",picked:"seleccionados",scopeN:"Incluir nacionalidad secundaria",scopeP:"Incluir posiciones secundarias",search:"Buscar…",heightRange:"Rango de altura",heights:["Altura mín. (cm)","Altura máx. (cm)"],stepMinus:"Reducir",stepPlus:"Aumentar",button:'Filtros',active:'activos',description:'Selecciona los filtros y pulsa Aplicar para actualizar la lista.',close:'Cerrar filtros',apply:'Aplicar filtros',ageRange:'Rango de edad',title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
+  fr:{sections:["Nationalité","Postes","Âge","Taille","Pied préféré"],multi:"Sélection multiple",picked:"sélectionnés",scopeN:"Inclure la nationalité secondaire",scopeP:"Inclure les postes secondaires",search:"Rechercher…",heightRange:"Plage de taille",heights:["Taille min. (cm)","Taille max. (cm)"],stepMinus:"Diminuer",stepPlus:"Augmenter",button:'Filtres',active:'actifs',description:'Sélectionnez les filtres et appuyez sur Appliquer pour actualiser la liste.',close:'Fermer les filtres',apply:'Appliquer les filtres',ageRange:'Tranche d’âge',title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
  };
  const homeNames={en:['England','Scotland','Wales'],it:['Inghilterra','Scozia','Galles'],de:['England','Schottland','Wales'],es:['Inglaterra','Escocia','Gales'],fr:['Angleterre','Écosse','Pays de Galles']};
  const filterLocale=()=>filterLabels[language()]||filterLabels.en;
@@ -49,16 +54,19 @@
  const locale=()=>labels[language()]||labels.en;
  const attributeName=key=>(attrLabels[language()]||attrLabels.en).split('|')[allAttrs.indexOf(key)]||key;
  function parseLocation(){
-  const p=new URLSearchParams(location.search);
-  const rawPage=Number(p.get('page')||'1');
+  const p=new URLSearchParams(location.search),rawPage=Number(p.get('page')||'1');
+  const nationality=selectedCodes(p.get('nationality'),new Set(Object.keys(flags)));
+  const position=selectedCodes(p.get('position'),positions);
   const filters={
-   nationality:Object.hasOwn(flags,p.get('nationality'))?p.get('nationality'):'',
-   position:positions.has(p.get('position'))?p.get('position'):'',
-   ageMin:ageValue(p.get('ageMin')),
-   ageMax:ageValue(p.get('ageMax')),
+   nationality,nationalityScope:nationality&&p.get('nationalityScope')==='any'?'any':'',
+   position,positionScope:position&&p.get('positionScope')==='any'?'any':'',
+   ageMin:integerValue(p.get('ageMin'),0,120),ageMax:integerValue(p.get('ageMax'),0,120),
+   heightMin:integerValue(p.get('heightMin'),100,250),heightMax:integerValue(p.get('heightMax'),100,250),
    foot:['left','right'].includes(p.get('foot'))?p.get('foot'):''
   };
-  if(filters.ageMin&&filters.ageMax&&Number(filters.ageMin)>Number(filters.ageMax)){filters.ageMin='';filters.ageMax='';}
+  for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax']]){
+   if(filters[lo]&&filters[hi]&&Number(filters[lo])>Number(filters[hi])){filters[lo]='';filters[hi]='';}
+  }
   return {
    view:p.get('view')==='attributes'?'attributes':'overview',
    group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical',
@@ -108,25 +116,59 @@
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
   }
+  const filterSections=[...document.querySelectorAll('[data-players-filter-section]')];
+  const scopeLabels=[...document.querySelectorAll('[data-players-scope-label]')];
+  const stepButtons=[...document.querySelectorAll('[data-players-step]')];
+  function selectedCountryName(country,countries){
+   const home=homeNames[language()]||homeNames.en;
+   return country==='ENG'?home[0]:country==='SCO'?home[1]:country==='WAL'?home[2]:countries?.of(flags[country].slice(0,2).toUpperCase())||country;
+  }
   function syncDropdown(field){
    const wrapper=field.closest('.app-players-filter-select');
    if(!wrapper)return;
-   const caption=wrapper.querySelector('[data-players-filter-value]');
-   if(caption)caption.textContent=field.selectedOptions[0]?.textContent||'';
-   for(const option of wrapper.querySelectorAll('[data-players-filter-option]')){
-    const selected=option.dataset.playersFilterOption===field.value;
-    option.setAttribute('aria-selected',String(selected));
-    const native=[...field.options].find(item=>item.value===option.dataset.playersFilterOption);
-    if(native)option.textContent=native.textContent;
+   const caption=wrapper.querySelector('[data-players-filter-value]'),t=filterLocale();
+   const menuOptions=dropdownCache.get(wrapper)?.options||[...wrapper.querySelectorAll('[data-players-filter-option]')];
+   if(field.classList.contains('app-players-filter-multi')){
+    const values=new Set(field.value.split(',').filter(Boolean));
+    if(caption)caption.textContent=values.size?values.size+' '+t.picked:t.all;
+    for(const option of menuOptions)option.setAttribute('aria-selected',String(option.dataset.playersFilterOption?values.has(option.dataset.playersFilterOption):values.size===0));
+   }else{
+    if(caption)caption.textContent=field.selectedOptions[0]?.textContent||t.all;
+    for(const option of menuOptions){
+     const selected=option.dataset.playersFilterOption===field.value;
+     option.setAttribute('aria-selected',String(selected));
+     const native=[...field.options].find(item=>item.value===option.dataset.playersFilterOption);
+     const name=option.querySelector('[data-players-filter-option-label]');
+     if(native&&name)name.textContent=native.textContent;
+    }
+   }
+  }
+  function syncSectionCounts(){
+   const t=filterLocale();
+   const draft=drawerOpen()?Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value])):state.filters;
+   const counts={
+    nationality:draft.nationality?draft.nationality.split(',').length:0,
+    position:draft.position?draft.position.split(',').length:0,
+    age:Number(!!draft.ageMin)+Number(!!draft.ageMax),
+    height:Number(!!draft.heightMin)+Number(!!draft.heightMax),
+    foot:Number(!!draft.foot)
+   };
+   for(const section of filterSections){
+    const key=section.dataset.playersFilterSection;
+    const index=['nationality','position','age','height','foot'].indexOf(key);
+    const label=section.querySelector('[data-players-section-label]');
+    if(label)label.textContent=t.sections[index];
+    const count=section.querySelector('[data-players-section-count]');
+    if(count){count.hidden=!counts[key];count.textContent=counts[key]?String(counts[key]):'';}
    }
   }
   function syncFilterControls(){
    const t=filterLocale(),main=locale();
    filterPanel?.setAttribute('aria-label',t.title);
    if(filterTitle)filterTitle.textContent=t.title;
-   if(filterDescription)filterDescription.textContent=t.description;
    filterClose?.setAttribute('aria-label',t.close);
    filterAgeRange?.setAttribute('aria-label',t.ageRange);
+   document.querySelector('[data-players-height-range]')?.setAttribute('aria-label',t.heightRange);
    if(filterApply)filterApply.textContent=t.apply;
    if(filterTriggerLabel)filterTriggerLabel.textContent=t.button;
    const selectedCount=filterKeys.filter(key=>state.filters?.[key]).length;
@@ -134,23 +176,42 @@
    filterTrigger?.setAttribute('aria-label',t.button+(selectedCount?': '+selectedCount+' '+t.active:''));
    let countries;
    try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
+   const labelKeys=['nationality','position','ageMin','ageMax','heightMin','heightMax','foot'];
+   const labels=[t.multi,t.multi,t.names[2],t.names[3],...t.heights,t.names[4]];
    for(const field of filterFields){
-    const key=field.dataset.playersFilter;
-    const selected=state.filters?.[key]||'';
-    if(field.value!==selected)field.value=selected;
+    const key=field.dataset.playersFilter,selected=state.filters?.[key]||'';
+    if(field.type==='checkbox')field.checked=selected==='any';
+    else if(field.value!==selected)field.value=selected;
     const label=field.closest('.app-players-filter-control')?.querySelector('[data-players-filter-label]');
-    if(label)label.textContent=t.names[filterKeys.indexOf(key)];
+    if(label)label.textContent=labels[labelKeys.indexOf(key)]||'';
     if(field.tagName==='SELECT'){
      field.options[0].textContent=t.all;
      if(key==='foot'){field.options[1].textContent=main.left;field.options[2].textContent=main.right;}
-     if(key==='nationality')for(const option of [...field.options].slice(1)){
-      const country=option.value,home=homeNames[language()]||homeNames.en;
-      const name=country==='ENG'?home[0]:country==='SCO'?home[1]:country==='WAL'?home[2]:countries?.of(flags[country].slice(0,2).toUpperCase());
-      option.textContent=name||country;
-     }
-    }else field.placeholder=t.all;
-    if(field.tagName==='SELECT')syncDropdown(field);
+    }else if(field.type==='number')field.placeholder=t.all;
    }
+   for(const wrapper of dropdowns){
+    const key=wrapper.dataset.playersFilterSelect;
+    const {field,menu,options}=dropdownCache.get(wrapper);
+    if(key==='nationality')for(const option of options){
+     const c=option.dataset.playersFilterOption;
+     const label=option.querySelector('[data-players-filter-option-label]');
+     if(label)label.textContent=c?selectedCountryName(c,countries):t.all;
+    }
+    if(key==='position'){
+     const all=options.find(option=>option.dataset.playersFilterOption==='');
+     if(all?.querySelector('[data-players-filter-option-label]'))all.querySelector('[data-players-filter-option-label]').textContent=t.all;
+    }
+    const search=menu.querySelector('[data-players-filter-search]');
+    if(search){search.placeholder=t.search;search.setAttribute('aria-label',t.search+' '+t.sections[key==='nationality'?0:1]);}
+    syncDropdown(field);
+   }
+   for(const scope of scopeLabels)scope.textContent=scope.dataset.playersScopeLabel==='nationality'?t.scopeN:t.scopeP;
+   for(const button of stepButtons){
+    const key=button.dataset.playersStep,field=filterFields.find(f=>f.dataset.playersFilter===key);
+    const label=labels[labelKeys.indexOf(key)]||key;
+    button.setAttribute('aria-label',(button.dataset.direction==='-1'?t.stepMinus:t.stepPlus)+' '+label);
+   }
+   syncSectionCounts();
    if(reset){reset.textContent=t.reset;reset.disabled=false;}
   }
   function syncControls(){
@@ -264,10 +325,12 @@
   function highlightDropdown(wrapper,index){
    const {trigger,menu,options}=dropdownParts(wrapper);
    if(!options.length)return;
-   const selected=(index+options.length)%options.length;
-   options.forEach((option,i)=>{if(i===selected)option.dataset.active='true';else delete option.dataset.active});
-   trigger.setAttribute('aria-activedescendant',options[selected].id);
-   if(!menu.hidden)options[selected].scrollIntoView?.({block:'nearest'});
+   const visible=options.filter(option=>!option.hidden);
+   if(!visible.length)return;
+   const active=((index%visible.length)+visible.length)%visible.length;
+   options.forEach(option=>{if(option===visible[active])option.dataset.active='true';else delete option.dataset.active});
+   trigger.setAttribute('aria-activedescendant',visible[active].id);
+   if(!menu.hidden)visible[active].scrollIntoView?.({block:'nearest'});
   }
   function closeDropdown(wrapper,restoreFocus=false){
    if(!wrapper)return;
@@ -284,19 +347,33 @@
   function openDropdownMenu(wrapper){
    if(openDropdown&&openDropdown!==wrapper)closeDropdown(openDropdown);
    const {field,trigger,menu,options}=dropdownParts(wrapper);
+   const search=menu.querySelector('[data-players-filter-search]');
+   if(search){search.value='';options.forEach(option=>option.hidden=false);}
    openDropdown=wrapper;
    filterDialog.append(menu);
    menu.hidden=false;
    positionDropdown(wrapper);
    trigger.setAttribute('aria-expanded','true');
-   const current=options.findIndex(option=>option.dataset.playersFilterOption===field.value);
+   const primary=field.value.split(',')[0]||'';
+   const current=options.filter(option=>!option.hidden).findIndex(option=>option.dataset.playersFilterOption===primary);
    highlightDropdown(wrapper,Math.max(0,current));
   }
   function chooseDropdown(wrapper,index){
    const {field,options}=dropdownParts(wrapper);
-   if(!options[index])return;
-   field.value=options[index].dataset.playersFilterOption;
-   syncDropdown(field);closeDropdown(wrapper,true);
+   if(!options[index]||options[index].hidden)return;
+   const chosen=options[index].dataset.playersFilterOption;
+   if(field.classList.contains('app-players-filter-multi')){
+    const codes=new Set(field.value.split(',').filter(Boolean));
+    if(!chosen)codes.clear();
+    else if(codes.has(chosen))codes.delete(chosen);
+    else codes.add(chosen);
+    field.value=[...codes].sort().join(',');
+    syncDropdown(field);
+    syncSectionCounts();
+    highlightDropdown(wrapper,Math.max(0,options.filter(o=>!o.hidden).indexOf(options[index])));
+   }else{
+    field.value=chosen;syncDropdown(field);syncSectionCounts();closeDropdown(wrapper,true);
+   }
   }
   for(const wrapper of dropdowns){
    const {trigger,menu,options}=dropdownParts(wrapper);
@@ -310,15 +387,31 @@
     if(!['ArrowDown','ArrowUp','Home','End','Enter',' '].includes(k))return;
     event.preventDefault();
     if(menu.hidden){openDropdownMenu(wrapper);if(k==='Enter'||k===' ')return;}
-    const active=options.findIndex(option=>option.id===trigger.getAttribute('aria-activedescendant'));
-    if(k==='Enter'||k===' '){chooseDropdown(wrapper,Math.max(0,active));return;}
-    const next=k==='Home'?0:k==='End'?options.length-1:active+(k==='ArrowUp'?-1:1);
+    const visible=options.filter(option=>!option.hidden);
+    const active=visible.findIndex(option=>option.id===trigger.getAttribute('aria-activedescendant'));
+    if(k==='Enter'||k===' '){chooseDropdown(wrapper,options.indexOf(visible[Math.max(0,active)]));return;}
+    const next=k==='Home'?0:k==='End'?visible.length-1:active+(k==='ArrowUp'?-1:1);
     highlightDropdown(wrapper,next);
    });
    menu.addEventListener('click',event=>{
     const option=event.target.closest('[data-players-filter-option]');
     if(option&&menu.contains(option))chooseDropdown(wrapper,options.indexOf(option));
    });
+   const search=menu.querySelector('[data-players-filter-search]');
+   if(search){
+    search.addEventListener('input',()=>{
+     const needle=search.value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+     options.forEach(option=>{
+      const code=option.dataset.playersFilterOption,label=option.querySelector('[data-players-filter-option-label]')?.textContent||'';
+      option.hidden=!!needle&&!!code&&!((label+' '+code).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(needle));
+     });
+     highlightDropdown(wrapper,0);
+    });
+    search.addEventListener('keydown',event=>{
+     if(event.key==='Enter'){event.preventDefault();const active=options.findIndex(option=>option.id===trigger.getAttribute('aria-activedescendant'));if(active>=0)chooseDropdown(wrapper,active);}
+     if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();const visible=options.filter(option=>!option.hidden);const active=visible.findIndex(option=>option.id===trigger.getAttribute('aria-activedescendant'));highlightDropdown(wrapper,active+(event.key==='ArrowDown'?1:-1));}
+    });
+   }
   }
   filterDialog?.addEventListener('click',event=>{
    if(!openDropdown)return;
@@ -330,28 +423,42 @@
    if(openDropdown)closeDropdown(openDropdown);
   },{passive:true});
   function applyFilters(){
-   const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.value]));
+   const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value]));
    for(const field of filterFields){
     field.setCustomValidity('');
     if(!field.checkValidity()){field.reportValidity();return;}
    }
-   // Native number fields can retain forms such as 05 or 2e1; normalize to the API's canonical decimal form.
-   for(const key of ['ageMin','ageMax'])if(fields[key]!=='')fields[key]=String(Number(fields[key]));
-   if(fields.ageMin&&fields.ageMax&&Number(fields.ageMin)>Number(fields.ageMax)){
-    const field=filterFields.find(f=>f.dataset.playersFilter==='ageMax');
-    field.setCustomValidity(filterLocale().range);field.reportValidity();return;
+   for(const key of ['ageMin','ageMax','heightMin','heightMax'])if(fields[key]!=='')fields[key]=String(Number(fields[key]));
+   for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax']]){
+    if(fields[lo]&&fields[hi]&&Number(fields[lo])>Number(fields[hi])){
+     const field=filterFields.find(f=>f.dataset.playersFilter===hi);
+     field.setCustomValidity(filterLocale().range);field.reportValidity();return;
+    }
+   }
+   for(const key of ['nationality','position']){
+    if(!fields[key])fields[key+'Scope']='';
    }
    const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
    if(filterSignature(nextFilters)===filterSignature(state.filters)){closeFilterDialog();return;}
    state.filters=nextFilters;state.page=1;syncUrl();syncControls();closeFilterDialog();load(1);
   }
   // Draft values remain inside the modal until Apply; never fetch on individual changes.
-  for(const field of filterFields)field.addEventListener('input',()=>field.setCustomValidity(''));
+  for(const field of filterFields)field.addEventListener('input',()=>{field.setCustomValidity('');syncSectionCounts();});
+  for(const button of stepButtons)button.addEventListener('click',()=>{
+   const field=filterFields.find(f=>f.dataset.playersFilter===button.dataset.playersStep);
+   if(!field)return;
+   const delta=Number(button.dataset.direction),base=Number(field.dataset.stepBase);
+   const min=Number(field.min),max=Number(field.max);
+   const current=field.value===''?base:Number(field.value);
+   field.value=String(Math.max(min,Math.min(max,current+delta)));
+   field.setCustomValidity('');
+   syncSectionCounts();
+  });
   filterForm?.addEventListener('submit',event=>{event.preventDefault();applyFilters()});
   reset?.addEventListener('click',()=>{
    const changed=filterKeys.some(key=>state.filters?.[key])||state.page!==1;
    state.filters=Object.fromEntries(filterKeys.map(key=>[key,'']));
-   for(const field of filterFields)field.setCustomValidity('');
+   for(const field of filterFields){field.setCustomValidity('');if(field.type==='checkbox')field.checked=false;}
    state.page=1;syncUrl();syncControls();closeFilterDialog();
    if(changed)load(1);
   });

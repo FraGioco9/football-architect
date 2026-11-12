@@ -174,3 +174,56 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const post=await worker.fetch(new Request(origin+'/api/players',{method:'POST'}),service);
  expect(post.status).toBe(405);
 });
+
+
+it('public Players filters support multiselect and opt-in secondary matches across full generations',async()=>{
+ const preview=await createPreview({count:51,seed:'multiselect-secondary-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ // Controlled stored fixtures: only the earliest ID has ENG and RW as secondary values.
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.secondary_nationality',NULL,'$.secondary_positions',json('[]'))").run();
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.secondary_nationality','ENG','$.secondary_positions',json('[\"RW\",\"LW\"]')) WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const primaryN=await get('?nationality=ENG');
+ expect(primaryN).toMatchObject({status:200,data:{count:0,players:[]}});
+ const anyN=await get('?nationality=ENG&nationalityScope=any');
+ expect(anyN).toMatchObject({status:200,data:{count:1,page:1,totalPages:1}});
+ expect(anyN.data.players[0].id).toBe(first!.id);
+ const primaryP=await get('?position=RW');
+ expect(primaryP).toMatchObject({status:200,data:{count:0}});
+ const anyP=await get('?position=RW&positionScope=any');
+ expect(anyP).toMatchObject({status:200,data:{count:1}});
+ expect(anyP.data.players[0].id).toBe(first!.id);
+ const combined=await get('?nationality=ENG&nationalityScope=any&position=LW&positionScope=any');
+ expect(combined).toMatchObject({status:200,data:{count:1}});
+ expect(combined.data.players[0].id).toBe(first!.id);
+ const noCrossMatch=await get('?nationality=ENG&position=RW&positionScope=any');
+ expect(noCrossMatch).toMatchObject({status:200,data:{count:0}});
+ const twoNationalities=await get('?nationality=ITA%2CENG&page=2');
+ expect(twoNationalities).toMatchObject({status:200,data:{count:51,page:2,totalPages:2}});
+ expect(twoNationalities.data.players).toHaveLength(1);
+ const twoPositions=await get('?position=ST%2CRW&positionScope=any');
+ expect(twoPositions).toMatchObject({status:200,data:{count:51,page:1,totalPages:2}});
+ const heights=await get('?heightMin=100&heightMax=250');
+ expect(heights).toMatchObject({status:200,data:{count:51,page:1,totalPages:2}});
+ const tall=await get('?heightMin=250');
+ expect(tall).toMatchObject({status:200,data:{count:0}});
+ for(const query of [
+  '?nationalityScope=any','?positionScope=any',
+  '?nationality=ITA%2CITA','?position=ST%2CST',
+  '?nationality=ITA%2CXYZ','?position=RW%2CXX',
+  '?nationality=%49TA','?nationality=ITA%2cENG',
+  '?heightMin=99','?heightMax=251','?heightMin=200&heightMax=190',
+  '?nationality=ENG&nationalityScope=primary','?position=RW&positionScope=secondary',
+  '?nationality=ITA&nationality=ENG'
+ ]){
+  const invalid=await get(query);
+  expect(invalid.status,query).toBe(422);
+  expect(invalid.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+});
