@@ -274,6 +274,49 @@ try{
    await league.click();await page.waitForURL("**/competitions/it-1/standings**");
   });
  }
+
+ // 404 regression: real HTTP error and centered app shell on responsive viewports.
+ for(const sample of [
+  {width:320,height:700,locale:'it',theme:'light'},
+  {width:390,height:844,locale:'de',theme:'dark'},
+  {width:768,height:900,locale:'fr',theme:'light'},
+  {width:1440,height:900,locale:'en',theme:'dark'}
+ ]){
+  const context=await browser.newContext({viewport:{width:sample.width,height:sample.height}});
+  await context.addInitScript(({locale,theme})=>{
+   localStorage.setItem('football-architect:language',locale);
+   localStorage.setItem('football-architect:theme',theme);
+  },sample);
+  try{
+   const page=await context.newPage();
+   const response=await page.goto('http://app.localhost:2000/not-a-404-route?lang='+sample.locale,{waitUntil:'domcontentloaded',timeout:30000});
+   assert.equal(response?.status(),404,'404 response '+sample.width);
+   const result=await page.evaluate(()=>{
+    const main=document.querySelector('.fa404-main');
+    const parts=['.fa404-code','#fa404-title','#fa404-description','.fa404-action']
+      .map(selector=>document.querySelector(selector)?.getBoundingClientRect());
+    if(!main||parts.some(rect=>!rect))return null;
+    const area=main.getBoundingClientRect();
+    const top=Math.min(...parts.map(rect=>rect.top)),bottom=Math.max(...parts.map(rect=>rect.bottom));
+    return {locale:document.documentElement.lang,theme:document.documentElement.dataset.theme,
+      shell:!!document.querySelector('.fa-shell-sidebar')&&!!document.querySelector('.fa-shell-topbar')&&!!document.querySelector('.app-footer'),
+      links:[...main.querySelectorAll('a[href]')].map(el=>el.getAttribute('href')),
+      x:parts.map(rect=>Math.abs(rect.left+rect.width/2-(area.left+area.width/2))),
+      y:Math.abs((top+bottom)/2-(area.top+area.height/2)),
+      fits:bottom-top<=area.height,
+      overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(result,'404 content must exist');
+   assert.equal(result.locale,sample.locale);
+   assert.equal(result.theme,sample.theme);
+   assert.equal(result.shell,true);
+   assert.deepEqual(result.links,['/dashboard']);
+   assert.ok(result.x.every(offset=>offset<5),'404 horizontal centering '+sample.width);
+   if(result.fits)assert.ok(result.y<5,'404 vertical centering '+sample.width);
+   assert.ok(result.overflow<=2,'404 horizontal overflow '+sample.width);
+   checks.push({route:'/not-a-404-route',width:sample.width,status:404,centered:true});
+  }finally{await context.close()}
+ }
 }finally{await browser.close()}
 mkdirSync("int24-browser-artifacts",{recursive:true});
 writeFileSync("int24-browser-artifacts/fe-02-"+engine+"-geometry.json",JSON.stringify({engine,checks},null,2));
