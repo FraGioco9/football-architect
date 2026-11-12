@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {createRequire} from 'node:module';
 import {renderSidebar} from '../tools/render-sidebar.mjs';
 test('shared sidebar renders Profile directly below Settings',()=>{
  const template=readFileSync(new URL('../templates/app-page.html',import.meta.url),'utf8').replace('@@FA_LINE_044@@','<a id="app-nav-settings" href="/settings">').replace('@@FA_WORLD_LINK@@','<a id="app-nav-divisions" href="/competitions">');
@@ -41,4 +42,30 @@ test('profile can load the shared dropdown binder without the competition model'
  const window={};
  runInNewContext(script,{window,document:{querySelector:()=>({})}});
  assert.equal(typeof window.faBindCompetitionMenu,'function');
+});
+
+test('public pages reuse the Admin permission snapshot across full route navigations, not a second 401',()=>{
+ const require=createRequire(import.meta.url);
+ const {publicPermissionsCache}=require('../assets/profile-navigation.js');
+ const data=new Map();
+ const storage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value),removeItem:key=>data.delete(key)};
+ const page=type=>({sessionStorage:storage,performance:{getEntriesByType:()=>[{type}]}});
+ const first=publicPermissionsCache(page('navigate'));
+ assert.equal(first.read(),null);
+ first.write([]);
+ assert.deepEqual(publicPermissionsCache(page('navigate')).read(),[]);
+ first.write(['admin.access','admin.world.read']);
+ assert.deepEqual(publicPermissionsCache(page('navigate')).read(),['admin.access','admin.world.read']);
+ assert.equal(publicPermissionsCache(page('reload')).read(),null);
+});
+test('public sidebar cannot treat malformed cached values as Admin authorization',()=>{
+ const require=createRequire(import.meta.url);
+ const {publicPermissionsCache}=require('../assets/profile-navigation.js');
+ const data=new Map([['fa:admin:permissions:v1',JSON.stringify({version:1,permissions:['<script>']})]]);
+ const storage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value),removeItem:key=>data.delete(key)};
+ const cache=publicPermissionsCache({sessionStorage:storage,performance:{getEntriesByType:()=>[{type:'navigate'}]}});
+ assert.equal(cache.read(),null);
+ assert.equal(data.has('fa:admin:permissions:v1'),false);
+ const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
+ assert.doesNotMatch(nav,/pageshow[^\\n]*check\\(/);
 });
