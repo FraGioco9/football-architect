@@ -1,6 +1,6 @@
 # Football Architect — 404 concept for owner review
 
-**Status: DESIGN PROPOSAL ONLY. Not implemented, tested in a browser or published.** Related: issue #485, issue #493, Draft/HOLD PR #500.
+**Status: owner-approved design, implemented in Draft/HOLD only. NOT merged or deployed.** Related: issue #485, issue #493, Draft/HOLD PR #500.
 
 ## Layout
 
@@ -32,7 +32,7 @@ Content width around 680px, aligned to existing page typography. Reuse `assets/t
 
 Use existing EN default and EN/DE/ES/FR/IT preference handling. Localized text and language control must not require authentication.
 
-## Proposed HTTP/security contract — not implemented
+## Implemented HTTP/security contract (pending exact-head test acceptance)
 
 - Unknown **document GET**: actual HTTP **404**, with localized HTML; **HEAD**: 404 and no body. Never 200 with merely a visible "404" label.
 - Missing JS/CSS/image/JSON/API: preserve 404 and correct content-type semantics; never return successful HTML as script/data. Keep unsafe paths **403** and unsupported methods **405**.
@@ -43,10 +43,11 @@ Use existing EN default and EN/DE/ES/FR/IT preference handling. Localized text a
 
 ## Review gates
 
-- [ ] Owner approves minimal header and layout (vs full app sidebar). **The sole link destination `/dashboard` is owner-specified**, so do not add Home, Competitions or Back links.
-- [ ] Owner approves wording in five languages.
-- [ ] Owner approves Dark/Light, 320/390/768/1440 and keyboard behavior.
-- [ ] Owner approves HTTP 404/HEAD and asset/API/Admin permission separation.
-- [ ] After approval: implement under Draft/HOLD; run Chromium/WebKit and exact-head CI. Merge and Preview/Production deploy require separate authorization.
+- [x] Owner approved minimal header and layout (vs full app sidebar). **The sole link destination `/dashboard` is owner-specified**, so do not add Home, Competitions or Back links.
+- [x] Owner approved the proposed experience and wording in five languages.
+- [x] Owner approved implementing Dark/Light, 320/390/768/1440 and keyboard behavior; QA still pending.
+- [x] Owner approved implementation of HTTP 404/HEAD and asset/API/Admin permission separation; CI acceptance still pending.
+- [x] Implement under Draft/HOLD with HTTP, Worker, and Chromium regression tests; CI pending.
+- [ ] Verify exact-head Site/Browser/Admin/FULL, WebKit/iPhone Safari, and live Preview read-only after separate deploy authorization. Merge and deployment remain separate approvals.
 
-**This file is not an implemented 404 page.**
+**Implementation in this PR:** `404.html` is allowlisted in the guarded public artifact, local DEV serves HTTP 404 for missing HTML documents (HEAD empty), and the Cloudflare Preview Worker serves the staged 404 body only for missing document navigation while preserving error status. The page has one and only one anchor to `/dashboard`, no private shell, no automatic navigation, uses existing theme storage and the five-language preference. Chromium sample, local HTTP tests and Worker binding tests are committed; exact-head CI and physical Safari review remain required. **No merge or deployment authorization is implied.**

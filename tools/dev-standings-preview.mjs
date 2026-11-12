@@ -109,6 +109,29 @@ function allowedHost(value, subdomains) {
   const address = value.slice(0, -(String(PORT).length + 1));
   return isLoopback(address) || (!subdomains && LAN_ENABLED && isPrivateIPv4(address));
 }
+// Serve the public 404 document only for missing HTML navigations. Asset,
+// API, unsafe-path, forbidden and method-denied responses keep their status/type.
+function isMissingDocumentRequest(req,raw){
+  if(!['GET','HEAD'].includes(req.method)||!raw?.startsWith('/')||
+    raw.startsWith('//')||raw.includes('%')||raw.includes('\\')||
+    /\.(?!html(?:$|\/))[a-z0-9]+\/?$/i.test(raw)||
+    /^\/(?:assets|api|__fa_dev__|__fa_match_engine__|dev|backend|tools|tests|docs|\.git|\.github)(?:\/|$)/.test(raw))
+    return false;
+  const accept=req.headers.accept||'';
+  return !accept||accept.includes('text/html')||accept.includes('*/*');
+}
+async function respondMissingDocument(req,res,root,raw){
+  if(!isMissingDocumentRequest(req,raw))return reject(res,404);
+  try {
+    if(!isAllowlistedPublicPath('404.html'))return reject(res,404);
+    const html=await safeFile(root,'404.html');
+    res.writeHead(404,{'Content-Type':'text/html; charset=utf-8',
+      'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow',
+      'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff',
+      'X-Frame-Options':'DENY'});
+    res.end(req.method==='HEAD'?undefined:html);
+  }catch{reject(res,404)}
+}
 function reject(res, status = 404) {
   res.writeHead(status, {
     "Content-Type": "text/plain; charset=utf-8",
@@ -253,6 +276,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
+      if(raw==='/404.html')return respondMissingDocument(req,res,root,raw);
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
@@ -262,10 +286,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       } else {
         const appHost = subdomains && req.headers.host === "app.localhost:2000";
         const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
-        if (!isAllowlistedPublicPath(file)) return reject(res, 404);
+        if (!isAllowlistedPublicPath(file)) return respondMissingDocument(req,res,root,raw);
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
-        if (!type) return reject(res, 404);
+        if (!type) return respondMissingDocument(req,res,root,raw);
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
@@ -352,6 +376,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       });
       res.end(req.method === "HEAD" ? undefined : body);
     } catch {
+      // File lookup errors are 404, but a document navigation may show the
+      // approved page. Do not expose filesystem errors, APIs or private paths.
+      const raw=req.url?.split('?')[0]??'';
+      if(isMissingDocumentRequest(req,raw))return respondMissingDocument(req,res,root,raw);
       reject(res); // Fail closed: never serve a partial or unchecked artifact.
     }
   });

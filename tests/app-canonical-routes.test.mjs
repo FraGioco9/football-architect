@@ -118,3 +118,45 @@ test('ROUTING-08: real loopback HTTP matrix, canonical redirects, invalid IDs an
   assert.equal((await get('/assets/a%2fb')).status,403);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('ROUTING-08: localized 404 is a real HTTP error, with one Dashboard link and no asset masking',async()=>{
+ const page=read('404.html');
+ const {isAllowlistedPublicPath,planPublicFiles}=await import('../tools/publication-guard.mjs');
+ assert.ok(isAllowlistedPublicPath('404.html'));
+ assert.ok(planPublicFiles().includes('404.html'));
+ assert.deepEqual([...page.matchAll(/<a\\b[^>]*href="([^"]+)"/g)].map(m=>m[1]),['/dashboard']);
+ for(const lang of ['en','de','es','fr','it'])assert.ok(page.includes('data-fa404-locale="'+lang+'"'));
+ assert.ok(page.includes('football-architect:language'));
+ const server=createPreviewServer({devPreview:false});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=(path,method='GET',accept='text/html')=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,method,
+   headers:{host:'127.0.0.1:2000',accept}},res=>{
+   const parts=[];res.on('data',part=>parts.push(part));
+   res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body:Buffer.concat(parts).toString()}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  for(const path of ['/a-missing-page','/a-missing-page?lang=it',
+    '/clubs/it/41/overview','/competitions/int-2/overview','/404.html']){
+   const result=await get(path);
+   assert.equal(result.status,404,path);
+   assert.match(result.headers['content-type'],/^text\/html;/,path);
+   assert.match(result.body,/href="\/dashboard"/,path);
+   assert.equal([...result.body.matchAll(/<a\\b[^>]*href="([^"]+)"/g)].length,1);
+   assert.equal(result.headers.location,undefined,'no automatic redirect');
+  }
+  const head=await get('/a-missing-page','HEAD');
+  assert.equal(head.status,404);assert.equal(head.body,'');
+  const asset=await get('/assets/missing.js','GET','*/*');
+  assert.equal(asset.status,404);assert.match(asset.headers['content-type'],/^text\/plain/);
+  assert.doesNotMatch(asset.body,/<html/);
+  const json=await get('/a-missing-page','GET','application/json');
+  assert.equal(json.status,404);assert.match(json.headers['content-type'],/^text\/plain/);
+  const unsafe=await get('/assets/a%2fb');
+  assert.equal(unsafe.status,403);assert.doesNotMatch(unsafe.body,/Page not found/);
+  const method=await get('/a-missing-page','POST');
+  assert.equal(method.status,405);assert.doesNotMatch(method.body,/Page not found/);
+  assert.equal((await get('/dashboard')).status,200);
+ }finally{await new Promise(resolve=>server.close(resolve))}
+});

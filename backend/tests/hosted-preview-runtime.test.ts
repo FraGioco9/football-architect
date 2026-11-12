@@ -48,3 +48,38 @@ it('rejects unsafe paths, non-Preview host/config and writes; supports HEAD with
  expect((await call('/account/login',{}, {...config,PLAYER_ORIGIN:'https://other.invalid'})).status).toBe(503);
  expect(await (await call('/account/login',{method:'HEAD'})).text()).toBe('');
 });
+
+it('ROUTING-08: real 404 HTML only for missing documents and HEAD, never for assets or APIs',async()=>{
+ const lookedUp:string[]=[];
+ const env:PreviewEnv={...config,ASSETS:{fetch:async input=>{
+  const path=new URL(new Request(input).url).pathname;
+  lookedUp.push(path);
+  if(path==='/404.html')return new Response('<!doctype html><a href="/dashboard">Go to Dashboard</a>',
+   {status:200,headers:{'Content-Type':'text/html','Set-Cookie':'untrusted=1'}});
+  return new Response('Not Found',{status:404,headers:{'Content-Type':'text/plain'}});
+ }}};
+ const page=await call('/does-not-exist?lang=it',{headers:{Accept:'text/html'}},env);
+ expect(page.status).toBe(404);
+ expect(page.headers.get('content-type')).toContain('text/html');
+ expect(page.headers.get('cache-control')).toContain('no-store');
+ expect(page.headers.get('set-cookie')).toBeNull();
+ expect(page.headers.get('location')).toBeNull();
+ expect(await page.text()).toContain('href="/dashboard"');
+ expect(lookedUp.slice(-2)).toEqual(['/does-not-exist/index.html','/404.html']);
+ const head=await call('/does-not-exist',{method:'HEAD',headers:{Accept:'text/html'}},env);
+ expect(head.status).toBe(404);expect(await head.text()).toBe('');
+ expect(lookedUp.slice(-2)).toEqual(['/does-not-exist/index.html','/404.html']);
+ const direct=await call('/404.html',{headers:{Accept:'text/html'}},env);
+ expect(direct.status).toBe(404);
+ expect(await direct.text()).toContain('href="/dashboard"');
+ const asset=await call('/assets/missing.js',{headers:{Accept:'*/*'}},env);
+ expect(asset.status).toBe(404);
+ expect(asset.headers.get('content-type')).toContain('text/plain');
+ expect(await asset.text()).toBe('Not Found');
+ expect(lookedUp.at(-1)).toBe('/assets/missing.js');
+ const json=await call('/does-not-exist',{headers:{Accept:'application/json'}},env);
+ expect(json.status).toBe(404);expect(json.headers.get('content-type')).toContain('text/plain');
+ expect(lookedUp.at(-1)).toBe('/does-not-exist/index.html');
+ expect((await call('/assets/a%2fb',{headers:{Accept:'text/html'}},env)).status).toBe(403);
+ expect((await call('/does-not-exist',{method:'POST'},env)).status).toBe(405);
+});

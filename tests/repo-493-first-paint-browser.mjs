@@ -413,6 +413,49 @@ try{
   record(harness,390,'real-dom-failed-svg','PASS',failed);
  }catch(error){record(harness,390,'real-dom-crest-lifecycle','FAIL',String(error));throw error;}
  finally{releaseCrest();await crestPage.close();}
+ // ROUTING-08: real browser verifies the actual 404 response, locale/theming,
+ // responsive geometry and the sole Dashboard navigation. This is sampled QA.
+ for(const [width,language,theme] of [[320,'it','light'],[390,'de','dark'],[768,'fr','light'],[1440,'en','dark']]){
+  const page=await browser.newPage({viewport:{width,height:820}});
+  const path='/this-page-is-missing?lang='+language;
+  try{
+   await page.addInitScript(theme=>{
+    localStorage.setItem('football-architect:theme',theme);
+   },theme);
+   const response=await page.goto(origin+path,{waitUntil:'domcontentloaded',timeout:30000});
+   assert.equal(response?.status(),404,path+' HTTP status');
+   const state=await page.evaluate(()=>{
+    const a=[...document.querySelectorAll('a[href]')];
+    const dashboard=document.querySelector('#fa404-dashboard');
+    const main=document.querySelector('.fa404-main');
+    return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,
+     links:a.map(x=>x.getAttribute('href')),dashboardVisible:dashboard?.getClientRects().length>0,
+     title:document.querySelector('#fa404-title')?.textContent.trim().replace(/\s+/g,' '),
+     mainWidth:main?.getBoundingClientRect().width??0,
+     horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth,
+     selected:document.querySelector('#fa404-language')?.value,
+     body404:document.querySelector('.fa404-code')?.textContent.trim()};
+   });
+   assert.equal(state.language,language);
+   assert.equal(state.theme,theme);
+   assert.deepEqual(state.links,['/dashboard']);
+   assert.equal(state.dashboardVisible,true);
+   assert.equal(state.horizontalOverflow,false,'404 must fit without horizontal scrolling');
+   assert.ok(state.mainWidth>0&&state.mainWidth<=width,'404 main geometry');
+   assert.equal(state.selected,language);
+   assert.equal(state.body404,'404');
+   await page.selectOption('#fa404-language','es');
+   const switched=await page.evaluate(()=>({
+    lang:document.documentElement.lang,stored:localStorage.getItem('football-architect:language'),
+    text:getComputedStyle(document.querySelector('[data-fa404-locale="es"]')).display,
+    links:[...document.querySelectorAll('a[href]')].map(x=>x.getAttribute('href'))
+   }));
+   assert.equal(switched.lang,'es');assert.equal(switched.stored,'es');
+   assert.notEqual(switched.text,'none');assert.deepEqual(switched.links,['/dashboard']);
+   record(path,width,'step-08-404-locale-theme-responsive','PASS',{...state,switched});
+  }catch(error){record(path,width,'step-08-404-locale-theme-responsive','FAIL',String(error));throw error;}
+  finally{await page.close();}
+ }
  console.log('REPO-493 browser '+engine+': '+evidence.filter(e=>e.status==='PASS').length+
   ' PASS assertions; remaining matrix states UNKNOWN.');
 }finally{

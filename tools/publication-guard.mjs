@@ -9,7 +9,7 @@ import {validateDivisionAssets} from "./validate-division-assets.mjs";
 import {clubCrestAssets} from "./club-crest-assets.mjs";
 
 export const repositoryRoot=fileURLToPath(new URL("../",import.meta.url));
-const required=["assets/profile-navigation.js","assets/account-ui.js","assets/account.css","data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","assets/account-login.js","assets/local-dev-inbox-link.js","assets/account-onboarding.js","assets/account-recovery.js","assets/account-settings.js","assets/account-verification.js",
+const required=["404.html","assets/profile-navigation.js","assets/account-ui.js","assets/account.css","data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","assets/account-login.js","assets/local-dev-inbox-link.js","assets/account-onboarding.js","assets/account-recovery.js","assets/account-settings.js","assets/account-verification.js",
  "assets/competition-stats.js","assets/players-directory.js",
  "clubs/_shared/index.html","clubs/_shared/manifest.json","assets/club-page.js","assets/club-model.js","assets/club-page.css","assets/club-season-source.mjs","assets/club-history-source.mjs","assets/club-public-read-cache.mjs",
  "vercel.json","index.html","guide/index.html","dashboard/index.html","players/index.html",
@@ -20,7 +20,7 @@ const required=["assets/profile-navigation.js","assets/account-ui.js","assets/ac
 ];
 const divisions=["it","eng","es","de","fr","pt","nl","br"]
  .flatMap(country=>[1,2].map(tier=>"competitions/"+country+"-"+tier+"/index.html"));
-const rootFiles=new Set(["data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","competitions/int-1/index.html","competitions/int-2/index.html","clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
+const rootFiles=new Set(["404.html","data/country-codes.json","account/index.html","account/login/index.html","account/recover/index.html","account/register/index.html","account/verify-email/index.html","competitions/int-1/index.html","competitions/int-2/index.html","clubs/index.html","clubs/_shared/index.html","clubs/_shared/manifest.json","vercel.json","index.html","favicon.ico","favicon.svg","guide/index.html",
  "dashboard/index.html","players/index.html","admin/index.html","admin/calendar/index.html","admin/players/index.html","calendar/index.html",
  "settings/index.html","competitions/index.html",
  "competitions/_shared/index.html","competitions/_shared/manifest.json",
