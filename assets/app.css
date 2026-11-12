@@ -1561,11 +1561,11 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
 /* Sort is still interactive, but labels never display arrows, hover highlights,
  * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
-.app-players-sort-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.app-players-sort-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1;box-sizing:border-box;width:100%;min-width:0;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .app-players-sort-button:hover,.app-players-sort-button:active,.app-players-sort-button:focus{color:inherit;background:transparent;box-shadow:none;outline:none;text-shadow:none;filter:none}
 .app-players-sort-button:focus-visible{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 /* Active-only sort chevron has a permanent layout slot so the title never shifts. */
-.app-players-sort-chevron{display:block;flex:0 0 12px;width:12px;height:12px;visibility:hidden;opacity:0;transform:rotate(0deg);transform-origin:50% 50%;pointer-events:none}
+.app-players-sort-chevron{display:block;flex:0 0 16px;width:16px;height:16px;align-self:center;visibility:hidden;opacity:0;transform:rotate(0deg);transform-origin:50% 50%;pointer-events:none}
 .app-players-table th[aria-sort="ascending"] .app-players-sort-chevron,.app-players-table th[aria-sort="descending"] .app-players-sort-chevron{visibility:visible;opacity:1}
 .app-players-table th[aria-sort="ascending"] .app-players-sort-chevron{transform:rotate(180deg)}
 
@@ -1660,7 +1660,7 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-filter-section-header>span:first-child{flex:1;min-width:0}
 .app-players-filter-section-header>.language-chevron,.app-players-attribute-category>summary>.language-chevron{display:block;flex:0 0 16px;width:16px;height:16px;margin:0;transform:rotate(0deg);transform-origin:50% 50%;transition:transform .16s ease;pointer-events:none}
 .app-players-filter-section-header .language-chevron{transition:transform .16s ease}
-.app-players-filter-section[open] .app-players-filter-section-header .language-chevron{transform:rotate(180deg)}
+.app-players-filter-section[open]:not(.is-collapsing) .app-players-filter-section-header .language-chevron{transform:rotate(180deg)}
 .app-players-filter-section-header:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 /* The section titles are interactive, but no hover/tap selection or highlight is painted. */
 .app-players-filter-section-header,.app-players-attribute-category>summary,.app-players-filter-control>span,.app-players-attribute-pick,.app-players-scope-control{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
@@ -1684,7 +1684,9 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-age-range input{appearance:textfield;-moz-appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
 .app-players-age-range input::-webkit-inner-spin-button,.app-players-age-range input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* Attributes: four compact nested categories, only selected rows reveal min/max. */
-.app-players-name-control{padding:12px 6px 16px;border-bottom:1px solid var(--border)}
+.app-players-name-section .app-players-filter-section-header{cursor:default}
+.app-players-name-section .app-players-filter-section-body{padding-top:4px}
+.app-players-name-control{padding:0}
 .app-players-name-control input{width:100%;height:44px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);padding:10px 12px;font-size:14px}
 .app-players-name-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 /* Native search-field clear X remains a direct pointer target on Chrome and Safari. */
@@ -1698,7 +1700,7 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-attribute-category>summary::marker{content:""}
 .app-players-attribute-category>summary>span:first-child{flex:1}
 .app-players-attribute-category>summary>.language-chevron{transition:transform .16s ease}
-.app-players-attribute-category[open]>summary>.language-chevron{transform:rotate(180deg)}
+.app-players-attribute-category[open]:not(.is-collapsing)>summary>.language-chevron{transform:rotate(180deg)}
 .app-players-attribute-category>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .app-players-attribute-count{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;padding:0;border:1px solid var(--border);border-radius:50%;background:var(--line);color:var(--text);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}
 .app-players-attribute-count[hidden],.app-players-attribute-bounds[hidden]{display:none!important}

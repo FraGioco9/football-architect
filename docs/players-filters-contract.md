@@ -36,3 +36,11 @@ The frontend uses URLSearchParams, which produces `%2C` for comma-separated nati
 **Drawer:** Keep the user-approved thin separators, reduce the vertical gaps, and reserve a fixed position for each 16px chevron so opening sections only rotates the icon around its own center. Use **Min** and **Max** as the sole visible labels above the Age/Height boxes; no repetitive “Min age/height” or “All” placeholder inside those boxes. Show “Preferred foot” only in the expandable section heading; the dropdown uses that heading as its accessible label. Show applied-filter counts (trigger, sections and attribute groups) in true circular badges; secondary matching toggles do not add to the count. Labels and section headings cannot be text-selected and do not show hover/tap/click highlight. Focus-visible outlines remain for keyboard accessibility.
 
 No filtering semantics, background-scroll behavior, scrollbar gutter, public projection or remote DB/deploy policy changes. Exact-head automatic CI and Chrome/iPhone Safari visual QA remain required. **PR #515 remains Draft/HOLD** until explicit approval.
+
+## Players drawer and pitch-position ordering — November 12, 2026
+
+- Name displays an accessible non-label 44px section heading aligned with Nationality; clicking the heading no longer focuses/highlights its search box.
+- Active sort chevrons occupy a consistent 16px slot with 7px gap, vertically centered in static and dynamic headers.
+- Main and attribute subcategory dividers animate content expand/collapse (200ms); reduced-motion is respected, and the page/root scrollbar remains unaffected.
+- Portaled Preferred foot menu measures its own rendered height before choosing the upward anchor, eliminating an oversized gap for its short list.
+- DESC positions ordering (first click), back-to-front and right-to-left: GK, RB, RWB, CB, LWB, LB, DM, RM, CM, LM, RW, AM, LW, ST. ASC reverses it; third click resets to created-at order. SQL uses a fixed whitelist CASE expression plus ID tie-break.

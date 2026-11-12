@@ -708,3 +708,24 @@ test('Players filter labels are compact, counters circular and chevrons rotate i
  assert.match(css,/user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent/);
  assert.match(css,/\.app-players-filters\{[^}]*scrollbar-gutter:stable/);
 });
+
+test('Players refinement: accessible Name section, sort chevrons, animated dividers and short dropdown anchoring',()=>{
+ const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),js=read('assets/players-directory.js'),sql=read('backend/src/public-players-read.ts');
+ assert.match(html,/class="app-players-filter-section app-players-name-section"/);
+ assert.match(html,/id="players-filter-name-label" data-players-filter-label="name">Name/);
+ assert.match(html,/data-players-filter="name" maxlength="80"[^>]*aria-labelledby="players-filter-name-label"/);
+ assert.doesNotMatch(html,/<label class="app-players-filter-control app-players-name-control"/,'clicking the Name title must not focus its input');
+ assert.match(css,/\.app-players-name-section \.app-players-filter-section-header\{cursor:default\}/);
+ assert.ok(generator.includes('app-players-name-section'),'generator retains the same Name section');
+ assert.match(css,/\.app-players-sort-button\{[^}]*gap:7px;line-height:1/);
+ assert.match(css,/\.app-players-sort-chevron\{[^}]*width:16px;height:16px;align-self:center/);
+ assert.equal((html.match(/class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16"/g)||[]).length,6);
+ assert.match(js,/chev\.setAttribute\('width','16'\);chev\.setAttribute\('height','16'\)/);
+ assert.match(js,/const naturalHeight=Math\.max\(44,menu\.scrollHeight/);
+ assert.match(js,/const expandAnimations=new WeakMap\(\)/);
+ assert.match(js,/content\.animate\(/);
+ assert.match(js,/section\.open=false/);
+ assert.match(css,/\.app-players-filter-section\[open\]:not\(\.is-collapsing\)/);
+ assert.match(sql,/const pitchPositions=\['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'\]/);
+ assert.match(sql,/\['positions',positionRank\]/);
+});

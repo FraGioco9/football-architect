@@ -251,7 +251,7 @@
     const key=field.dataset.playersFilter,selected=state.filters?.[key]||'';
     if(field.type==='checkbox')field.checked=selected==='any';
     else if(field.value!==selected)field.value=selected;
-    const label=field.closest('.app-players-filter-control')?.querySelector('[data-players-filter-label]');
+    const label=field.closest('.app-players-filter-control')?.querySelector('[data-players-filter-label]')||(key==='name'?document.querySelector('[data-players-filter-label="name"]'):null);
     if(label)label.textContent=labels[labelKeys.indexOf(key)]||'';
     if(field.tagName==='SELECT'){
      field.options[0].textContent=t.all;
@@ -313,7 +313,7 @@
     // The chevron reserves its position beside the title; only an active sort reveals it.
     const chev=document.createElementNS('http://www.w3.org/2000/svg','svg');
     chev.classList.add('app-players-sort-chevron');chev.setAttribute('viewBox','0 0 20 20');
-    chev.setAttribute('width','12');chev.setAttribute('height','12');chev.setAttribute('aria-hidden','true');
+    chev.setAttribute('width','16');chev.setAttribute('height','16');chev.setAttribute('aria-hidden','true');
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d','m5 7 5 5 5-5');path.setAttribute('fill','none');
     path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width','1.75');
@@ -446,7 +446,9 @@
    const above=Math.max(0,rect.top-panel.top-12);
    const up=below<175&&above>below;
    const room=up?above:below;
-   const height=Math.max(44,Math.min(280,room));
+   // The short Preferred foot list must anchor by its actual height when opening upward.
+   const naturalHeight=Math.max(44,menu.scrollHeight||menu.getBoundingClientRect().height||44);
+   const height=Math.max(44,Math.min(280,naturalHeight,room));
    menu.style.left=Math.round(rect.left-panel.left)+'px';
    menu.style.width=Math.round(rect.width)+'px';
    menu.style.maxHeight=Math.floor(height)+'px';
@@ -552,6 +554,39 @@
    // Do not let a detached listbox cover the scrolling controls.
    if(openDropdown)closeDropdown(openDropdown);
   },{passive:true});
+
+  // Animate main filter sections and nested attribute groups, retaining native details semantics.
+  const expandAnimations=new WeakMap();
+  for(const section of filterDialog?.querySelectorAll('details.app-players-filter-section,details.app-players-attribute-category')||[]){
+   const summary=section.querySelector(':scope > summary');
+   const content=summary?.nextElementSibling;
+   if(!summary||!content)continue;
+   summary.addEventListener('click',event=>{
+    event.preventDefault(); // Keyboard activation also dispatches a click.
+    expandAnimations.get(section)?.cancel();
+    expandAnimations.delete(section);
+    const closing=section.open&&!section.classList.contains('is-collapsing');
+    section.classList.toggle('is-collapsing',closing);
+    if(!closing)section.open=true; // Make content measurable before expanding.
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||!content.animate){
+     section.open=!closing;section.classList.remove('is-collapsing');return;
+    }
+    const height=Math.max(1,content.scrollHeight);
+    content.style.overflow='hidden';
+    const motion=content.animate(
+     closing?[{height:height+'px',opacity:1},{height:'0px',opacity:0}]:[{height:'0px',opacity:0},{height:height+'px',opacity:1}],
+     {duration:200,easing:'ease-in-out'}
+    );
+    expandAnimations.set(section,motion);
+    motion.onfinish=()=>{
+     if(expandAnimations.get(section)!==motion)return;
+     expandAnimations.delete(section);
+     content.style.removeProperty('overflow');
+     if(closing)section.open=false;
+     section.classList.remove('is-collapsing');
+    };
+   });
+  }
   // Blank/invalid ranges have no filter effect. Applying never opens a validity bubble.
   function applyFilters(){
    const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value]));

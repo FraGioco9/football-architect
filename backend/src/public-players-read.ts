@@ -69,11 +69,14 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   predicates.push("json_extract(payload_json,'$.preferred_foot')=?");values.push(filters.foot);
  }
  // The ORDER BY expression is chosen exclusively from fixed, server-approved SQL.
+ // Highest rank appears first in DESC (first click): GK, then right-to-left, rear-to-front.
+ const pitchPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'] as const;
+ const positionRank="CASE json_extract(payload_json,'$.primary_position') "+pitchPositions.map((code,index)=>"WHEN '"+code+"' THEN "+(pitchPositions.length-index)).join(' ')+" ELSE 0 END";
  const sortSql=new Map<string,string>([
   ['nationality',"json_extract(payload_json,'$.nationality')"],
   ['name',"COALESCE(json_extract(payload_json,'$.display_name'),json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))"],
   ['age',"json_extract(payload_json,'$.age')"],
-  ['positions',"json_extract(payload_json,'$.primary_position')"],
+  ['positions',positionRank],
   ['height',"json_extract(payload_json,'$.height_cm')"],
   ['foot',"json_extract(payload_json,'$.preferred_foot')"],
   ...[...FILTER_ATTRIBUTE_KEYS].map(key=>[key,"json_extract(payload_json,'$.attributes."+key+"')"] as [string,string])

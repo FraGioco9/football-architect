@@ -163,6 +163,18 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const overflow=await worker.fetch(new Request(origin+'/api/players?page=3&nationality=ITA&position=ST'),service);
  expect(overflow.status).toBe(200);
  expect(await overflow.json()).toMatchObject({count:51,page:3,totalPages:2,players:[]});
+ // The first-click DESC order puts GK first, then right-to-left positions.
+ const sortedIds=await db.prepare('SELECT id FROM generated_players ORDER BY id LIMIT 3').all<{id:number}>();
+ for(const [index,position] of ['GK','RB','LW'].entries()){
+  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.primary_position',?) WHERE id=?")
+   .bind(position,sortedIds.results[index].id).run();
+ }
+ const pitched=await worker.fetch(new Request(origin+'/api/players?sort=positions&order=desc'),service);
+ expect(pitched.status).toBe(200);
+ expect(((await pitched.json()) as any).players.slice(0,3).map((player:any)=>player.primary_position)).toEqual(['GK','RB','LW']);
+ const reverse=await worker.fetch(new Request(origin+'/api/players?sort=positions&order=asc'),service);
+ expect(reverse.status).toBe(200);
+ expect(((await reverse.json()) as any).players[0].primary_position).toBe('ST');
  // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
  for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
