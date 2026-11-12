@@ -9,6 +9,19 @@
   GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'
  });
 
+
+ const filterKeys=['nationality','position','ageMin','ageMax','foot'];
+ const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
+ const ageValue=value=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)<=120?value:'';
+ const filterLabels={
+  en:{title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
+  it:{title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
+  de:{title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
+  es:{title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
+  fr:{title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
+ };
+ const homeNames={en:['England','Scotland','Wales'],it:['Inghilterra','Scozia','Galles'],de:['England','Schottland','Wales'],es:['Inglaterra','Escocia','Gales'],fr:['Angleterre','Écosse','Pays de Galles']};
+ const filterLocale=()=>filterLabels[language()]||filterLabels.en;
  const groups=Object.freeze({
   technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
   mental:['vision','positioning','decisions','composure'],
@@ -38,16 +51,28 @@
  function parseLocation(){
   const p=new URLSearchParams(location.search);
   const rawPage=Number(p.get('page')||'1');
+  const filters={
+   nationality:Object.hasOwn(flags,p.get('nationality'))?p.get('nationality'):'',
+   position:positions.has(p.get('position'))?p.get('position'):'',
+   ageMin:ageValue(p.get('ageMin')),
+   ageMax:ageValue(p.get('ageMax')),
+   foot:['left','right'].includes(p.get('foot'))?p.get('foot'):''
+  };
+  if(filters.ageMin&&filters.ageMax&&Number(filters.ageMin)>Number(filters.ageMax)){filters.ageMin='';filters.ageMax='';}
   return {
    view:p.get('view')==='attributes'?'attributes':'overview',
    group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical',
-   page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1
+   page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1,
+   filters
   };
  }
  function init(){
   const table=document.querySelector('.app-players-table'),scroll=table?.closest('.app-players-table-scroll');
   if(!table||!table.tBodies.length||!scroll)return;
   const body=table.tBodies[0],countNode=document.querySelector('[data-players-count]');
+  const filterPanel=document.querySelector('.app-players-filters');
+  const filterFields=[...document.querySelectorAll('.app-players-filters [data-players-filter]')];
+  const reset=document.querySelector('[data-players-reset]');
   const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
   const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
   const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
@@ -61,17 +86,42 @@
    const t=locale();
    countNode.textContent=new Intl.NumberFormat(language()||'en').format(count)+' '+(count===1?t.one:t.many);
   }
+  function filterSignature(filters){return filterKeys.map(key=>filters?.[key]||'').join('|')}
   function syncUrl(mode='pushState'){
    const url=new URL(location.href);
-   for(const name of ['view','group','nationality','position','page'])url.searchParams.delete(name);
+   for(const name of ['view','group','page',...filterKeys])url.searchParams.delete(name);
    url.searchParams.set('view',state.view);
    if(state.view==='attributes')url.searchParams.set('group',state.group);
+   for(const key of filterKeys)if(state.filters?.[key])url.searchParams.set(key,state.filters[key]);
    if(state.page>1)url.searchParams.set('page',String(state.page));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
   }
+  function syncFilterControls(){
+   const t=filterLocale(),main=locale();
+   filterPanel?.setAttribute('aria-label',t.title);
+   let countries;
+   try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
+   for(const field of filterFields){
+    const key=field.dataset.playersFilter;
+    const selected=state.filters?.[key]||'';
+    if(field.value!==selected)field.value=selected;
+    const label=field.closest('label')?.querySelector('[data-players-filter-label]');
+    if(label)label.textContent=t.names[filterKeys.indexOf(key)];
+    if(field.tagName==='SELECT'){
+     field.options[0].textContent=t.all;
+     if(key==='foot'){field.options[1].textContent=main.left;field.options[2].textContent=main.right;}
+     if(key==='nationality')for(const option of [...field.options].slice(1)){
+      const country=option.value,home=homeNames[language()]||homeNames.en;
+      const name=country==='ENG'?home[0]:country==='SCO'?home[1]:country==='WAL'?home[2]:countries?.of(flags[country].slice(0,2).toUpperCase());
+      option.textContent=name||country;
+     }
+    }else field.placeholder=t.all;
+   }
+   if(reset){reset.textContent=t.reset;reset.disabled=!filterKeys.some(key=>state.filters?.[key]);}
+  }
   function syncControls(){
-   const t=locale();
+   const t=locale();syncFilterControls();
    document.documentElement.dataset.playersView=state.view;
    document.documentElement.dataset.playersGroup=state.group;
    tabs.forEach((tab,i)=>{const active=tab.dataset.playersView===state.view;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.tabs[i]});
@@ -103,7 +153,7 @@
    const t=locale();
    if(!data){message(t[status]);return}
    lastCount=data.count;renderCount(lastCount);
-   if(!data.players.length){message(t.empty);scroll.setAttribute('aria-busy','false');return}
+   if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
    const fragment=document.createDocumentFragment();
    for(const player of data.players){
     const tr=document.createElement('tr');flagCell(tr,player);cell(tr,player.display_name||'—');
@@ -121,24 +171,28 @@
    }
    body.replaceChildren(fragment);
    previous.textContent=t.prev;next.textContent=t.next;
-   counter.textContent=t.page+' '+data.page+' '+t.of+' '+data.totalPages;
+   counter.textContent=t.page+' '+data.page+' '+t.of+' '+data.totalPages+' · '+new Intl.NumberFormat(language()||'en').format(data.count)+' '+(data.count===1?t.one:t.many);
    previous.disabled=data.page<=1;next.disabled=data.page>=data.totalPages;
    pager.hidden=data.totalPages<=1;scroll.setAttribute('aria-busy','false');
   }
   function refresh(){syncControls();paint(current)}
   async function load(page){
    const seq=++ticket;state.page=page;current=null;status='loading';
+   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));
+   scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
    scroll.setAttribute('aria-busy','true');renderHead();message(locale().loading);
+   const query=new URLSearchParams({page:String(page)});
+   for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
    try{
-    const response=await fetch('/api/players?page='+page,{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+    const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
     if(!response.ok)throw new Error('http_'+response.status);
     const data=await response.json();
     if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||!Number.isSafeInteger(data.totalPages)||data.totalPages<1)
      throw new Error('invalid_players_response');
     if(seq!==ticket)return;
-    current=data;status='ready';paint(data);
+    current=data;status='ready';paint(data);scroll.style.minHeight='';
    }catch{
-    if(seq===ticket){status='error';message(locale().error);scroll.setAttribute('aria-busy','false');if(lastCount===null&&countNode)countNode.replaceChildren()}
+    if(seq===ticket){status='error';message(locale().error);scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
    }
   }
   function changeView(view){
@@ -149,6 +203,29 @@
    if(state.group===group)return;
    state.group=group;syncUrl();refresh();
   }
+  function applyFilters(){
+   const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.value]));
+   for(const field of filterFields){
+    field.setCustomValidity('');
+    if(!field.checkValidity()){field.reportValidity();return;}
+   }
+   if(fields.ageMin&&fields.ageMax&&Number(fields.ageMin)>Number(fields.ageMax)){
+    const field=filterFields.find(f=>f.dataset.playersFilter==='ageMax');
+    field.setCustomValidity(filterLocale().range);field.reportValidity();return;
+   }
+   const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
+   if(filterSignature(nextFilters)===filterSignature(state.filters))return;
+   state.filters=nextFilters;state.page=1;syncUrl();syncControls();load(1);
+  }
+  for(const field of filterFields){
+   field.addEventListener('change',applyFilters);
+   field.addEventListener('input',()=>field.setCustomValidity(''));
+  }
+  reset?.addEventListener('click',()=>{
+   state.filters=Object.fromEntries(filterKeys.map(key=>[key,'']));
+   for(const field of filterFields)field.setCustomValidity('');
+   state.page=1;syncUrl();syncControls();load(1);
+  });
   tabs.forEach(tab=>tab.addEventListener('click',event=>{event.preventDefault();changeView(tab.dataset.playersView)}));
   groupTabs.forEach(tab=>tab.addEventListener('click',()=>changeGroup(tab.dataset.playersGroup)));
   function keyboardTab(event,nodes,change,key){
@@ -164,11 +241,11 @@
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
-   const next=parseLocation(),changed=next.page!==state.page;
+   const next=parseLocation(),changed=next.page!==state.page||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);
   });
-  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();message(locale()[status]);if(lastCount!==null)renderCount(lastCount)}})
+  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   syncControls();syncUrl('replaceState');load(state.page);
  }

@@ -1,6 +1,6 @@
 # PLAYERS-FILTERS-01 — Backend V1 contract (issue #512)
 
-This is the **first implementation slice**; the `/players` UI remains unchanged until the owner reviews the filter layout and semantics. No migration or remote D1 write is performed in this slice.
+The first slice established the server-side contract; the follow-on slice adds compact accessible controls in `/players`. Secondary matching and final filter set remain provisional pending owner review. No migration or remote D1 write is performed in this slice.
 
 ## Read-only endpoint
 
@@ -23,6 +23,6 @@ Both `COUNT(*)` and the stable `ORDER BY created_at DESC, id ASC LIMIT 50 OFFSET
 ## Follow-on work / owner review
 
 - Review whether nationality and position should include secondary values, the final filter set, and the compact desktop/mobile layout.
-- Implement URL-synced, five-language, accessible controls with static first-paint dimensions, reset, and filtered count/empty/loading/error states.
+- Implemented: URL-synced, five-language controls with static first-paint dimensions, reset and filtered totals, empty/loading/error states. Visual QA remains outstanding.
 - Review D1 `EXPLAIN QUERY PLAN` and selective expression indexes **before** deciding on a migration. No migrations or remote databases touched here.
 - Run focused Worker + proxy + page tests and visual QA on exact PR head. Draft/HOLD; no merge/deploy without separate owner approval.

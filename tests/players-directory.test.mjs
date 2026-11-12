@@ -18,7 +18,7 @@ test('Players static shell loads the D1 directory renderer and reserves the empt
 });
 test('renderer is read-only, sanitizes output and uses only documented public fields',()=>{
  const code=read('assets/players-directory.js');
- assert.match(code,/fetch\('\/api\/players\?page='\+page/);
+ assert.match(code,/fetch\('\/api\/players\?'\+query\.toString\(\)/);
  assert.doesNotMatch(code,/\/api\/players\/page\//,'legacy pagination URL must not remain');
  assert.match(code,/credentials:'omit'/);
  assert.match(code,/textContent=/);
@@ -63,15 +63,15 @@ test('Players two views retain shared canonical rows and approved four skill gro
   assert.ok(html.includes('data-players-group="'+group+'"'),group);
   assert.ok(renderer.includes(group+':['),group);
  }
- assert.doesNotMatch(html,/data-players-filter|app-players-filters/);
- assert.doesNotMatch(renderer,/data-players-filter|state\.nationality|state\.position/);
+ assert.match(html,/class="app-players-filters"/);
+ assert.match(renderer,/data-players-filter/);
  assert.match(html,/class="app-players-table"/);
  assert.match(renderer,/history\[mode\]/);
  assert.match(renderer,/window\.addEventListener\('popstate'/);
  assert.match(renderer,/new URLSearchParams\(location\.search\)/);
  assert.match(renderer,/groups\[state\.group\]/);
  assert.match(renderer,/data\.count/);
- assert.doesNotMatch(css,/\.app-players-filters|\.app-players-filter-control/);
+ assert.match(css,/\.app-players-filters\{display:grid/);
  assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*transition:background-color/);
  assert.doesNotMatch(css,/\.app-players-tabs \.app-competition-tab\[aria-selected="true"\]::after/);
  assert.match(generator,/data-players-first-paint/);
@@ -155,7 +155,7 @@ test('Players toolbar remains in document flow across main views and count is ou
  assert.ok(css.includes('html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}'));
  assert.doesNotMatch(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{display:none/);
  assert.match(code,/function changeView\(view\)\{[^}]*state\.view=view;syncUrl\(\);refresh\(\)/);
- assert.doesNotMatch(code,/data-players-filter|state\.nationality|state\.position/);
+ assert.match(code,/function applyFilters\(\)/);
 });
 
 test('Players groups use Technical, Mental, Physical, Goalkeeper order while attribute names keep their historical field mapping',()=>{
@@ -215,13 +215,14 @@ test('Players view and group slugs are explicit even for both default selections
   let current=new URL('http://localhost:2000/players'+search);
   const location={href:current.href,pathname:current.pathname,search:current.search,hash:current.hash};
   const history={state:null,pushState(_state,_unused,next){current=new URL(next,current)},replaceState(_state,_unused,next){current=new URL(next,current)}};
-  runInNewContext(code.slice(begin,end)+"\nsyncUrl('replaceState')",{state,location,history,URL});
+  runInNewContext(code.slice(begin,end)+"\nsyncUrl('replaceState')",{state,location,history,URL,filterKeys:['nationality','position','ageMin','ageMax','foot']});
   return current.pathname+current.search;
  };
  assert.equal(run({view:'overview',group:'technical',page:1},''),'/players?view=overview');
  assert.equal(run({view:'attributes',group:'technical',page:1},'?view=attributes'),'/players?view=attributes&group=technical');
  assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&page=2');
  assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
+ assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&page=2');
 });
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
@@ -289,7 +290,7 @@ test('Players Attributes always show fixed-width Positions after the name withou
   assert.ok(labels&&labels.includes('|'+term+'|'),'GK positioning label in '+locale);
  }
  assert.match(renderer,/goalkeeping:\['gk_reflexes','gk_handling','gk_positioning','gk_aerial'\]/);
- assert.doesNotMatch(renderer,/data-players-filter/,'do not reintroduce filters');
+ assert.match(renderer,/data-players-filter/,'#512 filters are present');
 });
 
 test('Attributes widths remain proportional after 54px flag, 248px player and fixed 200px Positions',()=>{
@@ -350,17 +351,56 @@ test('Players main tabs are compact and centered; existing top margins alone are
 test('Players collection uses a validated page query, without changing the public response',()=>{
  const server=read('backend/src/index.ts'),client=read('assets/players-directory.js'),integration=read('backend/tests/players-generation-runtime.test.ts');
  assert.ok(server.includes("if(url.pathname==='/api/players')"));
- assert.ok(server.includes("const params=[...url.searchParams]"));
- assert.ok(server.includes('params.length>1'));
- assert.ok(server.includes("params[0][0]!=='page'"));
- assert.ok(server.includes('/^[1-9][0-9]{0,3}$/'));
- assert.ok(server.includes('readPublicPlayers(requireDatabase(env.DB),page)'));
+ assert.ok(server.includes('parsePublicPlayerQuery(url.search)'));
+ assert.ok(server.includes('readPublicPlayers(requireDatabase(env.DB),query.page,query.filters)'));
  assert.ok(!server.includes('playersPage=url.pathname.match'),'old page path should not be routed');
- assert.ok(client.includes("fetch('/api/players?page='+page"));
+ assert.ok(client.includes("fetch('/api/players?'+query.toString()"));
  assert.ok(!client.includes("fetch('/api/players/page/'+page"));
  for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
   assert.ok(integration.includes(path),'missing integration case '+path);
  }
  assert.ok(integration.includes('expect(legacy.status).toBe(404)'));
  assert.ok(integration.includes('count:51,page:2,pageSize:50,totalPages:2'));
+});
+
+test('PLAYERS-FILTERS-01 has five stable accessible controls, first-paint URL state, and no client-only filtering',()=>{
+ const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
+ const css=read('assets/app.css'),code=read('assets/players-directory.js');
+ for(const key of ['nationality','position','ageMin','ageMax','foot']){
+  assert.ok(html.includes('data-players-filter="'+key+'"'),key);
+  assert.ok(generator.includes('data-players-filter=\\\"'+key+'\\\"'),key);
+ }
+ assert.ok(html.includes('data-players-reset'));
+ assert.ok(html.includes("const filters={nationality:countryCodes.has(params.get('nationality'))"),'static script initializes selections before first paint');
+ assert.match(css,/\.app-players-filters\{display:grid/);
+ assert.match(css,/@media\(max-width:1050px\)/);
+ assert.match(css,/@media\(max-width:620px\)/);
+ assert.match(code,/function applyFilters\(\)/);
+ assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);load\(1\)/);
+ assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
+ assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
+ assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
+ assert.match(code,/if\(state\.view===view\)return/);
+ assert.match(code,/renderCount\(lastCount\)/);
+ assert.match(code,/noMatches/);
+ for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{title:'),lng);
+ assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px/);
+});
+test('Players first paint selects URL filter values without changing table/view DOM',()=>{
+ const html=read('players/index.html'),script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script);
+ const selections={};
+ const make=(key)=>({dataset:{playersFilter:key},value:''});
+ const fields=['nationality','position','ageMin','ageMax','foot'].map(make);
+ const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
+ const doc={
+  documentElement:{lang:'en',dataset:{}},
+  querySelectorAll(selector){if(selector==='.app-players-filters [data-players-filter]')return fields;if(selector==='.app-players-tabs [data-players-view]')return [];if(selector==='.app-players-groups [data-players-group]')return [];return [];},
+  querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};throw Error(selector)},
+  createElement(){return {scope:'',textContent:''}}
+ };
+ runInNewContext(script,{document:doc,location:{search:'?nationality=ITA&position=ST&ageMin=18&ageMax=29&foot=left'},URLSearchParams});
+ for(const field of fields)selections[field.dataset.playersFilter]=field.value;
+ assert.deepEqual(selections,{nationality:'ITA',position:'ST',ageMin:'18',ageMax:'29',foot:'left'});
+ assert.equal(row.cells.length,6,'overview geometry stays static');
 });
