@@ -428,12 +428,14 @@ try{
     const a=[...document.querySelectorAll('a[href]')];
     const dashboard=document.querySelector('#fa404-dashboard');
     const main=document.querySelector('.fa404-main');
+    const localeText=document.querySelector('[data-fa404-locale="'+document.documentElement.lang+'"]');
     return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,
      links:a.map(x=>x.getAttribute('href')),dashboardVisible:dashboard?.getClientRects().length>0,
-     title:document.querySelector('#fa404-title')?.textContent.trim().replace(/\s+/g,' '),
+     localizedTextVisible:localeText?getComputedStyle(localeText).display!=='none':false,
      mainWidth:main?.getBoundingClientRect().width??0,
      horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth,
-     selected:document.querySelector('#fa404-language')?.value,
+     controls:document.querySelectorAll('select,button,[data-theme-choice]').length,
+     hint:document.querySelector('.fa404-hint')!==null,
      body404:document.querySelector('.fa404-code')?.textContent.trim()};
    });
    assert.equal(state.language,language);
@@ -442,17 +444,24 @@ try{
    assert.equal(state.dashboardVisible,true);
    assert.equal(state.horizontalOverflow,false,'404 must fit without horizontal scrolling');
    assert.ok(state.mainWidth>0&&state.mainWidth<=width,'404 main geometry');
-   assert.equal(state.selected,language);
+   assert.equal(state.localizedTextVisible,true,'translated copy visible');
+   assert.equal(state.controls,0,'no language or theme controls');
+   assert.equal(state.hint,false,'no address-check hint');
    assert.equal(state.body404,'404');
-   await page.selectOption('#fa404-language','es');
-   const switched=await page.evaluate(()=>({
-    lang:document.documentElement.lang,stored:localStorage.getItem('football-architect:language'),
-    text:getComputedStyle(document.querySelector('[data-fa404-locale="es"]')).display,
+   await page.evaluate(()=>localStorage.setItem('football-architect:language','es'));
+   const second=await page.goto(origin+'/another-missing-route',{waitUntil:'domcontentloaded'});
+   assert.equal(second?.status(),404);
+   const persisted=await page.evaluate(()=>({
+    language:document.documentElement.lang,
+    localizedText:getComputedStyle(document.querySelector('[data-fa404-locale="es"]')).display,
+    controls:document.querySelectorAll('select,button,[data-theme-choice]').length,
     links:[...document.querySelectorAll('a[href]')].map(x=>x.getAttribute('href'))
    }));
-   assert.equal(switched.lang,'es');assert.equal(switched.stored,'es');
-   assert.notEqual(switched.text,'none');assert.deepEqual(switched.links,['/dashboard']);
-   record(path,width,'step-08-404-locale-theme-responsive','PASS',{...state,switched});
+   assert.equal(persisted.language,'es');
+   assert.notEqual(persisted.localizedText,'none');
+   assert.equal(persisted.controls,0);
+   assert.deepEqual(persisted.links,['/dashboard']);
+   record(path,width,'step-08-404-locale-theme-responsive','PASS',{...state,persisted});
   }catch(error){record(path,width,'step-08-404-locale-theme-responsive','FAIL',String(error));throw error;}
   finally{await page.close();}
  }

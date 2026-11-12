@@ -127,6 +127,7 @@ test('ROUTING-08: localized 404 is a real HTTP error, with one Dashboard link an
  assert.deepEqual([...page.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(m=>m[1]),['/dashboard']);
  for(const lang of ['en','de','es','fr','it'])assert.ok(page.includes('data-fa404-locale="'+lang+'"'));
  assert.ok(page.includes('football-architect:language'));
+ assert.doesNotMatch(page,/<select\b|<button\b|data-theme-choice=|fa404-hint|Check the address/i);
  const server=createPreviewServer({devPreview:false});
  server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=(path,method='GET',accept='text/html')=>new Promise((resolve,reject)=>{
