@@ -73,6 +73,26 @@ test('default shared D1 executes Worker code locally; explicit offline --local i
  assert.ok(dev.children.every(c=>c.killed));
 });
 
+test('legacy --lan launches local source with shared remote D1 and public frontend only',()=>{
+ const {proc,messages}=fakeProcess(['--lan','192.168.1.90']);
+ const spawned=[];
+ const interfaces=()=>({wifi:[{address:'192.168.1.90',family:'IPv4',internal:false}]});
+ const spawnChild=(command,args,options)=>{
+  const child=new EventEmitter();Object.assign(child,{pid:100+spawned.length,killed:false,kill(){this.killed=true}});
+  spawned.push({command,args,options,child});return child;
+ };
+ const dev=startLocalDev({proc,spawnChild,interfaces,sharedD1:true});
+ assert.equal(spawned.length,2);
+ assert.deepEqual(spawned[0].args,['run','dev:shared','--prefix','backend']);
+ assert.equal(spawned[0].options.env.FA_DEV_LAN,'');
+ assert.equal(spawned[1].options.env.FA_DEV_LAN,'1');
+ assert.equal(spawned[1].options.env.FA_DEV_LAN_HOST,'192.168.1.90');
+ assert.equal(spawned[1].options.env.FA_ADMIN_API_TARGET,'http://127.0.0.1:8787');
+ assert.match(messages.join(''),/LAN Safari QA frontend/);
+ proc.emit('SIGINT');
+ assert.ok(dev.children.every(c=>c.killed));
+});
+
 test('shared plan starts frontend only, never a local Worker or inherited production/LAN settings',()=>{
  const plan=sharedDevPlan({target,execPath:'/node',env:{FA_ADMIN_API_POOL:'production',
   FA_ADMIN_API_TARGET:'https://production.invalid',FA_DEV_LAN:'1',FA_DEV_LAN_HOST:'10.0.0.2',FOO:'value'}});
