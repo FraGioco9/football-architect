@@ -73,9 +73,10 @@ test('shared filter parser rejects duplicates, unknown inputs, encoded values an
  assert.deepEqual(parsePublicPlayerQuery('?nationality=ITA%2CFRA&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=175&heightMax=195').filters,
   {nationality:['ITA','FRA'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',heightMin:175,heightMax:195});
  assert.deepEqual(parsePublicPlayerQuery(''),{page:1,filters:{}});
+ assert.deepEqual(parsePublicPlayerQuery('?name=Andrea').filters,{name:'Andrea'});
  for(const raw of ['?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
   '?foot=both','?ageMin=121','?ageMin=-1','?ageMin=01','?ageMin=22&ageMax=21','?ageMin=10&ageMin=20',
-  '?view=overview','?page=1&page=2','?name=Andrea','?nationality=%49TA','?page=1&','?page=1#x',
+  '?view=overview','?page=1&page=2','?name=%25','?nationality=%49TA','?page=1&','?page=1#x',
   '?ageMax=21.5','?foot=right&foo=bar']){
   assert.throws(()=>parsePublicPlayerQuery(raw),/invalid_public_request/,raw);
   assert.equal(isAllowedPublicPlayersPath('/api/players'+raw),false,raw);

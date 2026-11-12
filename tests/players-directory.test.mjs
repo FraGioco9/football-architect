@@ -366,7 +366,7 @@ test('Players collection uses a validated page query, without changing the publi
 });
 
 
-test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and height steppers without changing the directory table',()=>{
+test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and plain range boxes without changing the directory table',()=>{
  const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),code=read('assets/players-directory.js');
  for(const section of ['nationality','position','age','height','foot','attributes']){
   assert.ok(html.includes('data-players-filter-section="'+section+'"'),section);
@@ -375,17 +375,17 @@ test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and heigh
  for(const key of ['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'])
   assert.ok(html.includes('data-players-filter="'+key+'"'),key);
  assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,6);
- assert.equal((html.match(/class="app-players-stepper"/g)||[]).length,2);
- assert.equal((html.match(/class="app-players-stepper-button"/g)||[]).length,0,'stepper inherits fixtures arrow styling with its own class');
- assert.equal((html.match(/data-players-step="(heightMin|heightMax)"/g)||[]).length,4);
- assert.doesNotMatch(html,/data-players-step="age(?:Min|Max)"/);
+ assert.doesNotMatch(html,/class="app-players-stepper"/,'Height and Age have only input boxes');
+ assert.doesNotMatch(html,/data-players-step=/);
+ assert.equal((html.match(/data-players-filter="(?:heightMin|heightMax)"/g)||[]).length,2);
  assert.equal((html.slice(html.indexOf('<form class="app-players-filter-form"'),html.indexOf('<footer class="app-players-filter-actions"')).match(/data-players-attribute-enable=/g)||[]).length,20);
  assert.doesNotMatch(html,/Select filters and press Apply to update the list/);
  assert.doesNotMatch(html,/data-players-filter-description/);
  assert.match(css,/\.app-players-filter-section-header\{display:flex/);
- assert.match(css,/\.app-players-stepper\{display:grid/);
- assert.match(css,/\.app-players-stepper input::-webkit-inner-spin-button/);
- assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
+ assert.match(css,/\.app-players-age-range input\{appearance:textfield/);
+ assert.match(css,/\.app-players-age-range input::-webkit-inner-spin-button/);
+ assert.doesNotMatch(code,/stepButtons/);
+ assert.match(code,/state\.filters=nextFilters;state\.page=1;\s*syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
  assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
@@ -501,7 +501,7 @@ test('Players name search is first, nationality and position have no Select mult
  assert.match(css,/\.app-players-filter-menu \.language-option\[data-players-filter-option=""\]\{justify-content:center;text-align:center\}/);
  assert.match(code,/const selectedCount=totalFilterCount\(state\.filters\)/);
  assert.match(code,/key!=='attributes'&&!key\.endsWith\('Scope'\)/);
- assert.match(code,/fields\.name=fields\.name\.normalize\('NFC'\)\.trim\(\)/);
+ assert.match(code,/const name=String\(fields\.name\|\|''\)\.normalize\('NFC'\)\.trim\(\)/);
 });
 test('Players attributes use four compact groups; twenty opt-in bounds are hidden until activated',()=>{
  const html=read('players/index.html'),css=read('assets/app.css'),code=read('assets/players-directory.js');
@@ -518,7 +518,8 @@ test('Players attributes use four compact groups; twenty opt-in bounds are hidde
  assert.match(css,/\.app-players-attribute-count\[hidden\],\.app-players-attribute-bounds\[hidden\]\{display:none!important\}/);
  assert.match(code,/function restoreAttributes\(\)/);
  assert.match(code,/function draftAttributes\(\)/);
- assert.match(code,/if\(min\.value===''&&max\.value===''\)/,'selected range must have one boundary');
+ assert.match(code,/check\.checked=false;range\.hidden=true;min\.value='';max\.value=''/,'empty attributes must be deactivated on Apply');
+ assert.doesNotMatch(code,/reportValidity\(\)/,'Apply never displays browser validation errors');
  assert.match(code,/fields\.attributes=attrs\.sort\(\)\.join\(','\)/);
  assert.match(code,/const nextFilters=Object\.fromEntries\(filterKeys\.map\(key=>\[key,fields\[key\]\|\|''\]\)\)/);
  assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
@@ -541,4 +542,50 @@ test('Players filter drawer permanently reserves its own scrollbar gutter withou
  assert.match(css,/\.app-players-filter-dialog\{[^}]*overflow:hidden/,'the scrollable region owns the scrollbar, not the top-layer dialog');
  assert.doesNotMatch(css,/html:has\(\.app-players-filter-dialog/,'opening the drawer must not alter root scrollbar gutter');
  assert.doesNotMatch(js,/document\.documentElement\.style\.overflow/,'the background scroll state stays untouched');
+});
+
+
+test('Players Apply ignores blank ranges, unchecks empty attributes, and never reports errors',()=>{
+ const js=read('assets/players-directory.js');
+ const from=js.indexOf('  function applyFilters(){'),to=js.indexOf('  // Draft values remain',from);
+ assert.ok(from>0&&to>from,'Apply function exists');
+ const source=js.slice(from,to);
+ assert.doesNotMatch(source,/reportValidity|setCustomValidity|throw new Error/,'no browser validation messages');
+ const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot','attributes'];
+ const fields=keys.filter(k=>k!=='attributes').map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'number',checked:false}));
+ const get=key=>fields.find(f=>f.dataset.playersFilter===key);
+ let loads=0,closes=0,urlSync=0;
+ const check={checked:true},range={hidden:false},min={value:''},max={value:''};
+ const attrs=new Map([['passing',{check,range,min,max}]]);
+ const signature=filters=>keys.map(k=>filters[k]||'').join('|');
+ const state={page:1,filters:Object.fromEntries(keys.map(k=>[k,'']))};
+ const apply=new Function('filterFields','attributeMap','state','filterKeys','filterSignature',
+  'validName','syncFilterControls','syncUrl','syncControls','closeFilterDialog','load',
+  source+';return applyFilters;')(fields,attrs,state,keys,signature,
+  value=>value.length<=80,()=>{},()=>{urlSync++},()=>{},()=>{closes++},()=>{loads++});
+ apply();
+ assert.equal(check.checked,false,'empty selected attribute unchecked');
+ assert.equal(range.hidden,true,'empty attribute bounds collapse');
+ assert.equal(state.filters.attributes,'','no attribute query when empty');
+ assert.equal(loads,0,'no duplicate fetch when unchanged');
+ assert.equal(closes,1);
+ check.checked=true;range.hidden=false;min.value='70';max.value='';
+ apply();
+ assert.equal(state.filters.attributes,'passing_70_x','one-sided range works');
+ assert.equal(loads,1);assert.equal(urlSync,1);
+ check.checked=true;range.hidden=false;min.value='';max.value='';
+ get('heightMin').value='';get('heightMax').value='';
+ apply();
+ assert.equal(state.filters.attributes,'','clears previously active attribute');
+ assert.equal(loads,2,'exactly one refresh on removal');
+ assert.equal(check.checked,false);
+ get('ageMin').value='30';get('ageMax').value='20';
+ apply();
+ assert.equal(state.filters.ageMin,'');assert.equal(state.filters.ageMax,'');
+ assert.equal(loads,2,'inverted range ignored without a request');
+ get('heightMin').value='170';get('heightMax').value='';
+ apply();
+ assert.equal(state.filters.heightMin,'170');
+ assert.equal(state.filters.heightMax,'');
+ assert.equal(loads,3,'one-sided height works');
 });

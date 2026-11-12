@@ -4,11 +4,11 @@
 
 One non-modal animated right-hand drawer stays below the site header, in the browser top layer, without changing the shell, background clicks, scrollbar, table or first-paint geometry.
 
-Name search appears before Nationality, followed by the expandable sections Nationality, Positions, Age, Height, Preferred foot, and Attributes. Nationality and Positions retain searchable multiple selection and optional secondary matching, but no longer display the 'Select multiple' caption. Include secondary is a matching-mode toggle, not an extra active-filter count. Selected values and the All dropdown option are centered. Age minimum and maximum are plain number boxes (no stepper); Height retains the existing ±1 controls.
+Name search appears before Nationality, followed by the expandable sections Nationality, Positions, Age, Height, Preferred foot, and Attributes. Nationality and Positions retain searchable multiple selection and optional secondary matching, but no longer display the 'Select multiple' caption. Include secondary is a matching-mode toggle, not an extra active-filter count. Selected values and the All dropdown option are centered. Age and Height minimum/maximum controls are plain number boxes, without custom +/- buttons or browser spinner arrows.
 
 Attributes has four nested expandable groups: Technical (8 attributes), Mental (4), Physical (4), Goalkeeping (4). Each attribute has a checkbox. Its Min / Max (1–99 inclusive) number fields are shown only when selected; at least one bound must be filled before Apply. AND joins selected attributes; a group with no selections stays a compact single row. Group titles, input labels, values and errors are localized across EN/DE/ES/FR/IT.
 
-All fields are draft-only until Apply. Reset clears active filters once. Closing without applying discards drafts. URL state, first-paint filter count, Browser Back/Forward, server pagination and empty state stay supported. The counter excludes both secondary matching toggles and counts each selected attribute separately.
+On Apply, blank or invalid numeric limits are silently ignored. If both limits of a category form an inverted range, that range becomes inactive; no validation popup or inline error appears. A checked attribute with no valid bounds is deselected. All fields are draft-only until Apply. Reset clears active filters once. Closing without applying discards drafts. URL state, first-paint filter count, Browser Back/Forward, server pagination and empty state stay supported. The counter excludes both secondary matching toggles and counts each selected attribute separately.
 
 ## Query allowlist
 
@@ -21,3 +21,7 @@ Name search uses a bound literal LIKE substring over stored full name (fallback 
 ## Tests and open work
 
 Automated: parser security, named/encoded search, combined attribute ranges, primary/secondary nationality and positions, filtered count/pages; static HTML generator parity, first paint, drawer interactions and counter. Visual Chrome / iPhone Safari manual QA still required on 320/390/768/1440, themes and five languages. Review the D1 query plan before adding indexes. PR #515 remains Draft/HOLD until explicit merge authorization.
+
+## Local DEV proxy regression and loading errors
+
+The frontend uses URLSearchParams, which produces `%2C` for comma-separated nationality/position/attribute selections and percent-encoded UTF-8 names. The previous loopback proxy guard rejected *all* percent escapes before forwarding, resulting in HTTP 403 and the generic "Unable to load players" message. The guard now permits encoded URLs **only when the entire /api/players path passes the existing strict query parser**, leaving other encoded/unsafe routes blocked. The change is tested with positive canonical and negative encoded inputs. This corrects a confirmed loading failure in local DEV; if the shared remote Preview Worker is older than the branch, it must still be updated separately before it can serve new filter keys. No remote deployment was performed.

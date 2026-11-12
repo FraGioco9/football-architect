@@ -1659,16 +1659,10 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-filter-search{position:sticky;top:-5px;z-index:1;padding:4px 4px 8px;background:var(--surface)}
 .app-players-filter-search input{box-sizing:border-box;width:100%;height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:13px}
 .app-players-filter-search input:focus-visible,.app-players-scope-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-players-stepper{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:3px;min-width:0}
-.app-players-stepper .app-players-stepper-button{display:grid;place-items:center;box-sizing:border-box;width:34px;min-width:34px;height:44px;min-height:44px;padding:0;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:18px;cursor:pointer}
-.app-players-stepper .app-players-stepper-button:hover{border-color:var(--focus)}
-.app-players-stepper .app-players-stepper-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-players-stepper input{text-align:center;min-width:0;padding-inline:2px;appearance:textfield;-moz-appearance:textfield;font-variant-numeric:tabular-nums}
-.app-players-stepper input::-webkit-inner-spin-button,.app-players-stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .app-players-filter-section .app-players-age-range{gap:8px}
-/* Age uses two plain boxes: hide both custom and native +/- spinner affordances. */
-.app-players-age-range[data-players-age-range] input{appearance:textfield;-moz-appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
-.app-players-age-range[data-players-age-range] input::-webkit-inner-spin-button,.app-players-age-range[data-players-age-range] input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* Age and Height both have fixed-size plain boxes, without browser stepper arrows. */
+.app-players-age-range input{appearance:textfield;-moz-appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
+.app-players-age-range input::-webkit-inner-spin-button,.app-players-age-range input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* Attributes: four compact nested categories, only selected rows reveal min/max. */
 .app-players-name-control{padding:3px 2px 6px}
 .app-players-name-control input{width:100%;height:44px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);padding:10px 12px;font-size:14px}

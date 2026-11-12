@@ -141,7 +141,6 @@
   }
   const filterSections=[...document.querySelectorAll('[data-players-filter-section]')];
   const scopeLabels=[...document.querySelectorAll('[data-players-scope-label]')];
-  const stepButtons=[...document.querySelectorAll('[data-players-step]')];
   const attributeItems=[...document.querySelectorAll('[data-players-attribute-item]')];
   const attributeCategories=[...document.querySelectorAll('[data-players-attribute-category]')];
   const attributeMap=new Map(attributeItems.map(item=>{
@@ -282,11 +281,6 @@
     max.setAttribute('aria-label',translated+' '+t.max);
    }
    restoreAttributes();
-   for(const button of stepButtons){
-    const key=button.dataset.playersStep,field=filterFields.find(f=>f.dataset.playersFilter===key);
-    const label=labels[labelKeys.indexOf(key)]||key;
-    button.setAttribute('aria-label',(button.dataset.direction==='-1'?t.stepMinus:t.stepPlus)+' '+label);
-   }
    syncSectionCounts();
    if(reset){reset.textContent=t.reset;reset.disabled=false;}
   }
@@ -498,45 +492,50 @@
    // Do not let a detached listbox cover the scrolling controls.
    if(openDropdown)closeDropdown(openDropdown);
   },{passive:true});
+  // Blank/invalid ranges have no filter effect. Applying never opens a validity bubble.
   function applyFilters(){
-   const t=filterLocale();
    const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value]));
-   for(const field of filterFields){
-    field.setCustomValidity('');
-    if(!field.checkValidity()){field.reportValidity();return;}
-   }
-   fields.name=fields.name.normalize('NFC').trim();
-   if(fields.name&&!validName(fields.name)){
-    const input=filterFields.find(f=>f.dataset.playersFilter==='name');
-    input.setCustomValidity(t.badName);input.reportValidity();return;
-   }
-   for(const key of ['ageMin','ageMax','heightMin','heightMax'])if(fields[key]!=='')fields[key]=String(Number(fields[key]));
-   for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax']]){
-    if(fields[lo]&&fields[hi]&&Number(fields[lo])>Number(fields[hi])){
-     const field=filterFields.find(f=>f.dataset.playersFilter===hi);
-     field.setCustomValidity(t.range);field.reportValidity();return;
+   const filterByKey=new Map(filterFields.map(field=>[field.dataset.playersFilter,field]));
+   const canonicalNumber=(raw,min,max)=>{
+    const value=String(raw||'').trim();
+    if(!/^(?:0|[1-9][0-9]{0,2})$/.test(value))return '';
+    const number=Number(value);
+    return number>=min&&number<=max?String(number):'';
+   };
+   const name=String(fields.name||'').normalize('NFC').trim();
+   fields.name=validName(name)?name:'';
+   for(const [minKey,maxKey,min,max] of [
+    ['ageMin','ageMax',0,120],
+    ['heightMin','heightMax',100,250]
+   ]){
+    fields[minKey]=canonicalNumber(fields[minKey],min,max);
+    fields[maxKey]=canonicalNumber(fields[maxKey],min,max);
+    if(fields[minKey]&&fields[maxKey]&&Number(fields[minKey])>Number(fields[maxKey])){
+     // An inverted range is inactive rather than blocking Apply.
+     fields[minKey]='';fields[maxKey]='';
     }
    }
    const attrs=[];
-   for(const [key,{check,min,max}] of attributeMap){
-    min.setCustomValidity('');max.setCustomValidity('');
+   for(const [key,{check,range,min,max}] of attributeMap){
     if(!check.checked)continue;
-    if(!min.checkValidity()){min.reportValidity();return;}
-    if(!max.checkValidity()){max.reportValidity();return;}
-    if(min.value===''&&max.value===''){
-     min.setCustomValidity(t.attrRange);min.reportValidity();return;
+    const lower=canonicalNumber(min.value,1,99),upper=canonicalNumber(max.value,1,99);
+    const active=!!(lower||upper)&&!(lower&&upper&&Number(lower)>Number(upper));
+    if(!active){
+     // Checked attribute with empty boxes must disappear from the active filters.
+     check.checked=false;range.hidden=true;min.value='';max.value='';
+     continue;
     }
-    const lower=min.value===''?'x':String(Number(min.value)),upper=max.value===''?'x':String(Number(max.value));
-    if(lower!=='x'&&upper!=='x'&&Number(lower)>Number(upper)){
-     max.setCustomValidity(t.attrReverse);max.reportValidity();return;
-    }
-    attrs.push(key+'_'+lower+'_'+upper);
+    min.value=lower;max.value=upper;
+    attrs.push(key+'_'+(lower||'x')+'_'+(upper||'x'));
    }
    fields.attributes=attrs.sort().join(',');
    for(const key of ['nationality','position'])if(!fields[key])fields[key+'Scope']='';
    const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
-   if(filterSignature(nextFilters)===filterSignature(state.filters)){closeFilterDialog();return;}
-   state.filters=nextFilters;state.page=1;syncUrl();syncControls();closeFilterDialog();load(1);
+   if(filterSignature(nextFilters)===filterSignature(state.filters)){
+    syncFilterControls();closeFilterDialog();return;
+   }
+   state.filters=nextFilters;state.page=1;
+   syncUrl();syncControls();closeFilterDialog();load(1);
   }
   // Draft values remain inside the modal until Apply; never fetch on individual changes.
   for(const field of filterFields)field.addEventListener('input',()=>{field.setCustomValidity('');syncSectionCounts();});
@@ -548,16 +547,6 @@
    });
    for(const input of [min,max])input.addEventListener('input',()=>{input.setCustomValidity('');syncSectionCounts();});
   }
-  for(const button of stepButtons)button.addEventListener('click',()=>{
-   const field=filterFields.find(f=>f.dataset.playersFilter===button.dataset.playersStep);
-   if(!field)return;
-   const delta=Number(button.dataset.direction),base=Number(field.dataset.stepBase);
-   const min=Number(field.min),max=Number(field.max);
-   const current=field.value===''?base:Number(field.value);
-   field.value=String(Math.max(min,Math.min(max,current+delta)));
-   field.setCustomValidity('');
-   syncSectionCounts();
-  });
   filterForm?.addEventListener('submit',event=>{event.preventDefault();applyFilters()});
   reset?.addEventListener('click',()=>{
    const changed=filterKeys.some(key=>state.filters?.[key])||state.page!==1;
