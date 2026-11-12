@@ -90,6 +90,16 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  const calendarScript=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
  assert.match(calendarScript,/render\(\);void controller\.refresh\(\);/);
  assert.doesNotMatch(calendarScript,/pageshow[^\n]*controller\.refresh\(/);
+ // Cross-page Admin routes share a tab-scoped permission snapshot; refresh
+ // invalidates it. Session tokens and server authorization never use this cache.
+ assert.match(playersScript,/permissionCache\?\.read\(\)/);
+ assert.match(playersScript,/permissionCache\?\.write\(perms\)/);
+ assert.match(calendarScript,/createAdminController\(cachedAdminRequest,render\)/);
+ assert.match(calendarScript,/permissionCache\?\.clear\(\);void controller\.refresh\(\)/);
+ for(const html of [home,calendar,players])assert.match(html,/\/assets\/admin-permissions-cache\.js/);
+ assert.ok(planPublicFiles().includes('assets/admin-permissions-cache.js'));
+ for(const asset of ['account-login','account-settings'])
+  assert.match(readFileSync(new URL('../assets/'+asset+'.js',import.meta.url),'utf8'),/sessionStorage\.removeItem\('fa:admin:permissions:v1'\)/);
  assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
 
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
