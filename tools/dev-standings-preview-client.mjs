@@ -596,6 +596,25 @@ function waitForRows() {
   });
 }
 
+// #521: keep already-loaded image nodes across DEV preview mount and restore.
+// Swap incoming empty crest hosts into old rows, retaining rollback structure.
+function reuseCrestHosts(currentRows,nextRows){
+ const hosts=new Map();
+ for(const row of currentRows){
+  const id=row?.dataset?.worldClub,host=row?.querySelector?.('[data-club-crest]');
+  if(id&&host?.dataset?.clubCrest===id&&!hosts.has(id))hosts.set(id,host);
+ }
+ for(const row of nextRows){
+  const id=row?.dataset?.worldClub,original=hosts.get(id);
+  const incoming=row?.querySelector?.('[data-club-crest]');
+  if(!original||!incoming||original===incoming||incoming.dataset.clubCrest!==id)continue;
+  const parent=incoming.parentNode,next=incoming.nextSibling;
+  if(!parent||!original.parentNode)continue;
+  original.replaceWith(incoming);
+  parent.insertBefore(original,next);
+ }
+}
+
 async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
   try {
     // A single per-document manifest promise is reused by the competition
@@ -850,8 +869,12 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       if(committed){
        if(restoreFixtures)attempt(restoreFixtures);
        if(restorePostseason)attempt(restorePostseason);
+       const previousDesktop=[...tbody.children];
        attempt(()=>tbody.replaceChildren(...canonicalRows));
+       attempt(()=>reuseCrestHosts(previousDesktop,canonicalRows));
+       const previousMobile=[...mobileList.children];
        attempt(()=>mobileList.replaceChildren(...canonicalMobile));
+       attempt(()=>reuseCrestHosts(previousMobile,canonicalMobile));
        attempt(()=>{
         if(captionI18n===null)caption.removeAttribute("data-app-i18n");
         else caption.setAttribute("data-app-i18n",captionI18n);
@@ -866,8 +889,12 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     committed=true;
     // Commit to DOM only after all integrity checks and node construction passed.
     if(commitFixtures)commitFixtures();
+    // Mount before swapping: new placeholders are never connected after this
+    // synchronous task, so the crest MutationObserver cannot load them twice.
     tbody.replaceChildren(fragment);
+    reuseCrestHosts(canonicalRows,[...tbody.children]);
     commitMobile();
+    reuseCrestHosts(canonicalMobile,[...mobileList.children]);
     if(commitPostseason)commitPostseason();
     for(const {el,top,left} of scrollState){el.scrollTop=top;el.scrollLeft=left;}
     if(focused?.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});
