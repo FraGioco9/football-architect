@@ -127,6 +127,10 @@
   const pagination=root.querySelector('[data-admin-players-page]'),previous=root.querySelector('[data-admin-players-prev]'),next=root.querySelector('[data-admin-players-next]');
   const committed=root.querySelector('[data-admin-players-commit-status]');
   const tr=()=>({...(translations[doc.documentElement.lang]||translations.en),...(stageTranslations[doc.documentElement.lang]||stageTranslations.en)});
+  // An approved cohort carries its next deterministic seed back to the generator.
+  const nextSeed=new URLSearchParams(win.location.search).get('nextSeed');
+  if(form&&/^fa-next-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(nextSeed||''))
+   form.querySelector('[data-players-option="seed"]').value=nextSeed;
   let allowed=false,canWrite=false,validation=null,options=null,signature='',ticket=0;
   let pending=false,draft=null,draftPage=0,operation=0,saved=false;
 
@@ -307,14 +311,14 @@
    try{options=makeOptions(rawValues());nextSignature=JSON.stringify(options);validation=null}
    catch(error){options=null;validation=error.message}
    if(nextSignature!==signature){signature=nextSignature;invalidateDraft();}
-   if(draft){renderPage();if(!saved&&!pending)feedback.textContent=text.previewReady;}
+   if(draft&&!pending)feedback.textContent=text.previewReady;
    if(validation&&!pending)feedback.textContent=text.invalid+': '+validation;
    const previewDisabled=!allowed||!canWrite||!options||pending;
-   const commitDisabled=!allowed||!canWrite||!draft||pending||saved||confirmation.value!=='GENERATE PLAYERS';
+   const commitDisabled=true;
    // Preserve the enabled button throughout pointerdown/click. WebKit may
    // suppress a click after an unnecessary disabled-property assignment.
    if(previewButton.disabled!==previewDisabled)previewButton.disabled=previewDisabled;
-   if(commitButton.disabled!==commitDisabled)commitButton.disabled=commitDisabled;
+   if(commitButton&&commitButton.disabled!==commitDisabled)commitButton.disabled=commitDisabled;
   }
   async function authorizedPost(path,payload){
    const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
@@ -339,8 +343,8 @@
     if(active!==operation||signature!==expected||!allowed||!canWrite)return;
     if(!data||!Array.isArray(data.candidates)||data.candidates.length!==data.summary?.count||
       typeof data.draftId!=='string')throw Error('invalid_preview');
-    draft=data;draftPage=0;result.hidden=false;renderPage();
-    feedback.textContent=tr().previewReady;
+    draft=data;draftPage=0;
+    win.location.assign('/admin/players/preview?draftId='+encodeURIComponent(data.draftId));
    }catch(error){
     if(active!==operation)return;
     feedback.textContent=tr().previewError+': '+error.message;
@@ -403,11 +407,11 @@
    form.addEventListener('change',event=>{
     if(event.target?.matches?.('select[data-players-option]'))update();
    });
-   confirmation.addEventListener('input',update);
+   confirmation?.addEventListener('input',update);
    previewButton.addEventListener('click',()=>{void previewPlayers()});
-   commitButton.addEventListener('click',()=>{void commitPlayers()});
-   previous.addEventListener('click',()=>{if(draft){draftPage--;renderPage()}});
-   next.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
+   commitButton?.addEventListener('click',()=>{void commitPlayers()});
+   previous?.addEventListener('click',()=>{if(draft){draftPage--;renderPage()}});
+   next?.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
   }
   new MutationObserver(update).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   win.addEventListener('pageshow',event=>{if(event.persisted)void check()});

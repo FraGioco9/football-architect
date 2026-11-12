@@ -1755,3 +1755,9 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-filter-dialog+.app-players-table-scroll{margin-top:0}
 @media(max-width:620px){.app-players-header{gap:8px}.app-players-filter-trigger{min-width:104px;padding-inline:10px}.app-players-filter-dialog{width:min(420px,100vw)}}
 @media(prefers-reduced-motion:reduce){.app-players-filter-trigger,.app-players-filter-dialog{transition:none;animation:none!important}}
+
+/* Shared fixed tooltip, above scrolling Players and Admin preview tables. */
+.app-players-nationality-tooltip{position:fixed;z-index:2147482000;max-width:min(260px,calc(100vw - 16px));padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);box-shadow:0 12px 30px #0007;pointer-events:none;font-size:12px;line-height:1.4}
+.app-players-nationality-tooltip[hidden]{display:none}
+.app-players-nationality-flag:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:2px}
+@media(prefers-reduced-motion:reduce){.app-players-nationality-tooltip{animation:none}}

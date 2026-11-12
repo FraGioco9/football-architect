@@ -184,20 +184,6 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  </div>
  <p class="admin-players-feedback" data-admin-players-feedback role="status" aria-live="polite"></p>
  </form>
- <section class="admin-players-preview" data-admin-players-result aria-labelledby="admin-players-preview-heading" hidden>
- <h3 id="admin-players-preview-heading" data-admin-players-label="previewHeading">Player preview</h3>
- <p data-admin-players-summary></p>
- <div class="admin-players-preview-scroll">
- <table class="admin-players-preview-table"><thead><tr><th data-admin-players-label="colIndex">#</th><th data-admin-players-label="colName">Name</th><th data-admin-players-label="colNationality">Nationality</th><th data-admin-players-label="colAge">Age</th><th data-admin-players-label="colPosition">Position</th><th data-admin-players-label="colFoot">Foot</th><th data-admin-players-label="colHeight">Height</th></tr></thead><tbody data-admin-players-rows></tbody></table>
- </div>
- <div class="admin-players-preview-pagination"><button type="button" data-admin-players-prev disabled aria-label="Previous preview page">‹</button><span data-admin-players-page></span><button type="button" data-admin-players-next disabled aria-label="Next preview page">›</button></div>
- <div class="admin-players-approval">
- <label for="admin-players-approval" data-admin-players-label="approvalPrompt">Type GENERATE PLAYERS to confirm this preview</label>
- <input id="admin-players-approval" type="text" data-admin-players-confirmation autocomplete="off" spellcheck="false" placeholder="GENERATE PLAYERS">
- <button type="button" data-admin-players-commit data-admin-players-label="commit" disabled>Generate in environment</button>
- </div>
- </section>
- <p class="admin-players-commit-status" data-admin-players-commit-status role="status" aria-live="polite" hidden></p>
  </div>
 </section>
         </section>
