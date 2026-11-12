@@ -1547,17 +1547,19 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 .app-players-header{min-width:0}
 .app-players-header>.app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;text-align:left}
 html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
-.app-players-count{flex:0 0 auto;margin:0;min-width:116px;min-height:20px;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
-.app-players-count-skeleton{display:inline-block;width:88px;height:12px;border-radius:4px;background:var(--line);vertical-align:middle}
+.app-players-count{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;flex:0 0 132px;width:132px;height:44px;margin:0;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
+.app-players-count-skeleton{display:block;flex:0 0 98px;width:98px;height:14px;margin-inline-start:auto;border-radius:4px;background:var(--line)}
 
 /* Player directory: fixed six-column full-width table with an accessible blank flag heading. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-players-table-scroll:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.app-players-table{width:100%;min-width:690px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:690px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
+.app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
-.app-players-table th:first-child{width:54px;padding-inline:8px}
-.app-players-table th:nth-child(2){width:35%;text-align:left}
+.app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
+.app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:12%}
 .app-players-table th:nth-child(4){width:20%}
 .app-players-table th:nth-child(5){width:15%}
@@ -1589,15 +1591,16 @@ html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden
 .app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:44px;min-height:44px;padding:7px 6px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
 .app-players-toolbar+.app-players-table-scroll{margin-top:14px}
 .app-players-table[data-players-table-mode="attributes"]{min-width:760px}
-.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:220px;text-align:left}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){width:120px;text-align:center}
-html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1250px}
+html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1262px}
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+3){font-variant-numeric:tabular-nums}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
  .app-players-toolbar{height:96px;align-items:flex-start;gap:8px}
  .app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:44px}
  .app-players-group{min-height:44px;height:44px;padding:6px 3px;font-size:11px}
- .app-players-count{align-self:flex-start;min-width:102px;margin-top:12px;font-size:11px}
+ .app-players-count{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0;font-size:11px}
+ .app-players-count-skeleton{flex-basis:86px;width:86px}
 }
 @media(prefers-reduced-motion:reduce){.app-players-tabs .app-competition-tab,.app-players-group{transition:none}}

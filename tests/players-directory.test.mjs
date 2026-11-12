@@ -113,7 +113,7 @@ test('Players first paint never selects or replaces the html root despite its st
    dataset,classList:{toggle(){}},setAttribute(){},textContent:'',options:[{textContent:''}]
   });
   const views=['overview','attributes'].map(playersView=>element({playersView}));
-  const groups=['physical','technical','mental','goalkeeping'].map(playersGroup=>element({playersGroup}));
+  const groups=['technical','mental','physical','goalkeeping'].map(playersGroup=>element({playersGroup}));
   const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
   const table={tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};
   const document={
@@ -130,10 +130,10 @@ test('Players first paint never selects or replaces the html root despite its st
   };
   runInNewContext(script,{document,location:{search},URLSearchParams});
   assert.equal(root.dataset.playersView,search?'attributes':'overview');
-  assert.equal(root.dataset.playersGroup,search?'goalkeeping':'physical');
+  assert.equal(root.dataset.playersGroup,search?'goalkeeping':'technical');
   assert.equal(views[0].textContent,'Overview');
-  assert.equal(groups[0].textContent,'Physical');
-  assert.equal(groups[3].textContent,'Goalkeeping');
+  assert.equal(groups[0].textContent,'Technical');
+  assert.equal(groups[3].textContent,'Goalkeeper');
   if(search)assert.equal(table.dataset.playersTableMode,'attributes');
  }
 });
@@ -148,4 +148,47 @@ test('Players toolbar remains in document flow across main views and count is ou
  assert.doesNotMatch(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{display:none/);
  assert.match(code,/function changeView\(view\)\{[^}]*state\.view=view;syncUrl\(\);refresh\(\)/);
  assert.doesNotMatch(code,/data-players-filter|state\.nationality|state\.position/);
+});
+
+test('Players groups use Technical, Mental, Physical, Goalkeeper order while attribute names keep their historical field mapping',()=>{
+ const html=read('players/index.html'),renderer=read('assets/players-directory.js'),generator=read('tools/generate-app-pages.mjs');
+ const order=[...html.matchAll(/data-players-group="(technical|mental|physical|goalkeeping)"/g)].map(m=>m[1]);
+ assert.deepEqual(order,['technical','mental','physical','goalkeeping']);
+ assert.match(html,/data-players-group="technical">Technical<\/button>/);
+ assert.match(html,/data-players-group="goalkeeping">Goalkeeper<\/button>/);
+ assert.match(html,/group=Object\.hasOwn\(groups,params\.get\('group'\)\)\?params\.get\('group'\):'technical'/);
+ assert.match(renderer,/group:Object\.hasOwn\(groups,p\.get\('group'\)\)\?p\.get\('group'\):'technical'/);
+ assert.match(renderer,/state\.view==='attributes'&&state\.group!=='technical'/);
+ assert.match(html,/const keysAll=\['speed','strength','stamina','agility','passing'/i);
+ assert.match(renderer,/const allAttrs=\['speed','strength','stamina','agility','passing'/i);
+ assert.ok(generator.includes('data-players-group='),'generated HTML must retain group buttons');
+});
+test('Players public shell reserves exact common flag and name widths in every view, without moving total count',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css');
+ const colgroup=html.match(/<colgroup>([\s\S]*?)<\/colgroup>/)?.[1];
+ assert.ok(colgroup,'fixed first two columns exist from first paint');
+ assert.match(colgroup,/col class="app-players-flag-column"/);
+ assert.match(colgroup,/col class="app-players-name-column"/);
+ assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px/);
+ assert.match(css,/col\.app-players-flag-column\{width:var\(--app-players-flag-width\)\}/);
+ assert.match(css,/col\.app-players-name-column\{width:var\(--app-players-name-width\)\}/);
+ assert.match(css,/\.app-players-table th:nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
+ assert.doesNotMatch(css,/\.app-players-table th:nth-child\(2\)\{width:35%/);
+ assert.match(css,/\.app-players-count\{[^}]*display:flex;align-items:center;justify-content:flex-end;[^}]*width:132px;height:44px/);
+ assert.match(css,/\.app-players-count-skeleton\{[^}]*width:98px;height:14px/);
+ assert.match(css,/\.app-players-count\{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0/);
+ assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
+});
+test('Players receives the shared protected Debug Settings widget without publishing private scripts',()=>{
+ const html=read('players/index.html');
+ const local=read('tools/dev-standings-preview.mjs');
+ const client=read('tools/dev-standings-preview-client.mjs');
+ const artifact=read('tools/dev-preview-artifact.mjs');
+ assert.doesNotMatch(html,/src="\/__fa_dev__\/debug-settings\.mjs"/,'public page must not directly load private Debug');
+ assert.match(local,/\['dashboard\/index\.html','settings\/index\.html','clubs\/index\.html','players\/index\.html'\]/);
+ assert.match(client,/const sharedPath=.*players/);
+ assert.match(client,/createDebugWidget\(\{page:validPath\?"standings":clubPath\?"clubs":/);
+ assert.match(artifact,/admin\|competitions\|clubs\|players/);
+ assert.match(artifact,/path==="players\/index\.html"/);
 });

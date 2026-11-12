@@ -10,12 +10,14 @@
  });
 
  const groups=Object.freeze({
-  physical:['speed','strength','stamina','agility'],
   technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
   mental:['vision','positioning','decisions','composure'],
+  physical:['speed','strength','stamina','agility'],
   goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
  });
- const allAttrs=Object.values(groups).flat();
+ // Skill labels preserve the approved original public JSON order, independently
+ // of the order in which the user switches attribute groups.
+ const allAttrs=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={
   en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|GK positioning|Aerial',
   it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento portiere|Uscite alte',
@@ -24,11 +26,11 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement gardien|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Physical','Technical','Mental','Goalkeeping'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Fisici','Tecnici','Mentali','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Physisch','Technisch','Mental','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Físicos','Técnicos','Mentales','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Physiques','Techniques','Mentaux','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
@@ -38,7 +40,7 @@
   const rawPage=Number(p.get('page')||'1');
   return {
    view:p.get('view')==='attributes'?'attributes':'overview',
-   group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'physical',
+   group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical',
    page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1
   };
  }
@@ -63,7 +65,7 @@
    const url=new URL(location.href);
    for(const name of ['view','group','nationality','position','page'])url.searchParams.delete(name);
    if(state.view!=='overview')url.searchParams.set('view',state.view);
-   if(state.view==='attributes'&&state.group!=='physical')url.searchParams.set('group',state.group);
+   if(state.view==='attributes'&&state.group!=='technical')url.searchParams.set('group',state.group);
    if(state.page>1)url.searchParams.set('page',String(state.page));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);

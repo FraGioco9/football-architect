@@ -52,15 +52,18 @@ function debugHtml(bytes,path) {
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');
   return Buffer.from(html.replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
  }
- if(!/^(?:dashboard|calendar|settings|admin|competitions|clubs)\//.test(path)||!path.endsWith("/index.html"))return bytes;
+ if(!/^(?:dashboard|calendar|settings|admin|competitions|clubs|players)\//.test(path)||!path.endsWith("/index.html"))return bytes;
  let html=bytes.toString("utf8");
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
  const detail=/^competitions\/(?:(?:it|eng|es|de|fr|pt|nl|br)-[12]|int-1|int-2)\/index\.html$/.test(path);
  const calendarClock=path==="calendar/index.html"?DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled!==false)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
  if(calendarClock)html=html.replace('<script data-calendar-bootstrap>',calendarClock+'<script data-calendar-bootstrap>');
+ const injection=path==="players/index.html"
+  ? DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>'
+  : INJECTION;
  return Buffer.from(html.replace("</head>",
-  DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"||path==="calendar/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+INJECTION+"\n</head>"),"utf8");
+  DEBUG_FIRST_PAINT+(detail||path==="competitions/index.html"||path==="calendar/index.html"?DEBUG_SEASON_BOOTSTRAP:"")+injection+"\n</head>"),"utf8");
 }
 
 function expectedBytes(sourceRoot,debugRoot) {

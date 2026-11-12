@@ -430,7 +430,7 @@ function setPreviewEnabled(enabled) {
  return transition;
 }
 
-const sharedPath=/^\/(?:dashboard|settings|calendar|clubs)(?:\/index\.html|\/)?$/.test(location.pathname);
+const sharedPath=/^\/(?:dashboard|settings|calendar|clubs|players)(?:\/index\.html|\/)?$/.test(location.pathname);
 if(validPath||indexPath||clubPath||sharedPath){
  if(debugSeason===0){try{sessionStorage.removeItem(FLAG)}catch{}}
  if(clubPath&&debugEnabled()&&debugSeason>0){try{sessionStorage.setItem(FLAG,'on')}catch{}window.dispatchEvent(new Event('fa:fictional-standings-change'))}
@@ -459,7 +459,7 @@ if(validPath||indexPath||clubPath||sharedPath){
    if(!await resetPreview())return false;
    widgetRoot?.resetWidgetState();syncDebugControls();return true;
   }}]);
-  widgetRoot=createDebugWidget({page:validPath?"standings":clubPath?"clubs":"competitions"});
+  widgetRoot=createDebugWidget({page:validPath?"standings":clubPath?"clubs":/^\/players(?:\/index\.html|\/)?$/.test(location.pathname)?"players":"competitions"});
   // Keep the canonical placeholders invisible until DEV results are ready.
   // A failed preview must release the guard rather than leave an empty table.
   const reveal=()=>{delete document.documentElement.dataset.faDevStandingsPending;window.faDebugFirstPaintRelease?.()};
