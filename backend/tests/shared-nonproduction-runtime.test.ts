@@ -36,6 +36,30 @@ it('two frontend sign-ins share identity and world while logout affects only one
  expect((await call('/api/player/session',undefined,{Cookie:previewCookie})).status).toBe(200);
  expect((await call('/api/admin/world',undefined,{Cookie:previewCookie})).status).toBe(403);
 });
+it('local Worker with shared dev-preview D1 signs into the same existing account with a separate loopback session',async()=>{
+ const devOrigin='http://app.localhost:2000';
+ const localConfig={...config,PLAYER_MODE:'local',PLAYER_ORIGIN:devOrigin,PLAYER_LOCAL_INBOX_ENABLED:'false'};
+ const localCall=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request(devOrigin+path,{
+  method:body===undefined?'GET':'POST',headers:{...(body===undefined?{}:{'Content-Type':'application/json',Origin:devOrigin}),...headers},
+  ...(body===undefined?{}:{body:JSON.stringify(body)})
+ }),localConfig);
+ const unauth=await localCall('/api/player/permissions');
+ expect(unauth.status).toBe(401);
+ const login=await localCall('/api/player/login',{email:'shared@example.invalid',password});
+ expect(login.status).toBe(200);
+ const localCookie=cookie(login);
+ expect(localCookie).toMatch(/^fa_player_local=/);
+ const session=await localCall('/api/player/session',undefined,{Cookie:localCookie});
+ expect(session.status).toBe(200);
+ expect((await session.json() as any).authenticated).toBe(true);
+ const permissions=await localCall('/api/player/permissions',undefined,{Cookie:localCookie});
+ expect(permissions.status).toBe(200);
+ expect(await permissions.json()).toEqual({permissions:[]});
+ // Do not enable a local-only inbox or unverified registrations on the shared online pool.
+ const registration=await localCall('/api/player/register',{email:'another@example.invalid',password,username:'another-user'});
+ expect(registration.status).toBe(503);
+});
+
 it('expected nonproduction requests cannot dispatch to Production or accept unsupported pool claims',async()=>{
  const before=(await db.prepare('SELECT COUNT(*) AS n FROM player_sessions').first<{n:number}>())!.n;
  expect((await call('/api/player/login',{email:'shared@example.invalid',password},{'X-FA-Expected-Pool':'dev-preview'},{...config,PLAYER_MODE:'production'})).status).toBe(503);

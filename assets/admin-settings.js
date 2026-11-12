@@ -215,7 +215,24 @@
   const players=doc.querySelector('#app-admin [data-admin-players]');
   const playerFind=s=>players?.querySelector(s);
   const playerCommand=()=>playersTrialCommand({count:playerFind('[data-admin-players-count]')?.value,seed:playerFind('[data-admin-players-seed]')?.value,suitability:playerFind('[data-admin-players-suitability]')?.value});
-  const controller=createAdminController(browserRequest,render);
+  const permissionCache=doc.defaultView?.faAdminPermissionsCache?.create(doc.defaultView);
+  // UI-only per-tab snapshot. Each privileged Worker endpoint still reauthorizes.
+  async function cachedAdminRequest(path,options){
+   if(path==='/api/player/permissions'){
+    const cached=permissionCache?.read();
+    if(cached!==null&&cached!==undefined)return {permissions:cached};
+   }
+   try{
+    const data=await browserRequest(path,options);
+    if(path==='/api/player/permissions')permissionCache?.write(data?.permissions);
+    return data;
+   }catch(error){
+    if(error?.status===401&&path==='/api/player/permissions')permissionCache?.write([]);
+    else if(error?.status===401||error?.status===403)permissionCache?.clear();
+    throw error;
+   }
+  }
+  const controller=createAdminController(cachedAdminRequest,render);
   function render(state=controller.state()){
    const text=copies[doc.documentElement.lang]||copies.en;
    host.querySelectorAll('[data-admin-copy]').forEach(node=>node.textContent=text[node.dataset.adminCopy]);
@@ -284,7 +301,7 @@
    if(input.value!=='APPROVE SEASON 2'||!proposal?.snapshot||proposal.approval)return;
    input.value='';await controller.approveSeasonTwo(proposal.snapshot.snapshotHash);render();
   });
-  find('[data-admin-refresh]').addEventListener('click',()=>controller.refresh());
+  find('[data-admin-refresh]').addEventListener('click',()=>{permissionCache?.clear();void controller.refresh()});
   find('[data-admin-prepare]').addEventListener('click',()=>controller.prepare());
   host.querySelectorAll('[data-admin-command]').forEach(button=>button.addEventListener('click',()=>controller.command(button.dataset.adminCommand)));
   find('[data-admin-reset-confirm]').addEventListener('input',()=>render());
@@ -300,7 +317,9 @@
    catch{playerFind('[data-admin-players-feedback]').textContent=messages.manual;}
   });
   new MutationObserver(()=>render()).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  window.addEventListener('pageshow',event=>{if(event.persisted)void controller.refresh()});
+  // A full page load/refresh (or an explicit Admin Refresh click) rechecks
+  // permissions. Navigating back via BFCache does not trigger another request.
+  // Server-side guards remain authoritative for all protected operations.
   render();void controller.refresh();
  }
  return {createAdminController,mount,canRunCommand,nextDaySimulation,playersTrialCommand};
