@@ -154,8 +154,29 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const firstExplicit=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
  expect(firstExplicit.status).toBe(200);
  expect((await firstExplicit.json() as any).players).toHaveLength(50);
- // Only one positive page query parameter is allowed; all others return 422.
- for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
+ const matched=await worker.fetch(new Request(origin+'/api/players?position=ST&nationality=ITA&ageMin=0&ageMax=120'),service);
+ expect(matched.status).toBe(200);
+ expect(await matched.json()).toMatchObject({count:51,page:1,pageSize:50,totalPages:2});
+ const missed=await worker.fetch(new Request(origin+'/api/players?nationality=ENG&position=GK'),service);
+ expect(missed.status).toBe(200);
+ expect(await missed.json()).toMatchObject({count:0,page:1,totalPages:1,players:[]});
+ const overflow=await worker.fetch(new Request(origin+'/api/players?page=3&nationality=ITA&position=ST'),service);
+ expect(overflow.status).toBe(200);
+ expect(await overflow.json()).toMatchObject({count:51,page:3,totalPages:2,players:[]});
+ // The first-click DESC order puts GK first, then right-to-left positions.
+ const sortedIds=await db.prepare('SELECT id FROM generated_players ORDER BY id LIMIT 3').all<{id:number}>();
+ for(const [index,position] of ['GK','RB','LW'].entries()){
+  await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.primary_position',?) WHERE id=?")
+   .bind(position,sortedIds.results[index].id).run();
+ }
+ const pitched=await worker.fetch(new Request(origin+'/api/players?sort=positions&order=desc'),service);
+ expect(pitched.status).toBe(200);
+ expect(((await pitched.json()) as any).players.slice(0,3).map((player:any)=>player.primary_position)).toEqual(['GK','RB','LW']);
+ const reverse=await worker.fetch(new Request(origin+'/api/players?sort=positions&order=asc'),service);
+ expect(reverse.status).toBe(200);
+ expect(((await reverse.json()) as any).players[0].primary_position).toBe('ST');
+ // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
+ for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
   expect(invalid.status,invalidQuery).toBe(422);
   expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
@@ -164,4 +185,135 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  expect(legacy.status).toBe(404);
  const post=await worker.fetch(new Request(origin+'/api/players',{method:'POST'}),service);
  expect(post.status).toBe(405);
+});
+
+
+it('public Players filters support multiselect and opt-in secondary matches across full generations',async()=>{
+ const preview=await createPreview({count:51,seed:'multiselect-secondary-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ // Controlled stored fixtures: only the earliest ID has ENG and RW as secondary values.
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.secondary_nationality',NULL,'$.secondary_positions',json('[]'))").run();
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.secondary_nationality','ENG','$.secondary_positions',json('[\"RW\",\"LW\"]')) WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const primaryN=await get('?nationality=ENG');
+ expect(primaryN).toMatchObject({status:200,data:{count:0,players:[]}});
+ const anyN=await get('?nationality=ENG&nationalityScope=any');
+ expect(anyN).toMatchObject({status:200,data:{count:1,page:1,totalPages:1}});
+ expect(anyN.data.players[0].id).toBe(first!.id);
+ const primaryP=await get('?position=RW');
+ expect(primaryP).toMatchObject({status:200,data:{count:0}});
+ const anyP=await get('?position=RW&positionScope=any');
+ expect(anyP).toMatchObject({status:200,data:{count:1}});
+ expect(anyP.data.players[0].id).toBe(first!.id);
+ const combined=await get('?nationality=ENG&nationalityScope=any&position=LW&positionScope=any');
+ expect(combined).toMatchObject({status:200,data:{count:1}});
+ expect(combined.data.players[0].id).toBe(first!.id);
+ const noCrossMatch=await get('?nationality=ENG&position=RW&positionScope=any');
+ expect(noCrossMatch).toMatchObject({status:200,data:{count:0}});
+ const twoNationalities=await get('?nationality=ITA%2CENG&page=2');
+ expect(twoNationalities).toMatchObject({status:200,data:{count:51,page:2,totalPages:2}});
+ expect(twoNationalities.data.players).toHaveLength(1);
+ const twoPositions=await get('?position=ST%2CRW&positionScope=any');
+ expect(twoPositions).toMatchObject({status:200,data:{count:51,page:1,totalPages:2}});
+ const heights=await get('?heightMin=100&heightMax=250');
+ expect(heights).toMatchObject({status:200,data:{count:51,page:1,totalPages:2}});
+ const tall=await get('?heightMin=250');
+ expect(tall).toMatchObject({status:200,data:{count:0}});
+ for(const query of [
+  '?nationalityScope=any','?positionScope=any',
+  '?nationality=ITA%2CITA','?position=ST%2CST',
+  '?nationality=ITA%2CXYZ','?position=RW%2CXX',
+  '?nationality=%49TA','?nationality=ITA%2cENG',
+  '?heightMin=99','?heightMax=251','?heightMin=200&heightMax=190',
+  '?nationality=ENG&nationalityScope=primary','?position=RW&positionScope=secondary',
+  '?nationality=ITA&nationality=ENG'
+ ]){
+  const invalid=await get(query);
+  expect(invalid.status,query).toBe(422);
+  expect(invalid.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+});
+
+
+it('public name substring and multiple attribute ranges filter the active generation before COUNT/page',async()=>{
+ const preview=await createPreview({count:51,seed:'directory-name-attrs-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ // Isolate the test criteria so both filtered count and pages have deterministic membership.
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.attributes.passing',1,'$.attributes.vision',1)").run();
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.first_name','Andrea','$.last_name','Filterprobe','$.display_name','Andrea Filterprobe','$.attributes.passing',87,'$.attributes.vision',93) WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const name=await get('?name=filterprobe');
+ expect(name).toMatchObject({status:200,data:{count:1,page:1,totalPages:1}});
+ expect(name.data.players[0].id).toBe(first!.id);
+ const combined=await get('?name=Andrea+Filterprobe&attributes=passing_87_87%2Cvision_90_x');
+ expect(combined).toMatchObject({status:200,data:{count:1,totalPages:1}});
+ expect(combined.data.players[0].id).toBe(first!.id);
+ const low=await get('?attributes=passing_1_1&page=2');
+ expect(low).toMatchObject({status:200,data:{count:50,page:2,totalPages:1,players:[]}});
+ const high=await get('?attributes=passing_88_99');
+ expect(high).toMatchObject({status:200,data:{count:0,players:[]}});
+ const xOnly=await get('?attributes=vision_x_92');
+ expect(xOnly).toMatchObject({status:200,data:{count:50}});
+ const oneLower=await get('?attributes=gk_reflexes_1_x');
+ expect(oneLower.status).toBe(200);
+ const nameMiss=await get('?name=NoSuchFilterprobe');
+ expect(nameMiss).toMatchObject({status:200,data:{count:0}});
+ for(const invalid of [
+  '?name=%25','?name=Andrea%20Filterprobe','?name=%20Andrea',
+  '?attributes=passing_x_x','?attributes=vision_0_90','?attributes=vision_60_100',
+  '?attributes=vision_80_60','?attributes=unknown_30_x',
+  '?attributes=passing_50_x%2Cpassing_60_x',
+  '?attributes=vision_60_x%2Cvision_70_x',
+  '?attributes=vision_60_x&attributes=passing_20_x',
+  '?attributes=vision_60_x%2cpassing_20_x'
+ ]){
+  const resp=await get(invalid);
+  expect(resp.status,invalid).toBe(422);
+  expect(resp.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+});
+
+
+it('sorting all generated Players is stable across pages, not limited to the 50 visible rows',async()=>{
+ const preview=await createPreview({count:51,seed:'players-global-sort-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',22,'$.attributes.passing',1,'$.display_name','AAA Sortprobe')").run();
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',80,'$.attributes.passing',99,'$.display_name','ZZZ Sortprobe') WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const maxAge=await get('?sort=age&order=desc&page=1');
+ expect(maxAge).toMatchObject({status:200,data:{count:51,totalPages:2,page:1}});
+ expect(maxAge.data.players[0].id).toBe(first!.id);
+ const ascendingLast=await get('?sort=age&order=asc&page=2');
+ expect(ascendingLast).toMatchObject({status:200,data:{count:51,totalPages:2,page:2}});
+ expect(ascendingLast.data.players).toHaveLength(1);
+ expect(ascendingLast.data.players[0].id).toBe(first!.id);
+ const passing=await get('?sort=passing&order=desc');
+ expect(passing).toMatchObject({status:200,data:{count:51,totalPages:2}});
+ expect(passing.data.players[0].id).toBe(first!.id);
+ const names=await get('?sort=name&order=desc');
+ expect(names).toMatchObject({status:200,data:{count:51,totalPages:2}});
+ expect(names.data.players[0].id).toBe(first!.id);
+ for(const invalid of ['?order=asc','?sort=age&order=up','?sort=unknown','?sort=passing%20','?sort=name&sort=age']){
+  const response=await get(invalid);
+  expect(response.status,invalid).toBe(422);
+  expect(response.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
 });
