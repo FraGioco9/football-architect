@@ -205,6 +205,7 @@
     "tests/competition-model.test.mjs": "site-node",
     "tests/competition-navigation.test.mjs": "site-node",
     "tests/competition-overview-teams.test.mjs": "site-node",
+    "tests/competition-preboot-tabs.test.mjs": "site-node",
     "tests/competition-rules-model.test.mjs": "site-node",
     "tests/competition-rules-view.test.mjs": "site-node",
     "tests/competition-rules.test.mjs": "site-node",
