@@ -324,3 +324,34 @@ export function createPreviewClubHistory(division,clubId,progress){
   coverage:seasons.some(s=>s.memberships.some(m=>m.stats.played>0))?'complete':'empty',
   seasons:Object.freeze(seasons)});
 }
+
+// Club-only read of the same protected deterministic schedule. Never published.
+export function createPreviewClubFixtures(division,clubId,progress,season,day){
+ assertDivision(division);
+ const definition=previewDefinition(division),clubKey=division.countryId+'-'+clubId;
+ const base={source:'dev',clubKey,season,currentSeason:progress.season,day,competitions:[definition],rows:[],
+  provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}};
+ if(season===0)return {...base,coverage:'unstarted'};
+ if(!Number.isInteger(season)||season<1||season>progress.season||!Number.isInteger(day)||day<0||day>56)
+  return {...base,coverage:'unavailable'};
+ const viewedDay=season===progress.season?day:56;
+ const national=globalThis.faWorldCalendarModel.createSeason(season).days.flatMap(d=>d.events.filter(e=>e.family==='national').map(e=>({day:d.day,...e})));
+ const games=createPreviewStandings(division,30,season).fixtures.map(g=>({...g,phaseId:'league'}));
+ const stage=definition.rules.phases.find(p=>p.type==='knockout');
+ const bracket=createPreviewPostseason(division,previewSeasonProgress(season,progress),season);
+ for(const tie of bracket.ties)for(const i of [0,1])games.push({round:31+i,phaseId:stage.id,tieId:tie.id,leg:i+1,
+  homeId:tie.clubIds[i===0?1:0],awayId:tie.clubIds[i===0?0:1],homeGoals:null,awayGoals:null,...tie.legs[i]});
+ if(bracket.final)games.push({...bracket.final,round:33,phaseId:stage.id,leg:1,tieId:'final'});
+ const rows=games.filter(g=>[g.homeId,g.awayId].includes(clubId)).map(g=>{
+  const sportingDay=national.find(e=>e.round===g.round)?.day;
+  if(!sportingDay)throw Error('Missing canonical DEV sporting day');
+  const home=g.homeId===clubId,played=sportingDay<=viewedDay&&g.homeGoals!==null;
+  return {id:'dev:'+season+':'+division.id+':'+g.round+':'+g.homeId+':'+g.awayId,competitionId:division.id,
+   season,day:sportingDay,round:g.round,phaseId:g.phaseId,tieId:g.tieId??null,leg:g.leg??null,
+   opponentId:division.countryId+'-'+(home?g.awayId:g.homeId),venue:home?'home':'away',
+   goalsFor:played?(home?g.homeGoals:g.awayGoals):null,goalsAgainst:played?(home?g.awayGoals:g.homeGoals):null,
+   resolution:!played?null:g.penalties?'penalties':g.afterExtraTime?'extra-time':'regulation',
+   penalties:played&&g.penalties?{for:home?g.penalties.homeGoals:g.penalties.awayGoals,against:home?g.penalties.awayGoals:g.penalties.homeGoals}:null};
+ }).sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id,'en'));
+ return {...base,rows,coverage:'partial',unavailable:['int-1','int-2']};
+}

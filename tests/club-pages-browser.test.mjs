@@ -525,7 +525,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':'.club-empty')+"')"),true);
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
     }
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
@@ -769,4 +769,94 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await new Promise(resolve=>server.close(resolve));await new Promise(resolve=>devServer.close(resolve));
     await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:100});
   }
+});
+
+test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive and history',{timeout:120000},async()=>{
+ const {published}=await import('./canonical-state-browser.mjs');
+ const browser=chrome(),dir=await mkdtemp(join(tmpdir(),'fa-club-fixtures-'));
+ let world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:1,day:16,phase:'active'};
+ let hold=false,failHistory=false,failCompetition=false,useDev=false;const held=[];
+ const router=createPreviewServer({devPreview:false}),devRouter=createPreviewServer();
+ const server=createServer((req,res)=>{
+  const path=new URL(req.url,'http://localhost').pathname;
+  const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};
+  if(path==='/api/world')return json(200,{world});
+  if(path==='/api/clubs/IT-1/history'){
+   if(failHistory)return json(503,{});
+   const raw=published('IT-1',1,world),played=raw.data.statistics.teams[0].played;
+   const overview={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,world,status:'partial',reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:1:x'},
+    data:{season:1,memberships:[{competitionId:'IT-1',season:1,category:'domestic',position:1,points:played,cupStatus:null,nextMatch:null}]}};
+   return json(200,{schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',world,status:'available',reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews:[overview]}});
+  }
+  if(path==='/api/competitions/IT-1/seasons/1'){
+   const data=published('IT-1',1,world),send=()=>json(failCompetition?503:200,data);
+   if(hold)held.push(send);else send();return;
+  }
+  req.headers.host='127.0.0.1:2000';(useDev?devRouter:router).emit('request',req,res);
+ });
+ server.listen(0,'127.0.0.1');await once(server,'listening');const origin='http://127.0.0.1:'+server.address().port;
+ const proc=spawn(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-proxy-server','--no-first-run','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{stdio:['ignore','ignore','pipe']});
+ let stderr='',socket;proc.stderr.on('data',d=>stderr+=d);
+ try{
+  let endpoint;for(let i=0;i<100&&!endpoint;i++){endpoint=stderr.match(/DevTools listening on (ws:\/\/\S+)/)?.[1];if(!endpoint)await delay(50);}
+  assert.ok(endpoint,'Chromium starts');const address=new URL(endpoint).host;
+  const tab=(await(await fetch('http://'+address+'/json/list')).json()).find(t=>t.type==='page');
+  socket=new WebSocket(tab.webSocketDebuggerUrl);await new Promise((ok,fail)=>{socket.addEventListener('open',ok,{once:true});socket.addEventListener('error',fail,{once:true});});
+  let seq=0;const pending=new Map();socket.addEventListener('message',e=>{const m=JSON.parse(e.data),p=pending.get(m.id);if(!p)return;pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(Error(m.error.message)):p.resolve(m.result);});
+  const cmd=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq,timer=setTimeout(()=>{pending.delete(id);reject(Error('CDP timeout '+method));},10000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}));});
+  const run=async expression=>{const r=await cmd('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
+  const wait=async expr=>{for(let i=0;i<100;i++){if(await run(expr).catch(()=>false))return;await delay(50);}throw Error('Timed out '+expr+'; '+await run("JSON.stringify({url:location.href,text:document.querySelector('.club-fixtures')?.textContent,errors:window.__errors,active:document.activeElement?.outerHTML?.slice(0,250)})"));};
+  await cmd('Page.enable');await cmd('Emulation.setFocusEmulationEnabled',{enabled:true});await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__errors=[];window.addEventListener('error',e=>__errors.push(e.message));window.addEventListener('unhandledrejection',e=>__errors.push(String(e.reason?.stack||e.reason)));"});
+  const visit=async()=>{await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=1'});await wait("document.documentElement.dataset.clubReady==='true'&&document.querySelector('.club-fixtures-controls')");};
+  hold=true;await visit();await wait("document.querySelectorAll('.club-fixture-loading').length===6");
+  const before=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");
+  await wait('true');for(let i=0;i<100&&!held.length;i++)await delay(20);assert.ok(held.length,'canonical season request is pending');
+  await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click()");held.splice(0).forEach(send=>send());hold=false;
+  await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
+  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
+  await run("window.__fixtureFocus=document.querySelector('[data-club-fixture-control=season] button');__fixtureFocus.focus();document.documentElement.lang='it'");await delay(80);assert.equal(await run('document.activeElement===window.__fixtureFocus'),true,'locale redraw retains focused combobox');
+  await run("document.documentElement.lang='en'");await delay(60);
+  assert.equal(await run("[...document.querySelectorAll('.club-fixture-opponent')].every(n=>!n.href.includes('/it/1/'))"),true);
+  assert.equal(await run("document.querySelectorAll('.club-fixture-opponent [data-club-crest]').length"),30,'each repeated opponent retains its own crest host');
+  assert.equal(await run("[...document.querySelectorAll('[data-club-fixture-id]')].filter(n=>Number(n.querySelector('.club-fixture-meta span').textContent.replace(/\\D/g,''))>16).every(n=>n.querySelector('strong').textContent==='—')"),true);
+  await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
+  assert.equal(await run("document.activeElement.getAttribute('aria-describedby')"),'club-fixture-venue-tooltip');
+  await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').hidden"),true);
+  for(const [width,lang,theme] of [[320,'it','dark'],[390,'de','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
+   await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+   await run(`document.documentElement.lang=${JSON.stringify(lang)};document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await delay(60);
+   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no overflow '+width+' '+lang);
+   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result')].every(n=>n.getBoundingClientRect().width>=64)"),true);
+   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,1440].includes(width)){
+    mkdirSync(process.env.CLUB_FIXTURES_QA_DIR,{recursive:true});
+    const capture=await cmd('Page.captureScreenshot',{format:'png'});
+    writeFileSync(join(process.env.CLUB_FIXTURES_QA_DIR,'club-fixtures-'+width+'-'+lang+'-'+theme+'.png'),Buffer.from(capture.data,'base64'));
+   }
+   await run("document.querySelector('[data-club-venue]').focus()");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').textContent===document.activeElement.getAttribute('aria-label')"),true);
+   assert.equal(await run("(()=>{const n=document.querySelector('[data-club-fixtures-next]'),r=n.getBoundingClientRect();return r.width>150&&r.left>=0&&r.right<=innerWidth&&n.textContent.trim().length>5})()"),true,'next command remains visible and legible');
+  }
+  await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
+  await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
+  await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-menu-value=\"0\"]').click()");await wait("location.search.includes('season=0')&&document.querySelectorAll('[data-club-fixture-id]').length===0");
+  await run('history.back()');await wait("location.search.includes('season=1')&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run('history.forward()');await wait("location.search.includes('season=0')&&document.querySelectorAll('[data-club-fixture-id]').length===0");
+  await visit();await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  failCompetition=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures-notice')?.textContent.includes('unavailable')");assert.equal(await run("document.querySelectorAll('[data-club-fixture-id]').length"),0);
+  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures-notice[role=alert]')!==null");
+  failHistory=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("document.querySelector('.club-fixtures-notice')?.textContent.includes('Season 0')");
+  assert.deepEqual(await run('window.__errors'),[]);
+  useDev=true;
+  await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"sessionStorage.setItem('football-architect:debug-enabled','on');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','1');sessionStorage.setItem('football-architect:standings-dev-matchdays','4');sessionStorage.setItem('football-architect:calendar-dev-world-day','16');"});
+  await visit();await wait("window.faWorldState?.get?.().source==='dev'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  assert.equal(await run("document.querySelector('.club-fixtures-notice').textContent.includes('Preview')"),true);
+  await run("window.faDebugEnabled=false;sessionStorage.setItem('football-architect:debug-enabled','off');window.faWorldState.setSource({kind:'authoritative'});window.dispatchEvent(new Event('fa:source-change'))");
+  await wait("document.querySelectorAll('[data-club-fixture-id]').length===0&&!document.querySelector('.club-fixtures-notice').textContent.includes('Preview')");
+  assert.deepEqual(await run('window.__errors'),[]);
+  console.log('CLUB-FIXTURES Chromium PASS: canonical API, late response/tab fence, 30 club-only rows, no future scores, stable controls, focus tooltip, five locales/themes at 320/390/768/1440, season/filter/next, refresh/Back/Forward, unavailable/error/Season 0. Physical Safari remains UNKNOWN.');
+ }finally{socket?.close();proc.kill();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true,maxRetries:8,retryDelay:100});}
 });

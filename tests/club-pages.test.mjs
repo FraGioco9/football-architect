@@ -117,7 +117,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
-   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':'club-empty'));
+   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':'club-empty'));
    assert.doesNotMatch(html,/\?view=|href="\/app\//);
   }
  }
@@ -685,4 +685,44 @@ test('CLUB-HISTORY-04: each season has one expandable total row and hidden compe
  assert.doesNotMatch(devSeasonZero,/<table /,'Season 0 has a notice, not an empty table');
  assert.match(css,/margin:0 0 14px/,'desktop name/location spacing');
  assert.match(css,/font-size:clamp\(1\.2rem,4\.8vw,1\.5rem\);margin-bottom:10px/,'mobile name/location spacing');
+});
+
+test('CLUB-FIXTURES renderer: localized controls, opponent-only rows, venues and shootouts',async()=>{
+ const {default:fixtures}=await import('../assets/club-fixtures.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const row={id:'fixture-a',competitionId:'IT-1',season:1,day:12,round:4,phaseId:'league',opponentId:'IT-2',venue:'away',goalsFor:2,goalsAgainst:1,resolution:'penalties',penalties:{for:5,against:4}};
+ for(const lang of ['en','de','es','fr','it']){
+  const html=fixtures.render({manifest,lang,season:1,seasons:[0,1],snapshot:{coverage:'complete',day:12,rows:[row],competitions:[]}});
+  assert.ok(html.includes('2–1'));assert.ok(html.includes('5–4'));assert.ok(html.includes('data-club-crest="IT-2"'));assert.ok(!html.includes('data-club-crest="IT-1"'));
+  assert.ok(html.includes('data-club-venue="away"'));assert.ok(html.includes(fixtures.copy[lang].away));assert.ok(html.includes('role="combobox"'));
+ }
+ const unknown=fixtures.render({manifest,lang:'en',season:1,seasons:[1],snapshot:{coverage:'complete',day:0,rows:[{...row,opponentId:null,goalsFor:null,goalsAgainst:null,resolution:null,penalties:null}],competitions:[]}});
+ assert.ok(unknown.includes('Opponent TBD'));assert.ok(!unknown.includes('2–1'));
+});
+
+test('CLUB-FIXTURES DEV adapter uses the sporting calendar and masks future results',async()=>{
+ const {createPreviewClubFixtures}=await import('../tools/dev-standings-preview-data.mjs');
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json')),division=manifest.divisions.find(d=>d.id==='IT-1');
+ const snapshot=createPreviewClubFixtures(division,1,{season:1,matchdays:4},1,16);
+ assert.equal(snapshot.rows.filter(r=>r.phaseId==='league').length,30);
+ assert.ok(snapshot.rows.every(r=>r.day<=16||r.goalsFor===null));
+ assert.equal(snapshot.rows[0].day,13);assert.equal(snapshot.provenance.kind,'fictional');
+ assert.equal(createPreviewClubFixtures(division,1,{season:0,matchdays:0},0,0).coverage,'unstarted');
+});
+
+test('CLUB-FIXTURES: knockout links use configured phase and leg tokens',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ await import('../assets/competition-rules-view.js');
+ const competitions=JSON.parse(read('competitions/_shared/manifest.json')).competitions;
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const row={id:'cup-leg-2',competitionId:'int-1',day:48,round:12,phaseId:'semifinals',leg:2,opponentId:'ENG-2',venue:'neutral',goalsFor:null,goalsAgainst:null};
+ const html=ui.render({manifest,lang:'it',season:1,snapshot:{coverage:'complete',day:46,rows:[row],competitions}});
+ assert.ok(html.includes('matchday=semifinals%3A2'));
+ assert.ok(html.includes('Semifinali'));assert.ok(html.includes('Campo neutro'));
+});
+
+test('CLUB-FIXTURES: parser-time loading notice and region label are localized before hydration',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ assert.match(ui.render(),/data-club-fixture-text="loading"/);
+ assert.match(read('tools/generate-club-pages.mjs'),/fixtures\.setAttribute\('aria-label',fixtureLabels\.competition\)/);
 });

@@ -1,0 +1,45 @@
+/* Pure Club Fixtures presentation, shared by the generator and browser. */
+((root,factory)=>{const api=factory();root.faClubFixtures=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;})(typeof window!=='undefined'?window:globalThis,()=>{
+ 'use strict';
+ const keys=['season','competition','all','next','day','opponent','venue','result','home','away','neutral','unknown','loading','empty','unstarted','unavailable','error','partial','extra','penalties','scheduled','fulltime','preview'];
+ const values={
+  en:['Season','Competition','All','Go to next match','Day','Opponent','Venue','Result','Home','Away','Neutral ground','Opponent TBD','Loading fixtures…','No fixtures are available.','Season 0 has not started.','Fixture data is unavailable.','Unable to load fixtures. Please try again.','Some competitions are unavailable.','After extra time','Penalties','Scheduled','Full time','Preview'],
+  de:['Saison','Wettbewerb','Alle','Zum nächsten Spiel','Tag','Gegner','Spielort','Ergebnis','Heim','Auswärts','Neutraler Platz','Gegner offen','Spielplan wird geladen…','Keine Spiele verfügbar.','Saison 0 hat noch nicht begonnen.','Spieldaten sind nicht verfügbar.','Spielplan konnte nicht geladen werden. Bitte erneut versuchen.','Einige Wettbewerbe sind nicht verfügbar.','Nach Verlängerung','Elfmeterschießen','Angesetzt','Endstand','Vorschau'],
+  es:['Temporada','Competición','Todas','Ir al próximo partido','Día','Rival','Sede','Resultado','Local','Visitante','Campo neutral','Rival por definir','Cargando partidos…','No hay partidos disponibles.','La temporada 0 no ha comenzado.','Los datos de partidos no están disponibles.','No se pudieron cargar los partidos. Inténtalo de nuevo.','Algunas competiciones no están disponibles.','Tras prórroga','Penaltis','Programado','Finalizado','Vista previa'],
+  fr:['Saison','Compétition','Toutes','Aller au prochain match','Jour','Adversaire','Lieu','Résultat','Domicile','Extérieur','Terrain neutre','Adversaire à définir','Chargement des matchs…','Aucun match disponible.','La saison 0 n’a pas commencé.','Les données des matchs sont indisponibles.','Impossible de charger les matchs. Réessayez.','Certaines compétitions sont indisponibles.','Après prolongation','Tirs au but','Programmé','Terminé','Aperçu'],
+  it:['Stagione','Competizione','Tutte','Vai alla prossima partita','Giorno','Avversario','Sede','Risultato','Casa','Trasferta','Campo neutro','Avversario da definire','Caricamento partite…','Nessuna partita disponibile.','La stagione 0 non è iniziata.','Dati delle partite non disponibili.','Impossibile caricare le partite. Riprova.','Alcune competizioni non sono disponibili.','Dopo i supplementari','Rigori','Programmata','Terminata','Anteprima']
+ };
+ const copy=Object.fromEntries(Object.entries(values).map(([lang,v])=>[lang,Object.fromEntries(keys.map((k,i)=>[k,v[i]]))]));
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const icons={home:'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>',away:'<path d="m22 2-7 20-4-9-9-4Z M11 13 22 2"/>',neutral:'<circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12h20"/>'};
+ const text=(key,t)=>'<span data-club-fixture-text="'+key+'">'+esc(t[key])+'</span>';
+ function control(id,label,selected,options){
+  return '<div class="language-control club-fixture-select" data-club-fixture-control="'+id+'"><button type="button" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="club-fixture-'+id+'-menu" aria-label="'+esc(label)+'"><span data-club-fixture-value>'+esc(selected)+'</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" role="listbox" aria-label="'+esc(label)+'" id="club-fixture-'+id+'-menu" hidden>'+options.map(([value,label],i)=>'<div class="language-option" role="option" id="club-fixture-'+id+'-'+i+'" data-menu-value="'+esc(value)+'">'+esc(label)+'</div>').join('')+'</div></div>';
+ }
+ function render({manifest={clubs:[]},lang='en',season=1,seasons=[1],filter='all',snapshot={coverage:'loading',rows:[],competitions:[]}}={}){
+  const t=copy[lang]||copy.en,rows=snapshot.rows||[],competitions=snapshot.competitions||[],pending=snapshot.coverage==='loading';
+  const compName=id=>competitions.find(d=>d.id===id)?.name||manifest.divisions?.find(d=>d.id===id)?.name||({'int-1':'Sovereign Cup','int-2':'Federation Cup'}[id])||id;
+  const options=[['all',t.all],...competitions.map(d=>[d.id,compName(d.id)])];
+  const next=rows.find(row=>row.goalsFor===null&&row.day>snapshot.day);
+  const toolbar='<div class="club-fixtures-toolbar">'+control('season',t.season,t.season+' '+season,seasons.map(s=>[s,t.season+' '+s]))+control('competition',t.competition,filter==='all'?t.all:compName(filter),options)+'<button type="button" class="language-trigger club-fixtures-next" data-club-fixtures-next'+(!next?' disabled':'')+'>'+text('next',t)+'</button></div>';
+  let body='';
+  if(pending)body=Array.from({length:6},()=>'<li class="club-fixture-row club-fixture-loading" aria-hidden="true"><span class="club-fixture-meta"><span class="club-fp-bar"></span></span><span class="club-fixture-opponent"><span class="app-world-club-crest-placeholder fa-crest-loading"></span><span class="club-fp-bar"></span></span><span class="club-fp-bar"></span><span class="club-fp-bar"></span></li>').join('');
+  else body=rows.filter(row=>filter==='all'||row.competitionId===filter).map(row=>{
+   const club=manifest.clubs.find(c=>c.countryId+'-'+c.clubId===row.opponentId),name=club?.primaryName||t.unknown;
+   const opponentHref=club?'/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/fixtures?season='+season:null;
+   const crest='<span class="app-world-club-crest-placeholder fa-crest-loading"'+(club?' data-club-crest="'+esc(row.opponentId)+'"':'')+' aria-hidden="true">'+(manifest.clubCrests?.[row.opponentId]?'<img class="app-club-crest-image" src="/'+esc(manifest.clubCrests[row.opponentId])+'" alt="" decoding="async">':'')+'</span>';
+   const opponent=crest+'<span>'+esc(name)+'</span>';
+   const definition=competitions.find(d=>d.id===row.competitionId),rules=globalThis.faCompetitionRules,view=globalThis.faCompetitionRulesView;
+   const choice=definition&&rules?.fixtureChoices(definition).find(c=>c.phaseId===row.phaseId&&(row.phaseId==='league'?c.round===row.round:definition.category!=='international'||!row.leg||c.labelParams?.leg===row.leg));
+   const stage=choice&&view?view.fixturesChoiceLabel(definition,choice,lang):row.phaseId==='league'?t.day+' '+row.round:row.phaseId;
+   const token=choice?.value??(row.phaseId==='league'?row.round:row.phaseId==='promotionPlayoffs'?'playoffs':row.phaseId);
+   const compHref='/competitions/'+row.competitionId.toLowerCase()+'/fixtures?season='+season+'&matchday='+encodeURIComponent(token);
+   const played=row.goalsFor!==null,score=played?row.goalsFor+'–'+row.goalsAgainst:'—';
+   const status=!played?t.scheduled:row.resolution==='penalties'?t.penalties:row.resolution==='extra-time'?t.extra:t.fulltime;
+   return '<li class="club-fixture-row'+(row===next?' is-next':'')+'" data-club-fixture-id="'+esc(row.id)+'"'+(row===next?' data-club-fixture-next tabindex="-1"':'')+'><span class="club-fixture-meta"><span>'+esc(t.day)+' '+row.day+'</span><a href="'+esc(compHref)+'">'+esc(compName(row.competitionId))+' · '+esc(stage)+'</a></span>'+(opponentHref?'<a class="club-fixture-opponent" href="'+esc(opponentHref)+'">'+opponent+'</a>':'<span class="club-fixture-opponent">'+opponent+'</span>')+'<span class="club-fixture-venue" role="img" tabindex="0" data-club-venue="'+row.venue+'" aria-label="'+esc(t[row.venue])+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'+icons[row.venue]+'</svg></span><span class="club-fixture-result"><strong aria-label="'+esc(t.result+': '+score)+'">'+score+'</strong><small>'+esc(status)+(played&&row.penalties?' '+row.penalties.for+'–'+row.penalties.against:'')+'</small></span></li>';
+  }).join('');
+  const notice=pending?t.loading:snapshot.coverage==='unstarted'?t.unstarted:snapshot.coverage==='error'?t.error:snapshot.coverage==='unavailable'?t.unavailable:snapshot.coverage==='partial'?t.partial:!body?t.empty:'';
+  return '<section class="club-fixtures" aria-label="'+esc(t.competition)+'"><div class="club-fixtures-controls">'+toolbar+'</div><p class="club-fixtures-notice" role="'+(snapshot.coverage==='error'?'alert':'status')+'">'+(pending?text('loading',t):esc(notice))+(snapshot.source==='dev'?' · '+esc(t.preview):'')+'</p><ul class="club-fixtures-list" aria-busy="'+pending+'">'+body+'</ul></section>';
+ }
+ return {copy,render};
+});

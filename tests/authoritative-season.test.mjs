@@ -156,3 +156,16 @@ test('CLUB-FIXTURES: Season 0 makes no reads; failed cups do not discard domesti
  assert.equal(result.coverage,'partial');assert.equal(result.rows.length,30);assert.deepEqual(result.unavailable,['int-1']);
  assert.ok(result.rows.every(f=>f.goalsFor===null));
 });
+
+test('CLUB-FIXTURES: viewed Season 0 remains unstarted after world advancement',async()=>{
+ const {readClubFixtures}=await import('../assets/club-fixtures-source.mjs');let reads=0;
+ const result=await readClubFixtures({clubKey:'IT-1',season:0,world,manifest,fetchJson:async()=>{reads++}});
+ assert.equal(result.coverage,'unstarted');assert.equal(reads,0);
+});
+test('CLUB-FIXTURES: neutral final and extra-time/shootout retain club perspective',async()=>{
+ const {projectClubFixtures}=await import('../assets/club-fixtures-source.mjs');
+ const fixture={id:'final',competitionId:'int-1',homeClubId:'ENG-2',awayClubId:'IT-1',day:54,round:13,phaseId:'final',neutral:true,
+  result:{homeGoals:2,awayGoals:2,resolution:'penalties',extraTime:{home:1,away:1},penalties:{home:4,away:5},winnerClubId:'IT-1'}};
+ const [row]=projectClubFixtures([fixture],'IT-1',1,54);
+ assert.equal(row.venue,'neutral');assert.equal(row.goalsFor,2);assert.equal(row.goalsAgainst,2);assert.deepEqual(row.penalties,{for:5,against:4});
+});

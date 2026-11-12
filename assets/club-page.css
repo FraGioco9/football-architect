@@ -464,3 +464,40 @@ body.app-body{--app-page-pad-top:8px}
  .club-history-table th,.club-history-table td{padding-inline:9px;font-size:.82rem}
  .club-history-table thead th{font-size:.73rem}
 }
+
+/* Club Fixtures: use the existing shell, crest and dropdown tokens. */
+.club-fixtures{min-width:0;min-height:440px}
+.club-fixtures[hidden]{display:none}
+.club-fixtures-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-height:44px}
+.club-fixture-select{position:relative;min-width:145px;max-width:100%}
+.club-fixture-select .language-trigger{display:flex;justify-content:space-between;gap:12px;min-height:44px;width:100%}
+.club-fixture-select .language-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;max-width:min(310px,85vw);max-height:240px;overflow-y:auto;z-index:30}
+.club-fixtures-next{min-height:44px;margin-left:auto}
+.club-fixtures-notice{min-height:1.5em;margin:12px 0;color:var(--muted);font-size:13px}
+.club-fixtures-list{margin:0;padding:0;list-style:none;min-height:336px}
+.club-fixture-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(0,1.8fr) 36px 110px;gap:12px;align-items:center;min-height:64px;padding:10px 12px;box-sizing:border-box;border-bottom:1px solid var(--border);font-size:14px}
+.club-fixture-row.is-next{background:var(--surface);box-shadow:inset 3px 0 var(--fa-shell-accent)}
+.club-fixture-meta{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:12px;color:var(--muted)}
+.club-fixture-meta a{color:inherit;overflow-wrap:anywhere}
+.club-fixture-opponent{display:flex;align-items:center;gap:10px;min-width:0;color:var(--text);text-decoration:none}
+.club-fixture-opponent>span:last-child{overflow-wrap:anywhere}
+.club-fixture-opponent .app-world-club-crest-placeholder{flex:none;width:28px;height:28px}
+.club-fixture-venue{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--muted);border-radius:6px}
+.club-fixture-venue svg{width:20px;height:20px}
+.club-fixture-result{display:flex;align-items:center;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums;text-align:center}
+.club-fixture-result strong{white-space:nowrap;font-size:16px}
+.club-fixture-result small{color:var(--muted);font-size:10px}
+.club-fixture-loading .club-fp-bar{width:100%;max-width:150px}
+@media(max-width:620px){
+ .club-fixtures-toolbar{gap:8px}.club-fixture-select{flex:1;min-width:105px}.club-fixtures-next{font-size:12px;flex-basis:100%;justify-content:center}
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 4px}
+ .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;gap:7px}
+ .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
+ .club-fixture-meta{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;gap:4px 10px;font-size:11px}
+}
+
+.club-fixture-select .language-trigger{min-width:0}.club-fixtures-next{min-width:0}
+
+.calendar-marker-tooltip.club-fixture-tooltip{display:block!important}.calendar-marker-tooltip.club-fixture-tooltip[hidden]{display:none!important}
+
+@media(max-width:620px){.club-fixture-select .language-trigger{font-size:13px;padding-inline:10px;gap:6px}.club-fixture-select [data-club-fixture-value]{white-space:nowrap}}

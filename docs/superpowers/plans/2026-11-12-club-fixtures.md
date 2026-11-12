@@ -22,18 +22,18 @@
 - Direct URLs, refresh, Back/Forward, mobile overflow and keyboard controls.
 
 ### Task 1: Canonical fixture projection
-- [ ] Add failing tests in tests/authoritative-season.test.mjs using its canonical fixture factory: club-only selection, stable same-day ordering, future score rejection, partial competition errors and Season 0.
-- [ ] Implement assets/club-fixtures-source.mjs: readClubFixtures({clubKey,season,world,fetchJson,manifest,signal}) and projectClubFixtures(fixtures,clubKey,season,day). Reuse validateAuthoritativeSeason and verified club history memberships.
-- [ ] Run node --test tests/authoritative-season.test.mjs; commit with plan and update #504.
+- [x] Add failing tests in tests/authoritative-season.test.mjs using its canonical fixture factory: club-only selection, stable same-day ordering, future score rejection, partial competition errors and Season 0.
+- [x] Implement assets/club-fixtures-source.mjs: readClubFixtures({clubKey,season,world,fetchJson,manifest,signal}) and projectClubFixtures(fixtures,clubKey,season,day). Reuse validateAuthoritativeSeason and verified club history memberships.
+- [x] Run node --test tests/authoritative-season.test.mjs; commit with plan and update #504.
 
 ### Task 2: Club Fixtures UI and adapters
-- [ ] Add failing pure-renderer tests in tests/club-pages.test.mjs for translated controls, opponent-only score perspective, venue tooltip labels and unknown participants.
-- [ ] Implement assets/club-fixtures.js pure renderer, assets/club-fixtures-controller.mjs, generated first-paint shell, club-page integration and scoped CSS; publish the new assets through the existing allowlist.
-- [ ] Add protected DEV fixture projection to tools/dev-competition-stats-client.mjs using existing preview/calendar readers; preserve unavailable international coverage.
-- [ ] Run targeted Club/source/generation/fixtures tests and generator consistency; commit and update #504.
+- [x] Add failing pure-renderer tests in tests/club-pages.test.mjs for translated controls, opponent-only score perspective, venue tooltip labels and unknown participants.
+- [x] Implement assets/club-fixtures.js pure renderer, assets/club-fixtures-controller.mjs, generated first-paint shell, club-page integration and scoped CSS; publish the new assets through the existing allowlist.
+- [x] Add protected DEV fixture projection to tools/dev-competition-stats-client.mjs using existing preview/calendar readers; preserve unavailable international coverage.
+- [x] Run targeted Club/source/generation/fixtures tests and generator consistency; commit and update #504.
 
 ### Task 3: Browser and QA evidence
-- [ ] Extend existing Club Chromium test for season/filter/navigation/loading/venue focus and responsive locale/theme coverage.
+- [x] Extend existing Club Chromium test for season/filter/navigation/loading/venue focus and responsive locale/theme coverage.
 - [ ] Run targeted browser and regression checks. Inspect final diff; fix material findings with reproducing tests.
 - [ ] Add docs/clubs/club-fixtures-qa.md separating automatic evidence from manual physical Safari/VoiceOver checks and unavailable coverage.
 - [ ] Commit QA; update #504; push once and create one English Draft/HOLD PR; inspect automatic CI without redispatch.
@@ -41,3 +41,8 @@
 ## Execution ledger
 - Preflight complete: remote main fetched, AGENTS.md read, two open PR file lists inspected. Native worktree tools unavailable; isolated worktree created at /workspace/football-architect-504.
 - Owner explicitly authorized execution and supplied approved design; no additional plan/design confirmation needed.
+
+- Task 1 complete: 46508c2, source test RED→GREEN, 16/16 at first milestone.
+- Task 2 complete: focused source/presentation/history/loading regression 101/101; targeted Chromium PASS including API/Debug, pending tab switch, refresh/history, focus/tooltips, stable controls and responsive locales/themes. Generator --check and CI discovery PASS.
+- Independent final review: two P2 findings (focus loss during redraw and parser-time locale labels), both fixed with RED→GREEN tests. Screenshot review additionally found repeated opponent crest-host reuse; fixed with 15-vs-30 reproducer and passing Chromium rerun.
+- Scope clarification: public API currently supports seasons 1–2; DEV adapter exposes domestic fixtures/postseason only. Missing international DEV snapshots stay explicit partial coverage. No new draw, fixture or result authority introduced.
