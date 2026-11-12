@@ -290,12 +290,13 @@ try{
      const nextLabel=row.querySelector('.club-competition-next>.club-competition-label').textContent;
      const box=sel=>{const r=row.querySelector(sel).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}};
      const before={identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
-      status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label')};
+      status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label'),
+      fixture:box('.club-fp-competition-fixture')};
      const states=[];
      try{
       // Hydration replaces the anonymous skeleton list with a verified list.
-      // Remove the skeleton class before injecting fixture data, otherwise
-      // its 59px reserved placeholder height falsely offsets empty match text.
+      // The first-paint and real fixture slots reserve the same minimum height,
+      // so both the label and the fixture's first line retain their y position.
       list.classList.remove('club-fp-competition');
       // Verify the center of *visible* text, including the empty fixture state:
       // a reserved min-height used to make that text appear too high.
@@ -314,7 +315,7 @@ try{
        const lastChild=nextContent.lastElementChild.getBoundingClientRect();
        const minHeight=getComputedStyle(nextContent).minHeight;
        const matchRect=match?.getBoundingClientRect();
-       states.push({value,identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
+       states.push({value,fixtureTop:box('.club-competition-next-content > *').y,identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
         status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label'),
         statusBlock:box('.club-competition-metrics'),nextBlock:box('.club-competition-next'),
         summary:box('.club-competition-summary'),visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
@@ -331,14 +332,16 @@ try{
      for(const key of ['identity','logo','status','next'])
       assert.ok(Math.abs(state[key].x-parity.before[key].x)<1.5,
        'First paint '+key+' horizontal slot moved at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
+     for(const key of ['status','next'])assert.ok(Math.abs(state[key].y-parity.before[key].y)<1.5,
+      'First paint '+key+' label moved vertically at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
+     assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
+      'First paint Next match first line moved vertically at '+width+'px for '+state.value);
      const centered=rect=>rect.y+rect.height/2;
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.nextBlock))<1.5,
       'Status and longer Next match are vertically centered on the same row at '+width+'px');
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.summary))<1.5,
       'Status remains centered within the grown row summary at '+width+'px');
-     assert.equal(state.minHeight,'0px','Hydrated Next match is not a skeleton at '+width+'px for '+state.value);
-     assert.ok(Math.abs(state.visibleCenter-centered(state.statusBlock))<1.5,
-      'visible Next match text (not its empty reserved box) is vertically centered with Status at '+width+'px for '+state.value);
+     assert.equal(state.minHeight,'59px','Hydrated Next match reserves the same first-line slot as first paint at '+width+'px for '+state.value);
      if(comp.availableWidth>800)assert.ok(Math.abs(centered(state.identity)-centered(state.summary))<1.5,
       'wide row centers the crest/name and both summary blocks together at '+width+'px');
      assert.ok(state.visible&&state.contained,'Long fixture must wrap completely inside panel: '+JSON.stringify({width,...state}));
