@@ -294,7 +294,8 @@ try{
     assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-commit-status]').count(),1);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true,'Generate opens confirmation rather than saving immediately');
     assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
-    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
+    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),2,'Each preview candidate has a protected temporary detail link');
+    assert.match(await page.locator('[data-admin-preview-rows] a').first().getAttribute('href'),/^\/admin\/players\/preview\/player\?draftId=.*&index=1(?:&|$)/);
     // Pairwise responsive/i18n checks in the existing Chromium + WebKit Admin
     // browser suite. Preview data is already loaded: no additional API reads.
     const previewCases=[

@@ -1785,3 +1785,8 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-preview-confirm-actions .app-players-filter-trigger:disabled{opacity:.45;cursor:default}
 html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{background:rgba(16,34,29,.38)}
 @media(max-width:800px){.app-players-preview-page .app-players-header{flex-wrap:wrap;align-items:flex-start}.app-players-preview-actions{width:100%;justify-content:flex-start}.app-players-preview-message{text-align:left}}
+
+/* Name-only player detail links (#502). No row-wide underline or focus overlay. */
+.app-players-table .app-player-name-link{color:inherit;text-decoration:none;font:inherit;display:inline}
+.app-players-table .app-player-name-link:hover{text-decoration:underline;text-underline-offset:3px}
+.app-players-table .app-player-name-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}

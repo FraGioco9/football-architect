@@ -109,3 +109,15 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   })
  };
 }
+
+/** Public single-player read, sharing the directory projection and lifetime rules. */
+export async function readPublicPlayer(db:Database,id:number){
+ if(!Number.isSafeInteger(id)||id<1)throw new ApiError(422,'invalid_public_request');
+ const before=await readWorld(db);
+ const row=await db.prepare('SELECT id,payload_json FROM generated_players WHERE id=?').bind(id).first<StoredRow>();
+ const after=await readWorld(db);
+ if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
+ if(!row)throw new ApiError(404,'player_not_found');
+ const payload=JSON.parse(row.payload_json) as StoredPlayer;
+ return {player:projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age})};
+}
