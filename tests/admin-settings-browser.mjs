@@ -296,6 +296,27 @@ try{
     assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
     assert.equal(await page.locator('[data-admin-preview-rows] a').count(),2,'Each preview candidate has a protected temporary detail link');
     assert.match(await page.locator('[data-admin-preview-rows] a').first().getAttribute('href'),/^\/admin\/players\/preview\/player\?draftId=.*&index=1(?:&|$)/);
+
+    // A draft candidate opens a real protected detail, never a public ID.
+    await page.locator('[data-admin-preview-view="attributes"]').click();
+    await page.locator('[data-admin-preview-group="mental"]').click();
+    await page.locator('[data-admin-preview-rows] a').first().click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview/player');
+    await page.locator('[data-player-detail-mode="preview"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-detail-name]').innerText(),'Luca Rossi');
+    assert.equal(await page.locator('[data-detail-back]').getAttribute('href').then(href=>new URL(href,'http://app.localhost:2000').pathname),'/admin/players/preview');
+    assert.equal(await page.locator('[data-detail-panel="overview"] dd').count(),6);
+    assert.equal(await page.locator('[data-detail-panel="attributes"] [data-detail-attr-slot]').count(),8);
+    await page.locator('[data-detail-view="attributes"]').click();
+    await page.locator('[data-detail-group="mental"]').click();
+    assert.equal(await page.locator('[data-detail-attr-slot]:visible').count(),4);
+    await page.locator('[data-detail-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-preview-view="attributes"]').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('[data-admin-preview-group="mental"]').getAttribute('aria-selected'),'true');
+    await page.locator('[data-admin-preview-view="overview"]').click();
+
     // Pairwise responsive/i18n checks in the existing Chromium + WebKit Admin
     // browser suite. Preview data is already loaded: no additional API reads.
     const previewCases=[
@@ -403,7 +424,7 @@ try{
     assert.equal(previewCalls,3);assert.equal(commitCalls,1);
     assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,writer?7:2,'Every Admin document checks permissions independently');
+   assert.equal(permissionReads,writer?9:2,'Each Admin document checks permissions independently');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}

@@ -61,7 +61,7 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.match(script,/p\.preview_id!=='trial-'/);
  assert.doesNotMatch(script,/localStorage|sessionStorage|innerHTML/);
  assert.match(script,/if\(preview\)root\.hidden=true/);
- assert.match(index,/\/api\/players\/\(\[1-9\]\[0-9\]\*\)/);
+ assert.match(index,/const playerDetail=url\.pathname\.match/);
  assert.match(publicApi,/SELECT id,payload_json FROM generated_players WHERE id=\?/);
  assert.match(publicApi,/projectPublicFootballerDirectoryRecord/);
 });
