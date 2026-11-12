@@ -747,3 +747,23 @@ test('Players table header geometry and independent sort-label anchoring',()=>{
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
  assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:44px/);
 });
+
+test('Players filter close matches the canonical search and calendar popup X',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),generator=read('tools/generate-app-pages.mjs'),js=read('assets/players-directory.js');
+ const button=html.match(/<button[^>]*data-players-filter-close[^>]*>[\s\S]*?<\/button>/)?.[0];
+ const search=html.match(/<button id="app-search-close"[^>]*>[\s\S]*?<\/button>/)?.[0];
+ assert.ok(button&&search,'both the filter and search dialog close buttons exist');
+ assert.match(button,/class="app-search-close"/);
+ assert.match(button,/aria-label="Close filters"/);
+ assert.match(button,/width="18" height="18" viewBox="0 0 24 24"/);
+ assert.match(button,/stroke-width="1.8"/);
+ assert.match(button,/d="M6 6l12 12M18 6L6 18"/);
+ assert.match(search,/class="app-search-close"/);
+ assert.match(search,/d="M6 6l12 12M18 6L6 18"/);
+ assert.match(css,/\.app-search-close\{display:grid;place-items:center;flex:none;width:36px;height:36px;[^}]*border:0;border-radius:8px/);
+ assert.match(css,/\.app-search-close:hover\{background:#244040\}/);
+ assert.match(css,/html\[data-theme="light"\] \.app-search-close:hover\{background:#E8F3EB\}/);
+ assert.doesNotMatch(css,/\.app-players-filter-close\{/,'no drawer-specific size, border or hover override');
+ assert.ok(generator.includes('data-players-filter-close'));
+ assert.match(js,/filterClose\?\.addEventListener\('click',\(\)=>closeFilterDialog\(\)\)/);
+});
