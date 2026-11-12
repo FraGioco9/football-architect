@@ -127,7 +127,36 @@
   const pagination=root.querySelector('[data-admin-players-page]'),previous=root.querySelector('[data-admin-players-prev]'),next=root.querySelector('[data-admin-players-next]');
   const committed=root.querySelector('[data-admin-players-commit-status]');
   const tr=()=>({...(translations[doc.documentElement.lang]||translations.en),...(stageTranslations[doc.documentElement.lang]||stageTranslations.en)});
+  // The preview returns only its approved generator *options*, never candidate
+  // records, via transient same-tab history state. The full form survives the
+  // dedicated-page round trip without leaking those values into a query string
+  // or persistent browser storage.
+  if(form){
+   const restored=win.history.state?.faAdminGeneratorOptions;
+   if(restored&&typeof restored==='object'&&!Array.isArray(restored)){
+    const set=(key,value)=>{
+     const field=form.querySelector('[data-players-option="'+key+'"]');
+     if(!field||value===undefined||value===null)return;
+     field.value=Array.isArray(value)?value.join(':'):String(value);
+    };
+    for(const [key,value] of Object.entries(restored)){
+     if(key==='attributes'&&value&&typeof value==='object'&&!Array.isArray(value)){
+      for(const [attribute,v] of Object.entries(value))set('attribute.'+attribute,v);
+     }else if(key==='secondaryNationality'){
+      if(value==='none')set('secondaryMode','none');
+      else if(typeof value==='string'){set('secondaryMode','exact');set('secondaryCountry',value);}
+      else if(Array.isArray(value)){set('secondaryMode','allowed');set('secondaryAllowed',value.join(','));}
+     }else if(['allowedPositions','secondaryPositions','allowedSecondaries'].includes(key)){
+      set(key,Array.isArray(value)?value.join(','):value);
+     }else set(key,value);
+    }
+    // Consume the one-time handoff; a later refresh should not unexpectedly
+    // overwrite edits made on the generator form.
+    win.history.replaceState(null,'',win.location.pathname+win.location.search+win.location.hash);
+   }
+  }
   // An approved cohort carries its next deterministic seed back to the generator.
+  // Apply it after restoring the other options so the old seed cannot win.
   const nextSeed=new URLSearchParams(win.location.search).get('nextSeed');
   if(form&&/^fa-next-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(nextSeed||''))
    form.querySelector('[data-players-option="seed"]').value=nextSeed;

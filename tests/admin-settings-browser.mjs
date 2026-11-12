@@ -306,6 +306,12 @@ try{
     await page.locator('[data-admin-preview-view="overview"]').click();
     await page.locator('[data-admin-preview-back]').click();
     await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
+    await page.locator('[data-players-option="age"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Back restores all generator options');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'admin-trial');
+    assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
+    assert.equal(await page.locator('[data-players-option="primaryPosition"]').inputValue(),'ST');
+    assert.equal(await page.locator('[data-players-option="attribute.shooting"]').inputValue(),'65:80');
     await page.locator('[data-players-option="age"]').fill('20');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false,'Invalid generation options cannot be previewed');
     await page.locator('[data-players-option="age"]').fill('18');
@@ -325,6 +331,9 @@ try{
     assert.equal(await page.locator('[data-admin-preview-confirm-dialog]').isVisible(),false,'Committed draft must close the confirmation');
     await page.locator('[data-admin-preview-back]').click();
     await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
+    await page.locator('[data-players-option="count"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Saving does not erase the prior generator settings');
+    assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
     await page.locator('[data-admin-players-preview]').click();

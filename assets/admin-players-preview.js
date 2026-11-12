@@ -250,6 +250,17 @@
  prev.addEventListener('click',()=>{if(draft&&page>0){page--;render();}});
  next.addEventListener('click',()=>{if(draft&&page+1<Math.ceil(draft.summary.count/pageSize)){page++;render();}});
  confirmation.addEventListener('input',render);
+ // A normal Back action should retain generator settings, including after a
+ // successful save. Only the normalized options cross the page boundary;
+ // never carry generated candidates or a permanent ID in history state.
+ back.addEventListener('click',event=>{
+  if(!draft||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  const destination=new URL(back.href,location.href);
+  if(destination.origin!==location.origin||destination.pathname!=='/admin/players')return;
+  event.preventDefault();
+  history.replaceState({faAdminGeneratorOptions:draft.options},'',destination.pathname+destination.search+destination.hash);
+  location.reload();
+ });
  regen.addEventListener('click',()=>{void regenerate();});
  commit.addEventListener('click',()=>{
   if(commit.disabled)return;

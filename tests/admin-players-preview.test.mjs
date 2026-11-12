@@ -95,3 +95,14 @@ test('Shared nationality tooltip prefers above and respects site animation and r
  assert.match(css,/\.app-players-nationality-tooltip\.is-closing\{animation:app-world-tooltip-out 130ms ease-in both/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.app-players-nationality-tooltip,\.app-players-nationality-tooltip\.is-closing\{animation:none!important\}/);
 });
+
+test('Preview Back restores only normalized generator options through transient history, not candidates',()=>{
+ const generator=read('assets/admin-players.js'),preview=read('assets/admin-players-preview.js');
+ assert.match(preview,/history\.replaceState\(\{faAdminGeneratorOptions:draft\.options\}/);
+ assert.doesNotMatch(preview,/history\.replaceState\(\{[^}]*candidates/);
+ assert.match(preview,/location\.reload\(\)/);
+ assert.match(generator,/win\.history\.state\?\.faAdminGeneratorOptions/);
+ assert.match(generator,/win\.history\.replaceState\(null/);
+ assert.match(generator,/if\(key==='attributes'/);
+ assert.match(generator,/if\(form&&\/\^fa-next-/);
+});
