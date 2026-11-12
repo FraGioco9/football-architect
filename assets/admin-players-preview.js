@@ -59,7 +59,7 @@
   es:{generate:'Generar',regenerate:'Regenerar',back:'Volver',heading:'Confirmar generación',cancel:'Cancelar',confirm:'Confirmar'},
   fr:{generate:'Générer',regenerate:'Régénérer',back:'Retour',heading:'Confirmer la génération',cancel:'Annuler',confirm:'Confirmer'}
  };
- const pageSize=25,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
+ const pageSize=50,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
  function columns(){return view==='overview'?['nationality','name','age','positions','height','foot']:['nationality','name','positions',...groups[group]];}
  function colLabel(key){
   const t=locale();
