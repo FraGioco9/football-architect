@@ -28,6 +28,7 @@ form.addEventListener('submit',async e=>{
  try{
   const r=await fetch('/api/player/login',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password})});
   if(!r.ok){ui.feedback(message,r.status===401?t[5]:r.status===429?t[7]:t[6]);return;}
+  try{window.sessionStorage.removeItem('fa:admin:permissions:v1')}catch{/* storage disabled */}
   form.reset();returnAfterLogin();
  }catch{ui.feedback(message,t[6]);}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
 });
