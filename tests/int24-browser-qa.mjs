@@ -37,6 +37,9 @@ try {
      document.querySelectorAll('#fa-dev-stats .fa-dev-stats-card').length===3;
    },slug);
    await routePage.waitForSelector('#competition-tab-stats[aria-selected="true"]');
+   // The static tabs may be visible before their route controller is installed.
+   // Wait for the canonical router, not merely first-paint panel state.
+   await routePage.waitForFunction(()=>window.faCompetitionRoute?.get?.()?.view==="stats");
    const actual=await routePage.evaluate(()=>({
     id:window.faCompetitionContext?.definition?.id?.toLowerCase(),
     season:window.faCompetitionContext?.selectedSeason,
@@ -62,6 +65,7 @@ try {
    });
    for(const view of views){
     await routePage.locator("#competition-tab-"+view).click();
+    await routePage.waitForFunction(view=>window.faCompetitionRoute?.get?.()?.view===view,view);
     const observed=await routePage.evaluate(view=>{
      const tab=document.getElementById("competition-tab-"+view);
      const panel=document.getElementById("competition-panel-"+view);
