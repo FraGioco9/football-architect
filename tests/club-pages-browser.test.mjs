@@ -857,6 +857,65 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    await run("document.querySelector('[data-club-venue]').focus()");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').textContent===document.activeElement.getAttribute('aria-label')"),true);
    assert.equal(await run("(()=>{const n=document.querySelector('[data-club-fixtures-next]'),r=n.getBoundingClientRect();return r.height>=44&&n.scrollWidth<=n.clientWidth+1&&r.left>=0&&r.right<=innerWidth&&n.textContent.trim().length>5})()"),true,'next command remains visible and legible');
   }
+  // V01: compare pending-row skeleton slots against actual hydrated text.
+  const fixtureGeometry=()=>run(`(()=>{
+   const row=document.querySelector('.club-fixture-row');
+   if(!row)return null;
+   const loading=row.classList.contains('club-fixture-loading');
+   const rect=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,cx:r.x+r.width/2,cy:r.y+r.height/2,width:r.width,height:r.height};};
+   const measure=selector=>{const n=row.querySelector(selector);if(!n)throw Error('Missing fixture geometry '+selector);return rect(n);};
+   const selectors={
+    day:loading?'.club-fixture-skeleton-line:first-child':'.club-fixture-meta > span:first-child',
+    league:loading?'.club-fixture-skeleton-line:nth-child(2)':'.club-fixture-meta a',
+    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > span:last-child',
+    venue:'.club-fixture-venue',score:'.club-fixture-result strong',status:'.club-fixture-result small'
+   };
+   const bars={day:'.club-fixture-skeleton-day',league:'.club-fixture-skeleton-league',
+    name:'.club-fixture-skeleton-name',venue:'.club-fixture-skeleton-venue',
+    score:'.club-fixture-skeleton-score',status:'.club-fixture-skeleton-status'};
+   return {loading,row:rect(row),parts:Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,measure(selector)])),
+    bars:loading?Object.fromEntries(Object.entries(bars).map(([key,selector])=>[key,measure(selector)])):null,
+    season:document.querySelector('[data-club-fixture-control=season] [data-club-fixture-value]')?.textContent.trim(),
+    selectorSkeleton:!!document.querySelector('[data-club-fixture-control=season] .club-fp-bar')};
+  })()`);
+  for(const width of [320,390,768,1440]){
+   await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
+   hold=true;await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=1'});
+   await wait("document.querySelectorAll('.club-fixture-loading').length===6");
+   const pendingLayout=await fixtureGeometry();
+   assert.equal(pendingLayout.loading,true,'row skeletons exist at '+width);
+   assert.ok(pendingLayout.season.endsWith(' 1'),'URL season shown while loading at '+width);
+   assert.equal(pendingLayout.selectorSkeleton,false,'season control has no skeleton at '+width);
+   for(const [part,bar] of Object.entries(pendingLayout.bars)){
+    const slot=pendingLayout.parts[part];
+    assert.ok(bar.width>0&&bar.height>0,'visible '+part+' skeleton at '+width);
+    assert.ok(Math.abs(bar.cy-slot.cy)<=6,'center '+part+' skeleton in text slot at '+width);
+   }
+   for(let i=0;i<100&&!held.length;i++)await delay(20);
+   assert.ok(held.length,'canonical API held for geometry at '+width);
+   hold=false;held.splice(0).forEach(send=>send());
+   await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+   const loadedLayout=await fixtureGeometry();
+   assert.equal(loadedLayout.loading,false);
+   assert.equal(loadedLayout.selectorSkeleton,false,'no season bar after hydration at '+width);
+   assert.ok(Math.abs(pendingLayout.row.y-loadedLayout.row.y)<=2,'first row stays anchored at '+width);
+   for(const [part,beforeSlot] of Object.entries(pendingLayout.parts)){
+    const afterSlot=loadedLayout.parts[part];
+    assert.ok(Math.abs(beforeSlot.cy-afterSlot.cy)<=8,
+     part+' vertical center matches loaded text at '+width+': '+beforeSlot.cy+' / '+afterSlot.cy);
+    // Content can introduce a vertical scrollbar; tolerate its grid width change.
+    const beforeX=beforeSlot.cx-pendingLayout.row.x,afterX=afterSlot.cx-loadedLayout.row.x;
+    if(['venue','score','status'].includes(part))
+     assert.ok(Math.abs(beforeX-afterX)<=20,part+' stays in its grid column at '+width);
+    else if(part==='name'||part==='day')
+     assert.ok(Math.abs(beforeSlot.x-pendingLayout.row.x-(afterSlot.x-loadedLayout.row.x))<=6,
+      part+' text begins at reserved slot at '+width);
+    else if(part==='league')
+     assert.ok(Math.abs(beforeSlot.x-pendingLayout.row.x-(afterSlot.x-loadedLayout.row.x))<=(width<=620?20:3),
+      'league text starts at reserved slot at '+width);
+   }
+  }
+  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/390/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};

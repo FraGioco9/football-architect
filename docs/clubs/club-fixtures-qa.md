@@ -34,7 +34,11 @@ The first command passed **101/101** at the implementation milestone. The dedica
 - Public historical support follows the existing API/validator boundary of **seasons 1–2**. The selector offers positive seasons from 1 through the canonical current season (descending like Standings), with only viewed Season 1 at canonical Season 0. An absent season selects latest; invalid/zero selects 1 and future deep links clamp to current, using URL replacement only after the shared clock is confirmed. Canonical Season 0 remains internally unstarted and requests no fixture data. Later unsupported public data remains unavailable without a notice.
 - The protected existing DEV adapter supplies domestic league/postseason data. It does not supply a club-level international snapshot, so DEV explicitly reports partial competition coverage. International fixtures are displayed when public canonical membership/season data supplies them. Future postseason pairs absent from canonical data are not manufactured.
 - The current public validator publishes resolved fixture participants. The UI has a translated unknown-opponent presentation, but cannot assign an unresolved future tie to a club without canonical evidence.
-- There is no separate match-detail route in this contract. Competition/phase links open existing Fixtures routes with season and configured matchday/phase; opponent crest/name open that opponent's Fixtures in the same viewed season.
+- There is no separate match-detail route in this contract. Competition/phase links open existing Fixtures routes with season and configured matchday/phase; opponent crest/name open that opponent's Overview; competition/phase links preserve the selected season.
+
+## 2026-11-12 skeleton/selector follow-up (PR #529)
+
+At `31ffcdd`, exact-HEAD Site checks and Chromium Browser QA passed. The previous scenario measured toolbar/buttons but **not** row-level skeleton-to-text centers. A new Chromium regression measures the six pending-row slots against hydrated text at 320/390/768/1440 widths, with visible `?season=1` and no Season selector skeleton. The new regression is **PENDING CI** until executed; physical iPhone Safari remains UNKNOWN. Opponent crest/name now open the opponent's **Overview**, while the competition link still opens Competition Fixtures. The PR remains Draft/HOLD; no merge or deploy.
 
 ## Manual owner acceptance — all still UNKNOWN
 
