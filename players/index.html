@@ -216,9 +216,25 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </div>
         </section>
         <section id="app-divisions" class="app-view nav01-directory" aria-labelledby="players-title">
-          <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
+          <header class="app-players-header">
+            <h1 id="players-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
+          </header>
+          <nav class="app-competition-tabs app-players-tabs" role="tablist" aria-label="Player views">
+            <a class="app-competition-tab is-active" role="tab" data-players-view="overview" aria-selected="true" href="/players?view=overview">Overview</a>
+            <a class="app-competition-tab" role="tab" data-players-view="attributes" aria-selected="false" href="/players?view=attributes&amp;group=technical">Attributes</a>
+          </nav>
+          <div class="app-players-toolbar">
+            <nav class="app-players-groups" role="tablist" aria-label="Attribute groups">
+              <button type="button" class="app-competition-tab app-players-group is-active" role="tab" aria-selected="true" data-players-group="technical">Technical</button>
+              <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-players-group="mental">Mental</button>
+              <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-players-group="physical">Physical</button>
+              <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-players-group="goalkeeping">Goalkeeper</button>
+            </nav>
+            <p class="app-players-count" data-players-count aria-live="polite"><span class="app-players-count-skeleton" aria-hidden="true"></span></p>
+          </div>
           <div class="app-players-table-scroll" role="region" aria-label="Players directory" tabindex="0">
             <table class="app-players-table">
+              <colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"></colgroup>
               <thead>
                 <tr>
                   <th scope="col" class="app-players-flag-col"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span></th>
@@ -238,6 +254,28 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               </tbody>
             </table>
           </div>
+          <script data-players-first-paint>(()=>{'use strict';
+           const params=new URLSearchParams(location.search),view=params.get('view')==='attributes'?'attributes':'overview';
+           const groups={technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']};
+           const group=Object.hasOwn(groups,params.get('group'))?params.get('group'):'technical';
+           document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
+           const locale=document.documentElement.lang.toLowerCase().slice(0,2);
+           const names={en:['Overview','Attributes','Technical','Mental','Physical','Goalkeeper'],it:['Panoramica','Attributi','Tecnici','Mentali','Fisici','Portiere'],de:['Übersicht','Attribute','Technisch','Mental','Physisch','Torwart'],es:['Resumen','Atributos','Técnicos','Mentales','Físicos','Portero'],fr:['Vue d’ensemble','Attributs','Techniques','Mentaux','Physiques','Gardien']}[locale]||['Overview','Attributes','Technical','Mental','Physical','Goalkeeper'];
+           for(const [i,tab] of [...document.querySelectorAll('.app-players-tabs [data-players-view]')].entries()){const active=tab.dataset.playersView===view;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.textContent=names[i];}
+           for(const [i,tab] of [...document.querySelectorAll('.app-players-groups [data-players-group]')].entries()){const active=tab.dataset.playersGroup===group;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.textContent=names[i+2];}
+           if(view==='attributes'){
+            const table=document.querySelector('.app-players-table'),row=table.tHead.rows[0],keys=groups[group];
+            const attributeNames={en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|Positioning|Aerial',it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento|Uscite alte',de:'Tempo|Stärke|Ausdauer|Beweglichkeit|Passen|Technik|Dribbling|Schuss|Flanken|Zweikampf|Deckung|Kopfball|Übersicht|Stellungsspiel|Entscheidungen|Ruhe|Reflexe|Fangen|Stellungsspiel|Luftraum',es:'Velocidad|Fuerza|Resistencia|Agilidad|Pases|Técnica|Regate|Tiro|Centros|Entradas|Marcaje|Cabeceo|Visión|Colocación|Decisiones|Serenidad|Reflejos|Blocaje|Colocación|Juego aéreo',fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'};
+            const keysAll=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'],labels=(attributeNames[locale]||attributeNames.en).split('|');
+            while(row.cells.length>2)row.deleteCell(2);
+            const positions=document.createElement('th');positions.scope='col';
+            positions.textContent={en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'}[locale]||'Positions';
+            row.append(positions);
+            for(const key of keys){const th=document.createElement('th');th.scope='col';th.textContent=labels[keysAll.indexOf(key)];row.append(th);}
+            table.dataset.playersTableMode='attributes';
+            table.tBodies[0].rows[0].cells[0].colSpan=keys.length+3;
+           }
+          })();</script>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>

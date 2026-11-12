@@ -53,6 +53,12 @@ test("DEBUG-INFRA-02: protected contract is a separately verified, nonpublic art
   assert.equal(manifest.contract,"protected_debug");
   assert.deepEqual(manifest.files.map(x=>x.path),planned.filter(p=>p!=="__fa_dev__/artifact-manifest.json"));
   for(const file of manifest.files)assert.match(file.sha256,/^[0-9a-f]{64}$/);
+  const playersPublic=readFileSync(join(repositoryRoot,"players","index.html"),"utf8");
+  const playersProtected=readFileSync(join(protectedPath,"players","index.html"),"utf8");
+  assert.doesNotMatch(playersPublic,/\/__fa_dev__\/debug-settings/);
+  assert.match(playersProtected,/src="\/__fa_dev__\/debug-settings\.mjs"/);
+  assert.match(playersProtected,/faDevPreviewMode=true/);
+  assert.equal(playersProtected.split('src="/__fa_dev__/debug-settings.mjs"').length,2);
   const protectedHtml=readFileSync(join(protectedPath,"dashboard","index.html"),"utf8");
   const originalHtml=readFileSync(join(repositoryRoot,"dashboard","index.html"),"utf8");
   assert.doesNotMatch(originalHtml,/__fa_dev__\/debug-settings|faDebugPending/);

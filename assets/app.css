@@ -1543,18 +1543,32 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 }
 
 /* Explore Players uses the same inline SVG presentation as the other sidebar icons. */
-/* Player directory: fixed six-column full-width table with an accessible blank flag heading. */
+/* Players header: stable first-paint count, aligned with the other Explore directories. */
+.app-players-header{min-width:0}
+.app-players-header>.app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;text-align:left}
+html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
+.app-players-count{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;flex:0 0 132px;width:132px;height:44px;margin:0;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
+.app-players-count-skeleton{display:block;flex:0 0 98px;width:98px;height:14px;margin-inline-start:auto;border-radius:4px;background:var(--line)}
+
+/* Player directory: fixed flag/name columns; every remaining column receives a share of the available width. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-players-table-scroll:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.app-players-table{width:100%;min-width:690px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px;width:100%;min-width:782px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
+.app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
+.app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
-.app-players-table th:first-child{width:54px;padding-inline:8px}
-.app-players-table th:nth-child(2){width:35%;text-align:left}
-.app-players-table th:nth-child(3){width:12%}
-.app-players-table th:nth-child(4){width:20%}
-.app-players-table th:nth-child(5){width:15%}
-.app-players-table th:nth-child(6){width:auto}
+.app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
+.app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
+.app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
+.app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
+.app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
+.app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
+/* Positions contains position codes and is left-aligned like Player, including the static Overview header. */
+.app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4){text-align:left}
+/* Foot is a descriptive value (Left / Right), so align its heading and values with other text columns. */
+.app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6){text-align:left}
 .app-players-table tbody tr:last-child td{border-bottom:0}
 .app-players-empty-row td{height:148px;padding:26px 18px;text-align:center;white-space:normal}
 .app-players-empty-row strong{display:block;font-size:14px;font-weight:700;line-height:1.5}
@@ -1570,3 +1584,33 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 .app-players-page-button{font:inherit;font-size:13px;font-weight:650;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-panel);padding:7px 12px;cursor:pointer}
 .app-players-page-button:not(:disabled):hover{border-color:var(--focus)}
 .app-players-page-button:disabled{opacity:.45;cursor:default}
+
+/* PLAYERS-505: same active-tab treatment as Standings, with an always-reserved toolbar.
+ * Group tabs remain in flow while visually hidden in Overview, so the table never shifts. */
+.app-players-tabs{margin-top:var(--app-page-section-gap);min-height:40px}
+.app-players-tabs .app-competition-tab{position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 136px;width:136px;min-width:136px;max-width:136px;height:40px;min-height:40px;padding:7px 9px;font-size:12px;line-height:1.2;text-align:center;text-decoration:none;transition:background-color .18s ease,color .18s ease}
+.app-players-tabs .app-competition-tab:focus-visible,.app-players-group:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0;margin-top:0}
+.app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:34px;flex:1 1 auto;gap:8px;max-width:472px;min-width:0}
+html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}
+.app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:34px;min-height:34px;padding:6px 5px;font-size:11px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
+.app-players-toolbar+.app-players-table-scroll{margin-top:0}
+.app-players-table[data-players-table-mode="attributes"]{min-width:982px}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(2){width:var(--app-players-name-width);text-align:left}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(n+3){text-align:center}
+.app-players-table[data-players-table-mode="attributes"] :is(th,td):nth-child(3){text-align:left}
+.app-players-table[data-players-table-mode="attributes"] th:nth-child(3){width:var(--app-players-positions-width)}
+.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 4)}
+html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1462px}
+html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
+.app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+4){font-variant-numeric:tabular-nums}
+@media(max-width:620px){
+ .app-players-tabs{margin-top:18px}
+ .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
+ .app-players-toolbar{height:76px;align-items:flex-start;gap:8px}
+ .app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:34px}
+ .app-players-group{min-height:34px;height:34px;padding:5px 3px;font-size:11px}
+ .app-players-count{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0;font-size:11px}
+ .app-players-count-skeleton{flex-basis:86px;width:86px}
+}
+@media(prefers-reduced-motion:reduce){.app-players-tabs .app-competition-tab,.app-players-group{transition:none}}

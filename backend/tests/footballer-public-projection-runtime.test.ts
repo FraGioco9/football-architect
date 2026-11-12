@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'vitest';
 import {
-  projectPublicFootballerCard,projectPublicFootballerProfile
+  projectPublicFootballerCard,projectPublicFootballerProfile,projectPublicFootballerDirectoryRecord,PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS
 } from '../src/footballer-public-projection.ts';
 const internal={
   id:'internal-do-not-send',
@@ -66,4 +66,28 @@ test('reject invalid source fields and untrusted authoritative context',()=>{
   assert.throws(()=>projectPublicFootballerCard(internal,ctx as any),TypeError);
  assert.throws(()=>projectPublicFootballerProfile({...internal,secondary_positions:'ST'} as any),TypeError);
  assert.throws(()=>projectPublicFootballerProfile({...internal,preferred_foot:'both'}),TypeError);
+});
+
+test('approved public JSON publishes the 20 sporting skills, never sensitive generator data',()=>{
+ const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((key,index)=>[key,index+1]));
+ const record=projectPublicFootballerDirectoryRecord({...internal,attributes},{publicId:123,currentAge:19});
+ assert.deepEqual(Object.keys(record),['id','first_name','last_name','display_name','nationality',
+  'secondary_nationality','age','career_status','height_cm','preferred_foot','primary_position','secondary_positions','attributes']);
+ assert.equal(record.id,123);
+ assert.equal(record.display_name,'Joao da Silva');
+ assert.equal(record.secondary_nationality,'POR');
+ assert.deepEqual(record.attributes,attributes);
+ assert.equal(Object.isFrozen(record),true);
+ assert.equal(Object.isFrozen(record.attributes),true);
+ for(const forbidden of ['initial_age','development_aptitude','preview_id','known_as','seed','credentials','trial_primary_suitability_target','future_internal_field'])
+  assert.equal(JSON.stringify(record).includes(forbidden),false,forbidden+' leaked');
+});
+test('public directory fails closed on invalid skills and authoritative identity',()=>{
+ const attributes=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map(key=>[key,50]));
+ for(const altered of [
+  {...attributes,shooting:0},{...attributes,speed:100},{...attributes,vision:4.5},
+  {...attributes,passing:'60'},{...attributes,composure:undefined}
+ ])assert.throws(()=>projectPublicFootballerDirectoryRecord({...internal,attributes:altered},{publicId:4,currentAge:18}),TypeError);
+ for(const context of [{publicId:0,currentAge:18},{publicId:1},{currentAge:18}])
+  assert.throws(()=>projectPublicFootballerDirectoryRecord({...internal,attributes},context),TypeError);
 });
