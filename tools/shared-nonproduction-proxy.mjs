@@ -4,7 +4,7 @@ import {isIP} from 'node:net';
 // Keep ordinary private responses tightly bounded. Player previews contain up to
 // 1000 full player records, so only these exact protected routes get a larger cap.
 export const protectedResponseLimit=(path,publicRead=false)=>publicRead?524288:
- (path==='/api/admin/players'||path==='/api/admin/players/preview')?2097152:65536;
+ (path==='/api/admin/players'||path==='/api/admin/players/preview'||path==='/api/admin/players/draft')?2097152:65536;
 const fail=res=>{res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"environment_unavailable"}}');return true};
 const forbidden=res=>{res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end('{"error":{"code":"forbidden"}}');return true};
 export function sendSharedHttps(url,{method='GET',headers={},body=Buffer.alloc(0),limit=65536,timeoutMs=15000}={}){

@@ -1,6 +1,6 @@
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
-import {renderAdminSettings,renderAdminPlayers} from './render-admin-settings.mjs';
+import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
 import {buildRoute} from "../assets/routes-registry.mjs";
@@ -272,9 +272,10 @@ for(const page of outputPages){
 for(const [route,title,content,scripts] of [
  ['admin','Admin','<div class="admin-directory" data-admin-directory><section class="app-panel admin-directory-card" data-admin-panel="calendar" aria-labelledby="admin-card-calendar-title"><h2 id="admin-card-calendar-title" data-admin-directory-copy="calendar">Calendar</h2><p data-admin-directory-copy="calendarDescription">Manage the world calendar and sporting progression</p><a class="app-link app-link-primary" href="/admin/calendar" data-admin-card="calendar" data-admin-directory-copy="calendar">Calendar</a></section><section class="app-panel admin-directory-card" data-admin-panel="players" aria-labelledby="admin-card-players-title"><h2 id="admin-card-players-title" data-admin-directory-copy="players">Players</h2><p data-admin-directory-copy="playersDescription">Configure player generation</p><a class="app-link app-link-primary" href="/admin/players" data-admin-card="players" data-admin-directory-copy="players">Players</a></section></div>',['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
  ['admin/calendar','Admin — Calendar',renderAdminSettings(),['/assets/world-calendar-model.js','/assets/admin-permissions-cache.js','/assets/admin-settings.js']],
- ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-permissions-cache.js','/assets/admin-players.js']]
+ ['admin/players','Admin — Players',renderAdminPlayers(),['/assets/admin-permissions-cache.js','/assets/admin-players.js']],
+ ['admin/players/preview','Admin — Players Preview',renderAdminPlayersPreview(),['/assets/players-nationality-tooltip.js','/assets/admin-permissions-cache.js','/assets/admin-players-preview.js']]
 ]){
- const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          '+(route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="/admin" data-admin-back aria-label="Back to Admin"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
+ const section='<section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>\n          '+(route==='admin/players/preview'?'':route==='admin'?'<h1 id="admin-title" class="app-page-title">Admin</h1>':'<div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">'+(route.endsWith('calendar')?'Calendar':'Players')+'</h1>\n          <a class="app-link app-link-secondary admin-back" href="'+(route==='admin/players/preview'?'/admin/players':'/admin')+'" data-admin-back aria-label="'+(route==='admin/players/preview'?'Back to Player generation':'Back to Admin')+'"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>')+'\n          '+content+'\n        </section>\n';
  let html=template.replace(/(id="main-content" tabindex="-1">\n)[\s\S]*?(      <\/main>)/,(_,first,last)=>first+section+last);
  for(const [token,value] of Object.entries(worldPageReplacements()))html=html.replaceAll(token,value);
  // At first paint, Admin must not highlight a different sidebar destination.
@@ -282,7 +283,7 @@ for(const [route,title,content,scripts] of [
   .replace('id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page"','id="app-nav-divisions" href="/competitions" data-app-view="divisions"');
  html=html.replace('<title>Competitions','<title>'+title);
  html=html.replace('</head>',
-  '  <meta name="robots" content="noindex,nofollow">\n  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
+  '  <meta name="robots" content="noindex,nofollow">\n'+(route==='admin/players/preview'?'  <meta name="referrer" content="no-referrer">\n':'')+'  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
  writeOutput(route+'/index.html',html);
 }
 // Account and authentication routes use the same career shell.
@@ -356,6 +357,6 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  let html=source.slice(0,begin)+content+source.slice(finish);
  html=html.replace("<title>Competitions — Football Architect</title>","<title>Players — Football Architect</title>");
  html=html.replace('  <script src="/assets/international-cups.js" defer></script>\n','');
- html=html.replace('</head>','  <script src="/assets/players-directory.js" defer></script>\n</head>');
+ html=html.replace('</head>','  <script src="/assets/players-nationality-tooltip.js" defer></script>\n  <script src="/assets/players-directory.js" defer></script>\n</head>');
  writeOutput("players/index.html",html);
 }

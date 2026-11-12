@@ -130,11 +130,10 @@ try{
     assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false,'Reset still requires its typed confirmation');
    }
    if(allowed&&grant!=='revoked-write'){
-    assert.equal(permissionReads,1,'Settings, Admin directory and Calendar share one per-tab permission check');
+    assert.equal(permissionReads,1,'Settings, Admin directory and Calendar reuse one per-tab permissions check');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     assert.equal(await page.locator('[data-admin-world]').isVisible(),true);
     revoked=true;
-    // Explicit refresh detects revocation; BFCache navigation does not recheck.
     await page.locator('[data-admin-refresh]').click();
     await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
     assert.equal(await page.locator('#main-content').innerText(),'');
@@ -156,23 +155,44 @@ try{
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
    // An isolated API fixture; the real Worker/D1 transactions are tested separately.
    await page.route('**/api/admin/session',route=>{sessionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({actor:{id:'admin'},csrfToken:'fixture-csrf'})})});
+   let currentOptions=null,draftCommitted=false;
    await page.route('**/api/admin/players/preview',route=>{
     previewCalls++;
     assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     const {options}=route.request().postDataJSON();
+    currentOptions=options;draftCommitted=false;
     assert.equal(options.count,2);
     if(previewCalls<=2)assert.equal(options.seed,'admin-trial');
     else assert.match(options.seed,/^fa-next-11111111-1111-4111-8111-111111111111$/);
     assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
     assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
-    const candidates=[0,1].map(i=>({id:'example-'+i,preview_id:'trial-000'+(i+1),
-     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',initial_age:18,
-     primary_position:'ST',preferred_foot:'right',height_cm:180}));
+    const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
+     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
+     primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
+     attributes:{speed:60,strength:60,stamina:60,agility:60,passing:60,technique:60,dribbling:60,
+      shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
+      decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({draftId:'11111111-1111-4111-8111-111111111111',
      summary:{count:2,seed:options.seed,countries:{ITA:2}},candidates})});
    });
+   await page.route('**/api/admin/players/draft',route=>{
+    assert.equal(route.request().method(),'POST','Admin draft read must be CSRF-protected');
+    assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111'});
+    assert.ok(currentOptions,'Preview must have been generated before it can be read');
+    if(draftCommitted)return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{code:'players_preview_expired'}})});
+    const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
+     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
+     primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
+     attributes:{speed:60,strength:60,stamina:60,agility:60,passing:60,technique:60,dribbling:60,
+      shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
+      decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     draftId:'11111111-1111-4111-8111-111111111111',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
+     options:currentOptions,candidates})});
+   });
    await page.route('**/api/admin/players/commit',route=>{
-    commitCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    commitCalls++;draftCommitted=true;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111',confirmation:'GENERATE PLAYERS'});
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({batchId:'11111111-1111-4111-8111-111111111111',count:2,alreadyCommitted:false})});
    });
@@ -247,7 +267,7 @@ try{
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
     assert.equal(await page.locator('[data-admin-players-copy],[data-admin-players-command]').count(),0,'No legacy CLI-only form controls');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
+    assert.equal(await page.locator('[data-admin-players-result],[data-admin-players-commit]').count(),0,'The generator must not embed preview or approval');
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
     await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').click();
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'true');
@@ -261,44 +281,127 @@ try{
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-players-option="attribute.shooting"]').fill('65:80');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true);
-    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false);
     await page.locator('[data-admin-players-preview]').click();
-    try{
-     await page.locator('[data-admin-players-result]').waitFor({state:'visible',timeout:12000});
-    }catch(error){
-     const diagnostic=await page.evaluate(()=>({
-      feedback:document.querySelector('[data-admin-players-feedback]')?.textContent,
-      previewDisabled:document.querySelector('[data-admin-players-preview]')?.disabled,
-      status:document.querySelector('#app-admin')?.dataset.adminAccess,
-      previewHidden:document.querySelector('[data-admin-players-result]')?.hidden
-     }));
-     throw new Error('Admin Players preview did not render '+JSON.stringify({...diagnostic,previewCalls,sessionReads,adminCalls,errors}),{cause:error});
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-players-preview-page]').waitFor({state:'visible'});
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
+    assert.match(await page.locator('[data-admin-preview-count]').innerText(),/2/);
+    assert.equal(await page.locator('.app-players-preview-page .app-panel,.app-players-preview-page .admin-players-approval').count(),0);
+    assert.equal(await page.locator('.app-players-preview-actions > :is(button,a)').count(),3);
+    assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-feedback]').count(),1);
+    assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-commit-status]').count(),1);
+    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true,'Generate opens confirmation rather than saving immediately');
+    assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
+    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
+    // Pairwise responsive/i18n checks in the existing Chromium + WebKit Admin
+    // browser suite. Preview data is already loaded: no additional API reads.
+    const previewCases=[
+     {lang:'en',width:320,theme:'dark',generate:'Generate',overview:'Overview',attributes:'Attributes'},
+     {lang:'it',width:390,theme:'light',generate:'Genera',overview:'Panoramica',attributes:'Attributi'},
+     {lang:'de',width:430,theme:'dark',generate:'Generieren',overview:'Übersicht',attributes:'Attribute'},
+     {lang:'es',width:768,theme:'light',generate:'Generar',overview:'Resumen',attributes:'Atributos'},
+     {lang:'fr',width:1440,theme:'dark',generate:'Générer',overview:'Vue d’ensemble',attributes:'Attributs'}
+    ];
+    for(const variant of previewCases){
+     await page.setViewportSize({width:variant.width,height:844});
+     await page.evaluate(({lang,theme})=>{
+      document.documentElement.lang=lang;document.documentElement.dataset.theme=theme;
+     },variant);
+     await page.waitForFunction(expected=>document.querySelector('[data-admin-players-commit]')?.textContent===expected,variant.generate);
+     assert.equal(await page.locator('[data-admin-preview-view="overview"]').innerText(),variant.overview);
+     assert.equal(await page.locator('[data-admin-preview-view="attributes"]').innerText(),variant.attributes);
+     const layout=await page.evaluate(()=>{
+      const root=document.querySelector('[data-admin-players-preview-page]');
+      const bar=root.querySelector('.app-players-preview-actions');
+      const scroll=root.querySelector('.app-players-table-scroll');
+      const nav=root.querySelector('[data-admin-preview-pagination]');
+      // The fixture has two players: expose the shared pager only to measure
+      // actual CSS geometry, then restore its original hidden state.
+      const originallyHidden=nav.hidden;nav.hidden=false;
+      const left=nav.querySelector('[data-admin-preview-prev]').getBoundingClientRect();
+      const right=nav.querySelector('[data-admin-preview-next]').getBoundingClientRect();
+      const widths={previous:left.width,next:right.width,heightPrev:left.height,heightNext:right.height};
+      nav.hidden=originallyHidden;
+      return {
+       viewport:innerWidth,document:document.documentElement.scrollWidth,
+       actions:[...bar.querySelectorAll(':scope > button,:scope > a')].map(node=>({
+        text:node.textContent.trim(),visible:node.getBoundingClientRect().width>0,
+        right:node.getBoundingClientRect().right
+       })),
+       tableViewport:scroll.getBoundingClientRect().width,
+       widths
+      };
+     });
+     assert.ok(layout.document<=layout.viewport+1,variant.lang+' '+variant.width+' page overflow: '+JSON.stringify(layout));
+     assert.equal(layout.actions.length,3,'Only Generate, Regenerate and Back may appear');
+     assert.ok(layout.actions.every(x=>x.visible&&x.right<=layout.viewport+1),'Visible actions must fit the viewport: '+JSON.stringify(layout));
+     assert.ok(layout.tableViewport>0&&layout.tableViewport<=layout.viewport+1,'Only the table may scroll horizontally');
+     assert.ok(Math.abs(layout.widths.previous-layout.widths.next)<.5,'Previous/Next widths must match');
+     assert.ok(Math.abs(layout.widths.heightPrev-layout.widths.heightNext)<.5,'Previous/Next heights must match');
+     assert.equal(layout.widths.previous,variant.width<=420?88:112,'Shared pager width at this breakpoint');
     }
-    assert.equal(await page.locator('[data-admin-players-rows] tr').count(),2);
-    assert.match(await page.locator('[data-admin-players-summary]').innerText(),/2/);
-    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Preview alone never approves');
-    // Editing any generation input invalidates the old preview before commit.
+    await page.setViewportSize({width:390,height:844});
+    await page.evaluate(()=>{document.documentElement.lang='en';document.documentElement.dataset.theme='dark'});
+    await page.waitForFunction(()=>document.querySelector('[data-admin-players-commit]')?.textContent==='Generate');
+    await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().hover();
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+    assert.match(await page.locator('#app-players-nationality-tooltip').innerText(),/Italy/);
+    assert.equal(await page.locator('#app-players-nationality-tooltip').getAttribute('data-placement'),'above');
+    assert.equal(await page.locator('#app-players-nationality-tooltip').evaluate(node=>getComputedStyle(node).animationName),'app-world-tooltip-in');
+    await page.mouse.move(0,0);
+    await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().focus();
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+    await page.keyboard.press('Escape');
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
+    await page.locator('[data-admin-preview-view="attributes"]').click();
+    assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
+    assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');
+    await page.locator('[data-admin-preview-view="overview"]').click();
+    await page.locator('[data-admin-preview-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
+    await page.locator('[data-players-option="age"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Back restores all generator options');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'admin-trial');
+    assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
+    assert.equal(await page.locator('[data-players-option="primaryPosition"]').inputValue(),'ST');
+    assert.equal(await page.locator('[data-players-option="attribute.shooting"]').inputValue(),'65:80');
     await page.locator('[data-players-option="age"]').fill('20');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false);
+    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false,'Invalid generation options cannot be previewed');
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-admin-players-preview]').click();
-    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
-    await page.locator('[data-admin-players-confirmation]').fill('GENERATE PLAYERS');
-    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true);
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
     await page.locator('[data-admin-players-commit]').click();
+    await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'visible'});
+    assert.equal(commitCalls,0,'Opening confirmation never saves players');
+    await page.keyboard.press('Escape');
+    await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'hidden'});
+    assert.equal(commitCalls,0,'Closing the confirmation cannot save a player');
+    await page.locator('[data-admin-players-commit]').click();
+    await page.locator('[data-admin-preview-confirm-dialog]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-preview-confirm-action]').isEnabled(),false);
+    await page.locator('[data-admin-players-confirmation]').fill('GENERATE PLAYERS');
+    assert.equal(await page.locator('[data-admin-preview-confirm-action]').isEnabled(),true);
+    await page.locator('[data-admin-preview-confirm-action]').click();
     await page.locator('[data-admin-players-commit-status]').waitFor({state:'visible'});
     assert.match(await page.locator('[data-admin-players-commit-status]').innerText(),/2/);
-    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Approved preview cannot be committed twice');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false,'Committed draft must not remain approvable');
-    assert.equal(await page.locator('[data-admin-players-confirmation]').inputValue(),'');
+    assert.equal(await page.locator('[data-admin-preview-confirm-dialog]').isVisible(),false,'Committed draft must close the confirmation');
+    await page.locator('[data-admin-preview-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
+    await page.locator('[data-players-option="count"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Saving does not erase the prior generator settings');
+    assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
     await page.locator('[data-admin-players-preview]').click();
-    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
-    assert.equal(previewCalls,3);assert.equal(commitCalls,1);assert.equal(sessionReads,4);
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(previewCalls,3);assert.equal(commitCalls,1);
+    assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,1,'Admin directory and Players share one per-tab permission check');
+   assert.equal(permissionReads,1,'Admin directory, Players and Preview reuse one per-tab permissions check');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
