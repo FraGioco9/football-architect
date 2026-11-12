@@ -27,7 +27,7 @@ test('Generator navigates to protected preview without browser persistence or fa
  const backend=read('backend/src/players-generation-command.ts');
  const html=read('admin/players/preview/index.html');
  assert.match(generator,/location.assign\('\/admin\/players\/preview\?draftId='/);
- assert.match(preview,/\/api\/admin\/players\/draft\?draftId=/);
+ assert.ok(preview.includes("authorizedPost('/api/admin/players/draft',{draftId:id})"));
  assert.match(preview,/\/api\/admin\/players\/commit/);
  assert.match(preview,/\/api\/admin\/players\/preview/);
  assert.match(preview,/new MutationObserver\(render\)/);

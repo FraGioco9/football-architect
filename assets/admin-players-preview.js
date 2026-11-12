@@ -185,9 +185,7 @@
    if(!permitted.ok)throw new Error('permission_denied');
    const data=await permitted.json(),p=data.permissions||[];
    if(!['admin.access','admin.world.read','admin.world.write'].every(x=>p.includes(x)))throw new Error('permission_denied');
-   const response=await fetch('/api/admin/players/draft?draftId='+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}});
-   if(!response.ok)throw new Error('http_'+response.status);
-   const info=await response.json();
+   const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
    if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options)
     throw new Error('invalid_draft');
    draft=info;status='ready';feedback.textContent=tr().ready;

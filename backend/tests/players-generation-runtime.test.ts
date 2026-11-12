@@ -47,7 +47,7 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(preview.candidates[0].preview_id).toMatch(/^trial-[0-9]{4}$/);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
  expect((await db.prepare('SELECT status,count FROM player_generation_drafts WHERE id=?').bind(preview.draftId).first())).toMatchObject({status:'preview',count:2});
- const fetched=await request('/draft?draftId='+preview.draftId);
+ const fetched=await request('/draft',{draftId:preview.draftId});
  expect(fetched.status).toBe(200);
  const refreshed=await fetched.json() as any;
  expect(refreshed.candidates).toHaveLength(preview.summary.count);
@@ -55,13 +55,13 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(refreshed.candidates[0].id).toBeUndefined();
  expect(refreshed.summary.seed).toBe(preview.summary.seed);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
- expect((await request('/draft?draftId='+preview.draftId+'&unexpected=1')).status).toBe(422);
+ expect((await request('/draft',{draftId:preview.draftId,unexpected:1})).status).toBe(422);
  const confirm={draftId:preview.draftId,confirmation:'GENERATE PLAYERS'};
  const success=await request('/commit',confirm);
  expect(success.status).toBe(200);
  const result=await success.json() as any;
  expect(result.count).toBe(2);expect(result.alreadyCommitted).toBe(false);
- expect((await request('/draft?draftId='+preview.draftId)).status).toBe(409);
+ expect((await request('/draft',{draftId:preview.draftId})).status).toBe(409);
  expect((await request('/commit',confirm)).status).toBe(200);
  const replay=await (await request('/commit',confirm)).json() as any;
  expect(replay.alreadyCommitted).toBe(true);
@@ -112,7 +112,7 @@ it('fails closed on missing/invalid approval, invalid options, missing CSRF and 
  expect((await request('/commit',{draftId:preview.draftId,confirmation:'YES'})).status).toBe(422);
  expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'},{'X-CSRF-Token':''})).status).toBe(403);
  await db.prepare("DELETE FROM account_permissions WHERE account_id=? AND permission='admin.world.write'").bind(playerId).run();
- expect((await request('/draft?draftId='+preview.draftId)).status).toBe(403);
+ expect((await request('/draft',{draftId:preview.draftId})).status).toBe(403);
  expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(403);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(before);
 });
