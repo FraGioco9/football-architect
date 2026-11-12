@@ -44,3 +44,9 @@ No filtering semantics, background-scroll behavior, scrollbar gutter, public pro
 - Main and attribute subcategory dividers animate content expand/collapse (200ms); reduced-motion is respected, and the page/root scrollbar remains unaffected.
 - Portaled Preferred foot menu measures its own rendered height before choosing the upward anchor, eliminating an oversized gap for its short list.
 - DESC positions ordering (first click), back-to-front and right-to-left: GK, RB, RWB, CB, LWB, LB, DM, RM, CM, LM, RW, AM, LW, ST. ASC reverses it; third click resets to created-at order. SQL uses a fixed whitelist CASE expression plus ID tie-break.
+
+### Table header geometry and sort-label alignment — 2026-11-12
+- Header: 44px height, 5px vertical padding and 32px sort button (rather than 32px button + 20px vertical padding). Header typography: 12px / 700 / 1.2. Data and reserved loading rows remain 44px and data typography 13px.
+- Independent text labels retain the exact centered or left-aligned position whether unsorted or sorted. Active 16px chevrons are absolutely anchored 7px outside the label; the nationality sort icon is centered within its flag column.
+- Canonical HTML generator, first-paint Attributes headers and normal runtime render all use the same label wrapper. Existing three-stage sorting remains.
+- Updated two stale Site tests: sidebar contract expects sortable flag header; URL helper test extracts only the actual syncUrl function instead of accidentally executing filter initialization without document.

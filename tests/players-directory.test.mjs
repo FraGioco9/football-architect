@@ -211,7 +211,7 @@ test('Players view and group slugs are explicit even for both default selections
  assert.match(code,/if\(state\.view==='attributes'\)url\.searchParams\.set\('group',state\.group\)/);
  assert.match(code,/syncControls\(\);syncUrl\('replaceState'\);load\(state\.page\)/,'default direct URL normalized without extra history entry');
  assert.match(code,/state=next;syncControls\(\);syncUrl\('replaceState'\)/,'Back/Forward also restores canonical URLs');
- const begin=code.indexOf("  function syncUrl(mode='pushState'){"),end=code.indexOf("  function syncControls(){",begin);
+  const begin=code.indexOf("  function syncUrl(mode='pushState'){"),end=code.indexOf("  const filterSections=",begin);
  assert.ok(begin>=0&&end>begin,'extract actual production URL helper');
  const run=(state,search)=>{
   let current=new URL('http://localhost:2000/players'+search);
@@ -627,7 +627,7 @@ test('Players column buttons provide persistent URL ordering on complete server-
  for(const bad of ['?order=asc','?sort=unknown','?sort=name&order=up','?sort=name&sort=age']){
   assert.throws(()=>parser.parsePublicPlayerQuery(bad),{name:'TypeError'},bad);
  }
- assert.match(css,/\.app-players-sort-button\{display:inline-flex;[^}]*cursor:pointer/);
+ assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*cursor:pointer/);
  assert.match(css,/\.app-players-sort-button:focus-visible\{text-decoration:underline/);
  assert.match(css,/\.app-players-sort-button:hover,\.app-players-sort-button:active,\.app-players-sort-button:focus\{color:inherit;background:transparent/);
  assert.match(css,/user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent/);
@@ -638,8 +638,8 @@ test('Players column buttons provide persistent URL ordering on complete server-
  assert.match(js,/if\(state\.sort!==key\)\{state\.sort=key;state\.order='desc';\}/);
  assert.match(js,/else if\(state\.order==='desc'\)state\.order='asc'/);
  assert.match(js,/else\{state\.sort='';state\.order='';\}/);
- assert.match(css,/\.app-players-sort-chevron\{[^}]*visibility:hidden;opacity:0;transform:rotate\(0deg\);transform-origin:50% 50%/);
- assert.match(css,/\.app-players-table th\[aria-sort="ascending"\] \.app-players-sort-chevron\{transform:rotate\(180deg\)\}/);
+ assert.match(css,/\.app-players-sort-chevron\{[^}]*visibility:hidden;opacity:0;transform:translateY\(-50%\) rotate\(0deg\);transform-origin:50% 50%/);
+ assert.match(css,/\.app-players-table th\[aria-sort="ascending"\] \.app-players-sort-chevron\{transform:translateY\(-50%\) rotate\(180deg\)\}/);
  assert.match(html,/class="app-players-sort-chevron"/);
  assert.match(js,/classList\.add\('app-players-sort-chevron'\)/);
  assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/);
@@ -717,8 +717,8 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
  assert.doesNotMatch(html,/<label class="app-players-filter-control app-players-name-control"/,'clicking the Name title must not focus its input');
  assert.match(css,/\.app-players-name-section \.app-players-filter-section-header\{cursor:default\}/);
  assert.ok(generator.includes('app-players-name-section'),'generator retains the same Name section');
- assert.match(css,/\.app-players-sort-button\{[^}]*gap:7px;line-height:1/);
- assert.match(css,/\.app-players-sort-chevron\{[^}]*width:16px;height:16px;align-self:center/);
+ assert.match(css,/\.app-players-sort-button\{[^}]*gap:0;line-height:1.2/);
+ assert.match(css,/\.app-players-sort-chevron\{[^}]*width:16px;height:16px/);
  assert.equal((html.match(/class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16"/g)||[]).length,6);
  assert.match(js,/chev\.setAttribute\('width','16'\);chev\.setAttribute\('height','16'\)/);
  assert.match(js,/const naturalHeight=Math\.max\(44,menu\.scrollHeight/);
@@ -728,4 +728,22 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
  assert.match(css,/\.app-players-filter-section\[open\]:not\(\.is-collapsing\)/);
  assert.match(sql,/const pitchPositions=\['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'\]/);
  assert.match(sql,/\['positions',positionRank\]/);
+});
+
+test('Players table header geometry and independent sort-label anchoring',()=>{
+ const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),js=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-table thead th\{height:44px;padding-block:5px;[^}]*font-size:12px;font-weight:700;line-height:1.2/);
+ assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:32px;min-height:32px/);
+ assert.match(css,/\.app-players-sort-label\{position:relative;display:inline-block;max-width:100%/);
+ assert.match(css,/\.app-players-sort-chevron\{position:absolute;display:block;left:calc\(100% \+ 7px\);top:50%/);
+ assert.match(css,/\.app-players-flag-col \.app-players-sort-chevron\{left:0\}/);
+ assert.equal((html.match(/class="app-players-sort-label"/g)||[]).length,6);
+ assert.equal((html.match(/class="app-players-sort-chevron"/g)||[]).length,6);
+ assert.match(js,/wrapper\.append\(text\);button\.append\(wrapper\)/);
+ assert.match(js,/chev\.append\(path\);wrapper\.append\(chev\)/);
+ assert.match(html,/wrapper\.textContent=label;button\.append\(wrapper\)/);
+ assert.match(html,/chevron\.append\(path\);wrapper\.append\(chevron\)/);
+ assert.match(gen,/app-players-sort-label/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:44px/);
 });

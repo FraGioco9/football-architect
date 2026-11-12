@@ -113,8 +113,8 @@ test('Explore Players comes before Clubs and opens the public directory (not Adm
  assert.match(icon,/fill-rule="evenodd"/);
  assert.match(icon,/M245,0/);
  assert.ok(inlineIcon.includes('d="'+icon.match(/ d="([^"]+)"/)[1]+'"'),'Unmodified original artwork embedded inline');
- assert.ok(html.includes('<th scope="col" class="app-players-flag-col"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span></th>'));
- const columns=[...html.matchAll(/<th scope="col" data-app-i18n="playersColumn[^"]+">([^<]+)<\/th>/g)].map(m=>m[1]);
+  assert.match(html,/<th scope="col" class="app-players-flag-col"><button[^>]*data-players-sort="nationality"[^>]*><span class="app-players-sort-label"><span class="sr-only" data-app-i18n="playersNationality">Nationality<\/span>/);
+  const columns=[...html.matchAll(/data-app-i18n="playersColumn[^"]+">([^<]+)<\/span>/g)].map(m=>m[1]);
  assert.deepEqual(columns,['Player','Age','Positions','Height','Foot']);
  assert.ok(html.includes('<td colspan="6">'));
  assert.doesNotMatch(html,/\/admin\/players/);

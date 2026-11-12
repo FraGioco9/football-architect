@@ -307,10 +307,11 @@
     if(flag)node.className='app-players-flag-col';
     const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';
     button.dataset.playersSort=key;
+    const wrapper=document.createElement('span');wrapper.className='app-players-sort-label';
     const text=document.createElement('span');text.textContent=label;
     if(flag)text.className='sr-only';
-    button.append(text);
-    // The chevron reserves its position beside the title; only an active sort reveals it.
+    wrapper.append(text);button.append(wrapper);
+    // The chevron belongs to the label but does not contribute to its layout width.
     const chev=document.createElementNS('http://www.w3.org/2000/svg','svg');
     chev.classList.add('app-players-sort-chevron');chev.setAttribute('viewBox','0 0 20 20');
     chev.setAttribute('width','16');chev.setAttribute('height','16');chev.setAttribute('aria-hidden','true');
@@ -318,7 +319,7 @@
     path.setAttribute('d','m5 7 5 5 5-5');path.setAttribute('fill','none');
     path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width','1.75');
     path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');
-    chev.append(path);button.append(chev);
+    chev.append(path);wrapper.append(chev);
     node.append(button);
     node.setAttribute('aria-sort',state.sort===key?(state.order==='desc'?'descending':'ascending'):'none');
     row.append(node);
