@@ -67,5 +67,5 @@ test('public sidebar cannot treat malformed cached values as Admin authorization
  assert.equal(cache.read(),null);
  assert.equal(data.has('fa:admin:permissions:v1'),false);
  const nav=readFileSync(new URL('../assets/profile-navigation.js',import.meta.url),'utf8');
- assert.doesNotMatch(nav,/pageshow[^\\n]*check\\(/);
+ assert.doesNotMatch(nav,/pageshow[^\n]*check\(/);
 });
