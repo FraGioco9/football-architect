@@ -1,0 +1,38 @@
+# AI-AUTONOMY-01 · non-executable pilot policy
+# This is documentation/configuration data ONLY. No workflow or runner reads it today.
+# Changing values here does not authorize Codex, GitHub Actions, billing or deployment.
+schema_version: 1
+status: preparation
+automation:
+  enabled: false
+  trigger: none # no schedule, webhook, push, pull_request or workflow_dispatch
+  agent_dispatch: disabled
+  api_execution: disabled
+  max_concurrent_tasks: 0
+  retry_limit: 0
+  auto_pick_next_issue: false
+pilot:
+  candidate_issue: 504
+  coordination_issue: 524
+  provider: codex_cloud_manual
+  start_requires_new_owner_approval: true
+  measure_quota_and_quality: true
+  allow_changes_in_pilot_without_approval: false
+proposed_labels: # proposal only: labels not created, no GitHub rules attached
+  ready: "ai:ready"
+  working: "ai:working"
+  blocked: "ai:blocked"
+safety:
+  allow_merge: false
+  allow_auto_merge: false
+  allow_deploy: false
+  allow_remote_d1: false
+  allow_secret_or_permission_changes: false
+  allow_branch_deletion: false
+  allow_unattended_execution: false
+  require_draft_hold_pr: true
+  require_exact_head_ci_when_applicable: true
+cost:
+  github_actions_api_budget_usd: 0
+  api_key_configured: false
+  no_api_spend_without_separate_approval: true
