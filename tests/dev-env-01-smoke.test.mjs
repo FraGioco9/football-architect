@@ -18,7 +18,8 @@ async function listen(server){server.listen(0,'127.0.0.1');await once(server,'li
 async function close(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 
 test('default selected mode uses shared remote D1, explicit --local keeps isolated DB',()=>{
- assert.deepEqual(selectDevMode([]),{mode:'remote-d1'});
+ assert.deepEqual(selectDevMode([]),{mode:'remote-d1',lanAddress:null});
+ assert.deepEqual(selectDevMode(['--lan','192.168.1.90']),{mode:'remote-d1',lanAddress:'192.168.1.90'});
  assert.equal(selectDevMode(['--local']).mode,'local');
 });
 

@@ -38,11 +38,12 @@ export function localDevPlan({platform=process.platform,execPath=process.execPat
 export const SHARED_PREVIEW_TARGET='https://preview.football-architect.workers.dev';
 /** Parse before starting any children; never fall back to a different database. */
 export function selectDevMode(flags=[]){
- if(flags.length===0)return {mode:'remote-d1'};
+ if(flags.length===0)return {mode:'remote-d1',lanAddress:null};
+ if(flags.length===2&&flags[0]==='--lan')return {mode:'remote-d1',lanAddress:flags[1]};
  if(flags.length===2&&flags[0]==='--shared')return {mode:'shared',target:validateSharedPreviewTarget(flags[1])};
  if(flags.length===1&&flags[0]==='--local')return {mode:'local',lanAddress:null};
  if(flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan')return {mode:'local',lanAddress:flags[2]};
- throw Error('DEV usage: node tools/dev.mjs [--local [--lan <private IPv4>] | --shared '+SHARED_PREVIEW_TARGET+']');
+ throw Error('DEV usage: node tools/dev.mjs [--lan <private IPv4> | --local [--lan <private IPv4>] | --shared '+SHARED_PREVIEW_TARGET+']');
 }
 export function validateSharedPreviewTarget(target){
  if(target!==SHARED_PREVIEW_TARGET)
@@ -91,12 +92,12 @@ export async function startSharedDev({proc=process,spawnChild=spawn,verify=verif
 
 export function startLocalDev({proc=process,spawnChild=spawn,interfaces=networkInterfaces,sharedD1=false}={}){
  const flags=proc.argv.slice(2);
- // Empty flags support only the legacy dev-auth-local.mjs alias and direct fixtures.
- // The canonical dev.mjs CLI defaults to shared.
+ // The canonical dev.mjs CLI defaults to local Worker + shared remote D1.
+ // The legacy --lan flag is safe: public frontend only; no private LAN APIs.
  const legacyLan=flags.length===2&&flags[0]==='--lan';
  const explicitLocal=flags.length===1&&flags[0]==='--local';
  const explicitLan=flags.length===3&&flags[0]==='--local'&&flags[1]==='--lan';
- if(sharedD1&&flags.length)throw Error('Shared D1 DEV is the no-flags default; use --local for isolated D1');
+ if(sharedD1&&flags.length&&!legacyLan)throw Error('Shared D1 DEV accepts only --lan <private IPv4>');
  if(!sharedD1&&flags.length&&!(legacyLan||explicitLocal||explicitLan))
   throw Error('Isolated local DEV requires --local [--lan <private IPv4>]');
  const lanAddress=legacyLan||explicitLan?validateLanAddress(flags[flags.length-1],interfaces()):null;

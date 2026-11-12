@@ -115,7 +115,11 @@ it('stale world and expired draft cannot create players',async()=>{
  // Call the domain command with an unchanged live session but advanced clock.
  const session={actor:{id:actor,email},digest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf),
   credentialVersion:1,unified:{playerId,sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
- await expect(commitPlayerGeneration(db,session as any,{draftId:live.draftId,confirmation:'GENERATE PLAYERS'},now+2)).rejects.toMatchObject({status:409});
+ // Created by the HTTP handler using its current wall clock; the module-level
+ // fixture clock may be older when the full CI suite is under load.
+ const liveRow=await db.prepare('SELECT created_at FROM player_generation_drafts WHERE id=?').bind(live.draftId).first<{created_at:number}>();
+ expect(liveRow).not.toBeNull();
+ await expect(commitPlayerGeneration(db,session as any,{draftId:live.draftId,confirmation:'GENERATE PLAYERS'},liveRow!.created_at+2)).rejects.toMatchObject({status:409});
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
 });
 

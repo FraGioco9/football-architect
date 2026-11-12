@@ -18,11 +18,13 @@ function fakeProcess(flags){
  return {proc,messages};
 }
 test('canonical DEV uses local Worker and shared D1 without a Preview deployment, isolated D1 requires --local',()=>{
- assert.deepEqual(selectDevMode([]),{mode:'remote-d1'});
+ assert.deepEqual(selectDevMode([]),{mode:'remote-d1',lanAddress:null});
+ assert.deepEqual(selectDevMode(['--lan','192.168.1.90']),{mode:'remote-d1',lanAddress:'192.168.1.90'});
  assert.deepEqual(selectDevMode(['--shared',target]),{mode:'shared',target});
  assert.deepEqual(selectDevMode(['--local']),{mode:'local',lanAddress:null});
  assert.deepEqual(selectDevMode(['--local','--lan','192.168.1.90']),{mode:'local',lanAddress:'192.168.1.90'});
- for(const flags of [['--lan','192.168.1.90'],['--remote'],['--shared'],['--shared','https://example.invalid'],['--local','--shared'],['--local','--lan'],['--local','--lan','192.168.1.90','extra']])
+ assert.throws(()=>selectDevMode(['--lan']),/DEV usage/);
+ for(const flags of [['--remote'],['--shared'],['--shared','https://example.invalid'],['--local','--shared'],['--local','--lan'],['--local','--lan','192.168.1.90','extra']])
   assert.throws(()=>selectDevMode(flags),/DEV usage|Shared DEV/);
 });
 

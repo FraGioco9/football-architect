@@ -19,6 +19,8 @@ node tools/dev.mjs
 
 **Default = local Worker code + shared Cloudflare D1:** the frontend and Worker execute on your PC at `http://app.localhost:2000` and `http://127.0.0.1:8787`; the Worker connects directly to the **existing** nonproduction D1 (`football-architect-dev`) through Wrangler's `remote = true` binding. The hosted Preview uses the same database but can run older code independently. New backend APIs can be tested locally **without deploying Preview**. Shared data changes are real; avoid destructive testing, and sign in separately from the hosted Preview. The launcher never migrates, deploys or copies data. Wrangler login/network access is required for remote D1.
 
+**Important:** The shared database already has its own verified accounts. An account created only in the old isolated local D1 will not log into the shared D1 until separately migrated or registered/verified via hosted Preview. A 401 from `/api/player/permissions` before signing in is expected; check the **POST `/api/player/login`** status to diagnose a failed login. Clear obsolete `app.localhost` site cookies if switching DBs leaves stale sessions; do not repeat logins into a 429 throttle.
+
 **Explicit isolated local mode** for offline QA, disposable experiments and operator tooling:
 
 ```powershell
@@ -33,7 +35,7 @@ Optional frontend-only iPhone Safari QA on trusted Wi-Fi (replace with the PC's 
 node tools/dev.mjs --local --lan 192.168.1.90
 ```
 
-Open `http://192.168.1.90:2000/dashboard` on the phone. LAN `/api/*` is denied; this does **not** expose Player/Admin, local inbox or D1. Never port-forward or bind to all interfaces. [Full DEV guidance](docs/architecture/dev-env-01-startup.md).
+Open `http://192.168.1.90:2000/dashboard` on the phone. The old command `node tools/dev.mjs --lan 192.168.1.90` is also supported and uses the **shared D1** for localhost while exposing only the static site over LAN. Use `--local --lan` when testing with isolated data. LAN `/api/*` is denied; **login and authenticated API access on the phone are not supported**. This does not expose Player/Admin, local inbox or D1. Never port-forward or bind to all interfaces. [Full DEV guidance](docs/architecture/dev-env-01-startup.md).
 
 ## Source and contracts
 
