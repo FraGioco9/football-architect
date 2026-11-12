@@ -156,23 +156,44 @@ try{
    await page.route('**/api/admin/**',route=>{adminCalls++;return route.fulfill({status:503,body:'not allowed'})});
    // An isolated API fixture; the real Worker/D1 transactions are tested separately.
    await page.route('**/api/admin/session',route=>{sessionReads++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({actor:{id:'admin'},csrfToken:'fixture-csrf'})})});
+   let currentOptions=null,draftCommitted=false;
    await page.route('**/api/admin/players/preview',route=>{
     previewCalls++;
     assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     const {options}=route.request().postDataJSON();
+    currentOptions=options;draftCommitted=false;
     assert.equal(options.count,2);
     if(previewCalls<=2)assert.equal(options.seed,'admin-trial');
     else assert.match(options.seed,/^fa-next-11111111-1111-4111-8111-111111111111$/);
     assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
     assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
-    const candidates=[0,1].map(i=>({id:'example-'+i,preview_id:'trial-000'+(i+1),
-     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',initial_age:18,
-     primary_position:'ST',preferred_foot:'right',height_cm:180}));
+    const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
+     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
+     primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
+     attributes:{speed:60,strength:60,stamina:60,agility:60,passing:60,technique:60,dribbling:60,
+      shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
+      decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({draftId:'11111111-1111-4111-8111-111111111111',
      summary:{count:2,seed:options.seed,countries:{ITA:2}},candidates})});
    });
+   await page.route('**/api/admin/players/draft',route=>{
+    assert.equal(route.request().method(),'POST','Admin draft read must be CSRF-protected');
+    assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111'});
+    assert.ok(currentOptions,'Preview must have been generated before it can be read');
+    if(draftCommitted)return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{code:'players_preview_expired'}})});
+    const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
+     display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
+     primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
+     attributes:{speed:60,strength:60,stamina:60,agility:60,passing:60,technique:60,dribbling:60,
+      shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
+      decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     draftId:'11111111-1111-4111-8111-111111111111',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
+     options:currentOptions,candidates})});
+   });
    await page.route('**/api/admin/players/commit',route=>{
-    commitCalls++;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
+    commitCalls++;draftCommitted=true;assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111',confirmation:'GENERATE PLAYERS'});
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({batchId:'11111111-1111-4111-8111-111111111111',count:2,alreadyCommitted:false})});
    });
@@ -247,7 +268,7 @@ try{
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
     assert.equal(await page.locator('[data-admin-players-copy],[data-admin-players-command]').count(),0,'No legacy CLI-only form controls');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
+    assert.equal(await page.locator('[data-admin-players-result],[data-admin-players-commit]').count(),0,'The generator must not embed preview or approval');
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
     await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').click();
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'true');
@@ -261,44 +282,48 @@ try{
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-players-option="attribute.shooting"]').fill('65:80');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true);
-    assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false);
     await page.locator('[data-admin-players-preview]').click();
-    try{
-     await page.locator('[data-admin-players-result]').waitFor({state:'visible',timeout:12000});
-    }catch(error){
-     const diagnostic=await page.evaluate(()=>({
-      feedback:document.querySelector('[data-admin-players-feedback]')?.textContent,
-      previewDisabled:document.querySelector('[data-admin-players-preview]')?.disabled,
-      status:document.querySelector('#app-admin')?.dataset.adminAccess,
-      previewHidden:document.querySelector('[data-admin-players-result]')?.hidden
-     }));
-     throw new Error('Admin Players preview did not render '+JSON.stringify({...diagnostic,previewCalls,sessionReads,adminCalls,errors}),{cause:error});
-    }
-    assert.equal(await page.locator('[data-admin-players-rows] tr').count(),2);
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-players-preview-page]').waitFor({state:'visible'});
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.match(await page.locator('[data-admin-players-summary]').innerText(),/2/);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Preview alone never approves');
-    // Editing any generation input invalidates the old preview before commit.
+    assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
+    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
+    await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().hover();
+    await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+    assert.match(await page.locator('#app-players-nationality-tooltip').innerText(),/Italy/);
+    await page.locator('[data-admin-preview-view="attributes"]').click();
+    assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
+    assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');
+    await page.locator('[data-admin-preview-view="overview"]').click();
+    await page.locator('[data-admin-preview-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
     await page.locator('[data-players-option="age"]').fill('20');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false);
-    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false);
+    assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),false,'Invalid generation options cannot be previewed');
     await page.locator('[data-players-option="age"]').fill('18');
     await page.locator('[data-admin-players-preview]').click();
-    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
     await page.locator('[data-admin-players-confirmation]').fill('GENERATE PLAYERS');
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true);
     await page.locator('[data-admin-players-commit]').click();
     await page.locator('[data-admin-players-commit-status]').waitFor({state:'visible'});
     assert.match(await page.locator('[data-admin-players-commit-status]').innerText(),/2/);
-    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),false,'Approved preview cannot be committed twice');
-    assert.equal(await page.locator('[data-admin-players-result]').isVisible(),false,'Committed draft must not remain approvable');
-    assert.equal(await page.locator('[data-admin-players-confirmation]').inputValue(),'');
+    assert.equal(await page.locator('[data-admin-preview-approval]').isVisible(),false,'Committed draft must not remain approvable');
+    await page.locator('[data-admin-preview-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
     await page.locator('[data-admin-players-preview]').click();
-    await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
-    assert.equal(previewCalls,3);assert.equal(commitCalls,1);assert.equal(sessionReads,4);
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(previewCalls,3);assert.equal(commitCalls,1);
+    assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,2);
+   assert.equal(permissionReads,writer?7:2,'Every Admin document checks permissions independently');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
