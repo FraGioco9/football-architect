@@ -401,7 +401,7 @@ try{
     assert.equal(previewCalls,3);assert.equal(commitCalls,1);
     assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,1,'Admin directory, Players and Preview reuse one per-tab permissions check');
+   assert.equal(permissionReads,writer?3:1,'Admin route navigation reuses permissions, but each of the two explicit Preview Back reloads rechecks');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
