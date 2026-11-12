@@ -242,7 +242,7 @@ test("PUBLIC-03: execute the actual staging script for both approval contracts",
  try{
   const source=join(root,"source");mkdirSync(source);
   // Copy a source fixture; the staging script must import real builders and verify their output.
-  for(const path of ["assets","admin","dashboard","calendar","settings","competitions","players","clubs","account","data","guide","tools","vercel.json","index.html","favicon.svg","favicon.ico"])
+  for(const path of ["assets","admin","dashboard","calendar","settings","competitions","players","clubs","account","data","guide","tools","vercel.json","index.html","404.html","favicon.svg","favicon.ico"])
    fs.cpSync(join(repositoryRoot,path),join(source,path),{recursive:true});
   const debug=join(root,"expected-debug");stageProtectedDebugArtifact(repositoryRoot,debug);
   const approved=createHash("sha256").update(readFileSync(join(debug,"__fa_dev__/artifact-manifest.json"))).digest("hex");
@@ -255,6 +255,8 @@ test("PUBLIC-03: execute the actual staging script for both approval contracts",
    const result=run(contract,hash);assert.equal(result.status,0,result.stderr);
    const bytes=readFileSync(join(source,"preview-bundle/publication-manifest.json"));
    const manifest=JSON.parse(bytes);assert.equal(manifest.contract,contract);assert.equal(manifest.files.length,count);
+   assert.ok(manifest.files.some(file=>file.path==="404.html"),contract+" must carry the allowlisted 404 document");
+   assert.ok(existsSync(join(source,"preview-bundle/site/404.html")),contract+" staged 404 document missing");
    assert.ok(readFileSync(output,"utf8").includes("inventory_sha256="+createHash("sha256").update(bytes).digest("hex")));
    if(contract==="public")assert.equal(fs.existsSync(join(source,"preview-bundle/site/__fa_dev__")),false);
   }

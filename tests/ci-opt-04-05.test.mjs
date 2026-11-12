@@ -80,7 +80,13 @@ test('gate executes its tested observer inline, without evaluating candidate cod
  const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
  const observer=readFileSync('tools/ci-full-evidence.cjs','utf8').split('\n').filter(l=>!l.startsWith('module.exports=')).join('\n').trim();
  const embedded=source.split('          script: |\n')[1].split('\n').map(l=>l.startsWith('            ')?l.slice(12):l).join('\n');
- assert.ok(embedded.startsWith(observer));assert.doesNotMatch(source,/actions\/checkout|require\(/);
+ assert.ok(embedded.startsWith(observer));
+ const scope=source.split('\n  scope:')[1]?.split('\n  full-evidence:')[0];
+ assert.ok(scope,'exact-head classification job missing');
+ assert.match(scope,/actions\/checkout@v4/,'short classification job checks out exact source');
+ const observerJob=source.split('\n  full-evidence:')[1];
+ assert.ok(observerJob,'FULL observer job missing');
+ assert.doesNotMatch(observerJob,/actions\/checkout|require\(/,'observer remains inline/read-only and cannot run candidate code');
 });
 
 test('ownership labels cannot hide executable tests in manual or helper lanes',async()=>{
