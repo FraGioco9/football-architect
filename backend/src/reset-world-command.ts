@@ -1,4 +1,4 @@
-/** Atomic Season0 purge. Authorization and typed confirmation precede this D1 command. */
+/** Atomic Season 0 sporting reset; persisted players and their committed generator batches survive. */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';
 import type {Database} from './database.ts';
@@ -27,8 +27,9 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=? AND season_number=? AND phase=? AND day=?',[world.generation,world.revision,world.seasonNumber,world.phase,world.day]),
    abortUnless(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM seasons WHERE generation<>?)',[world.generation]),
    db.prepare("UPDATE world_state SET generation=?,revision=0,season_number=0,day=0,phase='unstarted' WHERE id=1 AND generation=? AND revision=?").bind(nextGeneration,world.generation,world.revision),
-   db.prepare('DELETE FROM generated_players'),
-   db.prepare('DELETE FROM player_generation_drafts'),
+   // Persisted players reference committed draft IDs: keep both rows and FK parents.
+   // Abandon only uncommitted previews from the previous sporting generation.
+   db.prepare("DELETE FROM player_generation_drafts WHERE status='preview'"),
    db.prepare('DELETE FROM season_two_approvals'),
    db.prepare('DELETE FROM season_archive_summaries'),
    db.prepare('DELETE FROM season_archives'),

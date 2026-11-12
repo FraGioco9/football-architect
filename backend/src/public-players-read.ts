@@ -14,7 +14,9 @@ interface StoredRow {id:number;payload_json:string}
 export async function readPublicPlayers(db:Database,page:number,filters:PublicPlayerFilters={}){
  if(!Number.isSafeInteger(page)||page<1||page>9999)throw new ApiError(422,'invalid_public_request');
  const before=await readWorld(db);
- const predicates=['world_generation=?'],values:(string|number)[]=[before.generation];
+ // Persisted player identities survive sporting world resets; the generation
+ // is a concurrency guard, not a filter on player ownership or visibility.
+ const predicates:string[]=[],values:(string|number)[]=[];
  // Dynamic values are bound; SQL expressions are fixed and cannot be supplied by clients.
  if(filters.name!==undefined){
   // Names are a validated literal substring: escape LIKE metacharacters defensively.
@@ -88,13 +90,13 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  const orderBy=sortExpression
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
   :'created_at DESC,id ASC';
- const where=predicates.join(' AND ');
- const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE '+where)
+ const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
+ const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players'+where)
   .bind(...values).first<{n:number}>();
  const count=countRow?.n??0;
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
  const rows=page<=totalPages
-  ?(await db.prepare('SELECT id,payload_json FROM generated_players WHERE '+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
+  ?(await db.prepare('SELECT id,payload_json FROM generated_players'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
     .bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
   :[];
  const after=await readWorld(db);

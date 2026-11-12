@@ -165,7 +165,10 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
 }
 export async function listGeneratedPlayers(db:Database){
  const world=await readWorld(db);
- const rows=await db.prepare('SELECT id,batch_id,entry_season,payload_json FROM generated_players WHERE world_generation=? ORDER BY created_at DESC,id LIMIT 100').bind(world.generation).all<{id:string;batch_id:string;entry_season:number;payload_json:string}>();
- const count=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE world_generation=?').bind(world.generation).first<{n:number}>();
+ // The committed player catalogue spans sporting world generations.
+ const rows=await db.prepare('SELECT id,batch_id,entry_season,payload_json FROM generated_players ORDER BY created_at DESC,id LIMIT 100').all<{id:number;batch_id:string;entry_season:number;payload_json:string}>();
+ const count=await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>();
+ const after=await readWorld(db);
+ if(after.generation!==world.generation)throw new ApiError(409,'stale_world');
  return {count:count?.n??0,worldGeneration:world.generation,players:rows.results.map(row=>JSON.parse(row.payload_json))};
 }

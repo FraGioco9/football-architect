@@ -47,17 +47,17 @@ test('public page uses persisted numeric IDs, includes approved JSON and exclude
  assert.doesNotMatch(JSON.stringify(player),/initial_age|development_aptitude|seed|preview_id|known_as/);
 });
 
-test('public directory count and pagination use only current world generation and bounded page size',async()=>{
+test('public directory count and pagination include persisted players independent of world generation',async()=>{
  const {db,calls}=mockDb();
  await readPublicPlayers(db,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
  const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
- assert.match(count.sql,/WHERE world_generation=\?/);
- assert.match(page.sql,/WHERE world_generation=\?/);
+ assert.doesNotMatch(count.sql,/world_generation|WHERE/);
+ assert.doesNotMatch(page.sql,/world_generation|WHERE/);
  assert.doesNotMatch(count.sql,/json_extract/);
  assert.doesNotMatch(page.sql,/json_extract/);
- assert.deepEqual(count.params,[generation]);
- assert.deepEqual(page.params,[generation,50,0]);
+ assert.deepEqual(count.params,[]);
+ assert.deepEqual(page.params,[50,0]);
 });
 test('public directory rejects invalid page numbers before database reads',async()=>{
  const {db,calls}=mockDb();
@@ -101,8 +101,8 @@ test('all filters are bound into COUNT and page queries before pagination, witho
  for(const token of ["'$.nationality'","'$.primary_position'","'$.age'","'$.preferred_foot'"]){
   assert.ok(count.sql.includes(token),token);assert.ok(page.sql.includes(token),token);
  }
- assert.deepEqual(count.params,[generation,'ITA','CM',18,30,'right']);
- assert.deepEqual(page.params,[generation,'ITA','CM',18,30,'right',50,0]);
+ assert.deepEqual(count.params,['ITA','CM',18,30,'right']);
+ assert.deepEqual(page.params,['ITA','CM',18,30,'right',50,0]);
  assert.match(page.sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(JSON.stringify(result.players),/initial_age|development_aptitude|seed/);
 });
@@ -121,8 +121,8 @@ test('validated name search and sparse public attributes keep COUNT and page SQL
   assert.match(stmt.sql,/LIKE \? ESCAPE/);
   assert.doesNotMatch(stmt.sql,/Andrea Rossi|passing_70_x/,'never interpolate player-supplied filters');
  }
- assert.deepEqual(count.params,[generation,'%Andrea Rossi%',70,90,18]);
- assert.deepEqual(page.params,[generation,'%Andrea Rossi%',70,90,18,50,0]);
+ assert.deepEqual(count.params,['%Andrea Rossi%',70,90,18]);
+ assert.deepEqual(page.params,['%Andrea Rossi%',70,90,18,50,0]);
  for(const bad of [
   '?name=%25','?name=%5F','?name=Andrea%20Rossi','?name=%20Andrea',
   '?attributes=passing_x_x','?attributes=passing_0_99','?attributes=passing_70_100',
@@ -146,7 +146,7 @@ test('Players server-side sorting uses an allowlisted SQL expression with stable
   assert.ok(page.sql.includes(path),sort);
   assert.ok(page.sql.includes(' '+order.toUpperCase()+', id ASC LIMIT ? OFFSET ?'),sort);
   assert.doesNotMatch(page.sql,/ORDER BY \?/,'cannot parameterize SQL column identifiers');
-  assert.deepEqual(count.params,[generation],sort+' does not change the number of records');
-  assert.deepEqual(page.params,[generation,50,0]);
+  assert.deepEqual(count.params,[],sort+' does not change the number of records');
+  assert.deepEqual(page.params,[50,0]);
  }
 });
