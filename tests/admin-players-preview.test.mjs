@@ -63,7 +63,7 @@ test('Dedicated preview has the same bare Players table and just three page acti
  for(const selector of ['app-players-header','app-page-title','app-competition-tabs app-players-tabs','app-players-toolbar','app-players-groups','app-players-count','app-players-table-scroll','app-players-table','app-players-pagination','app-players-nationality-flag']){
   if(selector==='app-players-nationality-flag')continue; // Flag is rendered from the common JS renderer.
   assert.ok(preview.includes(selector),selector);
-  assert.ok(publicHtml.includes(selector),selector+' must be shared with /players');
+  assert.ok((selector==='app-players-pagination'?read('assets/players-directory.js'):publicHtml).includes(selector),selector+' must be shared with /players');
  }
  for(const action of ['data-admin-players-commit','data-admin-preview-regenerate','data-admin-preview-back'])assert.ok(preview.includes(action),action);
  assert.doesNotMatch(preview,/app-panel|app-settings-panel|admin-settings|admin-players-preview-summary|admin-players-approval|admin-page-heading|data-admin-back/);
