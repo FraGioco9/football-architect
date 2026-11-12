@@ -74,7 +74,21 @@ try {
       crestStable:[...window.__sh02Crests].every(([clubId,host])=>host.isConnected&&
        document.querySelector(`#app-standings-body [data-club-crest="${clubId}"]`)===host)};
     },view);
-    assert.deepEqual(observed,{route:view,selected:"true",panelHidden:false,tabStable:true,panelStable:true,crestStable:true},slug+"/"+view);
+    // When a crest host is unexpectedly replaced, report the exact club,
+    // connectedness and hydration state without weakening the assertion.
+    const crestDiagnostics=observed.crestStable?[]:await routePage.evaluate(()=>
+     [...window.__sh02Crests].flatMap(([clubId,host])=>{
+      const present=document.querySelector('#app-standings-body [data-club-crest="'+clubId+'"]');
+      return host.isConnected&&present===host?[]:[{
+       clubId,connected:host.isConnected,present:!!present,sameNode:host===present,
+       loading:document.documentElement.dataset.faStandingsLoading??null,
+       pending:document.documentElement.dataset.faDevStandingsPending??null,
+       seasonTransition:document.documentElement.dataset.faDevSeasonTransition??null,
+       revision:window.faCompetitionContext?.revision??null
+      }];
+     }));
+    assert.deepEqual(observed,{route:view,selected:"true",panelHidden:false,tabStable:true,panelStable:true,crestStable:true},
+     slug+"/"+view+" crest diagnostics: "+JSON.stringify(crestDiagnostics));
     assert.equal(await routePage.locator("#competition-panel-"+view).isVisible(),true,slug+"/"+view+" mounted view visible");
     checks++;
    }

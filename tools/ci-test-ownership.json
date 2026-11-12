@@ -223,6 +223,7 @@
     "tests/dev-preview-02d-security.test.mjs": "site-node",
     "tests/dev-preview-artifact.test.mjs": "site-node",
     "tests/dev-shared-d1.test.mjs": "site-node",
+    "tests/dev-preview-crest-host-reuse.test.mjs": "site-node",
     "tests/dev-standings-preview.test.mjs": "site-node",
     "tests/division-allocations.test.mjs": "site-node",
     "tests/division-assets.test.mjs": "site-node",
