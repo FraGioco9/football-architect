@@ -129,7 +129,10 @@ const previousCoherenceOffsets={A:12,B:4,C:-5,D:-13}; // exact V6/prior 60% repl
 const versatileShare=.55; // proposed, not numerically approved; Draft/HOLD
 // Provisional continuous role-expression distribution, never a third category.
 // This applies to skill VALUES, not to the derived suitability classification.
-const roleExpression={mean:15,sd:12,maxAbs:35,maxAttributeShift:25};
+// #518: under approved A's rarer secondaries, soften primary-only role expression
+// to keep natural secondary-equivalent/better aptitude within approved #399 bands.
+// No assigned aptitude bucket, position swap, or change to the suitability formula.
+const roleExpression={mean:13,sd:12,maxAbs:35,maxAttributeShift:25};
 const GENERATION_PROFILES=Object.freeze({
  specialist:Object.freeze({primary:.70,secondary:.30}),
  versatile:Object.freeze({primary:.50,secondary:.50})

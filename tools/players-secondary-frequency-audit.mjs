@@ -3,9 +3,10 @@
 // node tools/players-secondary-frequency-audit.mjs [--json]
 // Read-only evidence after #518 owner approved calibration A. No writes.
 import assert from 'node:assert/strict';
-import {generateTrial,AUTO_SECONDARY_COUNT_WEIGHTS} from './players-generation-trial.mjs';
+import {generateTrial,AUTO_SECONDARY_COUNT_WEIGHTS,calculatePositionSuitability} from './players-generation-trial.mjs';
 
-const SEEDS=['fa-official-trial-01','fa-phase1-independent-02','fa-phase1-independent-03'];
+// Keep the exact three official #399 role-calibration seeds, not a different cohort.
+const SEEDS=['fa-official-trial-01','fa-audit-independent-02','fa-audit-independent-03'];
 const ROLES='GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' ');
 const BASELINE=[25,35,25,11,3.5,.5]; // Historical outfield baseline before approved #518 A.
 const CANDIDATES={
@@ -26,6 +27,23 @@ function summarize(players){
  }
  return {n:players.length,counts,percent:counts.map(n=>pct(n,players.length))};
 }
+// All suitability buckets are DERIVED from generated attributes; no quotas.
+function secondarySuitability(players){
+ const counts={better:0,equivalent:0,primary:0};
+ for(const player of players){
+  if(!player.secondary_positions.length)continue;
+  const primary=calculatePositionSuitability(player.attributes,player.primary_position);
+  const best=Math.max(...player.secondary_positions.map(role=>
+   calculatePositionSuitability(player.attributes,role)));
+  const delta=best-primary;
+  if(delta>=3)counts.better++;
+  else if(delta<=-3)counts.primary++;
+  else counts.equivalent++;
+ }
+ const n=sum(Object.values(counts));
+ return {n,counts,percent:Object.fromEntries(Object.entries(counts).map(
+  ([key,value])=>[key,n?pct(value,n):null]))};
+}
 function expectation(weights){
  assert.equal(weights.length,6);
  assert.equal(sum(weights),100);
@@ -37,14 +55,16 @@ function report(){
  const cohorts=SEEDS.map(seed=>{
   const players=generateTrial({count:1000,seed}).candidates;
   return {seed,players,overall:summarize(players),
-   outfield:summarize(players.filter(p=>p.primary_position!=='GK'))};
+   outfield:summarize(players.filter(p=>p.primary_position!=='GK')),
+   suitability:secondarySuitability(players)};
  });
  const all=cohorts.flatMap(c=>c.players);
  const byRole=Object.fromEntries(ROLES.map(role=>[role,summarize(all.filter(p=>p.primary_position===role))]));
  return {
   issue:518,mode:'read-only approved A',seedCount:SEEDS.length,
-  cohortSize:1000,seeds:cohorts.map(({seed,overall,outfield})=>({seed,overall,outfield})),
+  cohortSize:1000,seeds:cohorts.map(({seed,overall,outfield,suitability})=>({seed,overall,outfield,suitability})),
   pooled:summarize(all),outfield:summarize(all.filter(p=>p.primary_position!=='GK')),
+  suitability:secondarySuitability(all),
   byRole,
   theoretical:{
    status:'model predictions, not observed results; assumes 9% GK',
@@ -79,6 +99,14 @@ function markdown(r){
   '| Role | N | 0 | 1 | 2 | 3 | 4 | 5 |',
   '|---|---:|---:|---:|---:|---:|---:|---:|',
   ...Object.entries(r.byRole).map(([role,s])=>'| '+role+' | '+s.n+' | '+s.percent.map(v=>v.toFixed(2)+'%').join(' | ')+' |'),
+  '', '## Derived secondary suitability (players with 1–5 secondaries only)',
+  '', '| Cohort | N | Secondary better (>= +3) | Equivalent (-3 to +3) | Primary better (<= -3) |',
+  '|---|---:|---:|---:|---:|',
+  ...r.seeds.map(s=>'| '+s.seed+' | '+s.suitability.n+' | '+
+   ['better','equivalent','primary'].map(k=>s.suitability.percent[k].toFixed(2)+'%').join(' | ')+' |'),
+  '| **Pooled** | '+r.suitability.n+' | '+
+   ['better','equivalent','primary'].map(k=>r.suitability.percent[k].toFixed(2)+'%').join(' | ')+' |',
+  '', 'Buckets use the unchanged 70% core + 30% support suitability formula; no quota is enforced.',
   '', 'The report is informational only; no DB writes, schema changes or player edits.'
  ];
  return lines.join('\n');

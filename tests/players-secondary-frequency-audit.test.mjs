@@ -32,6 +32,16 @@ test('#518 owner-approved A is active; three seeded cohorts have fewer multiple 
  assert.equal(report.seeds.length,3);
  assert.deepEqual(report.theoretical.activeApprovedWeights,[45,35,15,4,.9,.1]);
  assert.deepEqual(report.theoretical.pooledActive,[49.95,31.85,13.65,3.64,.819,.091]);
+ const fit=report.suitability;
+ assert.equal(fit.n,fit.counts.better+fit.counts.equivalent+fit.counts.primary);
+ assert.equal(fit.n,report.pooled.n-report.pooled.counts[0]);
+ // Owner-approved #399 windows, unchanged; these are measured from attributes.
+ assert.ok(fit.percent.better>=5&&fit.percent.better<=10,
+  'Secondary-better 5–10%: '+JSON.stringify(fit));
+ assert.ok(fit.percent.equivalent>=20&&fit.percent.equivalent<=25,
+  'Secondary-equivalent 20–25%: '+JSON.stringify(fit));
+ assert.ok(fit.percent.primary>=65&&fit.percent.primary<=75,
+  'Primary-better 65–75%: '+JSON.stringify(fit));
  assert.equal(Object.keys(report.byRole).length,14);
  assert.deepEqual(report.byRole.GK.counts.slice(1),[0,0,0,0,0]);
  const out=report.outfield;
@@ -47,6 +57,6 @@ test('#518 owner-approved A is active; three seeded cohorts have fewer multiple 
  console.log('SECONDARY #518 measured 3x1000:',JSON.stringify({
   pooled:report.pooled,outfield:report.outfield,
   perSeed:report.seeds.map(s=>({seed:s.seed,counts:s.overall.counts})),
-  gkCount:report.byRole.GK.n
+  gkCount:report.byRole.GK.n,suitability:report.suitability
  }));
 });

@@ -46,3 +46,12 @@ The audit generates three cohorts of 1,000 players with existing Phase-1 seeds, 
 - [x] Dedicated regression covers exact manual choice, fixed secondary count, GK restriction, seeded automatic 3×1,000 cohort frequency and role grouping. Worker source parity has a separate mandatory test.
 - [ ] Review exact-head seeded report and existing #399 fit calibration; do not silently change specialist/versatile weights, attribute distributions, suitability model or existing persisted footballers.
 - [ ] Verify CI and obtain separately authorized merge; no remote DB/deploy or new migration.
+
+
+## #399 secondary-fit calibration after the approved A distribution
+
+The measured A-only cohort (3 × 1,000, official #399 audit seeds) had **1,527 players with secondary positions**: 76/1,527 (4.98%) secondary better, 291/1,527 (19.06%) equivalent and 1,160/1,527 (75.97%) primary better. This fails the existing statistical reference windows of **5–10% / 20–25% / 65–75%**. The user authorized improving secondary-better and equivalent occurrences, not weakening the reference windows.
+
+**Targeted generator adjustment:** decrease the *positive mean* of the continuous primary-role expression from **15 to 13**, keeping SD **12**, latent clamp **±35**, per-attribute cap **25**, approved A count frequencies, **45% specialist / 55% versatile** in eligible players, their individual **70/30 and 50/50** mixtures, role-core floors **6/10/12**, primary-suitability target-first constraint and aptitude formula **0.70 × A + 0.30 × B**. This promotes more *natural* equivalent or secondary-better outputs through generated attribute distributions without assigning fit quotas, rewriting scores or changing a player's official primary position. The selected mean is a calibration coefficient and does not change any persisted schema or Admin options.
+
+The read-only audit at `tools/players-secondary-frequency-audit.mjs` now reports all three derived fit buckets both pooled and per seed, using the same three seeds as the #399 quality gate. Exact-head measurements and regression checks determine whether this coefficient is acceptable; **do not claim a PASS based solely on the intended direction of the parameter change**.
