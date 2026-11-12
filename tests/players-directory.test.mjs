@@ -331,11 +331,12 @@ test('Overview Foot is left-aligned like Positions and Player, without changing 
 });
 
 
-test('Players main tabs have centered labels, compact sizes and zero gaps above subgroup bar and table',()=>{
+test('Players main tabs are compact and centered; existing top margins alone are zeroed',()=>{
  const css=read('assets/app.css'),html=read('players/index.html');
- assert.match(css,/\.app-players-tabs\{margin-top:var\(--app-page-section-gap\);min-height:40px;padding-bottom:0\}/);
+ assert.match(css,/\.app-players-tabs\{margin-top:var\(--app-page-section-gap\);min-height:40px\}/);
+ assert.doesNotMatch(css,/\.app-players-tabs\{[^}]*padding-bottom:0/,'keep shared Standings tab-strip padding');
  assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*width:136px;[^}]*height:40px;[^}]*text-align:center/);
- assert.match(css,/\.app-players-toolbar\{[^}]*height:44px;[^}]*margin-top:0\}/);
+ assert.match(css,/\.app-players-toolbar\{display:flex;align-items:center;[^}]*height:44px;[^}]*margin-top:0\}/,'zero only existing toolbar margin, preserve alignment');
  assert.match(css,/\.app-players-toolbar\+\.app-players-table-scroll\{margin-top:0\}/);
  assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
  assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/,'mobile reserved area persists across view switches');

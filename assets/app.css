@@ -1587,10 +1587,10 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 
 /* PLAYERS-505: same active-tab treatment as Standings, with an always-reserved toolbar.
  * Group tabs remain in flow while visually hidden in Overview, so the table never shifts. */
-.app-players-tabs{margin-top:var(--app-page-section-gap);min-height:40px;padding-bottom:0}
+.app-players-tabs{margin-top:var(--app-page-section-gap);min-height:40px}
 .app-players-tabs .app-competition-tab{position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 136px;width:136px;min-width:136px;max-width:136px;height:40px;min-height:40px;padding:7px 9px;font-size:12px;line-height:1.2;text-align:center;text-decoration:none;transition:background-color .18s ease,color .18s ease}
 .app-players-tabs .app-competition-tab:focus-visible,.app-players-group:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.app-players-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0;margin-top:0}
+.app-players-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0;margin-top:0}
 .app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:34px;flex:1 1 auto;gap:8px;max-width:472px;min-width:0}
 html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}
 .app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:34px;min-height:34px;padding:6px 5px;font-size:11px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
