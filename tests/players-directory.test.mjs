@@ -52,7 +52,7 @@ test('Players #505 toolbar reserves the API-backed total beside the attribute gr
  for(const locale of ['en','de','es','fr','it'])assert.ok(code.includes(locale+":{one:'"),locale);
  assert.match(css,/\.app-players-header\{min-width:0\}/);
  assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
- assert.match(css,/\.app-players-toolbar\{height:96px/);
+ assert.match(css,/\.app-players-toolbar\{height:76px/);
 });
 
 test('Players two views retain shared canonical rows and approved four skill groups',()=>{
@@ -79,11 +79,11 @@ test('Players two views retain shared canonical rows and approved four skill gro
 test('Players attribute group controls stay all visible without horizontal scrolling at desktop and mobile sizes',()=>{
  const css=read('assets/app.css');
  const html=read('players/index.html');
- assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);grid-auto-rows:44px/);
+ assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);grid-auto-rows:34px/);
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
  assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
- assert.match(css,/\.app-players-toolbar\{height:96px/);
- assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:44px/);
+ assert.match(css,/\.app-players-toolbar\{height:76px/);
+ assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
  assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
  assert.match(html,/class="app-competition-tab app-players-group/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{/);
@@ -158,7 +158,7 @@ test('Players groups use Technical, Mental, Physical, Goalkeeper order while att
  assert.match(html,/data-players-group="goalkeeping">Goalkeeper<\/button>/);
  assert.match(html,/group=Object\.hasOwn\(groups,params\.get\('group'\)\)\?params\.get\('group'\):'technical'/);
  assert.match(renderer,/group:Object\.hasOwn\(groups,p\.get\('group'\)\)\?p\.get\('group'\):'technical'/);
- assert.match(renderer,/state\.view==='attributes'&&state\.group!=='technical'/);
+ assert.match(renderer,/if\(state\.view==='attributes'\)url\.searchParams\.set\('group',state\.group\)/);
  assert.match(html,/const keysAll=\['speed','strength','stamina','agility','passing'/i);
  assert.match(renderer,/const allAttrs=\['speed','strength','stamina','agility','passing'/i);
  assert.ok(generator.includes('data-players-group='),'generated HTML must retain group buttons');
@@ -191,4 +191,36 @@ test('Players receives the shared protected Debug Settings widget without publis
  assert.match(client,/createDebugWidget\(\{page:validPath\?"standings":clubPath\?"clubs":/);
  assert.match(artifact,/admin\|competitions\|clubs\|players/);
  assert.match(artifact,/path==="players\/index\.html"/);
+});
+
+test('Players view and group slugs are explicit even for both default selections',()=>{
+ const html=read('players/index.html'),code=read('assets/players-directory.js');
+ assert.match(html,/href="\/players\?view=overview"/);
+ assert.match(html,/href="\/players\?view=attributes&amp;group=technical"/);
+ assert.match(code,/url\.searchParams\.set\('view',state\.view\)/);
+ assert.match(code,/if\(state\.view==='attributes'\)url\.searchParams\.set\('group',state\.group\)/);
+ assert.match(code,/syncControls\(\);syncUrl\('replaceState'\);load\(state\.page\)/,'default direct URL normalized without extra history entry');
+ assert.match(code,/state=next;syncControls\(\);syncUrl\('replaceState'\)/,'Back/Forward also restores canonical URLs');
+ const begin=code.indexOf("  function syncUrl(mode='pushState'){"),end=code.indexOf("  function syncControls(){",begin);
+ assert.ok(begin>=0&&end>begin,'extract actual production URL helper');
+ const run=(state,search)=>{
+  let current=new URL('http://localhost:2000/players'+search);
+  const location={href:current.href,pathname:current.pathname,search:current.search,hash:current.hash};
+  const history={state:null,pushState(_state,_unused,next){current=new URL(next,current)},replaceState(_state,_unused,next){current=new URL(next,current)}};
+  runInNewContext(code.slice(begin,end)+"\nsyncUrl('replaceState')",{state,location,history,URL});
+  return current.pathname+current.search;
+ };
+ assert.equal(run({view:'overview',group:'technical',page:1},''),'/players?view=overview');
+ assert.equal(run({view:'attributes',group:'technical',page:1},'?view=attributes'),'/players?view=attributes&group=technical');
+ assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&page=2');
+ assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
+});
+test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*flex:0 0 160px;width:160px;min-width:160px;max-width:160px;height:46px;min-height:46px/);
+ assert.match(css,/\.app-players-groups\{[^}]*grid-auto-rows:34px;[^}]*max-width:472px/);
+ assert.match(css,/\.app-players-group\{[^}]*height:34px;min-height:34px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 calc\(\(100% - 4px\)\/2\);[^}]*height:44px;min-height:44px/);
+ assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/);
+ assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
 });

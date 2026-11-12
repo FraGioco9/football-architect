@@ -64,8 +64,8 @@
   function syncUrl(mode='pushState'){
    const url=new URL(location.href);
    for(const name of ['view','group','nationality','position','page'])url.searchParams.delete(name);
-   if(state.view!=='overview')url.searchParams.set('view',state.view);
-   if(state.view==='attributes'&&state.group!=='technical')url.searchParams.set('group',state.group);
+   url.searchParams.set('view',state.view);
+   if(state.view==='attributes')url.searchParams.set('group',state.group);
    if(state.page>1)url.searchParams.set('page',String(state.page));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
@@ -162,12 +162,12 @@
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
    const next=parseLocation(),changed=next.page!==state.page;
-   state=next;syncControls();
+   state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);
   });
   new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();message(locale()[status]);if(lastCount!==null)renderCount(lastCount)}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-  syncControls();load(state.page);
+  syncControls();syncUrl('replaceState');load(state.page);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();
