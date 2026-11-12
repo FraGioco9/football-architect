@@ -14,11 +14,11 @@
  const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
  const ageValue=value=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)<=120?value:'';
  const filterLabels={
-  en:{title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
-  it:{title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
-  de:{title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
-  es:{title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
-  fr:{title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
+  en:{button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
+  it:{button:'Filtri',active:'attivi',description:'Seleziona i filtri e premi Applica per aggiornare l\'elenco.',close:'Chiudi filtri',apply:'Applica filtri',ageRange:'Intervallo di età',title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
+  de:{button:'Filter',active:'aktiv',description:'Wähle Filter aus und klicke auf Anwenden, um die Liste zu aktualisieren.',close:'Filter schließen',apply:'Filter anwenden',ageRange:'Altersspanne',title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
+  es:{button:'Filtros',active:'activos',description:'Selecciona los filtros y pulsa Aplicar para actualizar la lista.',close:'Cerrar filtros',apply:'Aplicar filtros',ageRange:'Rango de edad',title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
+  fr:{button:'Filtres',active:'actifs',description:'Sélectionnez les filtres et appuyez sur Appliquer pour actualiser la liste.',close:'Fermer les filtres',apply:'Appliquer les filtres',ageRange:'Tranche d’âge',title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
  };
  const homeNames={en:['England','Scotland','Wales'],it:['Inghilterra','Scozia','Galles'],de:['England','Schottland','Wales'],es:['Inglaterra','Escocia','Gales'],fr:['Angleterre','Écosse','Pays de Galles']};
  const filterLocale=()=>filterLabels[language()]||filterLabels.en;
@@ -73,6 +73,16 @@
   const filterPanel=document.querySelector('.app-players-filters');
   const filterFields=[...document.querySelectorAll('.app-players-filters [data-players-filter]')];
   const reset=document.querySelector('[data-players-reset]');
+  const filterTrigger=document.querySelector('[data-players-filter-open]');
+  const filterTriggerLabel=document.querySelector('[data-players-filter-trigger-label]');
+  const filterActive=document.querySelector('[data-players-filter-active]');
+  const filterDialog=document.querySelector('#players-filter-dialog');
+  const filterForm=document.querySelector('[data-players-filter-form]');
+  const filterClose=document.querySelector('[data-players-filter-close]');
+  const filterApply=document.querySelector('[data-players-apply]');
+  const filterTitle=document.querySelector('[data-players-filter-title]');
+  const filterDescription=document.querySelector('[data-players-filter-description]');
+  const filterAgeRange=document.querySelector('[data-players-age-range]');
   const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
   const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
   const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
@@ -100,6 +110,15 @@
   function syncFilterControls(){
    const t=filterLocale(),main=locale();
    filterPanel?.setAttribute('aria-label',t.title);
+   if(filterTitle)filterTitle.textContent=t.title;
+   if(filterDescription)filterDescription.textContent=t.description;
+   filterClose?.setAttribute('aria-label',t.close);
+   filterAgeRange?.setAttribute('aria-label',t.ageRange);
+   if(filterApply)filterApply.textContent=t.apply;
+   if(filterTriggerLabel)filterTriggerLabel.textContent=t.button;
+   const selectedCount=filterKeys.filter(key=>state.filters?.[key]).length;
+   if(filterActive){filterActive.hidden=selectedCount===0;filterActive.textContent=selectedCount?String(selectedCount):'';}
+   filterTrigger?.setAttribute('aria-label',t.button+(selectedCount?': '+selectedCount+' '+t.active:''));
    let countries;
    try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
    for(const field of filterFields){
@@ -118,7 +137,7 @@
      }
     }else field.placeholder=t.all;
    }
-   if(reset){reset.textContent=t.reset;reset.disabled=!filterKeys.some(key=>state.filters?.[key]);}
+   if(reset){reset.textContent=t.reset;reset.disabled=false;}
   }
   function syncControls(){
    const t=locale();syncFilterControls();
@@ -216,17 +235,40 @@
     field.setCustomValidity(filterLocale().range);field.reportValidity();return;
    }
    const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
-   if(filterSignature(nextFilters)===filterSignature(state.filters))return;
-   state.filters=nextFilters;state.page=1;syncUrl();syncControls();load(1);
+   if(filterSignature(nextFilters)===filterSignature(state.filters)){filterDialog?.close();return;}
+   state.filters=nextFilters;state.page=1;syncUrl();syncControls();filterDialog?.close();load(1);
   }
-  for(const field of filterFields){
-   field.addEventListener('change',applyFilters);
-   field.addEventListener('input',()=>field.setCustomValidity(''));
-  }
+  // Draft values remain inside the modal until Apply; never fetch on individual changes.
+  for(const field of filterFields)field.addEventListener('input',()=>field.setCustomValidity(''));
+  filterForm?.addEventListener('submit',event=>{event.preventDefault();applyFilters()});
   reset?.addEventListener('click',()=>{
+   const changed=filterKeys.some(key=>state.filters?.[key])||state.page!==1;
    state.filters=Object.fromEntries(filterKeys.map(key=>[key,'']));
    for(const field of filterFields)field.setCustomValidity('');
-   state.page=1;syncUrl();syncControls();load(1);
+   state.page=1;syncUrl();syncControls();filterDialog?.close();
+   if(changed)load(1);
+  });
+  let previousOverflow='';
+  filterTrigger?.addEventListener('click',()=>{
+   if(!filterDialog||filterDialog.open)return;
+   syncFilterControls(); // Reopen from applied state; discard unsubmitted draft edits.
+   previousOverflow=document.documentElement.style.overflow;
+   filterDialog.showModal(); // Native focus trap, backdrop and Escape-to-close.
+   document.documentElement.style.overflow='hidden';
+   filterTrigger.setAttribute('aria-expanded','true');
+   filterFields[0]?.focus({preventScroll:true});
+  });
+  filterClose?.addEventListener('click',()=>filterDialog?.close());
+  filterDialog?.addEventListener('click',event=>{
+   if(event.target!==filterDialog)return;
+   const bounds=filterDialog.getBoundingClientRect();
+   if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)filterDialog.close();
+  });
+  filterDialog?.addEventListener('close',()=>{
+   document.documentElement.style.overflow=previousOverflow;
+   filterTrigger?.setAttribute('aria-expanded','false');
+   for(const field of filterFields)field.setCustomValidity('');
+   filterTrigger?.focus({preventScroll:true});
   });
   tabs.forEach(tab=>tab.addEventListener('click',event=>{event.preventDefault();changeView(tab.dataset.playersView)}));
   groupTabs.forEach(tab=>tab.addEventListener('click',()=>changeGroup(tab.dataset.playersGroup)));
@@ -243,6 +285,7 @@
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
+   if(filterDialog?.open)filterDialog.close();
    const next=parseLocation(),changed=next.page!==state.page||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);

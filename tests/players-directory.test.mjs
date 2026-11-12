@@ -375,17 +375,17 @@ test('PLAYERS-FILTERS-01 has five stable accessible controls, first-paint URL st
  assert.ok(html.includes('data-players-reset'));
  assert.ok(html.includes("const filters={nationality:countryCodes.has(params.get('nationality'))"),'static script initializes selections before first paint');
  assert.match(css,/\.app-players-filters\{display:grid/);
- assert.match(css,/@media\(max-width:1050px\)/);
+ assert.match(css,/\.app-players-filter-dialog\[open\]\{display:flex;flex-direction:column\}/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(code,/function applyFilters\(\)/);
- assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);load\(1\)/);
+ assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);filterDialog\?\.close\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
  assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
  assert.match(code,/if\(state\.view===view\)return/);
  assert.match(code,/renderCount\(lastCount\)/);
  assert.match(code,/noMatches/);
- for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{title:'),lng);
+ for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{button:'),lng);
  assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px/);
 });
 test('Players first paint selects URL filter values without changing table/view DOM',()=>{
@@ -395,14 +395,52 @@ test('Players first paint selects URL filter values without changing table/view 
  const make=(key)=>({dataset:{playersFilter:key},value:''});
  const fields=['nationality','position','ageMin','ageMax','foot'].map(make);
  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
+ const pill={hidden:true,textContent:''},trigger={label:'',setAttribute(name,value){if(name==='aria-label')this.label=value}},title={textContent:''};
  const doc={
   documentElement:{lang:'en',dataset:{}},
-  querySelectorAll(selector){if(selector==='.app-players-filters [data-players-filter]')return fields;if(selector==='.app-players-tabs [data-players-view]')return [];if(selector==='.app-players-groups [data-players-group]')return [];return [];},
+  querySelectorAll(selector){
+   if(selector==='.app-players-filters [data-players-filter]')return fields;
+   if(selector==='[data-players-filter-active]')return [pill];
+   if(selector==='[data-players-filter-open]')return [trigger];
+   if(selector==='[data-players-filter-trigger-label]')return [title];
+   if(selector==='.app-players-tabs [data-players-view]'||selector==='.app-players-groups [data-players-group]')return [];
+   return [];
+  },
   querySelector(selector){if(selector==='.app-players-table')return {tHead:{rows:[row]},tBodies:[{rows:[{cells:[{colSpan:6}]}]}],dataset:{}};throw Error(selector)},
   createElement(){return {scope:'',textContent:''}}
  };
  runInNewContext(script,{document:doc,location:{search:'?nationality=ITA&position=ST&ageMin=18&ageMax=29&foot=left'},URLSearchParams});
  for(const field of fields)selections[field.dataset.playersFilter]=field.value;
  assert.deepEqual(selections,{nationality:'ITA',position:'ST',ageMin:'18',ageMax:'29',foot:'left'});
+ assert.equal(pill.textContent,'5','five URL-applied filters are visible immediately');
+ assert.equal(pill.hidden,false);
+ assert.equal(title.textContent,'Filters');
+ assert.equal(trigger.label,'Filters: 5 active');
  assert.equal(row.cells.length,6,'overview geometry stays static');
+});
+
+
+test('Players Filters button opens an accessible drawer; selections stay draft-only until Apply',()=>{
+ const html=read('players/index.html'),code=read('assets/players-directory.js'),css=read('assets/app.css');
+ assert.match(html,/<button[^>]+data-players-filter-open[^>]+aria-haspopup="dialog"[^>]+aria-expanded="false"/);
+ assert.match(html,/<dialog id="players-filter-dialog" class="app-players-filter-dialog" aria-labelledby="players-filter-title" aria-describedby="players-filter-description">/);
+ assert.match(html,/<form class="app-players-filter-form" data-players-filter-form novalidate>/);
+ assert.match(html,/<button type="button" class="app-players-filter-close" data-players-filter-close/);
+ assert.match(html,/<button type="submit" class="app-players-apply" data-players-apply>/);
+ assert.match(html,/data-players-reset/);
+ const filters=html.slice(html.indexOf('<dialog id="players-filter-dialog"'),html.indexOf('<div class="app-players-table-scroll"'));
+ assert.equal((filters.match(/data-players-filter="(nationality|position|ageMin|ageMax|foot)"/g)||[]).length,5);
+ assert.match(css,/\.app-players-filter-dialog::backdrop\{background:/);
+ assert.match(css,/\.app-players-filter-dialog\{[^}]*width:min\(420px,100vw\)/);
+ assert.match(css,/\.app-players-filter-dialog\+\.[a-z-]+\{margin-top:0\}/);
+ assert.match(code,/filterDialog\.showModal\(\)/,'use native modal focus containment');
+ assert.match(code,/filterDialog\?\.addEventListener\('close'/);
+ assert.match(code,/filterClose\?\.addEventListener\('click'/);
+ assert.match(code,/filterTrigger\?\.focus\(\{preventScroll:true\}\)/,'closing returns focus to trigger');
+ assert.match(code,/filterForm\?\.addEventListener\('submit',event=>\{event\.preventDefault\(\);applyFilters\(\)\}\)/);
+ assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/,'changing a draft control must not fetch');
+ assert.match(code,/if\(filterSignature\(nextFilters\)===filterSignature\(state\.filters\)\)\{filterDialog\?\.close\(\);return;\}/,'no GET when no filters changed');
+ assert.match(code,/if\(changed\)load\(1\)/,'Reset causes at most one GET');
+ assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/,'Back/Forward still restores applied query');
+ assert.match(css,/@media\(max-width:620px\)/);
 });

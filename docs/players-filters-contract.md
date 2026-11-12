@@ -1,6 +1,6 @@
 # PLAYERS-FILTERS-01 — Backend V1 contract (issue #512)
 
-The first slice established the server-side contract; the follow-on slice adds compact accessible controls in `/players`. Secondary matching and final filter set remain provisional pending owner review. No migration or remote D1 write is performed in this slice.
+The backend slice established the server-side contract. The follow-on UI now uses a **Filters button that opens a right-side native modal drawer**, with all five inputs, Apply and one-click Reset. The final matching semantics still require owner review. No migration or remote D1 write is performed in this slice.
 
 ## Read-only endpoint
 
@@ -23,6 +23,10 @@ Both `COUNT(*)` and the stable `ORDER BY created_at DESC, id ASC LIMIT 50 OFFSET
 ## Follow-on work / owner review
 
 - Review whether nationality and position should include secondary values, the final filter set, and the compact desktop/mobile layout.
-- Implemented: URL-synced, five-language controls with static first-paint dimensions, reset and filtered totals, empty/loading/error states. Visual QA remains outstanding.
+- Implemented: modal drawer with parser-created trigger and applied-filter count; URL-synced five-language controls, native dialog focus trapping, Escape/backdrop/X dismissal, Apply batching, one-click Reset, static table first-paint dimensions and filtered totals. Visual QA remains outstanding.
 - Review D1 `EXPLAIN QUERY PLAN` and selective expression indexes **before** deciding on a migration. No migrations or remote databases touched here.
 - Run focused Worker + proxy + page tests and visual QA on exact PR head. Draft/HOLD; no merge/deploy without separate owner approval.
+
+## Drawer interaction (owner-requested layout revision)
+
+The only permanent filter UI is the **Filters** trigger on the Players page header; its numeric indicator shows the applied filter count from the initial URL before deferred hydration. The modal drawer overlays the page without changing its table or tab dimensions. Selections stay local to the drawer until **Apply filters**, which validates all five fields and performs at most one server-side GET. Closing via X, Escape or backdrop discards pending edits. **Reset filters** clears all active filters in one click, updates the URL and refreshes only if a filter or page was actually changed. Native `<dialog>` provides keyboard focus containment; focus returns to the trigger after close. The backdrop and responsive drawer remain within the same static HTML generator and publication contract.
