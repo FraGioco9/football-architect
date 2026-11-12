@@ -430,11 +430,12 @@ try{
     const main=document.querySelector('.fa404-main');
     const localeText=document.querySelector('[data-fa404-locale="'+document.documentElement.lang+'"]');
     return {language:document.documentElement.lang,theme:document.documentElement.dataset.theme,
-     links:a.map(x=>x.getAttribute('href')),dashboardVisible:dashboard?.getClientRects().length>0,
+     links:[...document.querySelectorAll('main a[href]')].map(x=>x.getAttribute('href')),
+     sidebar:!!document.querySelector('.fa-shell-sidebar'),topbar:!!document.querySelector('.fa-shell-topbar'),dashboardVisible:dashboard?.getClientRects().length>0,
      localizedTextVisible:localeText?getComputedStyle(localeText).display!=='none':false,
      mainWidth:main?.getBoundingClientRect().width??0,
      horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth,
-     controls:document.querySelectorAll('select,button,[data-theme-choice]').length,
+     controls:document.querySelectorAll('main select,main button,main [data-theme-choice]').length,
      hint:document.querySelector('.fa404-hint')!==null,
      body404:document.querySelector('.fa404-code')?.textContent.trim()};
    });
@@ -442,6 +443,8 @@ try{
    assert.equal(state.theme,theme);
    assert.deepEqual(state.links,['/dashboard']);
    assert.equal(state.dashboardVisible,true);
+   assert.equal(state.sidebar,true);
+   assert.equal(state.topbar,true);
    assert.equal(state.horizontalOverflow,false,'404 must fit without horizontal scrolling');
    assert.ok(state.mainWidth>0&&state.mainWidth<=width,'404 main geometry');
    assert.equal(state.localizedTextVisible,true,'translated copy visible');
@@ -455,7 +458,7 @@ try{
     language:document.documentElement.lang,
     localizedText:getComputedStyle(document.querySelector('[data-fa404-locale="es"]')).display,
     controls:document.querySelectorAll('select,button,[data-theme-choice]').length,
-    links:[...document.querySelectorAll('a[href]')].map(x=>x.getAttribute('href'))
+    links:[...document.querySelectorAll('main a[href]')].map(x=>x.getAttribute('href'))
    }));
    assert.equal(persisted.language,'es');
    assert.notEqual(persisted.localizedText,'none');
