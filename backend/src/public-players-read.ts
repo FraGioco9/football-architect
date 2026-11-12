@@ -2,7 +2,7 @@
 import {ApiError} from './errors.ts';
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
-import {projectPublicFootballerProfile,type InternalFootballer} from './footballer-public-projection.ts';
+import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
 interface StoredPlayer extends InternalFootballer {age?:number}
@@ -25,7 +25,7 @@ export async function readPublicPlayers(db:Database,page:number){
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
   players:rows.map(row=>{
    const payload=JSON.parse(row.payload_json) as StoredPlayer;
-   return projectPublicFootballerProfile(payload,{publicId:row.id,currentAge:payload.age});
+   return projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age});
   })
  };
 }

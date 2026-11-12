@@ -42,16 +42,16 @@ test('shared plan starts frontend only, never a local Worker or inherited produc
 test('readiness checks environment, world and Players API anonymously, without any POST or cookies',async()=>{
  const calls=[];
  const ready=await verifySharedPreviewReadiness(target,{send:async(url,options)=>{
-  calls.push({path:url.pathname,options});
+  calls.push({path:url.pathname+url.search,options});
   if(url.pathname==='/api/environment')
    return payload({schemaVersion:1,pool:'dev-preview',origin:target,sharedWorld:true,separateSignIn:true});
   if(url.pathname==='/api/world')return payload({world:{generation:'world-id',seasonNumber:0}});
-  if(url.pathname==='/api/players/page/1')
+  if(url.pathname+url.search==='/api/players?page=1')
    return payload({count:11,page:1,totalPages:1,players:Array.from({length:11},(_,i)=>({id:i+1}))});
   throw Error('unexpected request');
  }});
  assert.deepEqual(ready,{ready:true,count:11});
- assert.deepEqual(calls.map(c=>c.path),['/api/environment','/api/world','/api/players/page/1']);
+ assert.deepEqual(calls.map(c=>c.path),['/api/environment','/api/world','/api/players?page=1']);
  for(const c of calls){
   assert.equal(c.options.method,'GET');
   assert.deepEqual(c.options.headers,{'x-fa-expected-pool':'dev-preview'});

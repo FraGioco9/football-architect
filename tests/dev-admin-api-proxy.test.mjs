@@ -34,20 +34,20 @@ test('forwards bounded same-origin API requests, Origin and cookies, without red
 });
 test('public sporting bridge permits only canonical GET paths and strips operator credentials',async()=>{
  const upstream=createServer((req,res)=>{
-  assert.ok(['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players/page/1'].includes(req.url));
+  assert.ok(['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players?page=1'].includes(req.url));
   for(const key of ['cookie','x-csrf-token','idempotency-key','origin'])assert.equal(req.headers[key],undefined);
   res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['must-not-cross=1']});res.end(JSON.stringify({data:'x'.repeat(80000)}));
  });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
  const target='http://127.0.0.1:'+upstream.address().port;
  const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
  try{
-  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/players/page/0','/api/players/page/1?bad=1','/api/players/page/10000']){
+  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/players/page/0','/api/players/page/1','/api/players/page/1?bad=1','/api/players/page/10000','/api/players?page=0','/api/players?page=-1','/api/players?page=01','/api/players?page=','/api/players?page=10000','/api/players?page=1&sort=name','/api/players?page=1&page=2','/api/players?view=overview']){
    const res=response();await proxyAdminApi(req(path),res,{target});assert.equal(res.status,path.includes('?')?403:404);
   }
   const denied=response();await proxyAdminApi({...req('/api/competitions/IT-1/seasons/1'),method:'POST'},denied,{target});assert.equal(denied.status,405);
   const deniedClub=response();await proxyAdminApi({...req('/api/clubs/IT-1/seasons/1/overview'),method:'POST'},deniedClub,{target});assert.equal(deniedClub.status,405);
   const deniedHistory=response();await proxyAdminApi({...req('/api/clubs/IT-1/history'),method:'POST'},deniedHistory,{target});assert.equal(deniedHistory.status,405);
-  for(const path of ['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players/page/1']){
+  for(const path of ['/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players?page=1']){
   const result=await new Promise((resolve,reject)=>{
    const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,headers:{Host:'localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},res=>{let body='';res.on('data',c=>body+=c);res.on('end',()=>resolve({status:res.statusCode,body,cookie:res.headers['set-cookie']}))});r.on('error',reject);r.end();
   });assert.equal(result.status,200);assert.equal(JSON.parse(result.body).data.length,80000);assert.equal(result.cookie,undefined);
@@ -57,7 +57,7 @@ test('public sporting bridge permits only canonical GET paths and strips operato
 
 test('LAN opt-in serves only anonymous world and competition GETs on a verified local interface',async()=>{
  const upstream=createServer((request,res)=>{
-  assert.ok(['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history'].includes(request.url));
+  assert.ok(['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players?page=1'].includes(request.url));
   for(const key of ['cookie','origin','x-csrf-token','idempotency-key'])assert.equal(request.headers[key],undefined,'public LAN read must not forward '+key);
   res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=must-not-leak']});res.end('{"ok":true}');
  });
@@ -69,7 +69,7 @@ test('LAN opt-in serves only anonymous world and competition GETs on a verified 
  const lanRequest=path=>({...req(path,remote,host),headers:{host,cookie:'operator=secret',origin:'http://192.168.50.10:2000','x-csrf-token':'do-not-forward'},
   async *[Symbol.asyncIterator](){} });
  try{
-  for(const path of ['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history']){
+  for(const path of ['/api/world','/api/competitions/int-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/seasons/1/overview','/api/clubs/IT-1/history','/api/players?page=1']){
    const res=response();await proxyAdminApi(lanRequest(path),res,opts);
    assert.equal(res.status,200,path);assert.equal(JSON.parse(res.body).ok,true);assert.equal(res.headers['set-cookie'],undefined);
   }
@@ -85,6 +85,7 @@ test('LAN opt-in serves only anonymous world and competition GETs on a verified 
    ['unsafe query',lanRequest('/api/competitions/int-1/seasons/1?admin=1'),opts],
     ['club query rejected',lanRequest('/api/clubs/IT-1/seasons/1/overview?admin=1'),opts],
     ['history query rejected',lanRequest('/api/clubs/IT-1/history?admin=1'),opts],
+    ['players query rejected',lanRequest('/api/players?page=1&admin=1'),opts],
     ['history POST rejected',{...lanRequest('/api/clubs/IT-1/history'),method:'POST'},opts]
   ]){
    const res=response();await proxyAdminApi(request,res,options);assert.equal(res.status,403,reason);
@@ -183,6 +184,41 @@ test('Admin Players preview/commit/list bridge preserves authorization and accep
   const blocked=response();await proxyAdminApi({...req('/api/admin/players','192.168.1.30','192.168.1.10:2000'),method:'GET'},blocked,
    {target:'http://127.0.0.1:'+upstream.address().port,lanEnabled:true,lanHosts:['192.168.1.10']});
   assert.equal(blocked.status,403,'Player records must never be public over LAN');
+ }finally{
+  bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);
+ }
+});
+
+
+test('Players pagination query is forwarded only for canonical GET pages and strips all secrets',async()=>{
+ const seen=[];
+ const upstream=createServer((req,res)=>{
+  seen.push({url:req.url,method:req.method,cookie:req.headers.cookie,origin:req.headers.origin,csrf:req.headers['x-csrf-token']});
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['secret=must-not-cross']});
+  res.end(JSON.stringify({count:51,page:Number(new URL(req.url,'http://localhost').searchParams.get('page')||1),pageSize:50,totalPages:2,players:[]}));
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=path=>new Promise((resolve,reject)=>{
+  const q=request({hostname:'127.0.0.1',port:bridge.address().port,path,headers:{Host:'app.localhost:2000',Cookie:'operator=private','X-CSRF-Token':'private'}},r=>{
+   const chunks=[];r.on('data',c=>chunks.push(c));r.on('end',()=>resolve({status:r.statusCode,payload:Buffer.concat(chunks).toString(),cookie:r.headers['set-cookie']}));
+  });q.on('error',reject);q.end();
+ });
+ try{
+  for(const path of ['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999']){
+   const r=await send(path);
+   assert.equal(r.status,200,path);assert.equal(r.cookie,undefined);
+   assert.equal(JSON.parse(r.payload).page,path.includes('=')?Number(path.split('=').at(-1)):1);
+  }
+  assert.deepEqual(seen.map(x=>x.url),['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999']);
+  for(const r of seen){assert.equal(r.method,'GET');assert.equal(r.cookie,undefined);assert.equal(r.origin,undefined);assert.equal(r.csrf,undefined)}
+  const before=seen.length;
+  for(const path of ['/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=name']){
+   const r=await send(path);assert.equal(r.status,403,path);
+  }
+  assert.equal((await send('/api/players/page/1')).status,404);
+  assert.equal(seen.length,before,'invalid and legacy requests never reach backend');
  }finally{
   bridge.closeAllConnections();upstream.closeAllConnections();
   await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);

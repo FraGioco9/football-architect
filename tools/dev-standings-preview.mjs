@@ -357,7 +357,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         }
         body=Buffer.from(html,'utf8');
       }
-      if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
+      if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html','players/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",DEBUG_MODE_BOOTSTRAP+'\n</head>'),"utf8");
       // Keep local Development navigation identical to the 404 document.
