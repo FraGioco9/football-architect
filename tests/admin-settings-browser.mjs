@@ -289,13 +289,17 @@ try{
     assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.match(await page.locator('[data-admin-preview-count]').innerText(),/2/);
     assert.equal(await page.locator('.app-players-preview-page .app-panel,.app-players-preview-page .admin-players-approval').count(),0);
-    assert.equal(await page.locator('.app-players-preview-actions > *').count(),3);
+    assert.equal(await page.locator('.app-players-preview-actions > :is(button,a)').count(),3);
+    assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-feedback]').count(),1);
+    assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-commit-status]').count(),1);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true,'Generate opens confirmation rather than saving immediately');
     assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
     assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
     await page.locator('[data-admin-preview-rows] .app-players-nationality-flag').first().hover();
     await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
     assert.match(await page.locator('#app-players-nationality-tooltip').innerText(),/Italy/);
+    assert.equal(await page.locator('#app-players-nationality-tooltip').getAttribute('data-placement'),'above');
+    assert.equal(await page.locator('#app-players-nationality-tooltip').evaluate(node=>getComputedStyle(node).animationName),'app-world-tooltip-in');
     await page.locator('[data-admin-preview-view="attributes"]').click();
     assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');

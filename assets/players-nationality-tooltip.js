@@ -16,24 +16,40 @@
   try{return new Intl.DisplayNames([lang],{type:'region'}).of(flags[code].slice(0,2).toUpperCase())||code;}catch{return code;}
  }
  const selector='.app-players-nationality-flag[data-player-country]';
- let active=null,tip=null;
+ let active=null,tip=null,hideTimer=null;
  function tooltip(){
   if(tip)return tip;
   tip=document.createElement('div');tip.id='app-players-nationality-tooltip';tip.className='app-players-nationality-tooltip';
   tip.setAttribute('role','tooltip');tip.hidden=true;document.body.append(tip);return tip;
  }
- function hide(){if(active)active.removeAttribute('aria-describedby');active=null;if(tip)tip.hidden=true;}
+ function hide(){
+  if(active)active.removeAttribute('aria-describedby');
+  active=null;
+  if(!tip||tip.hidden)return;
+  window.clearTimeout(hideTimer);
+  tip.classList.add('is-closing');
+  hideTimer=window.setTimeout(()=>{
+   if(!active&&tip){tip.hidden=true;tip.classList.remove('is-closing');}
+   hideTimer=null;
+  },130);
+ }
  function position(){
   if(!active||!tip||tip.hidden)return;
   const rect=active.getBoundingClientRect(),w=tip.offsetWidth||110,h=tip.offsetHeight||38;
   tip.style.left=Math.round(Math.min(window.innerWidth-w-8,Math.max(8,rect.left+rect.width/2-w/2)))+'px';
-  const below=rect.bottom+8,above=rect.top-h-8;
-  tip.style.top=Math.round(Math.max(8,below+h>window.innerHeight&&above>=8?above:Math.min(below,window.innerHeight-h-8)))+'px';
+  const above=rect.top-h-8,below=rect.bottom+8;
+  // Prefer above the flag. Only fall back below if the top edge has no room.
+  const placeAbove=above>=8,placeBelow=!placeAbove&&below+h<=window.innerHeight-8;
+  tip.dataset.placement=placeAbove?'above':placeBelow?'below':(rect.top>window.innerHeight-rect.bottom?'above':'below');
+  const y=placeAbove?above:placeBelow?below:Math.max(8,Math.min(below,window.innerHeight-h-8));
+  tip.style.top=Math.round(y)+'px';
  }
  function show(node){
   if(!node||!node.matches(selector))return;
   if(active&&active!==node)active.removeAttribute('aria-describedby');
   active=node;const tipNode=tooltip();node.alt=name(node.dataset.playerCountry);
+  window.clearTimeout(hideTimer);hideTimer=null;
+  tipNode.classList.remove('is-closing');
   tipNode.textContent=node.alt;tipNode.hidden=false;node.setAttribute('aria-describedby',tipNode.id);position();
  }
  document.addEventListener('pointerover',e=>{const node=e.target.closest?.(selector);if(node&&e.pointerType!=='touch')show(node);});

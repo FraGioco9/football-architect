@@ -156,13 +156,13 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
  <header class="app-players-header">
   <h1 id="admin-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
   <div class="app-players-preview-actions" aria-label="Preview actions">
+   <p class="app-players-preview-message" data-admin-players-feedback role="status" aria-live="polite" hidden></p>
+   <p class="app-players-preview-message" data-admin-players-commit-status role="status" aria-live="polite" hidden></p>
    <button type="button" class="app-players-filter-trigger" data-admin-players-commit disabled>Generate</button>
    <button type="button" class="app-players-filter-trigger" data-admin-preview-regenerate disabled>Regenerate</button>
    <a class="app-players-filter-trigger" href="/admin/players" data-admin-preview-back>Back</a>
   </div>
  </header>
- <p class="app-players-preview-message" data-admin-players-feedback role="status" aria-live="polite" hidden></p>
- <p class="app-players-preview-message" data-admin-players-commit-status role="status" aria-live="polite" hidden></p>
  <nav class="app-competition-tabs app-players-tabs" role="tablist" aria-label="Player views" data-admin-preview-tabs>
   <button type="button" class="app-competition-tab is-active" role="tab" aria-selected="true" data-admin-preview-view="overview">Overview</button>
   <button type="button" class="app-competition-tab" role="tab" aria-selected="false" data-admin-preview-view="attributes">Attributes</button>

@@ -72,3 +72,26 @@ test('Dedicated preview has the same bare Players table and just three page acti
  assert.ok(preview.includes('app-competition-tab app-players-group'), 'Attribute groups use the identical public tab classes');
  assert.doesNotMatch(html,/class="admin-page-heading"/, 'No duplicated Admin back header');
 });
+
+test('Preview status is inline with the three actions, and the shared Players pager is symmetric',async()=>{
+ const {renderAdminPlayersPreview}=await import('../tools/render-admin-settings.mjs');
+ const html=renderAdminPlayersPreview(),css=read('assets/app.css');
+ const actions=html.slice(html.indexOf('class="app-players-preview-actions"'),html.indexOf('</div>',html.indexOf('class="app-players-preview-actions"')));
+ for(const selector of ['data-admin-players-feedback','data-admin-players-commit-status','data-admin-players-commit','data-admin-preview-regenerate','data-admin-preview-back'])assert.ok(actions.includes(selector),selector+' lives inside the actions row');
+ assert.equal((actions.match(/class="app-players-filter-trigger"/g)||[]).length,3);
+ assert.match(css,/\.app-players-page-button\{[^}]*flex:0 0 112px;[^}]*width:112px;[^}]*min-width:112px;[^}]*max-width:112px/);
+ assert.match(css,/@media\(max-width:420px\)\{\.app-players-pagination\{[^}]*\}\.app-players-page-button\{[^}]*width:88px;[^}]*min-width:88px;[^}]*max-width:88px/);
+ assert.match(read('assets/players-directory.js'),/previous.className='app-players-page-button';next.className='app-players-page-button'/);
+ assert.match(html,/data-admin-preview-prev[^>]*>Previous<\/button>/);
+ assert.match(html,/data-admin-preview-next[^>]*>Next<\/button>/);
+});
+test('Shared nationality tooltip prefers above and respects site animation and reduced motion',()=>{
+ const script=read('assets/players-nationality-tooltip.js'),css=read('assets/app.css');
+ assert.match(script,/const placeAbove=above>=8/);
+ assert.match(script,/tip\.dataset\.placement=placeAbove\?'above'/);
+ assert.match(script,/tip\.classList\.add\('is-closing'\)/);
+ assert.match(script,/tip\.classList\.remove\('is-closing'\)/);
+ assert.match(css,/\.app-players-nationality-tooltip\{[^}]*animation:app-world-tooltip-in 170ms ease-out both/);
+ assert.match(css,/\.app-players-nationality-tooltip\.is-closing\{animation:app-world-tooltip-out 130ms ease-in both/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.app-players-nationality-tooltip,\.app-players-nationality-tooltip\.is-closing\{animation:none!important\}/);
+});
