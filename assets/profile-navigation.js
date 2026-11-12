@@ -16,13 +16,15 @@
  // per-tab validated UI snapshot. No sensitive credentials are cached.
  function publicPermissionsCache(win){
   if(win.faAdminPermissionsCache?.create)return win.faAdminPermissionsCache.create(win);
-  const KEY='fa:admin:permissions:v1';
+  const KEY='fa:admin:permissions:v1',ANON='fa:player:anonymous:v1';
   let storage=null;
   try{storage=win.sessionStorage}catch{/* unavailable */}
   const clear=()=>{try{storage?.removeItem(KEY)}catch{/* no storage */}};
   try{
    const kind=win.performance?.getEntriesByType?.('navigation')?.[0]?.type;
-   if(kind==='reload'||(!kind&&win.performance?.navigation?.type===1))clear();
+   if(kind==='reload'||(!kind&&win.performance?.navigation?.type===1)){
+    clear();try{storage?.removeItem(ANON)}catch{/* no storage */}
+   }
   }catch{/* missing navigation timing */}
   return {
    read(){
@@ -45,6 +47,7 @@
   const doc=win.document,settings=doc.getElementById('app-nav-settings');if(!settings)return;
   const onAdmin=/^\/admin(?:\/(?:calendar|players))?$/.test(win.location.pathname.replace(/\/+$/,''));
   const permissionsCache=publicPermissionsCache(win);
+  const accountPage=/^\/account(?:\/|$)/.test(win.location.pathname);
   let entry=null,request=0;
   function paint(){
    if(!entry)return;
@@ -73,7 +76,10 @@
     const value=response.ok?await response.json():null;
     if(ticket!==request)return;
     if(response.ok&&Array.isArray(value?.permissions))permissionsCache.write(value.permissions);
-    else if(response.status===401)permissionsCache.write([]);
+    else if(response.status===401){
+     permissionsCache.write([]);
+     try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* storage disabled */}
+    }
     show(canAccessAdmin(value?.permissions));
    }catch{if(ticket===request)show(false)}finally{win.clearTimeout(timer)}
   }
@@ -82,6 +88,9 @@
   if(onAdmin){
    show(win.faAdminAccess===true);
    win.addEventListener('fa:admin-access',event=>show(event.detail===true));
+  }else if(accountPage){
+   // Profile and Login already check session: skip an extra anonymous 401.
+   show(canAccessAdmin(permissionsCache.read()));
   }else{
    void check();
    // BFCache restores keep the last tab snapshot; no redundant 401 requests.
@@ -98,11 +107,19 @@
    const destination=new URL(link.href,win.location.href);
    if(destination.origin!==win.location.origin)return;
    event.preventDefault();if(pending)return;pending=true;link.setAttribute('aria-busy','true');
-   const login=()=>{win.faLoginReturn?.remember();win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang))};
+   const login=(confirmedAnonymous=false)=>{
+    if(confirmedAnonymous){try{win.sessionStorage.setItem('fa:player:skip-login-session-probe:v1','1')}catch{/* no storage */}}
+    win.faLoginReturn?.remember();win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang));
+   };
+   // If the same tab already received a 401, avoid another auth probe.
+   try{if(win.sessionStorage.getItem('fa:player:anonymous:v1')==='1'){login(true);return}}catch{/* no storage */}
    const controller=new AbortController(),timer=win.setTimeout(()=>controller.abort(),8000);
    try{
     const response=await win.fetch('/api/player/session',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
-    if(response.status===401){login();return;}
+    if(response.status===401){
+     try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* no storage */}
+     login(true);return;
+    }
     if(response.ok){
      const value=await response.json();
      if(value?.authenticated===true&&typeof value?.actor?.id==='string'){

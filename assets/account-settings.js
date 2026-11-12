@@ -113,7 +113,14 @@ ui.bind(value=>{
 const status=document.getElementById('status'),protectedPanel=document.getElementById('protected'),login=document.getElementById('login-link');
 let csrf='';
 const post=async(path,body)=>{const r=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'Accept-Language':ui.language},body:JSON.stringify(body)});const result=await r.json().catch(()=>null);if(!r.ok)throw {status:r.status,code:result?.error?.code};return result};
-function redirectToLogin(){try{window.sessionStorage.removeItem('fa:admin:permissions:v1')}catch{/* storage disabled */}window.faLoginReturn.remember();location.replace('/account/login')}
+function redirectToLogin(){
+ try{
+  window.sessionStorage.removeItem('fa:admin:permissions:v1');
+  window.sessionStorage.setItem('fa:player:anonymous:v1','1');
+  window.sessionStorage.setItem('fa:player:skip-login-session-probe:v1','1');
+ }catch{/* storage disabled */}
+ window.faLoginReturn.remember();location.replace('/account/login')
+}
 function unauthenticated(message){csrf='';protectedPanel.hidden=true;login.hidden=false;ui.feedback(status,message);}
 async function init(){try{
  const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(r.status===401){redirectToLogin();return;}if(!r.ok){unauthenticated(t[8]);return;}

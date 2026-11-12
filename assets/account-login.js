@@ -21,14 +21,25 @@ ui.bind(locale=>{
 });
 let returning=false;
 const returnAfterLogin=()=>{if(returning)return;returning=true;location.replace(window.faLoginReturn.take())};
-(async()=>{try{const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const value=await r.json();if(!submitting&&value?.authenticated===true&&typeof value?.actor?.id==='string')returnAfterLogin();}catch{/* Restore failures leave the login available. */}})();
+(async()=>{
+ // Profile has already received a 401. Consume this one-time marker so Login
+ // does not immediately reissue the same unauthorized session request.
+ try{
+  const key='fa:player:skip-login-session-probe:v1';
+  const skip=window.sessionStorage.getItem(key)==='1';
+  window.sessionStorage.removeItem(key);
+  if(skip)return;
+ }catch{/* storage disabled: perform the normal session check */}
+ try{const r=await fetch('/api/player/session',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const value=await r.json();if(!submitting&&value?.authenticated===true&&typeof value?.actor?.id==='string')returnAfterLogin();}catch{/* Restore failures leave the login available. */}})();
 form.addEventListener('submit',async e=>{
  e.preventDefault();if(submitting)return;submitting=true;button.disabled=true;button.textContent=t[4];ui.feedback(message,'');
  const values=new FormData(form),password=String(values.get('password')||'');
  try{
   const r=await fetch('/api/player/login',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(values.get('email')||''),password})});
   if(!r.ok){ui.feedback(message,r.status===401?t[5]:r.status===429?t[7]:t[6]);return;}
-  try{window.sessionStorage.removeItem('fa:admin:permissions:v1')}catch{/* storage disabled */}
+  try{
+   for(const key of ['fa:admin:permissions:v1','fa:player:anonymous:v1','fa:player:skip-login-session-probe:v1'])window.sessionStorage.removeItem(key);
+  }catch{/* storage disabled */}
   form.reset();returnAfterLogin();
  }catch{ui.feedback(message,t[6]);}finally{submitting=false;button.disabled=false;button.textContent=t[3];}
 });
