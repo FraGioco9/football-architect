@@ -1666,6 +1666,36 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-stepper input{text-align:center;min-width:0;padding-inline:2px;appearance:textfield;-moz-appearance:textfield;font-variant-numeric:tabular-nums}
 .app-players-stepper input::-webkit-inner-spin-button,.app-players-stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .app-players-filter-section .app-players-age-range{gap:8px}
+/* Age uses two plain boxes: hide both custom and native +/- spinner affordances. */
+.app-players-age-range[data-players-age-range] input{appearance:textfield;-moz-appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
+.app-players-age-range[data-players-age-range] input::-webkit-inner-spin-button,.app-players-age-range[data-players-age-range] input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* Attributes: four compact nested categories, only selected rows reveal min/max. */
+.app-players-name-control{padding:3px 2px 6px}
+.app-players-name-control input{width:100%;height:44px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);padding:10px 12px;font-size:14px}
+.app-players-name-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-filter-control:has(.app-players-filter-multi)>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.app-players-attribute-categories{gap:9px}
+.app-players-attribute-category{min-width:0;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface)}
+.app-players-attribute-category>summary{display:flex;align-items:center;gap:10px;box-sizing:border-box;min-height:43px;padding:10px 12px;list-style:none;font-size:13px;font-weight:700;cursor:pointer}
+.app-players-attribute-category>summary::-webkit-details-marker{display:none}
+.app-players-attribute-category>summary::marker{content:""}
+.app-players-attribute-category>summary>span:first-child{flex:1}
+.app-players-attribute-category>summary>.language-chevron{transition:transform .16s ease}
+.app-players-attribute-category[open]>summary>.language-chevron{transform:rotate(180deg)}
+.app-players-attribute-category>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.app-players-attribute-count{display:grid;place-items:center;min-width:20px;height:20px;border-radius:999px;background:var(--line);font-size:11px;font-variant-numeric:tabular-nums}
+.app-players-attribute-count[hidden],.app-players-attribute-bounds[hidden]{display:none!important}
+.app-players-attribute-options{display:grid;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--border)}
+.app-players-attribute-item{display:grid;gap:8px;min-width:0;padding-block:4px}
+.app-players-attribute-item+.app-players-attribute-item{border-top:1px solid var(--border);padding-top:12px}
+.app-players-attribute-pick{display:flex;align-items:center;gap:9px;min-width:0;color:var(--text);font-size:13px;cursor:pointer}
+.app-players-attribute-pick input{width:17px;height:17px;min-width:17px;accent-color:var(--focus);cursor:pointer}
+.app-players-attribute-pick input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-attribute-bounds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-left:25px}
+.app-players-attribute-bounds input{box-sizing:border-box;width:100%;min-width:0;height:40px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font-size:13px;text-align:center;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
+.app-players-attribute-bounds input::-webkit-inner-spin-button,.app-players-attribute-bounds input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.app-players-attribute-bounds input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
 
 .app-players-filter-control>span{min-height:16px;line-height:16px}
 .app-players-filter-control input{box-sizing:border-box;width:100%;min-width:0;height:44px;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:14px;line-height:1.3}
@@ -1673,6 +1703,15 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-filter-select.language-control{width:100%;min-width:0;z-index:1}
 .app-players-filter-select.language-control:has(.language-trigger[aria-expanded="true"]){z-index:45}
 .app-players-filter-select .language-trigger{box-sizing:border-box;width:100%;min-width:0;min-height:44px;height:44px;font-size:14px;line-height:1.3}
+/* Keep the selected All/value perfectly centered without shifting the chevron. */
+.app-players-filter-dropdown-trigger{position:relative;padding-inline:34px}
+.app-players-filter-dropdown-trigger>[data-players-filter-value]{display:block;flex:1 1 auto;min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-players-filter-dropdown-trigger>.language-chevron{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none}
+.app-players-filter-menu .language-option[data-players-filter-option=""]{justify-content:center;text-align:center}
+.app-players-filter-menu .language-option[data-players-filter-option=""] .app-players-filter-option-tick{display:none}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[data-players-filter-option=""]{justify-content:center;text-align:center}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[data-players-filter-option=""] .app-players-filter-option-tick{display:none}
+
 .app-players-filter-select .language-trigger>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app-players-filter-select .language-menu{box-sizing:border-box;inset-inline:0;width:100%;min-width:0;max-height:280px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
 /* Portaled to the top-layer dialog while open: escaped from the scroller clipping context. */

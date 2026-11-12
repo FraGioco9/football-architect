@@ -227,3 +227,48 @@ it('public Players filters support multiselect and opt-in secondary matches acro
   expect(invalid.data).toMatchObject({error:{code:'invalid_public_request'}});
  }
 });
+
+
+it('public name substring and multiple attribute ranges filter the active generation before COUNT/page',async()=>{
+ const preview=await createPreview({count:51,seed:'directory-name-attrs-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ // Isolate the test criteria so both filtered count and pages have deterministic membership.
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.attributes.passing',1,'$.attributes.vision',1)").run();
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.first_name','Andrea','$.last_name','Filterprobe','$.display_name','Andrea Filterprobe','$.attributes.passing',87,'$.attributes.vision',93) WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const name=await get('?name=filterprobe');
+ expect(name).toMatchObject({status:200,data:{count:1,page:1,totalPages:1}});
+ expect(name.data.players[0].id).toBe(first!.id);
+ const combined=await get('?name=Andrea+Filterprobe&attributes=passing_87_87%2Cvision_90_x');
+ expect(combined).toMatchObject({status:200,data:{count:1,totalPages:1}});
+ expect(combined.data.players[0].id).toBe(first!.id);
+ const low=await get('?attributes=passing_1_1&page=2');
+ expect(low).toMatchObject({status:200,data:{count:50,page:2,totalPages:1,players:[]}});
+ const high=await get('?attributes=passing_88_99');
+ expect(high).toMatchObject({status:200,data:{count:0,players:[]}});
+ const xOnly=await get('?attributes=vision_x_92');
+ expect(xOnly).toMatchObject({status:200,data:{count:50}});
+ const oneLower=await get('?attributes=gk_reflexes_1_x');
+ expect(oneLower.status).toBe(200);
+ const nameMiss=await get('?name=NoSuchFilterprobe');
+ expect(nameMiss).toMatchObject({status:200,data:{count:0}});
+ for(const invalid of [
+  '?name=%25','?name=Andrea%20Filterprobe','?name=%20Andrea',
+  '?attributes=passing_x_x','?attributes=vision_0_90','?attributes=vision_60_100',
+  '?attributes=vision_80_60','?attributes=unknown_30_x',
+  '?attributes=passing_50_x%2Cpassing_60_x',
+  '?attributes=vision_60_x%2Cvision_70_x',
+  '?attributes=vision_60_x&attributes=passing_20_x',
+  '?attributes=vision_60_x%2cpassing_20_x'
+ ]){
+  const resp=await get(invalid);
+  expect(resp.status,invalid).toBe(422);
+  expect(resp.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+});

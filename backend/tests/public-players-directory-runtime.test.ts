@@ -99,3 +99,27 @@ test('all filters are bound into COUNT and page queries before pagination, witho
  assert.match(page.sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(JSON.stringify(result.players),/initial_age|development_aptitude|seed/);
 });
+
+
+test('validated name search and sparse public attributes keep COUNT and page SQL parameterized',async()=>{
+ const query=parsePublicPlayerQuery('?name=Andrea+Rossi&attributes=passing_70_x%2Cvision_x_90&ageMin=18');
+ assert.deepEqual(query,{page:1,filters:{name:'Andrea Rossi',attributes:[{key:'passing',min:70},{key:'vision',max:90}],ageMin:18}});
+ const {db,calls}=mockDb();
+ await readPublicPlayers(db,1,query.filters);
+ const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ for(const stmt of [count,page]){
+  assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.passing'\)>=\?/);
+  assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.vision'\)<=\?/);
+  assert.match(stmt.sql,/LIKE \? ESCAPE/);
+  assert.doesNotMatch(stmt.sql,/Andrea Rossi|passing_70_x/,'never interpolate player-supplied filters');
+ }
+ assert.deepEqual(count.params,[generation,'%Andrea Rossi%',70,90,18]);
+ assert.deepEqual(page.params,[generation,'%Andrea Rossi%',70,90,18,50,0]);
+ for(const bad of [
+  '?name=%25','?name=%5F','?name=Andrea%20Rossi','?name=%20Andrea',
+  '?attributes=passing_x_x','?attributes=passing_0_99','?attributes=passing_70_100',
+  '?attributes=passing_90_70','?attributes=vision_20_x%2Cvision_80_x',
+  '?attributes=unknown_20_x','?attributes=vision_x_50%2cpassing_50_x'
+ ])assert.throws(()=>parsePublicPlayerQuery(bad),/invalid_public_request/,bad);
+});

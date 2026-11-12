@@ -366,18 +366,20 @@ test('Players collection uses a validated page query, without changing the publi
 });
 
 
-test('PLAYERS-FILTERS-01 uses five expandable sections, multi-select scopes, and steppers without changing the directory table',()=>{
+test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and height steppers without changing the directory table',()=>{
  const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),code=read('assets/players-directory.js');
- for(const section of ['nationality','position','age','height','foot']){
+ for(const section of ['nationality','position','age','height','foot','attributes']){
   assert.ok(html.includes('data-players-filter-section="'+section+'"'),section);
   assert.ok(generator.includes('data-players-filter-section=\\\"'+section+'\\\"'),section+' canonical generator');
  }
- for(const key of ['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'])
+ for(const key of ['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'])
   assert.ok(html.includes('data-players-filter="'+key+'"'),key);
- assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,5);
- assert.equal((html.match(/class="app-players-stepper"/g)||[]).length,4);
+ assert.equal((html.match(/class="app-players-filter-section"/g)||[]).length,6);
+ assert.equal((html.match(/class="app-players-stepper"/g)||[]).length,2);
  assert.equal((html.match(/class="app-players-stepper-button"/g)||[]).length,0,'stepper inherits fixtures arrow styling with its own class');
- assert.equal((html.match(/data-players-step="(ageMin|ageMax|heightMin|heightMax)"/g)||[]).length,8);
+ assert.equal((html.match(/data-players-step="(heightMin|heightMax)"/g)||[]).length,4);
+ assert.doesNotMatch(html,/data-players-step="age(?:Min|Max)"/);
+ assert.equal((html.slice(html.indexOf('<form class="app-players-filter-form"'),html.indexOf('<footer class="app-players-filter-actions"')).match(/data-players-attribute-enable=/g)||[]).length,20);
  assert.doesNotMatch(html,/Select filters and press Apply to update the list/);
  assert.doesNotMatch(html,/data-players-filter-description/);
  assert.match(css,/\.app-players-filter-section-header\{display:flex/);
@@ -388,13 +390,13 @@ test('PLAYERS-FILTERS-01 uses five expandable sections, multi-select scopes, and
  assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
  assert.match(code,/renderCount\(lastCount\)/);
- for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{sections:'),lng);
+ for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{name:'),lng);
  assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px/);
 });
 test('Players first paint reads comma-separated multi values and scopes without changing table geometry',()=>{
  const html=read('players/index.html'),script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
  assert.ok(script);
- const keys=['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
+ const keys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
  const fields=keys.map(key=>({dataset:{playersFilter:key},value:'',type:key.endsWith('Scope')?'checkbox':'text',checked:false}));
  const row={cells:[{},{},{},{},{},{}],deleteCell(i){this.cells.splice(i,1)},append(node){this.cells.push(node)}};
  const pill={hidden:true,textContent:''},trigger={label:'',setAttribute(name,value){if(name==='aria-label')this.label=value}},title={textContent:''};
@@ -412,10 +414,10 @@ test('Players first paint reads comma-separated multi values and scopes without 
  };
  runInNewContext(script,{document:doc,location:{search:'?nationality=ITA%2CENG&nationalityScope=any&position=RW%2CST&positionScope=any&ageMin=18&ageMax=29&heightMin=170&heightMax=195&foot=left'},URLSearchParams});
  const actual=Object.fromEntries(fields.map(f=>[f.dataset.playersFilter,f.type==='checkbox'?(f.checked?'any':''):f.value]));
- assert.deepEqual(actual,{nationality:'ITA,ENG',nationalityScope:'any',position:'RW,ST',positionScope:'any',ageMin:'18',ageMax:'29',heightMin:'170',heightMax:'195',foot:'left'});
- assert.equal(pill.textContent,'9','URL applies all fields before hydration');
+ assert.deepEqual(actual,{name:'',nationality:'ITA,ENG',nationalityScope:'any',position:'RW,ST',positionScope:'any',ageMin:'18',ageMax:'29',heightMin:'170',heightMax:'195',foot:'left'});
+ assert.equal(pill.textContent,'7','scope flags are never counted as additional filters');
  assert.equal(title.textContent,'Filters');
- assert.equal(trigger.label,'Filters: 9 active');
+ assert.equal(trigger.label,'Filters: 7 active');
  assert.equal(row.cells.length,6,'overview geometry remains stable');
 });
 test('Players native top-layer drawer and portaled dropdowns preserve outside clicks and scrollbars',()=>{
@@ -485,4 +487,49 @@ test('Players SQL count/page share identical secondary and multiple filters with
  assert.match(types,/nationality\?:string\[\]/);
  assert.match(types,/positionScope\?:'any'/);
  assert.match(integration,/public Players filters support multiselect and opt-in secondary matches across full generations/);
+});
+
+
+test('Players name search is first, nationality and position have no Select multiple copy, All is centered',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),code=read('assets/players-directory.js');
+ const form=html.slice(html.indexOf('data-players-filter-form novalidate'),html.indexOf('<footer class="app-players-filter-actions"'));
+ assert.ok(form.indexOf('data-players-filter="name"')<form.indexOf('data-players-filter-section="nationality"'));
+ assert.doesNotMatch(form,/Select multiple/);
+ assert.doesNotMatch(form,/Select nationalities/);
+ assert.match(form,/data-players-filter="name" maxlength="80"/);
+ assert.match(css,/\.app-players-filter-dropdown-trigger>\[data-players-filter-value\]\{[^}]*text-align:center/);
+ assert.match(css,/\.app-players-filter-menu \.language-option\[data-players-filter-option=""\]\{justify-content:center;text-align:center\}/);
+ assert.match(code,/const selectedCount=totalFilterCount\(state\.filters\)/);
+ assert.match(code,/key!=='attributes'&&!key\.endsWith\('Scope'\)/);
+ assert.match(code,/fields\.name=fields\.name\.normalize\('NFC'\)\.trim\(\)/);
+});
+test('Players attributes use four compact groups; twenty opt-in bounds are hidden until activated',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),code=read('assets/players-directory.js');
+ const form=html.slice(html.indexOf('<form class="app-players-filter-form"'),html.indexOf('<footer class="app-players-filter-actions"'));
+ for(const cat of ['technical','mental','physical','goalkeeping'])
+  assert.ok(form.includes('data-players-attribute-category="'+cat+'"'),cat);
+ for(const field of ['passing','technique','dribbling','shooting','crossing','tackling','marking','heading',
+  'vision','positioning','decisions','composure','speed','strength','stamina','agility','gk_reflexes','gk_handling','gk_positioning','gk_aerial']){
+  assert.ok(form.includes('data-players-attribute-enable="'+field+'"'),field);
+  assert.ok(form.includes('data-players-attribute-min="'+field+'"'),field);
+  assert.ok(form.includes('data-players-attribute-max="'+field+'"'),field);
+ }
+ assert.equal((form.match(/data-players-attribute-enable=/g)||[]).length,20);
+ assert.match(css,/\.app-players-attribute-count\[hidden\],\.app-players-attribute-bounds\[hidden\]\{display:none!important\}/);
+ assert.match(code,/function restoreAttributes\(\)/);
+ assert.match(code,/function draftAttributes\(\)/);
+ assert.match(code,/if\(min\.value===''&&max\.value===''\)/,'selected range must have one boundary');
+ assert.match(code,/fields\.attributes=attrs\.sort\(\)\.join\(','\)/);
+ assert.match(code,/const nextFilters=Object\.fromEntries\(filterKeys\.map\(key=>\[key,fields\[key\]\|\|''\]\)\)/);
+ assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
+});
+test('Players first paint initializes name, attributes and the applied-count while the drawer remains closed',()=>{
+ const html=read('players/index.html'),script=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(script);
+ assert.match(script,/name:\(params\.get\('name'\)\|\|''\)\.slice\(0,80\)/);
+ assert.match(script,/attributes:safeAttr\(params\.get\('attributes'\)\)/);
+ assert.match(script,/document\.querySelector\('\[data-players-attribute-enable="'/);
+ assert.match(script,/if\(range\)range\.hidden=false/);
+ assert.match(script,/key!=='attributes'&&!key\.endsWith\('Scope'\)/);
+ assert.match(script,/filters\.attributes\.split\(','\)\.filter\(Boolean\)\.length/);
 });

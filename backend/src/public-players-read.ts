@@ -6,6 +6,7 @@ import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
+const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
 interface StoredRow {id:number;payload_json:string}
 
@@ -15,6 +16,27 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  const before=await readWorld(db);
  const predicates=['world_generation=?'],values:(string|number)[]=[before.generation];
  // Dynamic values are bound; SQL expressions are fixed and cannot be supplied by clients.
+ if(filters.name!==undefined){
+  // Names are a validated literal substring: escape LIKE metacharacters defensively.
+  const needle=filters.name.replace(/[\\%_]/g,ch=>'\\'+ch);
+  predicates.push("(COALESCE(json_extract(payload_json,'$.display_name'),json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name')) LIKE ? ESCAPE '\\' COLLATE NOCASE)");
+  values.push('%'+needle+'%');
+ }
+ if(filters.attributes?.length){
+  for(const attribute of filters.attributes){
+   if(!FILTER_ATTRIBUTE_KEYS.has(attribute.key))throw new ApiError(422,'invalid_public_request');
+   const path='$.attributes.'+attribute.key;
+   if(attribute.min!==undefined){
+    predicates.push("json_extract(payload_json,'"+path+"')>=?");
+    values.push(attribute.min);
+   }
+   if(attribute.max!==undefined){
+    predicates.push("json_extract(payload_json,'"+path+"')<=?");
+    values.push(attribute.max);
+   }
+  }
+ }
+
  if(filters.nationality?.length){
   const inList=filters.nationality.map(()=>'?').join(',');
   const primary="json_extract(payload_json,'$.nationality') IN ("+inList+")";

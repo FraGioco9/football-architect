@@ -1,40 +1,23 @@
-# PLAYERS-FILTERS-01 — expandable server-side filters (#512)
-
-This branch contains a read-only Players directory filter workflow. The right-side **Filters** drawer is a non-modal browser top-layer popover: it slides from the right **below the measured site header**, does not shift or lock the shell, preserves background scrollbars and closes when the user clicks outside. It contains five expandable native `<details>` sections; there is no introductory paragraph.
+# PLAYERS-FILTERS-01 — advanced read-only Players filtering (#512)
 
 ## UI
 
-| Section | Controls | Matching |
-| --- | --- | --- |
-| Nationality | Searchable multi-select of all 50 supported nationalities, with an **Include secondary nationality** checkbox | Default: any selected **primary** nationality. Opt-in: primary **or** secondary nationality |
-| Positions | Searchable multi-select of all 14 supported positions, with an **Include secondary positions** checkbox | Default: any selected **primary** position. Opt-in: primary **or** any secondary position |
-| Age | Inclusive minimum/maximum, with site-styled **− / +** buttons changing by exactly 1; editable numeric entry | 0–120 |
-| Height | Inclusive minimum/maximum in centimeters, with **− / +** buttons | 100–250 cm |
-| Preferred foot | Site-styled single-choice dropdown | Left / Right / All |
+One non-modal animated right-hand drawer stays below the site header, in the browser top layer, without changing the shell, background clicks, scrollbar, table or first-paint geometry.
 
-Inside each multi-select, selected options remain ticked until toggled again; searching filters the *visible options* without changing the selection. Multi-select options within a section combine using **OR**; selected sections combine using **AND**. The secondary checkbox only matters when that section has selected values. The **All** option clears all choices in that section. Form values remain draft-only until **Apply filters**. Reset immediately clears every applied filter and requests the first page once, when necessary. Empty, loading, API error, 50-per-page pagination, first-paint URL state and all five site languages remain supported.
+Name search appears before Nationality, followed by the expandable sections Nationality, Positions, Age, Height, Preferred foot, and Attributes. Nationality and Positions retain searchable multiple selection and optional secondary matching, but no longer display the 'Select multiple' caption. Include secondary is a matching-mode toggle, not an extra active-filter count. Selected values and the All dropdown option are centered. Age minimum and maximum are plain number boxes (no stepper); Height retains the existing ±1 controls.
 
-The three dropdowns use the site's `language-control/language-trigger/language-menu/language-option` classes. Open menus are temporarily moved to the drawer top-layer, outside its scrollable form; scrolling the drawer closes an open menu so scrollbars cannot be covered. Keyboard navigation supports arrows, Home/End, Enter/Space and Escape. Drawer/option animations respect `prefers-reduced-motion`; the only animated property of the drawer is its own transform. Background scrollbar/HTML/body overflow properties are never mutated.
+Attributes has four nested expandable groups: Technical (8 attributes), Mental (4), Physical (4), Goalkeeping (4). Each attribute has a checkbox. Its Min / Max (1–99 inclusive) number fields are shown only when selected; at least one bound must be filled before Apply. AND joins selected attributes; a group with no selections stays a compact single row. Group titles, input labels, values and errors are localized across EN/DE/ES/FR/IT.
 
-## Canonical GET /api/players query
+All fields are draft-only until Apply. Reset clears active filters once. Closing without applying discards drafts. URL state, first-paint filter count, Browser Back/Forward, server pagination and empty state stay supported. The counter excludes both secondary matching toggles and counts each selected attribute separately.
 
-| Key | Validation | Semantics |
-| --- | --- | --- |
-| `page` | canonical 1–9999, default 1 | Stable 50-player pagination |
-| `nationality` | 1–50 distinct approved 3-letter codes separated by commas | Multi-value primary nationality matches |
-| `nationalityScope` | `any` only, requiring nationality | Match secondary nationality as well |
-| `position` | 1–14 distinct approved position codes separated by commas | Multi-value primary position matches |
-| `positionScope` | `any` only, requiring position | Match any secondary position as well |
-| `ageMin`, `ageMax` | integers 0–120, inclusive, min ≤ max | Optional age interval |
-| `heightMin`, `heightMax` | integers 100–250, inclusive, min ≤ max | Optional height interval |
-| `foot` | `left` / `right` | Preferred foot |
+## Query allowlist
 
-Single-value `nationality=ITA` and `position=ST` remain backward-compatible. Browsers serialize commas as `%2C`; both plain commas and canonical uppercase `%2C` are accepted, but arbitrary percent escapes, duplicate keys, duplicate list items, unknown codes, empty values, aliases and out-of-range numbers return **422 invalid_public_request**. Scope keys without a matching nationality or position filter return 422. No name-search semantics are added.
+GET /api/players supports page 1–9999; a name search (up to 80 Unicode NFC letters/digits and allowed punctuation, canonical URL-form encoding); nationality / nationalityScope=any; position / positionScope=any; inclusive ageMin/ageMax (0–120); inclusive heightMin/heightMax (100–250 cm); preferred foot left/right; and an attributes list.
 
-SQL uses only bind parameters: `IN (...)` for each primary multi-selection, an opt-in `OR json_extract(...secondary_nationality) IN (...)`, and an opt-in `OR EXISTS (SELECT ... FROM json_each(...secondary_positions))`. All active filter predicates join with AND; the identical predicate and bound values are used for COUNT and LIMIT/OFFSET queries on the **active world generation**. No client-side filtering of a preloaded page, private projection changes, schema migration or remote D1 write.
+Attribute syntax: attributes=passing_70_x,vision_x_90 (comma or encoded uppercase %2C). Each of the twenty allowed public skill keys can appear at most once, with a min and/or max 1–99, 'x' meaning omitted. Both omitted is rejected, as are reversed ranges, unapproved keys, duplicate keys, malformed encodings and unknown query keys. Scope flags require their corresponding nationality / position list. Invalid queries return HTTP 422.
 
-## Tests and publication
+Name search uses a bound literal LIKE substring over stored full name (fallback first+last); SQLite's NOCASE matching is case-insensitive for ASCII but not guaranteed accent-insensitive. All attribute paths are server-allowlisted and all thresholds are bound. The identical WHERE applies to COUNT and page SELECT over the active generation; no client-only filtering of loaded 50-player pages, changes to public JSON, schema migration, deployment or remote D1 writes.
 
-- Shared query-parser valid/invalid coverage, proxy allowlist and Worker D1 integration for primary vs secondary matches, multi-choice OR, cross-section AND, height and filtered pagination.
-- Static shell-generator parity, URL first-paint/selection tests, 5 sections, searchable dropdown controls, site-style stepper, no per-change GET, top-layer and scrollbar regression checks.
-- Exact-head GitHub Actions and Chrome/iPhone Safari pointer/keyboard QA remain the merge gates. Use automatic CI rather than manually duplicating FULL runs. PR #515 stays **Draft/HOLD** until explicit merge authorization; no deploy or database changes.
+## Tests and open work
+
+Automated: parser security, named/encoded search, combined attribute ranges, primary/secondary nationality and positions, filtered count/pages; static HTML generator parity, first paint, drawer interactions and counter. Visual Chrome / iPhone Safari manual QA still required on 320/390/768/1440, themes and five languages. Review the D1 query plan before adding indexes. PR #515 remains Draft/HOLD until explicit merge authorization.

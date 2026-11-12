@@ -10,7 +10,26 @@
  });
 
 
- const filterKeys=['nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot'];
+ const filterKeys=['name','nationality','nationalityScope','position','positionScope','ageMin','ageMax','heightMin','heightMax','foot','attributes'];
+ const totalFilterCount=filters=>filterKeys.filter(key=>filters?.[key]&&key!=='attributes'&&!key.endsWith('Scope')).length+(filters?.attributes||'').split(',').filter(Boolean).length;
+ const validName=value=>typeof value==='string'&&value.length<=80&&value.trim()===value&&value===value.normalize('NFC')&&/^[\p{L}\p{M}0-9 .'’\-]{1,80}$/u.test(value);
+ const safeAttributeCodes=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
+ const parseAttributeString=value=>{
+  if(!value)return [];
+  const items=value.split(','),seen=new Set();
+  if(items.length>20)return [];
+  const parsed=[];
+  for(const item of items){
+   const match=/^([a-z_]+)_(x|[1-9][0-9]?)_(x|[1-9][0-9]?)$/.exec(item);
+   if(!match||!safeAttributeCodes.has(match[1])||seen.has(match[1])||
+      (match[2]==='x'&&match[3]==='x')||
+      (match[2]!=='x'&&Number(match[2])>99)||
+      (match[3]!=='x'&&Number(match[3])>99)||
+      (match[2]!=='x'&&match[3]!=='x'&&Number(match[2])>Number(match[3])))return [];
+   seen.add(match[1]);parsed.push({key:match[1],min:match[2],max:match[3]});
+  }
+  return parsed;
+ };
  const selectedCodes=(value,allowed)=>{
   const codes=(value||'').split(',').filter(Boolean);
   return codes.length&&new Set(codes).size===codes.length&&codes.every(code=>allowed.has(code))?codes.sort().join(','):'';
@@ -19,11 +38,11 @@
  const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
  const ageValue=value=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)<=120?value:'';
  const filterLabels={
-  en:{sections:["Nationality","Positions","Age","Height","Preferred foot"],multi:"Select multiple",picked:"selected",scopeN:"Include secondary nationality",scopeP:"Include secondary positions",search:"Search…",heightRange:"Height range",heights:["Min height (cm)","Max height (cm)"],stepMinus:"Decrease",stepPlus:"Increase",button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
-  it:{sections:["Nazionalità","Posizioni","Età","Altezza","Piede preferito"],multi:"Selezione multipla",picked:"selezionati",scopeN:"Includi nazionalità secondaria",scopeP:"Includi posizioni secondarie",search:"Cerca…",heightRange:"Intervallo di altezza",heights:["Altezza min. (cm)","Altezza max. (cm)"],stepMinus:"Diminuisci",stepPlus:"Aumenta",button:'Filtri',active:'attivi',description:'Seleziona i filtri e premi Applica per aggiornare l\'elenco.',close:'Chiudi filtri',apply:'Applica filtri',ageRange:'Intervallo di età',title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
-  de:{sections:["Nationalität","Positionen","Alter","Größe","Starker Fuß"],multi:"Mehrfachauswahl",picked:"ausgewählt",scopeN:"Auch zweite Nationalität",scopeP:"Auch Nebenpositionen",search:"Suchen…",heightRange:"Größenbereich",heights:["Mindestgröße (cm)","Höchstgröße (cm)"],stepMinus:"Verringern",stepPlus:"Erhöhen",button:'Filter',active:'aktiv',description:'Wähle Filter aus und klicke auf Anwenden, um die Liste zu aktualisieren.',close:'Filter schließen',apply:'Filter anwenden',ageRange:'Altersspanne',title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
-  es:{sections:["Nacionalidad","Posiciones","Edad","Altura","Pie preferido"],multi:"Selección múltiple",picked:"seleccionados",scopeN:"Incluir nacionalidad secundaria",scopeP:"Incluir posiciones secundarias",search:"Buscar…",heightRange:"Rango de altura",heights:["Altura mín. (cm)","Altura máx. (cm)"],stepMinus:"Reducir",stepPlus:"Aumentar",button:'Filtros',active:'activos',description:'Selecciona los filtros y pulsa Aplicar para actualizar la lista.',close:'Cerrar filtros',apply:'Aplicar filtros',ageRange:'Rango de edad',title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
-  fr:{sections:["Nationalité","Postes","Âge","Taille","Pied préféré"],multi:"Sélection multiple",picked:"sélectionnés",scopeN:"Inclure la nationalité secondaire",scopeP:"Inclure les postes secondaires",search:"Rechercher…",heightRange:"Plage de taille",heights:["Taille min. (cm)","Taille max. (cm)"],stepMinus:"Diminuer",stepPlus:"Augmenter",button:'Filtres',active:'actifs',description:'Sélectionnez les filtres et appuyez sur Appliquer pour actualiser la liste.',close:'Fermer les filtres',apply:'Appliquer les filtres',ageRange:'Tranche d’âge',title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
+  en:{name:"Name",searchName:"Search by name…",min:"Min",max:"Max",attrRange:"Enter at least a minimum or a maximum for this attribute",badName:"Enter a valid player name",attrReverse:"Minimum attribute value cannot exceed maximum",sections:["Nationality","Positions","Age","Height","Preferred foot","Attributes"],multi:"Select multiple",picked:"selected",scopeN:"Include secondary nationality",scopeP:"Include secondary positions",search:"Search…",heightRange:"Height range",heights:["Min height (cm)","Max height (cm)"],stepMinus:"Decrease",stepPlus:"Increase",button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
+  it:{name:"Nome",searchName:"Cerca per nome…",min:"Min",max:"Max",attrRange:"Inserisci almeno un minimo o un massimo per questo attributo",badName:"Inserisci un nome valido",attrReverse:"Il minimo dell'attributo non può superare il massimo",sections:["Nazionalità","Posizioni","Età","Altezza","Piede preferito","Attributi"],multi:"Selezione multipla",picked:"selezionati",scopeN:"Includi nazionalità secondaria",scopeP:"Includi posizioni secondarie",search:"Cerca…",heightRange:"Intervallo di altezza",heights:["Altezza min. (cm)","Altezza max. (cm)"],stepMinus:"Diminuisci",stepPlus:"Aumenta",button:'Filtri',active:'attivi',description:'Seleziona i filtri e premi Applica per aggiornare l\'elenco.',close:'Chiudi filtri',apply:'Applica filtri',ageRange:'Intervallo di età',title:'Filtri giocatori',names:['Nazionalità','Posizione','Età min.','Età max.','Piede preferito'],all:'Tutti',reset:'Reimposta filtri',noMatches:'Nessun giocatore corrispondente',range:"L'età minima non può superare quella massima"},
+  de:{name:"Name",searchName:"Nach Namen suchen…",min:"Min",max:"Max",attrRange:"Mindestens einen Mindest- oder Höchstwert angeben",badName:"Gültigen Spielernamen eingeben",attrReverse:"Der Mindestwert darf nicht höher als der Höchstwert sein",sections:["Nationalität","Positionen","Alter","Größe","Starker Fuß","Attribute"],multi:"Mehrfachauswahl",picked:"ausgewählt",scopeN:"Auch zweite Nationalität",scopeP:"Auch Nebenpositionen",search:"Suchen…",heightRange:"Größenbereich",heights:["Mindestgröße (cm)","Höchstgröße (cm)"],stepMinus:"Verringern",stepPlus:"Erhöhen",button:'Filter',active:'aktiv',description:'Wähle Filter aus und klicke auf Anwenden, um die Liste zu aktualisieren.',close:'Filter schließen',apply:'Filter anwenden',ageRange:'Altersspanne',title:'Spielerfilter',names:['Nationalität','Position','Mindestalter','Höchstalter','Starker Fuß'],all:'Alle',reset:'Filter zurücksetzen',noMatches:'Keine passenden Spieler',range:'Das Mindestalter darf nicht über dem Höchstalter liegen'},
+  es:{name:"Nombre",searchName:"Buscar por nombre…",min:"Mín",max:"Máx",attrRange:"Introduce un mínimo o un máximo para este atributo",badName:"Introduce un nombre válido",attrReverse:"El mínimo del atributo no puede superar el máximo",sections:["Nacionalidad","Posiciones","Edad","Altura","Pie preferido","Atributos"],multi:"Selección múltiple",picked:"seleccionados",scopeN:"Incluir nacionalidad secundaria",scopeP:"Incluir posiciones secundarias",search:"Buscar…",heightRange:"Rango de altura",heights:["Altura mín. (cm)","Altura máx. (cm)"],stepMinus:"Reducir",stepPlus:"Aumentar",button:'Filtros',active:'activos',description:'Selecciona los filtros y pulsa Aplicar para actualizar la lista.',close:'Cerrar filtros',apply:'Aplicar filtros',ageRange:'Rango de edad',title:'Filtros de jugadores',names:['Nacionalidad','Posición','Edad mín.','Edad máx.','Pie preferido'],all:'Todos',reset:'Restablecer filtros',noMatches:'No hay jugadores que coincidan',range:'La edad mínima no puede superar la máxima'},
+  fr:{name:"Nom",searchName:"Rechercher par nom…",min:"Min",max:"Max",attrRange:"Saisissez au moins une valeur minimale ou maximale",badName:"Saisissez un nom valide",attrReverse:"Le minimum ne peut pas dépasser le maximum",sections:["Nationalité","Postes","Âge","Taille","Pied préféré","Attributs"],multi:"Sélection multiple",picked:"sélectionnés",scopeN:"Inclure la nationalité secondaire",scopeP:"Inclure les postes secondaires",search:"Rechercher…",heightRange:"Plage de taille",heights:["Taille min. (cm)","Taille max. (cm)"],stepMinus:"Diminuer",stepPlus:"Augmenter",button:'Filtres',active:'actifs',description:'Sélectionnez les filtres et appuyez sur Appliquer pour actualiser la liste.',close:'Fermer les filtres',apply:'Appliquer les filtres',ageRange:'Tranche d’âge',title:'Filtres des joueurs',names:['Nationalité','Poste','Âge min.','Âge max.','Pied préféré'],all:'Tous',reset:'Réinitialiser les filtres',noMatches:'Aucun joueur correspondant',range:'L’âge minimum ne peut pas dépasser l’âge maximum'}
  };
  const homeNames={en:['England','Scotland','Wales'],it:['Inghilterra','Scozia','Galles'],de:['England','Schottland','Wales'],es:['Inglaterra','Escocia','Gales'],fr:['Angleterre','Écosse','Pays de Galles']};
  const filterLocale=()=>filterLabels[language()]||filterLabels.en;
@@ -57,7 +76,11 @@
   const p=new URLSearchParams(location.search),rawPage=Number(p.get('page')||'1');
   const nationality=selectedCodes(p.get('nationality'),new Set(Object.keys(flags)));
   const position=selectedCodes(p.get('position'),positions);
+  const name=p.get('name')||'';
+  const attributes=p.get('attributes')||'';
   const filters={
+   name:validName(name)?name:'',
+   attributes:parseAttributeString(attributes).map(item=>item.key+'_'+item.min+'_'+item.max).join(','),
    nationality,nationalityScope:nationality&&p.get('nationalityScope')==='any'?'any':'',
    position,positionScope:position&&p.get('positionScope')==='any'?'any':'',
    ageMin:integerValue(p.get('ageMin'),0,120),ageMax:integerValue(p.get('ageMax'),0,120),
@@ -119,6 +142,42 @@
   const filterSections=[...document.querySelectorAll('[data-players-filter-section]')];
   const scopeLabels=[...document.querySelectorAll('[data-players-scope-label]')];
   const stepButtons=[...document.querySelectorAll('[data-players-step]')];
+  const attributeItems=[...document.querySelectorAll('[data-players-attribute-item]')];
+  const attributeCategories=[...document.querySelectorAll('[data-players-attribute-category]')];
+  const attributeMap=new Map(attributeItems.map(item=>{
+   const key=item.dataset.playersAttributeItem;
+   return [key,{item,check:item.querySelector('[data-players-attribute-enable]'),range:item.querySelector('[data-players-attribute-range]'),
+    min:item.querySelector('[data-players-attribute-min]'),max:item.querySelector('[data-players-attribute-max]')}];
+  }));
+  function draftAttributes(){
+   const specs=[];
+   for(const [key,{check,min,max}] of attributeMap){
+    if(!check.checked)continue;
+    const lo=min.value===''?'x':String(Number(min.value)),hi=max.value===''?'x':String(Number(max.value));
+    if(lo==='x'&&hi==='x')continue;
+    specs.push(key+'_'+lo+'_'+hi);
+   }
+   return specs.sort().join(',');
+  }
+  function restoreAttributes(){
+   const chosen=new Map(parseAttributeString(state.filters.attributes).map(item=>[item.key,item]));
+   for(const [key,{check,range,min,max}] of attributeMap){
+    const spec=chosen.get(key);
+    check.checked=!!spec;range.hidden=!spec;
+    min.value=spec?(spec.min==='x'?'':spec.min):'';
+    max.value=spec?(spec.max==='x'?'':spec.max):'';
+    min.setCustomValidity('');max.setCustomValidity('');
+   }
+   syncAttributeCounts();
+  }
+  function syncAttributeCounts(){
+   for(const category of attributeCategories){
+    const keys=groups[category.dataset.playersAttributeCategory]||[];
+    const n=keys.filter(key=>attributeMap.get(key)?.check.checked).length;
+    const badge=category.querySelector('[data-players-attribute-count]');
+    if(badge){badge.hidden=!n;badge.textContent=n?String(n):'';}
+   }
+  }
   function selectedCountryName(country,countries){
    const home=homeNames[language()]||homeNames.en;
    return country==='ENG'?home[0]:country==='SCO'?home[1]:country==='WAL'?home[2]:countries?.of(flags[country].slice(0,2).toUpperCase())||country;
@@ -146,16 +205,18 @@
   function syncSectionCounts(){
    const t=filterLocale();
    const draft=drawerOpen()?Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value])):state.filters;
+   const specs=drawerOpen()?draftAttributes():state.filters.attributes||'';
    const counts={
     nationality:draft.nationality?draft.nationality.split(',').length:0,
     position:draft.position?draft.position.split(',').length:0,
     age:Number(!!draft.ageMin)+Number(!!draft.ageMax),
     height:Number(!!draft.heightMin)+Number(!!draft.heightMax),
-    foot:Number(!!draft.foot)
+    foot:Number(!!draft.foot),
+    attributes:drawerOpen()?[...attributeMap.values()].filter(item=>item.check.checked).length:specs.split(',').filter(Boolean).length
    };
    for(const section of filterSections){
     const key=section.dataset.playersFilterSection;
-    const index=['nationality','position','age','height','foot'].indexOf(key);
+    const index=['nationality','position','age','height','foot','attributes'].indexOf(key);
     const label=section.querySelector('[data-players-section-label]');
     if(label)label.textContent=t.sections[index];
     const count=section.querySelector('[data-players-section-count]');
@@ -171,13 +232,13 @@
    document.querySelector('[data-players-height-range]')?.setAttribute('aria-label',t.heightRange);
    if(filterApply)filterApply.textContent=t.apply;
    if(filterTriggerLabel)filterTriggerLabel.textContent=t.button;
-   const selectedCount=filterKeys.filter(key=>state.filters?.[key]).length;
+   const selectedCount=totalFilterCount(state.filters);
    if(filterActive){filterActive.hidden=selectedCount===0;filterActive.textContent=selectedCount?String(selectedCount):'';}
    filterTrigger?.setAttribute('aria-label',t.button+(selectedCount?': '+selectedCount+' '+t.active:''));
    let countries;
    try{countries=new Intl.DisplayNames([language()||'en'],{type:'region'});}catch{countries=null;}
-   const labelKeys=['nationality','position','ageMin','ageMax','heightMin','heightMax','foot'];
-   const labels=[t.multi,t.multi,t.names[2],t.names[3],...t.heights,t.names[4]];
+   const labelKeys=['name','nationality','position','ageMin','ageMax','heightMin','heightMax','foot'];
+   const labels=[t.name,t.sections[0],t.sections[1],t.names[2],t.names[3],...t.heights,t.names[4]];
    for(const field of filterFields){
     const key=field.dataset.playersFilter,selected=state.filters?.[key]||'';
     if(field.type==='checkbox')field.checked=selected==='any';
@@ -188,6 +249,7 @@
      field.options[0].textContent=t.all;
      if(key==='foot'){field.options[1].textContent=main.left;field.options[2].textContent=main.right;}
     }else if(field.type==='number')field.placeholder=t.all;
+    else if(key==='name')field.placeholder=t.searchName;
    }
    for(const wrapper of dropdowns){
     const key=wrapper.dataset.playersFilterSelect;
@@ -206,6 +268,20 @@
     syncDropdown(field);
    }
    for(const scope of scopeLabels)scope.textContent=scope.dataset.playersScopeLabel==='nationality'?t.scopeN:t.scopeP;
+   for(const cat of attributeCategories){
+    const key=cat.dataset.playersAttributeCategory,index=['technical','mental','physical','goalkeeping'].indexOf(key);
+    const label=cat.querySelector('[data-players-attribute-category-label]');
+    if(label)label.textContent=main.groups[index];
+   }
+   for(const [key,{min,max,item}] of attributeMap){
+    const label=item.querySelector('[data-players-attribute-label]');
+    const translated=attributeName(key);
+    if(label)label.textContent=translated;
+    min.placeholder=t.min;max.placeholder=t.max;
+    min.setAttribute('aria-label',translated+' '+t.min);
+    max.setAttribute('aria-label',translated+' '+t.max);
+   }
+   restoreAttributes();
    for(const button of stepButtons){
     const key=button.dataset.playersStep,field=filterFields.find(f=>f.dataset.playersFilter===key);
     const label=labels[labelKeys.indexOf(key)]||key;
@@ -423,27 +499,55 @@
    if(openDropdown)closeDropdown(openDropdown);
   },{passive:true});
   function applyFilters(){
+   const t=filterLocale();
    const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.type==='checkbox'?(field.checked?'any':''):field.value]));
    for(const field of filterFields){
     field.setCustomValidity('');
     if(!field.checkValidity()){field.reportValidity();return;}
    }
+   fields.name=fields.name.normalize('NFC').trim();
+   if(fields.name&&!validName(fields.name)){
+    const input=filterFields.find(f=>f.dataset.playersFilter==='name');
+    input.setCustomValidity(t.badName);input.reportValidity();return;
+   }
    for(const key of ['ageMin','ageMax','heightMin','heightMax'])if(fields[key]!=='')fields[key]=String(Number(fields[key]));
    for(const [lo,hi] of [['ageMin','ageMax'],['heightMin','heightMax']]){
     if(fields[lo]&&fields[hi]&&Number(fields[lo])>Number(fields[hi])){
      const field=filterFields.find(f=>f.dataset.playersFilter===hi);
-     field.setCustomValidity(filterLocale().range);field.reportValidity();return;
+     field.setCustomValidity(t.range);field.reportValidity();return;
     }
    }
-   for(const key of ['nationality','position']){
-    if(!fields[key])fields[key+'Scope']='';
+   const attrs=[];
+   for(const [key,{check,min,max}] of attributeMap){
+    min.setCustomValidity('');max.setCustomValidity('');
+    if(!check.checked)continue;
+    if(!min.checkValidity()){min.reportValidity();return;}
+    if(!max.checkValidity()){max.reportValidity();return;}
+    if(min.value===''&&max.value===''){
+     min.setCustomValidity(t.attrRange);min.reportValidity();return;
+    }
+    const lower=min.value===''?'x':String(Number(min.value)),upper=max.value===''?'x':String(Number(max.value));
+    if(lower!=='x'&&upper!=='x'&&Number(lower)>Number(upper)){
+     max.setCustomValidity(t.attrReverse);max.reportValidity();return;
+    }
+    attrs.push(key+'_'+lower+'_'+upper);
    }
+   fields.attributes=attrs.sort().join(',');
+   for(const key of ['nationality','position'])if(!fields[key])fields[key+'Scope']='';
    const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
    if(filterSignature(nextFilters)===filterSignature(state.filters)){closeFilterDialog();return;}
    state.filters=nextFilters;state.page=1;syncUrl();syncControls();closeFilterDialog();load(1);
   }
   // Draft values remain inside the modal until Apply; never fetch on individual changes.
   for(const field of filterFields)field.addEventListener('input',()=>{field.setCustomValidity('');syncSectionCounts();});
+  for(const [key,{check,range,min,max}] of attributeMap){
+   check.addEventListener('change',()=>{
+    range.hidden=!check.checked;
+    min.setCustomValidity('');max.setCustomValidity('');
+    syncAttributeCounts();syncSectionCounts();
+   });
+   for(const input of [min,max])input.addEventListener('input',()=>{input.setCustomValidity('');syncSectionCounts();});
+  }
   for(const button of stepButtons)button.addEventListener('click',()=>{
    const field=filterFields.find(f=>f.dataset.playersFilter===button.dataset.playersStep);
    if(!field)return;
@@ -459,6 +563,7 @@
    const changed=filterKeys.some(key=>state.filters?.[key])||state.page!==1;
    state.filters=Object.fromEntries(filterKeys.map(key=>[key,'']));
    for(const field of filterFields){field.setCustomValidity('');if(field.type==='checkbox')field.checked=false;}
+   restoreAttributes();
    state.page=1;syncUrl();syncControls();closeFilterDialog();
    if(changed)load(1);
   });
