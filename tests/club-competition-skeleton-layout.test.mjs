@@ -31,7 +31,7 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-competition-list \.club-competition-entry\{[^}]*align-items:center;padding:0;margin:0;border:0;/);
  assert.doesNotMatch(css,/\.club-competition-list \.club-competition-entry\+\.club-competition-entry\{[^}]*padding/,'following competition rows have no padding');
  assert.doesNotMatch(css,/@container club-competition-panel \(max-width:800px\)\{\s*\.club-competition-list \.club-competition-entry\{[^}]*padding/,'stacked rows retain zero padding');
- assert.match(css,/\.club-competition-list \.club-competition-metrics,[\s\S]*?justify-content:center;[\s\S]*?align-self:center;/);
+ assert.match(css,/\.club-competition-list \.club-competition-metrics,[\s\S]*?justify-content:flex-start;[\s\S]*?align-self:stretch;/);
  assert.match(css,/\.club-competition-list \.club-competition-logo\{[^}]*width:60px;height:60px;flex:0 0 60px/);
  assert.match(css,/\.club-competition-list \.club-competition-cup-mark\{[^}]*width:60px;height:60px;flex:0 0 60px/);
  assert.match(css,/\.club-competition-list \.club-competition-name\{font-size:17px;font-weight:700/);
@@ -44,8 +44,8 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-competition-list \.club-competition-next small\{font-size:12px;line-height:1\.25\}/);
  assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{font-size:19px\}/);
  assert.match(css,/\.club-competition-list \.club-competition-next-empty\{font-size:13px;line-height:1\.25/);
- assert.match(css,/\.club-competition-list \.club-competition-summary\{[\s\S]*?align-self:center/);
+ assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*align-self:stretch;min-height:80px;/);
  assert.match(css,/\.club-competition-list \.club-competition-match-name\{[^}]*-webkit-line-clamp:unset/);
- assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*min-height:0;/);
- assert.match(css,/\.club-fp-competition \.club-competition-next-content\{min-block-size:59px;justify-content:center\}/);
+ assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*min-height:59px;[^}]*justify-content:flex-start;/);
+ assert.match(css,/\.club-fp-competition \.club-competition-next-content\{min-block-size:59px;justify-content:flex-start\}/);
 });
