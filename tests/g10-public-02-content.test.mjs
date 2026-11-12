@@ -40,6 +40,12 @@ test("G10-PUBLIC-02: staged Debug adds precisely nine protected-only paths",{tim
     assert.notDeepEqual(debugBytes,publicBytes,"App HTML intentionally gains Debug entrypoints: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/debug-settings\.mjs"/,"Missing standings Debug entrypoint: "+path);
     assert.match(debugBytes.toString("utf8"),/src="\/__fa_dev__\/stats-client\.mjs"/,"Missing stats Debug entrypoint: "+path);
+   }else if(path==="players/index.html"){
+    assert.notDeepEqual(debugBytes,publicBytes,"Players page intentionally gains a protected Debug Settings entrypoint");
+    const protectedHtml=debugBytes.toString("utf8");
+    assert.match(protectedHtml,/src="\/__fa_dev__\/debug-settings\.mjs"/,"Players Debug Settings entrypoint missing");
+    assert.doesNotMatch(protectedHtml,/src="\/__fa_dev__\/stats-client\.mjs"/,"Players must not load unrelated Stats Debug");
+    assert.doesNotMatch(publicBytes.toString("utf8"),/\/__fa_dev__\//,"Public Players page must never reference private Debug");
    }else if(path==="clubs/_shared/index.html"){
     assert.equal(debugBytes.toString("utf8").replace(CLUB_SUMMARY_INJECTION+"\n",""),publicBytes.toString("utf8"));
    }else assert.deepEqual(debugBytes,publicBytes,"Inherited asset must remain byte-for-byte unchanged: "+path);
