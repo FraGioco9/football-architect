@@ -237,7 +237,7 @@ test('Players approved hybrid widths retain exact flag/name columns and distribu
  const html=read('players/index.html'),css=read('assets/app.css');
  const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
  assert.match(html,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"><\/colgroup>/);
- assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:782px/);
+ assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px;width:100%;min-width:782px/);
  assert.match(css,/col\.app-players-flag-column\{width:var\(--app-players-flag-width\)\}/);
  assert.match(css,/col\.app-players-name-column\{width:var\(--app-players-name-width\)\}/);
  const overview=[['Age',3,0.17],['Positions',4,0.42],['Height',5,0.21],['Foot',6,0.20]];
