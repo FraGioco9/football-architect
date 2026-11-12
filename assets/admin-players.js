@@ -140,6 +140,9 @@
      field.value=Array.isArray(value)?value.join(':'):String(value);
     };
     for(const [key,value] of Object.entries(restored)){
+     // An auto seed is generated server-side for one preview only. Restoring
+     // its temporary UUID would turn the next preview into a fixed-seed run.
+     if(key==='seed'&&typeof value==='string'&&/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value))continue;
      if(key==='attributes'&&value&&typeof value==='object'&&!Array.isArray(value)){
       for(const [attribute,v] of Object.entries(value))set('attribute.'+attribute,v);
      }else if(key==='secondaryNationality'){

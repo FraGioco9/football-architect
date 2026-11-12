@@ -106,3 +106,9 @@ test('Preview Back restores only normalized generator options through transient 
  assert.match(generator,/if\(key==='attributes'/);
  assert.match(generator,/if\(form&&\/\^fa-next-/);
 });
+
+test('Returning from an automatic preview does not pin the one-time auto seed',()=>{
+ const generator=read('assets/admin-players.js');
+ assert.match(generator,/if\(key==='seed'&&typeof value==='string'&&\/\^fa-auto-/);
+ assert.match(generator,/\)continue;\s+if\(key==='attributes'/);
+});
