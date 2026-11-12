@@ -18,7 +18,8 @@ test('Players static shell loads the D1 directory renderer and reserves the empt
 });
 test('renderer is read-only, sanitizes output and uses only documented public fields',()=>{
  const code=read('assets/players-directory.js');
- assert.match(code,/fetch\('\/api\/players\/page\/'/);
+ assert.match(code,/fetch\('\/api\/players\?page='\+page/);
+ assert.doesNotMatch(code,/\/api\/players\/page\//,'legacy pagination URL must not remain');
  assert.match(code,/credentials:'omit'/);
  assert.match(code,/textContent=/);
  assert.doesNotMatch(code,/innerHTML|\/api\/admin\/players/);
@@ -343,4 +344,23 @@ test('Players main tabs are compact and centered; existing top margins alone are
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
  assert.ok(html.indexOf('class="app-players-toolbar"')<html.indexOf('class="app-players-table-scroll"'),'zero-gap toolbar stays directly before table');
  for(const view of ['overview','attributes'])assert.match(html,new RegExp('data-players-view="'+view+'"'),'tab remains in the static first paint');
+});
+
+
+test('Players collection uses a validated page query, without changing the public response',()=>{
+ const server=read('backend/src/index.ts'),client=read('assets/players-directory.js'),integration=read('backend/tests/players-generation-runtime.test.ts');
+ assert.ok(server.includes("if(url.pathname==='/api/players')"));
+ assert.ok(server.includes("const params=[...url.searchParams]"));
+ assert.ok(server.includes('params.length>1'));
+ assert.ok(server.includes("params[0][0]!=='page'"));
+ assert.ok(server.includes('/^[1-9][0-9]{0,3}$/'));
+ assert.ok(server.includes('readPublicPlayers(requireDatabase(env.DB),page)'));
+ assert.ok(!server.includes('playersPage=url.pathname.match'),'old page path should not be routed');
+ assert.ok(client.includes("fetch('/api/players?page='+page"));
+ assert.ok(!client.includes("fetch('/api/players/page/'+page"));
+ for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
+  assert.ok(integration.includes(path),'missing integration case '+path);
+ }
+ assert.ok(integration.includes('expect(legacy.status).toBe(404)'));
+ assert.ok(integration.includes('count:51,page:2,pageSize:50,totalPages:2'));
 });

@@ -130,7 +130,7 @@
    const seq=++ticket;state.page=page;current=null;status='loading';
    scroll.setAttribute('aria-busy','true');renderHead();message(locale().loading);
    try{
-    const response=await fetch('/api/players/page/'+page,{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+    const response=await fetch('/api/players?page='+page,{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
     if(!response.ok)throw new Error('http_'+response.status);
     const data=await response.json();
     if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||!Number.isSafeInteger(data.totalPages)||data.totalPages<1)

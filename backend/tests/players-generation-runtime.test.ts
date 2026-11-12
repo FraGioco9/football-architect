@@ -120,7 +120,7 @@ it('stale world and expired draft cannot create players',async()=>{
 });
 
 it('anonymous /api/players lists approved records only, with safe fields and pagination',async()=>{
- const empty=await worker.fetch(new Request(origin+'/api/players/page/1'),service);
+ const empty=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
  expect(empty.status).toBe(200);
  expect((await empty.json() as any).count).toBe(0);
  const preview=await createPreview({count:51,seed:'directory-public-51',primaryNationality:'ITA',primaryPosition:'ST'});
@@ -146,10 +146,22 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
    expect(player).not.toHaveProperty(privateField);
   }
  }
- const second=await worker.fetch(new Request(origin+'/api/players/page/2'),service);
- expect((await second.json() as any).players).toHaveLength(1);
- const invalid=await worker.fetch(new Request(origin+'/api/players?page=2'),service);
- expect(invalid.status).toBe(422);
+ const second=await worker.fetch(new Request(origin+'/api/players?page=2'),service);
+ expect(second.status).toBe(200);
+ const b=await second.json() as any;
+ expect(b).toMatchObject({count:51,page:2,pageSize:50,totalPages:2});
+ expect(b.players).toHaveLength(1);
+ const firstExplicit=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
+ expect(firstExplicit.status).toBe(200);
+ expect((await firstExplicit.json() as any).players).toHaveLength(50);
+ // Only one positive page query parameter is allowed; all others return 422.
+ for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
+  const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
+  expect(invalid.status,invalidQuery).toBe(422);
+  expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+ const legacy=await worker.fetch(new Request(origin+'/api/players/page/2'),service);
+ expect(legacy.status).toBe(404);
  const post=await worker.fetch(new Request(origin+'/api/players',{method:'POST'}),service);
  expect(post.status).toBe(405);
 });
