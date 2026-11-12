@@ -104,7 +104,7 @@ test('Players first paint never selects or replaces the html root despite its st
  }
  assert.ok(generator.includes('.app-players-tabs [data-players-view]'));
  assert.ok(generator.includes('.app-players-groups [data-players-group]'));
- for(const search of ['', '?view=attributes&group=goalkeeping']){
+ for(const search of ['', '?view=attributes&group=technical', '?view=attributes&group=mental', '?view=attributes&group=physical', '?view=attributes&group=goalkeeping']){
   const root={
    lang:'en',dataset:{},
    set textContent(_value){throw Error('Changing HTML root textContent deletes sidebar, styles and table')},
@@ -130,11 +130,18 @@ test('Players first paint never selects or replaces the html root despite its st
   };
   runInNewContext(script,{document,location:{search},URLSearchParams});
   assert.equal(root.dataset.playersView,search?'attributes':'overview');
-  assert.equal(root.dataset.playersGroup,search?'goalkeeping':'technical');
+  const group=new URLSearchParams(search).get('group')||'technical';
+  assert.equal(root.dataset.playersGroup,group);
   assert.equal(views[0].textContent,'Overview');
   assert.equal(groups[0].textContent,'Technical');
   assert.equal(groups[3].textContent,'Goalkeeper');
-  if(search)assert.equal(table.dataset.playersTableMode,'attributes');
+  if(search){
+   const expected=group==='technical'?11:7; // flag + name + Positions + 8/4 skills
+   assert.equal(table.dataset.playersTableMode,'attributes');
+   assert.equal(row.cells.length,expected);
+   assert.equal(row.cells[2].textContent,'Positions','Positions must be third before the attributes');
+   assert.equal(table.tBodies[0].rows[0].cells[0].colSpan,expected);
+  } else assert.equal(row.cells.length,6,'Overview remains unchanged');
  }
 });
 
@@ -228,7 +235,7 @@ test('Players primary view controls are larger than the compact attribute subgro
 test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
- assert.match(html,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><\/colgroup>/);
+ assert.match(html,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"><\/colgroup>/);
  assert.match(css,/--app-players-flag-width:54px;--app-players-name-width:248px;width:100%;min-width:782px/);
  assert.match(css,/col\.app-players-flag-column\{width:var\(--app-players-flag-width\)\}/);
  assert.match(css,/col\.app-players-name-column\{width:var\(--app-players-name-width\)\}/);
@@ -237,10 +244,15 @@ test('Players approved hybrid widths retain exact flag/name columns and distribu
   assert.ok(css.includes('.app-players-table th:nth-child('+column+'){width:calc(('+fixed+') * '+fraction.toFixed(2)+')}'),name+' must use a percentage of the flexible portion, not a percent of the whole table');
  assert.equal(overview.reduce((total,[,,fraction])=>total+Math.round(fraction*100),0),100);
  const attrSelector='.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+3)';
- assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"]{min-width:782px}'));
- assert.ok(css.includes(attrSelector+'{width:calc(('+fixed+') / 4)}'));
- assert.ok(css.includes('html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1262px}'));
- assert.ok(css.includes('html[data-players-group="technical"] '+attrSelector+'{width:calc(('+fixed+') / 8)}'));
+ const attrFixed=fixed+' - var(--app-players-positions-width)';
+ const attrSelector4='.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4)';
+ assert.ok(css.includes('--app-players-positions-width:200px'));
+ assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"]{min-width:982px}'));
+ assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}'));
+ assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"] th:nth-child(3){width:var(--app-players-positions-width)}'));
+ assert.ok(css.includes(attrSelector4+'{width:calc(('+attrFixed+') / 4)}'));
+ assert.ok(css.includes('html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1462px}'));
+ assert.ok(css.includes('html[data-players-group="technical"] '+attrSelector4+'{width:calc(('+attrFixed+') / 8)}'));
  assert.doesNotMatch(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(n\+3\)\{width:120px/);
  for(const total of [782,1262,1440,1920]){
   const variable=total-54-248;
@@ -250,6 +262,46 @@ test('Players approved hybrid widths retain exact flag/name columns and distribu
   assert.ok(Math.abs(variable/4*4-variable)<1e-8);
   assert.ok(Math.abs(variable/8*8-variable)<1e-8);
  }
- assert.equal(54+248+4*120,782,'four-attribute minimum remains readable');
- assert.equal(54+248+8*120,1262,'technical minimum avoids compressed headings');
+ assert.equal(54+248+200+4*120,982,'four-attribute minimum remains readable with Positions');
+ assert.equal(54+248+200+8*120,1462,'technical minimum avoids compressed headings with Positions');
+});
+
+
+test('Players Attributes always show fixed-width Positions after the name without changing public skill keys',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),renderer=read('assets/players-directory.js'),generator=read('tools/generate-app-pages.mjs');
+ assert.match(html,/class="app-players-view-third-column"/,'third slot must be reserved in static colgroup');
+ assert.match(html,/positions\.textContent=\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'/);
+ assert.match(html,/row\.append\(positions\);\s*for\(const key of keys\)/,'Positions must precede stats on first paint');
+ assert.match(html,/colSpan=keys\.length\+3/);
+ assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:6/);
+ assert.match(renderer,/else \{th\(t\.columns\[2\]\);for\(const key of groups\[state\.group\]\)th\(attributeName\(key\)\);\}/);
+ assert.match(renderer,/const positionsShown=\[player\.primary_position,\.\.\.\(Array\.isArray\(player\.secondary_positions\)\?player\.secondary_positions:\[\]\)\]\.filter\(Boolean\)/);
+ assert.match(renderer,/else \{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\);\s*for\(const key of groups\[state\.group\]\)/);
+ assert.match(css,/--app-players-positions-width:200px/);
+ assert.ok(generator.includes('app-players-view-third-column')&&generator.includes('row.append(positions)'));
+ for(const label of ['GK positioning','Posizionamento portiere','Torwartstellung','Posición de portero','Placement gardien']){
+  assert.ok(!renderer.includes('|'+label+'|'),label+' must not remain as a visible skill label');
+  assert.ok(!html.includes('|'+label+'|'),label+' must not remain in first paint');
+ }
+ for(const [locale,term] of [['en','Positioning'],['it','Posizionamento'],['de','Stellungsspiel'],['es','Colocación'],['fr','Placement']]){
+  const labels=renderer.match(new RegExp(''+locale+":'([^']+)'"))?.[1];
+  assert.ok(labels&&labels.includes('|'+term+'|'),'GK positioning label in '+locale);
+ }
+ assert.match(renderer,/goalkeeping:\['gk_reflexes','gk_handling','gk_positioning','gk_aerial'\]/);
+ assert.doesNotMatch(renderer,/data-players-filter/,'do not reintroduce filters');
+});
+
+test('Attributes widths remain proportional after 54px flag, 248px player and fixed 200px Positions',()=>{
+ const css=read('assets/app.css');
+ const remaining='100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)';
+ assert.ok(css.includes('.app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc(('+remaining+') / 4)}'));
+ assert.ok(css.includes('html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc(('+remaining+') / 8)}'));
+ for(const group of [{name:'Technical',count:8,min:1462},{name:'Mental',count:4,min:982},{name:'Physical',count:4,min:982},{name:'Goalkeeper',count:4,min:982}]){
+  assert.equal(group.min,54+248+200+group.count*120,group.name+' minimum widths');
+  for(const total of [group.min,1800]){
+   const available=total-54-248-200;
+   assert.ok(available/group.count>=120);
+   assert.equal(group.count*(available/group.count),available);
+  }
+ }
 });

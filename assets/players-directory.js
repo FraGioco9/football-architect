@@ -19,11 +19,11 @@
  // of the order in which the user switches attribute groups.
  const allAttrs=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={
-  en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|GK positioning|Aerial',
-  it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento portiere|Uscite alte',
-  de:'Tempo|Stärke|Ausdauer|Beweglichkeit|Passen|Technik|Dribbling|Schuss|Flanken|Zweikampf|Deckung|Kopfball|Übersicht|Stellungsspiel|Entscheidungen|Ruhe|Reflexe|Fangen|Torwartstellung|Luftraum',
-  es:'Velocidad|Fuerza|Resistencia|Agilidad|Pases|Técnica|Regate|Tiro|Centros|Entradas|Marcaje|Cabeceo|Visión|Colocación|Decisiones|Serenidad|Reflejos|Blocaje|Posición de portero|Juego aéreo',
-  fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement gardien|Jeu aérien'
+  en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|Positioning|Aerial',
+  it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento|Uscite alte',
+  de:'Tempo|Stärke|Ausdauer|Beweglichkeit|Passen|Technik|Dribbling|Schuss|Flanken|Zweikampf|Deckung|Kopfball|Übersicht|Stellungsspiel|Entscheidungen|Ruhe|Reflexe|Fangen|Stellungsspiel|Luftraum',
+  es:'Velocidad|Fuerza|Resistencia|Agilidad|Pases|Técnica|Regate|Tiro|Centros|Entradas|Marcaje|Cabeceo|Visión|Colocación|Decisiones|Serenidad|Reflejos|Blocaje|Colocación|Juego aéreo',
+  fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const labels={
   en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
@@ -54,7 +54,7 @@
   previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
   counter.className='app-players-page-count';counter.setAttribute('aria-live','polite');pager.append(previous,counter,next);scroll.after(pager);
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
-  const cols=()=>state.view==='attributes'?2+groups[state.group].length:6;
+  const cols=()=>state.view==='attributes'?3+groups[state.group].length:6;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
    if(!countNode)return;
@@ -82,7 +82,7 @@
    const th=(value,isFlag=false)=>{const node=document.createElement('th');node.scope='col';if(isFlag){node.className='app-players-flag-col';const a=document.createElement('span');a.className='sr-only';a.textContent=t.nationality;node.append(a)}else node.textContent=value;row.append(node)};
    th('',true);th(t.columns[0]);
    if(state.view==='overview')for(const name of t.columns.slice(1))th(name);
-   else for(const key of groups[state.group])th(attributeName(key));
+   else {th(t.columns[2]);for(const key of groups[state.group])th(attributeName(key));}
    table.tHead.replaceChildren(row);
    table.dataset.playersTableMode=state.view;
   }
@@ -107,13 +107,16 @@
    const fragment=document.createDocumentFragment();
    for(const player of data.players){
     const tr=document.createElement('tr');flagCell(tr,player);cell(tr,player.display_name||'—');
+    const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
      cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
-     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
      cell(tr,positionsShown.join(', ')||'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');
      cell(tr,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
-    }else for(const key of groups[state.group])cell(tr,Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—');
+    }else {
+     cell(tr,positionsShown.join(', ')||'—');
+     for(const key of groups[state.group])cell(tr,Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—');
+    }
     fragment.append(tr);
    }
    body.replaceChildren(fragment);
