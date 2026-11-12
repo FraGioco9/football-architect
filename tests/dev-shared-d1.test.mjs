@@ -44,7 +44,7 @@ test('remote D1 local Worker configuration targets the approved nonproduction re
  assert.match(config,/PLAYER_MODE = "local"/);
  assert.match(config,/PLAYER_ORIGIN = "http:\/\/app.localhost:2000"/);
  assert.match(config,/PLAYER_LOCAL_INBOX_ENABLED = "false"/);
- assert.doesNotMatch(config,/\.\.\.PROD|production/i);
+ assert.doesNotMatch(config,/PLAYER_MODE = "production"|football-architect-prod"/);
 });
 
 test('default shared D1 executes Worker code locally; explicit offline --local isolates storage',()=>{

@@ -15,7 +15,7 @@ These instructions apply to any coding agent working in this repository. They ar
 - **First paint:** render correct static structure and fixed geometry immediately; reserve space for variable data; hydrate values without layout shift, placeholder flashes or misleading empty states. Debug OFF behaves like the ordinary environment.
 - Source of truth: `templates/app-page.html`, `tools/generate-app-pages.mjs`, `tools/generate-club-pages.mjs`, `tools/render-competition-page.mjs`, and applicable assets/registries. **Never hand-edit generated HTML/manifests.** Use the canonical generators.
 - Public player data is an allowlisted projection; private/internal fields, seeds, Admin privileges, CSRF/session and DEV/Production boundaries must remain protected.
-- Default `node tools/dev.mjs` is shared Cloudflare Preview-backed DEV, not a disposable local D1. Use explicit `--local` for isolated tests. Never treat local test PASS as proof of hosted state or physical Safari QA.
+- Default `node tools/dev.mjs` executes current Worker source locally with a **remote binding to shared DEV/Preview D1**. It can mutate real online nonproduction data; use explicit `--local` for isolated tests. A deployed Preview Worker may run older code and needs separate publication when its own interface/API must update. Never treat local test PASS as hosted QA.
 
 ## Working agreement
 1. Start with the **current** `main`, inspect relevant existing PRs/issues, read the specific acceptance criteria, and identify conflicting work before editing.
@@ -24,7 +24,7 @@ These instructions apply to any coding agent working in this repository. They ar
 4. Prefer existing components, dropdowns, tooltips, skeletons and design tokens. Avoid speculative refactors or changing unrelated approved designs, public APIs, persistent IDs and schema.
 5. Run narrow relevant checks during work; group broad verification at the stable exact HEAD when required. FAST/TARGETED is not FULL. Do not duplicate or manually re-dispatch existing CI; report PASS/FAIL/PENDING/UNKNOWN truthfully.
 6. Update the authorized issue checklist/progress after material, verified milestones, with commit/PR links. Do not claim steps done before evidence exists. If blocked, stop, document the blocker, and leave a safe Draft/HOLD state.
-7. On Windows local work, use Node.js 22 and PowerShell: `npm --prefix backend ci`, then `node tools/dev.mjs` for shared DEV/Preview (writes to online nonproduction D1) or `node tools/dev.mjs --local` for isolated local Worker/D1 tests; `node tools/generate-app-pages.mjs --check` for read-only generation consistency. Only run relevant tests from [CI guide](docs/ci/README.md).
+7. On Windows local work, use Node.js 22 and PowerShell: `npm --prefix backend ci`, then `node tools/dev.mjs` for local Worker + shared remote DEV/Preview D1 (writes to online nonproduction DB) or `node tools/dev.mjs --local` for isolated local Worker/D1 tests; `node tools/generate-app-pages.mjs --check` for read-only generation consistency. Only run relevant tests from [CI guide](docs/ci/README.md).
 
 ## Hard stops — separate owner approval required
 - Merging or enabling auto-merge, closing issues/PRs, deleting branches, changing branch protections or repository permissions.

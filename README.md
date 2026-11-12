@@ -17,7 +17,7 @@ npm --prefix backend ci
 node tools/dev.mjs
 ```
 
-**Default = shared DEV/Preview:** the local frontend uses the verified `https://preview.football-architect.workers.dev` Worker and its nonproduction D1 (`football-architect-dev`). The launcher does not start a local Worker or sync/copy databases. Site: `http://localhost:2000/`; App: `http://app.localhost:2000/dashboard`. Sign in separately from online Preview. The startup checks the environment, world and `GET /api/players?page=1`; if Preview is outdated or unavailable it **fails closed** without falling back to local D1. An approved Preview publish with compatible API and schema is required; the launcher never deploys or runs migrations.
+**Default = local Worker code + shared Cloudflare D1:** the frontend and Worker execute on your PC at `http://app.localhost:2000` and `http://127.0.0.1:8787`; the Worker connects directly to the **existing** nonproduction D1 (`football-architect-dev`) through Wrangler's `remote = true` binding. The hosted Preview uses the same database but can run older code independently. New backend APIs can be tested locally **without deploying Preview**. Shared data changes are real; avoid destructive testing, and sign in separately from the hosted Preview. The launcher never migrates, deploys or copies data. Wrangler login/network access is required for remote D1.
 
 **Explicit isolated local mode** for offline QA, disposable experiments and operator tooling:
 
@@ -25,7 +25,7 @@ node tools/dev.mjs
 node tools/dev.mjs --local
 ```
 
-This mode starts `node tools/dev-app-preview.mjs` alongside the local Wrangler Worker/D1 at `http://127.0.0.1:8787`. Local migrations and owner-only permissions remain manual. The legacy `node tools/dev.mjs --shared https://preview.football-architect.workers.dev` invocation is still accepted. Ctrl+C stops either mode.
+This mode starts a local-only Wrangler Worker/D1 at `http://127.0.0.1:8787`, fully isolated from Cloudflare. Local migrations and owner-only permissions remain manual. The legacy `node tools/dev.mjs --shared https://preview.football-architect.workers.dev` invocation remains available to explicitly **proxy the hosted Preview Worker**, but requires its deployed API version to be up to date. This is not needed for normal development. Ctrl+C stops either mode.
 
 Optional frontend-only iPhone Safari QA on trusted Wi-Fi (replace with the PC's own private IPv4 from `ipconfig`):
 
@@ -65,6 +65,6 @@ node --test --test-concurrency=1 (Get-ChildItem .\tests\*.test.mjs | Select-Obje
 
 The broad Node command is **not necessary on every local documentation edit**; see [CI/QA guide](docs/ci/README.md). Backend commands after dependency installation include `npm --prefix backend run typecheck` and `npm --prefix backend run test:contracts`. FAST/TARGETED does not certify FULL, and physical Safari/VoiceOver is not certified by emulation.
 
-**Default shared Dev/Preview** uses a verified nonproduction Worker/D1 with independent login sessions. **Isolated --local** Worker/D1/inbox are loopback-specific. **Production** needs distinct Worker/D1/accounts, secrets, domain and owner approval. The manual Preview workflow and repository publication allowlist are not deployment authorization. [Auth](backend/docs-auth-security-be-05.md), [shared nonproduction](backend/docs-shared-nonproduction.md), [Preview](docs/manual-preview.md).
+**Default shared DEV/Preview** runs the current Worker source locally with the **remote nonproduction D1** binding; hosted Preview independently runs its last published Worker against that same DB. **Isolated --local** Worker/D1/inbox remain loopback-specific. **Production** needs distinct Worker/D1/accounts, secrets, domain and owner approval. The manual Preview workflow and repository publication allowlist are not deployment authorization. [Auth](backend/docs-auth-security-be-05.md), [shared nonproduction](backend/docs-shared-nonproduction.md), [Preview](docs/manual-preview.md).
 
 Authorized workflow: current `main` → one task branch / grouped commit → Draft/HOLD PR in English → exact-head CI → review → **separately authorized squash merge** → verify post-merge. Deploy, remote DB, branch deletion and secret changes need independent approval. #357 removed only proven dead guards/bindings (**zero files**); #370 renamed **private identifiers only**, leaving public filenames and routes unchanged. Preserve historical snapshots, migration receipts and discarded pre-#347 branches solely as audit evidence. Remote integrations and physical accessibility are **UNKNOWN** until independently verified.
