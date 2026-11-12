@@ -209,6 +209,8 @@
     field.setCustomValidity('');
     if(!field.checkValidity()){field.reportValidity();return;}
    }
+   // Native number fields can retain forms such as 05 or 2e1; normalize to the API's canonical decimal form.
+   for(const key of ['ageMin','ageMax'])if(fields[key]!=='')fields[key]=String(Number(fields[key]));
    if(fields.ageMin&&fields.ageMax&&Number(fields.ageMin)>Number(fields.ageMax)){
     const field=filterFields.find(f=>f.dataset.playersFilter==='ageMax');
     field.setCustomValidity(filterLocale().range);field.reportValidity();return;

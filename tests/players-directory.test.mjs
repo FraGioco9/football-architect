@@ -156,6 +156,7 @@ test('Players toolbar remains in document flow across main views and count is ou
  assert.doesNotMatch(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{display:none/);
  assert.match(code,/function changeView\(view\)\{[^}]*state\.view=view;syncUrl\(\);refresh\(\)/);
  assert.match(code,/function applyFilters\(\)/);
+ assert.match(code,/fields\[key\]=String\(Number\(fields\[key\]\)\)/,'age query values must be canonical');
 });
 
 test('Players groups use Technical, Mental, Physical, Goalkeeper order while attribute names keep their historical field mapping',()=>{
@@ -286,7 +287,8 @@ test('Players Attributes always show fixed-width Positions after the name withou
   assert.ok(!html.includes('|'+label+'|'),label+' must not remain in first paint');
  }
  for(const [locale,term] of [['en','Positioning'],['it','Posizionamento'],['de','Stellungsspiel'],['es','Colocación'],['fr','Placement']]){
-  const labels=renderer.match(new RegExp(''+locale+":'([^']+)'"))?.[1];
+  const attributeDefinitions=renderer.slice(renderer.indexOf(' const attrLabels={'),renderer.indexOf(' const labels={'));
+  const labels=attributeDefinitions.match(new RegExp(''+locale+":'([^']+)'"))?.[1];
   assert.ok(labels&&labels.includes('|'+term+'|'),'GK positioning label in '+locale);
  }
  assert.match(renderer,/goalkeeping:\['gk_reflexes','gk_handling','gk_positioning','gk_aerial'\]/);
