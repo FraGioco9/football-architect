@@ -331,7 +331,7 @@ export function createPreviewClubFixtures(division,clubId,progress,season,day){
  const definition=previewDefinition(division),clubKey=division.countryId+'-'+clubId;
  const base={source:'dev',clubKey,season,currentSeason:progress.season,day,competitions:[definition],rows:[],
   provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}};
- if(season===0)return {...base,coverage:'unstarted'};
+ if(progress.season===0||season===0)return {...base,coverage:'unstarted'};
  if(!Number.isInteger(season)||season<1||season>progress.season||!Number.isInteger(day)||day<0||day>56)
   return {...base,coverage:'unavailable'};
  const viewedDay=season===progress.season?day:56;

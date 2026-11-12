@@ -288,7 +288,7 @@
    }
    content='<section class="club-history" aria-busy="'+pending+'">'+body+'</section>';
   }else if(selected.view==='fixtures'){
-   content=fixtureUI.render({manifest,lang,season:/^(0|[1-9]\d{0,8})$/.test(params.get('season')||'')?Number(params.get('season')):null});
+   content=fixtureUI.render({manifest,lang,season:params.get('season')==='1'?1:null});
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';

@@ -145,6 +145,8 @@ test('CLUB-FIXTURES: Season 0 makes no reads; failed cups do not discard domesti
  const unstarted={...world,revision:0,seasonNumber:0,phase:'unstarted',day:0};let calls=0;
  const zero=await readClubFixtures({clubKey:'IT-1',season:0,world:unstarted,fetchJson:async()=>{calls++},manifest});
  assert.equal(zero.coverage,'unstarted');assert.equal(calls,0);
+ const provisional=await readClubFixtures({clubKey:'IT-1',season:1,world:unstarted,fetchJson:async()=>{calls++},manifest});
+ assert.equal(provisional.coverage,'unstarted');assert.equal(provisional.season,1);assert.equal(calls,0,'Season 0 offers viewed Season 1 without inventing or fetching a season');
  const overview={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,world,status:'partial',reason:null,
   provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:1:x'},
   data:{season:1,memberships:['IT-1','int-1'].map(competitionId=>({competitionId,season:1,category:competitionId==='IT-1'?'domestic':'international',position:null,points:0,cupStatus:null,nextMatch:null}))}};

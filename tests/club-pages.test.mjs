@@ -708,6 +708,7 @@ test('CLUB-FIXTURES DEV adapter uses the sporting calendar and masks future resu
  assert.ok(snapshot.rows.every(r=>r.day<=16||r.goalsFor===null));
  assert.equal(snapshot.rows[0].day,13);assert.equal(snapshot.provenance.kind,'fictional');
  assert.equal(createPreviewClubFixtures(division,1,{season:0,matchdays:0},0,0).coverage,'unstarted');
+ assert.equal(createPreviewClubFixtures(division,1,{season:0,matchdays:0},1,0).coverage,'unstarted');
 });
 
 test('CLUB-FIXTURES: knockout links use configured phase and leg tokens',async()=>{
@@ -721,9 +722,10 @@ test('CLUB-FIXTURES: knockout links use configured phase and leg tokens',async()
  assert.ok(html.includes('Semifinali'));assert.ok(html.includes('Campo neutro'));
 });
 
-test('CLUB-FIXTURES: parser-time loading notice and region label are localized before hydration',async()=>{
+test('CLUB-FIXTURES: parser-time controls and region label are localized without a notice',async()=>{
  const {default:ui}=await import('../assets/club-fixtures.js');
- assert.match(ui.render(),/data-club-fixture-text="loading"/);
+ assert.doesNotMatch(ui.render(),/club-fixtures-notice|Loading fixtures/);
+ assert.match(ui.render(),/data-club-fixture-text="next"/);
  assert.match(read('tools/generate-club-pages.mjs'),/fixtures\.setAttribute\('aria-label',fixtureLabels\.competition\)/);
 });
 
@@ -735,5 +737,29 @@ test('CLUB-FIXTURES: unknown canonical season reserves a value instead of guessi
 test('CLUB-FIXTURES: confirmed source failure does not retain a season loading skeleton',async()=>{
  const {default:ui}=await import('../assets/club-fixtures.js');
  const markup=ui.render({season:null,snapshot:{coverage:'unavailable',rows:[],competitions:[]}});
- assert.ok(!markup.includes('club-fixture-season-loading'));assert.ok(markup.includes('Fixture data is unavailable.'));
+ assert.ok(!markup.includes('club-fixture-season-loading'));assert.ok(markup.includes('data-club-fixtures-state="unavailable"'));assert.ok(!markup.includes('club-fixtures-notice'));
+});
+
+test('CLUB-FIXTURES: approved toolbar order and no notice in any data state',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ for(const coverage of ['loading','complete','partial','unstarted','unpublished','unavailable','error']){
+  const markup=ui.render({season:1,seasons:[1],snapshot:{coverage,rows:[],competitions:[]}});
+  assert.ok(markup.indexOf('data-club-fixtures-next')<markup.indexOf('data-club-fixture-control="competition"'));
+  assert.ok(markup.indexOf('data-club-fixture-control="competition"')<markup.indexOf('data-club-fixture-control="season"'));
+  assert.doesNotMatch(markup,/club-fixtures-notice|Loading fixtures|No fixtures are available|Fixture data is unavailable/);
+  assert.ok(markup.includes('data-club-fixtures-state="'+coverage+'"'));
+ }
+});
+
+test('CLUB-FIXTURES: viewed seasons follow Standings and clamp invalid or future links',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ for(const [current,expected] of [[0,[1]],[1,[1]],[2,[2,1]],[4,[4,3,2,1]]]){
+  const result=ui.resolveSeason({current});assert.deepEqual(result.seasons,expected);assert.equal(result.season,Math.max(1,current));
+ }
+ assert.equal(ui.resolveSeason({current:2,requested:'1'}).season,1);
+ for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,1);
+ for(const requested of ['3','999'])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
+ assert.equal(ui.resolveSeason({current:0,requested:'2'}).season,1);
+ assert.equal(ui.resolveSeason({current:null,requested:'999'}).season,null,'unverified clock cannot clamp a future link');
+ assert.deepEqual(ui.resolveSeason({current:null}).seasons,[]);
 });

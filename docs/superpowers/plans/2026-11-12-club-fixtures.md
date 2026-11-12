@@ -51,3 +51,11 @@
 - Final source-read audit: unknown canonical season uses reserved placeholder, never guessed Season 1; confirmed unavailable state removes loading placeholder. Both cases covered by RED→GREEN tests.
 
 - Delivered one Draft/HOLD PR #529. Final icon audit corrected the away glyph to an actual airplane; unchanged-main browser comparison confirmed the same 300-second timeout. This follow-up is a fourth grouped venue/evidence correction; its automatic CI cycle supersedes the initial PR head, with no manual rerun.
+
+
+## Owner-approved follow-up — toolbar / History / season policy
+- [x] Reproduce Debug History publish → shell repaint → Fixtures request loop, then gate/deduplicate active Fixtures preview requests (22d28e0). Bounded Chromium regression RED→GREEN.
+- [x] Next-match left; Competition then Season right; 14px tab separator gap; no Fixtures notice or its visible messages. Keep pending skeletons and internal data/source state.
+- [x] Align viewed season policy with Standings: positive 1..current, minimum viewable 1 at canonical world 0, descending menu, latest default, invalid/zero→1, future→current, canonical URL replacement after clock confirmation.
+- [x] Test public/DEV world 0/1/2, closed season, cold/warm History, source change, Back/Forward, first-paint geometry and locale/theme widths. 123 targeted Node checks and dedicated Chromium PASS; independent review no material findings.
+- [ ] Physical Safari/VoiceOver and owner visual acceptance remain separate manual checks. No merge/deploy/remote DB authorization.

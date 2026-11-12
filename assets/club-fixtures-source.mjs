@@ -24,7 +24,7 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
  competitionIdsForClub(clubKey);
  if(!validPublicWorld(world)||typeof fetchJson!=='function')throw TypeError('Invalid club fixture read');
  const base={source:'authoritative',clubKey,season,world,day:season===world.seasonNumber?world.day:56,competitions:[],rows:[],unavailable:[]};
- if(season===0)return {...base,coverage:'unstarted'};
+ if(world.seasonNumber===0||season===0)return {...base,coverage:'unstarted'};
  if(!Number.isInteger(season)||season<1||season>world.seasonNumber||world.seasonNumber>2)return {...base,coverage:'unavailable'};
  const batch=await fetchJson('/api/clubs/'+clubKey+'/history',{signal});
  const overviews=projectClubHistoryOverviews(batch,clubKey,world);
