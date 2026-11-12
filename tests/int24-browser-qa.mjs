@@ -677,10 +677,43 @@ try {
  for(const route of ["/competitions/int-1/standings","/competitions/int-2/fixtures","/competitions/int-1/stats","/competitions/it-1/standings","/competitions/it-1/stats","/calendar","/clubs/it/1/overview"]){
   console.log("Season 0 QA route: "+route);
   await page.goto(base+route,{waitUntil:"domcontentloaded"});
+  // The DEV widget can mount before the competition router finishes its
+  // asynchronous manifest/bootstrap handoff. Season 0 must operate on the
+  // actual ready competition, never assume an early widget means it exists.
+  const waitForCompetitionRuntime=async()=>{
+   if(!route.startsWith('/competitions/'))return;
+   const [,root,id,view]=route.split('/');
+   await page.waitForFunction(({id,view})=>{
+    const context=window.faCompetitionContext,router=window.faCompetitionRoute?.get?.();
+    return context?.definition?.id?.toLowerCase()===id &&
+     context.selectedSeason===1 && router?.season==='1'&&router.view===view;
+   },{id,view});
+  };
+  await waitForCompetitionRuntime();
   try{await page.waitForSelector('.fa-dev-widget-button')}catch(error){console.log("DEV state: "+JSON.stringify(await page.evaluate(()=>({url:location.href,dataset:{...document.documentElement.dataset},widgets:document.querySelectorAll('.fa-dev-widget').length}))));console.log("DEV JS errors: "+JSON.stringify(zeroErrors));throw error}
   await page.locator('.fa-dev-widget-button').click();
   const season=page.locator('[data-dev-control="season-number"]');
   assert.equal(await season.getAttribute('min'),'0');
+  // #521: sample the 16 fully-mounted club hosts before switching out of DEV.
+  // Matching by club identity also detects a row reorder without false failures.
+  const verifyCrestHosts=async(label)=>{
+   const detached=await page.evaluate(()=>{
+    const captured=window.__qa521CrestHosts;
+    return [...captured].flatMap(([id,host])=>{
+     const current=document.querySelector('#app-standings-body [data-club-crest="'+id+'"]');
+     return host.isConnected&&current===host?[]:[id];
+    });
+   });
+   assert.deepEqual(detached,[],label+' must retain exact crest host identities');
+  };
+  if(route==='/competitions/it-1/standings'){
+   await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1 &&
+    document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
+   await page.evaluate(()=>{
+    window.__qa521CrestHosts=new Map([...document.querySelectorAll('#app-standings-body [data-club-crest]')]
+     .map(host=>[host.dataset.clubCrest,host]));
+   });
+  }
   await season.fill('0');await season.dispatchEvent('change');
   await page.waitForFunction(()=>document.querySelector('[data-dev-control="world-day"]')?.disabled===true);
   assert.equal(await page.locator('[data-dev-control="world-day-number"]').isDisabled(),true);
@@ -694,6 +727,11 @@ try {
    assert.equal(await page.locator('#competition-panel-'+route.split('/').at(-1)).isVisible(),true);
    assert.equal(await page.evaluate(()=>window.faCompetitionRoute.get().season),'1');
    assert.deepEqual(await page.evaluate(()=>({season:window.faCompetitionContext?.selectedSeason,data:window.faCompetitionContext?.seasonData})),{season:1,data:null});
+   if(route==='/competitions/it-1/standings'){
+    await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='false'&&
+     document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
+    await verifyCrestHosts('Season 1 -> 0 DEV rollback');
+   }
    if(route.endsWith('/stats')){assert.equal(await page.locator('#fa-dev-stats .fa-dev-stats-card').count(),3);assert.equal(await page.locator('#fa-dev-stats .app-competition-stat-value').count(),0)}
   }
   if(route==='/calendar'){
@@ -701,7 +739,15 @@ try {
    assert.equal(await page.locator('#calendar-season-value').innerText(),'1');
   }
   await page.reload({waitUntil:"domcontentloaded"});
+  await waitForCompetitionRuntime();
   await page.waitForSelector('.fa-dev-widget-button');
+  if(route==='/competitions/it-1/standings'){
+   await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body [data-club-crest]').length===16);
+   await page.evaluate(()=>{
+    window.__qa521CrestHosts=new Map([...document.querySelectorAll('#app-standings-body [data-club-crest]')]
+     .map(host=>[host.dataset.clubCrest,host]));
+   });
+  }
   assert.equal(await page.locator('[data-dev-control="world-day"]').isDisabled(),true);
   if(route.startsWith('/competitions/')){
    assert.equal(await page.locator('#app-competition-season-value').innerText(),'1');
@@ -728,6 +774,11 @@ try {
    assert.equal(await page.evaluate(()=>window.faCompetitionContext?.selectedSeason),1);
    if(/\/competitions\/int-[12]\//.test(route))assert.equal(await page.evaluate(()=>window.faCompetitionContext?.seasonData),null);
    else await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.season===1);
+   if(route==='/competitions/it-1/standings'){
+    await page.waitForFunction(()=>document.querySelectorAll('#app-standings-body [data-club-crest]').length===16&&
+     document.documentElement.dataset.faStandingsLoading==='false');
+    await verifyCrestHosts('Season 0 -> 1 DEV activation');
+   }
   }
   checks++;
  }
