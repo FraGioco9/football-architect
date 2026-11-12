@@ -110,6 +110,9 @@ const positionCompatibility={
 const footLeftPct={GK:20,RB:10,CB:20,LB:75,RWB:10,LWB:75,DM:20,CM:20,AM:25,RM:15,LM:65,RW:35,LW:45,ST:25};
 const heightMeans={GK:189,RB:179,CB:186,LB:179,RWB:178,LWB:178,DM:182,CM:179,AM:176,RM:176,LM:176,RW:175,LW:175,ST:183};
 const positionWeights={GK:9,RB:7,CB:15,LB:7,RWB:3,LWB:3,DM:9,CM:10,AM:7,RM:5,LM:5,RW:5,LW:5,ST:10};
+// #518 owner-approved automatic count weights for outfield players only (0..5).
+// Manual secondaryPositions and explicit secondaryCount bypass this distribution.
+export const AUTO_SECONDARY_COUNT_WEIGHTS=Object.freeze([45,35,15,4,.9,.1]);
 const bands=[[1,29],[30,49],[50,69],[70,84],[85,99]];
 const bandPercents={A:[4,16,42,30,8],B:[10,28,42,17,3],C:[22,39,30,8,1],D:[50,36,13,1,0]};
 // Experimental V2 smoothing of output distributions; no persisted overall/ability field.
@@ -126,7 +129,10 @@ const previousCoherenceOffsets={A:12,B:4,C:-5,D:-13}; // exact V6/prior 60% repl
 const versatileShare=.55; // proposed, not numerically approved; Draft/HOLD
 // Provisional continuous role-expression distribution, never a third category.
 // This applies to skill VALUES, not to the derived suitability classification.
-const roleExpression={mean:15,sd:12,maxAbs:35,maxAttributeShift:25};
+// #518: under approved A's rarer secondaries, soften primary-only role expression
+// to keep natural secondary-equivalent/better aptitude within approved #399 bands.
+// No assigned aptitude bucket, position swap, or change to the suitability formula.
+const roleExpression={mean:13,sd:12,maxAbs:35,maxAttributeShift:25};
 const GENERATION_PROFILES=Object.freeze({
  specialist:Object.freeze({primary:.70,secondary:.30}),
  versatile:Object.freeze({primary:.50,secondary:.50})
@@ -394,7 +400,7 @@ function secondaryPositions(role,foot,rng,options){
   return [...options.secondaryPositions];
  }
  const count=role==='GK'?0:(options.secondaryCount===undefined?
-  weighted([0,1,2,3,4,5].filter(n=>n<=all.length),[25,35,25,11,3.5,.5].slice(0,Math.min(5,all.length)+1),rng):options.secondaryCount);
+  weighted([0,1,2,3,4,5].filter(n=>n<=all.length),AUTO_SECONDARY_COUNT_WEIGHTS.slice(0,Math.min(5,all.length)+1),rng):options.secondaryCount);
  if(!Number.isInteger(count)||count<0||count>5||count>all.length)throw Error('Secondary-position count impossible with role restrictions');
  const candidates=[...all],out=[];
  for(let i=0;i<count;i++){
@@ -695,10 +701,13 @@ export function selfTest(){
   }
  }
  assert.equal(adjustedRoles.size,POSITIONS.length,'Core balancing must affect all 14 roles');
- assert.equal(priorCohort.candidates[142].preview_id,'trial-0143');
- assert.equal(priorCohort.candidates[142].primary_position,'ST');
- assert.ok(priorCohort.candidates[142].attributes.shooting>=62,
-  'Pure ST with high relevant values must no longer have shooting 48');
+ // Approved frequency A changes later RNG draws and player identities.
+ // Assert the real automatic ST core-floor behavior, not a fixed preview ID.
+ const correctedStriker=priorCohort.candidates.find((p,i)=>
+  p.primary_position==='ST'&&
+  p.attributes.shooting>noCoreFloor.candidates[i].attributes.shooting);
+ assert.ok(correctedStriker,
+  'ST shooting must receive a relative automatic A-core correction');
  const manualShooting=generateTrial({count:1,seed:'manual-A-control',
   primaryPosition:'ST',secondaryCount:0,attributes:{shooting:48}});
  assert.equal(manualShooting.candidates[0].attributes.shooting,48,

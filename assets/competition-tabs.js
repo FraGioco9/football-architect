@@ -90,6 +90,8 @@
   if(!tablist||!model)return;
   const views=model.views.map(view=>view.id);
   const tabs=[...tablist.querySelectorAll('[role="tab"]')];
+  const prebootSnapshot=window.faCompetitionPrebootTabs?.snapshot?.();
+  let prebootFixtureRound=prebootSnapshot?.fixtureRound||null;
   // Safari may briefly restore touch focus to the active tab when a modal closes.
   for(const tab of tabs)if(tab.style)tab.style.webkitTapHighlightColor="transparent";
   const panels=tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
@@ -138,7 +140,7 @@
   window.addEventListener("resize",revealAfterRestoration);
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(revealAfterRestoration).observe(tablist);
   // CAL-IMP-04: validated return context; no external or legacy route.
-  const rawReturn=new URL(window.location.href).searchParams.get('calendarReturn');
+  const rawReturn=new URL(window.location.href).searchParams.get('calendarReturn')||prebootSnapshot?.calendarReturn;
   let calendarReturn=null;
   if(rawReturn){
     try{const u=new URL(rawReturn,window.location.origin),p=u.searchParams;
@@ -152,7 +154,7 @@
   }
   const returnHost=document.getElementById('app-fixtures-toolbar');
   if(calendarReturn&&returnHost){const a=document.createElement('a');a.href=calendarReturn;a.textContent='← Calendar';returnHost.append(a)}
-  let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday");
+  let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday")&&!prebootFixtureRound;
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
   let availableSeasons=[...new Set(["1",...(window.faDebugEnabled===false?[]:devSeasons)])];
@@ -184,7 +186,7 @@
   };
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=normalizeCupRound(params.get("matchday")),parsed=routePath();
+    const id=params.get("season"),round=normalizeCupRound(params.get("matchday")??prebootFixtureRound),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
     return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?latestSeason:requested,
@@ -323,7 +325,9 @@
     pendingDefaultMatchday=false;
     apply(read(),{replace:true});
   });
+  window.faCompetitionPrebootTabs?.dispose?.();
   apply(read(),{replace:true});
+  prebootFixtureRound=null;
   const restoreTabScroll=()=>{
     if(savedTabScroll!==null)tablist.scrollLeft=Math.min(savedTabScroll,Math.max(0,tablist.scrollWidth-tablist.clientWidth));
     syncTabOverflow();

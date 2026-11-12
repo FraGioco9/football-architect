@@ -258,6 +258,9 @@ test("PUBLIC-03: canonical Cloudflare staging uses guarded public assets, never 
   stagePublicArtifact(repositoryRoot,publicPath);
   stageProtectedDebugArtifact(repositoryRoot,protectedPath);
   assert.deepEqual(assertPublicArtifact(publicPath),planPublicFiles());
+  assert.ok(planPublicFiles().includes('404.html'));
+  assert.ok(existsSync(join(publicPath,'404.html')));
+  assert.ok(existsSync(join(protectedPath,'404.html')));
   assert.deepEqual(assertProtectedDebugArtifact(protectedPath),planProtectedDebugFiles());
   assert.equal(existsSync(join(publicPath,"__fa_dev__")),false);
   assert.ok(existsSync(join(protectedPath,"__fa_dev__/debug-settings.mjs")));

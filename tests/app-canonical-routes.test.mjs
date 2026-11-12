@@ -76,3 +76,76 @@ test('DEV rejects removed app paths while canonical routes still load', async ()
       assert.equal(await get(path),200,path);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+test('404: localized error is a real HTTP error, with one Dashboard link and no asset masking',async()=>{
+ const page=read('404.html');
+ const {isAllowlistedPublicPath,planPublicFiles}=await import('../tools/publication-guard.mjs');
+ assert.ok(isAllowlistedPublicPath('404.html'));
+ assert.ok(planPublicFiles().includes('404.html'));
+ assert.match(page,/<aside class="fa-shell-sidebar"/);
+ assert.match(page,/<header class="fa-shell-topbar"/);
+ assert.deepEqual([...page.matchAll(/<main\b[\s\S]*?<\/main>/g)].flatMap(m=>[...m[0].matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(a=>a[1])),['/dashboard']);
+ for(const lang of ['en','de','es','fr','it'])assert.ok(page.includes('data-fa404-locale="'+lang+'"'));
+ assert.ok(page.includes('football-architect:language'));
+ assert.doesNotMatch(page.match(/<main\b[\s\S]*?<\/main>/)?.[0]??'',/<select\b|<button\b|data-theme-choice=|fa404-hint|Check the address/i);
+ const server=createPreviewServer({devPreview:false});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=(path,method='GET',accept='text/html')=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,method,
+   headers:{host:'127.0.0.1:2000',accept}},res=>{
+   const parts=[];res.on('data',part=>parts.push(part));
+   res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,body:Buffer.concat(parts).toString()}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  for(const path of ['/a-missing-page','/a-missing-page?lang=it',
+    '/clubs/it/41/overview','/missing-competition-page','/404.html']){
+   const result=await get(path);
+   assert.equal(result.status,404,path);
+   assert.match(result.headers['content-type'],/^text\/html;/,path);
+   assert.match(result.body,/href="\/dashboard"/,path);
+   assert.equal([...result.body.match(/<main\b[\s\S]*?<\/main>/)?.[0]?.matchAll(/<a\b[^>]*href="([^"]+)"/g)??[]].length,1);
+   assert.match(result.body,/<aside class="fa-shell-sidebar"/);
+   assert.match(result.body,/<header class="fa-shell-topbar"/);
+   assert.equal(result.headers.location,undefined,'no automatic redirect');
+  }
+  const head=await get('/a-missing-page','HEAD');
+  assert.equal(head.status,404);assert.equal(head.body,'');
+  const asset=await get('/assets/missing.js','GET','*/*');
+  assert.equal(asset.status,404);assert.match(asset.headers['content-type'],/^text\/plain/);
+  assert.doesNotMatch(asset.body,/<html/);
+  const json=await get('/a-missing-page','GET','application/json');
+  assert.equal(json.status,404);assert.match(json.headers['content-type'],/^text\/plain/);
+  const unsafe=await get('/assets/a%2fb');
+  assert.equal(unsafe.status,403);assert.doesNotMatch(unsafe.body,/Page not found/);
+  const method=await get('/a-missing-page','POST');
+  assert.equal(method.status,405);assert.doesNotMatch(method.body,/Page not found/);
+  assert.equal((await get('/dashboard')).status,200);
+ }finally{await new Promise(resolve=>server.close(resolve))}
+});
+
+test('404 and Dashboard use the same local DEV sidebar additions and link rewriting',async()=>{
+ const server=createPreviewServer({devPreview:true,subdomains:true});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=path=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,
+   headers:{host:'app.localhost:2000',accept:'text/html'}},res=>{
+    const parts=[];res.on('data',part=>parts.push(part));
+    res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  const dashboard=await get('/dashboard'),missing=await get('/missing-sidebar-example');
+  assert.equal(dashboard.status,200);assert.equal(missing.status,404);
+  for(const response of [dashboard,missing]){
+   assert.match(response.body,/data-me-dev-link/,'DEV section should be present');
+   assert.match(response.body,/data-fa-dev-app-origin|faDevAppOrigin/,'subdomain origin bootstrap');
+   assert.match(response.body,/href="http:\/\/app\.localhost:2000\/dashboard"/);
+   assert.match(response.body,/href="http:\/\/localhost:2000\/guide"/);
+  }
+  const aside=body=>body.match(/<aside\b[\s\S]*?<\/aside>/)?.[0]??'';
+  const hrefs=body=>[...aside(body).matchAll(/\bhref="([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(hrefs(missing.body),hrefs(dashboard.body),'404 and Dashboard navigation links must agree');
+  assert.doesNotMatch(aside(missing.body),/id="app-nav-dashboard"[^>]*aria-current="page"/);
+ }finally{await new Promise(resolve=>server.close(resolve))}
+});

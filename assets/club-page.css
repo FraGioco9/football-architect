@@ -294,9 +294,9 @@ body.app-body{--app-page-pad-top:8px}
 
 /* QA-16 V04: flat, calm competition rows; one row per verified participation.
    The anonymous first-paint row uses this exact same structure and geometry.
-   Center the crest/name, Status and Next match vertically in each row.
-   Longer fixture names may increase row height without clipping or shifting
-   either column horizontally. Debug ON/OFF share this same geometry.
+   Center the crest/name in each row; keep Status and Next match top-aligned
+   within their shared summary so labels and the fixture's first line stay
+   fixed from first paint through hydration, even for longer fixture names. Debug ON/OFF share this same geometry.
    A named container keeps the summary on the right whenever its panel fits. */
 .club-overview-layout>.club-competition{container:club-competition-panel / inline-size}
 .club-competition-list{display:flex;flex-direction:column;gap:0;margin-top:8px}
@@ -325,15 +325,15 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition-list .club-competition-summary{
  grid-column:2;grid-row:1;display:grid;
  grid-template-columns:minmax(205px,220px) minmax(0,1fr);
- grid-template-rows:auto;align-items:center;gap:clamp(12px,1.8vw,24px);
+ grid-template-rows:auto;align-items:stretch;gap:clamp(12px,1.8vw,24px);
  width:100%;max-width:580px;margin:0;padding:0;
- border:0;justify-self:end;align-self:center;min-height:44px;
+ border:0;justify-self:end;align-self:stretch;min-height:80px;
 }
 .club-competition-list .club-competition-metrics,
 .club-competition-list .club-competition-metrics>div,
 .club-competition-list .club-competition-next{
- display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
- align-self:center;grid-column:auto;grid-row:auto;gap:4px;
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+ align-self:stretch;grid-column:auto;grid-row:auto;gap:4px;
  width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:0;border:0;
 }
 .club-competition-list .club-competition-metrics dt,
@@ -346,8 +346,8 @@ body.app-body{--app-page-pad-top:8px}
 }
 .club-competition-list .club-competition-next-content{
  display:flex;flex-direction:column;align-items:flex-start;
- grid-row:auto;gap:3px;max-height:none;min-height:0;overflow:visible;
- align-self:flex-start;font-size:14px;line-height:1.35;
+ grid-row:auto;gap:3px;max-height:none;min-height:59px;overflow:visible;
+ align-self:flex-start;justify-content:flex-start;font-size:14px;line-height:1.35;
 }
 .club-competition-list .club-competition-next-content>a.app-link,
 .club-competition-list .club-competition-next-empty{
@@ -356,7 +356,7 @@ body.app-body{--app-page-pad-top:8px}
 /* Long team names wrap in full; never ellipsize the fixture identity. */
 .club-competition-list .club-competition-next-content>a.app-link{display:block;width:100%;max-width:100%}
 .club-competition-list .club-competition-match-name{display:block;white-space:normal;overflow:visible;overflow-wrap:anywhere;-webkit-line-clamp:unset}
-.club-competition-list .club-competition-metrics>div{gap:5px}
+.club-competition-list .club-competition-metrics>div{gap:4px}
 .club-competition-list .club-competition-next small{font-size:12px;line-height:1.25}
 @container club-competition-panel (max-width:800px){
  .club-competition-list .club-competition-entry{
@@ -393,9 +393,9 @@ body.app-body{--app-page-pad-top:8px}
 .club-fp-competition .club-fp-competition-position{inline-size:55px}
 .club-fp-competition .club-fp-competition-fixture{inline-size:132px}
 .club-fp-competition .club-fp-competition-round{inline-size:64px;block-size:10px}
-/* Only the anonymous first-paint slot reserves a two-line fixture height.
-   Hydrated data centers its visible text without invisible trailing space. */
-.club-fp-competition .club-competition-next-content{min-block-size:59px;justify-content:center}
+/* First paint and hydrated rows reserve the same two-line fixture slot.
+   Start-align their labels and values so Next match does not move on hydration. */
+.club-fp-competition .club-competition-next-content{min-block-size:59px;justify-content:flex-start}
 .club-first-paint-panel .club-fp-competition .club-competition-next-content>.club-fp-bar+.club-fp-bar{margin-top:3px}
 @media(prefers-reduced-motion:reduce){.club-fp-competition .club-fp-competition-logo{animation:none}}
 
