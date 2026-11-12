@@ -124,7 +124,7 @@ test('ROUTING-08: localized 404 is a real HTTP error, with one Dashboard link an
  const {isAllowlistedPublicPath,planPublicFiles}=await import('../tools/publication-guard.mjs');
  assert.ok(isAllowlistedPublicPath('404.html'));
  assert.ok(planPublicFiles().includes('404.html'));
- assert.deepEqual([...page.matchAll(/<a\\b[^>]*href="([^"]+)"/g)].map(m=>m[1]),['/dashboard']);
+ assert.deepEqual([...page.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(m=>m[1]),['/dashboard']);
  for(const lang of ['en','de','es','fr','it'])assert.ok(page.includes('data-fa404-locale="'+lang+'"'));
  assert.ok(page.includes('football-architect:language'));
  const server=createPreviewServer({devPreview:false});
@@ -143,7 +143,7 @@ test('ROUTING-08: localized 404 is a real HTTP error, with one Dashboard link an
    assert.equal(result.status,404,path);
    assert.match(result.headers['content-type'],/^text\/html;/,path);
    assert.match(result.body,/href="\/dashboard"/,path);
-   assert.equal([...result.body.matchAll(/<a\\b[^>]*href="([^"]+)"/g)].length,1);
+   assert.equal([...result.body.matchAll(/<a\b[^>]*href="([^"]+)"/g)].length,1);
    assert.equal(result.headers.location,undefined,'no automatic redirect');
   }
   const head=await get('/a-missing-page','HEAD');
