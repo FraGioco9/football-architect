@@ -154,8 +154,17 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const firstExplicit=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
  expect(firstExplicit.status).toBe(200);
  expect((await firstExplicit.json() as any).players).toHaveLength(50);
- // Only one positive page query parameter is allowed; all others return 422.
- for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
+ const matched=await worker.fetch(new Request(origin+'/api/players?position=ST&nationality=ITA&ageMin=0&ageMax=120'),service);
+ expect(matched.status).toBe(200);
+ expect(await matched.json()).toMatchObject({count:51,page:1,pageSize:50,totalPages:2});
+ const missed=await worker.fetch(new Request(origin+'/api/players?nationality=ENG&position=GK'),service);
+ expect(missed.status).toBe(200);
+ expect(await missed.json()).toMatchObject({count:0,page:1,totalPages:1,players:[]});
+ const overflow=await worker.fetch(new Request(origin+'/api/players?page=3&nationality=ITA&position=ST'),service);
+ expect(overflow.status).toBe(200);
+ expect(await overflow.json()).toMatchObject({count:51,page:3,totalPages:2,players:[]});
+ // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
+ for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
   expect(invalid.status,invalidQuery).toBe(422);
   expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
