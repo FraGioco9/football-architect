@@ -120,11 +120,35 @@ function isMissingDocumentRequest(req,raw){
   const accept=req.headers.accept||'';
   return !accept||accept.includes('text/html')||accept.includes('*/*');
 }
-async function respondMissingDocument(req,res,root,raw){
+// Apply exactly the same local link/navigation decoration to regular pages
+// and to missing HTML documents. Keep the public HTML source unchanged.
+function rewriteLocalAppShellLinks(body,enabled){
+  if(!enabled)return body;
+  const appOrigin="http://app.localhost:2000",siteOrigin="http://localhost:2000";
+  const config='<script>document.documentElement.dataset.faDevAppOrigin="'+appOrigin+
+    '";document.documentElement.dataset.faDevSiteOrigin="'+siteOrigin+'"</script>';
+  return Buffer.from(body.toString("utf8").replace("</head>",config+"\n</head>")
+    .replace(/(\bhref=")([^"#]+)(")/g,(all,prefix,href,quote)=>{
+      if(/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs)(?:[/?#]|$)/.test(href))
+        return prefix+appOrigin+href+quote;
+      if(href==="/"||/^\/guide(?:[/?#]|$)/.test(href))
+        return prefix+siteOrigin+(href==="/"? "":href)+quote;
+      return all;
+    }),"utf8");
+}
+function insertLocalDevelopmentSidebar(body,enabled){
+  return enabled&&body.includes('<nav class="fa-shell-nav"')
+    ?Buffer.from(addDevelopmentToAppHtml(body.toString('utf8')),'utf8')
+    :body;
+}
+async function respondMissingDocument(req,res,root,raw,context){
   if(!isMissingDocumentRequest(req,raw))return reject(res,404);
   try {
     if(!isAllowlistedPublicPath('404.html'))return reject(res,404);
-    const html=await safeFile(root,'404.html');
+    let html=await safeFile(root,'404.html');
+    html=rewriteLocalAppShellLinks(html,(context.devPreview||context.sharedBackend)&&context.subdomains);
+    html=insertLocalDevelopmentSidebar(html,context.devPreview&&context.subdomains&&
+      isLoopback(context.remote)&&req.headers.host==='app.localhost:2000');
     res.writeHead(404,{'Content-Type':'text/html; charset=utf-8',
       'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow',
       'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff',
@@ -261,7 +285,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         res.writeHead(308,{"Location":viewSlash.canonical+query,"Cache-Control":"no-store"});
         res.end();return;
       }
-      if(raw==='/404.html')return respondMissingDocument(req,res,root,raw);
+      if(raw==='/404.html')return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
       const virtual = VIRTUAL[raw];
       let body, type;
       if (virtual) {
@@ -271,10 +295,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       } else {
         const appHost = subdomains && req.headers.host === "app.localhost:2000";
         const file = publicRequestFile(appHost && (raw === "/" || raw === "/index.html") ? "/dashboard" : raw);
-        if (!isAllowlistedPublicPath(file)) return respondMissingDocument(req,res,root,raw);
+        if (!isAllowlistedPublicPath(file)) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         body = await safeFile(root, file);
         type = TYPES[extname(file)];
-        if (!type) return respondMissingDocument(req,res,root,raw);
+        if (!type) return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
@@ -297,19 +321,8 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           body = Buffer.from(seasonHtml.replace("</head>", DEBUG_FIRST_PAINT + (file === "calendar/index.html" ? DEBUG_SEASON_BOOTSTRAP : "") + INJECT + "\n</head>"), "utf8");
         }
       }
-      if ((devPreview || sharedBackend) && subdomains && type === TYPES[".html"]) {
-        const appOrigin = "http://app.localhost:2000", siteOrigin = "http://localhost:2000";
-        const config = '<script>document.documentElement.dataset.faDevAppOrigin="' + appOrigin +
-          '";document.documentElement.dataset.faDevSiteOrigin="' + siteOrigin + '"</script>';
-        body = Buffer.from(body.toString("utf8").replace("</head>", config + "\n</head>")
-          .replace(/(\bhref=")([^"#]+)(")/g, (all, prefix, href, quote) => {
-            if (/^\/(?:account|dashboard|calendar|settings|admin|competitions|players|clubs)(?:[/?#]|$)/.test(href))
-              return prefix + appOrigin + href + quote;
-            if (href === "/" || /^\/guide(?:[/?#]|$)/.test(href))
-              return prefix + siteOrigin + (href === "/" ? "" : href) + quote;
-            return all;
-          }), "utf8");
-      }
+      if(type===TYPES[".html"])
+        body=rewriteLocalAppShellLinks(body,(devPreview||sharedBackend)&&subdomains);
       // Server-render only a *verified* canonical season into the first HTML
       // paint. Links retain their own valid earlier season, future URLs are
       // clamped, and plain /standings starts directly at the public latest.
@@ -347,12 +360,10 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
       if(devPreview && type === TYPES[".html"]) body=Buffer.from(body.toString("utf8").replace("</head>",DEBUG_MODE_BOOTSTRAP+'\n</head>'),"utf8");
-      // Add the DEV-only entry to the existing generated navigation, without changing
-      // any other sidebar group or the underlying public/generated HTML.
-      if (devPreview && subdomains && isLoopback(remote) &&
-          req.headers.host === 'app.localhost:2000' && type === TYPES[".html"] &&
-          body.includes('<nav class="fa-shell-nav"'))
-        body = Buffer.from(addDevelopmentToAppHtml(body.toString('utf8')), 'utf8');
+      // Keep local Development navigation identical to the 404 document.
+      if(type===TYPES[".html"])
+        body=insertLocalDevelopmentSidebar(body,devPreview&&subdomains&&
+          isLoopback(remote)&&req.headers.host==='app.localhost:2000');
       res.writeHead(200, {
         "Content-Type": type,
         "Cache-Control": raw === "/favicon.ico" || raw === "/favicon.svg" ? "public, max-age=86400" : "no-store",
@@ -362,7 +373,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
       res.end(req.method === "HEAD" ? undefined : body);
     } catch {
       const raw=req.url?.split('?')[0]??'';
-      if(isMissingDocumentRequest(req,raw))return respondMissingDocument(req,res,root,raw);
+      if(isMissingDocumentRequest(req,raw))return respondMissingDocument(req,res,root,raw,{devPreview,sharedBackend,subdomains,remote:req.socket.remoteAddress});
       reject(res); // Fail closed: never serve a partial or unchecked artifact.
     }
   });

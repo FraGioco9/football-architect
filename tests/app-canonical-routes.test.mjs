@@ -123,3 +123,29 @@ test('404: localized error is a real HTTP error, with one Dashboard link and no 
   assert.equal((await get('/dashboard')).status,200);
  }finally{await new Promise(resolve=>server.close(resolve))}
 });
+
+test('404 and Dashboard use the same local DEV sidebar additions and link rewriting',async()=>{
+ const server=createPreviewServer({devPreview:true,subdomains:true});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const get=path=>new Promise((resolve,reject)=>{
+  const req=request({host:'127.0.0.1',port:server.address().port,path,
+   headers:{host:'app.localhost:2000',accept:'text/html'}},res=>{
+    const parts=[];res.on('data',part=>parts.push(part));
+    res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));
+  });req.on('error',reject);req.end();
+ });
+ try{
+  const dashboard=await get('/dashboard'),missing=await get('/missing-sidebar-example');
+  assert.equal(dashboard.status,200);assert.equal(missing.status,404);
+  for(const response of [dashboard,missing]){
+   assert.match(response.body,/data-me-dev-link/,'DEV section should be present');
+   assert.match(response.body,/data-fa-dev-app-origin|faDevAppOrigin/,'subdomain origin bootstrap');
+   assert.match(response.body,/href="http:\/\/app\.localhost:2000\/dashboard"/);
+   assert.match(response.body,/href="http:\/\/localhost:2000\/guide"/);
+  }
+  const aside=body=>body.match(/<aside\b[\s\S]*?<\/aside>/)?.[0]??'';
+  const hrefs=body=>[...aside(body).matchAll(/\bhref="([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(hrefs(missing.body),hrefs(dashboard.body),'404 and Dashboard navigation links must agree');
+  assert.doesNotMatch(aside(missing.body),/id="app-nav-dashboard"[^>]*aria-current="page"/);
+ }finally{await new Promise(resolve=>server.close(resolve))}
+});

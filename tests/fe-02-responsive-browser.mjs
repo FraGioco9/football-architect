@@ -299,6 +299,7 @@ try{
     const area=main.getBoundingClientRect();
     const top=Math.min(...parts.map(rect=>rect.top)),bottom=Math.max(...parts.map(rect=>rect.bottom));
     return {locale:document.documentElement.lang,theme:document.documentElement.dataset.theme,
+      selected:[...document.querySelectorAll('.fa-shell-nav a[aria-current="page"]')].map(el=>el.id),
       shell:!!document.querySelector('.fa-shell-sidebar')&&!!document.querySelector('.fa-shell-topbar')&&!!document.querySelector('.app-footer'),
       links:[...main.querySelectorAll('a[href]')].map(el=>el.getAttribute('href')),
       x:parts.map(rect=>Math.abs(rect.left+rect.width/2-(area.left+area.width/2))),
@@ -310,7 +311,8 @@ try{
    assert.equal(result.locale,sample.locale);
    assert.equal(result.theme,sample.theme);
    assert.equal(result.shell,true);
-   assert.deepEqual(result.links,['/dashboard']);
+   assert.deepEqual(result.links.map(href=>new URL(href,page.url()).pathname),['/dashboard']);
+   assert.deepEqual(result.selected,[],'404 must not activate Dashboard in sidebar');
    assert.ok(result.x.every(offset=>offset<5),'404 horizontal centering '+sample.width);
    if(result.fits)assert.ok(result.y<5,'404 vertical centering '+sample.width);
    assert.ok(result.overflow<=2,'404 horizontal overflow '+sample.width);
