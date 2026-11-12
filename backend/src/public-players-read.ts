@@ -68,13 +68,30 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  if(filters.foot!==undefined){
   predicates.push("json_extract(payload_json,'$.preferred_foot')=?");values.push(filters.foot);
  }
+ // The ORDER BY expression is chosen exclusively from fixed, server-approved SQL.
+ const sortSql=new Map<string,string>([
+  ['nationality',"json_extract(payload_json,'$.nationality')"],
+  ['name',"COALESCE(json_extract(payload_json,'$.display_name'),json_extract(payload_json,'$.first_name')||' '||json_extract(payload_json,'$.last_name'))"],
+  ['age',"json_extract(payload_json,'$.age')"],
+  ['positions',"json_extract(payload_json,'$.primary_position')"],
+  ['height',"json_extract(payload_json,'$.height_cm')"],
+  ['foot',"json_extract(payload_json,'$.preferred_foot')"],
+  ...[...FILTER_ATTRIBUTE_KEYS].map(key=>[key,"json_extract(payload_json,'$.attributes."+key+"')"] as [string,string])
+ ]);
+ if(filters.order!==undefined&&!filters.sort)throw new ApiError(422,'invalid_public_request');
+ if(filters.sort!==undefined&&!sortSql.has(filters.sort))throw new ApiError(422,'invalid_public_request');
+ if(filters.order!==undefined&&filters.order!=='asc'&&filters.order!=='desc')throw new ApiError(422,'invalid_public_request');
+ const sortExpression=filters.sort?sortSql.get(filters.sort)!:null;
+ const orderBy=sortExpression
+  ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
+  :'created_at DESC,id ASC';
  const where=predicates.join(' AND ');
  const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE '+where)
   .bind(...values).first<{n:number}>();
  const count=countRow?.n??0;
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
  const rows=page<=totalPages
-  ?(await db.prepare('SELECT id,payload_json FROM generated_players WHERE '+where+' ORDER BY created_at DESC,id ASC LIMIT ? OFFSET ?')
+  ?(await db.prepare('SELECT id,payload_json FROM generated_players WHERE '+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
     .bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
   :[];
  const after=await readWorld(db);

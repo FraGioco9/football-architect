@@ -25,3 +25,14 @@ Automated: parser security, named/encoded search, combined attribute ranges, pri
 ## Local DEV proxy regression and loading errors
 
 The frontend uses URLSearchParams, which produces `%2C` for comma-separated nationality/position/attribute selections and percent-encoded UTF-8 names. The previous loopback proxy guard rejected *all* percent escapes before forwarding, resulting in HTTP 403 and the generic "Unable to load players" message. The guard now permits encoded URLs **only when the entire /api/players path passes the existing strict query parser**, leaving other encoded/unsafe routes blocked. The change is tested with positive canonical and negative encoded inputs. This corrects a confirmed loading failure in local DEV; if the shared remote Preview Worker is older than the branch, it must still be updated separately before it can serve new filter keys. No remote deployment was performed.
+
+
+## Sortable table and initial skeleton refinement (2026-11-12)
+
+All column headings are buttons with visible up/down indicators, focus rings and `aria-sort`. Supported sort keys are `nationality`, `name`, `age`, `positions` (primary position), `height`, `foot`, and the 20 allowlisted public attribute names. `order` may be `asc` or `desc` only when `sort` is supplied. New sorts default ascending for text, descending for numbers; clicking the same heading toggles direction. Changing the sort returns to page 1 and stores `sort`/`order` in the URL, so history restores both. An out-of-view sort is discarded when switching view or attribute group. The allowlisted Worker SQL ORDER BY applies before `LIMIT 50 OFFSET`, with stable `id ASC` ties and unchanged default `created_at DESC,id ASC`. COUNT and projection remain unchanged.
+
+Both HTML first paint and dynamic requests render exactly **five** layout-stable skeleton rows, with opacity of their individual bars decreasing from first to fifth. Row geometry and cell count match the selected table view and skill group; no visible “Loading players” message remains. A screen-reader-only live loading status stays in the initial HTML. Bars are static rather than pulsing, including for reduced-motion users. No changes to table widths or sidebar layout.
+
+The native name-search clear X on Blink/WebKit uses `cursor:pointer`.
+
+**Suggested drawer visual simplification (not implemented without owner design approval):** replace the nested outlined section panels with subtle separators, place Age and Height alongside each other on sufficiently wide screens, keep Name always visible and replace the four outlined Attributes subgroup panels with a compact segmented category picker. Preserve matching semantics, Apply batching, accessibility, scrollbar gutter and the section collapse affordance.

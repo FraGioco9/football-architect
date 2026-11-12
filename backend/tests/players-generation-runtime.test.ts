@@ -164,7 +164,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  expect(overflow.status).toBe(200);
  expect(await overflow.json()).toMatchObject({count:51,page:3,totalPages:2,players:[]});
  // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
- for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
+ for(const invalidQuery of ['?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
   expect(invalid.status,invalidQuery).toBe(422);
   expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
@@ -270,5 +270,38 @@ it('public name substring and multiple attribute ranges filter the active genera
   const resp=await get(invalid);
   expect(resp.status,invalid).toBe(422);
   expect(resp.data).toMatchObject({error:{code:'invalid_public_request'}});
+ }
+});
+
+
+it('sorting all generated Players is stable across pages, not limited to the 50 visible rows',async()=>{
+ const preview=await createPreview({count:51,seed:'players-global-sort-51',primaryNationality:'ITA',primaryPosition:'ST'});
+ expect((await request('/commit',{draftId:preview.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ const first=await db.prepare('SELECT MIN(id) AS id FROM generated_players').first<{id:number}>();
+ expect(first?.id).toEqual(expect.any(Number));
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',22,'$.attributes.passing',1,'$.display_name','AAA Sortprobe')").run();
+ await db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.age',80,'$.attributes.passing',99,'$.display_name','ZZZ Sortprobe') WHERE id=?")
+  .bind(first!.id).run();
+ const get=async(query:string)=>{
+  const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
+  return {status:response.status,data:await response.json() as any};
+ };
+ const maxAge=await get('?sort=age&order=desc&page=1');
+ expect(maxAge).toMatchObject({status:200,data:{count:51,totalPages:2,page:1}});
+ expect(maxAge.data.players[0].id).toBe(first!.id);
+ const ascendingLast=await get('?sort=age&order=asc&page=2');
+ expect(ascendingLast).toMatchObject({status:200,data:{count:51,totalPages:2,page:2}});
+ expect(ascendingLast.data.players).toHaveLength(1);
+ expect(ascendingLast.data.players[0].id).toBe(first!.id);
+ const passing=await get('?sort=passing&order=desc');
+ expect(passing).toMatchObject({status:200,data:{count:51,totalPages:2}});
+ expect(passing.data.players[0].id).toBe(first!.id);
+ const names=await get('?sort=name&order=desc');
+ expect(names).toMatchObject({status:200,data:{count:51,totalPages:2}});
+ expect(names.data.players[0].id).toBe(first!.id);
+ for(const invalid of ['?order=asc','?sort=age&order=up','?sort=unknown','?sort=passing%20','?sort=name&sort=age']){
+  const response=await get(invalid);
+  expect(response.status,invalid).toBe(422);
+  expect(response.data).toMatchObject({error:{code:'invalid_public_request'}});
  }
 });

@@ -358,7 +358,7 @@ test('Players collection uses a validated page query, without changing the publi
  assert.ok(!server.includes('playersPage=url.pathname.match'),'old page path should not be routed');
  assert.ok(client.includes("fetch('/api/players?'+query.toString()"));
  assert.ok(!client.includes("fetch('/api/players/page/'+page"));
- for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=name','?view=overview']){
+ for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview']){
   assert.ok(integration.includes(path),'missing integration case '+path);
  }
  assert.ok(integration.includes('expect(legacy.status).toBe(404)'));
@@ -482,7 +482,8 @@ test('Players SQL count/page share identical secondary and multiple filters with
  assert.match(sql,/const where=predicates\.join\(' AND '\)/);
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players WHERE/);
  assert.match(sql,/SELECT id,payload_json FROM generated_players WHERE/);
- assert.match(sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
+ assert.match(sql,/'created_at DESC,id ASC'/);
+ assert.match(sql,/ORDER BY '\+orderBy\+' LIMIT \? OFFSET \?'/);
  assert.match(sql,/json_extract\(payload_json,'\$\.height_cm'\)>=\?/);
  assert.match(types,/nationality\?:string\[\]/);
  assert.match(types,/positionScope\?:'any'/);
@@ -588,4 +589,56 @@ test('Players Apply ignores blank ranges, unchecks empty attributes, and never r
  assert.equal(state.filters.heightMin,'170');
  assert.equal(state.filters.heightMax,'');
  assert.equal(loads,3,'one-sided height works');
+});
+
+
+test('Players renders five cell-aligned skeleton rows on first paint with progressively lower opacity',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
+ const tbody=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
+ assert.equal((tbody.match(/class="app-players-skeleton-row"/g)||[]).length,5);
+ assert.equal((tbody.match(/class="app-players-skeleton-bar"/g)||[]).length,30);
+ assert.match(tbody,/class="sr-only" data-players-status role="status"/,'text remains only for screen readers');
+ assert.doesNotMatch(tbody,/class="app-players-empty-row"/,'no visible loading message');
+ assert.match(css,/\.app-players-table \.app-players-skeleton-row td\{height:40px/);
+ for(const value of ['.9','.78','.66','.54','.42'])assert.ok(css.includes('--players-skeleton-opacity:'+value),value);
+ assert.match(js,/function showSkeleton\(\)/);
+ assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
+ assert.match(js,/scroll\.setAttribute\('aria-busy','true'\);renderHead\(\);showSkeleton\(\)/);
+ assert.match(js,/if\(status==='loading'\)showSkeleton\(\);else message/);
+ const fp=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.match(fp,/if\(skeleton\.classList\?\.contains\('app-players-skeleton-row'\)\)/);
+ assert.match(fp,/for\(const key of keys\)\{const td=document\.createElement\('td'\)/);
+ assert.doesNotMatch(js,/message\(locale\(\)\.loading\)/);
+});
+test('Players column buttons provide persistent URL ordering on complete server-side datasets',async()=>{
+ const html=read('players/index.html'),js=read('assets/players-directory.js'),css=read('assets/app.css'),sql=read('backend/src/public-players-read.ts');
+ const parser=await import('../backend/src/public-players-filters.mjs');
+ for(const key of ['nationality','name','age','positions','height','foot']){
+  assert.match(html,new RegExp('data-players-sort="'+key+'"'));
+  assert.deepEqual(parser.parsePublicPlayerQuery('?sort='+key+'&order=asc').filters,{sort:key,order:'asc'});
+ }
+ for(const key of ['passing','vision','speed','gk_reflexes']){
+  assert.deepEqual(parser.parsePublicPlayerQuery('?sort='+key+'&order=desc').filters,{sort:key,order:'desc'});
+ }
+ for(const bad of ['?order=asc','?sort=unknown','?sort=name&order=up','?sort=name&sort=age']){
+  assert.throws(()=>parser.parsePublicPlayerQuery(bad),{name:'TypeError'},bad);
+ }
+ assert.match(css,/\.app-players-sort-button\{display:inline-flex;[^}]*cursor:pointer/);
+ assert.match(css,/\.app-players-sort-button:focus-visible/);
+ assert.match(js,/table\.tHead\.addEventListener\('click',event=>/);
+ assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/);
+ assert.match(js,/if\(state\.sort\)\{query\.set\('sort',state\.sort\);query\.set\('order',state\.order\);\}/);
+ assert.match(js,/next\.sort!==state\.sort\|\|next\.order!==state\.order/);
+ assert.match(sql,/const sortSql=new Map<string,string>/);
+ assert.match(sql,/const orderBy=sortExpression/);
+ assert.match(sql,/id ASC'/,'deterministic secondary sorting');
+ assert.match(sql,/ORDER BY '\+orderBy\+' LIMIT \? OFFSET \?/);
+ assert.doesNotMatch(sql,/ORDER BY \?\s+LIMIT/);
+ const firstPaint=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
+ assert.match(firstPaint,/th\.setAttribute\('aria-sort',active\?/);
+});
+test('Players search clear X uses a pointer cursor on supported WebKit/Blink browsers',()=>{
+ const html=read('players/index.html'),css=read('assets/app.css');
+ assert.match(html,/data-players-filter="name" maxlength="80"/);
+ assert.match(css,/\.app-players-name-control input::-webkit-search-cancel-button\{cursor:pointer\}/);
 });

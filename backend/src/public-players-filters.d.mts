@@ -1,6 +1,8 @@
 /** Public read-only Players query contract shared with the DEV bridge. */
 export interface PublicPlayerAttributeRange {key:string;min?:number;max?:number}
 export interface PublicPlayerFilters {
+ sort?:string;
+ order?:'asc'|'desc';
  name?:string;
  attributes?:PublicPlayerAttributeRange[];
  nationality?:string[];

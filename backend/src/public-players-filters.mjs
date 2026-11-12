@@ -2,6 +2,7 @@
 const COUNTRIES=new Set('ALG ARG AUS AUT BEL BRA CAN CHI CIV CMR COD COL CRO DEN ECU EGY ENG ESP FRA GER GRE HUN IRN ITA JPN KOR MAR MEX MLI NED NGA NOR PAN PAR POL POR RSA RUS SCO SEN SRB SUI SVK SWE TUR UKR URU USA VEN WAL'.split(' '));
 const POSITIONS=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
 const ATTRIBUTES=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
+const SORTS=new Set(['nationality','name','age','positions','height','foot',...ATTRIBUTES]);
 const nameValue=raw=>{
  let value;
  try{value=decodeURIComponent(raw.replaceAll('+',' '));}catch{throw new TypeError('invalid_public_request');}
@@ -30,6 +31,8 @@ const selected=(value,allowed)=>{
 };
 const validators=Object.freeze({
  page:value=>/^[1-9][0-9]{0,3}$/.test(value),
+ sort:value=>SORTS.has(value),
+ order:value=>value==='asc'||value==='desc',
  name:value=>{try{nameValue(value);return true}catch{return false}},
  attributes:value=>{try{attributeValue(value.replaceAll('%2C',','));return true}catch{return false}},
  nationality:value=>selected(value,COUNTRIES),
@@ -58,7 +61,8 @@ export function parsePublicPlayerQuery(raw=''){
    throw new TypeError('invalid_public_request');
   seen.add(key);values[key]=value;
  }
- if((values.nationalityScope&&!values.nationality)||(values.positionScope&&!values.position))
+ if((values.nationalityScope&&!values.nationality)||(values.positionScope&&!values.position)||
+    (values.order&&!values.sort))
   throw new TypeError('invalid_public_request');
  const ageMin=values.ageMin===undefined?undefined:Number(values.ageMin);
  const ageMax=values.ageMax===undefined?undefined:Number(values.ageMax);
@@ -68,6 +72,7 @@ export function parsePublicPlayerQuery(raw=''){
     (heightMin!==undefined&&heightMax!==undefined&&heightMin>heightMax))
   throw new TypeError('invalid_public_request');
  const filters={};
+ if(values.sort!==undefined){filters.sort=values.sort;filters.order=values.order||(['nationality','name','positions','foot'].includes(values.sort)?'asc':'desc');}
  if(values.name!==undefined)filters.name=nameValue(values.name);
  if(values.attributes!==undefined)filters.attributes=attributeValue(values.attributes);
  if(values.nationality!==undefined)filters.nationality=values.nationality.split(',');

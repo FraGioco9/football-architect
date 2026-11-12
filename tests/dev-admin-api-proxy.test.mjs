@@ -41,7 +41,7 @@ test('public sporting bridge permits only canonical GET paths and strips operato
  const target='http://127.0.0.1:'+upstream.address().port;
  const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
  try{
-  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/players/page/0','/api/players/page/1','/api/players/page/1?bad=1','/api/players/page/10000','/api/players?page=0','/api/players?page=-1','/api/players?page=01','/api/players?page=','/api/players?page=10000','/api/players?page=1&sort=name','/api/players?page=1&page=2','/api/players?view=overview','/api/players?ageMin=40&ageMax=20','/api/players?position=CF','/api/players?nationality=ZZZ','/api/players?foot=left&foot=right','/api/players?nationality=%49TA']){
+  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/players/page/0','/api/players/page/1','/api/players/page/1?bad=1','/api/players/page/10000','/api/players?page=0','/api/players?page=-1','/api/players?page=01','/api/players?page=','/api/players?page=10000','/api/players?page=1&sort=unknown','/api/players?page=1&page=2','/api/players?view=overview','/api/players?ageMin=40&ageMax=20','/api/players?position=CF','/api/players?nationality=ZZZ','/api/players?foot=left&foot=right','/api/players?nationality=%49TA']){
    const res=response();await proxyAdminApi(req(path),res,{target});assert.equal(res.status,path.includes('?')?403:404);
   }
   const denied=response();await proxyAdminApi({...req('/api/competitions/IT-1/seasons/1'),method:'POST'},denied,{target});assert.equal(denied.status,405);
@@ -219,7 +219,9 @@ test('Players pagination query is forwarded only for canonical GET pages and str
    '/api/players?page=1&position=ST%2CRW&positionScope=any',
    '/api/players?page=1&attributes=passing_70_x%2Cvision_x_90',
    '/api/players?page=1&name=Jo%C3%A3o',
-   '/api/players?page=1&name=Andrea+Rossi'
+   '/api/players?page=1&name=Andrea+Rossi',
+   '/api/players?page=1&sort=age&order=desc',
+   '/api/players?page=1&sort=passing&order=asc'
   ];
   for(const path of encoded){
    const response=await send(path);
@@ -229,7 +231,7 @@ test('Players pagination query is forwarded only for canonical GET pages and str
   assert.deepEqual(seen.slice(4).map(x=>x.url),encoded,'forward canonical escapes unchanged');
   for(const r of seen){assert.equal(r.method,'GET');assert.equal(r.cookie,undefined);assert.equal(r.origin,undefined);assert.equal(r.csrf,undefined)}
   const before=seen.length;
-  for(const path of ['/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=name','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
+  for(const path of ['/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=unknown','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
    const r=await send(path);assert.equal(r.status,403,path);
   }
   assert.equal((await send('/api/players/page/1')).status,404);

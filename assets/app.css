@@ -1559,6 +1559,28 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
+/* Server-side sort controls: no column-width changes between load and refresh. */
+.app-players-sort-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;width:100%;min-width:0;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer}
+.app-players-sort-button:hover{color:var(--focus)}
+.app-players-sort-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.app-players-sort-icon{display:inline-flex;flex:0 0 12px;align-items:center;justify-content:center;min-width:12px;font-size:12px;line-height:1;opacity:.6}
+.app-players-sort-icon::before{content:"↕"}
+.app-players-table th[aria-sort="ascending"] .app-players-sort-icon::before{content:"↑"}
+.app-players-table th[aria-sort="descending"] .app-players-sort-icon::before{content:"↓"}
+.app-players-table th[aria-sort="ascending"] .app-players-sort-icon,.app-players-table th[aria-sort="descending"] .app-players-sort-icon{opacity:1}
+.app-players-table th:nth-child(2) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button,.app-players-table[data-players-table-mode="attributes"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
+/* Five fixed-geometry placeholders, gently fading from row 1 through row 5. */
+.app-players-skeleton-row{--players-skeleton-opacity:.9;--players-skeleton-name-width:74%}
+.app-players-skeleton-row:nth-child(2){--players-skeleton-opacity:.78;--players-skeleton-name-width:60%}
+.app-players-skeleton-row:nth-child(3){--players-skeleton-opacity:.66;--players-skeleton-name-width:82%}
+.app-players-skeleton-row:nth-child(4){--players-skeleton-opacity:.54;--players-skeleton-name-width:55%}
+.app-players-skeleton-row:nth-child(5){--players-skeleton-opacity:.42;--players-skeleton-name-width:70%}
+.app-players-table .app-players-skeleton-row td{height:40px;padding-block:10px}
+.app-players-skeleton-bar{display:block;width:50%;max-width:100%;height:12px;margin-inline:auto;border-radius:3px;background:var(--muted);opacity:var(--players-skeleton-opacity);pointer-events:none}
+.app-players-skeleton-row td:first-child .app-players-skeleton-bar{width:24px;height:18px;border-radius:2px}
+.app-players-skeleton-row td:nth-child(2) .app-players-skeleton-bar{width:var(--players-skeleton-name-width);margin-left:0}
+.app-players-table:not([data-players-table-mode="attributes"]) .app-players-skeleton-row td:nth-child(4) .app-players-skeleton-bar,.app-players-table:not([data-players-table-mode="attributes"]) .app-players-skeleton-row td:nth-child(6) .app-players-skeleton-bar,.app-players-table[data-players-table-mode="attributes"] .app-players-skeleton-row td:nth-child(3) .app-players-skeleton-bar{margin-left:0}
+
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
@@ -1667,6 +1689,8 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-name-control{padding:3px 2px 6px}
 .app-players-name-control input{width:100%;height:44px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);padding:10px 12px;font-size:14px}
 .app-players-name-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* Native search-field clear X remains a direct pointer target on Chrome and Safari. */
+.app-players-name-control input::-webkit-search-cancel-button{cursor:pointer}
 .app-players-filter-control:has(.app-players-filter-multi)>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .app-players-attribute-categories{gap:9px}
 .app-players-attribute-category{min-width:0;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface)}

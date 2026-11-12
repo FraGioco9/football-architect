@@ -265,20 +265,20 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
               <colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"></colgroup>
               <thead>
                 <tr>
-                  <th scope="col" class="app-players-flag-col"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span></th>
-                  <th scope="col" data-app-i18n="playersColumnPlayer">Player</th>
-                  <th scope="col" data-app-i18n="playersColumnAge">Age</th>
-                  <th scope="col" data-app-i18n="playersColumnPositions">Positions</th>
-                  <th scope="col" data-app-i18n="playersColumnHeight">Height</th>
-                  <th scope="col" data-app-i18n="playersColumnFoot">Foot</th>
+                  <th scope="col" class="app-players-flag-col"><button type="button" class="app-players-sort-button" data-players-sort="nationality" aria-label="Sort by Nationality"><span class="sr-only" data-app-i18n="playersNationality">Nationality</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="name" aria-label="Sort by Player"><span data-app-i18n="playersColumnPlayer">Player</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="age" aria-label="Sort by Age"><span data-app-i18n="playersColumnAge">Age</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="positions" aria-label="Sort by Positions"><span data-app-i18n="playersColumnPositions">Positions</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="height" aria-label="Sort by Height"><span data-app-i18n="playersColumnHeight">Height</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
+                  <th scope="col"><button type="button" class="app-players-sort-button" data-players-sort="foot" aria-label="Sort by Foot"><span data-app-i18n="playersColumnFoot">Foot</span><span class="app-players-sort-icon" aria-hidden="true"></span></button></th>
                 </tr>
               </thead>
               <tbody>
-                <tr class="app-players-empty-row">
-                  <td colspan="6">
-                    <strong data-players-status role="status" aria-live="polite">Loading players…</strong>
-                  </td>
-                </tr>
+                <tr class="app-players-skeleton-row" aria-hidden="false"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span><span class="sr-only" data-players-status role="status" aria-live="polite">Loading players…</span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
+                <tr class="app-players-skeleton-row" aria-hidden="true"><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td><td><span class="app-players-skeleton-bar" aria-hidden="true"></span></td></tr>
               </tbody>
             </table>
           </div>
@@ -286,6 +286,10 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
            const params=new URLSearchParams(location.search),view=params.get('view')==='attributes'?'attributes':'overview';
            const groups={technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']};
            const group=Object.hasOwn(groups,params.get('group'))?params.get('group'):'technical';
+           const possibleSorts=new Set(['nationality','name','age','positions','height','foot',...groups[group]]);
+           const requestedSort=params.get('sort')||'';
+           const sort=requestedSort&&possibleSorts.has(requestedSort)&&(view==='attributes'?['nationality','name','positions',...groups[group]].includes(requestedSort):['nationality','name','age','positions','height','foot'].includes(requestedSort))?requestedSort:'';
+           const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):['nationality','name','positions','foot'].includes(sort)?'asc':'desc';
            document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
            const countryCodes=new Set('ALG ARG AUS AUT BEL BRA CAN CHI CIV CMR COD COL CRO DEN ECU EGY ENG ESP FRA GER GRE HUN IRN ITA JPN KOR MAR MEX MLI NED NGA NOR PAN PAR POL POR RSA RUS SCO SEN SRB SUI SVK SWE TUR UKR URU USA VEN WAL'.split(' ')),positionCodes=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
            const numeric=(value,min,max)=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)>=min&&Number(value)<=max?value:'';
@@ -365,11 +369,25 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             const keysAll=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'],labels=(attributeNames[locale]||attributeNames.en).split('|');
             while(row.cells.length>2)row.deleteCell(2);
             const positions=document.createElement('th');positions.scope='col';
-            positions.textContent={en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'}[locale]||'Positions';
+            const addSort=(th,key,label)=>{
+             const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';button.dataset.playersSort=key;button.textContent=label;
+             const arrow=document.createElement('span');arrow.className='app-players-sort-icon';arrow.setAttribute('aria-hidden','true');button.append(arrow);th.append(button);
+            };
+            addSort(positions,'positions',{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'}[locale]||'Positions');
             row.append(positions);
-            for(const key of keys){const th=document.createElement('th');th.scope='col';th.textContent=labels[keysAll.indexOf(key)];row.append(th);}
+            for(const key of keys){const th=document.createElement('th');th.scope='col';addSort(th,key,labels[keysAll.indexOf(key)]);row.append(th);}
             table.dataset.playersTableMode='attributes';
-            table.tBodies[0].rows[0].cells[0].colSpan=keys.length+3;
+            const rows=table.tBodies[0].rows;
+            for(const skeleton of rows){
+             if(skeleton.classList?.contains('app-players-skeleton-row')){
+              while(skeleton.cells.length>3)skeleton.deleteCell(skeleton.cells.length-1);
+              for(const key of keys){const td=document.createElement('td');const bar=document.createElement('span');bar.className='app-players-skeleton-bar';bar.setAttribute('aria-hidden','true');td.append(bar);skeleton.append(td);}
+             }else skeleton.cells[0].colSpan=keys.length+3;
+            }
+           }
+           for(const button of document.querySelectorAll('.app-players-table [data-players-sort]')){
+            const th=button.closest('th'),active=sort===button.dataset.playersSort;
+            if(th)th.setAttribute('aria-sort',active?(order==='desc'?'descending':'ascending'):'none');
            }
           })();</script>
         </section>

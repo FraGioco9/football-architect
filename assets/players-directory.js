@@ -36,6 +36,12 @@
  };
  const integerValue=(value,min,max)=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)>=min&&Number(value)<=max?value:'';
  const positions=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
+ const sortableCommon=new Set(['nationality','name','positions']);
+ const sortableOverview=new Set(['nationality','name','age','positions','height','foot']);
+ const allowedSort=(view,group,sort)=>view==='attributes'
+  ?sortableCommon.has(sort)||groups[group].includes(sort)
+  :sortableOverview.has(sort);
+ const preferredOrder=key=>['name','nationality','positions','foot'].includes(key)?'asc':'desc';
  const ageValue=value=>/^(?:0|[1-9][0-9]{0,2})$/.test(value||'')&&Number(value)<=120?value:'';
  const filterLabels={
   en:{name:"Name",searchName:"Search by name…",min:"Min",max:"Max",attrRange:"Enter at least a minimum or a maximum for this attribute",badName:"Enter a valid player name",attrReverse:"Minimum attribute value cannot exceed maximum",sections:["Nationality","Positions","Age","Height","Preferred foot","Attributes"],multi:"Select multiple",picked:"selected",scopeN:"Include secondary nationality",scopeP:"Include secondary positions",search:"Search…",heightRange:"Height range",heights:["Min height (cm)","Max height (cm)"],stepMinus:"Decrease",stepPlus:"Increase",button:'Filters',active:'active',description:'Select filters and press Apply to update the list.',close:'Close filters',apply:'Apply filters',ageRange:'Age range',title:'Player filters',names:['Nationality','Position','Min age','Max age','Preferred foot'],all:'All',reset:'Reset filters',noMatches:'No matching players',range:'Minimum age cannot exceed maximum age'},
@@ -74,6 +80,9 @@
  const attributeName=key=>(attrLabels[language()]||attrLabels.en).split('|')[allAttrs.indexOf(key)]||key;
  function parseLocation(){
   const p=new URLSearchParams(location.search),rawPage=Number(p.get('page')||'1');
+  const view=p.get('view')==='attributes'?'attributes':'overview',group=Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical';
+  const sortKey=p.get('sort')||'',sort=allowedSort(view,group,sortKey)?sortKey:'';
+  const order=sort&&['asc','desc'].includes(p.get('order'))?p.get('order'):sort?preferredOrder(sort):'';
   const nationality=selectedCodes(p.get('nationality'),new Set(Object.keys(flags)));
   const position=selectedCodes(p.get('position'),positions);
   const name=p.get('name')||'';
@@ -91,8 +100,7 @@
    if(filters[lo]&&filters[hi]&&Number(filters[lo])>Number(filters[hi])){filters[lo]='';filters[hi]='';}
   }
   return {
-   view:p.get('view')==='attributes'?'attributes':'overview',
-   group:Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical',
+   view,group,sort,order,
    page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1,
    filters
   };
@@ -131,9 +139,10 @@
   function filterSignature(filters){return filterKeys.map(key=>filters?.[key]||'').join('|')}
   function syncUrl(mode='pushState'){
    const url=new URL(location.href);
-   for(const name of ['view','group','page',...filterKeys])url.searchParams.delete(name);
+   for(const name of ['view','group','page','sort','order',...filterKeys])url.searchParams.delete(name);
    url.searchParams.set('view',state.view);
    if(state.view==='attributes')url.searchParams.set('group',state.group);
+   if(state.sort){url.searchParams.set('sort',state.sort);url.searchParams.set('order',state.order);}
    for(const key of filterKeys)if(state.filters?.[key])url.searchParams.set(key,state.filters[key]);
    if(state.page>1)url.searchParams.set('page',String(state.page));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
@@ -293,12 +302,42 @@
   }
   function renderHead(){
    const t=locale(),row=document.createElement('tr');
-   const th=(value,isFlag=false)=>{const node=document.createElement('th');node.scope='col';if(isFlag){node.className='app-players-flag-col';const a=document.createElement('span');a.className='sr-only';a.textContent=t.nationality;node.append(a)}else node.textContent=value;row.append(node)};
-   th('',true);th(t.columns[0]);
-   if(state.view==='overview')for(const name of t.columns.slice(1))th(name);
-   else {th(t.columns[2]);for(const key of groups[state.group])th(attributeName(key));}
+   const addHeader=(label,key,flag=false)=>{
+    const node=document.createElement('th');node.scope='col';
+    if(flag)node.className='app-players-flag-col';
+    const button=document.createElement('button');button.type='button';button.className='app-players-sort-button';
+    button.dataset.playersSort=key;
+    const text=document.createElement('span');text.textContent=label;
+    if(flag)text.className='sr-only';
+    const arrow=document.createElement('span');arrow.className='app-players-sort-icon';arrow.setAttribute('aria-hidden','true');
+    button.append(text,arrow);node.append(button);
+    node.setAttribute('aria-sort',state.sort===key?(state.order==='desc'?'descending':'ascending'):'none');
+    row.append(node);
+   };
+   addHeader(t.nationality,'nationality',true);
+   addHeader(t.columns[0],'name');
+   if(state.view==='overview'){
+    addHeader(t.columns[1],'age');addHeader(t.columns[2],'positions');
+    addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
+   }else{
+    addHeader(t.columns[2],'positions');
+    for(const key of groups[state.group])addHeader(attributeName(key),key);
+   }
    table.tHead.replaceChildren(row);
    table.dataset.playersTableMode=state.view;
+  }
+  function showSkeleton(){
+   const fragment=document.createDocumentFragment(),columns=cols();
+   for(let n=0;n<5;n++){
+    const tr=document.createElement('tr');tr.className='app-players-skeleton-row';
+    tr.setAttribute('aria-hidden','true');
+    for(let i=0;i<columns;i++){
+     const td=document.createElement('td'),bar=document.createElement('span');
+     bar.className='app-players-skeleton-bar';bar.setAttribute('aria-hidden','true');td.append(bar);tr.append(td);
+    }
+    fragment.append(tr);
+   }
+   body.replaceChildren(fragment);pager.hidden=true;scroll.setAttribute('aria-busy','true');
   }
   function message(value){
    const tr=document.createElement('tr');tr.className='app-players-empty-row';
@@ -315,7 +354,7 @@
   function paint(data){
    renderHead();
    const t=locale();
-   if(!data){message(t[status]);return}
+   if(!data){if(status==='loading')showSkeleton();else message(t[status]);return}
    lastCount=data.count;renderCount(lastCount);
    if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
    const fragment=document.createDocumentFragment();
@@ -344,9 +383,10 @@
    const seq=++ticket;state.page=page;current=null;status='loading';
    if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));
    scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
-   scroll.setAttribute('aria-busy','true');renderHead();message(locale().loading);
+   scroll.setAttribute('aria-busy','true');renderHead();showSkeleton();
    const query=new URLSearchParams({page:String(page)});
    for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
+   if(state.sort){query.set('sort',state.sort);query.set('order',state.order);}
    try{
     const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
     if(!response.ok)throw new Error('http_'+response.status);
@@ -361,11 +401,19 @@
   }
   function changeView(view){
    if(state.view===view)return;
-   state.view=view;syncUrl();refresh();
+   state.view=view;
+   const sortCleared=!!state.sort&&!allowedSort(state.view,state.group,state.sort);
+   if(sortCleared){state.sort='';state.order='';state.page=1;}
+   syncUrl();
+   if(sortCleared)load(1);else refresh();
   }
   function changeGroup(group){
    if(state.group===group)return;
-   state.group=group;syncUrl();refresh();
+   state.group=group;
+   const sortCleared=!!state.sort&&!allowedSort(state.view,state.group,state.sort);
+   if(sortCleared){state.sort='';state.order='';state.page=1;}
+   syncUrl();
+   if(sortCleared)load(1);else refresh();
   }
   // Shared site combobox presentation (language-trigger / language-menu / language-option).
   // Keep focus on the trigger and expose the active option via aria-activedescendant.
@@ -622,15 +670,23 @@
   const tabsBar=document.querySelector('.app-players-tabs'),groupBar=document.querySelector('.app-players-groups');
   tabsBar?.addEventListener('keydown',event=>keyboardTab(event,tabs,changeView,'playersView'));
   groupBar?.addEventListener('keydown',event=>keyboardTab(event,groupTabs,changeGroup,'playersGroup'));
+  // Delegate to the table header, which is recreated on view and locale changes.
+  table.tHead.addEventListener('click',event=>{
+   const key=event.target.closest?.('[data-players-sort]')?.dataset.playersSort;
+   if(!key||!allowedSort(state.view,state.group,key))return;
+   if(state.sort===key)state.order=state.order==='asc'?'desc':'asc';
+   else{state.sort=key;state.order=preferredOrder(key);}
+   state.page=1;syncUrl();load(1);
+  });
   previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
   next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
   window.addEventListener('popstate',()=>{
    if(drawerOpen()){restoreTriggerFocus=false;finishFilterClose();}
-   const next=parseLocation(),changed=next.page!==state.page||filterSignature(next.filters)!==filterSignature(state.filters);
+   const next=parseLocation(),changed=next.page!==state.page||next.sort!==state.sort||next.order!==state.order||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
    if(changed)load(state.page);else paint(current);
   });
-  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));}})
+  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();if(status==='loading')showSkeleton();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-skeleton'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   syncControls();syncUrl('replaceState');load(state.page);
  }
