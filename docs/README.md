@@ -18,6 +18,10 @@
 | Schema, repository, transaction boundaries | [BE-03](../backend/docs-d1-repositories-be-03.md) |
 | CI/QA workflows and exact-head evidence | [CI guide](ci/README.md) |
 
+## AI development preparation
+
+[AI-AUTONOMY-01 pilot — DISABLED](ci/ai-autonomy-01.md) documents the owner-gated Codex Cloud trial and possible later offline orchestrator. [Agent instructions](../AGENTS.md) and the [non-executable policy](../.github/ai-autonomy/pilot-policy.yml) do **not** authorize or launch any task.
+
 ## Operational and environment records
 
 [Local Player setup](../backend/docs-player-local-dev.md); [opt-in shared Dev/Preview](../backend/docs-shared-nonproduction.md); [Hosted Preview preparation](../backend/docs-hosted-preview.md); [Gmail preparation](../backend/docs-gmail-preview.md); [Cloudflare environment blueprint](../backend/docs-cloudflare-auth-environments.md); [manual Vercel Preview](manual-preview.md); [owner-only Admin operations](admin-world-01-operations.md). Distinguish local loopback from shared nonproduction, and shared nonproduction from Production. Examples and planned names are not live resource evidence.
