@@ -3,6 +3,14 @@ import api,{type Env} from './index.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
+// Only eligible missing documents receive the friendly HTML; resources keep
+// the binding's own response type/status, and APIs remain in the API router.
+function eligibleMissingDocument(request:Request,url:URL,file:string){
+ const path=url.pathname;
+ if(!file.endsWith('.html')||/^\/(?:assets|api|backend|tools|tests|docs|__fa_dev__|\.git|\.github)(?:\/|$)/.test(path))return false;
+ const accept=request.headers.get('Accept')||'';
+ return !accept||accept.includes('text/html')||accept.includes('*/*');
+}
 const error=(status:number,code:string)=>new Response(JSON.stringify({error:{code}}),{status,headers:{...privateHeaders,'Content-Type':'application/json; charset=utf-8'}});
 function route(url:URL){
  const original=url.pathname;
@@ -41,6 +49,20 @@ export default {
    // Cookies, authorization, CSRF, verification tokens and caller source never
    // enter the static binding or its cache key. Bodies are streamed unchanged.
    const response=await env.ASSETS.fetch(new Request(new URL(target.file!,url.origin),{method:request.method}));
+   if((response.status===404||target.file==='/404.html'&&response.status===200)&&
+     eligibleMissingDocument(request,url,target.file!)){
+    // The fallback must itself be staged by the strict public artifact guard.
+    // Do not turn a missing asset, JSON or blocked endpoint into HTML.
+    const fallback=target.file==='/404.html'?response:
+      await env.ASSETS.fetch(new Request(new URL('/404.html',url.origin),{method:request.method}));
+    if(fallback.status===200){
+     const headers=new Headers({...privateHeaders,'Content-Type':'text/html; charset=utf-8',
+       'X-Frame-Options':'DENY'});
+     if(env.PREVIEW_SOURCE_SHA&&/^[a-f0-9]{40}$/.test(env.PREVIEW_SOURCE_SHA))
+      headers.set('X-FA-Source-SHA',env.PREVIEW_SOURCE_SHA);
+     return new Response(request.method==='HEAD'?null:fallback.body,{status:404,headers});
+    }
+   }
    const headers=new Headers(response.headers);headers.delete('Set-Cookie');
    headers.set('X-Content-Type-Options','nosniff');headers.set('X-Robots-Tag','noindex, nofollow');
    if(target.file!.endsWith('.html')||response.status!==200)for(const [key,value] of Object.entries(privateHeaders))headers.set(key,value);
