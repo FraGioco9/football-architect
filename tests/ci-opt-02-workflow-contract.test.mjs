@@ -100,3 +100,26 @@ test('pinned Playwright containers trust only exact checkout workspace for git o
  }
  assert.doesNotMatch(browserStep+adminStep,/safe\.directory '\*'/);
 });
+
+test('CI-OPT-03 does not wait for FULL evidence on narrowed Draft checks',()=>{
+ const gate=readFileSync(new URL('../.github/workflows/ci-opt-03-full-gate.yml',import.meta.url),'utf8');
+ assert.match(gate,/pull_request:\s*\n\s*types:\s*\[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
+ assert.match(gate,/workflow_dispatch:/);
+ assert.match(gate,/name: Classify FULL evidence requirement/);
+ assert.match(gate,/ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.sha \|\| inputs\.expected_head \}\}/);
+ assert.match(gate,/fetch-depth: 0/);
+ assert.match(gate,/persist-credentials: false/);
+ assert.match(gate,/git rev-parse HEAD/);
+ assert.match(gate,/node tools\/ci-opt-01-impact\.mjs >> "\$GITHUB_OUTPUT"/);
+ assert.match(gate,/admin-world-final-verification/);
+ assert.match(gate,/echo "mode=full" >> "\$GITHUB_OUTPUT"/);
+ const observer=gate.split('  full-evidence:')[1];
+ assert.ok(observer,'required FULL observer missing');
+ assert.match(observer,/needs: scope/);
+ assert.match(observer,/if: \$\{\{ needs\.scope\.outputs\.mode == 'full' \}\}/);
+ assert.match(observer,/Verify exact PR head and complete FULL workflow evidence/);
+ assert.match(observer,/run\.head_sha!==sha/);
+ assert.match(observer,/if\(rows\.every\(r=>r\.state==='PASS'\)\)/);
+ assert.match(observer,/baseSha:live\.base\.sha/);
+ assert.doesNotMatch(gate,/continue-on-error:\s*true|wrangler deploy|--remote/);
+});

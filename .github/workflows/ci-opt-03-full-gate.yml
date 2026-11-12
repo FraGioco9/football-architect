@@ -20,8 +20,41 @@ concurrency:
   group: ci-opt-03-full-evidence-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 jobs:
+  # Reuse Site/Browser/Admin's fail-closed impact classifier. Ordinary narrowed
+  # Draft checks need not start a 45-minute observer waiting for nonexistent FULL
+  # markers; a high-risk change, final review or manual verification always does.
+  scope:
+    name: Classify FULL evidence requirement
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.impact.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.expected_head }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assert exact scope source
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.expected_head }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Classify fast-safe changes
+        id: impact
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.draft }}" = "true" ] && [ "${{ contains(github.event.pull_request.body, '<!-- admin-world-final-verification -->') }}" != "true" ]; then
+            node tools/ci-opt-01-impact.mjs >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+          fi
   full-evidence:
     name: CI FULL exact-head evidence
+    needs: scope
+    if: ${{ needs.scope.outputs.mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
