@@ -130,12 +130,12 @@ try{
     assert.equal(await page.locator('[data-admin-reset]').isEnabled(),false,'Reset still requires its typed confirmation');
    }
    if(allowed&&grant!=='revoked-write'){
-    assert.equal(permissionReads,3,'Settings, Admin directory and Calendar each check permissions once');
+    assert.equal(permissionReads,1,'Settings, Admin directory and Calendar share one per-tab permission check');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     assert.equal(await page.locator('[data-admin-world]').isVisible(),true);
     revoked=true;
-    if(grant==='write')await page.evaluate(()=>dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
-    else await page.locator('[data-admin-refresh]').click();
+    // Explicit refresh detects revocation; BFCache navigation does not recheck.
+    await page.locator('[data-admin-refresh]').click();
     await page.locator('#app-admin[data-admin-access="denied"]').waitFor({state:'attached'});
     assert.equal(await page.locator('#main-content').innerText(),'');
     assert.equal(await page.locator('[data-admin-signed-in]').isVisible(),false);
@@ -298,7 +298,7 @@ try{
     await page.locator('[data-admin-players-result]').waitFor({state:'visible'});
     assert.equal(previewCalls,3);assert.equal(commitCalls,1);assert.equal(sessionReads,4);
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,2);
+   assert.equal(permissionReads,1,'Admin directory and Players share one per-tab permission check');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
