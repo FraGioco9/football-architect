@@ -5,6 +5,8 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
+import {previewPlayerGeneration,commitPlayerGeneration,listGeneratedPlayers} from '../src/players-generation-command.ts';
+import {readPublicPlayers} from '../src/public-players-read.ts';
 import {generateSeasonCalendar} from '../src/calendar-command.ts';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
@@ -45,6 +47,49 @@ it('purges all season state and retains admin access plus historical operation l
  const prepared=await prepareSeason(db,session,{expectedGeneration:outcome.world.generation,expectedRevision:0},'new-generation-prepare-00001',await loadApprovedSnapshot(),now);
  expect(prepared.world).toMatchObject({seasonNumber:1,phase:'preparing',revision:1});
 });
+
+it('preserves committed generated players and their FK draft parents across Season 0 reset',async()=>{
+ const options={count:2,seed:'preserve-players-reset',primaryNationality:'ITA',primaryPosition:'ST'};
+ const batch=await previewPlayerGeneration(db,session,{options},now);
+ await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
+ const abandoned=await previewPlayerGeneration(db,session,{options:{...options,count:1,seed:'stale-preview-before-reset'}},now);
+ const saved=(await db.prepare('SELECT id,batch_id,world_generation,entry_season,payload_json,created_at FROM generated_players ORDER BY id').all()).results;
+ const committedDraft=await db.prepare('SELECT * FROM player_generation_drafts WHERE id=?').bind(batch.draftId).first();
+ expect(saved).toHaveLength(2);
+ expect(committedDraft).toMatchObject({id:batch.draftId,status:'committed'});
+ const beforePublic=await readPublicPlayers(db,1);
+ const beforeAdmin=await listGeneratedPlayers(db);
+ expect(beforePublic.count).toBe(2);
+ expect(beforeAdmin.count).toBe(2);
+
+ const previousGeneration=world.generation;
+ const result=await resetWorld(db,session,{...cmd(),confirmation:'RESET SEASON 0'},'reset-preserve-generated-00001',now);
+ expect(result.world.generation).not.toBe(previousGeneration);
+ expect((await db.prepare('SELECT id,batch_id,world_generation,entry_season,payload_json,created_at FROM generated_players ORDER BY id').all()).results).toEqual(saved);
+ expect(await db.prepare('SELECT * FROM player_generation_drafts WHERE id=?').bind(batch.draftId).first()).toEqual(committedDraft);
+ expect(await db.prepare('SELECT id FROM player_generation_drafts WHERE id=?').bind(abandoned.draftId).first()).toBeNull();
+ expect((await db.prepare('PRAGMA foreign_key_check').all()).results).toEqual([]);
+ await expect(commitPlayerGeneration(db,session,{draftId:abandoned.draftId,confirmation:'GENERATE PLAYERS'},now)).rejects.toMatchObject({status:404});
+
+ const afterPublic=await readPublicPlayers(db,1);
+ const afterAdmin=await listGeneratedPlayers(db);
+ expect(afterPublic).toEqual(beforePublic);
+ expect(afterAdmin.players).toEqual(beforeAdmin.players);
+ expect(afterAdmin.count).toBe(2);
+ expect(afterAdmin.worldGeneration).toBe(result.world.generation);
+
+ const next=await previewPlayerGeneration(db,session,{options:{...options,count:1,seed:'players-after-world-reset'}},now);
+ await commitPlayerGeneration(db,session,{draftId:next.draftId,confirmation:'GENERATE PLAYERS'},now);
+ const all=(await db.prepare('SELECT id,world_generation FROM generated_players ORDER BY id').all()).results as {id:number;world_generation:string}[];
+ expect(all).toHaveLength(3);
+ expect(all.slice(0,2).map(row=>row.id)).toEqual(saved.map((row:any)=>row.id));
+ expect(all.slice(0,2).every(row=>row.world_generation===previousGeneration)).toBe(true);
+ expect(all[2].id).toBeGreaterThan(all[1].id);
+ expect(all[2].world_generation).toBe(result.world.generation);
+ expect((await readPublicPlayers(db,1)).count).toBe(3);
+ expect((await listGeneratedPlayers(db)).count).toBe(3);
+});
+
 it('refuses missing confirmation and atomically rolls back failed reset audit',async()=>{
  await expect(resetWorld(db,session,{...cmd(),confirmation:'RESET'},'invalid-reset-00001',now)).rejects.toMatchObject({status:422});
  world=(await initializeAdministrativeEvents(db,session,cmd(),'reset-fail-events-00001',now)).world;

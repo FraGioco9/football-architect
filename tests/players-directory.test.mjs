@@ -480,9 +480,11 @@ test('Players SQL count/page share identical secondary and multiple filters with
  const sql=read('backend/src/public-players-read.ts'),types=read('backend/src/public-players-filters.d.mts'),integration=read('backend/tests/players-generation-runtime.test.ts');
  assert.match(sql,/json_extract\(payload_json,'\$\.secondary_nationality'\) IN/);
  assert.match(sql,/EXISTS \(SELECT 1 FROM json_each\(payload_json,'\$\.secondary_positions'\)/);
- assert.match(sql,/const where=predicates\.join\(' AND '\)/);
- assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players WHERE/);
- assert.match(sql,/SELECT id,payload_json FROM generated_players WHERE/);
+ // Player identities survive world reset: no filters means no WHERE clause.
+ assert.match(sql,/const where=predicates\.length\?' WHERE '\+predicates\.join\(' AND '\):''/);
+ assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
+ assert.match(sql,/SELECT id,payload_json FROM generated_players'\+where/);
+ assert.doesNotMatch(sql,/WHERE world_generation=\?/);
  assert.match(sql,/'created_at DESC,id ASC'/);
  assert.match(sql,/ORDER BY '\+orderBy\+' LIMIT \? OFFSET \?'/);
  assert.match(sql,/json_extract\(payload_json,'\$\.height_cm'\)>=\?/);
