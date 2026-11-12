@@ -36,6 +36,10 @@ The first command passed **101/101** at the implementation milestone. The dedica
 - The current public validator publishes resolved fixture participants. The UI has a translated unknown-opponent presentation, but cannot assign an unresolved future tie to a club without canonical evidence.
 - There is no separate match-detail route in this contract. Competition/phase links open existing Fixtures routes with season and configured matchday/phase; opponent crest/name open that opponent's Overview; competition/phase links preserve the selected season.
 
+## 2026-11-12 exact-head FULL CI diagnosis
+
+At `ca20447`, GitHub Site FULL passed **1,204/1,204** Node checks across 148 test files, including `CLUB-FIXTURES geometry PASS` at 320/390/768/1440 and the bounded Fixtures Chromium scenario. Admin World FULL also passed. Browser FULL failed in FE-01 at `/competitions/int-1/fixtures` (1440px, dark, EN): before-CSS saw zero visible round arrows, after-CSS temporarily saw two, and its focused after-CSS snapshot had zero again. This is an asynchronous readiness mismatch, **not a proven CSS regression**. FE-01 now waits for `data-fa-standings-loading=false` plus two animation frames on Competition routes before either CSS snapshot. **New exact-head CI is pending.** No application CSS, renderer, routing or data change. Physical iPhone Safari and owner acceptance remain UNKNOWN.
+
 ## 2026-11-12 skeleton/selector follow-up (PR #529)
 
 At `31ffcdd`, exact-HEAD Site checks and Chromium Browser QA passed. The previous scenario measured toolbar/buttons but **not** row-level skeleton-to-text centers. A new Chromium regression measures the six pending-row slots against hydrated text at 320/390/768/1440 widths, with visible `?season=1` and no Season selector skeleton. The new regression is **PENDING CI** until executed; physical iPhone Safari remains UNKNOWN. Opponent crest/name now open the opponent's **Overview**, while the competition link still opens Competition Fixtures. The PR remains Draft/HOLD; no merge or deploy.
