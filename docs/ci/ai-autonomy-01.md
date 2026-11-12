@@ -1,25 +1,25 @@
 # AI-AUTONOMY-01 — controlled Codex pilot (PLANNED / DISABLED)
 
-**Coordination:** [#524](https://github.com/FraGioco9/football-architect/issues/524) · **candidate pilot:** [#503](https://github.com/FraGioco9/football-architect/issues/503) · **policy:** [`.github/ai-autonomy/pilot-policy.yml`](../../.github/ai-autonomy/pilot-policy.yml).
+**Coordination:** [#524](https://github.com/FraGioco9/football-architect/issues/524) · **candidate pilot:** [#504](https://github.com/FraGioco9/football-architect/issues/503) · **policy:** [`.github/ai-autonomy/pilot-policy.yml`](../../.github/ai-autonomy/pilot-policy.yml).
 
 ## Current status and scope
 
 This is a **preparation runbook**, not a deployed automation. No GitHub Actions workflow, cron, webhook, Codex API request, automation, GitHub label rule or other agent dispatcher has been enabled. The policy has `automation.enabled: false` and `max_concurrent_tasks: 0`; **nothing consumes that file automatically**.
 
-Preparation work is authorized under #524. **Starting Codex Cloud on #503 requires a new owner instruction**, as does any paid API/GitHub Actions implementation. A ChatGPT Plus subscription and API billing are not interchangeable.
+Preparation work is authorized under #524. **Starting Codex Cloud on #504 requires a new owner instruction**, as does any paid API/GitHub Actions implementation. A ChatGPT Plus subscription and API billing are not interchangeable.
 
 ## Phase 1 — Manual Codex Cloud evaluation (future, with owner authorization)
 
-1. Review #503's acceptance criteria and the latest `main`. Check open PRs touching `/admin/players`, `/players`, shared table components, or Player API. If conflicts exist, pause and coordinate instead of duplicating work.
-2. The owner links/connects the `FraGioco9/football-architect` repository to their Codex Cloud environment and checks access/available usage. Repo visibility alone does not imply a Codex connection is configured. Never paste tokens into issues, prompts or PRs.
-3. Once explicitly authorized, the owner manually starts **one** Codex Cloud task for #503 with the scoped instructions below. Do not simultaneously start an unattended runner.
-4. The agent inspects [`AGENTS.md`](../../AGENTS.md), relevant source/contracts and #503, then works from current `main` on a task branch. It must follow existing first-paint, i18n, responsive, auth, preview-not-commit and test contracts.
-5. Use grouped commits and one Draft/HOLD PR in English. No merge, deploy, remote DB write or preview publish. Update #503 only for verified progress with exact commit/PR links; mark manual Safari/visual QA UNKNOWN until performed.
+1. Review #504's acceptance criteria and the latest `main`. Check open PRs touching club pages, competition Fixtures, shared sporting calendar, canonical routing or World/Debug APIs. If conflicts exist, pause and coordinate instead of duplicating work.
+2. The owner confirms the already published Codex Cloud environment is connected to `FraGioco9/football-architect` and checks access/available usage. Node.js 22 and read-only repository checks passed in the environment report; full-stack startup is not yet verified. Never paste tokens into issues, prompts or PRs.
+3. Once explicitly authorized, the owner manually starts **one** Codex Cloud task for #504 with the scoped instructions below. Do not simultaneously start an unattended runner.
+4. The agent inspects [`AGENTS.md`](../../AGENTS.md), relevant source/contracts and #504, then works from current `main` on a task branch. Note: `AGENTS.md` is not available on `main` until the preparation PR #525 is separately approved and merged; do not claim the agent has read it before then. It must follow existing first-paint, i18n, responsive, canonical season/day, no-future-score-leakage and test contracts.
+5. Use grouped commits and one Draft/HOLD PR in English. No merge, deploy, remote DB write or preview publish. Update #504 only for verified progress with exact commit/PR links; mark manual Safari/visual QA UNKNOWN until performed.
 6. Stop after the approved scope and report tests, unresolved choices, CI head, approximate duration, observed quota/credits if surfaced, retries and the owner's supervision required. If usage details are unavailable, record **UNKNOWN**, not an estimate presented as measurement.
 
 ### Suggested task text (use only after authorization)
 
-> Implement the next approved slice of Football Architect issue #503 (Players Generator Preview) using the repository's AGENTS.md and the issue acceptance criteria. First check main, active PRs and source ownership. Match the existing /players table conventions without persisting preview records or exposing private attributes. Work in a dedicated branch, make grouped commits, run focused tests and open one Draft/HOLD PR. Update #503 with evidence, progress and blockers; stop at any new product decision. Do not merge, deploy, invoke remote D1, change secrets, or start another issue.
+> The owner has already prepared the issue-specific prompt for #504 (Club Fixtures). Once separately authorized, use that prompt along with AGENTS.md and the issue acceptance criteria. First check current main, active PRs and source ownership. Reuse existing competition Fixtures conventions, preserve canonical season/day and prevent future-result leakage. Implement one approved scope in a dedicated branch, with grouped commits, focused tests and one Draft/HOLD PR. Update #504 with evidence, progress and blockers; stop at any new product decision. Do not merge, deploy, access remote D1, change secrets or start another issue.
 
 ## Measurements and go/no-go
 
@@ -28,7 +28,7 @@ For each manual trial record:
 | Field | Evidence |
 | --- | --- |
 | Issue / PR / exact HEAD | GitHub links and SHA |
-| Acceptance criteria met | Checked vs #503, not merely code written |
+| Acceptance criteria met | Checked vs #504, not merely code written |
 | QA | Targeted tests with results; FULL exact-head only when relevant; manual device QA explicitly UNKNOWN until performed |
 | Time | Elapsed wall time if observed; otherwise UNKNOWN |
 | ChatGPT/Codex quota used | Usage indicator/credits if observable, otherwise UNKNOWN |

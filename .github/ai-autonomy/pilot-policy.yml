@@ -12,7 +12,7 @@ automation:
   retry_limit: 0
   auto_pick_next_issue: false
 pilot:
-  candidate_issue: 503
+  candidate_issue: 504
   coordination_issue: 524
   provider: codex_cloud_manual
   start_requires_new_owner_approval: true
