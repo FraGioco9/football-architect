@@ -69,7 +69,9 @@ test('public directory rejects invalid page numbers before database reads',async
 
 test('shared filter parser rejects duplicates, unknown inputs, encoded values and inverted ages',()=>{
  const valid=parsePublicPlayerQuery('?position=ST&nationality=ITA&ageMin=18&ageMax=24&foot=left&page=2');
- assert.deepEqual(valid,{page:2,filters:{nationality:'ITA',position:'ST',ageMin:18,ageMax:24,foot:'left'}});
+ assert.deepEqual(valid,{page:2,filters:{nationality:['ITA'],position:['ST'],ageMin:18,ageMax:24,foot:'left'}});
+ assert.deepEqual(parsePublicPlayerQuery('?nationality=ITA%2CFRA&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=175&heightMax=195').filters,
+  {nationality:['ITA','FRA'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',heightMin:175,heightMax:195});
  assert.deepEqual(parsePublicPlayerQuery(''),{page:1,filters:{}});
  for(const raw of ['?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
   '?foot=both','?ageMin=121','?ageMin=-1','?ageMin=01','?ageMin=22&ageMax=21','?ageMin=10&ageMin=20',
