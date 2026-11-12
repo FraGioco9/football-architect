@@ -1,10 +1,11 @@
-import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPreviewClubSummary,createPreviewClubHistory,readPreviewClubProgress} from "./dev-standings-preview-data.mjs";
+import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPreviewClubSummary,createPreviewClubHistory,readPreviewClubProgress,createPreviewClubFixtures} from "./dev-standings-preview-data.mjs";
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 async function startClubSummary(){
 const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
 let catalogue,revision=0;
 const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
+const publishFixtures=snapshot=>{window.faDevClubFixturesPublished=true;window.faDevClubFixturesSnapshot=snapshot;window.dispatchEvent(new CustomEvent('fa:club-fixtures-preview',{detail:snapshot}));};
 const publishHistory=snapshot=>{
  window.faDevClubHistoryPublished=true;
  window.faDevClubHistorySnapshot=snapshot;
@@ -13,23 +14,25 @@ const publishHistory=snapshot=>{
 async function refresh(){
  const version=++revision;
  const route=window.faClubModel?.route(location.pathname),progress=readPreviewClubProgress(sessionStorage);
- const identity=JSON.stringify([location.pathname,progress]);
- if(!enabled()||!route){publish(null);publishHistory(null);return;}
+ const viewedSeason=()=>{const raw=new URLSearchParams(location.search).get('season');return /^(0|[1-9]\d{0,8})$/.test(raw||'')?Number(raw):progress.season;};
+ const identity=JSON.stringify([location.pathname,viewedSeason(),progress]);
+ if(!enabled()||!route){publish(null);publishHistory(null);publishFixtures(null);return;}
  try{
   catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'same-origin',cache:'no-store'}).then(async response=>{
    if(!response.ok)throw Error('Unavailable club competition data');
    const data=await response.json();if(!competitionModel.validManifest(data))throw Error('Invalid club competition data');return data;
   }).catch(error=>{catalogue=null;throw error});
   const data=await catalogue;
-  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,readPreviewClubProgress(sessionStorage)]))return;
+  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,viewedSeason(),readPreviewClubProgress(sessionStorage)]))return;
   const division=data.divisions.find(d=>d.countryId===route.countryId&&d.clubs.some(c=>c.clubId===route.clubId));
   const summary=division?createPreviewClubSummary(division,route.clubId,progress):null;
   const history=division?createPreviewClubHistory(division,route.clubId,progress):null;
-  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,readPreviewClubProgress(sessionStorage)]))return;
+  if(version!==revision||!enabled()||identity!==JSON.stringify([location.pathname,viewedSeason(),readPreviewClubProgress(sessionStorage)]))return;
   publish(summary);
   const clock=window.faWorldState?.get?.();
   publishHistory(history?{...history,worldDay:clock?.source==='dev'?clock.current?.day:null}:null);
- }catch{if(version===revision){publish(null);publishHistory(null);}}
+  publishFixtures(division?createPreviewClubFixtures(division,route.clubId,progress,viewedSeason(),clock?.source==='dev'?clock.current?.day:0):{source:'dev',clubKey:route.countryId+'-'+route.clubId,season:viewedSeason(),currentSeason:progress.season,day:clock?.current?.day,coverage:progress.season===0?'unstarted':'complete',rows:[],competitions:[],provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}});
+ }catch{if(version===revision){publish(null);publishHistory(null);publishFixtures(null);}}
 }
 await new Promise(resolve=>{
  if(document.documentElement.dataset.clubReady==='true')return resolve();
@@ -38,7 +41,7 @@ await new Promise(resolve=>{
  });
  observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-club-ready']});
 });
-for(const event of ['fa:source-change','fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow'])window.addEventListener(event,refresh);
+for(const event of ['fa:source-change','fa:fictional-standings-change','fa:dev-world-day-change','fa:dev-progress-change','pageshow','popstate','fa:club-fixtures-selection'])window.addEventListener(event,refresh);
 window.addEventListener('storage',event=>{if(event.key?.startsWith('football-architect:'))refresh();});
 await refresh();
 

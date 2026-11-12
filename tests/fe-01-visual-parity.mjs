@@ -66,7 +66,13 @@ try{
      await page.locator(route.selectors[0]).first().waitFor({state:"visible",timeout:10000});
     }
     assert.equal(response?.status(),200,route.path+" "+stage);
-    if(route.path.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    if(route.path.startsWith('/competitions/')){
+     await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+     // A mounted competition definition precedes the asynchronous world/season read.
+     // Snapshot settled UI in both CSS variants, not transient navigation arrows.
+     await page.waitForFunction(()=>document.documentElement.dataset.faStandingsLoading==='false',null,{timeout:15000});
+     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    }
     if(route.path.startsWith('/clubs/')&&route.path!='/clubs')await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true');
     if(route.path==='/clubs')await page.waitForFunction(()=>!document.getElementById('nav01-country-trigger')?.disabled);
     await page.evaluate(async()=>{await document.fonts.ready});

@@ -3,7 +3,7 @@
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
  let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'};
- let refreshClubHistory=()=>{},refreshClubOverview=()=>{};
+ let refreshClubHistory=()=>{},refreshClubOverview=()=>{},fixturesController=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const competitionSeason=()=>{
   const explicit=new URLSearchParams(location.search).get('season');
@@ -91,6 +91,7 @@
    const previousTabs=host.querySelector(':scope > .club-tabs');
    const tabScrollLeft=previousTabs?.scrollLeft;
    const historyTableScroll=host.querySelector('.club-history-table-wrap')?.scrollLeft;
+   const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
    staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
@@ -128,8 +129,8 @@
    }else if(stagedTabs){tabs=stagedTabs;header.after(tabs)}
    // Preserve the original first-paint header, tab links, scroll and crest image nodes.
    reuseCrests(host,staging,true);
-   for(const child of [...host.childNodes])if(child!==header&&child!==tabs)child.remove();
-   for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs)host.append(child);
+   for(const child of [...host.childNodes])if(child!==header&&child!==tabs&&child!==retainedFixtures)child.remove();
+   for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
    syncHistoryRows();
    host.dataset.clubBase=selected.base;
@@ -187,6 +188,7 @@
    }
    document.documentElement.dataset.clubIdentityReady='true';
    document.documentElement.dataset.clubReady='true';
+   fixturesController?.mount();
   };
   const applyCompetitionSnapshot=incoming=>{
    const previous=JSON.stringify(competitionSnapshot);
@@ -383,6 +385,9 @@
    }catch{historySnapshot={source:'unavailable'};if(selected.view==='history')paint(true)}
   };
   void enableClubHistory();
+  const fixtureModule=await import('/assets/club-fixtures-controller.mjs');
+  fixturesController=fixtureModule.mountClubFixtures({host,manifest});
+  fixturesController.mount();
 
   // Ignore unrelated attribute mutations and retain focus, scroll and SVG/image
   // nodes when the user changes the interface language.

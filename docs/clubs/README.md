@@ -32,3 +32,7 @@ Imported from `football_architect_320_clubs_final_approved_offline(1).csv`, appr
 Competition pages and their generated manifest read primary names directly from this JSON. The [provisional allocation](../divisions/initial-club-allocation.md) remains separate: IDs 1–16 per country in tier 1, 17–32 in tier 2, and 33–40 outside the division lists. All 320 club records remain in the catalogue.
 
 Superseded anagraphic records, parallel naming catalogues and archival identity tables have been removed from the current tree. Earlier versions remain in Git history. The [design specification](clubs-design-specification.en.md) describes broader identity rules; this import does not create crest artwork, kits, rivalry links, translations or game state.
+
+## Club Fixtures QA
+
+The [Club Fixtures QA block](club-fixtures-qa.md) records automatic #504 evidence, canonical coverage limits and the manual checks still required before accepting block 21 in #408.
