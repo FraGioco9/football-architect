@@ -8,7 +8,7 @@ import './competition-tabs.js';
 export function mountClubFixtures({host,manifest}){
  const ui=window.faClubFixtures,state=window.faWorldState;
  let panel=null,snapshot={coverage:'loading',rows:[],competitions:[]},filter='all',epoch=0,abort=null,lastKey=null,catalogue=null;
- let rememberedSeason=null;
+ let rememberedSeason=null,previewSelection=null;
  const bindings=new Map();
  const route=()=>window.faClubModel.route(location.pathname);
  const season=()=>{
@@ -143,6 +143,11 @@ export function mountClubFixtures({host,manifest}){
   if(rememberedSeason!==null)for(const link of host.querySelectorAll('.club-tabs a'))if(/\/(fixtures|stats)$/.test(new URL(link.href).pathname)){
    const url=new URL(link.href);url.searchParams.set('season',viewed);link.href=url.pathname+url.search;
   }
-  window.dispatchEvent(new Event('fa:club-fixtures-selection'));refresh();
+  // History publishes a snapshot by repainting the club shell. It must not
+  // request Fixtures again, or DEV's shared History publication loops forever.
+  if(route()?.view!=='fixtures'){previewSelection=null;hideTip();return;}
+  const selection=identity();
+  if(selection!==previewSelection){previewSelection=selection;window.dispatchEvent(new Event('fa:club-fixtures-selection'));}
+  refresh();
  }};
 }

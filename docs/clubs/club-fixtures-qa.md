@@ -74,3 +74,7 @@ The shared output writer now normalizes assembled CRLF output to LF before struc
 Automatic follow-up: **80/80 targeted checks PASS on Node 22**, covering generator Windows fixtures, Club pages, authoritative season, app shell and generated boundaries. The new regression first failed at the reported offset, then passed for both `--check` and generation from CRLF sources; a deliberately modified HTML attribute still fails, preserving content-drift detection. Generator consistency, discovery and scoped diff checks PASS. Active PR #528 touches distinct Admin sections of the generator; this fix is confined to the shared output writer.
 
 Actual owner Windows rerun remains UNKNOWN until reported; Node 24 compatibility is not certified. Use the project's Node.js 22. This is one owner-reported follow-up validation failure after the initial delivery; quota/credits and platform retry counter remain UNKNOWN. No merge, deployment or remote database operation.
+
+## Owner follow-up — History freeze
+
+Reproduced a Debug-only feedback loop: History snapshot publication repainted the club shell; Fixtures `mount()` then requested the shared DEV provider again, which republished History indefinitely. A bounded Chromium regression captured repeated Fixtures requests on the History tab. Fixtures now requests preview data only while its own tab is active, once per selection/world identity. The same browser regression passes after the fix, including returning to Fixtures. Layout/season/notice refinements requested alongside this report are handled in the next grouped change.

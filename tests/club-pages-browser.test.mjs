@@ -854,6 +854,11 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"sessionStorage.setItem('football-architect:debug-enabled','on');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','1');sessionStorage.setItem('football-architect:standings-dev-matchdays','4');sessionStorage.setItem('football-architect:calendar-dev-world-day','16');"});
   await visit();await wait("window.faWorldState?.get?.().source==='dev'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("document.querySelector('.club-fixtures-notice').textContent.includes('Preview')"),true);
+  // Bound the old feedback loop so the regression fails without hanging Chrome.
+  await run("window.__fixtureRequests=0;window.__nativeDispatch=window.dispatchEvent.bind(window);window.dispatchEvent=e=>{if(e.type==='fa:club-fixtures-selection'&&++window.__fixtureRequests>8)return true;return window.__nativeDispatch(e)};document.querySelector('.club-tabs a[href$=\"/history\"]').click()");
+  await delay(150);
+  assert.equal(await run('window.__fixtureRequests<=1'),true,'History redraw must not request Fixtures repeatedly');
+  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run("window.faDebugEnabled=false;sessionStorage.setItem('football-architect:debug-enabled','off');window.faWorldState.setSource({kind:'authoritative'});window.dispatchEvent(new Event('fa:source-change'))");
   await wait("document.querySelectorAll('[data-club-fixture-id]').length===0&&!document.querySelector('.club-fixtures-notice').textContent.includes('Preview')");
   assert.deepEqual(await run('window.__errors'),[]);
