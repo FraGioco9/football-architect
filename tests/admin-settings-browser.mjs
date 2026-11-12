@@ -356,6 +356,34 @@ try{
   assert.equal(await page.evaluate(()=>window.faWorldState?.get().current),null,'Unavailable world data must not fabricate current progress');
   checks++;
  }finally{await context.close();}
+ // Anonymous Profile entry must not cause two or more redundant 401s:
+ // one negative permission lookup on the public page is enough until refresh.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   const page=await context.newPage();
+   let permissionReads=0,sessionReads=0;
+   const unauthorized={status:401,contentType:'application/json',body:'{"error":{"code":"unauthorized"}}'};
+   await page.route('**/api/player/permissions',route=>{permissionReads++;return route.fulfill(unauthorized)});
+   await page.route('**/api/player/session',route=>{sessionReads++;return route.fulfill(unauthorized)});
+   await page.route('**/api/world',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.goto('http://app.localhost:2000/dashboard',{waitUntil:'networkidle'});
+   assert.equal(permissionReads,1,'First public page checks Admin link visibility once');
+   await page.locator('#app-nav-profile').click();
+   await page.waitForURL('**/account/login');
+   await page.waitForLoadState('networkidle');
+   assert.equal(permissionReads,1,'Profile/Login do not recheck Admin sidebar permissions');
+   assert.equal(sessionReads,0,'The known 401 is reused for navigation to Login');
+   await page.reload({waitUntil:'networkidle'});
+   assert.equal(sessionReads,1,'An explicit Login refresh checks session again');
+   await page.goto('http://app.localhost:2000/account',{waitUntil:'domcontentloaded'});
+   await page.waitForURL('**/account/login');
+   await page.waitForLoadState('networkidle');
+   assert.equal(sessionReads,2,'Direct Profile verifies session once, not again on redirect');
+   assert.equal(permissionReads,1,'Account pages do not send anonymous Admin checks');
+   checks++;
+  }finally{await context.close();}
+ }
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
  preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));
