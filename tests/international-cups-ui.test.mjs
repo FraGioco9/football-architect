@@ -73,13 +73,20 @@ test('INT-24 DEV injects shared Debug controls on cup root and subpage routes',a
  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
  const get=path=>new Promise((resolve,reject)=>{
   request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
-   let body='';res.setEncoding('utf8');res.on('data',part=>body+=part);res.on('end',()=>resolve({status:res.statusCode,body}));
+   let body='';res.setEncoding('utf8');res.on('data',part=>body+=part);res.on('end',()=>resolve({status:res.statusCode,location:res.headers.location??null,body}));
   }).on('error',reject).end();
  });
  try{
   for(const slug of names)for(const suffix of ['',...views.map(v=>'/'+v)]){
-   const response=await get('/competitions/'+slug+suffix+'?season=99');
-   assert.equal(response.status,200);
+   const path='/competitions/'+slug+suffix+'?season=99';
+   let response=await get(path);
+   if(!suffix){
+    assert.equal(response.status,308,path+' canonical cup root');
+    assert.equal(response.location,'/competitions/'+slug+'/standings?season=99');
+    assert.equal(response.body,'',path+' redirect body');
+    response=await get(response.location);
+   }
+   assert.equal(response.status,200,path+' canonical destination');
    assert.match(response.body,/data-fa-dev-preview src="\/__fa_dev__\/standings-client.mjs"/);
    assert.match(response.body,/dataset.faDevSeasons="1,2,3,4"/);
   }

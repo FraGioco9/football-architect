@@ -359,8 +359,12 @@ test("DEV-GATE-01/03: only DEV responses inject private scripts; static source s
     assert.equal(page.headers["cache-control"],"no-store");
     assert.equal(page.body.split(clientName).length,2);
     assert.ok(page.body.includes("<script type=\"module\""));
-    const indexPage = await get("/competitions/eng-2/index.html");
-    assert.equal(indexPage.status,200);
+    const alias=await get("/competitions/eng-2/index.html");
+    assert.equal(alias.status,308);
+    assert.equal(alias.headers.location,"/competitions/eng-2/overview");
+    assert.equal(alias.body,"");
+    const indexPage=await get(alias.headers.location);
+    assert.equal(indexPage.status,200,"canonical destination must render the DEV page");
     assert.equal(indexPage.body.split(clientName).length,2);
     const regular = await get("/");
     assert.equal(regular.status,200);
