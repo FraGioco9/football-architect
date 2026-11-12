@@ -1548,7 +1548,7 @@ html[data-calendar-view="week"][data-calendar-week-pending] #world-calendar .cal
 .app-players-header>.app-page-title{margin:0;color:#f2f7f4;font-size:var(--app-page-title-size);font-weight:780;letter-spacing:-.035em;line-height:1.2;text-align:left}
 html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-count{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;flex:0 0 132px;width:132px;height:44px;margin:0;white-space:nowrap;text-align:end;color:var(--muted);font-size:13px;font-weight:650;line-height:20px;font-variant-numeric:tabular-nums}
-.app-players-count-skeleton{display:block;flex:0 0 98px;width:98px;height:14px;margin-inline-start:auto;border-radius:4px;background:var(--line)}
+.app-players-count-placeholder{display:block;flex:0 0 98px;width:98px;height:14px;margin-inline-start:auto;background:transparent}
 
 /* Player directory: fixed flag/name columns; every remaining column receives a share of the available width. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
@@ -1558,7 +1558,25 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
-.app-players-table thead th{height:44px;background:#172d30;color:var(--muted);font-size:12px;font-weight:750;letter-spacing:.02em;white-space:nowrap}
+.app-players-table thead th{height:44px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
+/* Sort is still interactive, but labels never display arrows, hover highlights,
+ * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
+.app-players-sort-button{display:flex;align-items:center;justify-content:center;gap:0;line-height:1.2;box-sizing:border-box;width:100%;min-width:0;height:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.app-players-sort-button:hover,.app-players-sort-button:active,.app-players-sort-button:focus{color:inherit;background:transparent;box-shadow:none;outline:none;text-shadow:none;filter:none}
+.app-players-sort-button:focus-visible{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+/* The label owns the alignment; an active chevron sits beside it without shifting text. */
+.app-players-sort-label{position:relative;display:inline-block;max-width:100%;white-space:nowrap;line-height:1.2}
+.app-players-sort-chevron{position:absolute;display:block;left:calc(100% + 7px);top:50%;width:16px;height:16px;visibility:hidden;opacity:0;transform:translateY(-50%) rotate(0deg);transform-origin:50% 50%;pointer-events:none}
+.app-players-table th[aria-sort="ascending"] .app-players-sort-chevron,.app-players-table th[aria-sort="descending"] .app-players-sort-chevron{visibility:visible;opacity:1}
+.app-players-table th[aria-sort="ascending"] .app-players-sort-chevron{transform:translateY(-50%) rotate(180deg)}
+/* The flag column has no visible label: center its chevron in the flag column. */
+.app-players-flag-col .app-players-sort-label{width:16px;height:16px}
+.app-players-flag-col .app-players-sort-chevron{left:0}
+
+.app-players-table th:nth-child(2) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button,.app-players-table[data-players-table-mode="attributes"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
+/* Preserve real table row geometry during loading: five empty rows, no data skeletons. */
+.app-players-table tbody tr:not(.app-players-empty-row){height:44px}
+.app-players-table .app-players-loading-row td{height:44px;padding:0 16px}
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
@@ -1611,6 +1629,129 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
  .app-players-groups{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:34px}
  .app-players-group{min-height:34px;height:34px;padding:5px 3px;font-size:11px}
  .app-players-count{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0;font-size:11px}
- .app-players-count-skeleton{flex-basis:86px;width:86px}
+ .app-players-count-placeholder{flex-basis:86px;width:86px}
 }
 @media(prefers-reduced-motion:reduce){.app-players-tabs .app-competition-tab,.app-players-group{transition:none}}
+
+/* PLAYERS-FILTERS-01: accessible native modal drawer. The table never reflows when opened. */
+.app-players-header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px}
+.app-players-filter-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;box-sizing:border-box;min-width:108px;height:40px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:650;line-height:1.2;cursor:pointer}
+.app-players-filter-trigger:hover{border-color:var(--focus)}
+.app-players-filter-trigger:focus-visible,.app-players-filter-control :is(select,input):focus-visible,.app-players-reset:focus-visible,.app-players-apply:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-filter-active{display:inline-grid;place-items:center;flex:0 0 24px;width:24px;height:24px;padding:0;box-sizing:border-box;border:1px solid var(--border);border-radius:50%;background:var(--line);color:var(--text);font-size:11px;line-height:1;font-weight:750;font-variant-numeric:tabular-nums}
+.app-players-filter-active[hidden]{display:none}
+.app-players-filter-dialog{position:fixed;inset:var(--players-filter-top,60px) 0 0 auto;box-sizing:border-box;width:min(420px,100vw);max-width:100vw;height:calc(100dvh - var(--players-filter-top,60px));max-height:calc(100dvh - var(--players-filter-top,60px));margin:0;padding:0;border:0;border-left:1px solid var(--border);border-radius:0;background:var(--surface);color:var(--text);box-shadow:-16px 0 48px rgba(0,0,0,.28);overflow:hidden;z-index:2147483647}
+.app-players-filter-dialog:not(:popover-open){display:none}
+.app-players-filter-dialog:popover-open{display:flex;flex-direction:column;animation:players-filter-slide-in .24s cubic-bezier(.2,.85,.2,1) both}
+.app-players-filter-dialog:popover-open.is-closing{animation:players-filter-slide-out .22s cubic-bezier(.4,0,.75,.25) both}
+/* No scrim or scroll lock: page/header and existing scrollbar remain untouched. */
+.app-players-filter-dialog::backdrop{background:transparent;pointer-events:none}
+@keyframes players-filter-slide-in{from{transform:translate3d(100%,0,0)}to{transform:translate3d(0,0,0)}}
+@keyframes players-filter-slide-out{from{transform:translate3d(0,0,0)}to{transform:translate3d(100%,0,0)}}
+.app-players-filter-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:66px;padding:12px 20px;border-bottom:1px solid var(--border);box-sizing:border-box}
+.app-players-filter-dialog-header h2{margin:0;font-size:20px;font-weight:750;line-height:1.3}
+.app-players-filter-form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;margin:0}
+.app-players-filters{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:0;flex:1 1 auto;min-height:0;padding:8px 16px 24px;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+.app-players-filter-control{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:650;color:var(--muted)}
+
+/* Expandable sections preserve panel geometry; only their internal content scrolls. */
+.app-players-filter-section{display:block;min-width:0;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;overflow:visible}
+.app-players-filter-section-header{display:flex;align-items:center;gap:10px;min-height:44px;padding:9px 6px;box-sizing:border-box;cursor:pointer;color:var(--text);font-size:13px;font-weight:750;list-style:none}
+.app-players-filter-section-header::-webkit-details-marker{display:none}
+.app-players-filter-section-header::marker{content:""}
+.app-players-filter-section-header>span:first-child{flex:1;min-width:0}
+.app-players-filter-section-header>.language-chevron,.app-players-attribute-category>summary>.language-chevron{display:block;flex:0 0 16px;width:16px;height:16px;margin:0;transform:rotate(0deg);transform-origin:50% 50%;transition:transform .16s ease;pointer-events:none}
+.app-players-filter-section-header .language-chevron{transition:transform .16s ease}
+.app-players-filter-section[open]:not(.is-collapsing) .app-players-filter-section-header .language-chevron{transform:rotate(180deg)}
+.app-players-filter-section-header:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+/* The section titles are interactive, but no hover/tap selection or highlight is painted. */
+.app-players-filter-section-header,.app-players-attribute-category>summary,.app-players-filter-control>span,.app-players-attribute-pick,.app-players-scope-control{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.app-players-filter-section-header:hover,.app-players-filter-section-header:active,.app-players-attribute-category>summary:hover,.app-players-attribute-category>summary:active,.app-players-attribute-pick:hover,.app-players-attribute-pick:active,.app-players-scope-control:hover,.app-players-scope-control:active{color:inherit;background:transparent;box-shadow:none;text-shadow:none;filter:none}
+@media(prefers-reduced-motion:reduce){.app-players-filter-section-header>.language-chevron,.app-players-attribute-category>summary>.language-chevron{transition:none}}
+
+.app-players-filter-section-count{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;padding:0;border:1px solid var(--border);border-radius:50%;background:var(--line);color:var(--text);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}
+.app-players-filter-section-count[hidden]{display:none}
+.app-players-filter-section-body{display:grid;gap:12px;min-width:0;padding:4px 6px 16px;border-top:0}
+.app-players-scope-control{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;color:var(--text);font-size:12px;font-weight:650;line-height:1.5}
+.app-players-scope-control input{width:17px;height:17px;min-width:17px;accent-color:var(--focus);cursor:pointer}
+.app-players-filter-menu .app-players-filter-option-tick{display:grid;place-items:center;flex:0 0 17px;width:17px;height:17px;border:1px solid var(--border);border-radius:4px;color:transparent;font-size:12px;line-height:1}
+.app-players-filter-menu .language-option{display:flex;align-items:center;gap:8px}
+.app-players-filter-menu .language-option[hidden]{display:none}
+.app-players-filter-menu .language-option[aria-selected="true"] .app-players-filter-option-tick{color:var(--text);border-color:var(--focus);background:rgba(91,142,121,.22)}
+.app-players-filter-search{position:sticky;top:-5px;z-index:1;padding:4px 4px 8px;background:var(--surface)}
+.app-players-filter-search input{box-sizing:border-box;width:100%;height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.app-players-filter-search input:focus-visible,.app-players-scope-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-filter-section .app-players-age-range{gap:8px}
+/* Age and Height both have fixed-size plain boxes, without browser stepper arrows. */
+.app-players-age-range input{appearance:textfield;-moz-appearance:textfield;text-align:center;font-variant-numeric:tabular-nums}
+.app-players-age-range input::-webkit-inner-spin-button,.app-players-age-range input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* Attributes: four compact nested categories, only selected rows reveal min/max. */
+.app-players-name-section .app-players-filter-section-header{cursor:default}
+.app-players-name-section .app-players-filter-section-body{padding-top:4px}
+.app-players-name-control{padding:0}
+.app-players-name-control input{width:100%;height:44px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);padding:10px 12px;font-size:14px}
+.app-players-name-control input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* Native search-field clear X remains a direct pointer target on Chrome and Safari. */
+.app-players-name-control input::-webkit-search-cancel-button{cursor:pointer}
+.app-players-filter-control:has(.app-players-filter-multi)>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.app-players-attribute-categories{gap:9px}
+.app-players-attribute-category{min-width:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
+.app-players-attribute-category:last-child{border-bottom:0}
+.app-players-attribute-category>summary{display:flex;align-items:center;gap:10px;box-sizing:border-box;min-height:40px;padding:8px 4px;list-style:none;font-size:13px;font-weight:700;cursor:pointer}
+.app-players-attribute-category>summary::-webkit-details-marker{display:none}
+.app-players-attribute-category>summary::marker{content:""}
+.app-players-attribute-category>summary>span:first-child{flex:1}
+.app-players-attribute-category>summary>.language-chevron{transition:transform .16s ease}
+.app-players-attribute-category[open]:not(.is-collapsing)>summary>.language-chevron{transform:rotate(180deg)}
+.app-players-attribute-category>summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.app-players-attribute-count{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;padding:0;border:1px solid var(--border);border-radius:50%;background:var(--line);color:var(--text);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}
+.app-players-attribute-count[hidden],.app-players-attribute-bounds[hidden]{display:none!important}
+.app-players-attribute-options{display:grid;gap:8px;padding:8px 4px 14px;border-top:0}
+.app-players-attribute-item{display:grid;gap:8px;min-width:0;padding-block:4px}
+.app-players-attribute-item+.app-players-attribute-item{border-top:1px solid var(--border);padding-top:12px}
+.app-players-attribute-pick{display:flex;align-items:center;gap:9px;min-width:0;color:var(--text);font-size:13px;cursor:pointer}
+.app-players-attribute-pick input{width:17px;height:17px;min-width:17px;accent-color:var(--focus);cursor:pointer}
+.app-players-attribute-pick input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-players-attribute-bounds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-left:25px}
+.app-players-attribute-bounds input{box-sizing:border-box;width:100%;min-width:0;height:40px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font-size:13px;text-align:center;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
+.app-players-attribute-bounds input::-webkit-inner-spin-button,.app-players-attribute-bounds input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.app-players-attribute-bounds input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+
+.app-players-filter-control>span{min-height:16px;line-height:16px}
+.app-players-filter-control input{box-sizing:border-box;width:100%;min-width:0;height:44px;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit;font-size:14px;line-height:1.3}
+.app-players-filter-native[hidden]{display:none!important}
+.app-players-filter-select.language-control{width:100%;min-width:0;z-index:1}
+.app-players-filter-select.language-control:has(.language-trigger[aria-expanded="true"]){z-index:45}
+.app-players-filter-select .language-trigger{box-sizing:border-box;width:100%;min-width:0;min-height:44px;height:44px;font-size:14px;line-height:1.3}
+/* Keep the selected value and dropdown chevron in fixed positions.
+ * Opening rotates the chevron around its own center without translation. */
+.app-players-filter-dropdown-trigger[aria-expanded="true"]>.language-chevron{transform:translateY(-50%) rotate(180deg)}
+/* Keep the selected All/value perfectly centered without shifting the chevron. */
+.app-players-filter-dropdown-trigger{position:relative;padding-inline:34px}
+.app-players-filter-dropdown-trigger>[data-players-filter-value]{display:block;flex:1 1 auto;min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-players-filter-dropdown-trigger>.language-chevron{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none}
+.app-players-filter-menu .language-option[data-players-filter-option=""]{justify-content:center;text-align:center}
+.app-players-filter-menu .language-option[data-players-filter-option=""] .app-players-filter-option-tick{display:none}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[data-players-filter-option=""]{justify-content:center;text-align:center}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[data-players-filter-option=""] .app-players-filter-option-tick{display:none}
+
+.app-players-filter-select .language-trigger>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-players-filter-select .language-menu{box-sizing:border-box;inset-inline:0;width:100%;min-width:0;max-height:280px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+/* Portaled to the top-layer dialog while open: escaped from the scroller clipping context. */
+.app-players-filter-dialog>.app-players-filter-menu{position:absolute;inset:auto;z-index:100;box-sizing:border-box;min-width:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;box-shadow:var(--fa-dropdown-shadow)}
+.app-players-filter-dialog>.app-players-filter-menu .language-option{display:flex;align-items:center;gap:8px}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[hidden]{display:none}
+.app-players-filter-dialog>.app-players-filter-menu .language-option[aria-selected="true"] .app-players-filter-option-tick{color:var(--text);border-color:var(--focus);background:rgba(91,142,121,.22)}
+@media(prefers-reduced-motion:reduce){.app-players-filter-section-header .language-chevron{transition:none}}
+.app-players-filter-select .language-option{min-height:44px;padding:10px;font-size:13px}
+.app-players-filter-select .language-option:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.app-players-filter-control input:invalid{border-color:var(--focus)}
+.app-players-age-range{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.app-players-filter-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:0 0 auto;padding:16px 20px calc(16px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);box-sizing:border-box;background:var(--surface)}
+.app-players-reset,.app-players-apply{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:8px;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;line-height:1.2;cursor:pointer}
+.app-players-apply{background:var(--focus);border-color:var(--focus);color:var(--surface)}
+.app-players-reset:hover,.app-players-apply:hover{filter:brightness(1.1)}
+.app-players-filter-dialog+.app-players-table-scroll{margin-top:0}
+@media(max-width:620px){.app-players-header{gap:8px}.app-players-filter-trigger{min-width:104px;padding-inline:10px}.app-players-filter-dialog{width:min(420px,100vw)}}
+@media(prefers-reduced-motion:reduce){.app-players-filter-trigger,.app-players-filter-dialog{transition:none;animation:none!important}}

@@ -10,6 +10,7 @@ import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers} from './public-players-read.ts';
+import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
 export interface Env extends AdminEnv, PlayerEnv, CloudflareDeliveryEnv, GmailDeliveryEnv, LocalInboxEnv {
@@ -50,12 +51,10 @@ export default {
     }
     if(url.pathname==='/api/players'){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
-      // One optional positive page parameter; no filters, duplicates or ambiguous values.
-      const params=[...url.searchParams];
-      if(params.length>1||(params.length===1&&(params[0][0]!=='page'||!/^[1-9][0-9]{0,3}$/.test(params[0][1]))))
-        return json(422,{error:{code:'invalid_public_request'}});
-      const page=params.length?Number(params[0][1]):1;
-      try{return json(200,await readPublicPlayers(requireDatabase(env.DB),page))}
+      let query;
+      try{query=parsePublicPlayerQuery(url.search)}
+      catch{return json(422,{error:{code:'invalid_public_request'}})}
+      try{return json(200,await readPublicPlayers(requireDatabase(env.DB),query.page,query.filters))}
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'players_unavailable'}});
