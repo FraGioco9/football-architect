@@ -375,10 +375,10 @@ test('PLAYERS-FILTERS-01 has five stable accessible controls, first-paint URL st
  assert.ok(html.includes('data-players-reset'));
  assert.ok(html.includes("const filters={nationality:countryCodes.has(params.get('nationality'))"),'static script initializes selections before first paint');
  assert.match(css,/\.app-players-filters\{display:grid/);
- assert.match(css,/\.app-players-filter-dialog\[open\]\{display:flex;flex-direction:column\}/);
+ assert.match(css,/\.app-players-filter-dialog\[open\]\{display:flex;flex-direction:column;animation:players-filter-slide-in/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(code,/function applyFilters\(\)/);
- assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);filterDialog\?\.close\(\);load\(1\)/);
+ assert.match(code,/state\.filters=nextFilters;state\.page=1;syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
  assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
@@ -439,8 +439,52 @@ test('Players Filters button opens an accessible drawer; selections stay draft-o
  assert.match(code,/filterTrigger\?\.focus\(\{preventScroll:true\}\)/,'closing returns focus to trigger');
  assert.match(code,/filterForm\?\.addEventListener\('submit',event=>\{event\.preventDefault\(\);applyFilters\(\)\}\)/);
  assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/,'changing a draft control must not fetch');
- assert.match(code,/if\(filterSignature\(nextFilters\)===filterSignature\(state\.filters\)\)\{filterDialog\?\.close\(\);return;\}/,'no GET when no filters changed');
+ assert.match(code,/if\(filterSignature\(nextFilters\)===filterSignature\(state\.filters\)\)\{closeFilterDialog\(\);return;\}/,'no GET when no filters changed');
  assert.match(code,/if\(changed\)load\(1\)/,'Reset causes at most one GET');
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/,'Back/Forward still restores applied query');
  assert.match(css,/@media\(max-width:620px\)/);
+});
+
+test('Players filter drawer is offset below the actual shell header, animates both ways, and honors reduced motion',()=>{
+ const css=read('assets/app.css'),js=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-filter-dialog\{position:fixed;inset:var\(--players-filter-top,60px\) 0 0 auto/);
+ assert.match(css,/height:calc\(100dvh - var\(--players-filter-top,60px\)\)/);
+ assert.match(css,/\.app-players-filter-dialog::backdrop\{background:linear-gradient\(to bottom,transparent 0,transparent var\(--players-filter-top,60px\)/);
+ assert.match(css,/@keyframes players-filter-slide-in\{from\{transform:translate3d\(100%,0,0\)\}/);
+ assert.match(css,/@keyframes players-filter-slide-out\{from\{transform:translate3d\(0,0,0\)\}/);
+ assert.match(css,/\.app-players-filter-dialog\[open\]\.is-closing\{animation:players-filter-slide-out/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{[^}]*animation:none!important/);
+ assert.match(js,/document\.querySelector\('\.fa-shell-topbar'\)/);
+ assert.match(js,/header\?\.getBoundingClientRect\(\)\.bottom\?\?60/);
+ assert.match(js,/document\.documentElement\.style\.setProperty\('--players-filter-top',bottom\+'px'\)/);
+ assert.match(js,/syncDrawerTop\(\);[\s\S]*filterDialog\.showModal\(\)/);
+ assert.match(js,/filterDialog\?\.addEventListener\('animationend'/);
+ assert.match(js,/filterDialog\?\.addEventListener\('cancel',event=>\{event\.preventDefault\(\);closeFilterDialog\(\)\}\)/);
+ assert.match(js,/window\.addEventListener\('resize',\(\)=>\{if\(filterDialog\?\.open\)syncDrawerTop\(\)\}\)/);
+});
+test('Players nationality, position and foot share the site language-trigger dropdown patterns',()=>{
+ const html=read('players/index.html'),generator=read('tools/generate-app-pages.mjs');
+ const css=read('assets/app.css'),code=read('assets/players-directory.js');
+ const panel=html.slice(html.indexOf('<dialog id="players-filter-dialog"'),html.indexOf('<div class="app-players-table-scroll"'));
+ for(const key of ['nationality','position','foot']){
+  assert.ok(panel.includes('class="language-control app-players-filter-select" data-players-filter-select="'+key+'"'),key);
+  assert.ok(panel.includes('data-players-filter="'+key+'" tabindex="-1" aria-hidden="true" hidden'),key+' native state');
+  assert.ok(panel.includes('class="language-trigger app-players-filter-dropdown-trigger" role="combobox" aria-haspopup="listbox"'),key+' trigger');
+  assert.ok(panel.includes('role="listbox" aria-labelledby="players-filter-'+key+'-label" hidden'),key+' menu');
+  assert.ok(generator.includes('data-players-filter-select=\\\"'+key+'\\\"'),key+' generator');
+ }
+ assert.equal((panel.match(/class="language-control app-players-filter-select"/g)||[]).length,3);
+ assert.equal((panel.match(/data-players-filter="(nationality|position|ageMin|ageMax|foot)"/g)||[]).length,5);
+ assert.match(css,/\.app-players-filter-select \.language-trigger\{box-sizing:border-box;width:100%/);
+ assert.match(css,/\.app-players-filter-select \.language-menu\{box-sizing:border-box/);
+ assert.match(css,/\.app-players-filter-native\[hidden\]\{display:none!important\}/);
+ assert.match(code,/function openDropdownMenu\(wrapper\)/);
+ assert.match(code,/function chooseDropdown\(wrapper,index\)/);
+ assert.match(code,/function closeDropdown\(wrapper,restoreFocus=false\)/);
+ assert.match(code,/trigger\.setAttribute\('aria-activedescendant',options\[selected\]\.id\)/);
+ assert.match(code,/if\(k==='Escape'&&!menu\.hidden\)\{event\.preventDefault\(\);event\.stopPropagation\(\);closeDropdown\(wrapper\);return;\}/);
+ assert.match(code,/const next=k==='Home'\?0:k==='End'\?options\.length-1/);
+ assert.match(code,/field\.value=options\[index\]\.dataset\.playersFilterOption/);
+ assert.doesNotMatch(code,/field\.addEventListener\('change',applyFilters\)/);
+ assert.match(html,/for\(const select of document\.querySelectorAll\('\.app-players-filter-native'\)\)/);
 });

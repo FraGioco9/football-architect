@@ -72,6 +72,7 @@
   const body=table.tBodies[0],countNode=document.querySelector('[data-players-count]');
   const filterPanel=document.querySelector('.app-players-filters');
   const filterFields=[...document.querySelectorAll('.app-players-filters [data-players-filter]')];
+  const dropdowns=[...document.querySelectorAll('.app-players-filter-select')];
   const reset=document.querySelector('[data-players-reset]');
   const filterTrigger=document.querySelector('[data-players-filter-open]');
   const filterTriggerLabel=document.querySelector('[data-players-filter-trigger-label]');
@@ -107,6 +108,18 @@
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
   }
+  function syncDropdown(field){
+   const wrapper=field.closest('.app-players-filter-select');
+   if(!wrapper)return;
+   const caption=wrapper.querySelector('[data-players-filter-value]');
+   if(caption)caption.textContent=field.selectedOptions[0]?.textContent||'';
+   for(const option of wrapper.querySelectorAll('[data-players-filter-option]')){
+    const selected=option.dataset.playersFilterOption===field.value;
+    option.setAttribute('aria-selected',String(selected));
+    const native=[...field.options].find(item=>item.value===option.dataset.playersFilterOption);
+    if(native)option.textContent=native.textContent;
+   }
+  }
   function syncFilterControls(){
    const t=filterLocale(),main=locale();
    filterPanel?.setAttribute('aria-label',t.title);
@@ -125,7 +138,7 @@
     const key=field.dataset.playersFilter;
     const selected=state.filters?.[key]||'';
     if(field.value!==selected)field.value=selected;
-    const label=field.closest('label')?.querySelector('[data-players-filter-label]');
+    const label=field.closest('.app-players-filter-control')?.querySelector('[data-players-filter-label]');
     if(label)label.textContent=t.names[filterKeys.indexOf(key)];
     if(field.tagName==='SELECT'){
      field.options[0].textContent=t.all;
@@ -136,6 +149,7 @@
       option.textContent=name||country;
      }
     }else field.placeholder=t.all;
+    if(field.tagName==='SELECT')syncDropdown(field);
    }
    if(reset){reset.textContent=t.reset;reset.disabled=false;}
   }
@@ -222,6 +236,71 @@
    if(state.group===group)return;
    state.group=group;syncUrl();refresh();
   }
+  // Shared site combobox presentation (language-trigger / language-menu / language-option).
+  // Keep focus on the trigger and expose the active option via aria-activedescendant.
+  let openDropdown=null;
+  const dropdownParts=wrapper=>({
+   field:wrapper.querySelector('[data-players-filter]'),
+   trigger:wrapper.querySelector('.language-trigger'),
+   menu:wrapper.querySelector('.language-menu'),
+   options:[...wrapper.querySelectorAll('[data-players-filter-option]')]
+  });
+  function highlightDropdown(wrapper,index){
+   const {trigger,menu,options}=dropdownParts(wrapper);
+   if(!options.length)return;
+   const selected=(index+options.length)%options.length;
+   options.forEach((option,i)=>{if(i===selected)option.dataset.active='true';else delete option.dataset.active});
+   trigger.setAttribute('aria-activedescendant',options[selected].id);
+   if(!menu.hidden)options[selected].scrollIntoView?.({block:'nearest'});
+  }
+  function closeDropdown(wrapper,restoreFocus=false){
+   if(!wrapper)return;
+   const {trigger,menu,options}=dropdownParts(wrapper);
+   menu.hidden=true;
+   trigger.setAttribute('aria-expanded','false');
+   trigger.removeAttribute('aria-activedescendant');
+   options.forEach(option=>delete option.dataset.active);
+   if(openDropdown===wrapper)openDropdown=null;
+   if(restoreFocus)trigger.focus({preventScroll:true});
+  }
+  function openDropdownMenu(wrapper){
+   if(openDropdown&&openDropdown!==wrapper)closeDropdown(openDropdown);
+   const {field,trigger,menu,options}=dropdownParts(wrapper);
+   openDropdown=wrapper;menu.hidden=false;trigger.setAttribute('aria-expanded','true');
+   const current=options.findIndex(option=>option.dataset.playersFilterOption===field.value);
+   highlightDropdown(wrapper,Math.max(0,current));
+  }
+  function chooseDropdown(wrapper,index){
+   const {field,options}=dropdownParts(wrapper);
+   if(!options[index])return;
+   field.value=options[index].dataset.playersFilterOption;
+   syncDropdown(field);closeDropdown(wrapper,true);
+  }
+  for(const wrapper of dropdowns){
+   const {trigger,menu,options}=dropdownParts(wrapper);
+   trigger.addEventListener('click',()=>{
+    if(menu.hidden)openDropdownMenu(wrapper);else closeDropdown(wrapper);
+   });
+   trigger.addEventListener('keydown',event=>{
+    const k=event.key;
+    if(k==='Escape'&&!menu.hidden){event.preventDefault();event.stopPropagation();closeDropdown(wrapper);return;}
+    if(k==='Tab'){closeDropdown(wrapper);return;}
+    if(!['ArrowDown','ArrowUp','Home','End','Enter',' '].includes(k))return;
+    event.preventDefault();
+    if(menu.hidden){openDropdownMenu(wrapper);if(k==='Enter'||k===' ')return;}
+    const active=options.findIndex(option=>option.id===trigger.getAttribute('aria-activedescendant'));
+    if(k==='Enter'||k===' '){chooseDropdown(wrapper,Math.max(0,active));return;}
+    const next=k==='Home'?0:k==='End'?options.length-1:active+(k==='ArrowUp'?-1:1);
+    highlightDropdown(wrapper,next);
+   });
+   menu.addEventListener('click',event=>{
+    const option=event.target.closest('[data-players-filter-option]');
+    if(option&&menu.contains(option))chooseDropdown(wrapper,options.indexOf(option));
+   });
+  }
+  filterDialog?.addEventListener('click',event=>{
+   if(openDropdown&&!openDropdown.contains(event.target))closeDropdown(openDropdown);
+  });
   function applyFilters(){
    const fields=Object.fromEntries(filterFields.map(field=>[field.dataset.playersFilter,field.value]));
    for(const field of filterFields){
@@ -235,8 +314,8 @@
     field.setCustomValidity(filterLocale().range);field.reportValidity();return;
    }
    const nextFilters=Object.fromEntries(filterKeys.map(key=>[key,fields[key]||'']));
-   if(filterSignature(nextFilters)===filterSignature(state.filters)){filterDialog?.close();return;}
-   state.filters=nextFilters;state.page=1;syncUrl();syncControls();filterDialog?.close();load(1);
+   if(filterSignature(nextFilters)===filterSignature(state.filters)){closeFilterDialog();return;}
+   state.filters=nextFilters;state.page=1;syncUrl();syncControls();closeFilterDialog();load(1);
   }
   // Draft values remain inside the modal until Apply; never fetch on individual changes.
   for(const field of filterFields)field.addEventListener('input',()=>field.setCustomValidity(''));
@@ -245,31 +324,58 @@
    const changed=filterKeys.some(key=>state.filters?.[key])||state.page!==1;
    state.filters=Object.fromEntries(filterKeys.map(key=>[key,'']));
    for(const field of filterFields)field.setCustomValidity('');
-   state.page=1;syncUrl();syncControls();filterDialog?.close();
+   state.page=1;syncUrl();syncControls();closeFilterDialog();
    if(changed)load(1);
   });
-  let previousOverflow='';
+  let previousOverflow='',closeFallback=null;
+  function syncDrawerTop(){
+   const header=document.querySelector('.fa-shell-topbar');
+   const bottom=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom??60));
+   document.documentElement.style.setProperty('--players-filter-top',bottom+'px');
+  }
+  function finishFilterClose(){
+   if(closeFallback!==null){clearTimeout(closeFallback);closeFallback=null;}
+   if(filterDialog?.open)closeFilterDialog();
+  }
+  function closeFilterDialog(){
+   if(!filterDialog?.open||filterDialog.classList.contains('is-closing'))return;
+   closeDropdown(openDropdown);
+   if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){finishFilterClose();return;}
+   filterDialog.classList.add('is-closing');
+   // Safari/Chromium: event drives closure; fallback handles throttled animations.
+   closeFallback=setTimeout(finishFilterClose,280);
+  }
   filterTrigger?.addEventListener('click',()=>{
    if(!filterDialog||filterDialog.open)return;
    syncFilterControls(); // Reopen from applied state; discard unsubmitted draft edits.
+   syncDrawerTop();
    previousOverflow=document.documentElement.style.overflow;
-   filterDialog.showModal(); // Native focus trap, backdrop and Escape-to-close.
+   filterDialog.classList.remove('is-closing');
+   filterDialog.showModal(); // Native focus containment; drawer begins below the fixed header.
    document.documentElement.style.overflow='hidden';
    filterTrigger.setAttribute('aria-expanded','true');
-   filterFields[0]?.focus({preventScroll:true});
+   dropdowns[0]?.querySelector('.language-trigger')?.focus({preventScroll:true});
   });
-  filterClose?.addEventListener('click',()=>filterDialog?.close());
+  filterClose?.addEventListener('click',closeFilterDialog);
+  filterDialog?.addEventListener('cancel',event=>{event.preventDefault();closeFilterDialog()});
+  filterDialog?.addEventListener('animationend',event=>{
+   if(event.target===filterDialog&&event.animationName==='players-filter-slide-out')finishFilterClose();
+  });
   filterDialog?.addEventListener('click',event=>{
    if(event.target!==filterDialog)return;
    const bounds=filterDialog.getBoundingClientRect();
-   if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)filterDialog.close();
+   if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)closeFilterDialog();
   });
   filterDialog?.addEventListener('close',()=>{
+   if(closeFallback!==null){clearTimeout(closeFallback);closeFallback=null;}
+   filterDialog.classList.remove('is-closing');
+   closeDropdown(openDropdown);
    document.documentElement.style.overflow=previousOverflow;
    filterTrigger?.setAttribute('aria-expanded','false');
    for(const field of filterFields)field.setCustomValidity('');
    filterTrigger?.focus({preventScroll:true});
   });
+  window.addEventListener('resize',()=>{if(filterDialog?.open)syncDrawerTop()});
   tabs.forEach(tab=>tab.addEventListener('click',event=>{event.preventDefault();changeView(tab.dataset.playersView)}));
   groupTabs.forEach(tab=>tab.addEventListener('click',()=>changeGroup(tab.dataset.playersGroup)));
   function keyboardTab(event,nodes,change,key){
