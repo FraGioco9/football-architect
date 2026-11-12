@@ -5,6 +5,7 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=model;
 })(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
+ const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
  const views=['overview','roster','fixtures','stats','history'];
  const keys=['overview','roster','fixtures','stats','history','identity','profile','competition','primaryName','fullName','compactName','abbr','nickname','city','country','primaryColor','secondaryColor','stadium','division','provisional','outside','emptyRoster','emptyFixtures','emptyStats','emptyHistory','navigation','crest','error','skip'];
  const rows={
@@ -286,6 +287,8 @@
      '<tbody>'+rows+'</tbody></table></div>';
    }
    content='<section class="club-history" aria-busy="'+pending+'">'+body+'</section>';
+  }else if(selected.view==='fixtures'){
+   content=fixtureUI.render({manifest,lang,season:params.get('season')==='1'?1:null});
   }else{
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';

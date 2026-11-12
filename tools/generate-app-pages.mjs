@@ -221,6 +221,9 @@ const normalizeRouteLinks=(html,path)=>{
  });
 };
 const writeOutput=(path,content)=>{
+ // Function.toString() preserves CRLF in serialized bootstrap source on Windows.
+ // Normalize the assembled output before structural checks, comparison and writes.
+ content=content.replace(/\r\n/g,"\n");
  const routeTag='  <script src="/assets/routes-registry.js" defer></script>\n';
  if(path.endsWith('.html')&&/^(calendar|clubs|competitions)\//.test(path)&&!content.includes(routeTag)){
   if(!content.includes('<head>\n'))throw Error('Route bootstrap head missing: '+path);
