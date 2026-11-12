@@ -64,3 +64,13 @@ No merge, deploy/publication, remote D1 write, secret change or unattended task 
 - Manual acceptance remains UNKNOWN regardless of automatic status.
 
 Final venue audit: the away glyph uses an actual monochrome airplane silhouette. This small approved-requirement correction follows the initial PR creation, so its normal push starts a new exact-head CI cycle; no manual CI dispatch/rerun is used.
+
+## Windows owner follow-up — CRLF bootstrap generation
+
+The owner reported 52/53 tests passing on Windows / Node 24.19.0, with generation consistency failing at `calendar/index.html` offset 952. Reproduced the **same mismatch on Node 22.23.5** by converting generator/bootstrap `.mjs` sources to CRLF: `Function.toString()` retains source line endings, while only the checked-in HTML had been normalized before comparison.
+
+The shared output writer now normalizes assembled CRLF output to LF before structural checks, comparison and writing. This covers Calendar, Competition and Club bootstraps without editing generated HTML or source/artwork bytes. The Windows fixture now includes the Club Fixtures renderer dependency.
+
+Automatic follow-up: **80/80 targeted checks PASS on Node 22**, covering generator Windows fixtures, Club pages, authoritative season, app shell and generated boundaries. The new regression first failed at the reported offset, then passed for both `--check` and generation from CRLF sources; a deliberately modified HTML attribute still fails, preserving content-drift detection. Generator consistency, discovery and scoped diff checks PASS. Active PR #528 touches distinct Admin sections of the generator; this fix is confined to the shared output writer.
+
+Actual owner Windows rerun remains UNKNOWN until reported; Node 24 compatibility is not certified. Use the project's Node.js 22. This is one owner-reported follow-up validation failure after the initial delivery; quota/credits and platform retry counter remain UNKNOWN. No merge, deployment or remote database operation.
