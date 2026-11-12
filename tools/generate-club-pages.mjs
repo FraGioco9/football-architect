@@ -33,7 +33,19 @@ function bootstrapClubFirstPaint(){
  const fixtureLabels=JSON.parse(fixtures.dataset.labels)[locale];
  fixtures.setAttribute('aria-label',fixtureLabels.competition);
  for(const node of fixtures.querySelectorAll('[data-club-fixture-text]'))node.textContent=fixtureLabels[node.dataset.clubFixtureText];
- const requested=params.get('season');const initial=requested==='1'?1:null;
+ const requested=params.get('season'),valid=/^[1-9]\d{0,8}$/.test(requested||'');
+  let initial=valid?Number(requested):null;
+  // The protected DEV bootstrap exposes the same session season as Standings
+  // before the asynchronous world/manifest read. Public default remains unknown
+  // until the canonical world clock confirms it; never guess Season 1.
+  if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false){
+   try{
+    const raw=sessionStorage.getItem('football-architect:standings-dev-season');
+    const candidate=raw===null||raw.trim()===''?1:Number(raw);
+    const limit=Number.isInteger(candidate)&&candidate>=0&&candidate<=4?Math.max(1,candidate):1;
+    initial=params.has('season')?(valid?Math.min(limit,initial):1):limit;
+   }catch{}
+  }
  for(const control of fixtures.querySelectorAll('[data-club-fixture-control]')){const id=control.dataset.clubFixtureControl,label=fixtureLabels[id];control.querySelector('button').setAttribute('aria-label',label);control.querySelector('[role=listbox]').setAttribute('aria-label',label);const value=control.querySelector('[data-club-fixture-value]');value.textContent=id==='season'?fixtureLabels.season+(initial===null?' ':' '+initial):fixtureLabels.all;if(id==='season'&&initial===null){const placeholder=document.createElement('span');placeholder.className='club-fp-bar club-fixture-season-loading';placeholder.setAttribute('aria-hidden','true');value.append(placeholder);}}
  other.setAttribute('aria-hidden',String(view!=='history'));
  if(view==='overview'){overview.removeAttribute('aria-hidden');overview.setAttribute('aria-busy','true');}

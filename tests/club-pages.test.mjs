@@ -763,3 +763,34 @@ test('CLUB-FIXTURES: viewed seasons follow Standings and clamp invalid or future
  assert.equal(ui.resolveSeason({current:null,requested:'999'}).season,null,'unverified clock cannot clamp a future link');
  assert.deepEqual(ui.resolveSeason({current:null}).seasons,[]);
 });
+
+test('CLUB-FIXTURES: text-only hover and overview navigation, with sized skeleton slots',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const row={id:'game',competitionId:'IT-1',day:12,round:4,phaseId:'league',opponentId:'IT-2',venue:'home',goalsFor:null,goalsAgainst:null};
+ const rendered=ui.render({manifest,season:1,seasons:[1],snapshot:{coverage:'complete',rows:[row],competitions:[]}});
+ assert.match(rendered,/class="club-fixture-opponent" href="\/clubs\/it\/2\/overview"/);
+ assert.doesNotMatch(rendered,/\/clubs\/it\/2\/fixtures/);
+ assert.match(rendered,/href="\/competitions\/it-1\/fixtures\?season=1&amp;matchday=4"/);
+ const loading=ui.render();
+ for(const part of ['day','league','name','venue','score','status'])
+  assert.match(loading,new RegExp('club-fixture-skeleton-'+part));
+ const css=read('assets/club-page.css');
+ assert.match(css,/a\.club-fixture-opponent:is\(:hover,:focus-visible\)>span:last-child\{text-decoration:underline/);
+ assert.match(css,/\.club-fixture-meta a:is\(:hover,:focus-visible\)\{text-decoration:underline/);
+ assert.match(css,/\.club-fixture-opponent\{[^}]*width:fit-content/);
+ assert.match(css,/\.club-fixture-select \[data-club-fixture-value\]\{[^}]*white-space:nowrap/);
+ assert.match(css,/\.club-fixture-loading \.club-fixture-skeleton-venue\{width:18px/);
+ const expected=ui.render().replace('<section class="club-fixtures"',"<section hidden data-labels='"+JSON.stringify(ui.copy).replaceAll("'","&#39;")+"' class=\"club-fixtures\"");
+ assert.ok(read('clubs/_shared/index.html').includes(expected),'first-paint fixtures are generated from the current renderer');
+});
+
+test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a public guess',()=>{
+ const generator=read('tools/generate-club-pages.mjs');
+ const generated=read('clubs/_shared/index.html');
+ assert.match(generator,/window\.faDevPreviewMode===true&&window\.faDebugEnabled!==false/);
+ assert.match(generator,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
+ assert.match(generator,/initial=params\.has\('season'\)\?\(valid\?Math\.min\(limit,initial\):1\):limit/);
+ assert.match(generated,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
+ assert.match(read('assets/club-page.css'),/\.club-fixture-season-loading\{width:2ch/);
+});
