@@ -41,14 +41,24 @@
  const validId=()=>query.size===1&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id||'');
  const table=root.querySelector('.app-players-table'),scroll=root.querySelector('.app-players-table-scroll');
  const body=table.tBodies[0],feedback=root.querySelector('[data-admin-players-feedback]');
- const summary=root.querySelector('[data-admin-players-summary]'),count=root.querySelector('[data-admin-preview-count]');
+ const count=root.querySelector('[data-admin-preview-count]');
  const pagination=root.querySelector('[data-admin-preview-pagination]'),pageLabel=root.querySelector('[data-admin-preview-page]');
  const prev=root.querySelector('[data-admin-preview-prev]'),next=root.querySelector('[data-admin-preview-next]');
  const tabs=[...root.querySelectorAll('[data-admin-preview-view]')],groupTabs=[...root.querySelectorAll('[data-admin-preview-group]')];
  const confirmation=root.querySelector('[data-admin-players-confirmation]'),commit=root.querySelector('[data-admin-players-commit]');
  const regen=root.querySelector('[data-admin-preview-regenerate]'),back=root.querySelector('[data-admin-preview-back]');
- const approval=root.querySelector('[data-admin-preview-approval]'),receipt=root.querySelector('[data-admin-players-commit-status]');
+ const confirmationDialog=root.querySelector('[data-admin-preview-confirm-dialog]');
+ const confirmAction=root.querySelector('[data-admin-preview-confirm-action]');
+ const confirmCancel=root.querySelector('[data-admin-preview-cancel]');
+ const receipt=root.querySelector('[data-admin-players-commit-status]');
  let draft=null,view='overview',group='technical',sort='',order='',page=0,busy=false,saved=false,status='loading';
+ const buttonLabels={
+  en:{generate:'Generate',regenerate:'Regenerate',back:'Back',heading:'Confirm generation',cancel:'Cancel',confirm:'Confirm'},
+  it:{generate:'Genera',regenerate:'Rigenera',back:'Indietro',heading:'Conferma generazione',cancel:'Annulla',confirm:'Conferma'},
+  de:{generate:'Generieren',regenerate:'Neu generieren',back:'Zurück',heading:'Generierung bestätigen',cancel:'Abbrechen',confirm:'Bestätigen'},
+  es:{generate:'Generar',regenerate:'Regenerar',back:'Volver',heading:'Confirmar generación',cancel:'Cancelar',confirm:'Confirmar'},
+  fr:{generate:'Générer',regenerate:'Régénérer',back:'Retour',heading:'Confirmer la génération',cancel:'Annuler',confirm:'Confirmer'}
+ };
  const pageSize=25,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
  function columns(){return view==='overview'?['nationality','name','age','positions','height','foot']:['nationality','name','positions',...groups[group]];}
  function colLabel(key){
@@ -127,11 +137,12 @@
   body.replaceChildren(frag);
  }
  function render(){
-  const t=locale(),c=tr();document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
-  root.querySelector('[data-admin-preview-title]').textContent=c.title;
+  const t=locale(),c=tr(),actions=buttonLabels[language()]||buttonLabels.en;
+  document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
+  root.querySelector('[data-admin-preview-confirm-heading]').textContent=actions.heading;
   root.querySelector('[data-admin-preview-confirm-label]').textContent=c.confirm;
-  root.querySelector('[data-admin-preview-back]').textContent=c.back;
-  regen.textContent=c.regen;commit.textContent=c.commit;
+  confirmCancel.textContent=actions.cancel;confirmAction.textContent=actions.confirm;
+  back.textContent=actions.back;regen.textContent=actions.regenerate;commit.textContent=actions.generate;
   tabs.forEach((tab,i)=>{const active=tab.dataset.adminPreviewView===view;tab.textContent=t.tabs[i];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
   groupTabs.forEach((tab,i)=>{const active=tab.dataset.adminPreviewGroup===group;tab.textContent=t.groups[i];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
   renderHead();pagination.hidden=true;
@@ -158,13 +169,13 @@
    }
    if(ordered.length)body.replaceChildren(frag);else showMessage(t.empty);
    count.textContent=new Intl.NumberFormat(language()).format(draft.summary.count)+' '+(draft.summary.count===1?t.one:t.many);
-   summary.textContent=c.summary+' · '+Object.keys(draft.summary.countries||{}).length+' '+t.nationality.toLowerCase()+' · '+draft.summary.seed;
-   pageLabel.textContent=t.page+' '+(page+1)+' '+t.of+' '+total;
+   pageLabel.textContent=t.page+' '+(page+1)+' '+t.of+' '+total+' · '+new Intl.NumberFormat(language()).format(draft.summary.count)+' '+(draft.summary.count===1?t.one:t.many);
    prev.textContent=t.prev;next.textContent=t.next;prev.disabled=page===0;next.disabled=page===total-1;
    pagination.hidden=total<=1;
   }
-  regen.disabled=!draft||busy||saved;commit.disabled=!draft||busy||saved||confirmation.value!=='GENERATE PLAYERS';
-  approval.hidden=!draft||saved;receipt.hidden=!saved;
+  regen.disabled=!draft||busy;commit.disabled=!draft||busy||saved;
+  confirmAction.disabled=!draft||busy||saved||confirmation.value!=='GENERATE PLAYERS';
+  feedback.hidden=!feedback.textContent;receipt.hidden=!saved;
  }
  async function authorizedPost(path,payload){
   const session=await fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
@@ -188,17 +199,19 @@
    const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
    if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options)
     throw new Error('invalid_draft');
-   draft=info;status='ready';feedback.textContent=tr().ready;
+   draft=info;status='ready';feedback.textContent='';
   }catch(e){status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;}
   render();
  }
  async function regenerate(){
-  if(!draft||busy||saved)return;
+  if(!draft||busy)return;
   busy=true;feedback.textContent=tr().regenerating;render();
   try{
    const options={...draft.options};
-   // Preserve manual seeds; auto-generated seeds must be fresh on each preview.
-   if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
+   // A saved cohort always starts a new deterministic batch; otherwise retain
+   // manual seeds and let server-owned auto seeds regenerate freely.
+   if(saved)options.seed='fa-next-'+draft.draftId;
+   else if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
    const nextDraft=await authorizedPost('/api/admin/players/preview',{options});
    if(!nextDraft||!nextDraft.draftId)throw new Error('invalid_preview');
    location.replace('/admin/players/preview?draftId='+encodeURIComponent(nextDraft.draftId));
@@ -214,7 +227,7 @@
    back.href='/admin/players?nextSeed='+encodeURIComponent('fa-next-'+answer.batchId);
    feedback.textContent='';
   }catch(e){feedback.textContent=(e.message==='stale_players_preview'||e.message==='players_preview_expired'?tr().expired:tr().error+': '+e.message);}
-  finally{busy=false;render();}
+  finally{busy=false;if(confirmationDialog.open)confirmationDialog.close();confirmation.value='';render();}
  }
  function keyTabs(event,tabs,field,fn){
   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
@@ -238,7 +251,17 @@
  next.addEventListener('click',()=>{if(draft&&page+1<Math.ceil(draft.summary.count/pageSize)){page++;render();}});
  confirmation.addEventListener('input',render);
  regen.addEventListener('click',()=>{void regenerate();});
- commit.addEventListener('click',()=>{void save();});
+ commit.addEventListener('click',()=>{
+  if(commit.disabled)return;
+  confirmation.value='';render();confirmationDialog.showModal();confirmation.focus();
+ });
+ confirmCancel.addEventListener('click',()=>confirmationDialog.close());
+ confirmAction.addEventListener('click',()=>{void save();});
+ confirmation.addEventListener('keydown',event=>{
+  if(event.key==='Enter'&&!confirmAction.disabled){event.preventDefault();void save();}
+ });
+ confirmationDialog.addEventListener('close',()=>{confirmation.value='';render();commit.focus();});
+ confirmationDialog.addEventListener('click',event=>{if(event.target===confirmationDialog)confirmationDialog.close();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  void load();
 })();

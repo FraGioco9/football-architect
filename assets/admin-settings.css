@@ -163,17 +163,3 @@
 .app-admin-view .admin-players-feedback,.app-admin-view .admin-players-commit-status{min-height:1.4em;margin:0;overflow-wrap:anywhere}
 .app-admin-view .admin-players-commit-status{padding:12px 20px}
 
-/* Dedicated Admin preview reuses the public Players table, toolbar and pagination. */
-.app-admin-view .admin-players-preview-page{display:grid;gap:12px;min-width:0;padding:20px}
-.app-admin-view .admin-players-preview-page[hidden]{display:none!important}
-.app-admin-view .admin-players-preview-page h2{font-size:var(--fa-text-panel-heading);font-weight:700;margin:0}
-.app-admin-view .admin-players-preview-page p{margin:0}
-.app-admin-view .admin-players-preview-page .app-players-tabs{margin-top:4px}
-.app-admin-view .admin-players-preview-page .app-players-table-scroll{margin-top:0}
-.app-admin-view .admin-players-preview-page .app-players-pagination{margin-top:0}
-.app-admin-view .admin-players-preview-page .admin-players-preview-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
-.app-admin-view .admin-players-preview-page .admin-players-preview-actions button{margin:0}
-.app-admin-view .admin-players-preview-page .admin-players-approval{padding-top:14px}
-.app-admin-view .admin-players-preview-page .admin-players-commit-status[hidden]{display:none!important}
-
-.app-admin-view .admin-players-preview-page .admin-players-approval[hidden]{display:none!important}

@@ -53,3 +53,22 @@ test('Both Players tables use the same nationality tooltip component and styles'
  assert.equal(isAllowlistedPublicPath('assets/players-nationality-tooltip.js'),true);
  assert.equal(isAllowlistedPublicPath('assets/admin-players-preview.js'),true);
 });
+
+test('Dedicated preview has the same bare Players table and just three page actions',async()=>{
+ const html=read('admin/players/preview/index.html');
+ const publicHtml=read('players/index.html');
+ const {renderAdminPlayersPreview}=await import('../tools/render-admin-settings.mjs');
+ const preview=renderAdminPlayersPreview();
+ assert.ok(html.includes(preview));
+ for(const selector of ['app-players-header','app-page-title','app-competition-tabs app-players-tabs','app-players-toolbar','app-players-groups','app-players-count','app-players-table-scroll','app-players-table','app-players-pagination','app-players-nationality-flag']){
+  if(selector==='app-players-nationality-flag')continue; // Flag is rendered from the common JS renderer.
+  assert.ok(preview.includes(selector),selector);
+  assert.ok(publicHtml.includes(selector),selector+' must be shared with /players');
+ }
+ for(const action of ['data-admin-players-commit','data-admin-preview-regenerate','data-admin-preview-back'])assert.ok(preview.includes(action),action);
+ assert.doesNotMatch(preview,/app-panel|app-settings-panel|admin-settings|admin-players-preview-summary|admin-players-approval|admin-page-heading|data-admin-back/);
+ assert.match(preview,/<dialog[^>]*data-admin-preview-confirm-dialog/);
+ assert.equal((preview.match(/class="app-players-loading-row"/g)||[]).length,5);
+ assert.ok(preview.includes('app-competition-tab app-players-group'), 'Attribute groups use the identical public tab classes');
+ assert.doesNotMatch(html,/class="admin-page-heading"/, 'No duplicated Admin back header');
+});

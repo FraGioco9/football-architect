@@ -81,7 +81,8 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.ok(preview.includes(renderAdminPlayersPreview()));
  for(const selector of ['data-admin-players-preview-page','data-admin-preview-view','data-admin-preview-group','data-admin-preview-rows','data-admin-players-confirmation','data-admin-players-commit'])
   assert.ok(preview.includes(selector),selector);
- assert.match(preview,/href="\/admin\/players" data-admin-back/);
+ assert.match(preview,/href="\/admin\/players" data-admin-preview-back/);
+ assert.doesNotMatch(preview,/class="admin-page-heading"|data-admin-back|class="app-panel app-settings-panel admin-settings admin-players admin-players-preview-page"/);
  assert.doesNotMatch(players,/data-admin-players-copy|data-admin-players-command|Copy PowerShell command/,'Preview/approval replaces manual CLI copy');
 
  assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');

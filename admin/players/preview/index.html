@@ -151,24 +151,29 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
       <div class="fa-shell-content-scroll">
       <main class="app-main" id="main-content" tabindex="-1">
 <section id="app-admin" class="app-view app-admin-view" aria-labelledby="admin-title" hidden>
-          <div class="admin-page-heading"><h1 id="admin-title" class="app-page-title">Players</h1>
-          <a class="app-link app-link-secondary admin-back" href="/admin/players" data-admin-back aria-label="Back to Player generation"><svg class="fa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Admin</span></a></div>
-          <section class="app-panel app-settings-panel admin-settings admin-players admin-players-preview-page" data-admin-players-preview-page aria-labelledby="admin-players-preview-heading" hidden>
- <h2 id="admin-players-preview-heading" data-admin-preview-title>Player preview</h2>
- <p class="admin-players-feedback" data-admin-players-feedback role="status" aria-live="polite"></p>
- <p class="admin-players-preview-summary" data-admin-players-summary></p>
+          <div class="app-players-preview-page" data-admin-players-preview-page hidden>
+ <header class="app-players-header">
+  <h1 id="admin-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>
+  <div class="app-players-preview-actions" aria-label="Preview actions">
+   <button type="button" class="app-players-filter-trigger" data-admin-players-commit disabled>Generate</button>
+   <button type="button" class="app-players-filter-trigger" data-admin-preview-regenerate disabled>Regenerate</button>
+   <a class="app-players-filter-trigger" href="/admin/players" data-admin-preview-back>Back</a>
+  </div>
+ </header>
+ <p class="app-players-preview-message" data-admin-players-feedback role="status" aria-live="polite" hidden></p>
+ <p class="app-players-preview-message" data-admin-players-commit-status role="status" aria-live="polite" hidden></p>
  <nav class="app-competition-tabs app-players-tabs" role="tablist" aria-label="Player views" data-admin-preview-tabs>
   <button type="button" class="app-competition-tab is-active" role="tab" aria-selected="true" data-admin-preview-view="overview">Overview</button>
   <button type="button" class="app-competition-tab" role="tab" aria-selected="false" data-admin-preview-view="attributes">Attributes</button>
  </nav>
  <div class="app-players-toolbar">
   <nav class="app-players-groups" role="tablist" aria-label="Attribute groups" data-admin-preview-groups>
-   <button type="button" class="app-players-group" role="tab" data-admin-preview-group="technical">Technical</button>
-   <button type="button" class="app-players-group" role="tab" data-admin-preview-group="mental">Mental</button>
-   <button type="button" class="app-players-group" role="tab" data-admin-preview-group="physical">Physical</button>
-   <button type="button" class="app-players-group" role="tab" data-admin-preview-group="goalkeeping">Goalkeeper</button>
+   <button type="button" class="app-competition-tab app-players-group is-active" role="tab" aria-selected="true" data-admin-preview-group="technical">Technical</button>
+   <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-admin-preview-group="mental">Mental</button>
+   <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-admin-preview-group="physical">Physical</button>
+   <button type="button" class="app-competition-tab app-players-group" role="tab" aria-selected="false" data-admin-preview-group="goalkeeping">Goalkeeper</button>
   </nav>
-  <span class="app-players-count" data-admin-preview-count aria-live="polite"></span>
+  <p class="app-players-count" data-admin-preview-count aria-live="polite"><span class="app-players-count-placeholder" aria-hidden="true"></span></p>
  </div>
  <div class="app-players-table-scroll" role="region" tabindex="0" aria-label="Generated player preview" aria-busy="true">
   <table class="app-players-table" data-players-table-mode="overview">
@@ -182,17 +187,18 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
   <span class="app-players-page-count" data-admin-preview-page aria-live="polite"></span>
   <button type="button" class="app-players-page-button" data-admin-preview-next disabled>Next</button>
  </nav>
- <div class="admin-players-preview-actions">
-  <button type="button" data-admin-preview-regenerate disabled>Regenerate preview</button>
-  <a class="app-link app-link-secondary" href="/admin/players" data-admin-preview-back>Back to generator</a>
- </div>
- <div class="admin-players-approval" data-admin-preview-approval>
-  <label for="admin-players-approval" data-admin-preview-confirm-label>Type GENERATE PLAYERS to confirm this preview</label>
-  <input id="admin-players-approval" type="text" data-admin-players-confirmation autocomplete="off" spellcheck="false" placeholder="GENERATE PLAYERS">
-  <button type="button" data-admin-players-commit disabled>Generate in environment</button>
- </div>
- <p class="admin-players-commit-status" data-admin-players-commit-status role="status" aria-live="polite" hidden></p>
-</section>
+ <dialog class="app-players-preview-confirm-dialog" data-admin-preview-confirm-dialog aria-labelledby="admin-preview-confirm-heading">
+  <div class="app-players-preview-confirm-content">
+   <h2 id="admin-preview-confirm-heading" data-admin-preview-confirm-heading>Generate players</h2>
+   <label for="admin-preview-confirmation" data-admin-preview-confirm-label>Type GENERATE PLAYERS to confirm this generation</label>
+   <input id="admin-preview-confirmation" type="text" data-admin-players-confirmation autocomplete="off" spellcheck="false" placeholder="GENERATE PLAYERS">
+   <div class="app-players-preview-confirm-actions">
+    <button type="button" class="app-players-filter-trigger" data-admin-preview-cancel>Cancel</button>
+    <button type="button" class="app-players-filter-trigger" data-admin-preview-confirm-action disabled>Confirm</button>
+   </div>
+  </div>
+ </dialog>
+</div>
         </section>
       </main>
       <footer class="app-footer"><span>FOOTBALL ARCHITECT</span><span data-app-i18n="offline">OFFLINE · SINGLE PLAYER</span></footer>
