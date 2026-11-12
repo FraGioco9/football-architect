@@ -56,7 +56,9 @@ try {
    await routePage.evaluate(()=>{
     window.__sh02Tabs=[...document.querySelectorAll(".app-competition-tabs [role=tab]")];
     window.__sh02Panels=window.__sh02Tabs.map(tab=>document.getElementById(tab.getAttribute("aria-controls")));
-    window.__sh02Crest=document.querySelector("#app-standings-body [data-club-crest]");
+    // Standings may reorder after authoritative hydration: track each club, not row zero.
+    window.__sh02Crests=new Map([...document.querySelectorAll("#app-standings-body [data-club-crest]")]
+      .map(host=>[host.dataset.clubCrest,host]));
    });
    for(const view of views){
     await routePage.locator("#competition-tab-"+view).click();
@@ -67,8 +69,10 @@ try {
      return {route:window.faCompetitionRoute?.get()?.view,selected:tab?.getAttribute("aria-selected"),
       panelHidden:panel?.hidden,tabStable:index>=0,
       panelStable:index>=0&&window.__sh02Panels[index]===panel,
-      crestStable:!window.__sh02Crest||window.__sh02Crest.isConnected&&
-       document.querySelector("#app-standings-body [data-club-crest]")===window.__sh02Crest};
+      // A loading standings table can mount fewer hosts than the full capacity.
+      // Only assert identity for hosts already present at the captured baseline.
+      crestStable:[...window.__sh02Crests].every(([clubId,host])=>host.isConnected&&
+       document.querySelector(`#app-standings-body [data-club-crest="${clubId}"]`)===host)};
     },view);
     assert.deepEqual(observed,{route:view,selected:"true",panelHidden:false,tabStable:true,panelStable:true,crestStable:true},slug+"/"+view);
     assert.equal(await routePage.locator("#competition-panel-"+view).isVisible(),true,slug+"/"+view+" mounted view visible");
