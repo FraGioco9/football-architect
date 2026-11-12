@@ -318,3 +318,14 @@ test('Positions is left-aligned in Overview and all Attributes groups; stats rem
  assert.match(css,/\.app-players-table th:nth-child\(2\)\{width:var\(--app-players-name-width\);text-align:left\}/);
  assert.match(css,/\.app-players-table th:nth-child\(4\)\{width:calc\(/,'column widths retained');
 });
+
+
+test('Overview Foot is left-aligned like Positions and Player, without changing numeric skill alignment',()=>{
+ const css=read('assets/app.css'),renderer=read('assets/players-directory.js');
+ assert.match(css,/\.app-players-table:not\(\[data-players-table-mode="attributes"\]\) :is\(th,td\):nth-child\(6\)\{text-align:left\}/,'Foot header and values in Overview, including first paint');
+ assert.match(css,/\.app-players-table:not\(\[data-players-table-mode="attributes"\]\) :is\(th,td\):nth-child\(4\)\{text-align:left\}/,'Positions remains left-aligned in Overview');
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(n\+3\)\{text-align:center\}/,'Attribute statistics remain centered');
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(3\)\{text-align:left\}/,'Attributes Positions remains left');
+ assert.match(css,/\.app-players-table th:nth-child\(6\)\{width:calc\(\(100% - var\(--app-players-flag-width\) - var\(--app-players-name-width\)\) \* 0\.20\)\}/,'Foot width unchanged');
+ assert.match(renderer,/player\.preferred_foot==='left'\?t\.left:player\.preferred_foot==='right'\?t\.right:'—'/);
+});

@@ -1567,6 +1567,8 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
 /* Positions contains position codes and is left-aligned like Player, including the static Overview header. */
 .app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4){text-align:left}
+/* Foot is a descriptive value (Left / Right), so align its heading and values with other text columns. */
+.app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6){text-align:left}
 .app-players-table tbody tr:last-child td{border-bottom:0}
 .app-players-empty-row td{height:148px;padding:26px 18px;text-align:center;white-space:normal}
 .app-players-empty-row strong{display:block;font-size:14px;font-weight:700;line-height:1.5}
