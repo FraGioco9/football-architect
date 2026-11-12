@@ -98,8 +98,11 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(calendarScript,/permissionCache\?\.clear\(\);void controller\.refresh\(\)/);
  for(const html of [home,calendar,players])assert.match(html,/\/assets\/admin-permissions-cache\.js/);
  assert.ok(planPublicFiles().includes('assets/admin-permissions-cache.js'));
- for(const asset of ['account-login','account-settings'])
-  assert.match(readFileSync(new URL('../assets/'+asset+'.js',import.meta.url),'utf8'),/sessionStorage\.removeItem\('fa:admin:permissions:v1'\)/);
+ const accountLogin=readFileSync(new URL('../assets/account-login.js',import.meta.url),'utf8');
+ const accountProfile=readFileSync(new URL('../assets/account-settings.js',import.meta.url),'utf8');
+ assert.match(accountLogin,/for\(const key of \['fa:admin:permissions:v1','fa:player:anonymous:v1','fa:player:skip-login-session-probe:v1'\]/);
+ assert.match(accountLogin,/sessionStorage\.removeItem\(key\)/);
+ assert.match(accountProfile,/sessionStorage\.removeItem\('fa:admin:permissions:v1'\)/);
  assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
 
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);
