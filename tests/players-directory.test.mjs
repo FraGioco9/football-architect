@@ -224,10 +224,10 @@ test('Players view and group slugs are explicit even for both default selections
 });
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*flex:0 0 160px;width:160px;min-width:160px;max-width:160px;height:46px;min-height:46px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*flex:0 0 136px;width:136px;min-width:136px;max-width:136px;height:40px;min-height:40px/);
  assert.match(css,/\.app-players-groups\{[^}]*grid-auto-rows:34px;[^}]*max-width:472px/);
  assert.match(css,/\.app-players-group\{[^}]*height:34px;min-height:34px/);
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 calc\(\(100% - 4px\)\/2\);[^}]*height:44px;min-height:44px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
  assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/);
  assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
 });
@@ -328,4 +328,18 @@ test('Overview Foot is left-aligned like Positions and Player, without changing 
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] :is\(th,td\):nth-child\(3\)\{text-align:left\}/,'Attributes Positions remains left');
  assert.match(css,/\.app-players-table th:nth-child\(6\)\{width:calc\(\(100% - var\(--app-players-flag-width\) - var\(--app-players-name-width\)\) \* 0\.20\)\}/,'Foot width unchanged');
  assert.match(renderer,/player\.preferred_foot==='left'\?t\.left:player\.preferred_foot==='right'\?t\.right:'—'/);
+});
+
+
+test('Players main tabs have centered labels, compact sizes and zero gaps above subgroup bar and table',()=>{
+ const css=read('assets/app.css'),html=read('players/index.html');
+ assert.match(css,/\.app-players-tabs\{margin-top:var\(--app-page-section-gap\);min-height:40px;padding-bottom:0\}/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*width:136px;[^}]*height:40px;[^}]*text-align:center/);
+ assert.match(css,/\.app-players-toolbar\{[^}]*height:44px;[^}]*margin-top:0\}/);
+ assert.match(css,/\.app-players-toolbar\+\.app-players-table-scroll\{margin-top:0\}/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
+ assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/,'mobile reserved area persists across view switches');
+ assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
+ assert.ok(html.indexOf('class="app-players-toolbar"')<html.indexOf('class="app-players-table-scroll"'),'zero-gap toolbar stays directly before table');
+ for(const view of ['overview','attributes'])assert.match(html,new RegExp('data-players-view="'+view+'"'),'tab remains in the static first paint');
 });
