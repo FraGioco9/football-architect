@@ -48,7 +48,10 @@ export function mountClubFixtures({host,manifest}){
  function paint(){
   if(route()?.view!=='fixtures')return;
   const {season:chosen,seasons}=selection();
-  const requested=new URLSearchParams(location.search).get('competition');
+  // Explicit URL seasons remain visible while waiting for canonical confirmation.
+  const params=new URLSearchParams(location.search),requestedSeason=params.get('season');
+  const displaySeason=chosen??(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null);
+  const requested=params.get('competition');
   filter=requested&&snapshot.competitions?.some(d=>d.id===requested)?requested:'all';
   const focused=panel?.contains(document.activeElement)?document.activeElement:null;
   const focusControl=focused?.closest('[data-club-fixture-control]')?.dataset.clubFixtureControl;
@@ -56,7 +59,7 @@ export function mountClubFixtures({host,manifest}){
   const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent')?'.club-fixture-opponent':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
   const oldCrests=new Map();
   for(const node of panel?.querySelectorAll('[data-club-crest]')||[]){const key=node.dataset.clubCrest;if(!oldCrests.has(key))oldCrests.set(key,[]);oldCrests.get(key).push(node);}
-  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:chosen,seasons,filter,snapshot});
+  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();

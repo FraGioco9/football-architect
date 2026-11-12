@@ -729,9 +729,11 @@ test('CLUB-FIXTURES: parser-time controls and region label are localized without
  assert.match(read('tools/generate-club-pages.mjs'),/fixtures\.setAttribute\('aria-label',fixtureLabels\.competition\)/);
 });
 
-test('CLUB-FIXTURES: unknown canonical season reserves a value instead of guessing Season 1',async()=>{
+test('CLUB-FIXTURES: unknown canonical season shows its label without a selector skeleton',async()=>{
  const {default:ui}=await import('../assets/club-fixtures.js');
- const markup=ui.render();assert.ok(!markup.includes('Season 1'));assert.match(markup,/club-fixture-season-loading/);
+ const markup=ui.render();
+ assert.ok(!markup.includes('Season 1'));assert.doesNotMatch(markup,/club-fixture-season-loading/);
+ assert.match(markup,/<span data-club-fixture-value>Season<\/span>/);
 });
 
 test('CLUB-FIXTURES: confirmed source failure does not retain a season loading skeleton',async()=>{
@@ -780,7 +782,10 @@ test('CLUB-FIXTURES: text-only hover and overview navigation, with sized skeleto
  assert.match(css,/\.club-fixture-meta a:is\(:hover,:focus-visible\)\{text-decoration:underline/);
  assert.match(css,/\.club-fixture-opponent\{[^}]*width:fit-content/);
  assert.match(css,/\.club-fixture-select \[data-club-fixture-value\]\{[^}]*white-space:nowrap/);
- assert.match(css,/\.club-fixture-loading \.club-fixture-skeleton-venue\{width:18px/);
+ assert.match(css,/\.club-fixture-loading \.club-fixture-skeleton-venue\{inline-size:18px/);
+ assert.match(loading,/class="club-fixture-skeleton-line"/);
+ assert.match(loading,/class="club-fixture-result"><strong><span class="club-fp-bar club-fixture-skeleton-score"/);
+ assert.match(css,/\.club-fixture-skeleton-line \.club-fp-bar,\s*\.club-fixture-loading \.club-fixture-result \.club-fp-bar\{display:inline-block;vertical-align:middle/);
  const expected=ui.render().replace('<section class="club-fixtures"',"<section hidden data-labels='"+JSON.stringify(ui.copy).replaceAll("'","&#39;")+"' class=\"club-fixtures\"");
  assert.ok(read('clubs/_shared/index.html').includes(expected),'first-paint fixtures are generated from the current renderer');
 });
@@ -792,5 +797,8 @@ test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a publ
  assert.match(generator,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
  assert.match(generator,/initial=params\.has\('season'\)\?\(valid\?Math\.min\(limit,initial\):1\):limit/);
  assert.match(generated,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
- assert.match(read('assets/club-page.css'),/\.club-fixture-season-loading\{width:2ch/);
+ assert.doesNotMatch(read('assets/club-page.css'),/club-fixture-season-loading/);
+ assert.doesNotMatch(generated,/club-fixture-season-loading/);
+ assert.match(generator,/const requested=params\.get\('season'\),valid=/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,seasons,filter,snapshot/);
 });
