@@ -54,6 +54,10 @@ it('preserves committed generated players and their FK draft parents across Seas
  await commitPlayerGeneration(db,session,{draftId:batch.draftId,confirmation:'GENERATE PLAYERS'},now);
  const abandoned=await previewPlayerGeneration(db,session,{options:{...options,count:1,seed:'stale-preview-before-reset'}},now);
  const saved=(await db.prepare('SELECT id,batch_id,world_generation,entry_season,payload_json,created_at FROM generated_players ORDER BY id').all()).results;
+ // Two affiliation rows reference preserved footballers; uncommitted drafts never do.
+ await db.prepare('INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)').bind(saved[0].id,'IT-1').run();
+ await db.prepare('INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)').bind(saved[1].id,'BR-40').run();
+ const savedAffiliations=(await db.prepare('SELECT player_id,club_key FROM player_club_affiliations ORDER BY player_id').all()).results;
  const committedDraft=await db.prepare('SELECT * FROM player_generation_drafts WHERE id=?').bind(batch.draftId).first();
  expect(saved).toHaveLength(2);
  expect(committedDraft).toMatchObject({id:batch.draftId,status:'committed'});
@@ -67,6 +71,7 @@ it('preserves committed generated players and their FK draft parents across Seas
  expect(result.world.generation).not.toBe(previousGeneration);
  expect((await db.prepare('SELECT id,batch_id,world_generation,entry_season,payload_json,created_at FROM generated_players ORDER BY id').all()).results).toEqual(saved);
  expect(await db.prepare('SELECT * FROM player_generation_drafts WHERE id=?').bind(batch.draftId).first()).toEqual(committedDraft);
+ expect((await db.prepare('SELECT player_id,club_key FROM player_club_affiliations ORDER BY player_id').all()).results).toEqual(savedAffiliations);
  expect(await db.prepare('SELECT id FROM player_generation_drafts WHERE id=?').bind(abandoned.draftId).first()).toBeNull();
  expect((await db.prepare('PRAGMA foreign_key_check').all()).results).toEqual([]);
  await expect(commitPlayerGeneration(db,session,{draftId:abandoned.draftId,confirmation:'GENERATE PLAYERS'},now)).rejects.toMatchObject({status:404});
@@ -86,6 +91,7 @@ it('preserves committed generated players and their FK draft parents across Seas
  expect(all.slice(0,2).every(row=>row.world_generation===previousGeneration)).toBe(true);
  expect(all[2].id).toBeGreaterThan(all[1].id);
  expect(all[2].world_generation).toBe(result.world.generation);
+ expect((await db.prepare('SELECT player_id,club_key FROM player_club_affiliations ORDER BY player_id').all()).results).toEqual(savedAffiliations);
  expect((await readPublicPlayers(db,1)).count).toBe(3);
  expect((await listGeneratedPlayers(db)).count).toBe(3);
 });
