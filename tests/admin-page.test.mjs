@@ -134,12 +134,12 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.app-admin-view \.admin-players-dropdown \.language-option\[aria-selected="true"\],/,'Menu label color must not change on selection');
  assert.match(css,/\.app-admin-view \.admin-players-fields label:is\(:hover,:focus-within\)/,'Hovering a label must not produce a highlight');
  assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):hover:not\(:disabled\)/,'Hover highlight belongs only to inputs and dropdown boxes');
- for(const name of 'count seed primarySuitability primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
+ for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
   assert.ok(players.includes('data-players-option="attribute.'+a+'"'),a);
- const autos=players.match(/data-players-option="(?:count|seed|primarySuitability)"[^>]+/g)||[];
- assert.equal(autos.length,3,'No Players field begins with a manual value');
+ const autos=players.match(/data-players-option="(?:count|seed|primarySuitabilityMin|primarySuitabilityMax)"[^>]+/g)||[];
+ assert.equal(autos.length,4,'No Players field begins with a manual value');
  assert.ok(autos.every(field=>!field.includes('value=')),autos.join('\n'));
 });
 

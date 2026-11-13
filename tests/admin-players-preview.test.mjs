@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -115,4 +116,24 @@ test('Returning from an automatic preview does not pin the one-time auto seed',(
  const generator=read('assets/admin-players.js');
  assert.match(generator,/if\(key==='seed'&&typeof value==='string'&&\/\^fa-auto-/);
  assert.match(generator,/\)continue;\s+if\(key==='attributes'/);
+});
+
+test('Generator Primary suitability min/max inputs reuse the existing inclusive API contract',()=>{
+ const require=createRequire(import.meta.url);
+ const {makeOptions}=require('../assets/admin-players.js');
+ assert.deepEqual(makeOptions({}),{});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'65',primarySuitabilityMax:'80'}),{primarySuitability:[65,80]});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'70'}),{primarySuitability:[70,90]});
+ assert.deepEqual(makeOptions({primarySuitabilityMax:'80'}),{primarySuitability:[1,80]});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'75',primarySuitabilityMax:'75'}),{primarySuitability:75});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'1',primarySuitabilityMax:'90'}),{primarySuitability:[1,90]});
+ for(const raw of [
+  {primarySuitabilityMin:'0'},{primarySuitabilityMax:'91'},
+  {primarySuitabilityMin:'80',primarySuitabilityMax:'70'},
+  {primarySuitabilityMin:'50:70'},
+  {primarySuitabilityMax:'abc'},{primarySuitabilityMin:'70.5'}
+ ])assert.throws(()=>makeOptions(raw));
+ const source=read('assets/admin-players.js');
+ assert.match(source,/key==='primarySuitability'/);
+ assert.match(source,/set\('primarySuitabilityMin',value\[0\]\);set\('primarySuitabilityMax',value\[1\]\)/);
 });
