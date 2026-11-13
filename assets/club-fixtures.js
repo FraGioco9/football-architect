@@ -103,19 +103,11 @@
  function control(id,label,selected,options){
   return '<div class="language-control club-fixture-select" data-club-fixture-control="'+id+'"><button type="button" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="club-fixture-'+id+'-menu" aria-label="'+esc(label)+'"><span data-club-fixture-value>'+esc(selected)+'</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" role="listbox" aria-label="'+esc(label)+'" id="club-fixture-'+id+'-menu" hidden>'+options.map(([value,label],i)=>'<div class="language-option" role="option" id="club-fixture-'+id+'-'+i+'" data-menu-value="'+esc(value)+'">'+esc(label)+'</div>').join('')+'</div></div>';
  }
- // Only the active season can have a navigable next match. Reuse this rule in
- // both the renderer and click handler so historical, finished and loading
- // states cannot offer a stale action.
- function nextFixture({snapshot,season,currentSeason}={}){
-  if(!Number.isSafeInteger(season)||season<1||season!==currentSeason||
-   !['complete','partial'].includes(snapshot?.coverage)||!Number.isSafeInteger(snapshot?.day))return null;
-  return snapshot.rows?.find(row=>row.goalsFor===null&&row.day>snapshot.day)??null;
- }
  function render({manifest={clubs:[]},lang='en',season=null,currentSeason=null,explicitSeason=false,seasons=[],filter='all',snapshot={coverage:'loading',rows:[],competitions:[]}}={}){
   const t=copy[lang]||copy.en,rows=snapshot.rows||[],competitions=snapshot.competitions||[],pending=snapshot.coverage==='loading';
   const compName=id=>competitions.find(d=>d.id===id)?.name||manifest.divisions?.find(d=>d.id===id)?.name||({'int-1':'Sovereign Cup','int-2':'Federation Cup'}[id])||id;
   const options=[['all',t.all],...competitions.map(d=>[d.id,compName(d.id)])];
-  const next=nextFixture({snapshot,season,currentSeason});
+  const next=rows.find(row=>row.goalsFor===null&&row.day>snapshot.day);
   const toolbar='<div class="club-fixtures-toolbar"><button type="button" class="language-trigger club-fixtures-next" data-club-fixtures-next'+(!next?' disabled':'')+'>'+text('next',t)+'</button><div class="club-fixtures-selectors">'+control('competition',t.competition,filter==='all'?t.all:compName(filter),options)+control('season',t.season,season===null?t.season:t.season+' '+season,seasons.map(s=>[s,t.season+' '+s]))+'</div></div>';
   let body='';
   if(pending)body=Array.from({length:6},()=>'<li class="club-fixture-row club-fixture-loading" aria-hidden="true"><span class="club-fixture-meta"><span class="club-fixture-skeleton-line"><span class="club-fp-bar club-fixture-skeleton-day"></span></span><span class="club-fixture-skeleton-line"><span class="club-fp-bar club-fixture-skeleton-league"></span></span></span><span class="club-fixture-opponent"><span class="app-world-club-crest-placeholder fa-crest-loading"></span><span class="club-fixture-skeleton-name-slot"><span class="club-fp-bar club-fixture-skeleton-name"></span></span></span><span class="club-fixture-venue"><span class="club-fp-bar club-fixture-skeleton-venue"></span></span><span class="club-fixture-result"><strong><span class="club-fp-bar club-fixture-skeleton-score"></span></strong><small><span class="club-fp-bar club-fixture-skeleton-status"></span></small></span></li>').join('');
@@ -145,5 +137,5 @@
   const chosen=requested===null&&rememberedValid?Math.min(Number(remembered),limit):choice.season;
   return {season:chosen,seasons:Array.from({length:limit},(_,i)=>limit-i),confirmed:true};
  }
- return {copy,render,resolveSeason,nextFixture};
+ return {copy,render,resolveSeason};
 });

@@ -124,6 +124,21 @@
   const filterDescription=document.querySelector('[data-players-filter-description]');
   const filterAgeRange=document.querySelector('[data-players-age-range]');
   const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
+  const groupBar=document.querySelector('.app-players-groups');
+  const syncGroupTabEdges=()=>{
+   if(!groupBar)return;
+   const maximum=Math.max(0,groupBar.scrollWidth-groupBar.clientWidth);
+   groupBar.dataset.canScrollLeft=String(maximum>1&&groupBar.scrollLeft>1);
+   groupBar.dataset.canScrollRight=String(maximum>1&&groupBar.scrollLeft<maximum-1);
+  };
+  const revealActiveGroup=()=>{
+   const selected=groupBar?.querySelector('[aria-selected="true"]');
+   if(!selected)return;
+   const strip=groupBar.getBoundingClientRect(),tab=selected.getBoundingClientRect();
+   if(tab.right>strip.right)groupBar.scrollLeft+=tab.right-strip.right;
+   else if(tab.left<strip.left)groupBar.scrollLeft+=tab.left-strip.left;
+   syncGroupTabEdges();
+  };
   const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
   const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
   previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
@@ -299,6 +314,7 @@
    document.documentElement.dataset.playersGroup=state.group;
    tabs.forEach((tab,i)=>{const active=tab.dataset.playersView===state.view;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.tabs[i]});
    groupTabs.forEach((tab,i)=>{const active=tab.dataset.playersGroup===state.group;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.groups[i]});
+   syncGroupTabEdges();
   }
   function renderHead(){
    const t=locale(),row=document.createElement('tr');
@@ -424,6 +440,7 @@
    if(sortCleared){state.sort='';state.order='';state.page=1;}
    syncUrl();
    if(sortCleared)load(1);else refresh();
+   revealActiveGroup();
   }
   function changeGroup(group){
    if(state.group===group)return;
@@ -431,7 +448,8 @@
    const sortCleared=!!state.sort&&!allowedSort(state.view,state.group,state.sort);
    if(sortCleared){state.sort='';state.order='';state.page=1;}
    syncUrl();
-   if(sortCleared)load(1);else refresh();
+   if(sortCleared){syncControls();load(1);}else refresh();
+   revealActiveGroup();
   }
   // Shared site combobox presentation (language-trigger / language-menu / language-option).
   // Keep focus on the trigger and expose the active option via aria-activedescendant.
@@ -720,9 +738,12 @@
    const next=event.key==='Home'?0:event.key==='End'?nodes.length-1:(current+(event.key==='ArrowRight'?1:-1)+nodes.length)%nodes.length;
    nodes[next].focus();change(nodes[next].dataset[key]);
   }
-  const tabsBar=document.querySelector('.app-players-tabs'),groupBar=document.querySelector('.app-players-groups');
+  const tabsBar=document.querySelector('.app-players-tabs');
   tabsBar?.addEventListener('keydown',event=>keyboardTab(event,tabs,changeView,'playersView'));
   groupBar?.addEventListener('keydown',event=>keyboardTab(event,groupTabs,changeGroup,'playersGroup'));
+  groupBar?.addEventListener('scroll',syncGroupTabEdges,{passive:true});
+  window.addEventListener('resize',syncGroupTabEdges,{passive:true});
+  if(groupBar&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncGroupTabEdges).observe(groupBar);
   // Delegate to the table header, which is recreated on view and locale changes.
   function cycleSort(key){
    if(!key||!allowedSort(state.view,state.group,key))return;
@@ -741,11 +762,12 @@
    if(drawerOpen()){restoreTriggerFocus=false;finishFilterClose();}
    const next=parseLocation(),changed=next.page!==state.page||next.sort!==state.sort||next.order!==state.order||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
+   revealActiveGroup();
    if(changed)load(state.page);else paint(current);
   });
-  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
+  new MutationObserver(()=>{syncControls();revealActiveGroup();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-  syncControls();syncUrl('replaceState');load(state.page);
+  syncControls();revealActiveGroup();syncUrl('replaceState');load(state.page);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();

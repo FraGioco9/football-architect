@@ -86,6 +86,14 @@ test('Players attribute groups use one horizontally scrollable mobile strip and 
  assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center;gap:8px\}/,'mobile toolbar returns to one reserved row');
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto;overflow-y:hidden;scrollbar-width:none/,'mobile groups scroll as one unwrapped strip');
  assert.match(css,/\.app-players-groups::-webkit-scrollbar\{display:none\}/,'hide the mobile group scrollbar like Club Roster');
+ assert.match(css,/\.app-players-groups\{--app-tabs-fade-left:0px;--app-tabs-fade-right:0px;[^}]*mask-image:linear-gradient/,'mobile tabs inherit the conditional Club Roster mask');
+ assert.match(css,/\.app-players-groups\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(css,/\.app-players-groups\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
+ const script=read('assets/players-directory.js');
+ assert.match(script,/groupBar\.dataset\.canScrollLeft=String\(maximum>1&&groupBar\.scrollLeft>1\)/);
+ assert.match(script,/groupBar\.dataset\.canScrollRight=String\(maximum>1&&groupBar\.scrollLeft<maximum-1\)/);
+ assert.match(script,/groupBar\?\.addEventListener\('scroll',syncGroupTabEdges,\{passive:true\}\)/);
+ assert.match(script,/window\.addEventListener\('resize',syncGroupTabEdges,\{passive:true\}\)/);
  assert.match(css,/\.app-players-group\{flex:0 0 calc\(40% - 3\.2px\);[^}]*min-height:34px;height:34px;[^}]*white-space:nowrap/,'groups keep one row and expose a partial third');
  assert.match(html,/class="app-competition-tab app-players-group/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{/);

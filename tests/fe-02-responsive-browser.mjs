@@ -183,6 +183,16 @@ try{
      "last mobile subview is reachable by horizontal scroll "+JSON.stringify({width,geometry}));
     assert.ok(geometry.strip.bottom<=geometry.bar.bottom+1&&geometry.bar.height<=45,
      "subview strip and count fit the one-row toolbar "+JSON.stringify({width,geometry}));
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='true');
+    const initial=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight,mask:getComputedStyle(el).maskImage}));
+    assert.equal(initial.left,'false','left fade stays off before scrolling at '+width);
+    assert.equal(initial.right,'true','right fade is visible while more subviews are hidden at '+width);
+    assert.ok(initial.mask.includes('linear-gradient'),'mobile subviews use the conditional CSS fade at '+width);
+    await page.locator('.app-players-groups').evaluate(el=>{el.scrollLeft=el.scrollWidth});
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='false');
+    const end=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight}));
+    assert.equal(end.left,'true','left fade appears after scrolling at '+width);
+    assert.equal(end.right,'false','right fade disappears at the end at '+width);
    }else{
     assert.equal(geometry.display,"grid","desktop retains four visible subviews");
     assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1),

@@ -118,3 +118,11 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - Mobile toolbar is a reserved single 44px row in both Overview (groups hidden but space retained) and Attributes (groups visible). Desktop retains four grid columns; main Overview/Attributes tabs are unchanged.
 - `tests/players-directory.test.mjs` updates source contracts and `tests/fe-02-responsive-browser.mjs` measures real scroll reachability, no page overflow and desktop parity at 320/375/390/430/768/1440 in Chromium/WebKit.
 - Real physical iPhone Safari and VoiceOver remain NOT TESTED; PR Draft/HOLD, no merge/deploy/remote DB writes.
+
+
+## Mobile Players subgroup edge fade — 2026-11-13
+
+- The one-line scrollable `/players` Attributes strip now uses the **same conditional 16px gradient mask** as Club Roster. Initially the right edge fades; while scrolling both edges may fade; at the end only the left edge fades. No fade is shown on an edge with no hidden tabs.
+- The scroll range is measured using `scrollWidth/clientWidth/scrollLeft`; refreshed after user scroll, resize, localized tab labels, group/view changes and popstate. The selected group is revealed on keyboard navigation and direct deep links.
+- Unit and Chromium/WebKit browser assertions cover mask, edge attributes and left/right transitions, with the existing 320–1440px responsive checks unchanged.
+- PR #542 stays Draft/HOLD, no merge, deploy or remote DB changes. Physical Safari/VoiceOver acceptance remains NOT TESTED.
