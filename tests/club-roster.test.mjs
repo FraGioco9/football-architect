@@ -138,6 +138,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  assert.equal((failed.match(/aria-disabled="true"/g)||[]).length,5,'API unavailable: keep tabs disabled');
  assert.doesNotMatch(failed,/data-club-roster-view="info"[^>]*href=/);
  assert.match(failed,/temporarily unavailable/);
+ assert.doesNotMatch(failed,/href="\/clubs\/it\/1\/roster\?view=/);
  const missing=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable',status:404});
  assert.match(missing,/Restart the local development server/);
 });
@@ -179,7 +180,10 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/params\.get\('sort'\)!==key/);
  assert.match(js,/params\.get\('order'\)==='desc'/);
  assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);
- assert.match(js,/params\.delete\('view'\);params\.delete\('group'\);params\.set\('view',view\)/);
+ assert.match(js,/if\(selected\.view==='roster'\)\{/);
+ assert.match(js,/if\(location\.search\)history\.replaceState\(null,'',location\.pathname\+location\.hash\)/);
+ assert.match(js,/data\.count>0&&!new URLSearchParams\(location\.search\)\.has\('view'\)/);
+ assert.match(js,/location\.pathname\+'\?view=info'\+location\.hash/);
  assert.match(js,/const target=control\.dataset\.clubRosterView/);
  assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
  assert.match(js,/if\(!queryOnly\)refreshClubRoster/);
