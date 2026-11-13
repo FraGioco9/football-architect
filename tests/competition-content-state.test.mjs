@@ -96,7 +96,11 @@ test('03C2 real Awards presenter removes stale winners on season and source refr
   append(...children){this.children.push(...children)},
   insertBefore(item,before){const index=this.children.indexOf(before);this.children.splice(index<0?this.children.length:index,0,item)},
   replaceChildren(...children){this.children=children},
-  querySelector(selector){return selector===':scope > .fa-awards'?this.children.find(x=>x.className==='fa-awards')??null:null}
+  querySelector(selector){
+   if(selector===':scope > .fa-awards')return this.children.find(x=>x.className==='fa-awards')??null;
+   if(selector==='[data-competition-skeleton-root]')return this.children.find(x=>x.dataset?.competitionSkeletonRoot)??null;
+   return null;
+  }
  });
  const panel=node('section');
  const document={
@@ -110,6 +114,7 @@ test('03C2 real Awards presenter removes stale winners on season and source refr
  const window={
   faCompetitionContext:initial,faAppRenderLanguage(){},
   faCompetitionRulesView:{awardIds:()=>['champion','player']},
+  faCompetitionRenderDOM:{sync(current,next){current.replaceChildren(...next.children)}},
   addEventListener:(type,handler)=>{listeners[type]=handler}
  };
  runInNewContext(read('assets/competition-awards.js'),{window,document});
@@ -122,7 +127,16 @@ test('03C2 real Awards presenter removes stale winners on season and source refr
  assert.equal(panel.dataset.faContentState,'available');
  assert.equal(chips()[0],'Season 1 champion');
  const changed=next=>listeners['fa:competition-context-change']({detail:next});
+ const staleShell=()=>({dataset:{competitionSkeletonRoot:'awards'},className:'app-competition-view-skeleton',
+  children:[],remove(){panel.children.splice(panel.children.indexOf(this),1)}});
+ const first=staleShell();panel.children.push(first);
+ changed({...initial,revision:2});
+ assert.ok(!panel.children.includes(first),'refresh with unchanged card presentation must remove stale Awards skeleton');
+ assert.equal(panel.children.length,1,'exactly one live Awards wrapper remains after initial hydration');
+ const second=staleShell();panel.children.push(second);
  changed({...initial,selectedSeason:2,revision:2});
+ assert.ok(!panel.children.includes(second),'DOM-sync content updates must also remove the stale skeleton');
+ assert.equal(panel.children.length,1,'the mounted Awards panel cannot retain duplicate first-paint cards');
  assert.equal(panel.dataset.faContentState,'unknown');
  assert.equal(panel.dataset.faContentSeason,'2');
  assert.equal(panel.dataset.faContentRevision,'2');
