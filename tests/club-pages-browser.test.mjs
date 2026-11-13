@@ -535,6 +535,21 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       'Roster has five peer views and no Attributes sub-navigation');
     assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
       ['info','technical','mental','physical','goalkeeping']);
+    // Roster mobile: exactly 2.5 tabs before player count and edge-aware fade.
+    for(const width of [320,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+     const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
+     assert.equal(measured.rowHeight,42,'42px row at '+width);
+     assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
+     assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));
+     assert.ok(measured.countAfter&&measured.overflows&&measured.fade!=='none'&&measured.right==='true'&&measured.left==='false','player count and right fade at '+width);
+     await run("document.querySelector('.club-roster-tabs').scrollLeft=9999");
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='true'");
+     await run("document.querySelector('.club-roster-tabs').scrollLeft=0");
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await run("document.querySelector('[data-club-roster-view=technical]').click()");
     await wait("location.search==='?view=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
