@@ -845,9 +845,16 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    await run(`document.documentElement.lang=${JSON.stringify(lang)};document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await delay(60);
    const controls=await run("(()=>{const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};return {tabs:box(document.querySelector('.club-tabs')),toolbar:box(document.querySelector('.club-fixtures-controls')),next:box(document.querySelector('[data-club-fixtures-next]')),competition:box(document.querySelector('[data-club-fixture-control=competition]')),season:box(document.querySelector('[data-club-fixture-control=season]'))}})()");
    assert.ok(Math.abs(controls.toolbar.top-controls.tabs.bottom-14)<1,'controls sit 14px below view separator at '+width);
-   assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'next command stays at left at '+width);
-   assert.ok(controls.competition.right<=controls.season.left,'competition precedes season at '+width);
-   assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'selectors align right at '+width);
+   if(width<=620){
+    assert.ok(controls.competition.right<=controls.season.left,'mobile competition precedes season at '+width);
+    assert.ok(Math.abs(controls.competition.left-controls.toolbar.left)<1&&Math.abs(controls.season.right-controls.toolbar.right)<1,'mobile selectors fill first row at '+width);
+    assert.ok(controls.next.top>=Math.max(controls.competition.bottom,controls.season.bottom)+7,'mobile next match sits below selectors at '+width);
+    assert.ok(Math.abs((controls.next.left+controls.next.right)-(controls.toolbar.left+controls.toolbar.right))<=2,'mobile next match is centered at '+width);
+   }else{
+    assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'desktop next command stays at left at '+width);
+    assert.ok(controls.competition.right<=controls.season.left,'desktop competition precedes season at '+width);
+    assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'desktop selectors align right at '+width);
+   }
    assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.fa-shell-content-scroll').scrollWidth<=document.querySelector('.fa-shell-content-scroll').clientWidth+1&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no shell/page/fixtures overflow '+width+' '+lang);
    assert.equal(await run("[...document.querySelectorAll('.club-fixture-result')].every(n=>n.getBoundingClientRect().width>=64)"),true);
    if(process.env.CLUB_FIXTURES_QA_DIR&&[320,375,430,1440].includes(width)){
