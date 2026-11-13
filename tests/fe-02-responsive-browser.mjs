@@ -148,6 +148,50 @@ try{
    assert.ok((await tab.boundingBox()).height>=43.9,"Club tab hit area");
   });
  }
+ // #527: Players subgroup tabs must behave like Club Roster on mobile.
+ // Measure the real scrolling strip at the requested mobile widths, not only a CSS contract.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"en",theme:"dark"},"/players?view=attributes&group=technical",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const toolbar=document.querySelector(".app-players-toolbar");
+    const strip=toolbar.querySelector(".app-players-groups");
+    const tabs=[...strip.querySelectorAll(".app-players-group")];
+    const count=toolbar.querySelector("[data-players-count]");
+    const box=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
+    const bar=box(toolbar),stripBox=box(strip),countBox=box(count),tabBoxes=tabs.map(box);
+    const style=getComputedStyle(strip),groupStyle=getComputedStyle(tabs[0]);
+    const original=strip.scrollLeft;
+    strip.scrollLeft=strip.scrollWidth;
+    const shift=strip.scrollLeft-original,atEnd=box(tabs.at(-1));
+    strip.scrollLeft=original;
+    return {bar,strip:stripBox,count:countBox,tabs:tabBoxes,display:style.display,
+     scrollMode:style.overflowX,whiteSpace:groupStyle.whiteSpace,
+     canScroll:strip.scrollWidth>strip.clientWidth+30,shift,
+     lastVisibleAtEnd:atEnd.left>=stripBox.left-2&&atEnd.right<=stripBox.right+2,
+     pageOverflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.equal(geometry.tabs.length,4,"Players must expose all four attribute subviews");
+   assert.ok(geometry.count.left>=geometry.strip.right-1&&geometry.count.right<=geometry.bar.right+1,
+    "Players count stays to the right of the subview strip "+JSON.stringify({width,geometry}));
+   if(width<=620){
+    assert.equal(geometry.display,"flex","mobile groups form one row");
+    assert.equal(geometry.scrollMode,"auto","mobile strip scrolls horizontally");
+    assert.equal(geometry.whiteSpace,"nowrap","mobile labels remain single-line");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1&&tab.height>=33.9),
+     "all subview buttons share one 34px row "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.canScroll&&geometry.shift>20&&geometry.lastVisibleAtEnd,
+     "last mobile subview is reachable by horizontal scroll "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.strip.bottom<=geometry.bar.bottom+1&&geometry.bar.height<=45,
+     "subview strip and count fit the one-row toolbar "+JSON.stringify({width,geometry}));
+   }else{
+    assert.equal(geometry.display,"grid","desktop retains four visible subviews");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1),
+     "desktop subviews remain a single row "+JSON.stringify({width,geometry}));
+   }
+   assert.ok(geometry.pageOverflow<=2,"subview scroll must not cause page overflow "+JSON.stringify({width,geometry}));
+  });
+ }
+
  // Same CSS/DOM class structure as live Fixtures; no sporting data mutation.
  for(const width of [621,768,800]){
   await visit({width,height:900,language:"en",theme:"dark"},"/competitions/it-1/fixtures",async page=>{

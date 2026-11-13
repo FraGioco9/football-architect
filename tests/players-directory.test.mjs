@@ -53,7 +53,7 @@ test('Players #505 toolbar reserves the API-backed total beside the attribute gr
  for(const locale of ['en','de','es','fr','it'])assert.ok(code.includes(locale+":{one:'"),locale);
  assert.match(css,/\.app-players-header\{min-width:0\}/);
  assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
- assert.match(css,/\.app-players-toolbar\{height:76px/);
+ assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center/);
 });
 
 test('Players two views retain shared canonical rows and approved four skill groups',()=>{
@@ -77,15 +77,16 @@ test('Players two views retain shared canonical rows and approved four skill gro
  assert.match(generator,/data-players-first-paint/);
 });
 
-test('Players attribute group controls stay all visible without horizontal scrolling at desktop and mobile sizes',()=>{
+test('Players attribute groups use one horizontally scrollable mobile strip and keep the count outside',()=>{
  const css=read('assets/app.css');
  const html=read('players/index.html');
  assert.match(css,/\.app-players-groups\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);grid-auto-rows:34px/);
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
  assert.match(css,/\.app-players-toolbar\{display:flex;[^}]*height:44px/);
- assert.match(css,/\.app-players-toolbar\{height:76px/);
- assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
- assert.match(css,/\.app-players-group\{[^}]*white-space:normal/);
+ assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center;gap:8px\}/,'mobile toolbar returns to one reserved row');
+ assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto;overflow-y:hidden;scrollbar-width:none/,'mobile groups scroll as one unwrapped strip');
+ assert.match(css,/\.app-players-groups::-webkit-scrollbar\{display:none\}/,'hide the mobile group scrollbar like Club Roster');
+ assert.match(css,/\.app-players-group\{flex:0 0 calc\(40% - 3\.2px\);[^}]*min-height:34px;height:34px;[^}]*white-space:nowrap/,'groups keep one row and expose a partial third');
  assert.match(html,/class="app-competition-tab app-players-group/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{/);
  for(const group of ['physical','technical','mental','goalkeeping'])
@@ -344,7 +345,7 @@ test('Players main tabs are compact and centered; existing top margins alone are
  assert.match(css,/\.app-players-toolbar\{display:flex;align-items:center;[^}]*height:44px;[^}]*margin-top:0\}/,'zero only existing toolbar margin, preserve alignment');
  assert.match(css,/\.app-players-toolbar\+\.app-players-table-scroll\{margin-top:0\}/);
  assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
- assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/,'mobile reserved area persists across view switches');
+ assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center/,'mobile toolbar still reserves one row across view switches');
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
  assert.ok(html.indexOf('class="app-players-toolbar"')<html.indexOf('class="app-players-table-scroll"'),'zero-gap toolbar stays directly before table');
  for(const view of ['overview','attributes'])assert.match(html,new RegExp('data-players-view="'+view+'"'),'tab remains in the static first paint');
