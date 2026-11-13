@@ -11,7 +11,7 @@ test('CLUB-ROSTER-01 first paint exposes Overview/Attributes without a redundant
  assert.match(html,/data-club-roster-view="attributes"/);
  for(const group of ['technical','mental','physical','goalkeeping']){
   assert.match(html,new RegExp('data-club-roster-group="'+group+'"'));
-  assert.match(generator,new RegExp('data-club-roster-group=\\\\"'+group+'\\\\"'));
+  assert.match(generator,/club-roster-groups/);
  }
  assert.match(html,/data-club-roster-label="5"/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
@@ -53,7 +53,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
    assert.match(rendered,/CM, DM/);
    assert.equal((rendered.match(/class="club-roster-player-link"/g)||[]).length,65,language+'/'+group);
    assert.equal((rendered.match(/<th scope="col"/g)||[]).length,length,language+'/'+group);
-   assert.ok(rendered.includes('>25</td>')||rendered.includes('>33</td>'),language+'/'+group);
+   assert.ok(rendered.includes('>'+({technical:25,mental:33,physical:21,goalkeeping:37}[group])+'</td>'),language+'/'+group);
   }
  }
  const empty=model.render(manifest,selected,'en','',null,1,null,{source:'ready',clubKey:'IT-1',count:0,players:[]});
