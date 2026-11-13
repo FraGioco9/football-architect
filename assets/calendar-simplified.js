@@ -30,23 +30,32 @@
  let selectedSeason=Number(document.documentElement.dataset.calendarSeason)||null;
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?Math.max(1,readDebugSeason()):999999999);
- function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const season=(window.faWorldState?.get?.().current?.season??selectedSeason);const route="/calendar?"+(season?"season="+season+"&":"")+"calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
- function calendarQuery(season,source){
+ function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
+ function calendarQuery(season,source,{keepExplicit=false}={}){
   const view=document.documentElement.dataset.calendarView==='week'?'week':'season';
-  const query=new URLSearchParams({season:String(season),calendarView:view});
+  const query=new URLSearchParams(source);
+  const current=dev?Math.max(1,readDebugSeason()):Math.max(1,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??season);
+  if(season===current&&!keepExplicit)query.delete('season');
+  else query.set('season',String(season));
+  query.delete('day');
+  query.set('calendarView',view);
   const week=Number(source.get('week'));
   if(view==='week'&&Number.isInteger(week)&&week>=1&&week<=8)query.set('week',String(week));
+  else query.delete('week');
   return query;
  }
  function updateSeason(){
-  const limit=dev?readDebugSeason():publicSeasonLimit();
+  const source=window.faWorldState?.get?.();
+  const verified=source?.source==='authoritative'&&source.worldStatus==='ready'?source.world?.seasonNumber:null;
+  const current=dev?Math.max(1,readDebugSeason()):verified??window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??null;
+  const limit=dev?Math.max(1,readDebugSeason()):Math.max(1,current??publicSeasonLimit());
   const params=new URL(location.href).searchParams;
-  const requested=Number(params.get('season'));
-  const pending=!dev&&!validSeason(requested)&&window.faWorldState?.get?.().worldStatus==='pending';
+  const pending=!dev&&current===null&&(source?.worldStatus===undefined||source.worldStatus==='pending');
   if(pending){trigger.disabled=true;return;}
-  selectedSeason=params.has('season')&&validSeason(requested)?requested:Math.max(1,limit);
+  const choice=window.faRoutesRegistry.resolveSeasonQuery(params,current??limit);
+  selectedSeason=choice.season??Math.max(1,limit);
   const canonical=new URL(location.href);
-  canonical.search=calendarQuery(selectedSeason,params);
+  canonical.search=calendarQuery(selectedSeason,params,{keepExplicit:choice.explicit});
   if(location.pathname+location.search!==canonical.pathname+canonical.search)history.replaceState(history.state,'',canonical);
   root.dataset.seasonInitialized='true';
   const optionKey=String(Math.max(1,limit));

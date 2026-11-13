@@ -5,9 +5,13 @@
  let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'},rosterSnapshot={source:'loading'};
  let refreshClubHistory=()=>{},refreshClubOverview=()=>{},refreshClubRoster=()=>{},fixturesController=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
+ const currentWorldSeason=()=>{
+  const value=window.faWorldState?.get?.().current?.season;
+  return Number.isSafeInteger(value)&&value>=0?Math.max(1,value):null;
+ };
  const competitionSeason=()=>{
-  const explicit=new URLSearchParams(location.search).get('season');
-  if(/^[1-9]\d{0,8}$/.test(explicit||''))return Number(explicit);
+  const resolved=window.faRoutesRegistry.resolveSeasonQuery(location.search,currentWorldSeason());
+  if(resolved.season!==null)return resolved.season;
   if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false){
    try{const raw=sessionStorage.getItem('football-architect:standings-dev-season'),n=raw===null?NaN:Number(raw);
     if(Number.isInteger(n)&&n>=1&&n<=4)return n}catch{}
@@ -112,7 +116,7 @@
    const rosterTableScroll=host.querySelector('.club-roster-table-scroll')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot);
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
    let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
    if(header&&stagedHeader){
@@ -232,7 +236,7 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot);
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
    const replacement=staging.querySelector('.club-competition');
    if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));

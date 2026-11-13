@@ -112,19 +112,19 @@ test('INT-24 legacy leg links normalize on both cups',()=>{
 test('COMPETITION-URL: invalid parameters normalize while explicit public seasons remain selected',()=>{
  const s=setup('/competitions/it-1/index.html?season=bad&view=unknown&matchday=999');
  assert.equal(s.window.location.pathname,'/competitions/it-1/standings');
- assert.equal(s.window.location.search,'?season=1');assert.equal(s.count(),1);
+ assert.equal(s.window.location.search,'');assert.equal(s.count(),1);
  const missing=setup('/competitions/it-1?season=2&view=fixtures&matchday=4');
  assert.equal(missing.window.faCompetitionRoute.get().season,'2','Do not invent a public world before its response');
  assert.equal(missing.fields.get('app-competition-season-unavailable').hidden,true,'Never show the retired notice');
  assert.equal(missing.fields.get('competition-panel-fixtures').hidden,false,'Static view never disappears');
  missing.window.faCompetitionRoute.setPublicSeasonLimit(1);
  assert.equal(missing.window.faCompetitionRoute.get().season,'1');
- assert.equal(missing.window.location.search,'?season=1&matchday=4');
+ assert.equal(missing.window.location.search,'?matchday=4');
  assert.equal(missing.count(),1,'Redirect replaces the history entry');
  const future=setup('/competitions/int-1/fixtures?season=9&matchday=playoffs:1');
  future.window.faCompetitionRoute.setPublicSeasonLimit(2);
  assert.equal(future.window.faCompetitionRoute.get().season,'2');
- assert.equal(future.window.location.search,'?season=2&matchday=playoffs');
+ assert.equal(future.window.location.search,'?matchday=playoffs');
  const historical=setup('/competitions/int-1/history?season=1');
  historical.window.faCompetitionRoute.setPublicSeasonLimit(2);
  assert.equal(historical.window.faCompetitionRoute.get().season,'1');
@@ -133,17 +133,51 @@ test('COMPETITION-URL: invalid parameters normalize while explicit public season
  assert.equal(unstarted.window.faCompetitionRoute.get().season,'1');
  assert.equal(unstarted.fields.get('app-competition-season-value').textContent,'1');
 });
+test('ISSUE #531: seasonless navigation preserves hash and unrelated query; explicit current stays',()=>{
+ const clean=setup('/competitions/it-1/standings?source=qa#details',null,routeRegistry,null,2);
+ assert.equal(clean.window.faCompetitionRoute.get().season,'2');
+ assert.equal(clean.window.location.search,'?source=qa');
+ assert.equal(clean.window.location.hash,'#details');
+ clean.tabs[2].events.click();
+ assert.equal(clean.window.location.search,'?source=qa&matchday=1');
+ assert.equal(clean.window.location.hash,'#details');
+ clean.window.faCompetitionRoute.set({season:'1'});
+ assert.equal(clean.window.location.search,'?source=qa&season=1&matchday=1');
+ clean.window.faCompetitionRoute.set({season:'2'});
+ assert.equal(clean.window.location.search,'?source=qa&matchday=1');
+ const explicit=setup('/competitions/it-1/standings?season=2&tracking=keep#top',null,routeRegistry,null,2);
+ assert.equal(explicit.window.location.search,'?season=2&tracking=keep');
+ explicit.tabs[3].events.click();
+ assert.equal(explicit.window.location.search,'?season=2&tracking=keep');
+ assert.equal(explicit.window.location.hash,'#top');
+ const invalid=setup('/competitions/it-1/stats?season=-3&tracking=keep#top',null,routeRegistry,null,2);
+ assert.equal(invalid.window.location.search,'?tracking=keep');
+ assert.equal(invalid.window.location.hash,'#top');
+ const future=setup('/competitions/it-1/stats?season=3&tracking=keep#top',null,routeRegistry,null,2);
+ assert.equal(future.window.location.search,'?tracking=keep');
+});
+test('ISSUE #531: a seasonless selection follows canonical season transitions',()=>{
+ const s=setup('/competitions/it-1/history?source=qa',null,routeRegistry,null,1);
+ assert.equal(s.window.faCompetitionRoute.get().season,'1');
+ s.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(s.window.faCompetitionRoute.get().season,'2');
+ assert.equal(s.window.location.search,'?source=qa');
+ const explicit=setup('/competitions/it-1/history?season=1',null,routeRegistry,null,1);
+ explicit.window.faCompetitionRoute.setPublicSeasonLimit(2);
+ assert.equal(explicit.window.faCompetitionRoute.get().season,'1');
+ assert.equal(explicit.window.location.search,'?season=1');
+});
 test('PUBLIC first paint uses verified latest Season 2 without showing 1 or skeleton',()=>{
  const latest=setup('/competitions/it-1/standings',null,routeRegistry,null,2);
  assert.equal(latest.window.faCompetitionRoute.get().season,'2');
  assert.equal(latest.fields.get('app-competition-season-value').textContent,'2');
  assert.equal(latest.fields.get('app-competition-season').disabled,false);
- assert.equal(latest.window.location.search,'?season=2');
+ assert.equal(latest.window.location.search,'');
  const historical=setup('/competitions/it-1/standings?season=1',null,routeRegistry,null,2);
  assert.equal(historical.fields.get('app-competition-season-value').textContent,'1');
  const future=setup('/competitions/it-1/standings?season=9',null,routeRegistry,null,2);
  assert.equal(future.fields.get('app-competition-season-value').textContent,'2');
- assert.equal(future.window.location.search,'?season=2');
+ assert.equal(future.window.location.search,'');
 });
 test('PUBLIC season picker reserves its label until world confirms the redirect; no future numeral flashes',()=>{
  const future=setup('/competitions/it-1/fixtures?season=99&matchday=4');
@@ -279,7 +313,7 @@ test('DEV future seasons clamp to progress while unresolved public URLs keep the
    assert.equal(s.window.faCompetitionRoute.get().season,dev===null?'99':'3');
    assert.equal(s.window.faCompetitionRoute.get().view,'fixtures');
    assert.equal(s.window.faCompetitionRoute.get().matchday,4);
-   assert.equal(s.window.location.search,'?season='+(dev===null?'99':'3')+'&matchday=4');
+   assert.equal(s.window.location.search,dev===null?'?season=99&matchday=4':'?matchday=4');
    assert.equal(s.fields.get('app-competition-season-unavailable').hidden,true);
    assert.equal(s.fields.get('competition-panel-fixtures').hidden,false);
    s.window.faCompetitionRoute.set({season:'99'});
