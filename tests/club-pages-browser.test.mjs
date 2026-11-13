@@ -534,6 +534,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
      assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
     }
+    // A failed API response must not invent a selected subview or mutate /roster.
+    await visit('/clubs/it/1/roster?view=mental');
+    await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
+    assert.equal(await run('location.search'),'','failed roster read stays at /roster');
+    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),5);
+    assert.equal(await run("document.querySelector('.club-load-error')"),null,'roster read failure is not a club identity failure');
     mockReadyRoster=true;
     await visit('/clubs/it/1/roster?view=info');
     await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
