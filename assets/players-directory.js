@@ -372,7 +372,12 @@
    if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
    const fragment=document.createDocumentFragment();
    for(const player of data.players){
-    const tr=document.createElement('tr');flagCell(tr,player);cell(tr,player.display_name||'—');
+    const tr=document.createElement('tr');flagCell(tr,player);
+    const nameCell=cell(tr,'');
+    if(Number.isSafeInteger(player.id)&&player.id>0){
+     const link=document.createElement('a');link.className='app-player-name-link';link.href='/players/'+player.id+'?view=overview';
+     link.textContent=player.display_name||'—';nameCell.append(link);
+    }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
      cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');

@@ -13,12 +13,19 @@ test("PLAYER-AUTH public artifact includes only the approved account pages and s
  for(const path of ["backend/src/http-player.ts","backend/src/player-auth.ts","backend/wrangler.toml","backend/migrations/0013_player_auth.sql"])
   assert.ok(!files.includes(path),"backend data must stay private: "+path);
  const routing=JSON.parse(readFileSync(join(repositoryRoot,"vercel.json"),"utf8"));
- assert.deepEqual(routing.headers,[{source:"/account/:path*",headers:[
-  {key:"Cache-Control",value:"private, no-store, max-age=0"},
-  {key:"Referrer-Policy",value:"no-referrer"},
-  {key:"X-Robots-Tag",value:"noindex, nofollow"},
-  {key:"X-Content-Type-Options",value:"nosniff"}
- ]}]);
+ assert.deepEqual(routing.headers,[
+  {source:"/account/:path*",headers:[
+   {key:"Cache-Control",value:"private, no-store, max-age=0"},
+   {key:"Referrer-Policy",value:"no-referrer"},
+   {key:"X-Robots-Tag",value:"noindex, nofollow"},
+   {key:"X-Content-Type-Options",value:"nosniff"}
+  ]},
+  {source:"/admin/players/preview/:path*",headers:[
+   {key:"Cache-Control",value:"private, no-store, max-age=0"},
+   {key:"Referrer-Policy",value:"no-referrer"},
+   {key:"X-Robots-Tag",value:"noindex, nofollow"}
+  ]}
+ ]);
 });
 
 test("INT24-PUBLIC: shared rules and stats are self-contained public dependencies",()=>{

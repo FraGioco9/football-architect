@@ -53,6 +53,15 @@
  const confirmCancel=root.querySelector('[data-admin-preview-cancel]');
  const receipt=root.querySelector('[data-admin-players-commit-status]');
  let draft=null,view='overview',group='technical',sort='',order='',page=0,busy=false,saved=false,status='loading';
+ // Restore the preview table presentation without putting draft content in URLs.
+ const restored=new URLSearchParams(location.hash.slice(1));
+ if(['overview','attributes'].includes(restored.get('view')))view=restored.get('view');
+ if(['technical','mental','physical','goalkeeping'].includes(restored.get('group')))group=restored.get('group');
+ if(/^[1-9][0-9]{0,3}$/.test(restored.get('page')||''))page=Number(restored.get('page'))-1;
+ if(['name','nationality','positions','age','height','foot',...groups[group]].includes(restored.get('sort')))sort=restored.get('sort');
+ if(sort&&['asc','desc'].includes(restored.get('order')))order=restored.get('order');
+ const restoreScroll=/^(0|[1-9][0-9]{0,5})$/.test(restored.get('scroll')||'')?Number(restored.get('scroll')):0;
+
  const buttonLabels={
   en:{generate:'Generate',regenerate:'Regenerate',back:'Back',heading:'Confirm generation',cancel:'Cancel',confirm:'Confirm'},
   it:{generate:'Genera',regenerate:'Rigenera',back:'Indietro',heading:'Conferma generazione',cancel:'Annulla',confirm:'Conferma'},
@@ -153,9 +162,17 @@
   else{
    const ordered=sorted(),total=Math.max(1,Math.ceil(ordered.length/pageSize));page=Math.min(page,total-1);
    const frag=document.createDocumentFragment();
-   for(const {player} of ordered.slice(page*pageSize,(page+1)*pageSize)){
+   for(const {player,index} of ordered.slice(page*pageSize,(page+1)*pageSize)){
     const row=document.createElement('tr');flagCell(row,player);
-    addCell(row,player.display_name||'—');
+    const nameCell=document.createElement('td');
+    const link=document.createElement('a');link.className='app-player-name-link';
+    const target=new URL('/admin/players/preview/player',location.origin);
+    target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));target.searchParams.set('view','overview');
+    target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
+    target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
+    if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}
+    link.href=target.pathname+target.search;link.textContent=player.display_name||'—';
+    nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     if(view==='overview'){
      addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
@@ -208,6 +225,7 @@
    draft=info;status='ready';feedback.textContent='';
   }catch(e){status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;}
   render();
+  if(draft&&restoreScroll)requestAnimationFrame(()=>{scroll.scrollLeft=restoreScroll;});
  }
  async function regenerate(){
   if(!draft||busy)return;
