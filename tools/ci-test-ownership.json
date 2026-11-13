@@ -198,6 +198,7 @@
     "tests/club-competition-skeleton-layout.test.mjs": "site-node",
     "tests/club-competition-summary.test.mjs": "site-node",
     "tests/club-crests.test.mjs": "site-node",
+    "tests/club-fixtures-source.test.mjs": "site-node",
     "tests/club-history-source.test.mjs": "site-node",
     "tests/club-identity-trafford.test.mjs": "site-node",
     "tests/club-pages-browser.test.mjs": "site-node",
@@ -282,7 +283,6 @@
     "tests/rules-registry.test.mjs": "site-node",
     "tests/season-one-selection.test.mjs": "site-node",
     "tests/season-two-controls.test.mjs": "site-node",
-    "tests/seasonless-routing.test.mjs": "site-node",
     "tests/season-two-navigation-browser.mjs": "manual",
     "tests/sh-01-sporting-contract.test.mjs": "site-node",
     "tests/sh-02-competition-rendering.test.mjs": "site-node",
@@ -303,6 +303,7 @@
     "tests/world-catalog.test.mjs": "site-node",
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
-    "tests/world-divisions.test.mjs": "site-node"
+    "tests/world-divisions.test.mjs": "site-node",
+    "tests/seasonless-routing.test.mjs": "site-node"
   }
 }
