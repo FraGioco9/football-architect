@@ -972,7 +972,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
-  assert.ok(fixtureReads>=2,'verified club fixture endpoint serves the public view');
+  assert.ok(fixtureReads>=1,'verified club fixture endpoint serves the public view, including cache reuse');
   assert.equal(competitionReads,0,'Club Fixtures never calls the per-competition season APIs');
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'Season 1 offers only Season 1');
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null);

@@ -40,7 +40,7 @@ test('club fixtures source rejects mismatched world, foreign fixtures, future re
 });
 
 test('club fixtures source keeps unstarted/unpublished/unavailable states distinct without fan-out',async()=>{
- const zero={...world,seasonNumber:0,day:0,phase:'unstarted'};
+ const zero={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
  const calls=[];
  const unstarted=await readClubFixtures({clubKey:'IT-1',season:1,world:zero,manifest,fetchJson:async path=>{calls.push(path);throw Error('unexpected request')}});
  assert.equal(unstarted.coverage,'unstarted');assert.deepEqual(calls,[]);
