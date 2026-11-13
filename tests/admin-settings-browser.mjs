@@ -206,9 +206,10 @@ try{
    const writer=permissionSet.includes('admin.world.write');
    if(permissionSet.length===0)assert.equal(await page.locator('#main-content').innerText(),'');
    else{
-    assert.equal(await page.locator('.admin-directory-card').count(),2);
+    assert.equal(await page.locator('.admin-directory-card').count(),3);
     assert.equal(await page.locator('[data-admin-card="calendar"].app-link').isVisible(),true);
     assert.equal(await page.locator('[data-admin-card="players"].app-link').isVisible(),writer);
+    assert.equal(await page.locator('[data-admin-card="contracts"].app-link').isVisible(),writer);
     assert.equal(await page.locator('[data-admin-panel="players"]').isVisible(),writer);
     assert.equal(await page.locator('#app-nav-dashboard.is-active,#app-nav-divisions.is-active').count(),0);
    }
@@ -486,6 +487,160 @@ try{
    assert.equal(permissionReads,1,'Account pages do not send anonymous Admin checks');
    checks++;
   }finally{await context.close();}
+ }
+ // #509 Contracts: simulated Admin browser batch assignment, no remote writes.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  let releaseInitialList;
+  try{
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const generation='11111111-1111-4111-8111-111111111111';
+   let club=null,writes=0,permissionReads=0;
+   let holdInitialList=true;
+   const initialList=new Promise(resolve=>{releaseInitialList=resolve});
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>{
+    permissionReads++;
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     permissions:['admin.access','admin.world.read','admin.world.write']})});
+   });
+   await page.route('**/api/admin/session',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({actor:{id:'test'},csrfToken:'a'.repeat(64)})}));
+   await page.route('**/api/admin/contracts*',async r=>{
+    if(r.request().method()==='GET'&&holdInitialList){
+     holdInitialList=false;await initialList;
+    }
+    if(r.request().method()==='POST'){
+     writes++;
+     assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
+     const body=r.request().postDataJSON();
+     assert.deepEqual(body,{players:[1,2,3,4].map(playerId=>({
+      playerId,expectedClubKey:writes===1?null:'IT-1'
+     })),clubKey:writes===1?'IT-1':null,expectedGeneration:generation,expectedRevision:0});
+     club=body.clubKey;
+     return r.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({updated:4,clubKey:club,playerIds:[1,2,3,4],worldGeneration:generation,worldRevision:0})});
+    }
+    const players=[1,2,3,4].map(id=>({id,name:'Test Player '+id,nationality:id===1?'ITA':'BRA',
+     age:20+id,primary_position:id===1?'CM':'ST',secondary_positions:[],
+     height_cm:180+id,preferred_foot:'right',clubKey:club}));
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     count:4,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
+     players,clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
+   });
+   await page.goto('http://app.localhost:2000/admin');
+   await page.locator('[data-admin-card="contracts"]').waitFor({state:'visible'});
+   assert.equal(await page.locator('.admin-directory-card').count(),3);
+   await page.locator('[data-admin-card="contracts"]').click();
+   await page.waitForURL('**/admin/contracts');
+   await page.locator('.admin-contracts-skeleton').first().waitFor({state:'visible'});
+   const before=await page.evaluate(()=>{
+    const el=s=>document.querySelector(s),box=el('.admin-contracts-assignment'),
+     head=el('.admin-contracts-table thead'),tbody=el('[data-contracts-rows]');
+    const rowList=[...tbody.querySelectorAll('tr')];
+    return {boxY:box.getBoundingClientRect().y,headY:head.getBoundingClientRect().y,
+     rows:rowList.length,cellCounts:rowList.map(r=>r.cells.length),
+     checkboxes:rowList.map(r=>r.cells[0].querySelector('input')?.disabled),
+     widths:[...head.querySelectorAll('th')].map(th=>th.getBoundingClientRect().width),
+     count:el('[data-contracts-selected-count]').textContent,
+     dropdownDisabled:el('[data-contracts-trigger]').disabled,
+     message:el('[data-contracts-message]').textContent,
+     totalWidth:el('[data-contracts-total]').getBoundingClientRect().width,
+     pageWidth:el('[data-contracts-page]').getBoundingClientRect().width};
+   });
+   assert.equal(before.rows,5);
+   assert.deepEqual(before.cellCounts,[8,8,8,8,8]);
+   assert.ok(before.checkboxes.every(Boolean),'First-paint checkbox silhouettes are disabled');
+   assert.equal(before.widths.length,8);
+   assert.match(before.count,/^0 /);
+   assert.equal(before.dropdownDisabled,true);
+   assert.equal(before.message,'');
+   assert.ok(before.totalWidth>=76&&before.pageWidth>=100,'Stable counter/page space');
+   releaseInitialList();
+   await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
+   const after=await page.evaluate(()=>{
+    const el=s=>document.querySelector(s),box=el('.admin-contracts-assignment'),head=el('.admin-contracts-table thead');
+    return {boxY:box.getBoundingClientRect().y,headY:head.getBoundingClientRect().y,
+     widths:[...head.querySelectorAll('th')].map(th=>th.getBoundingClientRect().width)};
+   });
+   assert.ok(Math.abs(after.boxY-before.boxY)<1,'Assignment box remains in place');
+   assert.ok(Math.abs(after.headY-before.headY)<1,'Table header remains in place');
+   assert.ok(after.widths.every((w,i)=>Math.abs(w-before.widths[i])<1),'Columns do not shift');
+   const contractFlag=page.locator('[data-contracts-player="1"] .app-players-nationality-flag');
+   assert.equal(await contractFlag.getAttribute('data-player-country'),'ITA');
+   assert.equal(await contractFlag.getAttribute('alt'),'Italy');
+   await contractFlag.hover();
+   await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+   assert.equal(await page.locator('#app-players-nationality-tooltip').innerText(),'Italy');
+   await contractFlag.focus();
+   assert.equal(await contractFlag.getAttribute('aria-describedby'),'app-players-nationality-tooltip');
+   await contractFlag.press('Escape');
+   await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
+   assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
+   assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
+   assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),4);
+   assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true,
+    'Contracts status text must not occupy space or appear on screen');
+   assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
+    'No Loading players message is shown');
+   assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await page.locator('[data-contracts-check="1"]').check();
+   await page.locator('[data-contracts-check="4"]').click({modifiers:['Shift']});
+   for(const id of [1,2,3,4])
+    assert.equal(await page.locator('[data-contracts-check="'+id+'"]').isChecked(),true);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^4 /);
+   assert.equal(await page.evaluate(()=>window.getSelection()?.toString()||''),'',
+    'Shift+click range must not highlight table text');
+   await page.locator('[data-contracts-check="1"]').uncheck();
+   await page.locator('[data-contracts-check="4"]').click({modifiers:['Shift']});
+   for(const id of [1,2,3,4])
+    assert.equal(await page.locator('[data-contracts-check="'+id+'"]').isChecked(),false);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^0 /);
+   await page.locator('[data-contracts-all]').check();
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^4 /);
+   await page.locator('[data-contracts-trigger]').click();
+   await page.locator('[data-contracts-club-search]').fill('Italian');
+   await page.locator('.admin-contracts-club-menu [data-value="IT-1"]').click();
+   await page.locator('[data-contracts-save]').click();
+   await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
+    .every(row=>row.textContent.includes('Test Italian Club')));
+   assert.equal(await page.locator('[data-contracts-all]').isChecked(),false);
+   await page.locator('[data-contracts-all]').check();
+   await page.locator('[data-contracts-trigger]').click();
+   await page.locator('.admin-contracts-club-menu [data-value="__unassigned__"]').click();
+   await page.locator('[data-contracts-save]').click();
+   await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
+    .every(row=>row.textContent.includes('Free Agent')));
+   assert.equal(writes,2);
+   assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
+    'No loading or success messages after assignment');
+   assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true);
+   assert.ok(permissionReads<=2,'Shared Admin permission cache');
+   // A hard refresh must paint the complete static layout before even the
+   // permissions response arrives; only player rows and clubs are asynchronous.
+   let releaseRefreshPermissions;
+   const refreshPermissionHold=new Promise(resolve=>{releaseRefreshPermissions=resolve});
+   await page.route('**/api/player/permissions',async route=>{
+    await refreshPermissionHold;
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     permissions:['admin.access','admin.world.read','admin.world.write']})});
+   });
+   try{
+    await page.reload({waitUntil:'domcontentloaded'});
+    assert.equal(await page.locator('#app-admin').isVisible(),true,'Contracts heading visible before permissions finish');
+    assert.equal(await page.locator('[data-admin-contracts]').isVisible(),true,'Assignment and table visible on refresh');
+    assert.equal(await page.locator('#app-admin').getAttribute('data-admin-access'),'pending');
+    assert.equal(await page.locator('.admin-contracts-assignment').isVisible(),true);
+    assert.equal(await page.locator('.admin-contracts-table thead').isVisible(),true);
+    assert.equal(await page.locator('.admin-contracts-skeleton').count(),5);
+    assert.equal(await page.locator('[data-contracts-trigger]').isDisabled(),true);
+    assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
+    assert.equal(await page.locator('[data-contracts-check]').count(),0,'No player data before authorized API read');
+   }finally{releaseRefreshPermissions();}
+   await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
+   assert.deepEqual(errors,[]);checks++;
+  }finally{releaseInitialList?.();await context.close()}
  }
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{

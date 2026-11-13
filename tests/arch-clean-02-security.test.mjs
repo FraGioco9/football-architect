@@ -10,8 +10,8 @@ test('ARCH-CLEAN-02 security: approved hosting routes include exactly two Player
   assert.equal(hosting.redirects.length,33);
   for(const suffix of ['/', '/index.html'])assert.deepEqual(hosting.redirects.find(route=>route.source==='/admin/players/preview'+suffix),{source:'/admin/players/preview'+suffix,destination:'/admin/players/preview',permanent:true});
   assert.equal(hosting.rewrites.length,8);
-  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players)')).length,2);
-  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players)').length,1);
+  assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts)')).length,2);
+  assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts)').length,1);
   assert.equal(hosting.rewrites.some(r=>r.destination.includes('/app/')),false);
 });
 
