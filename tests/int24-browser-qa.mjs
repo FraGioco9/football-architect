@@ -845,7 +845,12 @@ try {
   if(id==='IT-1'){
    await historyPage.locator('.fa-dev-widget-button').click();
    await historyPage.locator('[data-dev-control="season-number"]').fill('2');await historyPage.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+   // #531: an implicit season follows the new current Debug season. Pin the
+   // historical Season 1 explicitly before asserting its archived rule snapshot.
+   await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({season:'1'}));
    await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionContext?.seasonData?.rulesSnapshot?.phases[0].points.win===3);
+   assert.equal(new URL(historyPage.url()).searchParams.get('season'),'1');
    assert.notEqual(await historyPage.locator('#app-standings-body tr').nth(1).getAttribute('data-standing-outcome'),'champion');
    assert.notEqual(await historyPage.locator('#app-standings-compact-list>li').nth(1).getAttribute('data-standing-outcome'),'champion');
    await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'standings'}));
