@@ -38,6 +38,18 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(client,/window\.addEventListener\('resize',syncRosterTabEdges/);
  assert.match(html,/const syncSubviewFade=/);
  assert.match(generator,/const syncSubviewFade=/);
+ // Issue #548: all primary mobile View bars hide the scrollbar, not only Roster subviews.
+ const shared=read('assets/app.css');
+ assert.match(shared,/\.app-competition-tabs\{scrollbar-width:none;-ms-overflow-style:none/);
+ assert.match(shared,/\.app-competition-tabs::-webkit-scrollbar\{display:none;width:0;height:0\}/);
+ assert.match(shared,/\.app-competition-tabs\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
+ assert.match(shared,/\.app-competition-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(shared,/\.app-world-standing-scroll\{[^}]*scrollbar-width:thin/);
+ assert.match(shared,/\.app-players-table-scroll\{[^}]*scrollbar-width:thin/);
+ const playerDetail=read('assets/player-detail.js');
+ assert.match(playerDetail,/viewBar\?\.addEventListener\('scroll',syncViewEdges/);
+ assert.match(playerDetail,/window\.addEventListener\('resize',syncViewEdges/);
+
 
  assert.doesNotMatch(generator,/club-roster-groups/);
  assert.match(html,/data-club-roster-label="5"/);
