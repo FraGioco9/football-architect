@@ -61,7 +61,7 @@ export default {
         return json(503,{error:{code:'players_unavailable'}});
       }
     }
-    const roster=url.pathname.match(/^\\/api\\/clubs\\/([^/]+)\\/roster$/);
+    const roster=url.pathname.match(/^\/api\/clubs\/([^/]+)\/roster$/);
     if(roster){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search)return json(422,{error:{code:'invalid_public_request'}});
