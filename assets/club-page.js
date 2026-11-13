@@ -228,6 +228,27 @@
    }
   });
   paint();
+  // Present the same roster snapshot in Overview and Attributes; no extra API read.
+  host.addEventListener('click',event=>{
+   const control=event.target.closest?.('[data-club-roster-view],[data-club-roster-group]');
+   if(!control||selected.view!=='roster')return;
+   const view=control.dataset.clubRosterView,group=control.dataset.clubRosterGroup;
+   const params=new URLSearchParams(location.search);
+   if(view){
+    if(!['overview','attributes'].includes(view))return;
+    if(view==='overview'){params.delete('view');params.delete('group')}
+    else params.set('view','attributes');
+   }else if(group){
+    if(!['technical','mental','physical','goalkeeping'].includes(group))return;
+    params.set('view','attributes');params.set('group',group);
+   }else return;
+   const next=location.pathname+(params.size?'?'+params.toString():'')+location.hash;
+   if(next===location.pathname+location.search+location.hash)return;
+   history.pushState(null,'',next);
+   paint(true);
+   const key=view?'data-club-roster-view':'data-club-roster-group';
+   host.querySelector('['+key+'="'+(view||group)+'"]')?.focus({preventScroll:true});
+  });
   // A current-state roster read is independent of sporting seasons and archives.
   let rosterRequest=0,rosterAbort=null;
   refreshClubRoster=()=>{
@@ -239,7 +260,7 @@
    void (async()=>{
     try{
      const response=await fetch('/api/clubs/'+clubKey+'/roster',{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
-     if(!response.ok)throw Error('roster_http_'+response.status);
+     if(!response.ok){const error=Error('roster_http_'+response.status);error.status=response.status;throw error;}
      const data=await response.json();
      if(data?.clubKey!==clubKey||!Number.isSafeInteger(data.count)||data.count<0||
       !Array.isArray(data.players)||data.players.length!==data.count||
@@ -249,9 +270,9 @@
       throw Error('invalid_roster_response');
      if(signal.aborted||ticket!==rosterRequest)return;
      rosterSnapshot={source:'ready',...data};
-    }catch{
+    }catch(error){
      if(signal.aborted||ticket!==rosterRequest)return;
-     rosterSnapshot={source:'unavailable'};
+     rosterSnapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
     }
     if(selected.view==='roster')paint(true);
    })();
@@ -430,7 +451,15 @@
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
+   if(next&&next.base===selected.base){
+    const queryOnly=selected.view==='roster'&&next.view==='roster';
+    selected=next;paint(true);refreshClubHistory();refreshClubOverview();
+    if(!queryOnly)refreshClubRoster();
+    if(queryOnly){
+     const mode=new URLSearchParams(location.search).get('view')==='attributes'?'attributes':'overview';
+     host.querySelector('[data-club-roster-view="'+mode+'"]')?.focus({preventScroll:true});
+    }else host.querySelector('.club-tabs [aria-current="page"]')?.focus({preventScroll:true});
+   }
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
