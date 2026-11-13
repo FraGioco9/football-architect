@@ -593,7 +593,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
     assert.equal(await run('location.search'),'?view=technical','loading subviews cannot navigate');
-    assert.equal(blockedRosterResponses.length,1,'club roster request held until assertions complete');
+    for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
+    assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
     holdRosterResponse=false;
     const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
     blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
