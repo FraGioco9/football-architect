@@ -165,7 +165,7 @@ test('#502 skeleton footprint, pitch size, attribute separators and silent loadi
  assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
  assert.match(css,/\.app-player-detail-status\[hidden\]\{display:none!important\}/);
  assert.match(css,/\.app-player-detail-attribute-line:last-child\{border-bottom:0\}/);
- assert.match(css,/\.app-player-detail-attribute-line\{[^}]*min-height:52px[^}]*border-bottom:1px solid var\(--line\)/);
+ assert.match(css,/\.app-player-detail-attribute-line\{[^}]*min-height:38px[^}]*padding:5px 8px[^}]*border-bottom:1px solid var\(--line\)/);
  assert.match(css,/\.app-player-detail-pitch-holder\{width:min\(100%,330px\)/);
  assert.match(css,/\.app-player-detail-positions h2,\.app-player-detail-attributes h2\{font-size:22px/);
  assert.match(css,/\.app-player-detail-name-skeleton\{[^}]*width:270px;max-width:100%;height:32px;margin:0/);
@@ -210,5 +210,21 @@ test('#535 primary role highlights align with canonical generator A/B tiers',()=
   assert.equal((html.match(/data-detail-legend-title/g)||[]).length,1);
   assert.equal((html.match(/data-detail-tier="core"/g)||[]).length,1);
   assert.equal((html.match(/data-detail-tier="support"/g)||[]).length,1);
+ }
+});
+
+test('#535 follow-up: inline legend, compact rows and same marker appearance',()=>{
+ const renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
+ assert.doesNotMatch(renderer,/app-standings-legend app-player-detail-legend/);
+ assert.match(renderer,/app-player-detail-legend/);
+ assert.match(css,/\.app-player-detail-legend\{display:flex;align-items:center;/);
+ assert.doesNotMatch(css,/\.app-player-detail-legend\{[^}]*\b(border|background|padding):/);
+ assert.match(css,/\.app-player-detail-attribute-line\{[^}]*min-height:38px;[^}]*padding:5px 8px/);
+ assert.match(css,/\.app-player-detail-pitch-marker circle\{fill:#FFFFFF;stroke:#143D2A;stroke-width:2\}/);
+ assert.doesNotMatch(css,/\.app-player-detail-pitch-marker\.is-primary circle/);
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.match(html,/class="app-player-detail-legend" data-detail-legend/);
+  assert.doesNotMatch(html,/class="app-standings-legend app-player-detail-legend"/);
  }
 });
