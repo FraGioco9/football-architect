@@ -26,9 +26,11 @@ export async function verifyArea(page,area,{touch}){
   assert.equal(await page.locator('#calendar-season-menu [role=option]').count(),1);
   await activate(picker);
  }else if(area==='competitions'){
-  // DOM-first navigation can precede async competition route activation.
-  // Wait for the real interaction controller rather than a network-idle heuristic.
-  await page.waitForFunction(()=>typeof window.faCompetitionRoute?.set==='function');
+  // Wait for both the route controller and two-frame tab-scroll restoration.
+  // On WebKit, clicking before the static tab shell settles can lose the
+  // interaction to the first-paint restoration pass (especially at 768px).
+  await page.waitForFunction(()=>typeof window.faCompetitionRoute?.set==='function'&&
+    document.documentElement.dataset.faTabsRestored==='true'&&!!window.faCompetitionContext?.definition);
   const tab=page.locator('#competition-tab-fixtures');
   await activate(tab);
   await page.waitForFunction(()=>document.querySelector('#competition-tab-fixtures')?.getAttribute('aria-selected')==='true');
