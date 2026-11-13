@@ -528,6 +528,16 @@ try{
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
    await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
+   const contractFlag=page.locator('[data-contracts-player="1"] .app-players-nationality-flag');
+   assert.equal(await contractFlag.getAttribute('data-player-country'),'ITA');
+   assert.equal(await contractFlag.getAttribute('alt'),'Italy');
+   await contractFlag.hover();
+   await page.locator('#app-players-nationality-tooltip').waitFor({state:'visible'});
+   assert.equal(await page.locator('#app-players-nationality-tooltip').innerText(),'Italy');
+   await contractFlag.focus();
+   assert.equal(await contractFlag.getAttribute('aria-describedby'),'app-players-nationality-tooltip');
+   await contractFlag.press('Escape');
+   await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
    assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
    assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
    assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),4);

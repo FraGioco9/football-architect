@@ -148,6 +148,11 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(html,/<title>Admin — Contracts — Football Architect<\/title>/);
  assert.match(html,/href="\/admin" data-admin-back/);
  assert.match(html,/src="\/assets\/admin-contracts.js"/);
+ assert.match(html,/src="\/assets\/players-nationality-tooltip.js"/);
+ assert.ok(html.indexOf('src="/assets/players-nationality-tooltip.js"')<html.indexOf('src="/assets/admin-contracts.js"'));
+ assert.match(source,/data\.playerCountry=p\.nationality/);
+ assert.match(source,/faPlayersNationality\?\.name\(p\.nationality\)/);
+ assert.match(source,/img\.tabIndex=0/);
  assert.doesNotMatch(html,/src="\/assets\/admin-players.js"|src="\/assets\/admin-settings.js"/);
  assert.match(html,/data-contracts-select/);
  assert.match(html,/class="app-panel admin-contracts-assignment"/);

@@ -102,8 +102,10 @@
     input.checked=selected.has(p.id);input.disabled=busy;input.setAttribute('aria-label',l('pick')+' '+p.name);
     checkTd.append(input);tr.append(checkTd);
     const flagTd=doc.createElement('td'),flag=Object.hasOwn(flags,p.nationality)?flags[p.nationality]:null;
-    if(flag){const img=doc.createElement('img');img.src='/assets/flags/'+flag+'.svg';img.alt=p.nationality;
-     img.className='app-players-nationality-flag';img.width=24;img.height=18;flagTd.append(img)}
+    if(flag){const img=doc.createElement('img');img.src='/assets/flags/'+flag+'.svg';
+     img.className='app-players-nationality-flag';img.dataset.playerCountry=p.nationality;
+     img.alt=win.faPlayersNationality?.name(p.nationality)||p.nationality;
+     img.tabIndex=0;img.width=24;img.height=18;flagTd.append(img)}
     else flagTd.textContent=p.nationality||'';
     tr.append(flagTd);
     const name=doc.createElement('td');name.textContent=p.name;name.className='admin-contracts-player-name';tr.append(name);
