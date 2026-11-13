@@ -24,7 +24,7 @@ test("FE-01: identical tokenized typography, spacing, size, radius, shadow and m
  has(directory,".nav01-filters>input{min-height:var(--fa-control-height-filter)");
  has(directory,".nav01-filter .language-trigger{height:100%;min-height:var(--fa-control-height-filter)");
  has(awards,".fa-awards-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:var(--fa-space-3)");
- assert.equal((admin.match(/min-height:var\(--fa-control-height-regular\)/g)||[]).length,6); // #509: Contracts assignment control
+ assert.equal((admin.match(/min-height:var\(--fa-control-height-regular\)/g)||[]).length,5); // Contracts uses Players shared control geometry
 });
 test("FE-01: preserve scoped responsive, sport, focus and first-paint owners",()=>{
  for(const s of [".app-world-standing-table tbody tr>*{height:68px}","@media(max-width:620px){.app-world-standing-scroll{display:none!important}",".app-fixtures-arrow{width:var(--fa-control-height-compact)","@media(max-width:360px){.app-fixtures-select{width:100px","html[data-competition-view=\"awards\"] #competition-tab-awards",".app-standings-skeleton{display:none",".app-competition-view-skeleton{display:none","#world-calendar #calendar-controls #calendar-week-trigger:is(:hover,:active):not(:disabled)"])has(app,s);
