@@ -1,6 +1,6 @@
 /* #502 — Player detail follows Club-page layout, panel and tab primitives. */
 .app-player-detail-page{width:100%;min-width:0}
-.app-player-detail-heading{display:flex;align-items:center;gap:18px;min-width:0;min-height:181px}
+.app-player-detail-heading{display:flex;align-items:center;justify-content:center;gap:18px;min-width:0;min-height:181px}
 .app-player-detail-portrait{width:160px;height:181px;flex:0 0 160px;display:grid;place-items:end center;overflow:hidden;border-radius:var(--fa-radius-panel);border:1px solid var(--border);background:var(--surface-raised);box-sizing:border-box}
 .app-player-detail-silhouette{width:100%;height:100%;color:var(--muted);opacity:.65}
 .app-player-detail-identity{min-width:0;flex:0 1 440px;max-width:440px;display:flex;flex-direction:column;justify-content:center;gap:8px}
@@ -95,3 +95,22 @@ html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:
 @media(max-width:620px){.app-player-detail-affiliation{flex-basis:calc(100% - 115px);max-width:none;min-height:92px;margin-left:115px;padding-left:0}.app-player-detail-affiliation::before{display:none}.app-player-detail-affiliation-content{min-height:80px;font-size:13px}.app-player-detail-club-stack{gap:5px}.app-player-detail-club-crest,.app-player-detail-club-crest-placeholder,.app-player-detail-club-logo-skeleton{width:48px;height:48px}.app-player-detail-club-loading{gap:6px;min-height:80px}.app-player-detail-club-name-skeleton{width:92px;height:14px}.app-player-detail-identity{flex:1 1 0;max-width:none}.app-player-detail-header-meta{flex-wrap:wrap;white-space:normal}.app-player-detail-heading{gap:15px;min-height:114px;flex-wrap:wrap}.app-player-detail-portrait{width:100px;height:114px;flex-basis:100px}.app-player-detail-identity .app-page-title{font-size:clamp(1.2rem,4.8vw,1.5rem);min-height:32px}.app-player-detail-name-skeleton{width:160px;height:24px}.app-player-detail-identity{gap:5px}.app-player-detail-back{margin-left:115px;align-self:flex-start}.app-player-detail-tabs .app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);font-size:clamp(10px,2.55vw,11px)}}
 @media(max-width:460px){.app-player-detail-attribute-columns{grid-template-columns:minmax(0,1fr)}.app-player-detail-info-line{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.app-player-detail-tabs .app-competition-tab,.app-player-detail-marker-ring{transition:none!important}}
+
+/* #527: center the portrait + identity as the header's visual pair, not the
+   portrait + identity + offset affiliation as one uneven flex row. */
+.app-player-detail-heading{position:relative;flex-wrap:wrap}
+.app-player-detail-affiliation{position:absolute;right:0;top:50%;transform:translateY(-50%);margin-left:0}
+.app-player-detail-back{flex:0 0 100%;text-align:center}
+@media(max-width:1240px){
+ /* Put the club below the centered identity pair before the right-hand column
+    would collide with the portrait/name at tablet and narrow desktop widths. */
+ .app-player-detail-affiliation{position:static;right:auto;top:auto;transform:none;flex:0 0 100%;width:100%;max-width:100%;min-width:0;margin:0;padding:0}
+ .app-player-detail-affiliation::before{display:none}
+}
+@media(max-width:620px){
+ /* Fixed-width text track prevents first-paint skeleton -> name recentering.
+    The two visible elements are centered together, with the club below. */
+ .app-player-detail-identity{flex:0 1 min(265px,calc(100% - 115px));width:min(265px,calc(100% - 115px));max-width:min(265px,calc(100% - 115px))}
+ .app-player-detail-heading{row-gap:12px}
+ .app-player-detail-back{margin-left:0}
+}

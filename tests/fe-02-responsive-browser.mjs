@@ -148,6 +148,96 @@ try{
    assert.ok((await tab.boundingBox()).height>=43.9,"Club tab hit area");
   });
  }
+ // #527: centered Player Detail header, portrait adjacent to the name at all widths.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"it",theme:"light"},"/players/33",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const heading=document.querySelector(".app-player-detail-heading");
+    const photo=heading?.querySelector(".app-player-detail-portrait");
+    const identity=heading?.querySelector(".app-player-detail-identity");
+    const affiliation=heading?.querySelector(".app-player-detail-affiliation");
+    if(!heading||!photo||!identity||!affiliation)return null;
+    const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,
+     width:r.width,height:r.height,cy:(r.top+r.bottom)/2};};
+    return {heading:box(heading),photo:box(photo),identity:box(identity),club:box(affiliation),
+     justify:getComputedStyle(heading).justifyContent,
+     overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(geometry,"Player Detail static header exists at "+width);
+   assert.equal(geometry.justify,"center","Player Detail header content is horizontally centered at "+width);
+   assert.ok(geometry.photo.right<=geometry.identity.left+1&&Math.abs(geometry.photo.cy-geometry.identity.cy)<=2,
+    "portrait and player name stay beside each other and vertically centered "+JSON.stringify({width,geometry}));
+   assert.ok(geometry.photo.left>=geometry.heading.left-2&&geometry.identity.right<=geometry.heading.right+2,
+    "portrait and name stay within the header "+JSON.stringify({width,geometry}));
+   // Center the actual portrait+name group, not the combined group including the club.
+   const pairCenter=(geometry.photo.left+geometry.identity.right)/2;
+   const headerCenter=(geometry.heading.left+geometry.heading.right)/2;
+   assert.ok(Math.abs(pairCenter-headerCenter)<=3,
+    "portrait+name pair shares the true header center "+JSON.stringify({width,pairCenter,headerCenter,geometry}));
+   if(width<=1240)
+    assert.ok(geometry.club.top>=Math.max(geometry.photo.bottom,geometry.identity.bottom)-2,
+     "club affiliation must occupy its own row beneath the centered pair "+JSON.stringify({width,geometry}));
+   else
+    assert.ok(geometry.club.left>=geometry.identity.right+3,
+     "desktop right-side club must not overlap the centered player name "+JSON.stringify({width,geometry}));
+   assert.ok(geometry.overflow<=2,"no horizontal overflow in the player header "+JSON.stringify({width,geometry}));
+  });
+ }
+
+ // #527: Players subgroup tabs must behave like Club Roster on mobile.
+ // Measure the real scrolling strip at the requested mobile widths, not only a CSS contract.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"en",theme:"dark"},"/players?view=attributes&group=technical",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const toolbar=document.querySelector(".app-players-toolbar");
+    const strip=toolbar.querySelector(".app-players-groups");
+    const tabs=[...strip.querySelectorAll(".app-players-group")];
+    const count=toolbar.querySelector("[data-players-count]");
+    const box=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
+    const bar=box(toolbar),stripBox=box(strip),countBox=box(count),tabBoxes=tabs.map(box);
+    const style=getComputedStyle(strip),groupStyle=getComputedStyle(tabs[0]);
+    const original=strip.scrollLeft;
+    strip.scrollLeft=strip.scrollWidth;
+    const shift=strip.scrollLeft-original,atEnd=box(tabs.at(-1));
+    strip.scrollLeft=original;
+    return {bar,strip:stripBox,count:countBox,tabs:tabBoxes,display:style.display,
+     scrollMode:style.overflowX,whiteSpace:groupStyle.whiteSpace,
+     canScroll:strip.scrollWidth>strip.clientWidth+30,shift,
+     lastVisibleAtEnd:atEnd.left>=stripBox.left-2&&atEnd.right<=stripBox.right+2,
+     pageOverflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.equal(geometry.tabs.length,4,"Players must expose all four attribute subviews");
+   assert.ok(geometry.count.left>=geometry.strip.right-1&&geometry.count.right<=geometry.bar.right+1,
+    "Players count stays to the right of the subview strip "+JSON.stringify({width,geometry}));
+   if(width<=620){
+    assert.equal(geometry.display,"flex","mobile groups form one row");
+    assert.equal(geometry.scrollMode,"auto","mobile strip scrolls horizontally");
+    assert.equal(geometry.whiteSpace,"nowrap","mobile labels remain single-line");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1&&tab.height>=33.9),
+     "all subview buttons share one 34px row "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.canScroll&&geometry.shift>20&&geometry.lastVisibleAtEnd,
+     "last mobile subview is reachable by horizontal scroll "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.strip.bottom<=geometry.bar.bottom+1&&geometry.bar.height<=45,
+     "subview strip and count fit the one-row toolbar "+JSON.stringify({width,geometry}));
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='true');
+    const initial=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight,mask:getComputedStyle(el).maskImage}));
+    assert.equal(initial.left,'false','left fade stays off before scrolling at '+width);
+    assert.equal(initial.right,'true','right fade is visible while more subviews are hidden at '+width);
+    assert.ok(initial.mask.includes('linear-gradient'),'mobile subviews use the conditional CSS fade at '+width);
+    await page.locator('.app-players-groups').evaluate(el=>{el.scrollLeft=el.scrollWidth});
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='false');
+    const end=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight}));
+    assert.equal(end.left,'true','left fade appears after scrolling at '+width);
+    assert.equal(end.right,'false','right fade disappears at the end at '+width);
+   }else{
+    assert.equal(geometry.display,"grid","desktop retains four visible subviews");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1),
+     "desktop subviews remain a single row "+JSON.stringify({width,geometry}));
+   }
+   assert.ok(geometry.pageOverflow<=2,"subview scroll must not cause page overflow "+JSON.stringify({width,geometry}));
+  });
+ }
+
  // Same CSS/DOM class structure as live Fixtures; no sporting data mutation.
  for(const width of [621,768,800]){
   await visit({width,height:900,language:"en",theme:"dark"},"/competitions/it-1/fixtures",async page=>{
