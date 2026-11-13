@@ -506,15 +506,17 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-fixture-loading .club-fixture-skeleton-status{inline-size:56px;block-size:9px}
 @media(max-width:620px){
  .club-fixtures-toolbar{gap:8px;justify-content:center}.club-fixtures-selectors{order:-1;width:100%;gap:8px;margin-left:0}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:center;margin-inline:auto}
- /* Dense two-track layout: a full 44px opponent tap area plus three reserved
-    12px metadata lines, with no overflow, clipping or truncated club names. */
- .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:2px 8px;padding:3px 10px}
+ /* Two fixed first-paint tracks: 44px opponent target plus 24px metadata.
+    Keep longer three-line captions unconstrained, with extra room at 320px. */
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:0 8px;padding:2px 10px}
  .club-fixture-opponent{grid-column:1;grid-row:1;font-size:12px;line-height:14px;gap:7px;min-height:44px}
  .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
  /* Stable date and competition columns, including long three-line labels. */
- .club-fixture-meta{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-height:36px;gap:2px 10px;font-size:11px;line-height:12px}
+ .club-fixture-meta{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-height:24px;gap:2px 10px;font-size:11px;line-height:12px}
  .club-fixture-meta a{align-self:center}
 }
+/* At 320px the metadata link can occupy three lines; reserve them from first paint. */
+@media(max-width:360px){.club-fixture-meta{min-height:36px}}
 
 .club-fixture-select .language-trigger{min-width:0}.club-fixtures-next{min-width:0}
 

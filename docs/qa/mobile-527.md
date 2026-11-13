@@ -150,3 +150,13 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - All opponent names, competition text, scores and dates remain visible and untruncated; crest and venue-icon dimensions unchanged. Multi-line names and three-line competition labels still have reserved geometry for first paint.
 - Browser QA measures pending/hydrated first row <=105px with <=2px geometry drift, median of all 30 hydrated rows <=105px and maximum <=130px for long translated names at 320/375/390/430px. Existing strict per-slot geometry tests remain unchanged. Pass/fail not assumed ahead of CI.
 - Desktop/other routes unaffected. PR #542 remains Draft/HOLD, no merge or deployment.
+
+
+## Club Fixtures third mobile density pass — 2026-11-14
+
+- Owner requested rows shorter again. Kept the 44px opponent tap region, 12px name font, crest and venue sizes, competition/day link, scores and statuses unchanged. Reduced mobile vertical row padding 3px→2px and track gap 2px→0px.
+- The metadata grid now reserves two 12px lines (24px) at widths 361–620px instead of always reserving three (36px). At 320px (<=360px), it still reserves all three lines (36px) to protect loading stability for longer competition/stage labels. Longer actual labels are not clipped; they can grow if necessary.
+- Theoretical common mobile row height moves from ~89px to ~73px on widths 375–430px, and ~85px at 320px; no new font shrinkage. This is an **estimate**, not a measured PASS.
+- Existing skeleton/loaded stability and exact positional thresholds remain. Browser QA asserts a first row height <=85px on 375/390/430, <=95px on 320, and median 30-row density accordingly; unusual long labels remain subject to the independent longest-row test.
+- Note: the previous exact-head Browser QA failed in unrelated INT24 Awards card count (22 vs 11); preserve its evidence separately, do not misattribute it to Club Fixtures or claim this latest change is green until run.
+- Draft/HOLD, no merge/deploy/DB writes; physical iPhone Safari still pending.

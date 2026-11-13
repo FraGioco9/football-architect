@@ -1063,13 +1063,15 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    if(width<=620){
     assert.ok(pendingLayout.opponent.height>=44&&loadedLayout.opponent.height>=44,'reserve three lines and a 44px opponent touch target at '+width);
     assert.ok(Math.abs(pendingLayout.opponent.height-loadedLayout.opponent.height)<=2,'opponent height stays fixed across hydration at '+width+': '+pendingLayout.opponent.height+' / '+loadedLayout.opponent.height);
-    assert.ok(pendingLayout.meta.height>=36&&loadedLayout.meta.height>=36,'reserve three 12px lines for fixture metadata at '+width);
+    const metaReserved=width<=360?36:24;
+    assert.ok(pendingLayout.meta.height>=metaReserved&&loadedLayout.meta.height>=metaReserved,'reserve the appropriate two or three metadata lines at '+width);
     assert.ok(Math.abs(pendingLayout.meta.height-loadedLayout.meta.height)<=2,'fixture metadata height stays fixed across hydration at '+width+': '+pendingLayout.meta.height+' / '+loadedLayout.meta.height);
-    assert.ok(pendingLayout.row.height<=105&&loadedLayout.row.height<=105,'dense mobile fixture first row stays within 105px at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
+    const maximumHeight=width<=360?95:85;
+    assert.ok(pendingLayout.row.height<=maximumHeight&&loadedLayout.row.height<=maximumHeight,'compact fixture first row stays within '+maximumHeight+'px at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
     assert.ok(Math.abs(pendingLayout.row.height-loadedLayout.row.height)<=2,'row footprint remains fixed through hydration at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
     const rowHeights=await run("[...document.querySelectorAll('[data-club-fixture-id]')].map(n=>n.getBoundingClientRect().height).sort((a,b)=>a-b)");
     assert.equal(rowHeights.length,30,'all club fixture rows render at '+width);
-    assert.ok(rowHeights[14]<=105,'median club fixture row stays dense at '+width+': '+rowHeights[14]);
+    assert.ok(rowHeights[14]<=(width<=360?95:85),'median of 30 club fixture rows stays compact at '+width+': '+rowHeights[14]);
     assert.ok(rowHeights.at(-1)<=130,'even the longest translated fixture row remains usable at '+width+': '+rowHeights.at(-1));
    }
    for(const [part,beforeSlot] of Object.entries(pendingLayout.parts)){

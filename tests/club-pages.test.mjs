@@ -730,9 +730,10 @@ test('CLUB-FIXTURES next-match action requires a verified unplayed future fixtur
  assert.doesNotMatch(html,/data-club-fixtures-next disabled/);
  assert.match(html,/class="club-fixture-row is-next"/);
  const css=read('assets/club-page.css');
- assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-fixture-row\{[^}]*padding:3px 10px/,'dense mobile row retains padding for the next-match highlight');
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-fixture-row\{[^}]*padding:2px 10px/,'ultra-compact mobile row retains horizontal highlight padding');
  assert.match(css,/\.club-fixture-opponent\{[^}]*line-height:14px;gap:7px;min-height:44px/,'three-line names keep a 44px opponent touch target');
- assert.match(css,/\.club-fixture-meta\{[^}]*display:grid;grid-template-columns:max-content minmax\(0,1fr\);align-items:center;min-height:36px/,'mobile metadata stays in two dense stable columns');
+ assert.match(css,/\.club-fixture-meta\{[^}]*display:grid;grid-template-columns:max-content minmax\(0,1fr\);align-items:center;min-height:24px/,'typical mobile metadata reserves two lines without truncating');
+ assert.match(css,/@media\(max-width:360px\)\{\.club-fixture-meta\{min-height:36px\}\}/,'320px keeps three metadata lines reserved');
  assert.match(css,/\.club-fixtures-next:disabled,\.club-fixtures-next:disabled:hover\{[^}]*opacity:\.45;cursor:default;pointer-events:none;[^}]*background:var\(--surface\);[^}]*box-shadow:none\}/,'disabled next-match action matches the muted Matchday controls and has no interactive hover treatment');
 });
 
