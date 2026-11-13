@@ -426,9 +426,12 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 
 /* A partial next tab and edge fades expose horizontal navigation on phones. */
 @media(max-width:620px){
- .app-competition-tabs{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px;scroll-padding-inline:16px;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
+ /* View navigation keeps touch/keyboard scrolling; hide only its visual scrollbar.
+  * Other scrollable surfaces (tables, menus, page content) retain their scrollbars. */
+ .app-competition-tabs{scrollbar-width:none;-ms-overflow-style:none;--app-tabs-fade-left:0px;--app-tabs-fade-right:0px;scroll-padding-inline:16px;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
+ .app-competition-tabs::-webkit-scrollbar{display:none;width:0;height:0}
  .app-competition-tabs[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
- .app-competition-tabs[data-can-scroll-right="false"]{--app-tabs-fade-right:0px}
+ .app-competition-tabs[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
 }
 
 /* Light theme: overrides for the shared shell and competition views. */

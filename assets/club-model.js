@@ -149,6 +149,10 @@
   const ready=snapshot?.source==='ready'&&snapshot.clubKey===clubKey&&
    Array.isArray(snapshot.players)&&Number.isSafeInteger(snapshot.count)&&snapshot.count===snapshot.players.length;
   const unavailable=snapshot?.source==='unavailable',pending=!ready&&!unavailable;
+  // A verified empty squad has no usable subviews or table columns. Render only
+  // localized text; unknown/loading states still reserve the table first paint.
+  if(ready&&snapshot.count===0)
+   return '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+escape(w.empty)+'</p></section>';
   const labels=mode==='attributes'
    ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
    :['',w.name,w.age,w.positions,w.height,w.foot];

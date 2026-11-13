@@ -38,6 +38,18 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(client,/window\.addEventListener\('resize',syncRosterTabEdges/);
  assert.match(html,/const syncSubviewFade=/);
  assert.match(generator,/const syncSubviewFade=/);
+ // Issue #548: all primary mobile View bars hide the scrollbar, not only Roster subviews.
+ const shared=read('assets/app.css');
+ assert.match(shared,/\.app-competition-tabs\{scrollbar-width:none;-ms-overflow-style:none/);
+ assert.match(shared,/\.app-competition-tabs::-webkit-scrollbar\{display:none;width:0;height:0\}/);
+ assert.match(shared,/\.app-competition-tabs\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
+ assert.match(shared,/\.app-competition-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(shared,/\.app-world-standing-scroll\{[^}]*scrollbar-width:thin/);
+ assert.match(shared,/\.app-players-table-scroll\{[^}]*scrollbar-width:thin/);
+ const playerDetail=read('assets/player-detail.js');
+ assert.match(playerDetail,/viewBar\?\.addEventListener\('scroll',syncViewEdges/);
+ assert.match(playerDetail,/window\.addEventListener\('resize',syncViewEdges/);
+
 
  assert.doesNotMatch(generator,/club-roster-groups/);
  assert.match(html,/data-club-roster-label="5"/);
@@ -89,8 +101,22 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
    assert.ok(rendered.includes('>'+({technical:25,mental:33,physical:21,goalkeeping:37}[group])+'</td>'),language+'/'+group);
   }
  }
- const empty=model.render(manifest,selected,'en','',null,1,null,{source:'ready',clubKey:'IT-1',count:0,players:[]});
- assert.match(empty,/No players are currently assigned/);
+ const emptyMessages={
+  en:'No players are currently assigned to this club.',
+  de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',
+  es:'Actualmente no hay jugadores asignados a este club.',
+  fr:'Aucun joueur n’est actuellement affecté à ce club.',
+  it:'Nessun giocatore è attualmente assegnato a questo club.'
+ };
+ for(const language of locales)for(const view of ['info','technical','mental','physical','goalkeeping']){
+  const empty=model.render(manifest,selected,language,'?view='+view,null,1,null,{source:'ready',clubKey:'IT-1',count:0,players:[]});
+  const section=empty.match(/<section class="club-roster"[^>]*>[\s\S]*?<\/section>/)?.[0];
+  assert.equal(section,
+   '<section class="club-roster" aria-busy="false" data-roster-mode="empty"><p class="club-roster-empty" role="status">'+emptyMessages[language]+'</p></section>',
+   language+'/'+view+': verified empty roster must show only localized text');
+  assert.doesNotMatch(section,/<table\b|<nav\b|<button\b|<tr\b|club-roster-count|app-players-loading-row|app-players-table-scroll|0 players/);
+ }
+ assert.match(read('assets/club-page.css'),/\.club-roster-empty\{margin:14px 0 0;color:var\(--muted\)/);
  const pending=model.render(manifest,selected,'en','?view=technical',null,1,null,{source:'loading'});
  assert.equal((pending.match(/app-players-loading-row/g)||[]).length,5);
  assert.match(pending,/colspan="11"/);

@@ -38,10 +38,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
- let refuseCrests=false,holdDeferred=false,manifestMode='ok';const deferredResponses=[];
+ let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false;const deferredResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
    if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
@@ -540,6 +541,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
      await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
      const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
+     const primary=await run("(()=>{const nav=document.querySelector('.club-tabs'),style=getComputedStyle(nav),scrollbar=getComputedStyle(nav,'::-webkit-scrollbar');return {width:style.scrollbarWidth,webkitDisplay:scrollbar.display,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft,overflow:nav.scrollWidth>nav.clientWidth}})()");
+     assert.equal(primary.width,'none','primary Club View scrollbar is hidden at '+width);
+     assert.equal(primary.webkitDisplay,'none','WebKit primary View scrollbar is hidden at '+width);
+     assert.ok(primary.overflow&&primary.right==='true','scroll indicator remains active at '+width);
      assert.equal(measured.rowHeight,42,'42px row at '+width);
      assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
      assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));
@@ -573,6 +578,24 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.querySelector('[data-club-roster-sort=positions]').click()");
     await wait("location.search==='?view=info&sort=positions&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
+    // Verified API count=0: desktop and mobile render only a localized paragraph,
+    // with no subviews, player count, sort buttons, or table.
+    mockEmptyRoster=true;
+    for(const [width,view] of [[1440,'info'],[390,'technical'],[320,'goalkeeping']]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await visit('/clubs/it/1/roster?view='+view);
+     await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
+     const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");
+     const emptyWords={en:'No players are currently assigned to this club.',de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',es:'Actualmente no hay jugadores asignados a este club.',fr:'Aucun joueur n’est actuellement affecté à ce club.',it:'Nessun giocatore è attualmente assegnato a questo club.'};
+     assert.equal(emptyState.text,emptyWords[emptyState.lang]||emptyWords.en,'empty roster copy at '+width);
+     assert.equal(emptyState.children,1,'empty roster has one paragraph at '+width);
+     assert.equal(emptyState.paragraph,'club-roster-empty');
+     assert.equal(emptyState.status,'status');
+     assert.equal(emptyState.extras,null,'no table, subviews, count or sort at '+width);
+     assert.equal(emptyState.overflow,false,'empty roster cannot overflow viewport at '+width);
+    }
+    mockEmptyRoster=false;
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     const publicLink=await run("document.querySelector('.club-competition a')?.getAttribute('href')??null");
     assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings?season=1','Only verified source may replace initial season link');
