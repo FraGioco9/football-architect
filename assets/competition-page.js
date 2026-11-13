@@ -3,7 +3,7 @@
   "use strict";
   if(window.faCompetitionContextApi)return;
   const sourceUrl = document.currentScript?.src;
-  const requestedSeasonWasExplicit=window.location?.href?new URL(window.location.href).searchParams.has('season'):false;
+  const requestedSeasonWasExplicit=window.location?.href?/^[1-9]\d{0,8}$/.test(new URL(window.location.href).searchParams.get('season')||''):false;
   const routeId = document.querySelector('meta[name="fa-competition"]')?.content;
   const root = new URL("../competitions/_shared/", sourceUrl);
   const mainContent = document.getElementById("main-content");
@@ -1141,10 +1141,12 @@
     const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=4);
     const seasons=activeDebugSeason===null?[1]:devSeasons.length?devSeasons.filter(n=>n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
-    const raw=new URL(window.location.href).searchParams.get("season");
     const initial=activeDebugSeason===null&&Number.isInteger(window.faCompetitionInitialSeason)
       ?Math.max(1,window.faCompetitionInitialSeason):null;
-    const requested=raw===null?initial??Math.max(...seasons):/^[1-9]\d{0,8}$/.test(raw)?Number(raw):1;
+    const choice=window.faRoutesRegistry.resolveSeasonQuery(
+      new URL(window.location.href).searchParams,
+      activeDebugSeason===null?initial:Math.max(1,activeDebugSeason));
+    const requested=choice.season??initial??Math.max(...seasons);
     window.faCompetitionContextApi=Object.freeze({selectSeason,replaceSeasonData,clearSeasonData,setDebugSeason});
     nextContext(activeDebugSeason===null&&initial!==null?Math.min(requested,initial):activeDebugSeason===null?requested:seasons.includes(requested)?requested:1);
     await loadScript('world-calendar-model.js');

@@ -303,6 +303,7 @@
     "tests/world-catalog.test.mjs": "site-node",
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
-    "tests/world-divisions.test.mjs": "site-node"
+    "tests/world-divisions.test.mjs": "site-node",
+    "tests/seasonless-routing.test.mjs": "site-node"
   }
 }
