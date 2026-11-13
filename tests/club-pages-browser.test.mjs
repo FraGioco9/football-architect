@@ -38,10 +38,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
- let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false;const deferredResponses=[];
+ let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
@@ -578,6 +579,29 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.querySelector('[data-club-roster-sort=positions]').click()");
     await wait("location.search==='?view=info&sort=positions&order=desc'");
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
+    // Real browser: pending View controls are grey, have no href/focus target,
+    // cannot navigate, and become enabled when the API delivers valid players.
+    holdRosterResponse=true;
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await visit('/clubs/it/1/roster?view=technical');
+    await wait("document.querySelector('.club-roster[aria-busy=true] .club-roster-tabs [aria-disabled=true]')!==null");
+    const pendingTabs=await run("(()=>{const root=document.querySelector('.club-roster'),tabs=[...root.querySelectorAll('[data-club-roster-view]')],style=getComputedStyle(tabs[0]);return {count:tabs.length,disabled:tabs.filter(a=>a.getAttribute('aria-disabled')==='true').length,hrefs:tabs.filter(a=>a.hasAttribute('href')).length,focus:tabs.map(a=>a.tabIndex),opacity:style.opacity,cursor:style.cursor}})()");
+    assert.equal(pendingTabs.count,5);
+    assert.equal(pendingTabs.disabled,5);
+    assert.equal(pendingTabs.hrefs,0);
+    assert.deepEqual(pendingTabs.focus,[-1,-1,-1,-1,-1]);
+    assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    assert.equal(await run('location.search'),'?view=technical','loading subviews cannot navigate');
+    assert.equal(blockedRosterResponses.length,1,'club roster request held until assertions complete');
+    holdRosterResponse=false;
+    const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
+    blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
+    await wait("document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
+    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    await wait("location.search==='?view=mental'");
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     // Verified API count=0: desktop and mobile render only a localized paragraph,
     // with no subviews, player count, sort buttons, or table.
     mockEmptyRoster=true;
