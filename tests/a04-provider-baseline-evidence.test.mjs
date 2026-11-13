@@ -285,6 +285,8 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   const put=async data=>run('window.faCompetitionContextApi.replaceSeasonData('+JSON.stringify(data)+',window.faCompetitionContext.revision)');
   await t.test('E2/E3: real DEV MD0/15/30, Season 0 persistence and historical snapshot output',async()=>{
    await visit(devOrigin,'IT-1');
+   // These scenarios explicitly opt in; the normal fresh-session default stays OFF.
+   await run("sessionStorage.setItem('football-architect:debug-enabled','on')");
    for(const days of [0,15,30]){
     await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays',"+JSON.stringify(String(days))+");sessionStorage.removeItem('football-architect:calendar-dev-world-day')");
     await visit(devOrigin,'IT-1','fixtures',2);
@@ -307,6 +309,8 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
   await t.test('E4: controlled A/B promises cannot restore Fixtures/Stats/Postseason after newer season or Debug OFF',async()=>{
    await visit(devOrigin,'IT-1');
+   // These scenarios explicitly opt in; the normal fresh-session default stays OFF.
+   await run("sessionStorage.setItem('football-architect:debug-enabled','on')");
    await run("sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day')");
    await visit(devOrigin,'IT-1','fixtures',1);
    await wait('window.faCompetitionContext.seasonData?.season===1&&window.faCompetitionContext.seasonData?.statistics?.overview?.matchesPlayed===240&&!document.documentElement.dataset.faDevStandingsPending');
@@ -385,6 +389,8 @@ test('A04 browser baseline: public routes, provider states, delayed publications
   });
   await t.test('E5: absent/zero/partial/invalid/recovered Stats in five locales, ARIA and mobile widths',async()=>{
    await visit(devOrigin,'IT-1');
+   // These scenarios explicitly opt in; the normal fresh-session default stays OFF.
+   await run("sessionStorage.setItem('football-architect:debug-enabled','on')");
    assert.equal(await run('window.faCompetitionContextApi.setDebugSeason(2)'),true,'synthetic Stats data requires DEV authority');
    const locales=[['en','No statistics yet.','Statistics are unavailable.','Stats','Close'],['de','Noch keine Statistiken.','Statistiken sind nicht verfügbar.','Statistiken','Schließen'],['es','Aún sin estadísticas.','Las estadísticas no están disponibles.','Estadísticas','Cerrar'],['fr','Aucune statistique.','Les statistiques sont indisponibles.','Statistiques','Fermer'],['it','Nessuna statistica.','Le statistiche non sono disponibili.','Statistiche','Chiudi']];
    for(const [lang,empty,error,nav,close] of locales){

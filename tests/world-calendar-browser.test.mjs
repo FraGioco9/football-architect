@@ -72,6 +72,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     const measure=()=>run(`(()=>{const root=document.getElementById('world-calendar'),visible=[...root.querySelectorAll('[data-calendar-day]')].filter(b=>b.getClientRects().length),rows=[...root.querySelectorAll('[data-week]')].filter(r=>r.getClientRects().length);return {view:document.documentElement.dataset.calendarView,selection:window.faWorldCalendar.getSelection(),rows:rows.length,visible:visible.length,scroll:root.scrollWidth,width:root.clientWidth,body:document.documentElement.scrollWidth,viewport:innerWidth,clipped:[...root.querySelectorAll('button,.calendar-event,.calendar-day-kind,.calendar-note,.calendar-selected')].filter(n=>n.getClientRects().length&&n.scrollWidth>n.clientWidth+1).map(n=>n.className+':'+n.textContent),errors:window.__calendarErrors}})()`);
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
+    // The protected Calendar scenario deliberately opts into its DEV world.
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
     const runValue=expr=>run(expr);
     holdWorld=true;
     await cmd('Page.navigate',{url:origin+'/calendar?calendarView=week'});
@@ -91,7 +93,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     for(let i=0;i<100&&await run("document.querySelector('#calendar-week-value').textContent")!=='Week 4';i++)await delay(30);
     assert.equal(await run("document.querySelector('#calendar-week-value').textContent"),'Week 4');
     assert.equal(await run("document.querySelector('#calendar-season-value').textContent"),'2');
-    assert.equal(await run("new URL(location.href).searchParams.get('season')"),'2');
+    assert.equal(await run("new URL(location.href).searchParams.has('season')"),false,'Current public season remains implicit');
     assert.deepEqual(await visibleWeekNumbers(),['22','23','24','25','26','27','28']);
     assert.equal(await run("new URL(location.href).searchParams.get('week')"),'4');
     assert.equal(await run("document.getElementById('calendar-days').getBoundingClientRect().height"),pendingHeight);
@@ -126,7 +128,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     // Public rendering must ignore a leftover fictional DEV world day.
     await runValue("sessionStorage.setItem('football-architect:calendar-dev-world-day','26');sessionStorage.setItem('football-architect:calendar-selection',JSON.stringify({version:1,view:'week'}))");
     await visit();
-    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.get('season')"),'2','Public Calendar link must ignore DEV season storage');
+    assert.equal(await runValue("new URL(document.getElementById('app-nav-calendar').href).searchParams.has('season')"),false,'Public Calendar link remains seasonless and ignores DEV storage');
     assert.equal(await runValue("document.documentElement.dataset.calendarView"),'season','Cached Week must not override the device default');
     assert.equal(await runValue("new URL(location.href).searchParams.get('calendarView')"),'season','Default view is canonicalized in the URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'1','Public bootstrap must not import DEV day');
@@ -212,7 +214,7 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     assert.equal(await runValue("document.getElementById('calendar-current-week').hidden"),true);
     await runValue("(()=>{const input=document.querySelector('[data-dev-control=season]');input.value='3';input.dispatchEvent(new Event('change',{bubbles:true}))})()");
     for(let i=0;i<20&&!await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length===3");i++)await delay(50);
-    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'1','Debug Season expands the list without overriding the viewed season');
+    assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'3','Implicit season follows current Debug progress');
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-menu .language-option').length"),3);
     assert.deepEqual(await runValue("[...document.querySelectorAll('#calendar-season-menu .language-option')].map(e=>e.textContent)"),['3','2','1']);
     await runValue("document.getElementById('calendar-season').click()");
@@ -230,21 +232,21 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     await cmd('Page.navigate',{url:devOrigin+'/calendar?calendarView=week'});
     for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarUiReady==='true'");i++)await delay(50);
     assert.equal(await runValue("document.querySelector('#calendar-season-value').textContent"),'3','Absent season resolves to current DEV season');
-    assert.equal(await runValue("new URL(location.href).searchParams.get('season')"),'3','Current season is canonicalized in URL');
+    assert.equal(await runValue("new URL(location.href).searchParams.has('season')"),false,'Current Debug season remains implicit in URL');
     assert.equal(await runValue("document.documentElement.dataset.calendarWeek"),'4','Default current season opens current week');
     assert.equal(await runValue("getComputedStyle(document.querySelector('#calendar-week-trigger')).borderTopWidth"),'1px');
     await cmd('Page.navigate',{url:devOrigin+'/calendar'});
     for(let i=0;i<100&&!await runValue("document.readyState==='complete'&&document.documentElement.dataset.calendarReady==='true'");i++)await delay(50);
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true);
     assert.equal(await runValue("new URL(location.href).searchParams.has('calendarView')"),true,'Navigating without a view canonicalizes it');
-    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true,'Season is always first in Calendar URL');
-    assert.equal(await runValue("[...new URL(location.href).searchParams.keys()].slice(0,2).join(',')"),'season,calendarView');
+    assert.equal(await runValue("new URL(location.href).searchParams.has('season')"),false,'Seasonless current URL is canonical');
+    assert.equal(await runValue("[...new URL(location.href).searchParams.keys()].join(',')"),'calendarView');
     // Pre-render contract: the Season picker exists in the source HTML, not after deferred JS.
     assert.equal(await runValue("!!document.querySelector('#app-calendar > .calendar-season-picker')"),true);
     assert.equal(await runValue("document.querySelectorAll('#calendar-season-picker').length"),1);
     assert.equal(await runValue("document.getElementById('calendar-controls').previousElementSibling?.classList.contains('calendar-toolbar')"),true,'Week controls remain after toolbar');
     assert.equal(await runValue("document.querySelectorAll('#calendar-day-26').length"),1);
-    assert.equal(await runValue("new URL(location.href).searchParams.toString().startsWith('season=')"),true);
+    assert.equal(await runValue("new URL(location.href).searchParams.has('season')"),false);
     assert.equal(await runValue("document.querySelectorAll('#world-calendar .calendar-event--final').length"),2,'Both cup finals have gold marker class');
     assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].every(e=>e.textContent==='F')"),true,'Both cup final grid markers show F');
     assert.equal(await runValue("[...document.querySelectorAll('#world-calendar .calendar-event--final')].map(e=>e.dataset.calendarMarker).sort().join(',')"),'FEDERATION-FINAL,SOVEREIGN-FINAL','Underlying final event IDs stay unchanged');

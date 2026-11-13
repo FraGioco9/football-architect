@@ -155,18 +155,19 @@
   const returnHost=document.getElementById('app-fixtures-toolbar');
   if(calendarReturn&&returnHost){const a=document.createElement('a');a.href=calendarReturn;a.textContent='← Calendar';returnHost.append(a)}
   let pendingDefaultMatchday=!new URL(window.location.href).searchParams.has("matchday")&&!prebootFixtureRound;
+  let explicitSeason=false;
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
-  let availableSeasons=[...new Set(["1",...(window.faDebugEnabled===false?[]:devSeasons)])];
+  let availableSeasons=[...new Set(["1",...(window.faDebugEnabled!==true?[]:devSeasons)])];
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
-  if(window.faDebugEnabled!==false&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
+  if(window.faDebugEnabled===true&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
     availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
-  const serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
+  let serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
     ?window.faCompetitionInitialSeason:null;
-  if((window.faDebugEnabled===false||devSeasons.length===0)&&serverSeason!==null)
+  if((window.faDebugEnabled!==true||devSeasons.length===0)&&serverSeason!==null)
     availableSeasons=Array.from({length:serverSeason},(_,i)=>String(i+1));
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
-  const publicRoute=()=>window.faDebugEnabled===false||devSeasons.length===0;
+  const publicRoute=()=>window.faDebugEnabled!==true||devSeasons.length===0;
   const confirmedPublicWorld=()=>{
     const snapshot=window.faWorldState?.get?.();
     return snapshot?.source==='authoritative'&&Number.isInteger(snapshot.world?.seasonNumber)?snapshot.world:null;
@@ -186,31 +187,45 @@
   };
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=normalizeCupRound(params.get("matchday")??prebootFixtureRound),parsed=routePath();
+    const round=normalizeCupRound(params.get("matchday")??prebootFixtureRound),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
-    const requested=/^[1-9]\d{0,8}$/.test(id||"")?id:params.has("season")?"1":latestSeason;
-    return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?latestSeason:requested,
+    const currentLimit=publicRoute()?(confirmedPublicWorld()?.seasonNumber??serverSeason):Number(latestSeason);
+    const choice=routes.resolveSeasonQuery(params,currentLimit);
+    explicitSeason=choice.explicit;
+    const requested=String(choice.season??latestSeason);
+    return {season:devSeasons.length&&window.faDebugEnabled===true&&!availableSeasons.includes(requested)?latestSeason:requested,
       view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     const previousView=state?.view;
     state={...next,matchday:normalizeCupRound(next.matchday)};
-    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season=latestSeason;
+    if(devSeasons.length&&window.faDebugEnabled===true&&!availableSeasons.includes(state.season)){
+      state.season=latestSeason;explicitSeason=false;
+    }
     // Only the canonical public world may clamp a future deep link; until it
     // arrives keep the static shell visible without assuming Season 1.
     const world=publicRoute()?confirmedPublicWorld():null;
     const knownLimit=world?.seasonNumber??(publicRoute()?serverSeason:null);
-    if(knownLimit!==null&&knownLimit!==undefined&&Number(state.season)>Math.max(1,knownLimit))
-      state.season=String(Math.max(1,knownLimit));
+    if(knownLimit!==null&&knownLimit!==undefined&&Number(state.season)>Math.max(1,knownLimit)){
+      state.season=String(Math.max(1,knownLimit));explicitSeason=false;
+    }
     const pendingPublicSeason=publicRoute()&&!publicSeasonConfirmed&&!world;
     const url=new URL(window.location.href);
     const identity=routePath();
     url.pathname=routes.buildRoute({kind:identity.kind,id:identity.base.slice("/competitions/".length),view:state.view});
-    url.search="";url.hash="";
-    if(state.view==="fixtures"&&calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
-    url.searchParams.set("season",state.season);
-    if(state.view==="fixtures")url.searchParams.set("matchday",identity.kind==="cup"&&typeof state.matchday==="string"?state.matchday.replace(/:1$/,""):String(state.matchday));
+    // Preserve unrelated query state and fragments across canonical subpage changes.
+    url.searchParams.delete("view");
+    if(explicitSeason)url.searchParams.set("season",state.season);
+    else url.searchParams.delete("season");
+    if(state.view==="fixtures"){
+      url.searchParams.delete("calendarReturn"); // Reject invalid external or stale return contexts.
+      if(calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
+      url.searchParams.set("matchday",identity.kind==="cup"&&typeof state.matchday==="string"?state.matchday.replace(/:1$/,""):String(state.matchday));
+    }else{
+      url.searchParams.delete("calendarReturn");
+      url.searchParams.delete("matchday");
+    }
     if(url.href!==window.location.href)window.history[replace?"replaceState":"pushState"](null,"",url.href);
     const index=views.indexOf(state.view);
     // Preserve the physical combobox at first paint, but reserve its value
@@ -235,7 +250,7 @@
     if(focus)tabs[index].focus({preventScroll:true});
     if(focus||(previousView!==undefined&&previousView!==state.view))revealSelectedTab();
     window.faAppRenderLanguage?.();
-    window.faCompetitionContextApi?.selectSeason(Number(state.season));
+    if(!pendingPublicSeason)window.faCompetitionContextApi?.selectSeason(Number(state.season));
     for(const listener of listeners)listener({...state});
     // Notify DEV enhancements even when they initialize before this router.
     window.dispatchEvent(new CustomEvent("fa:competition-route-change",{detail:{...state}}));
@@ -243,6 +258,10 @@
   function set(patch,options){
     if(Object.hasOwn(patch,"matchday"))pendingDefaultMatchday=false;
     const next={...state,...patch};
+    if(Object.hasOwn(patch,"season")){
+      const current=publicRoute()?(confirmedPublicWorld()?.seasonNumber??serverSeason):Number(latestSeason);
+      explicitSeason=!Number.isSafeInteger(current)||Number(next.season)!==Math.max(1,current);
+    }
     if(!views.includes(next.view)||!/^[1-9]\d{0,8}$/.test(next.season)||
       !validFixtureRound(normalizeCupRound(next.matchday)))return;
     apply(next,options);
@@ -283,9 +302,12 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
-    if(devSeasons.length&&window.faDebugEnabled!==false||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    if(devSeasons.length&&window.faDebugEnabled===true||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    serverSeason=Math.max(1,limit); // Verified public limit replaces a stale first-paint bootstrap.
     const next=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));
-    const target=selectLatest||!next.includes(state.season)?next.at(-1):state.season;
+    const validSelection=next.includes(state.season);
+    const target=selectLatest||!explicitSeason||!validSelection?next.at(-1):state.season;
+    if(!validSelection)explicitSeason=false;
     const wasConfirmed=publicSeasonConfirmed;
     publicSeasonConfirmed=true;
     if(wasConfirmed&&next.length===availableSeasons.length&&next.every((value,i)=>availableSeasons[i]===value)&&state.season===target)return true;
@@ -293,7 +315,7 @@
     seasonPicker.update(seasonOptions());apply({...state,season:target},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
-    if(window.faDebugEnabled===false)return false;
+    if(window.faDebugEnabled!==true)return false;
     if(limit!==0&&!devSeasons.includes(String(limit)))return false;
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
     document.documentElement.dataset.faDevCurrentSeason=String(limit);
@@ -301,11 +323,13 @@
     if(!inactiveChanged&&next.length===availableSeasons.length&&next.every(id=>availableSeasons.includes(id)))return true;
     availableSeasons=next;latestSeason=next.reduce((a,b)=>Number(a)>Number(b)?a:b);
     seasonPicker.update(seasonOptions());
-    apply({...state,season:availableSeasons.includes(state.season)?state.season:latestSeason},{replace:true});
+    const validSelection=availableSeasons.includes(state.season);
+    if(!validSelection)explicitSeason=false;
+    apply({...state,season:explicitSeason&&validSelection?state.season:latestSeason},{replace:true});
     return true;
   };
   window.addEventListener('fa:source-change',()=>{
-    if(window.faDebugEnabled===false){
+    if(window.faDebugEnabled!==true){
       // Switching away from Debug invalidates its clock before the public
       // /api/world response is verified. Never treat that unknown state as
       // world Season 0: it would wrongly redirect a valid Season 2 view to 1.
@@ -320,6 +344,13 @@
         document.documentElement.dataset.faCompetitionSeasonVerified='false';
       }
     }else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
+  });
+  // Handle the verified world even if an invalid/future deep link could not
+  // load sporting data. A later season transition updates seasonless routes.
+  window.faWorldState?.subscribe?.(snapshot=>{
+    if(snapshot?.source==='authoritative'&&snapshot.worldStatus==='ready'&&
+      Number.isSafeInteger(snapshot.world?.seasonNumber))
+      window.faCompetitionRoute.setPublicSeasonLimit(snapshot.world.seasonNumber);
   });
   window.addEventListener("popstate",()=>{
     pendingDefaultMatchday=false;

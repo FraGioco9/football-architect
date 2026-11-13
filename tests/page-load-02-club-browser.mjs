@@ -35,7 +35,7 @@ try{
    for(const lang of ['de','es','fr','it','en']){
     await page.locator('.club-tabs [aria-current="page"]').focus();
     await page.evaluate(lang=>document.documentElement.lang=lang,lang);
-    await page.waitForFunction(lang=>document.title.includes(window.faClubModel.copies[lang].overview),lang);
+    await page.waitForFunction(()=>document.title===(document.querySelector('#club-title')?.textContent?.trim()||'Club')+' — Football Architect');
     const state=await page.evaluate(()=>({
      sameCrest:window.pageLoad02Crest===document.querySelector('.club-header [data-club-crest] .app-club-crest-image'),
      focused:document.activeElement?.matches('.club-tabs [aria-current="page"]'),

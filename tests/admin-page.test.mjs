@@ -162,7 +162,7 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  const source=readFileSync(new URL('../assets/admin-contracts.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../assets/admin-settings.css',import.meta.url),'utf8');
  assert.ok(html.includes(renderAdminContracts()));
- assert.match(html,/<title>Admin — Contracts — Football Architect<\/title>/);
+ assert.match(html,/<title>Admin Contracts — Football Architect<\/title>/);
  assert.match(html,/href="\/admin" data-admin-back/);
  assert.match(html,/src="\/assets\/admin-contracts.js"/);
  assert.match(html,/src="\/assets\/players-nationality-tooltip.js"/);

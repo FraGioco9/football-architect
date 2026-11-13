@@ -2,7 +2,7 @@ import {readPreviewProgress,previewSeasonMatchdays,competitionModel,createPrevie
 import {aggregatePreviewStats} from "./stats-data.mjs";
 
 async function startClubSummary(){
-const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+const enabled=()=>{try{return window.faDebugEnabled===true&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
 let catalogue,revision=0;
 const publish=snapshot=>window.dispatchEvent(new CustomEvent('fa:club-competition-summary',{detail:snapshot}));
 const publishFixtures=snapshot=>{window.faDevClubFixturesPublished=true;window.faDevClubFixturesSnapshot=snapshot;window.dispatchEvent(new CustomEvent('fa:club-fixtures-preview',{detail:snapshot}));};
@@ -51,7 +51,7 @@ if(document.getElementById('club-page'))await startClubSummary();
 // Data adapter only. Public presentation mounts from the generic competition context.
 function createStatsPreviewProvider(){
  let epoch=0,destroyed=false;
- const enabled=()=>{try{return window.faDebugEnabled!==false&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
+ const enabled=()=>{try{return window.faDebugEnabled===true&&sessionStorage.getItem('football-architect:standings-dev-preview')==='on'}catch{return false}};
  const signature=statistics=>JSON.stringify(statistics?{overview:statistics.overview,teams:statistics.teams,players:statistics.players}:null);
  async function refresh(){
   const token=++epoch,context=window.faCompetitionContext,definition=context?.definition;

@@ -164,16 +164,17 @@ test('DEBUG-FIRST-PAINT: DEV defaults are gated synchronously and failure cannot
  assert.equal(typeof DEBUG_FIRST_PAINT,'string');
  const {runInNewContext}=await import('node:vm');
  const script=DEBUG_FIRST_PAINT.match(/<script>([\s\S]+)<\/script>/)[1];
- for(const value of ['on',null]){
+ for(const [value,enabled] of [['on',true],[null,false],['off',false],['true',false]]){
   const document={documentElement:{dataset:{}}};const window={};let timeout;
   runInNewContext(script,{document,window,location:{pathname:'/competitions/eng-1'},sessionStorage:{getItem:()=>value},setTimeout:fn=>{timeout=fn;return 1},clearTimeout(){}});
-  assert.equal(document.documentElement.dataset.faDebugPending,'true');
-  timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)
+  assert.equal(document.documentElement.dataset.faDebugPending,enabled?'true':undefined);
+  if(enabled){timeout();assert.equal(document.documentElement.dataset.faDebugPending,undefined)}
+  else assert.equal(timeout,undefined,'OFF should show the ordinary first paint immediately');
  }
  const document={documentElement:{dataset:{}}};let release;
  runInNewContext(script,{document,window:{},location:{pathname:'/competitions/it-1'},sessionStorage:{getItem(){throw Error('blocked')}},clearTimeout(){},setTimeout(fn){release=fn}});
- assert.equal(document.documentElement.dataset.faDebugPending,'true');
- release();assert.equal(document.documentElement.dataset.faDebugPending,undefined);
+ assert.equal(document.documentElement.dataset.faDebugPending,undefined);
+ assert.equal(release,undefined);
 });
 
 test("DEBUG-SEASONS-01: protected Preview supports four fictional seasons without changing public bytes",()=>{
@@ -298,4 +299,26 @@ test('FIXTURES prepaint progress is injected only for enabled local/protected De
   if(disabled)assert.equal(window.faFixturesInitialProgress,undefined);
   else assert.deepEqual(JSON.parse(JSON.stringify(window.faFixturesInitialProgress)),{currentSeason:3,matchdays:16,day:28});
  }
+});
+
+test('DEBUG-549: absent, invalid and blocked preferences initialize OFF; only explicit on enables Debug',async()=>{
+ const {DEBUG_MODE_BOOTSTRAP,DEBUG_SEASON_BOOTSTRAP}=await import('../tools/dev-preview-artifact.mjs');
+ const script=html=>html.slice(html.indexOf('<script>')+8,html.indexOf('</script>'));
+ for(const [stored,expected] of [[null,false],['off',false],['on',true],['true',false],['false',false],['',false],['ON',false]]){
+  const window={},dataset={},values=new Map([['football-architect:standings-dev-season','3'],['football-architect:calendar-dev-world-day','28'],['football-architect:standings-dev-matchdays','16']]);
+  if(stored!==null)values.set('football-architect:debug-enabled',stored);
+  const sessionStorage={getItem:key=>values.get(key)??null};
+  runInNewContext(script(DEBUG_MODE_BOOTSTRAP),{window,sessionStorage});
+  runInNewContext(script(DEBUG_SEASON_BOOTSTRAP),{window,document:{documentElement:{dataset}},sessionStorage});
+  assert.equal(window.faDebugEnabled,expected,'stored='+stored);
+  assert.equal(dataset.faHistoryStatic,'false');
+  assert.equal(window.faFixturesInitialProgress===undefined,!expected);
+ }
+ const window={};
+ runInNewContext(script(DEBUG_MODE_BOOTSTRAP),{window,sessionStorage:{getItem(){throw Error('blocked')}}});
+ assert.equal(window.faDebugEnabled,false,'blocked session storage must not enable Debug');
+ const noStorage={},dataset={};
+ runInNewContext(script(DEBUG_SEASON_BOOTSTRAP),{window:noStorage,document:{documentElement:{dataset}},sessionStorage:{getItem(){throw Error('blocked')}}});
+ assert.equal(noStorage.faFixturesInitialProgress,undefined);
+ assert.equal(dataset.faHistoryStatic,'false');
 });
