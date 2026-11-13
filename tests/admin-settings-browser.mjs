@@ -162,8 +162,7 @@ try{
     const {options}=route.request().postDataJSON();
     currentOptions=options;draftCommitted=false;
     assert.equal(options.count,2);
-    if(previewCalls<=2)assert.equal(options.seed,'admin-trial');
-    else assert.match(options.seed,/^fa-next-11111111-1111-4111-8111-111111111111$/);
+    assert.equal(options.seed,'admin-trial','Explicit generator seed stays unchanged after saving');
     assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
     assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
     const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
@@ -180,7 +179,6 @@ try{
     assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111'});
     assert.ok(currentOptions,'Preview must have been generated before it can be read');
-    if(draftCommitted)return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{code:'players_preview_expired'}})});
     const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
      display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
      primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
@@ -188,7 +186,7 @@ try{
       shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
       decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-     draftId:'11111111-1111-4111-8111-111111111111',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
+     draftId:'11111111-1111-4111-8111-111111111111',status:draftCommitted?'committed':'preview',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
      options:currentOptions,candidates})});
    });
    await page.route('**/api/admin/players/commit',route=>{
@@ -248,9 +246,14 @@ try{
     await page.mouse.move(0,0); // Establish an unhovered field baseline.
     await page.waitForTimeout(220);
     const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
-    await page.locator('[data-admin-players-label="age"]').hover();
+    // Captions deliberately ignore pointer events; hover() would wait for a hit target forever.
+    const captionBox=await page.locator('[data-admin-players-label="age"]').boundingBox();
+    assert.ok(captionBox,'The age caption must be laid out');
+    await page.mouse.move(captionBox.x+captionBox.width/2,captionBox.y+captionBox.height/2);
     await page.waitForTimeout(220);
     assert.deepEqual(await readLabel(),beforeFocus,'Hover on field caption must not highlight the label');
+    const inputAfterCaption=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    assert.deepEqual(inputAfterCaption,inputBeforeHover,'Hover on the caption must not highlight the input box either');
     // Native HTML <label> can forward :hover to its associated input.
     // The visible highlight belongs to the field box, never the caption.
     await age.hover();
@@ -266,7 +269,8 @@ try{
     assert.notEqual(focused.shadow,'none','Focus highlight must remain visible on the input box');
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
-    assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="primarySuitabilityMin"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="primarySuitabilityMax"]').inputValue(),'');
     assert.equal(await page.locator('[data-admin-players-copy],[data-admin-players-command]').count(),0,'No legacy CLI-only form controls');
     assert.equal(await page.locator('[data-admin-players-result],[data-admin-players-commit]').count(),0,'The generator must not embed preview or approval');
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
@@ -463,7 +467,7 @@ try{
     await page.locator('[data-players-option="count"]').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Saving does not erase the prior generator settings');
     assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
-    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'admin-trial','Manually selected seed remains unchanged after saving');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
     await page.locator('[data-admin-players-preview]').click();
     await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
@@ -471,7 +475,7 @@ try{
     assert.equal(previewCalls,3);assert.equal(commitCalls,1);
     assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,writer?3:1,'Admin navigation reuses cached permissions; explicit Preview Back reloads recheck');
+   assert.equal(permissionReads,writer?2:1,'Preview Back reuses the existing page history without redundant permission reads');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}

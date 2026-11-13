@@ -222,9 +222,11 @@
    // Cached UI permissions never replace backend authorization below.
    if(!['admin.access','admin.world.read','admin.world.write'].every(x=>p.includes(x)))throw new Error('permission_denied');
    const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
-   if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options)
+   if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options||!['preview','committed'].includes(info.status))
     throw new Error('invalid_draft');
-   draft=info;status='ready';feedback.textContent='';
+   draft=info;saved=info.status==='committed';
+   if(saved)receipt.textContent=info.summary.count+' '+tr().saved+' · '+info.draftId;
+   status='ready';feedback.textContent='';
   }catch(e){status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;}
   render();
   if(draft&&restoreScroll)requestAnimationFrame(()=>{scroll.scrollLeft=restoreScroll;});
@@ -234,10 +236,8 @@
   busy=true;feedback.textContent=tr().regenerating;render();
   try{
    const options={...draft.options};
-   // A saved cohort always starts a new deterministic batch; otherwise retain
-   // manual seeds and let server-owned auto seeds regenerate freely.
-   if(saved)options.seed='fa-next-'+draft.draftId;
-   else if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
+   // Auto is always server-selected; an explicit manual seed remains reproducible.
+   if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
    const nextDraft=await authorizedPost('/api/admin/players/preview',{options});
    if(!nextDraft||!nextDraft.draftId)throw new Error('invalid_preview');
    location.replace('/admin/players/preview?draftId='+encodeURIComponent(nextDraft.draftId));
@@ -250,7 +250,6 @@
    const answer=await authorizedPost('/api/admin/players/commit',{draftId:draft.draftId,confirmation:'GENERATE PLAYERS'});
    if(answer.batchId!==draft.draftId||answer.count!==draft.summary.count)throw new Error('invalid_commit_result');
    saved=true;receipt.textContent=answer.count+' '+tr().saved+' · '+answer.batchId;
-   back.href='/admin/players?nextSeed='+encodeURIComponent('fa-next-'+answer.batchId);
    feedback.textContent='';
   }catch(e){feedback.textContent=(e.message==='stale_players_preview'||e.message==='players_preview_expired'?tr().expired:tr().error+': '+e.message);}
   finally{busy=false;if(confirmationDialog.open)confirmationDialog.close();confirmation.value='';render();}
@@ -284,6 +283,11 @@
   const destination=new URL(back.href,location.href);
   if(destination.origin!==location.origin||destination.pathname!=='/admin/players')return;
   event.preventDefault();
+  // Prefer the generator history entry when following the normal workflow.
+  let fromGenerator=false;
+  try{const ref=new URL(document.referrer);fromGenerator=ref.origin===location.origin&&ref.pathname==='/admin/players';}catch{}
+  if(fromGenerator&&history.length>1){history.back();return;}
+  // Direct/replaced previews: use an ephemeral history-state handoff, no storage.
   history.replaceState({faAdminGeneratorOptions:draft.options},'',destination.pathname+destination.search+destination.hash);
   location.reload();
  });

@@ -26,11 +26,11 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const copies={
-  en:{back:'Back to players',backPreview:'Back to preview',backGenerator:'Back to generator',overview:'Overview',attributes:'Attributes',groups:['Technical','Mental','Physical','Goalkeeper'],fields:['Nationality','Second nationality','Age','Positions','Height','Preferred foot'],notFound:'Player not found',expired:'Preview expired or no longer available. Return to the generator.',denied:'Admin permission required',error:'Unable to load player',left:'Left',right:'Right',preview:'Generated preview · not saved',player:'Player',previewTitle:'Player preview'},
-  it:{back:'Torna ai giocatori',backPreview:'Torna all’anteprima',backGenerator:'Torna al generatore',overview:'Panoramica',attributes:'Attributi',groups:['Tecnici','Mentali','Fisici','Portiere'],fields:['Nazionalità','Seconda nazionalità','Età','Posizioni','Altezza','Piede preferito'],notFound:'Giocatore non trovato',expired:'Anteprima scaduta o non più disponibile. Torna al generatore.',denied:'Autorizzazione Admin necessaria',error:'Impossibile caricare il giocatore',left:'Sinistro',right:'Destro',preview:'Anteprima generata · non salvato',player:'Giocatore',previewTitle:'Anteprima giocatore'},
-  de:{back:'Zurück zu Spielern',backPreview:'Zurück zur Vorschau',backGenerator:'Zurück zum Generator',overview:'Übersicht',attributes:'Attribute',groups:['Technisch','Mental','Physisch','Torwart'],fields:['Nationalität','Zweite Nationalität','Alter','Positionen','Größe','Starker Fuß'],notFound:'Spieler nicht gefunden',expired:'Vorschau abgelaufen oder nicht mehr verfügbar. Zum Generator zurückkehren.',denied:'Admin-Berechtigung erforderlich',error:'Spieler konnte nicht geladen werden',left:'Links',right:'Rechts',preview:'Generierte Vorschau · nicht gespeichert',player:'Spieler',previewTitle:'Spielervorschau'},
-  es:{back:'Volver a jugadores',backPreview:'Volver a vista previa',backGenerator:'Volver al generador',overview:'Resumen',attributes:'Atributos',groups:['Técnicos','Mentales','Físicos','Portero'],fields:['Nacionalidad','Segunda nacionalidad','Edad','Posiciones','Altura','Pie preferido'],notFound:'Jugador no encontrado',expired:'Vista previa caducada o no disponible. Vuelve al generador.',denied:'Se requiere permiso de administrador',error:'No se pudo cargar el jugador',left:'Izquierdo',right:'Derecho',preview:'Vista previa generada · sin guardar',player:'Jugador',previewTitle:'Vista previa del jugador'},
-  fr:{back:'Retour aux joueurs',backPreview:'Retour à l’aperçu',backGenerator:'Retour au générateur',overview:'Vue d’ensemble',attributes:'Attributs',groups:['Techniques','Mentaux','Physiques','Gardien'],fields:['Nationalité','Seconde nationalité','Âge','Postes','Taille','Pied préféré'],notFound:'Joueur introuvable',expired:'Aperçu expiré ou indisponible. Revenez au générateur.',denied:'Autorisation Admin requise',error:'Impossible de charger le joueur',left:'Gauche',right:'Droit',preview:'Aperçu généré · non enregistré',player:'Joueur',previewTitle:'Aperçu du joueur'}
+  en:{back:'Back to players',backPreview:'Back to preview',backGenerator:'Back to generator',overview:'Overview',attributes:'Attributes',groups:['Technical','Mental','Physical','Goalkeeper'],fields:['Nationality','Second nationality','Age','Positions','Height','Preferred foot'],notFound:'Player not found',expired:'Preview expired or no longer available. Return to the generator.',denied:'Admin permission required',error:'Unable to load player',left:'Left',right:'Right',preview:'Generated preview · not saved',savedPreview:'Generated player · saved',player:'Player',previewTitle:'Player preview'},
+  it:{back:'Torna ai giocatori',backPreview:'Torna all’anteprima',backGenerator:'Torna al generatore',overview:'Panoramica',attributes:'Attributi',groups:['Tecnici','Mentali','Fisici','Portiere'],fields:['Nazionalità','Seconda nazionalità','Età','Posizioni','Altezza','Piede preferito'],notFound:'Giocatore non trovato',expired:'Anteprima scaduta o non più disponibile. Torna al generatore.',denied:'Autorizzazione Admin necessaria',error:'Impossibile caricare il giocatore',left:'Sinistro',right:'Destro',preview:'Anteprima generata · non salvato',savedPreview:'Giocatore generato · salvato',player:'Giocatore',previewTitle:'Anteprima giocatore'},
+  de:{back:'Zurück zu Spielern',backPreview:'Zurück zur Vorschau',backGenerator:'Zurück zum Generator',overview:'Übersicht',attributes:'Attribute',groups:['Technisch','Mental','Physisch','Torwart'],fields:['Nationalität','Zweite Nationalität','Alter','Positionen','Größe','Starker Fuß'],notFound:'Spieler nicht gefunden',expired:'Vorschau abgelaufen oder nicht mehr verfügbar. Zum Generator zurückkehren.',denied:'Admin-Berechtigung erforderlich',error:'Spieler konnte nicht geladen werden',left:'Links',right:'Rechts',preview:'Generierte Vorschau · nicht gespeichert',savedPreview:'Generierter Spieler · gespeichert',player:'Spieler',previewTitle:'Spielervorschau'},
+  es:{back:'Volver a jugadores',backPreview:'Volver a vista previa',backGenerator:'Volver al generador',overview:'Resumen',attributes:'Atributos',groups:['Técnicos','Mentales','Físicos','Portero'],fields:['Nacionalidad','Segunda nacionalidad','Edad','Posiciones','Altura','Pie preferido'],notFound:'Jugador no encontrado',expired:'Vista previa caducada o no disponible. Vuelve al generador.',denied:'Se requiere permiso de administrador',error:'No se pudo cargar el jugador',left:'Izquierdo',right:'Derecho',preview:'Vista previa generada · sin guardar',savedPreview:'Jugador generado · guardado',player:'Jugador',previewTitle:'Vista previa del jugador'},
+  fr:{back:'Retour aux joueurs',backPreview:'Retour à l’aperçu',backGenerator:'Retour au générateur',overview:'Vue d’ensemble',attributes:'Attributs',groups:['Techniques','Mentaux','Physiques','Gardien'],fields:['Nationalité','Seconde nationalité','Âge','Postes','Taille','Pied préféré'],notFound:'Joueur introuvable',expired:'Aperçu expiré ou indisponible. Revenez au générateur.',denied:'Autorisation Admin requise',error:'Impossible de charger le joueur',left:'Gauche',right:'Droit',preview:'Aperçu généré · non enregistré',savedPreview:'Joueur généré · enregistré',player:'Joueur',previewTitle:'Aperçu du joueur'}
  };
 
  const extra={
@@ -76,7 +76,7 @@
   ST:['shooting positioning composure heading','speed strength technique agility']
  });
  const attrGroups=['technical','mental','physical','goalkeeping'];
- let player=null,state='loading',request=0,selectedPosition=null,clubCatalog=null,clubCatalogPromise=null,clubCatalogResolved=false;
+ let player=null,state='loading',request=0,selectedPosition=null,clubCatalog=null,clubCatalogPromise=null,clubCatalogResolved=false,previewCommitted=false;
  function previewReturnUrl(){
   const url=new URL('/admin/players/preview',location.origin);url.searchParams.set('draftId',context.draftId);
   const hash=new URLSearchParams();
@@ -252,8 +252,9 @@
   for(const tier of ['core','support'])panel.querySelector('[data-detail-legend-label="'+tier+'"]').textContent=e[tier];
   panel.querySelector('[data-detail-legend-title]').textContent=e.legend;
   renderRoleHighlights();
-  statusNode.hidden=state==='loading'||state==='ready';
-  statusNode.textContent=statusNode.hidden?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
+  // A missing player is already reported in the heading; no duplicate footer.
+  statusNode.hidden=state==='loading'||state==='ready'||state==='not-found';
+  statusNode.textContent=statusNode.hidden?'':state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
   // Show the separator and age only when a player is loaded.
   panel.querySelector('.app-player-detail-header-separator').hidden=!player;
   ageNode.hidden=!player;
@@ -261,7 +262,7 @@
    if(state!=='loading'){
     setContent(nameNode,state==='not-found'?copy.notFound:copy.player);roleNode.textContent='—';
     setContent(nationalityNode,'—');setContent(ageNode,'—');setContent(clubNode,'—');
-    subtitle.textContent=preview?copy.preview:'';
+    subtitle.textContent=preview?(previewCommitted?copy.savedPreview:copy.preview):'';
     for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))setContent(node,'—');
    }
    renderPitch();return;
@@ -271,7 +272,7 @@
   setContent(nationalityNode,countryNode(player.nationality));
   setContent(ageNode,Number.isSafeInteger(player.age)?localizedAge(player.age):'—');
   renderClub();
-  subtitle.textContent=preview?copy.preview:'';
+  subtitle.textContent=preview?(previewCommitted?copy.savedPreview:copy.preview):'';
   for(const key of ['nationality','secondary_nationality','age','height_cm','preferred_foot'])
    setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key));
   for(const key of attrKeys){
@@ -297,9 +298,11 @@
   const resp=await fetch('/api/admin/players/draft',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({draftId:context.draftId})});
   if(!resp.ok){if(resp.status===401||resp.status===403)permissionCache?.clear();throw Error(resp.status===401||resp.status===403?'denied':'expired');}
   const draft=await resp.json();
-  if(draft.draftId!==context.draftId||!Array.isArray(draft.candidates)||draft.summary?.count!==draft.candidates.length)throw Error('expired');
+  if(draft.draftId!==context.draftId||!['preview','committed'].includes(draft.status)||!Array.isArray(draft.candidates)||draft.summary?.count!==draft.candidates.length)throw Error('expired');
   const p=draft.candidates[Number(context.index)-1];
-  if(!p||p.preview_id!=='trial-'+String(context.index).padStart(4,'0'))throw Error('expired');
+  // Legacy snapshots never contained preview_id; verified draft and index suffice.
+  if(!p||(p.preview_id!==undefined&&p.preview_id!=='trial-'+String(context.index).padStart(4,'0')))throw Error('expired');
+  previewCommitted=draft.status==='committed';
   // Explicit public/detail projection. Never retain internal options or metadata.
   const permitted=['first_name','last_name','display_name','nationality','secondary_nationality','age','height_cm','preferred_foot','primary_position','secondary_positions','career_status'];
   const projected=Object.fromEntries(permitted.filter(k=>Object.hasOwn(p,k)).map(k=>[k,p[k]]));
@@ -310,7 +313,7 @@
   const ticket=++request;
   // Protected draft detail must not expose bfcache-private candidate data
   // until rechecking the active session and server-side draft on return.
-  player=null;selectedPosition=null;state='loading';
+  player=null;selectedPosition=null;state='loading';previewCommitted=false;
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());

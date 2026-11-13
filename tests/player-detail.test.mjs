@@ -98,6 +98,8 @@ test('#502 preview generated link retains only routing context and never persist
  assert.match(script,/const permitted=\['first_name'/);
  assert.match(script,/projected\.attributes=Object\.fromEntries/);
  assert.match(script,/draftPattern\.test/);
+ assert.match(script,/previewCommitted=draft\.status==='committed'/);
+ assert.match(script,/p\.preview_id!==undefined/);
  assert.match(script,/cache:'no-store'/);
  assert.match(script,/data-detail-pitch-markers/);
  assert.match(script,/addEventListener\('popstate'/);
@@ -109,6 +111,10 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.ok(script.includes("setContent(nameNode,state==='not-found'?copy.notFound:copy.player)"));
+ assert.match(script,/statusNode\.hidden=state==='loading'\|\|state==='ready'\|\|state==='not-found'/);
+ const statusLine=script.split('\n').find(line=>line.includes('statusNode.textContent='));
+ assert.ok(statusLine,'Status copy must be rendered in a dedicated footer node');
+ assert.doesNotMatch(statusLine,/state==='not-found'\?copy\.notFound/);
  assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 

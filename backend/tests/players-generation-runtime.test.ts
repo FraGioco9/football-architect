@@ -53,7 +53,8 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(fetched.status).toBe(200);
  const refreshed=await fetched.json() as any;
  expect(refreshed.candidates).toHaveLength(preview.summary.count);
- expect(refreshed.candidates[0]).toMatchObject({display_name:preview.candidates[0].display_name,age:preview.candidates[0].age,attributes:preview.candidates[0].attributes});
+ expect(refreshed.candidates[0]).toMatchObject({display_name:preview.candidates[0].display_name,age:preview.candidates[0].age,attributes:preview.candidates[0].attributes,preview_id:preview.candidates[0].preview_id});
+ expect(refreshed.status).toBe('preview');
  expect(refreshed.candidates[0].id).toBeUndefined();
  expect(refreshed.summary.seed).toBe(preview.summary.seed);
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
@@ -63,7 +64,12 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(success.status).toBe(200);
  const result=await success.json() as any;
  expect(result.count).toBe(2);expect(result.alreadyCommitted).toBe(false);
- expect((await request('/draft',{draftId:preview.draftId})).status).toBe(409);
+ const committedRead=await request('/draft',{draftId:preview.draftId});
+ expect(committedRead.status).toBe(200);
+ const committedSnapshot=await committedRead.json() as any;
+ expect(committedSnapshot.status).toBe('committed');
+ expect(committedSnapshot.candidates).toEqual(refreshed.candidates);
+ expect(committedSnapshot.options.seed).toBe(preview.summary.seed);
  expect((await request('/commit',confirm)).status).toBe(200);
  const replay=await (await request('/commit',confirm)).json() as any;
  expect(replay.alreadyCommitted).toBe(true);
