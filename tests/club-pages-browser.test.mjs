@@ -839,7 +839,8 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
   assert.equal(await run("document.activeElement.getAttribute('aria-describedby')"),'club-fixture-venue-tooltip');
   await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').hidden"),true);
-  for(const [width,lang,theme] of [[320,'it','dark'],[390,'de','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
+  // MOBILE-QA #527: cover intermediate real-device widths beyond the 320/390 baselines.
+  for(const [width,lang,theme] of [[320,'it','dark'],[375,'en','dark'],[390,'de','light'],[430,'fr','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    await run(`document.documentElement.lang=${JSON.stringify(lang)};document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await delay(60);
    const controls=await run("(()=>{const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};return {tabs:box(document.querySelector('.club-tabs')),toolbar:box(document.querySelector('.club-fixtures-controls')),next:box(document.querySelector('[data-club-fixtures-next]')),competition:box(document.querySelector('[data-club-fixture-control=competition]')),season:box(document.querySelector('[data-club-fixture-control=season]'))}})()");
@@ -847,9 +848,9 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'next command stays at left at '+width);
    assert.ok(controls.competition.right<=controls.season.left,'competition precedes season at '+width);
    assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'selectors align right at '+width);
-   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no overflow '+width+' '+lang);
+   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.fa-shell-content-scroll').scrollWidth<=document.querySelector('.fa-shell-content-scroll').clientWidth+1&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no shell/page/fixtures overflow '+width+' '+lang);
    assert.equal(await run("[...document.querySelectorAll('.club-fixture-result')].every(n=>n.getBoundingClientRect().width>=64)"),true);
-   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,1440].includes(width)){
+   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,375,430,1440].includes(width)){
     mkdirSync(process.env.CLUB_FIXTURES_QA_DIR,{recursive:true});
     const capture=await cmd('Page.captureScreenshot',{format:'png'});
     writeFileSync(join(process.env.CLUB_FIXTURES_QA_DIR,'club-fixtures-'+width+'-'+lang+'-'+theme+'.png'),Buffer.from(capture.data,'base64'));
@@ -878,7 +879,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
     season:document.querySelector('[data-club-fixture-control=season] [data-club-fixture-value]')?.textContent.trim(),
     selectorSkeleton:!!document.querySelector('[data-club-fixture-control=season] .club-fp-bar')};
   })()`);
-  for(const width of [320,390,768,1440]){
+  for(const width of [320,375,390,430,768,1440]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    hold=true;await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=1'});
    await wait("document.querySelectorAll('.club-fixture-loading').length===6");
@@ -915,7 +916,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
       'league text starts at reserved slot at '+width);
    }
   }
-  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/390/768/1440; no Season selector skeleton.');
+  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/375/390/430/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
