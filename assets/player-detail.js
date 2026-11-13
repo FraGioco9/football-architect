@@ -327,11 +327,15 @@
   if(preview)root.hidden=false;render();
   if(!preview&&player?.clubKey)void resolveClubCatalog(ticket);
  }
+ function syncViewParam(url,target){
+  if(target==='overview')url.searchParams.delete('view');
+  else url.searchParams.set('view',target);
+ }
  function setView(next){
   if(!['overview','info'].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
-  url.searchParams.set('view',next);
+  syncViewParam(url,next);
   history.pushState(history.state,'',url.pathname+url.search+url.hash);
   render();
  }
@@ -348,9 +352,10 @@
  });
  function normalizeViewUrl(){
   const url=new URL(location.href);
-  if(url.searchParams.get('view')===view)return;
-  url.searchParams.set('view',view);
-  history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+  const current=url.pathname+url.search+url.hash;
+  syncViewParam(url,view);
+  if(url.pathname+url.search+url.hash!==current)
+   history.replaceState(history.state,'',url.pathname+url.search+url.hash);
  }
  window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});

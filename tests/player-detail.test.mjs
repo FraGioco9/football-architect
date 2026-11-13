@@ -73,7 +73,7 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  const directory=read('assets/players-directory.js'),preview=read('assets/admin-players-preview.js');
  const script=read('assets/player-detail.js'),index=read('backend/src/index.ts');
  const publicApi=read('backend/src/public-players-read.ts');
- assert.match(directory,/link\.href='\/players\/'\+player\.id\+'\?view=overview'/);
+ assert.match(directory,/link\.href='\/players\/'\+player\.id;/);
  assert.match(directory,/link\.className='app-player-name-link'/);
  assert.match(preview,/link\.className='app-player-name-link'/);
  assert.match(preview,/target\.searchParams\.set\('draftId',id\)/);
@@ -141,7 +141,8 @@ test('#502 direct player details activate Players, never Dashboard, in app shell
 test('#502 Overview and Info are independent views with reserved first paint and history navigation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  assert.match(js,/views\.filter\(tab=>!tab\.disabled\)/);
- assert.match(js,/url\.searchParams\.set\('view',next\)/);
+ assert.match(js,/if\(target==='overview'\)url\.searchParams\.delete\('view'\)/);
+ assert.match(js,/else url\.searchParams\.set\('view',target\)/);
  assert.match(js,/normalizeViewUrl\(\)/);
  assert.match(js,/history\.replaceState\(history\.state/);
  assert.match(js,/history\.pushState\(history\.state/);
@@ -154,6 +155,58 @@ test('#502 Overview and Info are independent views with reserved first paint and
  assert.match(renderer,/detailPanel\(preview\)/);
  assert.doesNotMatch(read('players/_shared/index.html'),/data-detail-back/);
  assert.match(read('admin/players/preview/player/index.html'),/data-detail-back/);
+});
+
+
+test('#555 default player Overview is a clean URL across initial load, tabs, legacy links and browser history',()=>{
+ const script=read('assets/player-detail.js');
+ const begin=script.indexOf(' function syncViewParam('),end=script.indexOf("\n window.addEventListener('pageshow'",begin);
+ assert.ok(begin>=0&&end>begin,'exercise the real player-detail routing functions');
+ const setup=path=>{
+  let current=new URL('http://app.localhost:2000'+path);
+  const actions=[],listeners={};
+  const location={
+   get href(){return current.href;},
+   get pathname(){return current.pathname;},
+   get search(){return current.search;},
+   get hash(){return current.hash;}
+  };
+  const history={
+   state:{restored:true},
+   pushState(_state,_title,next){actions.push('push');current=new URL(next,current);},
+   replaceState(_state,_title,next){actions.push('replace');current=new URL(next,current);}
+  };
+  const context={view:new URLSearchParams(current.search).get('view')==='info'?'info':'overview',
+   URL,URLSearchParams,location,history,views:[],render:()=>{},window:{addEventListener:(name,fn)=>{listeners[name]=fn;}}};
+  const api=runInNewContext(script.slice(begin,end)+'\n({setView,normalizeViewUrl,currentView:()=>view})',context);
+  return {api,actions,listeners,path:()=>current.pathname+current.search+current.hash,
+   navigate:next=>{current=new URL(next,current);}};
+ };
+ const normal=setup('/players/33');
+ normal.api.normalizeViewUrl();
+ assert.equal(normal.path(),'/players/33');
+ assert.deepEqual(normal.actions,[],'clean direct URL should not mutate history');
+ normal.api.setView('info');
+ assert.equal(normal.path(),'/players/33?view=info');
+ assert.equal(normal.api.currentView(),'info');
+ normal.api.setView('overview');
+ assert.equal(normal.path(),'/players/33');
+ assert.deepEqual(normal.actions,['push','push'],'tab switches remain navigable');
+ normal.navigate('/players/33?view=info');
+ normal.listeners.popstate();
+ assert.equal(normal.api.currentView(),'info','Back/Forward restores Info');
+ assert.equal(normal.path(),'/players/33?view=info');
+ normal.navigate('/players/33');
+ normal.listeners.popstate();
+ assert.equal(normal.api.currentView(),'overview','Back/Forward restores Overview');
+ assert.equal(normal.path(),'/players/33');
+ const legacy=setup('/players/33?view=overview&group=technical#positions');
+ legacy.api.normalizeViewUrl();
+ assert.equal(legacy.path(),'/players/33?group=technical#positions');
+ assert.deepEqual(legacy.actions,['replace'],'legacy Overview must normalize without new history entry');
+ const preview=setup('/admin/players/preview/player?draftId=example&index=1&returnPage=2&view=overview#positions');
+ preview.api.normalizeViewUrl();
+ assert.equal(preview.path(),'/admin/players/preview/player?draftId=example&index=1&returnPage=2#positions','draft context and fragment remain intact');
 });
 
 test('#502 skeleton footprint, pitch size, attribute separators and silent loading are stable',()=>{
