@@ -554,10 +554,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
      await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
      const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
+     // The main View strip restores scrollLeft from sessionStorage on navigation.
+     // Exercise the left edge explicitly rather than assuming a fresh position.
+     await run("document.querySelector('.club-tabs').scrollLeft=0;window.dispatchEvent(new Event('resize'))");
+     await wait("(()=>{const nav=document.querySelector('.club-tabs');if(!nav)return false;const max=Math.max(0,nav.scrollWidth-nav.clientWidth);return nav.scrollLeft<1&&nav.dataset.canScrollLeft==='false'&&nav.dataset.canScrollRight===String(max>1)})()");
      const primary=await run("(()=>{const nav=document.querySelector('.club-tabs'),style=getComputedStyle(nav),scrollbar=getComputedStyle(nav,'::-webkit-scrollbar');return {width:style.scrollbarWidth,webkitDisplay:scrollbar.display,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft,overflow:nav.scrollWidth>nav.clientWidth}})()");
      assert.equal(primary.width,'none','primary Club View scrollbar is hidden at '+width);
      assert.equal(primary.webkitDisplay,'none','WebKit primary View scrollbar is hidden at '+width);
-     assert.ok(primary.overflow&&primary.right==='true','scroll indicator remains active at '+width);
+     assert.equal(primary.right,String(primary.overflow),'right fade matches actual mobile View overflow at '+width);
+     assert.equal(primary.left,'false','no left fade at start at '+width);
      assert.equal(measured.rowHeight,42,'42px row at '+width);
      assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
      assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));

@@ -182,6 +182,9 @@
     if(tabs.dataset.clubInteractionsBound!=='true'){
      tabs.dataset.clubInteractionsBound='true';
      tabs.addEventListener('scroll',()=>{syncTabEdges();try{sessionStorage.setItem(key,String(tabs.scrollLeft))}catch{}},{passive:true});
+     // Overflow and fades must follow a desktop/mobile breakpoint change even
+     // when scrollLeft stays at zero and therefore emits no scroll event.
+     window.addEventListener('resize',syncTabEdges,{passive:true});
      tabs.addEventListener('click',event=>{
       const link=event.target.closest?.('a');
       if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
