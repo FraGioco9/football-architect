@@ -267,7 +267,7 @@ test('A03-04C: active and inactive club tabs transfer only temporal context to F
   const html=model.render(manifest,selected,'en','?view=history&season=3&matchday=7&x=1');
   const nav=html.match(/<nav class="app-competition-tabs club-tabs"[^>]*>(.*?)<\/nav>/)[1];
   const hrefs=[...nav.matchAll(/href="([^"]+)"/g)].map(m=>m[1].replaceAll('&amp;','&'));
-  assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/stats?season=3&matchday=7',selected.base+'/history']);
+  assert.deepEqual(hrefs,[selected.base+'/overview',selected.base+'/roster?view=info',selected.base+'/fixtures?season=3&matchday=7',selected.base+'/stats?season=3&matchday=7',selected.base+'/history']);
   assert.equal((nav.match(/aria-current="page"/g)||[]).length,1);
   if(path.includes('/40/'))assert.doesNotMatch(html,/href="\/competitions\//,'Unallocated club cannot invent a competition link');
   else assert.ok(html.includes('href="/competitions/it-1/standings?season=3"'));
