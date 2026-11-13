@@ -44,6 +44,10 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   for(const view of ['overview','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
   for(const view of ['stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
   assert.doesNotMatch(html,/data-detail-view="attributes"|data-detail-group="technical"/);
+  assert.match(html,/data-detail-value="nationality"/);
+  assert.match(html,/data-detail-value="secondary_nationality"/);
+  for(const position of ['primary','secondary'])assert.match(html,new RegExp('data-detail-position-value="'+position+'"'));
+  for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
   if(mode==='preview'){
    assert.match(html,/name="robots" content="noindex,nofollow"/);

@@ -107,7 +107,7 @@
   panel.querySelector('[data-detail-club-label]').textContent=e.club;
   panel.querySelector('[data-detail-pitch]').setAttribute('aria-label',e.positionLabel);
   for(const [i,key] of ['nationality','secondary_nationality','age','height_cm','preferred_foot'].entries()){
-   panel.querySelector('[data-detail-label="'+key+'"]').textContent=copy.fields[i<2?i:i+1];
+   panel.querySelector('[data-detail-label="'+key+'"]').textContent=copy.fields[i<3?i:i+1];
   }
   for(const [i,key] of attrGroups.entries())panel.querySelector('[data-detail-group-title="'+key+'"]').textContent=copy.groups[i];
   for(const [i,key] of attrKeys.entries())panel.querySelector('[data-detail-attr-label="'+key+'"]').textContent=labels[i]||key;
