@@ -304,7 +304,7 @@
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
-   const suffix=view==='roster'?'?view=info':['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
+   const suffix=['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
    return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
   }).join('')+'</nav>';
   const swatch=key=>{
