@@ -71,7 +71,8 @@ export function mountClubFixtures({host,manifest}){
    panel.addEventListener('focusout',hideTip);
    panel.addEventListener('keydown',e=>{if(e.key==='Escape')hideTip();});
    panel.addEventListener('click',e=>{const action=e.target.closest('button[data-club-fixtures-next]');if(action){
-    if(action.disabled||!ui.nextFixture({snapshot,season:season(),currentSeason:state?.get?.().current?.season??null}))return;
+    const next=ui.nextFixture({snapshot,season:season(),currentSeason:state?.get?.().current?.season??null});
+    if(action.disabled||!next)return;
     if(filter!=='all'&&next.competitionId!==filter){const u=new URL(location.href);u.searchParams.delete('competition');history.pushState(null,'',u.pathname+u.search);paint();}
     const row=panel.querySelector('[data-club-fixture-next]');row?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});row?.focus({preventScroll:true});
    }});
