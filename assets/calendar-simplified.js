@@ -12,7 +12,7 @@
  };
  const calendarTexts=()=>locales[document.documentElement.lang]||locales.en;
  const seasonKey='football-architect:standings-dev-season';
- const debugMode=()=>window.faDebugEnabled!==false&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
+ const debugMode=()=>window.faDebugEnabled===true&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
  let dev=debugMode();
  const publicSeasonLimit=()=>Math.max(1,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber||1);
  const selector=document.querySelector('#app-calendar > .calendar-season-picker')||document.createElement('div');

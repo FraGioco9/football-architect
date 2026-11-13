@@ -32,7 +32,7 @@ function setup(path='/competitions/it-1/',devSeason=null,registry=routeRegistry,
  const document={addEventListener(){},documentElement:{dataset:devSeason!==null?{faDevSeasons:'1,2,3,4',faDevCurrentSeason:String(devSeason)}:{}},getElementById:id=>fields.get(id),querySelector:()=>tablist,
  createElement(){const node=item();node.remove=()=>{menu.options=menu.options.filter(item=>item!==node)};return node}};
  const definition=definitions.find(d=>path.includes('/'+d.slug+'/')||path.includes('/'+d.slug+'?'));
- const window={faCompetitionInitialSeason:initialPublicSeason,faCompetitionPrebootTabs:prebootSnapshot?{snapshot:()=>prebootSnapshot,dispose(){this.disposed=true}}:undefined,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
+ const window={faDebugEnabled:devSeason!==null,faCompetitionInitialSeason:initialPublicSeason,faCompetitionPrebootTabs:prebootSnapshot?{snapshot:()=>prebootSnapshot,dispose(){this.disposed=true}}:undefined,faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionContext:definition?{definition}:null,faCompetitionContextApi:{selectSeason:season=>contextSeasons.push(Number(season))},faCompetitionModel:competitionModel,get location(){return stack[cursor]},history:{
   replaceState(a,b,url){stack[cursor]=new URL(url,stack[cursor])},
   pushState(a,b,url){stack.splice(cursor+1);stack.push(new URL(url,stack[cursor]));cursor++}},
   dispatchEvent(){},addEventListener(k,fn){events[k]=fn}};

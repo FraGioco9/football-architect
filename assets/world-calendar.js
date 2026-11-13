@@ -125,7 +125,7 @@
   for(const [lang,label] of Object.entries({en:'Authoritative world',it:'Mondo autorevole',de:'Verbindliche Welt',es:'Mundo oficial',fr:'Monde officiel'}))clockText[lang].push(label);
   // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
   // Public pages must never accept a browser-dispatched fictional or authoritative clock.
-  const devClockEnabled=()=>window.faDebugEnabled!==false&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
+  const devClockEnabled=()=>window.faDebugEnabled===true&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
   function updateClock(raw){
     try{clockSnapshot=devClockEnabled()&&raw?.source?.kind==='dev'?clockAdapter?.normalize(raw)??null:null}catch{clockSnapshot=null}
     if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){
