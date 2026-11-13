@@ -200,13 +200,16 @@
   function apply(next,{replace=false,focus=false}={}){
     const previousView=state?.view;
     state={...next,matchday:normalizeCupRound(next.matchday)};
-    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season))state.season=latestSeason;
+    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season)){
+      state.season=latestSeason;explicitSeason=false;
+    }
     // Only the canonical public world may clamp a future deep link; until it
     // arrives keep the static shell visible without assuming Season 1.
     const world=publicRoute()?confirmedPublicWorld():null;
     const knownLimit=world?.seasonNumber??(publicRoute()?serverSeason:null);
-    if(knownLimit!==null&&knownLimit!==undefined&&Number(state.season)>Math.max(1,knownLimit))
-      state.season=String(Math.max(1,knownLimit));
+    if(knownLimit!==null&&knownLimit!==undefined&&Number(state.season)>Math.max(1,knownLimit)){
+      state.season=String(Math.max(1,knownLimit));explicitSeason=false;
+    }
     const pendingPublicSeason=publicRoute()&&!publicSeasonConfirmed&&!world;
     const url=new URL(window.location.href);
     const identity=routePath();
