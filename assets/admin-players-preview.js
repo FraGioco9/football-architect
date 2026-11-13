@@ -148,6 +148,8 @@
  }
  function render(){
   const t=locale(),c=tr(),actions=buttonLabels[language()]||buttonLabels.en;
+  root.querySelector('#admin-title').textContent=c.title;
+  document.title=c.title+' — Football Architect';
   document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
   root.querySelector('[data-admin-preview-confirm-heading]').textContent=actions.heading;
   root.querySelector('[data-admin-preview-confirm-label]').textContent=c.confirm;

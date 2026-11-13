@@ -24,6 +24,8 @@ async function visit(profile,path,verify){
  await context.addInitScript(data=>{
   localStorage.setItem("football-architect:theme",data.theme);
   localStorage.setItem("football-architect:language",data.language);
+  // These responsive fixtures deliberately exercise protected sporting data.
+  sessionStorage.setItem("football-architect:debug-enabled","on");
  },profile);
  const page=await context.newPage(),errors=[];
  page.on("pageerror",error=>errors.push(String(error)));

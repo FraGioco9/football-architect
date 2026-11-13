@@ -14,6 +14,8 @@ export async function runArea(browser,area,engine='chromium'){
    await context.addInitScript(({language,theme})=>{
     localStorage.setItem('football-architect:language',language);
     localStorage.setItem('football-architect:theme',theme);
+    // Activate the protected DEV world explicitly for browser interaction QA.
+    sessionStorage.setItem('football-architect:debug-enabled','on');
    },config);
    const errors=[];
    page.on('pageerror',e=>errors.push(e.message));
