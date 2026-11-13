@@ -2,8 +2,8 @@
 (async()=>{
  'use strict';
  const model=window.faClubModel,host=document.getElementById('club-page');
- let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'};
- let refreshClubHistory=()=>{},refreshClubOverview=()=>{},fixturesController=null;
+ let selected=model.route(location.pathname),competitionSnapshot={source:'loading'},historySnapshot={source:'loading'},rosterSnapshot={source:'loading'};
+ let refreshClubHistory=()=>{},refreshClubOverview=()=>{},refreshClubRoster=()=>{},fixturesController=null;
  const language=()=>Object.hasOwn(model.copies,document.documentElement.lang)?document.documentElement.lang:'en';
  const competitionSeason=()=>{
   const explicit=new URLSearchParams(location.search).get('season');
@@ -93,7 +93,7 @@
    const historyTableScroll=host.querySelector('.club-history-table-wrap')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot);
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
    let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
    if(header&&stagedHeader){
@@ -153,7 +153,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-      selected=next;paint(true);refreshClubHistory();refreshClubOverview();
+      selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
      tabs.addEventListener('keydown',event=>{
@@ -197,7 +197,7 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot);
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot);
    const replacement=staging.querySelector('.club-competition');
    if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
@@ -228,6 +228,36 @@
    }
   });
   paint();
+  // A current-state roster read is independent of sporting seasons and archives.
+  let rosterRequest=0,rosterAbort=null;
+  refreshClubRoster=()=>{
+   if(selected.view!=='roster')return;
+   const clubKey=selected.countryId+'-'+selected.clubId;
+   const ticket=++rosterRequest;
+   rosterAbort?.abort();rosterAbort=new AbortController();
+   const {signal}=rosterAbort;
+   void (async()=>{
+    try{
+     const response=await fetch('/api/clubs/'+clubKey+'/roster',{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal,headers:{Accept:'application/json'}});
+     if(!response.ok)throw Error('roster_http_'+response.status);
+     const data=await response.json();
+     if(data?.clubKey!==clubKey||!Number.isSafeInteger(data.count)||data.count<0||
+      !Array.isArray(data.players)||data.players.length!==data.count||
+      data.players.some((p,i)=>!Number.isSafeInteger(p?.id)||p.id<1||
+       i>0&&p.id<=data.players[i-1].id||typeof p.display_name!=='string'||
+       typeof p.nationality!=='string'||typeof p.primary_position!=='string'))
+      throw Error('invalid_roster_response');
+     if(signal.aborted||ticket!==rosterRequest)return;
+     rosterSnapshot={source:'ready',...data};
+    }catch{
+     if(signal.aborted||ticket!==rosterRequest)return;
+     rosterSnapshot={source:'unavailable'};
+    }
+    if(selected.view==='roster')paint(true);
+   })();
+  };
+  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++});
+  refreshClubRoster();
   // Public source: exactly the club's two domestic candidates plus both cups.
   // Shared world ownership, strict season validation and a reset fence prevent
   // showing Season 1 memberships in Season 2 or on Debug source transitions.
@@ -400,7 +430,7 @@
   }).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('popstate',()=>{
    const next=model.route(location.pathname);
-   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();refreshClubOverview();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
+   if(next&&next.base===selected.base){selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();host.querySelector('.club-tabs [aria-current="page"]').focus({preventScroll:true});}
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
  }catch{
