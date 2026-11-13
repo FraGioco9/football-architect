@@ -158,16 +158,16 @@
   let explicitSeason=false;
   // Seasons 2–4 are isolated DEV previews, never public competition seasons.
   const devSeasons=(document.documentElement.dataset.faDevSeasons||"").split(",").filter(x=>/^[1-9]\d*$/.test(x));
-  let availableSeasons=[...new Set(["1",...(window.faDebugEnabled===false?[]:devSeasons)])];
+  let availableSeasons=[...new Set(["1",...(window.faDebugEnabled!==true?[]:devSeasons)])];
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
-  if(window.faDebugEnabled!==false&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
+  if(window.faDebugEnabled===true&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
     availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
   let serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
     ?window.faCompetitionInitialSeason:null;
-  if((window.faDebugEnabled===false||devSeasons.length===0)&&serverSeason!==null)
+  if((window.faDebugEnabled!==true||devSeasons.length===0)&&serverSeason!==null)
     availableSeasons=Array.from({length:serverSeason},(_,i)=>String(i+1));
   let latestSeason=availableSeasons.reduce((a,b)=>Number(a)>Number(b)?a:b);
-  const publicRoute=()=>window.faDebugEnabled===false||devSeasons.length===0;
+  const publicRoute=()=>window.faDebugEnabled!==true||devSeasons.length===0;
   const confirmedPublicWorld=()=>{
     const snapshot=window.faWorldState?.get?.();
     return snapshot?.source==='authoritative'&&Number.isInteger(snapshot.world?.seasonNumber)?snapshot.world:null;
@@ -193,14 +193,14 @@
     const choice=routes.resolveSeasonQuery(params,currentLimit);
     explicitSeason=choice.explicit;
     const requested=String(choice.season??latestSeason);
-    return {season:devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(requested)?latestSeason:requested,
+    return {season:devSeasons.length&&window.faDebugEnabled===true&&!availableSeasons.includes(requested)?latestSeason:requested,
       view:views.includes(explicit)?explicit:views.includes(params.get("view"))?params.get("view"):"standings",
       matchday:validFixtureRound(round)?round:/^[1-9]\d*$/.test(round||"")&&validFixtureRound(Number(round))?Number(round):1};
   }
   function apply(next,{replace=false,focus=false}={}){
     const previousView=state?.view;
     state={...next,matchday:normalizeCupRound(next.matchday)};
-    if(devSeasons.length&&window.faDebugEnabled!==false&&!availableSeasons.includes(state.season)){
+    if(devSeasons.length&&window.faDebugEnabled===true&&!availableSeasons.includes(state.season)){
       state.season=latestSeason;explicitSeason=false;
     }
     // Only the canonical public world may clamp a future deep link; until it
@@ -302,7 +302,7 @@
   const seasonPicker=window.faBindCompetitionMenu(season,seasonMenu,seasonOptions(),value=>set({season:value}),
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
-    if(devSeasons.length&&window.faDebugEnabled!==false||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    if(devSeasons.length&&window.faDebugEnabled===true||!Number.isInteger(limit)||limit<0||limit>2)return false;
     serverSeason=Math.max(1,limit); // Verified public limit replaces a stale first-paint bootstrap.
     const next=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));
     const validSelection=next.includes(state.season);
@@ -315,7 +315,7 @@
     seasonPicker.update(seasonOptions());apply({...state,season:target},{replace:true});return true;
   };
   window.faCompetitionRoute.setSeasonLimit=limit=>{
-    if(window.faDebugEnabled===false)return false;
+    if(window.faDebugEnabled!==true)return false;
     if(limit!==0&&!devSeasons.includes(String(limit)))return false;
     const inactiveChanged=(document.documentElement.dataset.faDevCurrentSeason==="0")!==(limit===0);
     document.documentElement.dataset.faDevCurrentSeason=String(limit);
@@ -329,7 +329,7 @@
     return true;
   };
   window.addEventListener('fa:source-change',()=>{
-    if(window.faDebugEnabled===false){
+    if(window.faDebugEnabled!==true){
       // Switching away from Debug invalidates its clock before the public
       // /api/world response is verified. Never treat that unknown state as
       // world Season 0: it would wrongly redirect a valid Season 2 view to 1.

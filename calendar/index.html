@@ -20,7 +20,7 @@
   const validWeek = Number.isInteger(requestedWeek) && requestedWeek >= 1 && requestedWeek <= 8;
   const mobile = window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches;
   const view = ['season', 'week'].includes(requestedView) ? requestedView : validWeek || mobile ? 'week' : 'season';
-  const dev = window.faDebugEnabled !== false &&
+  const dev = window.faDebugEnabled === true &&
     (window.faDevPreviewMode === true || window.faDevCalendarClockSnapshot?.source?.kind === 'dev');
   let currentSeason = 1, worldDay = 1;
   if (dev) {

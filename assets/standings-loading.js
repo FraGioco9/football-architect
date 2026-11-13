@@ -30,8 +30,8 @@
       if(!panel?.querySelector||!root.document.querySelector)return;
       let current=panel.querySelector('[data-competition-skeleton-root]');
       if(!loading||confirmedEmpty(panel,root.faCompetitionContext,root.faCompetitionRoute?.get?.())){current?.remove();return;}
-      const preview=root.faDebugEnabled!==false&&root.document.documentElement.dataset.faDevSeasons!==undefined;
-      const season=Number((preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??root.faFixturesInitialProgress?.currentSeason??1);
+      const preview=root.faDebugEnabled===true&&root.document.documentElement.dataset.faDevSeasons!==undefined;
+      const season=Number((preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??(preview?root.faFixturesInitialProgress?.currentSeason:undefined)??1);
       if(view==='history'&&preview&&season===0){
         current?.remove();
         panel.querySelector('[data-history-empty]')?.removeAttribute('hidden');
@@ -45,8 +45,8 @@
         if(template){current?.remove();panel.append(template.content.cloneNode(true));current=panel.querySelector('[data-competition-skeleton-root]');root.faAppRenderLanguage?.();}
       }
       if(view==='history'&&current?.querySelectorAll){
-        const progress=root.faFixturesInitialProgress||{},knownSeason=(preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??progress.currentSeason,season=Number(knownSeason??1);
-        const day=root.faDevWorldClockSnapshot?.current?.day??progress.day,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
+        const progress=preview?(root.faFixturesInitialProgress||{}):{},knownSeason=(preview?root.document.documentElement.dataset.faDevCurrentSeason:undefined)??progress.currentSeason,season=Number(knownSeason??1);
+        const day=preview?(root.faDevWorldClockSnapshot?.current?.day??progress.day):undefined,last=Number(current.dataset.skeletonLastLeagueDay),rounds=Number(current.dataset.skeletonLeagueRounds);
         const knownCompleted=knownSeason!==undefined&&(day!==undefined||progress.matchdays!==undefined);
         const completed=Math.max(0,season-1+((last>0&&day>=last)||(!day&&rounds>0&&progress.matchdays>=rounds)?1:0));
         const archive=current.querySelector('.app-history-dev-archive');

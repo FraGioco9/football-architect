@@ -96,6 +96,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
+    // Fixture uses explicit DEV choice; an existing OFF remains unchanged.
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -800,12 +802,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?matchday=17'");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(advancedIndex+1));
     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=17');
-    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings?season=3');
+    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings');
     await run("document.querySelector('.club-competition-name a').click()");
     await wait("location.pathname==='/competitions/it-1/standings'&&window.faCompetitionContext?.selectedSeason===3&&window.faCompetitionContext?.seasonData?.season===3&&document.documentElement.dataset.faStandingsLoading==='false'");
     assert.deepEqual(await run("[...document.querySelectorAll('#app-standings-body tr[data-world-club]')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])"),advanced.rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),'Club -> Standings preserves the displayed season and full table');
     await visit('/clubs/it/1/overview',devOrigin);
-    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings?season=3'");
+    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings'");
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
     await wait("document.querySelector('.club-competition-next a')===null&&[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')");
     assert.equal(await run("[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')"),true,'Reset cannot leave a fabricated club position');
