@@ -101,7 +101,7 @@ try{
    assert.equal(pending.place,'','city and country remain anonymous until catalog response');
    assert.equal(pending.tabs.length,5);
    assert.equal(pending.tabs.filter(tab=>tab.selected==='page').length,1);
-   assert.equal(pending.tabs.find(tab=>tab.selected==='page').href,'/clubs/'+country+'/'+id+'/'+view);
+   assert.equal(pending.tabs.find(tab=>tab.selected==='page').href,'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=info':''));
    assert.equal(pending.falseEmpty,false);
    assert.equal(pending.error,false);assert.equal(pending.ready,false);assert.equal(pending.visible,true);
    await page.evaluate(()=>window.clubFirstPaintNodes={
