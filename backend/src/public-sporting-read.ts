@@ -77,9 +77,10 @@ export function deriveInternationalClubStatus(
 }
 async function readPublicProjection(db:Database,competitionId:string,selectedSeason:number,calendarDay?:number){
  const clubKey=competitionId.startsWith('club:')?competitionId.slice('club:'.length):null;
- if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey)))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
+ const fixturesClubKey=competitionId.startsWith('club-fixtures:')?competitionId.slice('club-fixtures:'.length):null;
+ if((competitionId!=='world'&&!competitionPattern.test(competitionId)&&!(clubKey&&clubPattern.test(clubKey))&&!(fixturesClubKey&&clubPattern.test(fixturesClubKey)))||!Number.isSafeInteger(selectedSeason)||selectedSeason<1||competitionId==='world'&&(typeof calendarDay!=='number'||!Number.isInteger(calendarDay)||calendarDay<1||calendarDay>56))throw new ApiError(404,'not_found');
  const world=await readWorld(db);
- const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:clubKey?{clubKey}:{competitionId}),selectedSeason,world};
+ const base={schemaVersion:1 as const,providerId:'authoritative-world' as const,...(competitionId==='world'?{scope:'calendar' as const,day:calendarDay}:clubKey?{clubKey}:fixturesClubKey?{clubKey:fixturesClubKey}:{competitionId}),selectedSeason,world};
  const empty=async(status:'empty'|'unavailable',reason:string)=>{
   await unchanged(db,world);
   return {...base,status,reason,provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
@@ -131,6 +132,27 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    if(await canonicalHash(JSON.parse(summary.summary_json))!==summary.summary_hash)invalid();
   }else if(archive){
    if(viewedWorld.day!==56||archive.generation!==world.generation)invalid();
+  }
+  // Read one validated world and one season evidence set, not a club history
+  // request plus a separate full projection for every competition.
+  if(fixturesClubKey){
+   const affiliations=evidence.snapshot.bindings.filter(b=>b.clubIds.includes(fixturesClubKey));
+   const domestic=affiliations.filter(b=>!b.competitionId.startsWith('int-'));
+   if((affiliations.length>0&&domestic.length!==1)||affiliations.length>2||
+     new Set(affiliations.map(b=>b.competitionId)).size!==affiliations.length)invalid();
+   const plans=[...state.ties.values()],competitionIds=new Set(affiliations.map(b=>b.competitionId));
+   const all=[...evidence.schedule.fixtures,...plans.flatMap(p=>p.fixtures.map(item=>item.fixture))];
+   const fixtures=projectFixtures(all.filter(f=>f.homeClubId===fixturesClubKey||f.awayClubId===fixturesClubKey),
+    plans,storedResults).sort((a,b)=>a.day-b.day||a.competitionId.localeCompare(b.competitionId,'en')||
+     a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
+   if(fixtures.some(f=>!competitionIds.has(f.competitionId)||
+     (f.result!==null)!==(f.day<=viewedWorld.day)))invalid();
+   const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},
+    competitions:[...competitionIds],fixtures};
+   await unchanged(db,world);
+   return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
+    provenance:{kind:'authoritative' as const,resultAuthority:'temporary-score-v1' as const,
+     sourceRef:'club-fixtures:'+world.generation+':season:'+selectedSeason+':'+evidence.calendar.calendar_hash},data};
   }
   // One validated snapshot/progression reconstructs every current club membership.
   // Avoid four independent full competition projections and their repeated D1 reads.
@@ -208,6 +230,11 @@ export function readPublicSportingSeason(db:Database,competitionId:string,select
 }
 export function readPublicCalendarDay(db:Database,selectedSeason:number,day:number){return readPublicProjection(db,'world',selectedSeason,day)}
 
+/** One read-only, canonically validated club-season fixtures response. */
+export function readPublicClubFixtures(db:Database,clubKey:string,selectedSeason:number){
+ if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
+ return readPublicProjection(db,'club-fixtures:'+clubKey,selectedSeason);
+}
 /** Compact, validated club overview: exactly one public HTTP request per selected season. */
 export function readPublicClubOverview(db:Database,clubKey:string,selectedSeason:number){
  if(!clubPattern.test(clubKey))throw new ApiError(404,'not_found');
