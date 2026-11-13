@@ -38,12 +38,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
- let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
+ let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,mockReadyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
    if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
    if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
+   if(path==='/api/clubs/IT-1/roster'&&mockReadyRoster){
+    res.writeHead(200,{'Content-Type':'application/json'});
+    res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]}));return;
+   }
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
    if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
@@ -476,11 +480,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster?view=info');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Home'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Home'});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/overview');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight'});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster?view=info');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
     assert.notEqual(await run("getComputedStyle(document.activeElement).outlineStyle"),'none');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'End'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'End'});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/history');
@@ -528,9 +532,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
      assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),view==='history'?'':view==='roster'?'?season=2&matchday=7&view=info':'?season=2&matchday=7');
+     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
     }
+    mockReadyRoster=true;
     await visit('/clubs/it/1/roster?view=info');
+    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
     assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
@@ -581,6 +587,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
     // Real browser: pending View controls are grey, have no href/focus target,
     // cannot navigate, and become enabled when the API delivers valid players.
+    mockReadyRoster=false;
     holdRosterResponse=true;
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
     await visit('/clubs/it/1/roster?view=technical');
@@ -606,13 +613,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     }
     await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
-    assert.equal(await run('location.search'),'?view=technical','loading subviews cannot navigate');
+    assert.equal(await run('location.search'),'','loading subviews cannot navigate; stay at /roster');
     for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
     assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
     holdRosterResponse=false;
     const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
     blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
-    await wait("document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
+    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
+    assert.equal(await run("document.querySelector('.club-roster [aria-selected=true]')?.dataset.clubRosterView"),'info','successful response activates Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
     await wait("location.search==='?view=mental'");
@@ -624,6 +632,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      await visit('/clubs/it/1/roster?view='+view);
      await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
+     assert.equal(await run('location.search'),'','empty verified squad stays /roster');
      const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");
      const emptyWords={en:'No players are currently assigned to this club.',de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',es:'Actualmente no hay jugadores asignados a este club.',fr:'Aucun joueur n’est actuellement affecté à ce club.',it:'Nessun giocatore è attualmente assegnato a questo club.'};
      assert.equal(emptyState.text,emptyWords[emptyState.lang]||emptyWords.en,'empty roster copy at '+width);
@@ -665,7 +674,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
 
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
-    await run('document.querySelector(".club-tabs a[href*=\'/roster?view=info\']").click()');
+    await run('document.querySelector(".club-tabs a[href$=\'/roster\']").click()');
     assert.equal(await run("location.pathname.endsWith('/roster')"),true);
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Click retains focus on the replacement active tab');
     assert.equal(await run("document.querySelector('.club-header .app-club-crest-image')===window.__clubHeaderCrest"),true,'Tab navigation must preserve the loaded header crest');
@@ -696,7 +705,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      devManifestDelay=150;
      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
-     await run("document.querySelector('.club-tabs a[href*=\"/roster?view=info\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
+     await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
      await wait("document.querySelector('[data-club-position]')?.textContent==="+JSON.stringify(englishOrdinal(index+1)));
      devManifestDelay=0;
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
@@ -931,7 +940,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   hold=true;await visit();await wait("document.querySelectorAll('.club-fixture-loading').length===6");
   const before=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");
   await wait('true');for(let i=0;i<100&&!held.length;i++)await delay(20);assert.ok(held.length,'canonical season request is pending');
-  await run("document.querySelector('.club-tabs a[href*=\"/roster?view=info\"]').click()");held.splice(0).forEach(send=>send());hold=false;
+  await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click()");held.splice(0).forEach(send=>send());hold=false;
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
