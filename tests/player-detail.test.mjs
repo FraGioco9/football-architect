@@ -111,6 +111,8 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
+ assert.match(script,/statusNode\.hidden=state==='loading'\|\|state==='ready'\|\|state==='not-found'/);
+ assert.doesNotMatch(script,/state==='not-found'\?copy\.notFound/);
  assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 

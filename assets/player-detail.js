@@ -240,8 +240,9 @@
   for(const tier of ['core','support'])panel.querySelector('[data-detail-legend-label="'+tier+'"]').textContent=e[tier];
   panel.querySelector('[data-detail-legend-title]').textContent=e.legend;
   renderRoleHighlights();
-  statusNode.hidden=state==='loading'||state==='ready';
-  statusNode.textContent=statusNode.hidden?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
+  // The page heading already reports not-found. Avoid repeating it at the bottom.
+  statusNode.hidden=state==='loading'||state==='ready'||state==='not-found';
+  statusNode.textContent=statusNode.hidden?'':state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
   // Show the separator and age only when a player is loaded.
   panel.querySelector('.app-player-detail-header-separator').hidden=!player;
   ageNode.hidden=!player;
