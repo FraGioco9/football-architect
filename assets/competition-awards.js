@@ -74,7 +74,7 @@ function render(context){
  const current=panel.querySelector?.(":scope > .fa-awards");
  if(current&&presentation===lastPresentation){
   // A first-paint shell may coexist with already-hydrated cards on route changes.
-  panel.querySelector('[data-competition-skeleton-root]')?.remove();
+  panel.querySelector?.('[data-competition-skeleton-root]')?.remove();
   window.faAppRenderLanguage?.();return;
  }
  const wrap=el("div","fa-awards");
@@ -108,7 +108,7 @@ function render(context){
  else panel.replaceChildren(wrap);
  // In the DOM-sync branch, replacing card contents does not remove siblings.
  // Discard the first-paint skeleton only after live award cards are mounted.
- panel.querySelector('[data-competition-skeleton-root]')?.remove();
+ panel.querySelector?.('[data-competition-skeleton-root]')?.remove();
  lastPresentation=presentation;
  window.faAppRenderLanguage?.();
 }
