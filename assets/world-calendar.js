@@ -167,11 +167,16 @@
   updateClock(window.faDevCalendarClockSnapshot??null);
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
-    const p=new URLSearchParams();
+    const p=new URLSearchParams(window.location?.search||'');
     const season=window.faCalendarSelectedSeason?.()??Number(root.dataset.calendarSeason);
-    if(season)p.set('season',String(season));
+    const current=Math.max(1,window.faWorldState?.get?.().current?.season??season);
+    const choice=window.faRoutesRegistry?.resolveSeasonQuery(p,current);
+    if(season&&(season!==current||choice?.explicit))p.set('season',String(season));
+    else p.delete('season');
+    p.delete('day');
     p.set('calendarView',state.view);
     if(state.view==='week'&&root.dataset.calendarWeekPending!=='true')p.set('week',String(Math.ceil(state.day/7)));
+    else p.delete('week');
     return '/calendar?'+p.toString();
   };
   const saveUrl=push=>{
