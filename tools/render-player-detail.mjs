@@ -1,22 +1,38 @@
-// Canonical player-detail first-paint shell. All player data is API-owned.
-const groups=['technical','mental','physical','goalkeeping'];
-const overview=['nationality','secondary_nationality','age','positions','height_cm','preferred_foot'];
+/* #502: Club-style player profile Overview, with reserved first-paint geometry. */
+const groupFields={"technical":["passing","technique","dribbling","shooting","crossing","tackling","marking","heading"],"mental":["vision","positioning","decisions","composure"],"physical":["speed","strength","stamina","agility"],"goalkeeping":["gk_reflexes","gk_handling","gk_positioning","gk_aerial"]};
+const infoFields=["nationality","secondary_nationality","age","height_cm","preferred_foot"];
+const titleMap={"technical":"Technical","mental":"Mental","physical":"Physical","goalkeeping":"Goalkeeper"};
+const attrNames={"passing":"Passing","technique":"Technique","dribbling":"Dribbling","shooting":"Shooting","crossing":"Crossing","tackling":"Tackling","marking":"Marking","heading":"Heading","vision":"Vision","positioning":"Positioning","decisions":"Decisions","composure":"Composure","speed":"Speed","strength":"Strength","stamina":"Stamina","agility":"Agility","gk_reflexes":"Reflexes","gk_handling":"Handling","gk_positioning":"Positioning","gk_aerial":"Aerial"};
+const infoNames={"nationality":"Nationality","secondary_nationality":"Second nationality","age":"Age","height_cm":"Height","preferred_foot":"Preferred foot"};
 function detailPanel(){
- const fields=overview.map(key=>'<div class="app-player-detail-field"><dt data-detail-label="'+key+'">&nbsp;</dt><dd data-detail-value="'+key+'"><span class="app-skeleton-bar" aria-hidden="true"></span></dd></div>').join('\n');
- const skills=Array.from({length:8},(_,i)=>'<div class="app-player-detail-field" data-detail-attr-slot="'+i+'"><dt>&nbsp;</dt><dd><span class="app-skeleton-bar" aria-hidden="true"></span></dd></div>').join('\n');
- const tabs=groups.map((key,i)=>'<button type="button" class="app-competition-tab app-players-group'+(i===0?' is-active':'')+'" role="tab" aria-selected="'+(i===0)+'" data-detail-group="'+key+'">'+key+'</button>').join('\n');
+ const skeleton=()=>'<span class="app-skeleton-bar" aria-hidden="true"></span>';
+ const positionRows=['primary','secondary'].map((key)=>'<div class="app-player-detail-position-line"><dt data-detail-position-label="'+key+'">'+(key==='primary'?'Primary position':'Secondary positions')+'</dt><dd data-detail-position-value="'+key+'">'+skeleton()+'</dd></div>').join('\n');
+ const infoRows=infoFields.map(key=>'<div class="app-player-detail-info-line"><dt data-detail-label="'+key+'">'+infoNames[key]+'</dt><dd data-detail-value="'+key+'">'+skeleton()+'</dd></div>').join('\n');
+ const columns=Object.entries(groupFields).map(([group,keys])=>'<section class="app-player-detail-attribute-group" data-detail-attribute-group="'+group+'"><h3 data-detail-group-title="'+group+'">'+titleMap[group]+'</h3><dl>'+keys.map(key=>'<div class="app-player-detail-attribute-line"><dt data-detail-attr-label="'+key+'">'+attrNames[key]+'</dt><dd data-detail-attr-value="'+key+'">'+skeleton()+'</dd></div>').join('')+'</dl></section>').join('\n');
+ const viewTabs=['overview','stats','history','progression'].map((view,i)=>'<button type="button" class="app-competition-tab'+(i===0?' is-active':'')+'" role="tab" data-detail-view="'+view+'" aria-selected="'+(i===0)+'"'+(i===0?' tabindex="0"':' disabled aria-disabled="true" tabindex="-1"')+'>'+view.charAt(0).toUpperCase()+view.slice(1)+'</button>').join('');
+ const pitch='<svg data-detail-pitch class="app-player-detail-pitch" viewBox="0 0 240 330" role="img" aria-label="Playable positions" xmlns="http://www.w3.org/2000/svg">'
+  +'<rect width="240" height="330" rx="5" fill="#246A4C"/>'
+  +Array.from({length:11},(_,i)=>'<rect x="0" y="'+(i*30)+'" width="240" height="15" fill="#FFFFFF" opacity=".035"/>').join('')
+  +'<g fill="none" stroke="#FFFFFF" stroke-width="1.4" opacity=".72"><rect x="9" y="9" width="222" height="312"/><path d="M9 165H231M66 9V55H174V9M96 9V26H144V9M66 321V275H174V321M96 321V304H144V321"/><circle cx="120" cy="165" r="34"/><path d="M97 55 A24 24 0 0 0 143 55M97 275 A24 24 0 0 1 143 275"/></g>'
+  +'<g fill="#fff" opacity=".9"><circle cx="120" cy="36" r="2.5"/><circle cx="120" cy="294" r="2.5"/><circle cx="120" cy="165" r="2"/></g><g data-detail-pitch-markers></g></svg>';
+ const silhouette='<svg class="app-player-detail-silhouette" viewBox="0 0 160 181" fill="none" aria-hidden="true" focusable="false"><circle cx="80" cy="62" r="31" fill="currentColor"/><path d="M29 178v-21c0-34 17-55 43-62l8 8 8-8c26 7 43 28 43 62v21H29Z" fill="currentColor"/></svg>';
  return '<div class="app-player-detail-wrap" data-player-detail>\n'
- +'<header class="app-player-detail-heading"><div class="app-player-detail-identity">'
- +'<h1 id="player-detail-title" class="app-page-title"><span data-detail-name><span class="app-skeleton-bar app-player-detail-name-skeleton" aria-hidden="true"></span></span></h1>'
- +'<p data-detail-subtitle class="app-player-detail-subtitle">&nbsp;</p></div>'
- +'<a class="app-link app-link-secondary app-player-detail-back" data-detail-back href="/players">Back to players</a></header>\n'
- +'<nav class="app-competition-tabs app-players-tabs" role="tablist" aria-label="Player views">'
- +'<button type="button" class="app-competition-tab is-active" role="tab" data-detail-view="overview" aria-selected="true">Overview</button>'
- +'<button type="button" class="app-competition-tab" role="tab" data-detail-view="attributes" aria-selected="false">Attributes</button></nav>\n'
- +'<div class="app-players-toolbar"><nav class="app-players-groups" role="tablist" aria-label="Attribute groups">'+tabs+'</nav></div>\n'
- +'<section class="app-player-detail-content" data-detail-panel="overview" aria-label="Player overview"><dl class="app-player-detail-grid">'+fields+'</dl></section>\n'
- +'<section class="app-player-detail-content" data-detail-panel="attributes" aria-label="Player attributes" hidden><dl class="app-player-detail-grid">'+skills+'</dl></section>\n'
- +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite"></p></div>';
+  +'<header class="app-player-detail-heading"><div class="app-player-detail-portrait">'+silhouette+'</div>'
+  +'<div class="app-player-detail-identity"><h1 id="player-detail-title" class="app-page-title"><span data-detail-name><span class="app-skeleton-bar app-player-detail-name-skeleton" aria-hidden="true"></span></span></h1>'
+  +'<p class="app-player-detail-role" data-detail-role><span class="app-skeleton-bar" aria-hidden="true"></span></p>'
+  +'<p class="app-player-detail-club"><span data-detail-club-label>Club</span>: <span data-detail-club>—</span></p>'
+  +'<p class="app-player-detail-subtitle" data-detail-subtitle>&nbsp;</p></div>'
+  +'<a class="app-player-detail-back" data-detail-back href="/players">Back to players</a></header>\n'
+  +'<nav class="app-competition-tabs club-tabs app-player-detail-tabs" role="tablist" aria-label="Player views">'+viewTabs+'</nav>\n'
+  +'<div class="app-player-detail-overview" data-detail-panel="overview">'
+  +'<div class="app-player-detail-top">'
+  +'<section class="app-panel app-player-detail-positions" aria-labelledby="player-detail-positions-title"><h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions</h2>'
+  +'<div class="app-player-detail-position-body"><div class="app-player-detail-pitch-holder">'+pitch+'</div><dl class="app-player-detail-position-list">'+positionRows+'</dl></div></section>'
+  +'<section class="app-panel app-player-detail-info" aria-labelledby="player-detail-info-title"><h2 id="player-detail-info-title" data-detail-section-title="info">Info</h2><dl class="app-player-detail-info-list">'+infoRows+'</dl></section>'
+  +'</div>'
+  +'<section class="app-panel app-player-detail-attributes" aria-labelledby="player-detail-attributes-title"><h2 id="player-detail-attributes-title" data-detail-section-title="attributes">Attributes</h2>'
+  +'<div class="app-player-detail-attribute-columns">'+columns+'</div></section></div>'
+  +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite"></p></div>';
 }
 export function renderPlayerDetailPage(html,mode){
  if(mode!=='public'&&mode!=='preview')throw new TypeError('invalid_detail_mode');

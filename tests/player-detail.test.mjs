@@ -35,8 +35,15 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/src="\/assets\/player-detail.js" defer/);
   assert.match(html,/href="\/assets\/player-detail.css"/);
   assert.match(html,/class="app-skeleton-bar app-player-detail-name-skeleton"/);
-  assert.equal((html.match(/data-detail-value="/g)||[]).length,6);
-  assert.equal((html.match(/data-detail-attr-slot="/g)||[]).length,8);
+  assert.equal((html.match(/data-detail-value="/g)||[]).length,5);
+  assert.equal((html.match(/data-detail-attr-value="/g)||[]).length,20);
+  assert.equal((html.match(/data-detail-attribute-group="/g)||[]).length,4);
+  assert.equal((html.match(/class="app-panel app-player-detail-/g)||[]).length,3);
+  assert.match(html,/data-detail-pitch-markers/);
+  assert.match(html,/class="app-player-detail-silhouette"/);
+  for(const view of ['overview','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
+  for(const view of ['stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
+  assert.doesNotMatch(html,/data-detail-view="attributes"|data-detail-group="technical"/);
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
   if(mode==='preview'){
    assert.match(html,/name="robots" content="noindex,nofollow"/);
@@ -75,7 +82,7 @@ test('#502 preview generated link retains only routing context and never persist
  assert.match(script,/projected\.attributes=Object\.fromEntries/);
  assert.match(script,/draftPattern\.test/);
  assert.match(script,/cache:'no-store'/);
- assert.match(script,/history\.pushState/);
+ assert.match(script,/data-detail-pitch-markers/);
  assert.match(script,/addEventListener\('popstate'/);
  assert.match(script,/addEventListener\('pageshow'/);
  assert.doesNotMatch(script,/\/api\/admin\/players\/commit|\/api\/admin\/players\/preview/);
@@ -85,5 +92,5 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
- assert.match(script,/for\(const node of panel\.querySelectorAll\('\[data-detail-value\]'\)\)setContent\(node,'—'\)/);
+ assert.match(script,/\[data-detail-value\],\[data-detail-position-value\],\[data-detail-attr-value\]/);
 });

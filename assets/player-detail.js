@@ -1,10 +1,10 @@
-/* #502: one read-only player detail UI for persisted IDs and Admin draft candidates. */
+/* #502 — Club-style player Overview shared by public and protected draft detail. */
 (()=>{'use strict';
  const root=document.querySelector('[data-player-detail-mode]');if(!root)return;
  const preview=root.dataset.playerDetailMode==='preview',panel=root.querySelector('[data-player-detail]');
- const nameNode=panel.querySelector('[data-detail-name]'),subtitle=panel.querySelector('[data-detail-subtitle]');
+ const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
  const back=panel.querySelector('[data-detail-back]'),statusNode=panel.querySelector('[data-detail-status]');
- const views=[...panel.querySelectorAll('[data-detail-view]')],groupTabs=[...panel.querySelectorAll('[data-detail-group]')];
+ const views=[...panel.querySelectorAll('[data-detail-view]')];
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
  const attrKeys=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={
@@ -21,8 +21,17 @@
   es:{back:'Volver a jugadores',backPreview:'Volver a vista previa',backGenerator:'Volver al generador',overview:'Resumen',attributes:'Atributos',groups:['Técnicos','Mentales','Físicos','Portero'],fields:['Nacionalidad','Segunda nacionalidad','Edad','Posiciones','Altura','Pie preferido'],loading:'Cargando jugador…',notFound:'Jugador no encontrado',expired:'Vista previa caducada o no disponible. Vuelve al generador.',denied:'Se requiere permiso de administrador',error:'No se pudo cargar el jugador',left:'Izquierdo',right:'Derecho',preview:'Vista previa generada · sin guardar',player:'Jugador'},
   fr:{back:'Retour aux joueurs',backPreview:'Retour à l’aperçu',backGenerator:'Retour au générateur',overview:'Vue d’ensemble',attributes:'Attributs',groups:['Techniques','Mentaux','Physiques','Gardien'],fields:['Nationalité','Seconde nationalité','Âge','Postes','Taille','Pied préféré'],loading:'Chargement du joueur…',notFound:'Joueur introuvable',expired:'Aperçu expiré ou indisponible. Revenez au générateur.',denied:'Autorisation Admin requise',error:'Impossible de charger le joueur',left:'Gauche',right:'Droit',preview:'Aperçu généré · non enregistré',player:'Joueur'}
  };
+
+ const extra={
+  en:{views:['Overview','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions'},
+  it:{views:['Panoramica','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili'},
+  de:{views:['Übersicht','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen'},
+  es:{views:['Resumen','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles'},
+  fr:{views:['Vue d’ensemble','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables'}
+ };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const tr=()=>copies[language()]||copies.en;
+ const ex=()=>extra[language()]||extra.en;
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
@@ -31,9 +40,9 @@
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
  const validPreview=preview&&draftPattern.test(context.draftId||'')&&numeric(context.index)&&Number(context.index)<=1000
   &&[...params.keys()].every(k=>['draftId','index','returnView','returnGroup','returnPage','returnScroll','returnSort','returnOrder','view','group'].includes(k));
- let player=null,state='loading',view='overview',group='technical',request=0;
- function fromUrl(){view=params.get('view')==='attributes'?'attributes':'overview';group=Object.hasOwn(groups,params.get('group'))?params.get('group'):'technical';}
- function updateUrl(){const url=new URL(location.href);url.searchParams.delete('view');url.searchParams.delete('group');if(view==='attributes'){url.searchParams.set('view',view);url.searchParams.set('group',group);}history.pushState(null,'',url.pathname+url.search+url.hash);}
+ const pitchCoords=Object.freeze({GK:[120,294],RB:[198,261],RWB:[210,213],CB:[120,261],LWB:[30,213],LB:[42,261],DM:[120,216],RM:[194,168],CM:[120,168],LM:[46,168],RW:[194,83],AM:[120,116],LW:[46,83],ST:[120,54]});
+ const attrGroups=['technical','mental','physical','goalkeeping'];
+ let player=null,state='loading',request=0;
  function previewReturnUrl(){
   const url=new URL('/admin/players/preview',location.origin);url.searchParams.set('draftId',context.draftId);
   const hash=new URLSearchParams();
@@ -49,64 +58,81 @@
   return url.pathname+url.search+url.hash;
  }
  function countryNode(code){
-  const wrapper=document.createElement('span');
+  const wrapper=document.createElement('span');wrapper.className='app-player-detail-country';
   if(!code){wrapper.textContent='—';return wrapper;}
   const countries=window.faPlayersNationality||{},flag=countries.flags?.[code];
-  if(flag){const img=document.createElement('img');img.className='app-player-detail-flag app-players-nationality-flag';img.dataset.playerCountry=code;img.src='/assets/flags/'+flag+'.svg';img.width=24;img.height=18;img.alt=typeof countries.name==='function'?countries.name(code):code;img.tabIndex=0;wrapper.append(img);}
+  if(flag){
+   const img=document.createElement('img');img.className='app-player-detail-flag app-players-nationality-flag';
+   img.dataset.playerCountry=code;img.src='/assets/flags/'+flag+'.svg';img.width=24;img.height=18;
+   img.alt=typeof countries.name==='function'?countries.name(code):code;img.tabIndex=0;wrapper.append(img);
+  }
   wrapper.append(document.createTextNode(code));return wrapper;
  }
  function displayValue(key){
   const copy=tr();
   if(key==='nationality'||key==='secondary_nationality')return countryNode(player[key]);
-  if(key==='positions')return [player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
   if(key==='height_cm')return Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—';
   if(key==='preferred_foot')return player.preferred_foot==='left'?copy.left:player.preferred_foot==='right'?copy.right:'—';
   return Number.isSafeInteger(player[key])?String(player[key]):'—';
  }
- function setContent(node,value){node.replaceChildren(typeof value==='string'?document.createTextNode(value):value);}
+ function setContent(node,value){if(node)node.replaceChildren(typeof value==='string'?document.createTextNode(value):value);}
+ function positionCodes(){
+  if(!player)return[];
+  return [player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter((code,index,items)=>Object.hasOwn(pitchCoords,code)&&items.indexOf(code)===index);
+ }
+ function renderPitch(){
+  const markers=panel.querySelector('[data-detail-pitch-markers]');if(!markers)return;
+  markers.replaceChildren();
+  if(!player)return;
+  const ns='http://www.w3.org/2000/svg';
+  for(const code of positionCodes()){
+   const [x,y]=pitchCoords[code],primary=code===player.primary_position;
+   const g=document.createElementNS(ns,'g');g.setAttribute('class','app-player-detail-pitch-marker'+(primary?' is-primary':''));
+   const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
+   const label=document.createElementNS(ns,'text');label.setAttribute('x',String(x));label.setAttribute('y',String(y+4));label.setAttribute('text-anchor','middle');label.textContent=code;
+   const title=document.createElementNS(ns,'title');title.textContent=(primary?ex().primary:ex().secondary)+': '+code;
+   g.append(title,circle,label);markers.append(g);
+  }
+ }
  function render(){
-  const copy=tr();
-  document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
+  const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   back.textContent=preview?(state==='expired'||state==='denied'?copy.backGenerator:copy.backPreview):copy.back;
   back.href=preview?(state==='expired'||state==='denied'?'/admin/players':validPreview?previewReturnUrl():'/admin/players'):'/players';
-  views.forEach(tab=>{const active=tab.dataset.detailView===view;tab.textContent=copy[tab.dataset.detailView];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
-  groupTabs.forEach((tab,i)=>{const active=tab.dataset.detailGroup===group;tab.textContent=copy.groups[i];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
-  for(const section of panel.querySelectorAll('[data-detail-panel]'))section.hidden=section.dataset.detailPanel!==view;
-  const fieldKeys=['nationality','secondary_nationality','age','positions','height_cm','preferred_foot'];
-  panel.querySelectorAll('[data-detail-label]').forEach((node,i)=>{node.textContent=copy.fields[i];});
+  views.forEach((tab,i)=>{tab.textContent=e.views[i];tab.classList.toggle('is-active',i===0);tab.setAttribute('aria-selected',String(i===0));});
+  for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
+   panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
+  }
+  panel.querySelector('[data-detail-position-label="primary"]').textContent=e.primary;
+  panel.querySelector('[data-detail-position-label="secondary"]').textContent=e.secondary;
+  panel.querySelector('[data-detail-club-label]').textContent=e.club;
+  panel.querySelector('[data-detail-pitch]').setAttribute('aria-label',e.positionLabel);
+  for(const [i,key] of ['nationality','secondary_nationality','age','height_cm','preferred_foot'].entries()){
+   panel.querySelector('[data-detail-label="'+key+'"]').textContent=copy.fields[i<2?i:i+1];
+  }
+  for(const [i,key] of attrGroups.entries())panel.querySelector('[data-detail-group-title="'+key+'"]').textContent=copy.groups[i];
+  for(const [i,key] of attrKeys.entries())panel.querySelector('[data-detail-attr-label="'+key+'"]').textContent=labels[i]||key;
   statusNode.textContent=state==='loading'?copy.loading:state==='ready'?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
   if(!player){
    if(state!=='loading'){
-    setContent(nameNode,copy.notFound);
+    setContent(nameNode,copy.notFound);roleNode.textContent='—';
     subtitle.textContent=preview?copy.preview:'';
-    for(const node of panel.querySelectorAll('[data-detail-value]'))setContent(node,'—');
-    for(const slot of panel.querySelectorAll('[data-detail-attr-slot]')){
-     slot.querySelector('dt').textContent='\u00a0';
-     slot.querySelector('dd').textContent='—';
-    }
+    for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-position-value],[data-detail-attr-value]'))setContent(node,'—');
    }
-   return;
+   renderPitch();return;
   }
   setContent(nameNode,player.display_name||[player.first_name,player.last_name].filter(Boolean).join(' ')||copy.player);
-  subtitle.textContent=preview?copy.preview:[player.primary_position,player.career_status].filter(Boolean).join(' · ');
-  fieldKeys.forEach(key=>setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key)));
-  const keys=groups[group],labels=(attrLabels[language()]||attrLabels.en).split('|');
-  panel.querySelectorAll('[data-detail-attr-slot]').forEach((slot,i)=>{
-   const key=keys[i];slot.hidden=!key;if(!key)return;
-   slot.querySelector('dt').textContent=labels[attrKeys.indexOf(key)]||key;
-   slot.querySelector('dd').textContent=Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—';
-  });
- }
- function setTab(next,kind){
-  if(kind==='view'){if(view===next)return;view=next;}
-  else {if(group===next)return;group=next;}
-  updateUrl();render();
- }
- function keyTabs(event,tabs,kind){
-  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-  event.preventDefault();const idx=tabs.indexOf(event.target);
-  const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(idx+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-  tabs[next].focus();setTab(kind==='view'?tabs[next].dataset.detailView:tabs[next].dataset.detailGroup,kind);
+  roleNode.textContent=player.primary_position||'—';
+  subtitle.textContent=preview?copy.preview:'';
+  for(const key of ['nationality','secondary_nationality','age','height_cm','preferred_foot'])
+   setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key));
+  setContent(panel.querySelector('[data-detail-position-value="primary"]'),player.primary_position||'—');
+  const secondary=positionCodes().filter(code=>code!==player.primary_position);
+  setContent(panel.querySelector('[data-detail-position-value="secondary"]'),secondary.length?secondary.join(', '):'—');
+  for(const key of attrKeys){
+   const value=player.attributes?.[key];
+   setContent(panel.querySelector('[data-detail-attr-value="'+key+'"]'),Number.isSafeInteger(value)?String(value):'—');
+  }
+  renderPitch();
  }
  async function authorizedDraft(){
   const perms=await fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
@@ -131,15 +157,14 @@
  }
  async function load(){
   const ticket=++request;
-  // A cached preview document must never display stale private candidate data
-  // while rechecking the active Admin session and the live draft on pageshow.
+  // Protected draft detail must not expose bfcache-private candidate data
+  // until rechecking the active session and server-side draft on return.
   player=null;state='loading';
   if(preview)root.hidden=true;
   const skeleton=()=>{const bar=document.createElement('span');bar.className='app-skeleton-bar';bar.setAttribute('aria-hidden','true');return bar;};
-  nameNode.replaceChildren(skeleton());
+  nameNode.replaceChildren(skeleton());roleNode.replaceChildren(skeleton());
   subtitle.textContent='\u00a0';
-  for(const node of panel.querySelectorAll('[data-detail-value]'))node.replaceChildren(skeleton());
-  for(const node of panel.querySelectorAll('[data-detail-attr-slot] dd'))node.replaceChildren(skeleton());
+  for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-position-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
   render();
   try{
    if(preview&&!validPreview)throw Error('expired');
@@ -155,10 +180,7 @@
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
   if(preview)root.hidden=false;render();
  }
- fromUrl();
- views.forEach(tab=>{tab.addEventListener('click',()=>setTab(tab.dataset.detailView,'view'));tab.addEventListener('keydown',e=>keyTabs(e,views,'view'));});
- groupTabs.forEach(tab=>{tab.addEventListener('click',()=>setTab(tab.dataset.detailGroup,'group'));tab.addEventListener('keydown',e=>keyTabs(e,groupTabs,'group'));});
- window.addEventListener('popstate',()=>{const next=new URLSearchParams(location.search);view=next.get('view')==='attributes'?'attributes':'overview';group=Object.hasOwn(groups,next.get('group'))?next.get('group'):'technical';render();});
+ window.addEventListener('popstate',()=>{render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();
