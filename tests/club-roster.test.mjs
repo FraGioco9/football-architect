@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redundant Roster heading',()=>{
+test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes tab',()=>{
  const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs');
  assert.match(html,/class="club-roster club-first-paint-roster" aria-busy="true" data-roster-mode="overview" hidden/);
  assert.match(html,/app-players-table club-roster-table/);
  assert.match(html,/data-club-roster-view="info"/);
- assert.match(html,/data-club-roster-view="attributes"/);
+ for(const view of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-club-roster-view="'+view+'"'));
+ assert.equal((html.match(/data-club-roster-view="/g)||[]).length,5);
+ assert.doesNotMatch(html,/data-club-roster-view="attributes"|data-club-roster-group=|club-roster-toolbar|>Attributes<\/a>/);
  assert.match(html,/href="\?view=info" role="tab"/);
  assert.match(html,/href="\?view=technical" role="tab"/);
  assert.match(html,/data-club-roster-sort="positions"/);
@@ -20,15 +22,10 @@ test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redun
  const css=read('assets/club-page.css');
  assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
  assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:30px;min-height:30px/);
- assert.match(css,/\.club-roster-toolbar\{[^}]*height:auto;min-height:0/);
- assert.match(css,/\.club-roster \.club-roster-groups \.app-players-group\{[^}]*padding:5px 5px/);
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 7px/);
- assert.match(css,/\.club-roster\[data-roster-mode="overview"\] \.club-roster-toolbar\{display:none\}/);
+ assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 5px/);
+ assert.doesNotMatch(css,/\.club-roster-toolbar\{|\.club-roster-groups\{/);
 
- for(const group of ['technical','mental','physical','goalkeeping']){
-  assert.match(html,new RegExp('data-club-roster-group="'+group+'"'));
-  assert.match(generator,/club-roster-groups/);
- }
+ assert.doesNotMatch(generator,/club-roster-groups/);
  assert.match(html,/data-club-roster-label="5"/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
  assert.match(html,/roster\.hidden=view!=='roster'/);
@@ -36,7 +33,7 @@ test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redun
  assert.doesNotMatch(html,/<h2 data-club-roster-title>|<h2>Roster<\/h2>/);
  assert.doesNotMatch(html,/data-club-roster-pagination|class="club-roster-pagination"/);
 });
-test('CLUB-ROSTER-01 keeps all current players, across five locales and both subviews',async()=>{
+test('CLUB-ROSTER-01 keeps all current players, across five locales and five subviews',async()=>{
  const {default:model}=await import('../assets/club-model.js');
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const selected={countryId:'IT',clubId:1,view:'roster',base:'/clubs/it/1'};
@@ -49,7 +46,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
  const snapshot={source:'ready',clubKey:'IT-1',count:65,players};
  const locales=['en','de','es','fr','it'];
  const expectedOverview={en:'Info',de:'Info',es:'Info',fr:'Info',it:'Info'};
- const expectedAttributes={en:'Attributes',de:'Attribute',es:'Atributos',fr:'Attributs',it:'Attributi'};
+ const expectedCategories={en:['Technical','Mental','Physical','Goalkeeper'],de:['Technisch','Mental','Physisch','Torwart'],es:['Técnicos','Mentales','Físicos','Portero'],fr:['Techniques','Mentaux','Physiques','Gardien'],it:['Tecnici','Mentali','Fisici','Portiere']};
  for(const language of locales){
   const html=model.render(manifest,selected,language,'?view=info',null,1,null,snapshot);
   assert.equal((html.match(/class="club-roster-player-link"/g)||[]).length,65,language);
@@ -64,7 +61,8 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
   assert.match(html,/<\/nav><span class="club-roster-count">65 /);
 
   assert.match(html,new RegExp('>'+expectedOverview[language]+'<'));
-  assert.match(html,new RegExp('>'+expectedAttributes[language]+'<'));
+  for(const label of expectedCategories[language])assert.ok(html.includes('>'+label+'</a>'),language+': '+label);
+  assert.doesNotMatch(html,/data-club-roster-view="attributes"|club-roster-toolbar|club-roster-groups/);
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
   assert.ok(html.includes('65 '),language);
   for(const [group,length] of [['technical',11],['mental',7],['physical',7],['goalkeeping',7]]){
@@ -121,13 +119,13 @@ test('CLUB-ROSTER-01 orders all assigned players by the canonical pitch position
 test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mismatch',()=>{
  const js=read('assets/club-page.js');
  assert.match(js,/data-club-roster-view/);
- assert.match(js,/data-club-roster-group/);
+ assert.doesNotMatch(js,/data-club-roster-group/);
  assert.match(js,/data-club-roster-sort/);
  assert.match(js,/params\.get\('sort'\)!==key/);
  assert.match(js,/params\.get\('order'\)==='desc'/);
  assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);
  assert.match(js,/params\.delete\('view'\);params\.delete\('group'\);params\.set\('view',view\)/);
- assert.match(js,/const target=view==='info'\?'info':view==='attributes'\?'technical':group/);
+ assert.match(js,/const target=control\.dataset\.clubRosterView/);
  assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
  assert.match(js,/if\(!queryOnly\)refreshClubRoster/);
  assert.match(js,/status:Number\.isSafeInteger\(error\?\.status\)/);
