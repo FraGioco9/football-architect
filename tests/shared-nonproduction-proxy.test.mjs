@@ -31,10 +31,26 @@ test('HTTPS activation is explicit and rejects ambiguous, local and credentialed
  const res=await run(req(),()=>{throw Error('must not send')},{pool:undefined});assert.equal(res.status,503);
 });
 test('public world, seasons, fixtures/results and calendar reads never forward credentials or set cookies',async()=>{
- for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history']){
-  let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{n++;if(n===1)return context();assert.deepEqual(options.headers,{'x-fa-expected-pool':'dev-preview'});return {status:200,headers:{'set-cookie':['evil=1']},body:Buffer.from('{"world":{}}')}});
+ for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history','/api/clubs/IT-1/seasons/1/fixtures']){
+  let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{
+   n++;if(n===1)return context();
+   assert.equal(url.pathname,path,'shared bridge forwards the exact public URL');
+   assert.equal(options.method,'GET');
+   assert.deepEqual(options.headers,{'x-fa-expected-pool':'dev-preview'});
+   return {status:200,headers:{'set-cookie':['evil=1']},body:Buffer.from('{"world":{}}')};
+  });
   assert.equal(res.status,200);assert.equal(res.headers['set-cookie'],undefined);
  }
+});
+test('shared DEV blocks noncanonical Club Fixtures variants before network and accepts only anonymous GET',async()=>{
+ for(const path of ['/api/clubs/IT-1/seasons/0/fixtures','/api/clubs/IT-01/seasons/1/fixtures',
+  '/api/clubs/IT-1/seasons/1/fixtures?season=2','/api/clubs/IT-1/seasons/1/fixtures/other',
+  '/api/clubs/IT-1/seasons/9007199254740992/fixtures']){
+  let requests=0;const result=await run(req({path}),async()=>{requests++;throw Error('unexpected upstream call')});
+  assert.equal(result.status,path.includes('?')?403:404,path);assert.equal(requests,0,path);
+ }
+ const blocked=await run(req({path:'/api/clubs/IT-1/seasons/1/fixtures',method:'POST'}),async()=>{throw Error('POST must not be sent')});
+ assert.equal(blocked.status,405);
 });
 test('redirects, malformed/oversize context, upstream failures and unsafe cookies fail closed',async()=>{
  for(const bad of [{status:302,headers:{location:'https://evil.invalid'},body:Buffer.from('')},{status:200,headers:{},body:Buffer.from('not json')},{status:200,headers:{},body:Buffer.alloc(2000)}]){
