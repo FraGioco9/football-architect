@@ -51,7 +51,8 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  const script=read('assets/player-detail.js'),index=read('backend/src/index.ts');
  const publicApi=read('backend/src/public-players-read.ts');
  assert.match(directory,/link\.href='\/players\/'\+player\.id/);
- assert.match(directory,/link\.className='app-link app-player-name-link'/);
+ assert.match(directory,/link\.className='app-player-name-link'/);
+ assert.match(preview,/link\.className='app-player-name-link'/);
  assert.match(preview,/target\.searchParams\.set\('draftId',id\)/);
  assert.match(preview,/target\.searchParams\.set\('index',String\(index\+1\)\)/);
  assert.match(preview,/\/admin\/players\/preview\/player/);
