@@ -24,7 +24,7 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(html,/<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs"/);
  assert.match(html,/<\/nav><span class="club-roster-count"><span class="app-players-count-placeholder"/);
  const css=read('assets/club-page.css');
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\[aria-disabled="true"\]\{opacity:\.45;[^}]*pointer-events:none\}/);
+ assert.match(css,/\.app-body \.club-roster \.club-roster-tabs \.app-competition-tab\[aria-disabled="true"\]\{opacity:\.45;[^}]*background:transparent;cursor:default;pointer-events:none\}/);
  assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
  assert.match(css,/\.club-roster-view-row\{[^}]*height:42px;min-height:42px/);
  assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:32px;min-height:32px/);
@@ -135,6 +135,8 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and five sub
  const legacy=model.render(manifest,selected,'en','?view=attributes&group=mental',null,1,null,snapshot);
  assert.match(legacy,/data-roster-group="mental"/);
  const failed=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable'});
+ assert.equal((failed.match(/aria-disabled="true"/g)||[]).length,5,'API unavailable: keep tabs disabled');
+ assert.doesNotMatch(failed,/data-club-roster-view="info"[^>]*href=/);
  assert.match(failed,/temporarily unavailable/);
  const missing=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable',status:404});
  assert.match(missing,/Restart the local development server/);
@@ -182,4 +184,6 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
  assert.match(js,/if\(!queryOnly\)refreshClubRoster/);
  assert.match(js,/status:Number\.isSafeInteger\(error\?\.status\)/);
+ assert.match(js,/host\.querySelectorAll\('a\[href\]'\)/,'pending tabs must not enter href normalization');
+ assert.match(js,/if\(document\.documentElement\.dataset\.clubIdentityReady==='true'\)return/,'optional module errors keep hydrated identity');
 });
