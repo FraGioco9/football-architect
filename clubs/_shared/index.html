@@ -325,6 +325,21 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
    return th;
   }));
   for(const cell of table.tBodies[0].querySelectorAll('td[colspan]'))cell.colSpan=fields.length;
+  // Match the hydrated Roster: expose fades only at scrollable edges.
+  const subviewTabs=roster.querySelector('.club-roster-tabs');
+  const syncSubviewFade=()=>{
+   const max=Math.max(0,subviewTabs.scrollWidth-subviewTabs.clientWidth);
+   subviewTabs.dataset.canScrollLeft=String(max>1&&subviewTabs.scrollLeft>1);
+   subviewTabs.dataset.canScrollRight=String(max>1&&subviewTabs.scrollLeft<max-1);
+  };
+  const activeSubview=subviewTabs.querySelector('[aria-selected="true"]');
+  if(activeSubview){
+   const bounds=subviewTabs.getBoundingClientRect(),chosen=activeSubview.getBoundingClientRect();
+   if(chosen.right>bounds.right)subviewTabs.scrollLeft+=chosen.right-bounds.right;
+   else if(chosen.left<bounds.left)subviewTabs.scrollLeft+=chosen.left-bounds.left;
+  }
+  syncSubviewFade();
+  subviewTabs.addEventListener('scroll',syncSubviewFade,{passive:true});
  }
  const fixtures=document.querySelector('.club-fixtures');fixtures.hidden=view!=='fixtures';
  const fixtureLabels=JSON.parse(fixtures.dataset.labels)[locale];
