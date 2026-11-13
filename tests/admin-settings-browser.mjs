@@ -306,7 +306,28 @@ try{
     assert.equal(await page.locator('[data-detail-back]').getAttribute('href').then(href=>new URL(href,'http://app.localhost:2000').pathname),'/admin/players/preview');
     assert.equal(await page.locator('[data-player-detail-mode="preview"] .app-panel').count(),3,'Two Overview panels plus dedicated Info view');
     assert.equal(await page.locator('[data-detail-panel="overview"] .app-panel').count(),2,'Overview has Positions and Attributes side by side');
-    assert.equal(await page.locator('[data-detail-positions] > *').count(),1,'Positions contains only the pitch');
+    assert.equal(await page.locator('[data-detail-positions] > h2').innerText(),'Positions');
+    assert.equal(await page.locator('[data-detail-positions] .app-player-detail-pitch').count(),1);
+    assert.equal(await page.locator('[data-detail-positions] dl').count(),0,'No textual position list in the pitch panel');
+    assert.equal(await page.locator('[data-detail-status]').isVisible(),false,'No loading caption when the profile resolves');
+    const detailMetrics=await page.evaluate(()=>{
+     const panel=document.querySelector('[data-detail-positions]').getBoundingClientRect();
+     const attrs=document.querySelector('.app-player-detail-attributes').getBoundingClientRect();
+     const pitch=document.querySelector('.app-player-detail-pitch-holder').getBoundingClientRect();
+     const label=document.querySelector('.app-player-detail-attributes h2');
+     const rows=[...document.querySelectorAll('[data-detail-attribute-group="technical"] .app-player-detail-attribute-line')];
+     return {panelWidth:panel.width,pitchWidth:pitch.width,pitchCenter:(pitch.left+pitch.right)/2,
+      panelCenter:(panel.left+panel.right)/2,topDifference:Math.abs(panel.top-attrs.top),
+      headingFontSize:getComputedStyle(label).fontSize,
+      firstDivider:getComputedStyle(rows[0]).borderBottomWidth,lastDivider:getComputedStyle(rows.at(-1)).borderBottomWidth};
+    });
+    assert.ok(detailMetrics.pitchWidth>0&&detailMetrics.pitchWidth<=330,'Pitch fits reserved responsive width');
+    assert.ok(detailMetrics.pitchWidth<=detailMetrics.panelWidth,'Pitch cannot overflow its panel');
+    assert.ok(Math.abs(detailMetrics.pitchCenter-detailMetrics.panelCenter)<3,'Pitch centered horizontally');
+    assert.ok(detailMetrics.topDifference<2,'Positions and Attributes share their top row');
+    assert.equal(detailMetrics.headingFontSize,'22px');
+    assert.equal(detailMetrics.firstDivider,'1px');
+    assert.equal(detailMetrics.lastDivider,'0px');
     assert.equal(await page.locator('[data-detail-value]').count(),5,'Info contains five personal facts');
     assert.equal(await page.locator('[data-detail-attr-value]').count(),20,'Attributes contains 20 numeric skills');
     assert.equal(await page.locator('[data-detail-attribute-group]').count(),4,'Four skill columns');

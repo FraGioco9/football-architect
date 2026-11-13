@@ -51,7 +51,9 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.match(html,/data-detail-panel="overview" role="tabpanel"/);
   assert.match(html,/data-detail-panel="info" role="tabpanel"/);
   assert.match(html,/data-player-detail-first-paint/);
-  assert.match(html,/data-detail-positions aria-label="Positions"/);
+  assert.match(html,/data-detail-positions aria-labelledby="player-detail-positions-title"/);
+  assert.match(html,/<h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions<\/h2>/);
+  assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
   assert.equal((html.match(/data-detail-panel="/g)||[]).length,2);
   assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
@@ -150,4 +152,22 @@ test('#502 Overview and Info are independent views with reserved first paint and
  assert.match(renderer,/detailPanel\(preview\)/);
  assert.doesNotMatch(read('players/_shared/index.html'),/data-detail-back/);
  assert.match(read('admin/players/preview/player/index.html'),/data-detail-back/);
+});
+
+test('#502 skeleton footprint, pitch size, attribute separators and silent loading are stable',()=>{
+ const html=read('players/_shared/index.html');
+ const script=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ assert.match(script,/nameNode\.replaceChildren\(skeleton\('app-player-detail-name-skeleton'\)\)/);
+ assert.match(script,/statusNode\.hidden=state==='loading'\|\|state==='ready'/);
+ assert.doesNotMatch(script,/Loading player|Caricamento giocatore|Spieler wird geladen|Cargando jugador|Chargement du joueur/);
+ assert.match(html,/data-detail-status role="status" aria-live="polite" hidden/);
+ assert.match(css,/\.app-player-detail-status\[hidden\]\{display:none!important\}/);
+ assert.match(css,/\.app-player-detail-attribute-line:last-child\{border-bottom:0\}/);
+ assert.match(css,/\.app-player-detail-attribute-line\{[^}]*min-height:52px[^}]*border-bottom:1px solid var\(--line\)/);
+ assert.match(css,/\.app-player-detail-pitch-holder\{width:min\(100%,330px\)/);
+ assert.match(css,/\.app-player-detail-positions h2,\.app-player-detail-attributes h2\{font-size:22px/);
+ assert.match(css,/\.app-player-detail-name-skeleton\{[^}]*width:270px;max-width:100%;height:32px;margin:0/);
+ assert.match(css,/\.app-player-detail-attribute-line dd \.app-skeleton-bar\{[^}]*margin:0 0 0 auto/);
+ assert.match(css,/\.app-player-detail-info-line \[data-detail-value="age"\] \.app-skeleton-bar\{width:30px\}/);
+ assert.match(css,/\.app-player-detail-name-skeleton\{width:160px;height:24px\}/);
 });

@@ -25,12 +25,12 @@ function detailPanel(preview){
   +'<nav class="app-competition-tabs club-tabs app-player-detail-tabs" role="tablist" aria-label="Player views">'+viewTabs+'</nav>\n'
   +'<div class="app-player-detail-overview" id="player-detail-overview-panel" data-detail-panel="overview" role="tabpanel" aria-labelledby="player-detail-overview-tab">'
   +'<div class="app-player-detail-top">'
-  +'<section class="app-panel app-player-detail-positions" data-detail-positions aria-label="Positions">'
+  +'<section class="app-panel app-player-detail-positions" data-detail-positions aria-labelledby="player-detail-positions-title"><h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions</h2>'
   +'<div class="app-player-detail-pitch-holder">'+pitch+'</div></section>'
   +'<section class="app-panel app-player-detail-attributes" aria-labelledby="player-detail-attributes-title"><h2 id="player-detail-attributes-title" data-detail-section-title="attributes">Attributes</h2>'
   +'<div class="app-player-detail-attribute-columns">'+columns+'</div></section></div></div>'
   +'<section class="app-panel app-player-detail-info app-player-detail-info-view" id="player-detail-info-panel" data-detail-panel="info" role="tabpanel" aria-labelledby="player-detail-info-tab"><h2 data-detail-section-title="info">Info</h2><dl class="app-player-detail-info-list">'+infoRows+'</dl></section>'
-  +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite"></p></div>';
+  +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite" hidden></p></div>';
 }
 export function renderPlayerDetailPage(html,mode){
  if(mode!=='public'&&mode!=='preview')throw new TypeError('invalid_detail_mode');
