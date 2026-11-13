@@ -14,13 +14,28 @@ const catalogue=Object.freeze([...canonical].map(([clubKey,name])=>({clubKey,nam
 const invalid=()=>new ApiError(422,'invalid_player_contract');
 const validId=(v:unknown):v is number=>Number.isSafeInteger(v)&&Number(v)>0;
 const validKey=(v:unknown):v is string=>typeof v==='string'&&canonical.has(v);
-interface Row {id:number;first_name:string|null;last_name:string|null;club_key:string|null}
+interface Row {
+ id:number;first_name:string|null;last_name:string|null;club_key:string|null;
+ nationality:string|null;age:number|null;height_cm:number|null;
+ preferred_foot:string|null;primary_position:string|null;secondary_positions:string|null;
+}
 const presentation=(r:Row)=>{
  // Public-facing portion of a protected Admin record: no generator JSON, draft,
  // aptitude, development details or private account data leave this module.
  const first=typeof r.first_name==='string'?r.first_name.trim():'';
  const last=typeof r.last_name==='string'?r.last_name.trim():'';
- return {id:r.id,name:(first+' '+last).trim()||'#'+r.id,clubKey:r.club_key??null};
+ const secondary=typeof r.secondary_positions==='string'?(()=>{
+  try{const v:unknown=JSON.parse(r.secondary_positions!);return Array.isArray(v)?v.filter((p):p is string=>typeof p==='string').slice(0,4):[]}
+  catch{return [] as string[]}
+ })():[];
+ return {id:r.id,name:(first+' '+last).trim()||'#'+r.id,clubKey:r.club_key??null,
+  ...(typeof r.nationality==='string'?{nationality:r.nationality}:{}),
+  ...(Number.isSafeInteger(r.age)?{age:r.age}:{}),
+  ...(Number.isSafeInteger(r.height_cm)?{height_cm:r.height_cm}:{}),
+  ...(r.preferred_foot==='left'||r.preferred_foot==='right'?{preferred_foot:r.preferred_foot}:{}),
+  ...(typeof r.primary_position==='string'?{primary_position:r.primary_position}:{}),
+  secondary_positions:secondary};
+
 };
 /** Report a missing forward-only local/DEV schema without leaking SQL or D1 details. */
 async function withAffiliationSchema<T>(work:()=>Promise<T>):Promise<T>{
@@ -34,6 +49,12 @@ async function withAffiliationSchema<T>(work:()=>Promise<T>):Promise<T>{
 const listSql=`SELECT p.id,
  json_extract(p.payload_json,'$.first_name') AS first_name,
  json_extract(p.payload_json,'$.last_name') AS last_name,
+ json_extract(p.payload_json,'$.nationality') AS nationality,
+ json_extract(p.payload_json,'$.age') AS age,
+ json_extract(p.payload_json,'$.height_cm') AS height_cm,
+ json_extract(p.payload_json,'$.preferred_foot') AS preferred_foot,
+ json_extract(p.payload_json,'$.primary_position') AS primary_position,
+ json_extract(p.payload_json,'$.secondary_positions') AS secondary_positions,
  a.club_key FROM generated_players p
  LEFT JOIN player_club_affiliations a ON a.player_id=p.id`;
 
@@ -137,4 +158,77 @@ export async function changePlayerContract(db:Database,session:AdminSession,inpu
  }
  return {playerId:change.playerId,clubKey:change.clubKey,
   worldGeneration:world.generation,worldRevision:world.revision};
+}
+
+/** #509: atomic batch assignment (up to one current directory page), not a transfer market. */
+interface BatchContract {playerId:number;expectedClubKey:string|null}
+function parseBatchChange(input:unknown):{
+ players:BatchContract[];clubKey:string|null;expectedGeneration:string;expectedRevision:number
+}{
+ if(!input||typeof input!=='object'||Array.isArray(input))throw invalid();
+ const raw=input as Record<string,unknown>;
+ if(Object.keys(raw).sort().join(',')!=='clubKey,expectedGeneration,expectedRevision,players'||
+  !(raw.clubKey===null||validKey(raw.clubKey))||
+  typeof raw.expectedGeneration!=='string'||
+  !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(raw.expectedGeneration)||
+  !Number.isSafeInteger(raw.expectedRevision)||Number(raw.expectedRevision)<0||
+  !Array.isArray(raw.players)||raw.players.length===0||raw.players.length>50)throw invalid();
+ const unique=new Set<number>();
+ for(const value of raw.players){
+  if(!value||typeof value!=='object'||Array.isArray(value))throw invalid();
+  const entry=value as Record<string,unknown>;
+  if(Object.keys(entry).sort().join(',')!=='expectedClubKey,playerId'||
+   !validId(entry.playerId)||
+   !(entry.expectedClubKey===null||validKey(entry.expectedClubKey))||
+   unique.has(entry.playerId))throw invalid();
+  unique.add(entry.playerId);
+ }
+ return input as ReturnType<typeof parseBatchChange>;
+}
+export async function changePlayerContractsBatch(db:Database,session:AdminSession,input:unknown,now:number){
+ const change=parseBatchChange(input),world=await readWorld(db);
+ if(world.generation!==change.expectedGeneration||world.revision!==change.expectedRevision)
+  throw new ApiError(409,'stale_world');
+ const ids=change.players.map(p=>p.playerId);
+ const placeholders=ids.map(()=>'?').join(',');
+ const existing=await withAffiliationSchema(()=>db.prepare(
+  `SELECT p.id,a.club_key FROM generated_players p
+  LEFT JOIN player_club_affiliations a ON a.player_id=p.id
+  WHERE p.id IN (${placeholders})`).bind(...ids)
+  .all<{id:number;club_key:string|null}>());
+ if(existing.results.length!==ids.length)throw new ApiError(404,'player_not_found');
+ const known=new Map(existing.results.map(row=>[row.id,row.club_key]));
+ if(change.players.some(p=>known.get(p.playerId)!==p.expectedClubKey))
+  throw new ApiError(409,'stale_player_contract');
+ const guards=change.players.map(p=>p.expectedClubKey===null
+  ?abortUnless(db,
+   'SELECT 1 FROM generated_players g WHERE g.id=? AND NOT EXISTS (SELECT 1 FROM player_club_affiliations a WHERE a.player_id=g.id)',
+   [p.playerId])
+  :abortUnless(db,
+   'SELECT 1 FROM generated_players g JOIN player_club_affiliations a ON a.player_id=g.id WHERE g.id=? AND a.club_key=?',
+   [p.playerId,p.expectedClubKey]));
+ const mutations=change.players.map(p=>change.clubKey===null
+  ?db.prepare('DELETE FROM player_club_affiliations WHERE player_id=?').bind(p.playerId)
+  :db.prepare(`INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)
+   ON CONFLICT(player_id) DO UPDATE SET club_key=excluded.club_key`).bind(p.playerId,change.clubKey));
+ try{
+  await db.batch([sessionGuard(db,session,now),
+   abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND revision=?',
+    [change.expectedGeneration,change.expectedRevision]),...guards,...mutations]);
+ }catch{
+  const fresh=await readWorld(db);
+  if(fresh.generation!==change.expectedGeneration||fresh.revision!==change.expectedRevision)
+   throw new ApiError(409,'stale_world');
+  const current=await withAffiliationSchema(()=>db.prepare(
+   `SELECT p.id,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a
+    ON a.player_id=p.id WHERE p.id IN (${placeholders})`).bind(...ids)
+   .all<{id:number;club_key:string|null}>());
+  if(current.results.length!==ids.length)throw new ApiError(404,'player_not_found');
+  const freshLinks=new Map(current.results.map(r=>[r.id,r.club_key]));
+  if(change.players.some(p=>freshLinks.get(p.playerId)!==p.expectedClubKey))
+   throw new ApiError(409,'stale_player_contract');
+  throw new ApiError(503,'player_contract_unavailable');
+ }
+ return {updated:ids.length,clubKey:change.clubKey,
+  playerIds:ids,worldGeneration:world.generation,worldRevision:world.revision};
 }

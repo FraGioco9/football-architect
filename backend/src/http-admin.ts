@@ -26,7 +26,7 @@ import {resetWorld} from './reset-world-command.ts';
 import {readSeasonArchives,readClosedSeasonHistory} from './season-archive-read.ts';
 import {readSeasonTwoCandidate} from './season-two-candidate-read.ts';
 import {previewPlayerGeneration,readPlayerGenerationDraft,commitPlayerGeneration,listGeneratedPlayers} from './players-generation-command.ts';
-import {parseContractListQuery,readPlayerContracts,changePlayerContract} from './player-club-contracts.ts';
+import {parseContractListQuery,readPlayerContracts,changePlayerContract,changePlayerContractsBatch} from './player-club-contracts.ts';
 import {prepareSeasonTwo} from './season-two-prepare-command.ts';
 import {approveSeasonTwoSnapshot} from './season-two-approval-command.ts';
 export interface AdminEnv {DB?:unknown;PLAYER_MODE?:string;PLAYER_ORIGIN?:string;PLAYER_TRUSTED_SOURCE?:string}
@@ -84,7 +84,10 @@ export async function handleAdmin(request:Request,env:AdminEnv):Promise<Response
   if(path==='/api/admin/players/commit')return json(200,await commitPlayerGeneration(db,session,await readJsonBody(request),now));
   if(path==='/api/admin/contracts'&&request.method==='POST'){
    if(new URL(request.url).search)throw new ApiError(422,'invalid_player_contract');
-   return json(200,await changePlayerContract(db,session,await readJsonBody(request),now));
+   const body=await readJsonBody(request);
+   return json(200,body&&typeof body==='object'&&!Array.isArray(body)&&'players' in body
+    ?await changePlayerContractsBatch(db,session,body,now)
+    :await changePlayerContract(db,session,body,now));
   }
   const rawCommand=await readJsonBody(request),key=parseIdempotencyKey(request.headers.get('Idempotency-Key'));
   if(path==='/api/admin/seasons/next-prepare')return json(200,await prepareSeasonTwo(db,session,parsePrepareRequest(rawCommand),key,now));
