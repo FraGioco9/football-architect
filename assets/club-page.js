@@ -80,6 +80,16 @@
      if(row.dataset.clubHistoryDetail===season)row.hidden=!expanded;
    }
   };
+  // The Roster nav is recreated when its view or sorting changes.
+  // Track both scrollable edges on scroll and viewport resize for conditional fades.
+  const syncRosterTabEdges=()=>{
+   const nav=host.querySelector('.club-roster-tabs');
+   if(!nav)return;
+   const maximum=Math.max(0,nav.scrollWidth-nav.clientWidth);
+   nav.dataset.canScrollLeft=String(maximum>1&&nav.scrollLeft>1);
+   nav.dataset.canScrollRight=String(maximum>1&&nav.scrollLeft<maximum-1);
+  };
+  window.addEventListener('resize',syncRosterTabEdges,{passive:true});
   host.addEventListener('click',event=>{
    if(selected.view!=='history'||event.target.closest?.('a,input,select,textarea'))return;
    const row=event.target.closest?.('[data-club-history-summary]');
@@ -98,6 +108,7 @@
    const previousTabs=host.querySelector(':scope > .club-tabs');
    const tabScrollLeft=previousTabs?.scrollLeft;
    const historyTableScroll=host.querySelector('.club-history-table-wrap')?.scrollLeft;
+   const rosterTabScrollLeft=host.querySelector('.club-roster-tabs')?.scrollLeft;
    const rosterTableScroll=host.querySelector('.club-roster-table-scroll')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
@@ -141,6 +152,19 @@
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
    if(Number.isFinite(rosterTableScroll)){const rosterWrap=host.querySelector('.club-roster-table-scroll');if(rosterWrap)rosterWrap.scrollLeft=rosterTableScroll;}
+   const rosterTabs=host.querySelector('.club-roster-tabs');
+   if(rosterTabs){
+    if(Number.isFinite(rosterTabScrollLeft))rosterTabs.scrollLeft=rosterTabScrollLeft;
+    // On a direct URL, keep the selected category fully visible.
+    const active=rosterTabs.querySelector('[aria-selected="true"]');
+    if(active){
+     const bounds=rosterTabs.getBoundingClientRect(),selectedTab=active.getBoundingClientRect();
+     if(selectedTab.right>bounds.right)rosterTabs.scrollLeft+=selectedTab.right-bounds.right;
+     else if(selectedTab.left<bounds.left)rosterTabs.scrollLeft+=selectedTab.left-bounds.left;
+    }
+    syncRosterTabEdges();
+    rosterTabs.addEventListener('scroll',syncRosterTabEdges,{passive:true});
+   }
    syncHistoryRows();
    host.dataset.clubBase=selected.base;
    if(tabs){
