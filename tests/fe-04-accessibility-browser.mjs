@@ -8,7 +8,7 @@ export async function verifyFe04AccessibilityBrowser(browser){
  for(const profile of profiles){
   const context=await browser.newContext({viewport:{width:profile.width,height:900},reducedMotion:"reduce"});
   try{
-   await context.addInitScript(({lang,theme})=>{localStorage.setItem("football-architect:language",lang);localStorage.setItem("football-architect:theme",theme)},profile);
+   await context.addInitScript(({lang,theme})=>{localStorage.setItem("football-architect:language",lang);localStorage.setItem("football-architect:theme",theme);sessionStorage.setItem("football-architect:debug-enabled","on")},profile);
    const page=await context.newPage();
    // Dynamic app polling can keep the network busy indefinitely. The test verifies
    // actual UI hydration below instead of waiting for a global network idle.
