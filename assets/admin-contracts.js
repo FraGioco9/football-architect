@@ -1,171 +1,211 @@
-/* Admin Contracts: guarded current-state affiliation, never an economic contract. */
-((root,factory)=>{
- const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;
- if(root.document)api.mount(root);
-})(typeof window==='undefined'?globalThis:window,()=>{
+/* Admin Contracts #509: Players-style checkbox list, atomic batch assignments. */
+((root,factory)=>{const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root.document)api.mount(root)})(typeof window==='undefined'?globalThis:window,()=>{
  'use strict';
- const copy={
-  en:{heading:'Player–club affiliations',assignHeading:'Assign player to club',playersHeading:'Players',choosePlayer:'Select a player from the list or enter its ID.',apiMissing:'The Contracts API is not available in this environment. Update the Worker before using it.',schemaMissing:'The Contracts database migration is not installed in this environment.',serviceUnavailable:'This environment cannot provide Contracts right now.',empty:'No saved players found.',intro:'One current club per persisted player. No durations, salaries or fees.',findLabel:'Player ID',find:'Find',all:'All players',id:'ID',player:'Player',club:'Club',action:'Action',previous:'Previous',next:'Next',edit:'Edit affiliation',targetClub:'Club',unassigned:'Unassigned',save:'Save',unassign:'Unassign',cancel:'Cancel',change:'Change',page:'Page',of:'of',players:'players',busy:'Saving…',loading:'Loading affiliations…',saved:'Affiliation saved.',notFound:'No player has that ID.',invalid:'Enter a positive numeric player ID.',failed:'Unable to load affiliations.',writeFailed:'Save failed. Refresh and retry.',stale:'World or affiliation changed. Refresh and retry.'},
-  it:{heading:'Affiliazioni giocatore–club',assignHeading:'Assegna giocatore a club',playersHeading:'Giocatori',choosePlayer:'Seleziona un giocatore dall\'elenco o inserisci il suo ID.',apiMissing:'L\'API Contracts non è disponibile in questo ambiente. Occorre aggiornare il Worker.',schemaMissing:'La migrazione del database Contracts non è installata in questo ambiente.',serviceUnavailable:'Contracts non è disponibile in questo ambiente.',empty:'Non ci sono giocatori salvati.',intro:'Un solo club attuale per giocatore salvato. Nessuna durata, stipendio o costo.',findLabel:'ID giocatore',find:'Cerca',all:'Tutti i giocatori',id:'ID',player:'Giocatore',club:'Club',action:'Azione',previous:'Precedente',next:'Successiva',edit:'Modifica affiliazione',targetClub:'Club',unassigned:'Senza club',save:'Salva',unassign:'Svincola',cancel:'Annulla',change:'Modifica',page:'Pagina',of:'di',players:'giocatori',busy:'Salvataggio…',loading:'Caricamento affiliazioni…',saved:'Affiliazione salvata.',notFound:'Nessun giocatore con questo ID.',invalid:'Inserisci un ID numerico positivo.',failed:'Impossibile caricare le affiliazioni.',writeFailed:'Salvataggio non riuscito. Ricarica e riprova.',stale:'Mondo o affiliazione cambiata. Ricarica e riprova.'},
-  de:{heading:'Spieler–Verein-Zuordnungen',assignHeading:'Spieler einem Verein zuweisen',playersHeading:'Spieler',choosePlayer:'Spieler aus der Liste wählen oder ID eingeben.',apiMissing:'Die Contracts-API ist in dieser Umgebung nicht verfügbar. Worker aktualisieren.',schemaMissing:'Die Contracts-Datenbankmigration fehlt in dieser Umgebung.',serviceUnavailable:'Contracts ist in dieser Umgebung nicht verfügbar.',empty:'Keine gespeicherten Spieler.',intro:'Ein aktueller Verein pro gespeichertem Spieler. Keine Laufzeiten, Gehälter oder Gebühren.',findLabel:'Spieler-ID',find:'Suchen',all:'Alle Spieler',id:'ID',player:'Spieler',club:'Verein',action:'Aktion',previous:'Zurück',next:'Weiter',edit:'Zuordnung bearbeiten',targetClub:'Verein',unassigned:'Ohne Verein',save:'Speichern',unassign:'Zuordnung lösen',cancel:'Abbrechen',change:'Ändern',page:'Seite',of:'von',players:'Spieler',busy:'Speichern…',loading:'Zuordnungen laden…',saved:'Zuordnung gespeichert.',notFound:'Kein Spieler mit dieser ID.',invalid:'Positive Spieler-ID eingeben.',failed:'Zuordnungen nicht verfügbar.',writeFailed:'Speichern fehlgeschlagen. Neu laden.',stale:'Welt oder Zuordnung geändert. Neu laden.'},
-  es:{heading:'Vínculos jugador–club',assignHeading:'Asignar jugador a un club',playersHeading:'Jugadores',choosePlayer:'Selecciona un jugador o escribe su ID.',apiMissing:'La API Contracts no está disponible aquí. Actualiza el Worker.',schemaMissing:'Falta la migración de base de datos Contracts.',serviceUnavailable:'Contracts no está disponible en este entorno.',empty:'No hay jugadores guardados.',intro:'Un club actual por jugador guardado. Sin duración, salarios ni tarifas.',findLabel:'ID del jugador',find:'Buscar',all:'Todos los jugadores',id:'ID',player:'Jugador',club:'Club',action:'Acción',previous:'Anterior',next:'Siguiente',edit:'Editar vínculo',targetClub:'Club',unassigned:'Sin club',save:'Guardar',unassign:'Desvincular',cancel:'Cancelar',change:'Cambiar',page:'Página',of:'de',players:'jugadores',busy:'Guardando…',loading:'Cargando vínculos…',saved:'Vínculo guardado.',notFound:'No hay jugador con ese ID.',invalid:'Introduce un ID numérico positivo.',failed:'No se pueden cargar vínculos.',writeFailed:'No se pudo guardar. Recarga e inténtalo.',stale:'El mundo o vínculo cambió. Recarga.'},
-  fr:{heading:'Affiliations joueur–club',assignHeading:'Affecter un joueur à un club',playersHeading:'Joueurs',choosePlayer:'Sélectionnez un joueur ou saisissez son ID.',apiMissing:'L\'API Contracts est indisponible ici. Mettez à jour le Worker.',schemaMissing:'La migration de base de données Contracts est absente.',serviceUnavailable:'Contracts est indisponible dans cet environnement.',empty:'Aucun joueur enregistré.',intro:'Un club actuel par joueur enregistré. Sans durée, salaire ni frais.',findLabel:'ID du joueur',find:'Rechercher',all:'Tous les joueurs',id:'ID',player:'Joueur',club:'Club',action:'Action',previous:'Précédent',next:'Suivant',edit:'Modifier affiliation',targetClub:'Club',unassigned:'Sans club',save:'Enregistrer',unassign:'Désaffilier',cancel:'Annuler',change:'Modifier',page:'Page',of:'sur',players:'joueurs',busy:'Enregistrement…',loading:'Chargement des affiliations…',saved:'Affiliation enregistrée.',notFound:'Aucun joueur avec cet ID.',invalid:'Saisissez un ID numérique positif.',failed:'Chargement impossible.',writeFailed:'Enregistrement impossible. Rechargez.',stale:'Le monde ou affiliation a changé. Rechargez.'}
+ const flags={ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',DEN:'dk',AUT:'at',IRN:'ir',ECU:'ec',EGY:'eg',AUS:'au',CAN:'ca',ALG:'dz',CIV:'ci',NGA:'ng',TUR:'tr',KOR:'kr',PAR:'py',SWE:'se',RUS:'ru',UKR:'ua',POL:'pl',HUN:'hu',WAL:'gb-wls',COD:'cd',GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'};
+ const labels={
+  en:{assignHeading:'Assign players to club',playersHeading:'Players',chooseClub:'Choose club',unassigned:'Unassigned',assign:'Assign',nationality:'',player:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',club:'Club',previous:'Previous',next:'Next',of:'of',page:'Page',players:'players',selected:'players selected',all:'Select all on this page',pick:'Select',left:'Left',right:'Right',search:'Search clubs…',loading:'Loading players…',saving:'Assigning…',saved:'Affiliations updated.',empty:'No players available.',limit:'Select at most 50 players per assignment.',failed:'Unable to load affiliations.',apiMissing:'Contracts API unavailable. Update the Worker.',schemaMissing:'Contracts migration missing.',stale:'World or affiliation changed. Reload and select again.',saveFailed:'Assignment failed; no changes were saved.',unavailable:'Contracts unavailable.'},
+  it:{assignHeading:'Assegna giocatori al club',playersHeading:'Giocatori',chooseClub:'Seleziona club',unassigned:'Senza club',assign:'Assegna',nationality:'',player:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',club:'Club',previous:'Precedente',next:'Successiva',of:'di',page:'Pagina',players:'giocatori',selected:'giocatori selezionati',all:'Seleziona tutti in questa pagina',pick:'Seleziona',left:'Sinistro',right:'Destro',search:'Cerca club…',loading:'Caricamento giocatori…',saving:'Assegnazione…',saved:'Affiliazioni aggiornate.',empty:'Nessun giocatore disponibile.',limit:'Seleziona al massimo 50 giocatori per assegnazione.',failed:'Impossibile caricare le affiliazioni.',apiMissing:'API Contracts non disponibile. Aggiorna il Worker.',schemaMissing:'Manca la migrazione D1 Contracts.',stale:'Mondo o affiliazione cambiata. Ricarica e seleziona di nuovo.',saveFailed:'Assegnazione non riuscita; nessun dato modificato.',unavailable:'Contracts non disponibile.'},
+  de:{assignHeading:'Spieler einem Verein zuweisen',playersHeading:'Spieler',chooseClub:'Verein auswählen',unassigned:'Ohne Verein',assign:'Zuweisen',nationality:'',player:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',club:'Verein',previous:'Zurück',next:'Weiter',of:'von',page:'Seite',players:'Spieler',selected:'Spieler ausgewählt',all:'Alle auf dieser Seite auswählen',pick:'Auswählen',left:'Links',right:'Rechts',search:'Verein suchen…',loading:'Spieler laden…',saving:'Zuordnen…',saved:'Zuordnungen aktualisiert.',empty:'Keine Spieler.',limit:'Maximal 50 Spieler je Zuweisung.',failed:'Zuordnungen nicht verfügbar.',apiMissing:'Contracts-API fehlt. Worker aktualisieren.',schemaMissing:'Contracts-D1-Migration fehlt.',stale:'Welt oder Zuordnung geändert. Erneut laden.',saveFailed:'Zuordnung fehlgeschlagen; keine Daten geändert.',unavailable:'Contracts nicht verfügbar.'},
+  es:{assignHeading:'Asignar jugadores a un club',playersHeading:'Jugadores',chooseClub:'Elegir club',unassigned:'Sin club',assign:'Asignar',nationality:'',player:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',club:'Club',previous:'Anterior',next:'Siguiente',of:'de',page:'Página',players:'jugadores',selected:'jugadores seleccionados',all:'Seleccionar todos en esta página',pick:'Seleccionar',left:'Izquierdo',right:'Derecho',search:'Buscar clubes…',loading:'Cargando jugadores…',saving:'Asignando…',saved:'Vínculos actualizados.',empty:'No hay jugadores.',limit:'Máximo 50 jugadores por operación.',failed:'No se pueden cargar vínculos.',apiMissing:'API Contracts no disponible. Actualiza Worker.',schemaMissing:'Falta migración D1 Contracts.',stale:'Mundo o vínculo cambiado. Recarga.',saveFailed:'Error al asignar; ningún cambio guardado.',unavailable:'Contracts no disponible.'},
+  fr:{assignHeading:'Affecter des joueurs à un club',playersHeading:'Joueurs',chooseClub:'Choisir un club',unassigned:'Sans club',assign:'Affecter',nationality:'',player:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',club:'Club',previous:'Précédent',next:'Suivant',of:'sur',page:'Page',players:'joueurs',selected:'joueurs sélectionnés',all:'Tout sélectionner sur cette page',pick:'Sélectionner',left:'Gauche',right:'Droit',search:'Rechercher clubs…',loading:'Chargement joueurs…',saving:'Affectation…',saved:'Affiliations mises à jour.',empty:'Aucun joueur.',limit:'50 joueurs maximum par opération.',failed:'Chargement impossible.',apiMissing:'API Contracts indisponible. Actualisez Worker.',schemaMissing:'Migration D1 Contracts absente.',stale:'Monde ou affiliation modifié. Rechargez.',saveFailed:'Affectation échouée; aucune modification.',unavailable:'Contracts indisponible.'}
  };
  function mount(win){
-  const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-contracts]');
-  if(!root)return;
-  const el=selector=>root.querySelector(selector),tbody=el('[data-contracts-rows]');
-  const select=el('[data-contracts-select]'),editor=el('[data-contracts-editor]');
-  const search=el('[data-contracts-find-input]'),status=el('[data-contracts-message]');
-  const permissionCache=win.faAdminPermissionsCache?.create(win);
-  const save=el('[data-contracts-save]'),unassign=el('[data-contracts-unassign]');
-  let allowed=false,busy=false,epoch=0,page=1,filterId=null,selected=null,chosen=null,record=null,clubs=null;
-  const tr=()=>copy[doc.documentElement.lang]||copy.en;
-  const label=key=>tr()[key]||copy.en[key];
-  const clubName=key=>key===null?label('unassigned'):(clubs?.find(c=>c.clubKey===key)?.name||key);
-  const message=value=>{status.textContent=value||''};
-  function buttons(){
-   select.disabled=!allowed||busy||!selected;
-   save.disabled=!allowed||busy||!selected||chosen===selected.clubKey;
-   unassign.disabled=!allowed||busy||!selected||selected.clubKey===null;
-   el('[data-contracts-working]').textContent=busy?label('busy'):'';
+  const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-contracts]');if(!root)return;
+  const el=q=>root.querySelector(q),rows=el('[data-contracts-rows]'),all=el('[data-contracts-all]');
+  const select=el('[data-contracts-select]'),trigger=el('[data-contracts-trigger]');
+  const menu=el('.admin-contracts-club-menu'),menuItems=el('[data-contracts-club-options]'),search=el('[data-contracts-club-search]');
+  const status=el('[data-contracts-message]'),save=el('[data-contracts-save]'),permissionCache=win.faAdminPermissionsCache?.create(win);
+  const selected=new Map();let allowed=false,busy=false,epoch=0,page=1,record=null,clubs=null,options=[],active=0;
+  const t=()=>labels[doc.documentElement.lang]||labels.en,l=k=>t()[k]??labels.en[k];
+  const clubName=key=>key===null?l('unassigned'):(clubs?.find(c=>c.clubKey===key)?.name||key);
+  const report=value=>{status.textContent=value||''};
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const shownOptions=()=>options.filter(n=>!n.hidden);
+  function controls(){
+   el('[data-contracts-selected-count]').textContent=selected.size+' '+l('selected');
+   trigger.disabled=!allowed||busy||!record;
+   save.disabled=!allowed||busy||!record||selected.size===0||!select.value;
+   save.textContent=busy?l('saving'):l('assign');
+   const visible=record?.players||[],n=visible.filter(p=>selected.has(p.id)).length;
+   all.disabled=!allowed||busy||!record||!visible.length;
+   all.checked=visible.length>0&&n===visible.length;all.indeterminate=n>0&&n<visible.length;all.setAttribute('aria-label',l('all'));
+   el('[data-contracts-prev]').disabled=busy||!record||page<=1;
+   el('[data-contracts-next]').disabled=busy||!record||page>=record.totalPages;
   }
-  function closeEditor(){selected=null;chosen=null;select.value='';el('[data-contracts-selected]').textContent=label('choosePlayer');buttons();}
-  function paint(access){
-   allowed=access;host.hidden=!access;root.hidden=!access;host.dataset.adminAccess=access?'granted':'denied';
-   win.faAdminAccess=access;win.dispatchEvent(new CustomEvent('fa:admin-access',{detail:access}));
-   if(!access){record=null;closeEditor();tbody.replaceChildren();}
+  function closeMenu(focus=false){
+   menu.hidden=true;trigger.setAttribute('aria-expanded','false');
+   trigger.removeAttribute('aria-activedescendant');search.removeAttribute('aria-activedescendant');
+   if(focus)trigger.focus({preventScroll:true});
+  }
+  function highlight(){
+   const visible=shownOptions();active=Math.max(0,Math.min(active,visible.length-1));
+   for(const item of options)delete item.dataset.active;
+   if(visible.length){visible[active].dataset.active='true';visible[active].scrollIntoView?.({block:'nearest'});
+    for(const node of [trigger,search])node.setAttribute('aria-activedescendant',visible[active].id)}
+  }
+  function filterOptions(){
+   const q=normalize(search.value);for(const item of options)item.hidden=!!q&&!normalize(item.textContent+' '+item.dataset.value).includes(q);
+   active=0;if(!menu.hidden)highlight();
+  }
+  function syncSelect(){
+   const value=select.selectedOptions[0]?.textContent||l('chooseClub');
+   el('[data-contracts-dropdown-value]').textContent=value;trigger.setAttribute('aria-label',l('chooseClub')+': '+value);
+   search.placeholder=l('search');search.setAttribute('aria-label',l('search'));
+   for(const item of options)item.setAttribute('aria-selected',String(item.dataset.value===select.value));
+   controls();
+  }
+  function choose(item){if(!item)return;select.value=item.dataset.value;closeMenu(true);syncSelect()}
+  function openMenu(){
+   if(trigger.disabled)return;
+   search.value='';filterOptions();menu.hidden=false;trigger.setAttribute('aria-expanded','true');
+   const b=trigger.getBoundingClientRect();el('.admin-contracts-dropdown').dataset.menuPlacement=win.innerHeight-b.bottom<220&&b.top>220?'above':'below';
+   active=Math.max(0,shownOptions().findIndex(item=>item.dataset.value===select.value));search.focus({preventScroll:true});highlight();
+  }
+  function keys(e){
+   const key=e.key;
+   if(['ArrowDown','ArrowUp','Home','End'].includes(key)&&!(e.target===search&&['Home','End'].includes(key))){
+    e.preventDefault();if(menu.hidden)openMenu();const items=shownOptions();if(!items.length)return;
+    active=key==='Home'?0:key==='End'?items.length-1:key==='ArrowDown'?(active+1)%items.length:(active-1+items.length)%items.length;highlight();
+   }else if(key==='Escape'&&!menu.hidden){e.preventDefault();closeMenu(true)}
+   else if(key==='Enter'||(key===' '&&e.target!==search)){e.preventDefault();if(menu.hidden)openMenu();else choose(shownOptions()[active])}
+   else if(key==='Tab')closeMenu();
+  }
+  function populate(){
+   if(!clubs)return;
+   const previous=select.value;select.replaceChildren();
+   for(const [value,name] of [['',l('chooseClub')],['__unassigned__',l('unassigned')],...clubs.map(c=>[c.clubKey,c.name+' · '+c.clubKey])]){
+    const node=doc.createElement('option');node.value=value;node.textContent=name;select.append(node);
+   }
+   select.value=previous&&[...select.options].some(x=>x.value===previous)?previous:'';
+   const fragment=doc.createDocumentFragment();options=[];
+   [...select.options].forEach((source,i)=>{
+    const node=doc.createElement('div');node.id='admin-contracts-option-'+i;node.className='language-option';
+    node.setAttribute('role','option');node.dataset.value=source.value;node.textContent=source.textContent;
+    node.addEventListener('click',()=>choose(node));
+    node.addEventListener('pointermove',()=>{const i=shownOptions().indexOf(node);if(i>=0&&!menu.hidden){active=i;highlight()}});
+    options.push(node);fragment.append(node);
+   });
+   menuItems.replaceChildren(fragment);syncSelect();
+  }
+  function loading(){
+   rows.replaceChildren();for(let i=0;i<5;i++){const tr=doc.createElement('tr'),td=doc.createElement('td');
+    tr.className='admin-contracts-skeleton';td.colSpan=8;tr.append(td);rows.append(tr)}
+   rows.setAttribute('aria-busy','true');
   }
   function render(){
    if(!record)return;
-   tbody.replaceChildren();
+   const fragment=doc.createDocumentFragment();
    for(const p of record.players){
-    const row=doc.createElement('tr'),id=doc.createElement('td');
-    id.textContent=String(p.id);row.append(id);
-    const playerCell=doc.createElement('td'),button=doc.createElement('button');
-    button.type='button';button.className='admin-contracts-pick';
-    button.textContent=p.name;button.dataset.contractsEdit=String(p.id);button.disabled=busy||!allowed;
-    playerCell.append(button);row.append(playerCell);
-    const clubCell=doc.createElement('td');clubCell.textContent=clubName(p.clubKey);row.append(clubCell);
-    tbody.append(row);
+    const tr=doc.createElement('tr'),checkTd=doc.createElement('td');tr.dataset.contractsPlayer=String(p.id);
+    checkTd.className='admin-contracts-checkbox-cell';
+    const input=doc.createElement('input');input.type='checkbox';input.dataset.contractsCheck=String(p.id);
+    input.checked=selected.has(p.id);input.disabled=busy;input.setAttribute('aria-label',l('pick')+' '+p.name);
+    checkTd.append(input);tr.append(checkTd);
+    const flagTd=doc.createElement('td'),flag=Object.hasOwn(flags,p.nationality)?flags[p.nationality]:null;
+    if(flag){const img=doc.createElement('img');img.src='/assets/flags/'+flag+'.svg';img.alt=p.nationality;
+     img.className='app-players-nationality-flag';img.width=24;img.height=18;flagTd.append(img)}
+    else flagTd.textContent=p.nationality||'';
+    tr.append(flagTd);
+    const name=doc.createElement('td');name.textContent=p.name;name.className='admin-contracts-player-name';tr.append(name);
+    const positions=[p.primary_position,...(Array.isArray(p.secondary_positions)?p.secondary_positions:[])].filter(Boolean).join(', ')||'—';
+    const values=[Number.isSafeInteger(p.age)?String(p.age):'—',positions,
+     Number.isSafeInteger(p.height_cm)?p.height_cm+' cm':'—',
+     p.preferred_foot==='left'?l('left'):p.preferred_foot==='right'?l('right'):'—',clubName(p.clubKey)];
+    for(const v of values){const td=doc.createElement('td');td.textContent=v;tr.append(td)}
+    fragment.append(tr);
    }
-   tbody.setAttribute('aria-busy','false');
-   el('[data-contracts-total]').textContent=record.count+' '+label('players');
-   el('[data-contracts-page]').textContent=label('page')+' '+record.page+' '+label('of')+' '+record.totalPages;
-   el('[data-contracts-prev]').disabled=busy||filterId!==null||page<=1;
-   el('[data-contracts-next]').disabled=busy||filterId!==null||page>=record.totalPages;
+   rows.replaceChildren(fragment);rows.setAttribute('aria-busy','false');
+   el('[data-contracts-total]').textContent=record.count+' '+l('players');
+   el('[data-contracts-page]').textContent=l('page')+' '+record.page+' '+l('of')+' '+record.totalPages;
+   controls();
   }
   function translate(){
-   root.querySelectorAll('[data-contracts-copy]').forEach(n=>{
-    if(label(n.dataset.contractsCopy))n.textContent=label(n.dataset.contractsCopy);
-   });
-   el('[data-contracts-selected]').textContent=selected?'#'+selected.id+' · '+selected.name+' · '+clubName(selected.clubKey):label('choosePlayer');
-   buttons();render();
+   root.querySelectorAll('[data-contracts-copy]').forEach(node=>{node.textContent=l(node.dataset.contractsCopy)});
+   populate();if(record)render();else controls();
   }
-  function populateClubs(){
-   if(!clubs||select.options.length>1)return;
-   const fragment=doc.createDocumentFragment();
-   for(const c of clubs){
-    const option=doc.createElement('option');option.value=c.clubKey;
-    option.textContent=c.name+' · '+c.clubKey;fragment.append(option);
-   }
-   select.append(fragment);
+  function clear(){
+   record=null;selected.clear();clubs=null;select.value='';closeMenu();rows.replaceChildren();
+   el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';controls();
   }
-  function openEditor(p){
-   if(!allowed||busy)return;
-   selected=p;chosen=p.clubKey;select.value=p.clubKey??'';
-   el('[data-contracts-selected]').textContent='#'+p.id+' · '+p.name+' · '+clubName(p.clubKey);
-   buttons();select.focus();
+  function paint(yes){
+   allowed=yes;host.hidden=!yes;root.hidden=!yes;host.dataset.adminAccess=yes?'granted':'denied';
+   win.faAdminAccess=yes;win.dispatchEvent(new win.CustomEvent('fa:admin-access',{detail:yes}));if(!yes)clear();
   }
   async function load(){
-   if(!allowed)return;
-   const ticket=++epoch;closeEditor();message(label('loading'));tbody.setAttribute('aria-busy','true');
+   if(!allowed)return false;
+   const ticket=++epoch;loading();report(l('loading'));controls();
    try{
-    const query=filterId===null?'?page='+page:'?playerId='+filterId;
-    const response=await win.fetch('/api/admin/contracts'+query,{credentials:'same-origin',cache:'no-store'});
-    const payload=await response.json();
-    if(ticket!==epoch||!allowed)return;
-    if(!response.ok){if(response.status===401||response.status===403)permissionCache?.clear();throw Error(payload?.error?.code||'http_'+response.status);}
-    if(!Array.isArray(payload?.players)||!Array.isArray(payload?.clubs)||typeof payload.worldGeneration!=='string'||!Number.isSafeInteger(payload.worldRevision))throw Error('invalid_contract_data');
-    record=payload;clubs=payload.clubs;populateClubs();render();
-   if(filterId!==null&&payload.players.length===1)openEditor(payload.players[0]);
-   message(payload.count===0?label('empty'):'');
-   }catch(error){
-    if(ticket!==epoch)return;
-    record=null;tbody.replaceChildren();tbody.setAttribute('aria-busy','false');
-    el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';
-    el('[data-contracts-prev]').disabled=true;el('[data-contracts-next]').disabled=true;
-    const code=String(error.message||'');
-    message(code==='player_not_found'?label('notFound'):
-     code==='contracts_schema_unavailable'?label('schemaMissing'):
-     code==='not_found'||code==='http_404'?label('apiMissing'):
-     code==='admin_unavailable'||code==='environment_unavailable'||code==='http_503'?label('serviceUnavailable'):
-     label('failed'));
-    if(/^(unauthorized|permission_denied|http_401|http_403)$/.test(error.message))paint(false);
+    const res=await win.fetch('/api/admin/contracts?page='+page,{credentials:'same-origin',cache:'no-store'}),data=await res.json();
+    if(ticket!==epoch||!allowed)return false;
+    if(!res.ok){if([401,403].includes(res.status))permissionCache?.clear();throw Error(data?.error?.code||'http_'+res.status)}
+    if(!Array.isArray(data?.players)||!Array.isArray(data?.clubs)||typeof data.worldGeneration!=='string'||!Number.isSafeInteger(data.worldRevision))throw Error('invalid_contract_data');
+    if(record&&(data.worldGeneration!==record.worldGeneration||data.worldRevision!==record.worldRevision))selected.clear();
+    record=data;page=data.page;clubs=data.clubs;populate();render();
+    report(data.count===0?l('empty'):'');return true;
+   }catch(e){
+    if(ticket!==epoch)return false;clear();rows.setAttribute('aria-busy','false');
+    const code=String(e.message||'');
+    report(code==='contracts_schema_unavailable'?l('schemaMissing'):
+     ['not_found','http_404'].includes(code)?l('apiMissing'):['http_503','admin_unavailable','environment_unavailable'].includes(code)?l('unavailable'):l('failed'));
+    if(['unauthorized','permission_denied','http_401','http_403'].includes(code))paint(false);
+    return false;
    }
   }
-  async function mutate(target){
-   if(!allowed||busy||!selected||!record||target===selected.clubKey)return;
-   busy=true;buttons();message('');
-   const ticket=++epoch,p=selected,world=record;
+  function toggle(id,on){
+   if(!allowed||busy||!record)return;const p=record.players.find(x=>x.id===id);if(!p)return;
+   if(on){if(!selected.has(id)&&selected.size>=50){report(l('limit'));render();return}
+    selected.set(id,{playerId:id,expectedClubKey:p.clubKey})}
+   else selected.delete(id);
+   report('');render();
+  }
+  async function assign(){
+   if(!allowed||busy||!record||!selected.size||!select.value)return;
+   const target=select.value==='__unassigned__'?null:select.value;
+   const world=record,players=[...selected.values()],ticket=++epoch;busy=true;closeMenu();controls();report('');
    try{
     const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
-    if(!session.ok){if(session.status===401||session.status===403)permissionCache?.clear();throw Error('auth_'+session.status);}
+    if(!session.ok){if([401,403].includes(session.status))permissionCache?.clear();throw Error('auth_'+session.status)}
     const auth=await session.json();if(typeof auth.csrfToken!=='string'||!auth.csrfToken)throw Error('csrf_missing');
-    const response=await win.fetch('/api/admin/contracts',{
-     method:'POST',credentials:'same-origin',cache:'no-store',
+    const res=await win.fetch('/api/admin/contracts',{method:'POST',credentials:'same-origin',cache:'no-store',
      headers:{'Content-Type':'application/json','X-CSRF-Token':auth.csrfToken},
-     body:JSON.stringify({playerId:p.id,clubKey:target,expectedClubKey:p.clubKey,
-      expectedGeneration:world.worldGeneration,expectedRevision:world.worldRevision})
-    });
-    const payload=await response.json();
-    if(ticket!==epoch||!allowed)return;
-    if(!response.ok)throw Error(payload?.error?.code||'http_'+response.status);
-    busy=false;buttons();await load();if(record)message(label('saved'));
-   }catch(error){
-    if(ticket!==epoch)return;
-    message(/stale_world|stale_player_contract/.test(error.message)?label('stale'):label('writeFailed'));
-    if(/auth_401|auth_403|permission_denied/.test(error.message))paint(false);
-   }finally{busy=false;buttons();}
+     body:JSON.stringify({players,clubKey:target,expectedGeneration:world.worldGeneration,expectedRevision:world.worldRevision})});
+    const data=await res.json();if(ticket!==epoch||!allowed)return;
+    if(!res.ok)throw Error(data?.error?.code||'http_'+res.status);
+    selected.clear();select.value='';busy=false;syncSelect();
+    const ok=await load();if(ok)report(l('saved'));
+   }catch(e){
+    if(ticket!==epoch)return;const code=String(e.message||'');
+    report(/stale_world|stale_player_contract/.test(code)?l('stale'):l('saveFailed'));
+    if(['auth_401','auth_403','permission_denied'].includes(code))paint(false);
+   }finally{busy=false;controls();if(record)render()}
   }
   async function check(){
    const ticket=++epoch;paint(false);
-   const accept=permissions=>{
-    const permitted=['admin.access','admin.world.read','admin.world.write'].every(k=>permissions.includes(k));
-    paint(permitted);if(permitted)void load();
-   };
-   const cached=permissionCache?.read();
-   if(cached!==null&&cached!==undefined){accept(cached);return;}
+   const accept=permissions=>{const ok=['admin.access','admin.world.read','admin.world.write'].every(k=>permissions.includes(k));paint(ok);if(ok)void load()};
+   const cached=permissionCache?.read();if(cached!==undefined&&cached!==null){accept(cached);return}
    try{
-    const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
-    if(!response.ok){if(response.status===401)permissionCache?.write([]);throw Error('permissions')}
-    const payload=await response.json();
-    if(ticket!==epoch)return;
-    const permissions=Array.isArray(payload.permissions)?payload.permissions:[];
-    permissionCache?.write(permissions);accept(permissions);
+    const res=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
+    if(!res.ok){if(res.status===401)permissionCache?.write([]);throw Error('permission_denied')}
+    const data=await res.json();if(ticket!==epoch)return;
+    const perms=Array.isArray(data.permissions)?data.permissions:[];permissionCache?.write(perms);accept(perms);
    }catch{if(ticket===epoch)paint(false)}
   }
-  el('[data-contracts-search-form]').addEventListener('submit',event=>{
-   event.preventDefault();
-   const raw=search.value.trim();
-   if(!/^[1-9][0-9]*$/.test(raw)||!Number.isSafeInteger(Number(raw))){message(label('invalid'));return;}
-   filterId=Number(raw);page=1;void load();
+  rows.addEventListener('change',e=>{const c=e.target.closest?.('input[data-contracts-check]');if(c)toggle(Number(c.dataset.contractsCheck),c.checked)});
+  all.addEventListener('change',()=>{
+   if(!record||busy)return;
+   const list=record.players,include=list.some(p=>!selected.has(p.id));
+   if(include&&selected.size+list.filter(p=>!selected.has(p.id)).length>50){report(l('limit'));render();return}
+   for(const p of list){if(include)selected.set(p.id,{playerId:p.id,expectedClubKey:p.clubKey});else selected.delete(p.id)}
+   report('');render();
   });
-  el('[data-contracts-clear]').addEventListener('click',()=>{search.value='';filterId=null;page=1;void load()});
   el('[data-contracts-prev]').addEventListener('click',()=>{if(!busy&&page>1){page--;void load()}});
   el('[data-contracts-next]').addEventListener('click',()=>{if(!busy&&record&&page<record.totalPages){page++;void load()}});
-  tbody.addEventListener('click',event=>{
-   const target=event.target.closest('button[data-contracts-edit]');
-   if(!target)return;
-   const p=record?.players.find(x=>x.id===Number(target.dataset.contractsEdit));
-   if(p)openEditor(p);
-  });
-  select.addEventListener('change',()=>{chosen=select.value||null;buttons()});
-  save.addEventListener('click',()=>{void mutate(chosen)});
-  unassign.addEventListener('click',()=>{void mutate(null)});
-  el('[data-contracts-cancel]').addEventListener('click',closeEditor);
-  new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  // Permission cache is per-tab and refreshed only on a full navigation/refresh.
+  save.addEventListener('click',()=>{void assign()});
+  trigger.addEventListener('click',()=>menu.hidden?openMenu():closeMenu(true));
+  trigger.addEventListener('keydown',keys);search.addEventListener('keydown',keys);search.addEventListener('input',filterOptions);
+  doc.addEventListener('pointerdown',e=>{if(!el('.admin-contracts-dropdown').contains(e.target))closeMenu()},{capture:true});
+  win.addEventListener('resize',()=>{if(!menu.hidden)closeMenu()},{passive:true});
+  new win.MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   translate();void check();
  }
  return {mount};
