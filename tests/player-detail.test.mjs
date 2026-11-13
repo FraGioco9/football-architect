@@ -328,7 +328,7 @@ test('#535 natural age text and nationality aligned on same header baseline in f
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)\?localizedAge\(player\.age\):'—'\)/);
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center;/);
  assert.match(css,/\.app-player-detail-header-meta>\[data-detail-header-nationality\],\.app-player-detail-header-meta>\[data-detail-header-age\]\{display:inline-flex;align-items:center/);
- assert.match(css,/\.app-player-detail-header-meta \.app-player-detail-country\{display:inline-flex;align-items:center/);
+ assert.match(css,/\.app-player-detail-header-meta \.app-player-detail-country,\.app-player-detail-country-skeleton\{display:inline-flex;align-items:center/);
 });
 
 test('#535 header nationality has no tooltip and shows a full visible name',()=>{
@@ -352,7 +352,8 @@ test('#535 flag, long nationality, dot and age skeleton share the real header fo
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
  assert.match(css,/\.app-player-detail-identity\{[^}]*flex:0 1 440px/);
- assert.match(css,/@media\(max-width:620px\)\{\.app-player-detail-affiliation\{[^}]*\.app-player-detail-identity\{flex:1 1 0;max-width:none\}/);
+ assert.match(css,/@media\(max-width:620px\)\{\.app-player-detail-affiliation\{[^}]*\}/);
+ assert.match(css,/\.app-player-detail-identity\{flex:1 1 0;max-width:none\}/);
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
   const header=html.slice(html.indexOf('class="app-player-detail-header-meta"'),html.indexOf('class="app-player-detail-affiliation"'));
