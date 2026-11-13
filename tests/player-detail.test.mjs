@@ -247,7 +247,7 @@ test('#535 selectable pitch roles use a primary default and update A/B without l
  assert.doesNotMatch(js.slice(js.indexOf(' function selectPosition(code)'),js.indexOf(' function renderPitch()')),/renderPitch\(\)/,
   'Do not replace keyboard-focused markers when selecting another role');
  assert.match(css,/\.app-player-detail-pitch-marker\.is-selected circle/);
- assert.match(css,/\.app-player-detail-pitch-marker:focus-visible circle/);
+ assert.match(css,/\.app-player-detail-pitch-marker:focus-visible \.app-player-detail-marker-disc/);
  assert.match(css,/\.app-player-detail-pitch-marker circle\{fill:#FFFFFF;stroke:#143D2A;stroke-width:2\}/);
  assert.match(css,/\.app-player-detail-attributes\{display:flex;flex-direction:column/);
  assert.match(css,/\.app-player-detail-legend\{[^}]*margin-top:auto;padding-top:12px/);
@@ -274,7 +274,8 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
   assert.match(html,/data-detail-header-age/);
   assert.match(html,/data-detail-club/);
   assert.match(html,/app-player-detail-affiliation/);
-  assert.match(html,/app-player-detail-club-skeleton/);
+  assert.match(html,/app-player-detail-club-logo-skeleton/);
+  assert.match(html,/app-player-detail-club-name-skeleton/);
   assert.doesNotMatch(html,/data-detail-club-label/);
  }
  assert.match(renderer,/app-player-detail-header-meta/);
@@ -322,7 +323,7 @@ test('#535 follow-up: marker has no native tooltip, club has stacked crest and n
 test('#535 natural age text and nationality aligned on same header baseline in five locales',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
  assert.match(js,/function localizedAge\(n\)/);
- for(const phrase of ["'anni'","'years'","'old'","'Jahre'","'alt'","'años'","'ans'"])
+ for(const phrase of ["'anni'","'years'","old","'Jahre'","alt","'años'","'ans'"])
   assert.ok(js.includes(phrase),phrase);
  assert.doesNotMatch(js,/copy\.fields\[2\]\+': '\+player\.age/);
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)\?localizedAge\(player\.age\):'—'\)/);
