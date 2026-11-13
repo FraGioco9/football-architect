@@ -10,6 +10,7 @@ import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
+import {readPublicClubRoster} from './public-club-roster-read.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -69,6 +70,17 @@ export default {
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'players_unavailable'}});
+      }
+    }
+    const roster=url.pathname.match(/^\/api\/clubs\/([^/]+)\/roster$/);
+    if(roster){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicClubRoster(requireDatabase(env.DB),roster[1]))}
+      catch(error){
+        if(error instanceof ApiError&&['club_not_found','stale_world'].includes(error.code))
+         return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'roster_unavailable'}});
       }
     }
     const sporting=url.pathname.match(/^\/api\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))\/seasons\/([1-9][0-9]*)$/);
