@@ -169,6 +169,11 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(css,/\[data-admin-contracts\]\[hidden\]/);
  assert.match(css,/\.admin-contracts-checkbox-cell input/);
  assert.match(css,/\.admin-contracts-dropdown-trigger/);
+ assert.match(css,/\.app-admin-view \.admin-contracts-message\{position:absolute!important/);
+ assert.match(css,/\.admin-contracts-checkbox-cell\{user-select:none/);
+ assert.match(source,/e\.shiftKey&&e\.target\.closest/);
+ assert.doesNotMatch(source,/report\(l\('loading'\)\)|report\(l\('saved'\)\)/);
+ assert.match(source,/save\.textContent=l\('assign'\)/);
  assert.match(source,/\/api\/player\/permissions/);
  assert.match(source,/admin\.world\.write/);
  assert.match(source,/\/api\/admin\/contracts/);

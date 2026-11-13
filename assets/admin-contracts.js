@@ -25,7 +25,7 @@
    el('[data-contracts-selected-count]').textContent=selected.size+' '+l('selected');
    trigger.disabled=!allowed||busy||!record;
    save.disabled=!allowed||busy||!record||selected.size===0||!select.value;
-   save.textContent=busy?l('saving'):l('assign');
+   save.textContent=l('assign');
    const visible=record?.players||[],n=visible.filter(p=>selected.has(p.id)).length;
    all.disabled=!allowed||busy||!record||!visible.length;
    all.checked=visible.length>0&&n===visible.length;all.indeterminate=n>0&&n<visible.length;all.setAttribute('aria-label',l('all'));
@@ -135,7 +135,7 @@
   }
   async function load(){
    if(!allowed)return false;
-   const ticket=++epoch;loading();report(l('loading'));controls();
+   const ticket=++epoch;loading();report('');controls();
    try{
     const res=await win.fetch('/api/admin/contracts?page='+page,{credentials:'same-origin',cache:'no-store'}),data=await res.json();
     if(ticket!==epoch||!allowed)return false;
@@ -146,7 +146,7 @@
     }
     if(record?.page!==data.page)anchorId=null;
     record=data;page=data.page;clubs=data.clubs;populate();render();
-    report(data.count===0?l('empty'):'');return true;
+    return true;
    }catch(e){
     if(ticket!==epoch)return false;clear();rows.setAttribute('aria-busy','false');
     const code=String(e.message||'');
@@ -190,7 +190,7 @@
     const data=await res.json();if(ticket!==epoch||!allowed)return;
     if(!res.ok)throw Error(data?.error?.code||'http_'+res.status);
     selected.clear();anchorId=null;select.value='';busy=false;syncSelect();
-    const ok=await load();if(ok)report(l('saved'));
+    await load();
    }catch(e){
     if(ticket!==epoch)return;const code=String(e.message||'');
     report(/stale_world|stale_player_contract/.test(code)?l('stale'):l('saveFailed'));
@@ -208,6 +208,11 @@
     const perms=Array.isArray(data.permissions)?data.permissions:[];permissionCache?.write(perms);accept(perms);
    }catch{if(ticket===epoch)paint(false)}
   }
+  // Prevent the browser's native Shift-click text selection over checkbox rows.
+  // Keep the input click intact so ranged checkbox selection continues to work.
+  rows.addEventListener('mousedown',e=>{
+   if(e.shiftKey&&e.target.closest?.('input[data-contracts-check]'))e.preventDefault();
+  });
   rows.addEventListener('click',e=>{const c=e.target.closest?.('input[data-contracts-check]');if(c)toggle(Number(c.dataset.contractsCheck),c.checked,e.shiftKey)});
   all.addEventListener('change',()=>{
    if(!record||busy)return;

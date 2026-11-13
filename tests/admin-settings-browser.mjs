@@ -541,6 +541,10 @@ try{
    assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
    assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
    assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),4);
+   assert.equal(await page.locator('[data-contracts-message]').isVisible(),false,
+    'Contracts status text must not occupy space or appear on screen');
+   assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
+    'No Loading players message is shown');
    assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.locator('[data-contracts-check="1"]').check();
@@ -548,6 +552,8 @@ try{
    for(const id of [1,2,3,4])
     assert.equal(await page.locator('[data-contracts-check="'+id+'"]').isChecked(),true);
    assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^4 /);
+   assert.equal(await page.evaluate(()=>window.getSelection()?.toString()||''),'',
+    'Shift+click range must not highlight table text');
    await page.locator('[data-contracts-check="1"]').uncheck();
    await page.locator('[data-contracts-check="4"]').click({modifiers:['Shift']});
    for(const id of [1,2,3,4])
@@ -569,6 +575,9 @@ try{
    await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
     .every(row=>row.textContent.includes('Free Agent')));
    assert.equal(writes,2);
+   assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
+    'No loading or success messages after assignment');
+   assert.equal(await page.locator('[data-contracts-message]').isVisible(),false);
    assert.ok(permissionReads<=2,'Shared Admin permission cache');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
