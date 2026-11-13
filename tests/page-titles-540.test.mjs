@@ -58,6 +58,9 @@ test('#540 existing simple page titles and JavaScript parse are preserved',()=>{
   ['calendar/index.html','Calendar — Football Architect'],
   ['settings/index.html','Settings — Football Architect'],
   ['players/index.html','Players — Football Architect'],
+  ['admin/calendar/index.html','Admin Calendar — Football Architect'],
+  ['admin/players/index.html','Admin Players — Football Architect'],
+  ['admin/contracts/index.html','Admin Contracts — Football Architect'],
   ['match-engine/lab/index.html','Match Engine — Football Architect']
  ])assert.equal(pageTitle(path),title,path);
  for(const path of ['assets/app.js','assets/player-detail.js','assets/club-page.js','assets/admin-players-preview.js'])
