@@ -25,6 +25,19 @@ test('#502 persisted and protected preview detail routes are canonical and stati
  assert.ok(published.includes('admin/players/preview/player/index.html'));
 });
 
+test('#527 public mobile Player Detail text is centered against the portrait without the unused subtitle',()=>{
+ const css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ assert.match(css,/@media\(max-width:620px\)\{\s*\.app-player-detail-heading\{align-items:center\}/);
+ assert.match(css,/\.app-player-detail-identity\{align-self:center;justify-content:center\}/);
+ assert.match(css,/\.app-player-detail-page\[data-player-detail-mode="public"\] \.app-player-detail-subtitle\{display:none\}/);
+ assert.match(renderer,/data-detail-name/);
+ assert.match(renderer,/data-detail-role/);
+ assert.match(renderer,/data-detail-header-nationality/);
+ assert.match(renderer,/data-detail-header-age/);
+ assert.match(css,/\.app-player-detail-heading\{display:flex;align-items:center;gap:18px;min-width:0;min-height:181px\}/,
+  'restored 9411b691 desktop layout, with no horizontal justification override');
+});
+
 test('#502 both generated detail shells match canonical renderer and reserve first-paint fields',()=>{
  for(const [src,output,mode] of [
   ['players/index.html','players/_shared/index.html','public'],
