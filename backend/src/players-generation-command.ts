@@ -109,7 +109,7 @@ export async function readPlayerGenerationDraft(db:Database,session:AdminSession
  const stored=JSON.parse(draft.candidates_json) as Data[];
  if(!Array.isArray(stored)||stored.length!==draft.count)throw new ApiError(503,'players_preview_unavailable');
  // Snapshot intentionally omits ephemeral ids. Reconstruct them for authorized reads.
- const candidates=stored.map((player,index)=>({...player,preview_id:'trial-'+String(index+1).padStart(4,'0')}));
+ const candidates:Data[]=stored.map((player,index)=>({...player,preview_id:'trial-'+String(index+1).padStart(4,'0')}));
  const countries:Record<string,number>={};
  for(const item of candidates){const code=String(item.nationality??'');countries[code]=(countries[code]??0)+1;}
  return {draftId:draft.id,worldGeneration:draft.world_generation,seasonNumber:draft.season_number,
