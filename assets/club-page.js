@@ -184,7 +184,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-      if(next.view==='roster'&&selected.view!=='roster')rosterSnapshot={source:'loading'};
+      if(next.view==='roster')rosterSnapshot={source:'loading'};
       selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
