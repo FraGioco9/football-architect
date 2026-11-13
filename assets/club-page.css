@@ -5,7 +5,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-first-paint-header .club-crest{visibility:visible}
 /* Anonymous header crest shares the circular standings loading primitive. */
 .club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
-.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:fill;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:contain;flex:none}
 .club-first-paint-header h1{min-height:1.15em}
 .club-first-paint-header .club-location{min-height:1.25em}
 .club-first-paint-panel{min-height:160px;visibility:visible}

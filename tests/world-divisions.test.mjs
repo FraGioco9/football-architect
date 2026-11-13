@@ -215,8 +215,8 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;align-items:center;justify-content:center;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}"));
  assert.ok(css.includes(".app-world-flag{display:block;width:100%;height:100%;flex:none;object-fit:contain;border:0;border-radius:0;clip-path:none}"));
- assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
- assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("lipis/flag-icons"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("MIT license"));
 });
 
 test("COMPETITIONS-06 keyboard and click controls preserve seven-tab routing",()=>{
