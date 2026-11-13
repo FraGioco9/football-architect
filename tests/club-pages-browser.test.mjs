@@ -591,6 +591,20 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(pendingTabs.hrefs,0);
     assert.deepEqual(pendingTabs.focus,[-1,-1,-1,-1,-1]);
     assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
+    assert.equal(await run("document.querySelector('.club-load-error')"),null,'loading roster must not show the generic Club info error');
+    assert.equal(await run("document.documentElement.dataset.clubIdentityReady"),'true','club identity loads while the roster waits');
+    // Pending views are grey and non-interactive on desktop, including the active tab.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    const desktopPending=await run("(()=>{const tabs=[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')];return tabs.map(el=>{const css=getComputedStyle(el);return {opacity:css.opacity,background:css.backgroundColor,pointer:css.pointerEvents,disabled:el.getAttribute('aria-disabled'),href:el.getAttribute('href')}})})()");
+    assert.equal(desktopPending.length,5);
+    for(const [index,tab] of desktopPending.entries()){
+     assert.ok(Math.abs(Number(tab.opacity)-0.45)<0.02,'desktop disabled opacity: '+index);
+     assert.ok(tab.background==='rgba(0, 0, 0, 0)'||tab.background==='transparent','desktop disabled background: '+index+' '+tab.background);
+     assert.equal(tab.pointer,'none','desktop disabled pointer events '+index);
+     assert.equal(tab.disabled,'true','desktop aria-disabled '+index);
+     assert.equal(tab.href,null,'desktop must not expose nonfunctional URLs');
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
     await run("document.querySelector('[data-club-roster-view=mental]').click()");
     assert.equal(await run('location.search'),'?view=technical','loading subviews cannot navigate');
     for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
