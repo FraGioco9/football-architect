@@ -248,9 +248,14 @@ try{
     await page.mouse.move(0,0); // Establish an unhovered field baseline.
     await page.waitForTimeout(220);
     const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
-    await page.locator('[data-admin-players-label="age"]').hover();
+    // Captions deliberately ignore pointer events; hover() would wait for a hit target forever.
+    const captionBox=await page.locator('[data-admin-players-label="age"]').boundingBox();
+    assert.ok(captionBox,'The age caption must be laid out');
+    await page.mouse.move(captionBox.x+captionBox.width/2,captionBox.y+captionBox.height/2);
     await page.waitForTimeout(220);
     assert.deepEqual(await readLabel(),beforeFocus,'Hover on field caption must not highlight the label');
+    const inputAfterCaption=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    assert.deepEqual(inputAfterCaption,inputBeforeHover,'Hover on the caption must not highlight the input box either');
     // Native HTML <label> can forward :hover to its associated input.
     // The visible highlight belongs to the field box, never the caption.
     await age.hover();
