@@ -18,7 +18,7 @@ function detailPanel(preview){
  const silhouette='<svg class="app-player-detail-silhouette" viewBox="0 0 160 181" fill="none" aria-hidden="true" focusable="false"><circle cx="80" cy="62" r="31" fill="currentColor"/><path d="M29 178v-21c0-34 17-55 43-62l8 8 8-8c26 7 43 28 43 62v21H29Z" fill="currentColor"/></svg>';
  return '<div class="app-player-detail-wrap" data-player-detail>\n'
   +'<header class="app-player-detail-heading"><div class="app-player-detail-portrait">'+silhouette+'</div>'
-  +'<div class="app-player-detail-identity"><h1 id="player-detail-title" class="app-page-title"><span data-detail-name><span class="app-skeleton-bar app-player-detail-name-skeleton" aria-hidden="true"></span></span></h1>'
+  +'<div class="app-player-detail-identity"><h1 id="player-detail-title" class="app-page-title"><span class="sr-only" data-detail-heading-fallback>'+(preview?'Player preview':'Player')+'</span><span data-detail-name><span class="app-skeleton-bar app-player-detail-name-skeleton" aria-hidden="true"></span></span></h1>'
   +'<p class="app-player-detail-role" data-detail-role><span class="app-skeleton-bar" aria-hidden="true"></span></p>'
   +'<div class="app-player-detail-header-meta"><span data-detail-header-nationality><span class="app-player-detail-country-skeleton" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-flag-skeleton"></span><span class="app-skeleton-bar app-player-detail-nationality-skeleton"></span></span></span><span class="app-player-detail-header-separator" aria-hidden="true" hidden>·</span><span data-detail-header-age hidden></span></div>'
   +'<p class="app-player-detail-subtitle" data-detail-subtitle>&nbsp;</p></div>'
@@ -45,7 +45,7 @@ export function renderPlayerDetailPage(html,mode){
  if(!result.includes(current))throw new Error('Player detail source script missing');
  result=result.replace(current,'/assets/player-detail.js')
   .replace(preview?'<title>Admin — Players Preview':'<title>Players — Football Architect',
-           preview?'<title>Admin — Player':'<title>Player — Football Architect');
+           preview?'<title>Player preview':'<title>Player — Football Architect');
  if(!result.includes('/assets/player-detail.css'))
   result=result.replace('</head>','  <link rel="stylesheet" href="/assets/player-detail.css">\n</head>');
  if(!result.includes('data-player-detail-first-paint'))

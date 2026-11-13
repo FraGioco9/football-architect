@@ -1286,12 +1286,9 @@
       if(language()==='en')target.searchParams.delete('lang');else target.searchParams.set('lang',language());link.href=target.href;
     }
     const defaultView=window.matchMedia?.('(max-width:620px), (hover:none) and (pointer:coarse)')?.matches?'week':'season';
-    // The DEV season is stored before the DEV widget mounts; do not gate it on a Calendar-only clock.
-    const worldSeason=window.faWorldState?.get?.().current?.season;
-    let activeSeason=Math.max(1,worldSeason||1);
-    const isDevCalendar=window.faDebugEnabled!==false&&(window.faWorldState?.get?.().source==='dev'||window.faDevPreviewMode===true||Boolean(document.documentElement.dataset.faDevAppOrigin)||window.faDevCalendarClockSnapshot?.source?.kind==="dev");
-    if(isDevCalendar){try{const n=Number(sessionStorage.getItem('football-architect:standings-dev-season'));if(Number.isInteger(n)&&n>=1&&n<=4)activeSeason=n}catch{}}
-    const calendarRoute="/calendar?"+(isDevCalendar||worldSeason!=null?"season="+activeSeason+"&":"")+"calendarView="+defaultView;
+    // The Calendar link always means "current" and must not pin the clock
+    // to whichever season happened to be active when the link was rendered.
+    const calendarRoute="/calendar?calendarView="+defaultView;
     // Refresh on activation: the DEV season may change after the sidebar first renders.
     const calendarNav=links.calendar;
     if(calendarNav?.dataset&&!calendarNav.dataset.calendarSeasonLinkBound&&typeof calendarNav.addEventListener==="function"){
@@ -1314,8 +1311,7 @@
       const route = registry?.parseRoute(pathname) || registry?.parseRoute(pathname.replace(/\/$/, "")+"/standings");
       if (route && (route.kind === "competition" || route.kind === "cup")) {
         const id = route.base.slice("/competitions/".length);
-        const season = link.getAttribute("data-dev-latest-season") || String(activeSeason);
-        link.setAttribute("href", appHref(registry.buildRoute({kind:route.kind,id,view:"standings"})+"?season="+season));
+        link.setAttribute("href", appHref(registry.buildRoute({kind:route.kind,id,view:"standings"})));
       }
     }
     for (const link of document.querySelectorAll("a.app-competition-return")) {
@@ -1391,7 +1387,7 @@
       if (countryName) node.textContent = countryName;
     }
     const detail = document.getElementById("division-detail-name");
-    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin") document.title = (activeView() === "divisions" ? (detail ? detail.textContent : strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
+    if (activeView() !== "clubs" && activeView() !== "profile" && activeView() !== "admin" && !document.querySelector?.("[data-player-detail-mode]")) document.title = (activeView() === "divisions" ? (detail?.textContent?.trim() || strings.navCompetitions) : activeView() === "players" ? strings.statsDevPlayers : strings[activeView()]) + " — Football Architect";
     renderWorldProgress();
   }
   function renderView() {

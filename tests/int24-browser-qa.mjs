@@ -450,6 +450,8 @@ try {
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
+  // Supplied-data browser QA deliberately exercises the isolated Debug source.
+  await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
   for(const view of views){
    const url=base+"/competitions/"+cup+"/"+view;
    const response=await page.goto(url,{waitUntil:"domcontentloaded"});
@@ -675,6 +677,8 @@ try {
  // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
  // Calendar and Club; it never creates a simulated season 0.
  const page=await browser.newPage({viewport:{width:390,height:900}});
+ // Season 0 scenarios explicitly opt into Debug before the first protected paint.
+ await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
  page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
@@ -791,6 +795,7 @@ try {
  // historical rules snapshot, scores or table. Interception is test-only.
  for(const id of ['IT-1','int-1','int-2']){
   const historyPage=await browser.newPage({viewport:{width:390,height:900}});
+  await historyPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
   await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
    const response=await route.fetch(),json=await response.json();
    const definition=json.competitions.find(definition=>definition.id===id);definition.rules.phases[0].points.win=2;
@@ -845,7 +850,12 @@ try {
   if(id==='IT-1'){
    await historyPage.locator('.fa-dev-widget-button').click();
    await historyPage.locator('[data-dev-control="season-number"]').fill('2');await historyPage.locator('[data-dev-control="season-number"]').dispatchEvent('change');
+   // #531: an implicit season follows the new current Debug season. Pin the
+   // historical Season 1 explicitly before asserting its archived rule snapshot.
+   await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===2);
+   await historyPage.evaluate(()=>window.faCompetitionRoute.set({season:'1'}));
    await historyPage.waitForFunction(()=>window.faCompetitionContext?.selectedSeason===1&&window.faCompetitionContext?.seasonData?.rulesSnapshot?.phases[0].points.win===3);
+   assert.equal(new URL(historyPage.url()).searchParams.get('season'),'1');
    assert.notEqual(await historyPage.locator('#app-standings-body tr').nth(1).getAttribute('data-standing-outcome'),'champion');
    assert.notEqual(await historyPage.locator('#app-standings-compact-list>li').nth(1).getAttribute('data-standing-outcome'),'champion');
    await historyPage.evaluate(()=>window.faCompetitionRoute.set({view:'standings'}));
@@ -855,6 +865,7 @@ try {
  }
  // PR 318: shared domestic qualification bands, localized legends and centered form letters.
  const formPage=await browser.newPage({viewport:{width:1440,height:900}});
+ await formPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:"domcontentloaded"});
  await formPage.evaluate(()=>{
   sessionStorage.setItem('football-architect:standings-dev-preview','on');

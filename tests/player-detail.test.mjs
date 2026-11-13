@@ -108,7 +108,7 @@ test('#502 preview generated link retains only routing context and never persist
 test('#502 error pages settle placeholders rather than leaving a perpetual loading skeleton',()=>{
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
- assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
+ assert.ok(script.includes("setContent(nameNode,state==='not-found'?copy.notFound:copy.player)"));
  assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 
@@ -156,7 +156,6 @@ test('#502 Overview and Info are independent views with reserved first paint and
  assert.doesNotMatch(read('players/_shared/index.html'),/data-detail-back/);
  assert.match(read('admin/players/preview/player/index.html'),/data-detail-back/);
 });
-
 
 test('#555 default player Overview is a clean URL across initial load, tabs, legacy links and browser history',()=>{
  const script=read('assets/player-detail.js');

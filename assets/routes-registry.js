@@ -38,8 +38,30 @@ function buildRoute({kind,id,view="overview",country:clubCountry}){
  if(kind==="page"&&pages.includes(id))return "/"+id;
  throw new TypeError("Invalid route identity or view");
 }
+// A missing season is an intentional current-season permalink, not a reason to
+// insert a query string. Explicit historical/current permalinks remain stable.
+function resolveSeasonQuery(search,current=null,{min=1}={}){
+ const params=search instanceof URLSearchParams?search:new URLSearchParams(search);
+ const has=params.has("season"),raw=params.get("season");
+ const valid=typeof raw==="string"&&(min===0?/^(?:0|[1-9]\d{0,8})$/:/^[1-9]\d{0,8}$/).test(raw);
+ const confirmed=Number.isSafeInteger(current)&&current>=0;
+ const latest=confirmed?Math.max(min,current):null;
+ const requested=valid?Number(raw):null;
+ const unavailable=confirmed&&requested!==null&&requested>latest;
+ return Object.freeze({season:requested!==null&&!unavailable?requested:latest,
+  explicit:has&&valid&&!unavailable,remove:has&&(!valid||unavailable),confirmed});
+}
+function withSeason(path,season,current,{preserveExplicit=false}={}){
+ const url=new URL(path,"https://football-architect.invalid");
+ const other=new URLSearchParams(url.search);url.search="";
+ if(Number.isSafeInteger(season)&&season>=0&&
+   (preserveExplicit||!Number.isSafeInteger(current)||season!==current))
+  url.searchParams.set("season",String(season));
+ for(const [key,value] of other)if(key!=="season")url.searchParams.append(key,value);
+ return url.pathname+url.search+url.hash;
+}
 function canonicalizeRoute(pathname){return parseRoute(pathname)?.canonical??null;}
 function resolveRouteIdentity(pathname){const p=parseRoute(pathname);return p?Object.freeze({kind:p.kind,base:p.base??p.canonical,view:p.view??null}):null;}
 
-return Object.freeze({countries,competitionViews,cupViews,clubViews,pages,parseRoute,buildRoute,canonicalizeRoute,resolveRouteIdentity});
+return Object.freeze({countries,competitionViews,cupViews,clubViews,pages,parseRoute,buildRoute,resolveSeasonQuery,withSeason,canonicalizeRoute,resolveRouteIdentity});
 });

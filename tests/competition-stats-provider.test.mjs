@@ -14,7 +14,7 @@ function fixture(id='IT-1'){
  const results=createPreviewStandings(division,15).fixtures;
  const stored=new Map([['football-architect:standings-dev-season','1'],['football-architect:standings-dev-matchdays','15'],['football-architect:standings-dev-preview','on']]);
  const sessionStorage={getItem:key=>stored.get(key)??null};
- const window={faCompetitionDivision:division,events:{},faCompetitionContext:{definition,selectedSeason:1,revision:1,seasonData:{season:1,rulesVersion:definition.rules.version,participants:division.clubs,fixtures:null,results,statistics:{standings:[]},status:'partial'}},
+ const window={faDebugEnabled:true,faCompetitionDivision:division,events:{},faCompetitionContext:{definition,selectedSeason:1,revision:1,seasonData:{season:1,rulesVersion:definition.rules.version,participants:division.clubs,fixtures:null,results,statistics:{standings:[]},status:'partial'}},
   addEventListener(name,fn){this.events[name]=fn},removeEventListener(name){delete this.events[name]}};
  let publications=0;
  window.faCompetitionContextApi={replaceSeasonData(data,expected){assert.equal(expected,window.faCompetitionContext.revision);publications++;window.faCompetitionContext={...window.faCompetitionContext,revision:expected+1,seasonData:data};return true}};

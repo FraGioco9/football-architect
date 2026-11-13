@@ -125,7 +125,7 @@
   for(const [lang,label] of Object.entries({en:'Authoritative world',it:'Mondo autorevole',de:'Verbindliche Welt',es:'Mundo oficial',fr:'Monde officiel'}))clockText[lang].push(label);
   // DEV presentation is enabled only by the isolated server-side HTML bootstrap.
   // Public pages must never accept a browser-dispatched fictional or authoritative clock.
-  const devClockEnabled=()=>window.faDebugEnabled!==false&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
+  const devClockEnabled=()=>window.faDebugEnabled===true&&(window.faDevPreviewMode===true||window.faDevCalendarClockSnapshot?.source?.kind==='dev');
   function updateClock(raw){
     try{clockSnapshot=devClockEnabled()&&raw?.source?.kind==='dev'?clockAdapter?.normalize(raw)??null:null}catch{clockSnapshot=null}
     if(pendingInitialWeek&&state.view==='week'&&manualWeekDay===null){
@@ -167,18 +167,24 @@
   updateClock(window.faDevCalendarClockSnapshot??null);
   const hasLocation=()=>Boolean(window.location?.href)&&typeof URL!=='undefined';
   const returnPath=()=>{
-    const p=new URLSearchParams();
+    const p=new URLSearchParams(window.location?.search||'');
     const season=window.faCalendarSelectedSeason?.()??Number(root.dataset.calendarSeason);
-    if(season)p.set('season',String(season));
+    const current=Math.max(1,window.faWorldState?.get?.().current?.season??season);
+    const choice=window.faRoutesRegistry?.resolveSeasonQuery(p,current);
+    if(season&&(season!==current||choice?.explicit))p.set('season',String(season));
+    else p.delete('season');
+    p.delete('day');
     p.set('calendarView',state.view);
     if(state.view==='week'&&root.dataset.calendarWeekPending!=='true')p.set('week',String(Math.ceil(state.day/7)));
+    else p.delete('week');
     return '/calendar?'+p.toString();
   };
   const saveUrl=push=>{
     if(!hasLocation()||!window.history)return;
     const target=returnPath();
+    const hash=window.location.hash||'';
     if(window.location.pathname+window.location.search!==target)
-      window.history[push?'pushState':'replaceState'](null,'',target);
+      window.history[push?'pushState':'replaceState'](null,'',target+hash);
   };
   window.addEventListener?.('popstate',()=>{
     if(!hasLocation())return;

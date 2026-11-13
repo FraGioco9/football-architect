@@ -135,7 +135,7 @@
     state.subscribe(()=>onChange());onChange();
     const protectedSource=window.faDevPreviewMode===true||document.documentElement.dataset.faDevCurrentSeason!==undefined;
     const syncDebug=()=>{
-      if(!protectedSource||window.faDebugEnabled===false)return;
+      if(!protectedSource||window.faDebugEnabled!==true)return;
       try{
         const raw=sessionStorage.getItem('football-architect:standings-dev-season');
         const candidate=raw===null||raw.trim()===''?1:Number(raw),n=Number.isInteger(candidate)&&candidate>=0&&candidate<=4?candidate:1;
@@ -145,7 +145,7 @@
     };
     let controller;
     const refresh=async()=>{
-      if(protectedSource&&window.faDebugEnabled!==false){syncDebug();return;}
+      if(protectedSource&&window.faDebugEnabled===true){syncDebug();return;}
       state.setSource({kind:'authoritative'});
       controller?.abort();controller=new AbortController();const ticket=state.beginRead(),requestController=controller,timer=setTimeout(()=>requestController.abort(),8000);
       try{

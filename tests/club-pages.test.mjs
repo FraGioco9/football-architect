@@ -411,7 +411,7 @@ test('club competition links open Standings with the displayed season and no fix
  const manifest=JSON.parse(read('clubs/_shared/manifest.json')),selected=model.route('/clubs/it/1/overview');
  const snapshot={source:'dev',divisionId:'IT-1',clubId:1,season:3,position:2,points:12,nextMatch:null};
  const href=(search,summary)=>model.render(manifest,selected,'en',search,summary).match(/class="club-competition-name"><a[^>]*href="([^"]+)"/)?.[1];
- assert.equal(href('',snapshot),'/competitions/it-1/standings?season=3');
+ assert.equal(href('',snapshot),'/competitions/it-1/standings');
  assert.equal(href('?season=2&matchday=7',null),'/competitions/it-1/standings?season=2');
  assert.equal(href('',null),'/competitions/it-1/standings');
  assert.equal(href('?season=bad',null),'/competitions/it-1/standings');
@@ -422,7 +422,7 @@ test('SAF-05 club league links open the selected season without an unparameteriz
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const selected=model.route('/clubs/it/1/overview');
  const html=model.render(manifest,selected,'en','',null,3);
- assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=3"/g)||[]).length,1);
+ assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings"/g)||[]).length,1);
  const requested=model.render(manifest,selected,'en','?season=2',null,3);
  assert.equal((requested.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=2"/g)||[]).length,1);
  assert.match(read('assets/club-page.js'),/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
@@ -762,7 +762,7 @@ test('CLUB-FIXTURES: viewed seasons follow Standings and clamp invalid or future
   const result=ui.resolveSeason({current});assert.deepEqual(result.seasons,expected);assert.equal(result.season,Math.max(1,current));
  }
  assert.equal(ui.resolveSeason({current:2,requested:'1'}).season,1);
- for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,1);
+ for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  for(const requested of ['3','999'])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  assert.equal(ui.resolveSeason({current:0,requested:'2'}).season,1);
  assert.equal(ui.resolveSeason({current:null,requested:'999'}).season,null,'unverified clock cannot clamp a future link');
@@ -803,5 +803,7 @@ test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a publ
  assert.doesNotMatch(read('assets/club-page.css'),/club-fixture-season-loading/);
  assert.doesNotMatch(generated,/club-fixture-season-loading/);
  assert.match(generator,/const requested=params\.get\('season'\),valid=/);
- assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,seasons,filter,snapshot/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/currentSeason:/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/explicitSeason:/);
 });
