@@ -543,8 +543,12 @@
    }
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
- }catch{
-  // Manifest failure is confirmed, but permanent catalog identity and navigation remain valid.
+ }catch(error){
+  // A failure in a later optional reader/controller must not erase an already
+  // hydrated club identity and replace it with a misleading catalog error.
+  console.error('Club page initialization failed:',error);
+  if(document.documentElement.dataset.clubIdentityReady==='true')return;
+  // Before identity hydration, report a genuine startup/manifest failure.
   for(const child of [...host.children])if(!child.matches('.club-header,.club-tabs'))child.remove();
   const message=document.createElement('p');message.className='app-panel club-load-error';
   message.setAttribute('role','alert');message.textContent=model.copies[language()].error;host.append(message);
