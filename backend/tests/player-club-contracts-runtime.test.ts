@@ -109,7 +109,7 @@ it('optimistic link comparison ensures a stale operator cannot overwrite a newer
  const raced=await call('POST','',command(1,'BR-40',null));
  expect(raced.status).toBe(409);
  expect((await call('GET','?playerId=1')).data.players[0].clubKey).toBe('IT-1');
- await db.prepare("UPDATE world_state SET revision=revision+1 WHERE id=1").run();
+ await db.prepare('UPDATE world_state SET generation=? WHERE id=1').bind(crypto.randomUUID()).run();
  expect((await call('POST','',command(1,'BR-40','IT-1'))).status).toBe(409);
  expect((await db.prepare('SELECT club_key FROM player_club_affiliations WHERE player_id=1').first<{club_key:string}>())?.club_key).toBe('IT-1');
 });
