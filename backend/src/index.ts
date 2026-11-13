@@ -9,7 +9,7 @@ import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
 import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
-import {readPublicPlayers} from './public-players-read.ts';
+import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
@@ -48,6 +48,17 @@ export default {
       } catch (error) {
         if (error instanceof ApiError) return json(error.status, { error: { code: error.code } });
         return json(503, { error: { code: 'world_unavailable' } });
+      }
+    }
+    const playerDetail=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)$/);
+    if(playerDetail){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search||!Number.isSafeInteger(Number(playerDetail[1])))return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicPlayer(requireDatabase(env.DB),Number(playerDetail[1])))}
+      catch(error){
+        if(error instanceof ApiError&&(error.code==='player_not_found'||error.code==='stale_world'))
+          return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'players_unavailable'}});
       }
     }
     if(url.pathname==='/api/players'){

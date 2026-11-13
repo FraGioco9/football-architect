@@ -47,6 +47,9 @@ function safeDebugBytes(root,path) {
 }
 
 function debugHtml(bytes,path) {
+ // Player detail shells remain byte-identical in public and protected Debug
+ // staging: player identity is read-only and not a simulated sporting projection.
+ if(path==='players/_shared/index.html'||path==='admin/players/preview/player/index.html')return bytes;
  if(path==='clubs/_shared/index.html'){
   const html=bytes.toString('utf8');
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');

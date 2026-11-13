@@ -34,8 +34,9 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  let url;try{url=new URL(target)}catch{return reply(res,503,'admin_unavailable')}
  const clubOverview=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/[1-9][0-9]{0,8}\/overview$/.test(raw);
  const clubHistory=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/history$/.test(raw);
- const playersRead=isAllowedPublicPlayersPath(raw);
  const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster$/.test(raw);
+ const singlePlayer=/^\/api\/players\/[1-9][0-9]*$/.test(raw)&&Number.isSafeInteger(Number(raw.slice('/api/players/'.length)));
+ const playersRead=isAllowedPublicPlayersPath(raw)||singlePlayer;
  // Contracts is a protected Admin route. Forward only the exact, bounded GET
  // filters the Worker understands; never turn it into an anonymous LAN read.
  const contractsListQuery=req.method==='GET'&&
