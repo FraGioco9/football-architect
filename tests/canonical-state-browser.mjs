@@ -84,7 +84,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
     const state=await page.evaluate(()=>({source:window.faWorldState.get().source,current:window.faWorldState.get().current,lang:document.documentElement.lang,theme:document.documentElement.dataset.theme,overflow:document.documentElement.scrollWidth>innerWidth+2,calendar:document.getElementById('app-nav-calendar')?.getAttribute('href'),progress:document.querySelector('.fa-shell-date-full')?.textContent}));
     assert.equal(state.source,'authoritative',path);assert.deepEqual(state.current,{season:2,day:20});assert.ok(state.progress.includes('2')&&state.progress.includes('20/56'),path+' shared header progress');
     assert.equal(state.lang,lang);assert.equal(state.theme,theme);assert.equal(state.overflow,false,path+' overflow');
-    assert.equal(new URL(state.calendar,origin).searchParams.get('season'),'2',path+' global sidebar');
+    assert.equal(new URL(state.calendar,origin).searchParams.has('season'),false,path+' global sidebar must follow the implicit current season');
     if(path.includes('?season=1'))assert.equal(new URL(page.url()).searchParams.get('season'),'1',path+' historical URL');
     checks++;
    }
@@ -115,7 +115,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.equal(await page.evaluate(()=>window.sh03Header===document.querySelector('.app-competition-header')&&window.sh03Picker===document.querySelector('#app-competition-season')),true);checks++;
   await page.keyboard.press('Escape');
   await page.evaluate(()=>window.faCompetitionRoute.set({view:'fixtures',season:'2',matchday:3}));
-  await page.waitForURL('**/fixtures?season=2&matchday=3');
+  await page.waitForURL('**/fixtures?matchday=3');
   await page.goBack();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='standings'&&window.faCompetitionRoute?.get().season==='1');
   await page.goForward();await page.waitForFunction(()=>window.faCompetitionRoute?.get().view==='fixtures'&&window.faCompetitionRoute?.get().season==='2');checks++;
   let release;holdSeasonOne=new Promise(resolve=>release=resolve);const started=new Promise(resolve=>heldStarted=resolve);
@@ -248,7 +248,7 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
   apiWorld={...world,revision:6,day:22};
   await switcher.uncheck();await page.waitForFunction(()=>window.faWorldState?.get().current?.day===22);
-  assert.equal(new URL(page.url()).searchParams.get('season'),'2','OFF retains viewed season');
+  assert.equal(new URL(page.url()).searchParams.has('season'),false,'OFF leaves current season implicit');
   releaseOld();holdSeasonOne=null;await page.waitForFunction(()=>window.faCompetitionContext?.seasonData?.world?.revision===6);
   assert.equal(await page.evaluate(()=>!!window.sh03DocumentToken),true,'switches preserve the document');checks++;
   await page.goto(debugOrigin+'/calendar?season=2&calendarView=week',{waitUntil:'networkidle'});
