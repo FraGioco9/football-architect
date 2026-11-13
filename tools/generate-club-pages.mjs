@@ -22,7 +22,7 @@ function bootstrapClubFirstPaint(){
  const activeIndex=names.indexOf(view);
  for(const link of tabs.querySelectorAll('[data-club-first-paint-tab]')){
   const id=link.dataset.clubFirstPaintTab,active=id===view;
-  link.href='/clubs/'+country+'/'+clubId+'/'+id+(['fixtures','stats'].includes(id)&&context.size?'?'+context:'');
+  link.href='/clubs/'+country+'/'+clubId+'/'+id+(id==='roster'?'?view=info':['fixtures','stats'].includes(id)&&context.size?'?'+context:'');
   link.textContent=labels[locale][names.indexOf(id)];
   link.classList.toggle('is-active',active);
   if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
@@ -53,12 +53,20 @@ function bootstrapClubFirstPaint(){
    fr:{title:'Effectif',tabs:['Info','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],cols:['','Joueur','Âge','Postes','Taille','Pied'],nationality:'Nationalité'},
    it:{title:'Rosa',tabs:['Info','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],cols:['','Giocatore','Età','Posizioni','Altezza','Piede'],nationality:'Nazionalità'}
   };
-  const w=words[locale],mode=params.get('view')==='attributes'?'attributes':'overview';
-  const group=Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
+  const w=words[locale],requested=params.get('view');
+  const group=Object.hasOwn(keys,requested)?requested:
+   requested==='attributes'&&Object.hasOwn(keys,params.get('group'))?params.get('group'):'technical';
+  const mode=Object.hasOwn(keys,requested)||requested==='attributes'?'attributes':'overview';
+  const subviewHref=target=>{
+   const query=new URLSearchParams(location.search);
+   query.delete('view');query.delete('group');query.set('view',target);
+   return location.pathname+'?'+query.toString();
+  };
   roster.dataset.rosterMode=mode;
   for(const button of roster.querySelectorAll('[data-club-roster-view]')){
-   const active=button.dataset.clubRosterView===mode;
+   const active=button.dataset.clubRosterView===(mode==='overview'?'info':'attributes');
    button.textContent=w.tabs[button.dataset.clubRosterView==='attributes'?1:0];
+   button.href=subviewHref(button.dataset.clubRosterView==='info'?'info':'technical');
    button.classList.toggle('is-active',active);
    button.setAttribute('aria-selected',String(active));
    button.tabIndex=active?0:-1;
@@ -66,6 +74,7 @@ function bootstrapClubFirstPaint(){
   for(const button of roster.querySelectorAll('[data-club-roster-group]')){
    const key=button.dataset.clubRosterGroup,index=Object.keys(keys).indexOf(key),active=key===group;
    button.textContent=w.groups[index];
+   button.href=subviewHref(key);
    button.classList.toggle('is-active',active);
    button.setAttribute('aria-selected',String(active));
    button.tabIndex=active?0:-1;
@@ -164,7 +173,7 @@ function bootstrapClubFirstPaint(){
  document.documentElement.dataset.clubShellReady='true';
 }
 function buildClubShell(firstPaintScript){
- const rosterShell="<section class=\"club-roster club-first-paint-roster\" aria-busy=\"true\" data-roster-mode=\"overview\" hidden><div class=\"club-roster-view-row\"><nav class=\"app-competition-tabs app-players-tabs club-roster-tabs\" role=\"tablist\" aria-label=\"Roster\"><button type=\"button\" role=\"tab\" class=\"app-competition-tab is-active\" data-club-roster-view=\"overview\" aria-selected=\"true\" tabindex=\"0\">Info</button><button type=\"button\" role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"attributes\" aria-selected=\"false\" tabindex=\"-1\">Attributes</button></nav><span class=\"club-roster-count\"><span class=\"app-players-count-placeholder\" aria-hidden=\"true\"></span></span></div><div class=\"app-players-toolbar club-roster-toolbar\"><div class=\"app-players-groups club-roster-groups\" role=\"tablist\" aria-label=\"Attributes\"><button type=\"button\" role=\"tab\" class=\"app-competition-tab app-players-group is-active\" data-club-roster-group=\"technical\" aria-selected=\"true\" tabindex=\"0\">Technical</button><button type=\"button\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"mental\" aria-selected=\"false\" tabindex=\"-1\">Mental</button><button type=\"button\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"physical\" aria-selected=\"false\" tabindex=\"-1\">Physical</button><button type=\"button\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"goalkeeping\" aria-selected=\"false\" tabindex=\"-1\">Goalkeeper</button></div></div><div class=\"app-players-table-scroll club-roster-table-scroll\" aria-busy=\"true\"><table class=\"app-players-table club-roster-table\" data-players-table-mode=\"overview\" data-roster-group=\"technical\" aria-label=\"Roster\"><colgroup><col class=\"app-players-flag-column\"><col class=\"app-players-name-column\"><col><col><col><col></colgroup><thead><tr><th scope=\"col\" data-club-roster-label=\"0\" class=\"app-players-flag-col\" aria-label=\"Nationality\"></th><th scope=\"col\" data-club-roster-label=\"1\">Player</th><th scope=\"col\" data-club-roster-label=\"2\">Age</th><th scope=\"col\" data-club-roster-label=\"3\">Positions</th><th scope=\"col\" data-club-roster-label=\"4\">Height</th><th scope=\"col\" data-club-roster-label=\"5\">Foot</th></tr></thead><tbody><tr class=\"app-players-loading-row\"><td colspan=\"6\"><span class=\"sr-only\" role=\"status\">Loading roster</span></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr></tbody></table></div></section>";
+ const rosterShell="<section class=\"club-roster club-first-paint-roster\" aria-busy=\"true\" data-roster-mode=\"overview\" hidden><div class=\"club-roster-view-row\"><nav class=\"app-competition-tabs app-players-tabs club-roster-tabs\" role=\"tablist\" aria-label=\"Roster\"><a href=\"?view=info\" role=\"tab\" class=\"app-competition-tab is-active\" data-club-roster-view=\"info\" aria-selected=\"true\" tabindex=\"0\">Info</a><a href=\"?view=technical\" role=\"tab\" class=\"app-competition-tab\" data-club-roster-view=\"attributes\" aria-selected=\"false\" tabindex=\"-1\">Attributes</a></nav><span class=\"club-roster-count\"><span class=\"app-players-count-placeholder\" aria-hidden=\"true\"></span></span></div><div class=\"app-players-toolbar club-roster-toolbar\"><div class=\"app-players-groups club-roster-groups\" role=\"tablist\" aria-label=\"Attributes\"><a href=\"?view=technical\" role=\"tab\" class=\"app-competition-tab app-players-group is-active\" data-club-roster-group=\"technical\" aria-selected=\"true\" tabindex=\"0\">Technical</a><a href=\"?view=mental\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"mental\" aria-selected=\"false\" tabindex=\"-1\">Mental</a><a href=\"?view=physical\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"physical\" aria-selected=\"false\" tabindex=\"-1\">Physical</a><a href=\"?view=goalkeeping\" role=\"tab\" class=\"app-competition-tab app-players-group\" data-club-roster-group=\"goalkeeping\" aria-selected=\"false\" tabindex=\"-1\">Goalkeeper</a></div></div><div class=\"app-players-table-scroll club-roster-table-scroll\" aria-busy=\"true\"><table class=\"app-players-table club-roster-table\" data-players-table-mode=\"overview\" data-roster-group=\"technical\" aria-label=\"Roster\"><colgroup><col class=\"app-players-flag-column\"><col class=\"app-players-name-column\"><col><col><col><col></colgroup><thead><tr><th scope=\"col\" data-club-roster-label=\"0\" class=\"app-players-flag-col\" aria-label=\"Nationality\"></th><th scope=\"col\" data-club-roster-label=\"1\">Player</th><th scope=\"col\" data-club-roster-label=\"2\">Age</th><th scope=\"col\" data-club-roster-label=\"3\">Positions</th><th scope=\"col\" data-club-roster-label=\"4\">Height</th><th scope=\"col\" data-club-roster-label=\"5\">Foot</th></tr></thead><tbody><tr class=\"app-players-loading-row\"><td colspan=\"6\"><span class=\"sr-only\" role=\"status\">Loading roster</span></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr><tr class=\"app-players-loading-row\" aria-hidden=\"true\"><td colspan=\"6\"></td></tr></tbody></table></div></section>";
  return '<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
   '<div id="club-page" aria-live="polite">'+
   '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest fa-crest-loading"></span><div>'+
