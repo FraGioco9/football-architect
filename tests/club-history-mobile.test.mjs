@@ -48,6 +48,16 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
  }
 });
 
+test('#560 table semantics are explicitly restored when CSS displays mobile grid rows',()=>{
+ const js=read('assets/club-page.js');
+ assert.match(js,/table\.setAttribute\('role','table'\)/);
+ assert.match(js,/table\.tHead\?\.setAttribute\('role','rowgroup'\)/);
+ assert.match(js,/for\(const row of table\.rows\)row\.setAttribute\('role','row'\)/);
+ assert.match(js,/thead th'\)\)cell\.setAttribute\('role','columnheader'\)/);
+ assert.match(js,/tbody th'\)\)cell\.setAttribute\('role','rowheader'\)/);
+ assert.match(js,/tbody td'\)\)cell\.setAttribute\('role','cell'\)/);
+});
+
 test('#560 mobile History provides the eight localized numeric labels and nonclipped links',()=>{
  const css=read('assets/club-page.css');
  const mobile=css.slice(css.indexOf('/* CLUB-HISTORY-MOBILE:'),css.indexOf('/* Club Fixtures:',css.indexOf('/* CLUB-HISTORY-MOBILE:')));

@@ -555,10 +555,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
         rowHeight:r.height,linkWidth:lr.width,linkScroll:link.scrollWidth,linkClient:link.clientWidth,
         linkHref:link.getAttribute('href'),linkText:link.textContent.trim(),
+        explicitTableRole:wrap.querySelector('table').getAttribute('role'),
+        explicitRowRole:row.getAttribute('role'),explicitCellRole:row.querySelector('td').getAttribute('role'),
         linkWhiteSpace:getComputedStyle(link).whiteSpace,linkOverflow:getComputedStyle(link).overflow,
         overflow:document.documentElement.scrollWidth-innerWidth};
       })()`);
       assert.equal(expanded.expanded,'true','History remains expandable by click at '+width);
+      assert.equal(expanded.explicitTableRole,'table','responsive table preserves screen-reader semantics at '+width);
+      assert.equal(expanded.explicitRowRole,'row','expanded competition row preserves its semantic role at '+width);
+      assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
       assert.equal(expanded.hidden,false,'History competition row appears at '+width);
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
       if(width<=620){
