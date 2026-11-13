@@ -21,7 +21,8 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(html,/<\/nav><span class="club-roster-count"><span class="app-players-count-placeholder"/);
  const css=read('assets/club-page.css');
  assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
- assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:30px;min-height:30px/);
+ assert.match(css,/\.club-roster-view-row\{[^}]*height:42px;min-height:42px/);
+ assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:32px;min-height:32px/);
  assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 5px/);
  assert.doesNotMatch(css,/\.club-roster-toolbar\{|\.club-roster-groups\{/);
 
