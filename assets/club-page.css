@@ -516,15 +516,19 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 
 @media(max-width:620px){.club-fixture-select .language-trigger{font-size:13px;padding-inline:10px;gap:6px}.club-fixture-select [data-club-fixture-value]{white-space:nowrap}}
 
-/* CLUB-ROSTER-01: reuse the public Players table without pagination or a surrounding card. */
+/* CLUB-ROSTER-01: reuse Players' compact subview tabs, attribute groups and table. */
 .club-roster{width:100%;min-width:0}
 .club-roster[hidden],.club-first-paint-roster[hidden]{display:none}
-.club-roster-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px}
-.club-roster-toolbar h2{margin:0;color:var(--text);font-size:22px;font-weight:750;line-height:1.2}
-.club-roster-count{display:flex;align-items:center;justify-content:flex-end;min-width:132px;height:44px;white-space:nowrap;color:var(--muted);font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
+.club-roster-tabs{margin-top:var(--app-page-section-gap)}
+.club-roster-tabs .app-competition-tab{cursor:pointer}
+.club-roster-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0}
+.club-roster[data-roster-mode="overview"] .club-roster-groups{visibility:hidden;pointer-events:none}
+.club-roster-count{display:flex;align-items:center;justify-content:flex-end;flex:0 0 132px;min-width:132px;height:44px;white-space:nowrap;color:var(--muted);font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
 .club-roster-table-scroll{margin-top:0}
 .club-roster-table td:nth-child(2){text-align:left;font-weight:650}
+.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
+.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
 .club-roster-player-link{color:inherit;text-decoration:none;text-underline-offset:3px;text-decoration-thickness:1px}
 .club-roster-player-link:hover,.club-roster-player-link:focus-visible{text-decoration:underline}
 .club-roster-player-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
-@media(max-width:520px){.club-roster-toolbar h2{font-size:20px}.club-roster-count{min-width:104px}}
+@media(max-width:620px){.club-roster-toolbar{height:76px;align-items:flex-start;gap:8px}.club-roster-count{align-self:flex-start;flex:0 0 104px;min-width:104px;font-size:11px}}
