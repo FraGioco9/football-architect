@@ -233,8 +233,8 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-groups\{[^}]*grid-auto-rows:34px;[^}]*max-width:472px/);
  assert.match(css,/\.app-players-group\{[^}]*height:34px;min-height:34px/);
  assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
- assert.match(css,/\.app-players-toolbar\{height:76px;align-items:flex-start/);
- assert.match(css,/\.app-players-groups\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);grid-auto-rows:34px/);
+ assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center/,'mobile subview toolbar reserves one row');
+ assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
 
 test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
