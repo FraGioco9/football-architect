@@ -142,3 +142,11 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - At <=620px, reduced row vertical padding from 10px to 6px, track gap from 6px to 4px, opponent reserved height from 62px to 50px (13px type/16px line height, three name lines), and metadata reservation from 52px to 42px (11px type/13px line height, three competition lines). Target ~108px first-paint row, roughly 23% shorter, without reducing crest or venue icon sizes.
 - Browser checks now require first-paint and hydrated row height <=120px with <=2px difference at 320/375/390/430px, preserve <=8px positional checks and 2px reserved-track deltas. Exceptions for genuinely longer localized labels are not accepted without review. No clipping or ellipsis added.
 - Club Fixtures mobile change only; desktop, player list, player detail and DB behavior unchanged. PR Draft/HOLD and no merge/deploy.
+
+
+## Club Fixtures second mobile row-density pass — 2026-11-14
+
+- Owner requested even shorter rows after the first ~108px target. At <=620px, the two-track row now uses 3px vertical padding, 2px track gap, 44px min-height opponent/tap region at 12px type / 14px line-height, and 36px metadata reservation at 11px type / 12px line-height. Typical theoretical height ~89px (down ~18% from first compact pass and ~36% from original).
+- All opponent names, competition text, scores and dates remain visible and untruncated; crest and venue-icon dimensions unchanged. Multi-line names and three-line competition labels still have reserved geometry for first paint.
+- Browser QA measures pending/hydrated first row <=105px with <=2px geometry drift, median of all 30 hydrated rows <=105px and maximum <=130px for long translated names at 320/375/390/430px. Existing strict per-slot geometry tests remain unchanged. Pass/fail not assumed ahead of CI.
+- Desktop/other routes unaffected. PR #542 remains Draft/HOLD, no merge or deployment.
