@@ -45,10 +45,12 @@
   return query;
  }
  function updateSeason(){
-  const limit=dev?readDebugSeason():publicSeasonLimit();
+  const source=window.faWorldState?.get?.();
+  const verified=source?.source==='authoritative'&&source.worldStatus==='ready'?source.world?.seasonNumber:null;
+  const current=dev?Math.max(1,readDebugSeason()):verified??window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??null;
+  const limit=dev?Math.max(1,readDebugSeason()):Math.max(1,current??publicSeasonLimit());
   const params=new URL(location.href).searchParams;
-  const current=dev?Math.max(1,readDebugSeason()):window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??null;
-  const pending=!dev&&current===null&&window.faWorldState?.get?.().worldStatus==='pending';
+  const pending=!dev&&current===null&&(source?.worldStatus===undefined||source.worldStatus==='pending');
   if(pending){trigger.disabled=true;return;}
   const choice=window.faRoutesRegistry.resolveSeasonQuery(params,current??limit);
   selectedSeason=choice.season??Math.max(1,limit);
