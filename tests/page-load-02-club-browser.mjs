@@ -82,8 +82,9 @@ try{
   };
   await page.route('**/clubs/_shared/manifest.json',handler);
   try{
-   await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view,{waitUntil:'domcontentloaded'});
+   await page.goto(origin+'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=technical':''),{waitUntil:'domcontentloaded'});
    await page.waitForFunction(()=>document.documentElement.dataset.clubShellReady==='true');
+   if(view==='roster')assert.equal(new URL(page.url()).search,'','first paint strips a stale subview before the manifest resolves');
    assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.app-main')).paddingTop),
     '8px','Club page top padding is 8px at first paint for '+view+' '+width+'px');
    const identity=manifest.clubs.find(c=>c.countryId===country.toUpperCase()&&c.clubId===id);
@@ -101,7 +102,7 @@ try{
    assert.equal(pending.place,'','city and country remain anonymous until catalog response');
    assert.equal(pending.tabs.length,5);
    assert.equal(pending.tabs.filter(tab=>tab.selected==='page').length,1);
-   assert.equal(pending.tabs.find(tab=>tab.selected==='page').href,'/clubs/'+country+'/'+id+'/'+view+(view==='roster'?'?view=info':''));
+   assert.equal(pending.tabs.find(tab=>tab.selected==='page').href,'/clubs/'+country+'/'+id+'/'+view);
    assert.equal(pending.falseEmpty,false);
    assert.equal(pending.error,false);assert.equal(pending.ready,false);assert.equal(pending.visible,true);
    await page.evaluate(()=>window.clubFirstPaintNodes={
