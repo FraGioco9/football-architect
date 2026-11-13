@@ -3,11 +3,11 @@
  'use strict';
  const flags={ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',DEN:'dk',AUT:'at',IRN:'ir',ECU:'ec',EGY:'eg',AUS:'au',CAN:'ca',ALG:'dz',CIV:'ci',NGA:'ng',TUR:'tr',KOR:'kr',PAR:'py',SWE:'se',RUS:'ru',UKR:'ua',POL:'pl',HUN:'hu',WAL:'gb-wls',COD:'cd',GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'};
  const labels={
-  en:{assignHeading:'Assign players to club',playersHeading:'Players',chooseClub:'Choose club',unassigned:'Unassigned',assign:'Assign',nationality:'',player:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',club:'Club',previous:'Previous',next:'Next',of:'of',page:'Page',players:'players',selected:'players selected',all:'Select all on this page',pick:'Select',left:'Left',right:'Right',search:'Search clubs…',loading:'Loading players…',saving:'Assigning…',saved:'Affiliations updated.',empty:'No players available.',limit:'Select at most 50 players per assignment.',failed:'Unable to load affiliations.',apiMissing:'Contracts API unavailable. Update the Worker.',schemaMissing:'Contracts migration missing.',stale:'World or affiliation changed. Reload and select again.',saveFailed:'Assignment failed; no changes were saved.',unavailable:'Contracts unavailable.'},
-  it:{assignHeading:'Assegna giocatori al club',playersHeading:'Giocatori',chooseClub:'Seleziona club',unassigned:'Senza club',assign:'Assegna',nationality:'',player:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',club:'Club',previous:'Precedente',next:'Successiva',of:'di',page:'Pagina',players:'giocatori',selected:'giocatori selezionati',all:'Seleziona tutti in questa pagina',pick:'Seleziona',left:'Sinistro',right:'Destro',search:'Cerca club…',loading:'Caricamento giocatori…',saving:'Assegnazione…',saved:'Affiliazioni aggiornate.',empty:'Nessun giocatore disponibile.',limit:'Seleziona al massimo 50 giocatori per assegnazione.',failed:'Impossibile caricare le affiliazioni.',apiMissing:'API Contracts non disponibile. Aggiorna il Worker.',schemaMissing:'Manca la migrazione D1 Contracts.',stale:'Mondo o affiliazione cambiata. Ricarica e seleziona di nuovo.',saveFailed:'Assegnazione non riuscita; nessun dato modificato.',unavailable:'Contracts non disponibile.'},
-  de:{assignHeading:'Spieler einem Verein zuweisen',playersHeading:'Spieler',chooseClub:'Verein auswählen',unassigned:'Ohne Verein',assign:'Zuweisen',nationality:'',player:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',club:'Verein',previous:'Zurück',next:'Weiter',of:'von',page:'Seite',players:'Spieler',selected:'Spieler ausgewählt',all:'Alle auf dieser Seite auswählen',pick:'Auswählen',left:'Links',right:'Rechts',search:'Verein suchen…',loading:'Spieler laden…',saving:'Zuordnen…',saved:'Zuordnungen aktualisiert.',empty:'Keine Spieler.',limit:'Maximal 50 Spieler je Zuweisung.',failed:'Zuordnungen nicht verfügbar.',apiMissing:'Contracts-API fehlt. Worker aktualisieren.',schemaMissing:'Contracts-D1-Migration fehlt.',stale:'Welt oder Zuordnung geändert. Erneut laden.',saveFailed:'Zuordnung fehlgeschlagen; keine Daten geändert.',unavailable:'Contracts nicht verfügbar.'},
-  es:{assignHeading:'Asignar jugadores a un club',playersHeading:'Jugadores',chooseClub:'Elegir club',unassigned:'Sin club',assign:'Asignar',nationality:'',player:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',club:'Club',previous:'Anterior',next:'Siguiente',of:'de',page:'Página',players:'jugadores',selected:'jugadores seleccionados',all:'Seleccionar todos en esta página',pick:'Seleccionar',left:'Izquierdo',right:'Derecho',search:'Buscar clubes…',loading:'Cargando jugadores…',saving:'Asignando…',saved:'Vínculos actualizados.',empty:'No hay jugadores.',limit:'Máximo 50 jugadores por operación.',failed:'No se pueden cargar vínculos.',apiMissing:'API Contracts no disponible. Actualiza Worker.',schemaMissing:'Falta migración D1 Contracts.',stale:'Mundo o vínculo cambiado. Recarga.',saveFailed:'Error al asignar; ningún cambio guardado.',unavailable:'Contracts no disponible.'},
-  fr:{assignHeading:'Affecter des joueurs à un club',playersHeading:'Joueurs',chooseClub:'Choisir un club',unassigned:'Sans club',assign:'Affecter',nationality:'',player:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',club:'Club',previous:'Précédent',next:'Suivant',of:'sur',page:'Page',players:'joueurs',selected:'joueurs sélectionnés',all:'Tout sélectionner sur cette page',pick:'Sélectionner',left:'Gauche',right:'Droit',search:'Rechercher clubs…',loading:'Chargement joueurs…',saving:'Affectation…',saved:'Affiliations mises à jour.',empty:'Aucun joueur.',limit:'50 joueurs maximum par opération.',failed:'Chargement impossible.',apiMissing:'API Contracts indisponible. Actualisez Worker.',schemaMissing:'Migration D1 Contracts absente.',stale:'Monde ou affiliation modifié. Rechargez.',saveFailed:'Affectation échouée; aucune modification.',unavailable:'Contracts indisponible.'}
+  en:{assignHeading:'Assign players to club',playersHeading:'Players',chooseClub:'Choose club',unassigned:'Free Agent',assign:'Assign',nationality:'',player:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',club:'Club',previous:'Previous',next:'Next',of:'of',page:'Page',players:'players',selected:'players selected',all:'Select all on this page',pick:'Select',left:'Left',right:'Right',search:'Search clubs…',loading:'Loading players…',saving:'Assigning…',saved:'Affiliations updated.',empty:'No players available.',limit:'Select at most 50 players per assignment.',failed:'Unable to load affiliations.',apiMissing:'Contracts API unavailable. Update the Worker.',schemaMissing:'Contracts migration missing.',stale:'World or affiliation changed. Reload and select again.',saveFailed:'Assignment failed; no changes were saved.',unavailable:'Contracts unavailable.'},
+  it:{assignHeading:'Assegna giocatori al club',playersHeading:'Giocatori',chooseClub:'Seleziona club',unassigned:'Free Agent',assign:'Assegna',nationality:'',player:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',club:'Club',previous:'Precedente',next:'Successiva',of:'di',page:'Pagina',players:'giocatori',selected:'giocatori selezionati',all:'Seleziona tutti in questa pagina',pick:'Seleziona',left:'Sinistro',right:'Destro',search:'Cerca club…',loading:'Caricamento giocatori…',saving:'Assegnazione…',saved:'Affiliazioni aggiornate.',empty:'Nessun giocatore disponibile.',limit:'Seleziona al massimo 50 giocatori per assegnazione.',failed:'Impossibile caricare le affiliazioni.',apiMissing:'API Contracts non disponibile. Aggiorna il Worker.',schemaMissing:'Manca la migrazione D1 Contracts.',stale:'Mondo o affiliazione cambiata. Ricarica e seleziona di nuovo.',saveFailed:'Assegnazione non riuscita; nessun dato modificato.',unavailable:'Contracts non disponibile.'},
+  de:{assignHeading:'Spieler einem Verein zuweisen',playersHeading:'Spieler',chooseClub:'Verein auswählen',unassigned:'Free Agent',assign:'Zuweisen',nationality:'',player:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',club:'Verein',previous:'Zurück',next:'Weiter',of:'von',page:'Seite',players:'Spieler',selected:'Spieler ausgewählt',all:'Alle auf dieser Seite auswählen',pick:'Auswählen',left:'Links',right:'Rechts',search:'Verein suchen…',loading:'Spieler laden…',saving:'Zuordnen…',saved:'Zuordnungen aktualisiert.',empty:'Keine Spieler.',limit:'Maximal 50 Spieler je Zuweisung.',failed:'Zuordnungen nicht verfügbar.',apiMissing:'Contracts-API fehlt. Worker aktualisieren.',schemaMissing:'Contracts-D1-Migration fehlt.',stale:'Welt oder Zuordnung geändert. Erneut laden.',saveFailed:'Zuordnung fehlgeschlagen; keine Daten geändert.',unavailable:'Contracts nicht verfügbar.'},
+  es:{assignHeading:'Asignar jugadores a un club',playersHeading:'Jugadores',chooseClub:'Elegir club',unassigned:'Free Agent',assign:'Asignar',nationality:'',player:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',club:'Club',previous:'Anterior',next:'Siguiente',of:'de',page:'Página',players:'jugadores',selected:'jugadores seleccionados',all:'Seleccionar todos en esta página',pick:'Seleccionar',left:'Izquierdo',right:'Derecho',search:'Buscar clubes…',loading:'Cargando jugadores…',saving:'Asignando…',saved:'Vínculos actualizados.',empty:'No hay jugadores.',limit:'Máximo 50 jugadores por operación.',failed:'No se pueden cargar vínculos.',apiMissing:'API Contracts no disponible. Actualiza Worker.',schemaMissing:'Falta migración D1 Contracts.',stale:'Mundo o vínculo cambiado. Recarga.',saveFailed:'Error al asignar; ningún cambio guardado.',unavailable:'Contracts no disponible.'},
+  fr:{assignHeading:'Affecter des joueurs à un club',playersHeading:'Joueurs',chooseClub:'Choisir un club',unassigned:'Free Agent',assign:'Affecter',nationality:'',player:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',club:'Club',previous:'Précédent',next:'Suivant',of:'sur',page:'Page',players:'joueurs',selected:'joueurs sélectionnés',all:'Tout sélectionner sur cette page',pick:'Sélectionner',left:'Gauche',right:'Droit',search:'Rechercher clubs…',loading:'Chargement joueurs…',saving:'Affectation…',saved:'Affiliations mises à jour.',empty:'Aucun joueur.',limit:'50 joueurs maximum par opération.',failed:'Chargement impossible.',apiMissing:'API Contracts indisponible. Actualisez Worker.',schemaMissing:'Migration D1 Contracts absente.',stale:'Monde ou affiliation modifié. Rechargez.',saveFailed:'Affectation échouée; aucune modification.',unavailable:'Contracts indisponible.'}
  };
  function mount(win){
   const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-contracts]');if(!root)return;
@@ -15,7 +15,7 @@
   const select=el('[data-contracts-select]'),trigger=el('[data-contracts-trigger]');
   const menu=el('.admin-contracts-club-menu'),menuItems=el('[data-contracts-club-options]'),search=el('[data-contracts-club-search]');
   const status=el('[data-contracts-message]'),save=el('[data-contracts-save]'),permissionCache=win.faAdminPermissionsCache?.create(win);
-  const selected=new Map();let allowed=false,busy=false,epoch=0,page=1,record=null,clubs=null,options=[],active=0;
+  const selected=new Map();let allowed=false,busy=false,epoch=0,page=1,record=null,clubs=null,options=[],active=0,anchorId=null;
   const t=()=>labels[doc.documentElement.lang]||labels.en,l=k=>t()[k]??labels.en[k];
   const clubName=key=>key===null?l('unassigned'):(clubs?.find(c=>c.clubKey===key)?.name||key);
   const report=value=>{status.textContent=value||''};
@@ -124,7 +124,7 @@
    populate();if(record)render();else controls();
   }
   function clear(){
-   record=null;selected.clear();clubs=null;select.value='';closeMenu();rows.replaceChildren();
+   record=null;selected.clear();anchorId=null;clubs=null;select.value='';closeMenu();rows.replaceChildren();
    el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';controls();
   }
   function paint(yes){
@@ -139,7 +139,10 @@
     if(ticket!==epoch||!allowed)return false;
     if(!res.ok){if([401,403].includes(res.status))permissionCache?.clear();throw Error(data?.error?.code||'http_'+res.status)}
     if(!Array.isArray(data?.players)||!Array.isArray(data?.clubs)||typeof data.worldGeneration!=='string'||!Number.isSafeInteger(data.worldRevision))throw Error('invalid_contract_data');
-    if(record&&(data.worldGeneration!==record.worldGeneration||data.worldRevision!==record.worldRevision))selected.clear();
+    if(record&&(data.worldGeneration!==record.worldGeneration||data.worldRevision!==record.worldRevision)){
+     selected.clear();anchorId=null;
+    }
+    if(record?.page!==data.page)anchorId=null;
     record=data;page=data.page;clubs=data.clubs;populate();render();
     report(data.count===0?l('empty'):'');return true;
    }catch(e){
@@ -151,12 +154,25 @@
     return false;
    }
   }
-  function toggle(id,on){
-   if(!allowed||busy||!record)return;const p=record.players.find(x=>x.id===id);if(!p)return;
-   if(on){if(!selected.has(id)&&selected.size>=50){report(l('limit'));render();return}
-    selected.set(id,{playerId:id,expectedClubKey:p.clubKey})}
-   else selected.delete(id);
-   report('');render();
+  // Keep focus on checkboxes while selecting; rebuilding rows here would
+  // break keyboard use and the second click in a Shift+click range.
+  function syncChecks(){
+   for(const input of rows.querySelectorAll('input[data-contracts-check]'))
+    input.checked=selected.has(Number(input.dataset.contractsCheck));
+   controls();
+  }
+  function toggle(id,on,withShift=false){
+   if(!allowed||busy||!record)return;
+   const list=record.players,index=list.findIndex(p=>p.id===id);if(index<0)return;
+   const anchor=withShift?list.findIndex(p=>p.id===anchorId):-1;
+   const range=anchor>=0?list.slice(Math.min(anchor,index),Math.max(anchor,index)+1):[list[index]];
+   if(on){
+    const added=range.filter(p=>!selected.has(p.id)).length;
+    if(selected.size+added>50){report(l('limit'));syncChecks();return}
+    for(const p of range)selected.set(p.id,{playerId:p.id,expectedClubKey:p.clubKey});
+   }else for(const p of range)selected.delete(p.id);
+   if(anchor<0)anchorId=id;
+   report('');syncChecks();
   }
   async function assign(){
    if(!allowed||busy||!record||!selected.size||!select.value)return;
@@ -171,7 +187,7 @@
      body:JSON.stringify({players,clubKey:target,expectedGeneration:world.worldGeneration,expectedRevision:world.worldRevision})});
     const data=await res.json();if(ticket!==epoch||!allowed)return;
     if(!res.ok)throw Error(data?.error?.code||'http_'+res.status);
-    selected.clear();select.value='';busy=false;syncSelect();
+    selected.clear();anchorId=null;select.value='';busy=false;syncSelect();
     const ok=await load();if(ok)report(l('saved'));
    }catch(e){
     if(ticket!==epoch)return;const code=String(e.message||'');
@@ -190,7 +206,7 @@
     const perms=Array.isArray(data.permissions)?data.permissions:[];permissionCache?.write(perms);accept(perms);
    }catch{if(ticket===epoch)paint(false)}
   }
-  rows.addEventListener('change',e=>{const c=e.target.closest?.('input[data-contracts-check]');if(c)toggle(Number(c.dataset.contractsCheck),c.checked)});
+  rows.addEventListener('click',e=>{const c=e.target.closest?.('input[data-contracts-check]');if(c)toggle(Number(c.dataset.contractsCheck),c.checked,e.shiftKey)});
   all.addEventListener('change',()=>{
    if(!record||busy)return;
    const list=record.players,include=list.some(p=>!selected.has(p.id));

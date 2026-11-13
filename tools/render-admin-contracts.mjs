@@ -9,7 +9,7 @@ export function renderAdminContracts(){
      '<div class="language-control admin-contracts-dropdown">',
       '<select class="admin-contracts-native" data-contracts-select aria-label="Club" hidden tabindex="-1">',
        '<option value="" data-contracts-copy="chooseClub">Choose club</option>',
-       '<option value="__unassigned__" data-contracts-copy="unassigned">Unassigned</option>',
+       '<option value="__unassigned__" data-contracts-copy="unassigned">Free Agent</option>',
       '</select>',
       '<button type="button" class="language-trigger admin-contracts-dropdown-trigger" data-contracts-trigger',
        ' role="combobox" aria-haspopup="listbox" aria-expanded="false"',

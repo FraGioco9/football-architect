@@ -508,19 +508,18 @@ try{
      writes++;
      assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
      const body=r.request().postDataJSON();
-     assert.deepEqual(body,{players:[
-      {playerId:1,expectedClubKey:writes===1?null:'IT-1'},
-      {playerId:2,expectedClubKey:writes===1?null:'IT-1'}
-     ],clubKey:writes===1?'IT-1':null,expectedGeneration:generation,expectedRevision:0});
+     assert.deepEqual(body,{players:[1,2,3,4].map(playerId=>({
+      playerId,expectedClubKey:writes===1?null:'IT-1'
+     })),clubKey:writes===1?'IT-1':null,expectedGeneration:generation,expectedRevision:0});
      club=body.clubKey;
      return r.fulfill({status:200,contentType:'application/json',
-      body:JSON.stringify({updated:2,clubKey:club,playerIds:[1,2],worldGeneration:generation,worldRevision:0})});
+      body:JSON.stringify({updated:4,clubKey:club,playerIds:[1,2,3,4],worldGeneration:generation,worldRevision:0})});
     }
-    const players=[1,2].map(id=>({id,name:'Test Player '+id,nationality:id===1?'ITA':'BRA',
+    const players=[1,2,3,4].map(id=>({id,name:'Test Player '+id,nationality:id===1?'ITA':'BRA',
      age:20+id,primary_position:id===1?'CM':'ST',secondary_positions:[],
      height_cm:180+id,preferred_foot:'right',clubKey:club}));
     return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-     count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
+     count:4,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
      players,clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
    });
    await page.goto('http://app.localhost:2000/admin');
@@ -531,11 +530,21 @@ try{
    await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
    assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
    assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
-   assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),2);
+   assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),4);
    assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await page.locator('[data-contracts-check="1"]').check();
+   await page.locator('[data-contracts-check="4"]').click({modifiers:['Shift']});
+   for(const id of [1,2,3,4])
+    assert.equal(await page.locator('[data-contracts-check="'+id+'"]').isChecked(),true);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^4 /);
+   await page.locator('[data-contracts-check="1"]').uncheck();
+   await page.locator('[data-contracts-check="4"]').click({modifiers:['Shift']});
+   for(const id of [1,2,3,4])
+    assert.equal(await page.locator('[data-contracts-check="'+id+'"]').isChecked(),false);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^0 /);
    await page.locator('[data-contracts-all]').check();
-   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^2 /);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^4 /);
    await page.locator('[data-contracts-trigger]').click();
    await page.locator('[data-contracts-club-search]').fill('Italian');
    await page.locator('.admin-contracts-club-menu [data-value="IT-1"]').click();
@@ -548,7 +557,7 @@ try{
    await page.locator('.admin-contracts-club-menu [data-value="__unassigned__"]').click();
    await page.locator('[data-contracts-save]').click();
    await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
-    .every(row=>row.textContent.includes('Unassigned')));
+    .every(row=>row.textContent.includes('Free Agent')));
    assert.equal(writes,2);
    assert.ok(permissionReads<=2,'Shared Admin permission cache');
    assert.deepEqual(errors,[]);checks++;
