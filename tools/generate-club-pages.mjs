@@ -17,12 +17,14 @@ function bootstrapClubFirstPaint(){
  const locale=Object.hasOwn(labels,document.documentElement.lang)?document.documentElement.lang:'en';
  const header=document.querySelector('#club-page > .club-header'),tabs=document.querySelector('#club-page > .club-tabs');
  if(!header||!tabs)return;
+ // Reset even a bookmarked subview at document refresh. First paint stays neutral.
+ if(view==='roster'&&location.search)history.replaceState(null,'',location.pathname+location.hash);
  const params=new URLSearchParams(location.search),context=new URLSearchParams();
  for(const key of ['season','matchday'])if(params.has(key))context.set(key,params.get(key));
  const activeIndex=names.indexOf(view);
  for(const link of tabs.querySelectorAll('[data-club-first-paint-tab]')){
   const id=link.dataset.clubFirstPaintTab,active=id===view;
-  link.href='/clubs/'+country+'/'+clubId+'/'+id+(id==='roster'?'?view=info':['fixtures','stats'].includes(id)&&context.size?'?'+context:'');
+  link.href='/clubs/'+country+'/'+clubId+'/'+id+(['fixtures','stats'].includes(id)&&context.size?'?'+context:'');
   link.textContent=labels[locale][names.indexOf(id)];
   link.classList.toggle('is-active',active);
   if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
