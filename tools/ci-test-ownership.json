@@ -278,6 +278,7 @@
     "tests/rules-registry.test.mjs": "site-node",
     "tests/season-one-selection.test.mjs": "site-node",
     "tests/season-two-controls.test.mjs": "site-node",
+    "tests/seasonless-routing.test.mjs": "site-node",
     "tests/season-two-navigation-browser.mjs": "manual",
     "tests/sh-01-sporting-contract.test.mjs": "site-node",
     "tests/sh-02-competition-rendering.test.mjs": "site-node",
