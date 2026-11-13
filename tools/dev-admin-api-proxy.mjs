@@ -34,6 +34,9 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  let url;try{url=new URL(target)}catch{return reply(res,503,'admin_unavailable')}
  const clubOverview=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/[1-9][0-9]{0,8}\/overview$/.test(raw);
  const clubHistory=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/history$/.test(raw);
+ // #553: match only the canonical anonymous club-season fixtures GET.
+ const clubFixtures=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/([1-9][0-9]*)\/fixtures$/.exec(raw);
+ const clubFixturesRead=!!clubFixtures&&Number.isSafeInteger(Number(clubFixtures[2]));
  const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster$/.test(raw);
  const singlePlayer=/^\/api\/players\/[1-9][0-9]*$/.test(raw)&&Number.isSafeInteger(Number(raw.slice('/api/players/'.length)));
  const playersRead=isAllowedPublicPlayersPath(raw)||singlePlayer;
@@ -42,7 +45,7 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const contractsListQuery=req.method==='GET'&&
   /^\/api\/admin\/contracts\?(?:page=[1-9][0-9]{0,3}|playerId=[1-9][0-9]{0,15})$/.test(raw);
  const contractsPath=contractsListQuery?'/api/admin/contracts':raw;
- const publicRead=playersRead||clubRoster||clubOverview||clubHistory||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
+ const publicRead=playersRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
  const anonymousRead=publicRead||raw==='/api/world';
  const localClient=loopback(req.socket.remoteAddress)&&hostPattern.test(req.headers.host||'');
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);
