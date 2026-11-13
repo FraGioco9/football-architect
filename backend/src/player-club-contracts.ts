@@ -22,6 +22,15 @@ const presentation=(r:Row)=>{
  const last=typeof r.last_name==='string'?r.last_name.trim():'';
  return {id:r.id,name:(first+' '+last).trim()||'#'+r.id,clubKey:r.club_key??null};
 };
+/** Report a missing forward-only local/DEV schema without leaking SQL or D1 details. */
+async function withAffiliationSchema<T>(work:()=>Promise<T>):Promise<T>{
+ try{return await work()}
+ catch(error){
+  if(/\bno such table:\s*(?:main\.)?player_club_affiliations\b/i.test(String(error instanceof Error?error.message:error)))
+   throw new ApiError(503,'contracts_schema_unavailable');
+  throw error;
+ }
+}
 const listSql=`SELECT p.id,
  json_extract(p.payload_json,'$.first_name') AS first_name,
  json_extract(p.payload_json,'$.last_name') AS last_name,
@@ -53,13 +62,13 @@ export async function readPlayerContracts(db:Database,query:{page:number;playerI
  const pageSize=50;
  let count=0,rows:Row[];
  if(query.playerId!==null){
-  const item=await db.prepare(listSql+' WHERE p.id=?').bind(query.playerId).first<Row>();
+  const item=await withAffiliationSchema(()=>db.prepare(listSql+' WHERE p.id=?').bind(query.playerId!).first<Row>());
   if(!item)throw new ApiError(404,'player_not_found');
   count=1;rows=[item];
  }else{
   count=(await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n??0;
-  rows=(await db.prepare(listSql+' ORDER BY p.id ASC LIMIT ? OFFSET ?')
-   .bind(pageSize,(query.page-1)*pageSize).all<Row>()).results;
+  rows=(await withAffiliationSchema(()=>db.prepare(listSql+' ORDER BY p.id ASC LIMIT ? OFFSET ?')
+   .bind(pageSize,(query.page-1)*pageSize).all<Row>())).results;
  }
  const after=await readWorld(db);
  if(before.generation!==after.generation||before.revision!==after.revision)
@@ -86,9 +95,9 @@ function parseChange(input:unknown):ContractChange{
  return o as unknown as ContractChange;
 }
 async function currentLink(db:Database,playerId:number){
- return db.prepare(`SELECT p.id,a.club_key FROM generated_players p
+ return withAffiliationSchema(()=>db.prepare(`SELECT p.id,a.club_key FROM generated_players p
  LEFT JOIN player_club_affiliations a ON a.player_id=p.id WHERE p.id=?`)
- .bind(playerId).first<{id:number;club_key:string|null}>();
+ .bind(playerId).first<{id:number;club_key:string|null}>());
 }
 export async function changePlayerContract(db:Database,session:AdminSession,input:unknown,now:number){
  const change=parseChange(input),world=await readWorld(db);
