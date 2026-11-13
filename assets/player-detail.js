@@ -60,7 +60,7 @@
   ST:['shooting positioning composure heading','speed strength technique agility']
  });
  const attrGroups=['technical','mental','physical','goalkeeping'];
- let player=null,state='loading',request=0;
+ let player=null,state='loading',request=0,selectedPosition=null;
  function previewReturnUrl(){
   const url=new URL('/admin/players/preview',location.origin);url.searchParams.set('draftId',context.draftId);
   const hash=new URLSearchParams();
@@ -98,22 +98,45 @@
   if(!player)return[];
   return [player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter((code,index,items)=>Object.hasOwn(pitchCoords,code)&&items.indexOf(code)===index);
  }
+ function selectPosition(code){
+  if(!player||!positionCodes().includes(code)||selectedPosition===code)return;
+  selectedPosition=code;
+  const markers=panel.querySelector('[data-detail-pitch-markers]');
+  if(markers)for(const marker of markers.querySelectorAll('[data-detail-pitch-position]')){
+   const selected=marker.dataset.detailPitchPosition===code;
+   marker.classList.toggle('is-selected',selected);
+   marker.setAttribute('aria-pressed',String(selected));
+  }
+  // Do not recreate the SVG after a keyboard selection: preserve its focus.
+  renderRoleHighlights();
+ }
  function renderPitch(){
   const markers=panel.querySelector('[data-detail-pitch-markers]');if(!markers)return;
   markers.replaceChildren();
   if(!player)return;
   const ns='http://www.w3.org/2000/svg';
   for(const code of positionCodes()){
-   const [x,y]=pitchCoords[code],primary=code===player.primary_position;
-   const g=document.createElementNS(ns,'g');g.setAttribute('class','app-player-detail-pitch-marker'+(primary?' is-primary':''));
+   const [x,y]=pitchCoords[code],primary=code===player.primary_position,selected=code===selectedPosition;
+   const g=document.createElementNS(ns,'g');
+   g.setAttribute('class','app-player-detail-pitch-marker'+(primary?' is-primary':'')+(selected?' is-selected':''));
+   g.dataset.detailPitchPosition=code;
+   g.setAttribute('role','button');g.setAttribute('tabindex','0');
+   g.setAttribute('aria-pressed',String(selected));
+   g.setAttribute('aria-label',(primary?ex().primary:ex().secondary)+': '+code);
    const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
    const label=document.createElementNS(ns,'text');label.setAttribute('x',String(x));label.setAttribute('y',String(y+4));label.setAttribute('text-anchor','middle');label.textContent=code;
    const title=document.createElementNS(ns,'title');title.textContent=(primary?ex().primary:ex().secondary)+': '+code;
-   g.append(title,circle,label);markers.append(g);
+   g.append(title,circle,label);
+   g.addEventListener('click',()=>selectPosition(code));
+   g.addEventListener('keydown',event=>{
+    if(event.key!=='Enter'&&event.key!==' ')return;
+    event.preventDefault();selectPosition(code);
+   });
+   markers.append(g);
   }
  }
  function renderRoleHighlights(){
-  const profile=player&&roleAttributeProfiles[player.primary_position];
+  const profile=player&&roleAttributeProfiles[selectedPosition];
   const core=profile?profile[0].split(' '):[],support=profile?profile[1].split(' '):[],copy=ex();
   for(const key of attrKeys){
    const label=panel.querySelector('[data-detail-attr-label="'+key+'"]'),row=label.parentElement;
@@ -200,7 +223,7 @@
   const ticket=++request;
   // Protected draft detail must not expose bfcache-private candidate data
   // until rechecking the active session and server-side draft on return.
-  player=null;state='loading';
+  player=null;selectedPosition=null;state='loading';
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
@@ -217,7 +240,7 @@
    })();
    if(ticket!==request)return;
    if(!data||typeof data!=='object'||typeof data.display_name!=='string')throw Error('error');
-   player=data;state='ready';
+   player=data;selectedPosition=positionCodes()[0]||null;state='ready';
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
   if(preview)root.hidden=false;render();
  }

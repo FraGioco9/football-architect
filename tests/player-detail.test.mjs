@@ -228,3 +228,28 @@ test('#535 follow-up: inline legend, compact rows and same marker appearance',()
   assert.doesNotMatch(html,/class="app-standings-legend app-player-detail-legend"/);
  }
 });
+
+test('#535 selectable pitch roles use a primary default and update A/B without losing SVG keyboard focus',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ assert.match(js,/let player=null,state='loading',request=0,selectedPosition=null/);
+ assert.match(js,/player=data;selectedPosition=positionCodes\(\)\[0\]\|\|null;state='ready'/);
+ assert.match(js,/player=null;selectedPosition=null;state='loading'/);
+ assert.match(js,/const profile=player&&roleAttributeProfiles\[selectedPosition\]/);
+ assert.match(js,/function selectPosition\(code\)/);
+ assert.match(js,/!positionCodes\(\)\.includes\(code\)/);
+ assert.match(js,/marker\.classList\.toggle\('is-selected',selected\)/);
+ assert.match(js,/marker\.setAttribute\('aria-pressed',String\(selected\)\)/);
+ assert.match(js,/g\.setAttribute\('role','button'\);g\.setAttribute\('tabindex','0'\)/);
+ assert.match(js,/g\.setAttribute\('aria-pressed',String\(selected\)\)/);
+ assert.match(js,/g\.addEventListener\('click',\(\)=>selectPosition\(code\)\)/);
+ assert.match(js,/g\.addEventListener\('keydown',event=>/);
+ assert.match(js,/event\.key!=='Enter'&&event\.key!==' '/);
+ assert.doesNotMatch(js.slice(js.indexOf(' function selectPosition(code)'),js.indexOf(' function renderPitch()')),/renderPitch\(\)/,
+  'Do not replace keyboard-focused markers when selecting another role');
+ assert.match(css,/\.app-player-detail-pitch-marker\.is-selected circle/);
+ assert.match(css,/\.app-player-detail-pitch-marker:focus-visible circle/);
+ assert.match(css,/\.app-player-detail-pitch-marker circle\{fill:#FFFFFF;stroke:#143D2A;stroke-width:2\}/);
+ assert.match(css,/\.app-player-detail-attributes\{display:flex;flex-direction:column/);
+ assert.match(css,/\.app-player-detail-legend\{[^}]*margin-top:auto;padding-top:12px/);
+ assert.match(css,/\.app-player-detail-attribute-line dd \.app-skeleton-bar\{[^}]*width:19px;height:16px/);
+});
