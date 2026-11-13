@@ -3,12 +3,20 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('CLUB-ROSTER-01 first paint exposes Overview/Attributes without a redundant Roster heading',()=>{
+test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redundant Roster heading',()=>{
  const html=read('clubs/_shared/index.html'),generator=read('tools/generate-club-pages.mjs');
  assert.match(html,/class="club-roster club-first-paint-roster" aria-busy="true" data-roster-mode="overview" hidden/);
  assert.match(html,/app-players-table club-roster-table/);
  assert.match(html,/data-club-roster-view="overview"/);
  assert.match(html,/data-club-roster-view="attributes"/);
+ assert.match(html,/data-club-roster-view="overview"[^>]*>Info<\/button>/);
+ assert.match(html,/<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs"/);
+ assert.match(html,/<\/nav><span class="club-roster-count"><span class="app-players-count-placeholder"/);
+ const css=read('assets/club-page.css');
+ assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
+ assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:30px;min-height:30px/);
+ assert.match(css,/\.club-roster-toolbar\{[^}]*height:38px/);
+
  for(const group of ['technical','mental','physical','goalkeeping']){
   assert.match(html,new RegExp('data-club-roster-group="'+group+'"'));
   assert.match(generator,/club-roster-groups/);
@@ -32,7 +40,7 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
  }));
  const snapshot={source:'ready',clubKey:'IT-1',count:65,players};
  const locales=['en','de','es','fr','it'];
- const expectedOverview={en:'Overview',de:'Übersicht',es:'Resumen',fr:'Vue d’ensemble',it:'Panoramica'};
+ const expectedOverview={en:'Info',de:'Info',es:'Info',fr:'Info',it:'Info'};
  const expectedAttributes={en:'Attributes',de:'Attribute',es:'Atributos',fr:'Attributs',it:'Attributi'};
  for(const language of locales){
   const html=model.render(manifest,selected,language,'',null,1,null,snapshot);
@@ -42,6 +50,9 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
   assert.match(html,/href="\/players\/65"/);
   assert.match(html,/&lt;Private &amp; Name&gt;/);
   assert.match(html,/CM, DM/);
+  assert.match(html,/<div class="club-roster-view-row"><nav[^>]+class="app-competition-tabs app-players-tabs club-roster-tabs"/);
+  assert.match(html,/<\/nav><span class="club-roster-count">65 /);
+
   assert.match(html,new RegExp('>'+expectedOverview[language]+'<'));
   assert.match(html,new RegExp('>'+expectedAttributes[language]+'<'));
   assert.doesNotMatch(html,/club-empty|pagination|pageSize|development_aptitude|initial_age|<h2>Roster/);
