@@ -148,14 +148,14 @@ jobs:
       - name: Read-only same-origin smoke checks
         run: |
           set -euo pipefail
-          for path in /api/environment /api/world /api/players/page/1 /account/login /players; do
+          for path in /api/environment /api/world /api/players?page=1 /account/login /players; do
             status="$(curl --silent --show-error --max-time 25 --max-redirs 0 --output "$RUNNER_TEMP/fa-response.json" --write-out '%{http_code}' "$PREVIEW_ORIGIN$path")"
             [[ "$status" == 200 ]] || { echo "Unhealthy Preview $path: HTTP $status"; exit 1; }
             if [[ "$path" == /api/environment ]]; then
               jq -e --arg o "$PREVIEW_ORIGIN" '.pool=="dev-preview" and .origin==$o and .sharedWorld==true and .separateSignIn==true' "$RUNNER_TEMP/fa-response.json" >/dev/null
             elif [[ "$path" == /api/world ]]; then
               jq -e '.world.schemaVersion==1 and (.world.generation|type=="string")' "$RUNNER_TEMP/fa-response.json" >/dev/null
-            elif [[ "$path" == /api/players/page/1 ]]; then
+            elif [[ "$path" == /api/players?page=1 ]]; then
               jq -e '.count>=11 and .page==1 and (.players|type=="array")' "$RUNNER_TEMP/fa-response.json" >/dev/null
             fi
             echo "PASS $path"
