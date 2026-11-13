@@ -108,7 +108,9 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
   for(const view of clubViews){
    const selected=model.route(base+'/'+view),html=model.render(manifest,selected,lang,'?season=2&matchday=7');
    assert.ok(html.includes('aria-current="page"'));
-   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,5);
+   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,view==='roster'?10:5);
+   assert.equal((html.match(/class="app-competition-tabs club-tabs"/g)||[]).length,1);
+   assert.ok(html.includes(base+'/roster?view=info"'));
    assert.ok(html.includes(model.copies[lang][view]));
    assert.ok(html.includes(base+'/overview"'));
    assert.ok(html.includes(base+'/history"'));
@@ -118,7 +120,8 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
    }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':view==='roster'?'club-roster':'club-empty'));
-   assert.doesNotMatch(html,/\?view=|href="\/app\//);
+   // Roster uses a canonical direct Info subview; only /app/ links are invalid.
+   assert.doesNotMatch(html,/href="\/app\//);
   }
  }
  const poisoned={...manifest,clubs:manifest.clubs.map((c,i)=>i?c:{...c,primaryName:'<script>alert(1)</script>'})};
