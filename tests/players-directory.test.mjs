@@ -196,7 +196,7 @@ test('Players public shell reserves exact common flag and name widths in every v
  assert.doesNotMatch(css,/\.app-players-table th:nth-child\(2\)\{width:35%/);
  assert.match(css,/\.app-players-count\{[^}]*display:flex;align-items:center;justify-content:flex-end;[^}]*width:132px;height:44px/);
  assert.match(css,/\.app-players-count-placeholder\{[^}]*width:98px;height:14px/);
- assert.match(css,/\.app-players-count\{align-self:flex-start;flex-basis:102px;min-width:102px;width:102px;margin-top:0/);
+ assert.match(css,/\.app-players-count\{align-self:center;flex-basis:102px;min-width:102px;width:102px;margin-top:0/);
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
 });
 test('Players receives the shared protected Debug Settings widget without publishing private scripts',()=>{
@@ -218,7 +218,7 @@ test('Players view and group slugs are explicit even for both default selections
  assert.match(html,/href="\/players\?view=attributes&amp;group=technical"/);
  assert.match(code,/url\.searchParams\.set\('view',state\.view\)/);
  assert.match(code,/if\(state\.view==='attributes'\)url\.searchParams\.set\('group',state\.group\)/);
- assert.match(code,/syncControls\(\);syncUrl\('replaceState'\);load\(state\.page\)/,'default direct URL normalized without extra history entry');
+ assert.match(code,/syncControls\(\);revealActiveGroup\(\);syncUrl\('replaceState'\);load\(state\.page\)/,'default direct URL normalized without extra history entry');
  assert.match(code,/state=next;syncControls\(\);syncUrl\('replaceState'\)/,'Back/Forward also restores canonical URLs');
   const begin=code.indexOf("  function syncUrl(mode='pushState'){"),end=code.indexOf("  const filterSections=",begin);
  assert.ok(begin>=0&&end>begin,'extract actual production URL helper');
