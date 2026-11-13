@@ -836,7 +836,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';
       if(groupedLeg)await wait("!!window.faFixtures&&window.faCompetitionRoute.get().matchday==='quarterfinals:1'");
-      assert.equal(await currentUrl(),groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected,'A03-04C direct '+width+' '+row.input);
+      const expected=new URL(groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected,origin);
+      const incoming=new URL(row.input,origin);
+      // #531: preserve unrelated query parameters and fragments across legacy redirects.
+      for(const [key,value] of incoming.searchParams)if(!['view','season','matchday','calendarReturn'].includes(key))expected.searchParams.append(key,value);
+      if(incoming.hash)expected.hash=incoming.hash;
+      assert.equal(await currentUrl(),expected.pathname+expected.search+expected.hash,'A03-04C direct '+width+' '+row.input);
       assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},'Core precedes deferred consumers');
       assert.equal(await run('Object.isFrozen(window.faRoutesRegistry)&&Object.isFrozen(window.faRoutesRegistry.countries)'),true);
       assert.equal(await run("window.faRoutesRegistry.buildRoute({kind:'club',country:'br',id:40,view:'history'})"),'/clubs/br/40/history');
