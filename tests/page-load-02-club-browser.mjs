@@ -91,6 +91,8 @@ try{
    assert.ok(identity);
    const pending=await page.evaluate(()=>({
     title:document.querySelector('#club-title')?.textContent,
+     fallback:document.querySelector('#club-title [data-club-title-fallback]')?.textContent,
+     hasNameSkeleton:!!document.querySelector('#club-title .club-fp-bar.club-fp-header-name'),
     place:document.querySelector('.club-header .club-location')?.textContent,
     tabs:[...document.querySelectorAll('#club-page > .club-tabs a')].map(a=>({href:a.getAttribute('href'),selected:a.getAttribute('aria-current')})),
     falseEmpty:!!document.querySelector('#club-page .club-empty p,#club-page .club-competition-next-empty'),
@@ -98,7 +100,9 @@ try{
     ready:document.documentElement.dataset.clubReady==='true',
     visible:document.querySelector('#club-page > .club-header')?.getAttribute('aria-hidden')!=='true'
    }));
-   assert.equal(pending.title,'','club name remains an anonymous skeleton until the catalog responds');
+   assert.equal(pending.title,pending.fallback,'only the non-identifying accessible Club fallback is present before the catalog responds');
+    assert.equal(pending.fallback,'Club','English first paint exposes a generic accessible club heading');
+    assert.equal(pending.hasNameSkeleton,true,'visual club name remains a reserved skeleton until catalog responds');
    assert.equal(pending.place,'','city and country remain anonymous until catalog response');
    assert.equal(pending.tabs.length,5);
    assert.equal(pending.tabs.filter(tab=>tab.selected==='page').length,1);
