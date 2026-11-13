@@ -411,6 +411,8 @@ try{
     await page.keyboard.press('Escape');
     await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
     await page.locator('[data-admin-preview-view="attributes"]').click();
+    await page.locator('[data-admin-preview-group="technical"]').click();
+    assert.equal(await page.locator('[data-admin-preview-group="technical"]').getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');
     await page.locator('[data-admin-preview-view="overview"]').click();
