@@ -176,11 +176,7 @@
     win.history.replaceState(null,'',win.location.pathname+win.location.search+win.location.hash);
    }
   }
-  // An approved cohort carries its next deterministic seed back to the generator.
-  // Apply it after restoring the other options so the old seed cannot win.
-  const nextSeed=new URLSearchParams(win.location.search).get('nextSeed');
-  if(form&&/^fa-next-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(nextSeed||''))
-   form.querySelector('[data-players-option="seed"]').value=nextSeed;
+  // Auto is a form setting, not a server-generated seed to be pinned.
   let allowed=false,canWrite=false,validation=null,options=null,signature='',ticket=0;
   let pending=false,draft=null,draftPage=0,operation=0,saved=false;
 
@@ -394,6 +390,8 @@
     if(!data||!Array.isArray(data.candidates)||data.candidates.length!==data.summary?.count||
       typeof data.draftId!=='string')throw Error('invalid_preview');
     draft=data;draftPage=0;
+    // Preserve the selected options on this generator history entry (no storage).
+    win.history.replaceState({faAdminGeneratorOptions:selected},'',win.location.pathname+win.location.search+win.location.hash);
     win.location.assign('/admin/players/preview?draftId='+encodeURIComponent(data.draftId));
    }catch(error){
     if(active!==operation)return;

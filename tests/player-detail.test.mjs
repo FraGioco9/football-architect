@@ -98,6 +98,8 @@ test('#502 preview generated link retains only routing context and never persist
  assert.match(script,/const permitted=\['first_name'/);
  assert.match(script,/projected\.attributes=Object\.fromEntries/);
  assert.match(script,/draftPattern\.test/);
+ assert.match(script,/previewCommitted=draft\.status==='committed'/);
+ assert.match(script,/p\.preview_id!==undefined/);
  assert.match(script,/cache:'no-store'/);
  assert.match(script,/data-detail-pitch-markers/);
  assert.match(script,/addEventListener\('popstate'/);

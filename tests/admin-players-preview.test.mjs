@@ -40,7 +40,7 @@ test('Generator navigates to protected preview without browser persistence or fa
  assert.doesNotMatch(html,/<a[^>]+href="\/players\//);
  assert.match(backend,/readPlayerGenerationDraft/);
  assert.match(backend,/WHERE id=\? AND account_id=\?/);
- assert.match(backend,/status!=='preview'/);
+ assert.match(backend,/draft.status!=='preview'&&draft.status!=='committed'/);
  assert.match(backend,/expires_at<=now/);
 });
 test('Both Players tables use the same nationality tooltip component and styles',()=>{
@@ -104,12 +104,17 @@ test('Shared nationality tooltip prefers above and respects site animation and r
 test('Preview Back restores only normalized generator options through transient history, not candidates',()=>{
  const generator=read('assets/admin-players.js'),preview=read('assets/admin-players-preview.js');
  assert.match(preview,/history\.replaceState\(\{faAdminGeneratorOptions:draft\.options\}/);
+ assert.match(generator,/win\.history\.replaceState\(\{faAdminGeneratorOptions:selected\}/);
+ assert.match(preview,/history\.back\(\)/);
  assert.doesNotMatch(preview,/history\.replaceState\(\{[^}]*candidates/);
  assert.match(preview,/location\.reload\(\)/);
  assert.match(generator,/win\.history\.state\?\.faAdminGeneratorOptions/);
  assert.match(generator,/win\.history\.replaceState\(null/);
  assert.match(generator,/if\(key==='attributes'/);
- assert.match(generator,/if\(form&&\/\^fa-next-/);
+ assert.doesNotMatch(generator,/nextSeed/);
+ assert.doesNotMatch(preview,/back\.href='\/admin\/players\?nextSeed='/);
+ assert.match(preview,/saved=info\.status==='committed'/);
+ assert.match(preview,/if\(\/\^fa-auto-/);
 });
 
 test('Returning from an automatic preview does not pin the one-time auto seed',()=>{
@@ -136,4 +141,16 @@ test('Generator Primary suitability min/max inputs reuse the existing inclusive 
  const source=read('assets/admin-players.js');
  assert.match(source,/key==='primarySuitability'/);
  assert.match(source,/set\('primarySuitabilityMin',value\[0\]\);set\('primarySuitabilityMax',value\[1\]\)/);
+});
+
+test('Committed drafts remain inspectable while automatic seeds stay unpinned',()=>{
+ const preview=read('assets/admin-players-preview.js');
+ const detail=read('assets/player-detail.js');
+ const backend=read('backend/src/players-generation-command.ts');
+ assert.match(backend,/const candidates=stored\.map\(\(player,index\)=>\(\{\.\.\.player,preview_id:'trial-'/);
+ assert.match(backend,/status:draft\.status/);
+ assert.match(preview,/saved=info\.status==='committed'/);
+ assert.doesNotMatch(preview,/options\.seed='fa-next-'/);
+ assert.match(detail,/previewCommitted=draft\.status==='committed'/);
+ assert.match(detail,/p\.preview_id!==undefined/);
 });
