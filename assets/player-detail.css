@@ -43,9 +43,10 @@
 .app-player-detail-positions h2,.app-player-detail-attributes h2{font-size:22px;line-height:1.3;min-height:29px;margin:0 0 14px}
 .app-player-detail-pitch-holder{width:min(100%,330px);margin:0 auto;align-self:center;flex:none}
 .app-player-detail-pitch{display:block;width:100%;height:auto;border-radius:5px}
-.app-player-detail-pitch-marker{cursor:pointer;outline:none}
+.app-player-detail-pitch-marker{pointer-events:none;outline:none}
 .app-player-detail-pitch-marker circle{fill:#FFFFFF;stroke:#143D2A;stroke-width:2}
-.app-player-detail-pitch-marker .app-player-detail-marker-ring{fill:none;stroke:#F2C94C;stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.65);transition:opacity .2s ease,transform .2s ease}
+.app-player-detail-pitch-marker .app-player-detail-marker-disc{pointer-events:all;cursor:pointer}
+.app-player-detail-pitch-marker .app-player-detail-marker-ring{pointer-events:none;fill:none;stroke:#F2C94C;stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.65);transition:opacity .2s ease,transform .2s ease}
 .app-player-detail-pitch-marker.is-selected circle{stroke:#143D2A;stroke-width:2}
 .app-player-detail-pitch-marker.is-selected .app-player-detail-marker-ring{fill:none;stroke:#F2C94C;opacity:1;transform:scale(1)}
 .app-player-detail-pitch-marker:focus-visible .app-player-detail-marker-disc{stroke:#F2C94C;stroke-width:3}

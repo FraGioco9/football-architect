@@ -294,7 +294,7 @@ test('#535 selectable pitch roles use a primary default and update A/B without l
  assert.match(js,/marker\.setAttribute\('aria-pressed',String\(selected\)\)/);
  assert.match(js,/g\.setAttribute\('role','button'\);g\.setAttribute\('tabindex','0'\)/);
  assert.match(js,/g\.setAttribute\('aria-pressed',String\(selected\)\)/);
- assert.match(js,/g\.addEventListener\('click',\(\)=>selectPosition\(code\)\)/);
+ assert.match(js,/circle\.addEventListener\('click',\(\)=>selectPosition\(code\)\)/);
  assert.match(js,/g\.addEventListener\('keydown',event=>/);
  assert.match(js,/event\.key!=='Enter'&&event\.key!==' '/);
  assert.doesNotMatch(js.slice(js.indexOf(' function selectPosition(code)'),js.indexOf(' function renderPitch()')),/renderPitch\(\)/,
@@ -305,6 +305,19 @@ test('#535 selectable pitch roles use a primary default and update A/B without l
  assert.match(css,/\.app-player-detail-attributes\{display:flex;flex-direction:column/);
  assert.match(css,/\.app-player-detail-legend\{[^}]*margin-top:auto;padding-top:12px/);
  assert.match(css,/\.app-player-detail-attribute-line dd \.app-skeleton-bar\{[^}]*width:19px;height:16px/);
+});
+
+test('Player pitch only the inner disc handles pointer hover and selection; the outer ring remains passive',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ const render=js.slice(js.indexOf(' function renderPitch(){'),js.indexOf(' function renderRoleHighlights(){'));
+ assert.match(render,/circle\.addEventListener\('click',\(\)=>selectPosition\(code\)\)/);
+ assert.doesNotMatch(render,/g\.addEventListener\('click'/);
+ assert.doesNotMatch(render,/ring\.addEventListener\('click'/);
+ assert.match(render,/g\.addEventListener\('keydown',event=>/,'keyboard controls remain available on the focused SVG group');
+ assert.match(css,/\.app-player-detail-pitch-marker\{pointer-events:none;outline:none\}/);
+ assert.match(css,/\.app-player-detail-pitch-marker \.app-player-detail-marker-ring\{pointer-events:none;/);
+ assert.match(css,/\.app-player-detail-pitch-marker \.app-player-detail-marker-disc\{pointer-events:all;cursor:pointer\}/);
+ assert.doesNotMatch(css,/\.app-player-detail-pitch-marker\{cursor:pointer/);
 });
 
 test('#535 header shows position chain, nationality/age and canonical club or Free Agent',()=>{

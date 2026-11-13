@@ -139,7 +139,8 @@
    const circle=document.createElementNS(ns,'circle');circle.setAttribute('class','app-player-detail-marker-disc');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
    const label=document.createElementNS(ns,'text');label.setAttribute('x',String(x));label.setAttribute('y',String(y+4));label.setAttribute('text-anchor','middle');label.textContent=code;
    g.append(ring,circle,label);
-   g.addEventListener('click',()=>selectPosition(code));
+   // Only the inner disc is clickable; the surrounding selection ring is decorative.
+   circle.addEventListener('click',()=>selectPosition(code));
    g.addEventListener('keydown',event=>{
     if(event.key!=='Enter'&&event.key!==' ')return;
     event.preventDefault();selectPosition(code);
