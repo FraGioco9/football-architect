@@ -108,10 +108,9 @@
    tab.setAttribute('aria-selected',String(selected));
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
-  for(const [key,label] of [['info',e.info],['attributes',e.attributes]]){
+  for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
-  panel.querySelector('[data-detail-positions]').setAttribute('aria-label',e.positions);
   panel.querySelector('[data-detail-club-label]').textContent=e.club;
   panel.querySelector('[data-detail-pitch]').setAttribute('aria-label',e.positionLabel);
   for(const [i,key] of ['nationality','secondary_nationality','age','height_cm','preferred_foot'].entries()){
@@ -119,7 +118,8 @@
   }
   for(const [i,key] of attrGroups.entries())panel.querySelector('[data-detail-group-title="'+key+'"]').textContent=copy.groups[i];
   for(const [i,key] of attrKeys.entries())panel.querySelector('[data-detail-attr-label="'+key+'"]').textContent=labels[i]||key;
-  statusNode.textContent=state==='loading'?copy.loading:state==='ready'?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
+  statusNode.hidden=state==='loading'||state==='ready';
+  statusNode.textContent=statusNode.hidden?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
   if(!player){
    if(state!=='loading'){
     setContent(nameNode,copy.notFound);roleNode.textContent='—';
@@ -171,8 +171,8 @@
   // until rechecking the active session and server-side draft on return.
   player=null;state='loading';
   if(preview)root.hidden=true;
-  const skeleton=()=>{const bar=document.createElement('span');bar.className='app-skeleton-bar';bar.setAttribute('aria-hidden','true');return bar;};
-  nameNode.replaceChildren(skeleton());roleNode.replaceChildren(skeleton());
+  const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
+  nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
   render();
