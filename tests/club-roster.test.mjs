@@ -11,6 +11,9 @@ test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redun
  assert.match(html,/data-club-roster-view="attributes"/);
  assert.match(html,/href="\?view=info" role="tab"/);
  assert.match(html,/href="\?view=technical" role="tab"/);
+ assert.match(html,/data-club-roster-sort="positions"/);
+ assert.match(html,/class="app-players-sort-button"/);
+ assert.match(generator,/button\.dataset\.clubRosterSort=key/);
  assert.match(html,/data-club-roster-view="info"[^>]*>Info<\/a>/);
  assert.match(html,/<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs"/);
  assert.match(html,/<\/nav><span class="club-roster-count"><span class="app-players-count-placeholder"/);
@@ -18,6 +21,8 @@ test('CLUB-ROSTER-01 first paint exposes compact Info/Attributes without a redun
  assert.match(css,/\.club-roster \.club-roster-tabs\{[^}]*margin:0;padding:0;border:0/);
  assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*height:30px;min-height:30px/);
  assert.match(css,/\.club-roster-toolbar\{[^}]*height:auto;min-height:0/);
+ assert.match(css,/\.club-roster \.club-roster-groups \.app-players-group\{[^}]*padding:5px 5px/);
+ assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 7px/);
  assert.match(css,/\.club-roster\[data-roster-mode="overview"\] \.club-roster-toolbar\{display:none\}/);
 
  for(const group of ['technical','mental','physical','goalkeeping']){
@@ -85,10 +90,42 @@ test('CLUB-ROSTER-01 keeps all current players, across five locales and both sub
  const missing=model.render(manifest,selected,'en','',null,1,null,{source:'unavailable',status:404});
  assert.match(missing,/Restart the local development server/);
 });
+test('CLUB-ROSTER-01 orders all assigned players by the canonical pitch positions, and sorts each visible column',async()=>{
+ const {default:model}=await import('../assets/club-model.js');
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const selected={countryId:'IT',clubId:1,view:'roster',base:'/clubs/it/1'};
+ const pitch=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
+ const players=[...pitch].reverse().map((primary_position,i)=>({
+  id:i+1,display_name:'Player '+(i+1),nationality:i%2?'ITA':'ENG',
+  age:18+i,primary_position,secondary_positions:[],height_cm:165+i,
+  preferred_foot:i%2?'right':'left',attributes:{passing:i+1,vision:i+1,speed:i+1,gk_reflexes:i+1}
+ }));
+ const snapshot={source:'ready',clubKey:'IT-1',count:players.length,players};
+ const render=(query)=>model.render(manifest,selected,'en',query,null,1,null,snapshot);
+ const ids=query=>[...render(query).matchAll(/class="club-roster-player-link" href="\/players\/(\d+)"/g)].map(m=>Number(m[1]));
+ const defaultIds=players.map(p=>p.id).reverse();
+ assert.deepEqual(ids('?view=info'),defaultIds,'default uses GK -> ST independent of API row order');
+ assert.deepEqual(ids('?view=technical'),defaultIds,'attribute views share the same default');
+ assert.deepEqual(ids('?view=info&sort=positions&order=desc'),defaultIds);
+ assert.deepEqual(ids('?view=info&sort=positions&order=asc'),[...defaultIds].reverse());
+ assert.deepEqual(ids('?view=info&sort=age&order=desc'),defaultIds.slice());
+ assert.deepEqual(ids('?view=technical&sort=passing&order=desc'),defaultIds);
+ assert.deepEqual(ids('?view=technical&sort=passing&order=asc'),players.map(p=>p.id));
+ assert.deepEqual(ids('?view=info&sort=passing&order=desc'),defaultIds,'invalid Info sort falls back to pitch order');
+ const sorted=render('?view=info&sort=age&order=desc');
+ assert.match(sorted,/data-club-roster-sort="age"/);
+ assert.match(sorted,/<th scope="col" aria-sort="descending"><button type="button" class="app-players-sort-button" data-club-roster-sort="age"/);
+ assert.match(render('?view=technical&sort=passing&order=asc'),/<th scope="col" aria-sort="ascending"><button type="button" class="app-players-sort-button" data-club-roster-sort="passing"/);
+ assert.deepEqual(players.map(p=>p.primary_position),[...pitch].reverse(),'rendering never mutates API snapshot');
+});
 test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mismatch',()=>{
  const js=read('assets/club-page.js');
  assert.match(js,/data-club-roster-view/);
  assert.match(js,/data-club-roster-group/);
+ assert.match(js,/data-club-roster-sort/);
+ assert.match(js,/params\.get\('sort'\)!==key/);
+ assert.match(js,/params\.get\('order'\)==='desc'/);
+ assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);
  assert.match(js,/params\.delete\('view'\);params\.delete\('group'\);params\.set\('view',view\)/);
  assert.match(js,/const target=view==='info'\?'info':view==='attributes'\?'technical':group/);
  assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
