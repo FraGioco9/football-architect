@@ -495,6 +495,8 @@ try{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    const generation='11111111-1111-4111-8111-111111111111';
    let club=null,writes=0,permissionReads=0;
+   let releaseInitialList,holdInitialList=true;
+   const initialList=new Promise(resolve=>{releaseInitialList=resolve});
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',r=>{
     permissionReads++;
@@ -503,7 +505,10 @@ try{
    });
    await page.route('**/api/admin/session',r=>r.fulfill({status:200,contentType:'application/json',
     body:JSON.stringify({actor:{id:'test'},csrfToken:'a'.repeat(64)})}));
-   await page.route('**/api/admin/contracts*',r=>{
+   await page.route('**/api/admin/contracts*',async r=>{
+    if(r.request().method()==='GET'&&holdInitialList){
+     holdInitialList=false;await initialList;
+    }
     if(r.request().method()==='POST'){
      writes++;
      assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
@@ -527,7 +532,39 @@ try{
    assert.equal(await page.locator('.admin-directory-card').count(),3);
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
+   await page.locator('.admin-contracts-skeleton').first().waitFor({state:'visible'});
+   const before=await page.evaluate(()=>{
+    const el=s=>document.querySelector(s),box=el('.admin-contracts-assignment'),
+     head=el('.admin-contracts-table thead'),tbody=el('[data-contracts-rows]');
+    const rowList=[...tbody.querySelectorAll('tr')];
+    return {boxY:box.getBoundingClientRect().y,headY:head.getBoundingClientRect().y,
+     rows:rowList.length,cellCounts:rowList.map(r=>r.cells.length),
+     checkboxes:rowList.map(r=>r.cells[0].querySelector('input')?.disabled),
+     widths:[...head.querySelectorAll('th')].map(th=>th.getBoundingClientRect().width),
+     count:el('[data-contracts-selected-count]').textContent,
+     dropdownDisabled:el('[data-contracts-trigger]').disabled,
+     message:el('[data-contracts-message]').textContent,
+     totalWidth:el('[data-contracts-total]').getBoundingClientRect().width,
+     pageWidth:el('[data-contracts-page]').getBoundingClientRect().width};
+   });
+   assert.equal(before.rows,5);
+   assert.deepEqual(before.cellCounts,[8,8,8,8,8]);
+   assert.ok(before.checkboxes.every(Boolean),'First-paint checkbox silhouettes are disabled');
+   assert.equal(before.widths.length,8);
+   assert.match(before.count,/^0 /);
+   assert.equal(before.dropdownDisabled,true);
+   assert.equal(before.message,'');
+   assert.ok(before.totalWidth>=76&&before.pageWidth>=100,'Stable counter/page space');
+   releaseInitialList();
    await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
+   const after=await page.evaluate(()=>{
+    const el=s=>document.querySelector(s),box=el('.admin-contracts-assignment'),head=el('.admin-contracts-table thead');
+    return {boxY:box.getBoundingClientRect().y,headY:head.getBoundingClientRect().y,
+     widths:[...head.querySelectorAll('th')].map(th=>th.getBoundingClientRect().width)};
+   });
+   assert.ok(Math.abs(after.boxY-before.boxY)<1,'Assignment box remains in place');
+   assert.ok(Math.abs(after.headY-before.headY)<1,'Table header remains in place');
+   assert.ok(after.widths.every((w,i)=>Math.abs(w-before.widths[i])<1),'Columns do not shift');
    const contractFlag=page.locator('[data-contracts-player="1"] .app-players-nationality-flag');
    assert.equal(await contractFlag.getAttribute('data-player-country'),'ITA');
    assert.equal(await contractFlag.getAttribute('alt'),'Italy');
@@ -580,7 +617,7 @@ try{
    assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true);
    assert.ok(permissionReads<=2,'Shared Admin permission cache');
    assert.deepEqual(errors,[]);checks++;
-  }finally{await context.close()}
+  }finally{releaseInitialList?.();await context.close()}
  }
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
