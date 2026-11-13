@@ -450,6 +450,8 @@ try {
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
+  // Supplied-data browser QA deliberately exercises the isolated Debug source.
+  await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
   for(const view of views){
    const url=base+"/competitions/"+cup+"/"+view;
    const response=await page.goto(url,{waitUntil:"domcontentloaded"});

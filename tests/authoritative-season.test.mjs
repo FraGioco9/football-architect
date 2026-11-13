@@ -140,23 +140,23 @@ test('CLUB-FIXTURES: selects only club games with stable canonical ordering and 
  assert.deepEqual(rows.map(x=>x.id),['a','b']);assert.equal(rows[1].opponentId,'IT-2');assert.equal(rows[1].venue,'away');assert.equal(rows[1].goalsFor,2);assert.equal(rows[1].goalsAgainst,1);
  assert.throws(()=>projectClubFixtures(games,'IT-1',1,1),/Future/);
 });
-test('CLUB-FIXTURES: Season 0 makes no reads; failed cups do not discard domestic fixtures',async()=>{
+test('CLUB-FIXTURES: Season 0 skips API and unpublished source uses exactly one club read',async()=>{
  const {readClubFixtures}=await import('../assets/club-fixtures-source.mjs');
  const unstarted={...world,revision:0,seasonNumber:0,phase:'unstarted',day:0};let calls=0;
  const zero=await readClubFixtures({clubKey:'IT-1',season:0,world:unstarted,fetchJson:async()=>{calls++},manifest});
  assert.equal(zero.coverage,'unstarted');assert.equal(calls,0);
  const provisional=await readClubFixtures({clubKey:'IT-1',season:1,world:unstarted,fetchJson:async()=>{calls++},manifest});
  assert.equal(provisional.coverage,'unstarted');assert.equal(provisional.season,1);assert.equal(calls,0,'Season 0 offers viewed Season 1 without inventing or fetching a season');
- const overview={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,world,status:'partial',reason:null,
-  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:1:x'},
-  data:{season:1,memberships:['IT-1','int-1'].map(competitionId=>({competitionId,season:1,category:competitionId==='IT-1'?'domestic':'international',position:null,points:0,cupStatus:null,nextMatch:null}))}};
- const batch={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',world,status:'available',reason:null,
-  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews:[overview]}};
+ const unpublished={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,world,
+  status:'empty',reason:'calendar-unpublished',
+  provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
+ const paths=[];
  const result=await readClubFixtures({clubKey:'IT-1',season:1,world,manifest,fetchJson:async path=>{
-  if(path.endsWith('/history'))return batch;if(path.includes('/IT-1/'))return source();throw Error('cup unavailable');
+  paths.push(path);return unpublished;
  }});
- assert.equal(result.coverage,'partial');assert.equal(result.rows.length,30);assert.deepEqual(result.unavailable,['int-1']);
- assert.ok(result.rows.every(f=>f.goalsFor===null));
+ assert.equal(result.coverage,'unpublished');
+ assert.deepEqual(result.rows,[]);
+ assert.deepEqual(paths,['/api/clubs/IT-1/seasons/1/fixtures'],'unpublished season never fans out to competition endpoints');
 });
 
 test('CLUB-FIXTURES: viewed Season 0 remains unstarted after world advancement',async()=>{

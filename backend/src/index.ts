@@ -7,7 +7,7 @@ import {gmailEmailDeliveries,type GmailDeliveryEnv} from './gmail-email-delivery
 import {localInboxDeliveries,handleLocalInbox,type LocalInboxEnv} from './local-dev-inbox.ts';
 import { ApiError } from './errors.ts';
 import {requireDatabase} from './database.ts';
-import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory} from './public-sporting-read.ts';
+import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory,readPublicClubFixtures} from './public-sporting-read.ts';
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
@@ -88,6 +88,17 @@ export default {
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search||!Number.isSafeInteger(Number(sporting[2])))return json(422,{error:{code:'invalid_public_request'}});
       try{return json(200,await readPublicSportingSeason(requireDatabase(env.DB),sporting[1],Number(sporting[2])))}
+      catch(error){
+        if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
+        return json(503,{error:{code:'sporting_data_unavailable'}});
+      }
+    }
+    // One canonical, read-only club-season fixture projection.
+    const clubFixtures=url.pathname.match(/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/seasons\/([1-9][0-9]*)\/fixtures$/);
+    if(clubFixtures){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search||!Number.isSafeInteger(Number(clubFixtures[2])))return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicClubFixtures(requireDatabase(env.DB),clubFixtures[1],Number(clubFixtures[2])))}
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'sporting_data_unavailable'}});

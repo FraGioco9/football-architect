@@ -43,6 +43,11 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
     res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});
     res.end('{"error":{"code":"permission_denied"}}');return;
    }
+   // Fresh Debug OFF performs a read-only request for the authoritative world.
+   if(route==='/api/world'){
+    res.writeHead(503,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    res.end('{"error":{"code":"world_unavailable"}}');return;
+   }
    const file=publicRequestFile(route);
    if(!allow.has(file))throw Error("path not in artifact");
    const type=mime[extname(file)];
@@ -126,6 +131,8 @@ test("G10-PUBLIC-02 browser: Debug controls operate without outgoing mutations",
   await cmd("Page.navigate",{url:origin+"/competitions/it-1?season=1&view=standings"});
   await until("document.readyState==='complete'&&!!document.querySelector('.fa-dev-widget-button')&&document.querySelectorAll('#app-standings-body tr').length===16");
   await run("document.querySelector('.fa-dev-widget-button').click()");
+  await run("document.querySelector('[data-dev-control=debug-enabled]').click()");
+  await until("window.faDebugEnabled===true");
   await until("!!document.querySelector('[data-dev-control=season]')&&!!document.querySelector('[data-dev-control=world-day]')");
   assert.equal(await run("document.querySelector('[data-dev-control=season]').value"),"1");
   assert.equal(await run("document.querySelector('[data-dev-control=world-day]').value"),"1");
