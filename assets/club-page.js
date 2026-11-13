@@ -202,7 +202,9 @@
    }
    document.title=host.querySelector('h1').textContent+' · '+model.copies[language()][selected.view]+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
-   for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   // Loading Roster subviews are inert anchors without href. Routing those
+   // through faAppHref(null) throws and used to trigger the whole-page error.
+   for(const link of host.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    bindDivisionLinks(host);
    const translate=host.querySelector('[data-translate-club]');
    if(translate)translate.addEventListener('click',()=>{
