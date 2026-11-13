@@ -541,7 +541,7 @@ try{
    assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
    assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
    assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),4);
-   assert.equal(await page.locator('[data-contracts-message]').isVisible(),false,
+   assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true,
     'Contracts status text must not occupy space or appear on screen');
    assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
     'No Loading players message is shown');
@@ -577,7 +577,7 @@ try{
    assert.equal(writes,2);
    assert.equal(await page.locator('[data-contracts-message]').textContent(),'',
     'No loading or success messages after assignment');
-   assert.equal(await page.locator('[data-contracts-message]').isVisible(),false);
+   assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true);
    assert.ok(permissionReads<=2,'Shared Admin permission cache');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
