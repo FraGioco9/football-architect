@@ -728,6 +728,7 @@ test('CLUB-FIXTURES next-match action requires a verified unplayed future fixtur
  assert.match(html,/class="club-fixture-row is-next"/);
  const css=read('assets/club-page.css');
  assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-fixture-row\{[^}]*padding:10px 10px/,'mobile row horizontal padding reserves space beside the next-match highlight');
+ assert.match(css,/\.club-fixtures-next:disabled,\.club-fixtures-next:disabled:hover\{[^}]*opacity:\.45;cursor:default;pointer-events:none;[^}]*background:var\(--surface\);[^}]*box-shadow:none\}/,'disabled next-match action matches the muted Matchday controls and has no interactive hover treatment');
 });
 
 test('CLUB-FIXTURES DEV adapter uses the sporting calendar and masks future results',async()=>{

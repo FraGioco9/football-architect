@@ -926,6 +926,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/375/390/430/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
   assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
+  assert.equal(await run("getComputedStyle(document.querySelector('[data-club-fixtures-next]')).opacity"),'1','enabled next-match control is not muted');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
@@ -935,6 +936,11 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result strong')].every(n=>n.textContent!=='—')"),true,'closed Season 1 has verified results');
   assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'historical season must disable next-match action');
+  const mutedNext=await run("(()=>{const n=document.querySelector('[data-club-fixtures-next]'),s=getComputedStyle(n);return {opacity:s.opacity,cursor:s.cursor,pointerEvents:s.pointerEvents,background:s.backgroundColor,border:s.borderColor}})()");
+  assert.equal(mutedNext.opacity,'0.45','historical next-match uses the Matchday muted opacity');
+  assert.equal(mutedNext.cursor,'default','disabled next-match does not show a click cursor');
+  assert.equal(mutedNext.pointerEvents,'none','disabled next-match has no hover/touch interaction');
+  assert.ok(mutedNext.background&&mutedNext.border,'disabled control retains its button geometry');
   assert.equal(await run("document.querySelector('.club-fixture-row.is-next')"),null,'historical season must not highlight a next match');
   await run("document.querySelector('[data-club-fixtures-next]').click()");
   assert.equal(await run("document.querySelector('[data-club-fixture-next]')"),null,'disabled action must not select any match');

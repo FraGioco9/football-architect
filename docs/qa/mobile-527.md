@@ -76,5 +76,5 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - [ ] Run exact-head targeted checks and observe GitHub CI status; record the result rather than assuming PASS.
 - [ ] Actual visual/mobile interactions on Players and Club Fixtures, including physical Safari/VoiceOver; attach screenshots and file defects.
 - [ ] Revisit player-detail QA after authorized #535 integration and retest any fixes.
-- [x] Requested mobile fix: increase row side padding beside the next-match accent and natively disable the next-match button outside the current season or without a verified future fixture (source and test changes; runtime/CI verification pending).
+- [x] Requested mobile fix: increase row side padding beside the next-match accent and natively disable the next-match button outside the current season or without a verified future fixture; apply the existing Matchday-style muted disabled presentation (45% opacity, no click/hover feedback). Source and test changes committed; runtime/CI verification pending.
 - [ ] Final desktop regression and owner acceptance; close #527 only after approval.
