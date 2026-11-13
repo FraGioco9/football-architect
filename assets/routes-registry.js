@@ -39,7 +39,7 @@ function buildRoute({kind,id,view="overview",country:clubCountry}){
 function resolveSeasonQuery(search,current=null,{min=1}={}){
  const params=search instanceof URLSearchParams?search:new URLSearchParams(search);
  const has=params.has("season"),raw=params.get("season");
- const valid=typeof raw==="string"&&(min===0?/^(?:0|[1-9]\\d{0,8})$/:/^[1-9]\\d{0,8}$/).test(raw);
+ const valid=typeof raw==="string"&&(min===0?/^(?:0|[1-9]\d{0,8})$/:/^[1-9]\d{0,8}$/).test(raw);
  const confirmed=Number.isSafeInteger(current)&&current>=0;
  const latest=confirmed?Math.max(min,current):null;
  const requested=valid?Number(raw):null;
