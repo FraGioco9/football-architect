@@ -475,6 +475,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixture-select [data-club-fixture-value]{display:inline-flex;align-items:center;gap:4px;min-width:0;white-space:nowrap}
 .club-fixture-select .language-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;max-width:min(310px,85vw);max-height:240px;overflow-y:auto;z-index:30}
 .club-fixtures-next{min-height:44px;margin-right:auto}
+/* Matchday navigation's disabled treatment: visible but muted, without hover feedback. */
+.club-fixtures-next:disabled,.club-fixtures-next:disabled:hover{opacity:.45;cursor:default;pointer-events:none;background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 .club-fixtures-list{margin:14px 0 0;padding:0;list-style:none;min-height:336px}
 .club-fixture-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(0,1.8fr) 36px 110px;gap:12px;align-items:center;min-height:64px;padding:10px 12px;box-sizing:border-box;border-bottom:1px solid var(--border);font-size:14px}
 .club-fixture-row.is-next{background:var(--surface);box-shadow:inset 3px 0 var(--fa-shell-accent)}
@@ -503,8 +505,8 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-fixture-loading .club-fixture-skeleton-score{inline-size:40px;block-size:14px}
 .club-fixture-loading .club-fixture-skeleton-status{inline-size:56px;block-size:9px}
 @media(max-width:620px){
- .club-fixtures-toolbar{gap:8px}.club-fixtures-selectors{width:100%;gap:8px}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:flex-start}
- .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 4px}
+ .club-fixtures-toolbar{gap:8px;justify-content:center}.club-fixtures-selectors{order:-1;width:100%;gap:8px;margin-left:0}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:center;margin-inline:auto}
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 10px}
  .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;gap:7px}
  .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
  .club-fixture-meta{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;gap:4px 10px;font-size:11px}
