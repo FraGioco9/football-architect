@@ -114,7 +114,8 @@
    const rosterTableScroll=host.querySelector('.club-roster-table-scroll')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,
+    competitionSnapshot?.source==='dev'&&Number.isSafeInteger(competitionSnapshot.season)?competitionSnapshot.season:currentWorldSeason());
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
    let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
    if(header&&stagedHeader){
@@ -238,7 +239,8 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,
+    competitionSnapshot?.source==='dev'&&Number.isSafeInteger(competitionSnapshot.season)?competitionSnapshot.season:currentWorldSeason());
    const replacement=staging.querySelector('.club-competition');
    if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));

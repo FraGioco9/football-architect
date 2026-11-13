@@ -219,6 +219,7 @@
     if(explicitSeason)url.searchParams.set("season",state.season);
     else url.searchParams.delete("season");
     if(state.view==="fixtures"){
+      url.searchParams.delete("calendarReturn"); // Reject invalid external or stale return contexts.
       if(calendarReturn)url.searchParams.set("calendarReturn",calendarReturn);
       url.searchParams.set("matchday",identity.kind==="cup"&&typeof state.matchday==="string"?state.matchday.replace(/:1$/,""):String(state.matchday));
     }else{

@@ -42,7 +42,10 @@
   const week = Math.ceil(day / 7);
 
   const params = new URLSearchParams();
-  if (season !== null) params.set('season', String(season));
+  // A missing query always means the current season. The first-paint bootstrap
+  // must not synthesize an explicit Season 1 permalink before hydration.
+  if (season !== null && validSeason && url.searchParams.has('season') &&
+      (!dev || requested <= Math.max(1,currentSeason))) params.set('season', String(season));
   params.set('calendarView', view);
   if (view === 'week' && (explicitWeek || dev)) params.set('week', String(week));
   url.search = params;
