@@ -925,6 +925,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   }
   console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/375/390/430/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
@@ -933,6 +934,10 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result strong')].every(n=>n.textContent!=='—')"),true,'closed Season 1 has verified results');
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'historical season must disable next-match action');
+  assert.equal(await run("document.querySelector('.club-fixture-row.is-next')"),null,'historical season must not highlight a next match');
+  await run("document.querySelector('[data-club-fixtures-next]').click()");
+  assert.equal(await run("document.querySelector('[data-club-fixture-next]')"),null,'disabled action must not select any match');
   await run('history.back()');await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run('history.forward()');await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
@@ -948,6 +953,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   failHistory=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'world Season 0 still offers only viewed Season 1');
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'Season 0 disables next match');
   assert.deepEqual(await run('window.__errors'),[]);
   useDev=true;
   const devSetup=season=>"sessionStorage.setItem('football-architect:debug-enabled','on');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','"+season+"');sessionStorage.setItem('football-architect:standings-dev-matchdays','4');sessionStorage.setItem('football-architect:calendar-dev-world-day','16');";

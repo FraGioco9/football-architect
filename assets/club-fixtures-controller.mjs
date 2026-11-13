@@ -59,7 +59,7 @@ export function mountClubFixtures({host,manifest}){
   const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent')?'.club-fixture-opponent':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
   const oldCrests=new Map();
   for(const node of panel?.querySelectorAll('[data-club-crest]')||[]){const key=node.dataset.clubCrest;if(!oldCrests.has(key))oldCrests.set(key,[]);oldCrests.get(key).push(node);}
-  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,seasons,filter,snapshot});
+  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,currentSeason:state?.get?.().current?.season??null,seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();
@@ -70,9 +70,8 @@ export function mountClubFixtures({host,manifest}){
    panel.addEventListener('focusin',e=>showTip(e.target.closest('[data-club-venue]')));
    panel.addEventListener('focusout',hideTip);
    panel.addEventListener('keydown',e=>{if(e.key==='Escape')hideTip();});
-   panel.addEventListener('click',e=>{if(e.target.closest('[data-club-fixtures-next]')){
-    const next=snapshot.rows.find(r=>r.goalsFor===null&&r.day>snapshot.day);
-    if(!next)return;
+   panel.addEventListener('click',e=>{const action=e.target.closest('button[data-club-fixtures-next]');if(action){
+    if(action.disabled||!ui.nextFixture({snapshot,season:season(),currentSeason:state?.get?.().current?.season??null}))return;
     if(filter!=='all'&&next.competitionId!==filter){const u=new URL(location.href);u.searchParams.delete('competition');history.pushState(null,'',u.pathname+u.search);paint();}
     const row=panel.querySelector('[data-club-fixture-next]');row?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});row?.focus({preventScroll:true});
    }});

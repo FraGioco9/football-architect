@@ -504,7 +504,7 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-fixture-loading .club-fixture-skeleton-status{inline-size:56px;block-size:9px}
 @media(max-width:620px){
  .club-fixtures-toolbar{gap:8px;justify-content:center}.club-fixtures-selectors{order:-1;width:100%;gap:8px;margin-left:0}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:center;margin-inline:auto}
- .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 4px}
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 10px}
  .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;gap:7px}
  .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
  .club-fixture-meta{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;gap:4px 10px;font-size:11px}

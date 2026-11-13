@@ -700,6 +700,36 @@ test('CLUB-FIXTURES renderer: localized controls, opponent-only rows, venues and
  assert.ok(unknown.includes('Opponent TBD'));assert.ok(!unknown.includes('2–1'));
 });
 
+test('CLUB-FIXTURES next-match action requires a verified unplayed future fixture in the current season',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ const future={id:'future',day:24,goalsFor:null,competitionId:'IT-1'};
+ const played={id:'played',day:18,goalsFor:2,competitionId:'IT-1'};
+ const snapshot={coverage:'complete',day:16,rows:[played,future],competitions:[]};
+ const match=(snap,season,currentSeason)=>ui.nextFixture({snapshot:snap,season,currentSeason});
+ assert.equal(match(snapshot,2,2),future,'active season with an upcoming match is actionable');
+ assert.equal(match({...snapshot,coverage:'partial'},2,2),future,'partial source can still expose a verified fixture');
+ for(const [description,snap,selected,current] of [
+  ['historical season',snapshot,1,2],
+  ['unstarted world',snapshot,1,0],
+  ['unknown canonical season',snapshot,2,null],
+  ['fully played schedule',{...snapshot,rows:[played,{...future,goalsFor:1}]},2,2],
+  ['no future match',{...snapshot,day:30},2,2],
+  ['pending read',{...snapshot,coverage:'loading'},2,2],
+  ['error read',{...snapshot,coverage:'error'},2,2],
+  ['unavailable read',{...snapshot,coverage:'unavailable'},2,2]
+ ]){
+  assert.equal(match(snap,selected,current),null,description);
+  const html=ui.render({season:selected,currentSeason:current,snapshot:snap});
+  assert.match(html,/data-club-fixtures-next disabled/,description+' button must be natively disabled');
+  assert.doesNotMatch(html,/class="club-fixture-row is-next"/,description+' must not highlight a stale next fixture');
+ }
+ const html=ui.render({season:2,currentSeason:2,snapshot});
+ assert.doesNotMatch(html,/data-club-fixtures-next disabled/);
+ assert.match(html,/class="club-fixture-row is-next"/);
+ const css=read('assets/club-page.css');
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-fixture-row\{[^}]*padding:10px 10px/,'mobile row horizontal padding reserves space beside the next-match highlight');
+});
+
 test('CLUB-FIXTURES DEV adapter uses the sporting calendar and masks future results',async()=>{
  const {createPreviewClubFixtures}=await import('../tools/dev-standings-preview-data.mjs');
  const manifest=JSON.parse(read('competitions/_shared/manifest.json')),division=manifest.divisions.find(d=>d.id==='IT-1');
