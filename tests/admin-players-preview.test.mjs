@@ -147,7 +147,7 @@ test('Committed drafts remain inspectable while automatic seeds stay unpinned',(
  const preview=read('assets/admin-players-preview.js');
  const detail=read('assets/player-detail.js');
  const backend=read('backend/src/players-generation-command.ts');
- assert.match(backend,/const candidates=stored\.map\(\(player,index\)=>\(\{\.\.\.player,preview_id:'trial-'/);
+ assert.match(backend,/const candidates(?::Data\[\])?=stored\.map\(\(player,index\)=>\(\{\.\.\.player,preview_id:'trial-'/);
  assert.match(backend,/status:draft\.status/);
  assert.match(preview,/saved=info\.status==='committed'/);
  assert.doesNotMatch(preview,/options\.seed='fa-next-'/);

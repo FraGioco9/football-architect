@@ -112,7 +112,9 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.ok(script.includes("setContent(nameNode,state==='not-found'?copy.notFound:copy.player)"));
  assert.match(script,/statusNode\.hidden=state==='loading'\|\|state==='ready'\|\|state==='not-found'/);
- assert.doesNotMatch(script,/state==='not-found'\?copy\.notFound/);
+ const statusLine=script.split('\n').find(line=>line.includes('statusNode.textContent='));
+ assert.ok(statusLine,'Status copy must be rendered in a dedicated footer node');
+ assert.doesNotMatch(statusLine,/state==='not-found'\?copy\.notFound/);
  assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 
