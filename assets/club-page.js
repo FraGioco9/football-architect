@@ -17,18 +17,16 @@
  };
  try{
   if(!selected)throw Error('Unknown club route');
-  const params=new URLSearchParams(location.search);
+  // A refresh starts at /roster; the API will choose Info only after success.
   if(selected.view==='roster'){
-   const requested=params.get('view'),allowed=['info','technical','mental','physical','goalkeeping'];
-   const legacyGroup=params.get('group');
-   const view=allowed.includes(requested)?requested:
-    requested==='attributes'&&allowed.slice(1).includes(legacyGroup)?legacyGroup:
-    requested==='attributes'?'technical':'info';
-   params.delete('view');params.delete('group');params.set('view',view);
-  }else params.delete('view');
-  if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
-  const query=params.size?'?'+params:'';
-  if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
+   if(location.search)history.replaceState(null,'',location.pathname+location.hash);
+  }else{
+   const params=new URLSearchParams(location.search);
+   params.delete('view');
+   if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
+   const query=params.size?'?'+params:'';
+   if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
+  }
   const selectorScript=document.createElement('script');
   selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
   document.head.append(selectorScript);
@@ -186,6 +184,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
+      if(next.view==='roster'&&selected.view!=='roster')rosterSnapshot={source:'loading'};
       selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
@@ -350,6 +349,10 @@
       throw Error('invalid_roster_response');
      if(signal.aborted||ticket!==rosterRequest)return;
      rosterSnapshot={source:'ready',...data};
+     // No table is shown for a verified empty squad; keep the neutral route.
+     // A positive response selects Info without creating a history entry.
+     if(selected.view==='roster'&&data.count>0&&!new URLSearchParams(location.search).has('view'))
+      history.replaceState(null,'',location.pathname+'?view=info'+location.hash);
     }catch(error){
      if(signal.aborted||ticket!==rosterRequest)return;
      rosterSnapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
@@ -533,6 +536,7 @@
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){
     const queryOnly=selected.view==='roster'&&next.view==='roster';
+    if(next.view==='roster'&&!queryOnly)rosterSnapshot={source:'loading'};
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
