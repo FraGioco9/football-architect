@@ -78,7 +78,7 @@
   indexCache.set(manifest,index);
   return index;
  }
- function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null){
+ function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null,currentWorldSeason=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
   const index=getIndex(manifest),c=index.clubs.get(selected.countryId+'-'+selected.clubId);
   if(!c)throw Error('Unknown club identity');
@@ -101,7 +101,11 @@
   const params=new URLSearchParams(search);
   const requestedSeason=params.get('season');
   const competitionSeason=summary?.season||(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null)||(Number.isInteger(activeSeason)&&activeSeason>=1&&activeSeason<=999999999?activeSeason:null);
-  const competitionLink=link+(competitionSeason?'?season='+competitionSeason:'');
+  const canonicalCurrent=Number.isSafeInteger(currentWorldSeason)&&currentWorldSeason>=0?Math.max(1,currentWorldSeason):
+   params.has('season')?null:competitionSeason;
+  const explicit=routes.resolveSeasonQuery(params,canonicalCurrent).explicit;
+  const seasonLink=(path,year)=>routes.withSeason(path,year,canonicalCurrent,{preserveExplicit:explicit&&Number(requestedSeason)===year});
+  const competitionLink=link?seasonLink(link,competitionSeason):null;
   // A verified season membership replaces the build-time Season 1 division. The
   // fallback is retained only for legacy isolated DEV/tests, never while a
   // public source is loading or after authoritative season hydration.
@@ -115,7 +119,7 @@
   const currentDomestic=publicMemberships?.find(m=>m.category==='domestic')||null;
   const shownDomestic=currentDomestic?index.divisions.get(currentDomestic.competitionId):null;
   const divisionValue=publicMemberships
-   ?shownDomestic?'<a class="app-link" data-club-division-link href="'+routes.buildRoute({kind:'competition',id:shownDomestic.id.toLowerCase(),view:'standings'})+'?season='+snapshot.season+'">'+escape(shownDomestic.name)+'</a>':escape(t.outside)
+   ?shownDomestic?'<a class="app-link" data-club-division-link href="'+seasonLink(routes.buildRoute({kind:'competition',id:shownDomestic.id.toLowerCase(),view:'standings'}),Math.max(1,snapshot.season))+'">'+escape(shownDomestic.name)+'</a>':escape(t.outside)
    :publicPending?'<span class="club-fp-bar" style="--club-fp-width:55%"></span>':publicUnavailable?'—'
     :division?'<a class="app-link" data-club-division-link href="'+competitionLink+'">'+escape(division.name)+'</a>':escape(t.outside);
   const next=summary?.nextMatch;
@@ -124,7 +128,7 @@
   const awayCandidate=next&&index.clubs.get(c.countryId+'-'+next.awayId);
   const away=awayCandidate&&awayCandidate.divisionId===c.divisionId?awayCandidate:null;
   const validNext=home&&away&&home.clubId!==away.clubId&&[home.clubId,away.clubId].includes(c.clubId)&&Number.isInteger(next.round)&&next.round>=1&&next.round<=33;
-  const fixtureLink=validNext?routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?season='+summary.season+'&matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'):null;
+  const fixtureLink=validNext?seasonLink(routes.buildRoute({kind:'competition',id:division.id.toLowerCase(),view:'fixtures'})+'?matchday='+(next.round<=30?next.round:division.tier===1?'playout':'playoffs'),summary.season):null;
   const rank=summary?.position===null||!summary?'—':ordinal(summary.position,lang);
   const nextContent=validNext?'<a class="app-link" href="'+escape(fixtureLink)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(next.round<=30?t.matchdayLabel+' '+next.round:division.tier===1?t.playoutLabel:t.playoffsLabel)+'</small>':
    '<span class="club-competition-next-empty">'+escape(summary?t.noUpcomingMatch:t.noScheduledMatch)+'</span>';
@@ -146,7 +150,7 @@
   const memberCard=membership=>{
    const def=index.divisions.get(membership.competitionId),isDomestic=membership.category==='domestic';
    const title=isDomestic?(def?.name||membership.name):membership.name;
-   const target=routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'standings'})+'?season='+membership.season;
+   const target=seasonLink(routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'standings'}),membership.season);
    const badge=isDomestic&&def?'<img class="club-competition-logo" src="/assets/divisions/'+escape(def.id.toLowerCase()+'-'+def.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'/compact.svg')+'" width="64" height="64" alt="">':
     '<span class="club-competition-cup-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v8a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5v3a4 4 0 0 0 4 4M16 6h3v3a4 4 0 0 1-4 4M12 16v3M8 21h8"/></svg></span>';
    const next=membership.nextMatch;
@@ -155,7 +159,7 @@
    const phase=isDomestic?(next?.phaseId==='playout'?'playout':next?.phaseId==='promotionPlayoffs'?'playoffs':next?.round<=30?next.round:null)
      :(next?.phaseId==='league'?next.round:next?.phaseId);
    const fixtureUrl=valid&&phase!==null&&phase!==undefined?
-    routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'fixtures'})+'?season='+membership.season+'&matchday='+phase:null;
+    seasonLink(routes.buildRoute({kind:isDomestic?'competition':'cup',id:membership.competitionId.toLowerCase(),view:'fixtures'})+'?matchday='+phase,membership.season):null;
    const nextInfo=fixtureUrl
     ?'<a class="app-link" href="'+escape(fixtureUrl)+'"><span class="club-competition-match-name">'+escape(home.primaryName+' – '+away.primaryName)+'</span></a><small>'+escape(typeof phase==='number'?t.matchdayLabel+' '+phase:
       phase==='playout'?t.playoutLabel:phase==='playoffs'?t.playoffsLabel:phase==='quarterfinals'?'Quarter-finals':phase==='semifinals'?'Semi-finals':'Final')+'</small>'
@@ -178,7 +182,7 @@
    competitionCard;
   // Navigation carries existing temporal context only into Fixtures/Stats. No clock is created here.
   const temporal=new URLSearchParams();
-  for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));
+  for(const key of ['season','matchday'])if(params.has(key)&&(key!=='season'||explicit))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
    const suffix=['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
    return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
