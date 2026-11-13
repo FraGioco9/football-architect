@@ -49,15 +49,15 @@ it('returns protected, paginated current affiliation records and all canonical c
  expect(res.data).toMatchObject({count:3,page:1,pageSize:50,totalPages:1,
   worldGeneration:generation,worldRevision:revision});
  expect(res.data.players).toEqual([
-  {id:1,name:'First1 Last1',clubKey:null},
-  {id:2,name:'First2 Last2',clubKey:null},
+  {id:1,name:'First1 Last1',clubKey:null,secondary_positions:[]},
+  {id:2,name:'First2 Last2',clubKey:null,secondary_positions:[]},
   {id:3,name:'First3 Last3',clubKey:null}
  ]);
  expect(res.data.clubs).toHaveLength(320);
  expect(res.data.clubs).toContainEqual({clubKey:'IT-40',name:expect.any(String)});
  expect(JSON.stringify(res.data)).not.toMatch(/development_aptitude|initial_age|batch_id|seed|csrfToken/);
  expect(res.headers.get('cache-control')).toContain('private');
- expect((await call('GET','?playerId=2')).data.players).toEqual([{id:2,name:'First2 Last2',clubKey:null}]);
+ expect((await call('GET','?playerId=2')).data.players).toEqual([{id:2,name:'First2 Last2',clubKey:null,secondary_positions:[]}]);
  expect((await call('GET','?playerId=99')).status).toBe(404);
 });
 it('supports assign, same-club idempotency, guarded reassign and explicit unassign without changing player rows',async()=>{
@@ -112,4 +112,50 @@ it('optimistic link comparison ensures a stale operator cannot overwrite a newer
  await db.prepare('UPDATE world_state SET generation=? WHERE id=1').bind(crypto.randomUUID()).run();
  expect((await call('POST','',command(1,'BR-40','IT-1'))).status).toBe(409);
  expect((await db.prepare('SELECT club_key FROM player_club_affiliations WHERE player_id=1').first<{club_key:string}>())?.club_key).toBe('IT-1');
+});
+
+
+it('projects Players directory fields without exposing private generation attributes',async()=>{
+ await db.prepare('UPDATE generated_players SET payload_json=? WHERE id=?')
+  .bind(JSON.stringify({id:1,first_name:'Demo',last_name:'Footballer',nationality:'ITA',
+   age:21,height_cm:182,preferred_foot:'left',primary_position:'CM',secondary_positions:['DM','AM'],
+   development_aptitude:100,initial_age:18}),1).run();
+ const res=await call('GET','?page=1');
+ expect(res.status).toBe(200);
+ expect(res.data.players[0]).toMatchObject({id:1,name:'Demo Footballer',nationality:'ITA',
+  age:21,height_cm:182,preferred_foot:'left',primary_position:'CM',
+  secondary_positions:['DM','AM'],clubKey:null});
+ expect(JSON.stringify(res.data)).not.toMatch(/development_aptitude|initial_age|payload_json/);
+});
+it('atomically assigns and unassigns several selected players with one guarded batch',async()=>{
+ const before=(await db.prepare('SELECT * FROM generated_players ORDER BY id').all()).results;
+ const input=(players:any[],clubKey:string|null)=>({players,clubKey,expectedGeneration:generation,expectedRevision:revision});
+ const p1={playerId:1,expectedClubKey:null},p2={playerId:2,expectedClubKey:null};
+ let res=await call('POST','',input([p1,p2],'IT-1'));
+ expect(res.status).toBe(200);expect(res.data.updated).toBe(2);
+ expect((await db.prepare('SELECT player_id,club_key FROM player_club_affiliations ORDER BY player_id').all()).results)
+  .toEqual([{player_id:1,club_key:'IT-1'},{player_id:2,club_key:'IT-1'}]);
+ res=await call('POST','',input([{playerId:1,expectedClubKey:'IT-1'},{playerId:2,expectedClubKey:'IT-1'}],null));
+ expect(res.status).toBe(200);expect(res.data.updated).toBe(2);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM player_club_affiliations').first<{n:number}>())?.n).toBe(0);
+ expect((await db.prepare('SELECT * FROM generated_players ORDER BY id').all()).results).toEqual(before);
+});
+it('rejects unsafe, stale and unauthorized batches without partial assignments',async()=>{
+ const body=(players:any[],clubKey:unknown='ENG-1')=>({players,clubKey,expectedGeneration:generation,expectedRevision:revision});
+ const current=[{playerId:1,expectedClubKey:null},{playerId:2,expectedClubKey:null}];
+ for(const broken of [body([]),body(Array(51).fill({playerId:1,expectedClubKey:null})),
+  body([current[0],current[0]]),body([{playerId:1,expectedClubKey:'ENG-1'},current[1]]),
+  body([current[0],{playerId:99,expectedClubKey:null}]),
+  body(current,'UNKNOWN'),body(current,'it-1'),{...body(current),extra:'forged'},
+  {...body(current),expectedRevision:revision+1}]){
+  const res=await call('POST','',broken);
+  expect([404,409,422]).toContain(res.status);
+ }
+ expect((await call('POST','',body(current),'invalid-csrf')).status).toBe(403);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM player_club_affiliations').first<{n:number}>())?.n).toBe(0);
+ // Simulate a second operator changing one affiliation since this list was read.
+ await db.prepare('INSERT INTO player_club_affiliations(player_id,club_key) VALUES(?,?)').bind(2,'BR-40').run();
+ expect((await call('POST','',body(current))).status).toBe(409);
+ expect((await db.prepare('SELECT player_id,club_key FROM player_club_affiliations').all()).results)
+  .toEqual([{player_id:2,club_key:'BR-40'}]);
 });
