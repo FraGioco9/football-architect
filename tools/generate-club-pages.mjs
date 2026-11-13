@@ -96,14 +96,17 @@ function bootstrapClubFirstPaint(){
   }
  }
  header.removeAttribute('aria-hidden');
- document.title=labels[locale][activeIndex]+' — Football Architect';
+ const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
+  const titleFallback=document.querySelector('[data-club-title-fallback]');
+  if(titleFallback)titleFallback.textContent=fallback[locale];
+  document.title=fallback[locale]+' — Football Architect';
  document.documentElement.dataset.clubShellReady='true';
 }
 function buildClubShell(firstPaintScript){
  return '<section id="app-divisions" class="app-view app-world-view" aria-labelledby="club-title">'+
   '<div id="club-page" aria-live="polite">'+
   '<header class="club-header club-first-paint-header" aria-hidden="true"><span class="app-world-club-crest-placeholder club-crest fa-crest-loading"></span><div>'+
-  '<h1 id="club-title" class="app-page-title"><span class="club-fp-bar club-fp-header-name" aria-hidden="true"></span></h1>'+
+  '<h1 id="club-title" class="app-page-title"><span class="sr-only" data-club-title-fallback>Club</span><span class="club-fp-bar club-fp-header-name" aria-hidden="true"></span></h1>'+
   '<p class="club-location"><span class="club-first-paint-flag" aria-hidden="true"></span><span data-club-first-paint-location><span class="club-fp-bar club-fp-header-location" aria-hidden="true"></span></span></p>'+
   '</div></header>'+
   '<nav class="app-competition-tabs club-tabs" aria-label="Club pages">'+
@@ -131,7 +134,8 @@ export function clubOutputs({template,replacements,clubs,divisions,allocations,c
  for(const [token,value] of Object.entries({...replacements,'@@FA_WORLD_SECTION@@':staticContent}))html=html.replaceAll(token,value);
  html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"').replace('data-app-view="divisions" aria-current="page"','data-app-view="divisions"');
  html=html.replace('</head>','  <link rel="stylesheet" href="/assets/club-page.css">\n  <script src="/assets/club-fixtures.js" defer></script>\n  <script src="/assets/club-model.js" defer></script>\n  <script src="/assets/club-page.js" defer></script>\n</head>');
- html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
+ html=html.replace('<title>Competitions — Football Architect</title>','<title>Club — Football Architect</title>');
+  html=html.replace('<body class="app-body">','<body class="app-body">\n  <a class="skip-link" href="#main-content">Skip to content</a>');
  return [{path:'clubs/_shared/index.html',content:html},
   {path:'clubs/_shared/manifest.json',content:JSON.stringify(manifest,null,2)+'\n'}];
 }

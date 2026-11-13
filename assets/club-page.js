@@ -167,7 +167,9 @@
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
    }
-   document.title=host.querySelector('h1').textContent+' · '+model.copies[language()][selected.view]+' — Football Architect';
+   const titleName=host.querySelector('#club-title')?.textContent?.trim();
+    const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
+    document.title=(titleName&&!/^(?:undefined|null|nan)$/i.test(titleName)?titleName:fallback[language()])+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
    for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    bindDivisionLinks(host);

@@ -285,6 +285,8 @@ for(const [route,title,content,scripts] of [
  html=html.replace('class="fa-shell-link is-active" id="app-nav-divisions"','class="fa-shell-link" id="app-nav-divisions"')
   .replace('id="app-nav-divisions" href="/competitions" data-app-view="divisions" aria-current="page"','id="app-nav-divisions" href="/competitions" data-app-view="divisions"');
  html=html.replace('<title>Competitions','<title>'+title);
+  if(route==='admin/players/preview')html=html.replace('<title>Admin — Players Preview — Football Architect</title>','<title>Player preview — Football Architect</title>')
+   .replace('<h1 id="admin-title" class="app-page-title" data-app-i18n="statsDevPlayers">Players</h1>','<h1 id="admin-title" class="app-page-title">Player preview</h1>');
  html=html.replace('</head>',
   '  <meta name="robots" content="noindex,nofollow">\n'+(route==='admin/players/preview'?'  <meta name="referrer" content="no-referrer">\n':'')+'  <script src="/assets/routes-registry.js" defer></script>\n  <link rel="stylesheet" href="/assets/admin-settings.css">\n'+scripts.map(src=>'  <script src="'+src+'" defer></script>\n').join('')+'</head>');
  writeOutput(route+'/index.html',html);
