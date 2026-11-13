@@ -51,7 +51,7 @@ it('returns protected, paginated current affiliation records and all canonical c
  expect(res.data.players).toEqual([
   {id:1,name:'First1 Last1',clubKey:null,secondary_positions:[]},
   {id:2,name:'First2 Last2',clubKey:null,secondary_positions:[]},
-  {id:3,name:'First3 Last3',clubKey:null}
+  {id:3,name:'First3 Last3',clubKey:null,secondary_positions:[]}
  ]);
  expect(res.data.clubs).toHaveLength(320);
  expect(res.data.clubs).toContainEqual({clubKey:'IT-40',name:expect.any(String)});
