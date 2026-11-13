@@ -182,10 +182,11 @@
   }
   const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)
    :'<span class="app-players-count-placeholder" aria-hidden="true"></span>';
+  const tabsDisabled=!ready;
   const viewTabs=['info',...Object.keys(rosterGroups)].map((key,i)=>{
    const active=key===(mode==='overview'?'info':group);
    const label=i===0?w.tabs[0]:w.groups[i-1];
-   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'"'+(pending?'':' href="'+escape(href(key))+'"')+' data-club-roster-view="'+key+'" aria-selected="'+active+'"'+(pending?' aria-disabled="true"':'')+' tabindex="'+(pending?'-1':active?'0':'-1')+'">'+escape(label)+'</a>';
+   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'"'+(tabsDisabled?'':' href="'+escape(href(key))+'"')+' data-club-roster-view="'+key+'" aria-selected="'+active+'"'+(tabsDisabled?' aria-disabled="true"':'')+' tabindex="'+(tabsDisabled?'-1':active?'0':'-1')+'">'+escape(label)+'</a>';
   }).join('');
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span></div>'+
