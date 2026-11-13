@@ -170,7 +170,7 @@
 .app-admin-view .admin-contracts-assignment{display:flex;flex-direction:column;gap:12px;padding:16px;min-width:0;overflow:visible}
 .app-admin-view .admin-contracts-assignment h2{font-size:var(--fa-text-panel-heading);margin:0}
 .app-admin-view .admin-contracts-assign-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
-.app-admin-view [data-contracts-selected-count]{min-width:145px;color:var(--muted);font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
+.app-admin-view [data-contracts-selected-count]{display:inline-block;min-width:145px;min-height:1.2em;color:var(--muted);font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
 .app-admin-view .admin-contracts-dropdown{position:relative;z-index:5;flex:1 1 260px;max-width:420px;min-width:180px}
 .app-admin-view .admin-contracts-dropdown-trigger{box-sizing:border-box;display:flex;align-items:center;justify-content:center;position:relative;width:100%;height:44px;min-height:44px;padding:8px 36px 8px 12px;font-size:14px}
 .app-admin-view .admin-contracts-dropdown-trigger>[data-contracts-dropdown-value]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;text-align:center}
@@ -186,9 +186,9 @@
 .app-admin-view .admin-contracts-apply:disabled{opacity:.5;cursor:default}
 /* Keep critical failure and limit announcements accessible without any visible messages. */
 .app-admin-view .admin-contracts-message{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;padding:0!important;margin:-1px!important;border:0!important}
-.app-admin-view .admin-contracts-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0 12px}
+.app-admin-view .admin-contracts-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:30px;margin:8px 0 12px}
 .app-admin-view .admin-contracts-list-heading h2{font-size:var(--fa-text-panel-heading);margin:0}
-.app-admin-view [data-contracts-total]{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.app-admin-view [data-contracts-total]{display:inline-block;min-width:76px;min-height:1.2em;text-align:right;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .app-admin-view .admin-contracts-table-scroll{margin-top:0}
 .app-admin-view .admin-contracts-table{box-sizing:border-box;width:100%;min-width:985px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
 .app-admin-view .admin-contracts-table :is(th,td){box-sizing:border-box;padding:10px 12px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
@@ -210,7 +210,9 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 .app-admin-view .admin-contracts-checkbox-cell input:focus:not(:focus-visible){outline:none;box-shadow:none}
 .app-admin-view .admin-contracts-checkbox-cell:hover{background:transparent}
 .app-admin-view .admin-contracts-checkbox-cell input:disabled{opacity:.5;cursor:default}
+.app-admin-view .admin-contracts-skeleton{height:44px}
 .app-admin-view .admin-contracts-skeleton td{height:44px}
+.app-admin-view .admin-contracts-skeleton input:disabled{opacity:.45;pointer-events:none}
 .app-admin-view .admin-contracts-pagination{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:14px;margin-top:12px}
-.app-admin-view [data-contracts-page]{min-width:88px;text-align:center;color:var(--muted);font-size:13px}
+.app-admin-view [data-contracts-page]{display:inline-block;min-width:100px;min-height:1.2em;text-align:center;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 @media(max-width:620px){.app-admin-view [data-contracts-selected-count]{width:100%}.app-admin-view .admin-contracts-dropdown{max-width:none;min-width:0;flex:1 1 175px}.app-admin-view .admin-contracts-apply{min-width:100px}}

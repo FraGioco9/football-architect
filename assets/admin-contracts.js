@@ -87,10 +87,28 @@
    });
    menuItems.replaceChildren(fragment);syncSelect();
   }
+  // Static rows, header and controls already exist in HTML. Keep the five
+  // eight-column placeholders unchanged on the first authorized paint.
   function loading(){
-   rows.replaceChildren();for(let i=0;i<5;i++){const tr=doc.createElement('tr'),td=doc.createElement('td');
-    tr.className='admin-contracts-skeleton';td.colSpan=8;tr.append(td);rows.append(tr)}
-   rows.setAttribute('aria-busy','true');
+   if(rows.childElementCount===5&&[...rows.children].every(row=>row.classList.contains('admin-contracts-skeleton'))){
+    rows.setAttribute('aria-busy','true');return;
+   }
+   const fragment=doc.createDocumentFragment();
+   for(let i=0;i<5;i++){
+    const tr=doc.createElement('tr');tr.className='admin-contracts-skeleton';
+    tr.setAttribute('aria-hidden','true');
+    for(let col=0;col<8;col++){
+     const td=doc.createElement('td');
+     if(col===0){
+      td.className='admin-contracts-checkbox-cell';
+      const cb=doc.createElement('input');cb.type='checkbox';cb.disabled=true;
+      cb.tabIndex=-1;cb.setAttribute('aria-hidden','true');td.append(cb);
+     }
+     tr.append(td);
+    }
+    fragment.append(tr);
+   }
+   rows.replaceChildren(fragment);rows.setAttribute('aria-busy','true');
   }
   function render(){
    if(!record)return;
@@ -126,7 +144,8 @@
    populate();if(record)render();else controls();
   }
   function clear(){
-   record=null;selected.clear();anchorId=null;clubs=null;select.value='';closeMenu();rows.replaceChildren();
+   record=null;selected.clear();anchorId=null;clubs=null;select.value='';closeMenu();
+   loading();
    el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';controls();
   }
   function paint(yes){

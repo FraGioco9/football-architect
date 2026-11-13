@@ -47,7 +47,7 @@ export function renderAdminContracts(){
       '<th scope="col" data-contracts-copy="club">Club</th>',
      '</tr></thead>',
      '<tbody data-contracts-rows aria-busy="true">',
-      ...Array.from({length:5},()=>'<tr class="admin-contracts-skeleton" aria-hidden="true"><td colspan="8"></td></tr>'),
+      ...Array.from({length:5},()=>"<tr class=\"admin-contracts-skeleton\" aria-hidden=\"true\"><td class=\"admin-contracts-checkbox-cell\"><input type=\"checkbox\" disabled tabindex=\"-1\" aria-hidden=\"true\"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>"),
      '</tbody>',
     '</table>',
    '</div>',

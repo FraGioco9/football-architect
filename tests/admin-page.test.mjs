@@ -166,6 +166,19 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(html,/data-contracts-trigger/);
  assert.doesNotMatch(html,/data-contracts-find-input|data-contracts-unassign|data-contracts-cancel/);
  assert.match(html,/data-contracts-rows aria-busy="true"/);
+ const firstPaint=renderAdminContracts();
+ const staticRows=firstPaint.match(/<tr class="admin-contracts-skeleton" aria-hidden="true">[^]*?<\/tr>/g)||[];
+ assert.equal(staticRows.length,5,'Five complete empty rows exist in server HTML');
+ for(const row of staticRows){
+  assert.equal((row.match(/<td\b/g)||[]).length,8,'All eight columns are reserved before API data');
+  assert.match(row,/class="admin-contracts-checkbox-cell"><input type="checkbox" disabled tabindex="-1"/);
+  assert.doesNotMatch(row,/colspan|Loading players/);
+ }
+ assert.match(source,/rows.childElementCount===5/,'Permission check preserves static skeleton rows');
+ assert.match(source,/record=null;selected.clear\(\);anchorId=null;clubs=null;select.value='';closeMenu\(\);\s*loading\(\)/);
+ assert.match(html,/<section id="app-admin"[^>]*hidden/,'Admin data remain protected before authorization');
+ assert.match(css,/\[data-contracts-page\]\{display:inline-block;min-width:100px/);
+ assert.match(css,/\[data-contracts-total\]\{display:inline-block;min-width:76px/);
  assert.match(css,/\[data-admin-contracts\]\[hidden\]/);
  assert.match(css,/\.admin-contracts-checkbox-cell input/);
  assert.match(css,/\.admin-contracts-dropdown-trigger/);
