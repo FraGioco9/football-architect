@@ -378,8 +378,8 @@ test('#535 loading shows only flag and nationality skeleton; age and dot appear 
  assert.doesNotMatch(renderer,/app-player-detail-age-skeleton/);
  assert.match(css,/\.app-player-detail-header-meta \[hidden\]\{display:none!important\}/);
  assert.doesNotMatch(css,/\.app-player-detail-age-skeleton/);
- assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:110px/);
- assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:76px/);
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:clamp\(130px,15vw,220px\)/);
+ assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:88px/);
  for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(file),start=html.indexOf('class="app-player-detail-header-meta"'),
    end=html.indexOf('class="app-player-detail-affiliation"',start),header=html.slice(start,end);
@@ -406,8 +406,8 @@ test('#535 linked club label only, with passive crest and hover confined to text
 });
 test('#535 right-shift desktop/tablet, no mobile separator and mobile crest/label smaller',()=>{
  const css=read('assets/player-detail.css');
- assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:110px/);
- assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:76px/);
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:clamp\(130px,15vw,220px\)/);
+ assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:88px/);
  const mobile=css.slice(css.indexOf('@media(max-width:620px)'),css.indexOf('@media(max-width:460px)'));
  assert.match(mobile,/\.app-player-detail-affiliation::before\{display:none\}/);
  assert.match(mobile,/\.app-player-detail-club-crest,\.app-player-detail-club-crest-placeholder,\.app-player-detail-club-logo-skeleton\{width:48px;height:48px\}/);
