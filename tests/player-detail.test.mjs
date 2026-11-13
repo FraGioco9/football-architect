@@ -25,6 +25,19 @@ test('#502 persisted and protected preview detail routes are canonical and stati
  assert.ok(published.includes('admin/players/preview/player/index.html'));
 });
 
+test('#527 Player Detail header centers image and identity as an adjacent group',()=>{
+ const css=read('assets/player-detail.css');
+ assert.match(css,/\.app-player-detail-heading\{display:flex;align-items:center;justify-content:center;gap:18px;min-width:0;min-height:181px\}/,
+  'center the entire header row horizontally without changing its intrinsic first-paint height');
+ assert.match(css,/\.app-player-detail-identity\{[^}]*display:flex;flex-direction:column;justify-content:center/,
+  'name and metadata remain vertically centered beside the portrait');
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file),header=html.slice(html.indexOf('class="app-player-detail-heading"'),html.indexOf('class="app-player-detail-tabs"'));
+  assert.ok(header.includes('class="app-player-detail-portrait"'),file+' portrait exists');
+  assert.ok(header.indexOf('class="app-player-detail-portrait"')<header.indexOf('class="app-player-detail-identity"'),file+' image remains immediately to the left of the player identity');
+ }
+});
+
 test('#502 both generated detail shells match canonical renderer and reserve first-paint fields',()=>{
  for(const [src,output,mode] of [
   ['players/index.html','players/_shared/index.html','public'],

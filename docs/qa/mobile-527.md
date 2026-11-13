@@ -126,3 +126,9 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - The scroll range is measured using `scrollWidth/clientWidth/scrollLeft`; refreshed after user scroll, resize, localized tab labels, group/view changes and popstate. The selected group is revealed on keyboard navigation and direct deep links.
 - Unit and Chromium/WebKit browser assertions cover mask, edge attributes and left/right transitions, with the existing 320–1440px responsive checks unchanged.
 - PR #542 stays Draft/HOLD, no merge, deploy or remote DB changes. Physical Safari/VoiceOver acceptance remains NOT TESTED.
+
+
+## Player Detail header centering — owner request
+
+- Center the `/players/:id` header row horizontally with the portrait immediately alongside the name/metadata. Existing vertical alignment, affiliation block, first-paint skeletons, preview header, and portrait dimensions are retained.
+- Source and browser checks cover public and generated preview DOM, plus Chromium/WebKit responsive geometry at 320/375/390/430/768/1440px. Physical Safari and VoiceOver QA remain pending; no merge or deploy.

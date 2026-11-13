@@ -148,6 +148,37 @@ try{
    assert.ok((await tab.boundingBox()).height>=43.9,"Club tab hit area");
   });
  }
+ // #527: centered Player Detail header, portrait adjacent to the name at all widths.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"it",theme:"light"},"/players/33",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const heading=document.querySelector(".app-player-detail-heading");
+    const photo=heading?.querySelector(".app-player-detail-portrait");
+    const identity=heading?.querySelector(".app-player-detail-identity");
+    const affiliation=heading?.querySelector(".app-player-detail-affiliation");
+    if(!heading||!photo||!identity||!affiliation)return null;
+    const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,
+     width:r.width,height:r.height,cy:(r.top+r.bottom)/2};};
+    return {heading:box(heading),photo:box(photo),identity:box(identity),club:box(affiliation),
+     justify:getComputedStyle(heading).justifyContent,
+     overflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(geometry,"Player Detail static header exists at "+width);
+   assert.equal(geometry.justify,"center","Player Detail header content is horizontally centered at "+width);
+   assert.ok(geometry.photo.right<=geometry.identity.left+1&&Math.abs(geometry.photo.cy-geometry.identity.cy)<=2,
+    "portrait and player name stay beside each other and vertically centered "+JSON.stringify({width,geometry}));
+   assert.ok(geometry.photo.left>=geometry.heading.left-2&&geometry.identity.right<=geometry.heading.right+2,
+    "portrait and name stay within the header "+JSON.stringify({width,geometry}));
+   if(width>620){
+    const outerLeft=geometry.photo.left-geometry.heading.left;
+    const outerRight=geometry.heading.right-geometry.club.right;
+    assert.ok(Math.abs(outerLeft-outerRight)<=3,
+     "desktop/tablet header elements form a centered row "+JSON.stringify({width,geometry}));
+   }
+   assert.ok(geometry.overflow<=2,"no horizontal overflow in the player header "+JSON.stringify({width,geometry}));
+  });
+ }
+
  // #527: Players subgroup tabs must behave like Club Roster on mobile.
  // Measure the real scrolling strip at the requested mobile widths, not only a CSS contract.
  for(const width of [320,375,390,430,768,1440]){
