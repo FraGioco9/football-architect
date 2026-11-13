@@ -3,7 +3,7 @@
  const root=document.querySelector('[data-player-detail-mode]');if(!root)return;
  const preview=root.dataset.playerDetailMode==='preview',panel=root.querySelector('[data-player-detail]');
  const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
- const back=panel.querySelector('[data-detail-back]'),statusNode=panel.querySelector('[data-detail-status]');
+ const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
  const attrKeys=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
@@ -23,11 +23,11 @@
  };
 
  const extra={
-  en:{views:['Overview','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions'},
-  it:{views:['Panoramica','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili'},
-  de:{views:['Übersicht','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen'},
-  es:{views:['Resumen','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles'},
-  fr:{views:['Vue d’ensemble','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables'}
+  en:{views:['Overview','Info','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions'},
+  it:{views:['Panoramica','Info','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili'},
+  de:{views:['Übersicht','Info','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen'},
+  es:{views:['Resumen','Info','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles'},
+  fr:{views:['Vue d’ensemble','Info','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables'}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const tr=()=>copies[language()]||copies.en;
@@ -35,6 +35,7 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
+ let view=params.get('view')==='info'?'info':'overview';
  const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
@@ -96,14 +97,21 @@
  }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
-  back.textContent=preview?(state==='expired'||state==='denied'?copy.backGenerator:copy.backPreview):copy.back;
-  back.href=preview?(state==='expired'||state==='denied'?'/admin/players':validPreview?previewReturnUrl():'/admin/players'):'/players';
-  views.forEach((tab,i)=>{tab.textContent=e.views[i];tab.classList.toggle('is-active',i===0);tab.setAttribute('aria-selected',String(i===0));});
-  for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
+  if(back){
+   back.textContent=state==='expired'||state==='denied'?copy.backGenerator:copy.backPreview;
+   back.href=state==='expired'||state==='denied'?'/admin/players':validPreview?previewReturnUrl():'/admin/players';
+  }
+  document.documentElement.dataset.playerDetailView=view;
+  views.forEach((tab,i)=>{
+   const selected=tab.dataset.detailView===view;
+   tab.textContent=e.views[i];tab.classList.toggle('is-active',selected);
+   tab.setAttribute('aria-selected',String(selected));
+   if(!tab.disabled)tab.tabIndex=selected?0:-1;
+  });
+  for(const [key,label] of [['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
-  panel.querySelector('[data-detail-position-label="primary"]').textContent=e.primary;
-  panel.querySelector('[data-detail-position-label="secondary"]').textContent=e.secondary;
+  panel.querySelector('[data-detail-positions]').setAttribute('aria-label',e.positions);
   panel.querySelector('[data-detail-club-label]').textContent=e.club;
   panel.querySelector('[data-detail-pitch]').setAttribute('aria-label',e.positionLabel);
   for(const [i,key] of ['nationality','secondary_nationality','age','height_cm','preferred_foot'].entries()){
@@ -116,7 +124,7 @@
    if(state!=='loading'){
     setContent(nameNode,copy.notFound);roleNode.textContent='—';
     subtitle.textContent=preview?copy.preview:'';
-    for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-position-value],[data-detail-attr-value]'))setContent(node,'—');
+    for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))setContent(node,'—');
    }
    renderPitch();return;
   }
@@ -125,9 +133,6 @@
   subtitle.textContent=preview?copy.preview:'';
   for(const key of ['nationality','secondary_nationality','age','height_cm','preferred_foot'])
    setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key));
-  setContent(panel.querySelector('[data-detail-position-value="primary"]'),player.primary_position||'—');
-  const secondary=positionCodes().filter(code=>code!==player.primary_position);
-  setContent(panel.querySelector('[data-detail-position-value="secondary"]'),secondary.length?secondary.join(', '):'—');
   for(const key of attrKeys){
    const value=player.attributes?.[key];
    setContent(panel.querySelector('[data-detail-attr-value="'+key+'"]'),Number.isSafeInteger(value)?String(value):'—');
@@ -169,7 +174,7 @@
   const skeleton=()=>{const bar=document.createElement('span');bar.className='app-skeleton-bar';bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton());roleNode.replaceChildren(skeleton());
   subtitle.textContent='\u00a0';
-  for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-position-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
+  for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
   render();
   try{
    if(preview&&!validPreview)throw Error('expired');
@@ -185,7 +190,26 @@
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
   if(preview)root.hidden=false;render();
  }
- window.addEventListener('popstate',()=>{render();});
+ function setView(next){
+  if(!['overview','info'].includes(next)||next===view)return;
+  view=next;
+  const url=new URL(location.href);
+  if(next==='info')url.searchParams.set('view','info');else url.searchParams.delete('view');
+  history.pushState(history.state,'',url.pathname+url.search+url.hash);
+  render();
+ }
+ const activeTabs=views.filter(tab=>!tab.disabled);
+ activeTabs.forEach(tab=>{
+  tab.addEventListener('click',()=>setView(tab.dataset.detailView));
+  tab.addEventListener('keydown',event=>{
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+   event.preventDefault();
+   const index=activeTabs.indexOf(tab);
+   const chosen=event.key==='Home'?0:event.key==='End'?activeTabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+activeTabs.length)%activeTabs.length;
+   setView(activeTabs[chosen].dataset.detailView);activeTabs[chosen].focus();
+  });
+ });
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();

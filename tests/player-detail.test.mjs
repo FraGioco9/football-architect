@@ -42,15 +42,23 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
   assert.equal((html.match(/class="app-panel app-player-detail-/g)||[]).length,3);
   assert.match(html,/data-detail-pitch-markers/);
   assert.match(html,/class="app-player-detail-silhouette"/);
-  for(const view of ['overview','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
+  for(const view of ['overview','info','stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"'));
   for(const view of ['stats','history','progression'])assert.match(html,new RegExp('data-detail-view="'+view+'"[^>]* disabled aria-disabled="true"'));
   assert.doesNotMatch(html,/data-detail-view="attributes"|data-detail-group="technical"/);
   assert.match(html,/data-detail-value="nationality"/);
   assert.match(html,/data-detail-value="secondary_nationality"/);
-  for(const position of ['primary','secondary'])assert.match(html,new RegExp('data-detail-position-value="'+position+'"'));
+  assert.doesNotMatch(html,/data-detail-position-value|data-detail-position-label|app-player-detail-position-line/);
+  assert.match(html,/data-detail-panel="overview" role="tabpanel"/);
+  assert.match(html,/data-detail-panel="info" role="tabpanel"/);
+  assert.match(html,/data-player-detail-first-paint/);
+  assert.match(html,/data-detail-positions aria-label="Positions"/);
+  assert.equal((html.match(/data-detail-panel="/g)||[]).length,2);
+  assert.match(html,/data-detail-view="info"[^>]*aria-controls="player-detail-info-panel"/);
   for(const group of ['technical','mental','physical','goalkeeping'])assert.match(html,new RegExp('data-detail-attribute-group="'+group+'"'));
   assert.doesNotMatch(html,/data-players-filter-open|data-admin-players-confirmation/);
+  if(mode==='public')assert.doesNotMatch(html,/data-detail-back|Back to players/);
   if(mode==='preview'){
+   assert.match(html,/data-detail-back href="\/admin\/players"/);
    assert.match(html,/name="robots" content="noindex,nofollow"/);
    assert.match(html,/meta name="referrer" content="no-referrer"/);
    assert.match(html,/data-player-detail-mode="preview" hidden/);
@@ -98,7 +106,7 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
- assert.match(script,/\[data-detail-value\],\[data-detail-position-value\],\[data-detail-attr-value\]/);
+ assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 
 test('#502 direct player details activate Players, never Dashboard, in app shell and sidebar',()=>{
@@ -125,4 +133,21 @@ test('#502 direct player details activate Players, never Dashboard, in app shell
  }
  assert.match(app,/if \(dashboard\) dashboard\.hidden = current !== "dashboard"/);
  assert.match(app,/if \(divisions\) divisions\.hidden = current !== "divisions" && current !== "clubs" && current !== "players"/);
+});
+
+test('#502 Overview and Info are independent views with reserved first paint and history navigation',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ assert.match(js,/views\.filter\(tab=>!tab\.disabled\)/);
+ assert.match(js,/url\.searchParams\.set\('view','info'\)/);
+ assert.match(js,/url\.searchParams\.delete\('view'\)/);
+ assert.match(js,/history\.pushState\(history\.state/);
+ assert.match(js,/new URLSearchParams\(location\.search\)\.get\('view'\)==='info'/);
+ assert.match(css,/html\[data-player-detail-view="info"\] \.app-player-detail-overview\{display:none\}/);
+ assert.match(css,/html:not\(\[data-player-detail-view="info"\]\) \.app-player-detail-info-view\{display:none\}/);
+ assert.match(css,/grid-template-columns:minmax\(245px,\.36fr\) minmax\(0,1fr\)/);
+ assert.match(css,/\.app-player-detail-attribute-columns\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.doesNotMatch(css,/app-player-detail-position-list|app-player-detail-position-line/);
+ assert.match(renderer,/detailPanel\(preview\)/);
+ assert.doesNotMatch(read('players/_shared/index.html'),/data-detail-back/);
+ assert.match(read('admin/players/preview/player/index.html'),/data-detail-back/);
 });

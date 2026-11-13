@@ -4,12 +4,11 @@ const infoFields=["nationality","secondary_nationality","age","height_cm","prefe
 const titleMap={"technical":"Technical","mental":"Mental","physical":"Physical","goalkeeping":"Goalkeeper"};
 const attrNames={"passing":"Passing","technique":"Technique","dribbling":"Dribbling","shooting":"Shooting","crossing":"Crossing","tackling":"Tackling","marking":"Marking","heading":"Heading","vision":"Vision","positioning":"Positioning","decisions":"Decisions","composure":"Composure","speed":"Speed","strength":"Strength","stamina":"Stamina","agility":"Agility","gk_reflexes":"Reflexes","gk_handling":"Handling","gk_positioning":"Positioning","gk_aerial":"Aerial"};
 const infoNames={"nationality":"Nationality","secondary_nationality":"Second nationality","age":"Age","height_cm":"Height","preferred_foot":"Preferred foot"};
-function detailPanel(){
+function detailPanel(preview){
  const skeleton=()=>'<span class="app-skeleton-bar" aria-hidden="true"></span>';
- const positionRows=['primary','secondary'].map((key)=>'<div class="app-player-detail-position-line"><dt data-detail-position-label="'+key+'">'+(key==='primary'?'Primary position':'Secondary positions')+'</dt><dd data-detail-position-value="'+key+'">'+skeleton()+'</dd></div>').join('\n');
  const infoRows=infoFields.map(key=>'<div class="app-player-detail-info-line"><dt data-detail-label="'+key+'">'+infoNames[key]+'</dt><dd data-detail-value="'+key+'">'+skeleton()+'</dd></div>').join('\n');
  const columns=Object.entries(groupFields).map(([group,keys])=>'<section class="app-player-detail-attribute-group" data-detail-attribute-group="'+group+'"><h3 data-detail-group-title="'+group+'">'+titleMap[group]+'</h3><dl>'+keys.map(key=>'<div class="app-player-detail-attribute-line"><dt data-detail-attr-label="'+key+'">'+attrNames[key]+'</dt><dd data-detail-attr-value="'+key+'">'+skeleton()+'</dd></div>').join('')+'</dl></section>').join('\n');
- const viewTabs=['overview','stats','history','progression'].map((view,i)=>'<button type="button" class="app-competition-tab'+(i===0?' is-active':'')+'" role="tab" data-detail-view="'+view+'" aria-selected="'+(i===0)+'"'+(i===0?' tabindex="0"':' disabled aria-disabled="true" tabindex="-1"')+'>'+view.charAt(0).toUpperCase()+view.slice(1)+'</button>').join('');
+ const viewTabs=['overview','info','stats','history','progression'].map((view,i)=>'<button type="button" id="player-detail-'+view+'-tab" class="app-competition-tab'+(i===0?' is-active':'')+'" role="tab" data-detail-view="'+view+'" aria-selected="'+(i===0)+'" tabindex="'+(i===0?'0':'-1')+'"'+(i>1?' disabled aria-disabled="true"':' aria-controls="player-detail-'+view+'-panel"')+'>'+view.charAt(0).toUpperCase()+view.slice(1)+'</button>').join('');
  const pitch='<svg data-detail-pitch class="app-player-detail-pitch" viewBox="0 0 240 330" role="img" aria-label="Playable positions" xmlns="http://www.w3.org/2000/svg">'
   +'<rect width="240" height="330" rx="5" fill="#246A4C"/>'
   +Array.from({length:11},(_,i)=>'<rect x="0" y="'+(i*30)+'" width="240" height="15" fill="#FFFFFF" opacity=".035"/>').join('')
@@ -22,16 +21,15 @@ function detailPanel(){
   +'<p class="app-player-detail-role" data-detail-role><span class="app-skeleton-bar" aria-hidden="true"></span></p>'
   +'<p class="app-player-detail-club"><span data-detail-club-label>Club</span>: <span data-detail-club>—</span></p>'
   +'<p class="app-player-detail-subtitle" data-detail-subtitle>&nbsp;</p></div>'
-  +'<a class="app-player-detail-back" data-detail-back href="/players">Back to players</a></header>\n'
+  +(preview?'<a class="app-player-detail-back" data-detail-back href="/admin/players">Back to preview</a>':'')+'</header>\n'
   +'<nav class="app-competition-tabs club-tabs app-player-detail-tabs" role="tablist" aria-label="Player views">'+viewTabs+'</nav>\n'
-  +'<div class="app-player-detail-overview" data-detail-panel="overview">'
+  +'<div class="app-player-detail-overview" id="player-detail-overview-panel" data-detail-panel="overview" role="tabpanel" aria-labelledby="player-detail-overview-tab">'
   +'<div class="app-player-detail-top">'
-  +'<section class="app-panel app-player-detail-positions" aria-labelledby="player-detail-positions-title"><h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions</h2>'
-  +'<div class="app-player-detail-position-body"><div class="app-player-detail-pitch-holder">'+pitch+'</div><dl class="app-player-detail-position-list">'+positionRows+'</dl></div></section>'
-  +'<section class="app-panel app-player-detail-info" aria-labelledby="player-detail-info-title"><h2 id="player-detail-info-title" data-detail-section-title="info">Info</h2><dl class="app-player-detail-info-list">'+infoRows+'</dl></section>'
-  +'</div>'
+  +'<section class="app-panel app-player-detail-positions" data-detail-positions aria-label="Positions">'
+  +'<div class="app-player-detail-pitch-holder">'+pitch+'</div></section>'
   +'<section class="app-panel app-player-detail-attributes" aria-labelledby="player-detail-attributes-title"><h2 id="player-detail-attributes-title" data-detail-section-title="attributes">Attributes</h2>'
-  +'<div class="app-player-detail-attribute-columns">'+columns+'</div></section></div>'
+  +'<div class="app-player-detail-attribute-columns">'+columns+'</div></section></div></div>'
+  +'<section class="app-panel app-player-detail-info app-player-detail-info-view" id="player-detail-info-panel" data-detail-panel="info" role="tabpanel" aria-labelledby="player-detail-info-tab"><h2 data-detail-section-title="info">Info</h2><dl class="app-player-detail-info-list">'+infoRows+'</dl></section>'
   +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite"></p></div>';
 }
 export function renderPlayerDetailPage(html,mode){
@@ -39,7 +37,7 @@ export function renderPlayerDetailPage(html,mode){
  const preview=mode==='preview',marker=preview?'<section id="app-admin"':'<section id="app-divisions"';
  const start=html.indexOf(marker),end=html.indexOf('\n      </main>',start);
  if(start<0||end<0)throw new Error('Player detail source shell missing');
- const section='<section id="'+(preview?'app-admin':'app-divisions')+'" class="app-view '+(preview?'app-admin-view ':'')+'app-player-detail-page" aria-labelledby="player-detail-title" data-player-detail-mode="'+mode+'"'+(preview?' hidden':'')+'>\n          '+detailPanel()+'\n        </section>';
+ const section='<section id="'+(preview?'app-admin':'app-divisions')+'" class="app-view '+(preview?'app-admin-view ':'')+'app-player-detail-page" aria-labelledby="player-detail-title" data-player-detail-mode="'+mode+'"'+(preview?' hidden':'')+'>\n          '+detailPanel(preview)+'\n        </section>';
  let result=html.slice(0,start)+section+html.slice(end);
  const current=preview?'/assets/admin-players-preview.js':'/assets/players-directory.js';
  if(!result.includes(current))throw new Error('Player detail source script missing');
@@ -48,5 +46,7 @@ export function renderPlayerDetailPage(html,mode){
            preview?'<title>Admin — Player':'<title>Player — Football Architect');
  if(!result.includes('/assets/player-detail.css'))
   result=result.replace('</head>','  <link rel="stylesheet" href="/assets/player-detail.css">\n</head>');
+ if(!result.includes('data-player-detail-first-paint'))
+  result=result.replace('</head>','  <script data-player-detail-first-paint>document.documentElement.dataset.playerDetailView=new URLSearchParams(location.search).get("view")==="info"?"info":"overview";</script>\n</head>');
  return result;
 }
