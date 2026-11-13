@@ -488,57 +488,69 @@ try{
    checks++;
   }finally{await context.close();}
  }
- // #509 Contracts browser acceptance: all Worker responses are synthetic.
+ // #509 Contracts: simulated Admin browser batch assignment, no remote writes.
  {
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    const generation='11111111-1111-4111-8111-111111111111';
-   let currentClub=null,writes=0,permissionReads=0;
+   let club=null,writes=0,permissionReads=0;
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',r=>{
     permissionReads++;
-    return r.fulfill({status:200,contentType:'application/json',
-     body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})});
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     permissions:['admin.access','admin.world.read','admin.world.write']})});
    });
    await page.route('**/api/admin/session',r=>r.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify({actor:{id:'contracts-operator'},csrfToken:'a'.repeat(64)})}));
-   await page.route('**/api/admin/contracts*',async r=>{
+    body:JSON.stringify({actor:{id:'test'},csrfToken:'a'.repeat(64)})}));
+   await page.route('**/api/admin/contracts*',r=>{
     if(r.request().method()==='POST'){
      writes++;
      assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
-     const payload=r.request().postDataJSON();
-     assert.deepEqual(payload,{playerId:1,clubKey:writes===1?'IT-1':null,
-      expectedClubKey:writes===1?null:'IT-1',expectedGeneration:generation,expectedRevision:0});
-     currentClub=payload.clubKey;
+     const body=r.request().postDataJSON();
+     assert.deepEqual(body,{players:[
+      {playerId:1,expectedClubKey:writes===1?null:'IT-1'},
+      {playerId:2,expectedClubKey:writes===1?null:'IT-1'}
+     ],clubKey:writes===1?'IT-1':null,expectedGeneration:generation,expectedRevision:0});
+     club=body.clubKey;
      return r.fulfill({status:200,contentType:'application/json',
-      body:JSON.stringify({playerId:1,clubKey:currentClub,worldGeneration:generation,worldRevision:0})});
+      body:JSON.stringify({updated:2,clubKey:club,playerIds:[1,2],worldGeneration:generation,worldRevision:0})});
     }
-    return r.fulfill({status:200,contentType:'application/json',
-     body:JSON.stringify({count:1,page:1,pageSize:50,totalPages:1,worldGeneration:generation,
-      worldRevision:0,players:[{id:1,name:'Test Player',clubKey:currentClub}],
-      clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
+    const players=[1,2].map(id=>({id,name:'Test Player '+id,nationality:id===1?'ITA':'BRA',
+     age:20+id,primary_position:id===1?'CM':'ST',secondary_positions:[],
+     height_cm:180+id,preferred_foot:'right',clubKey:club}));
+    return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     count:2,page:1,pageSize:50,totalPages:1,worldGeneration:generation,worldRevision:0,
+     players,clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
    });
    await page.goto('http://app.localhost:2000/admin');
    await page.locator('[data-admin-card="contracts"]').waitFor({state:'visible'});
    assert.equal(await page.locator('.admin-directory-card').count(),3);
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
-   await page.locator('[data-contracts-edit="1"]').waitFor({state:'visible'});
-   assert.equal(await page.locator('[data-contracts-editor]').isVisible(),true);
-   assert.equal(await page.locator('.admin-contracts .app-panel').count(),1,'Only assignment is boxed');
+   await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
+   assert.equal(await page.locator('.admin-contracts .app-panel').count(),1);
    assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
-   assert.equal(await page.locator('[data-contracts-select]').isDisabled(),true);
+   assert.equal(await page.locator('.admin-contracts-table tbody tr').count(),2);
+   assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-   await page.locator('[data-contracts-edit="1"]').click();
-   await page.locator('[data-contracts-select]').selectOption('IT-1');
+   await page.locator('[data-contracts-all]').check();
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^2 /);
+   await page.locator('[data-contracts-trigger]').click();
+   await page.locator('[data-contracts-club-search]').fill('Italian');
+   await page.locator('.admin-contracts-club-menu [data-value="IT-1"]').click();
    await page.locator('[data-contracts-save]').click();
-   await page.waitForFunction(()=>document.querySelector('[data-contracts-rows]')?.textContent?.includes('Test Italian Club'));
-   await page.locator('[data-contracts-edit="1"]').click();
-   await page.locator('[data-contracts-unassign]').click();
-   await page.waitForFunction(()=>document.querySelector('[data-contracts-rows]')?.textContent?.includes('Unassigned'));
+   await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
+    .every(row=>row.textContent.includes('Test Italian Club')));
+   assert.equal(await page.locator('[data-contracts-all]').isChecked(),false);
+   await page.locator('[data-contracts-all]').check();
+   await page.locator('[data-contracts-trigger]').click();
+   await page.locator('.admin-contracts-club-menu [data-value="__unassigned__"]').click();
+   await page.locator('[data-contracts-save]').click();
+   await page.waitForFunction(()=>[...document.querySelectorAll('.admin-contracts-table tbody tr')]
+    .every(row=>row.textContent.includes('Unassigned')));
    assert.equal(writes,2);
-   assert.ok(permissionReads<=2,'Admin pages share the same per-tab permission snapshot');
+   assert.ok(permissionReads<=2,'Shared Admin permission cache');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
  }
