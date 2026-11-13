@@ -8,16 +8,16 @@ test('#560 History mobile uses a full-width four-column grid and leaves desktop 
  const css=read('assets/club-page.css'),start=css.indexOf('/* CLUB-HISTORY-MOBILE:');
  assert.ok(start>0,'standalone mobile-only History styling is present');
  const mobile=css.slice(start,css.indexOf('/* Club Fixtures:',start));
- assert.match(mobile,/@media\\(max-width:620px\\)\\{/);
- assert.match(mobile,/\\.club-history-table\\{[\\s\\S]*?display:block;width:100%;min-width:0;max-width:100%/);
- assert.match(mobile,/\\.club-history-table tr\\{[\\s\\S]*?display:grid;grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)/);
- assert.match(mobile,/\\.club-history-table-wrap\\{width:100%;max-width:100%;overflow:visible\\}/);
- assert.match(mobile,/\\.club-history-table thead\\{position:absolute;[^}]*clip-path:inset\\(50%\\)/,
+ assert.match(mobile,/@media\(max-width:620px\)\{/);
+ assert.match(mobile,/\.club-history-table\{[\s\S]*?display:block;width:100%;min-width:0;max-width:100%/);
+ assert.match(mobile,/\.club-history-table tr\{[\s\S]*?display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(mobile,/\.club-history-table-wrap\{width:100%;max-width:100%;overflow:visible\}/);
+ assert.match(mobile,/\.club-history-table thead\{position:absolute;[^}]*clip-path:inset\(50%\)/,
   'mobile headings remain in accessibility tree');
- assert.match(mobile,/\\.club-history-table \\.club-history-competition-row\\[hidden\\]\\{display:none\\}/);
- assert.match(css,/\\.club-history-table\\{--club-history-row-height:56px;width:100%;min-width:1020px;table-layout:fixed/,
+ assert.match(mobile,/\.club-history-table \.club-history-competition-row\[hidden\]\{display:none\}/);
+ assert.match(css,/\.club-history-table\{--club-history-row-height:56px;width:100%;min-width:1020px;table-layout:fixed/,
   'original desktop row height and table width remain');
- assert.match(css,/@media\\(max-width:620px\\)\\{\\s*\\.club-history-table\\{min-width:1020px\\}/,
+ assert.match(css,/@media\(max-width:620px\)\{\s*\.club-history-table\{min-width:1020px\}/,
   'the preexisting legacy mobile override is superseded later, not changed for desktop');
 });
 
@@ -34,8 +34,8 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
  assert.equal((html.match(/data-club-history-detail="5"/g)||[]).length,2,'two collapsed competitions');
  assert.match(html,/data-history-competition-row="IT-1" hidden/);
  assert.match(html,/data-history-competition-row="int-1" hidden/);
- assert.match(html,/\\/competitions\\/it-1\\/standings\\?season=5/);
- assert.match(html,/\\/competitions\\/int-1\\/standings\\?season=5/);
+ assert.match(html,/\/competitions\/it-1\/standings\?season=5/);
+ assert.match(html,/\/competitions\/int-1\/standings\?season=5/);
  assert.ok(html.includes('<td>+25</td>'),'signed goal difference retained');
  assert.ok(html.includes('<td>61</td>'),'points retained');
  const skeleton=model.render(manifest,selected,'it','',null,5,{source:'loading'});
@@ -55,7 +55,7 @@ test('#560 mobile History provides the eight localized numeric labels and noncli
   assert.ok(mobile.includes('.club-history-table tr>td:nth-child('+n+')::before'),'label '+n);
  for(const locale of ['it','de','es','fr'])
   assert.ok(mobile.includes('html:lang('+locale+') .club-history-table'),'translated '+locale+' abbrev');
- assert.match(mobile,/\\.club-history-table \\.club-history-competition-value a\\.club-history-competition-link\\{[^}]*white-space:normal;overflow:visible/);
- assert.match(mobile,/\\.club-history-table \\.club-history-competition-row td:nth-child\\(3\\)\\{[^}]*grid-column:1\\/-1;[^}]*flex-wrap:wrap/);
- assert.match(mobile,/\\.club-history-table \\.club-history-season-row:has\\(\\.club-history-empty-season\\)>td:nth-child\\(2\\)\\{/);
+ assert.match(mobile,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{[^}]*white-space:normal;overflow:visible/);
+ assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\)\{[^}]*grid-column:1\/-1;[^}]*flex-wrap:wrap/);
+ assert.match(mobile,/\.club-history-table \.club-history-season-row:has\(\.club-history-empty-season\)>td:nth-child\(2\)\{/);
 });

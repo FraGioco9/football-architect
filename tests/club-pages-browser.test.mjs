@@ -555,6 +555,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
         rowHeight:r.height,linkWidth:lr.width,linkScroll:link.scrollWidth,linkClient:link.clientWidth,
         linkHref:link.getAttribute('href'),linkText:link.textContent.trim(),
+        linkWhiteSpace:getComputedStyle(link).whiteSpace,linkOverflow:getComputedStyle(link).overflow,
         overflow:document.documentElement.scrollWidth-innerWidth};
       })()`);
       assert.equal(expanded.expanded,'true','History remains expandable by click at '+width);
@@ -562,7 +563,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
       if(width<=620){
        assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
-       assert.ok(expanded.linkScroll<=expanded.linkClient+1,'long mobile competition link is not clipped at '+width);
+       assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
+       assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
        assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);
       }
       await run("document.getElementById('history-mobile-560-probe').remove()");
