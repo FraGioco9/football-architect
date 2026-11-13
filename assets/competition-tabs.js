@@ -162,7 +162,7 @@
   const initialLimit=Number(document.documentElement.dataset.faDevCurrentSeason);
   if(window.faDebugEnabled!==false&&devSeasons.length&&Number.isInteger(initialLimit)&&initialLimit>=0)
     availableSeasons=availableSeasons.filter(id=>Number(id)<=Math.max(1,initialLimit));
-  const serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
+  let serverSeason=Number.isInteger(window.faCompetitionInitialSeason)&&window.faCompetitionInitialSeason>=1&&window.faCompetitionInitialSeason<=2
     ?window.faCompetitionInitialSeason:null;
   if((window.faDebugEnabled===false||devSeasons.length===0)&&serverSeason!==null)
     availableSeasons=Array.from({length:serverSeason},(_,i)=>String(i+1));
@@ -302,6 +302,7 @@
     document.getElementById("app-competition-season-control"));
   window.faCompetitionRoute.setPublicSeasonLimit=(limit,{selectLatest=false}={})=>{
     if(devSeasons.length&&window.faDebugEnabled!==false||!Number.isInteger(limit)||limit<0||limit>2)return false;
+    serverSeason=Math.max(1,limit); // Verified public limit replaces a stale first-paint bootstrap.
     const next=Array.from({length:Math.max(1,limit)},(_,i)=>String(i+1));
     const validSelection=next.includes(state.season);
     const target=selectLatest||!explicitSeason||!validSelection?next.at(-1):state.season;

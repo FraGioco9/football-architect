@@ -21,19 +21,22 @@
  const trigger=selector.querySelector('#calendar-season-picker'),menu=selector.querySelector('#calendar-season-menu'),value=selector.querySelector('#calendar-season-value');
  document.getElementById('calendar-title')?.after(selector);
  function closeMenu(){menu.hidden=true;trigger.setAttribute('aria-expanded','false')}
- function chooseSeason(n){selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.search=calendarQuery(n,url.searchParams);history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
+ function chooseSeason(n){explicitSelection=n!==(dev?Math.max(1,readDebugSeason()):publicSeasonLimit());selectedSeason=n;queueMicrotask(updateCurrentDay);const url=new URL(location.href);url.search=calendarQuery(n,url.searchParams);history.replaceState(history.state,'',url);updateSeason();closeMenu();trigger.focus()}
  trigger.addEventListener('click',()=>{menu.hidden=!menu.hidden;trigger.setAttribute('aria-expanded',String(!menu.hidden))});
  document.addEventListener('pointerdown',e=>{if(!selector.contains(e.target))closeMenu()});
  trigger.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();chooseSeason(Math.max(1,Math.min(dev?readDebugSeason():publicSeasonLimit(),selectedSeason+(e.key==='ArrowDown'?1:-1))))}});
  menu.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();trigger.focus()}});
  const readDebugSeason=()=>{try{const raw=sessionStorage.getItem(seasonKey),n=raw===null||raw.trim()===''?NaN:Number(raw);return Number.isInteger(n)&&n>=0&&n<=4?n:1}catch{return 1}};
  let selectedSeason=Number(document.documentElement.dataset.calendarSeason)||null;
+ let explicitSelection=new URL(location.href).searchParams.has('season');
  window.faCalendarSelectedSeason=()=>selectedSeason;
  const validSeason=n=>Number.isInteger(n)&&n>=1&&n<=(dev?Math.max(1,readDebugSeason()):999999999);
  function syncCalendarLink(){const mode=document.documentElement.dataset.calendarView==="week"?"week":"season";const route="/calendar?calendarView="+mode;document.getElementById("app-nav-calendar")?.setAttribute("href",window.faAppHref?.(route)||route)}
  function calendarQuery(season,source,{keepExplicit=false}={}){
   const view=document.documentElement.dataset.calendarView==='week'?'week':'season';
   const query=new URLSearchParams(source);
+  if(query.has('competition')&&!['all','national','international','sovereign','federation'].includes(query.get('competition')))query.delete('competition');
+  if(query.has('division')&&!/^(?:it|eng|es|de|fr|pt|nl|br)-[12]$/.test(query.get('division')))query.delete('division');
   const current=dev?Math.max(1,readDebugSeason()):Math.max(1,window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??season);
   if(season===current&&!keepExplicit)query.delete('season');
   else query.set('season',String(season));
@@ -50,6 +53,7 @@
   const current=dev?Math.max(1,readDebugSeason()):verified??window.faWorldCalendar?.getPublicWorld?.()?.seasonNumber??null;
   const limit=dev?Math.max(1,readDebugSeason()):Math.max(1,current??publicSeasonLimit());
   const params=new URL(location.href).searchParams;
+  if(!explicitSelection)params.delete('season');
   const pending=!dev&&current===null&&(source?.worldStatus===undefined||source.worldStatus==='pending');
   if(pending){trigger.disabled=true;return;}
   const choice=window.faRoutesRegistry.resolveSeasonQuery(params,current??limit);
@@ -78,7 +82,7 @@
 
  window.addEventListener('fa:dev-progress-change',updateSeason);
  window.addEventListener('fa:source-change',()=>{dev=debugMode();updateSeason()});
- window.addEventListener('popstate',updateSeason);
+ window.addEventListener('popstate',()=>{explicitSelection=new URL(location.href).searchParams.has('season');updateSeason()});
  // A day is never a permanent route or selection.
  if(new URL(location.href).searchParams.has('day')){const url=new URL(location.href);url.searchParams.delete('day');history.replaceState(history.state,'',url)}
  updateSeason();
