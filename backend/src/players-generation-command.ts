@@ -5,6 +5,7 @@ import type {Database} from './database.ts';
 import type {AdminSession} from './auth.ts';
 import {readWorld} from './world-repository.ts';
 import {sessionGuard} from './command-guards.ts';
+import {expiredPlayerPreviewDelete} from './player-preview-retention.ts';
 import {abortUnless} from './atomic-guard.ts';
 import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players-generator-core.mjs';
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
@@ -84,6 +85,8 @@ export async function previewPlayerGeneration(db:Database,session:AdminSession,i
   await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
+   // Atomic, bounded cleanup only after authenticating and checking the world.
+   expiredPlayerPreviewDelete(db,now),
    db.prepare('INSERT INTO player_generation_drafts(id,world_generation,season_number,account_id,options_json,candidates_json,count,seed,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
     .bind(batchId,world.generation,world.seasonNumber,session.unified!.playerId,JSON.stringify(options),snapshot,trial.count,trial.seed,now,expiresAt)
   ]);
