@@ -144,6 +144,13 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.waitForFunction(()=>window.faWorldState?.get().current===null&&document.documentElement.dataset.clubReady==='true');
   assert.ok((await page.locator('.club-header h1').textContent()).length>0);assert.equal(await page.locator('.club-tabs a').count(),5);checks++;
   offline=false;
+  // A fresh protected session must use the public world until Debug is explicitly enabled.
+  await page.goto(debugOrigin+'/competitions/it-1/standings',{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.faWorldState?.get().source==='authoritative'&&window.faWorldState.get().current?.season===2);
+  assert.equal(await page.locator('[data-dev-control="debug-enabled"]').isChecked(),false);checks++;
+  await page.locator('.fa-dev-widget-button').click();
+  await page.locator('[data-dev-control="debug-enabled"]').check();
+  await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===0);
   // Protected source ignores API data and retains its own empty Season 0 after reset/reload.
   const callsBefore=worldCalls;
   for(const path of routes){

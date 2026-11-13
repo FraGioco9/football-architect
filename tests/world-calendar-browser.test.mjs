@@ -72,6 +72,8 @@ test('CAL-IMP-02 real browser: Season/Week, 5 languages, Dark/Light, 320/390/844
     const measure=()=>run(`(()=>{const root=document.getElementById('world-calendar'),visible=[...root.querySelectorAll('[data-calendar-day]')].filter(b=>b.getClientRects().length),rows=[...root.querySelectorAll('[data-week]')].filter(r=>r.getClientRects().length);return {view:document.documentElement.dataset.calendarView,selection:window.faWorldCalendar.getSelection(),rows:rows.length,visible:visible.length,scroll:root.scrollWidth,width:root.clientWidth,body:document.documentElement.scrollWidth,viewport:innerWidth,clipped:[...root.querySelectorAll('button,.calendar-event,.calendar-day-kind,.calendar-note,.calendar-selected')].filter(n=>n.getClientRects().length&&n.scrollWidth>n.clientWidth+1).map(n=>n.className+':'+n.textContent),errors:window.__calendarErrors}})()`);
     await cmd('Page.enable');await cmd('Runtime.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"window.__calendarErrors=[];addEventListener('error',e=>window.__calendarErrors.push(e.message));addEventListener('unhandledrejection',e=>window.__calendarErrors.push(String(e.reason)));"});
+    // The protected Calendar scenario deliberately opts into its DEV world.
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
     const runValue=expr=>run(expr);
     holdWorld=true;
     await cmd('Page.navigate',{url:origin+'/calendar?calendarView=week'});

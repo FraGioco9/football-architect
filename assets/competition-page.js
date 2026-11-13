@@ -1137,9 +1137,9 @@
     if(division)required.push("app-competition-flag","app-competition-country","app-competition-tier","app-competition-level");
     if(required.some(id=>!document.getElementById(id)))throw Error("Incomplete generated page");
     const dataset=document.documentElement?.dataset||{};
-    activeDebugSeason=window.faDebugEnabled===false||dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
+    activeDebugSeason=window.faDebugEnabled!==true||dataset.faDevCurrentSeason===undefined?null:Number(dataset.faDevCurrentSeason);
     const devSeasons=(dataset.faDevSeasons||"").split(",").map(Number).filter(n=>n>=1&&n<=4);
-    const seasons=devSeasons.length?devSeasons.filter(n=>activeDebugSeason===null||n<=activeDebugSeason):[1];
+    const seasons=activeDebugSeason===null?[1]:devSeasons.length?devSeasons.filter(n=>n<=activeDebugSeason):[1];
     if(!seasons.includes(1))seasons.push(1);
     const initial=activeDebugSeason===null&&Number.isInteger(window.faCompetitionInitialSeason)
       ?Math.max(1,window.faCompetitionInitialSeason):null;
@@ -1278,7 +1278,7 @@
         };
         const select=()=>{if(activeDebugSeason!==null){loader.cancel();window.faStandingsLoading?.set('api',false);return;}const c=window.faCompetitionContext,key=c?.definition.id+':'+c?.selectedSeason+':'+window.faWorldState?.get?.().sourceRevision;if(key===selection)return;selection=key;void load()};
         window.addEventListener('fa:competition-context-change',select);
-        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled===false?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
+        window.addEventListener('fa:source-change',()=>{if(window.faDevPreviewMode!==true&&document.documentElement.dataset.faDevSeasons===undefined)return;selection='';setDebugSeason(window.faDebugEnabled!==true?null:Number(document.documentElement.dataset.faDevCurrentSeason||0));select()});
         window.faWorldState?.subscribe?.(revalidateWorld);
         window.addEventListener('pageshow',event=>{if(event.persisted)void load()});
         window.addEventListener('pagehide',event=>{if(!event.persisted)loader.dispose()});

@@ -25,6 +25,8 @@ let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const request=(competition='IT-1',season='1',method='GET',database=db)=>worker.fetch(new Request('https://example.invalid/api/competitions/'+competition+'/seasons/'+season,{method}),{DB:database});
 const clubHistory=(club='IT-1',method='GET')=>worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/history',{method}),{DB:db});
+const clubFixtures=(club='IT-1',season='1',method='GET',database=db,query='')=>
+ worker.fetch(new Request('https://example.invalid/api/clubs/'+club+'/seasons/'+season+'/fixtures'+query,{method}),{DB:database});
 // Read each season's projection from the one canonical History HTTP response.
 const clubOverview=async(club='IT-1',season='1',method='GET')=>{
  const response=await clubHistory(club,method);
@@ -140,6 +142,43 @@ it('returns published future fixtures with no fabricated results or player stats
  expect(inactive.data.memberships).toEqual([]);
  expect(inactive.status).toBe('partial');
 });
+it('returns all verified fixtures for one club in one request, without leaking future results',async()=>{
+ let response=await clubFixtures();
+ expect(response.status).toBe(200);
+ expect(await response.json()).toMatchObject({schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:1,status:'empty',reason:'season-not-prepared',data:null});
+ expect((await clubFixtures('IT-1','1','POST')).status).toBe(405);
+ expect((await clubFixtures('IT-41')).status).toBe(404);
+ expect((await clubFixtures('IT-1','0')).status).toBe(404);
+ expect((await clubFixtures('IT-1','1','GET',db,'?competition=IT-1')).status).toBe(422);
+ await prepare();
+ expect(await (await clubFixtures()).json()).toMatchObject({status:'empty',reason:'calendar-unpublished',data:null});
+ world=(await generateSeasonCalendar(db,session,meta(),'public-calendar-fixtures-0001',now)).world;
+ response=await clubFixtures();
+ expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('no-store');
+ let body=await response.json() as any;
+ expect(body).toMatchObject({clubKey:'IT-1',selectedSeason:1,status:'partial',world,
+  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1'},
+  data:{season:1,seasonState:{day:0},competitions:['IT-1','int-1']}});
+ expect(body.data.fixtures).toHaveLength(36);
+ expect(body.data.fixtures.filter((f:any)=>f.competitionId==='IT-1')).toHaveLength(30);
+ expect(body.data.fixtures.filter((f:any)=>f.competitionId==='int-1')).toHaveLength(6);
+ expect(body.data.fixtures.every((f:any)=>[f.homeClubId,f.awayClubId].includes('IT-1')&&f.result===null)).toBe(true);
+ expect(JSON.stringify(body)).not.toMatch(/password|csrf|token|operationId|sourceSeedHash|"seed"|approvalReference/);
+ const league=await (await request('IT-1')).json() as any;
+ const cup=await (await request('int-1')).json() as any;
+ const expected=[...league.data.fixtures,...cup.data.fixtures]
+  .filter((f:any)=>[f.homeClubId,f.awayClubId].includes('IT-1'))
+  .sort((a:any,b:any)=>a.day-b.day||a.competitionId.localeCompare(b.competitionId,'en')||
+   a.marker.localeCompare(b.marker,'en')||a.id.localeCompare(b.id,'en'));
+ expect(body.data.fixtures).toEqual(expected);
+ await through(13);
+ body=await (await clubFixtures()).json() as any;
+ expect(body.world).toEqual(world);
+ expect(body.data.fixtures.filter((f:any)=>f.day>world.day).every((f:any)=>f.result===null)).toBe(true);
+ expect(body.data.fixtures.some((f:any)=>f.day===13&&f.result!==null)).toBe(true);
+ const inactive=await (await clubFixtures('IT-40')).json() as any;
+ expect(inactive.data.competitions).toEqual([]);expect(inactive.data.fixtures).toEqual([]);
+},120000);
 it('uses saved day13 results for partial standings and score-only statistics',async()=>{
  await calendar();await through(13);
  const body=await (await request()).json() as any;

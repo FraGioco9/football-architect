@@ -1348,7 +1348,7 @@
     // Each page has its own static document for direct loading and refresh.
     if(document.querySelector?.(".fa404-main"))return "404"; // No active Dashboard on an error.
     const path = (window.location.pathname || "").replace(/\/+$/, "");
-    if (path === "/players") return "players";
+    if (path === "/players" || /^\/players\/[1-9][0-9]*$/.test(path)) return "players";
     if (path === "/clubs" || path.startsWith("/clubs/")) return "clubs";
     if (path === "/competitions" || path.startsWith("/competitions/")) return "divisions";
     if (path === "/calendar") return "calendar";

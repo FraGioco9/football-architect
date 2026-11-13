@@ -302,7 +302,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         if(devPreview&&file==="clubs/_shared/index.html")body=Buffer.from(body.toString('utf8').replace('</head>',CLUB_SUMMARY_INJECTION+'\n</head>'),'utf8');
         if(devPreview&&file==="calendar/index.html"){
           // Inject only on the DEV server; never present these fictional days as official time.
-          const bootstrap=DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled!==false)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
+          const bootstrap=DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled===true)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional local DEV calendar"},current:{season:1,day:1}};</script>';
           body=Buffer.from(body.toString("utf8").replace('<script data-calendar-bootstrap>',bootstrap+'<script data-calendar-bootstrap>'),"utf8");
         }
         if (devPreview && (DETAIL.test(raw) || CUP_DETAIL.test(raw) || file === "competitions/index.html" || file === "calendar/index.html")) {
@@ -345,7 +345,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         // parser-time script runs directly after the value and before paint.
         if(devPreview){
           const script='<script data-fa-competition-season-first-paint>(function(){'+
-            'if(window.faDebugEnabled===false||!document.documentElement.dataset.faDevSeasons)return;'+
+            'if(window.faDebugEnabled!==true||!document.documentElement.dataset.faDevSeasons)return;'+
             'const v=document.getElementById("app-competition-season-value");if(!v)return;'+
             'const s=new URLSearchParams(location.search).get("season"),'+
             'current=Math.max(1,Number(document.documentElement.dataset.faDevCurrentSeason)||1),'+

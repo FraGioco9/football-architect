@@ -68,7 +68,8 @@ test('W56-14 DEV module appears only in protected asset map',()=>{
 });
 test('W56-15 Calendar sidebar season regression retained',()=>{
  const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8');
- assert.match(source,/standings-dev-season/);assert.match(source,/calendarView/);
+ assert.doesNotMatch(source,/standings-dev-season/,'Sidebar uses current-season URLs without a stored DEV season');
+ assert.match(source,/calendarView/);
 });
 test('W56-16 calendar model and publication guard remain outside patch scope',()=>{
  const source=readFileSync(new URL('../tools/dev-preview-artifact.mjs',import.meta.url),'utf8');

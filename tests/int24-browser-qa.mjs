@@ -450,6 +450,8 @@ try {
   const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
   const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
+  // Supplied-data browser QA deliberately exercises the isolated Debug source.
+  await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
   for(const view of views){
    const url=base+"/competitions/"+cup+"/"+view;
    const response=await page.goto(url,{waitUntil:"domcontentloaded"});
@@ -675,6 +677,8 @@ try {
  // Season 0 is a DEV-only inactive state shared by cups, domestic divisions,
  // Calendar and Club; it never creates a simulated season 0.
  const page=await browser.newPage({viewport:{width:390,height:900}});
+ // Season 0 scenarios explicitly opt into Debug before the first protected paint.
+ await page.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  const zeroErrors=[];page.on("pageerror",error=>zeroErrors.push(error.message));
  page.on("console",message=>{if(message.type()==="error")console.log("DEV browser console: "+message.text())});
  page.on("response",response=>{if(response.status()>=400)console.log("DEV HTTP "+response.status()+" "+response.url())});
@@ -791,6 +795,7 @@ try {
  // historical rules snapshot, scores or table. Interception is test-only.
  for(const id of ['IT-1','int-1','int-2']){
   const historyPage=await browser.newPage({viewport:{width:390,height:900}});
+  await historyPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
   await historyPage.route('**/competitions/_shared/manifest.json',async route=>{
    const response=await route.fetch(),json=await response.json();
    const definition=json.competitions.find(definition=>definition.id===id);definition.rules.phases[0].points.win=2;
@@ -860,6 +865,7 @@ try {
  }
  // PR 318: shared domestic qualification bands, localized legends and centered form letters.
  const formPage=await browser.newPage({viewport:{width:1440,height:900}});
+ await formPage.addInitScript(()=>{if(sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')});
  await formPage.goto(base+'/competitions/it-1/standings',{waitUntil:"domcontentloaded"});
  await formPage.evaluate(()=>{
   sessionStorage.setItem('football-architect:standings-dev-preview','on');

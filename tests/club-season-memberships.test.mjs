@@ -33,8 +33,8 @@ test('QA-16: promoted club has current domestic and international competition in
  assert.match(html,/class="club-competition-list"/);
  assert.match(html,/data-club-competition-id="IT-1"/);
  assert.match(html,/data-club-competition-id="int-1"/);
- assert.match(html,/\/competitions\/it-1\/standings\?season=2/);
- assert.match(html,/\/competitions\/int-1\/fixtures\?season=2&amp;matchday=7/);
+ assert.match(html,/\/competitions\/it-1\/standings"/);
+ assert.match(html,/\/competitions\/int-1\/fixtures\?matchday=7/);
  assert.doesNotMatch(html,/\/competitions\/it-2\/standings/,'no stale Season 1 division');
  const header=html.match(/<header class="club-header">[\s\S]*?<\/header>/)?.[0];
  assert.ok(header.includes('class="club-location"'));

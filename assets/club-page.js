@@ -12,7 +12,7 @@
  const competitionSeason=()=>{
   const resolved=window.faRoutesRegistry.resolveSeasonQuery(location.search,currentWorldSeason());
   if(resolved.season!==null)return resolved.season;
-  if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false){
+  if(window.faDevPreviewMode===true&&window.faDebugEnabled===true){
    try{const raw=sessionStorage.getItem('football-architect:standings-dev-season'),n=raw===null?NaN:Number(raw);
     if(Number.isInteger(n)&&n>=1&&n<=4)return n}catch{}
   }
@@ -114,7 +114,8 @@
    const rosterTableScroll=host.querySelector('.club-roster-table-scroll')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,
+    competitionSnapshot?.source==='dev'&&Number.isSafeInteger(competitionSnapshot.season)?competitionSnapshot.season:currentWorldSeason());
    const stagedHeader=staging.querySelector('.club-header'),stagedTabs=staging.querySelector('.club-tabs');
    let header=host.querySelector(':scope > .club-header'),tabs=previousTabs;
    if(header&&stagedHeader){
@@ -240,7 +241,8 @@
    const panel=host.querySelector('.club-competition');if(!panel)return;
    const focused=panel.contains(document.activeElement),href=focused?document.activeElement.getAttribute('href'):null;
    const staging=document.createElement('div');
-   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,currentWorldSeason());
+   staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot,
+    competitionSnapshot?.source==='dev'&&Number.isSafeInteger(competitionSnapshot.season)?competitionSnapshot.season:currentWorldSeason());
    const replacement=staging.querySelector('.club-competition');
    if(!replacement)return;
    for(const link of replacement.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
@@ -254,7 +256,7 @@
   };
   // Isolated protected DEV summaries never override an authoritative snapshot.
   window.addEventListener('fa:club-competition-summary',event=>{
-   if(window.faDebugEnabled===false||!window.faDevPreviewMode&&window.faWorldState?.get?.().source==='authoritative')return;
+   if(window.faDebugEnabled!==true||!window.faDevPreviewMode&&window.faWorldState?.get?.().source==='authoritative')return;
    const incoming=event.detail;
    if(incoming?.schemaVersion===1){
     const selectors=window.faProviderSelectors;
@@ -401,7 +403,7 @@
      // Other Club views have no competition overview panel. Keep a completed
      // or in-flight result for when the user returns instead of refetching.
      if(selected.view!=='overview')return;
-     const current=state.get(),dev=current.source==='dev'&&window.faDebugEnabled!==false;
+     const current=state.get(),dev=current.source==='dev'&&window.faDebugEnabled===true;
      if(dev){
       lastWorldKey=null;publicAbort?.abort();++publicEpoch;
       if(competitionSnapshot?.source!=='dev')applyCompetitionSnapshot({source:'loading'});
@@ -462,7 +464,7 @@
     // the public HTTP reader. Validate its provenance and current source/day.
     const devHistory=value=>{
      const current=state.get(),key=selected.countryId+'-'+selected.clubId;
-     return window.faDevPreviewMode===true&&window.faDebugEnabled!==false&&
+     return window.faDevPreviewMode===true&&window.faDebugEnabled===true&&
       current.source==='dev'&&value?.schemaVersion===1&&value.source==='dev'&&
       value.clubKey===key&&value.currentSeason===current.current?.season&&
       value.worldDay===current.current?.day&&value.provenance?.kind==='fictional'&&
@@ -470,7 +472,7 @@
       ['empty','complete'].includes(value.coverage)&&Array.isArray(value.seasons);
     };
     window.addEventListener('fa:club-history-preview',event=>{
-     if(state.get().source!=='dev'||window.faDevPreviewMode!==true||window.faDebugEnabled===false)return;
+     if(state.get().source!=='dev'||window.faDevPreviewMode!==true||window.faDebugEnabled!==true)return;
      if(devHistory(event.detail))publish(event.detail);
      else if(event.detail===null)publish({source:'unavailable'});
     });
@@ -483,7 +485,7 @@
       abort?.abort();abort=null;epoch++;lastKey=null;
       // Season 0 has no sporting fixtures by construction, even before the
       // protected DEV preview reader completes. Never expose stale season data.
-      if(window.faDevPreviewMode===true&&window.faDebugEnabled!==false&&current.current?.season===0){
+      if(window.faDevPreviewMode===true&&window.faDebugEnabled===true&&current.current?.season===0){
        const empty={schemaVersion:1,source:'dev',clubKey:selected.countryId+'-'+selected.clubId,
         currentSeason:0,worldDay:0,matchdays:0,coverage:'empty',seasons:[],
         provenance:{kind:'fictional',sourceRef:'dev-fictional-preview',approved:false}};

@@ -9,7 +9,7 @@
 | Access | Implemented routes | Boundary |
 | --- | --- | --- |
 | Anonymous world | `GET /api/world` | Validated global projection; never fictional DEV data |
-| Anonymous sporting | `GET /api/competitions/{IT,ENG,ES,DE,FR,PT,NL,BR}-{1,2}/seasons/{n}`; `GET /api/competitions/int-{1,2}/seasons/{n}` | Verified season data, no inferred future scores |
+| Anonymous sporting | `GET /api/competitions/{IT,ENG,ES,DE,FR,PT,NL,BR}-{1,2}/seasons/{n}`; `GET /api/competitions/int-{1,2}/seasons/{n}`; `GET /api/clubs/{COUNTRY}-{CLUB_ID}/seasons/{n}/fixtures` | Verified season data, no inferred future scores; club fixtures response is scoped to one club |
 | Anonymous calendar | `GET /api/calendar/seasons/{n}/days/{1..56}` | Read-only day projection |
 | Nonproduction handshake | `GET /api/environment` | Explicit configured `dev-preview` pool only; fail closed elsewhere |
 | Private local inbox | `/api/local-dev/inbox` | Local loopback-only, never public or hosted |

@@ -96,6 +96,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
+    // Fixture uses explicit DEV choice; an existing OFF remains unchanged.
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -657,7 +659,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     const publicLink=await run("document.querySelector('.club-competition a')?.getAttribute('href')??null");
-    assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings?season=1','Only verified source may replace initial season link');
+    assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings','Only verified source may replace initial season link');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
@@ -728,7 +730,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
       assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(['[data-club-position]','.club-competition-next a'])});const match=document.querySelector('.club-competition-next a').getBoundingClientRect(),round=document.querySelector('.club-competition-next small').getBoundingClientRect(),name=document.querySelector('.club-competition-name').getBoundingClientRect(),tier=document.querySelector('.club-competition-tier').getBoundingClientRect();const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&baselines.every(Number.isFinite)&&Math.abs(round.top-match.bottom-3)<1.5&&Math.abs(tier.top-name.bottom-3)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
-     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
+     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
@@ -793,19 +795,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('[data-dev-control=season-number]')!==null");
     await run("document.querySelector('.fa-dev-widget-button').click()");
     await run("(()=>{const control=document.querySelector('[data-dev-control=season-number]');control.value='3';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
-    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href').includes('season=3&')");
+    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href').includes('matchday=')");
     assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No Season/Preview caption in DEV');
     await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
     const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);
-    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?season=3&matchday=17'");
+    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?matchday=17'");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(advancedIndex+1));
-    assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
-    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings?season=3');
+    assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=17');
+    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings');
     await run("document.querySelector('.club-competition-name a').click()");
     await wait("location.pathname==='/competitions/it-1/standings'&&window.faCompetitionContext?.selectedSeason===3&&window.faCompetitionContext?.seasonData?.season===3&&document.documentElement.dataset.faStandingsLoading==='false'");
     assert.deepEqual(await run("[...document.querySelectorAll('#app-standings-body tr[data-world-club]')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])"),advanced.rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),'Club -> Standings preserves the displayed season and full table');
     await visit('/clubs/it/1/overview',devOrigin);
-    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings?season=3'");
+    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings'");
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
     await wait("document.querySelector('.club-competition-next a')===null&&[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')");
     assert.equal(await run("[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')"),true,'Reset cannot leave a fabricated club position');
@@ -902,7 +904,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
  const {published}=await import('./canonical-state-browser.mjs');
  const browser=chrome(),dir=await mkdtemp(join(tmpdir(),'fa-club-fixtures-'));
  let world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:1,day:16,phase:'active'};
- let hold=false,failHistory=false,failCompetition=false,useDev=false;const held=[];
+ let hold=false,failHistory=false,failCompetition=false,failFixtures=false,useDev=false;const held=[];let fixtureReads=0,competitionReads=0;
  const payloadFor=season=>{
   const closed=season<world.seasonNumber||world.phase==='closed';
   const raw=published('IT-1',season,closed?{...world,day:56}:world);
@@ -916,6 +918,22 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   const path=new URL(req.url,'http://localhost').pathname;
   const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};
   if(path==='/api/world')return json(200,{world});
+  const clubFixtureRoute=/^\/api\/clubs\/IT-1\/seasons\/([12])\/fixtures$/.exec(path);
+  if(clubFixtureRoute){
+   fixtureReads++;const season=Number(clubFixtureRoute[1]),raw=payloadFor(season);
+   const packet={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,
+    status:raw.status,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
+    data:{season,seasonState:raw.data.seasonState,competitions:['IT-1'],
+     fixtures:raw.data.fixtures.filter(f=>[f.homeClubId,f.awayClubId].includes('IT-1'))}};
+   const send=()=>{
+    if(failFixtures)return json(503,{error:{code:'sporting_data_unavailable'}});
+    if(failCompetition)return json(200,{...packet,status:'unavailable',reason:'unsupported-season',
+     provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null});
+    return json(200,packet);
+   };
+   if(hold)held.push(send);else send();return;
+  }
   if(path==='/api/clubs/IT-1/history'){
    if(failHistory)return json(503,{});
    const overviews=Array.from({length:world.seasonNumber},(_,i)=>{
@@ -929,6 +947,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   }
   const competition=/^\/api\/competitions\/IT-1\/seasons\/([12])$/.exec(path);
   if(competition){
+   competitionReads++;
    const data=payloadFor(Number(competition[1])),send=()=>json(failCompetition?503:200,data);
    if(hold)held.push(send);else send();return;
   }
@@ -955,6 +974,8 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
+  assert.ok(fixtureReads>=1,'verified club fixture endpoint serves the public view, including cache reuse');
+  assert.equal(competitionReads,0,'Club Fixtures never calls the per-competition season APIs');
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'Season 1 offers only Season 1');
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null);
 
@@ -1047,25 +1068,27 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
-  await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1'],'Season 2 offers exactly 2 and 1, like Standings');
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result strong')].every(n=>n.textContent!=='—')"),true,'closed Season 1 has verified results');
-  await run('history.back()');await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run('history.back()');await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run('history.forward()');await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run("document.querySelector('.club-tabs a[href$=\"/history\"]').click()");await wait("document.querySelector('.club-history [data-club-history-toggle]')");
   await run("document.querySelector('.club-history [data-club-history-toggle]').click()");
   assert.equal(await run("document.querySelector('.club-history [data-club-history-toggle]').getAttribute('aria-expanded')"),'true','public History stays interactive after Fixtures');
-  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   failCompetition=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unavailable'");assert.equal(await run("document.querySelectorAll('[data-club-fixture-id]').length"),0);
-  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
+  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  assert.equal(competitionReads,0,'History outage cannot trigger competition fan-out');
+  failHistory=false;failFixtures=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null,'errors add no notice');
-  failHistory=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
+  failFixtures=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search===''&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'world Season 0 still offers only viewed Season 1');
   assert.deepEqual(await run('window.__errors'),[]);
   useDev=true;
@@ -1085,7 +1108,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:devBootstrap.identifier});
   devBootstrap=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:devSetup(2)});
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
-  await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30&&window.faWorldState.get().source==='dev'");
+  await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30&&window.faWorldState.get().source==='dev'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1'],'DEV shares positive season policy');
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length>=30");
@@ -1093,7 +1116,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:devBootstrap.identifier});
   devBootstrap=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:devSetup(0)});
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=2'});
-  await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'&&window.faWorldState.get().current?.season===0");
+  await wait("location.search===''&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'&&window.faWorldState.get().current?.season===0");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'DEV Reset to 0 clamps viewed season to 1');
   await run("window.faDebugEnabled=false;sessionStorage.setItem('football-architect:debug-enabled','off');window.faWorldState.setSource({kind:'authoritative'});window.dispatchEvent(new Event('fa:source-change'))");
   await wait("document.querySelectorAll('[data-club-fixture-id]').length===0&&document.querySelector('.club-fixtures')?.dataset.clubFixturesSource==='authoritative'");
