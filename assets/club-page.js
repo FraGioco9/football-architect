@@ -18,7 +18,14 @@
  try{
   if(!selected)throw Error('Unknown club route');
   const params=new URLSearchParams(location.search);
-  params.delete('view');
+  if(selected.view==='roster'){
+   const requested=params.get('view'),allowed=['info','technical','mental','physical','goalkeeping'];
+   const legacyGroup=params.get('group');
+   const view=allowed.includes(requested)?requested:
+    requested==='attributes'&&allowed.slice(1).includes(legacyGroup)?legacyGroup:
+    requested==='attributes'?'technical':'info';
+   params.delete('view');params.delete('group');params.set('view',view);
+  }else params.delete('view');
   if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
   const query=params.size?'?'+params:'';
   if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
@@ -228,21 +235,18 @@
    }
   });
   paint();
-  // Present the same roster snapshot in Overview and Attributes; no extra API read.
+  // Each roster display has a stable URL. The same snapshot serves every view.
   host.addEventListener('click',event=>{
-   const control=event.target.closest?.('[data-club-roster-view],[data-club-roster-group]');
-   if(!control||selected.view!=='roster')return;
+   const control=event.target.closest?.('a[data-club-roster-view],a[data-club-roster-group]');
+   if(!control||selected.view!=='roster'||event.defaultPrevented||event.button!==0||
+    event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
    const view=control.dataset.clubRosterView,group=control.dataset.clubRosterGroup;
+   const target=view==='info'?'info':view==='attributes'?'technical':group;
+   if(!['info','technical','mental','physical','goalkeeping'].includes(target))return;
+   event.preventDefault();
    const params=new URLSearchParams(location.search);
-   if(view){
-    if(!['overview','attributes'].includes(view))return;
-    if(view==='overview'){params.delete('view');params.delete('group')}
-    else params.set('view','attributes');
-   }else if(group){
-    if(!['technical','mental','physical','goalkeeping'].includes(group))return;
-    params.set('view','attributes');params.set('group',group);
-   }else return;
-   const next=location.pathname+(params.size?'?'+params.toString():'')+location.hash;
+   params.delete('view');params.delete('group');params.set('view',target);
+   const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
    paint(true);
@@ -466,7 +470,8 @@
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
-     const mode=new URLSearchParams(location.search).get('view')==='attributes'?'attributes':'overview';
+     const requested=new URLSearchParams(location.search).get('view');
+     const mode=['technical','mental','physical','goalkeeping'].includes(requested)?'attributes':'info';
      host.querySelector('[data-club-roster-view="'+mode+'"]')?.focus({preventScroll:true});
     }else host.querySelector('.club-tabs [aria-current="page"]')?.focus({preventScroll:true});
    }
