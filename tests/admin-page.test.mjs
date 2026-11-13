@@ -124,17 +124,28 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.app-admin-view \.admin-players form\{[^}]*max-width:none/,'Players form must not inherit the legacy 30rem limit');
  assert.match(css,/\.app-admin-view\{grid-template-columns:minmax\(0,1fr\)\}/);
  assert.match(css,/\.app-admin-view > \.admin-players,[^}]*width:100%/);
- assert.match(css,/\.app-admin-view \.admin-players-fields label,[^}]*outline:none/);
+ assert.match(css,/\.app-admin-view \.admin-players-fields \.admin-players-field,[^}]*background:transparent/);
  assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):focus-visible/);
  const appCss=readFileSync(new URL('../assets/app.css',import.meta.url),'utf8');
  assert.match(appCss,/\.app-view>\.app-page-title,\.app-admin-view>\.admin-page-heading>\.app-page-title\{/,'Both Admin headings must use the standard page title rule');
  assert.match(appCss,/html\[data-theme="light"\] \.app-admin-view>\.admin-page-heading>\.app-page-title/,'Admin headings must match standard titles in light theme');
  assert.match(css,/\.admin-settings :is\(input,select,textarea,button,a,\[role="option"\]\):focus-visible/,'Only interactive elements receive focus decoration');
- assert.match(css,/\.app-admin-view \.admin-players-fields label > \[data-admin-players-label\],/,'Label text must remain visually neutral');
+ assert.match(css,/\.app-admin-view \.admin-players-fields \.admin-players-field > \[data-admin-players-label\],/,'Caption text must remain visually neutral');
  assert.match(css,/\.app-admin-view \.admin-players-dropdown \.language-option\[aria-selected="true"\],/,'Menu label color must not change on selection');
- assert.match(css,/\.app-admin-view \.admin-players-fields label:is\(:hover,:focus-within\)/,'Hovering a label must not produce a highlight');
- assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):hover:not\(:disabled\)/,'Hover highlight belongs only to inputs and dropdown boxes');
- for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
+ assert.match(css,/\.admin-players-field:is\(:hover,:focus-within\)/,'Hovering the field wrapper must not highlight its caption');
+ assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):hover:not\(:disabled\):not\(:focus\)/,'Hover highlight belongs only to unfocused inputs and dropdown boxes');
+ const generatorForm=players.match(/<form data-admin-players-form novalidate>([\\s\\S]*?)<\\/form>/)?.[1]||'';
+ assert.doesNotMatch(generatorForm,/<label(?:\\s|>)/,'Captions must not wrap the interactive controls');
+ assert.equal((generatorForm.match(/class="admin-players-field"/g)||[]).length,39);
+ const ariaCaptions=[...generatorForm.matchAll(/<span id="(admin-players-caption-[^"]+)" data-admin-players-label="([^"]+)">/g)];
+ assert.equal(ariaCaptions.length,39);
+ assert.equal(new Set(ariaCaptions.map(item=>item[1])).size,39,'Caption ids must be unique');
+ for(const [,id,key] of ariaCaptions)
+  assert.match(generatorForm,new RegExp('<(?:input|select) aria-labelledby="'+id+'" data-players-option="'+key.replace(/[.*+?^$()|[\\]{}]/g,'\\for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality')+'"'),key+' must be accessible without clickable label wrappers');
+ assert.match(css,/pointer-events:none/,'Captions must not forward pointer interactions');
+ assert.match(playersScript,/select\\.closest\\('\\.admin-players-field'\\)/);
+ assert.match(playersScript,/\\.closest\\('\\.admin-players-field'\\)\\.hidden/);
+  for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
   assert.ok(players.includes('data-players-option="attribute.'+a+'"'),a);

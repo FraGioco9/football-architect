@@ -190,7 +190,7 @@
    return [...form.querySelectorAll('select[data-players-option]')].map((select,index)=>{
     const control=doc.createElement('div');control.className='language-control admin-players-dropdown';
     control.dataset.playersDropdown=select.dataset.playersOption;
-    const label=select.closest('label').querySelector('[data-admin-players-label]');
+    const label=select.closest('.admin-players-field').querySelector('[data-admin-players-label]');
     const trigger=doc.createElement('button');trigger.type='button';trigger.className='language-trigger';
     trigger.setAttribute('role','combobox');trigger.setAttribute('aria-haspopup','listbox');
     trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-label',label?.textContent||'Option');
@@ -344,7 +344,7 @@
    form.querySelectorAll('input[data-players-option]').forEach(input=>{input.placeholder=text.automatic});
    const mode=form.querySelector('[data-players-option="secondaryMode"]').value;
    for(const [field,show] of [['secondaryCountry',mode==='exact'],['secondaryAllowed',mode==='allowed']]){
-    form.querySelector('[data-players-option="'+field+'"]').closest('label').hidden=!show;
+    form.querySelector('[data-players-option="'+field+'"]').closest('.admin-players-field').hidden=!show;
    }
    for(const node of form.querySelectorAll('select option')){
     if(node.value===''||node.value==='automatic')node.textContent=text.automatic;
