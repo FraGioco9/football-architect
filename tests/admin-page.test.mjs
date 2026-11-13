@@ -60,7 +60,7 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.equal((home.match(/class="app-link app-link-primary"/g)||[]).length,3,'Each Admin box has a clear navigation button');
  assert.match(home,/href="\/admin\/calendar"/);
  assert.match(home,/href="\/admin\/players"/);
-  assert.match(home,/href="\/admin\/contracts"/);
+ assert.match(home,/href="\/admin\/contracts"/);
  assert.doesNotMatch(home,/data-admin-world|data-admin-players-form|\/assets\/admin-settings\.js/);
  const calendar=readFileSync(new URL('../admin/calendar/index.html',import.meta.url),'utf8');
  assert.match(calendar,/data-admin-world/);
@@ -89,6 +89,25 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.doesNotMatch(players,/data-admin-players-label="intro"|Configure a local generator trial/,'Remove obsolete generator introduction');
  assert.doesNotMatch(players,/data-players-seed-help|admin-players-seed-help|Same seed and options/,'Remove seed explanation');
  const playersScript=readFileSync(new URL('../assets/admin-players.js',import.meta.url),'utf8');
+ // Permissions requests run on full page load/refresh only, never BFCache restore.
+ assert.match(playersScript,/update\(\);void check\(\);/);
+ assert.doesNotMatch(playersScript,/pageshow[^\n]*check\(/);
+ const calendarScript=readFileSync(new URL('../assets/admin-settings.js',import.meta.url),'utf8');
+ assert.match(calendarScript,/render\(\);void controller\.refresh\(\);/);
+ assert.doesNotMatch(calendarScript,/pageshow[^\n]*controller\.refresh\(/);
+ // Cross-page Admin routes share a tab-scoped permission snapshot; refresh
+ // invalidates it. Session tokens and server authorization never use this cache.
+ assert.match(playersScript,/permissionCache\?\.read\(\)/);
+ assert.match(playersScript,/permissionCache\?\.write\(perms\)/);
+ assert.match(calendarScript,/createAdminController\(cachedAdminRequest,render\)/);
+ assert.match(calendarScript,/permissionCache\?\.clear\(\);void controller\.refresh\(\)/);
+ for(const html of [home,calendar,players,readFileSync(new URL('../admin/contracts/index.html',import.meta.url),'utf8')])assert.match(html,/\/assets\/admin-permissions-cache\.js/);
+ assert.ok(planPublicFiles().includes('assets/admin-permissions-cache.js'));
+ const accountLogin=readFileSync(new URL('../assets/account-login.js',import.meta.url),'utf8');
+ const accountProfile=readFileSync(new URL('../assets/account-settings.js',import.meta.url),'utf8');
+ assert.match(accountLogin,/for\(const key of \['fa:admin:permissions:v1','fa:player:anonymous:v1','fa:player:skip-login-session-probe:v1'\]/);
+ assert.match(accountLogin,/sessionStorage\.removeItem\(key\)/);
+ assert.match(accountProfile,/sessionStorage\.removeItem\('fa:admin:permissions:v1'\)/);
  assert.doesNotMatch(playersScript,/data-players-seed-help|playersSeedHelp|Same seed and options|Stesso seed e stesse opzioni|Gleicher Seed und gleiche Einstellungen|Misma semilla y opciones|Même graine et mêmes options/);
 
  assert.doesNotMatch(players,/data-admin-world|\/assets\/admin-settings\.js/);

@@ -8,26 +8,36 @@ Eight countries, 16 domestic divisions, two international cups (Sovereign and Fe
 
 [Documentation index](docs/README.md) · [Architecture and source ownership](docs/architecture/overview.md)
 
-## Windows 11 / PowerShell local startup
+## Windows 11 / PowerShell DEV startup
 
 Use Node.js **22**. From the repository root:
+
+The launcher also starts the frontend through `node tools/dev-app-preview.mjs` internally; there is no need to run this second command by hand. Site: `http://localhost:2000/`; app: `http://app.localhost:2000/dashboard`; competitions: `http://app.localhost:2000/competitions`.
 
 ```powershell
 npm --prefix backend ci
 node tools/dev.mjs
 ```
 
-Site: `http://localhost:2000/`; App: `http://app.localhost:2000/dashboard`; loopback Worker/D1: `http://127.0.0.1:8787`. The local app proxies `GET /api/world` to its local Worker. Ctrl+C stops the launcher. Local migrations and owner-only Admin permission management are **separate** operations. No hosted deployment or remote D1 is part of startup.
+**Default = local Worker code + shared Cloudflare D1:** the frontend and Worker execute on your PC at `http://app.localhost:2000` and `http://127.0.0.1:8787`; the Worker connects directly to the **existing** nonproduction D1 (`football-architect-dev`) through Wrangler's `remote = true` binding. The hosted Preview uses the same database but can run older code independently. New backend APIs can be tested locally **without deploying Preview**. Shared data changes are real; avoid destructive testing, and sign in separately from the hosted Preview. The launcher never migrates, deploys or copies data. Wrangler login/network access is required for remote D1.
 
-The full-stack launcher internally runs `node tools/dev-app-preview.mjs` for the frontend alongside the local Worker. That frontend-only command can also be used independently for UI/routing diagnostics, but **use `node tools/dev.mjs` for canonical local full-stack development**. The app Competitions index is `http://app.localhost:2000/competitions`; it shares the app origin with Dashboard, while `http://localhost:2000/` serves the site.
+**Important:** The shared database already has its own verified accounts. An account created only in the old isolated local D1 will not log into the shared D1 until separately migrated or registered/verified via hosted Preview. A 401 from `/api/player/permissions` before signing in is expected; check the **POST `/api/player/login`** status to diagnose a failed login. Clear obsolete `app.localhost` site cookies if switching DBs leaves stale sessions; do not repeat logins into a 429 throttle.
+
+**Explicit isolated local mode** for offline QA, disposable experiments and operator tooling:
+
+```powershell
+node tools/dev.mjs --local
+```
+
+This mode starts a local-only Wrangler Worker/D1 at `http://127.0.0.1:8787`, fully isolated from Cloudflare. Local migrations and owner-only permissions remain manual. The legacy `node tools/dev.mjs --shared https://preview.football-architect.workers.dev` invocation remains available to explicitly **proxy the hosted Preview Worker**, but requires its deployed API version to be up to date. This is not needed for normal development. Ctrl+C stops either mode.
 
 Optional frontend-only iPhone Safari QA on trusted Wi-Fi (replace with the PC's own private IPv4 from `ipconfig`):
 
 ```powershell
-node tools/dev.mjs --lan 192.168.1.90
+node tools/dev.mjs --local --lan 192.168.1.90
 ```
 
-Open `http://192.168.1.90:2000/dashboard` on the phone. LAN `/api/*` is denied; this does **not** expose Player/Admin, local inbox or D1. Never port-forward or bind to all interfaces. [Full DEV guidance](docs/architecture/dev-env-01-startup.md).
+Open `http://192.168.1.90:2000/dashboard` on the phone. The old command `node tools/dev.mjs --lan 192.168.1.90` is also supported and uses the **shared D1** for localhost while exposing only the static site over LAN. Use `--local --lan` when testing with isolated data. LAN `/api/*` is denied; **login and authenticated API access on the phone are not supported**. This does not expose Player/Admin, local inbox or D1. Never port-forward or bind to all interfaces. [Full DEV guidance](docs/architecture/dev-env-01-startup.md).
 
 ## Source and contracts
 
@@ -59,6 +69,6 @@ node --test --test-concurrency=1 (Get-ChildItem .\tests\*.test.mjs | Select-Obje
 
 The broad Node command is **not necessary on every local documentation edit**; see [CI/QA guide](docs/ci/README.md). Backend commands after dependency installation include `npm --prefix backend run typecheck` and `npm --prefix backend run test:contracts`. FAST/TARGETED does not certify FULL, and physical Safari/VoiceOver is not certified by emulation.
 
-**Local** Worker/D1/inbox are loopback-specific. **Shared Dev/Preview** can be opted into a separate nonproduction world/accounts backend with independent login boundaries. **Production** needs distinct Worker/D1/accounts, secrets, domain and owner approval. The manual Preview workflow and repository publication allowlist are not deployment authorization. [Auth](backend/docs-auth-security-be-05.md), [shared nonproduction](backend/docs-shared-nonproduction.md), [Preview](docs/manual-preview.md).
+**Default shared DEV/Preview** runs the current Worker source locally with the **remote nonproduction D1** binding; hosted Preview independently runs its last published Worker against that same DB. **Isolated --local** Worker/D1/inbox remain loopback-specific. **Production** needs distinct Worker/D1/accounts, secrets, domain and owner approval. The manual Preview workflow and repository publication allowlist are not deployment authorization. [Auth](backend/docs-auth-security-be-05.md), [shared nonproduction](backend/docs-shared-nonproduction.md), [Preview](docs/manual-preview.md).
 
 Authorized workflow: current `main` → one task branch / grouped commit → Draft/HOLD PR in English → exact-head CI → review → **separately authorized squash merge** → verify post-merge. Deploy, remote DB, branch deletion and secret changes need independent approval. #357 removed only proven dead guards/bindings (**zero files**); #370 renamed **private identifiers only**, leaving public filenames and routes unchanged. Preserve historical snapshots, migration receipts and discarded pre-#347 branches solely as audit evidence. Remote integrations and physical accessibility are **UNKNOWN** until independently verified.

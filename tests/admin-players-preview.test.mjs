@@ -16,6 +16,7 @@ test('Preview is a canonical Admin subpage and a protected, generated public-she
  assert.ok(html.includes(renderAdminPlayersPreview()));
  assert.match(html,/meta name="referrer" content="no-referrer"/);
  assert.match(html,/src="\/assets\/admin-players-preview.js" defer/);
+ assert.match(html,/src="\/assets\/admin-permissions-cache.js" defer/);
  assert.match(html,/src="\/assets\/players-nationality-tooltip.js" defer/);
  assert.doesNotMatch(html,/data-admin-players-form/);
  assert.match(html,/data-admin-players-preview-page[^>]*hidden/);
@@ -28,6 +29,9 @@ test('Generator navigates to protected preview without browser persistence or fa
  const html=read('admin/players/preview/index.html');
  assert.match(generator,/location.assign\('\/admin\/players\/preview\?draftId='/);
  assert.ok(preview.includes("authorizedPost('/api/admin/players/draft',{draftId:id})"));
+ assert.match(preview,/permissionCache\?\.read\(\)/);
+ assert.match(preview,/permissionCache\?\.write\(p\)/);
+ assert.match(preview,/permissionCache\?\.clear\(\)/);
  assert.match(preview,/\/api\/admin\/players\/commit/);
  assert.match(preview,/\/api\/admin\/players\/preview/);
  assert.match(preview,/new MutationObserver\(render\)/);

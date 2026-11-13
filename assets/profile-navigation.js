@@ -1,4 +1,4 @@
-/* Profile session is checked on activation. Admin discoverability uses account permissions only. */
+/* Profile session is checked on activation; Admin menu permissions are checked once per tab refresh. */
 ((root,factory)=>{
  const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;
  if(root.document)api.mount(root);
@@ -12,9 +12,42 @@
  function canAccessAdmin(permissions){
   return Array.isArray(permissions)&&permissions.includes('admin.access')&&permissions.includes('admin.world.read');
  }
+ // Public pages do not load the Admin-only helper, but share the same
+ // per-tab validated UI snapshot. No sensitive credentials are cached.
+ function publicPermissionsCache(win){
+  if(win.faAdminPermissionsCache?.create)return win.faAdminPermissionsCache.create(win);
+  const KEY='fa:admin:permissions:v1',ANON='fa:player:anonymous:v1';
+  let storage=null;
+  try{storage=win.sessionStorage}catch{/* unavailable */}
+  const clear=()=>{try{storage?.removeItem(KEY)}catch{/* no storage */}};
+  try{
+   const kind=win.performance?.getEntriesByType?.('navigation')?.[0]?.type;
+   if(kind==='reload'||(!kind&&win.performance?.navigation?.type===1)){
+    clear();try{storage?.removeItem(ANON)}catch{/* no storage */}
+   }
+  }catch{/* missing navigation timing */}
+  return {
+   read(){
+    try{
+     const raw=storage?.getItem(KEY);if(!raw)return null;
+     const value=JSON.parse(raw),permissions=value?.permissions;
+     if(value?.version!==1||!Array.isArray(permissions)||permissions.length>64||
+        !permissions.every(p=>typeof p==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(p))){clear();return null}
+     return [...permissions];
+    }catch{clear();return null}
+   },
+   write(permissions){
+    if(!Array.isArray(permissions)||permissions.length>64||!permissions.every(p=>typeof p==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(p)))return;
+    try{storage?.setItem(KEY,JSON.stringify({version:1,permissions}))}catch{/* no cache */}
+   },
+   clear
+  };
+ }
  function mountAdminNavigation(win){
   const doc=win.document,settings=doc.getElementById('app-nav-settings');if(!settings)return;
   const onAdmin=/^\/admin(?:\/(?:calendar|contracts|players(?:\/preview)?))?$/.test(win.location.pathname.replace(/\/+$/,''));
+  const permissionsCache=publicPermissionsCache(win);
+  const accountPage=/^\/account(?:\/|$)/.test(win.location.pathname);
   let entry=null,request=0;
   function paint(){
    if(!entry)return;
@@ -35,11 +68,19 @@
   }
   async function check(){
    const ticket=++request;show(false);
+   const cached=permissionsCache.read();
+   if(cached!==null){show(canAccessAdmin(cached));return}
    const controller=new win.AbortController(),timer=win.setTimeout(()=>controller.abort(),8000);
    try{
     const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
     const value=response.ok?await response.json():null;
-    if(ticket===request)show(canAccessAdmin(value?.permissions));
+    if(ticket!==request)return;
+    if(response.ok&&Array.isArray(value?.permissions))permissionsCache.write(value.permissions);
+    else if(response.status===401){
+     permissionsCache.write([]);
+     try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* storage disabled */}
+    }
+    show(canAccessAdmin(value?.permissions));
    }catch{if(ticket===request)show(false)}finally{win.clearTimeout(timer)}
   }
   // The Admin controller has its own fresh permission checks, including refresh
@@ -47,9 +88,13 @@
   if(onAdmin){
    show(win.faAdminAccess===true);
    win.addEventListener('fa:admin-access',event=>show(event.detail===true));
+  }else if(accountPage){
+   // Profile and Login already check session: skip an extra anonymous 401.
+   show(canAccessAdmin(permissionsCache.read()));
   }else{
    void check();
-   win.addEventListener('pageshow',event=>{if(event.persisted)void check()});
+   // BFCache restores keep the last tab snapshot; no redundant 401 requests.
+   // A real reload creates a new document and invalidates the snapshot above.
   }
  }
  function mount(win){
@@ -62,11 +107,19 @@
    const destination=new URL(link.href,win.location.href);
    if(destination.origin!==win.location.origin)return;
    event.preventDefault();if(pending)return;pending=true;link.setAttribute('aria-busy','true');
-   const login=()=>{win.faLoginReturn?.remember();win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang))};
+   const login=(confirmedAnonymous=false)=>{
+    if(confirmedAnonymous){try{win.sessionStorage.setItem('fa:player:skip-login-session-probe:v1','1')}catch{/* no storage */}}
+    win.faLoginReturn?.remember();win.location.assign(profileDestination(false,destination.href,win.document.documentElement.lang));
+   };
+   // If the same tab already received a 401, avoid another auth probe.
+   try{if(win.sessionStorage.getItem('fa:player:anonymous:v1')==='1'){login(true);return}}catch{/* no storage */}
    const controller=new AbortController(),timer=win.setTimeout(()=>controller.abort(),8000);
    try{
     const response=await win.fetch('/api/player/session',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
-    if(response.status===401){login();return;}
+    if(response.status===401){
+     try{win.sessionStorage.setItem('fa:player:anonymous:v1','1')}catch{/* no storage */}
+     login(true);return;
+    }
     if(response.ok){
      const value=await response.json();
      if(value?.authenticated===true&&typeof value?.actor?.id==='string'){
@@ -78,5 +131,5 @@
    }catch{login()}finally{win.clearTimeout(timer);pending=false;link.removeAttribute('aria-busy');}
   });
  }
- return {profileDestination,canAccessAdmin,mount};
+ return {profileDestination,canAccessAdmin,publicPermissionsCache,mount};
 });
