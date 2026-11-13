@@ -21,18 +21,16 @@
  };
  try{
   if(!selected)throw Error('Unknown club route');
-  const params=new URLSearchParams(location.search);
+  // A refresh starts at /roster; the API will choose Info only after success.
   if(selected.view==='roster'){
-   const requested=params.get('view'),allowed=['info','technical','mental','physical','goalkeeping'];
-   const legacyGroup=params.get('group');
-   const view=allowed.includes(requested)?requested:
-    requested==='attributes'&&allowed.slice(1).includes(legacyGroup)?legacyGroup:
-    requested==='attributes'?'technical':'info';
-   params.delete('view');params.delete('group');params.set('view',view);
-  }else params.delete('view');
-  if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
-  const query=params.size?'?'+params:'';
-  if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
+   if(location.search)history.replaceState(null,'',location.pathname+location.hash);
+  }else{
+   const params=new URLSearchParams(location.search);
+   params.delete('view');
+   if(['overview','history'].includes(selected.view)){params.delete('season');params.delete('matchday');}
+   const query=params.size?'?'+params:'';
+   if(query!==location.search)history.replaceState(null,'',location.pathname+query+location.hash);
+  }
   const selectorScript=document.createElement('script');
   selectorScript.type='module';selectorScript.src='/assets/provider-selectors-bootstrap.mjs';
   document.head.append(selectorScript);
@@ -190,6 +188,7 @@
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
       event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
+      if(next.view==='roster')rosterSnapshot={source:'loading'};
       selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
@@ -205,10 +204,12 @@
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
    }
    const titleName=host.querySelector('#club-title')?.textContent?.trim();
-   const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
-   document.title=(titleName&&!/^(?:undefined|null|nan)$/i.test(titleName)?titleName:fallback[language()])+' — Football Architect';
+    const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
+    document.title=(titleName&&!/^(?:undefined|null|nan)$/i.test(titleName)?titleName:fallback[language()])+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
-   for(const link of host.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
+   // Loading Roster subviews are inert anchors without href. Routing those
+   // through faAppHref(null) throws and used to trigger the whole-page error.
+   for(const link of host.querySelectorAll('a[href]'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
    bindDivisionLinks(host);
    const translate=host.querySelector('[data-translate-club]');
    if(translate)translate.addEventListener('click',()=>{
@@ -273,6 +274,10 @@
    const control=event.target.closest?.('a[data-club-roster-view]');
    if(!control||selected.view!=='roster'||event.defaultPrevented||event.button!==0||
     event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+   if(control.getAttribute('aria-disabled')==='true'||!control.hasAttribute('href')){
+    event.preventDefault();
+    return;
+   }
    const target=control.dataset.clubRosterView;
    const groups={
     info:['age','height','foot'],
@@ -321,7 +326,7 @@
   });
   host.addEventListener('keydown',event=>{
    const tab=event.target.closest?.('[data-club-roster-view]');
-   if(!tab||selected.view!=='roster')return;
+   if(!tab||selected.view!=='roster'||tab.getAttribute('aria-disabled')==='true')return;
    const list=tab.closest('[role="tablist"]');
    const options=[...list.querySelectorAll('[role="tab"]')],index=options.indexOf(tab);
    if(index<0)return;
@@ -350,6 +355,10 @@
       throw Error('invalid_roster_response');
      if(signal.aborted||ticket!==rosterRequest)return;
      rosterSnapshot={source:'ready',...data};
+     // No table is shown for a verified empty squad; keep the neutral route.
+     // A positive response selects Info without creating a history entry.
+     if(selected.view==='roster'&&data.count>0&&!new URLSearchParams(location.search).has('view'))
+      history.replaceState(null,'',location.pathname+'?view=info'+location.hash);
     }catch(error){
      if(signal.aborted||ticket!==rosterRequest)return;
      rosterSnapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
@@ -533,6 +542,7 @@
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){
     const queryOnly=selected.view==='roster'&&next.view==='roster';
+    if(next.view==='roster'&&!queryOnly)rosterSnapshot={source:'loading'};
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
@@ -543,8 +553,12 @@
    }
   });
   const crests=document.createElement('script');crests.src='/assets/club-crests.js';document.head.append(crests);
- }catch{
-  // Manifest failure is confirmed, but permanent catalog identity and navigation remain valid.
+ }catch(error){
+  // A failure in a later optional reader/controller must not erase an already
+  // hydrated club identity and replace it with a misleading catalog error.
+  console.error('Club page initialization failed:',error);
+  if(document.documentElement.dataset.clubIdentityReady==='true')return;
+  // Before identity hydration, report a genuine startup/manifest failure.
   for(const child of [...host.children])if(!child.matches('.club-header,.club-tabs'))child.remove();
   const message=document.createElement('p');message.className='app-panel club-load-error';
   message.setAttribute('role','alert');message.textContent=model.copies[language()].error;host.append(message);

@@ -7,6 +7,15 @@
  const nationalityNode=panel.querySelector('[data-detail-header-nationality]'),ageNode=panel.querySelector('[data-detail-header-age]'),clubNode=panel.querySelector('[data-detail-club]');
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
+ const viewBar=panel.querySelector('.app-player-detail-tabs');
+ const syncViewEdges=()=>{
+  if(!viewBar)return;
+  const max=Math.max(0,viewBar.scrollWidth-viewBar.clientWidth);
+  viewBar.dataset.canScrollLeft=String(max>1&&viewBar.scrollLeft>1);
+  viewBar.dataset.canScrollRight=String(max>1&&viewBar.scrollLeft<max-1);
+ };
+ viewBar?.addEventListener('scroll',syncViewEdges,{passive:true});
+ window.addEventListener('resize',syncViewEdges,{passive:true});
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
  const attrKeys=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
  const attrLabels={
@@ -228,6 +237,7 @@
    tab.setAttribute('aria-selected',String(selected));
    if(!tab.disabled)tab.tabIndex=selected?0:-1;
   });
+  syncViewEdges();
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
