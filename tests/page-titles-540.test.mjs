@@ -27,7 +27,7 @@ test('#540 public and protected player shells have safe, accessible first-paint 
  assert.match(js,/if\(typeof value!=='string'\)return ''/);
  assert.doesNotMatch(js,/document\.title=.*e\.views/,'tab labels must not enter browser title');
  const shell=read('assets/app.js');
- assert.match(shell,/!document\.querySelector\("\[data-player-detail-mode\]"\)/,'app shell must not overwrite player detail title');
+ assert.ok(shell.includes('!document.querySelector?.("[data-player-detail-mode]")'),'app shell must not overwrite player detail title');
 });
 
 test('#540 fallback copies cover five languages without draft candidate names in document title',()=>{

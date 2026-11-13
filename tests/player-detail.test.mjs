@@ -87,7 +87,8 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  assert.doesNotMatch(script,/localStorage|sessionStorage|innerHTML/);
  assert.match(script,/if\(preview\)root\.hidden=true/);
  assert.match(index,/const playerDetail=url\.pathname\.match/);
- assert.match(publicApi,/SELECT id,payload_json FROM generated_players WHERE id=\?/);
+ assert.match(publicApi,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p/);
+ assert.match(publicApi,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id WHERE p\.id=\?/);
  assert.match(publicApi,/projectPublicFootballerDirectoryRecord/);
 });
 
@@ -108,7 +109,7 @@ test('#502 preview generated link retains only routing context and never persist
 test('#502 error pages settle placeholders rather than leaving a perpetual loading skeleton',()=>{
  const script=read('assets/player-detail.js');
  assert.match(script,/if\(state!=='loading'\)\{/);
- assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
+ assert.ok(script.includes("setContent(nameNode,state==='not-found'?copy.notFound:copy.player)"));
  assert.match(script,/\[data-detail-value\],\[data-detail-attr-value\]/);
 });
 
