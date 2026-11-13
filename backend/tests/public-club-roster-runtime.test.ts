@@ -16,7 +16,7 @@ const footballer=(id:number)=>({
 });
 function fixture(count:number,clubKey='IT-1'){
  const queries:{sql:string;args:unknown[]}[]=[];
- let revision=0,advanceDuringRead=false;
+ let worldGeneration=generation,advanceDuringRead=false;
  const rows=Array.from({length:count},(_,i)=>({
   id:i+1,club_key:clubKey,payload_json:JSON.stringify(footballer(i+1))
  }));
@@ -27,13 +27,13 @@ function fixture(count:number,clubKey='IT-1'){
     async first(){
      queries.push({sql,args});
      if(sql.includes('FROM world_state'))
-      return {schema_version:1,generation,revision,season_number:0,day:0,phase:'unstarted'};
+      return {schema_version:1,generation:worldGeneration,revision:0,season_number:0,day:0,phase:'unstarted'};
      throw Error('unexpected first');
     },
     async all(){
      queries.push({sql,args});
      if(!sql.includes('FROM player_club_affiliations'))throw Error('unexpected roster query');
-     if(advanceDuringRead)revision++;
+     if(advanceDuringRead)worldGeneration='3e5f71a2-229e-49dd-8fb5-021ba741f6d9';
      return {results:rows.filter(row=>row.club_key===args[0]).sort((a,b)=>a.id-b.id),
       meta:{changes:0}};
     },
