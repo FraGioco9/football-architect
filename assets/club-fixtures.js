@@ -1,5 +1,9 @@
 /* Pure Club Fixtures presentation, shared by the generator and browser. */
-((root,factory)=>{const api=factory();root.faClubFixtures=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;})(typeof window!=='undefined'?window:globalThis,()=>{
+((root,factory)=>{
+ const routes=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./routes-registry.js'):root.faRoutesRegistry;
+ const api=factory(routes);root.faClubFixtures=api;
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
  const copy={
   "en": {
@@ -99,7 +103,7 @@
  function control(id,label,selected,options){
   return '<div class="language-control club-fixture-select" data-club-fixture-control="'+id+'"><button type="button" class="language-trigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="club-fixture-'+id+'-menu" aria-label="'+esc(label)+'"><span data-club-fixture-value>'+esc(selected)+'</span><svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="language-menu" role="listbox" aria-label="'+esc(label)+'" id="club-fixture-'+id+'-menu" hidden>'+options.map(([value,label],i)=>'<div class="language-option" role="option" id="club-fixture-'+id+'-'+i+'" data-menu-value="'+esc(value)+'">'+esc(label)+'</div>').join('')+'</div></div>';
  }
- function render({manifest={clubs:[]},lang='en',season=null,seasons=[],filter='all',snapshot={coverage:'loading',rows:[],competitions:[]}}={}){
+ function render({manifest={clubs:[]},lang='en',season=null,currentSeason=null,explicitSeason=false,seasons=[],filter='all',snapshot={coverage:'loading',rows:[],competitions:[]}}={}){
   const t=copy[lang]||copy.en,rows=snapshot.rows||[],competitions=snapshot.competitions||[],pending=snapshot.coverage==='loading';
   const compName=id=>competitions.find(d=>d.id===id)?.name||manifest.divisions?.find(d=>d.id===id)?.name||({'int-1':'Sovereign Cup','int-2':'Federation Cup'}[id])||id;
   const options=[['all',t.all],...competitions.map(d=>[d.id,compName(d.id)])];
@@ -116,7 +120,7 @@
    const choice=definition&&rules?.fixtureChoices(definition).find(c=>c.phaseId===row.phaseId&&(row.phaseId==='league'?c.round===row.round:definition.category!=='international'||!row.leg||c.labelParams?.leg===row.leg));
    const stage=choice&&view?view.fixturesChoiceLabel(definition,choice,lang):row.phaseId==='league'?t.day+' '+row.round:row.phaseId;
    const token=choice?.value??(row.phaseId==='league'?row.round:row.phaseId==='promotionPlayoffs'?'playoffs':row.phaseId);
-   const compHref='/competitions/'+row.competitionId.toLowerCase()+'/fixtures?season='+season+'&matchday='+encodeURIComponent(token);
+   const compHref=routes.withSeason('/competitions/'+row.competitionId.toLowerCase()+'/fixtures?matchday='+encodeURIComponent(token),season,currentSeason,{preserveExplicit:explicitSeason});
    const played=row.goalsFor!==null,score=played?row.goalsFor+'–'+row.goalsAgainst:'—';
    const status=!played?t.scheduled:row.resolution==='penalties'?t.penalties:row.resolution==='extra-time'?t.extra:t.fulltime;
    return '<li class="club-fixture-row'+(row===next?' is-next':'')+'" data-club-fixture-id="'+esc(row.id)+'"'+(row===next?' data-club-fixture-next tabindex="-1"':'')+'><span class="club-fixture-meta"><span>'+esc(t.day)+' '+row.day+'</span><a href="'+esc(compHref)+'">'+esc(compName(row.competitionId))+' · '+esc(stage)+'</a></span>'+(opponentHref?'<a class="club-fixture-opponent" href="'+esc(opponentHref)+'">'+opponent+'</a>':'<span class="club-fixture-opponent">'+opponent+'</span>')+'<span class="club-fixture-venue" role="img" tabindex="0" data-club-venue="'+row.venue+'" aria-label="'+esc(t[row.venue])+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">'+icons[row.venue]+'</svg></span><span class="club-fixture-result"><strong aria-label="'+esc(t.result+': '+score)+'">'+score+'</strong><small>'+esc(status)+(played&&row.penalties?' '+row.penalties.for+'–'+row.penalties.against:'')+'</small></span></li>';
@@ -125,10 +129,13 @@
  }
  function resolveSeason({current=null,requested=null,remembered=null}={}){
   const confirmed=Number.isSafeInteger(current)&&current>=0;
-  if(!confirmed)return {season:requested==='1'?1:null,seasons:[],confirmed:false};
-  const limit=Math.max(1,current),valid=value=>/^[1-9]\d{0,8}$/.test(String(value??''));
-  const chosen=requested!==null?(valid(requested)?Number(requested):1):valid(remembered)?Number(remembered):limit;
-  return {season:Math.min(limit,chosen),seasons:Array.from({length:limit},(_,i)=>limit-i),confirmed:true};
+  if(!confirmed)return {season:null,seasons:[],confirmed:false};
+  const limit=Math.max(1,current),params=new URLSearchParams();
+  if(requested!==null)params.set('season',String(requested));
+  const choice=routes.resolveSeasonQuery(params,current);
+  const rememberedValid=/^[1-9]\d{0,8}$/.test(String(remembered??''));
+  const chosen=requested===null&&rememberedValid?Math.min(Number(remembered),limit):choice.season;
+  return {season:chosen,seasons:Array.from({length:limit},(_,i)=>limit-i),confirmed:true};
  }
  return {copy,render,resolveSeason};
 });
