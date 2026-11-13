@@ -164,7 +164,7 @@
    for(const {player,index} of ordered.slice(page*pageSize,(page+1)*pageSize)){
     const row=document.createElement('tr');flagCell(row,player);
     const nameCell=document.createElement('td');
-    const link=document.createElement('a');link.className='app-link app-player-name-link';
+    const link=document.createElement('a');link.className='app-player-name-link';
     const target=new URL('/admin/players/preview/player',location.origin);
     target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));
     target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
