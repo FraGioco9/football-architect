@@ -525,6 +525,10 @@ try{
    await page.locator('[data-admin-card="contracts"]').click();
    await page.waitForURL('**/admin/contracts');
    await page.locator('[data-contracts-edit="1"]').waitFor({state:'visible'});
+   assert.equal(await page.locator('[data-contracts-editor]').isVisible(),true);
+   assert.equal(await page.locator('.admin-contracts .app-panel').count(),1,'Only assignment is boxed');
+   assert.equal(await page.locator('.admin-contracts-table-scroll .app-panel').count(),0);
+   assert.equal(await page.locator('[data-contracts-select]').isDisabled(),true);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.locator('[data-contracts-edit="1"]').click();
    await page.locator('[data-contracts-select]').selectOption('IT-1');

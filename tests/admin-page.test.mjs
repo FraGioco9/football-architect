@@ -150,9 +150,15 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  assert.match(html,/src="\/assets\/admin-contracts.js"/);
  assert.doesNotMatch(html,/src="\/assets\/admin-players.js"|src="\/assets\/admin-settings.js"/);
  assert.match(html,/data-contracts-select/);
- assert.match(html,/data-contracts-editor hidden/);
+ assert.match(html,/class="app-panel admin-contracts-assignment"/);
+ assert.match(html,/data-contracts-editor aria-labelledby=/);
+ assert.doesNotMatch(html,/class="app-panel app-settings-panel admin-settings admin-contracts"/);
+ assert.equal((renderAdminContracts().match(/class="app-panel/g)||[]).length,1,'Only the assignment form is boxed');
+ assert.ok(renderAdminContracts().indexOf('admin-contracts-assignment')<renderAdminContracts().indexOf('admin-contracts-table-scroll'));
+ assert.match(html,/data-contracts-find-input/);
  assert.match(html,/data-contracts-rows aria-busy="true"/);
  assert.match(css,/\[data-admin-contracts\]\[hidden\]/);
+ assert.match(css,/\.admin-contracts-pick:hover:not\(:disabled\)/);
  assert.match(source,/\/api\/player\/permissions/);
  assert.match(source,/admin\.world\.write/);
  assert.match(source,/\/api\/admin\/contracts/);
