@@ -182,8 +182,9 @@
   const saveUrl=push=>{
     if(!hasLocation()||!window.history)return;
     const target=returnPath();
+    const hash=window.location.hash||'';
     if(window.location.pathname+window.location.search!==target)
-      window.history[push?'pushState':'replaceState'](null,'',target);
+      window.history[push?'pushState':'replaceState'](null,'',target+hash);
   };
   window.addEventListener?.('popstate',()=>{
     if(!hasLocation())return;
