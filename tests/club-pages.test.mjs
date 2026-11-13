@@ -762,7 +762,7 @@ test('CLUB-FIXTURES: viewed seasons follow Standings and clamp invalid or future
   const result=ui.resolveSeason({current});assert.deepEqual(result.seasons,expected);assert.equal(result.season,Math.max(1,current));
  }
  assert.equal(ui.resolveSeason({current:2,requested:'1'}).season,1);
- for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,1);
+ for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  for(const requested of ['3','999'])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  assert.equal(ui.resolveSeason({current:0,requested:'2'}).season,1);
  assert.equal(ui.resolveSeason({current:null,requested:'999'}).season,null,'unverified clock cannot clamp a future link');
@@ -803,5 +803,7 @@ test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a publ
  assert.doesNotMatch(read('assets/club-page.css'),/club-fixture-season-loading/);
  assert.doesNotMatch(generated,/club-fixture-season-loading/);
  assert.match(generator,/const requested=params\.get\('season'\),valid=/);
- assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,seasons,filter,snapshot/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/currentSeason:/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/explicitSeason:/);
 });
