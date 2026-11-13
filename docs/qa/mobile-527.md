@@ -1,0 +1,79 @@
+# MOBILE-QA #527 — Players, player details, Club Fixtures
+
+**Status:** In progress; source/test audit completed on 2026-11-13. **No physical iPhone Safari or VoiceOver PASS claimed.** This document is the live QA ledger, not a blanket acceptance statement.
+
+## Scope and dependency checkpoint
+
+- Base at start: `main@64791005f1c5357b455775617dd9c5a16e006d3a`, including merged Players filters (#515), Club Fixtures (#529) and Admin Contracts (#534).
+- Public `/players`: available on main; directory, filter drawer, sorting, pagination, Overview and Attributes are eligible for QA.
+- Club `/clubs/<country>/<id>/fixtures`: available on main; include season, competition filter, next match, opponent links and venue explanations.
+- `/players/<numeric-id>` and protected draft player detail: **not yet integrated** at this baseline; implementation is on Draft/HOLD PR #535 (#502). Do not mark detail mobile QA complete based on the branch prototype. Test the latest integrated version once available, without merging it just to run QA.
+- Scope excludes product redesign, backend schema, D1 writes, deployment and changes to other page families.
+
+## Automated coverage inventory
+
+| Page | Already present in repository | #527 extension / remaining |
+| --- | --- | --- |
+| Players | `tests/players-directory.test.mjs` checks generated shell, 5 locales, first-paint state, attributes, filters, URL semantics and responsive CSS contracts. | Actual touch/visual mobile session, horizontal table behavior, long names, filter drawer scrolling and all theme/locale combinations remain unverified in this task. |
+| Club Fixtures | Dedicated `CLUB-FIXTURES browser` scenario in `tests/club-pages-browser.test.mjs`: actual Chromium, 320/390/768/1440, URL/history, season, errors, tooltip focus and pending/hydrated row geometry. | #527 adds **375 and 430px** to responsive and skeleton matrices, checks shell overflow as well as page/panel overflow, and allows screenshots at those widths. Exact-head run **PENDING**; this does not equal physical Safari. |
+| Player detail | #535 contains separate route/source tests in its Draft branch. | Defer integrated browser + device acceptance until #535 has an authorized integration. Include Overview/Info switch, player/club identity, silhouette, football pitch, skeletons, Back/Forward and protected candidate flow. |
+
+## Responsive acceptance matrix (all three page families, when available)
+
+Record each result as **PASS / FAIL / BLOCKED / NOT TESTED**, with browser/OS, actual viewport width, route, theme, locale and screenshot evidence. **Do not substitute Chromium emulation for a physical iPhone.**
+
+| Width | Browser/device | Focus |
+| --- | --- | --- |
+| 320px | Chromium narrow / small iPhone-like viewport | No unintentional page overflow; readable tabs, actions and row content |
+| 375px | Chromium + physical iPhone Safari | Compact header, sidebar, filters, controls and table scrolling |
+| 390px | Chromium + physical iPhone Safari | First paint, refresh and tab/view changes while loading |
+| 430px | Chromium + physical iPhone Safari | Long translations, two-column versus stacked content, touch actions |
+| 768px | Chromium/WebKit tablet-sized | Panels, tab line, selectors and intentional horizontal scroll |
+| 1440px | Chromium desktop | Desktop parity; no regressions from mobile fixes |
+
+### Route-by-route manual checks
+
+**`/players`**
+- Load directly, refresh, change Overview ↔ Attributes and all four groups while requests are pending; check reserved count and row geometry, sorting, page/filters state, Back/Forward.
+- Use Filters by touch: open and dismiss with X/backdrop, scroll the full drawer without scrolling the page, choose multiple nationality/position options, include secondaries, enter ranges, Apply and Reset; inspect focus and mobile keyboard behavior.
+- Check row/header alignment and any intentionally scrolling table, with at least one long player name, empty results and API error. Check flag labels via accessible focus/touch, not hover alone.
+
+**Club Fixtures**
+- Verify Season 0 and multiple seasons where data exists, direct/refresh/back/forward, competition filter, next match, same-club score perspective and future-result absence.
+- Check opponent crest/name and competition links, home/away/neutral venue icon **accessible explanation by touch and keyboard focus**, long translated labels and late API response after leaving the tab.
+- Compare six first-paint row skeleton positions with loaded rows; check season label first paint and no text/crest flash or unexpected horizontal overflow.
+
+**Player detail — BLOCKED on main until #535 integrated**
+- Open from persisted player name and protected Admin draft preview; direct URL, refresh, Back/Forward, expired/missing record and sign-out/permission loss.
+- Verify header silhouette, name, nationality/age, club/Free Agent state and crest/name skeletons after affiliation integration; Overview pitch/Attributes panel and separate Info view.
+- Check mobile stacking, position marker accessibility, visible skill values, no loading text, no clipping of the portrait, tabs or dividers. Stats/History/Progression remain disabled until their own features exist.
+
+**Cross-cutting:** Light/Dark; EN/DE/ES/FR/IT; iPhone Safari portrait/landscape, address-bar movement, keyboard and VoiceOver; Android Chrome touch; 320px overflow; screen reader labels. Capture **before and after** for each real fix.
+
+## Reproducible targeted checks (Node.js 22, Windows PowerShell)
+
+```powershell
+node --test tests/players-directory.test.mjs
+node --test --test-name-pattern="CLUB-FIXTURES browser" tests/club-pages-browser.test.mjs
+node tools/generate-app-pages.mjs --check
+```
+
+Optional Chromium screenshots (only when a local Chrome binary is available):
+
+```powershell
+$env:CLUB_FIXTURES_QA_DIR = "$PWD\artifacts\mobile-527"
+node --test --test-name-pattern="CLUB-FIXTURES browser" tests/club-pages-browser.test.mjs
+Remove-Item Env:CLUB_FIXTURES_QA_DIR
+```
+
+These are targeted local checks, not FULL CI, hosted acceptance, touch simulation or physical Safari. Keep one Draft/HOLD PR and do not manually dispatch duplicate CI. No merges, publication, remote database writes or issue closure without separate authorization.
+
+## Evidence / unresolved
+
+- [x] Reviewed issue #527, related #502/#504/#512 and the current main integration; #535 remains Draft/HOLD.
+- [x] Inspected existing static and dedicated browser test coverage; identified missing intermediate fixture widths and main-vs-branch detail QA boundary.
+- [x] Extended the existing Club Fixtures browser source with 375/430px cases, broader overflow assertion and optional captures.
+- [ ] Run exact-head targeted checks and observe GitHub CI status; record the result rather than assuming PASS.
+- [ ] Actual visual/mobile interactions on Players and Club Fixtures, including physical Safari/VoiceOver; attach screenshots and file defects.
+- [ ] Revisit player-detail QA after authorized #535 integration and retest any fixes.
+- [ ] Final desktop regression and owner acceptance; close #527 only after approval.
