@@ -147,7 +147,7 @@ test("PUBLIC-03: no repository-controlled deployment bypasses the artifact gate"
    assert.ok(verify>=0&&token>verify&&release>verify,"Verify package integrity before credentials and release");
    assert.match(publish,/c\.d1_databases\[0\]\.database_id!==db/);
    assert.match(publish,/c\.assets\?\.run_worker_first!==true/);
-   assert.match(publish,/\/api\/environment \/api\/world \/api\/players\/page\/1 \/account\/login \/players/);
+   assert.match(publish,/\/api\/environment \/api\/world \/api\/players\?page=1 \/account\/login \/players/);
    assert.match(publish,/\/api\/player\/session \/api\/player\/permissions/);
    assert.doesNotMatch(source,/--prod\b|--target=production|\bwrangler\s+d1\b|d1\s+execute\b|d1\s+migrations\s+apply\b|db\.prepare\(/i);
   }else{
@@ -196,7 +196,7 @@ test("PUBLIC-03: same-origin Worker serves native login, world and public assets
  assert.match(builder,/name:'preview'/);
  assert.doesNotMatch(builder,/name:t\.origin===|football-architect-preview/);
  assert.match(launcher,/SHARED_PREVIEW_TARGET='https:\/\/preview\.football-architect\.workers\.dev'/);
- assert.match(workflow,/\/api\/environment \/api\/world \/api\/players\/page\/1 \/account\/login \/players/);
+ assert.match(workflow,/\/api\/environment \/api\/world \/api\/players\?page=1 \/account\/login \/players/);
  assert.match(workflow,/\/api\/player\/session \/api\/player\/permissions/);
  assert.match(workflow,/c\.assets\?\.run_worker_first!==true/);
 });
