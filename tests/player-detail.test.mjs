@@ -346,10 +346,10 @@ test('#535 header nationality has no tooltip and shows a full visible name',()=>
 test('#535 flag, long nationality, dot and age skeleton share the real header footprint',()=>{
  const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
  assert.match(js,/nationalitySkeleton\.append\(skeleton\('app-player-detail-flag-skeleton'\),skeleton\('app-player-detail-nationality-skeleton'\)\)/);
- assert.match(js,/ageNode\.replaceChildren\(skeleton\('app-player-detail-age-skeleton'\)\)/);
+ assert.match(js,/ageNode\.replaceChildren\(\)/);
  assert.match(css,/\.app-player-detail-flag-skeleton\{[^}]*width:24px;height:18px/);
  assert.match(css,/\.app-player-detail-nationality-skeleton\{[^}]*width:116px;height:16px/);
- assert.match(css,/\.app-player-detail-age-skeleton\{[^}]*width:74px;height:16px/);
+ assert.doesNotMatch(css,/\.app-player-detail-age-skeleton/);
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
  assert.match(css,/\.app-player-detail-identity\{[^}]*flex:0 1 440px/);
@@ -358,11 +358,35 @@ test('#535 flag, long nationality, dot and age skeleton share the real header fo
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
   const header=html.slice(html.indexOf('class="app-player-detail-header-meta"'),html.indexOf('class="app-player-detail-affiliation"'));
-  for(const name of ['app-player-detail-flag-skeleton','app-player-detail-nationality-skeleton','app-player-detail-header-separator','app-player-detail-age-skeleton'])
+  for(const name of ['app-player-detail-flag-skeleton','app-player-detail-nationality-skeleton','app-player-detail-header-separator','data-detail-header-age hidden'])
    assert.ok(header.includes(name),path+': '+name);
   assert.ok(header.indexOf('app-player-detail-flag-skeleton')<header.indexOf('app-player-detail-nationality-skeleton'));
   assert.ok(header.indexOf('app-player-detail-nationality-skeleton')<header.indexOf('app-player-detail-header-separator'));
-  assert.ok(header.indexOf('app-player-detail-header-separator')<header.indexOf('app-player-detail-age-skeleton'));
+  assert.ok(header.indexOf('app-player-detail-header-separator')<header.indexOf('data-detail-header-age hidden'));
  }
  assert.match(renderer,/app-player-detail-country-skeleton/);
+});
+
+test('#535 loading shows only flag and nationality skeleton; age and dot appear with loaded player',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),
+  renderer=read('tools/render-player-detail.mjs');
+ assert.match(js,/panel\.querySelector\('\.app-player-detail-header-separator'\)\.hidden=!player;/);
+ assert.match(js,/ageNode\.hidden=!player;/);
+ assert.match(js,/ageNode\.replaceChildren\(\);/);
+ assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)\?localizedAge\(player\.age\):'—'\)/);
+ assert.doesNotMatch(js,/ageNode\.replaceChildren\(skeleton/);
+ assert.doesNotMatch(renderer,/app-player-detail-age-skeleton/);
+ assert.match(css,/\.app-player-detail-header-meta \[hidden\]\{display:none!important\}/);
+ assert.doesNotMatch(css,/\.app-player-detail-age-skeleton/);
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:18px/);
+ assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:12px/);
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file),start=html.indexOf('class="app-player-detail-header-meta"'),
+   end=html.indexOf('class="app-player-detail-affiliation"',start),header=html.slice(start,end);
+  assert.match(header,/app-player-detail-flag-skeleton/);
+  assert.match(header,/app-player-detail-nationality-skeleton/);
+  assert.match(header,/app-player-detail-header-separator" aria-hidden="true" hidden>·<\/span>/);
+  assert.match(header,/data-detail-header-age hidden><\/span>/);
+  assert.doesNotMatch(header,/app-player-detail-age-skeleton/);
+ }
 });

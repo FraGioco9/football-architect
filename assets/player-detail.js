@@ -229,6 +229,9 @@
   renderRoleHighlights();
   statusNode.hidden=state==='loading'||state==='ready';
   statusNode.textContent=statusNode.hidden?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
+  // Show the separator and age only when a player is loaded.
+  panel.querySelector('.app-player-detail-header-separator').hidden=!player;
+  ageNode.hidden=!player;
   if(!player){
    if(state!=='loading'){
     setContent(nameNode,copy.notFound);roleNode.textContent='—';
@@ -291,7 +294,7 @@
   nationalitySkeleton.setAttribute('aria-hidden','true');
   nationalitySkeleton.append(skeleton('app-player-detail-flag-skeleton'),skeleton('app-player-detail-nationality-skeleton'));
   nationalityNode.replaceChildren(nationalitySkeleton);
-  ageNode.replaceChildren(skeleton('app-player-detail-age-skeleton'));
+  ageNode.replaceChildren();
   renderClubSkeleton();
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
