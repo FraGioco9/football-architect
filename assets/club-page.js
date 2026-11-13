@@ -267,6 +267,10 @@
    const control=event.target.closest?.('a[data-club-roster-view]');
    if(!control||selected.view!=='roster'||event.defaultPrevented||event.button!==0||
     event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+   if(control.getAttribute('aria-disabled')==='true'||!control.hasAttribute('href')){
+    event.preventDefault();
+    return;
+   }
    const target=control.dataset.clubRosterView;
    const groups={
     info:['age','height','foot'],
@@ -315,7 +319,7 @@
   });
   host.addEventListener('keydown',event=>{
    const tab=event.target.closest?.('[data-club-roster-view]');
-   if(!tab||selected.view!=='roster')return;
+   if(!tab||selected.view!=='roster'||tab.getAttribute('aria-disabled')==='true')return;
    const list=tab.closest('[role="tablist"]');
    const options=[...list.querySelectorAll('[role="tab"]')],index=options.indexOf(tab);
    if(index<0)return;
