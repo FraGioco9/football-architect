@@ -17,7 +17,7 @@ function fixture(found=true,changed=false){
    bind(...next:unknown[]){return stmt(next)},
    async first(){
     calls.push({sql,args});
-    if(sql.includes('FROM world_state'))return {schema_version:1,generation:changed&&++worldReads>1?'other-generation':generation,revision:0,season_number:0,day:0,phase:'unstarted'};
+    if(sql.includes('FROM world_state'))return {schema_version:1,generation:changed&&++worldReads>1?'650e8400-e29b-41d4-a716-446655440000':generation,revision:0,season_number:0,day:0,phase:'unstarted'};
     if(sql.includes('FROM generated_players'))return found?{id:42,payload_json:JSON.stringify(payload)}:null;
     throw Error('Unexpected SQL: '+sql);
    },
