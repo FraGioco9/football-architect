@@ -98,6 +98,7 @@
    const previousTabs=host.querySelector(':scope > .club-tabs');
    const tabScrollLeft=previousTabs?.scrollLeft;
    const historyTableScroll=host.querySelector('.club-history-table-wrap')?.scrollLeft;
+   const rosterTableScroll=host.querySelector('.club-roster-table-scroll')?.scrollLeft;
    const retainedFixtures=selected.view==='fixtures'?host.querySelector(':scope > .club-fixtures'):null;
    const staging=document.createElement('div');
    staging.innerHTML=model.render(manifest,selected,language(),location.search,competitionSnapshot,competitionSeason(),historySnapshot,rosterSnapshot);
@@ -139,6 +140,7 @@
    for(const child of [...host.childNodes])if(child!==header&&child!==tabs&&child!==retainedFixtures)child.remove();
    for(const child of [...staging.childNodes])if(child!==stagedHeader&&child!==stagedTabs&&!(retainedFixtures&&child.matches?.('.club-fixtures')))host.append(child);
    if(Number.isFinite(historyTableScroll)){const tableWrap=host.querySelector('.club-history-table-wrap');if(tableWrap)tableWrap.scrollLeft=historyTableScroll;}
+   if(Number.isFinite(rosterTableScroll)){const rosterWrap=host.querySelector('.club-roster-table-scroll');if(rosterWrap)rosterWrap.scrollLeft=rosterTableScroll;}
    syncHistoryRows();
    host.dataset.clubBase=selected.base;
    if(tabs){
@@ -246,12 +248,40 @@
    event.preventDefault();
    const params=new URLSearchParams(location.search);
    params.delete('view');params.delete('group');params.set('view',target);
+   const sort=params.get('sort');
+   if(sort&&!['nationality','name','positions'].includes(sort)){
+    params.delete('sort');params.delete('order');
+   }
    const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
    paint(true);
    const key=view?'data-club-roster-view':'data-club-roster-group';
    host.querySelector('['+key+'="'+(view||group)+'"]')?.focus({preventScroll:true});
+  });
+  // Identical sort cycle to /players: descending, ascending, reset.
+  // Sort the in-memory club snapshot without repeating its public API request.
+  host.addEventListener('click',event=>{
+   const button=event.target.closest?.('[data-club-roster-sort]');
+   if(!button||selected.view!=='roster')return;
+   const key=button.dataset.clubRosterSort;
+   const params=new URLSearchParams(location.search);
+   const requested=params.get('view'),group=['technical','mental','physical','goalkeeping'].includes(requested)?requested:'info';
+   const common=['nationality','name','positions'];
+   const byView={
+    info:['age','height','foot'],
+    technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
+    mental:['vision','positioning','decisions','composure'],
+    physical:['speed','strength','stamina','agility'],
+    goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
+   };
+   if(!common.includes(key)&&!byView[group].includes(key))return;
+   if(params.get('sort')!==key){params.set('sort',key);params.set('order','desc');}
+   else if(params.get('order')==='desc')params.set('order','asc');
+   else{params.delete('sort');params.delete('order');}
+   history.pushState(null,'',location.pathname+'?'+params.toString()+location.hash);
+   paint(true);
+   host.querySelector('[data-club-roster-sort="'+key+'"]')?.focus({preventScroll:true});
   });
   host.addEventListener('keydown',event=>{
    const tab=event.target.closest?.('[data-club-roster-view],[data-club-roster-group]');
