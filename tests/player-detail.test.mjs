@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
@@ -98,4 +99,30 @@ test('#502 error pages settle placeholders rather than leaving a perpetual loadi
  assert.match(script,/if\(state!=='loading'\)\{/);
  assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
  assert.match(script,/\[data-detail-value\],\[data-detail-position-value\],\[data-detail-attr-value\]/);
+});
+
+test('#502 direct player details activate Players, never Dashboard, in app shell and sidebar',()=>{
+ const app=read('assets/app.js'),sidebar=read('assets/sidebar-evolution.js');
+ const a=app.indexOf('  function activeView() {'),b=app.indexOf('\n  function renderLanguage()',a);
+ assert.ok(a>=0&&b>a,'route recognition must remain in the app shell');
+ const activeViewSource=app.slice(a,b);
+ const c=sidebar.indexOf("const path=location.pathname.replace("),d=sidebar.indexOf('\nconst selected=',c);
+ assert.ok(c>=0&&d>c,'sidebar selected navigation must use route pathname');
+ const sidebarSource=sidebar.slice(c,d)+'\n;onPlayers;';
+ for(const [path,expectedView,selectedPlayers] of [
+  ['/players','players',true],
+  ['/players/42','players',true],
+  ['/players/42/','players',true],
+  ['/players/314','players',true],
+  ['/dashboard','dashboard',false],
+  ['/clubs/it/1/overview','clubs',false],
+  ['/players/abc','dashboard',false]
+ ]){
+  const window={location:{pathname:path}};
+  const document={querySelector:()=>null};
+  assert.equal(runInNewContext(activeViewSource+'\nactiveView()', {window,document}),expectedView,path);
+  assert.equal(runInNewContext(sidebarSource,{location:window.location}),selectedPlayers,path);
+ }
+ assert.match(app,/if \(dashboard\) dashboard\.hidden = current !== "dashboard"/);
+ assert.match(app,/if \(divisions\) divisions\.hidden = current !== "divisions" && current !== "clubs" && current !== "players"/);
 });
