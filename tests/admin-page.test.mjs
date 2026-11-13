@@ -134,17 +134,19 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
  assert.match(css,/\.app-admin-view \.admin-players-dropdown \.language-option\[aria-selected="true"\],/,'Menu label color must not change on selection');
  assert.match(css,/\.admin-players-field:is\(:hover,:focus-within\)/,'Hovering the field wrapper must not highlight its caption');
  assert.match(css,/\.app-admin-view \.admin-players-fields :is\(input\[data-players-option\],\.language-trigger\):hover:not\(:disabled\):not\(:focus\)/,'Hover highlight belongs only to unfocused inputs and dropdown boxes');
- const generatorForm=players.match(/<form data-admin-players-form novalidate>([\\s\\S]*?)<\\/form>/)?.[1]||'';
- assert.doesNotMatch(generatorForm,/<label(?:\\s|>)/,'Captions must not wrap the interactive controls');
+ const generatorForm=players.match(/<form data-admin-players-form novalidate>([\s\S]*?)<\/form>/)?.[1]||'';
+ assert.doesNotMatch(generatorForm,/<label(?:\s|>)/,'Captions must not wrap the interactive controls');
  assert.equal((generatorForm.match(/class="admin-players-field"/g)||[]).length,39);
  const ariaCaptions=[...generatorForm.matchAll(/<span id="(admin-players-caption-[^"]+)" data-admin-players-label="([^"]+)">/g)];
  assert.equal(ariaCaptions.length,39);
  assert.equal(new Set(ariaCaptions.map(item=>item[1])).size,39,'Caption ids must be unique');
- for(const [,id,key] of ariaCaptions)
-  assert.match(generatorForm,new RegExp('<(?:input|select) aria-labelledby="'+id+'" data-players-option="'+key.replace(/[.*+?^$()|[\\]{}]/g,'\\for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality')+'"'),key+' must be accessible without clickable label wrappers');
+ for(const [,id,key] of ariaCaptions)assert.ok(
+  generatorForm.includes('<input aria-labelledby="'+id+'" data-players-option="'+key+'"')||
+  generatorForm.includes('<select aria-labelledby="'+id+'" data-players-option="'+key+'"'),
+  key+' must remain accessible without clickable label wrappers');
  assert.match(css,/pointer-events:none/,'Captions must not forward pointer interactions');
- assert.match(playersScript,/select\\.closest\\('\\.admin-players-field'\\)/);
- assert.match(playersScript,/\\.closest\\('\\.admin-players-field'\\)\\.hidden/);
+ assert.match(playersScript,/select\.closest\('\.admin-players-field'\)/);
+ assert.match(playersScript,/\.closest\('\.admin-players-field'\)\.hidden/);
   for(const name of 'count seed primarySuitabilityMin primarySuitabilityMax primaryNationality secondaryMode secondaryCountry secondaryAllowed firstName lastName primaryPosition allowedPositions preferredFoot secondaryCount secondaryPositions allowedSecondaries age height developmentAptitude'.split(' '))
   assert.ok(players.includes('data-players-option="'+name+'"'),name);
  for(const a of 'speed strength stamina agility passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '))
