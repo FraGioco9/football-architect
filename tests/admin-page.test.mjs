@@ -52,7 +52,11 @@ test('Admin directory and child pages have isolated, protected markup',async()=>
   assert.equal(publicRequestFile(path),file);
   assert.ok(isAllowlistedPublicPath(file),file);
   assert.ok(planPublicFiles().includes(file));
-  assert.match(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
+  const initial=readFileSync(new URL('../'+file,import.meta.url),'utf8');
+  if(id==='admin/contracts'){
+   assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*data-admin-access="pending"/);
+   assert.doesNotMatch(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
+  }else assert.match(initial,/<section\b[^>]*id="app-admin"[^>]*\bhidden/);
  }
  const home=readFileSync(new URL('../admin/index.html',import.meta.url),'utf8');
  assert.match(home,/data-admin-directory/);
@@ -176,7 +180,11 @@ test('Admin Contracts route uses canonical generator and the shared authorizatio
  }
  assert.match(source,/rows.childElementCount===5/,'Permission check preserves static skeleton rows');
  assert.match(source,/record=null;selected.clear\(\);anchorId=null;clubs=null;select.value='';closeMenu\(\);\s*loading\(\)/);
- assert.match(html,/<section id="app-admin"[^>]*hidden/,'Admin data remain protected before authorization');
+ assert.match(html,/<section id="app-admin"[^>]*data-admin-access="pending"/,'Static Contracts scaffold paints before authorization');
+ assert.doesNotMatch(html,/<section id="app-admin"[^>]*hidden/);
+ assert.match(html,/data-contracts-trigger[^>]*disabled/,'Club dropdown is inert on first paint');
+ assert.match(html,/data-contracts-save[^>]*disabled/,'Assignment is inert on first paint');
+ assert.match(source,/const ticket=\+\+epoch;host\.dataset\.adminAccess='pending'/);
  assert.match(css,/\[data-contracts-page\]\{display:inline-block;min-width:100px/);
  assert.match(css,/\[data-contracts-total\]\{display:inline-block;min-width:76px/);
  assert.match(css,/\[data-admin-contracts\]\[hidden\]/);

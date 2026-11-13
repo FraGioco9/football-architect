@@ -616,6 +616,28 @@ try{
     'No loading or success messages after assignment');
    assert.equal(await page.locator('[data-contracts-message]').evaluate(node=>getComputedStyle(node).clipPath==='inset(50%)'),true);
    assert.ok(permissionReads<=2,'Shared Admin permission cache');
+   // A hard refresh must paint the complete static layout before even the
+   // permissions response arrives; only player rows and clubs are asynchronous.
+   let releaseRefreshPermissions;
+   const refreshPermissionHold=new Promise(resolve=>{releaseRefreshPermissions=resolve});
+   await page.route('**/api/player/permissions',async route=>{
+    await refreshPermissionHold;
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     permissions:['admin.access','admin.world.read','admin.world.write']})});
+   });
+   try{
+    await page.reload({waitUntil:'domcontentloaded'});
+    assert.equal(await page.locator('#app-admin').isVisible(),true,'Contracts heading visible before permissions finish');
+    assert.equal(await page.locator('[data-admin-contracts]').isVisible(),true,'Assignment and table visible on refresh');
+    assert.equal(await page.locator('#app-admin').getAttribute('data-admin-access'),'pending');
+    assert.equal(await page.locator('.admin-contracts-assignment').isVisible(),true);
+    assert.equal(await page.locator('.admin-contracts-table thead').isVisible(),true);
+    assert.equal(await page.locator('.admin-contracts-skeleton').count(),5);
+    assert.equal(await page.locator('[data-contracts-trigger]').isDisabled(),true);
+    assert.equal(await page.locator('[data-contracts-save]').isDisabled(),true);
+    assert.equal(await page.locator('[data-contracts-check]').count(),0,'No player data before authorized API read');
+   }finally{releaseRefreshPermissions();}
+   await page.locator('[data-contracts-check="1"]').waitFor({state:'visible'});
    assert.deepEqual(errors,[]);checks++;
   }finally{releaseInitialList?.();await context.close()}
  }

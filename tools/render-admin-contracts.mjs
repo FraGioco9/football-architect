@@ -1,7 +1,7 @@
 /** #509 Contracts uses the same full-width Players table and a single compact action box. */
 export function renderAdminContracts(){
  return [
-  '<section class="admin-contracts" data-admin-contracts hidden aria-label="Contracts">',
+  '<section class="admin-contracts" data-admin-contracts aria-label="Contracts">',
    '<section class="app-panel admin-contracts-assignment" data-contracts-editor aria-labelledby="admin-contracts-heading">',
     '<h2 id="admin-contracts-heading" data-contracts-copy="assignHeading">Assign players to club</h2>',
     '<div class="admin-contracts-assign-controls">',

@@ -217,7 +217,9 @@
    }finally{busy=false;controls();if(record)render()}
   }
   async function check(){
-   const ticket=++epoch;paint(false);
+   // The HTML already paints the inert Contracts scaffold on hard refresh.
+   // Do not hide it while the async permission check is pending.
+   const ticket=++epoch;host.dataset.adminAccess='pending';
    const accept=permissions=>{const ok=['admin.access','admin.world.read','admin.world.write'].every(k=>permissions.includes(k));paint(ok);if(ok)void load()};
    const cached=permissionCache?.read();if(cached!==undefined&&cached!==null){accept(cached);return}
    try{
