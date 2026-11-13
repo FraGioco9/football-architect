@@ -491,11 +491,12 @@ try{
  // #509 Contracts: simulated Admin browser batch assignment, no remote writes.
  {
   const context=await browser.newContext({viewport:{width:390,height:844}});
+  let releaseInitialList;
   try{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    const generation='11111111-1111-4111-8111-111111111111';
    let club=null,writes=0,permissionReads=0;
-   let releaseInitialList,holdInitialList=true;
+   let holdInitialList=true;
    const initialList=new Promise(resolve=>{releaseInitialList=resolve});
    await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
    await page.route('**/api/player/permissions',r=>{
