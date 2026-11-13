@@ -187,7 +187,7 @@
   };
   function read(){
     const params=new URL(window.location.href).searchParams;
-    const id=params.get("season"),round=normalizeCupRound(params.get("matchday")??prebootFixtureRound),parsed=routePath();
+    const round=normalizeCupRound(params.get("matchday")??prebootFixtureRound),parsed=routePath();
     const explicit=window.location.pathname.replace(/\/index\.html$/,"").replace(/\/+$/,"")!==parsed.base?parsed.view:null;
     const currentLimit=publicRoute()?(confirmedPublicWorld()?.seasonNumber??serverSeason):Number(latestSeason);
     const choice=routes.resolveSeasonQuery(params,currentLimit);
@@ -339,6 +339,13 @@
         document.documentElement.dataset.faCompetitionSeasonVerified='false';
       }
     }else window.faCompetitionRoute.setSeasonLimit(Number(document.documentElement.dataset.faDevCurrentSeason||0));
+  });
+  // Handle the verified world even if an invalid/future deep link could not
+  // load sporting data. A later season transition updates seasonless routes.
+  window.faWorldState?.subscribe?.(snapshot=>{
+    if(snapshot?.source==='authoritative'&&snapshot.worldStatus==='ready'&&
+      Number.isSafeInteger(snapshot.world?.seasonNumber))
+      window.faCompetitionRoute.setPublicSeasonLimit(snapshot.world.seasonNumber);
   });
   window.addEventListener("popstate",()=>{
     pendingDefaultMatchday=false;
