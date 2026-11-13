@@ -26,6 +26,19 @@ test('CLUB-ROSTER-01 first paint exposes five direct views without an Attributes
  assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*padding:5px 5px/);
  assert.doesNotMatch(css,/\.club-roster-toolbar\{|\.club-roster-groups\{/);
 
+ // 2.5 mobile subviews before the separate count; fades only where scroll is possible.
+ assert.match(css,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*flex:0 0 calc\(40% - 3\.2px\)/);
+ assert.match(css,/\.club-roster-count\{[^}]*flex:0 0 92px/);
+ assert.match(css,/\.club-roster \.club-roster-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(css,/\.club-roster \.club-roster-tabs\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
+ assert.match(css,/-webkit-mask-image:linear-gradient\(to right/);
+ const client=read('assets/club-page.js');
+ assert.match(client,/const syncRosterTabEdges=/);
+ assert.match(client,/rosterTabs\.addEventListener\('scroll',syncRosterTabEdges/);
+ assert.match(client,/window\.addEventListener\('resize',syncRosterTabEdges/);
+ assert.match(html,/const syncSubviewFade=/);
+ assert.match(generator,/const syncSubviewFade=/);
+
  assert.doesNotMatch(generator,/club-roster-groups/);
  assert.match(html,/data-club-roster-label="5"/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
