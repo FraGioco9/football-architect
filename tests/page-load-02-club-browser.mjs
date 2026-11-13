@@ -35,7 +35,7 @@ try{
    for(const lang of ['de','es','fr','it','en']){
     await page.locator('.club-tabs [aria-current="page"]').focus();
     await page.evaluate(lang=>document.documentElement.lang=lang,lang);
-    await page.waitForFunction(lang=>document.title.includes(window.faClubModel.copies[lang].overview),lang);
+    await page.waitForFunction(()=>document.title===(document.querySelector('#club-title')?.textContent?.trim()||'Club')+' — Football Architect');
     const state=await page.evaluate(()=>({
      sameCrest:window.pageLoad02Crest===document.querySelector('.club-header [data-club-crest] .app-club-crest-image'),
      focused:document.activeElement?.matches('.club-tabs [aria-current="page"]'),
@@ -91,6 +91,8 @@ try{
    assert.ok(identity);
    const pending=await page.evaluate(()=>({
     title:document.querySelector('#club-title')?.textContent,
+     fallback:document.querySelector('#club-title [data-club-title-fallback]')?.textContent,
+     hasNameSkeleton:!!document.querySelector('#club-title .club-fp-bar.club-fp-header-name'),
     place:document.querySelector('.club-header .club-location')?.textContent,
     tabs:[...document.querySelectorAll('#club-page > .club-tabs a')].map(a=>({href:a.getAttribute('href'),selected:a.getAttribute('aria-current')})),
     falseEmpty:!!document.querySelector('#club-page .club-empty p,#club-page .club-competition-next-empty'),
@@ -98,7 +100,9 @@ try{
     ready:document.documentElement.dataset.clubReady==='true',
     visible:document.querySelector('#club-page > .club-header')?.getAttribute('aria-hidden')!=='true'
    }));
-   assert.equal(pending.title,'','club name remains an anonymous skeleton until the catalog responds');
+   assert.equal(pending.title,pending.fallback,'only the non-identifying accessible Club fallback is present before the catalog responds');
+    assert.equal(pending.fallback,'Club','English first paint exposes a generic accessible club heading');
+    assert.equal(pending.hasNameSkeleton,true,'visual club name remains a reserved skeleton until catalog responds');
    assert.equal(pending.place,'','city and country remain anonymous until catalog response');
    assert.equal(pending.tabs.length,5);
    assert.equal(pending.tabs.filter(tab=>tab.selected==='page').length,1);
