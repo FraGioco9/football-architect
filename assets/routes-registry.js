@@ -49,10 +49,11 @@ function resolveSeasonQuery(search,current=null,{min=1}={}){
 }
 function withSeason(path,season,current,{preserveExplicit=false}={}){
  const url=new URL(path,"https://football-architect.invalid");
+ const other=new URLSearchParams(url.search);url.search="";
  if(Number.isSafeInteger(season)&&season>=0&&
    (preserveExplicit||!Number.isSafeInteger(current)||season!==current))
   url.searchParams.set("season",String(season));
- else url.searchParams.delete("season");
+ for(const [key,value] of other)if(key!=="season")url.searchParams.append(key,value);
  return url.pathname+url.search+url.hash;
 }
 function canonicalizeRoute(pathname){return parseRoute(pathname)?.canonical??null;}
