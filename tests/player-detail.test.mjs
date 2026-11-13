@@ -265,7 +265,7 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
  assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
  assert.doesNotMatch(js,/fetch\('\/api\/admin\/contracts'/);
- assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:68px;background:var\(--line\)/);
+ assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px;background:var\(--line\)/);
  assert.match(css,/\.app-player-detail-club-crest/);
  assert.match(css,/\.app-player-detail-club-link/);
  for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
@@ -307,7 +307,7 @@ test('#535 follow-up: marker has no native tooltip, club has stacked crest and n
  assert.match(js,/img\.width=72;img\.height=72/);
  assert.match(js,/clubCatalogResolved=true/);
  assert.match(js,/renderClubSkeleton\(\)/);
- assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:68px/);
+ assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
  assert.match(css,/\.app-player-detail-club-link\{display:flex;flex-direction:column/);
  assert.match(css,/\.app-player-detail-club-crest,\.app-player-detail-club-crest-placeholder\{[^}]*width:72px;height:72px/);
  assert.match(css,/\.app-player-detail-club-logo-skeleton\{[^}]*width:72px;height:72px/);
@@ -329,4 +329,38 @@ test('#535 natural age text and nationality aligned on same header baseline in f
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center;/);
  assert.match(css,/\.app-player-detail-header-meta>\[data-detail-header-nationality\],\.app-player-detail-header-meta>\[data-detail-header-age\]\{display:inline-flex;align-items:center/);
  assert.match(css,/\.app-player-detail-header-meta \.app-player-detail-country\{display:inline-flex;align-items:center/);
+});
+
+test('#535 header nationality has no tooltip and shows a full visible name',()=>{
+ const js=read('assets/player-detail.js');
+ const start=js.indexOf(' function countryNode(code){'),end=js.indexOf(' function displayValue(',start);
+ assert.ok(start>=0&&end>start);
+ const country=js.slice(start,end);
+ assert.match(country,/countries\.name==='function'\?countries\.name\(code\):code/);
+ assert.match(country,/img\.className='app-player-detail-flag'/);
+ assert.match(country,/img\.alt=''/);
+ assert.doesNotMatch(country,/app-players-nationality-flag|dataset\.playerCountry|tabIndex|setAttribute\('title'/);
+ assert.match(country,/document\.createTextNode\(name\|\|code\)/);
+});
+test('#535 flag, long nationality, dot and age skeleton share the real header footprint',()=>{
+ const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
+ assert.match(js,/nationalitySkeleton\.append\(skeleton\('app-player-detail-flag-skeleton'\),skeleton\('app-player-detail-nationality-skeleton'\)\)/);
+ assert.match(js,/ageNode\.replaceChildren\(skeleton\('app-player-detail-age-skeleton'\)\)/);
+ assert.match(css,/\.app-player-detail-flag-skeleton\{[^}]*width:24px;height:18px/);
+ assert.match(css,/\.app-player-detail-nationality-skeleton\{[^}]*width:116px;height:16px/);
+ assert.match(css,/\.app-player-detail-age-skeleton\{[^}]*width:74px;height:16px/);
+ assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
+ assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
+ assert.match(css,/\.app-player-detail-identity\{[^}]*flex:0 1 440px/);
+ assert.match(css,/@media\(max-width:620px\)\{\.app-player-detail-affiliation\{[^}]*\.app-player-detail-identity\{flex:1 1 0;max-width:none\}/);
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  const header=html.slice(html.indexOf('class="app-player-detail-header-meta"'),html.indexOf('class="app-player-detail-affiliation"'));
+  for(const name of ['app-player-detail-flag-skeleton','app-player-detail-nationality-skeleton','app-player-detail-header-separator','app-player-detail-age-skeleton'])
+   assert.ok(header.includes(name),path+': '+name);
+  assert.ok(header.indexOf('app-player-detail-flag-skeleton')<header.indexOf('app-player-detail-nationality-skeleton'));
+  assert.ok(header.indexOf('app-player-detail-nationality-skeleton')<header.indexOf('app-player-detail-header-separator'));
+  assert.ok(header.indexOf('app-player-detail-header-separator')<header.indexOf('app-player-detail-age-skeleton'));
+ }
+ assert.match(renderer,/app-player-detail-country-skeleton/);
 });

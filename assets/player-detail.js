@@ -80,12 +80,14 @@
   const wrapper=document.createElement('span');wrapper.className='app-player-detail-country';
   if(!code){wrapper.textContent='—';return wrapper;}
   const countries=window.faPlayersNationality||{},flag=countries.flags?.[code];
+  const name=typeof countries.name==='function'?countries.name(code):code;
   if(flag){
-   const img=document.createElement('img');img.className='app-player-detail-flag app-players-nationality-flag';
-   img.dataset.playerCountry=code;img.src='/assets/flags/'+flag+'.svg';img.width=24;img.height=18;
-   img.alt=typeof countries.name==='function'?countries.name(code):code;img.tabIndex=0;wrapper.append(img);
+   // Full nationality name is visible: no hover tooltip, keyboard focus or duplicate screen-reader text on the flag.
+   const img=document.createElement('img');img.className='app-player-detail-flag';
+   img.src='/assets/flags/'+flag+'.svg';img.width=24;img.height=18;
+   img.alt='';wrapper.append(img);
   }
-  wrapper.append(document.createTextNode(code));return wrapper;
+  wrapper.append(document.createTextNode(name||code));return wrapper;
  }
  function displayValue(key){
   const copy=tr();
@@ -284,7 +286,11 @@
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
-  nationalityNode.replaceChildren(skeleton('app-player-detail-nationality-skeleton'));
+  const nationalitySkeleton=document.createElement('span');
+  nationalitySkeleton.className='app-player-detail-country-skeleton';
+  nationalitySkeleton.setAttribute('aria-hidden','true');
+  nationalitySkeleton.append(skeleton('app-player-detail-flag-skeleton'),skeleton('app-player-detail-nationality-skeleton'));
+  nationalityNode.replaceChildren(nationalitySkeleton);
   ageNode.replaceChildren(skeleton('app-player-detail-age-skeleton'));
   renderClubSkeleton();
   subtitle.textContent='\u00a0';
