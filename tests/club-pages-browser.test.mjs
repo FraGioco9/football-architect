@@ -531,12 +531,14 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await visit('/clubs/it/1/roster?view=info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
     assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
-    assert.equal(await run("getComputedStyle(document.querySelector('.club-roster-toolbar')).display"),'none',
-      'Info must not reserve the unused attributes group row');
-    await run("document.querySelector('[data-club-roster-view=attributes]').click()");
+    assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
+      'Roster has five peer views and no Attributes sub-navigation');
+    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
+      ['info','technical','mental','physical','goalkeeping']);
+    await run("document.querySelector('[data-club-roster-view=technical]').click()");
     await wait("location.search==='?view=technical'");
     assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
-    await run("document.querySelector('[data-club-roster-group=mental]').click()");
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
     await wait("location.search==='?view=mental'");
     assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
     await run("history.back()");
