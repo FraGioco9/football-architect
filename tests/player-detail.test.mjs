@@ -68,7 +68,7 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
 
 test('#502 preview generated link retains only routing context and never persists on open',()=>{
  const script=read('assets/player-detail.js'),preview=read('assets/admin-players-preview.js');
- for(const field of ['returnView','returnGroup','returnPage','returnScroll'])
+ for(const field of ['returnView','returnGroup','returnPage','returnScroll','returnSort','returnOrder'])
   assert.ok(script.includes(field)&&preview.includes(field),field);
  assert.match(script,/const permitted=\['first_name'/);
  assert.match(script,/projected\.attributes=Object\.fromEntries/);
@@ -78,4 +78,11 @@ test('#502 preview generated link retains only routing context and never persist
  assert.match(script,/addEventListener\('popstate'/);
  assert.match(script,/addEventListener\('pageshow'/);
  assert.doesNotMatch(script,/\/api\/admin\/players\/commit|\/api\/admin\/players\/preview/);
+});
+
+test('#502 error pages settle placeholders rather than leaving a perpetual loading skeleton',()=>{
+ const script=read('assets/player-detail.js');
+ assert.match(script,/if\(state!=='loading'\)\{/);
+ assert.match(script,/setContent\(nameNode,copy\.notFound\)/);
+ assert.match(script,/for\(const node of panel\.querySelectorAll\('\[data-detail-value\]'\)\)setContent\(node,'—'\)/);
 });

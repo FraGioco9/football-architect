@@ -26,11 +26,11 @@
  const numeric=value=>typeof value==='string'&&/^[1-9][0-9]*$/.test(value)&&Number.isSafeInteger(Number(value));
  const draftPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  const params=new URLSearchParams(location.search);
- const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll')};
+ const context={draftId:params.get('draftId'),index:params.get('index'),returnView:params.get('returnView'),returnGroup:params.get('returnGroup'),returnPage:params.get('returnPage'),returnScroll:params.get('returnScroll'),returnSort:params.get('returnSort'),returnOrder:params.get('returnOrder')};
  const idMatch=!preview&&/^\/players\/([1-9][0-9]*)$/.exec(location.pathname);
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
  const validPreview=preview&&draftPattern.test(context.draftId||'')&&numeric(context.index)&&Number(context.index)<=1000
-  &&[...params.keys()].every(k=>['draftId','index','returnView','returnGroup','returnPage','returnScroll','view','group'].includes(k));
+  &&[...params.keys()].every(k=>['draftId','index','returnView','returnGroup','returnPage','returnScroll','returnSort','returnOrder','view','group'].includes(k));
  let player=null,state='loading',view='overview',group='technical',request=0;
  function fromUrl(){view=params.get('view')==='attributes'?'attributes':'overview';group=Object.hasOwn(groups,params.get('group'))?params.get('group'):'technical';}
  function updateUrl(){const url=new URL(location.href);url.searchParams.delete('view');url.searchParams.delete('group');if(view==='attributes'){url.searchParams.set('view',view);url.searchParams.set('group',group);}history.pushState(null,'',url.pathname+url.search+url.hash);}
@@ -41,6 +41,10 @@
   if(Object.hasOwn(groups,context.returnGroup))hash.set('group',context.returnGroup);
   if(numeric(context.returnPage)&&Number(context.returnPage)<=1000)hash.set('page',context.returnPage);
   if(context.returnScroll&&/^(0|[1-9][0-9]{0,5})$/.test(context.returnScroll))hash.set('scroll',context.returnScroll);
+  if(context.returnSort&&['name','nationality','positions','age','height','foot',...attrKeys].includes(context.returnSort)){
+   hash.set('sort',context.returnSort);
+   if(['asc','desc'].includes(context.returnOrder))hash.set('order',context.returnOrder);
+  }
   if(hash.size)url.hash=hash.toString();
   return url.pathname+url.search+url.hash;
  }
@@ -71,7 +75,18 @@
   const fieldKeys=['nationality','secondary_nationality','age','positions','height_cm','preferred_foot'];
   panel.querySelectorAll('[data-detail-label]').forEach((node,i)=>{node.textContent=copy.fields[i];});
   statusNode.textContent=state==='loading'?copy.loading:state==='ready'?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
-  if(!player)return;
+  if(!player){
+   if(state!=='loading'){
+    setContent(nameNode,copy.notFound);
+    subtitle.textContent=preview?copy.preview:'';
+    for(const node of panel.querySelectorAll('[data-detail-value]'))setContent(node,'—');
+    for(const slot of panel.querySelectorAll('[data-detail-attr-slot]')){
+     slot.querySelector('dt').textContent='\u00a0';
+     slot.querySelector('dd').textContent='—';
+    }
+   }
+   return;
+  }
   setContent(nameNode,player.display_name||[player.first_name,player.last_name].filter(Boolean).join(' ')||copy.player);
   subtitle.textContent=preview?copy.preview:[player.primary_position,player.career_status].filter(Boolean).join(' · ');
   fieldKeys.forEach(key=>setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key)));

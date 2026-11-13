@@ -169,6 +169,7 @@
     target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));
     target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
     target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
+    if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}
     link.href=target.pathname+target.search;link.textContent=player.display_name||'—';
     nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
