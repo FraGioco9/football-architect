@@ -474,11 +474,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await visit('/clubs/it/1/overview');
     await run("document.querySelector('.club-tabs a').focus()");
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',windowsVirtualKeyCode:9});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',windowsVirtualKeyCode:9});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster?view=info');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'Home'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'Home'});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/overview');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight'});
-    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster');
+    assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/roster?view=info');
     assert.notEqual(await run("getComputedStyle(document.activeElement).outlineStyle"),'none');
     await cmd('Input.dispatchKeyEvent',{type:'keyDown',key:'End'});await cmd('Input.dispatchKeyEvent',{type:'keyUp',key:'End'});
     assert.equal(await run("document.activeElement.getAttribute('href')"),'/clubs/it/1/history');
@@ -525,9 +525,39 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
+     assert.equal(await run('location.search'),view==='history'?'':view==='roster'?'?season=2&matchday=7&view=info':'?season=2&matchday=7');
     }
+    await visit('/clubs/it/1/roster?view=info');
+    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
+    assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
+    assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
+      'Roster has five peer views and no Attributes sub-navigation');
+    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
+      ['info','technical','mental','physical','goalkeeping']);
+    await run("document.querySelector('[data-club-roster-view=technical]').click()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    await wait("location.search==='?view=mental'");
+    assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
+    await run("history.back()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'technical');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical&sort=passing&order=desc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'descending');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical&sort=passing&order=asc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'ascending');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'none');
+    await run("document.querySelector('[data-club-roster-view=info]').click()");
+    await wait("location.search==='?view=info'");
+    await run("document.querySelector('[data-club-roster-sort=positions]').click()");
+    await wait("location.search==='?view=info&sort=positions&order=desc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     const publicLink=await run("document.querySelector('.club-competition a')?.getAttribute('href')??null");
     assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings?season=1','Only verified source may replace initial season link');
@@ -558,7 +588,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
 
     await visit(knownPath);await wait("document.querySelector('[data-club-crest-loaded]')!==null");
     await run("window.__clubHeaderCrest=document.querySelector('.club-header .app-club-crest-image')");
-    await run('document.querySelector(".club-tabs a[href$=\'/roster\']").click()');
+    await run('document.querySelector(".club-tabs a[href*=\'/roster?view=info\']").click()');
     assert.equal(await run("location.pathname.endsWith('/roster')"),true);
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Click retains focus on the replacement active tab');
     assert.equal(await run("document.querySelector('.club-header .app-club-crest-image')===window.__clubHeaderCrest"),true,'Tab navigation must preserve the loaded header crest');
@@ -589,7 +619,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
      devManifestDelay=150;
      await run("sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','2');sessionStorage.setItem('football-architect:standings-dev-matchdays','15');sessionStorage.removeItem('football-architect:calendar-dev-world-day');window.dispatchEvent(new Event('fa:fictional-standings-change'))");
-     await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
+     await run("document.querySelector('.club-tabs a[href*=\"/roster?view=info\"]').click();document.querySelector('.club-tabs a[href$=\"/overview\"]').click();window.__summaryTab=document.activeElement");
      await wait("document.querySelector('[data-club-position]')?.textContent==="+JSON.stringify(englishOrdinal(index+1)));
      devManifestDelay=0;
      assert.equal(await run("document.activeElement===window.__summaryTab"),true,'Delayed summary preserves the selected club tab and keyboard focus');
@@ -824,7 +854,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   hold=true;await visit();await wait("document.querySelectorAll('.club-fixture-loading').length===6");
   const before=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");
   await wait('true');for(let i=0;i<100&&!held.length;i++)await delay(20);assert.ok(held.length,'canonical season request is pending');
-  await run("document.querySelector('.club-tabs a[href$=\"/roster\"]').click()");held.splice(0).forEach(send=>send());hold=false;
+  await run("document.querySelector('.club-tabs a[href*=\"/roster?view=info\"]').click()");held.splice(0).forEach(send=>send());hold=false;
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');

@@ -1,6 +1,21 @@
 {
   "redirects": [
     {
+      "source": "/players/:id([1-9][0-9]*)/",
+      "destination": "/players/:id",
+      "permanent": true
+    },
+    {
+      "source": "/admin/players/preview/player/",
+      "destination": "/admin/players/preview/player",
+      "permanent": true
+    },
+    {
+      "source": "/admin/players/preview/player/index.html",
+      "destination": "/admin/players/preview/player",
+      "permanent": true
+    },
+    {
       "source": "/clubs/",
       "destination": "/clubs",
       "permanent": true
@@ -273,6 +288,14 @@
   ],
   "rewrites": [
     {
+      "source": "/players/:id([1-9][0-9]*)",
+      "destination": "/players/_shared/index.html"
+    },
+    {
+      "source": "/admin/players/preview/player",
+      "destination": "/admin/players/preview/player/index.html"
+    },
+    {
       "source": "/clubs",
       "destination": "/clubs/index.html"
     },
@@ -324,6 +347,23 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/admin/players/preview/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }

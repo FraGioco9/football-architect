@@ -1,6 +1,7 @@
 import {loadSeasonOnePreview} from './load-season-one-preview.mjs';
 import {bootstrapCompetitionTabs} from './competition-tab-preboot.mjs';
 import {renderAdminSettings,renderAdminPlayers,renderAdminPlayersPreview} from './render-admin-settings.mjs';
+import {renderPlayerDetailPage} from './render-player-detail.mjs';
 import {renderAdminContracts} from './render-admin-contracts.mjs';
 // Generates checked-in static app pages from the shared shell (Node.js 22, no npm).
 import {renderWorldCalendar,calendarBootstrap} from "./render-world-calendar.mjs";
@@ -362,3 +363,14 @@ if(check)console.log("Static HTML matches checked-in pages: "+outputPages.length
  html=html.replace('</head>','  <script src="/assets/players-nationality-tooltip.js" defer></script>\n  <script src="/assets/players-directory.js" defer></script>\n</head>');
  writeOutput("players/index.html",html);
 }
+// #502: generate both player-detail shells from their own canonical directory
+// shells. Player data remains empty until an authorized API read; no hand-edited
+// static HTML. The shared renderer also serves as a generated-file QA reference.
+for(const [source,output,mode] of [
+ ['players/index.html','players/_shared/index.html','public'],
+ ['admin/players/preview/index.html','admin/players/preview/player/index.html','preview']
+]){
+ const html=readFileSync(new URL('../'+source,import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ writeOutput(output,renderPlayerDetailPage(html,mode));
+}
+
