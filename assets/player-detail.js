@@ -135,16 +135,21 @@
   renderPitch();
  }
  async function authorizedDraft(){
-  const perms=await fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
-  if(!perms.ok)throw Error('denied');
-  const rights=(await perms.json()).permissions||[];
+  const permissionCache=window.faAdminPermissionsCache?.create(window);
+  let rights=permissionCache?.read();
+  if(!Array.isArray(rights)){
+   const perms=await fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
+   if(!perms.ok){if(perms.status===401||perms.status===403)permissionCache?.clear();throw Error('denied');}
+   rights=(await perms.json()).permissions||[];permissionCache?.write(rights);
+  }
   if(!['admin.access','admin.world.read','admin.world.write'].every(k=>rights.includes(k)))throw Error('denied');
+  // Cached UI permissions never replace the live server-side session or draft guard.
   const session=await fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
-  if(!session.ok)throw Error('denied');
+  if(!session.ok){permissionCache?.clear();throw Error('denied');}
   const csrf=(await session.json()).csrfToken;
   if(typeof csrf!=='string'||!csrf)throw Error('denied');
   const resp=await fetch('/api/admin/players/draft',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({draftId:context.draftId})});
-  if(!resp.ok)throw Error(resp.status===401||resp.status===403?'denied':'expired');
+  if(!resp.ok){if(resp.status===401||resp.status===403)permissionCache?.clear();throw Error(resp.status===401||resp.status===403?'denied':'expired');}
   const draft=await resp.json();
   if(draft.draftId!==context.draftId||!Array.isArray(draft.candidates)||draft.summary?.count!==draft.candidates.length)throw Error('expired');
   const p=draft.candidates[Number(context.index)-1];

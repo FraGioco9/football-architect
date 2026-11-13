@@ -4,7 +4,7 @@
 
 ## Canonical DEV command and boundary (current)
 
-PowerShell from repository root, Node 22: `npm --prefix backend ci` once, then `node tools/dev.mjs`. Local site `http://localhost:2000/`, app `http://app.localhost:2000/dashboard`, local Wrangler Worker/D1 `http://127.0.0.1:8787`. `tools/dev.mjs` explicitly clears inherited shared-pool target variables and uses `backend/wrangler.toml` with `wrangler dev --local`; it never auto-applies migrations, grants permissions, sends real external email or touches remote D1. Use `node tools/dev.mjs --lan <PC-owned-private-IPv4>` only on trusted Wi-Fi for a separate **frontend-only** listener; `/api/*` is blocked for LAN clients. Keep first-run database initialization and owner permission grants separate. [Architecture](overview.md), [local auth](../../backend/docs-player-local-dev.md), [README](../../README.md).
+PowerShell from repository root, Node 22: `npm --prefix backend ci` once, then `node tools/dev.mjs`. **Default shared DEV:** current Worker runs locally at `127.0.0.1:8787` using `backend/wrangler.shared-dev.toml` with **D1 remote = true** pointed at the existing `football-architect-dev` nonproduction database; the frontend also runs locally and proxies API requests to that Worker. There is no dependency on the hosted Preview code version and no new API deployment per commit. **LAN frontend-only:** `node tools/dev.mjs --lan <PC-owned-private-IPv4>` keeps the shared remote D1 for localhost while exposing only public frontend pages to Safari on the trusted LAN (no private/authenticated API). **Isolated local DEV:** `node tools/dev.mjs --local` starts a local Wrangler Worker/local D1 using separate `backend/wrangler.toml`; `node tools/dev.mjs --local --lan <PC-owned-private-IPv4>` keeps trusted Wi-Fi Safari frontend-only QA isolated. Hosted Preview continues to read the same D1 but needs a separate approved publish when its web UI or endpoints change. Wrangler remote bindings require account authentication and network access. No mode automatically migrates, deploys, grants permissions or copies DBs; default shared DEV may write real online nonproduction data through authorized API calls. [Architecture](overview.md), [local auth](../../backend/docs-player-local-dev.md), [README](../../README.md).
 
 ## Historical implementation audit (retained)
 
@@ -43,7 +43,7 @@ The main dependency chain is `dev.mjs` → frontend `dev-app-preview.mjs` → `c
 
 ```powershell
 npm --prefix backend ci
-node tools/dev.mjs
+node tools/dev.mjs --local
 ```
 
 From a second terminal, `Invoke-WebRequest http://app.localhost:2000/api/world` should return the local Worker's JSON after readiness; `/competitions/it-1/standings?season=1` must load on direct navigation and refresh. Site/app links retain separate origins; Player endpoints require `app.localhost` and operator state is governed by the Worker.

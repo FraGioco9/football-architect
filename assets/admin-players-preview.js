@@ -2,6 +2,7 @@
 (()=>{'use strict';
  const host=document.querySelector('#app-admin'),root=host?.querySelector('[data-admin-players-preview-page]');
  if(!root)return;
+ const permissionCache=window.faAdminPermissionsCache?.create(window);
  const groups=Object.freeze({
   technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
   mental:['vision','positioning','decisions','composure'],
@@ -196,22 +197,27 @@
  }
  async function authorizedPost(path,payload){
   const session=await fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
-  if(!session.ok)throw new Error('authorization_'+session.status);
+  if(!session.ok){if(session.status===401||session.status===403)permissionCache?.clear();throw new Error('authorization_'+session.status);}
   const auth=await session.json();
   if(typeof auth.csrfToken!=='string'||!auth.csrfToken)throw new Error('csrf_unavailable');
   const response=await fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',
    headers:{'Content-Type':'application/json','X-CSRF-Token':auth.csrfToken},body:JSON.stringify(payload)});
   const data=await response.json();
-  if(!response.ok)throw new Error(data?.error?.code||'http_'+response.status);
+  if(!response.ok){if(response.status===401||response.status===403)permissionCache?.clear();throw new Error(data?.error?.code||'http_'+response.status);}
   return data;
  }
  async function load(){
   host.hidden=false;root.hidden=false;render();
   if(!validId()){status='error';feedback.textContent=tr().error;render();return;}
   try{
-   const permitted=await fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
-   if(!permitted.ok)throw new Error('permission_denied');
-   const data=await permitted.json(),p=data.permissions||[];
+   let p=permissionCache?.read();
+   if(p===null||p===undefined){
+    const permitted=await fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
+    if(!permitted.ok){if(permitted.status===401)permissionCache?.write([]);throw new Error('permission_denied');}
+    const data=await permitted.json();p=Array.isArray(data.permissions)?data.permissions:[];
+    permissionCache?.write(p);
+   }
+   // Cached UI permissions never replace backend authorization below.
    if(!['admin.access','admin.world.read','admin.world.write'].every(x=>p.includes(x)))throw new Error('permission_denied');
    const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
    if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options)

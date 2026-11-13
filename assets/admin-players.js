@@ -126,6 +126,7 @@
   const summary=root.querySelector('[data-admin-players-summary]'),rows=root.querySelector('[data-admin-players-rows]');
   const pagination=root.querySelector('[data-admin-players-page]'),previous=root.querySelector('[data-admin-players-prev]'),next=root.querySelector('[data-admin-players-next]');
   const committed=root.querySelector('[data-admin-players-commit-status]');
+  const permissionCache=win.faAdminPermissionsCache?.create(win);
   const tr=()=>({...(translations[doc.documentElement.lang]||translations.en),...(stageTranslations[doc.documentElement.lang]||stageTranslations.en)});
   // The preview returns only its approved generator *options*, never candidate
   // records, via transient same-tab history state. The full form survives the
@@ -354,13 +355,13 @@
   }
   async function authorizedPost(path,payload){
    const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
-   if(!session.ok)throw Error('authorization_'+session.status);
+   if(!session.ok){if(session.status===401||session.status===403)permissionCache?.clear();throw Error('authorization_'+session.status);}
    const state=await session.json();
    if(typeof state.csrfToken!=='string'||!state.csrfToken)throw Error('csrf_unavailable');
    const response=await win.fetch(path,{method:'POST',credentials:'same-origin',cache:'no-store',
     headers:{'Content-Type':'application/json','X-CSRF-Token':state.csrfToken},body:JSON.stringify(payload)});
    const data=await response.json();
-   if(!response.ok)throw Error(data?.error?.code||'http_'+response.status);
+   if(!response.ok){if(response.status===401||response.status===403)permissionCache?.clear();throw Error(data?.error?.code||'http_'+response.status);}
    return data;
   }
   async function previewPlayers(){
@@ -420,13 +421,20 @@
   }
   async function check(){
    const current=++ticket;paint(false,false);
+   const cached=permissionCache?.read();
+   if(cached!==null&&cached!==undefined){
+    const read=cached.includes('admin.access')&&cached.includes('admin.world.read');
+    paint(read,read&&cached.includes('admin.world.write'));
+    return;
+   }
    const controller=new AbortController(),timeout=win.setTimeout(()=>controller.abort(),8000);
    try{
     const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
-    if(!response.ok)throw Error('permissions');
+    if(!response.ok){if(response.status===401)permissionCache?.write([]);throw Error('permissions');}
     const data=await response.json();
     if(current!==ticket)return;
     const perms=Array.isArray(data?.permissions)?data.permissions:[];
+    permissionCache?.write(perms);
     const read=perms.includes('admin.access')&&perms.includes('admin.world.read');
     paint(read,read&&perms.includes('admin.world.write'));
    }catch{if(current===ticket)paint(false,false)}finally{win.clearTimeout(timeout)}
@@ -446,7 +454,8 @@
    next?.addEventListener('click',()=>{if(draft){draftPage++;renderPage()}});
   }
   new MutationObserver(update).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  win.addEventListener('pageshow',event=>{if(event.persisted)void check()});
+  // One permissions request per full document load/refresh, not on BFCache.
+  // Every privileged API request still enforces fresh server authorization.
   update();void check();
  }
  return {makeOptions,commandFromRaw,mount};

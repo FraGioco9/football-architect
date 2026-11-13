@@ -1,0 +1,24 @@
+# LOCAL WORKER / REMOTE D1: deliberate DEV/Preview shared data without backend deployment.
+# Never use this file for publishing a Worker or testing destructive world resets.
+# Wrangler v4 remote bindings execute src/index.ts on this PC; only DB accesses Cloudflare.
+name = "fa-admin-world-shared-d1-local"
+main = "src/index.ts"
+compatibility_date = "2026-10-26"
+
+[dev]
+ip = "127.0.0.1"
+port = 8787
+
+[vars]
+PLAYER_MODE = "local"
+PLAYER_ORIGIN = "http://app.localhost:2000"
+# Shared online accounts authenticate with a separate host-only localhost cookie.
+# Local disposable verification/reset inbox must NOT create tokens on shared D1.
+PLAYER_LOCAL_INBOX_ENABLED = "false"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "football-architect-dev"
+database_id = "6a6c7803-56d3-4e7f-bd01-752d06a32341"
+remote = true
+migrations_dir = "migrations"

@@ -7,6 +7,8 @@ import {handleAdmin} from '../src/http-admin.ts';
 import worker from '../src/index.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {commitPlayerGeneration} from '../src/players-generation-command.ts';
+import hostedPreview from '../src/preview.ts';
+import {pruneExpiredPlayerPreviews} from '../src/player-preview-retention.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 import type {Database} from '../src/database.ts';
 const bindings=env as any,db=bindings.DB as Database;
@@ -83,6 +85,45 @@ it('shows a server-generated preview but creates zero permanent players until ex
  expect(read.players.map((p:any)=>p.id).sort()).toEqual(actual.map((p:any)=>p.id).sort());
  expect(await readWorld(db)).toEqual(oldWorld);
 });
+it('creation prunes expired drafts, but preserves active previews, committed parents and player records',async()=>{
+ const committed=await createPreview({count:1,seed:'ttl-committed'});
+ expect((await request('/commit',{draftId:committed.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(200);
+ const expired=await createPreview({count:1,seed:'ttl-expired'});
+ const active=await createPreview({count:1,seed:'ttl-active'});
+ await db.prepare('UPDATE player_generation_drafts SET created_at=created_at-7200,expires_at=expires_at-7200 WHERE id IN (?,?)')
+  .bind(expired.draftId,committed.draftId).run();
+ await createPreview({count:1,seed:'ttl-trigger'});
+ expect(await db.prepare('SELECT id FROM player_generation_drafts WHERE id=?').bind(expired.draftId).first()).toBeNull();
+ expect((await db.prepare('SELECT status FROM player_generation_drafts WHERE id=?').bind(active.draftId).first())?.status).toBe('preview');
+ expect((await db.prepare('SELECT status FROM player_generation_drafts WHERE id=?').bind(committed.draftId).first())?.status).toBe('committed');
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(1);
+ expect((await request('/commit',{draftId:expired.draftId,confirmation:'GENERATE PLAYERS'})).status).toBe(404);
+});
+
+it('scheduled Preview cleanup is bounded, idempotent and rejects non-preview deployments',async()=>{
+ const expired=await createPreview({count:1,seed:'ttl-cron-expired'});
+ const fresh=await createPreview({count:1,seed:'ttl-cron-fresh'});
+ await db.prepare('UPDATE player_generation_drafts SET created_at=created_at-7200,expires_at=expires_at-7200 WHERE id=?')
+  .bind(expired.draftId).run();
+ expect(await pruneExpiredPlayerPreviews(db,Math.floor(Date.now()/1000),1)).toBe(1);
+ expect(await pruneExpiredPlayerPreviews(db,Math.floor(Date.now()/1000))).toBe(0);
+ expect((await db.prepare('SELECT status FROM player_generation_drafts WHERE id=?').bind(fresh.draftId).first())?.status).toBe('preview');
+ await db.prepare('UPDATE player_generation_drafts SET created_at=created_at-7200,expires_at=expires_at-7200 WHERE id=?')
+  .bind(fresh.draftId).run();
+ const pool=await db.prepare('SELECT pool FROM account_environment_pool WHERE id=1').first<{pool:string}>();
+ if(!pool)await db.prepare("INSERT INTO account_environment_pool(id,pool,initialized_at) VALUES(1,'dev-preview',?)").bind(Math.floor(Date.now()/1000)).run();
+ const cronEnv={DB:db,PLAYER_MODE:'preview',PLAYER_TRUSTED_SOURCE:'cloudflare',
+  PLAYER_ORIGIN:'https://preview.football-architect.workers.dev',
+  ASSETS:{fetch:async()=>new Response('unused')}};
+ const ctl={cron:'15 * * * *'};
+ await expect(hostedPreview.scheduled(ctl,{...cronEnv,PLAYER_MODE:'production'})).rejects.toThrow('preview_retention_unavailable');
+ await expect(hostedPreview.scheduled({cron:'0 * * * *'},cronEnv)).rejects.toThrow('preview_retention_unavailable');
+ expect((await db.prepare("SELECT COUNT(*) AS n FROM player_generation_drafts WHERE status='preview'").first<{n:number}>())?.n).toBe(1);
+ await hostedPreview.scheduled(ctl,cronEnv);
+ expect((await db.prepare("SELECT COUNT(*) AS n FROM player_generation_drafts WHERE status='preview'").first<{n:number}>())?.n).toBe(0);
+ expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
+});
+
 it('Auto seeds are fresh per preview; manually supplied seeds remain reproducible',async()=>{
  const options={count:2,primaryNationality:'ITA',primaryPosition:'ST'};
  const first=await createPreview(options),second=await createPreview(options);
@@ -126,7 +167,11 @@ it('stale world and expired draft cannot create players',async()=>{
  // Call the domain command with an unchanged live session but advanced clock.
  const session={actor:{id:actor,email},digest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf),
   credentialVersion:1,unified:{playerId,sessionDigest:await digestOpaqueToken(token),csrfDigest:await digestOpaqueToken(csrf)}};
- await expect(commitPlayerGeneration(db,session as any,{draftId:live.draftId,confirmation:'GENERATE PLAYERS'},now+2)).rejects.toMatchObject({status:409});
+ // Created by the HTTP handler using its current wall clock; the module-level
+ // fixture clock may be older when the full CI suite is under load.
+ const liveRow=await db.prepare('SELECT created_at FROM player_generation_drafts WHERE id=?').bind(live.draftId).first<{created_at:number}>();
+ expect(liveRow).not.toBeNull();
+ await expect(commitPlayerGeneration(db,session as any,{draftId:live.draftId,confirmation:'GENERATE PLAYERS'},liveRow!.created_at+2)).rejects.toMatchObject({status:409});
  expect((await db.prepare('SELECT COUNT(*) AS n FROM generated_players').first<{n:number}>())?.n).toBe(0);
 });
 
