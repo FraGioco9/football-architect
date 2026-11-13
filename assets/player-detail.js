@@ -23,11 +23,11 @@
  };
 
  const extra={
-  en:{views:['Overview','Info','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions'},
-  it:{views:['Panoramica','Info','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili'},
-  de:{views:['Übersicht','Info','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen'},
-  es:{views:['Resumen','Info','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles'},
-  fr:{views:['Vue d’ensemble','Info','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables'}
+  en:{views:['Overview','Info','Stats','History','Progression'],positions:'Positions',info:'Info',attributes:'Attributes',primary:'Primary position',secondary:'Secondary positions',club:'Club',positionLabel:'Playable positions',legend:'Legend',core:'Key attributes',support:'Supporting attributes'},
+  it:{views:['Panoramica','Info','Statistiche','Storia','Progressione'],positions:'Posizioni',info:'Info',attributes:'Attributi',primary:'Posizione principale',secondary:'Posizioni secondarie',club:'Club',positionLabel:'Posizioni utilizzabili',legend:'Legenda',core:'Attributi fondamentali',support:'Attributi di supporto'},
+  de:{views:['Übersicht','Info','Statistik','Historie','Entwicklung'],positions:'Positionen',info:'Info',attributes:'Attribute',primary:'Hauptposition',secondary:'Nebenpositionen',club:'Verein',positionLabel:'Spielbare Positionen',legend:'Legende',core:'Kernattribute',support:'Ergänzende Attribute'},
+  es:{views:['Resumen','Info','Estadísticas','Historial','Progresión'],positions:'Posiciones',info:'Info',attributes:'Atributos',primary:'Posición principal',secondary:'Posiciones secundarias',club:'Club',positionLabel:'Posiciones posibles',legend:'Leyenda',core:'Atributos esenciales',support:'Atributos de apoyo'},
+  fr:{views:['Vue d’ensemble','Info','Statistiques','Historique','Progression'],positions:'Postes',info:'Info',attributes:'Attributs',primary:'Poste principal',secondary:'Postes secondaires',club:'Club',positionLabel:'Postes jouables',legend:'Légende',core:'Attributs essentiels',support:'Attributs de soutien'}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const tr=()=>copies[language()]||copies.en;
@@ -41,7 +41,24 @@
  const id=idMatch&&numeric(idMatch[1])?Number(idMatch[1]):null;
  const validPreview=preview&&draftPattern.test(context.draftId||'')&&numeric(context.index)&&Number(context.index)<=1000
   &&[...params.keys()].every(k=>['draftId','index','returnView','returnGroup','returnPage','returnScroll','returnSort','returnOrder','view','group'].includes(k));
- const pitchCoords=Object.freeze({GK:[120,294],RB:[198,261],RWB:[210,213],CB:[120,261],LWB:[30,213],LB:[42,261],DM:[120,216],RM:[194,168],CM:[120,168],LM:[46,168],RW:[194,83],AM:[120,116],LW:[46,83],ST:[120,54]});
+ // Symmetric lanes: stable spacing for compatible primary and secondary positions.
+ const pitchCoords=Object.freeze({GK:[120,304],RB:[192,258],CB:[120,258],LB:[48,258],RWB:[200,214],LWB:[40,214],DM:[120,214],RM:[192,166],CM:[120,166],LM:[48,166],RW:[192,80],AM:[120,114],LW:[48,80],ST:[120,49]});
+ const roleAttributeProfiles=Object.freeze({
+  GK:['gk_reflexes gk_handling gk_positioning gk_aerial','agility positioning decisions composure'],
+  RB:['speed stamina tackling crossing','marking positioning agility passing'],
+  CB:['marking tackling heading strength','positioning composure decisions passing'],
+  LB:['speed stamina tackling crossing','marking positioning agility passing'],
+  RWB:['speed stamina crossing agility','tackling passing positioning dribbling'],
+  LWB:['speed stamina crossing agility','tackling passing positioning dribbling'],
+  DM:['tackling marking positioning passing','strength stamina decisions vision'],
+  CM:['passing technique vision stamina','decisions positioning dribbling composure'],
+  AM:['technique vision passing dribbling','shooting decisions agility composure'],
+  RM:['speed crossing stamina dribbling','agility passing technique positioning'],
+  LM:['speed crossing stamina dribbling','agility passing technique positioning'],
+  RW:['speed dribbling agility technique','crossing shooting passing vision'],
+  LW:['speed dribbling agility technique','crossing shooting passing vision'],
+  ST:['shooting positioning composure heading','speed strength technique agility']
+ });
  const attrGroups=['technical','mental','physical','goalkeeping'];
  let player=null,state='loading',request=0;
  function previewReturnUrl(){
@@ -95,6 +112,17 @@
    g.append(title,circle,label);markers.append(g);
   }
  }
+ function renderRoleHighlights(){
+  const profile=player&&roleAttributeProfiles[player.primary_position];
+  const core=profile?profile[0].split(' '):[],support=profile?profile[1].split(' '):[],copy=ex();
+  for(const key of attrKeys){
+   const label=panel.querySelector('[data-detail-attr-label="'+key+'"]'),row=label.parentElement;
+   const tier=core.includes(key)?'core':support.includes(key)?'support':null;
+   row.classList.toggle('is-core',tier==='core');row.classList.toggle('is-support',tier==='support');
+   if(tier)label.setAttribute('aria-label',label.textContent+' · '+copy[tier]);
+   else label.removeAttribute('aria-label');
+  }
+ }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   if(back){
@@ -118,6 +146,9 @@
   }
   for(const [i,key] of attrGroups.entries())panel.querySelector('[data-detail-group-title="'+key+'"]').textContent=copy.groups[i];
   for(const [i,key] of attrKeys.entries())panel.querySelector('[data-detail-attr-label="'+key+'"]').textContent=labels[i]||key;
+  for(const tier of ['core','support'])panel.querySelector('[data-detail-legend-label="'+tier+'"]').textContent=e[tier];
+  panel.querySelector('[data-detail-legend-title]').textContent=e.legend;
+  renderRoleHighlights();
   statusNode.hidden=state==='loading'||state==='ready';
   statusNode.textContent=statusNode.hidden?'':state==='not-found'?copy.notFound:state==='expired'?copy.expired:state==='denied'?copy.denied:copy.error;
   if(!player){
@@ -194,7 +225,7 @@
   if(!['overview','info'].includes(next)||next===view)return;
   view=next;
   const url=new URL(location.href);
-  if(next==='info')url.searchParams.set('view','info');else url.searchParams.delete('view');
+  url.searchParams.set('view',next);
   history.pushState(history.state,'',url.pathname+url.search+url.hash);
   render();
  }
@@ -209,8 +240,14 @@
    setView(activeTabs[chosen].dataset.detailView);activeTabs[chosen].focus();
   });
  });
- window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';render();});
+ function normalizeViewUrl(){
+  const url=new URL(location.href);
+  if(url.searchParams.get('view')===view)return;
+  url.searchParams.set('view',view);
+  history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+ }
+ window.addEventListener('popstate',()=>{view=new URLSearchParams(location.search).get('view')==='info'?'info':'overview';normalizeViewUrl();render();});
  window.addEventListener('pageshow',e=>{if(preview&&e.persisted)void load();});
  new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
- render();void load();
+ normalizeViewUrl();render();void load();
 })();

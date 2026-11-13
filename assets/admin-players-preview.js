@@ -167,7 +167,7 @@
     const nameCell=document.createElement('td');
     const link=document.createElement('a');link.className='app-player-name-link';
     const target=new URL('/admin/players/preview/player',location.origin);
-    target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));
+    target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));target.searchParams.set('view','overview');
     target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
     target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
     if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}

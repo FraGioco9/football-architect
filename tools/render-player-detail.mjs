@@ -8,6 +8,7 @@ function detailPanel(preview){
  const skeleton=()=>'<span class="app-skeleton-bar" aria-hidden="true"></span>';
  const infoRows=infoFields.map(key=>'<div class="app-player-detail-info-line"><dt data-detail-label="'+key+'">'+infoNames[key]+'</dt><dd data-detail-value="'+key+'">'+skeleton()+'</dd></div>').join('\n');
  const columns=Object.entries(groupFields).map(([group,keys])=>'<section class="app-player-detail-attribute-group" data-detail-attribute-group="'+group+'"><h3 data-detail-group-title="'+group+'">'+titleMap[group]+'</h3><dl>'+keys.map(key=>'<div class="app-player-detail-attribute-line"><dt data-detail-attr-label="'+key+'">'+attrNames[key]+'</dt><dd data-detail-attr-value="'+key+'">'+skeleton()+'</dd></div>').join('')+'</dl></section>').join('\n');
+ const legend="<div class=\"app-standings-legend app-player-detail-legend\" data-detail-legend><p id=\"player-detail-attribute-legend-title\" data-detail-legend-title>Legend</p><ul aria-labelledby=\"player-detail-attribute-legend-title\"><li data-detail-tier=\"core\"><span class=\"app-standings-legend-swatch\" aria-hidden=\"true\"></span><span data-detail-legend-label=\"core\">Key attributes</span></li><li data-detail-tier=\"support\"><span class=\"app-standings-legend-swatch\" aria-hidden=\"true\"></span><span data-detail-legend-label=\"support\">Supporting attributes</span></li></ul></div>";
  const viewTabs=['overview','info','stats','history','progression'].map((view,i)=>'<button type="button" id="player-detail-'+view+'-tab" class="app-competition-tab'+(i===0?' is-active':'')+'" role="tab" data-detail-view="'+view+'" aria-selected="'+(i===0)+'" tabindex="'+(i===0?'0':'-1')+'"'+(i>1?' disabled aria-disabled="true"':' aria-controls="player-detail-'+view+'-panel"')+'>'+view.charAt(0).toUpperCase()+view.slice(1)+'</button>').join('');
  const pitch='<svg data-detail-pitch class="app-player-detail-pitch" viewBox="0 0 240 330" role="img" aria-label="Playable positions" xmlns="http://www.w3.org/2000/svg">'
   +'<rect width="240" height="330" rx="5" fill="#246A4C"/>'
@@ -28,7 +29,7 @@ function detailPanel(preview){
   +'<section class="app-panel app-player-detail-positions" data-detail-positions aria-labelledby="player-detail-positions-title"><h2 id="player-detail-positions-title" data-detail-section-title="positions">Positions</h2>'
   +'<div class="app-player-detail-pitch-holder">'+pitch+'</div></section>'
   +'<section class="app-panel app-player-detail-attributes" aria-labelledby="player-detail-attributes-title"><h2 id="player-detail-attributes-title" data-detail-section-title="attributes">Attributes</h2>'
-  +'<div class="app-player-detail-attribute-columns">'+columns+'</div></section></div></div>'
+  +'<div class="app-player-detail-attribute-columns">'+columns+'</div>'+legend+'</section></div></div>'
   +'<section class="app-panel app-player-detail-info app-player-detail-info-view" id="player-detail-info-panel" data-detail-panel="info" role="tabpanel" aria-labelledby="player-detail-info-tab"><h2 data-detail-section-title="info">Info</h2><dl class="app-player-detail-info-list">'+infoRows+'</dl></section>'
   +'<p class="app-player-detail-status" data-detail-status role="status" aria-live="polite" hidden></p></div>';
 }

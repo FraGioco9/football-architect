@@ -73,11 +73,12 @@ test('#502 names alone become links; uncommitted candidates cannot get permanent
  const directory=read('assets/players-directory.js'),preview=read('assets/admin-players-preview.js');
  const script=read('assets/player-detail.js'),index=read('backend/src/index.ts');
  const publicApi=read('backend/src/public-players-read.ts');
- assert.match(directory,/link\.href='\/players\/'\+player\.id/);
+ assert.match(directory,/link\.href='\/players\/'\+player\.id\+'\?view=overview'/);
  assert.match(directory,/link\.className='app-player-name-link'/);
  assert.match(preview,/link\.className='app-player-name-link'/);
  assert.match(preview,/target\.searchParams\.set\('draftId',id\)/);
  assert.match(preview,/target\.searchParams\.set\('index',String\(index\+1\)\)/);
+ assert.match(preview,/target\.searchParams\.set\('view','overview'\)/);
  assert.match(preview,/\/admin\/players\/preview\/player/);
  assert.doesNotMatch(preview,/link\.href='\/players\/'/);
  assert.match(script,/authorizedDraft\(\)/);
@@ -140,13 +141,14 @@ test('#502 direct player details activate Players, never Dashboard, in app shell
 test('#502 Overview and Info are independent views with reserved first paint and history navigation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  assert.match(js,/views\.filter\(tab=>!tab\.disabled\)/);
- assert.match(js,/url\.searchParams\.set\('view','info'\)/);
- assert.match(js,/url\.searchParams\.delete\('view'\)/);
+ assert.match(js,/url\.searchParams\.set\('view',next\)/);
+ assert.match(js,/normalizeViewUrl\(\)/);
+ assert.match(js,/history\.replaceState\(history\.state/);
  assert.match(js,/history\.pushState\(history\.state/);
  assert.match(js,/new URLSearchParams\(location\.search\)\.get\('view'\)==='info'/);
  assert.match(css,/html\[data-player-detail-view="info"\] \.app-player-detail-overview\{display:none\}/);
  assert.match(css,/html:not\(\[data-player-detail-view="info"\]\) \.app-player-detail-info-view\{display:none\}/);
- assert.match(css,/grid-template-columns:minmax\(245px,\.36fr\) minmax\(0,1fr\)/);
+ assert.match(css,/grid-template-columns:minmax\(300px,\.54fr\) minmax\(0,1fr\)/);
  assert.match(css,/\.app-player-detail-attribute-columns\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(css,/app-player-detail-position-list|app-player-detail-position-line/);
  assert.match(renderer,/detailPanel\(preview\)/);
@@ -170,4 +172,43 @@ test('#502 skeleton footprint, pitch size, attribute separators and silent loadi
  assert.match(css,/\.app-player-detail-attribute-line dd \.app-skeleton-bar\{[^}]*margin:0 0 0 auto/);
  assert.match(css,/\.app-player-detail-info-line \[data-detail-value="age"\] \.app-skeleton-bar\{width:30px\}/);
  assert.match(css,/\.app-player-detail-name-skeleton\{width:160px;height:24px\}/);
+});
+
+test('#535 positions are mirrored and markers do not collide',()=>{
+ const source=read('assets/player-detail.js');
+ const value=source.match(/const pitchCoords=Object\.freeze\(\{([^}]+)\}\);/)?.[1];
+ assert.ok(value);
+ const pos=Object.fromEntries([...value.matchAll(/([A-Z]+):\[(\d+),(\d+)\]/g)].map(([,k,x,y])=>[k,[+x,+y]]));
+ assert.equal(Object.keys(pos).length,14);
+ for(const [l,r] of [['LB','RB'],['LWB','RWB'],['LM','RM'],['LW','RW']]){
+  assert.equal(pos[l][0]+pos[r][0],240);
+  assert.equal(pos[l][1],pos[r][1]);
+ }
+ for(const [k,[x,y]] of Object.entries(pos))assert.ok(x>=25&&x<=215&&y>=25&&y<=305,k);
+ for(const [a,b] of [['GK','CB'],['CB','DM'],['DM','CM'],['CM','AM'],['AM','ST'],['LB','LWB'],['RB','RWB'],['RM','RW'],['LM','LW']])
+  assert.ok(Math.hypot(pos[a][0]-pos[b][0],pos[a][1]-pos[b][1])>32,a+'/'+b);
+});
+test('#535 primary role highlights align with canonical generator A/B tiers',()=>{
+ const source=read('assets/player-detail.js'),generator=read('backend/src/players-generator-core.mjs');
+ const clientText=source.match(/const roleAttributeProfiles=Object\.freeze\(\{([\s\S]*?)\}\);/)?.[1];
+ const generatorText=generator.match(/const profiles=\{([\s\S]*?)\};/)?.[1];
+ assert.ok(clientText&&generatorText);
+ const pairs=text=>Object.fromEntries([...text.matchAll(/^\s*(\w+):\['([^']+)','([^']+)'\],?\s*$/gm)]
+  .map(([,k,a,b])=>[k,[a.split(' '),b.split(' ')]]));
+ const client=pairs(clientText),engine=pairs(generatorText);
+ assert.deepEqual(Object.keys(client).sort(),['GK',...Object.keys(engine)].sort());
+ for(const [role,tiers] of Object.entries(engine))assert.deepEqual(client[role],tiers,role);
+ assert.deepEqual(client.GK,[['gk_reflexes','gk_handling','gk_positioning','gk_aerial'],['agility','positioning','decisions','composure']]);
+ for(const [role,[a,b]] of Object.entries(client)){assert.equal(a.length,4,role);assert.equal(b.length,4,role);assert.equal(new Set([...a,...b]).size,8,role);}
+ assert.match(source,/row\.classList\.toggle\('is-core'/);
+ assert.match(source,/row\.classList\.toggle\('is-support'/);
+ const css=read('assets/player-detail.css');
+ assert.match(css,/\.app-player-detail-attribute-line\.is-core/);
+ assert.match(css,/\.app-player-detail-attribute-line\.is-support/);
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.equal((html.match(/data-detail-legend-title/g)||[]).length,1);
+  assert.equal((html.match(/data-detail-tier="core"/g)||[]).length,1);
+  assert.equal((html.match(/data-detail-tier="support"/g)||[]).length,1);
+ }
 });
