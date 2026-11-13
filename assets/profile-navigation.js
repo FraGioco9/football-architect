@@ -14,7 +14,7 @@
  }
  function mountAdminNavigation(win){
   const doc=win.document,settings=doc.getElementById('app-nav-settings');if(!settings)return;
-  const onAdmin=/^\/admin(?:\/calendar|\/players(?:\/preview)?)?$/.test(win.location.pathname.replace(/\/+$/,''));
+  const onAdmin=/^\/admin(?:\/(?:calendar|contracts|players(?:\/preview)?))?$/.test(win.location.pathname.replace(/\/+$/,''));
   let entry=null,request=0;
   function paint(){
    if(!entry)return;

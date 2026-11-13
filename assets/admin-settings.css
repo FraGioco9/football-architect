@@ -52,7 +52,7 @@
 @media(max-width:800px){.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.admin-players .admin-players-fields{grid-template-columns:1fr}.admin-players .admin-players-fields.is-attributes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-.app-admin-view .admin-directory-card[hidden],.app-admin-view [data-admin-players][hidden]{display:none!important}
+.app-admin-view .admin-directory-card[hidden],.app-admin-view [data-admin-players][hidden],.app-admin-view [data-admin-contracts][hidden],.app-admin-view [data-contracts-editor][hidden]{display:none!important}
 
 /* Admin directory: separate cards with actual navigation buttons. */
 .app-admin-view .admin-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--fa-space-4);min-width:0}
@@ -163,3 +163,29 @@
 .app-admin-view .admin-players-feedback,.app-admin-view .admin-players-commit-status{min-height:1.4em;margin:0;overflow-wrap:anywhere}
 .app-admin-view .admin-players-commit-status{padding:12px 20px}
 
+
+/* Contracts V1 shares the site's Admin typography, buttons and control tokens. */
+.app-admin-view .admin-contracts{width:100%;min-width:0}
+.app-admin-view .admin-contracts-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:6px 0 14px}
+.app-admin-view .admin-contracts-toolbar form{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.app-admin-view .admin-contracts-toolbar label{margin:0;display:grid;gap:5px;font-size:13px}
+.app-admin-view .admin-contracts-toolbar input{box-sizing:border-box;width:170px;min-height:42px;padding:8px 10px;margin:0;border:1px solid var(--border);border-radius:var(--fa-radius-control);background:var(--surface);color:var(--text);font:inherit}
+.app-admin-view .admin-contracts .app-link{display:inline-flex;align-items:center;justify-content:center;min-height:var(--fa-control-height-regular);margin:0;padding:8px 12px;cursor:pointer}
+.app-admin-view .admin-contracts .app-link:disabled{opacity:.55;cursor:default}
+.app-admin-view .admin-contracts-table-scroll{overflow-x:auto;min-width:0;max-width:100%;border:1px solid var(--border);border-radius:var(--fa-radius-control)}
+.app-admin-view .admin-contracts-table{width:100%;border-collapse:collapse;min-width:540px;table-layout:fixed}
+.app-admin-view .admin-contracts-table th,.app-admin-view .admin-contracts-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);overflow-wrap:anywhere;font-size:var(--fa-text-control)}
+.app-admin-view .admin-contracts-table th:first-child,.app-admin-view .admin-contracts-table td:first-child{width:56px}
+.app-admin-view .admin-contracts-table th:last-child,.app-admin-view .admin-contracts-table td:last-child{width:112px;text-align:right}
+.app-admin-view .admin-contracts-table tbody tr:last-child td{border-bottom:0}
+.app-admin-view .admin-contracts-skeleton span{display:block;width:70%;height:1em;border-radius:4px;background:var(--border)}
+.app-admin-view .admin-contracts-pagination{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;margin-top:12px}
+.app-admin-view .admin-contracts-editor{border-top:1px solid var(--border);margin-top:16px;padding-top:16px;display:grid;gap:12px}
+.app-admin-view .admin-contracts-editor h3,.app-admin-view .admin-contracts-editor p{margin:0}
+.app-admin-view .admin-contracts-editor label{display:grid;gap:6px;max-width:480px;margin:0;font-size:13px}
+.app-admin-view .admin-contracts-select{width:100%;min-width:0;min-height:42px;max-width:100%;margin:0;padding:8px 12px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-control);font:inherit;cursor:pointer}
+.app-admin-view .admin-contracts-select:hover{border-color:var(--fa-field-hover-border);background:var(--fa-field-hover-bg)}
+.app-admin-view .admin-contracts-select:focus-visible,.app-admin-view .admin-contracts-toolbar input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app-admin-view .admin-contracts-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.app-admin-view .admin-contracts-message{min-height:1.5em;margin:0;color:var(--muted);font-size:13px}
+@media(max-width:620px){.app-admin-view .admin-contracts-toolbar form{width:100%}.app-admin-view .admin-contracts-toolbar input{min-width:0;width:100%}.app-admin-view .admin-contracts-toolbar label{flex:1;min-width:0}}
