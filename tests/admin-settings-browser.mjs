@@ -487,6 +487,56 @@ try{
    checks++;
   }finally{await context.close();}
  }
+ // #509 Contracts browser acceptance: all Worker responses are synthetic.
+ {
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const generation='11111111-1111-4111-8111-111111111111';
+   let currentClub=null,writes=0,permissionReads=0;
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>{
+    permissionReads++;
+    return r.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})});
+   });
+   await page.route('**/api/admin/session',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({actor:{id:'contracts-operator'},csrfToken:'a'.repeat(64)})}));
+   await page.route('**/api/admin/contracts*',async r=>{
+    if(r.request().method()==='POST'){
+     writes++;
+     assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
+     const payload=r.request().postDataJSON();
+     assert.deepEqual(payload,{playerId:1,clubKey:writes===1?'IT-1':null,
+      expectedClubKey:writes===1?null:'IT-1',expectedGeneration:generation,expectedRevision:0});
+     currentClub=payload.clubKey;
+     return r.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({playerId:1,clubKey:currentClub,worldGeneration:generation,worldRevision:0})});
+    }
+    return r.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({count:1,page:1,pageSize:50,totalPages:1,worldGeneration:generation,
+      worldRevision:0,players:[{id:1,name:'Test Player',clubKey:currentClub}],
+      clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
+   });
+   await page.goto('http://app.localhost:2000/admin');
+   await page.locator('[data-admin-card="contracts"]').waitFor({state:'visible'});
+   assert.equal(await page.locator('.admin-directory-card').count(),3);
+   await page.locator('[data-admin-card="contracts"]').click();
+   await page.waitForURL('**/admin/contracts');
+   await page.locator('[data-contracts-edit="1"]').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await page.locator('[data-contracts-edit="1"]').click();
+   await page.locator('[data-contracts-select]').selectOption('IT-1');
+   await page.locator('[data-contracts-save]').click();
+   await page.waitForFunction(()=>document.querySelector('[data-contracts-rows]')?.textContent?.includes('Test Italian Club'));
+   await page.locator('[data-contracts-edit="1"]').click();
+   await page.locator('[data-contracts-unassign]').click();
+   await page.waitForFunction(()=>document.querySelector('[data-contracts-rows]')?.textContent?.includes('Unassigned'));
+   assert.equal(writes,2);
+   assert.ok(permissionReads<=2,'Admin pages share the same per-tab permission snapshot');
+   assert.deepEqual(errors,[]);checks++;
+  }finally{await context.close()}
+ }
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
  preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));
