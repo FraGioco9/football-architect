@@ -5,7 +5,7 @@ import { createDebugWidget, registerDebugControls } from "./debug-widget.mjs";
 import { DEBUG_CONTROL_LIMITS } from "./dev-debug-config.mjs";
 import { createDevWorldClock, nationalProgress, DAY_KEY } from "./dev-world-clock.mjs";
 
-const debugEnabled=()=>window.faDebugEnabled!==false;
+const debugEnabled=()=>window.faDebugEnabled===true;
 const FLAG = "football-architect:standings-dev-preview";
 const SEASON_KEY = "football-architect:standings-dev-season";
 const ROUNDS_KEY = "football-architect:standings-dev-matchdays";
