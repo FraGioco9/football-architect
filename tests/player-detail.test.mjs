@@ -256,7 +256,7 @@ test('#535 selectable pitch roles use a primary default and update A/B without l
 
 test('#535 header shows position chain, nationality/age and canonical club or Free Agent',()=>{
  const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
- assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(' · '\)/);
+ assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(', '\)/);
  assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality\)\)/);
  assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)/);
  assert.match(js,/player\.clubKey===null\)\{setContent\(clubNode,'Free Agent'\)/);
@@ -265,7 +265,7 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
  assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
  assert.doesNotMatch(js,/fetch\('\/api\/admin\/contracts'/);
- assert.match(css,/\.app-player-detail-affiliation\{[^}]*border-left:1px solid var\(--line\)/);
+ assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:68px;background:var\(--line\)/);
  assert.match(css,/\.app-player-detail-club-crest/);
  assert.match(css,/\.app-player-detail-club-link/);
  for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
@@ -282,7 +282,7 @@ test('#535 header shows position chain, nationality/age and canonical club or Fr
 test('#535 position selection uses a subtle animated ring and reduced-motion support',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
  assert.match(js,/ring\.setAttribute\('class','app-player-detail-marker-ring'\)/);
- assert.match(js,/g\.append\(title,ring,circle,label\)/);
+ assert.match(js,/g\.append\(ring,circle,label\)/);
  assert.match(js,/renderRoleHighlights\(\)/);
  assert.match(css,/\.app-player-detail-marker-ring\{[^}]*transition:opacity .2s ease,transform .2s ease/);
  assert.match(css,/\.app-player-detail-pitch-marker\.is-selected \.app-player-detail-marker-ring/);
@@ -296,4 +296,37 @@ test('#509 detail keeps public clubKey read-only and never guesses absent affili
  assert.match(backend,/return \{player:\{\.\.\.projectPublicFootballerDirectoryRecord/);
  assert.match(js,/if\(preview\|\|player\.clubKey===null\)/);
  assert.match(js,/if\(!c\|\|typeof c\.primaryName!=='string'\)\{setContent\(clubNode,'—'\)/);
+});
+
+test('#535 follow-up: marker has no native tooltip, club has stacked crest and name with paired skeletons',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ assert.doesNotMatch(js,/document\.createElementNS\(ns,'title'\)/);
+ assert.doesNotMatch(js,/g\.append\(title,/);
+ assert.match(js,/g\.setAttribute\('aria-label',/);
+ assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(', '\)/);
+ assert.match(js,/img\.width=72;img\.height=72/);
+ assert.match(js,/clubCatalogResolved=true/);
+ assert.match(js,/renderClubSkeleton\(\)/);
+ assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:68px/);
+ assert.match(css,/\.app-player-detail-club-link\{display:flex;flex-direction:column/);
+ assert.match(css,/\.app-player-detail-club-crest,\.app-player-detail-club-crest-placeholder\{[^}]*width:72px;height:72px/);
+ assert.match(css,/\.app-player-detail-club-logo-skeleton\{[^}]*width:72px;height:72px/);
+ assert.match(css,/\.app-player-detail-club-name-skeleton\{[^}]*width:120px/);
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file);
+  assert.match(html,/app-player-detail-club-logo-skeleton/);
+  assert.match(html,/app-player-detail-club-name-skeleton/);
+  assert.doesNotMatch(html,/app-player-detail-club-skeleton/);
+ }
+});
+test('#535 natural age text and nationality aligned on same header baseline in five locales',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ assert.match(js,/function localizedAge\(n\)/);
+ for(const phrase of ["'anni'","'years'","'old'","'Jahre'","'alt'","'años'","'ans'"])
+  assert.ok(js.includes(phrase),phrase);
+ assert.doesNotMatch(js,/copy\.fields\[2\]\+': '\+player\.age/);
+ assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)\?localizedAge\(player\.age\):'—'\)/);
+ assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center;/);
+ assert.match(css,/\.app-player-detail-header-meta>\[data-detail-header-nationality\],\.app-player-detail-header-meta>\[data-detail-header-age\]\{display:inline-flex;align-items:center/);
+ assert.match(css,/\.app-player-detail-header-meta \.app-player-detail-country\{display:inline-flex;align-items:center/);
 });

@@ -22,7 +22,7 @@ function detailPanel(preview){
   +'<p class="app-player-detail-role" data-detail-role><span class="app-skeleton-bar" aria-hidden="true"></span></p>'
   +'<div class="app-player-detail-header-meta"><span data-detail-header-nationality><span class="app-skeleton-bar app-player-detail-nationality-skeleton" aria-hidden="true"></span></span><span class="app-player-detail-header-separator" aria-hidden="true">·</span><span data-detail-header-age><span class="app-skeleton-bar app-player-detail-age-skeleton" aria-hidden="true"></span></span></div>'
   +'<p class="app-player-detail-subtitle" data-detail-subtitle>&nbsp;</p></div>'
-  +'<div class="app-player-detail-affiliation"><div class="app-player-detail-affiliation-content" data-detail-club><span class="app-skeleton-bar app-player-detail-club-skeleton" aria-hidden="true"></span></div></div>'
+  +'<div class="app-player-detail-affiliation"><div class="app-player-detail-affiliation-content" data-detail-club><span class="app-player-detail-club-loading" aria-hidden="true"><span class="app-skeleton-bar app-player-detail-club-logo-skeleton"></span><span class="app-skeleton-bar app-player-detail-club-name-skeleton"></span></span></div></div>'
   +(preview?'<a class="app-player-detail-back" data-detail-back href="/admin/players">Back to preview</a>':'')+'</header>\n'
   +'<nav class="app-competition-tabs club-tabs app-player-detail-tabs" role="tablist" aria-label="Player views">'+viewTabs+'</nav>\n'
   +'<div class="app-player-detail-overview" id="player-detail-overview-panel" data-detail-panel="overview" role="tabpanel" aria-labelledby="player-detail-overview-tab">'

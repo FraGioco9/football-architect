@@ -61,7 +61,7 @@
   ST:['shooting positioning composure heading','speed strength technique agility']
  });
  const attrGroups=['technical','mental','physical','goalkeeping'];
- let player=null,state='loading',request=0,selectedPosition=null,clubCatalog=null,clubCatalogPromise=null;
+ let player=null,state='loading',request=0,selectedPosition=null,clubCatalog=null,clubCatalogPromise=null,clubCatalogResolved=false;
  function previewReturnUrl(){
   const url=new URL('/admin/players/preview',location.origin);url.searchParams.set('draftId',context.draftId);
   const hash=new URLSearchParams();
@@ -127,8 +127,7 @@
    const ring=document.createElementNS(ns,'circle');ring.setAttribute('class','app-player-detail-marker-ring');ring.setAttribute('cx',String(x));ring.setAttribute('cy',String(y));ring.setAttribute('r','20');
    const circle=document.createElementNS(ns,'circle');circle.setAttribute('class','app-player-detail-marker-disc');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
    const label=document.createElementNS(ns,'text');label.setAttribute('x',String(x));label.setAttribute('y',String(y+4));label.setAttribute('text-anchor','middle');label.textContent=code;
-   const title=document.createElementNS(ns,'title');title.textContent=(primary?ex().primary:ex().secondary)+': '+code;
-   g.append(title,ring,circle,label);
+   g.append(ring,circle,label);
    g.addEventListener('click',()=>selectPosition(code));
    g.addEventListener('keydown',event=>{
     if(event.key!=='Enter'&&event.key!==' ')return;
@@ -148,11 +147,30 @@
    else label.removeAttribute('aria-label');
   }
  }
+ function localizedAge(n){
+  const lang=language();
+  if(lang==='it')return n+' '+(n===1?'anno':'anni');
+  if(lang==='de')return n+' '+(n===1?'Jahr':'Jahre')+' alt';
+  if(lang==='es')return n+' '+(n===1?'año':'años');
+  if(lang==='fr')return n+' '+(n===1?'an':'ans');
+  return n+' '+(n===1?'year':'years')+' old';
+ }
+ function renderClubSkeleton(){
+  if(clubNode.querySelector('.app-player-detail-club-loading'))return;
+  const wrapper=document.createElement('span');wrapper.className='app-player-detail-club-loading';
+  wrapper.setAttribute('aria-hidden','true');
+  for(const name of ['logo','name']){
+   const bar=document.createElement('span');bar.className='app-skeleton-bar app-player-detail-club-'+name+'-skeleton';
+   wrapper.append(bar);
+  }
+  clubNode.replaceChildren(wrapper);
+ }
  function renderClub(){
   if(!player)return;
   if(preview||player.clubKey===null){setContent(clubNode,'Free Agent');return;}
   // Unknown/unavailable affiliation is not a verified free agent.
   const key=player.clubKey;
+  if(typeof key==='string'&&!clubCatalogResolved){renderClubSkeleton();return;}
   const c=typeof key==='string'&&Array.isArray(clubCatalog?.clubs)
    ?clubCatalog.clubs.find(entry=>entry.countryId+'-'+entry.clubId===key):null;
   if(!c||typeof c.primaryName!=='string'){setContent(clubNode,'—');return;}
@@ -162,7 +180,7 @@
   const crest=clubCatalog.clubCrests?.[key];
   if(typeof crest==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(crest)){
    const img=document.createElement('img');img.className='app-player-detail-club-crest';img.src='/'+crest;img.alt='';
-   img.width=42;img.height=42;link.append(img);
+   img.width=72;img.height=72;link.append(img);
   }else{
    const spacer=document.createElement('span');spacer.className='app-player-detail-club-crest-placeholder';
    spacer.setAttribute('aria-hidden','true');link.append(spacer);
@@ -178,7 +196,7 @@
    .catch(()=>null);
   const manifest=await clubCatalogPromise;
   if(ticket!==request)return;
-  clubCatalog=manifest;
+  clubCatalog=manifest;clubCatalogResolved=true;
   renderClub();
  }
  function render(){
@@ -219,9 +237,9 @@
    renderPitch();return;
   }
   setContent(nameNode,player.display_name||[player.first_name,player.last_name].filter(Boolean).join(' ')||copy.player);
-  roleNode.textContent=positionCodes().join(' · ')||'—';
+  roleNode.textContent=positionCodes().join(', ')||'—';
   setContent(nationalityNode,countryNode(player.nationality));
-  setContent(ageNode,Number.isSafeInteger(player.age)?copy.fields[2]+': '+player.age:'—');
+  setContent(ageNode,Number.isSafeInteger(player.age)?localizedAge(player.age):'—');
   renderClub();
   subtitle.textContent=preview?copy.preview:'';
   for(const key of ['nationality','secondary_nationality','age','height_cm','preferred_foot'])
@@ -268,7 +286,7 @@
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
   nationalityNode.replaceChildren(skeleton('app-player-detail-nationality-skeleton'));
   ageNode.replaceChildren(skeleton('app-player-detail-age-skeleton'));
-  clubNode.replaceChildren(skeleton('app-player-detail-club-skeleton'));
+  renderClubSkeleton();
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
   render();
