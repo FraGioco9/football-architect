@@ -249,6 +249,16 @@
    const key=view?'data-club-roster-view':'data-club-roster-group';
    host.querySelector('['+key+'="'+(view||group)+'"]')?.focus({preventScroll:true});
   });
+  host.addEventListener('keydown',event=>{
+   const tab=event.target.closest?.('[data-club-roster-view],[data-club-roster-group]');
+   if(!tab||selected.view!=='roster')return;
+   const list=tab.closest('[role="tablist"]');
+   const options=[...list.querySelectorAll('[role="tab"]')],index=options.indexOf(tab);
+   if(index<0)return;
+   const next={ArrowRight:(index+1)%options.length,ArrowLeft:(index+options.length-1)%options.length,Home:0,End:options.length-1}[event.key];
+   if(next===undefined)return;
+   event.preventDefault();options[next].click();
+  });
   // A current-state roster read is independent of sporting seasons and archives.
   let rosterRequest=0,rosterAbort=null;
   refreshClubRoster=()=>{
