@@ -237,27 +237,33 @@
    }
   });
   paint();
-  // Each roster display has a stable URL. The same snapshot serves every view.
+  // Each roster subview is a direct URL; no intermediate Attributes tab.
+  // Reuse the loaded club snapshot for category switches without another request.
   host.addEventListener('click',event=>{
-   const control=event.target.closest?.('a[data-club-roster-view],a[data-club-roster-group]');
+   const control=event.target.closest?.('a[data-club-roster-view]');
    if(!control||selected.view!=='roster'||event.defaultPrevented||event.button!==0||
     event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-   const view=control.dataset.clubRosterView,group=control.dataset.clubRosterGroup;
-   const target=view==='info'?'info':view==='attributes'?'technical':group;
-   if(!['info','technical','mental','physical','goalkeeping'].includes(target))return;
+   const target=control.dataset.clubRosterView;
+   const groups={
+    info:['age','height','foot'],
+    technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
+    mental:['vision','positioning','decisions','composure'],
+    physical:['speed','strength','stamina','agility'],
+    goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
+   };
+   if(!Object.hasOwn(groups,target))return;
    event.preventDefault();
    const params=new URLSearchParams(location.search);
    params.delete('view');params.delete('group');params.set('view',target);
    const sort=params.get('sort');
-   if(sort&&!['nationality','name','positions'].includes(sort)){
+   if(sort&&!['nationality','name','positions',...groups[target]].includes(sort)){
     params.delete('sort');params.delete('order');
    }
    const next=location.pathname+'?'+params.toString()+location.hash;
    if(next===location.pathname+location.search+location.hash)return;
    history.pushState(null,'',next);
    paint(true);
-   const key=view?'data-club-roster-view':'data-club-roster-group';
-   host.querySelector('['+key+'="'+(view||group)+'"]')?.focus({preventScroll:true});
+   host.querySelector('[data-club-roster-view="'+target+'"]')?.focus({preventScroll:true});
   });
   // Identical sort cycle to /players: descending, ascending, reset.
   // Sort the in-memory club snapshot without repeating its public API request.
@@ -284,7 +290,7 @@
    host.querySelector('[data-club-roster-sort="'+key+'"]')?.focus({preventScroll:true});
   });
   host.addEventListener('keydown',event=>{
-   const tab=event.target.closest?.('[data-club-roster-view],[data-club-roster-group]');
+   const tab=event.target.closest?.('[data-club-roster-view]');
    if(!tab||selected.view!=='roster')return;
    const list=tab.closest('[role="tablist"]');
    const options=[...list.querySelectorAll('[role="tab"]')],index=options.indexOf(tab);
@@ -501,7 +507,7 @@
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
      const requested=new URLSearchParams(location.search).get('view');
-     const mode=['technical','mental','physical','goalkeeping'].includes(requested)?'attributes':'info';
+     const mode=['technical','mental','physical','goalkeeping'].includes(requested)?requested:'info';
      host.querySelector('[data-club-roster-view="'+mode+'"]')?.focus({preventScroll:true});
     }else host.querySelector('.club-tabs [aria-current="page"]')?.focus({preventScroll:true});
    }
