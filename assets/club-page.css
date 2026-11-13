@@ -536,6 +536,6 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
  .club-roster .club-roster-tabs{--app-tabs-fade-left:0px;--app-tabs-fade-right:0px;scroll-padding-inline:0;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
  .club-roster .club-roster-tabs[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
  .club-roster .club-roster-tabs[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
- .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc((100% - 8px)/2.5);width:calc((100% - 8px)/2.5);min-width:calc((100% - 8px)/2.5);max-width:calc((100% - 8px)/2.5);height:32px;min-height:32px;padding-inline:4px}
+ .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);height:32px;min-height:32px;padding-inline:4px}
  .club-roster-count{flex:0 0 92px;min-width:92px;font-size:11px}
 }
