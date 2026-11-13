@@ -63,7 +63,7 @@ test("SAF-02/04 both competition and club fades initialize during parsing",()=>{
 test("Calendar first paint resolves the stored DEV season, including the selected Week",()=>{
  for(const path of ["tools/render-world-calendar.mjs","calendar/index.html"]){
   const html=read(path);
-  assert.match(html,/window\.faDebugEnabled !== false\s*&&\s*\(window\.faDevPreviewMode === true/);
+  assert.match(html,/window\.faDebugEnabled === true\s*&&\s*\(window\.faDevPreviewMode === true/);
   assert.match(html,/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
   assert.doesNotMatch(html,/const limit=window\.faDevCalendarClockSnapshot\?\.source\?\.kind==='dev'/);
  }
