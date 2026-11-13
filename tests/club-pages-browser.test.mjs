@@ -902,7 +902,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
  const {published}=await import('./canonical-state-browser.mjs');
  const browser=chrome(),dir=await mkdtemp(join(tmpdir(),'fa-club-fixtures-'));
  let world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:1,day:16,phase:'active'};
- let hold=false,failHistory=false,failCompetition=false,useDev=false;const held=[];
+ let hold=false,failHistory=false,failCompetition=false,failFixtures=false,useDev=false;const held=[];let fixtureReads=0,competitionReads=0;
  const payloadFor=season=>{
   const closed=season<world.seasonNumber||world.phase==='closed';
   const raw=published('IT-1',season,closed?{...world,day:56}:world);
@@ -916,6 +916,22 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   const path=new URL(req.url,'http://localhost').pathname;
   const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};
   if(path==='/api/world')return json(200,{world});
+  const clubFixtureRoute=/^\/api\/clubs\/IT-1\/seasons\/([12])\/fixtures$/.exec(path);
+  if(clubFixtureRoute){
+   fixtureReads++;const season=Number(clubFixtureRoute[1]),raw=payloadFor(season);
+   const packet={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,
+    status:raw.status,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
+    data:{season,seasonState:raw.data.seasonState,competitions:['IT-1'],
+     fixtures:raw.data.fixtures.filter(f=>[f.homeClubId,f.awayClubId].includes('IT-1'))}};
+   const send=()=>{
+    if(failFixtures)return json(503,{error:{code:'sporting_data_unavailable'}});
+    if(failCompetition)return json(200,{...packet,status:'unavailable',reason:'unsupported-season',
+     provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null});
+    return json(200,packet);
+   };
+   if(hold)held.push(send);else send();return;
+  }
   if(path==='/api/clubs/IT-1/history'){
    if(failHistory)return json(503,{});
    const overviews=Array.from({length:world.seasonNumber},(_,i)=>{
@@ -929,6 +945,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   }
   const competition=/^\/api\/competitions\/IT-1\/seasons\/([12])$/.exec(path);
   if(competition){
+   competitionReads++;
    const data=payloadFor(Number(competition[1])),send=()=>json(failCompetition?503:200,data);
    if(hold)held.push(send);else send();return;
   }
@@ -955,6 +972,8 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
+  assert.ok(fixtureReads>=2,'verified club fixture endpoint serves the public view');
+  assert.equal(competitionReads,0,'Club Fixtures never calls the per-competition season APIs');
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'Season 1 offers only Season 1');
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null);
 
@@ -1062,9 +1081,11 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   assert.equal(await run("document.querySelector('.club-history [data-club-history-toggle]').getAttribute('aria-expanded')"),'true','public History stays interactive after Fixtures');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   failCompetition=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unavailable'");assert.equal(await run("document.querySelectorAll('[data-club-fixture-id]').length"),0);
-  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
+  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  assert.equal(competitionReads,0,'History outage cannot trigger competition fan-out');
+  failHistory=false;failFixtures=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null,'errors add no notice');
-  failHistory=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+  failFixtures=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'world Season 0 still offers only viewed Season 1');
   assert.deepEqual(await run('window.__errors'),[]);
