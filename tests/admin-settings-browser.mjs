@@ -351,7 +351,7 @@ try{
     assert.equal(await page.locator('[data-detail-panel="info"]').isVisible(),true);
     assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),false);
     assert.equal(new URL(page.url()).searchParams.get('view'),'info');
-    assert.equal(await page.locator('[data-detail-value="nationality"]').innerText(),'Italy','Nationality presents its full localized name, not the code');
+    assert.equal((await page.locator('[data-detail-value="nationality"]').innerText()).trim(),'Italy','Nationality presents its full localized name, not the code');
     await page.goBack();
     assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),true,'Browser Back restores Overview');
     assert.equal(await page.locator('[data-detail-view="overview"]').getAttribute('aria-selected'),'true');
