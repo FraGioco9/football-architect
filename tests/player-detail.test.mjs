@@ -53,7 +53,7 @@ test('#502 both generated detail shells match canonical renderer and reserve fir
    assert.match(html,/name="robots" content="noindex,nofollow"/);
    assert.match(html,/meta name="referrer" content="no-referrer"/);
    assert.match(html,/data-player-detail-mode="preview" hidden/);
-   assert.match(html,/src="\\/assets\\/admin-permissions-cache.js" defer/);
+   assert.match(html,/src="\/assets\/admin-permissions-cache.js" defer/);
   }
  }
 });
