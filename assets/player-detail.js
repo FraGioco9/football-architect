@@ -177,18 +177,21 @@
    ?clubCatalog.clubs.find(entry=>entry.countryId+'-'+entry.clubId===key):null;
   if(!c||typeof c.primaryName!=='string'){setContent(clubNode,'—');return;}
   const [country,number]=key.split('-');
+  // The crest is a passive image; only the club name is a link.
+  const stack=document.createElement('div');stack.className='app-player-detail-club-stack';
   const link=document.createElement('a');link.className='app-player-detail-club-link';
   link.href='/clubs/'+country.toLowerCase()+'/'+number+'/overview';
   const crest=clubCatalog.clubCrests?.[key];
   if(typeof crest==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(crest)){
    const img=document.createElement('img');img.className='app-player-detail-club-crest';img.src='/'+crest;img.alt='';
-   img.width=72;img.height=72;link.append(img);
+   img.width=72;img.height=72;stack.append(img);
   }else{
    const spacer=document.createElement('span');spacer.className='app-player-detail-club-crest-placeholder';
-   spacer.setAttribute('aria-hidden','true');link.append(spacer);
+   spacer.setAttribute('aria-hidden','true');stack.append(spacer);
   }
-  const name=document.createElement('span');name.textContent=c.primaryName;link.append(name);
-  clubNode.replaceChildren(link);
+  const name=document.createElement('span');name.className='app-player-detail-club-name';
+  name.textContent=c.primaryName;link.append(name);stack.append(link);
+  clubNode.replaceChildren(stack);
  }
  async function resolveClubCatalog(ticket){
   if(!player||!player.clubKey)return;

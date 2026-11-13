@@ -309,7 +309,7 @@ test('#535 follow-up: marker has no native tooltip, club has stacked crest and n
  assert.match(js,/clubCatalogResolved=true/);
  assert.match(js,/renderClubSkeleton\(\)/);
  assert.match(css,/\.app-player-detail-affiliation::before\{[^}]*height:126px/);
- assert.match(css,/\.app-player-detail-club-link\{display:flex;flex-direction:column/);
+ assert.match(css,/\.app-player-detail-club-stack\{display:flex;flex-direction:column/);
  assert.match(css,/\.app-player-detail-club-crest,\.app-player-detail-club-crest-placeholder\{[^}]*width:72px;height:72px/);
  assert.match(css,/\.app-player-detail-club-logo-skeleton\{[^}]*width:72px;height:72px/);
  assert.match(css,/\.app-player-detail-club-name-skeleton\{[^}]*width:120px/);
@@ -378,8 +378,8 @@ test('#535 loading shows only flag and nationality skeleton; age and dot appear 
  assert.doesNotMatch(renderer,/app-player-detail-age-skeleton/);
  assert.match(css,/\.app-player-detail-header-meta \[hidden\]\{display:none!important\}/);
  assert.doesNotMatch(css,/\.app-player-detail-age-skeleton/);
- assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:38px/);
- assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:28px/);
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:62px/);
+ assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:44px/);
  for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(file),start=html.indexOf('class="app-player-detail-header-meta"'),
    end=html.indexOf('class="app-player-detail-affiliation"',start),header=html.slice(start,end);
@@ -389,4 +389,35 @@ test('#535 loading shows only flag and nationality skeleton; age and dot appear 
   assert.match(header,/data-detail-header-age hidden><\/span>/);
   assert.doesNotMatch(header,/app-player-detail-age-skeleton/);
  }
+});
+
+test('#535 linked club label only, with passive crest and hover confined to text',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ const start=js.indexOf(' function renderClub(){'),end=js.indexOf(' async function resolveClubCatalog(',start),part=js.slice(start,end);
+ assert.match(part,/const stack=document\.createElement\('div'\);stack\.className='app-player-detail-club-stack'/);
+ assert.match(part,/img\.width=72;img\.height=72;stack\.append\(img\)/);
+ assert.match(part,/stack\.append\(spacer\)/);
+ assert.match(part,/name\.className='app-player-detail-club-name'/);
+ assert.match(part,/name\.textContent=c\.primaryName;link\.append\(name\);stack\.append\(link\)/);
+ assert.match(part,/clubNode\.replaceChildren\(stack\)/);
+ assert.doesNotMatch(part,/link\.append\(img\)|link\.append\(spacer\)/);
+ assert.match(css,/\.app-player-detail-club-link:hover \.app-player-detail-club-name\{text-decoration:underline/);
+ assert.match(css,/\.app-player-detail-club-link:focus-visible\{outline:2px solid var\(--focus\)/);
+});
+test('#535 right-shift desktop/tablet, no mobile separator and mobile crest/label smaller',()=>{
+ const css=read('assets/player-detail.css');
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*margin-left:62px/);
+ assert.match(css,/@media\(max-width:900px\)\{\.app-player-detail-identity\{[^}]*\}\.app-player-detail-affiliation\{[^}]*margin-left:44px/);
+ const mobile=css.slice(css.indexOf('@media(max-width:620px)'),css.indexOf('@media(max-width:460px)'));
+ assert.match(mobile,/\.app-player-detail-affiliation::before\{display:none\}/);
+ assert.match(mobile,/\.app-player-detail-club-crest,\.app-player-detail-club-crest-placeholder,\.app-player-detail-club-logo-skeleton\{width:48px;height:48px\}/);
+ assert.match(mobile,/\.app-player-detail-affiliation-content\{min-height:80px;font-size:13px\}/);
+ assert.match(mobile,/\.app-player-detail-club-name-skeleton\{width:92px;height:14px\}/);
+ assert.doesNotMatch(mobile,/height:100px/);
+});
+test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens',()=>{
+ const css=read('assets/player-detail.css');
+ assert.match(css,/\.app-player-detail-info-view\{margin-top:14px;min-width:0;box-sizing:border-box\}/);
+ assert.match(css,/@media\(min-width:901px\)\{\.app-player-detail-info-view\{width:min\(100%,680px\)\}\}/);
+ assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
 });
