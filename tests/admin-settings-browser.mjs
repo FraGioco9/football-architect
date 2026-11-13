@@ -319,13 +319,24 @@ try{
      const rows=[...document.querySelectorAll('[data-detail-attribute-group="technical"] .app-player-detail-attribute-line')];
      return {panelWidth:panel.width,pitchWidth:pitch.width,pitchCenter:(pitch.left+pitch.right)/2,
       panelCenter:(panel.left+panel.right)/2,topDifference:Math.abs(panel.top-attrs.top),
+      panelBottom:panel.bottom,attributesTop:attrs.top,
       headingFontSize:getComputedStyle(label).fontSize,
       firstDivider:getComputedStyle(rows[0]).borderBottomWidth,lastDivider:getComputedStyle(rows.at(-1)).borderBottomWidth};
     });
     assert.ok(detailMetrics.pitchWidth>0&&detailMetrics.pitchWidth<=330,'Pitch fits reserved responsive width');
     assert.ok(detailMetrics.pitchWidth<=detailMetrics.panelWidth,'Pitch cannot overflow its panel');
     assert.ok(Math.abs(detailMetrics.pitchCenter-detailMetrics.panelCenter)<3,'Pitch centered horizontally');
-    assert.ok(detailMetrics.topDifference<2,'Positions and Attributes share their top row');
+    // This fixture uses a 390px viewport: mobile Overview panels stack vertically.
+    assert.ok(detailMetrics.attributesTop>=detailMetrics.panelBottom-2,
+      'Mobile Positions and Attributes stack without overlap');
+    await page.setViewportSize({width:1280,height:900});
+    const desktopTopDifference=await page.evaluate(()=>{
+     const positions=document.querySelector('[data-detail-positions]').getBoundingClientRect();
+     const attributes=document.querySelector('.app-player-detail-attributes').getBoundingClientRect();
+     return Math.abs(positions.top-attributes.top);
+    });
+    assert.ok(desktopTopDifference<2,'Desktop Positions and Attributes share their top row');
+    await page.setViewportSize({width:390,height:844});
     assert.equal(detailMetrics.headingFontSize,'22px');
     assert.equal(detailMetrics.firstDivider,'1px');
     assert.equal(detailMetrics.lastDivider,'0px');
@@ -340,7 +351,7 @@ try{
     assert.equal(await page.locator('[data-detail-panel="info"]').isVisible(),true);
     assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),false);
     assert.equal(new URL(page.url()).searchParams.get('view'),'info');
-    assert.equal(await page.locator('[data-detail-value="nationality"]').innerText(),'ITA');
+    assert.equal((await page.locator('[data-detail-value="nationality"]').innerText()).trim(),'Italy','Nationality presents its full localized name, not the code');
     await page.goBack();
     assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),true,'Browser Back restores Overview');
     assert.equal(await page.locator('[data-detail-view="overview"]').getAttribute('aria-selected'),'true');

@@ -7,6 +7,13 @@
  'use strict';
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
  const views=['overview','roster','fixtures','stats','history'];
+ const rosterFlags=Object.freeze({
+  ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',
+  COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',
+  DEN:'dk',AUT:'at',IRN:'ir',ECU:'ec',EGY:'eg',AUS:'au',CAN:'ca',ALG:'dz',CIV:'ci',NGA:'ng',
+  TUR:'tr',KOR:'kr',PAR:'py',SWE:'se',RUS:'ru',UKR:'ua',POL:'pl',HUN:'hu',WAL:'gb-wls',COD:'cd',
+  GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'
+ });
  const keys=['overview','roster','fixtures','stats','history','identity','profile','competition','primaryName','fullName','compactName','abbr','nickname','city','country','primaryColor','secondaryColor','stadium','division','provisional','outside','emptyRoster','emptyFixtures','emptyStats','emptyHistory','navigation','crest','error','skip'];
  const rows={
   en:['Overview','Roster','Fixtures','Stats','History','Club identity','Club profile','Competitions','Primary name','Full name','Compact name','Abbreviation','Nickname','City','Country','Primary color','Secondary color','Stadium','Division','Provisional allocation · no active season','Outside the current playing structure','No roster is available.','No fixtures are available.','No statistics are available.','No club history is available.','Club pages','Club crest','Club information is unavailable. Please reload the page.','Skip to content'],
@@ -78,7 +85,119 @@
   indexCache.set(manifest,index);
   return index;
  }
- function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null){
+ const rosterGroups=Object.freeze({
+  technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],
+  mental:['vision','positioning','decisions','composure'],
+  physical:['speed','strength','stamina','agility'],
+  goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
+ });
+ const rosterAllAttributes=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
+ // Keep exactly the public /players primary-position rank (descending: GK to ST).
+ const rosterPitchPositions=Object.freeze(['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST']);
+ const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
+ const rosterSortCommon=Object.freeze(['nationality','name','positions']);
+ const rosterSortInfo=Object.freeze(['nationality','name','age','positions','height','foot']);
+ function rosterSortValue(player,key){
+  if(key==='positions')return rosterPositionRank.get(player.primary_position)??0;
+  if(key==='name')return player.display_name;
+  if(key==='nationality')return player.nationality;
+  if(key==='age')return player.age;
+  if(key==='height')return player.height_cm;
+  if(key==='foot')return player.preferred_foot;
+  return player.attributes?.[key];
+ }
+ function sortedRosterPlayers(players,key,order){
+  const direction=order==='desc'?-1:1;
+  return [...players].sort((a,b)=>{
+   const x=rosterSortValue(a,key),y=rosterSortValue(b,key);
+   if(x==null||y==null)return x==null&&y==null?a.id-b.id:x==null?1:-1;
+   const comparison=typeof x==='number'&&typeof y==='number'?Math.sign(x-y):
+    String(x).localeCompare(String(y),'en',{sensitivity:'base'});
+   return comparison?direction*comparison:a.id-b.id;
+  });
+ }
+ const rosterSortChevron='<svg class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ const rosterAttributeNames={
+  en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|Positioning|Aerial',
+  it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento|Uscite alte',
+  de:'Tempo|Stärke|Ausdauer|Beweglichkeit|Passen|Technik|Dribbling|Schuss|Flanken|Zweikampf|Deckung|Kopfball|Übersicht|Stellungsspiel|Entscheidungen|Ruhe|Reflexe|Fangen|Stellungsspiel|Luftraum',
+  es:'Velocidad|Fuerza|Resistencia|Agilidad|Pases|Técnica|Regate|Tiro|Centros|Entradas|Marcaje|Cabeceo|Visión|Colocación|Decisiones|Serenidad|Reflejos|Blocaje|Colocación|Juego aéreo',
+  fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
+ };
+ const rosterWords={
+  en:{name:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',nationality:'Nationality',one:'player',many:'players',left:'Left',right:'Right',tabs:['Info'],groups:['Technical','Mental','Physical','Goalkeeper'],empty:'No players are currently assigned to this club.',unavailable:'The roster is temporarily unavailable.',missingApi:'Roster API is unavailable in this build. Restart the local development server from this branch.',loading:'Loading roster'},
+  de:{name:'Spieler',age:'Alter',positions:'Positionen',height:'Größe',foot:'Fuß',nationality:'Nationalität',one:'Spieler',many:'Spieler',left:'Links',right:'Rechts',tabs:['Info'],groups:['Technisch','Mental','Physisch','Torwart'],empty:'Diesem Verein sind derzeit keine Spieler zugeordnet.',unavailable:'Der Kader ist vorübergehend nicht verfügbar.',missingApi:'Die Kader-API fehlt in diesem Build. Starte den lokalen Entwicklungsserver mit diesem Branch neu.',loading:'Kader wird geladen'},
+  es:{name:'Jugador',age:'Edad',positions:'Posiciones',height:'Altura',foot:'Pie',nationality:'Nacionalidad',one:'jugador',many:'jugadores',left:'Izquierdo',right:'Derecho',tabs:['Info'],groups:['Técnicos','Mentales','Físicos','Portero'],empty:'Actualmente no hay jugadores asignados a este club.',unavailable:'La plantilla no está disponible temporalmente.',missingApi:'La API de la plantilla no está disponible en esta versión. Reinicia el servidor local desde esta rama.',loading:'Cargando plantilla'},
+  fr:{name:'Joueur',age:'Âge',positions:'Postes',height:'Taille',foot:'Pied',nationality:'Nationalité',one:'joueur',many:'joueurs',left:'Gauche',right:'Droit',tabs:['Info'],groups:['Techniques','Mentaux','Physiques','Gardien'],empty:'Aucun joueur n’est actuellement affecté à ce club.',unavailable:'L’effectif est temporairement indisponible.',missingApi:'L’API de l’effectif manque dans cette version. Redémarrez le serveur local depuis cette branche.',loading:'Chargement de l’effectif'},
+  it:{name:'Giocatore',age:'Età',positions:'Posizioni',height:'Altezza',foot:'Piede',nationality:'Nazionalità',one:'giocatore',many:'giocatori',left:'Sinistro',right:'Destro',tabs:['Info'],groups:['Tecnici','Mentali','Fisici','Portiere'],empty:'Nessun giocatore è attualmente assegnato a questo club.',unavailable:'La rosa è temporaneamente non disponibile.',missingApi:'L’API della rosa non è disponibile in questa versione. Riavvia il server locale dal branch corrente.',loading:'Caricamento rosa'}
+ };
+ function renderRoster(clubKey,lang,t,snapshot,search=''){
+  const w=rosterWords[lang],params=new URLSearchParams(search);
+  const requested=params.get('view');
+  const group=Object.hasOwn(rosterGroups,requested)?requested:
+   requested==='attributes'&&Object.hasOwn(rosterGroups,params.get('group'))?params.get('group'):'technical';
+  const mode=Object.hasOwn(rosterGroups,requested)||requested==='attributes'?'attributes':'overview';
+  const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
+  const href=view=>{const query=new URLSearchParams(search);query.delete('view');query.delete('group');query.set('view',view);return base+'?'+query.toString();};
+  const attributeKeys=rosterGroups[group];
+  const allowedSort=mode==='attributes'?[...rosterSortCommon,...attributeKeys]:rosterSortInfo;
+  const requestedSort=params.get('sort')||'';
+  const sort=allowedSort.includes(requestedSort)?requestedSort:'';
+  const order=sort?['desc','asc'].includes(params.get('order'))?params.get('order'):
+   ['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
+  const attrNames=rosterAttributeNames[lang].split('|');
+  const ready=snapshot?.source==='ready'&&snapshot.clubKey===clubKey&&
+   Array.isArray(snapshot.players)&&Number.isSafeInteger(snapshot.count)&&snapshot.count===snapshot.players.length;
+  const unavailable=snapshot?.source==='unavailable',pending=!ready&&!unavailable;
+  const labels=mode==='attributes'
+   ?['',w.name,w.positions,...attributeKeys.map(key=>attrNames[rosterAllAttributes.indexOf(key)])]
+   :['',w.name,w.age,w.positions,w.height,w.foot];
+  const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
+   (mode==='attributes'?'<col class="app-players-view-third-column">'+attributeKeys.map(()=>'<col>').join(''):'<col><col><col><col>')+'</colgroup>';
+  const colCount=labels.length;
+  const columnSorts=mode==='attributes'?['nationality','name','positions',...attributeKeys]:rosterSortInfo;
+  let body;
+  if(pending){
+   body=Array.from({length:5},(_,i)=>'<tr class="app-players-loading-row"'+(i?' aria-hidden="true"':'')+'><td colspan="'+colCount+'">'+
+    (i?'':'<span class="sr-only" role="status">'+escape(w.loading)+'</span>')+'</td></tr>').join('');
+  }else if(!ready||!snapshot.players.length){
+   const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
+   body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
+  }else{
+   body=sortedRosterPlayers(snapshot.players,sort||'positions',sort?order:'desc').map(player=>{
+    const id=Number(player.id),country=player.nationality;
+    const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
+    const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="24" height="18" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
+    const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ');
+    const value=v=>Number.isSafeInteger(v)?String(v):'—';
+    const cells=mode==='attributes'
+     ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
+     :'<td>'+value(player.age)+'</td><td>'+escape(positions||'—')+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
+    return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'">'+escape(player.display_name)+'</a></td>'+cells+'</tr>';
+   }).join('');
+  }
+  const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)
+   :'<span class="app-players-count-placeholder" aria-hidden="true"></span>';
+  const viewTabs=['info',...Object.keys(rosterGroups)].map((key,i)=>{
+   const active=key===(mode==='overview'?'info':group);
+   const label=i===0?w.tabs[0]:w.groups[i-1];
+   return '<a role="tab" class="app-competition-tab'+(active?' is-active':'')+'" href="'+escape(href(key))+'" data-club-roster-view="'+key+'" aria-selected="'+active+'" tabindex="'+(active?'0':'-1')+'">'+escape(label)+'</a>';
+  }).join('');
+  return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
+   '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span></div>'+
+   '<div class="app-players-table-scroll club-roster-table-scroll"'+(pending?' aria-busy="true"':'')+'>'+
+   '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
+   columns+'<thead><tr>'+labels.map((label,i)=>{
+    const key=columnSorts[i],active=sort===key;
+    return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
+     (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
+     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'">'+
+     '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
+     rosterSortChevron+'</span></button></th>';
+   }).join('')+
+   '</tr></thead><tbody>'+body+'</tbody></table></div></section>';
+ }
+ function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null,rosterSnapshot=null){
   const lang=Object.hasOwn(copies,language)?language:'en',t=copies[lang];
   const index=getIndex(manifest),c=index.clubs.get(selected.countryId+'-'+selected.clubId);
   if(!c)throw Error('Unknown club identity');
@@ -180,7 +299,7 @@
   const temporal=new URLSearchParams();
   for(const key of ['season','matchday'])if(params.has(key))temporal.set(key,params.get(key));
   const tabs='<nav class="app-competition-tabs club-tabs" aria-label="'+escape(t.navigation)+'">'+views.map(view=>{
-   const suffix=['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
+   const suffix=view==='roster'?'?view=info':['fixtures','stats'].includes(view)&&temporal.size?'?'+temporal:'';
    return '<a class="app-competition-tab'+(view===selected.view?' is-active':'')+'" href="'+routes.buildRoute({kind:'club',country:selected.countryId.toLowerCase(),id:selected.clubId,view})+suffix+'"'+(view===selected.view?' aria-current="page"':'')+'>'+escape(t[view])+'</a>';
   }).join('')+'</nav>';
   const swatch=key=>{
@@ -212,6 +331,8 @@
     '</div><aside class="app-panel club-kits" aria-labelledby="club-kits-title"><h2 id="club-kits-title">'+escape(t.kitsLabel)+'</h2><p>'+escape(t.kitsPending)+'</p></aside>'+
     '<section class="app-panel club-competition" aria-labelledby="club-competition-title"><h2 id="club-competition-title">'+escape(t.competition)+'</h2>'+
     effectiveCompetitionCard+'</section></div>';
+  }else if(selected.view==='roster'){
+   content=renderRoster(clubKey,lang,t,rosterSnapshot,search);
   }else if(selected.view==='history'){
    const words={
     en:{season:'Season',competition:'Competition',position:'Pos.',played:'MP',won:'W',drawn:'D',lost:'L',gf:'GF',ga:'GA',gd:'GD',points:'Pts',total:'Total',show:'Show competitions for',empty:'No games played',without:'No competitions this season.',unavailable:'Club history is temporarily unavailable.'},
