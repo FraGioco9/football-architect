@@ -117,3 +117,24 @@ test('shared preview forwards safe Players page query without credentials or coo
  const invalid=await run(req({path:'/api/players?page=1&filter=x'}),async()=>{attempts++;return context()});
  assert.equal(invalid.status,403);assert.equal(attempts,0);
 });
+
+test('shared DEV forwards authenticated Contracts GET queries and POST through verified pool only',async()=>{
+ const seen=[];
+ const send=async(url,options)=>{
+  seen.push({url:url.href,options});
+  if(seen.length%2===1)return context();
+  return {status:200,headers:{},body:Buffer.from('{"count":0,"players":[],"clubs":[]}')};
+ };
+ const get=await run(req({path:'/api/admin/contracts?page=1',headers:{cookie:'fa_player_local='+token}}),send);
+ const post=await run(req({path:'/api/admin/contracts',method:'POST',headers:{
+  origin:'http://app.localhost:2000',cookie:'fa_player_local='+token,'x-csrf-token':'csrf-test','content-type':'application/json'
+ },body:'{"playerId":1,"clubKey":null}'}),send);
+ assert.equal(get.status,200);assert.equal(post.status,200);
+ assert.equal(seen.length,4);
+ assert.equal(seen[1].url,origin+'/api/admin/contracts?page=1');
+ assert.deepEqual(seen[1].options.headers,{'x-fa-expected-pool':'dev-preview',origin,cookie:'__Host-fa_player='+token});
+ assert.equal(seen[3].url,origin+'/api/admin/contracts');
+ assert.equal(seen[3].options.headers['x-csrf-token'],'csrf-test');
+ const blocked=await run(req({path:'/api/admin/contracts?page=1&unexpected=1'}),async()=>{throw Error('must not forward')});
+ assert.equal(blocked.status,403);
+});

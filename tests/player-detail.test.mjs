@@ -253,3 +253,47 @@ test('#535 selectable pitch roles use a primary default and update A/B without l
  assert.match(css,/\.app-player-detail-legend\{[^}]*margin-top:auto;padding-top:12px/);
  assert.match(css,/\.app-player-detail-attribute-line dd \.app-skeleton-bar\{[^}]*width:19px;height:16px/);
 });
+
+test('#535 header shows position chain, nationality/age and canonical club or Free Agent',()=>{
+ const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
+ assert.match(js,/roleNode\.textContent=positionCodes\(\)\.join\(' · '\)/);
+ assert.match(js,/setContent\(nationalityNode,countryNode\(player\.nationality\)\)/);
+ assert.match(js,/setContent\(ageNode,Number\.isSafeInteger\(player\.age\)/);
+ assert.match(js,/player\.clubKey===null\)\{setContent\(clubNode,'Free Agent'\)/);
+ assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json'/);
+ assert.match(js,/clubCatalog\.clubs\.find\(/);
+ assert.match(js,/clubCatalog\.clubCrests\?\.\[key\]/);
+ assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+number\+'\/overview'/);
+ assert.doesNotMatch(js,/fetch\('\/api\/admin\/contracts'/);
+ assert.match(css,/\.app-player-detail-affiliation\{[^}]*border-left:1px solid var\(--line\)/);
+ assert.match(css,/\.app-player-detail-club-crest/);
+ assert.match(css,/\.app-player-detail-club-link/);
+ for(const file of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(file);
+  assert.match(html,/data-detail-header-nationality/);
+  assert.match(html,/data-detail-header-age/);
+  assert.match(html,/data-detail-club/);
+  assert.match(html,/app-player-detail-affiliation/);
+  assert.match(html,/app-player-detail-club-skeleton/);
+  assert.doesNotMatch(html,/data-detail-club-label/);
+ }
+ assert.match(renderer,/app-player-detail-header-meta/);
+});
+test('#535 position selection uses a subtle animated ring and reduced-motion support',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css');
+ assert.match(js,/ring\.setAttribute\('class','app-player-detail-marker-ring'\)/);
+ assert.match(js,/g\.append\(title,ring,circle,label\)/);
+ assert.match(js,/renderRoleHighlights\(\)/);
+ assert.match(css,/\.app-player-detail-marker-ring\{[^}]*transition:opacity .2s ease,transform .2s ease/);
+ assert.match(css,/\.app-player-detail-pitch-marker\.is-selected \.app-player-detail-marker-ring/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+test('#509 detail keeps public clubKey read-only and never guesses absent affiliation',()=>{
+ const backend=read('backend/src/public-players-read.ts'),js=read('assets/player-detail.js');
+ assert.match(backend,/LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.match(backend,/WHERE p\.id=\?/);
+ assert.match(backend,/clubKey=row\.club_key/);
+ assert.match(backend,/return \{player:\{\.\.\.projectPublicFootballerDirectoryRecord/);
+ assert.match(js,/if\(preview\|\|player\.clubKey===null\)/);
+ assert.match(js,/if\(!c\|\|typeof c\.primaryName!=='string'\)\{setContent\(clubNode,'—'\)/);
+});

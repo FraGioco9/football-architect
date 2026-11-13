@@ -3,6 +3,7 @@
  const root=document.querySelector('[data-player-detail-mode]');if(!root)return;
  const preview=root.dataset.playerDetailMode==='preview',panel=root.querySelector('[data-player-detail]');
  const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
+ const nationalityNode=panel.querySelector('[data-detail-header-nationality]'),ageNode=panel.querySelector('[data-detail-header-age]'),clubNode=panel.querySelector('[data-detail-club]');
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
  const views=[...panel.querySelectorAll('[data-detail-view]')];
  const groups=Object.freeze({technical:['passing','technique','dribbling','shooting','crossing','tackling','marking','heading'],mental:['vision','positioning','decisions','composure'],physical:['speed','strength','stamina','agility'],goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']});
@@ -60,7 +61,7 @@
   ST:['shooting positioning composure heading','speed strength technique agility']
  });
  const attrGroups=['technical','mental','physical','goalkeeping'];
- let player=null,state='loading',request=0,selectedPosition=null;
+ let player=null,state='loading',request=0,selectedPosition=null,clubCatalog=null,clubCatalogPromise=null;
  function previewReturnUrl(){
   const url=new URL('/admin/players/preview',location.origin);url.searchParams.set('draftId',context.draftId);
   const hash=new URLSearchParams();
@@ -123,10 +124,11 @@
    g.setAttribute('role','button');g.setAttribute('tabindex','0');
    g.setAttribute('aria-pressed',String(selected));
    g.setAttribute('aria-label',(primary?ex().primary:ex().secondary)+': '+code);
-   const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
+   const ring=document.createElementNS(ns,'circle');ring.setAttribute('class','app-player-detail-marker-ring');ring.setAttribute('cx',String(x));ring.setAttribute('cy',String(y));ring.setAttribute('r','20');
+   const circle=document.createElementNS(ns,'circle');circle.setAttribute('class','app-player-detail-marker-disc');circle.setAttribute('cx',String(x));circle.setAttribute('cy',String(y));circle.setAttribute('r','16');
    const label=document.createElementNS(ns,'text');label.setAttribute('x',String(x));label.setAttribute('y',String(y+4));label.setAttribute('text-anchor','middle');label.textContent=code;
    const title=document.createElementNS(ns,'title');title.textContent=(primary?ex().primary:ex().secondary)+': '+code;
-   g.append(title,circle,label);
+   g.append(title,ring,circle,label);
    g.addEventListener('click',()=>selectPosition(code));
    g.addEventListener('keydown',event=>{
     if(event.key!=='Enter'&&event.key!==' ')return;
@@ -146,6 +148,39 @@
    else label.removeAttribute('aria-label');
   }
  }
+ function renderClub(){
+  if(!player)return;
+  if(preview||player.clubKey===null){setContent(clubNode,'Free Agent');return;}
+  // Unknown/unavailable affiliation is not a verified free agent.
+  const key=player.clubKey;
+  const c=typeof key==='string'&&Array.isArray(clubCatalog?.clubs)
+   ?clubCatalog.clubs.find(entry=>entry.countryId+'-'+entry.clubId===key):null;
+  if(!c||typeof c.primaryName!=='string'){setContent(clubNode,'—');return;}
+  const [country,number]=key.split('-');
+  const link=document.createElement('a');link.className='app-player-detail-club-link';
+  link.href='/clubs/'+country.toLowerCase()+'/'+number+'/overview';
+  const crest=clubCatalog.clubCrests?.[key];
+  if(typeof crest==='string'&&/^assets\/clubs\/(?:IT|ENG|ES|DE|FR|PT|NL|BR)\/(?:[1-9]|[1-3][0-9]|40)\/crest\.svg$/.test(crest)){
+   const img=document.createElement('img');img.className='app-player-detail-club-crest';img.src='/'+crest;img.alt='';
+   img.width=42;img.height=42;link.append(img);
+  }else{
+   const spacer=document.createElement('span');spacer.className='app-player-detail-club-crest-placeholder';
+   spacer.setAttribute('aria-hidden','true');link.append(spacer);
+  }
+  const name=document.createElement('span');name.textContent=c.primaryName;link.append(name);
+  clubNode.replaceChildren(link);
+ }
+ async function resolveClubCatalog(ticket){
+  if(!player||!player.clubKey)return;
+  if(!clubCatalogPromise)clubCatalogPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
+   .then(res=>{if(!res.ok)throw Error('club_catalog_unavailable');return res.json()})
+   .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320?manifest:null)
+   .catch(()=>null);
+  const manifest=await clubCatalogPromise;
+  if(ticket!==request)return;
+  clubCatalog=manifest;
+  renderClub();
+ }
  function render(){
   const copy=tr(),e=ex(),labels=(attrLabels[language()]||attrLabels.en).split('|');
   if(back){
@@ -162,7 +197,7 @@
   for(const [key,label] of [['positions',e.positions],['info',e.info],['attributes',e.attributes]]){
    panel.querySelector('[data-detail-section-title="'+key+'"]').textContent=label;
   }
-  panel.querySelector('[data-detail-club-label]').textContent=e.club;
+  // Club identity is rendered separately from the player's nationality/age.
   panel.querySelector('[data-detail-pitch]').setAttribute('aria-label',e.positionLabel);
   for(const [i,key] of ['nationality','secondary_nationality','age','height_cm','preferred_foot'].entries()){
    panel.querySelector('[data-detail-label="'+key+'"]').textContent=copy.fields[i<3?i:i+1];
@@ -177,13 +212,17 @@
   if(!player){
    if(state!=='loading'){
     setContent(nameNode,copy.notFound);roleNode.textContent='—';
+    setContent(nationalityNode,'—');setContent(ageNode,'—');setContent(clubNode,'—');
     subtitle.textContent=preview?copy.preview:'';
     for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))setContent(node,'—');
    }
    renderPitch();return;
   }
   setContent(nameNode,player.display_name||[player.first_name,player.last_name].filter(Boolean).join(' ')||copy.player);
-  roleNode.textContent=player.primary_position||'—';
+  roleNode.textContent=positionCodes().join(' · ')||'—';
+  setContent(nationalityNode,countryNode(player.nationality));
+  setContent(ageNode,Number.isSafeInteger(player.age)?copy.fields[2]+': '+player.age:'—');
+  renderClub();
   subtitle.textContent=preview?copy.preview:'';
   for(const key of ['nationality','secondary_nationality','age','height_cm','preferred_foot'])
    setContent(panel.querySelector('[data-detail-value="'+key+'"]'),displayValue(key));
@@ -227,6 +266,9 @@
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
+  nationalityNode.replaceChildren(skeleton('app-player-detail-nationality-skeleton'));
+  ageNode.replaceChildren(skeleton('app-player-detail-age-skeleton'));
+  clubNode.replaceChildren(skeleton('app-player-detail-club-skeleton'));
   subtitle.textContent='\u00a0';
   for(const node of panel.querySelectorAll('[data-detail-value],[data-detail-attr-value]'))node.replaceChildren(skeleton());
   render();
@@ -243,6 +285,7 @@
    player=data;selectedPosition=positionCodes()[0]||null;state='ready';
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
   if(preview)root.hidden=false;render();
+  if(!preview&&player?.clubKey)void resolveClubCatalog(ticket);
  }
  function setView(next){
   if(!['overview','info'].includes(next)||next===view)return;

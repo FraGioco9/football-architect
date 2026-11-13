@@ -36,12 +36,12 @@
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players)/",
+      "source": "/admin/:section(calendar|players|contracts)/",
       "destination": "/admin/:section",
       "permanent": true
     },
     {
-      "source": "/admin/:section(calendar|players)/index.html",
+      "source": "/admin/:section(calendar|players|contracts)/index.html",
       "destination": "/admin/:section",
       "permanent": true
     },
@@ -304,7 +304,7 @@
       "destination": "/:page/index.html"
     },
     {
-      "source": "/admin/:section(calendar|players)",
+      "source": "/admin/:section(calendar|players|contracts)",
       "destination": "/admin/:section/index.html"
     },
     {

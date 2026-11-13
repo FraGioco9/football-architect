@@ -252,3 +252,19 @@ test('ENG-5 Southwark Athletic approved crest is registered in both public manif
  for(const color of ['#862932','#161616','#ffffff'])assert.ok(source.includes(color),color);
  for(const tag of ['image','text','linearGradient','radialGradient'])assert.equal(source.includes('<'+tag),false,tag);
 });
+
+test('DE-3 FC Eving approved crest is catalogued with canonical colors and SVG metadata',()=>{
+ const path='assets/clubs/DE/3/crest.svg';
+ assert.equal(manifest().clubCrests['DE-3'],path);
+ assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['DE-3'],path);
+ assert.equal(isAllowlistedPublicPath(path),true);
+ const svg=read(path);
+ assert.match(svg,/<svg[^>]*viewBox="0 0 1024 1024"/);
+ assert.match(svg,/<title id="fc-eving-title">FC Eving<\/title>/);
+ assert.match(svg,/<desc id="fc-eving-description">[^<]+<\/desc>/);
+ assert.match(svg,/aria-labelledby="fc-eving-title fc-eving-description"/);
+ assert.doesNotMatch(svg,/<(?:image|script|foreignObject)\b/i);
+ const colors=[...svg.matchAll(/#[0-9a-f]{6}\b/ig)].map(match=>match[0].toUpperCase());
+ assert.ok(colors.length>=2);
+ assert.deepEqual([...new Set(colors)].sort(),['#87432E','#F3EEE3'].sort());
+});

@@ -275,3 +275,44 @@ test('Admin preview draft reload forwards a CSRF-protected POST only on the exac
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();
   await Promise.all([new Promise(r=>bridge.close(r)),new Promise(r=>upstream.close(r))]);}
 });
+
+test('Admin Contracts bridge forwards only bounded authenticated list and mutation routes',async()=>{
+ const seen=[];
+ const upstream=createServer(async(request,res)=>{
+  const chunks=[];for await(const chunk of request)chunks.push(chunk);
+  const body=Buffer.concat(chunks).toString('utf8');
+  seen.push({path:request.url,method:request.method,cookie:request.headers.cookie,origin:request.headers.origin,csrf:request.headers['x-csrf-token'],body});
+  res.writeHead(200,{'Content-Type':'application/json'});
+  res.end(JSON.stringify({ok:true}));
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const bridge=createServer((request,res)=>proxyAdminApi(request,res,{target:'http://127.0.0.1:'+upstream.address().port}));
+ bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
+ const send=(path,method='GET',body)=>new Promise((resolve,reject)=>{
+  const headers={Host:'app.localhost:2000',Cookie:'fa_player_local='+'f'.repeat(64)};
+  if(method==='POST'){headers.Origin='http://app.localhost:2000';headers['X-CSRF-Token']='csrf-for-tests';headers['Content-Type']='application/json'}
+  const r=request({hostname:'127.0.0.1',port:bridge.address().port,path,method,headers},response=>{
+   let data='';response.on('data',part=>data+=part);response.on('end',()=>resolve({status:response.statusCode,body:data}));
+  });r.on('error',reject);r.end(body===undefined?undefined:JSON.stringify(body));
+ });
+ try{
+  assert.equal((await send('/api/admin/contracts?page=1')).status,200);
+  assert.equal((await send('/api/admin/contracts?page=9999')).status,200);
+  assert.equal((await send('/api/admin/contracts?playerId=23')).status,200);
+  assert.equal((await send('/api/admin/contracts')).status,200);
+  assert.equal((await send('/api/admin/contracts','POST',{playerId:23,clubKey:'IT-1'})).status,200);
+  for(const path of ['/api/admin/contracts?page=0','/api/admin/contracts?page=01','/api/admin/contracts?page=1&page=2','/api/admin/contracts?playerId=0','/api/admin/contracts?playerId=01','/api/admin/contracts?playerId=99999999999999999','/api/admin/contracts?unused=1','/api/admin/contracts?playerId=%31','/api/admin/contracts?playerId=23#x']){
+   assert.equal((await send(path)).status,403,path);
+  }
+  assert.equal((await send('/api/admin/contracts?page=1','POST',{})).status,403);
+  assert.equal((await send('/api/admin/contracts','DELETE')).status,405);
+  assert.deepEqual(seen.map(x=>[x.path,x.method]),[
+   ['/api/admin/contracts?page=1','GET'],['/api/admin/contracts?page=9999','GET'],
+   ['/api/admin/contracts?playerId=23','GET'],['/api/admin/contracts','GET'],
+   ['/api/admin/contracts','POST']]);
+  assert.ok(seen.every(x=>x.cookie==='fa_player_local='+'f'.repeat(64)));
+  assert.equal(seen[4].csrf,'csrf-for-tests');
+  assert.equal(seen[4].origin,'http://app.localhost:2000');
+  assert.ok(seen.slice(0,4).every(x=>x.csrf===undefined));
+ }finally{bridge.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(resolve=>bridge.close(resolve)),new Promise(resolve=>upstream.close(resolve))])}
+});

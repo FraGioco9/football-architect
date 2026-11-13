@@ -9,6 +9,7 @@ export const PUBLIC_PLAYER_PAGE_SIZE=50;
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
 interface StoredRow {id:number;payload_json:string}
+interface StoredDetailRow extends StoredRow {club_key:string|null}
 
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
 export async function readPublicPlayers(db:Database,page:number,filters:PublicPlayerFilters={}){
@@ -114,10 +115,17 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
 export async function readPublicPlayer(db:Database,id:number){
  if(!Number.isSafeInteger(id)||id<1)throw new ApiError(422,'invalid_public_request');
  const before=await readWorld(db);
- const row=await db.prepare('SELECT id,payload_json FROM generated_players WHERE id=?').bind(id).first<StoredRow>();
+ // Affiliation is a single authoritative LEFT JOIN; an absent row means Free Agent.
+ const row=await db.prepare(`SELECT p.id,p.payload_json,a.club_key FROM generated_players p
+  LEFT JOIN player_club_affiliations a ON a.player_id=p.id WHERE p.id=?`)
+  .bind(id).first<StoredDetailRow>();
  const after=await readWorld(db);
  if(after.generation!==before.generation)throw new ApiError(409,'stale_world');
  if(!row)throw new ApiError(404,'player_not_found');
  const payload=JSON.parse(row.payload_json) as StoredPlayer;
- return {player:projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age})};
+ // Keep the approved public player projection; add only current, nullable club identity.
+ const clubKey=row.club_key;
+ if(clubKey!==null&&(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(clubKey)))
+  throw new ApiError(503,'players_unavailable');
+ return {player:{...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),clubKey}};
 }
