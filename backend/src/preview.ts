@@ -1,5 +1,8 @@
 /** Hosted Preview only. Static files arrive exclusively from a guarded artifact. */
 import api,{type Env} from './index.ts';
+import {assertEnvironmentPool} from './environment-pool.ts';
+import {requireDatabase} from './database.ts';
+import {PREVIEW_RETENTION_CRON,pruneExpiredPlayerPreviews} from './player-preview-retention.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
@@ -69,5 +72,15 @@ export default {
    if(env.PREVIEW_SOURCE_SHA&&/^[a-f0-9]{40}$/.test(env.PREVIEW_SOURCE_SHA))headers.set('X-FA-Source-SHA',env.PREVIEW_SOURCE_SHA);
    return new Response(request.method==='HEAD'?null:response.body,{status:response.status,headers});
   }catch{return error(503,'preview_unavailable')}
+ },
+ // Only the canonical hosted Preview can receive the scheduled retention event.
+ async scheduled(controller:{cron:string},env:PreviewEnv):Promise<void>{
+  if(controller.cron!==PREVIEW_RETENTION_CRON||env.PLAYER_MODE!=='preview'||
+     env.PLAYER_TRUSTED_SOURCE!=='cloudflare'||
+     env.PLAYER_ORIGIN!=='https://preview.football-architect.workers.dev')
+   throw new Error('preview_retention_unavailable');
+  await assertEnvironmentPool(env);
+  const removed=await pruneExpiredPlayerPreviews(requireDatabase(env.DB),Math.floor(Date.now()/1000));
+  console.info('preview_retention_cleanup',{removed});
  }
 };
