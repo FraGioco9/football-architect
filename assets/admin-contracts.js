@@ -5,11 +5,11 @@
 })(typeof window==='undefined'?globalThis:window,()=>{
  'use strict';
  const copy={
-  en:{heading:'Player–club affiliations',intro:'One current club per persisted player. No durations, salaries or fees.',findLabel:'Player ID',find:'Find',all:'All players',id:'ID',player:'Player',club:'Club',action:'Action',previous:'Previous',next:'Next',edit:'Edit affiliation',targetClub:'Club',unassigned:'Unassigned',save:'Save',unassign:'Unassign',cancel:'Cancel',change:'Change',page:'Page',of:'of',players:'players',busy:'Saving…',loading:'Loading affiliations…',saved:'Affiliation saved.',notFound:'No player has that ID.',invalid:'Enter a positive numeric player ID.',failed:'Unable to load affiliations.',writeFailed:'Save failed. Refresh and retry.',stale:'World or affiliation changed. Refresh and retry.'},
-  it:{heading:'Affiliazioni giocatore–club',intro:'Un solo club attuale per giocatore salvato. Nessuna durata, stipendio o costo.',findLabel:'ID giocatore',find:'Cerca',all:'Tutti i giocatori',id:'ID',player:'Giocatore',club:'Club',action:'Azione',previous:'Precedente',next:'Successiva',edit:'Modifica affiliazione',targetClub:'Club',unassigned:'Senza club',save:'Salva',unassign:'Svincola',cancel:'Annulla',change:'Modifica',page:'Pagina',of:'di',players:'giocatori',busy:'Salvataggio…',loading:'Caricamento affiliazioni…',saved:'Affiliazione salvata.',notFound:'Nessun giocatore con questo ID.',invalid:'Inserisci un ID numerico positivo.',failed:'Impossibile caricare le affiliazioni.',writeFailed:'Salvataggio non riuscito. Ricarica e riprova.',stale:'Mondo o affiliazione cambiata. Ricarica e riprova.'},
-  de:{heading:'Spieler–Verein-Zuordnungen',intro:'Ein aktueller Verein pro gespeichertem Spieler. Keine Laufzeiten, Gehälter oder Gebühren.',findLabel:'Spieler-ID',find:'Suchen',all:'Alle Spieler',id:'ID',player:'Spieler',club:'Verein',action:'Aktion',previous:'Zurück',next:'Weiter',edit:'Zuordnung bearbeiten',targetClub:'Verein',unassigned:'Ohne Verein',save:'Speichern',unassign:'Zuordnung lösen',cancel:'Abbrechen',change:'Ändern',page:'Seite',of:'von',players:'Spieler',busy:'Speichern…',loading:'Zuordnungen laden…',saved:'Zuordnung gespeichert.',notFound:'Kein Spieler mit dieser ID.',invalid:'Positive Spieler-ID eingeben.',failed:'Zuordnungen nicht verfügbar.',writeFailed:'Speichern fehlgeschlagen. Neu laden.',stale:'Welt oder Zuordnung geändert. Neu laden.'},
-  es:{heading:'Vínculos jugador–club',intro:'Un club actual por jugador guardado. Sin duración, salarios ni tarifas.',findLabel:'ID del jugador',find:'Buscar',all:'Todos los jugadores',id:'ID',player:'Jugador',club:'Club',action:'Acción',previous:'Anterior',next:'Siguiente',edit:'Editar vínculo',targetClub:'Club',unassigned:'Sin club',save:'Guardar',unassign:'Desvincular',cancel:'Cancelar',change:'Cambiar',page:'Página',of:'de',players:'jugadores',busy:'Guardando…',loading:'Cargando vínculos…',saved:'Vínculo guardado.',notFound:'No hay jugador con ese ID.',invalid:'Introduce un ID numérico positivo.',failed:'No se pueden cargar vínculos.',writeFailed:'No se pudo guardar. Recarga e inténtalo.',stale:'El mundo o vínculo cambió. Recarga.'},
-  fr:{heading:'Affiliations joueur–club',intro:'Un club actuel par joueur enregistré. Sans durée, salaire ni frais.',findLabel:'ID du joueur',find:'Rechercher',all:'Tous les joueurs',id:'ID',player:'Joueur',club:'Club',action:'Action',previous:'Précédent',next:'Suivant',edit:'Modifier affiliation',targetClub:'Club',unassigned:'Sans club',save:'Enregistrer',unassign:'Désaffilier',cancel:'Annuler',change:'Modifier',page:'Page',of:'sur',players:'joueurs',busy:'Enregistrement…',loading:'Chargement des affiliations…',saved:'Affiliation enregistrée.',notFound:'Aucun joueur avec cet ID.',invalid:'Saisissez un ID numérique positif.',failed:'Chargement impossible.',writeFailed:'Enregistrement impossible. Rechargez.',stale:'Le monde ou affiliation a changé. Rechargez.'}
+  en:{heading:'Player–club affiliations',assignHeading:'Assign player to club',playersHeading:'Players',choosePlayer:'Select a player from the list or enter its ID.',apiMissing:'The Contracts API is not available in this environment. Update the Worker before using it.',schemaMissing:'The Contracts database migration is not installed in this environment.',serviceUnavailable:'This environment cannot provide Contracts right now.',empty:'No saved players found.',intro:'One current club per persisted player. No durations, salaries or fees.',findLabel:'Player ID',find:'Find',all:'All players',id:'ID',player:'Player',club:'Club',action:'Action',previous:'Previous',next:'Next',edit:'Edit affiliation',targetClub:'Club',unassigned:'Unassigned',save:'Save',unassign:'Unassign',cancel:'Cancel',change:'Change',page:'Page',of:'of',players:'players',busy:'Saving…',loading:'Loading affiliations…',saved:'Affiliation saved.',notFound:'No player has that ID.',invalid:'Enter a positive numeric player ID.',failed:'Unable to load affiliations.',writeFailed:'Save failed. Refresh and retry.',stale:'World or affiliation changed. Refresh and retry.'},
+  it:{heading:'Affiliazioni giocatore–club',assignHeading:'Assegna giocatore a club',playersHeading:'Giocatori',choosePlayer:'Seleziona un giocatore dall\'elenco o inserisci il suo ID.',apiMissing:'L\'API Contracts non è disponibile in questo ambiente. Occorre aggiornare il Worker.',schemaMissing:'La migrazione del database Contracts non è installata in questo ambiente.',serviceUnavailable:'Contracts non è disponibile in questo ambiente.',empty:'Non ci sono giocatori salvati.',intro:'Un solo club attuale per giocatore salvato. Nessuna durata, stipendio o costo.',findLabel:'ID giocatore',find:'Cerca',all:'Tutti i giocatori',id:'ID',player:'Giocatore',club:'Club',action:'Azione',previous:'Precedente',next:'Successiva',edit:'Modifica affiliazione',targetClub:'Club',unassigned:'Senza club',save:'Salva',unassign:'Svincola',cancel:'Annulla',change:'Modifica',page:'Pagina',of:'di',players:'giocatori',busy:'Salvataggio…',loading:'Caricamento affiliazioni…',saved:'Affiliazione salvata.',notFound:'Nessun giocatore con questo ID.',invalid:'Inserisci un ID numerico positivo.',failed:'Impossibile caricare le affiliazioni.',writeFailed:'Salvataggio non riuscito. Ricarica e riprova.',stale:'Mondo o affiliazione cambiata. Ricarica e riprova.'},
+  de:{heading:'Spieler–Verein-Zuordnungen',assignHeading:'Spieler einem Verein zuweisen',playersHeading:'Spieler',choosePlayer:'Spieler aus der Liste wählen oder ID eingeben.',apiMissing:'Die Contracts-API ist in dieser Umgebung nicht verfügbar. Worker aktualisieren.',schemaMissing:'Die Contracts-Datenbankmigration fehlt in dieser Umgebung.',serviceUnavailable:'Contracts ist in dieser Umgebung nicht verfügbar.',empty:'Keine gespeicherten Spieler.',intro:'Ein aktueller Verein pro gespeichertem Spieler. Keine Laufzeiten, Gehälter oder Gebühren.',findLabel:'Spieler-ID',find:'Suchen',all:'Alle Spieler',id:'ID',player:'Spieler',club:'Verein',action:'Aktion',previous:'Zurück',next:'Weiter',edit:'Zuordnung bearbeiten',targetClub:'Verein',unassigned:'Ohne Verein',save:'Speichern',unassign:'Zuordnung lösen',cancel:'Abbrechen',change:'Ändern',page:'Seite',of:'von',players:'Spieler',busy:'Speichern…',loading:'Zuordnungen laden…',saved:'Zuordnung gespeichert.',notFound:'Kein Spieler mit dieser ID.',invalid:'Positive Spieler-ID eingeben.',failed:'Zuordnungen nicht verfügbar.',writeFailed:'Speichern fehlgeschlagen. Neu laden.',stale:'Welt oder Zuordnung geändert. Neu laden.'},
+  es:{heading:'Vínculos jugador–club',assignHeading:'Asignar jugador a un club',playersHeading:'Jugadores',choosePlayer:'Selecciona un jugador o escribe su ID.',apiMissing:'La API Contracts no está disponible aquí. Actualiza el Worker.',schemaMissing:'Falta la migración de base de datos Contracts.',serviceUnavailable:'Contracts no está disponible en este entorno.',empty:'No hay jugadores guardados.',intro:'Un club actual por jugador guardado. Sin duración, salarios ni tarifas.',findLabel:'ID del jugador',find:'Buscar',all:'Todos los jugadores',id:'ID',player:'Jugador',club:'Club',action:'Acción',previous:'Anterior',next:'Siguiente',edit:'Editar vínculo',targetClub:'Club',unassigned:'Sin club',save:'Guardar',unassign:'Desvincular',cancel:'Cancelar',change:'Cambiar',page:'Página',of:'de',players:'jugadores',busy:'Guardando…',loading:'Cargando vínculos…',saved:'Vínculo guardado.',notFound:'No hay jugador con ese ID.',invalid:'Introduce un ID numérico positivo.',failed:'No se pueden cargar vínculos.',writeFailed:'No se pudo guardar. Recarga e inténtalo.',stale:'El mundo o vínculo cambió. Recarga.'},
+  fr:{heading:'Affiliations joueur–club',assignHeading:'Affecter un joueur à un club',playersHeading:'Joueurs',choosePlayer:'Sélectionnez un joueur ou saisissez son ID.',apiMissing:'L\'API Contracts est indisponible ici. Mettez à jour le Worker.',schemaMissing:'La migration de base de données Contracts est absente.',serviceUnavailable:'Contracts est indisponible dans cet environnement.',empty:'Aucun joueur enregistré.',intro:'Un club actuel par joueur enregistré. Sans durée, salaire ni frais.',findLabel:'ID du joueur',find:'Rechercher',all:'Tous les joueurs',id:'ID',player:'Joueur',club:'Club',action:'Action',previous:'Précédent',next:'Suivant',edit:'Modifier affiliation',targetClub:'Club',unassigned:'Sans club',save:'Enregistrer',unassign:'Désaffilier',cancel:'Annuler',change:'Modifier',page:'Page',of:'sur',players:'joueurs',busy:'Enregistrement…',loading:'Chargement des affiliations…',saved:'Affiliation enregistrée.',notFound:'Aucun joueur avec cet ID.',invalid:'Saisissez un ID numérique positif.',failed:'Chargement impossible.',writeFailed:'Enregistrement impossible. Rechargez.',stale:'Le monde ou affiliation a changé. Rechargez.'}
  };
  function mount(win){
   const doc=win.document,host=doc.querySelector('#app-admin'),root=host?.querySelector('[data-admin-contracts]');
@@ -25,11 +25,12 @@
   const clubName=key=>key===null?label('unassigned'):(clubs?.find(c=>c.clubKey===key)?.name||key);
   const message=value=>{status.textContent=value||''};
   function buttons(){
+   select.disabled=!allowed||busy||!selected;
    save.disabled=!allowed||busy||!selected||chosen===selected.clubKey;
    unassign.disabled=!allowed||busy||!selected||selected.clubKey===null;
    el('[data-contracts-working]').textContent=busy?label('busy'):'';
   }
-  function closeEditor(){selected=null;chosen=null;editor.hidden=true;buttons();}
+  function closeEditor(){selected=null;chosen=null;select.value='';el('[data-contracts-selected]').textContent=label('choosePlayer');buttons();}
   function paint(access){
    allowed=access;host.hidden=!access;root.hidden=!access;host.dataset.adminAccess=access?'granted':'denied';
    win.faAdminAccess=access;win.dispatchEvent(new CustomEvent('fa:admin-access',{detail:access}));
@@ -39,14 +40,14 @@
    if(!record)return;
    tbody.replaceChildren();
    for(const p of record.players){
-    const row=doc.createElement('tr');
-    for(const val of [p.id,p.name,clubName(p.clubKey)]){
-     const td=doc.createElement('td');td.textContent=String(val);row.append(td);
-    }
-    const cell=doc.createElement('td'),button=doc.createElement('button');
-    button.type='button';button.className='app-link app-link-secondary';
-    button.textContent=label('change');button.dataset.contractsEdit=String(p.id);button.disabled=busy||!allowed;
-    cell.append(button);row.append(cell);tbody.append(row);
+    const row=doc.createElement('tr'),id=doc.createElement('td');
+    id.textContent=String(p.id);row.append(id);
+    const playerCell=doc.createElement('td'),button=doc.createElement('button');
+    button.type='button';button.className='admin-contracts-pick';
+    button.textContent=p.name;button.dataset.contractsEdit=String(p.id);button.disabled=busy||!allowed;
+    playerCell.append(button);row.append(playerCell);
+    const clubCell=doc.createElement('td');clubCell.textContent=clubName(p.clubKey);row.append(clubCell);
+    tbody.append(row);
    }
    tbody.setAttribute('aria-busy','false');
    el('[data-contracts-total]').textContent=record.count+' '+label('players');
@@ -58,7 +59,7 @@
    root.querySelectorAll('[data-contracts-copy]').forEach(n=>{
     if(label(n.dataset.contractsCopy))n.textContent=label(n.dataset.contractsCopy);
    });
-   if(selected)el('[data-contracts-selected]').textContent='#'+selected.id+' · '+selected.name+' · '+clubName(selected.clubKey);
+   el('[data-contracts-selected]').textContent=selected?'#'+selected.id+' · '+selected.name+' · '+clubName(selected.clubKey):label('choosePlayer');
    buttons();render();
   }
   function populateClubs(){
@@ -73,7 +74,7 @@
   function openEditor(p){
    if(!allowed||busy)return;
    selected=p;chosen=p.clubKey;select.value=p.clubKey??'';
-   editor.hidden=false;el('[data-contracts-selected]').textContent='#'+p.id+' · '+p.name+' · '+clubName(p.clubKey);
+   el('[data-contracts-selected]').textContent='#'+p.id+' · '+p.name+' · '+clubName(p.clubKey);
    buttons();select.focus();
   }
   async function load(){
@@ -86,13 +87,20 @@
     if(ticket!==epoch||!allowed)return;
     if(!response.ok){if(response.status===401||response.status===403)permissionCache?.clear();throw Error(payload?.error?.code||'http_'+response.status);}
     if(!Array.isArray(payload?.players)||!Array.isArray(payload?.clubs)||typeof payload.worldGeneration!=='string'||!Number.isSafeInteger(payload.worldRevision))throw Error('invalid_contract_data');
-    record=payload;clubs=payload.clubs;populateClubs();render();message('');
+    record=payload;clubs=payload.clubs;populateClubs();render();
+   if(filterId!==null&&payload.players.length===1)openEditor(payload.players[0]);
+   message(payload.count===0?label('empty'):'');
    }catch(error){
     if(ticket!==epoch)return;
     record=null;tbody.replaceChildren();tbody.setAttribute('aria-busy','false');
     el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';
     el('[data-contracts-prev]').disabled=true;el('[data-contracts-next]').disabled=true;
-    message(error.message==='player_not_found'?label('notFound'):label('failed'));
+    const code=String(error.message||'');
+    message(code==='player_not_found'?label('notFound'):
+     code==='contracts_schema_unavailable'?label('schemaMissing'):
+     code==='not_found'||code==='http_404'?label('apiMissing'):
+     code==='admin_unavailable'||code==='environment_unavailable'||code==='http_503'?label('serviceUnavailable'):
+     label('failed'));
     if(/^(unauthorized|permission_denied|http_401|http_403)$/.test(error.message))paint(false);
    }
   }
@@ -113,7 +121,7 @@
     const payload=await response.json();
     if(ticket!==epoch||!allowed)return;
     if(!response.ok)throw Error(payload?.error?.code||'http_'+response.status);
-    busy=false;buttons();await load();message(label('saved'));
+    busy=false;buttons();await load();if(record)message(label('saved'));
    }catch(error){
     if(ticket!==epoch)return;
     message(/stale_world|stale_player_contract/.test(error.message)?label('stale'):label('writeFailed'));
