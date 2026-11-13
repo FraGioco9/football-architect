@@ -92,6 +92,31 @@
   goalkeeping:['gk_reflexes','gk_handling','gk_positioning','gk_aerial']
  });
  const rosterAllAttributes=['speed','strength','stamina','agility','passing','technique','dribbling','shooting','crossing','tackling','marking','heading','vision','positioning','decisions','composure','gk_reflexes','gk_handling','gk_positioning','gk_aerial'];
+ // Keep exactly the public /players primary-position rank (descending: GK to ST).
+ const rosterPitchPositions=Object.freeze(['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST']);
+ const rosterPositionRank=new Map(rosterPitchPositions.map((code,index)=>[code,rosterPitchPositions.length-index]));
+ const rosterSortCommon=Object.freeze(['nationality','name','positions']);
+ const rosterSortInfo=Object.freeze(['nationality','name','age','positions','height','foot']);
+ function rosterSortValue(player,key){
+  if(key==='positions')return rosterPositionRank.get(player.primary_position)??0;
+  if(key==='name')return player.display_name;
+  if(key==='nationality')return player.nationality;
+  if(key==='age')return player.age;
+  if(key==='height')return player.height_cm;
+  if(key==='foot')return player.preferred_foot;
+  return player.attributes?.[key];
+ }
+ function sortedRosterPlayers(players,key,order){
+  const direction=order==='desc'?-1:1;
+  return [...players].sort((a,b)=>{
+   const x=rosterSortValue(a,key),y=rosterSortValue(b,key);
+   if(x==null||y==null)return x==null&&y==null?a.id-b.id:x==null?1:-1;
+   const comparison=typeof x==='number'&&typeof y==='number'?Math.sign(x-y):
+    String(x).localeCompare(String(y),'en',{sensitivity:'base'});
+   return comparison?direction*comparison:a.id-b.id;
+  });
+ }
+ const rosterSortChevron='<svg class="app-players-sort-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
  const rosterAttributeNames={
   en:'Speed|Strength|Stamina|Agility|Passing|Technique|Dribbling|Shooting|Crossing|Tackling|Marking|Heading|Vision|Positioning|Decisions|Composure|Reflexes|Handling|Positioning|Aerial',
   it:'Velocità|Forza|Resistenza|Agilità|Passaggio|Tecnica|Dribbling|Tiro|Cross|Contrasto|Marcatura|Colpo di testa|Visione|Posizionamento|Decisioni|Freddezza|Riflessi|Presa|Posizionamento|Uscite alte',
@@ -115,6 +140,11 @@
   const base='/clubs/'+clubKey.split('-')[0].toLowerCase()+'/'+clubKey.split('-')[1]+'/roster';
   const href=view=>{const query=new URLSearchParams(search);query.delete('view');query.delete('group');query.set('view',view);return base+'?'+query.toString();};
   const attributeKeys=rosterGroups[group];
+  const allowedSort=mode==='attributes'?[...rosterSortCommon,...attributeKeys]:rosterSortInfo;
+  const requestedSort=params.get('sort')||'';
+  const sort=allowedSort.includes(requestedSort)?requestedSort:'';
+  const order=sort?['desc','asc'].includes(params.get('order'))?params.get('order'):
+   ['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
   const attrNames=rosterAttributeNames[lang].split('|');
   const ready=snapshot?.source==='ready'&&snapshot.clubKey===clubKey&&
    Array.isArray(snapshot.players)&&Number.isSafeInteger(snapshot.count)&&snapshot.count===snapshot.players.length;
@@ -125,6 +155,7 @@
   const columns='<colgroup><col class="app-players-flag-column"><col class="app-players-name-column">'+
    (mode==='attributes'?'<col class="app-players-view-third-column">'+attributeKeys.map(()=>'<col>').join(''):'<col><col><col><col>')+'</colgroup>';
   const colCount=labels.length;
+  const columnSorts=mode==='attributes'?['nationality','name','positions',...attributeKeys]:rosterSortInfo;
   let body;
   if(pending){
    body=Array.from({length:5},(_,i)=>'<tr class="app-players-loading-row"'+(i?' aria-hidden="true"':'')+'><td colspan="'+colCount+'">'+
@@ -133,7 +164,7 @@
    const message=ready?w.empty:snapshot?.status===404?w.missingApi:w.unavailable;
    body='<tr class="app-players-empty-row"><td colspan="'+colCount+'"><strong role="status">'+escape(message)+'</strong></td></tr>';
   }else{
-   body=snapshot.players.map(player=>{
+   body=sortedRosterPlayers(snapshot.players,sort||'positions',sort?order:'desc').map(player=>{
     const id=Number(player.id),country=player.nationality;
     const code=Object.hasOwn(rosterFlags,country)?rosterFlags[country]:null;
     const flag=code?'<img class="app-players-nationality-flag" src="/assets/flags/'+escape(code)+'.svg" width="24" height="18" alt="'+escape(country)+'" title="'+escape(country)+'">':escape(country||'');
@@ -158,7 +189,14 @@
    '<div class="app-players-toolbar club-roster-toolbar"><div class="app-players-groups club-roster-groups" role="tablist" aria-label="'+escape(w.tabs[1])+'">'+groupTabs+'</div></div>'+
    '<div class="app-players-table-scroll club-roster-table-scroll"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
-   columns+'<thead><tr>'+labels.map((label,i)=>'<th scope="col"'+(i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+escape(label)+'</th>').join('')+
+   columns+'<thead><tr>'+labels.map((label,i)=>{
+    const key=columnSorts[i],active=sort===key;
+    return '<th scope="col" aria-sort="'+(active?order==='desc'?'descending':'ascending':'none')+'"'+
+     (i===0?' class="app-players-flag-col" aria-label="'+escape(w.nationality)+'"':'')+'>'+
+     '<button type="button" class="app-players-sort-button" data-club-roster-sort="'+key+'">'+
+     '<span class="app-players-sort-label">'+(i===0?'<span class="sr-only">'+escape(w.nationality)+'</span>':escape(label))+
+     rosterSortChevron+'</span></button></th>';
+   }).join('')+
    '</tr></thead><tbody>'+body+'</tbody></table></div></section>';
  }
  function render(manifest,selected,language='en',search='',snapshot=null,activeSeason=null,historySnapshot=null,rosterSnapshot=null){
