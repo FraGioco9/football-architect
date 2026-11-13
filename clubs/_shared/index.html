@@ -304,7 +304,8 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
   const fields=mode==='attributes'?[w.cols[0],w.cols[1],w.cols[3],...keys[group].map(key=>names[locale].split('|')[allAttrs.indexOf(key)])]:w.cols;
   const columnSorts=mode==='attributes'?['nationality','name','positions',...keys[group]]:['nationality','name','age','positions','height','foot'];
   const sort=columnSorts.includes(params.get('sort'))?params.get('sort'):'';
-  const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):sort?'desc':'';
+  const order=sort&&['asc','desc'].includes(params.get('order'))?params.get('order'):
+   sort?['name','nationality','positions','foot'].includes(sort)?'asc':'desc':'';
   const colgroup=table.querySelector('colgroup');
   const colNodes=fields.map((_,index)=>{
    const col=document.createElement('col');
