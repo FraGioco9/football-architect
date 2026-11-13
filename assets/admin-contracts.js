@@ -17,6 +17,7 @@
   const el=selector=>root.querySelector(selector),tbody=el('[data-contracts-rows]');
   const select=el('[data-contracts-select]'),editor=el('[data-contracts-editor]');
   const search=el('[data-contracts-find-input]'),status=el('[data-contracts-message]');
+  const permissionCache=win.faAdminPermissionsCache?.create(win);
   const save=el('[data-contracts-save]'),unassign=el('[data-contracts-unassign]');
   let allowed=false,busy=false,epoch=0,page=1,filterId=null,selected=null,chosen=null,record=null,clubs=null;
   const tr=()=>copy[doc.documentElement.lang]||copy.en;
@@ -83,7 +84,7 @@
     const response=await win.fetch('/api/admin/contracts'+query,{credentials:'same-origin',cache:'no-store'});
     const payload=await response.json();
     if(ticket!==epoch||!allowed)return;
-    if(!response.ok)throw Error(payload?.error?.code||'http_'+response.status);
+    if(!response.ok){if(response.status===401||response.status===403)permissionCache?.clear();throw Error(payload?.error?.code||'http_'+response.status);}
     if(!Array.isArray(payload?.players)||!Array.isArray(payload?.clubs)||typeof payload.worldGeneration!=='string'||!Number.isSafeInteger(payload.worldRevision))throw Error('invalid_contract_data');
     record=payload;clubs=payload.clubs;populateClubs();render();message('');
    }catch(error){
@@ -101,7 +102,7 @@
    const ticket=++epoch,p=selected,world=record;
    try{
     const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
-    if(!session.ok)throw Error('auth_'+session.status);
+    if(!session.ok){if(session.status===401||session.status===403)permissionCache?.clear();throw Error('auth_'+session.status);}
     const auth=await session.json();if(typeof auth.csrfToken!=='string'||!auth.csrfToken)throw Error('csrf_missing');
     const response=await win.fetch('/api/admin/contracts',{
      method:'POST',credentials:'same-origin',cache:'no-store',
@@ -121,13 +122,19 @@
   }
   async function check(){
    const ticket=++epoch;paint(false);
+   const accept=permissions=>{
+    const permitted=['admin.access','admin.world.read','admin.world.write'].every(k=>permissions.includes(k));
+    paint(permitted);if(permitted)void load();
+   };
+   const cached=permissionCache?.read();
+   if(cached!==null&&cached!==undefined){accept(cached);return;}
    try{
     const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store'});
-    const payload=response.ok?await response.json():{};
+    if(!response.ok){if(response.status===401)permissionCache?.write([]);throw Error('permissions')}
+    const payload=await response.json();
     if(ticket!==epoch)return;
-    const p=Array.isArray(payload.permissions)?payload.permissions:[];
-    const permitted=response.ok&&['admin.access','admin.world.read','admin.world.write'].every(k=>p.includes(k));
-    paint(permitted);if(permitted)void load();
+    const permissions=Array.isArray(payload.permissions)?payload.permissions:[];
+    permissionCache?.write(permissions);accept(permissions);
    }catch{if(ticket===epoch)paint(false)}
   }
   el('[data-contracts-search-form]').addEventListener('submit',event=>{
@@ -150,7 +157,7 @@
   unassign.addEventListener('click',()=>{void mutate(null)});
   el('[data-contracts-cancel]').addEventListener('click',closeEditor);
   new MutationObserver(translate).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
-  win.addEventListener('pageshow',event=>{if(event.persisted)void check()});
+  // Permission cache is per-tab and refreshed only on a full navigation/refresh.
   translate();void check();
  }
  return {mount};

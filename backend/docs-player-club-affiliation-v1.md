@@ -1,7 +1,6 @@
 # Player–club affiliation V1 — implementation slice 1 (#509)
 
-**State:** schema and isolated regression tests only, Draft/HOLD. No public or Admin
-affiliation endpoints, UI, remote D1 migration, deployment or backfill in this slice.
+**State:** V1 storage, guarded Admin read/write API and Admin Contracts page in Draft/HOLD. No public affiliation endpoints, remote D1 migration, deployment or backfill.
 
 The forward-only `0022_player_club_affiliations.sql` migration creates exactly
 two columns: `player_id` (positive persisted numeric footballer ID, primary key,
@@ -24,16 +23,18 @@ Legacy `world_generation` on player records remains historical provenance, not
 a filter for public/Admin persisted-player visibility. Any stale Admin changes
 must still be rejected using live world generation/revision and expected link.
 
-Future separately reviewed increments:
+Current Draft/HOLD increments:
 1. Protected Admin atomic assign/reassign/unassign with permissions, CSRF,
    strict player/club identity, world revision and expected-affiliation guards.
-2. Current `GET /api/players?page=N` adds nullable `clubKey`, detail
+2. Admin /admin/contracts UI with a third directory card, search, current-club editing,
+   pagination and five-language site styling. Server authorization remains authoritative.
+
+Future separately reviewed increments:
+1. Current `GET /api/players?page=N` adds nullable `clubKey`, detail
    `GET /api/players/:id`, and **unpaginated**
    `GET /api/clubs/:clubKey/roster` with one root `clubKey` and complete
    `players[]` (no repeated per-player `clubKey`).
-3. API/Worker concurrency, reset, privacy and browser QA. No claim that any
-   endpoint or permission boundary exists before these increments land.
+2. Additional API/Worker concurrency, reset, privacy and browser QA.
+   No claim of public data exposure, remote deployment or production readiness.
 
-**Manual SQL smoke:** SQLite foreign keys/PK/cascade/empty-key behavior PASS
-against the proposed table and index. GitHub exact-head CI and full actual
-D1 migration/runtime results are **PENDING** until this PR is checked.
+**Evidence:** Previous schema-only exact-head CI PASS (52 Python migration and 282 Worker/D1 tests). Admin Contracts and subsequent UI/route changes remain subject to new exact-head CI and owner QA; no FULL PASS is claimed for this increment until GitHub reports it.
