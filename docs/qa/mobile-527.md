@@ -134,3 +134,11 @@ These are targeted local checks, not FULL CI, hosted acceptance, touch simulatio
 - Restored the exact `9411b691` changeset on top of current `main`, retaining the current official flag-icons `object-fit:contain` update. This reverses the two unapproved global header restructurings without rewriting history.
 - Targeted `assets/player-detail.css`: at <=620px the public profile's unused subtitle is hidden so its reserved 20px blank row no longer shifts the visible text group above the portrait midpoint. Existing flex heading and identity are explicitly aligned and centered on the cross axis. Desktop and protected preview remain in their original layout.
 - Added source contract and Chromium/WebKit viewport checks at 320/375/390/430/768/1440 measuring the midpoint between visible title and nationality/age against the portrait midpoint (<=2px). QA/CI/manual visual confirmation pending; PR Draft/HOLD, no merge/deploy.
+
+
+## Compact Club Fixtures rows on mobile — 2026-11-14
+
+- Owner reported that Club Fixtures mobile rows were too tall (~140px minimum under the previous 62px opponent + 52px competition tracks, 6px gap and 20px padding).
+- At <=620px, reduced row vertical padding from 10px to 6px, track gap from 6px to 4px, opponent reserved height from 62px to 50px (13px type/16px line height, three name lines), and metadata reservation from 52px to 42px (11px type/13px line height, three competition lines). Target ~108px first-paint row, roughly 23% shorter, without reducing crest or venue icon sizes.
+- Browser checks now require first-paint and hydrated row height <=120px with <=2px difference at 320/375/390/430px, preserve <=8px positional checks and 2px reserved-track deltas. Exceptions for genuinely longer localized labels are not accepted without review. No clipping or ellipsis added.
+- Club Fixtures mobile change only; desktop, player list, player detail and DB behavior unchanged. PR Draft/HOLD and no merge/deploy.

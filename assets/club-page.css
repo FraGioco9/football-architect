@@ -506,13 +506,13 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-fixture-loading .club-fixture-skeleton-status{inline-size:56px;block-size:9px}
 @media(max-width:620px){
  .club-fixtures-toolbar{gap:8px;justify-content:center}.club-fixtures-selectors{order:-1;width:100%;gap:8px;margin-left:0}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:center;margin-inline:auto}
- .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 10px}
- /* Three 13px opponent name lines require ~60px at inherited line-height. */
- .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;gap:7px;min-height:62px}
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:4px 8px;padding:6px 10px}
+ /* Compact three-line 13px names in a predictable 16px line box. */
+ .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;line-height:16px;gap:7px;min-height:50px}
  .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
  /* Keep day and competition in fixed columns; do not move the link onto a second flex row. */
- /* At 320px, competition labels may use three ~17px lines; reserve the same 52px track before and after hydration. */
- .club-fixture-meta{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-height:52px;gap:4px 10px;font-size:11px}
+ /* At 320px, reserve three compact 13px lines for long competition labels. */
+ .club-fixture-meta{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-height:42px;gap:4px 10px;font-size:11px;line-height:13px}
  .club-fixture-meta a{align-self:center}
 }
 
