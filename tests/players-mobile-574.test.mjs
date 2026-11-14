@@ -269,6 +269,8 @@ test('#574 desktop and mobile Player text center on the row midpoint without mov
  assert.match(links[0],/display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;transform:translateY\(\.5px\)/);
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
  assert.match(css,/\.app-players-table th,\.app-players-table td\{box-sizing:border-box;[^}]*border-bottom:1px solid var\(--line\);vertical-align:middle/);
+ assert.match(css,/\.app-players-table tbody tr:last-child td\{border-bottom:0\}/);
+ assert.match(css,/\.app-players-table tbody tr:last-child td:nth-child\(2\) :is\(\.app-player-name-link,\.club-roster-player-link\)\{transform:none\}/,'last row without border needs no vertical correction');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/,'underline remains out of flow');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/,'mobile label preserves intrinsic line-height');
 });

@@ -1883,6 +1883,8 @@ html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{backgroun
  * a 1px bottom border, so its content midpoint sits half a pixel above the
  * row midpoint. Offset the link by 0.5px, independently of the underline. */
 .app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;transform:translateY(.5px)}
+/* Final tbody row has no bottom border: its content midpoint equals row center. */
+.app-players-table tbody tr:last-child td:nth-child(2) :is(.app-player-name-link,.club-roster-player-link){transform:none}
 
 /* UI-VIEWS-01 (#559): view/subview controls only. No Club History content styles.
  * Desktop: narrower view buttons. Mobile: preserve the established 2.5-tab
