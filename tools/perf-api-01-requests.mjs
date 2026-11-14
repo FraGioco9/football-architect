@@ -13,6 +13,13 @@ export const DEFAULT_ROUTES=Object.freeze([
  '/account','/account/login','/admin','/admin/calendar','/admin/players','/admin/contracts'
 ]);
 
+// Tested in-page transitions are separate from document reloads. An absent
+// control is reported as SKIPPED, never as evidence of zero network requests.
+export const IN_PAGE_SCENARIOS=Object.freeze([
+ Object.freeze({routePattern:/^\/clubs\/[^/]+\/[^/]+\/roster(?:\?|$)/,
+  name:'roster-info-to-technical',selector:'a[data-club-roster-view="technical"]',
+  expectedView:'technical'})
+]);
 const VISIBLE_PARAMS=new Set(['season','day','week','offset','limit']);
 export function describeApiUrl(input){
  let url;
@@ -107,6 +114,29 @@ async function main(args){
     };
     const target=options.base+route;
     await visit('direct-load',()=>page.goto(target,{waitUntil:'load',timeout:25000}));
+    // Measure genuine in-document route transitions, not only page.goto.
+    // Club Roster is a verified pushState subview. A skeleton/empty/error page
+    // without an actionable control is explicitly inconclusive.
+    for(const scenario of IN_PAGE_SCENARIOS.filter(item=>item.routePattern.test(route))){
+     const control=page.locator(scenario.selector).first();
+     const visible=await control.isVisible().catch(()=>false);
+     const disabled=visible&&await control.getAttribute('aria-disabled')==='true';
+     if(!visible||disabled){
+      records.push({route,attempt,scenario:scenario.name,skipped:true,
+       reason:visible?'control-disabled':'control-unavailable',requestCount:null});
+      continue;
+     }
+     await visit(scenario.name,async()=>{
+      await control.click({timeout:5000});
+      if(new URL(page.url()).searchParams.get('view')!==scenario.expectedView)
+       throw Error('Roster subview did not reach expected URL');
+     });
+     await visit('roster-history-back',async()=>{
+      await page.goBack({waitUntil:'domcontentloaded',timeout:7000});
+      if(new URL(page.url()).searchParams.get('view')===scenario.expectedView)
+       throw Error('Roster Back did not restore prior view');
+     });
+    }
     await visit('refresh',()=>page.reload({waitUntil:'load',timeout:25000}));
     // A full route change within one tab should reuse only correctly scoped state.
     if(route!=='/dashboard'){
@@ -120,7 +150,7 @@ async function main(args){
  const head=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
  const result={label:options.label,head,base:options.base,runs:options.runs,
   environment:'Local isolated DEV recommended; anonymous fresh browser context per route/run',
-  caveats:'Counts are observations, not proof of redundant calls. Query values except numeric season/day/week/offset/limit are redacted. No real login, post-write, in-page tab click, iPhone Safari or hosted Preview coverage.',
+  caveats:'Counts are observations, not proof of redundant calls. Query values except numeric season/day/week/offset/limit are redacted. The Roster in-page subview is sampled when actionable, with explicit skips otherwise. No real login, post-write, physical iPhone Safari or hosted Preview coverage.',
   records};
  mkdirSync('int24-browser-artifacts',{recursive:true});
  const output='int24-browser-artifacts/perf-api-01-'+options.label+'.json';

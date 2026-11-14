@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,summarizeRequests,DEFAULT_ROUTES} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,summarizeRequests,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -30,4 +30,14 @@ test('API audit has representative anonymous route coverage',()=>{
  for(const prefix of ['/dashboard','/clubs','/competitions/','/calendar','/players','/account','/admin'])
   assert.ok(DEFAULT_ROUTES.some(r=>r.startsWith(prefix)),prefix);
  assert.ok(DEFAULT_ROUTES.every(path=>path.startsWith('/')&&!path.startsWith('//')));
+});
+
+test('Roster in-page audit distinguishes pushState navigation from document reload',()=>{
+ const scenario=IN_PAGE_SCENARIOS.find(s=>s.name==='roster-info-to-technical');
+ assert.ok(scenario);
+ assert.equal(scenario.routePattern.test('/clubs/it/1/roster'),true);
+ assert.equal(scenario.routePattern.test('/clubs/it/1/roster?view=info'),true);
+ assert.equal(scenario.routePattern.test('/clubs/it/1/overview'),false);
+ assert.equal(scenario.selector,'a[data-club-roster-view="technical"]');
+ assert.equal(scenario.expectedView,'technical');
 });
