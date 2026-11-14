@@ -397,6 +397,7 @@
     if(selected.view==='roster')paint(true);
    })();
   };
+  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
   // Contracts writes do not advance sporting-world revisions. A cross-tab
   // storage nonce invalidates only a previously loaded roster, not world data.
   const rosterSignalKey='fa:roster-affiliations:v1';
@@ -419,7 +420,6 @@
   document.addEventListener('visibilitychange',()=>{
    if(!document.hidden)checkRosterSignal();
   });
-  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
   window.addEventListener('pageshow',event=>{
    if(!event.persisted)return;
    checkRosterSignal();
