@@ -1862,7 +1862,8 @@ export function createPlayerMovement({
      (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
       experimentalAutonomousFixtureCarrySupportTerminalRunThrough||
       experimentalAutonomousFixtureCarrySupportTerminalLateralSlip))||
-    (experimentalAutonomousFixtureCarrySupportTerminalLateralSlip&&     (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
+    (experimentalAutonomousFixtureCarrySupportTerminalLateralSlip&&
+      (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
       experimentalAutonomousFixtureCarrySupportTerminalRunThrough))||
     (experimentalAutonomousFixtureCarrySupportTerminalRunThrough&&
      !experimentalAutonomousFixtureCarrySupportTerminalFacingLead)||
@@ -1880,7 +1881,6 @@ export function createPlayerMovement({
      !experimentalAutonomousFixtureCarrySupportBallAccess)||
     (experimentalAutonomousFixtureCarrySupportBallAccess&&
      !experimentalAutonomousFixtureCarrySupportPressHandoff)||
-
     (experimentalAutonomousFixtureCarrySupportPressHandoff&&
      !experimentalAutonomousFixtureCarrySupport)||
     (experimentalAutonomousFixtureCarrySupport&&
