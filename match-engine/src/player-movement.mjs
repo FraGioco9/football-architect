@@ -1826,6 +1826,7 @@ export function createPlayerMovement({
  experimentalAutonomousFixtureCarry=false,
  experimentalAutonomousFixtureCarrySupport=false,
  experimentalAutonomousFixtureCarrySupportPressHandoff=false,
+ experimentalAutonomousFixtureCarryBlockedDetour=false,
  experimentalAutonomousFixtureCarrySupportBallAccess=false,
  experimentalAutonomousFixtureCarrySupportLateralAlign=false,
  experimentalAutonomousFixtureCarrySupportEarlyFacing=false,
@@ -1847,6 +1848,7 @@ export function createPlayerMovement({
       experimentalAutonomousFixtureCarry,
       experimentalAutonomousFixtureCarrySupport,
       experimentalAutonomousFixtureCarrySupportPressHandoff,
+      experimentalAutonomousFixtureCarryBlockedDetour,
       experimentalAutonomousFixtureCarrySupportBallAccess,
       experimentalAutonomousFixtureCarrySupportLateralAlign,
       experimentalAutonomousFixtureCarrySupportEarlyFacing,
@@ -1924,6 +1926,8 @@ export function createPlayerMovement({
  let activeFixtureCarryOpponentRunnerId=null;
  let activeFixtureCarryOpponentFlank=null;
  let lastPhysicalCarryAction=null,activeFixtureCarryPursuit=null;
+ // Experimental only; no state or behavior changes when disabled.
+ let carryBlockedConsecutiveTicks=0;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
   if(!experimentalAutonomousFixtureCarry||
@@ -3284,8 +3288,38 @@ export function createPlayerMovement({
    // exceed free-space braking, and must never be mistaken for normal
    // bounded acceleration or an impulse imparted to the real match ball.
    p.blockedBy=blocker?.id??null;
-   if(blocker){p.vx=0;p.vy=0;}
-   else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
+   if(experimentalAutonomousFixtureCarryBlockedDetour&&
+      activeFixtureCarryPursuit?.playerId===p.id)
+    carryBlockedConsecutiveTicks=blocker?
+     carryBlockedConsecutiveTicks+1:0;
+   if(blocker){
+    let detour=null;
+    // C2-b experimental: sustained real carry pursuit obstruction only.
+    // This never runs in ordinary fixture sessions.
+    if(experimentalAutonomousFixtureCarryBlockedDetour&&
+       activeFixtureCarryPursuit?.playerId===p.id&&
+       carryBlockedConsecutiveTicks>=12&&dist>2.5){
+     const forwardX=dx/dist,forwardY=dy/dist;
+     const sideSpeed=Math.min(speedLimit,PLAYER_ACCEL_MPS2*PLAYER_DT);
+     const candidates=[1,-1].map(side=>{
+      const candidateVx=-forwardY*side*sideSpeed;
+      const candidateVy=forwardX*side*sideSpeed;
+      const cx=p.x+candidateVx*PLAYER_DT;
+      const cy=p.y+candidateVy*PLAYER_DT;
+      if(Math.abs(cx)>maxX||Math.abs(cy)>maxY)return null;
+      const clearance=Math.min(...players.filter(q=>q!==p).map(
+       q=>Math.hypot(cx-q.x,cy-q.y)));
+      if(clearance<PLAYER_MIN_SEPARATION_M-1e-9)return null;
+      return {cx,cy,candidateVx,candidateVy,clearance,side};
+     }).filter(Boolean);
+     detour=candidates.sort((a,b)=>
+      b.clearance-a.clearance||b.side-a.side)[0]??null;
+    }
+    if(detour){
+     p.x=detour.cx;p.y=detour.cy;
+     p.vx=detour.candidateVx;p.vy=detour.candidateVy;
+    }else{p.vx=0;p.vy=0;}
+   }else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
    const speed=Math.hypot(p.vx,p.vy);
    // C2.3u: only the *same* source-authenticated near-ball runner
    // may pivot toward the previous true ball. No direct facing write,
