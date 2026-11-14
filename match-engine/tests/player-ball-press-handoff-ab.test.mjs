@@ -468,6 +468,8 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
      detour:{x:round(carrier.x),y:round(carrier.y)},
      displacementFromBaselineM:round(Math.hypot(
       carrier.x-base.x,carrier.y-base.y)),
+     baselineBallGapM:round(Math.hypot(
+      base.x-a.ball.position.x,base.y-a.ball.position.y)),
      ballGapM:round(Math.hypot(carrier.x-b.ball.position.x,
       carrier.y-b.ball.position.y)),
      blocker:pursuit?.playerId==='away-9'?
@@ -481,6 +483,11 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    'detour must not affect movement before the first genuine carry');
   assert.ok(minimumClearance>=0.98-1e-6,
    'experimental carrier must preserve 0.98m hard separation');
+  const late=rows.find(row=>row.tick===693);
+  assert.ok(late&&late.displacementFromBaselineM>0.25,
+   'persistent detour must leave the blocked position by at least 0.25m');
+  assert.ok(late.ballGapM<late.baselineBallGapM-0.2,
+   'persistent detour must improve authentic carrier-to-ball gap by 0.2m');
   console.log('C2_B_OPT_IN_BLOCKED_DETOUR_AB',JSON.stringify({
    firstDivergenceTick:firstDivergence,
    firstShoeDifferenceTick:firstShoeDifference,

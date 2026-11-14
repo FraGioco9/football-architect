@@ -1926,8 +1926,9 @@ export function createPlayerMovement({
  let activeFixtureCarryOpponentRunnerId=null;
  let activeFixtureCarryOpponentFlank=null;
  let lastPhysicalCarryAction=null,activeFixtureCarryPursuit=null;
- // Experimental only; no state or behavior changes when disabled.
- let carryBlockedConsecutiveTicks=0;
+ // Experimental only; normal movement remains unchanged when disabled.
+ let carryBlockedConsecutiveTicks=0,carryBlockedSourceId=null;
+ let activeCarryBlockedDetour=null;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
   if(!experimentalAutonomousFixtureCarry||
@@ -3109,9 +3110,25 @@ export function createPlayerMovement({
     });
    }
   }
+  // Drop a detour immediately on any new genuine carry source or expiry.
+  if(experimentalAutonomousFixtureCarryBlockedDetour&&
+     activeCarryBlockedDetour&&
+     (!activeFixtureCarryPursuit||
+      activeCarryBlockedDetour.playerId!==activeFixtureCarryPursuit.playerId||
+      activeCarryBlockedDetour.sourceCarryTick!==
+       activeFixtureCarryPursuit.sourceCarryTick||
+      tick+1-activeCarryBlockedDetour.startTick>90))
+   activeCarryBlockedDetour=null;
   const targets=players.map(p=>{
-   if(activeFixtureCarryPursuit?.playerId===p.id)
+   if(activeFixtureCarryPursuit?.playerId===p.id){
+    if(experimentalAutonomousFixtureCarryBlockedDetour&&
+       activeCarryBlockedDetour?.playerId===p.id){
+     const wp=activeCarryBlockedDetour.waypoint;
+     if(Math.hypot(p.x-wp.x,p.y-wp.y)>0.16)return wp;
+     activeCarryBlockedDetour=null;
+    }
     return activeFixtureCarryPursuit.target;
+   }
    // Verified selected teammate tries to run to the observed ball with
    // ordinary integrator movement, not an injected collider position.
    if(fixtureChaseReceiverId===p.id)
@@ -3288,38 +3305,60 @@ export function createPlayerMovement({
    // exceed free-space braking, and must never be mistaken for normal
    // bounded acceleration or an impulse imparted to the real match ball.
    p.blockedBy=blocker?.id??null;
-   if(experimentalAutonomousFixtureCarryBlockedDetour&&
-      activeFixtureCarryPursuit?.playerId===p.id)
-    carryBlockedConsecutiveTicks=blocker?
-     carryBlockedConsecutiveTicks+1:0;
-   if(blocker){
-    let detour=null;
-    // C2-b experimental: sustained real carry pursuit obstruction only.
-    // This never runs in ordinary fixture sessions.
-    if(experimentalAutonomousFixtureCarryBlockedDetour&&
-       activeFixtureCarryPursuit?.playerId===p.id&&
-       carryBlockedConsecutiveTicks>=12&&dist>2.5){
-     const forwardX=dx/dist,forwardY=dy/dist;
-     const sideSpeed=Math.min(speedLimit,PLAYER_ACCEL_MPS2*PLAYER_DT);
-     const candidates=[1,-1].map(side=>{
-      const candidateVx=-forwardY*side*sideSpeed;
-      const candidateVy=forwardX*side*sideSpeed;
-      const cx=p.x+candidateVx*PLAYER_DT;
-      const cy=p.y+candidateVy*PLAYER_DT;
-      if(Math.abs(cx)>maxX||Math.abs(cy)>maxY)return null;
-      const clearance=Math.min(...players.filter(q=>q!==p).map(
-       q=>Math.hypot(cx-q.x,cy-q.y)));
-      if(clearance<PLAYER_MIN_SEPARATION_M-1e-9)return null;
-      return {cx,cy,candidateVx,candidateVy,clearance,side};
-     }).filter(Boolean);
-     detour=candidates.sort((a,b)=>
-      b.clearance-a.clearance||b.side-a.side)[0]??null;
+   if(experimentalAutonomousFixtureCarryBlockedDetour){
+    if(activeFixtureCarryPursuit?.playerId===p.id){
+     carryBlockedConsecutiveTicks=blocker?
+      blocker.id===carryBlockedSourceId?
+       carryBlockedConsecutiveTicks+1:1:0;
+     carryBlockedSourceId=blocker?.id??null;
+     // Only a source-authenticated carry and 12 consecutive true rejections
+     // by the SAME obstacle may activate the waypoint. It persists until
+     // the runner reaches it or its genuine pursuit expires.
+     if(blocker&&!activeCarryBlockedDetour&&
+        carryBlockedConsecutiveTicks>=12&&dist>2.5){
+      const forwardX=dx/dist,forwardY=dy/dist;
+      const cross=forwardX*(blocker.y-p.y)-
+       forwardY*(blocker.x-p.x);
+      const preferredSide=Math.abs(cross)>1e-6?
+       -Math.sign(cross):1;
+      let waypoint=null,chosenSide=null;
+      for(const side of [preferredSide,-preferredSide]){
+       if(waypoint)break;
+       const lateralX=-forwardY*side,lateralY=forwardX*side;
+       for(const [along,offset] of [[1.8,1.5],[1.35,1.55]]){
+        const wx=p.x+forwardX*along+lateralX*offset;
+        const wy=p.y+forwardY*along+lateralY*offset;
+        if(Math.abs(wx)>maxX||Math.abs(wy)>maxY)continue;
+        // A locally clear corridor is an intent, not fabricated contact.
+        // The actual body still uses the universal 0.98m guard every tick.
+        const routeSafe=players.every(q=>q===p||
+         Array.from({length:12},(_,k)=>(k+1)/12).every(frac=>{
+          const sx=p.x+(wx-p.x)*frac;
+          const sy=p.y+(wy-p.y)*frac;
+          return (sx-q.x)**2+(sy-q.y)**2>=
+           PLAYER_MIN_SEPARATION_M**2-1e-9;
+         }));
+        if(routeSafe){
+         waypoint=Object.freeze({x:wx,y:wy});
+         chosenSide=side;
+         break;
+        }
+       }
+      }
+      if(waypoint)activeCarryBlockedDetour=Object.freeze({
+       playerId:p.id,sourceCarryTick:activeFixtureCarryPursuit.sourceCarryTick,
+       blockerId:blocker.id,side:chosenSide,waypoint,startTick:tick+1
+      });
+     }
+    }else{
+     carryBlockedConsecutiveTicks=0;
+     carryBlockedSourceId=null;
     }
-    if(detour){
-     p.x=detour.cx;p.y=detour.cy;
-     p.vx=detour.candidateVx;p.vy=detour.candidateVy;
-    }else{p.vx=0;p.vy=0;}
-   }else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
+   }
+   // The triggering step is a canonical hard stop. Steering begins on
+   // the NEXT tick through the same normal acceleration and collision code.
+   if(blocker){p.vx=0;p.vy=0;}
+   else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
    const speed=Math.hypot(p.vx,p.vy);
    // C2.3u: only the *same* source-authenticated near-ball runner
    // may pivot toward the previous true ball. No direct facing write,
