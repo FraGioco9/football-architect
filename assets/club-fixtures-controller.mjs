@@ -8,18 +8,21 @@ import './competition-tabs.js';
 export function mountClubFixtures({host,manifest}){
  const ui=window.faClubFixtures,state=window.faWorldState;
  let panel=null,snapshot={coverage:'loading',rows:[],competitions:[]},filter='all',epoch=0,abort=null,lastKey=null,catalogue=null;
- let rememberedSeason=null,previewSelection=null;
+ let previewSelection=null;
  const bindings=new Map();
  const route=()=>window.faClubModel.route(location.pathname);
  const selection=()=>ui.resolveSeason({current:state?.get?.().current?.season??null,
-  requested:new URLSearchParams(location.search).get('season'),remembered:rememberedSeason});
+  requested:new URLSearchParams(location.search).get('season')});
  const season=()=>selection().season;
  const normalizeLocation=()=>{
   const chosen=selection();
   if(!chosen.confirmed||route()?.view!=='fixtures')return;
-  rememberedSeason=chosen.season;
-  const url=new URL(location.href);url.searchParams.set('season',chosen.season);
-  if(url.search!==location.search)history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+  const url=new URL(location.href);
+  const resolved=window.faRoutesRegistry.resolveSeasonQuery(url.searchParams,state.get().current?.season);
+  if(resolved.remove){
+   url.searchParams.delete('season');
+   history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+  }
  };
 
  const lang=()=>document.documentElement.lang;
@@ -34,13 +37,21 @@ export function mountClubFixtures({host,manifest}){
   if(!node)return;hideTip();tipTarget=node;tooltip.textContent=node.getAttribute('aria-label');tooltip.hidden=false;node.setAttribute('aria-describedby',tooltip.id);
   const r=node.getBoundingClientRect(),width=tooltip.offsetWidth,height=tooltip.offsetHeight;
   tooltip.style.left=Math.max(8,Math.min(innerWidth-width-8,r.left+r.width/2-width/2))+'px';
-  tooltip.style.top=Math.max(8,r.bottom+height+12<innerHeight?r.bottom+8:r.top-height-8)+'px';
+  const gap=8,edge=8,above=r.top-height-gap,below=r.bottom+gap;
+  // Favor the top edge; fall back below when a top placement would clip.
+  const top=above>=edge?above:below+height<=innerHeight-edge?below:r.top>=innerHeight-r.bottom?above:below;
+  tooltip.style.top=Math.max(edge,Math.min(innerHeight-height-edge,top))+'px';
  };
  const navigate=(key,value)=>{
   const chosen=season();if(chosen===null)return;
-  const url=new URL(location.href);url.searchParams.set('season',chosen);url.searchParams.set(key,value);
-  if(key==='season'){rememberedSeason=Number(value);filter='all';url.searchParams.delete('competition');}
-  history.pushState(null,'',url.pathname+url.search);
+  const url=new URL(location.href);
+  if(key==='season'){
+   const current=Math.max(1,state.get().current?.season??1);
+   if(Number(value)===current)url.searchParams.delete('season');
+   else url.searchParams.set('season',value);
+   filter='all';url.searchParams.delete('competition');
+  }else url.searchParams.set(key,value);
+  history.pushState(null,'',url.pathname+url.search+url.hash);
   if(key==='competition'){paint();return;}
   previewSelection=null;lastKey=null;normalizeLocation();
   const nextSelection=identity();previewSelection=nextSelection;window.dispatchEvent(new Event('fa:club-fixtures-selection'));refresh();
@@ -48,18 +59,19 @@ export function mountClubFixtures({host,manifest}){
  function paint(){
   if(route()?.view!=='fixtures')return;
   const {season:chosen,seasons}=selection();
-  // Explicit URL seasons remain visible while waiting for canonical confirmation.
-  const params=new URLSearchParams(location.search),requestedSeason=params.get('season');
-  const displaySeason=chosen??(/^[1-9]\d{0,8}$/.test(requestedSeason||'')?Number(requestedSeason):null);
+  const params=new URLSearchParams(location.search),displaySeason=chosen;
   const requested=params.get('competition');
   filter=requested&&snapshot.competitions?.some(d=>d.id===requested)?requested:'all';
   const focused=panel?.contains(document.activeElement)?document.activeElement:null;
   const focusControl=focused?.closest('[data-club-fixture-control]')?.dataset.clubFixtureControl;
   const focusRow=focused?.closest('[data-club-fixture-id]')?.dataset.clubFixtureId;
-  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent')?'.club-fixture-opponent':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
+  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent-name')?'.club-fixture-opponent-name':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
   const oldCrests=new Map();
   for(const node of panel?.querySelectorAll('[data-club-crest]')||[]){const key=node.dataset.clubCrest;if(!oldCrests.has(key))oldCrests.set(key,[]);oldCrests.get(key).push(node);}
-  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,seasons,filter,snapshot});
+  const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,
+   currentSeason:Math.max(1,state?.get?.().current?.season??1),
+   explicitSeason:window.faRoutesRegistry.resolveSeasonQuery(params,state?.get?.().current?.season).explicit,
+   seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();
@@ -70,9 +82,9 @@ export function mountClubFixtures({host,manifest}){
    panel.addEventListener('focusin',e=>showTip(e.target.closest('[data-club-venue]')));
    panel.addEventListener('focusout',hideTip);
    panel.addEventListener('keydown',e=>{if(e.key==='Escape')hideTip();});
-   panel.addEventListener('click',e=>{if(e.target.closest('[data-club-fixtures-next]')){
-    const next=snapshot.rows.find(r=>r.goalsFor===null&&r.day>snapshot.day);
-    if(!next)return;
+   panel.addEventListener('click',e=>{const action=e.target.closest('button[data-club-fixtures-next]');if(action){
+    const next=ui.nextFixture({snapshot,season:season(),currentSeason:state?.get?.().current?.season??null});
+    if(action.disabled||!next)return;
     if(filter!=='all'&&next.competitionId!==filter){const u=new URL(location.href);u.searchParams.delete('competition');history.pushState(null,'',u.pathname+u.search);paint();}
     const row=panel.querySelector('[data-club-fixture-next]');row?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});row?.focus({preventScroll:true});
    }});
@@ -103,11 +115,7 @@ export function mountClubFixtures({host,manifest}){
   if(focusControl)panel.querySelector('[data-club-fixture-control="'+focusControl+'"] button')?.focus({preventScroll:true});
   else if(focusRow){const row=[...panel.querySelectorAll('[data-club-fixture-id]')].find(n=>n.dataset.clubFixtureId===focusRow);(focusPart?row?.querySelector(focusPart):row)?.focus({preventScroll:true});}
   for(const link of panel.querySelectorAll('a'))if(window.faAppHref)link.href=window.faAppHref(link.getAttribute('href'));
-  // Preserve viewed season through other club tabs, without changing their contracts.
-  for(const link of host.querySelectorAll('.club-tabs a'))if(/\/(fixtures|stats)$/.test(new URL(link.href).pathname)){
-   if(chosen===null)continue;
-   const url=new URL(link.href);url.searchParams.set('season',chosen);link.href=url.pathname+url.search;
-  }
+
  }
  const identity=()=>{
   const s=state?.get?.(),w=s?.world;
@@ -148,15 +156,11 @@ export function mountClubFixtures({host,manifest}){
  window.addEventListener('fa:club-fixtures-preview',()=>{lastKey=null;refresh();});
  window.addEventListener('pagehide',()=>{abort?.abort();epoch++;cache.clear();hideTip();lastKey=null;});
  window.addEventListener('pageshow',()=>refresh());
- window.addEventListener('popstate',()=>{rememberedSeason=null;lastKey=null;refresh();});
+ window.addEventListener('popstate',()=>{lastKey=null;refresh();});
  const moveTip=()=>{if(tipTarget===document.activeElement)showTip(tipTarget);else hideTip();};
  window.addEventListener('scroll',moveTip,true);window.addEventListener('resize',moveTip);
  return {mount(){
   normalizeLocation();
-  const viewed=season();
-  if(rememberedSeason!==null)for(const link of host.querySelectorAll('.club-tabs a'))if(/\/(fixtures|stats)$/.test(new URL(link.href).pathname)){
-   const url=new URL(link.href);url.searchParams.set('season',viewed);link.href=url.pathname+url.search;
-  }
   // History publishes a snapshot by repainting the club shell. It must not
   // request Fixtures again, or DEV's shared History publication loops forever.
   if(route()?.view!=='fixtures'){previewSelection=null;hideTip();return;}

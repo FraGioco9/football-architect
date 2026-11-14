@@ -24,6 +24,8 @@ async function visit(profile,path,verify){
  await context.addInitScript(data=>{
   localStorage.setItem("football-architect:theme",data.theme);
   localStorage.setItem("football-architect:language",data.language);
+  // These responsive fixtures deliberately exercise protected sporting data.
+  sessionStorage.setItem("football-architect:debug-enabled","on");
  },profile);
  const page=await context.newPage(),errors=[];
  page.on("pageerror",error=>errors.push(String(error)));
@@ -146,6 +148,95 @@ try{
    assert.ok((await tab.boundingBox()).height>=43.9,"Club tab hit area");
   });
  }
+ // #527: mobile Player Detail content is visually centered against the portrait.
+ // The empty subtitle on public profiles must not displace name, role, nationality or age.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"it",theme:"dark"},"/players/33",async page=>{
+   await page.evaluate(async()=>{await document.fonts.ready});
+   const before=await page.evaluate(()=>{
+    const portrait=document.querySelector('.app-player-detail-portrait');
+    const title=document.querySelector('.app-player-detail-identity .app-page-title');
+    const role=document.querySelector('.app-player-detail-role');
+    const meta=document.querySelector('.app-player-detail-header-meta');
+    const subtitle=document.querySelector('.app-player-detail-subtitle');
+    const identity=document.querySelector('.app-player-detail-identity');
+    if(!portrait||!title||!role||!meta||!subtitle||!identity)return null;
+    const rect=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,cy:(r.top+r.bottom)/2};};
+    return {portrait:rect(portrait),title:rect(title),role:rect(role),meta:rect(meta),identity:rect(identity),
+     subtitleDisplay:getComputedStyle(subtitle).display,
+     headingJustify:getComputedStyle(portrait.parentElement).justifyContent,
+     rootOverflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.ok(before,"Player Detail has all header elements at "+width);
+   assert.ok(before.title.left>=before.portrait.right+5,"name remains to the right of the portrait at "+width);
+   assert.ok(before.title.top<=before.role.top&&before.role.top<=before.meta.top,
+    "name, position, nationality and age keep their reading order at "+width);
+   if(width<=620){
+    const contentCenter=(before.title.top+before.meta.bottom)/2;
+    assert.equal(before.subtitleDisplay,'none',"unused public subtitle does not skew mobile header at "+width);
+    assert.ok(Math.abs(contentCenter-before.portrait.cy)<=2,
+     "visible identity rows centered vertically against portrait "+JSON.stringify({width,contentCenter,before}));
+   }else{
+    assert.notEqual(before.subtitleDisplay,'none',"desktop header retains the original 9411b691 layout at "+width);
+   }
+   assert.ok(before.rootOverflow<=2,"Player Detail must not produce page overflow "+JSON.stringify({width,before}));
+  });
+ }
+
+ // #527: Players subgroup tabs must behave like Club Roster on mobile.
+ // Measure the real scrolling strip at the requested mobile widths, not only a CSS contract.
+ for(const width of [320,375,390,430,768,1440]){
+  await visit({width,height:844,language:"en",theme:"dark"},"/players?view=attributes&group=technical",async page=>{
+   const geometry=await page.evaluate(()=>{
+    const toolbar=document.querySelector(".app-players-toolbar");
+    const strip=toolbar.querySelector(".app-players-groups");
+    const tabs=[...strip.querySelectorAll(".app-players-group")];
+    const count=toolbar.querySelector("[data-players-count]");
+    const box=el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
+    const bar=box(toolbar),stripBox=box(strip),countBox=box(count),tabBoxes=tabs.map(box);
+    const style=getComputedStyle(strip),groupStyle=getComputedStyle(tabs[0]);
+    const original=strip.scrollLeft;
+    strip.scrollLeft=strip.scrollWidth;
+    const shift=strip.scrollLeft-original,atEnd=box(tabs.at(-1));
+    strip.scrollLeft=original;
+    return {bar,strip:stripBox,count:countBox,tabs:tabBoxes,display:style.display,
+     scrollMode:style.overflowX,whiteSpace:groupStyle.whiteSpace,
+     canScroll:strip.scrollWidth>strip.clientWidth+30,shift,
+     lastVisibleAtEnd:atEnd.left>=stripBox.left-2&&atEnd.right<=stripBox.right+2,
+     pageOverflow:document.documentElement.scrollWidth-innerWidth};
+   });
+   assert.equal(geometry.tabs.length,4,"Players must expose all four attribute subviews");
+   assert.ok(geometry.count.left>=geometry.strip.right-1&&geometry.count.right<=geometry.bar.right+1,
+    "Players count stays to the right of the subview strip "+JSON.stringify({width,geometry}));
+   if(width<=620){
+    assert.equal(geometry.display,"flex","mobile groups form one row");
+    assert.equal(geometry.scrollMode,"auto","mobile strip scrolls horizontally");
+    assert.equal(geometry.whiteSpace,"nowrap","mobile labels remain single-line");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1&&tab.height>=33.9),
+     "all subview buttons share one 34px row "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.canScroll&&geometry.shift>20&&geometry.lastVisibleAtEnd,
+     "last mobile subview is reachable by horizontal scroll "+JSON.stringify({width,geometry}));
+    assert.ok(geometry.strip.bottom<=geometry.bar.bottom+1&&geometry.bar.height<=45,
+     "subview strip and count fit the one-row toolbar "+JSON.stringify({width,geometry}));
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='true');
+    const initial=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight,mask:getComputedStyle(el).maskImage}));
+    assert.equal(initial.left,'false','left fade stays off before scrolling at '+width);
+    assert.equal(initial.right,'true','right fade is visible while more subviews are hidden at '+width);
+    assert.ok(initial.mask.includes('linear-gradient'),'mobile subviews use the conditional CSS fade at '+width);
+    await page.locator('.app-players-groups').evaluate(el=>{el.scrollLeft=el.scrollWidth});
+    await page.waitForFunction(()=>document.querySelector('.app-players-groups')?.dataset.canScrollRight==='false');
+    const end=await page.locator('.app-players-groups').evaluate(el=>({left:el.dataset.canScrollLeft,right:el.dataset.canScrollRight}));
+    assert.equal(end.left,'true','left fade appears after scrolling at '+width);
+    assert.equal(end.right,'false','right fade disappears at the end at '+width);
+   }else{
+    assert.equal(geometry.display,"grid","desktop retains four visible subviews");
+    assert.ok(geometry.tabs.every(tab=>Math.abs(tab.top-geometry.tabs[0].top)<=1),
+     "desktop subviews remain a single row "+JSON.stringify({width,geometry}));
+   }
+   assert.ok(geometry.pageOverflow<=2,"subview scroll must not cause page overflow "+JSON.stringify({width,geometry}));
+  });
+ }
+
  // Same CSS/DOM class structure as live Fixtures; no sporting data mutation.
  for(const width of [621,768,800]){
   await visit({width,height:900,language:"en",theme:"dark"},"/competitions/it-1/fixtures",async page=>{

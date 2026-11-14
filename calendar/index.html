@@ -20,7 +20,7 @@
   const validWeek = Number.isInteger(requestedWeek) && requestedWeek >= 1 && requestedWeek <= 8;
   const mobile = window.matchMedia('(max-width:620px), (hover:none) and (pointer:coarse)').matches;
   const view = ['season', 'week'].includes(requestedView) ? requestedView : validWeek || mobile ? 'week' : 'season';
-  const dev = window.faDebugEnabled !== false &&
+  const dev = window.faDebugEnabled === true &&
     (window.faDevPreviewMode === true || window.faDevCalendarClockSnapshot?.source?.kind === 'dev');
   let currentSeason = 1, worldDay = 1;
   if (dev) {
@@ -42,7 +42,10 @@
   const week = Math.ceil(day / 7);
 
   const params = new URLSearchParams();
-  if (season !== null) params.set('season', String(season));
+  // A missing query always means the current season. The first-paint bootstrap
+  // must not synthesize an explicit Season 1 permalink before hydration.
+  if (season !== null && validSeason && url.searchParams.has('season') &&
+      (!dev || requested <= Math.max(1,currentSeason))) params.set('season', String(season));
   params.set('calendarView', view);
   if (view === 'week' && (explicitWeek || dev)) params.set('week', String(week));
   url.search = params;

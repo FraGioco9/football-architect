@@ -7,6 +7,7 @@ import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.t
 import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
+import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -42,6 +43,20 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect(stage.fixtures_hash).toBe(await canonicalHash(fixtures));
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(56);
+ expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
+ const first=await db.prepare('SELECT match_id FROM season_match_slots LIMIT 1').first();
+ const match=await readPublicMatch(db,first!.match_id);
+ expect(match).toMatchObject({status:'scheduled',stageId:'league',provenance:{sourceKind:'domestic'}});
+ expect(match.result).toBeNull();
+ const list=await readPublishedCompetitionMatches(db,1,'IT-1');
+ expect(list).toMatchObject({status:'published',competitionId:'IT-1'});
+ expect(list.fixtures).toHaveLength(242);
+ expect(list.fixtures.filter((f:any)=>f.phaseId==='playout')).toHaveLength(2);
+ const reserved=list.fixtures.find((f:any)=>f.phaseId==='playout');
+ expect(await readPublicMatch(db,reserved!.matchId)).toMatchObject({status:'awaiting_participants',result:null,homeParticipant:null});
+ await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
  expect((await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('completed');
  expect(await stageDomesticCalendar(db,session,original,'domestic-stage-00001',now)).toEqual(result);
  world=result.world;
@@ -60,6 +75,8 @@ it('rolls back domestic staging on audit failure',async()=>{
  try{await expect(stageDomesticCalendar(db,session,command(),'domestic-stage-failure',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_domestic_stage').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_domestic_stages').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(0);
  expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('scheduled');
  expect(await readWorld(db)).toEqual(world);
 });

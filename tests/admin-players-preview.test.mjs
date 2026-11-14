@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -39,7 +40,7 @@ test('Generator navigates to protected preview without browser persistence or fa
  assert.doesNotMatch(html,/<a[^>]+href="\/players\//);
  assert.match(backend,/readPlayerGenerationDraft/);
  assert.match(backend,/WHERE id=\? AND account_id=\?/);
- assert.match(backend,/status!=='preview'/);
+ assert.match(backend,/draft.status!=='preview'&&draft.status!=='committed'/);
  assert.match(backend,/expires_at<=now/);
 });
 test('Both Players tables use the same nationality tooltip component and styles',()=>{
@@ -85,7 +86,7 @@ test('Preview status is inline with the three actions, and the shared Players pa
  assert.equal((actions.match(/class="app-players-filter-trigger"/g)||[]).length,3);
  assert.match(css,/\.app-players-page-button\{[^}]*flex:0 0 112px;[^}]*width:112px;[^}]*min-width:112px;[^}]*max-width:112px/);
  assert.match(css,/@media\(max-width:420px\)\{\.app-players-pagination\{[^}]*\}\.app-players-page-button\{[^}]*width:88px;[^}]*min-width:88px;[^}]*max-width:88px/);
- assert.match(read('assets/players-directory.js'),/previous.className='app-players-page-button';next.className='app-players-page-button'/);
+ assert.match(read('assets/players-directory.js'),/loadMore.className='app-players-page-button'/,'public directory uses Load more; Admin remains on Previous/Next');
  assert.match(html,/data-admin-preview-prev[^>]*>Previous<\/button>/);
  assert.match(html,/data-admin-preview-next[^>]*>Next<\/button>/);
 });
@@ -103,16 +104,53 @@ test('Shared nationality tooltip prefers above and respects site animation and r
 test('Preview Back restores only normalized generator options through transient history, not candidates',()=>{
  const generator=read('assets/admin-players.js'),preview=read('assets/admin-players-preview.js');
  assert.match(preview,/history\.replaceState\(\{faAdminGeneratorOptions:draft\.options\}/);
+ assert.match(generator,/win\.history\.replaceState\(\{faAdminGeneratorOptions:selected\}/);
+ assert.match(preview,/history\.back\(\)/);
  assert.doesNotMatch(preview,/history\.replaceState\(\{[^}]*candidates/);
  assert.match(preview,/location\.reload\(\)/);
  assert.match(generator,/win\.history\.state\?\.faAdminGeneratorOptions/);
  assert.match(generator,/win\.history\.replaceState\(null/);
  assert.match(generator,/if\(key==='attributes'/);
- assert.match(generator,/if\(form&&\/\^fa-next-/);
+ assert.doesNotMatch(generator,/nextSeed/);
+ assert.doesNotMatch(preview,/back\.href='\/admin\/players\?nextSeed='/);
+ assert.match(preview,/saved=info\.status==='committed'/);
+ assert.match(preview,/if\(\/\^fa-auto-/);
 });
 
 test('Returning from an automatic preview does not pin the one-time auto seed',()=>{
  const generator=read('assets/admin-players.js');
  assert.match(generator,/if\(key==='seed'&&typeof value==='string'&&\/\^fa-auto-/);
  assert.match(generator,/\)continue;\s+if\(key==='attributes'/);
+});
+
+test('Generator Primary suitability min/max inputs reuse the existing inclusive API contract',()=>{
+ const require=createRequire(import.meta.url);
+ const {makeOptions}=require('../assets/admin-players.js');
+ assert.deepEqual(makeOptions({}),{});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'65',primarySuitabilityMax:'80'}),{primarySuitability:[65,80]});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'70'}),{primarySuitability:[70,90]});
+ assert.deepEqual(makeOptions({primarySuitabilityMax:'80'}),{primarySuitability:[1,80]});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'75',primarySuitabilityMax:'75'}),{primarySuitability:75});
+ assert.deepEqual(makeOptions({primarySuitabilityMin:'1',primarySuitabilityMax:'90'}),{primarySuitability:[1,90]});
+ for(const raw of [
+  {primarySuitabilityMin:'0'},{primarySuitabilityMax:'91'},
+  {primarySuitabilityMin:'80',primarySuitabilityMax:'70'},
+  {primarySuitabilityMin:'50:70'},
+  {primarySuitabilityMax:'abc'},{primarySuitabilityMin:'70.5'}
+ ])assert.throws(()=>makeOptions(raw));
+ const source=read('assets/admin-players.js');
+ assert.match(source,/key==='primarySuitability'/);
+ assert.match(source,/set\('primarySuitabilityMin',value\[0\]\);set\('primarySuitabilityMax',value\[1\]\)/);
+});
+
+test('Committed drafts remain inspectable while automatic seeds stay unpinned',()=>{
+ const preview=read('assets/admin-players-preview.js');
+ const detail=read('assets/player-detail.js');
+ const backend=read('backend/src/players-generation-command.ts');
+ assert.match(backend,/const candidates(?::Data\[\])?=stored\.map\(\(player,index\)=>\(\{\.\.\.player,preview_id:'trial-'/);
+ assert.match(backend,/status:draft\.status/);
+ assert.match(preview,/saved=info\.status==='committed'/);
+ assert.doesNotMatch(preview,/options\.seed='fa-next-'/);
+ assert.match(detail,/previewCommitted=draft\.status==='committed'/);
+ assert.match(detail,/p\.preview_id!==undefined/);
 });

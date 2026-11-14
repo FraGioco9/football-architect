@@ -215,8 +215,8 @@ test("COMPETITIONS-06 common runtime preserves localization, data safety and con
  assert.ok(css.includes(".app-competition-panel[hidden]{display:none}"));
  assert.ok(css.includes(".app-world-flag-frame{display:inline-flex;align-items:center;justify-content:center;width:var(--fa-flag-width);height:var(--fa-flag-height);flex:none}"));
  assert.ok(css.includes(".app-world-flag{display:block;width:100%;height:100%;flex:none;object-fit:contain;border:0;border-radius:0;clip-path:none}"));
- assert.ok(read("assets/flags/SOURCE.md").includes("Hampus Borgos country-flags"));
- assert.ok(read("assets/flags/SOURCE.md").includes("public domain"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("lipis/flag-icons"));
+ assert.ok(read("assets/flags/SOURCE.md").includes("MIT license"));
 });
 
 test("COMPETITIONS-06 keyboard and click controls preserve seven-tab routing",()=>{
@@ -433,7 +433,8 @@ test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
 test("CLUB-COMPETITION-FULLWIDTH renders Competition after both top panels",()=>{
  const model=read("assets/club-model.js"),css=read("assets/club-page.css");
  assert.ok(model.includes("'</div><aside class=\"app-panel club-kits\""));
- assert.ok(css.includes(".club-overview-layout>.club-competition{grid-column:1/-1"));
+ assert.match(css,/\.club-overview-layout>\.club-competition\{\s*grid-column:1\/-1;/,
+  'Competitions span the Overview grid regardless of CSS line breaks');
 });
 
 test('standings loading stays active until all overlapping requests finish',()=>{

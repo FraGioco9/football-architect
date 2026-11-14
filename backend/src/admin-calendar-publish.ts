@@ -8,7 +8,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
+import {buildInitialSchedule,buildTrustedSeasonSchedule,isInitialScheduleVersion} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
 import {createProgression,processSportingDay} from './knockout-progression.ts';
 import {dueAdministrativeMilestones,type MilestoneKind} from './domain/calendar/admin-calendar-policy.ts';
@@ -30,6 +30,7 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
  if(!stage||stage.generation!==world.generation||stage.participants_hash!==snapshot.participantsHash||stage.rules_hash!==snapshot.rulesHash)throw new ApiError(422,'calendar_event_prerequisites');
  const stored=await db.prepare(`SELECT snapshot_json FROM seasons WHERE season_number=${world.seasonNumber}`).first<{snapshot_json:string}>();
  if(!stored||await canonicalHash(JSON.parse(stored.snapshot_json))!==await canonicalHash(snapshot))throw new ApiError(422,'calendar_event_prerequisites');
+ if(!isInitialScheduleVersion(stage.algorithm_version))throw new ApiError(422,'calendar_event_prerequisites');
  const schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,stage.seed):await buildTrustedSeasonSchedule(snapshot,stage.seed,world.seasonNumber),domestic=schedule.fixtures.filter(f=>!f.competitionId.startsWith('int-'));
  if(stage.algorithm_version!==schedule.algorithmVersion||stage.fixtures_hash!==await canonicalHash(domestic)||await canonicalHash(JSON.parse(stage.fixtures_json))!==stage.fixtures_hash)throw new ApiError(422,'calendar_event_prerequisites');
  const expected=await initialDrawOutcomes(schedule,snapshot);
@@ -42,8 +43,8 @@ export async function publishInternationalCalendar(db:Database,session:AdminSess
  }
  const calendarJson=JSON.stringify(schedule),calendarHash=await canonicalHash(schedule);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:'international:calendar',calendarHash,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>d.outcome_hash)});
- // The administrative clock advanced without fixtures. Rebuild the same deterministic
- // sporting evidence as a legacy season before handing control to sporting lifecycle.
+ // The administrative clock advanced without fixtures. Reconstruct V2 sporting
+ // evidence for elapsed days before handing control to the sporting lifecycle.
  const progression=createProgression(snapshot,schedule);
  const elapsedDays=[];
  const priorTies=[];

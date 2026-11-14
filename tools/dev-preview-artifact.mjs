@@ -5,12 +5,12 @@ import {join,resolve,dirname,sep} from "node:path";
 import {repositoryRoot,planPublicFiles,listFiles} from "./publication-guard.mjs";
 
 export const ARTIFACT_CONTRACTS=Object.freeze(["public","protected_debug"]);
-export const DEBUG_MODE_BOOTSTRAP='<script>window.faDevPreviewMode=true;try{window.faDebugEnabled=sessionStorage.getItem("football-architect:debug-enabled")!=="off"}catch{window.faDebugEnabled=true}</script>';
+export const DEBUG_MODE_BOOTSTRAP='<script>window.faDevPreviewMode=true;try{window.faDebugEnabled=sessionStorage.getItem("football-architect:debug-enabled")==="on"}catch{window.faDebugEnabled=false}</script>';
 export const DEBUG_SEASONS=Object.freeze([1,2,3,4]); // Fictional Preview only, never official competition history.
-export const DEBUG_SEASON_BOOTSTRAP='<script>document.documentElement.dataset.faDevDefaultSeason="1";document.documentElement.dataset.faDevSeasons="'+DEBUG_SEASONS.join(",")+'";(()=>{let season=1,enabled=true;try{enabled=sessionStorage.getItem("football-architect:debug-enabled")!=="off";const raw=sessionStorage.getItem("football-architect:standings-dev-season"),value=raw===null||raw.trim()===""?NaN:Number(raw);if(Number.isInteger(value)&&value>=0&&value<=4)season=value}catch{}document.documentElement.dataset.faDevCurrentSeason=String(season);document.documentElement.dataset.faHistoryStatic=String(season===0&&enabled);try{if(enabled){const read=(key,min,max,fallback)=>{const raw=sessionStorage.getItem(key),n=raw===null||raw.trim()===""?NaN:Number(raw);return Number.isInteger(n)&&n>=min&&n<=max?n:fallback};window.faFixturesInitialProgress={currentSeason:season,day:read("football-architect:calendar-dev-world-day",1,56,null),matchdays:read("football-architect:standings-dev-matchdays",0,33,0)}}}catch{}})()</script>';
+export const DEBUG_SEASON_BOOTSTRAP='<script>document.documentElement.dataset.faDevDefaultSeason="1";document.documentElement.dataset.faDevSeasons="'+DEBUG_SEASONS.join(",")+'";(()=>{let season=1,enabled=false;try{enabled=sessionStorage.getItem("football-architect:debug-enabled")==="on";const raw=sessionStorage.getItem("football-architect:standings-dev-season"),value=raw===null||raw.trim()===""?NaN:Number(raw);if(Number.isInteger(value)&&value>=0&&value<=4)season=value}catch{}document.documentElement.dataset.faDevCurrentSeason=String(season);document.documentElement.dataset.faHistoryStatic=String(season===0&&enabled);try{if(enabled){const read=(key,min,max,fallback)=>{const raw=sessionStorage.getItem(key),n=raw===null||raw.trim()===""?NaN:Number(raw);return Number.isInteger(n)&&n>=min&&n<=max?n:fallback};window.faFixturesInitialProgress={currentSeason:season,day:read("football-architect:calendar-dev-world-day",1,56,null),matchdays:read("football-architect:standings-dev-matchdays",0,33,0)}}}catch{}})()</script>';
 const MANIFEST="__fa_dev__/artifact-manifest.json";
 // Injected only into DEV responses/artifacts, before the body can paint.
-export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(/^\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
+export const DEBUG_FIRST_PAINT="<style>html[data-fa-debug-pending=\"true\"] .app-world-standings{visibility:hidden}</style><script>(()=>{let timer;const release=()=>{delete document.documentElement.dataset.faDebugPending;clearTimeout(timer)};window.faDebugFirstPaintRelease=release;try{if(sessionStorage.getItem('football-architect:debug-enabled')==='on'&&/^\\/competitions\\/(?:it|eng|es|de|fr|pt|nl|br)-[12](?:\\/(?:index\\.html)?)?$/.test(location.pathname)){document.documentElement.dataset.faDebugPending=\"true\";timer=setTimeout(release,10000)}}catch{release()}})();</script>";
 export const CLUB_SUMMARY_INJECTION=DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" data-fa-dev-club-summary src="/__fa_dev__/stats-client.mjs"></script>';
 const INJECTION=DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script><script type="module" src="/__fa_dev__/stats-client.mjs"></script>';
 const DEBUG_ASSETS=Object.freeze([
@@ -47,6 +47,9 @@ function safeDebugBytes(root,path) {
 }
 
 function debugHtml(bytes,path) {
+ // Player detail shells remain byte-identical in public and protected Debug
+ // staging: player identity is read-only and not a simulated sporting projection.
+ if(path==='players/_shared/index.html'||path==='admin/players/preview/player/index.html')return bytes;
  if(path==='clubs/_shared/index.html'){
   const html=bytes.toString('utf8');
   if(html.split('</head>').length!==2||html.includes('/__fa_dev__/'))throw Error('Unsafe protected club HTML');
@@ -57,7 +60,7 @@ function debugHtml(bytes,path) {
  if(html.split("</head>").length!==2||html.includes("/__fa_dev__/"))
   throw Error("Unsafe protected Debug HTML: "+path);
  const detail=/^competitions\/(?:(?:it|eng|es|de|fr|pt|nl|br)-[12]|int-1|int-2)\/index\.html$/.test(path);
- const calendarClock=path==="calendar/index.html"?DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled!==false)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
+ const calendarClock=path==="calendar/index.html"?DEBUG_MODE_BOOTSTRAP+'<script>if(window.faDebugEnabled===true)window.faDevCalendarClockSnapshot={source:{kind:"dev",reference:"fictional protected Debug calendar"},current:{season:1,day:1}};</script>':"";
  if(calendarClock)html=html.replace('<script data-calendar-bootstrap>',calendarClock+'<script data-calendar-bootstrap>');
  const injection=path==="players/index.html"
   ? DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>'

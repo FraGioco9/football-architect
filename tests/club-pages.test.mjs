@@ -108,7 +108,10 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
   for(const view of clubViews){
    const selected=model.route(base+'/'+view),html=model.render(manifest,selected,lang,'?season=2&matchday=7');
    assert.ok(html.includes('aria-current="page"'));
-   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,5);
+   assert.ok(html.includes('<h1 id="club-title" class="app-page-title">'+c.primaryName.replaceAll('&','&amp;')+'</h1>'),'Club H1 must use primaryName for '+c.countryId+'-'+c.clubId+' / '+view+' / '+lang);
+   assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,view==='roster'?10:5);
+   assert.equal((html.match(/class="app-competition-tabs club-tabs"/g)||[]).length,1);
+   assert.ok(html.includes(base+'/roster"'));
    assert.ok(html.includes(model.copies[lang][view]));
    assert.ok(html.includes(base+'/overview"'));
    assert.ok(html.includes(base+'/history"'));
@@ -117,8 +120,9 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
     for(const field of ['abbr','primaryColor','secondaryColor'])assert.ok(html.includes(c[field]));
     if(c.divisionId){assert.ok(html.includes('/competitions/'+c.divisionId.toLowerCase()+'/standings'));assert.equal((html.match(/data-club-division-link/g)||[]).length,1,'Only one division link in Competitions');assert.doesNotMatch(html,/club-header-division/);}
     else assert.ok(html.includes(model.copies[lang].outside));
-   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':'club-empty'));
-   assert.doesNotMatch(html,/\?view=|href="\/app\//);
+   }else assert.ok(html.includes(view==='history'?'club-history-row-loading':view==='fixtures'?'club-fixtures':view==='roster'?'club-roster':'club-empty'));
+   // Roster uses a canonical direct Info subview; only /app/ links are invalid.
+   assert.doesNotMatch(html,/href="\/app\//);
   }
  }
  const poisoned={...manifest,clubs:manifest.clubs.map((c,i)=>i?c:{...c,primaryName:'<script>alert(1)</script>'})};
@@ -308,7 +312,7 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const club of manifest.clubs){const selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');const html=model.render(manifest,selected,'en');assert.equal(model.render(manifest,selected,'en'),html);assert.ok(html.includes('data-club-crest="'+club.countryId+'-'+club.clubId+'"'));}
  const club=manifest.clubs[0],selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
- const changed={...manifest,clubs:manifest.clubs.map((c,i)=>i===0?{...c,fullName:'A01-10 alternate name'}:c)};
+ const changed={...manifest,clubs:manifest.clubs.map((c,i)=>i===0?{...c,primaryName:'A01-10 alternate name'}:c)};
  assert.ok(model.render(changed,selected).includes('A01-10 alternate name'));
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });
@@ -408,7 +412,7 @@ test('club competition links open Standings with the displayed season and no fix
  const manifest=JSON.parse(read('clubs/_shared/manifest.json')),selected=model.route('/clubs/it/1/overview');
  const snapshot={source:'dev',divisionId:'IT-1',clubId:1,season:3,position:2,points:12,nextMatch:null};
  const href=(search,summary)=>model.render(manifest,selected,'en',search,summary).match(/class="club-competition-name"><a[^>]*href="([^"]+)"/)?.[1];
- assert.equal(href('',snapshot),'/competitions/it-1/standings?season=3');
+ assert.equal(href('',snapshot),'/competitions/it-1/standings');
  assert.equal(href('?season=2&matchday=7',null),'/competitions/it-1/standings?season=2');
  assert.equal(href('',null),'/competitions/it-1/standings');
  assert.equal(href('?season=bad',null),'/competitions/it-1/standings');
@@ -419,7 +423,7 @@ test('SAF-05 club league links open the selected season without an unparameteriz
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const selected=model.route('/clubs/it/1/overview');
  const html=model.render(manifest,selected,'en','',null,3);
- assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=3"/g)||[]).length,1);
+ assert.equal((html.match(/data-club-division-link href="\/competitions\/it-1\/standings"/g)||[]).length,1);
  const requested=model.render(manifest,selected,'en','?season=2',null,3);
  assert.equal((requested.match(/data-club-division-link href="\/competitions\/it-1\/standings\?season=2"/g)||[]).length,1);
  assert.match(read('assets/club-page.js'),/sessionStorage\.getItem\('football-architect:standings-dev-season'\)/);
@@ -698,6 +702,45 @@ test('CLUB-FIXTURES renderer: localized controls, opponent-only rows, venues and
  }
  const unknown=fixtures.render({manifest,lang:'en',season:1,seasons:[1],snapshot:{coverage:'complete',day:0,rows:[{...row,opponentId:null,goalsFor:null,goalsAgainst:null,resolution:null,penalties:null}],competitions:[]}});
  assert.ok(unknown.includes('Opponent TBD'));assert.ok(!unknown.includes('2–1'));
+ const neutral=fixtures.render({manifest,lang:'en',season:1,seasons:[1],snapshot:{coverage:'complete',day:12,rows:[{...row,venue:'neutral'}],competitions:[]}});
+ assert.match(neutral,/data-club-venue="neutral" aria-label="Neutral"/,'English neutral venue tooltip is concise');
+ assert.doesNotMatch(neutral,/aria-label="Neutral ground"/);
+ const italian=fixtures.render({manifest,lang:'it',season:1,seasons:[1],snapshot:{coverage:'complete',day:12,rows:[{...row,venue:'neutral'}],competitions:[]}});
+ assert.match(italian,/data-club-venue="neutral" aria-label="Campo neutro"/,'existing localized labels remain unchanged');
+});
+
+test('CLUB-FIXTURES next-match action requires a verified unplayed future fixture in the current season',async()=>{
+ const {default:ui}=await import('../assets/club-fixtures.js');
+ const future={id:'future',day:24,goalsFor:null,competitionId:'IT-1'};
+ const played={id:'played',day:18,goalsFor:2,competitionId:'IT-1'};
+ const snapshot={coverage:'complete',day:16,rows:[played,future],competitions:[]};
+ const match=(snap,season,currentSeason)=>ui.nextFixture({snapshot:snap,season,currentSeason});
+ assert.equal(match(snapshot,2,2),future,'active season with an upcoming match is actionable');
+ assert.equal(match({...snapshot,coverage:'partial'},2,2),future,'partial source can still expose a verified fixture');
+ for(const [description,snap,selected,current] of [
+  ['historical season',snapshot,1,2],
+  ['unstarted world',snapshot,1,0],
+  ['unknown canonical season',snapshot,2,null],
+  ['fully played schedule',{...snapshot,rows:[played,{...future,goalsFor:1}]},2,2],
+  ['no future match',{...snapshot,day:30},2,2],
+  ['pending read',{...snapshot,coverage:'loading'},2,2],
+  ['error read',{...snapshot,coverage:'error'},2,2],
+  ['unavailable read',{...snapshot,coverage:'unavailable'},2,2]
+ ]){
+  assert.equal(match(snap,selected,current),null,description);
+  const html=ui.render({season:selected,currentSeason:current,snapshot:snap});
+  assert.match(html,/data-club-fixtures-next disabled/,description+' button must be natively disabled');
+  assert.doesNotMatch(html,/class="club-fixture-row is-next"/,description+' must not highlight a stale next fixture');
+ }
+ const html=ui.render({season:2,currentSeason:2,snapshot});
+ assert.doesNotMatch(html,/data-club-fixtures-next disabled/);
+ assert.match(html,/class="club-fixture-row is-next"/);
+ const css=read('assets/club-page.css');
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.club-fixture-row\{[^}]*padding:2px 10px/,'ultra-compact mobile row retains horizontal highlight padding');
+ assert.match(css,/\.club-fixture-opponent\{[^}]*line-height:14px;gap:7px;min-height:44px/,'three-line names keep a 44px opponent touch target');
+ assert.match(css,/\.club-fixture-meta\{[^}]*display:grid;grid-template-columns:max-content minmax\(0,1fr\);align-items:center;min-height:24px/,'typical mobile metadata reserves two lines without truncating');
+ assert.match(css,/@media\(max-width:360px\)\{\.club-fixture-meta\{min-height:36px\}\}/,'320px keeps three metadata lines reserved');
+ assert.match(css,/\.club-fixtures-next:disabled,\.club-fixtures-next:disabled:hover\{[^}]*opacity:\.45;cursor:default;pointer-events:none;[^}]*background:var\(--surface\);[^}]*box-shadow:none\}/,'disabled next-match action matches the muted Matchday controls and has no interactive hover treatment');
 });
 
 test('CLUB-FIXTURES DEV adapter uses the sporting calendar and masks future results',async()=>{
@@ -759,7 +802,7 @@ test('CLUB-FIXTURES: viewed seasons follow Standings and clamp invalid or future
   const result=ui.resolveSeason({current});assert.deepEqual(result.seasons,expected);assert.equal(result.season,Math.max(1,current));
  }
  assert.equal(ui.resolveSeason({current:2,requested:'1'}).season,1);
- for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,1);
+ for(const requested of ['0','-1','junk','01',''])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  for(const requested of ['3','999'])assert.equal(ui.resolveSeason({current:2,requested}).season,2);
  assert.equal(ui.resolveSeason({current:0,requested:'2'}).season,1);
  assert.equal(ui.resolveSeason({current:null,requested:'999'}).season,null,'unverified clock cannot clamp a future link');
@@ -771,14 +814,14 @@ test('CLUB-FIXTURES: text-only hover and overview navigation, with sized skeleto
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const row={id:'game',competitionId:'IT-1',day:12,round:4,phaseId:'league',opponentId:'IT-2',venue:'home',goalsFor:null,goalsAgainst:null};
  const rendered=ui.render({manifest,season:1,seasons:[1],snapshot:{coverage:'complete',rows:[row],competitions:[]}});
- assert.match(rendered,/class="club-fixture-opponent" href="\/clubs\/it\/2\/overview"/);
+ assert.match(rendered,/class="club-fixture-opponent-name" href="\/clubs\/it\/2\/overview"/);
  assert.doesNotMatch(rendered,/\/clubs\/it\/2\/fixtures/);
  assert.match(rendered,/href="\/competitions\/it-1\/fixtures\?season=1&amp;matchday=4"/);
  const loading=ui.render();
  for(const part of ['day','league','name','venue','score','status'])
   assert.match(loading,new RegExp('club-fixture-skeleton-'+part));
  const css=read('assets/club-page.css');
- assert.match(css,/a\.club-fixture-opponent:is\(:hover,:focus-visible\)>span:last-child\{text-decoration:underline/);
+ assert.match(css,/\.club-fixture-opponent-name:is\(:hover,:focus-visible\)\{text-decoration:underline/);
  assert.match(css,/\.club-fixture-meta a:is\(:hover,:focus-visible\)\{text-decoration:underline/);
  assert.match(css,/\.club-fixture-opponent\{[^}]*width:fit-content/);
  assert.match(css,/\.club-fixture-select \[data-club-fixture-value\]\{[^}]*white-space:nowrap/);
@@ -800,5 +843,7 @@ test('CLUB-FIXTURES: DEV season initializes from protected bootstrap, not a publ
  assert.doesNotMatch(read('assets/club-page.css'),/club-fixture-season-loading/);
  assert.doesNotMatch(generated,/club-fixture-season-loading/);
  assert.match(generator,/const requested=params\.get\('season'\),valid=/);
- assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,seasons,filter,snapshot/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/season:displaySeason,/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/currentSeason:/);
+ assert.match(read('assets/club-fixtures-controller.mjs'),/explicitSeason:/);
 });

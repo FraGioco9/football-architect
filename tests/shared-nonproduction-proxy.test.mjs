@@ -31,10 +31,26 @@ test('HTTPS activation is explicit and rejects ambiguous, local and credentialed
  const res=await run(req(),()=>{throw Error('must not send')},{pool:undefined});assert.equal(res.status,503);
 });
 test('public world, seasons, fixtures/results and calendar reads never forward credentials or set cookies',async()=>{
- for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history']){
-  let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{n++;if(n===1)return context();assert.deepEqual(options.headers,{'x-fa-expected-pool':'dev-preview'});return {status:200,headers:{'set-cookie':['evil=1']},body:Buffer.from('{"world":{}}')}});
+ for(const path of ['/api/world','/api/competitions/IT-1/seasons/1','/api/calendar/seasons/1/days/13','/api/clubs/IT-1/history','/api/clubs/IT-1/seasons/1/fixtures']){
+  let n=0;const res=await run(req({path,headers:{cookie:`fa_player_local=${token}`,'x-csrf-token':'secret'}}),async(url,options)=>{
+   n++;if(n===1)return context();
+   assert.equal(url.pathname,path,'shared bridge forwards the exact public URL');
+   assert.equal(options.method,'GET');
+   assert.deepEqual(options.headers,{'x-fa-expected-pool':'dev-preview'});
+   return {status:200,headers:{'set-cookie':['evil=1']},body:Buffer.from('{"world":{}}')};
+  });
   assert.equal(res.status,200);assert.equal(res.headers['set-cookie'],undefined);
  }
+});
+test('shared DEV blocks noncanonical Club Fixtures variants before network and accepts only anonymous GET',async()=>{
+ for(const path of ['/api/clubs/IT-1/seasons/0/fixtures','/api/clubs/IT-01/seasons/1/fixtures',
+  '/api/clubs/IT-1/seasons/1/fixtures?season=2','/api/clubs/IT-1/seasons/1/fixtures/other',
+  '/api/clubs/IT-1/seasons/9007199254740992/fixtures']){
+  let requests=0;const result=await run(req({path}),async()=>{requests++;throw Error('unexpected upstream call')});
+  assert.equal(result.status,path.includes('?')?403:404,path);assert.equal(requests,0,path);
+ }
+ const blocked=await run(req({path:'/api/clubs/IT-1/seasons/1/fixtures',method:'POST'}),async()=>{throw Error('POST must not be sent')});
+ assert.equal(blocked.status,405);
 });
 test('redirects, malformed/oversize context, upstream failures and unsafe cookies fail closed',async()=>{
  for(const bad of [{status:302,headers:{location:'https://evil.invalid'},body:Buffer.from('')},{status:200,headers:{},body:Buffer.from('not json')},{status:200,headers:{},body:Buffer.alloc(2000)}]){
@@ -100,21 +116,21 @@ test('shared preview supports large authenticated player cohorts without widenin
 });
 
 
-test('shared preview forwards safe Players page query without credentials or cookies',async()=>{
+test('shared preview forwards safe Players offset query without credentials or cookies',async()=>{
  const seen=[];
  const send=async(url,options)=>{
   seen.push({url:url.href,options});
   if(seen.length===1)return context();
   return {status:200,headers:{'set-cookie':['must-not-leak=secret']},body:Buffer.from(JSON.stringify({count:1,page:2,players:[]}))};
  };
- const result=await run(req({path:'/api/players?page=2',headers:{cookie:'fa_player_local='+token,'x-csrf-token':'private'}}),send);
+ const result=await run(req({path:'/api/players?offset=50',headers:{cookie:'fa_player_local='+token,'x-csrf-token':'private'}}),send);
  assert.equal(result.status,200);
  assert.deepEqual(JSON.parse(result.body),{count:1,page:2,players:[]});
  assert.equal(result.headers['set-cookie'],undefined);
- assert.equal(seen[1].url,origin+'/api/players?page=2');
+ assert.equal(seen[1].url,origin+'/api/players?offset=50');
  assert.deepEqual(seen[1].options.headers,{'x-fa-expected-pool':'dev-preview'});
  let attempts=0;
- const invalid=await run(req({path:'/api/players?page=1&filter=x'}),async()=>{attempts++;return context()});
+ const invalid=await run(req({path:'/api/players?page=1'}),async()=>{attempts++;return context()});
  assert.equal(invalid.status,403);assert.equal(attempts,0);
 });
 

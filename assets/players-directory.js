@@ -69,17 +69,21 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',loadingMore:'Loading...',appendLoading:'Loading more players…',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',club:'Club',freeAgent:'Free Agent',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',loadingMore:'Caricamento...',appendLoading:'Caricamento di altri giocatori…',moreLoaded:'Nuovi giocatori: {count}. Visualizzati: {loaded} su {total}.',allLoaded:'Tutti i giocatori caricati',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',club:'Club',freeAgent:'Svincolato',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',loadingMore:'Lädt...',appendLoading:'Weitere Spieler werden geladen…',moreLoaded:'Weitere Spieler: {count}. Angezeigt: {loaded} von {total}.',allLoaded:'Alle Spieler geladen',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',club:'Verein',freeAgent:'Vereinslos',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',loadingMore:'Cargando...',appendLoading:'Cargando más jugadores…',moreLoaded:'Jugadores añadidos: {count}. Mostrados: {loaded} de {total}.',allLoaded:'Todos los jugadores cargados',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',club:'Club',freeAgent:'Agente libre',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',loadingMore:'Chargement...',appendLoading:'Chargement de joueurs supplémentaires…',moreLoaded:'Joueurs ajoutés : {count}. Affichés : {loaded} sur {total}.',allLoaded:'Tous les joueurs chargés',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',club:'Club',freeAgent:'Sans club',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
  const attributeName=key=>(attrLabels[language()]||attrLabels.en).split('|')[allAttrs.indexOf(key)]||key;
  function parseLocation(){
-  const p=new URLSearchParams(location.search),rawPage=Number(p.get('page')||'1');
+  const p=new URLSearchParams(location.search),rawOffset=p.get('offset');
+  // Only offset selects an initial segment. Old page=N URLs are discarded.
+  const validOffset=rawOffset!==null&&/^(?:0|[1-9][0-9]{0,5})$/.test(rawOffset)&&
+   Number(rawOffset)<=499900&&Number(rawOffset)%50===0;
+  const initialPage=validOffset?Number(rawOffset)/50+1:1;
   const view=p.get('view')==='attributes'?'attributes':'overview',group=Object.hasOwn(groups,p.get('group'))?p.get('group'):'technical';
   const sortKey=p.get('sort')||'',sort=allowedSort(view,group,sortKey)?sortKey:'';
   const order=sort&&['asc','desc'].includes(p.get('order'))?p.get('order'):sort?preferredOrder(sort):'';
@@ -101,7 +105,7 @@
   }
   return {
    view,group,sort,order,
-   page:Number.isSafeInteger(rawPage)&&rawPage>=1&&rawPage<=9999?rawPage:1,
+   page:initialPage,
    filters
   };
  }
@@ -124,12 +128,72 @@
   const filterDescription=document.querySelector('[data-players-filter-description]');
   const filterAgeRange=document.querySelector('[data-players-age-range]');
   const tabs=[...document.querySelectorAll('.app-players-tabs [data-players-view]')],groupTabs=[...document.querySelectorAll('.app-players-groups [data-players-group]')];
-  const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
-  const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
-  previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
-  counter.className='app-players-page-count';counter.setAttribute('aria-live','polite');pager.append(previous,counter,next);scroll.after(pager);
+  const groupBar=document.querySelector('.app-players-groups');
+  const syncGroupTabEdges=()=>{
+   if(!groupBar)return;
+   const maximum=Math.max(0,groupBar.scrollWidth-groupBar.clientWidth);
+   groupBar.dataset.canScrollLeft=String(maximum>1&&groupBar.scrollLeft>1);
+   groupBar.dataset.canScrollRight=String(maximum>1&&groupBar.scrollLeft<maximum-1);
+  };
+  const revealActiveGroup=()=>{
+   const selected=groupBar?.querySelector('[aria-selected="true"]');
+   if(!selected)return;
+   const strip=groupBar.getBoundingClientRect(),tab=selected.getBoundingClientRect();
+   if(tab.right>strip.right)groupBar.scrollLeft+=tab.right-strip.right;
+   else if(tab.left<strip.left)groupBar.scrollLeft+=tab.left-strip.left;
+   syncGroupTabEdges();
+  };
+  // Public-only progressive loading: offset=N identifies the first segment.
+  // Admin generation preview deliberately keeps separate Previous/Next pagination.
+  const pager=document.createElement('nav');pager.className='app-players-pagination';pager.dataset.playersProgress='';
+  pager.setAttribute('aria-label','Players results');
+  const loadMore=document.createElement('button');
+  loadMore.type='button';loadMore.className='app-players-page-button';loadMore.dataset.playersLoadMore='';
+  pager.append(loadMore);scroll.after(pager);
+  const sentinel=document.createElement('span');sentinel.className='app-players-end-sentinel';
+  sentinel.setAttribute('aria-hidden','true');pager.after(sentinel);
+  // Persistent, nonvisual live status: remains accessible when the pager hides at EOF.
+  const appendStatus=document.createElement('span');appendStatus.className='sr-only';
+  appendStatus.dataset.playersAppendStatus='';
+  appendStatus.setAttribute('role','status');appendStatus.setAttribute('aria-live','polite');
+  appendStatus.setAttribute('aria-atomic','true');sentinel.after(appendStatus);
+  const announceAppend=copy=>{appendStatus.textContent=copy;};
+  const scrollPane=document.querySelector('.fa-shell-content-scroll');
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
-  const cols=()=>state.view==='attributes'?3+groups[state.group].length:6;
+  let loadedThrough=state.page,appendPending=false,appendError='';
+  // One canonical public manifest for every rendered segment; never request a crest per player.
+  let clubCrestsPromise=null;
+  function hydrateClubCrests(){
+   if(table.dataset.playersTableMode!=='overview')return;
+   if(!clubCrestsPromise)clubCrestsPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
+    .then(response=>{if(!response.ok)throw Error('club_manifest_unavailable');return response.json()})
+    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320&&manifest.clubCrests&&typeof manifest.clubCrests==='object'?manifest.clubCrests:null)
+    .catch(()=>null);
+   void clubCrestsPromise.then(catalog=>{
+    if(!catalog||table.dataset.playersTableMode!=='overview')return;
+    for(const mark of body.querySelectorAll('[data-player-club-crest]')){
+     if(mark.querySelector('img'))continue;
+     const key=mark.dataset.playerClubCrest;
+     if(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(key))continue;
+     const [country,id]=key.split('-'),path='assets/clubs/'+country+'/'+id+'/crest.svg';
+     if(!Object.hasOwn(catalog,key)||catalog[key]!==path)continue;
+     const image=document.createElement('img');image.className='app-players-club-crest';
+     image.src='/'+path;image.alt='';image.width=24;image.height=24;
+     image.loading='lazy';image.decoding='async';
+     image.addEventListener('error',()=>image.remove(),{once:true});
+     mark.append(image);
+    }
+   });
+  }
+  // Only the starting page is a permalink. No player data enters history state.
+  const navigationType=performance.getEntriesByType?.('navigation')?.[0]?.type;
+  const savedReturn=history.state?.faPlayersReturn;
+  let pendingReturn=navigationType==='back_forward'&&savedReturn?.source===location.pathname+location.search&&
+   savedReturn.startPage===state.page&&Number.isSafeInteger(savedReturn.loadedThrough)&&
+   savedReturn.loadedThrough>=state.page&&savedReturn.loadedThrough<=state.page+4&&
+   Number.isSafeInteger(savedReturn.playerId)&&savedReturn.playerId>0&&
+   Number.isFinite(savedReturn.scrollTop)&&savedReturn.scrollTop>=0?savedReturn:null;
+  const cols=()=>state.view==='attributes'?3+groups[state.group].length:7;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
    if(!countNode)return;
@@ -139,12 +203,12 @@
   function filterSignature(filters){return filterKeys.map(key=>filters?.[key]||'').join('|')}
   function syncUrl(mode='pushState'){
    const url=new URL(location.href);
-   for(const name of ['view','group','page','sort','order',...filterKeys])url.searchParams.delete(name);
+   for(const name of ['view','group','page','offset','sort','order',...filterKeys])url.searchParams.delete(name);
    url.searchParams.set('view',state.view);
    if(state.view==='attributes')url.searchParams.set('group',state.group);
    if(state.sort){url.searchParams.set('sort',state.sort);url.searchParams.set('order',state.order);}
    for(const key of filterKeys)if(state.filters?.[key])url.searchParams.set(key,state.filters[key]);
-   if(state.page>1)url.searchParams.set('page',String(state.page));
+   if(state.page>1)url.searchParams.set('offset',String((state.page-1)*50));
    if(url.pathname+url.search+url.hash!==location.pathname+location.search+location.hash)
     history[mode](history.state,'',url.pathname+url.search+url.hash);
   }
@@ -299,6 +363,7 @@
    document.documentElement.dataset.playersGroup=state.group;
    tabs.forEach((tab,i)=>{const active=tab.dataset.playersView===state.view;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.tabs[i]});
    groupTabs.forEach((tab,i)=>{const active=tab.dataset.playersGroup===state.group;tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;tab.textContent=t.groups[i]});
+   syncGroupTabEdges();
   }
   function renderHead(){
    const t=locale(),row=document.createElement('tr');
@@ -327,8 +392,9 @@
    addHeader(t.nationality,'nationality',true);
    addHeader(t.columns[0],'name');
    if(state.view==='overview'){
-    addHeader(t.columns[1],'age');addHeader(t.columns[2],'positions');
-    addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
+    addHeader(t.columns[2],'positions');
+    addHeader(t.columns[1],'age');addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
+    const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
    }else{
     addHeader(t.columns[2],'positions');
     for(const key of groups[state.group])addHeader(attributeName(key),key);
@@ -360,56 +426,168 @@
   }
   function flagCell(tr,player){
    const td=document.createElement('td'),flag=Object.hasOwn(flags,player.nationality)?flags[player.nationality]:null;
-   if(flag){const image=document.createElement('img');image.className='app-players-nationality-flag';image.width=24;image.height=18;image.alt=window.faPlayersNationality?.name(player.nationality)||player.nationality;image.dataset.playerCountry=player.nationality;image.tabIndex=0;image.src='/assets/flags/'+flag+'.svg';td.append(image)}
+   if(flag){const image=document.createElement('img');image.className='app-players-nationality-flag';image.width=20;image.height=15;image.alt=window.faPlayersNationality?.name(player.nationality)||player.nationality;image.dataset.playerCountry=player.nationality;image.tabIndex=0;image.src='/assets/flags/'+flag+'.svg';td.append(image)}
    else td.textContent=player.nationality||'';
    tr.append(td);
   }
-  function paint(data){
-   renderHead();
-   const t=locale();
-   if(!data){if(status==='loading')showLoadingRows();else message(t[status]);return}
-   lastCount=data.count;renderCount(lastCount);
-   if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
-   const fragment=document.createDocumentFragment();
-   for(const player of data.players){
-    const tr=document.createElement('tr');flagCell(tr,player);cell(tr,player.display_name||'—');
+  // Only a canonical affiliation is rendered as a club link.
+  function clubCell(tr,player){
+   const td=document.createElement('td');td.className='app-players-club-cell';
+   if(player.clubKey===null){td.textContent=locale().freeAgent;}
+   else if(typeof player.clubKey==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(player.clubKey)&&
+           typeof player.clubName==='string'&&player.clubName.trim()){
+    const [country,id]=player.clubKey.split('-');
+    const content=document.createElement('span');content.className='app-players-club-content';
+    const crest=document.createElement('span');crest.className='app-players-club-mark';
+    crest.dataset.playerClubCrest=player.clubKey;crest.setAttribute('aria-hidden','true');
+    const link=document.createElement('a');link.className='app-player-club-link';
+    link.href='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
+    const name=document.createElement('span');name.className='app-player-club-name';
+    name.textContent=player.clubName;link.title=player.clubName;link.append(name);
+    content.append(crest,link);td.append(content);
+   }else{td.textContent='—';}
+   tr.append(td);
+  }
+  function playerRows(players){
+   const t=locale(),fragment=document.createDocumentFragment();
+   for(const player of players){
+    const tr=document.createElement('tr');flagCell(tr,player);
+    const nameCell=cell(tr,'');
+    if(Number.isSafeInteger(player.id)&&player.id>0){
+     const link=document.createElement('a');link.className='app-player-name-link';link.href='/players/'+player.id;
+     link.textContent=player.display_name||'—';nameCell.append(link);
+    }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
-     cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,positionsShown.join(', ')||'—');
+     cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');
      cell(tr,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
+     clubCell(tr,player);
     }else {
      cell(tr,positionsShown.join(', ')||'—');
      for(const key of groups[state.group])cell(tr,Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—');
     }
     fragment.append(tr);
    }
-   body.replaceChildren(fragment);
-   previous.textContent=t.prev;next.textContent=t.next;
-   counter.textContent=t.page+' '+data.page+' '+t.of+' '+data.totalPages+' · '+new Intl.NumberFormat(language()||'en').format(data.count)+' '+(data.count===1?t.one:t.many);
-   previous.disabled=data.page<=1;next.disabled=data.page>=data.totalPages;
-   pager.hidden=data.totalPages<=1;scroll.setAttribute('aria-busy','false');
+   return fragment;
+  }
+  function renderProgress(){
+   const t=locale();
+   if(!current){
+    pager.hidden=status!=='error';
+    if(status==='error'){
+     loadMore.hidden=false;loadMore.disabled=false;loadMore.textContent=t.retry;
+    }
+    return;
+   }
+   // Keep the fallback visible and disabled while loading an additional batch;
+   // at EOF hide it, and on error offer retry/restart.
+   pager.hidden=current.players.length===0||loadedThrough>=current.totalPages;
+   if(pager.hidden)return;
+   if(appendPending){
+    loadMore.hidden=false;loadMore.disabled=true;loadMore.textContent=t.loadingMore;return;
+   }
+   loadMore.hidden=false;loadMore.disabled=false;
+   loadMore.textContent=appendError==='stale'?t.restart:appendError?t.retry:t.loadMore;
+  }
+  function paint(data){
+   renderHead();
+   const t=locale();
+   if(!data){if(status==='loading')showLoadingRows();else message(t[status]);renderProgress();return}
+   lastCount=data.count;renderCount(lastCount);
+   if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);renderProgress();scroll.setAttribute('aria-busy','false');return}
+   body.replaceChildren(playerRows(data.players));
+   hydrateClubCrests();renderProgress();scroll.setAttribute('aria-busy','false');
+   if(typeof requestAnimationFrame==='function')requestAnimationFrame(maybeLoadOnScroll);
   }
   function refresh(){syncControls();paint(current)}
-  async function load(page){
-   const seq=++ticket;state.page=page;current=null;status='loading';
-   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
-   scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
-   scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
-   const query=new URLSearchParams({page:String(page)});
+  async function fetchBatch(page){
+   const query=new URLSearchParams({offset:String((page-1)*50)});
    for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
    if(state.sort){query.set('sort',state.sort);query.set('order',state.order);}
+   const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+   if(response.status===409)throw new Error('stale_world');
+   if(!response.ok)throw new Error('http_'+response.status);
+   const data=await response.json();
+   if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||
+      data.pageSize!==50||!Number.isSafeInteger(data.totalPages)||data.totalPages<1||
+      !data.players.every(player=>Number.isSafeInteger(player.id)&&player.id>0)||
+      new Set(data.players.map(player=>player.id)).size!==data.players.length)
+    throw new Error('invalid_players_response');
+   return data;
+  }
+  async function load(page){
+   const seq=++ticket;state.page=page;loadedThrough=page;current=null;status='loading';
+   announceAppend('');appendPending=false;appendError='';
+   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
+   // No preserved height: replacing many loaded rows with five placeholders must
+   // also collapse the table viewport immediately on a sort/filter refresh.
+   scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
    try{
-    const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error('http_'+response.status);
-    const data=await response.json();
-    if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||!Number.isSafeInteger(data.totalPages)||data.totalPages<1)
-     throw new Error('invalid_players_response');
+    const data=await fetchBatch(page);
     if(seq!==ticket)return;
-    current=data;status='ready';paint(data);scroll.style.minHeight='';
+    if(data.count>0&&page>data.totalPages&&data.players.length===0){
+     state.page=1;syncUrl('replaceState');await load(1);return;
+    }
+    // Back from a player detail may create a new document (BFCache miss).
+    // Replay a bounded number of segments before painting, then restore focus/scroll.
+    const hint=pendingReturn;pendingReturn=null;
+    let restoredPage=page,players=data.players;
+    if(hint&&hint.loadedThrough>page){
+     const seen=new Set(players.map(player=>player.id));
+     for(let nextPage=page+1;nextPage<=hint.loadedThrough&&nextPage<=data.totalPages;nextPage++){
+      let batch;
+      try{batch=await fetchBatch(nextPage)}catch{break}
+      if(seq!==ticket)return;
+      if(batch.count!==data.count||batch.totalPages!==data.totalPages||batch.pageSize!==data.pageSize||
+         batch.players.length===0||batch.players.some(player=>seen.has(player.id)))break;
+      players=players.concat(batch.players);restoredPage=nextPage;
+      for(const player of batch.players)seen.add(player.id);
+     }
+    }
+    current={...data,players};loadedThrough=restoredPage;status='ready';paint(current);
+    if(hint&&restoredPage===hint.loadedThrough){
+     const pane=document.querySelector('.fa-shell-content-scroll');
+     if(pane)pane.scrollTop=hint.scrollTop;
+     body.querySelector('a.app-player-name-link[href="/players/'+hint.playerId+'"]')?.focus({preventScroll:true});
+    }
    }catch{
-    if(seq===ticket){status='error';message(locale().error);scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
+    if(seq===ticket){status='error';message(locale().error);renderProgress();scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
+   }
+  }
+  async function appendNext(){
+   if(!current||appendPending||appendError||loadedThrough>=current.totalPages)return;
+   const seq=ticket,nextPage=loadedThrough+1;
+   const oldCount=current.count,oldTotalPages=current.totalPages,oldPageSize=current.pageSize;
+   const seen=new Set(current.players.map(player=>player.id));
+   // Disabling a keyboard-activated fallback must not discard keyboard focus.
+   if(document.activeElement===loadMore)scroll.focus({preventScroll:true});
+   appendPending=true;appendError='';renderProgress();announceAppend(locale().appendLoading);
+   try{
+    const data=await fetchBatch(nextPage);
+    if(seq!==ticket)return; // A filter, sort, page or world refresh superseded this request.
+    if(data.count!==oldCount||data.totalPages!==oldTotalPages||data.pageSize!==oldPageSize||
+       data.players.length===0||data.players.some(player=>seen.has(player.id))){
+     appendError='stale';return; // OFFSET list changed; require a fresh first segment.
+    }
+    current.players.push(...data.players);loadedThrough=nextPage;
+    body.append(playerRows(data.players)); // Append, never rebuild the scrolled table.
+    hydrateClubCrests();
+    const format=new Intl.NumberFormat(language()||'en');
+    const statusCopy=locale().moreLoaded
+     .replace('{count}',format.format(data.players.length))
+     .replace('{loaded}',format.format(current.players.length))
+     .replace('{total}',format.format(current.count));
+    announceAppend(loadedThrough>=current.totalPages?statusCopy+' '+locale().allLoaded:statusCopy);
+   }catch(error){
+    if(seq===ticket)appendError=error?.message==='stale_world'?'stale':'network';
+   }finally{
+    if(seq===ticket){
+     appendPending=false;renderProgress();
+     if(appendError)announceAppend(appendError==='stale'?locale().changed:locale().loadError);
+     if(typeof requestAnimationFrame==='function')requestAnimationFrame(maybeLoadOnScroll);
+    }
    }
   }
   function changeView(view){
@@ -419,6 +597,7 @@
    if(sortCleared){state.sort='';state.order='';state.page=1;}
    syncUrl();
    if(sortCleared)load(1);else refresh();
+   revealActiveGroup();
   }
   function changeGroup(group){
    if(state.group===group)return;
@@ -426,8 +605,31 @@
    const sortCleared=!!state.sort&&!allowedSort(state.view,state.group,state.sort);
    if(sortCleared){state.sort='';state.order='';state.page=1;}
    syncUrl();
-   if(sortCleared)load(1);else refresh();
+   if(sortCleared){syncControls();load(1);}else refresh();
+   revealActiveGroup();
   }
+  // Observe the shell's actual vertical scrolling area, not the table's horizontal pane.
+  function maybeLoadOnScroll(){
+   if(!current||status!=='ready'||appendPending||appendError||
+      loadedThrough>=current.totalPages||pager.hidden)return;
+   const bottom=scrollPane?.getBoundingClientRect().bottom??window.innerHeight;
+   const edge=sentinel.getBoundingClientRect();
+   if(edge.top<=bottom+120&&edge.bottom>=0)appendNext();
+  }
+  if(typeof IntersectionObserver==='function'){
+   const observer=new IntersectionObserver(entries=>{
+    if(entries.some(entry=>entry.isIntersecting))maybeLoadOnScroll();
+   },{root:scrollPane||null,rootMargin:'0px 0px 120px 0px',threshold:0});
+   observer.observe(sentinel);
+  }else{
+   let framePending=false;
+   (scrollPane||window).addEventListener('scroll',()=>{
+    if(framePending)return;
+    framePending=true;
+    requestAnimationFrame(()=>{framePending=false;maybeLoadOnScroll();});
+   },{passive:true});
+  }
+  window.addEventListener('resize',maybeLoadOnScroll,{passive:true});
   // Shared site combobox presentation (language-trigger / language-menu / language-option).
   // Keep focus on the trigger and expose the active option via aria-activedescendant.
   let openDropdown=null;
@@ -715,9 +917,12 @@
    const next=event.key==='Home'?0:event.key==='End'?nodes.length-1:(current+(event.key==='ArrowRight'?1:-1)+nodes.length)%nodes.length;
    nodes[next].focus();change(nodes[next].dataset[key]);
   }
-  const tabsBar=document.querySelector('.app-players-tabs'),groupBar=document.querySelector('.app-players-groups');
+  const tabsBar=document.querySelector('.app-players-tabs');
   tabsBar?.addEventListener('keydown',event=>keyboardTab(event,tabs,changeView,'playersView'));
   groupBar?.addEventListener('keydown',event=>keyboardTab(event,groupTabs,changeGroup,'playersGroup'));
+  groupBar?.addEventListener('scroll',syncGroupTabEdges,{passive:true});
+  window.addEventListener('resize',syncGroupTabEdges,{passive:true});
+  if(groupBar&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncGroupTabEdges).observe(groupBar);
   // Delegate to the table header, which is recreated on view and locale changes.
   function cycleSort(key){
    if(!key||!allowedSort(state.view,state.group,key))return;
@@ -730,17 +935,35 @@
    const key=event.target.closest?.('[data-players-sort]')?.dataset.playersSort;
    cycleSort(key);
   });
-  previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
-  next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
+  // BFCache keeps the live list on Back. On a cold history return, store only
+  // bounded progress/position metadata and re-fetch segments (no private data).
+  body.addEventListener('click',event=>{
+   const link=event.target.closest?.('a.app-player-name-link');
+   if(!link||!body.contains(link)||!current)return;
+   const playerId=Number(link.getAttribute('href')?.split('/').pop());
+   if(!Number.isSafeInteger(playerId)||playerId<1)return;
+   const pane=document.querySelector('.fa-shell-content-scroll');
+   const base=history.state&&typeof history.state==='object'&&!Array.isArray(history.state)?history.state:{};
+   history.replaceState({...base,faPlayersReturn:{
+    source:location.pathname+location.search,startPage:state.page,loadedThrough,
+    scrollTop:pane?.scrollTop||0,playerId
+   }},'',location.href);
+  });
+  loadMore.addEventListener('click',()=>{
+   if(!current){if(status==='error')load(state.page);return;}
+   if(appendError==='stale'){state.page=1;syncUrl('replaceState');load(1);return;}
+   appendError='';appendNext();
+  });
   window.addEventListener('popstate',()=>{
    if(drawerOpen()){restoreTriggerFocus=false;finishFilterClose();}
    const next=parseLocation(),changed=next.page!==state.page||next.sort!==state.sort||next.order!==state.order||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
-   if(changed)load(state.page);else paint(current);
+   revealActiveGroup();
+   if(changed)load(state.page);else paint(current); // Preserve loaded batches on view-only history navigation.
   });
-  new MutationObserver(()=>{syncControls();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
+  new MutationObserver(()=>{syncControls();revealActiveGroup();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
-  syncControls();syncUrl('replaceState');load(state.page);
+  syncControls();revealActiveGroup();syncUrl('replaceState');load(state.page);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();

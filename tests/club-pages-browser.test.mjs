@@ -38,10 +38,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
  assert.equal(mime['.mjs'],'text/javascript','Club public ES modules must be served with a JavaScript MIME type');
  assert.ok(allowed.has('assets/club-public-read-cache.mjs'),'shared Club HTTP cache module must be published');
- let refuseCrests=false,holdDeferred=false,manifestMode='ok';const deferredResponses=[];
+ let refuseCrests=false,holdDeferred=false,manifestMode='ok',mockEmptyRoster=false,mockReadyRoster=false,holdRosterResponse=false;const deferredResponses=[],blockedRosterResponses=[];
  const server=createServer((req,res)=>{
   try{
    const path=new URL(req.url,'http://localhost').pathname;
+   if(path==='/api/clubs/IT-1/roster'&&holdRosterResponse){blockedRosterResponses.push(res);return;}
+   if(path==='/api/clubs/IT-1/roster'&&mockEmptyRoster){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:0,players:[]}));return;}
+   if(path==='/api/clubs/IT-1/roster'&&mockReadyRoster){
+    res.writeHead(200,{'Content-Type':'application/json'});
+    res.end(JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Fixture Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]}));return;
+   }
    const file=publicRequestFile(path);
    if(!allowed.has(file)||(refuseCrests&&file.startsWith('assets/clubs/')))throw Error('Not public');
    if(file==='clubs/_shared/manifest.json'&&manifestMode!=='ok'){if(manifestMode==='bad-json'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{invalid');}else{res.writeHead(503);res.end('Unavailable')}return;}
@@ -90,6 +96,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`window.__navFragmentFrames=[];const sample=()=>{const pane=document.querySelector('.fa-shell-content-scroll');let target;try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch{}if(pane&&target&&getComputedStyle(pane).visibility==='visible'){const padding=parseFloat(getComputedStyle(pane).scrollPaddingTop)||0;const expected=Math.max(0,Math.min(pane.scrollHeight-pane.clientHeight,pane.scrollTop+target.getBoundingClientRect().top-pane.getBoundingClientRect().top-pane.clientTop-padding));window.__navFragmentFrames.push({actual:pane.scrollTop,expected,aligned:Math.abs(pane.scrollTop-expected)<2&&window.scrollY===0})}if(window.__navFragmentFrames.length<120)requestAnimationFrame(sample)};requestAnimationFrame(sample);`});
+    // Fixture uses explicit DEV choice; an existing OFF remains unchanged.
+    await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
     const run=async expression=>{
       const out=await cmd("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
@@ -268,13 +276,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await visit('/clubs/it/1/overview');
      assert.equal(await run('document.documentElement.lang'),lang);
      assert.equal(await run('document.documentElement.dataset.theme'),theme);
-     const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:document.querySelector('#club-title').textContent,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
+     const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:document.querySelector('#club-title').textContent,browserTitle:document.title,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
      assert.equal(measured.overflow,false,JSON.stringify({width,theme,lang,measured}));
      assert.equal(measured.nav,5);
      assert.equal(await run("(()=>{const colors=document.querySelector('.club-colors'),label=colors.closest('dd').previousElementSibling.getBoundingClientRect(),group=colors.getBoundingClientRect();return (innerWidth<=360||Math.abs((group.top+group.bottom)-(label.top+label.bottom))<2)&&colors.querySelectorAll('.club-color-value').length===2&&[...colors.querySelectorAll('.club-color-value')].every(pair=>{const square=pair.firstElementChild.getBoundingClientRect(),value=pair.lastElementChild.getBoundingClientRect();return Math.abs((square.top+square.bottom)-(value.top+value.bottom))<2&&square.right<=value.left&&Math.abs(square.top-value.top)<3})})()"),true,'Color squares remain paired and vertically centered with their HEX values; the group aligns with its label');
      assert.equal(await run("(()=>{const row=document.querySelector('.club-fact-description').getBoundingClientRect(),label=document.querySelector('.club-fact-description dt').getBoundingClientRect(),text=document.querySelector('.club-fact-description dd').getBoundingClientRect();return Math.abs(text.left-row.left)<1&&Math.abs(text.width-row.width)<1&&text.top>=label.bottom+7})()"),true,'Description spans the identity width beneath its label: '+JSON.stringify({width,theme,lang}));
      assert.equal(await run("document.querySelectorAll('.fa-shell-nav [aria-current=\"page\"]').length===1&&document.querySelector('[data-nav01-clubs][aria-current=\"page\"]')?.getAttribute('href')==='/clubs'&&!document.querySelector('#app-nav-divisions').hasAttribute('aria-current')"),true,'Club pages select only the NAV-01 Clubs sidebar destination');
-     assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,index===0?{width:25,height:20,fit:'contain'}:{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).fullName);assert.ok(measured.description.length>50);
+     assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).primaryName);assert.equal(measured.browserTitle,measured.title+' — Football Architect');assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
      // Public QA has no source: do not assert a fabricated league/fixture card.
      const verifiedCard=await run("!!document.querySelector('.club-competition-entry[data-club-competition-id] .club-competition-logo')");
@@ -487,6 +495,170 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // #560: Club History's true mobile presentation is a four-column grid,
+    // with expansion, localized headings and untruncated competition labels.
+    // A synthetic verified row pair is used to isolate layout from the
+    // asynchronous History endpoint without changing application data.
+    for(const [width,lang] of [[320,'it'],[375,'en'],[390,'de'],[430,'fr'],[620,'es'],[768,'it'],[1440,'en']]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
+      await run('document.documentElement.lang='+JSON.stringify(lang));await delay(75);
+      // Inspect any real first-paint row before inserting the isolated test
+      // table, so measuring the probe cannot displace its geometry.
+      const firstPaintGapBefore=await run(`(()=>{
+       const tabs=document.querySelector('.club-tabs');
+       const row=document.querySelector('.club-history .club-history-row-loading');
+       return tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
+      })()`);
+      await run(`(()=>{
+       const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
+       const wrap=document.createElement('div');wrap.id='history-mobile-560-probe';
+       wrap.className='club-history-table-wrap';
+       wrap.innerHTML='<table class="club-history-table" aria-label="History">'+
+        '<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
+         Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>'+
+        '<thead><tr><th>Season</th><th>Competition</th><th>Position</th>'+
+         ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
+        '<tbody><tr class="club-history-season-row" data-club-history-summary="777-${width}">'+
+         '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777-${width}" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
+         '<td class="club-history-total-label">Total</td><td></td>'+
+         ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
+        '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
+         '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
+         '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
+         ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+       // Give each viewport an independent synthetic season key: the real
+       // controller retains expanded seasons across viewport changes.
+       // Put the synthetic table at the first content position, matching a
+       // verified History section rather than after any unavailable notice.
+       document.querySelector('.club-history').prepend(wrap);
+      })()`);
+      const initial=await run(`(()=>{
+       const wrap=document.getElementById('history-mobile-560-probe');
+       const tab=wrap.querySelector('.club-history-table'),row=wrap.querySelector('.club-history-season-row');
+       const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+       const stats=[...row.querySelectorAll('td')].slice(2,9);
+       const tabs=document.querySelector('.club-tabs');
+       const active=tabs?.querySelector('.app-competition-tab.is-active,[aria-current="page"]');
+       const section=document.querySelector('.club-history');
+       return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
+        separatorGap:tabs&&section?section.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        firstRowGap:tabs&&wrap.querySelector('tbody > .club-history-season-row')?
+         wrap.querySelector('tbody > .club-history-season-row').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        parentLayout:section?{display:getComputedStyle(section.parentElement).display,gap:getComputedStyle(section.parentElement).rowGap,sectionMargin:getComputedStyle(section).marginTop,tabMargin:getComputedStyle(tabs).marginBottom}:null,
+        tabBorder:tabs?getComputedStyle(tabs).borderBottomWidth:null,
+        shellOverflow:document.documentElement.scrollWidth-innerWidth,
+        label:getComputedStyle(stats[0],'::before').content,
+        labelGs:getComputedStyle(stats[5],'::before').content,
+        first:box(stats[0]),second:box(stats[1]),
+        fourth:box(stats[3]),fifth:box(stats[4]),
+        detailHidden:wrap.querySelector('.club-history-competition-row').hidden};
+      })()`);
+      assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
+      if(width<=620){
+       assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
+        'mobile History starts immediately below the view separator at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
+        'first season row starts flush with the separator at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore)<=1,
+        'pre-insertion first-paint History skeleton row starts flush with the separator at '+width+': '+firstPaintGapBefore);
+       assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
+       assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
+        'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
+       assert.ok(Math.abs(initial.first.top-initial.fourth.top)<=1&&initial.fifth.top>initial.first.top,
+        'four stat cells form the first grid row, then wrap at '+width+': '+JSON.stringify(initial));
+       const expected={it:['PG','GS'],en:['MP','GA'],de:['Sp','T−'],fr:['MJ','BC'],es:['PJ','GC']}[lang];
+       assert.equal(initial.label,'"'+expected[0]+'"','localized played label at '+width);
+       assert.equal(initial.labelGs,'"'+expected[1]+'"','localized against label at '+width);
+      }else{
+       assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
+      }
+      if(width<=620){
+       // Compare the exact seven first-paint skeleton centers to the seven
+       // hydrated aggregate-number centers in their shared grid tracks.
+       const alignment=await run(`(()=>{
+        const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
+        const cells=[...row.children].slice(3,10);
+        const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        const actual=cells.map(cell=>{
+         const range=document.createRange();range.selectNodeContents(cell);
+         const value=rect(range),slot=rect(cell);
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+        });
+        const initial=cells.map(cell=>cell.innerHTML);
+        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        row.classList.add('club-history-row-loading');
+        const skeleton=cells.map(cell=>{
+         const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
+         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
+        });
+        row.classList.remove('club-history-row-loading');
+        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        const header=row.querySelector('th:first-child');
+        const button=header.querySelector('button');
+        const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
+        const nameLeft=range.getBoundingClientRect().left;
+        const original=header.innerHTML;
+        header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
+         '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
+         '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
+        header.innerHTML=original;
+        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft};
+       })()`);
+       for(let i=0;i<7;i++){
+        const data=alignment.actual[i],skeleton=alignment.skeleton[i];
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+         'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
+         'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.height-skeleton.height)<=1,
+         'stat '+i+' keeps the same cell height during loading at '+width);
+       }
+       assert.ok(Math.abs(alignment.nameOffset)<=2,
+        'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
+      }
+      await run("document.querySelector('#history-mobile-560-probe [data-club-history-toggle]').click()");
+      const expanded=await run(`(()=>{
+       const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
+       const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
+       const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const position=row.querySelector('td:nth-child(3)');
+       const positionLabel=getComputedStyle(position,'::before');
+       const positionLayout=getComputedStyle(position);
+       const stat=row.querySelector('td:nth-child(4)');
+       return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
+        positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
+        positionValueSize:positionLayout.fontSize,
+        statTracks:getComputedStyle(stat).gridTemplateRows,
+        rowHeight:r.height,linkWidth:lr.width,linkScroll:link.scrollWidth,linkClient:link.clientWidth,
+        linkHref:link.getAttribute('href'),linkText:link.textContent.trim(),
+        explicitTableRole:wrap.querySelector('table').getAttribute('role'),
+        explicitRowRole:row.getAttribute('role'),explicitCellRole:row.querySelector('td').getAttribute('role'),
+        linkWhiteSpace:getComputedStyle(link).whiteSpace,linkOverflow:getComputedStyle(link).overflow,
+        overflow:document.documentElement.scrollWidth-innerWidth};
+      })()`);
+      assert.equal(expanded.expanded,'true','History remains expandable by click at '+width);
+      assert.equal(expanded.explicitTableRole,'table','responsive table preserves screen-reader semantics at '+width);
+      assert.equal(expanded.explicitRowRole,'row','expanded competition row preserves its semantic role at '+width);
+      assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
+      assert.equal(expanded.hidden,false,'History competition row appears at '+width);
+      assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
+      if(width<=620){
+       assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
+       assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
+       assert.equal(expanded.positionAlign,'baseline','position and label share the text baseline at '+width);
+       assert.equal(expanded.positionLabelSize,expanded.positionValueSize,'position label and value use the same font size at '+width);
+       assert.equal(expanded.statTracks,'12px 16px','numeric data and skeletons reserve identical label/value tracks at '+width);
+       assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
+       assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
+       assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);
+      }
+      await run("document.getElementById('history-mobile-560-probe').remove()");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await run("document.documentElement.lang='en'");await delay(70);
     // Regression: a spare part of the History competition cell must not behave
     // like the text link (hover underline OR click). Test the actual browser
     // hit areas, not only stylesheet selector strings.
@@ -525,12 +697,133 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await run("document.getElementById('club-history-link-hitbox-probe').remove()");
     for(const view of ['roster','fixtures','stats','history']){
      await visit('/clubs/br/40/'+view+'?season=2&matchday=7');
-     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':'.club-empty')+"')"),true);
-     assert.equal(await run('location.search'),view==='history'?'':'?season=2&matchday=7');
+     assert.equal(await run("!!document.querySelector('"+(view==='history'?'.club-history':view==='fixtures'?'.club-fixtures':view==='roster'?'.club-roster':'.club-empty')+"')"),true);
+     assert.equal(await run('location.search'),['history','roster'].includes(view)?'':'?season=2&matchday=7');
     }
+    // A failed API response must not invent a selected subview or mutate /roster.
+    await visit('/clubs/it/1/roster?view=mental');
+    await wait("document.querySelector('.club-roster[aria-busy=false] .app-players-empty-row')!==null");
+    assert.equal(await run('location.search'),'','failed roster read stays at /roster');
+    assert.equal(await run("document.querySelectorAll('.club-roster-tabs [aria-disabled=true]').length"),5);
+    assert.equal(await run("document.querySelector('.club-load-error')"),null,'roster read failure is not a club identity failure');
+    mockReadyRoster=true;
+    await visit('/clubs/it/1/roster?view=info');
+    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false]')!==null");
+    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-selected=true]')?.textContent"),'Info');
+    assert.equal(await run("document.querySelector('.club-roster-tabs [data-club-roster-view=info]')?.getAttribute('href')"),'/clubs/it/1/roster?view=info');
+    assert.equal(await run("document.querySelector('.club-roster-toolbar,.club-roster-groups')"),null,
+      'Roster has five peer views and no Attributes sub-navigation');
+    assert.deepEqual(await run("[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')].map(el=>el.dataset.clubRosterView)"),
+      ['info','technical','mental','physical','goalkeeping']);
+    // Roster mobile: exactly 2.5 tabs before player count and edge-aware fade.
+    for(const width of [320,390]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:true});
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+     const measured=await run("(()=>{const nav=document.querySelector('.club-roster-tabs'),count=document.querySelector('.club-roster-count'),row=document.querySelector('.club-roster-view-row'),buttons=[...nav.querySelectorAll('a')],n=nav.getBoundingClientRect(),third=buttons[2].getBoundingClientRect(),style=getComputedStyle(nav),item=buttons[0].getBoundingClientRect();return {rowHeight:row.getBoundingClientRect().height,navWidth:n.width,tabWidth:item.width,gap:parseFloat(style.columnGap),thirdVisible:Math.min(n.right,third.right)-Math.max(n.left,third.left),countAfter:count.getBoundingClientRect().left>=n.right,overflows:nav.scrollWidth>nav.clientWidth,fade:style.maskImage,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft}})()");
+     // The main View strip restores scrollLeft from sessionStorage on navigation.
+     // Exercise the left edge explicitly rather than assuming a fresh position.
+     await run("document.querySelector('.club-tabs').scrollLeft=0;window.dispatchEvent(new Event('resize'))");
+     await wait("(()=>{const nav=document.querySelector('.club-tabs');if(!nav)return false;const max=Math.max(0,nav.scrollWidth-nav.clientWidth);return nav.scrollLeft<1&&nav.dataset.canScrollLeft==='false'&&nav.dataset.canScrollRight===String(max>1)})()");
+     const primary=await run("(()=>{const nav=document.querySelector('.club-tabs'),style=getComputedStyle(nav),scrollbar=getComputedStyle(nav,'::-webkit-scrollbar');return {width:style.scrollbarWidth,webkitDisplay:scrollbar.display,right:nav.dataset.canScrollRight,left:nav.dataset.canScrollLeft,overflow:nav.scrollWidth>nav.clientWidth}})()");
+     assert.equal(primary.width,'none','primary Club View scrollbar is hidden at '+width);
+     assert.equal(primary.webkitDisplay,'none','WebKit primary View scrollbar is hidden at '+width);
+     assert.equal(primary.right,String(primary.overflow),'right fade matches actual mobile View overflow at '+width);
+     assert.equal(primary.left,'false','no left fade at start at '+width);
+     assert.equal(measured.rowHeight,42,'42px row at '+width);
+     assert.ok(Math.abs(measured.navWidth-(2.5*measured.tabWidth+2*measured.gap))<2,'2.5 mobile tabs: '+JSON.stringify(measured));
+     assert.ok(Math.abs(measured.thirdVisible/measured.tabWidth-0.5)<0.06,'half third tab: '+JSON.stringify(measured));
+     assert.ok(measured.countAfter&&measured.overflows&&measured.fade!=='none'&&measured.right==='true'&&measured.left==='false','player count and right fade at '+width);
+     await run("document.querySelector('.club-roster-tabs').scrollLeft=9999");
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='true'");
+     await run("document.querySelector('.club-roster-tabs').scrollLeft=0");
+     await wait("document.querySelector('.club-roster-tabs')?.dataset.canScrollLeft==='false'&&document.querySelector('.club-roster-tabs')?.dataset.canScrollRight==='true'");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await run("document.querySelector('[data-club-roster-view=technical]').click()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('.club-roster')?.dataset.rosterMode"),'attributes');
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    await wait("location.search==='?view=mental'");
+    assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'mental');
+    await run("history.back()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('.club-roster-table')?.dataset.rosterGroup"),'technical');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical&sort=passing&order=desc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'descending');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical&sort=passing&order=asc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'ascending');
+    await run("document.querySelector('[data-club-roster-sort=passing]').click()");
+    await wait("location.search==='?view=technical'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=passing]').closest('th').getAttribute('aria-sort')"),'none');
+    await run("document.querySelector('[data-club-roster-view=info]').click()");
+    await wait("location.search==='?view=info'");
+    await run("document.querySelector('[data-club-roster-sort=positions]').click()");
+    await wait("location.search==='?view=info&sort=positions&order=desc'");
+    assert.equal(await run("document.querySelector('[data-club-roster-sort=positions]').closest('th').getAttribute('aria-sort')"),'descending');
+    // Real browser: pending View controls are grey, have no href/focus target,
+    // cannot navigate, and become enabled when the API delivers valid players.
+    mockReadyRoster=false;
+    holdRosterResponse=true;
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await visit('/clubs/it/1/roster?view=technical');
+    await wait("document.querySelector('.club-roster[aria-busy=true] .club-roster-tabs [aria-disabled=true]')!==null");
+    const pendingTabs=await run("(()=>{const root=document.querySelector('.club-roster'),tabs=[...root.querySelectorAll('[data-club-roster-view]')],style=getComputedStyle(tabs[0]);return {count:tabs.length,disabled:tabs.filter(a=>a.getAttribute('aria-disabled')==='true').length,hrefs:tabs.filter(a=>a.hasAttribute('href')).length,focus:tabs.map(a=>a.tabIndex),opacity:style.opacity,cursor:style.cursor}})()");
+    assert.equal(pendingTabs.count,5);
+    assert.equal(pendingTabs.disabled,5);
+    assert.equal(pendingTabs.hrefs,0);
+    assert.deepEqual(pendingTabs.focus,[-1,-1,-1,-1,-1]);
+    assert.ok(Number(pendingTabs.opacity)<0.6&&pendingTabs.cursor==='default','loading subviews look disabled');
+    assert.equal(await run("document.querySelector('.club-load-error')"),null,'loading roster must not show the generic Club info error');
+    assert.equal(await run("document.documentElement.dataset.clubIdentityReady"),'true','club identity loads while the roster waits');
+    // Pending views are grey and non-interactive on desktop, including the active tab.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    const desktopPending=await run("(()=>{const tabs=[...document.querySelectorAll('.club-roster-tabs [data-club-roster-view]')];return tabs.map(el=>{const css=getComputedStyle(el);return {opacity:css.opacity,background:css.backgroundColor,pointer:css.pointerEvents,disabled:el.getAttribute('aria-disabled'),href:el.getAttribute('href')}})})()");
+    assert.equal(desktopPending.length,5);
+    for(const [index,tab] of desktopPending.entries()){
+     assert.ok(Math.abs(Number(tab.opacity)-0.45)<0.02,'desktop disabled opacity: '+index);
+     assert.ok(tab.background==='rgba(0, 0, 0, 0)'||tab.background==='transparent','desktop disabled background: '+index+' '+tab.background);
+     assert.equal(tab.pointer,'none','desktop disabled pointer events '+index);
+     assert.equal(tab.disabled,'true','desktop aria-disabled '+index);
+     assert.equal(tab.href,null,'desktop must not expose nonfunctional URLs');
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:true});
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    assert.equal(await run('location.search'),'','loading subviews cannot navigate; stay at /roster');
+    for(let i=0;i<100&&!blockedRosterResponses.length;i++)await delay(20);
+    assert.ok(blockedRosterResponses.length>=1,'club roster request held until assertions complete');
+    holdRosterResponse=false;
+    const loadedRoster={schemaVersion:1,clubKey:'IT-1',count:1,players:[{id:1001,display_name:'Test Player',nationality:'ITA',primary_position:'CM',secondary_positions:[],age:20,height_cm:180,preferred_foot:'right',attributes:{}}]};
+    blockedRosterResponses.splice(0).forEach(res=>{res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(loadedRoster))});
+    await wait("location.search==='?view=info'&&document.querySelector('.club-roster[aria-busy=false] [data-club-roster-view=mental][href]')?.getAttribute('aria-disabled')===null");
+    assert.equal(await run("document.querySelector('.club-roster [aria-selected=true]')?.dataset.clubRosterView"),'info','successful response activates Info');
+    assert.equal(await run("document.querySelector('.club-roster-tabs [aria-disabled=true]')"),null);
+    await run("document.querySelector('[data-club-roster-view=mental]').click()");
+    await wait("location.search==='?view=mental'");
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    // Verified API count=0: desktop and mobile render only a localized paragraph,
+    // with no subviews, player count, sort buttons, or table.
+    mockEmptyRoster=true;
+    for(const [width,view] of [[1440,'info'],[390,'technical'],[320,'goalkeeping']]){
+     await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
+     await visit('/clubs/it/1/roster?view='+view);
+     await wait("document.querySelector('.club-roster[data-roster-mode=empty] .club-roster-empty')!==null");
+     assert.equal(await run('location.search'),'','empty verified squad stays /roster');
+     const emptyState=await run("(()=>{const root=document.querySelector('.club-roster'),p=root?.querySelector('p');return {text:root?.textContent.trim(),lang:document.documentElement.lang,children:root?.children.length,paragraph:p?.className,status:p?.getAttribute('role'),extras:root?.querySelector('nav,table,button,.club-roster-count,.club-roster-table-scroll'),overflow:document.documentElement.scrollWidth>innerWidth+1}})()");
+     const emptyWords={en:'No players are currently assigned to this club.',de:'Diesem Verein sind derzeit keine Spieler zugeordnet.',es:'Actualmente no hay jugadores asignados a este club.',fr:'Aucun joueur n’est actuellement affecté à ce club.',it:'Nessun giocatore è attualmente assegnato a questo club.'};
+     assert.equal(emptyState.text,emptyWords[emptyState.lang]||emptyWords.en,'empty roster copy at '+width);
+     assert.equal(emptyState.children,1,'empty roster has one paragraph at '+width);
+     assert.equal(emptyState.paragraph,'club-roster-empty');
+     assert.equal(emptyState.status,'status');
+     assert.equal(emptyState.extras,null,'no table, subviews, count or sort at '+width);
+     assert.equal(emptyState.overflow,false,'empty roster cannot overflow viewport at '+width);
+    }
+    mockEmptyRoster=false;
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await visit('/clubs/it/1/overview?season=4');assert.equal(await run('location.search'),'');
     const publicLink=await run("document.querySelector('.club-competition a')?.getAttribute('href')??null");
-    assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings?season=1','Only verified source may replace initial season link');
+    assert.ok(publicLink===null||publicLink==='/competitions/it-1/standings','Only verified source may replace initial season link');
     // QA-02: opening a club from the directory must reuse the crest URL and show no placeholder once loaded.
     await cmd('Page.navigate',{url:origin+'/clubs'});
     await wait("document.querySelectorAll('.nav01-card').length===320&&document.querySelector('.nav01-grid')?.getAttribute('aria-busy')==='false'");
@@ -601,7 +894,74 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
       assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(['[data-club-position]','.club-competition-next a'])});const match=document.querySelector('.club-competition-next a').getBoundingClientRect(),round=document.querySelector('.club-competition-next small').getBoundingClientRect(),name=document.querySelector('.club-competition-name').getBoundingClientRect(),tier=document.querySelector('.club-competition-tier').getBoundingClientRect();const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&baselines.every(Number.isFinite)&&Math.abs(round.top-match.bottom-3)<1.5&&Math.abs(tier.top-name.bottom-3)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
-     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=2&matchday=16');
+
+     // Actual app geometry: both membership rows share horizontal tracks; a
+     // runtime pending row reserves the same slots as hydrated values.
+     const competitionGridProbe=await run(`(()=>{
+      const list=document.querySelector('.club-competition-list'),first=list.querySelector('.club-competition-entry');
+      const bottomGap=()=>{
+       const panel=list.closest('.club-competition'),last=list.lastElementChild;
+       const style=getComputedStyle(panel),box=panel.getBoundingClientRect(),row=last.getBoundingClientRect();
+       return {actual:box.bottom-row.bottom,
+        expected:parseFloat(style.paddingBottom)+parseFloat(style.borderBottomWidth),
+        minHeight:style.minHeight};
+      };
+      const singleBottomGap=bottomGap();
+      const second=first.cloneNode(true);
+      second.querySelector('.club-competition-name').textContent='Sovereign International Championship — Group B';
+      second.querySelector('.club-competition-tier').textContent='International';
+      second.querySelector('[data-club-position]').textContent='1st';
+      second.querySelector('.club-competition-next-content').innerHTML='<a class="app-link"><span class="club-competition-match-name">IJhaven Amsterdam – RC de Gironde</span></a><small>Matchday 3</small>';
+      list.append(second);
+      const doubleBottomGap=bottomGap();
+      const pos=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),b=row.getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height}};
+      const measure=row=>{
+       const a=pos(row,'.club-competition-metrics dt'),b=pos(row,'.club-competition-metrics dd');
+       const c=pos(row,'.club-competition-next>.club-competition-label'),d=pos(row,'.club-competition-next-content');
+       const crest=pos(row,'.club-competition-logo');
+       const end=row.querySelector('.club-competition-next-content').lastElementChild.getBoundingClientRect();
+       const rowTop=row.getBoundingClientRect().top,crestCenter=crest.y+crest.h/2;
+       const statusVisualCenter=(a.y+b.y+b.h)/2,nextVisualCenter=(c.y+end.bottom-rowTop)/2;
+       return {x1:a.x,x2:c.x,labelDelta:Math.abs(a.y-c.y),valueDelta:Math.abs(b.y-d.y),
+        centerDelta:Math.abs(a.x+a.w/2-b.x-b.w/2),nextDelta:Math.abs(c.x-d.x),
+        crestStatusDelta:Math.abs(crestCenter-statusVisualCenter),
+        crestNextDelta:Math.abs(crestCenter-nextVisualCenter)};
+      };
+      const rows=[measure(first),measure(second)];
+      const pending=first.cloneNode(true);
+      pending.querySelector('.club-competition-logo').outerHTML='<span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span>';
+      pending.querySelector('.club-competition-name').innerHTML='<span class="club-fp-bar club-fp-competition-name"></span>';
+      pending.querySelector('.club-competition-tier').innerHTML='<span class="club-fp-bar club-fp-competition-tier"></span>';
+      pending.querySelector('.club-competition-metrics dd').innerHTML='<span class="club-fp-bar club-fp-competition-position"></span>';
+      pending.querySelector('.club-competition-next-content').innerHTML='<span class="club-fp-bar club-fp-competition-fixture"></span><span class="club-fp-bar club-fp-competition-round"></span>';
+      const skeletonList=document.createElement('div');
+      skeletonList.className='club-competition-list club-fp-competition';skeletonList.append(pending);list.after(skeletonList);
+      const selectors=['.club-competition-identity','.club-competition-name','.club-competition-tier','.club-competition-metrics dt',
+       '.club-competition-metrics dd','.club-competition-next>.club-competition-label','.club-competition-next-content'];
+      const parity=selectors.map(selector=>{const a=pos(first,selector),b=pos(pending,selector);return {selector,x:Math.abs(a.x-b.x),y:Math.abs(a.y-b.y)}});
+      const statusBar=pos(pending,'.club-fp-competition-position');
+      const line=parseFloat(getComputedStyle(first.querySelector('.club-competition-metrics dd')).lineHeight);
+      const barOffset=Math.abs(statusBar.y-pos(first,'.club-competition-metrics dd').y-(line-12)/2);
+      const fixture=pos(pending,'.club-fp-competition-fixture'),round=pos(pending,'.club-fp-competition-round');
+      const fixtureLine=parseFloat(getComputedStyle(first.querySelector('.club-competition-next a')).lineHeight);
+      const roundLine=parseFloat(getComputedStyle(first.querySelector('.club-competition-next small')).lineHeight);
+      const lineDeltas=[Math.abs(fixture.h-fixtureLine),Math.abs(round.h-roundLine),Math.abs(round.y-fixture.y-fixture.h-3)];
+      skeletonList.remove();second.remove();
+      return {rows,parity,barOffset,lineDeltas,singleBottomGap,doubleBottomGap};
+     })()`);
+     assert.ok([competitionGridProbe.singleBottomGap,competitionGridProbe.doubleBottomGap]
+      .every(({actual,expected,minHeight})=>minHeight==='0px'&&Math.abs(actual-expected)<1.5),
+      'One or two competitions must end at the normal panel bottom padding, never a minimum-height strip at '+width+': '+JSON.stringify(competitionGridProbe));
+     assert.ok(competitionGridProbe.rows.every(row=>row.labelDelta<1.5&&row.valueDelta<8&&row.centerDelta<1.5&&row.nextDelta<1.5)
+      &&Math.abs(competitionGridProbe.rows[0].x1-competitionGridProbe.rows[1].x1)<1.5
+      &&Math.abs(competitionGridProbe.rows[0].x2-competitionGridProbe.rows[1].x2)<1.5
+      &&competitionGridProbe.parity.every(slot=>slot.x<1.5&&slot.y<1.5)
+      &&competitionGridProbe.barOffset<1.5
+      &&competitionGridProbe.lineDeltas.every(delta=>delta<1.5)
+      &&(width!==1440||competitionGridProbe.rows.every(row=>row.crestStatusDelta<7&&row.crestNextDelta<7)),
+      'Visible Status and Next match groups center with each row crest, not only their bounding boxes, at '+width+': '+JSON.stringify(competitionGridProbe));
+
+     assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
@@ -666,19 +1026,19 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('[data-dev-control=season-number]')!==null");
     await run("document.querySelector('.fa-dev-widget-button').click()");
     await run("(()=>{const control=document.querySelector('[data-dev-control=season-number]');control.value='3';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
-    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href').includes('season=3&')");
+    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href').includes('matchday=')");
     assert.equal(await run("document.querySelector('.club-competition-context')"),null,'No Season/Preview caption in DEV');
     await run("(()=>{const control=document.querySelector('[data-dev-control=world-day-number]');control.value='28';control.dispatchEvent(new Event('change',{bubbles:true}))})()");
     const advanced=createPreviewStandings(division,16,3),advancedIndex=advanced.rows.findIndex(r=>r.club.clubId===1);
-    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?season=3&matchday=17'");
+    await wait("document.querySelector('.club-competition-next a')?.getAttribute('href')==='/competitions/it-1/fixtures?matchday=17'");
     assert.equal(await run("document.querySelector('[data-club-position]').textContent"),englishOrdinal(advancedIndex+1));
-    assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?season=3&matchday=17');
-    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings?season=3');
+    assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=17');
+    assert.equal(await run("document.querySelector('.club-competition-name a').getAttribute('href')"),'/competitions/it-1/standings');
     await run("document.querySelector('.club-competition-name a').click()");
     await wait("location.pathname==='/competitions/it-1/standings'&&window.faCompetitionContext?.selectedSeason===3&&window.faCompetitionContext?.seasonData?.season===3&&document.documentElement.dataset.faStandingsLoading==='false'");
     assert.deepEqual(await run("[...document.querySelectorAll('#app-standings-body tr[data-world-club]')].map(row=>[row.dataset.worldClub,Number(row.children[9].textContent)])"),advanced.rows.map(row=>[row.club.countryId+'-'+row.club.clubId,row.pts]),'Club -> Standings preserves the displayed season and full table');
     await visit('/clubs/it/1/overview',devOrigin);
-    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings?season=3'");
+    await wait("document.querySelector('.club-competition-name a')?.getAttribute('href')==='/competitions/it-1/standings'");
     await run("document.querySelector('[data-dev-control=reset-global]').click()");
     await wait("document.querySelector('.club-competition-next a')===null&&[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')");
     assert.equal(await run("[...document.querySelectorAll('[data-club-position]')].every(el=>el.textContent==='—')"),true,'Reset cannot leave a fabricated club position');
@@ -707,7 +1067,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';
       if(groupedLeg)await wait("!!window.faFixtures&&window.faCompetitionRoute.get().matchday==='quarterfinals:1'");
-      assert.equal(await currentUrl(),groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected,'A03-04C direct '+width+' '+row.input);
+      const expected=new URL(groupedLeg?row.expected.replace('quarterfinals%3A2','quarterfinals'):row.expected,origin);
+      const incoming=new URL(row.input,origin);
+      // #531: preserve unrelated query parameters and fragments across legacy redirects.
+      for(const [key,value] of incoming.searchParams)if(!['view','season','matchday','calendarReturn'].includes(key))expected.searchParams.append(key,value);
+      if(incoming.hash)expected.hash=incoming.hash;
+      assert.equal(await currentUrl(),expected.pathname+expected.search+expected.hash,'A03-04C direct '+width+' '+row.input);
       assert.deepEqual(await run('window.__faRoutesBootstrap'),{clubModel:false,competitionRoute:false},'Core precedes deferred consumers');
       assert.equal(await run('Object.isFrozen(window.faRoutesRegistry)&&Object.isFrozen(window.faRoutesRegistry.countries)'),true);
       assert.equal(await run("window.faRoutesRegistry.buildRoute({kind:'club',country:'br',id:40,view:'history'})"),'/clubs/br/40/history');
@@ -775,7 +1140,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
  const {published}=await import('./canonical-state-browser.mjs');
  const browser=chrome(),dir=await mkdtemp(join(tmpdir(),'fa-club-fixtures-'));
  let world={schemaVersion:1,generation:'550e8400-e29b-41d4-a716-446655440000',revision:4,seasonNumber:1,day:16,phase:'active'};
- let hold=false,failHistory=false,failCompetition=false,useDev=false;const held=[];
+ let hold=false,failHistory=false,failCompetition=false,failFixtures=false,useDev=false;const held=[];let fixtureReads=0,competitionReads=0;
  const payloadFor=season=>{
   const closed=season<world.seasonNumber||world.phase==='closed';
   const raw=published('IT-1',season,closed?{...world,day:56}:world);
@@ -789,6 +1154,22 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   const path=new URL(req.url,'http://localhost').pathname;
   const json=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(body));};
   if(path==='/api/world')return json(200,{world});
+  const clubFixtureRoute=/^\/api\/clubs\/IT-1\/seasons\/([12])\/fixtures$/.exec(path);
+  if(clubFixtureRoute){
+   fixtureReads++;const season=Number(clubFixtureRoute[1]),raw=payloadFor(season);
+   const packet={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,
+    status:raw.status,reason:null,
+    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
+    data:{season,seasonState:raw.data.seasonState,competitions:['IT-1'],
+     fixtures:raw.data.fixtures.filter(f=>[f.homeClubId,f.awayClubId].includes('IT-1'))}};
+   const send=()=>{
+    if(failFixtures)return json(503,{error:{code:'sporting_data_unavailable'}});
+    if(failCompetition)return json(200,{...packet,status:'unavailable',reason:'unsupported-season',
+     provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null});
+    return json(200,packet);
+   };
+   if(hold)held.push(send);else send();return;
+  }
   if(path==='/api/clubs/IT-1/history'){
    if(failHistory)return json(503,{});
    const overviews=Array.from({length:world.seasonNumber},(_,i)=>{
@@ -802,6 +1183,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   }
   const competition=/^\/api\/competitions\/IT-1\/seasons\/([12])$/.exec(path);
   if(competition){
+   competitionReads++;
    const data=payloadFor(Number(competition[1])),send=()=>json(failCompetition?503:200,data);
    if(hold)held.push(send);else send();return;
   }
@@ -828,28 +1210,42 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await delay(50);assert.equal(await run("document.querySelector('.club-fixtures')===null"),true,'late fixtures cannot replace Roster');
   await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   const after=await run("[...document.querySelectorAll('.club-fixture-select button')].map(n=>({x:n.getBoundingClientRect().x,y:n.getBoundingClientRect().y,w:n.getBoundingClientRect().width}))");assert.deepEqual(after,before,'controls keep first-paint geometry');
+  assert.ok(fixtureReads>=1,'verified club fixture endpoint serves the public view, including cache reuse');
+  assert.equal(competitionReads,0,'Club Fixtures never calls the per-competition season APIs');
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'Season 1 offers only Season 1');
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null);
 
   await run("window.__fixtureFocus=document.querySelector('[data-club-fixture-control=season] button');__fixtureFocus.focus();document.documentElement.lang='it'");await delay(80);assert.equal(await run('document.activeElement===window.__fixtureFocus'),true,'locale redraw retains focused combobox');
   await run("document.documentElement.lang='en'");await delay(60);
-  assert.equal(await run("[...document.querySelectorAll('.club-fixture-opponent')].every(n=>!n.href.includes('/it/1/'))"),true);
+  assert.equal(await run("[...document.querySelectorAll('.club-fixture-opponent-name')].every(n=>!n.href.includes('/it/1/'))"),true);
   assert.equal(await run("document.querySelectorAll('.club-fixture-opponent [data-club-crest]').length"),30,'each repeated opponent retains its own crest host');
   assert.equal(await run("[...document.querySelectorAll('[data-club-fixture-id]')].filter(n=>Number(n.querySelector('.club-fixture-meta span').textContent.replace(/\\D/g,''))>16).every(n=>n.querySelector('strong').textContent==='—')"),true);
   await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
   assert.equal(await run("document.activeElement.getAttribute('aria-describedby')"),'club-fixture-venue-tooltip');
+  const position=await run("(()=>{const node=document.activeElement,original=node.getBoundingClientRect;node.getBoundingClientRect=()=>({left:100,right:132,top:160,bottom:192,width:32,height:32});node.blur();node.focus({preventScroll:true});const tip=document.getElementById('club-fixture-venue-tooltip'),top=parseFloat(tip.style.top);node.getBoundingClientRect=original;return top+tip.offsetHeight<=152})()");
+  assert.equal(position,true,'fixture tooltip prefers the space above the venue');
+  const fallback=await run("(()=>{const node=document.activeElement,original=node.getBoundingClientRect;node.getBoundingClientRect=()=>({left:100,right:132,top:5,bottom:37,width:32,height:32});node.blur();node.focus({preventScroll:true});const tip=document.getElementById('club-fixture-venue-tooltip'),top=parseFloat(tip.style.top);node.getBoundingClientRect=original;return top>=45&&top+tip.offsetHeight<=innerHeight-8})()");
+  assert.equal(fallback,true,'fixture tooltip falls below when the top would clip');
   await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').hidden"),true);
-  for(const [width,lang,theme] of [[320,'it','dark'],[390,'de','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
+  // MOBILE-QA #527: cover intermediate real-device widths beyond the 320/390 baselines.
+  for(const [width,lang,theme] of [[320,'it','dark'],[375,'en','dark'],[390,'de','light'],[430,'fr','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    await run(`document.documentElement.lang=${JSON.stringify(lang)};document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await delay(60);
    const controls=await run("(()=>{const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};return {tabs:box(document.querySelector('.club-tabs')),toolbar:box(document.querySelector('.club-fixtures-controls')),next:box(document.querySelector('[data-club-fixtures-next]')),competition:box(document.querySelector('[data-club-fixture-control=competition]')),season:box(document.querySelector('[data-club-fixture-control=season]'))}})()");
    assert.ok(Math.abs(controls.toolbar.top-controls.tabs.bottom-14)<1,'controls sit 14px below view separator at '+width);
-   assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'next command stays at left at '+width);
-   assert.ok(controls.competition.right<=controls.season.left,'competition precedes season at '+width);
-   assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'selectors align right at '+width);
-   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no overflow '+width+' '+lang);
+   if(width<=620){
+    assert.ok(controls.competition.right<=controls.season.left,'mobile competition precedes season at '+width);
+    assert.ok(Math.abs(controls.competition.left-controls.toolbar.left)<1&&Math.abs(controls.season.right-controls.toolbar.right)<1,'mobile selectors fill first row at '+width);
+    assert.ok(controls.next.top>=Math.max(controls.competition.bottom,controls.season.bottom)+7,'mobile next match sits below selectors at '+width);
+    assert.ok(Math.abs((controls.next.left+controls.next.right)-(controls.toolbar.left+controls.toolbar.right))<=2,'mobile next match is centered at '+width);
+   }else{
+    assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'desktop next command stays at left at '+width);
+    assert.ok(controls.competition.right<=controls.season.left,'desktop competition precedes season at '+width);
+    assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'desktop selectors align right at '+width);
+   }
+   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.fa-shell-content-scroll').scrollWidth<=document.querySelector('.fa-shell-content-scroll').clientWidth+1&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no shell/page/fixtures overflow '+width+' '+lang);
    assert.equal(await run("[...document.querySelectorAll('.club-fixture-result')].every(n=>n.getBoundingClientRect().width>=64)"),true);
-   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,1440].includes(width)){
+   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,375,430,1440].includes(width)){
     mkdirSync(process.env.CLUB_FIXTURES_QA_DIR,{recursive:true});
     const capture=await cmd('Page.captureScreenshot',{format:'png'});
     writeFileSync(join(process.env.CLUB_FIXTURES_QA_DIR,'club-fixtures-'+width+'-'+lang+'-'+theme+'.png'),Buffer.from(capture.data,'base64'));
@@ -867,18 +1263,18 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const selectors={
     day:loading?'.club-fixture-skeleton-line:first-child':'.club-fixture-meta > span:first-child',
     league:loading?'.club-fixture-skeleton-line:nth-child(2)':'.club-fixture-meta a',
-    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > span:last-child',
+    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > :last-child',
     venue:'.club-fixture-venue',score:'.club-fixture-result strong',status:'.club-fixture-result small'
    };
    const bars={day:'.club-fixture-skeleton-day',league:'.club-fixture-skeleton-league',
     name:'.club-fixture-skeleton-name',venue:'.club-fixture-skeleton-venue',
     score:'.club-fixture-skeleton-score',status:'.club-fixture-skeleton-status'};
-   return {loading,row:rect(row),parts:Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,measure(selector)])),
+   return {loading,row:rect(row),meta:rect(row.querySelector('.club-fixture-meta')),opponent:rect(row.querySelector('.club-fixture-opponent')),parts:Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,measure(selector)])),
     bars:loading?Object.fromEntries(Object.entries(bars).map(([key,selector])=>[key,measure(selector)])):null,
     season:document.querySelector('[data-club-fixture-control=season] [data-club-fixture-value]')?.textContent.trim(),
     selectorSkeleton:!!document.querySelector('[data-club-fixture-control=season] .club-fp-bar')};
   })()`);
-  for(const width of [320,390,768,1440]){
+  for(const width of [320,375,390,430,768,1440]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    hold=true;await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=1'});
    await wait("document.querySelectorAll('.club-fixture-loading').length===6");
@@ -899,8 +1295,23 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    assert.equal(loadedLayout.loading,false);
    assert.equal(loadedLayout.selectorSkeleton,false,'no season bar after hydration at '+width);
    assert.ok(Math.abs(pendingLayout.row.y-loadedLayout.row.y)<=2,'first row stays anchored at '+width);
+   if(width<=620){
+    assert.ok(pendingLayout.opponent.height>=44&&loadedLayout.opponent.height>=44,'reserve three lines and a 44px opponent touch target at '+width);
+    assert.ok(Math.abs(pendingLayout.opponent.height-loadedLayout.opponent.height)<=2,'opponent height stays fixed across hydration at '+width+': '+pendingLayout.opponent.height+' / '+loadedLayout.opponent.height);
+    const metaReserved=width<=360?36:24;
+    assert.ok(pendingLayout.meta.height>=metaReserved&&loadedLayout.meta.height>=metaReserved,'reserve the appropriate two or three metadata lines at '+width);
+    assert.ok(Math.abs(pendingLayout.meta.height-loadedLayout.meta.height)<=2,'fixture metadata height stays fixed across hydration at '+width+': '+pendingLayout.meta.height+' / '+loadedLayout.meta.height);
+    const maximumHeight=width<=360?95:85;
+    assert.ok(pendingLayout.row.height<=maximumHeight&&loadedLayout.row.height<=maximumHeight,'compact fixture first row stays within '+maximumHeight+'px at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
+    assert.ok(Math.abs(pendingLayout.row.height-loadedLayout.row.height)<=2,'row footprint remains fixed through hydration at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
+    const rowHeights=await run("[...document.querySelectorAll('[data-club-fixture-id]')].map(n=>n.getBoundingClientRect().height).sort((a,b)=>a-b)");
+    assert.equal(rowHeights.length,30,'all club fixture rows render at '+width);
+    assert.ok(rowHeights[14]<=(width<=360?95:85),'median of 30 club fixture rows stays compact at '+width+': '+rowHeights[14]);
+    assert.ok(rowHeights.at(-1)<=130,'even the longest translated fixture row remains usable at '+width+': '+rowHeights.at(-1));
+   }
    for(const [part,beforeSlot] of Object.entries(pendingLayout.parts)){
     const afterSlot=loadedLayout.parts[part];
+    // Preserve the strict first-paint geometry check, even at 320px.
     assert.ok(Math.abs(beforeSlot.cy-afterSlot.cy)<=8,
      part+' vertical center matches loaded text at '+width+': '+beforeSlot.cy+' / '+afterSlot.cy);
     // Content can introduce a vertical scrollbar; tolerate its grid width change.
@@ -915,31 +1326,45 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
       'league text starts at reserved slot at '+width);
    }
   }
-  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/390/768/1440; no Season selector skeleton.');
+  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/375/390/430/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
+  assert.equal(await run("getComputedStyle(document.querySelector('[data-club-fixtures-next]')).opacity"),'1','enabled next-match control is not muted');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
-  await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1'],'Season 2 offers exactly 2 and 1, like Standings');
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result strong')].every(n=>n.textContent!=='—')"),true,'closed Season 1 has verified results');
-  await run('history.back()');await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'historical season must disable next-match action');
+  const mutedNext=await run("(()=>{const n=document.querySelector('[data-club-fixtures-next]'),s=getComputedStyle(n);return {opacity:s.opacity,cursor:s.cursor,pointerEvents:s.pointerEvents,background:s.backgroundColor,border:s.borderColor}})()");
+  assert.equal(mutedNext.opacity,'0.45','historical next-match uses the Matchday muted opacity');
+  assert.equal(mutedNext.cursor,'default','disabled next-match does not show a click cursor');
+  assert.equal(mutedNext.pointerEvents,'none','disabled next-match has no hover/touch interaction');
+  assert.ok(mutedNext.background&&mutedNext.border,'disabled control retains its button geometry');
+  assert.equal(await run("document.querySelector('.club-fixture-row.is-next')"),null,'historical season must not highlight a next match');
+  await run("document.querySelector('[data-club-fixtures-next]').click()");
+  assert.equal(await run("document.querySelector('[data-club-fixture-next]')"),null,'disabled action must not select any match');
+  await run('history.back()');await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run('history.forward()');await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run("document.querySelector('.club-tabs a[href$=\"/history\"]').click()");await wait("document.querySelector('.club-history [data-club-history-toggle]')");
   await run("document.querySelector('.club-history [data-club-history-toggle]').click()");
   assert.equal(await run("document.querySelector('.club-history [data-club-history-toggle]').getAttribute('aria-expanded')"),'true','public History stays interactive after Fixtures');
-  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run("document.querySelector('.club-tabs a[href*=\"/fixtures\"]').click()");await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   failCompetition=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unavailable'");assert.equal(await run("document.querySelectorAll('[data-club-fixture-id]').length"),0);
-  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
+  failCompetition=false;failHistory=true;await cmd('Page.reload');await wait("document.querySelectorAll('[data-club-fixture-id]').length===30");
+  assert.equal(competitionReads,0,'History outage cannot trigger competition fan-out');
+  failHistory=false;failFixtures=true;await cmd('Page.reload');await wait("document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='error'");
   assert.equal(await run("document.querySelector('.club-fixtures-notice')"),null,'errors add no notice');
-  failHistory=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
-  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
+  failFixtures=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
+  await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search===''&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'world Season 0 still offers only viewed Season 1');
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'Season 0 disables next match');
   assert.deepEqual(await run('window.__errors'),[]);
   useDev=true;
   const devSetup=season=>"sessionStorage.setItem('football-architect:debug-enabled','on');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','"+season+"');sessionStorage.setItem('football-architect:standings-dev-matchdays','4');sessionStorage.setItem('football-architect:calendar-dev-world-day','16');";
@@ -958,7 +1383,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:devBootstrap.identifier});
   devBootstrap=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:devSetup(2)});
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
-  await wait("location.search==='?season=2'&&document.querySelectorAll('[data-club-fixture-id]').length===30&&window.faWorldState.get().source==='dev'");
+  await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30&&window.faWorldState.get().source==='dev'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['2','1'],'DEV shares positive season policy');
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length>=30");
@@ -966,7 +1391,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await cmd('Page.removeScriptToEvaluateOnNewDocument',{identifier:devBootstrap.identifier});
   devBootstrap=await cmd('Page.addScriptToEvaluateOnNewDocument',{source:devSetup(0)});
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=2'});
-  await wait("location.search==='?season=1'&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'&&window.faWorldState.get().current?.season===0");
+  await wait("location.search===''&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'&&window.faWorldState.get().current?.season===0");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'DEV Reset to 0 clamps viewed season to 1');
   await run("window.faDebugEnabled=false;sessionStorage.setItem('football-architect:debug-enabled','off');window.faWorldState.setSource({kind:'authoritative'});window.dispatchEvent(new Event('fa:source-change'))");
   await wait("document.querySelectorAll('[data-club-fixture-id]').length===0&&document.querySelector('.club-fixtures')?.dataset.clubFixturesSource==='authoritative'");

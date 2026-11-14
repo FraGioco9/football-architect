@@ -53,6 +53,15 @@
  const confirmCancel=root.querySelector('[data-admin-preview-cancel]');
  const receipt=root.querySelector('[data-admin-players-commit-status]');
  let draft=null,view='overview',group='technical',sort='',order='',page=0,busy=false,saved=false,status='loading';
+ // Restore the preview table presentation without putting draft content in URLs.
+ const restored=new URLSearchParams(location.hash.slice(1));
+ if(['overview','attributes'].includes(restored.get('view')))view=restored.get('view');
+ if(['technical','mental','physical','goalkeeping'].includes(restored.get('group')))group=restored.get('group');
+ if(/^[1-9][0-9]{0,3}$/.test(restored.get('page')||''))page=Number(restored.get('page'))-1;
+ if(['name','nationality','positions','age','height','foot',...groups[group]].includes(restored.get('sort')))sort=restored.get('sort');
+ if(sort&&['asc','desc'].includes(restored.get('order')))order=restored.get('order');
+ const restoreScroll=/^(0|[1-9][0-9]{0,5})$/.test(restored.get('scroll')||'')?Number(restored.get('scroll')):0;
+
  const buttonLabels={
   en:{generate:'Generate',regenerate:'Regenerate',back:'Back',heading:'Confirm generation',cancel:'Cancel',confirm:'Confirm'},
   it:{generate:'Genera',regenerate:'Rigenera',back:'Indietro',heading:'Conferma generazione',cancel:'Annulla',confirm:'Conferma'},
@@ -61,7 +70,7 @@
   fr:{generate:'Générer',regenerate:'Régénérer',back:'Retour',heading:'Confirmer la génération',cancel:'Annuler',confirm:'Confirmer'}
  };
  const pageSize=50,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
- function columns(){return view==='overview'?['nationality','name','age','positions','height','foot']:['nationality','name','positions',...groups[group]];}
+ function columns(){return view==='overview'?['nationality','name','positions','age','height','foot']:['nationality','name','positions',...groups[group]];}
  function colLabel(key){
   const t=locale();
   if(key==='nationality')return t.nationality;
@@ -119,7 +128,7 @@
   if(flag){
    const image=document.createElement('img');image.className='app-players-nationality-flag';
    image.dataset.playerCountry=code;image.alt=window.faPlayersNationality.name(code);image.tabIndex=0;
-   image.width=24;image.height=18;image.src='/assets/flags/'+flag+'.svg';td.append(image);
+   image.width=20;image.height=15;image.src='/assets/flags/'+flag+'.svg';td.append(image);
   }else td.textContent=code||'—';
   row.append(td);
  }
@@ -139,6 +148,8 @@
  }
  function render(){
   const t=locale(),c=tr(),actions=buttonLabels[language()]||buttonLabels.en;
+  root.querySelector('#admin-title').textContent=c.title;
+  document.title=c.title+' — Football Architect';
   document.documentElement.dataset.playersView=view;document.documentElement.dataset.playersGroup=group;
   root.querySelector('[data-admin-preview-confirm-heading]').textContent=actions.heading;
   root.querySelector('[data-admin-preview-confirm-label]').textContent=c.confirm;
@@ -153,13 +164,21 @@
   else{
    const ordered=sorted(),total=Math.max(1,Math.ceil(ordered.length/pageSize));page=Math.min(page,total-1);
    const frag=document.createDocumentFragment();
-   for(const {player} of ordered.slice(page*pageSize,(page+1)*pageSize)){
+   for(const {player,index} of ordered.slice(page*pageSize,(page+1)*pageSize)){
     const row=document.createElement('tr');flagCell(row,player);
-    addCell(row,player.display_name||'—');
+    const nameCell=document.createElement('td');
+    const link=document.createElement('a');link.className='app-player-name-link';
+    const target=new URL('/admin/players/preview/player',location.origin);
+    target.searchParams.set('draftId',id);target.searchParams.set('index',String(index+1));target.searchParams.set('view','overview');
+    target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
+    target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
+    if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}
+    link.href=target.pathname+target.search;link.textContent=player.display_name||'—';
+    nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     if(view==='overview'){
-     addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
      addCell(row,positions);
+     addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
      addCell(row,Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—');
      addCell(row,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
     }else{
@@ -203,21 +222,22 @@
    // Cached UI permissions never replace backend authorization below.
    if(!['admin.access','admin.world.read','admin.world.write'].every(x=>p.includes(x)))throw new Error('permission_denied');
    const info=await authorizedPost('/api/admin/players/draft',{draftId:id});
-   if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options)
+   if(info?.draftId!==id||!Array.isArray(info.candidates)||info.candidates.length!==info.summary?.count||!info.options||!['preview','committed'].includes(info.status))
     throw new Error('invalid_draft');
-   draft=info;status='ready';feedback.textContent='';
+   draft=info;saved=info.status==='committed';
+   if(saved)receipt.textContent=info.summary.count+' '+tr().saved+' · '+info.draftId;
+   status='ready';feedback.textContent='';
   }catch(e){status=e.message==='permission_denied'?'denied':'error';feedback.textContent=tr().error;}
   render();
+  if(draft&&restoreScroll)requestAnimationFrame(()=>{scroll.scrollLeft=restoreScroll;});
  }
  async function regenerate(){
   if(!draft||busy)return;
   busy=true;feedback.textContent=tr().regenerating;render();
   try{
    const options={...draft.options};
-   // A saved cohort always starts a new deterministic batch; otherwise retain
-   // manual seeds and let server-owned auto seeds regenerate freely.
-   if(saved)options.seed='fa-next-'+draft.draftId;
-   else if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
+   // Auto is always server-selected; an explicit manual seed remains reproducible.
+   if(/^fa-auto-[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(options.seed||''))delete options.seed;
    const nextDraft=await authorizedPost('/api/admin/players/preview',{options});
    if(!nextDraft||!nextDraft.draftId)throw new Error('invalid_preview');
    location.replace('/admin/players/preview?draftId='+encodeURIComponent(nextDraft.draftId));
@@ -230,7 +250,6 @@
    const answer=await authorizedPost('/api/admin/players/commit',{draftId:draft.draftId,confirmation:'GENERATE PLAYERS'});
    if(answer.batchId!==draft.draftId||answer.count!==draft.summary.count)throw new Error('invalid_commit_result');
    saved=true;receipt.textContent=answer.count+' '+tr().saved+' · '+answer.batchId;
-   back.href='/admin/players?nextSeed='+encodeURIComponent('fa-next-'+answer.batchId);
    feedback.textContent='';
   }catch(e){feedback.textContent=(e.message==='stale_players_preview'||e.message==='players_preview_expired'?tr().expired:tr().error+': '+e.message);}
   finally{busy=false;if(confirmationDialog.open)confirmationDialog.close();confirmation.value='';render();}
@@ -264,6 +283,11 @@
   const destination=new URL(back.href,location.href);
   if(destination.origin!==location.origin||destination.pathname!=='/admin/players')return;
   event.preventDefault();
+  // Prefer the generator history entry when following the normal workflow.
+  let fromGenerator=false;
+  try{const ref=new URL(document.referrer);fromGenerator=ref.origin===location.origin&&ref.pathname==='/admin/players';}catch{}
+  if(fromGenerator&&history.length>1){history.back();return;}
+  // Direct/replaced previews: use an ephemeral history-state handoff, no storage.
   history.replaceState({faAdminGeneratorOptions:draft.options},'',destination.pathname+destination.search+destination.hash);
   location.reload();
  });

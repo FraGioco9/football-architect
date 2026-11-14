@@ -10,8 +10,20 @@ assert.match(base||"",/^[0-9a-f]{40}$/);
 const files=["assets/landing.css","assets/app.css","assets/account.css","assets/clubs-directory.css","assets/club-page.css","assets/competition-awards.css","assets/admin-settings.css"];
 const changes=new Map();
 for(const file of files){
- const older=execFileSync("git",["show",base+":"+file],{encoding:"utf8",maxBuffer:3e6});
+ let older=execFileSync("git",["show",base+":"+file],{encoding:"utf8",maxBuffer:3e6});
  const newer=readFileSync(file,"utf8");
+ // Normalize only the approved #532 sitewide 25x20 -> 20x16 flag change.
+ // The rest of the PR-base CSS, geometry and focus comparisons remain strict.
+ if(file==="assets/app.css"){
+  const oldRoot=":root{--fa-flag-width:25px;--fa-flag-height:20px;";
+  const newRoot=":root{--fa-flag-width:20px;--fa-flag-height:16px;";
+  const oldFrame=".app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}";
+  const newFrame=".app-world-flag-frame{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4}";
+  if(newer.includes(newRoot)&&newer.includes(newFrame)&&(older.includes(oldRoot)||older.includes(oldFrame))){
+   assert.ok(older.includes(oldRoot)&&older.includes(oldFrame),"FE-01 baseline flag rules must match approved old dimensions");
+   older=older.replace(oldRoot,newRoot).replace(oldFrame,newFrame);
+  }
+ }
  if(older!==newer)changes.set("/"+file,{before:older,after:newer});
 }
 assert.ok(changes.size,"FE-01 CSS source was not changed");
@@ -135,7 +147,33 @@ try{
    }
    return copy;
   };
-  if(JSON.stringify(comparable(a,false))!==JSON.stringify(comparable(b,true)))
+  // UI-VIEWS-01 (#559) intentionally narrows only main view controls. Normalize
+  // their horizontal geometry *only in the PR that introduces the scoped CSS*,
+  // rather than excluding focus, typography, colors, height or other styles.
+  // Subsequent PRs must continue comparing all view-control properties.
+  const viewCss=changes.get("/assets/app.css");
+  const viewIntro=viewCss?.after.includes("/* UI-VIEWS-01 (#559):")&&!viewCss.before.includes("/* UI-VIEWS-01 (#559):");
+  const normalize=(sample,updated)=>{
+   const result=comparable(sample,updated);
+   if(viewIntro&&route.path.startsWith("/competitions/")&&profile.width>620){
+    for(const state of ["regular","focused"]){
+     for(const tab of result[state]?.[".app-competition-tab"]||[]){
+      tab.css.width="<intentional view width>";
+      tab.css["min-width"]="<intentional view width>";
+      tab.rect[0]=0;tab.rect[2]=0;
+     }
+    }
+   }
+   return result;
+  };
+  if(viewIntro&&route.path.startsWith("/competitions/")&&profile.width>620){
+   for(const tab of b.regular[".app-competition-tab"]||[]){
+    assert.equal(tab.css.width,"100px","UI-VIEWS-01 desktop view widths");
+    assert.equal(tab.css["min-width"],"100px","UI-VIEWS-01 desktop tab minimum widths");
+    assert.ok(tab.hitHeight>=39.9,"UI-VIEWS-01 desktop view touch height remains 40px");
+   }
+  }
+  if(JSON.stringify(normalize(a,false))!==JSON.stringify(normalize(b,true)))
    findings.push({route:route.path,profile,before:{regular:a.regular,focused:a.focused,overflow:a.overflow},after:{regular:b.regular,focused:b.focused,overflow:b.overflow}});
   if(a.screenshot&&b.screenshot){
    const left=PNG.sync.read(a.screenshot),right=PNG.sync.read(b.screenshot);

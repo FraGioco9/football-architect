@@ -4,8 +4,8 @@ body.app-body{--app-page-pad-top:8px}
 /* QA-16: stable first-paint Overview panels with anonymous skeleton values. */
 .club-first-paint-header .club-crest{visibility:visible}
 /* Anonymous header crest shares the circular standings loading primitive. */
-.club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
-.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:fill;flex:none}
+.club-first-paint-flag{display:inline-flex;width:var(--fa-flag-width);height:var(--fa-flag-height);min-width:var(--fa-flag-width);align-items:center;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:var(--fa-flag-width);height:var(--fa-flag-height);object-fit:contain;flex:none}
 .club-first-paint-header h1{min-height:1.15em}
 .club-first-paint-header .club-location{min-height:1.25em}
 .club-first-paint-panel{min-height:160px;visibility:visible}
@@ -82,51 +82,8 @@ body.app-body{--app-page-pad-top:8px}
 /* Country flag SVGs already contain the canonical rounded mask. Avoid a second CSS clip. */
 .club-country-flag{border-radius:0;clip-path:none}
 
-/* CLUB-240: compact identity and a baseline-aligned competition summary. */
-.club-overview-layout>.club-competition{grid-column:1/-1;width:100%;box-sizing:border-box}
-.club-competition-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);align-items:center;gap:24px;min-height:64px;margin-top:14px}
-.club-competition-identity{display:flex;align-items:center;gap:16px;min-width:0}
-.club-competition-logo{display:block;flex:0 0 64px;width:64px;height:64px;object-fit:contain}
-.club-competition-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:5px}
-.club-competition-label,.club-competition-tier{color:var(--muted);font-size:.85rem}
-.club-competition-name{font-size:18px;font-weight:700;overflow-wrap:anywhere}
-.club-competition-name .app-link{display:inline;padding:0;min-height:0;color:inherit;font:inherit;text-decoration:none}
-.club-competition-name .app-link:hover,.club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
-.club-competition-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-rows:auto 72px;align-content:center;align-self:stretch;column-gap:32px;row-gap:5px;min-width:0;width:min(100%,740px);box-sizing:border-box;justify-self:end;border-left:1px solid var(--line);padding-left:32px}
-.club-competition-metrics{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0;margin:0;overflow-wrap:anywhere}
-.club-competition-metrics>div{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0}
-.club-competition-metrics dt{grid-row:1}
-.club-competition-metrics dt,.club-competition-next small{font-size:.8rem;color:var(--muted)}
-.club-competition-metrics dd{grid-row:2;align-self:first baseline;margin:0;font-size:20px;line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums}
-.club-competition-next>.club-competition-label{grid-row:1;font-size:.8rem}
-.club-competition-next{display:grid;grid-template-rows:subgrid;grid-row:1/-1;min-width:0;height:100%;min-height:0;overflow-wrap:anywhere}
-.club-competition-next-content{display:flex;flex-direction:column;align-items:flex-start;grid-row:2;align-self:first baseline;gap:5px;min-width:0;max-height:72px;overflow:hidden;text-align:left}
-.club-competition-summary .app-link{display:inline;min-height:0;padding:0;color:inherit;text-decoration:none;text-align:left}
-.club-competition-summary .app-link:hover,.club-competition-summary .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
-.club-competition-next-content>a.app-link,.club-competition-next-empty{font-size:16px;line-height:1.4}.club-competition-next-content>a.app-link{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.club-competition-next-empty{color:var(--muted)}
-.club-competition-empty{margin:12px 0 0;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
-@media(max-width:760px){.club-competition-layout{grid-template-columns:minmax(0,1fr);gap:12px}.club-competition-name{font-size:16px}.club-competition-summary{width:100%;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:20px;justify-self:stretch;border-left:0;border-top:1px solid var(--line);padding:12px 0 0 8px}.club-competition-logo{width:56px;height:56px;flex-basis:56px}}
-
-/* Compact competition summary: retain division, tier, standing and fixture. */
-.club-competition-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.65fr);gap:16px;min-height:52px;margin-top:8px}
-.club-competition-logo{width:48px;height:48px;flex-basis:48px}
-.club-competition-identity{gap:12px}
-.club-competition-copy{gap:2px}
-.club-competition-name{font-size:16px}
-.club-competition-summary{grid-template-rows:auto 56px;column-gap:16px;row-gap:3px;padding-left:18px}
-.club-competition-next-content{max-height:56px;gap:3px}
-.club-competition-metrics dd{font-size:18px}
-@media(max-width:760px){.club-competition-layout{grid-template-columns:minmax(0,1fr);gap:8px}.club-competition-summary{padding:9px 0 0;grid-template-rows:auto 56px}.club-competition-logo{width:44px;height:44px;flex-basis:44px}}
-
-/* Final competition-row alignment and proportional country flag. */
-.club-country-flag{width:25px;height:20px;aspect-ratio:5/4;object-fit:contain}
-.club-competition-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.65fr);align-items:center}
-.club-competition-identity{align-self:center}
-.club-competition-logo{width:60px;height:60px;flex-basis:60px;align-self:center}
-.club-competition-summary{align-self:center;align-content:center}
-.club-competition-metrics dd,.club-competition-next-content{align-self:first baseline}
-@media(max-width:760px){.club-competition-logo{width:56px;height:56px;flex-basis:56px}.club-competition-summary{align-self:stretch}}
+/* Country flags retain the 5:4 canonical viewport. */
+.club-country-flag{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4;object-fit:contain}
 
 /* Club Identity: a single row-sizing model. Short facts share one height;
    long content (rivalries, description, wrapping values) grows naturally. */
@@ -166,105 +123,6 @@ body.app-body{--app-page-pad-top:8px}
 .club-identity .club-facts>div:has(.club-country-value) dd{display:flex;align-items:center;min-height:0}
 .club-identity .club-country-value{display:flex;align-items:center;line-height:23px;min-height:23px}
 
-/* Competition Compact: one full-width horizontal band on desktop. */
-.club-overview-layout>.club-competition{width:100%;grid-column:1/-1}
-.club-competition-layout{
- display:grid;grid-template-columns:minmax(0,1.2fr) minmax(92px,.42fr) minmax(0,1.2fr);
- gap:clamp(12px,2.5vw,32px);align-items:center;width:100%;min-height:76px;
-}
-.club-competition-identity{min-width:0;gap:14px;align-self:center}
-.club-competition-logo{width:60px;height:60px;flex:0 0 60px}
-.club-competition-copy{gap:3px}
-.club-competition-name{font-size:17px;line-height:1.3}
-.club-competition-summary{
- display:contents;border:0;padding:0;width:auto;
-}
-.club-competition-metrics{display:block;min-width:0;margin:0;text-align:center}
-.club-competition-metrics>div{display:flex;flex-direction:column;align-items:center;gap:5px}
-.club-competition-metrics dt{font-size:12px;line-height:1.3}
-.club-competition-metrics dd{font-size:24px;line-height:1.15;align-self:auto}
-.club-competition-next{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:5px;min-width:0;height:auto}
-.club-competition-next>.club-competition-label{font-size:12px;line-height:1.3}
-.club-competition-next-content{display:flex;flex-direction:column;align-items:flex-start;gap:4px;max-height:none;overflow:visible}
-.club-competition-next-content>a.app-link{font-size:15px;line-height:1.35}
-.club-competition-next-content small{line-height:1.3}
-@media(max-width:760px){
- .club-competition-layout{grid-template-columns:minmax(0,1.15fr) minmax(64px,.45fr) minmax(0,1fr);gap:10px;min-height:64px}
- .club-competition-logo{width:44px;height:44px;flex-basis:44px}
- .club-competition-identity{gap:8px}
- .club-competition-name{font-size:14px}
- .club-competition-tier{font-size:11px}
- .club-competition-metrics dd{font-size:19px}
- .club-competition-next-content>a.app-link{font-size:13px}
-}
-@media(max-width:480px){
- .club-competition-layout{grid-template-columns:minmax(0,1fr) auto;gap:10px}
- .club-competition-next{grid-column:1/-1;border-top:1px solid var(--line);padding-top:9px}
- .club-competition-metrics{justify-self:end}
-}
-
-/* Keep the league name and tier left-aligned beside the division crest. */
-.club-competition-identity{justify-content:flex-start;text-align:left}
-.club-competition-copy{align-items:flex-start;text-align:left}
-.club-competition-name,.club-competition-tier{text-align:left}
-
-/* Explicitly place the three competition blocks left-to-right across the full row. */
-.club-competition-layout{
- grid-template-columns:minmax(0,1.35fr) minmax(95px,.55fr) minmax(0,1.15fr);
- justify-content:stretch;
-}
-.club-competition-identity{grid-column:1;grid-row:1;justify-self:start;width:100%}
-.club-competition-metrics{grid-column:2;grid-row:1;justify-self:center}
-.club-competition-next{grid-column:3;grid-row:1;justify-self:start;width:100%}
-@media(max-width:760px){
- .club-competition-layout{grid-template-columns:minmax(0,1.2fr) minmax(70px,.5fr) minmax(0,1fr)}
-}
-@media(max-width:480px){
- .club-competition-layout{grid-template-columns:minmax(0,1fr) auto}
- .club-competition-identity{grid-column:1;grid-row:1}
- .club-competition-metrics{grid-column:2;grid-row:1;justify-self:end}
- .club-competition-next{grid-column:1/-1;grid-row:2}
-}
-
-/* Compact Competition band: trim panel chrome and reserve only the fixture text slot. */
-.club-overview-layout>.club-competition{padding:12px 18px}
-.club-competition>h2{margin-bottom:6px}
-.club-competition-layout{margin-top:0;min-height:0}
-.club-competition-next{gap:4px}
-.club-competition-next-content{min-height:54px;gap:3px}
-.club-competition-next-content>a.app-link{font-size:14px;line-height:1.25}
-.club-competition-next-content small{font-size:12px;line-height:1.25}
-@media(max-width:760px){
- .club-overview-layout>.club-competition{padding:12px 16px}
- .club-competition-next-content>a.app-link{font-size:13px}
-}
-@media(max-width:480px){
- .club-competition-layout{row-gap:8px}
- .club-competition-next{padding-top:6px}
-}
-
-/* Empty fixtures use the same compact typography as match links. */
-.club-competition-next-empty{font-size:14px;line-height:1.25}
-@media(max-width:760px){.club-competition-next-empty{font-size:13px}}
-
-/* Shared label/value rows keep Status and Next Match aligned at every width. */
-.club-competition-layout{grid-template-rows:auto minmax(54px,auto);row-gap:4px}
-.club-competition-identity{grid-row:1/3}
-.club-competition-metrics,.club-competition-next{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;grid-template-rows:subgrid;grid-row:1/3;row-gap:4px;align-self:stretch;align-content:normal}
-.club-competition-metrics>div{display:contents}
-.club-competition-metrics dt,.club-competition-next>.club-competition-label{grid-row:1;align-self:start}
-.club-competition-metrics dd,.club-competition-next-content{grid-row:2;align-self:start}
-.club-competition-next-content>a.app-link{display:inline-block;width:fit-content;max-width:100%;-webkit-line-clamp:unset;text-decoration:none}
-.club-competition-next-content>a.app-link:is(:hover,:focus-visible){text-decoration:none}
-.club-competition-match-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-decoration:none;text-underline-offset:1px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
-.club-competition-match-name:hover,.club-competition-next-content>a.app-link:focus-visible .club-competition-match-name{text-decoration-line:underline}
-@media(max-width:480px){
- .club-competition-layout{grid-template-columns:minmax(60px,.6fr) minmax(0,1.4fr);grid-template-rows:auto auto minmax(54px,auto)}
- .club-competition-identity{grid-column:1/-1;grid-row:1;margin-bottom:4px}
- .club-competition-metrics{grid-column:1;grid-row:2/4;justify-self:start;text-align:left}
- .club-competition-next{grid-column:2;grid-row:2/4;border:0;padding:0}
-}
-
 /* QA-16: visible reserved-value skeletons; real identity and controls do not flash. */
 .club-fp-bar{display:block;inline-size:var(--club-fp-width,75%);max-inline-size:100%;block-size:12px;border-radius:5px;background:color-mix(in srgb,var(--muted) 15%,var(--surface));animation:club-fp-pulse 1.5s ease-in-out infinite alternate}
 .club-first-paint-panel .club-fp-bar+.club-fp-bar{margin-top:14px}
@@ -280,8 +138,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition-entry .club-competition-name .app-link:hover,.club-competition-entry .club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:620px){.club-competition-cup-mark{width:50px;height:50px;flex-basis:50px}}
 
-/* Country flag parity: header stays 25×20 at first paint and after hydration. */
-.club-header .club-country-flag{display:block;width:25px!important;height:20px!important;min-width:25px;max-width:25px;min-height:20px;max-height:20px;aspect-ratio:5/4;flex:none}
+/* Country flag parity: header stays at shared 20×16 from first paint through hydration. */
+.club-header .club-country-flag{display:block;width:var(--fa-flag-width)!important;height:var(--fa-flag-height)!important;min-width:var(--fa-flag-width);max-width:var(--fa-flag-width);min-height:var(--fa-flag-height);max-height:var(--fa-flag-height);aspect-ratio:5/4;flex:none}
 
 
 /* QA-16 V01: skeleton bars hint at text, never fill entire long rows. */
@@ -292,112 +150,201 @@ body.app-body{--app-page-pad-top:8px}
 .club-first-paint-panel .club-fp-competition .club-fp-bar{max-inline-size:132px}
 .club-competition .club-fp-bar{max-inline-size:132px}
 
-/* QA-16 V04: flat, calm competition rows; one row per verified participation.
-   The anonymous first-paint row uses this exact same structure and geometry.
-   Center the crest/name in each row; keep Status and Next match top-aligned
-   within their shared summary so labels and the fixture's first line stay
-   fixed from first paint through hydration, even for longer fixture names. Debug ON/OFF share this same geometry.
-   A named container keeps the summary on the right whenever its panel fits. */
-.club-overview-layout>.club-competition{container:club-competition-panel / inline-size}
-.club-competition-list{display:flex;flex-direction:column;gap:0;margin-top:8px}
+/* Club Overview / Competitions: three columns and shared label/value rows.
+   The identity is vertically centered against the *visible* Status/Next match
+   text, not the empty lower area of their old fixed-height value containers.
+   The summary wrapper is layout-transparent. First paint uses these tracks. */
+/* Size the panel to its actual rows. The generic first-paint min-height of
+   160px otherwise leaves an empty strip below a single membership. */
+.club-overview-layout>.club-competition{
+ grid-column:1/-1;box-sizing:border-box;width:100%;min-height:0;
+ padding:12px 18px;container:club-competition-panel / inline-size;
+}
+.club-competition>h2{margin-bottom:6px}
+.club-competition-list{display:flex;flex-direction:column;margin-top:8px;gap:0}
 .club-competition-list .club-competition-entry{
- display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,580px);
- grid-template-rows:auto;gap:clamp(16px,2.4vw,32px);min-height:68px;
- align-items:center;padding:0;margin:0;border:0;
+ display:grid;grid-template-columns:minmax(180px,1fr) minmax(205px,220px) minmax(0,340px);
+ /* One shared label/value grid for all three visible blocks. The 80px row
+    height is outside the tracks so the whole content group can be centered. */
+ grid-template-rows:16px minmax(40px,auto);row-gap:4px;align-content:center;
+ column-gap:clamp(12px,1.8vw,24px);align-items:stretch;min-height:80px;
+ width:100%;padding:0;margin:0;border:0;
 }
 .club-competition-list .club-competition-entry+.club-competition-entry{
- border-top:1px solid var(--line);margin:0;
+ border-top:1px solid var(--line);margin:0;padding:0;
 }
 .club-competition-list .club-competition-identity{
- grid-column:1;grid-row:1;align-self:center;display:flex;align-items:center;
- gap:12px;min-width:0;min-height:80px;
+ grid-column:1;grid-row:1/3;display:flex;align-items:center;
+ align-self:center;min-height:0;gap:12px;min-width:0;width:100%;
+ text-align:left;
 }
-.club-competition-list .club-competition-logo{
+.club-competition-list .club-competition-logo,
+.club-competition-list .club-competition-cup-mark{
  width:60px;height:60px;flex:0 0 60px;align-self:center;
 }
- .club-competition-list .club-competition-cup-mark{
- width:60px;height:60px;flex:0 0 60px;border-radius:12px;
- background:var(--surface-raised);color:var(--muted);
-}
 .club-competition-list .club-competition-cup-mark svg{width:29px;height:29px}
-.club-competition-list .club-competition-name{font-size:17px;font-weight:700;line-height:1.3;overflow-wrap:normal}
-.club-competition-list .club-competition-tier{font-size:.85rem;line-height:1.35}
-.club-competition-list .club-competition-summary{
- grid-column:2;grid-row:1;display:grid;
- grid-template-columns:minmax(205px,220px) minmax(0,1fr);
- grid-template-rows:auto;align-items:stretch;gap:clamp(12px,1.8vw,24px);
- width:100%;max-width:580px;margin:0;padding:0;
- border:0;justify-self:end;align-self:stretch;min-height:80px;
+.club-competition-list .club-competition-copy{
+ display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;
 }
-.club-competition-list .club-competition-metrics,
-.club-competition-list .club-competition-metrics>div,
+.club-competition-list .club-competition-name{
+ font-size:17px;font-weight:700;line-height:1.3;overflow-wrap:normal;text-align:left;
+}
+.club-competition-list .club-competition-tier{
+ color:var(--muted);font-size:.85rem;line-height:1.35;text-align:left;
+}
+.club-competition-list .club-competition-name .app-link{
+ display:inline;min-height:0;padding:0;color:inherit;font:inherit;text-decoration:none;
+ white-space:normal;
+}
+.club-competition-list .club-competition-name .app-link:is(:hover,:focus-visible){
+ text-decoration:underline;text-underline-offset:3px;
+}
+.club-competition-list .club-competition-summary{
+ /* Layout-only div, no separate sizing context for Status and Next match. */
+ display:contents;
+}
+.club-competition-list .club-competition-metrics{
+ grid-column:2;grid-row:1/3;display:grid;grid-template-rows:subgrid;
+ min-width:0;width:100%;margin:0;padding:0;border:0;
+}
+.club-competition-list .club-competition-metrics>div{
+ display:grid;grid-row:1/3;grid-template-rows:subgrid;
+ min-width:0;width:100%;margin:0;padding:0;
+}
 .club-competition-list .club-competition-next{
- display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
- align-self:stretch;grid-column:auto;grid-row:auto;gap:4px;
- width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:0;border:0;
+ grid-column:3;grid-row:1/3;display:grid;grid-template-rows:subgrid;
+ min-width:0;width:100%;margin:0;padding:0;border:0;
+ text-align:left;
 }
 .club-competition-list .club-competition-metrics dt,
 .club-competition-list .club-competition-next>.club-competition-label{
- font-size:12px;line-height:1.3;grid-row:auto;
+ grid-column:1;grid-row:1;align-self:start;min-height:16px;
+ margin:0;color:var(--muted);font-size:12px;line-height:1.3;
 }
+.club-competition-list .club-competition-metrics dt{text-align:center}
 .club-competition-list .club-competition-metrics dd{
- grid-row:auto;margin:0;font-size:24px;font-weight:700;line-height:1.15;
- white-space:normal;overflow-wrap:anywhere;min-height:1.15em;align-self:flex-start;
+ grid-column:1;grid-row:2;justify-self:stretch;align-self:center;
+ margin:0;min-width:0;min-height:1.15em;
+ font-size:24px;font-weight:700;line-height:1.15;
+ font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere;
+ text-align:center;
 }
 .club-competition-list .club-competition-next-content{
- display:flex;flex-direction:column;align-items:flex-start;
- grid-row:auto;gap:3px;max-height:none;min-height:59px;overflow:visible;
- align-self:flex-start;justify-content:flex-start;font-size:14px;line-height:1.35;
+ grid-column:1;grid-row:2;align-self:center;display:flex;flex-direction:column;
+ align-items:flex-start;justify-content:flex-start;gap:3px;min-height:0;
+ min-width:0;max-height:none;overflow:visible;text-align:left;
 }
-.club-competition-list .club-competition-next-content>a.app-link,
+.club-competition-list .club-competition-summary .app-link{
+ min-height:0;padding:0;color:inherit;text-decoration:none;text-align:left;
+}
+.club-competition-list .club-competition-next-content>a.app-link{
+ display:block;width:100%;max-width:100%;font-size:14px;line-height:1.25;
+}
+.club-competition-list .club-competition-match-name{
+ display:block;white-space:normal;overflow:visible;overflow-wrap:anywhere;
+ -webkit-line-clamp:unset;text-decoration:none;text-underline-offset:1px;
+ text-decoration-thickness:1px;text-decoration-skip-ink:auto;
+}
+.club-competition-list .club-competition-next-content>a.app-link:is(:hover,:focus-visible){
+ text-decoration:none;
+}
+.club-competition-list .club-competition-match-name:hover,
+.club-competition-list .club-competition-next-content>a.app-link:focus-visible .club-competition-match-name{
+ text-decoration-line:underline;
+}
 .club-competition-list .club-competition-next-empty{
- font-size:14px;line-height:1.25;
+ color:var(--muted);font-size:14px;line-height:1.25;
 }
-/* Long team names wrap in full; never ellipsize the fixture identity. */
-.club-competition-list .club-competition-next-content>a.app-link{display:block;width:100%;max-width:100%}
-.club-competition-list .club-competition-match-name{display:block;white-space:normal;overflow:visible;overflow-wrap:anywhere;-webkit-line-clamp:unset}
-.club-competition-list .club-competition-metrics>div{gap:4px}
-.club-competition-list .club-competition-next small{font-size:12px;line-height:1.25}
+.club-competition-list .club-competition-next small{
+ color:var(--muted);font-size:12px;line-height:1.25;
+}
+.club-competition-empty{
+ margin:12px 0 0;color:var(--muted);line-height:1.5;overflow-wrap:anywhere;
+}
 @container club-competition-panel (max-width:800px){
  .club-competition-list .club-competition-entry{
-  grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;gap:10px;
+  grid-template-columns:minmax(261px,276px) minmax(0,1fr);
+  grid-template-rows:auto 16px minmax(40px,auto);
+  row-gap:4px;column-gap:14px;
  }
- .club-competition-list .club-competition-identity{grid-column:1;grid-row:1;min-height:64px}
- .club-competition-list .club-competition-summary{
-  grid-column:1;grid-row:2;grid-template-columns:minmax(205px,220px) minmax(0,1fr);
-  gap:14px;padding:0 0 0 56px;max-width:none;
+ .club-competition-list .club-competition-identity{
+  grid-column:1/-1;grid-row:1;min-height:64px;margin-bottom:6px;
  }
- /* The panel container controls placement only; visual scale is the same as a singleton. */
+ .club-competition-list .club-competition-metrics{
+  grid-column:1;grid-row:2/4;padding-left:56px;box-sizing:border-box;
+ }
+ .club-competition-list .club-competition-next{
+  grid-column:2;grid-row:2/4;
+ }
+ /* A wrapped fixture changes the compact row's natural height. Keep Status
+    and the fixture's first line on their stable first-paint track instead of
+    vertically recentering them when a match name wraps. */
+ .club-competition-list .club-competition-metrics dd,
+ .club-competition-list .club-competition-next-content{align-self:start}
 }
 @media(max-width:760px){
+ .club-overview-layout>.club-competition{padding:12px 16px}
  .club-competition-list .club-competition-logo,
- .club-competition-list .club-competition-cup-mark{width:44px;height:44px;flex-basis:44px}
+ .club-competition-list .club-competition-cup-mark{
+  width:44px;height:44px;flex-basis:44px;
+ }
  .club-competition-list .club-competition-cup-mark svg{width:23px;height:23px}
  .club-competition-list .club-competition-name{font-size:14px}
  .club-competition-list .club-competition-tier{font-size:11px}
  .club-competition-list .club-competition-metrics dd{font-size:19px}
  .club-competition-list .club-competition-next-content>a.app-link,
- .club-competition-list .club-competition-next-empty{font-size:13px;line-height:1.25}
+ .club-competition-list .club-competition-next-empty{
+  font-size:13px;line-height:1.25;
+ }
 }
 @container club-competition-panel (max-width:500px){
- .club-competition-list .club-competition-summary{padding-left:0;gap:10px;grid-template-columns:minmax(92px,40%) minmax(0,1fr)}
- .club-competition-list .club-competition-metrics dd{white-space:normal;overflow-wrap:anywhere}
+ .club-competition-list .club-competition-entry{
+  grid-template-columns:minmax(92px,40%) minmax(0,1fr);column-gap:10px;
+ }
+ .club-competition-list .club-competition-metrics{padding-left:0;}
 }
-/* Competition skeletons occupy the final crest, name, tier and value slots. */
+/* First paint and runtime pending skeletons retain the exact hydrated
+   name/tier text lines and status/fixture/round value tracks. Only the painted
+   placeholder bar is shorter than the line box it occupies. */
 .club-fp-competition .club-fp-competition-logo{
  box-sizing:border-box;background:color-mix(in srgb,var(--muted) 15%,var(--surface));
  border-radius:9px;animation:club-fp-pulse 1.5s ease-in-out infinite alternate;
 }
+.club-fp-competition .club-competition-name,
+.club-fp-competition .club-competition-tier{display:flex;align-items:center}
+.club-fp-competition .club-competition-name{min-height:1.3em}
+.club-fp-competition .club-competition-tier{min-height:1.35em}
 .club-fp-competition .club-fp-competition-name{inline-size:124px;block-size:14px}
 .club-fp-competition .club-fp-competition-tier{inline-size:68px;block-size:10px}
-.club-fp-competition .club-fp-competition-position{inline-size:55px}
-.club-fp-competition .club-fp-competition-fixture{inline-size:132px}
-.club-fp-competition .club-fp-competition-round{inline-size:64px;block-size:10px}
-/* First paint and hydrated rows reserve the same two-line fixture slot.
-   Start-align their labels and values so Next match does not move on hydration. */
-.club-fp-competition .club-competition-next-content{min-block-size:59px;justify-content:flex-start}
-.club-first-paint-panel .club-fp-competition .club-competition-next-content>.club-fp-bar+.club-fp-bar{margin-top:3px}
-@media(prefers-reduced-motion:reduce){.club-fp-competition .club-fp-competition-logo{animation:none}}
+.club-fp-competition .club-fp-competition-position{
+ display:block;inline-size:55px;block-size:12px;
+ margin:calc((1.15em - 12px)/2) auto 0;
+}
+.club-fp-competition .club-fp-competition-fixture,
+.club-fp-competition .club-fp-competition-round{
+ display:flex;align-items:center;background:transparent;border-radius:0;
+}
+.club-fp-competition .club-fp-competition-fixture{
+ inline-size:132px;font-size:14px;line-height:1.25;block-size:1.25em;
+}
+.club-fp-competition .club-fp-competition-round{
+ inline-size:64px;font-size:12px;line-height:1.25;block-size:1.25em;
+}
+.club-fp-competition .club-fp-competition-fixture::before,
+.club-fp-competition .club-fp-competition-round::before{
+ content:"";display:block;inline-size:100%;block-size:12px;border-radius:5px;
+ background:color-mix(in srgb,var(--muted) 15%,var(--surface));
+}
+.club-fp-competition .club-fp-competition-round::before{block-size:10px}
+.club-competition .club-fp-competition .club-competition-next-content>.club-fp-bar+.club-fp-bar{
+ margin-top:0;
+}
+@media(max-width:760px){
+ .club-fp-competition .club-fp-competition-fixture{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ .club-fp-competition .club-fp-competition-logo{animation:none}
+}
 
 /* QA-16 header refinement: compact, stable title/location rhythm. */
 .club-header h1{margin-bottom:14px;line-height:1.15}
@@ -465,6 +412,126 @@ body.app-body{--app-page-pad-top:8px}
  .club-history-table thead th{font-size:.73rem}
 }
 
+/* CLUB-HISTORY-MOBILE: preserve the native table markup and all statistics,
+   but lay season/competition rows out as a four-column grid on small screens.
+   Headings remain available to assistive technology; the visible labels
+   below share the exact locale abbreviations used by the original thead. */
+@media(max-width:620px){
+ /* Position the first History row directly below the Club view tabs border,
+    on first paint and after hydration. Desktop spacing stays unchanged. */
+ .club-history{margin-top:0;min-width:0}
+ .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
+ .club-history-table{
+  --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";
+  --club-history-mobile-d:"D";--club-history-mobile-l:"L";
+  --club-history-mobile-gf:"GF";--club-history-mobile-ga:"GA";
+  --club-history-mobile-gd:"GD";--club-history-mobile-pts:"Pts";
+  --club-history-mobile-position:"Pos.";
+  display:block;width:100%;min-width:0;max-width:100%;table-layout:auto;
+ }
+ html:lang(it) .club-history-table{
+  --club-history-mobile-mp:"PG";--club-history-mobile-w:"V";
+  --club-history-mobile-d:"N";--club-history-mobile-l:"P";
+  --club-history-mobile-ga:"GS";--club-history-mobile-gd:"DR";
+  --club-history-mobile-pts:"Pt";
+ }
+ html:lang(de) .club-history-table{
+  --club-history-mobile-mp:"Sp";--club-history-mobile-w:"S";
+  --club-history-mobile-d:"U";--club-history-mobile-l:"N";
+  --club-history-mobile-gf:"T+";--club-history-mobile-ga:"T−";
+  --club-history-mobile-gd:"TD";--club-history-mobile-pts:"Pkt";
+  --club-history-mobile-position:"Pl.";
+ }
+ html:lang(es) .club-history-table{
+  --club-history-mobile-mp:"PJ";--club-history-mobile-w:"G";
+  --club-history-mobile-d:"E";--club-history-mobile-l:"P";
+  --club-history-mobile-ga:"GC";--club-history-mobile-gd:"DG";
+ }
+ html:lang(fr) .club-history-table{
+  --club-history-mobile-mp:"MJ";--club-history-mobile-w:"V";
+  --club-history-mobile-d:"N";--club-history-mobile-l:"D";
+  --club-history-mobile-gf:"BP";--club-history-mobile-ga:"BC";
+  --club-history-mobile-gd:"DB";--club-history-mobile-pts:"Pts";
+  --club-history-mobile-position:"Pl.";
+ }
+ .club-history-table colgroup{display:none}
+ .club-history-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+ .club-history-table tbody{display:block;width:100%}
+ .club-history-table tr{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;height:auto;min-height:0;padding:6px 8px 10px;
+  box-sizing:border-box;border-bottom:1px solid var(--line);
+ }
+ .club-history-table tr>th,.club-history-table tr>td{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-sizing:border-box;width:auto;height:auto;min-height:34px;padding:4px 2px;
+  border:0;white-space:normal;overflow:visible;text-overflow:clip;
+  font-size:12px;line-height:1.25;text-align:center;
+ }
+ .club-history-table .club-history-season-row>th:first-child{
+  grid-column:1/-1;align-items:flex-start;min-height:44px;
+  text-align:left;font-size:14px;
+ }
+ .club-history-table .club-history-season-row .club-history-expand{min-height:44px;align-items:center}
+ .club-history-table .club-history-season-row>td:nth-child(2),
+ .club-history-table .club-history-season-row>td:nth-child(3),
+ .club-history-table .club-history-season-row>td:nth-child(11){display:none}
+ .club-history-table .club-history-competition-row{padding-inline-start:12px}
+ .club-history-table .club-history-competition-row>td:first-child{display:none}
+ .club-history-table .club-history-competition-row>th:nth-child(2){
+  grid-column:1/-1;align-items:flex-start;justify-content:center;
+  padding-inline-start:0;min-height:38px;text-align:left;white-space:normal;
+  overflow:visible;text-overflow:clip;
+ }
+ .club-history-table .club-history-competition-value a.club-history-competition-link{
+  display:inline;max-width:100%;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:anywhere;line-height:1.35;
+ }
+ /* Pos./stage label and its value share a baseline. Long phases wrap only
+    inside the value column; they must not push the label into another line. */
+ .club-history-table .club-history-competition-row td:nth-child(3){
+  grid-column:1/-1;display:grid;grid-template-columns:max-content minmax(0,1fr);
+  align-items:baseline;justify-content:start;column-gap:6px;
+  min-height:28px;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:anywhere;text-align:left;
+  font-size:12px;line-height:1.25;color:var(--muted);
+ }
+ .club-history-table .club-history-competition-row td:nth-child(3):empty{display:none}
+ .club-history-table .club-history-competition-row td:nth-child(3):not(:empty)::before{
+  content:var(--club-history-mobile-position);font-size:12px;line-height:inherit;
+  font-weight:600;align-self:baseline;
+ }
+ /* Each statistic has two identical fixed tracks, whether the second track
+    contains a text number or a first-paint skeleton bar. */
+ .club-history-table tr>td:nth-child(n+4){
+  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums;
+ }
+ .club-history-table tr>td:nth-child(n+4)::before{
+  display:block;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+ }
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{
+  align-self:center;justify-self:center;margin-inline:auto;
+ }
+ .club-history-table tr>td:nth-child(4)::before{content:var(--club-history-mobile-mp)}
+ .club-history-table tr>td:nth-child(5)::before{content:var(--club-history-mobile-w)}
+ .club-history-table tr>td:nth-child(6)::before{content:var(--club-history-mobile-d)}
+ .club-history-table tr>td:nth-child(7)::before{content:var(--club-history-mobile-l)}
+ .club-history-table tr>td:nth-child(8)::before{content:var(--club-history-mobile-gf)}
+ .club-history-table tr>td:nth-child(9)::before{content:var(--club-history-mobile-ga)}
+ .club-history-table tr>td:nth-child(10)::before{content:var(--club-history-mobile-gd)}
+ .club-history-table tr>td:nth-child(11)::before{content:var(--club-history-mobile-pts)}
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(2){
+  grid-column:1/-1;display:flex;align-items:flex-start;
+  min-height:28px;text-align:left;white-space:normal;color:var(--muted);
+ }
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(n+3){display:none}
+ .club-history-table .club-history-row-loading .club-history-total-label{display:none}
+ .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:44px}
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin-inline:auto}
+ .club-history-table .club-history-competition-row[hidden]{display:none}
+}
+
 /* Club Fixtures: use the existing shell, crest and dropdown tokens. */
 .club-fixtures{min-width:0;min-height:440px;margin-top:14px}
 .club-fixtures[hidden]{display:none}
@@ -475,6 +542,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixture-select [data-club-fixture-value]{display:inline-flex;align-items:center;gap:4px;min-width:0;white-space:nowrap}
 .club-fixture-select .language-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;max-width:min(310px,85vw);max-height:240px;overflow-y:auto;z-index:30}
 .club-fixtures-next{min-height:44px;margin-right:auto}
+/* Matchday navigation's disabled treatment: visible but muted, without hover feedback. */
+.club-fixtures-next:disabled,.club-fixtures-next:disabled:hover{opacity:.45;cursor:default;pointer-events:none;background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 .club-fixtures-list{margin:14px 0 0;padding:0;list-style:none;min-height:336px}
 .club-fixture-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(0,1.8fr) 36px 110px;gap:12px;align-items:center;min-height:64px;padding:10px 12px;box-sizing:border-box;border-bottom:1px solid var(--border);font-size:14px}
 .club-fixture-row.is-next{background:var(--surface);box-shadow:inset 3px 0 var(--fa-shell-accent)}
@@ -482,7 +551,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixture-meta a{color:inherit;overflow-wrap:anywhere;align-self:flex-start;width:fit-content;max-width:100%;text-decoration:none}
 .club-fixture-meta a:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px}
 .club-fixture-opponent{display:inline-flex;align-items:center;gap:10px;min-width:0;max-width:100%;width:fit-content;justify-self:start;color:var(--text);text-decoration:none}
-a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoration:underline;text-underline-offset:3px}
+.club-fixture-opponent-name{color:inherit;text-decoration:none;overflow-wrap:anywhere}
+.club-fixture-opponent-name:is(:hover,:focus-visible){text-decoration:underline;text-underline-offset:3px}
 .club-fixture-opponent>span:last-child{overflow-wrap:anywhere}
 .club-fixture-opponent .app-world-club-crest-placeholder{flex:none;width:28px;height:28px}
 .club-fixture-venue{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--muted);border-radius:6px}
@@ -503,12 +573,18 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-fixture-loading .club-fixture-skeleton-score{inline-size:40px;block-size:14px}
 .club-fixture-loading .club-fixture-skeleton-status{inline-size:56px;block-size:9px}
 @media(max-width:620px){
- .club-fixtures-toolbar{gap:8px}.club-fixtures-selectors{width:100%;gap:8px}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:flex-start}
- .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:6px 8px;padding:10px 4px}
- .club-fixture-opponent{grid-column:1;grid-row:1;font-size:13px;gap:7px}
+ .club-fixtures-toolbar{gap:8px;justify-content:center}.club-fixtures-selectors{order:-1;width:100%;gap:8px;margin-left:0}.club-fixture-select{flex:1;min-width:0}.club-fixtures-next{font-size:12px;justify-content:center;margin-inline:auto}
+ /* Two fixed first-paint tracks: 44px opponent target plus 24px metadata.
+    Keep longer three-line captions unconstrained, with extra room at 320px. */
+ .club-fixture-row{grid-template-columns:minmax(0,1fr) 26px 68px;gap:0 8px;padding:2px 10px}
+ .club-fixture-opponent{grid-column:1;grid-row:1;font-size:12px;line-height:14px;gap:7px;min-height:44px}
  .club-fixture-venue{grid-column:2;grid-row:1}.club-fixture-result{grid-column:3;grid-row:1}
- .club-fixture-meta{grid-column:1/-1;grid-row:2;flex-direction:row;flex-wrap:wrap;gap:4px 10px;font-size:11px}
+ /* Stable date and competition columns, including long three-line labels. */
+ .club-fixture-meta{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-height:24px;gap:2px 10px;font-size:11px;line-height:12px}
+ .club-fixture-meta a{align-self:center}
 }
+/* At 320px the metadata link can occupy three lines; reserve them from first paint. */
+@media(max-width:360px){.club-fixture-meta{min-height:36px}}
 
 .club-fixture-select .language-trigger{min-width:0}.club-fixtures-next{min-width:0}
 
@@ -516,3 +592,31 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 
 @media(max-width:620px){.club-fixture-select .language-trigger{font-size:13px;padding-inline:10px;gap:6px}.club-fixture-select [data-club-fixture-value]{white-space:nowrap}}
 
+/* CLUB-ROSTER-01: compact subviews below the main club navigation, no extra rule. */
+.club-roster{width:100%;min-width:0}
+.club-roster[hidden],.club-first-paint-roster[hidden]{display:none}
+.club-roster-empty{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+.club-roster-view-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;height:42px;min-height:42px}
+.club-roster .club-roster-tabs{display:flex;align-items:center;flex:1 1 auto;width:auto;min-width:0;min-height:32px;gap:4px;overflow-x:auto;overflow-y:hidden;margin:0;padding:0;border:0;scrollbar-width:none;-webkit-mask-image:none;mask-image:none}
+.club-roster .club-roster-tabs .app-competition-tab{box-sizing:border-box;flex:0 0 92px;width:92px;min-width:92px;max-width:92px;height:32px;min-height:32px;padding:5px 5px;border-radius:6px;font-size:11px;line-height:1.2;cursor:pointer}
+/* Disabled from the first paint until roster data is ready. */
+.app-body .club-roster .club-roster-tabs .app-competition-tab[aria-disabled="true"]{opacity:.45;color:var(--muted);background:transparent;cursor:default;pointer-events:none}
+.club-roster-count{display:flex;align-items:center;justify-content:flex-end;flex:0 0 110px;min-width:110px;height:36px;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.club-roster-table-scroll{margin-top:0}
+.club-roster-table td:nth-child(2){text-align:left;font-weight:650}
+.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
+.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
+/* Club Roster Technical is selected with data-roster-group (not the public
+ * directory's html[data-players-group]); mirror the shared mobile widths. */
+@media(max-width:720px){.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1364px}}
+@media(max-width:420px){.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1272px}}
+/* Player name links reuse the shared, layout-stable inline-flex underline in app.css. */
+@media(max-width:620px){
+ /* The horizontal viewport reveals two complete subviews plus half of the next.
+  * Keep the player count outside the scrolling strip. */
+ .club-roster .club-roster-tabs{--app-tabs-fade-left:0px;--app-tabs-fade-right:0px;scroll-padding-inline:0;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--app-tabs-fade-left),#000 calc(100% - var(--app-tabs-fade-right)),transparent)}
+ .club-roster .club-roster-tabs[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
+ .club-roster .club-roster-tabs[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
+ .club-roster .club-roster-tabs .app-competition-tab{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);height:32px;min-height:32px;padding-inline:4px}
+ .club-roster-count{flex:0 0 92px;min-width:92px;font-size:11px}
+}

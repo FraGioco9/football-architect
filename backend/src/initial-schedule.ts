@@ -5,8 +5,14 @@ import {buildSeasonCalendarEvidence} from './season-calendar-evidence.ts';
 import {ApiError} from './errors.ts';
 import {qualificationPots} from './domain/qualification/season-qualification-pots.ts';
 export interface Fixture {id:string;competitionId:string;marker:string;day:number;round:number;homeClubId:string;awayClubId:string}
+/** Calendar V1 data is intentionally unsupported: owners chose a fresh V2 rebuild. */
+export type InitialScheduleVersion='initial-leagues-v2';
+export const currentInitialScheduleVersion:InitialScheduleVersion='initial-leagues-v2';
+export function isInitialScheduleVersion(value:unknown):value is InitialScheduleVersion {
+ return value===currentInitialScheduleVersion;
+}
 export interface InitialSchedule {
- schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:'initial-leagues-v1';seed:string;
+ schemaVersion:1;season:number;scope:'initial-leagues';algorithmVersion:InitialScheduleVersion;seed:string;
  participantsHash:string;rulesHash:string;calendarHash:string;fixtures:Fixture[];
  pendingPhases:{competitionId:string;reason:'sporting-results-required'}[];
 }
@@ -47,7 +53,10 @@ async function generate(trusted:SchedulingSnapshot,seed:string,season:number):Pr
    const ring=await shuffle(binding.clubIds,seed+':'+id);
    for(let r=0;r<15;r++){
     for(let i=0;i<8;i++){
-     const [home,away]=(r+i)%2===0?[ring[i],ring[15-i]]:[ring[15-i],ring[i]];
+     // Round-based orientation balances first-half venues and prevents runs
+     // of three consecutive home or away games for any of the 16 clubs.
+     const firstHome=r%2===0&&!(r>=8&&i===7);
+     const [home,away]=firstHome?[ring[i],ring[15-i]]:[ring[15-i],ring[i]];
      add(id,r+1,home,away);add(id,r+16,away,home);
     }
     ring.splice(1,0,ring.pop()!);
@@ -71,7 +80,7 @@ async function generate(trusted:SchedulingSnapshot,seed:string,season:number):Pr
   }
  }
  fixtures.sort((a,b)=>a.day-b.day||a.marker.localeCompare(b.marker,'en')||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
- return {schemaVersion:1,season,scope:'initial-leagues',algorithmVersion:'initial-leagues-v1',seed,
+ return {schemaVersion:1,season,scope:'initial-leagues',algorithmVersion:currentInitialScheduleVersion,seed,
   participantsHash:trusted.participantsHash,rulesHash:trusted.rulesHash,calendarHash:calendar.calendarHash,fixtures,
   pendingPhases:trusted.bindings.map(b=>({competitionId:b.competitionId,reason:'sporting-results-required'}))};
 }
@@ -96,7 +105,13 @@ function checkInvariants(schedule:InitialSchedule,snapshot:SchedulingSnapshot):v
      const pot=new Set(pots[p]);
      if(home.filter(g=>pot.has(g.awayClubId)).length!==1||away.filter(g=>pot.has(g.homeClubId)).length!==1)return fail();
     }
-   }else for(const opponent of binding.clubIds.filter(id=>id!==club))if(home.filter(g=>g.awayClubId===opponent).length!==1||away.filter(g=>g.homeClubId===opponent).length!==1)return fail();
+   }else{
+    for(const opponent of binding.clubIds.filter(id=>id!==club))
+     if(home.filter(g=>g.awayClubId===opponent).length!==1||away.filter(g=>g.homeClubId===opponent).length!==1)return fail();
+    const sequence=Array.from({length:30},(_,i)=>games.find(g=>g.round===i+1&&(g.homeClubId===club||g.awayClubId===club))?.homeClubId===club);
+    if(sequence.slice(0,15).filter(Boolean).length<7||sequence.slice(0,15).filter(Boolean).length>8||
+       sequence.some((value,i)=>i>=2&&value===sequence[i-1]&&value===sequence[i-2]))return fail();
+   }
   }
  }
 }
@@ -109,7 +124,9 @@ export async function buildInitialSchedule(snapshot:ApprovedSnapshot,seed:string
 export async function validateInitialSchedule(input:unknown,snapshot:ApprovedSnapshot):Promise<void>{
  try{
   if(!input||typeof input!=='object'||Array.isArray(input))return fail();
-  const value=input as InitialSchedule,expected=await buildInitialSchedule(snapshot,value.seed);
+  const value=input as InitialSchedule;
+  if(!isInitialScheduleVersion(value.algorithmVersion))return fail();
+  const expected=await buildInitialSchedule(snapshot,value.seed);
   if(await canonicalHash(input)!==await canonicalHash(expected))return fail();
  }catch{return fail()}
 }

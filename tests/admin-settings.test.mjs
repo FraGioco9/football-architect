@@ -460,7 +460,7 @@ test('Admin Players encodes all stable generator controls without PowerShell int
  assert.deepEqual(playerForm.makeOptions({count:'auto',seed:'AUTO',age:'Auto'}),{});
  assert.match(playerForm.commandFromRaw({}),/--options-base64 e30 --out/);
  const raw={
-  count:'2',seed:'seed with spaces; $env:SECRET',primarySuitability:'65:80',
+  count:'2',seed:'seed with spaces; $env:SECRET',primarySuitabilityMin:'65',primarySuitabilityMax:'80',
   primaryNationality:'ITA',secondaryMode:'exact',secondaryCountry:'FRA',
   firstName:'Émile',lastName:'De Luca',primaryPosition:'ST',preferredFoot:'right',
   secondaryPositions:'AM',age:'18',height:'175:185',developmentAptitude:'50',

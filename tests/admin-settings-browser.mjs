@@ -162,8 +162,7 @@ try{
     const {options}=route.request().postDataJSON();
     currentOptions=options;draftCommitted=false;
     assert.equal(options.count,2);
-    if(previewCalls<=2)assert.equal(options.seed,'admin-trial');
-    else assert.match(options.seed,/^fa-next-11111111-1111-4111-8111-111111111111$/);
+    assert.equal(options.seed,'admin-trial','Explicit generator seed stays unchanged after saving');
     assert.equal(options.primaryNationality,'ITA');assert.equal(options.primaryPosition,'ST');
     assert.deepEqual(options.attributes.shooting,[65,80]);assert.equal(options.age,18);
     const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
@@ -180,7 +179,6 @@ try{
     assert.equal(route.request().headers()['x-csrf-token'],'fixture-csrf');
     assert.deepEqual(route.request().postDataJSON(),{draftId:'11111111-1111-4111-8111-111111111111'});
     assert.ok(currentOptions,'Preview must have been generated before it can be read');
-    if(draftCommitted)return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{code:'players_preview_expired'}})});
     const candidates=[0,1].map(i=>({preview_id:'trial-000'+(i+1),
      display_name:'Luca '+(i?'Bianchi':'Rossi'),nationality:'ITA',age:18,initial_age:18,
      primary_position:'ST',secondary_positions:i?['RW']:[],preferred_foot:'right',height_cm:180,
@@ -188,7 +186,7 @@ try{
       shooting:70,crossing:60,tackling:60,marking:60,heading:60,vision:60,positioning:60,
       decisions:60,composure:60,gk_reflexes:60,gk_handling:60,gk_positioning:60,gk_aerial:60}}));
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-     draftId:'11111111-1111-4111-8111-111111111111',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
+     draftId:'11111111-1111-4111-8111-111111111111',status:draftCommitted?'committed':'preview',summary:{count:2,seed:currentOptions.seed,countries:{ITA:2}},
      options:currentOptions,candidates})});
    });
    await page.route('**/api/admin/players/commit',route=>{
@@ -248,9 +246,14 @@ try{
     await page.mouse.move(0,0); // Establish an unhovered field baseline.
     await page.waitForTimeout(220);
     const inputBeforeHover=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
-    await page.locator('[data-admin-players-label="age"]').hover();
+    // Captions deliberately ignore pointer events; hover() would wait for a hit target forever.
+    const captionBox=await page.locator('[data-admin-players-label="age"]').boundingBox();
+    assert.ok(captionBox,'The age caption must be laid out');
+    await page.mouse.move(captionBox.x+captionBox.width/2,captionBox.y+captionBox.height/2);
     await page.waitForTimeout(220);
     assert.deepEqual(await readLabel(),beforeFocus,'Hover on field caption must not highlight the label');
+    const inputAfterCaption=await age.evaluate(node=>({bg:getComputedStyle(node).backgroundColor,border:getComputedStyle(node).borderColor}));
+    assert.deepEqual(inputAfterCaption,inputBeforeHover,'Hover on the caption must not highlight the input box either');
     // Native HTML <label> can forward :hover to its associated input.
     // The visible highlight belongs to the field box, never the caption.
     await age.hover();
@@ -266,7 +269,8 @@ try{
     assert.notEqual(focused.shadow,'none','Focus highlight must remain visible on the input box');
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'');
     assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'');
-    assert.equal(await page.locator('[data-players-option="primarySuitability"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="primarySuitabilityMin"]').inputValue(),'');
+    assert.equal(await page.locator('[data-players-option="primarySuitabilityMax"]').inputValue(),'');
     assert.equal(await page.locator('[data-admin-players-copy],[data-admin-players-command]').count(),0,'No legacy CLI-only form controls');
     assert.equal(await page.locator('[data-admin-players-result],[data-admin-players-commit]').count(),0,'The generator must not embed preview or approval');
     assert.equal(await page.locator('[data-players-dropdown="primaryNationality"] .language-trigger').getAttribute('aria-expanded'),'false');
@@ -294,7 +298,74 @@ try{
     assert.equal(await page.locator('.app-players-preview-actions [data-admin-players-commit-status]').count(),1);
     assert.equal(await page.locator('[data-admin-players-commit]').isEnabled(),true,'Generate opens confirmation rather than saving immediately');
     assert.equal(await page.locator('[data-admin-players-form]').count(),0,'The dedicated preview contains no generator form');
-    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),0,'Preview candidates have no permanent detail links');
+    assert.equal(await page.locator('[data-admin-preview-rows] a').count(),2,'Each preview candidate has a protected temporary detail link');
+    assert.match(await page.locator('[data-admin-preview-rows] a').first().getAttribute('href'),/^\/admin\/players\/preview\/player\?draftId=.*&index=1(?:&|$)/);
+
+    // A draft candidate opens a real protected detail, never a public ID.
+    await page.locator('[data-admin-preview-view="attributes"]').click();
+    await page.locator('[data-admin-preview-group="mental"]').click();
+    await page.locator('[data-admin-preview-rows] a').first().click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview/player');
+    await page.locator('[data-player-detail-mode="preview"]').waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-detail-name]').innerText(),'Luca Rossi');
+    assert.equal(await page.locator('[data-detail-back]').getAttribute('href').then(href=>new URL(href,'http://app.localhost:2000').pathname),'/admin/players/preview');
+    assert.equal(await page.locator('[data-player-detail-mode="preview"] .app-panel').count(),3,'Two Overview panels plus dedicated Info view');
+    assert.equal(await page.locator('[data-detail-panel="overview"] .app-panel').count(),2,'Overview has Positions and Attributes side by side');
+    assert.equal(await page.locator('[data-detail-positions] > h2').innerText(),'Positions');
+    assert.equal(await page.locator('[data-detail-positions] .app-player-detail-pitch').count(),1);
+    assert.equal(await page.locator('[data-detail-positions] dl').count(),0,'No textual position list in the pitch panel');
+    assert.equal(await page.locator('[data-detail-status]').isVisible(),false,'No loading caption when the profile resolves');
+    const detailMetrics=await page.evaluate(()=>{
+     const panel=document.querySelector('[data-detail-positions]').getBoundingClientRect();
+     const attrs=document.querySelector('.app-player-detail-attributes').getBoundingClientRect();
+     const pitch=document.querySelector('.app-player-detail-pitch-holder').getBoundingClientRect();
+     const label=document.querySelector('.app-player-detail-attributes h2');
+     const rows=[...document.querySelectorAll('[data-detail-attribute-group="technical"] .app-player-detail-attribute-line')];
+     return {panelWidth:panel.width,pitchWidth:pitch.width,pitchCenter:(pitch.left+pitch.right)/2,
+      panelCenter:(panel.left+panel.right)/2,topDifference:Math.abs(panel.top-attrs.top),
+      panelBottom:panel.bottom,attributesTop:attrs.top,
+      headingFontSize:getComputedStyle(label).fontSize,
+      firstDivider:getComputedStyle(rows[0]).borderBottomWidth,lastDivider:getComputedStyle(rows.at(-1)).borderBottomWidth};
+    });
+    assert.ok(detailMetrics.pitchWidth>0&&detailMetrics.pitchWidth<=330,'Pitch fits reserved responsive width');
+    assert.ok(detailMetrics.pitchWidth<=detailMetrics.panelWidth,'Pitch cannot overflow its panel');
+    assert.ok(Math.abs(detailMetrics.pitchCenter-detailMetrics.panelCenter)<3,'Pitch centered horizontally');
+    // This fixture uses a 390px viewport: mobile Overview panels stack vertically.
+    assert.ok(detailMetrics.attributesTop>=detailMetrics.panelBottom-2,
+      'Mobile Positions and Attributes stack without overlap');
+    await page.setViewportSize({width:1280,height:900});
+    const desktopTopDifference=await page.evaluate(()=>{
+     const positions=document.querySelector('[data-detail-positions]').getBoundingClientRect();
+     const attributes=document.querySelector('.app-player-detail-attributes').getBoundingClientRect();
+     return Math.abs(positions.top-attributes.top);
+    });
+    assert.ok(desktopTopDifference<2,'Desktop Positions and Attributes share their top row');
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(detailMetrics.headingFontSize,'22px');
+    assert.equal(detailMetrics.firstDivider,'1px');
+    assert.equal(detailMetrics.lastDivider,'0px');
+    assert.equal(await page.locator('[data-detail-value]').count(),5,'Info contains five personal facts');
+    assert.equal(await page.locator('[data-detail-attr-value]').count(),20,'Attributes contains 20 numeric skills');
+    assert.equal(await page.locator('[data-detail-attribute-group]').count(),4,'Four skill columns');
+    assert.equal(await page.locator('[data-detail-pitch-markers] .app-player-detail-pitch-marker').count(),1,'Primary position is marked');
+    assert.equal(await page.locator('[data-detail-view="overview"]').getAttribute('aria-selected'),'true');
+    for(const name of ['stats','history','progression'])assert.equal(await page.locator('[data-detail-view="'+name+'"]').isDisabled(),true);
+    assert.match(await page.locator('[data-detail-attr-value="shooting"]').innerText(),/^(?:[0-9]{1,2}|—)$/);
+    await page.locator('[data-detail-view="info"]').click();
+    assert.equal(await page.locator('[data-detail-panel="info"]').isVisible(),true);
+    assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),false);
+    assert.equal(new URL(page.url()).searchParams.get('view'),'info');
+    assert.equal((await page.locator('[data-detail-value="nationality"]').innerText()).trim(),'Italy','Nationality presents its full localized name, not the code');
+    await page.goBack();
+    assert.equal(await page.locator('[data-detail-panel="overview"]').isVisible(),true,'Browser Back restores Overview');
+    assert.equal(await page.locator('[data-detail-view="overview"]').getAttribute('aria-selected'),'true');
+    await page.locator('[data-detail-back]').click();
+    await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
+    await page.locator('[data-admin-preview-rows] tr:not(.app-players-loading-row)').first().waitFor({state:'visible'});
+    assert.equal(await page.locator('[data-admin-preview-view="attributes"]').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('[data-admin-preview-group="mental"]').getAttribute('aria-selected'),'true');
+    await page.locator('[data-admin-preview-view="overview"]').click();
+
     // Pairwise responsive/i18n checks in the existing Chromium + WebKit Admin
     // browser suite. Preview data is already loaded: no additional API reads.
     const previewCases=[
@@ -356,6 +427,8 @@ try{
     await page.keyboard.press('Escape');
     await page.locator('#app-players-nationality-tooltip').waitFor({state:'hidden'});
     await page.locator('[data-admin-preview-view="attributes"]').click();
+    await page.locator('[data-admin-preview-group="technical"]').click();
+    assert.equal(await page.locator('[data-admin-preview-group="technical"]').getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('[data-admin-preview-rows] tr').count(),2);
     assert.equal(await page.locator('[data-admin-preview-rows] tr:first-child td').count(),11,'Technical has 8 attributes plus flag/name/positions');
     await page.locator('[data-admin-preview-view="overview"]').click();
@@ -394,7 +467,7 @@ try{
     await page.locator('[data-players-option="count"]').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-players-option="count"]').inputValue(),'2','Saving does not erase the prior generator settings');
     assert.equal(await page.locator('[data-players-option="primaryNationality"]').inputValue(),'ITA');
-    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'fa-next-11111111-1111-4111-8111-111111111111','Seed advances after an approved generation');
+    assert.equal(await page.locator('[data-players-option="seed"]').inputValue(),'admin-trial','Manually selected seed remains unchanged after saving');
     assert.equal(await page.locator('[data-admin-players-preview]').isEnabled(),true,'Next cohort is immediately previewable');
     await page.locator('[data-admin-players-preview]').click();
     await page.waitForURL(url=>new URL(url).pathname==='/admin/players/preview');
@@ -402,7 +475,7 @@ try{
     assert.equal(previewCalls,3);assert.equal(commitCalls,1);
     assert.ok(sessionReads>=7,'All preview/draft/commit requests use signed Admin session+CSRF');
    }else assert.equal(await page.locator('#main-content').innerText(),'');
-   assert.equal(permissionReads,writer?3:1,'Admin route navigation reuses permissions, but each of the two explicit Preview Back reloads rechecks');
+   assert.equal(permissionReads,writer?2:1,'Preview Back reuses the existing page history without redundant permission reads');
    assert.equal(adminCalls,0,'Directory and Players cannot invoke World Admin endpoints');
    assert.deepEqual(errors,[]);checks++;
   }finally{await context.close()}
