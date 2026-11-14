@@ -54,8 +54,6 @@ function actualMovementDuties(frame){
   players:duties,
   playerCount:22,
   attackSupportRun:frame.provisionalAttackSupportRun??null,
-  ...(frame.continuityAudit?{
-   continuityAudit:Object.freeze({...frame.continuityAudit})}:{}),
   carryPursuit:frame.provisionalCarryPursuit??null,
   carryChallengerId:frame.provisionalChallengeCarryRunnerId??null,
   carryChallengerFlank:frame.provisionalCarryChallengeFlank??null,
@@ -92,7 +90,6 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
     key!=='autonomousActions'&&key!=='researchShotAttacker'&&
     key!=='autonomousCarry'&&key!=='autonomousCarrySupport'&&
      key!=='autonomousCarrySupportPressHandoff'&&
-     key!=='autonomousCarryAttackContinuity'&&
      key!=='autonomousCarrySupportBallAccess'&&
      key!=='autonomousCarrySupportLateralAlign'&&
      key!=='autonomousCarrySupportEarlyFacing'&&
@@ -124,12 +121,6 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
      Object.hasOwn(options,'researchShotAttacker')))reject();
  const autonomousCarrySupportPressHandoff=
   options.autonomousCarrySupportPressHandoff===true;
- if(Object.hasOwn(options,'autonomousCarryAttackContinuity')&&
-    (options.autonomousCarryAttackContinuity!==true||
-     !autonomousCarrySupportPressHandoff||
-     Object.hasOwn(options,'researchShotAttacker')))reject();
- const autonomousCarryAttackContinuity=
-  options.autonomousCarryAttackContinuity===true;
  if(Object.hasOwn(options,'autonomousCarrySupportBallAccess')&&
     (options.autonomousCarrySupportBallAccess!==true||
      !autonomousCarrySupportPressHandoff||
@@ -213,8 +204,6 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    experimentalAutonomousFixtureCarrySupport:true}:{}),
   ...(autonomousCarrySupportPressHandoff?{
    experimentalAutonomousFixtureCarrySupportPressHandoff:true}:{}),
-  ...(autonomousCarryAttackContinuity?{
-   experimentalAutonomousFixtureCarryAttackContinuity:true}:{}),
   ...(autonomousCarrySupportBallAccess?{
    experimentalAutonomousFixtureCarrySupportBallAccess:true}:{}),
   ...(autonomousCarrySupportLateralAlign?{
@@ -276,8 +265,6 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    ...(autonomousCarrySupport?{autonomousCarrySupportMode:true}:{}),
    ...(autonomousCarrySupportPressHandoff?{
     autonomousCarrySupportPressHandoffMode:true}:{}),
-   ...(autonomousCarryAttackContinuity?{
-    autonomousCarryAttackContinuityMode:true}:{}),
    ...(autonomousCarrySupportBallAccess?{
     autonomousCarrySupportBallAccessMode:true}:{}),
    ...(autonomousCarrySupportLateralAlign?{
@@ -352,8 +339,6 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
    ...(autonomousCarrySupportPressHandoff?{
     autonomousCarrySupportPressHandoff:true}:{}),
-   ...(autonomousCarryAttackContinuity?{
-    autonomousCarryAttackContinuity:true}:{}),
    ...(autonomousCarrySupportBallAccess?{
     autonomousCarrySupportBallAccess:true}:{}),
    ...(autonomousCarrySupportLateralAlign?{
