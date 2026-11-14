@@ -135,7 +135,7 @@
     win.requestAnimationFrame(()=>{queued=false;sync()});
    };
    sync();
-   win.addEventListener('resize',schedule,{passive:true});
+   win.addEventListener('resize',()=>{closePopup();schedule()},{passive:true});
    if(typeof win.MutationObserver==='function')new win.MutationObserver(changes=>{
     for(const mutation of changes){
      if(!mutation.addedNodes.length)continue;

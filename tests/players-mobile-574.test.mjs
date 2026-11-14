@@ -166,6 +166,7 @@ test('#574 positions use an overflow-driven, accessible mobile disclosure',async
  assert.match(code,/aria-label/);
  assert.match(code,/aria-expanded/);
  assert.match(code,/event\.key==='Escape'/);
+ assert.match(code,/win\.addEventListener\('resize',\(\)=>\{closePopup\(\);schedule\(\)\}/);
  assert.match(code,/win\.addEventListener\('scroll',\(\)=>closePopup\(\),\{capture:true,passive:true\}\)/);
  assert.match(code,/doc\.body\.append\(popup\)/,'tooltip must escape scrolling/masked table');
  assert.match(css,/\.fa-positions-cell\[data-fa-compact="true"\] \.fa-positions-more\{display:inline-flex\}/);
