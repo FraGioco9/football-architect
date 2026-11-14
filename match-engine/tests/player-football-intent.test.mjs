@@ -9,9 +9,11 @@ import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
 import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
  from '../src/player-football-corridors.mjs';
-import {inspectUniformPolicyGeometry,UNIFORM_POLICY_GEOMETRY_VERSION}
+import {inspectUniformPolicyGeometry,UNIFORM_POLICY_GEOMETRY_VERSION,
+ selectUniformAutonomousContactAction,
+ UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from '../src/player-ball-uniform-autonomous-action.mjs';
-import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
+import {INITIAL_PLAYERS,PLAYER_VERSION} from '../src/player-movement.mjs';
 
 const players=Object.freeze(['home','away'].flatMap((team,ti)=>
  Array.from({length:11},(_,i)=>Object.freeze({
@@ -516,5 +518,53 @@ test('P0 existing-policy shot and PASS geometry is diagnostic only',()=>{
  assert.throws(()=>inspectUniformPolicyGeometry({
   tick:25,playerId:'home-9',ballPosition:{...ball,x:NaN},
   physicalPlayerPositions:makePositions(false)
+ }),TypeError);
+});
+
+test('P0 original physical selector input gates reject fabricated opportunities',()=>{
+ const tick=30,id='home-9';
+ const playerFrame={version:PLAYER_VERSION,tick,players:INITIAL_PLAYERS.map(p=>({
+  ...p,x:p.id===id?0:p.x,y:p.id===id?0:p.y
+ }))};
+ const input={
+  tick,contactStarted:[id],contactActive:[id],playerFrame,
+  ballPosition:{x:0,y:0,z:0.11},
+  ballVelocity:{x:0,y:0,z:0},lastActionTick:0,
+  ballRadiusM:0.11,allowPhysicalCarry:false
+ };
+ // Pure selector accepts declared arrays, not proof of genuine Rapier.
+ const selected=selectUniformAutonomousContactAction(input);
+ assert.ok(selected&&selected.physicalPrerequisites);
+ const evidence=selected.physicalPrerequisites;
+ assert.equal(evidence.physicsTick,tick);
+ assert.equal(evidence.actorId,id);
+ assert.equal(evidence.exclusiveShoeStart,true);
+ assert.equal(evidence.cooldownElapsedTicks,30);
+ assert.equal(evidence.cooldownMinimumTicks,
+  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS);
+ assert.equal(evidence.shoeBallGapM,0);
+ assert.equal(evidence.ballHeightM,0.11);
+ assert.equal(evidence.ballHorizontalSpeedMps,0);
+ assert.equal(evidence.originalPhysicalGuardsPassed,true);
+ assert.equal(evidence.authorizesOfficialAction,false);
+ assert.equal(evidence.contactAuthenticatedByShape,false);
+ assert.ok(Object.isFrozen(evidence));
+ for(const patch of [
+  {contactStarted:[],contactActive:[]},
+  {contactActive:[id,'away-1']},
+  {lastActionTick:29},
+  {ballPosition:{x:2,y:0,z:0.11}},
+  {ballPosition:{x:0,y:0,z:0.25}},
+  {ballVelocity:{x:15,y:0,z:0}}
+ ])assert.equal(selectUniformAutonomousContactAction({
+  ...input,...patch
+ }),null);
+ for(const patch of [
+  {tick:31},{ballRadiusM:0},
+  {contactStarted:[id,id]},
+  {contactStarted:['unknown'],contactActive:['unknown']},
+  {ballVelocity:{x:NaN,y:0,z:0}}
+ ])assert.throws(()=>selectUniformAutonomousContactAction({
+  ...input,...patch
  }),TypeError);
 });

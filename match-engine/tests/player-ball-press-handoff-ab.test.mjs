@@ -97,6 +97,19 @@ function collect(summary,frame,c){
   assert.equal(action.appliedByRapier,true);
   assert.equal(action.actualPhysicsImpulseApplied,true);
   assert.equal(action.officialMatchAction,false);
+  const gate=action.physicalPrerequisites;
+  assert.ok(Object.isFrozen(gate));
+  assert.equal(gate.physicsTick,t);
+  assert.equal(gate.actorId,action.playerId);
+  assert.equal(gate.exclusiveShoeStart,true);
+  assert.equal(gate.originalPhysicalGuardsPassed,true);
+  assert.ok(gate.cooldownElapsedTicks>=gate.cooldownMinimumTicks);
+  assert.ok(gate.shoeBallGapM<=0.85);
+  assert.ok(gate.ballHeightM>=gate.ballRadiusM-0.015);
+  assert.ok(gate.ballHeightM<=gate.ballRadiusM+0.12);
+  assert.ok(gate.ballHorizontalSpeedMps<=14);
+  assert.equal(gate.contactAuthenticatedByShape,false);
+  assert.equal(gate.authorizesOfficialAction,false);
   summary.actions.push(Object.freeze({tick:t,action:action.action,
    playerId:action.playerId,team:action.team}));
   if(action.action==='shot'){

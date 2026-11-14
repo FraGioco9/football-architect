@@ -259,6 +259,18 @@ export function selectUniformAutonomousContactAction({
    playerId:id,team:player.team,
    action,recipientId:recipient?.id??null,
    passTarget,shotTarget,carryTarget,measuredGapM:gap,
+   // Same-tick PRE-impulse values from the only existing contact selector.
+   // No new eligibility policy or source authentication for caller input.
+   physicalPrerequisites:Object.freeze({
+    physicsTick:tick,actorId:id,source:'real-selector-inputs-pre-impulse',
+    exclusiveShoeStart:true,
+    cooldownElapsedTicks:tick-lastActionTick,
+    cooldownMinimumTicks:UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,
+    shoeBallGapM:gap,ballHeightM:ballPosition.z,
+    ballRadiusM,ballHorizontalSpeedMps:Math.hypot(ballVelocity.x,ballVelocity.y),
+    originalPhysicalGuardsPassed:true,
+    authorizesOfficialAction:false,contactAuthenticatedByShape:false
+   }),
    physicalTrigger:'same-tick-real-rapier-shoe-start',
    movementSource:'canonical-22-player-autonomous-mover',
    impulseNs,appliedByRapier:false,
