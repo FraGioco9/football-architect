@@ -1,7 +1,7 @@
 /** Reserved bracket fixtures have identities before clubs and results exist. */
-import divisions from '../../../data/divisions.json' with {type:'json'};
-import cups from '../../../data/international-competitions.json' with {type:'json'};
-import calendarModel from '../../../assets/world-calendar-model.js';
+import divisions from '../../../../data/divisions.json' with {type:'json'};
+import cups from '../../../../data/international-competitions.json' with {type:'json'};
+import calendarModel from '../../../../assets/world-calendar-model.js';
 import {legacySeasonOneRules} from '../../calendar-rules-compat.ts';
 import {matchIdForSlot} from './match-slot-identity.ts';
 
