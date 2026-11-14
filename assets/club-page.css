@@ -297,6 +297,7 @@ body.app-body{--app-page-pad-top:8px}
    Center the crest/name in each row; keep Status and Next match top-aligned
    within their shared summary so labels and the fixture's first line stay
    fixed from first paint through hydration, even for longer fixture names. Debug ON/OFF share this same geometry.
+   The label/value tracks are shared by Status and Next match, including later rows.
    A named container keeps the summary on the right whenever its panel fits. */
 .club-overview-layout>.club-competition{container:club-competition-panel / inline-size}
 .club-competition-list{display:flex;flex-direction:column;gap:0;margin-top:8px}
@@ -325,28 +326,29 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition-list .club-competition-summary{
  grid-column:2;grid-row:1;display:grid;
  grid-template-columns:minmax(205px,220px) minmax(0,1fr);
- grid-template-rows:auto;align-items:stretch;gap:clamp(12px,1.8vw,24px);
+ grid-template-rows:minmax(16px,auto) minmax(59px,auto);
+ align-items:start;column-gap:clamp(12px,1.8vw,24px);row-gap:4px;
  width:100%;max-width:580px;margin:0;padding:0;
  border:0;justify-self:end;align-self:stretch;min-height:80px;
 }
 .club-competition-list .club-competition-metrics,
 .club-competition-list .club-competition-metrics>div,
 .club-competition-list .club-competition-next{
- display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
- align-self:stretch;grid-column:auto;grid-row:auto;gap:4px;
+ display:grid;grid-template-rows:subgrid;grid-row:1/3;
+ align-items:start;align-self:stretch;grid-column:auto;gap:4px;
  width:100%;min-width:0;min-height:0;height:auto;margin:0;padding:0;border:0;
 }
 .club-competition-list .club-competition-metrics dt,
 .club-competition-list .club-competition-next>.club-competition-label{
- font-size:12px;line-height:1.3;grid-row:auto;
+ font-size:12px;line-height:1.3;grid-row:1;align-self:start;
 }
 .club-competition-list .club-competition-metrics dd{
- grid-row:auto;margin:0;font-size:24px;font-weight:700;line-height:1.15;
+ grid-row:2;margin:0;font-size:24px;font-weight:700;line-height:1.15;
  white-space:normal;overflow-wrap:anywhere;min-height:1.15em;align-self:flex-start;
 }
 .club-competition-list .club-competition-next-content{
  display:flex;flex-direction:column;align-items:flex-start;
- grid-row:auto;gap:3px;max-height:none;min-height:59px;overflow:visible;
+ grid-row:2;gap:3px;max-height:none;min-height:59px;overflow:visible;
  align-self:flex-start;justify-content:flex-start;font-size:14px;line-height:1.35;
 }
 .club-competition-list .club-competition-next-content>a.app-link,
