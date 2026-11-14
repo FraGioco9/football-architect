@@ -181,8 +181,12 @@ try{
        row:row.getBoundingClientRect().toJSON(),
       identity:rect('.club-competition-identity'),logo:rect('.club-fp-competition-logo'),
       copy:rect('.club-competition-copy'),name:rect('.club-fp-competition-name'),
-      tier:rect('.club-fp-competition-tier'),summary:rect('.club-competition-summary'),
-      status:rect('.club-competition-metrics'),statusValue:rect('.club-competition-metrics dd'),
+      tier:rect('.club-fp-competition-tier'),summary:(()=>{
+       const a=rect('.club-competition-metrics'),b=rect('.club-competition-next');
+       return {left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),
+        top:Math.min(a.top,b.top),bottom:Math.max(a.bottom,b.bottom)};
+      })(),
+      status:rect('.club-competition-metrics'),statusLabel:rect('.club-competition-metrics dt'),statusValue:rect('.club-competition-metrics dd'),
       statusBar:rect('.club-fp-competition-position'),
       next:rect('.club-competition-next'),nextContent:rect('.club-competition-next-content'),
       fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round')};
@@ -191,8 +195,11 @@ try{
     assert.deepEqual(comp.rowPadding,[0,0,0,0],'competition rows are padding-free at first paint and all viewport widths');
     assert.ok(Math.abs(comp.name.left-comp.copy.left)<2&&Math.abs(comp.tier.left-comp.copy.left)<2,
      'name and tier skeletons begin exactly where hydrated league text begins');
-    assert.ok(Math.abs(comp.statusBar.left-comp.statusValue.left)<2&&Math.abs(comp.fixtureBar.left-comp.nextContent.left)<2,
-     'status and fixture skeletons use the hydrated value origins');
+    const centerX=r=>(r.left+r.right)/2;
+    assert.ok(Math.abs(centerX(comp.statusBar)-centerX(comp.statusValue))<2
+     &&Math.abs(centerX(comp.statusBar)-centerX(comp.statusLabel))<2
+     &&Math.abs(comp.fixtureBar.left-comp.nextContent.left)<2,
+     'Status skeleton centers on the hydrated value; Next match starts at the hydrated value origin');
     assert.ok(comp.logo.width===comp.logo.height&&Math.abs(comp.logo.width-(width<=760?44:60))<1,
      'anonymous division crest matches the singleton 60px desktop / 44px mobile size');
     // Compare singleton division and multi-membership identities in the same
@@ -314,7 +321,13 @@ try{
         '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+statusLabel+'</dt><dd data-club-position>'+(empty?'4th':value)+'</dd></div></dl>'+
         '<div class="club-competition-next"><span class="club-competition-label">'+nextLabel+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div>';
        const dd=row.querySelector('.club-competition-metrics dd'),match=row.querySelector('.club-competition-match-name');
-       const panel=row.closest('.club-competition').getBoundingClientRect(),summary=row.querySelector('.club-competition-summary').getBoundingClientRect();
+       const panel=row.closest('.club-competition').getBoundingClientRect();
+       const summary=(()=>{
+        const a=row.querySelector('.club-competition-metrics').getBoundingClientRect();
+        const b=row.querySelector('.club-competition-next').getBoundingClientRect();
+        return {left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),
+         top:Math.min(a.top,b.top),bottom:Math.max(a.bottom,b.bottom)};
+       })();
        const label=row.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect();
        const nextContent=row.querySelector('.club-competition-next-content');
        const lastChild=nextContent.lastElementChild.getBoundingClientRect();
