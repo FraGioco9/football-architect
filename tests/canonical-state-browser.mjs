@@ -234,6 +234,16 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   await page.locator('.fa-dev-widget-close').click();
   await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-backdrop')?.hidden===true&&
     document.querySelector('.fa-dev-widget-panel')?.hidden===true);
+  // The previous closing timeout can still be pending after animationend.
+  // A rapid reopen must remain open after that original deadline expires.
+  await page.locator('.fa-dev-widget-button').click();
+  await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-panel')?.hidden===false);
+  await page.waitForTimeout(220);
+  assert.equal(await page.locator('.fa-dev-widget-panel').isVisible(),true,
+    'rapidly reopened Debug Settings must survive a previous close timeout');
+  await page.locator('.fa-dev-widget-close').click();
+  await page.waitForFunction(()=>document.querySelector('.fa-dev-widget-backdrop')?.hidden===true&&
+    document.querySelector('.fa-dev-widget-panel')?.hidden===true);
   const worldBeforeTabs=worldCalls;
   await page.locator('#competition-tab-fixtures').click();
   await page.locator('#competition-tab-stats').click();

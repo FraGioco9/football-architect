@@ -160,3 +160,13 @@ A5 consolidates one exact-day-13 lifecycle replay while retaining assertions, **
 `tools/test-suite-508-inventory.mjs` now reports **manual review queues** for explicit sporting lifecycle replays/D1 rebuilds and focused/skipped/todo test declarations, in addition to ownership, one-off club IDs, names and global state/IO risk flags. The queues are source scans only; a replay or skipped marker is not automatically classified as duplication or a defect. No CI selector, Worker/runtime, migration, fixture, or product code change.
 
 The 12-point whole-suite audit is still incomplete. A1–A6 are incremental evidence, not final coverage certification.
+
+## Batch A7 — cancel stale DEV widget close callbacks; targeted browser regression (2026-11-14)
+
+**Previous exact-HEAD `49cc75e354aeaf362267369ae4e22faabdafc97f` passed every required CI gate** (Site, Admin/Worker, Browser Chromium + WebKit, FULL, player generator and name/surname catalogues). Meanwhile `main` advanced with Players Directory scroll work. This batch incorporates the main change safely, preserving `tests/players-scroll-browser-532.mjs`, `backend/tests/public-players-directory-runtime.test.ts`, `tools/ci-test-ownership.json`, and associated assets/docs.
+
+**Observed intermittent failure:** A4 `canonical-state-browser.mjs` timed out at the Debug Settings toggle; A5/A6 passed the same flow. Source inspection identified a concrete close/reopen race in **local-only** `tools/dev-debug-widget.mjs`: `setOpen(false)` used both `animationend` and an **uncancelled 180 ms** fallback. If animationend completed early and the button reopened the panel, the stale fallback could later hide the newly opened panel. Previously, each close could also leave a stale animationend listener attached after timeout closure. This is a real code-path hazard; evidence still does not establish it caused the particular A4 failure.
+
+**Fix:** Track the active close's cleanup and cancel **both** fallback timer and event listener before reopening or starting another close. Ignore bubbled child animation events; guard stale finish callbacks. No changes to public output or animation duration. **Regression coverage:** extend existing `tests/canonical-state-browser.mjs` SH-03 Chromium/WebKit flow to reopen a mobile Debug panel immediately after close and assert it stays visible past 180 ms, then close it and continue the original world-state assertions. No new test file, no skipped gates, no added retry loops.
+
+**Next evidence required:** current new exact-head Browser/Worker/Site/FULL workflows must PASS. Runtime benchmarks for A5 are still inconclusive; do not use this browser reliability fix to claim CI speed improvement.
