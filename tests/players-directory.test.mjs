@@ -247,23 +247,29 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
 
-test('#532 Overview-only Club uses the canonical affiliation without changing Attributes',()=>{
- const html=read('players/index.html'),js=read('assets/players-directory.js'),css=read('assets/app.css'),generator=read('tools/generate-app-pages.mjs');
- assert.match(html,/<table class="app-players-table" data-players-public>/);
- assert.match(html,/<th scope="col" class="app-players-club-col">Club<\/th>/);
+test('#532 public Overview renders Flag Player Positions Age Height Foot Club and a crest',()=>{
+ const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),js=read('assets/players-directory.js'),css=read('assets/app.css');
+ const head=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</thead>',html.indexOf('<table class="app-players-table"')));
+ assert.deepEqual([...head.matchAll(/data-players-sort="([^"]+)"/g)].map(m=>m[1]),['nationality','name','positions','age','height','foot']);
+ assert.ok(head.indexOf('data-players-sort="foot"')<head.indexOf('app-players-club-col'));
  assert.equal((html.match(/colspan="7"/g)||[]).length,5);
  assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
- assert.match(js,/if\(state\.view==='overview'\)\{\s*clubCell\(tr,player\);/);
- assert.match(js,/player\.clubKey===null/);
+ assert.match(js,/addHeader\(t\.columns\[2\],'positions'\);\s*addHeader\(t\.columns\[1\],'age'\);addHeader\(t\.columns\[3\],'height'\);addHeader\(t\.columns\[4\],'foot'\)/);
+ assert.match(js,/if\(state\.view==='overview'\)\{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
+ assert.match(js,/clubCell\(tr,player\);\s*\}else \{/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
+ assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/);
+ assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json',\{credentials:'omit',cache:'force-cache'\}\)/);
+ assert.match(js,/Object\.hasOwn\(catalog,key\)\|\|catalog\[key\]!==path/);
+ assert.match(js,/crest\.dataset\.playerClubCrest=player\.clubKey/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+id\+'\/overview'/);
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{--app-players-club-width:200px;min-width:982px\}/);
- assert.match(css,/--app-players-club-width:176px;min-width:896px/);
- assert.match(css,/--app-players-club-width:160px;min-width:840px/);
- assert.match(generator,/app-players-club-col/);
- assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/,'direct Attributes preboot drops the Overview Club header');
- assert.match(html,/colSpan=keys\.length\+3/,'Attributes skeletons stay at their old column count');
+ assert.match(css,/\.app-players-club-content\{display:flex;align-items:center;[^}]*height:22px;gap:7px/);
+ assert.match(css,/\.app-players-club-crest\{[^}]*width:18px;height:18px;object-fit:contain/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
+ assert.doesNotMatch(css,/\.app-players-table \.app-player-club-link:hover\{text-decoration:underline/);
+ assert.ok(gen.indexOf('data-players-sort=\\\"foot')<gen.indexOf('app-players-club-col'));
 });
-
 test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
@@ -851,10 +857,10 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
  assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'name cell stays vertically centered');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
- assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
  assert.match(css,/\.app-players-table thead th\{height:36px/,'compact headings remain stable across all player tables');
