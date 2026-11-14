@@ -99,7 +99,7 @@
   if(flag){
    // Full nationality name is visible: no hover tooltip, keyboard focus or duplicate screen-reader text on the flag.
    const img=document.createElement('img');img.className='app-player-detail-flag';
-   img.src='/assets/flags/'+flag+'.svg';img.width=24;img.height=18;
+   img.src='/assets/flags/'+flag+'.svg';img.width=20;img.height=15;
    img.alt='';wrapper.append(img);
   }
   wrapper.append(document.createTextNode(name||code));return wrapper;

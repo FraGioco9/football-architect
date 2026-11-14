@@ -4,8 +4,8 @@ body.app-body{--app-page-pad-top:8px}
 /* QA-16: stable first-paint Overview panels with anonymous skeleton values. */
 .club-first-paint-header .club-crest{visibility:visible}
 /* Anonymous header crest shares the circular standings loading primitive. */
-.club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
-.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:contain;flex:none}
+.club-first-paint-flag{display:inline-flex;width:var(--fa-flag-width);height:var(--fa-flag-height);min-width:var(--fa-flag-width);align-items:center;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:var(--fa-flag-width);height:var(--fa-flag-height);object-fit:contain;flex:none}
 .club-first-paint-header h1{min-height:1.15em}
 .club-first-paint-header .club-location{min-height:1.25em}
 .club-first-paint-panel{min-height:160px;visibility:visible}
@@ -120,7 +120,7 @@ body.app-body{--app-page-pad-top:8px}
 @media(max-width:760px){.club-competition-layout{grid-template-columns:minmax(0,1fr);gap:8px}.club-competition-summary{padding:9px 0 0;grid-template-rows:auto 56px}.club-competition-logo{width:44px;height:44px;flex-basis:44px}}
 
 /* Final competition-row alignment and proportional country flag. */
-.club-country-flag{width:25px;height:20px;aspect-ratio:5/4;object-fit:contain}
+.club-country-flag{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4;object-fit:contain}
 .club-competition-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.65fr);align-items:center}
 .club-competition-identity{align-self:center}
 .club-competition-logo{width:60px;height:60px;flex-basis:60px;align-self:center}
@@ -280,8 +280,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition-entry .club-competition-name .app-link:hover,.club-competition-entry .club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:620px){.club-competition-cup-mark{width:50px;height:50px;flex-basis:50px}}
 
-/* Country flag parity: header stays 25×20 at first paint and after hydration. */
-.club-header .club-country-flag{display:block;width:25px!important;height:20px!important;min-width:25px;max-width:25px;min-height:20px;max-height:20px;aspect-ratio:5/4;flex:none}
+/* Country flag parity: header stays at shared 20×16 from first paint through hydration. */
+.club-header .club-country-flag{display:block;width:var(--fa-flag-width)!important;height:var(--fa-flag-height)!important;min-width:var(--fa-flag-width);max-width:var(--fa-flag-width);min-height:var(--fa-flag-height);max-height:var(--fa-flag-height);aspect-ratio:5/4;flex:none}
 
 
 /* QA-16 V01: skeleton bars hint at text, never fill entire long rows. */

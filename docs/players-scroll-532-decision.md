@@ -58,3 +58,10 @@
 
 - Shared public Players, Club Roster and Admin preview row height and five first-paint/sort loading rows: **30px** (previously 34px), with vertical table-cell padding **2px**. Column widths, fonts, flags, and 44px headers are unchanged.
 - The separate absolute underline on player-name links now uses **`bottom: 0` instead of `bottom: -2px`**, bringing it 2px closer to the text while keeping the centered line box stable on hover/focus. Visual Safari QA is still outstanding.
+
+## Sitewide non-table flag sizing (#532)
+
+- Shared world/competition/country-flag frame tokens reduced from **25×20 to 20×16px**; the competition flag frame's later override now uses the same CSS variables instead of reimposing the previous size. Embedded flag SVGs still preserve their 5:4 viewBox masks and `object-fit:contain`; no SVG content was changed.
+- Club header, identity and first-paint country flag placements resolve to the shared 20×16 size, including the fixed min/max header dimensions; the existing Clubs directory flags were already 20×16, so no change was needed there. Static SVG intrinsic width/height attributes remain unchanged; the stylesheet sizes their frames at first paint without requiring mass regeneration of generated pages.
+- Player detail flag and its skeleton are now **20×15px** (matching player table flag dimensions) in CSS and the renderer image dimensions. Existing title, age, tab, table column, flag tooltip, team crest and hit-area styling is preserved.
+- Regression assertions cover new common flag slots and player-detail first-paint parity; visual mobile Safari QA remains pending.

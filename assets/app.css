@@ -5,7 +5,7 @@
  * Keep source order: later refinements intentionally override earlier rules.
  * Compact declarations and media bodies retain existing source contracts.
  */
-:root{--fa-flag-width:25px;--fa-flag-height:20px;--fa-crest-shield-shape:polygon(50% 1%,91% 16%,90% 59%,79% 80%,50% 99%,21% 80%,10% 59%,9% 16%);--fa-crest-shield-fill:#7F9F96}
+:root{--fa-flag-width:20px;--fa-flag-height:16px;--fa-crest-shield-shape:polygon(50% 1%,91% 16%,90% 59%,79% 80%,50% 99%,21% 80%,10% 59%,9% 16%);--fa-crest-shield-fill:#7F9F96}
 html[data-theme="light"]{--fa-crest-shield-fill:#789688}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
@@ -1150,7 +1150,7 @@ svg.site-chevron>path{translate:0 .5px}
 .app-rules-outcome{padding:7px 10px;border-radius:5px}
 .app-rules-metric{padding:9px 12px}
 .app-rules-metric dd{font-size:19px}
-.app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
+.app-world-flag-frame{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4}
 .app-world-flag{width:100%;height:100%;object-fit:contain}
 
 /* UI-HOVER-02: Search-derived hover applies only to actual editable fields, not cards, labels or feedback. */

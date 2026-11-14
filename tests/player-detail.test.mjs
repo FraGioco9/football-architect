@@ -431,7 +431,9 @@ test('#535 flag, long nationality, dot and age skeleton share the real header fo
  const js=read('assets/player-detail.js'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
  assert.match(js,/nationalitySkeleton\.append\(skeleton\('app-player-detail-flag-skeleton'\),skeleton\('app-player-detail-nationality-skeleton'\)\)/);
  assert.match(js,/ageNode\.replaceChildren\(\)/);
- assert.match(css,/\.app-player-detail-flag-skeleton\{[^}]*width:24px;height:18px/);
+ assert.match(css,/\.app-player-detail-flag-skeleton\{[^}]*width:20px;height:15px/);
+ assert.match(css,/\.app-player-detail-flag\{[^}]*width:20px;height:15px;object-fit:contain/);
+ assert.match(js,/img\.src='\/assets\/flags\/'\+flag\+'\.svg';img\.width=20;img\.height=15/);
  assert.match(css,/\.app-player-detail-nationality-skeleton\{[^}]*width:116px;height:16px/);
  assert.doesNotMatch(css,/\.app-player-detail-age-skeleton/);
  assert.match(css,/\.app-player-detail-header-meta\{display:flex;align-items:center/);
