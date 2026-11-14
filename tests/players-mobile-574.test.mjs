@@ -139,7 +139,7 @@ test('#574 preview subview fade responds to scroll and resizing after first pain
 test('#574 mobile Club crest and compact name are centered together',()=>{
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) \.app-players-club-content\{display:flex;align-items:center;justify-content:center;gap:0;width:100%/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(7\)\{text-align:center\}/);
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) th\.app-players-club-col\{text-align:center\}/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) th\.app-players-club-col\{text-align:left\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:678px\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:640px\}/);
 });
@@ -180,13 +180,13 @@ test('#574 positions use an overflow-driven, accessible mobile disclosure',async
 });
 
 
-test('#574 Club header and centered club name use the same seventh-column axis',()=>{
+test('#574 Club header stays left while row Club names remain centered',()=>{
  const page=read('players/index.html'),directory=read('assets/players-directory.js');
  const mobile=css.split('/* #574: the visible text is centered exactly in its table cell.')[1];
  assert.ok(mobile,'mobile Club geometry block exists');
  assert.match(page,/<th scope="col" class="app-players-club-col">Club<\/th>/,'first-paint header has class');
  assert.match(directory,/club\.className='app-players-club-col'/,'hydrated header keeps same class');
- assert.match(mobile,/th\.app-players-club-col\{text-align:center\}/,'mobile Club header is centered');
+ assert.match(mobile,/th\.app-players-club-col\{text-align:left\}/,'mobile Club header follows desktop left alignment');
  assert.match(mobile,/tbody td:nth-child\(7\)\{text-align:center\}/,'Club data cell is centered');
  assert.match(mobile,/\.app-players-club-content\{display:flex;align-items:center;justify-content:center/,'name anchor is centered');
  assert.match(mobile,/\.app-players-club-mark\{position:absolute;right:calc\(100% \+ 4px\)/,'crest does not shift name');

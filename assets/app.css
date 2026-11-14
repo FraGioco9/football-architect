@@ -1959,8 +1959,8 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-name{display:inline-block;width:max-content;max-width:100%;min-width:0;height:18px;line-height:18px;vertical-align:middle;text-align:center;overflow:hidden}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-name[data-mobile-club-name]::before{display:inline-block;line-height:18px;vertical-align:middle}
  /* The static first-paint and hydrated Club headers share this semantic class.
-  * The heading is centered on the same seventh-column axis as the club label. */
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-players-club-col{text-align:center}
+  * Header stays left as on desktop; Club names remain centered in each row. */
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th.app-players-club-col{text-align:left}
 }
 @media(max-width:420px){
  .app-players-table :is(th,td){padding-inline:6px}
