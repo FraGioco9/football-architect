@@ -182,7 +182,9 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/params\.delete\('sort'\);params\.delete\('order'\)/);
  assert.match(js,/if\(selected\.view==='roster'\)\{/);
  assert.match(js,/if\(location\.search\)history\.replaceState\(null,'',location\.pathname\+location\.hash\)/);
- assert.match(js,/data\.count>0&&!new URLSearchParams\(location\.search\)\.has\('view'\)/);
+ assert.match(js,/rosterSnapshot\.count>0&&/);
+ assert.match(js,/const canonicalRosterInfo=/);
+ assert.doesNotMatch(js,/if\(next\.view==='roster'&&!queryOnly\)rosterSnapshot=\{source:'loading'\}/);
  assert.match(js,/location\.pathname\+'\?view=info'\+location\.hash/);
  assert.match(js,/const target=control\.dataset\.clubRosterView/);
  assert.match(js,/const queryOnly=selected\.view==='roster'&&next\.view==='roster'/);
@@ -218,4 +220,81 @@ test('CLUB-ROSTER-01 clicking the already active main tab is inert without a Ros
  assert.equal(getSnapshot(),snapshot,'loaded players must remain untouched');
  assert.equal(click('history'),true,'switching to a different view still uses client navigation');
  assert.deepEqual(counters,{navigation:1,paint:1,history:1,overview:1,roster:1});
+});
+
+test('CLUB-ROSTER-API: revisiting the same club reuses one in-flight or completed read',async()=>{
+ const js=read('assets/club-page.js');
+ const match=js.match(/  let rosterRequest=0,[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
+ assert.ok(match,'extract the real Roster request handler');
+ const makeController=new Function('selected','fetch','history','location','window','paint',
+  'let rosterSnapshot={source:"loading"},refreshClubRoster; '+match[0]+
+  '; return {refresh:()=>refreshClubRoster(),snapshot:()=>rosterSnapshot};');
+ const selected={view:'roster',countryId:'IT',clubId:1};
+ const location={pathname:'/clubs/it/1/roster',search:'',hash:''};
+ const pending=[];let requests=0,paints=0,replaces=0;
+ const fetch=(url,options)=>{
+  assert.equal(url,'/api/clubs/IT-1/roster');
+  assert.equal(options.method,'GET');
+  requests++;
+  return new Promise(resolve=>pending.push(resolve));
+ };
+ const history={replaceState:(_state,_title,url)=>{
+  replaces++;location.search=new URL(url,'https://example.test').search;
+ }};
+ const window={addEventListener:()=>{}};
+ const controller=makeController(selected,fetch,history,location,window,()=>paints++);
+ controller.refresh();
+ assert.equal(requests,1,'initial visit issues one read');
+ selected.view='fixtures';controller.refresh();
+ selected.view='history';controller.refresh();
+ selected.view='roster';controller.refresh();
+ assert.equal(requests,1,'returning during an in-flight read does not start a second request');
+ const players=[{id:1,display_name:'Test Player',nationality:'IT',primary_position:'ST'}];
+ pending.shift()({ok:true,json:async()=>({clubKey:'IT-1',count:1,players})});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(controller.snapshot().source,'ready');
+ assert.equal(paints,1,'the successful response renders once');
+ assert.equal(location.search,'?view=info','the first loaded squad still selects the canonical Info URL');
+ selected.view='history';controller.refresh();
+ selected.view='roster';controller.refresh();
+ selected.view='fixtures';controller.refresh();
+ selected.view='roster';controller.refresh();
+ assert.equal(requests,1,'every subsequent return reuses the same validated players');
+ assert.equal(controller.snapshot().players,players,'the validated snapshot is preserved');
+ assert.equal(replaces,1,'canonical Info must not rewrite an already canonical URL');
+});
+
+test('CLUB-ROSTER-API: empty squads are cached, transient failures can retry and stale reads are fenced',async()=>{
+ const js=read('assets/club-page.js');
+ const match=js.match(/  let rosterRequest=0,[\s\S]*?window\.addEventListener\('pagehide',[^\n]+\);/);
+ assert.ok(match);
+ const makeController=new Function('selected','fetch','history','location','window','paint',
+  'let rosterSnapshot={source:"loading"},refreshClubRoster; '+match[0]+
+  '; return {refresh:()=>refreshClubRoster(),snapshot:()=>rosterSnapshot};');
+ const selected={view:'roster',countryId:'IT',clubId:1};
+ const location={pathname:'/clubs/it/1/roster',search:'',hash:''};
+ let count=0;const pending=[];const handlers={};
+ const fetch=(_url,{signal})=>{count++;return new Promise((resolve,reject)=>pending.push({resolve,reject,signal}));};
+ const controller=makeController(selected,fetch,{replaceState:()=>{throw Error('Empty squad must keep neutral URL');}},
+  location,{addEventListener:(type,cb)=>handlers[type]=cb},()=>{});
+ controller.refresh();assert.equal(count,1);
+ pending.shift().reject(Error('temporary 503'));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(controller.snapshot().source,'unavailable');
+ selected.view='history';controller.refresh();
+ selected.view='roster';controller.refresh();
+ assert.equal(count,2,'failed reads are retryable after returning');
+ pending.shift().resolve({ok:true,json:async()=>({clubKey:'IT-1',count:0,players:[]})});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(controller.snapshot().source,'ready');
+ assert.equal(controller.snapshot().count,0);
+ selected.view='fixtures';controller.refresh();
+ selected.view='roster';controller.refresh();
+ assert.equal(count,2,'a verified empty squad is cached');
+ handlers.pagehide();
+ controller.refresh();
+ assert.equal(count,3,'pagehide clears the in-memory request identity');
+ pending.shift().resolve({ok:true,json:async()=>({clubKey:'IT-1',count:0,players:[]})});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(controller.snapshot().source,'ready');
 });

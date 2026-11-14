@@ -116,7 +116,7 @@ test('Explore Players comes before Clubs and opens the public directory (not Adm
   assert.match(html,/<th scope="col" class="app-players-flag-col"><button[^>]*data-players-sort="nationality"[^>]*><span class="app-players-sort-label"><span class="sr-only" data-app-i18n="playersNationality">Nationality<\/span>/);
   const columns=[...html.matchAll(/data-app-i18n="playersColumn[^"]+">([^<]+)<\/span>/g)].map(m=>m[1]);
  assert.deepEqual(columns,['Player','Positions','Age','Height','Foot']);
- assert.ok(html.includes('<td colspan="6">'));
+ assert.ok(html.includes('<td colspan="7">'));
  assert.doesNotMatch(html,/\/admin\/players/);
  assert.equal(publicRequestFile('/players'),'players/index.html');
  assert.equal(isAllowlistedPublicPath('players/index.html'),true);

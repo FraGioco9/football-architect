@@ -207,7 +207,6 @@
       // An active tab is a no-op: keep the Roster snapshot, URL and scroll position.
       if(next.view===selected.view)return;
       history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
-      if(next.view==='roster')rosterSnapshot={source:'loading'};
       selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
      });
@@ -355,12 +354,24 @@
    event.preventDefault();options[next].click();
   });
   // A current-state roster read is independent of sporting seasons and archives.
-  let rosterRequest=0,rosterAbort=null;
+  let rosterRequest=0,rosterAbort=null,rosterCacheClubKey=null;
+  const canonicalRosterInfo=()=>{
+   if(selected.view==='roster'&&rosterSnapshot.source==='ready'&&rosterSnapshot.count>0&&
+    !new URLSearchParams(location.search).has('view'))
+    history.replaceState(null,'',location.pathname+'?view=info'+location.hash);
+  };
   refreshClubRoster=()=>{
    if(selected.view!=='roster')return;
    const clubKey=selected.countryId+'-'+selected.clubId;
+   // Reuse both completed and in-flight reads when revisiting this club.
+   // An unavailable response can be retried on the next Roster entry.
+   if(rosterCacheClubKey===clubKey&&['loading','ready'].includes(rosterSnapshot.source)){
+    canonicalRosterInfo();return;
+   }
    const ticket=++rosterRequest;
    rosterAbort?.abort();rosterAbort=new AbortController();
+   rosterCacheClubKey=clubKey;
+   if(rosterSnapshot.source!=='loading'){rosterSnapshot={source:'loading'};paint(true);}
    const {signal}=rosterAbort;
    void (async()=>{
     try{
@@ -377,16 +388,16 @@
      rosterSnapshot={source:'ready',...data};
      // No table is shown for a verified empty squad; keep the neutral route.
      // A positive response selects Info without creating a history entry.
-     if(selected.view==='roster'&&data.count>0&&!new URLSearchParams(location.search).has('view'))
-      history.replaceState(null,'',location.pathname+'?view=info'+location.hash);
+     canonicalRosterInfo();
     }catch(error){
      if(signal.aborted||ticket!==rosterRequest)return;
+     rosterCacheClubKey=null;
      rosterSnapshot={source:'unavailable',status:Number.isSafeInteger(error?.status)?error.status:0};
     }
     if(selected.view==='roster')paint(true);
    })();
   };
-  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++});
+  window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
   refreshClubRoster();
   // Public source: exactly the club's two domestic candidates plus both cups.
   // Shared world ownership, strict season validation and a reset fence prevent
@@ -562,7 +573,6 @@
    const next=model.route(location.pathname);
    if(next&&next.base===selected.base){
     const queryOnly=selected.view==='roster'&&next.view==='roster';
-    if(next.view==='roster'&&!queryOnly)rosterSnapshot={source:'loading'};
     selected=next;paint(true);refreshClubHistory();refreshClubOverview();
     if(!queryOnly)refreshClubRoster();
     if(queryOnly){
