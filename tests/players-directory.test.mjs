@@ -821,7 +821,7 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
  assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'name cell stays vertically centered');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;min-height:18px;line-height:18px/,'link line box is stable');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:-2px;height:1px/,'underline is out of flow');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
