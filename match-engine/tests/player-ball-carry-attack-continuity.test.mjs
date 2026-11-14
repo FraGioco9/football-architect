@@ -228,6 +228,17 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
   // a real PASS and later CARRY authorize 148 support frames, but none
   // collides with the selected presser. No change is expected from C2-a
   // when its narrowly scoped precondition never occurs.
+  const audit=worlds[1].snapshot().continuityAudit;
+  assert.ok(audit.eligible>0,'authentic source-qualified candidates required');
+  assert.equal(audit.preHandoffConflicts,0,
+   'negative replay must not contain preliminary press collision');
+  assert.equal(audit.c23nResolved,0,
+   'negative replay has no C2.3n collision to resolve');
+  assert.equal(audit.residualConflicts,0,
+   'negative replay must not contain residual press collision');
+  assert.equal(audit.c2aResolved,0,
+   'negative replay must not invoke C2-a reassignment');
+  console.log('C2_A_REAL_RAPIER_PRESS_SELECTION_AUDIT',JSON.stringify(audit));
   assert.ok(eligibleFrames>0,'genuine post-carry support must be exercised');
   assert.equal(baselineDutyConflicts,0,
    'this baseline replay must not contain a lost support duty');
