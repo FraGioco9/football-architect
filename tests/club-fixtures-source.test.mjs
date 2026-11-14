@@ -45,7 +45,11 @@ test('club fixtures source keeps unstarted/unpublished/unavailable states distin
  const unstarted=await readClubFixtures({clubKey:'IT-1',season:1,world:zero,manifest,fetchJson:async path=>{calls.push(path);throw Error('unexpected request')}});
  assert.equal(unstarted.coverage,'unstarted');assert.deepEqual(calls,[]);
  const empty=packet();empty.status='empty';empty.reason='calendar-unpublished';empty.provenance={kind:'none',resultAuthority:null,sourceRef:null};empty.data=null;
- assert.equal((await read(empty).run()).coverage,'unpublished');
+ const unavailableBeforeDraw=await readClubFixtures({clubKey:'IT-1',season:1,world,manifest,fetchJson:async path=>{
+  if(path.startsWith('/api/clubs/'))return empty;
+  throw Error('Club Fixtures HTTP 404');
+ }});
+ assert.equal(unavailableBeforeDraw.coverage,'unpublished');
  const unavailable={...empty,status:'unavailable',reason:'unsupported-season'};
  assert.equal((await read(unavailable).run()).coverage,'unavailable');
 });
@@ -57,4 +61,35 @@ test('club fixtures source accepts a closed historical season with verified resu
  const loaded=await readClubFixtures({clubKey:'IT-1',season:1,world:w,manifest,fetchJson:async()=>payload});
  assert.equal(loaded.coverage,'complete');assert.equal(loaded.day,56);
  assert.equal(loaded.rows.every(r=>r.goalsFor!==null),true);
+});
+
+
+test('club fixtures reads the official domestic draw before the full world calendar',async()=>{
+ const dayTwo={...world,revision:7,day:2};
+ const empty=packet([],dayTwo);empty.status='empty';empty.reason='calendar-unpublished';
+ empty.provenance={kind:'none',resultAuthority:null,sourceRef:null};empty.data=null;
+ const league=Array.from({length:240},(_,i)=>({
+  matchId:String(i+1),phaseId:'league',marker:'N'+String(i%30+1).padStart(2,'0'),
+  day:13+i%30,round:i%30+1,homeClubId:i<30?'IT-1':'IT-5',
+  awayClubId:i<30?'IT-2':'IT-6'
+ }));
+ const publishedPacket={schemaVersion:1,providerId:'authoritative-world',season:1,
+  competitionId:'IT-1',status:'published',
+  provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)},
+  fixtures:[...league,{matchId:'241',phaseId:'playout',day:52,homeClubId:null,awayClubId:null}]};
+ const requested=[];
+ const result=await readClubFixtures({clubKey:'IT-1',season:1,world:dayTwo,manifest,
+  fetchJson:async path=>{
+   requested.push(path);
+   if(path.startsWith('/api/clubs/'))return empty;
+   if(path.endsWith('/competitions/IT-1'))return publishedPacket;
+   throw Error('Club Fixtures HTTP 404');
+  }});
+ assert.equal(result.coverage,'partial');
+ assert.equal(result.competitions.length,1);
+ assert.equal(result.rows.length,30);
+ assert.equal(result.rows[0].id,'1');
+ assert.equal(result.rows.every(r=>r.goalsFor===null&&r.venue==='home'),true);
+ assert.equal(requested.length,5);
+ assert.equal(result.rows.every(r=>/^[1-9][0-9]*$/.test(r.matchId)),true);
 });

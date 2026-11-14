@@ -62,7 +62,7 @@ export default {
         return json(503,{error:{code:'match_unavailable'}});
       }
     }
-    const matchDetail=url.pathname.match(/^\/api\/matches\/(m1_[0-9a-f]{32})$/);
+    const matchDetail=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)$/);
     if(matchDetail){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search)return json(422,{error:{code:'invalid_public_request'}});

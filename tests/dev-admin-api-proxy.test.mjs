@@ -323,3 +323,54 @@ test('Admin Contracts bridge forwards only bounded authenticated list and mutati
  }finally{bridge.closeAllConnections();upstream.closeAllConnections();
   await Promise.all([new Promise(resolve=>bridge.close(resolve)),new Promise(resolve=>upstream.close(resolve))])}
 });
+
+test('MATCH-SLOTS: local DEV proxies numeric match IDs and published fixtures, but never unsafe or private calls',async()=>{
+ const forwarded=[];
+ const upstream=createServer((r,res)=>{
+  forwarded.push(r.url);
+  assert.equal(r.method,'GET');
+  for(const key of ['cookie','origin','x-csrf-token','idempotency-key'])assert.equal(r.headers[key],undefined);
+  res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['private=never-forward']});
+  res.end(JSON.stringify({matchId:'1',status:'published',fixtures:[]}));
+ });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
+ const target='http://127.0.0.1:'+upstream.address().port;
+ const server=createServer((r,res)=>proxyAdminApi(r,res,{target}));
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const send=(path,method='GET')=>new Promise((resolve,reject)=>{
+  const r=request({hostname:'127.0.0.1',port:server.address().port,path,method,
+   headers:{Host:'app.localhost:2000',Cookie:'admin=secret','X-CSRF-Token':'private','Idempotency-Key':'private'}},res=>{
+   const chunks=[];res.on('data',chunk=>chunks.push(chunk));
+   res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(chunks).toString(),cookie:res.headers['set-cookie']}));
+  });r.on('error',reject);r.end();
+ });
+ try{
+  const valid=['/api/matches/seasons/1/competitions/IT-1',
+   '/api/matches/seasons/1/competitions/int-2','/api/matches/1','/api/matches/3896'];
+  for(const path of valid){
+   const result=await send(path);
+   assert.equal(result.status,200,path);
+   assert.equal(JSON.parse(result.body).status,'published');
+   assert.equal(result.cookie,undefined,'anonymous public APIs never pass upstream cookies');
+  }
+  assert.deepEqual(forwarded,valid);
+  const invalid=[
+   ['/api/matches/0',404],['/api/matches/01',404],
+   ['/api/matches/m1_00ba05c95b47e3fa47eae54de51ba23d',404],
+   ['/api/matches/9007199254740992',404],
+   ['/api/matches/seasons/0/competitions/IT-1',404],
+   ['/api/matches/seasons/01/competitions/IT-1',404],
+   ['/api/matches/seasons/9007199254740992/competitions/IT-1',404],
+   ['/api/matches/seasons/1/competitions/IT-3',404],
+   ['/api/matches/seasons/1/competitions/it-1',404],
+   ['/api/matches/1?admin=1',403],
+   ['/api/matches/seasons/1/competitions/IT-1?admin=1',403],
+   ['/api/matches/%31',403],['/api/matches/1%2Fextra',403],
+  ];
+  for(const [path,expected] of invalid)assert.equal((await send(path)).status,expected,path);
+  for(const path of valid)assert.equal((await send(path,'POST')).status,405,path);
+  assert.deepEqual(forwarded,valid,'invalid requests and methods must never reach the Worker');
+ }finally{
+  server.closeAllConnections();upstream.closeAllConnections();
+  await Promise.all([new Promise(resolve=>server.close(resolve)),new Promise(resolve=>upstream.close(resolve))]);
+ }
+});
