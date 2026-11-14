@@ -35,8 +35,38 @@ const VIRTUAL = Object.freeze({
 });
 // ME-01: explicit loopback + app-host only. Never listed in public artifacts.
 const MATCH_ENGINE_LAB = Object.freeze({
-  '/dev/match-engine': 'match-engine/lab/index.html',
+  '/dev/match-engine': 'match-engine/lab/fixture.html',
+  '/dev/match-engine/diagnostics': 'match-engine/lab/index.html',
+  '/__fa_match_engine__/fixture-lab.mjs': 'match-engine/src/fixture-lab.mjs',
+  '/__fa_match_engine__/fixture-lab.css': 'match-engine/lab/fixture.css',
+  '/__fa_match_engine__/physical-fixture-step-runtime.mjs': 'match-engine/src/physical-fixture-step-runtime.mjs',
+  '/__fa_match_engine__/player-ball-physical-carry-sequence.mjs': 'match-engine/src/player-ball-physical-carry-sequence.mjs',
+  '/__fa_match_engine__/player-ball-physical-carry-proximity.mjs': 'match-engine/src/player-ball-physical-carry-proximity.mjs',
+  '/__fa_match_engine__/player-ball-universal-world.mjs': 'match-engine/src/player-ball-universal-world.mjs',
+  '/__fa_match_engine__/player-ball-carry-oriented-shoe-geometry.mjs': 'match-engine/src/player-ball-carry-oriented-shoe-geometry.mjs',
+  '/__fa_match_engine__/player-ball-global-response.mjs': 'match-engine/src/player-ball-global-response.mjs',
+  '/__fa_match_engine__/temporary-uniform-fixture-squad.mjs': 'match-engine/src/temporary-uniform-fixture-squad.mjs',
+  '/__fa_match_engine__/player-ball-action-outcome-observation.mjs': 'match-engine/src/player-ball-action-outcome-observation.mjs',
+  '/__fa_match_engine__/player-ball-shot-boundary-observer.mjs': 'match-engine/src/player-ball-shot-boundary-observer.mjs',
+  '/__fa_match_engine__/player-ball-volume-boundary.mjs': 'match-engine/src/player-ball-volume-boundary.mjs',
+  '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/core.mjs': 'match-engine/src/core.mjs',
+  '/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs': 'match-engine/src/player-ball-uniform-autonomous-action.mjs',
+  '/__fa_match_engine__/player-ball-reach.mjs': 'match-engine/src/player-ball-reach.mjs',
+  '/__fa_match_engine__/player-ball-first-local-kick.mjs': 'match-engine/src/player-ball-first-local-kick.mjs',
+  '/__fa_match_engine__/player-ball-local-pass-receive.mjs': 'match-engine/src/player-ball-local-pass-receive.mjs',
+  '/__fa_match_engine__/player-ball-local-exchange.mjs': 'match-engine/src/player-ball-local-exchange.mjs',
+  '/__fa_match_engine__/player-ball-local-targeting.mjs': 'match-engine/src/player-ball-local-targeting.mjs',
+  '/__fa_match_engine__/player-ball-lane-closure.mjs': 'match-engine/src/player-ball-lane-closure.mjs',
+  '/__fa_match_engine__/player-ball-opposition-flight.mjs': 'match-engine/src/player-ball-opposition-flight.mjs',
+  '/__fa_match_engine__/player-ball-loose-response.mjs': 'match-engine/src/player-ball-loose-response.mjs',
+  '/__fa_match_engine__/player-ball-control-evidence.mjs': 'match-engine/src/player-ball-control-evidence.mjs',
+  '/__fa_match_engine__/player-ball-release-evidence.mjs': 'match-engine/src/player-ball-release-evidence.mjs',
+  '/__fa_match_engine__/player-foot-contact.mjs': 'match-engine/src/player-foot-contact.mjs',
+  '/__fa_match_engine__/player-foot-contact-timeline.mjs': 'match-engine/src/player-foot-contact-timeline.mjs',
+  '/__fa_match_engine__/player-foot-contact-solver.mjs': 'match-engine/src/player-foot-contact-solver.mjs',
+  '/__fa_match_engine__/player-foot-contact-momentum.mjs': 'match-engine/src/player-foot-contact-momentum.mjs',
+  '/__fa_match_engine__/player-foot-contact-qualification.mjs': 'match-engine/src/player-foot-contact-qualification.mjs',
   '/__fa_match_engine__/aerodynamics.mjs': 'match-engine/src/aerodynamics.mjs',
   '/__fa_match_engine__/magnus.mjs': 'match-engine/src/magnus.mjs',
   '/__fa_match_engine__/calibration-evidence.mjs': 'match-engine/src/calibration-evidence.mjs',
@@ -231,7 +261,7 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
         if (!devPreview || !subdomains || !isLoopback(remote) ||
             req.headers.host !== 'app.localhost:2000') return reject(res, 404);
         let bytes = await safeFile(root, labFile);
-        if (raw === '/dev/match-engine') {
+        if (raw === '/dev/match-engine' || raw === '/dev/match-engine/diagnostics') {
           const canonicalDashboard = await safeFile(root, 'dashboard/index.html');
           bytes = Buffer.from(renderMatchEngineLab(bytes.toString('utf8'), canonicalDashboard.toString('utf8')), 'utf8');
         }

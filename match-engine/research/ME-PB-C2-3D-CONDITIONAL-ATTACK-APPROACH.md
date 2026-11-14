@@ -1,0 +1,11 @@
+# C2.3d — conditional live-ball attack approach, no fabricated shot
+
+**Scope:** DEV research. Parent C2.3 and C2 are still OPEN. Exact-head validation required.
+
+The 22 players always begin in their ordinary canonical formation. The existing C2.3c attacking forward runs only after an **authentic, exclusive Rapier shoe PASS**, with a frozen same-tick passer, recipient, impulse and team. C2.3d adds one narrow continuation to that already authenticated run: if the *current* ball is within 35m of the opponent's line, within the +/-20m shooting channel, and the selected forward is within 12m of the ball and at most 1m ahead of it, the ordinary movement target changes from a 14m-forward, 8m-wide off-ball lane to a **0.26m behind-ball approach**. This is the existing normal-speed 60Hz mover, with unchanged collision separation and Rapier shoe physics. Otherwise the former wide-lane support remains.
+
+The movement observer explicitly exposes `phase`, measured `liveBallGapM`, and `possibleShotWindow` for read-only QA. `shotExecuted:false`, `physicalShoeStartObserved:false`, `passCompleted:null`, `officialMatchPossession:false` and `officialMatchResult:null` prevent treating the tactical cue as a true contact or outcome. The independent closed fixture reader validates the phase, bounded gap, linked prior real pass, tick, team, duty and non-scoring flags; no new external scenario switch or injected ball event is accepted.
+
+**Evidence:** mirrored pure tactical geometry tests cover the 35m shot-range limit, 20m width, 12m actual player-ball proximity, after-pass 240-tick expiry, and immutable non-scoring intent. Existing independent 220-tick real 11v11 home/away tests continue to verify the pass-triggered runs, now also their non-awarding phase flags. The new conditional phase only becomes a physically witnessed approach if the genuine normal-formation ball and a real forward *actually* reach this region in later tests. Neither a physical shot nor a full pass-to-shot sequence is asserted by pure geometry, and C2.3 remains unchecked until a new authentic shoe START+ACTIVE and shot impulse are independently observed from both teams.
+
+No player teleports, shoe position hacks, new physical knobs, production scoring or D1 changes. The local Match Engine LAB remains one compact manually configured pitch.

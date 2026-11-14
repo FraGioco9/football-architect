@@ -1,0 +1,214 @@
+// C2.3n: isolated genuine-carry presser/support handoff A/B.
+// No fake contacts, scripted shoe START, action injection or goal.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as rapier from '@dimforge/rapier3d-deterministic-compat';
+import {initializeRapier} from '../src/core.mjs';
+import {INITIAL_PLAYERS,PLAYER_PITCH} from '../src/player-movement.mjs';
+import {SHOT_MAX_RANGE_M} from '../src/player-ball-uniform-autonomous-action.mjs';
+import {createPhysicalFixtureStepRuntime}
+ from '../src/physical-fixture-step-runtime.mjs';
+
+const CASES=Object.freeze([
+ Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
+ Object.freeze({team:'away',country:'DE',x:4.96,vx:-0.3})
+]);
+const CHECKS=new Set([532,533,546,547,567,599,600,601,
+ 620,640,680,693,694,700,720]);
+const fix=c=>Object.freeze({
+ id:'season:1:'+c.country+'-1:N01:'+c.country+'-1:'+c.country+'-2',
+ competitionId:c.country+'-1',marker:'N01',day:1,round:1,
+ homeClubId:c.country+'-1',awayClubId:c.country+'-2'
+});
+const initial=c=>Object.freeze({
+ preset:'roll',seed:'c2-3e-natural-physical-'+c.team+'-'+c.country,
+ x:c.x,y:0,z:0,vx:c.vx,vy:0,vz:0
+});
+const round=n=>Number(n.toFixed(3));
+const opts=Object.freeze({autonomousActions:true,autonomousCarry:true,
+ autonomousCarrySupport:true});
+const extended=Object.freeze({...opts,autonomousCarrySupportPressHandoff:true});
+function collect(summary,frame,c){
+ const t=frame.physicsTick;
+ assert.equal(frame.officialMatchResult,null);
+ assert.equal(frame.officialMatchPossession,false);
+ assert.equal(frame.productionScoringConnected,false);
+ assert.equal(frame.physicalShotBoundary.goalScored,null);
+ const ball=frame.ball.position;
+ const dir=c.team==='home'?1:-1;
+ const toGoal=PLAYER_PITCH.lengthM/2-dir*ball.x;
+ const shortfall=Math.max(0,toGoal-SHOT_MAX_RANGE_M);
+ summary.advance=Math.max(summary.advance,dir*(ball.x-c.x));
+ summary.minShortfall=Math.min(summary.minShortfall,shortfall);
+ if(shortfall===0&&toGoal>0&&Math.abs(ball.y)<=20)
+  summary.inZoneFrames++;
+ const action=frame.localAutonomousAction;
+ const actualStarts=frame.physicalContactFeed.started;
+ summary.shoeStarts+=actualStarts.length;
+ for(const v of actualStarts)assert.ok(
+  frame.physicalContactFeed.active.some(k=>k.engineId===v.engineId&&
+   k.team===v.team),'real START must have ACTIVE shoe');
+ if(action){
+  assert.equal(actualStarts.length,1);
+  assert.equal(frame.physicalContactFeed.active.length,1);
+  assert.equal(action.playerId,actualStarts[0].engineId);
+  assert.equal(action.team,actualStarts[0].team);
+  assert.equal(action.tick,t);
+  assert.equal(action.physicalTrigger,'same-tick-real-rapier-shoe-start');
+  assert.equal(action.appliedByRapier,true);
+  assert.equal(action.actualPhysicsImpulseApplied,true);
+  assert.equal(action.officialMatchAction,false);
+  summary.actions.push(Object.freeze({tick:t,action:action.action,
+   playerId:action.playerId,team:action.team}));
+  if(action.action==='shot'){
+   assert.equal(action.shotTarget.shooterId,action.playerId);
+   assert.equal(action.shotTarget.physicsTick,t);
+   summary.realShots.push({tick:t,team:action.team,id:action.playerId});
+  }
+ }
+ const support=frame.contactDecisionObservation.attackSupportRun;
+ if(support?.team===c.team&&support.phase==='post-carry-support'){
+  summary.relayFrames++;
+  assert.equal(support.carryContinuation.team,c.team);
+  assert.equal(support.possibleShotWindow,false);
+  assert.equal(support.shotExecuted,false);
+  assert.equal(support.officialMatchResult,null);
+  // The 60Hz mover chose this duty from the LAST COMPLETED Rapier
+  // shoe event. A new contact generated in THIS frame cannot be
+  // the source for its earlier movement assignment.
+  const pass=summary.actions.findLast(x=>x.action==='pass'&&
+   x.team===c.team&&x.tick<t);
+  const carry=summary.actions.findLast(x=>x.action==='carry'&&
+   x.team===c.team&&x.tick<t);
+  assert.ok(pass&&carry&&carry.tick>pass.tick);
+  assert.equal(support.sourcePassTick,pass.tick);
+  assert.equal(support.carryContinuation.sourceCarryTick,carry.tick);
+  assert.ok(t-pass.tick>240&&t-pass.tick<=480);
+  assert.ok(t-carry.tick<=150&&t>carry.tick);
+ }
+ if(CHECKS.has(t)){
+  const relative=frame.physicalPlayerPositions
+   .filter(p=>[c.team+'-9',c.team+'-10',
+    (c.team==='away'?'home':'away')+'-7'].includes(p.engineId))
+   .map(p=>Object.freeze({id:p.engineId,
+    gapM:round(Math.hypot(p.x-ball.x,p.y-ball.y)),
+    duty:frame.contactDecisionObservation.duties.find(d=>
+     d.engineId===p.engineId)?.movementDuty}));
+  summary.checkpoints.push(Object.freeze({
+   tick:t,ball:Object.freeze({x:round(ball.x),y:round(ball.y)}),
+   shotShortfallM:round(shortfall),focus:Object.freeze(relative),
+   support:support?.team===c.team?Object.freeze({
+    id:support.playerId,phase:support.phase,
+    sourceCarryTick:support.carryContinuation?.sourceCarryTick??null
+   }):null,
+   contactStarts:Object.freeze(actualStarts.map(x=>x.engineId)),
+   actualAction:action?.action??null
+  }));
+ }
+}
+const empty=()=>({advance:0,minShortfall:Infinity,inZoneFrames:0,
+ shoeStarts:0,actions:[],realShots:[],relayFrames:0,checkpoints:[]});
+const compact=a=>Object.freeze({
+ maxAdvanceM:round(a.advance),minShortfallM:round(a.minShortfall),
+ inZoneFrames:a.inZoneFrames,realShoeStarts:a.shoeStarts,
+ actions:a.actions,realShots:a.realShots,relayFrames:a.relayFrames,
+ checkpoints:a.checkpoints.filter(x=>[599,600,601,640,680,693,694,720]
+  .includes(x.tick))
+});
+test('C2.3n opt-in strictly requires authenticated autonomous carry support',async()=>{
+ const R=await initializeRapier(rapier),c=CASES[1];
+ const valid=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+ try{
+  assert.equal(valid.snapshot().autonomousCarrySupportPressHandoffMode,true);
+  const reset=valid.reset();
+  try{
+   assert.equal(reset.snapshot().autonomousCarrySupportPressHandoffMode,true);
+   assert.equal(reset.snapshot().physicsTick,0);
+   for(let t=1;t<=30;t++)reset.step();
+  }finally{reset.dispose();}
+ }finally{valid.dispose();}
+ for(const bad of [
+  {autonomousCarrySupportPressHandoff:true},
+  {autonomousActions:true,autonomousCarrySupportPressHandoff:true},
+  {autonomousActions:true,autonomousCarry:true,
+   autonomousCarrySupportPressHandoff:true},
+  {...opts,autonomousCarrySupportPressHandoff:false},
+  {...extended,researchShotAttacker:'away'}
+ ])assert.throws(()=>createPhysicalFixtureStepRuntime(R,fix(c),initial(c),bad));
+});
+test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',async()=>{
+ const R=await initializeRapier(rapier),results=[];
+ for(const c of CASES){
+  const original=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),opts);
+  const trial=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+  const verified=c.team==='away'?
+   createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended):null;
+  const a=empty(),b=empty();
+  let firstChange=null;
+  try{
+   const old=original.snapshot(),next=trial.snapshot();
+   assert.equal(old.autonomousCarrySupportPressHandoffMode,undefined);
+   assert.equal(next.autonomousCarrySupportPressHandoffMode,true);
+   assert.deepEqual(old.ball,next.ball);
+   assert.deepEqual(old.physicalPlayerPositions,next.physicalPlayerPositions);
+   for(let t=1;t<=720;t++){
+    const x=original.step(),y=trial.step();
+    assert.equal(x.physicsTick,t);
+    assert.equal(y.physicsTick,t);
+    if(verified){
+     const z=verified.step();
+     assert.deepEqual(z.ball,y.ball,'independent Rapier ball replay '+t);
+     assert.deepEqual(z.physicalPlayerPositions,y.physicalPlayerPositions,
+      'independent 22-body replay '+t);
+     assert.deepEqual(z.physicalContactFeed,y.physicalContactFeed);
+     assert.deepEqual(z.localAutonomousAction,y.localAutonomousAction);
+    }
+    const same=JSON.stringify(x.physicalPlayerPositions)===
+     JSON.stringify(y.physicalPlayerPositions)&&
+     JSON.stringify(x.ball)===JSON.stringify(y.ball);
+    if(!same&&firstChange===null)firstChange=t;
+    if(firstChange===null){
+     assert.deepEqual(x.physicalContactFeed,y.physicalContactFeed);
+     assert.deepEqual(x.localAutonomousAction,y.localAutonomousAction);
+    }
+    collect(a,x,c);collect(b,y,c);
+   }
+   assert.deepEqual(a.checkpoints.map(x=>x.tick),[...CHECKS]);
+   assert.deepEqual(b.checkpoints.map(x=>x.tick),[...CHECKS]);
+   if(c.team==='home'){
+    assert.equal(firstChange,null,'HOME has no eligible carry relay');
+    assert.deepEqual(a.actions,b.actions);
+    assert.equal(b.relayFrames,0);
+   }else{
+    const old=a.checkpoints.find(x=>x.tick===600);
+    const changed=b.checkpoints.find(x=>x.tick===600);
+    assert.ok(firstChange>=600,'no earlier movement/physics divergence');
+    assert.equal(old.focus.find(p=>p.id==='away-10').duty,'press');
+    assert.equal(changed.focus.find(p=>p.id==='away-10').duty,
+     'attack-support-intent');
+    assert.equal(changed.support?.id,'away-10');
+    assert.equal(changed.support?.phase,'post-carry-support');
+    assert.ok(b.relayFrames>a.relayFrames);
+    assert.ok(Math.abs(a.minShortfall-0.681)<0.002,
+     'old real physical shortfall must remain unchanged');
+    assert.deepEqual(a.actions.find(x=>x.tick===694),
+     {tick:694,action:'pass',playerId:'home-7',team:'home'});
+   }
+   results.push(Object.freeze({
+    team:c.team,firstPhysicalDivergenceTick:firstChange,
+    baseline:compact(a),handoff:compact(b),
+    difference:Object.freeze({
+     relayFrames:b.relayFrames-a.relayFrames,
+     maxAdvanceM:round(b.advance-a.advance),
+     bestShotRangeShortfallM:round(b.minShortfall-a.minShortfall),
+     actualShoeStarts:b.shoeStarts-a.shoeStarts,
+     realShots:b.realShots.length-a.realShots.length,
+     shotTerritoryFrames:b.inZoneFrames-a.inZoneFrames
+    })
+   }));
+  }finally{original.dispose();trial.dispose();verified?.dispose();}
+ }
+ assert.deepEqual(results.map(x=>x.team),['home','away']);
+ console.log('C2_3N_REAL_CARRY_PRESS_HANDOFF_AB',
+  JSON.stringify(results));
+});

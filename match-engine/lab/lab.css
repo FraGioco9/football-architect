@@ -9,7 +9,7 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start;gap:12px;margin-top:12px}
 .me-panel{min-width:0;padding:clamp(10px,1.2vw,14px)}
 .me-toolbar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:7px 10px;margin-bottom:10px}
-.me-preset-control{display:grid;gap:5px;flex:1 1 205px;min-width:160px}
+.me-preset-control{display:grid;gap:5px;flex:1 1 260px;min-width:210px}
 .me-speed-control{display:grid;gap:5px;flex:0 0 92px}
 .me-field-label{display:block;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
 .me-dropdown{min-width:0;width:100%;z-index:auto}
@@ -144,6 +144,8 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 
 /* ME-PLAYER-UI-01: four concise observer facts with no diagnostic wall. */
 .me-players-toggle{min-height:24px;padding:3px 9px;font-size:11px}
+#ai-lane-plan:not([hidden]){font-weight:600;color:var(--text)}
+#ai-kick-outcome:not([hidden]){font-weight:700;color:var(--text)}
 .me-players-toggle[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
 .me-inspect-label{font-size:11px;font-weight:700;color:var(--muted)}
 .me-inspect-select{min-height:32px;max-width:175px;border:1px solid var(--border);border-radius:var(--fa-radius-control);padding:5px 8px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
@@ -157,3 +159,11 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-player-readout strong{color:var(--text);font-size:12px;font-weight:650;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .me-player-note{margin:0;color:var(--muted);font-size:11px;line-height:1.4}
 @media(max-width:620px){.me-player-readout{grid-template-columns:1fr}}
+
+/* ME-PB-02: one explicit experimental switch in Advanced settings only. */
+.me-pb-advanced-row{display:flex;align-items:flex-end;gap:8px;min-width:0}
+.me-pb-advanced-row .me-seed-field{flex:1 1 0;min-width:0}
+.me-pb-contact-toggle{display:flex;align-items:center;gap:5px;flex:0 1 160px;min-width:0;min-height:32px;color:var(--muted);font-size:10px;font-weight:650;line-height:1.25;cursor:pointer}
+.me-pb-contact-toggle input{flex:none;width:14px;height:14px;accent-color:var(--fa-field-focus-border)}
+.me-pb-contact-toggle input:focus-visible{outline:2px solid var(--fa-field-focus-border);outline-offset:3px}
+@media(max-width:330px){.me-pb-advanced-row{flex-wrap:wrap}.me-pb-contact-toggle{flex:1 1 auto}}

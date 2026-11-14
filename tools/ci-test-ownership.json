@@ -71,6 +71,7 @@
     "backend/tests/player-registration-runtime.test.ts": "backend-runtime",
     "backend/tests/players-generation-runtime.test.ts": "backend-runtime",
     "backend/tests/player-club-contracts-runtime.test.ts": "backend-runtime",
+    "backend/tests/physical-fixture-calendar-runtime.test.ts": "backend-runtime",
     "backend/tests/prepare-persistence.test.mts": "backend-operator",
     "backend/tests/prepare-runtime.test.ts": "backend-runtime",
     "backend/tests/preview-package.test.mts": "backend-operator",

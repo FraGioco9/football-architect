@@ -1,6 +1,7 @@
 import {createEngine, initializeRapier, PRESETS, canonicalSnapshot, FIXED_DT, toGroundClearance} from '/__fa_match_engine__/core.mjs';
 import {drawPitchMarkings,pickObservedPlayerAtCanvasPixel} from '/__fa_match_engine__/pitch-markings.mjs';
 import {createPlayerMovement,currentObservedPlayerAssignments} from '/__fa_match_engine__/player-movement.mjs';
+import {createPlayerBallReachObserver} from '/__fa_match_engine__/player-ball-reach.mjs';
 import {measureBounceHistory,FIFA_TURF_QUALITY_PRO_REFERENCE_M} from '/__fa_match_engine__/rebound-metrics.mjs';
 import {formatNumericValue, stepNumericValue} from '/__fa_match_engine__/numeric-controls.mjs';
 import {runPhysicsDiagnostics,BOUNCE_OBSERVATION_SECONDS,ROLL_OBSERVATION_SECONDS,SPIN_OBSERVATION_SECONDS} from '/__fa_match_engine__/physics-diagnostics.mjs';
@@ -20,8 +21,10 @@ const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
+let playerBallReach=createPlayerBallReachObserver();
 let playersShown=false;
 let inspectedPlayerId=null;
+let kickDemoActive=false,passDemoActive=false,exchangeDemoActive=false,defendDemoActive=false,autonomousDefendActive=false,multiPassDefenseActive=false,threePassDefenseActive=false,fourPassDefenseActive=false,shownKickTick=null,shownPassStageCount=0,shownExchangeCount=0,shownOppositionFlightTick=null;
 
 const say = (message, error = false) => {
   byId('status').textContent = message;
@@ -71,44 +74,304 @@ function setupNumericFields() {
   }
 }
 
-function loadPreset() {
-  const defaults = PRESETS[byId('preset').value];
-  for (const key of fields) {
-    byId(key).value = formatNumericValue(defaults[key]);
+// One authoritative Scenario dropdown. LAB-03 is Compare replay, not an
+// independent initial state; existing LAB-01/02/04/05 IDs remain stable.
+const LAB_SCENARIOS=Object.freeze({
+  drop:Object.freeze({preset:'drop',seed:'me01-fixed',initial:PRESETS.drop}),
+  launch:Object.freeze({preset:'launch',seed:'me01-fixed',initial:PRESETS.launch}),
+  roll:Object.freeze({preset:'roll',seed:'me01-fixed',initial:PRESETS.roll}),
+  bounce:Object.freeze({preset:'bounce',seed:'me01-fixed',initial:PRESETS.bounce}),
+  'ai-kick':Object.freeze({preset:'roll',seed:'local-ai-first-kick',
+    initial:Object.freeze({x:-4.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-pass':Object.freeze({preset:'roll',seed:'local-ai-first-pass',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-exchange':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-defend':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-defend-auto':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-defend-multi':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-defend-three':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})}),
+  'ai-defend-four':Object.freeze({preset:'roll',seed:'local-ai-exchange',
+    initial:Object.freeze({x:-19.35,y:0,z:0,vx:0,vy:0,vz:0})})
+});
+function selectedLabScenario(){
+  const config=LAB_SCENARIOS[byId('preset').value];
+  if(!config)throw new RangeError('Unknown LAB scenario');
+  return config;
+}
+function loadPreset(){
+  const choice=byId('preset').value,config=selectedLabScenario();
+  kickDemoActive=choice==='ai-kick';
+  passDemoActive=choice==='ai-pass';
+  defendDemoActive=choice==='ai-defend';
+  fourPassDefenseActive=choice==='ai-defend-four';
+  threePassDefenseActive=choice==='ai-defend-three'||fourPassDefenseActive;
+  multiPassDefenseActive=choice==='ai-defend-multi'||threePassDefenseActive;
+  autonomousDefendActive=choice==='ai-defend-auto'||multiPassDefenseActive;
+  exchangeDemoActive=choice==='ai-exchange'||defendDemoActive||autonomousDefendActive;
+  const experimental=kickDemoActive||passDemoActive||exchangeDemoActive;
+  for(const key of fields){
+    byId(key).value=formatNumericValue(config.initial[key]);
     refreshNumericArrows(key);
   }
-  byId('compare-result').textContent = '';
-  byId('compare-result').hidden = true;
+  byId('seed').value=config.seed;
+  // Experimental AI physically requires shoe bodies; the checkbox mirrors
+  // this requirement and restores unchecked when returning to normal LABs.
+  byId('foot-contact-optin').checked=experimental;
+  byId('foot-contact-optin').disabled=experimental;
+  playersShown=experimental;
+  byId('players-toggle').setAttribute('aria-pressed',String(playersShown));
+  byId('player-controls').hidden=!playersShown;
+  byId('compare-result').textContent='';
+  byId('compare-result').hidden=true;
 }
-function currentInput() {
+function currentInput(){
   for(const field of fields)normalizeNumericField(field);
-  const data = {preset: byId('preset').value, seed: byId('seed').value};
-  for (const key of fields) {
-    const element = byId(key);
-    if (element.value.trim() === '') throw new RangeError('Empty value: ' + key);
-    data[key] = Number(element.value);
+  const data={preset:selectedLabScenario().preset,seed:byId('seed').value};
+  for(const key of fields){
+    const element=byId(key);
+    if(element.value.trim()==='')throw new RangeError('Empty value: '+key);
+    data[key]=Number(element.value);
   }
   return data;
 }
 function restart() {
-  const next = createEngine(rapier, currentInput());
+  const next = createEngine(rapier,currentInput(),{
+    diagnosticPlayerFootContactsEnabled:kickDemoActive||passDemoActive||
+      exchangeDemoActive||byId('foot-contact-optin').checked,
+    diagnosticLocalAiKickEnabled:kickDemoActive,
+    diagnosticLocalAiPassReceiveEnabled:passDemoActive,
+    diagnosticLocalAiExchangeEnabled:exchangeDemoActive,
+    diagnosticLocalAiOpponentLaneEnabled:defendDemoActive,
+    diagnosticLocalAiAutonomousDefenseEnabled:autonomousDefendActive,
+    diagnosticLocalAiThirdPassEnabled:threePassDefenseActive,
+    diagnosticLocalAiFourthPassEnabled:fourPassDefenseActive
+  });
   if (engine) engine.dispose();
   engine = next;
   history = [engine.snapshot()];
   physicsTickSnapshot = history[0];
-  playerWorld=createPlayerMovement();playerSnapshot=playerWorld.snapshot();
-  inspectedPlayerId=null;byId('player-inspect-choice').value='';
+  playerWorld=createPlayerMovement({
+    experimentalAiKickApproach:kickDemoActive,
+    experimentalAiPassReceiveApproach:passDemoActive,
+    experimentalAiExchangeApproach:exchangeDemoActive,
+    experimentalAiOpponentLane:defendDemoActive,
+    experimentalAiAutonomousDefense:autonomousDefendActive,
+    experimentalAiMultiPassDefense:multiPassDefenseActive,
+    experimentalAiThreePassDefense:threePassDefenseActive,
+    experimentalAiFourPassDefense:fourPassDefenseActive
+  });
+  playerSnapshot=playerWorld.snapshot();
+  playerBallReach=createPlayerBallReachObserver();
+  playerBallReach.observe(physicsTickSnapshot,playerSnapshot); // Tick zero is baseline, not an invented touch.
+  inspectedPlayerId=autonomousDefendActive?'away-10':
+    exchangeDemoActive||passDemoActive?'home-7':
+    kickDemoActive?'home-10':null;
+  byId('player-inspect-choice').value=inspectedPlayerId??'';
+  shownKickTick=null;shownPassStageCount=0;shownExchangeCount=0;
+  shownOppositionFlightTick=null;
+  byId('ai-lane-plan').hidden=!autonomousDefendActive;
+  byId('ai-lane-plan').textContent=autonomousDefendActive?
+    'Away #10 starts in the normal formation · waiting for measured outgoing ball velocity':'';
+  byId('ai-kick-outcome').hidden=!(kickDemoActive||passDemoActive||exchangeDemoActive);
+  byId('ai-kick-outcome').textContent=autonomousDefendActive?
+    'Away #10 in normal formation · waiting for a real Home #7 pass':
+    defendDemoActive?
+    'Away #7 pressuring the live passing lane · watching for real Rapier contact':
+    exchangeDemoActive?
+    'Home #7 preparing first pass · awaiting real shoe contacts for the return':
+    passDemoActive?
+    'Home #7 approaching for a real pass to Home #10 · waiting for shoe contact':
+    kickDemoActive?
+    'Home #10 approaching the ball · waiting for real shoe contact':'';
+
   accumulator = 0;
   playing = false;
   byId('compare-result').textContent = '';
   byId('compare-result').hidden = true;
-  say('Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset]));
+  say(autonomousDefendActive?
+    'Ready · autonomous lane response from the standard formation (DEV only)':
+    defendDemoActive?
+    'Ready · live defending during a dynamic local AI pass (DEV only)':
+    exchangeDemoActive?
+    'Ready · physical AI exchange demo (Home #7 ↔ Home #10 · DEV only)':
+    passDemoActive?
+    'Ready · real AI pass and reception demo (Home #7 → Home #10 · DEV only)':
+    kickDemoActive?
+    'Ready · first real AI kick demo (Home #10 · no match results)':
+    'Ready · ' + ({drop:'Ball Drop',launch:'Ball Launch',roll:'Ball Roll (Grass)',bounce:'Ball Bounce (2 m)'}[engine.scenario.preset])+ (engine.footContactSnapshot?' · experimental foot collisions':''));
   render();
 }
 function advance() {
-  const snapshot = engine.step();
+  let snapshot;
+  if(engine.footContactSnapshot){
+    // The explicit diagnostic needs real autonomous player XY at the NEXT tick
+    // before Rapier integrates its kinematic foot-body colliders.
+    const exchange=multiPassDefenseActive?engine.localAiExchangeSnapshot?.():null;
+    const nextPlayers=playerWorld.step(physicsTickSnapshot.ball.position,{
+      velocity:physicsTickSnapshot.ball.velocity,
+      footContact:engine.footContactSnapshot(),
+      ...(multiPassDefenseActive?{
+        passEvent:exchange?.events?.filter(e=>
+          e.stage==='pass'||e.stage==='return-pass').at(-1)??null,
+        oppositionFlightAudit:exchange?.oppositionFlightAudit??null
+      }:{})
+    });
+    snapshot=engine.step(nextPlayers);
+    playerSnapshot=nextPlayers;
+  }else{
+    // Preserve the canonical accepted LAB ball-first update and its replays.
+    snapshot=engine.step();
+    playerSnapshot=playerWorld.step(snapshot.ball.position);
+  }
   physicsTickSnapshot = snapshot;
-  playerSnapshot=playerWorld.step(snapshot.ball.position);
+  const lane=playerSnapshot.observedLaneClosure;
+  if(multiPassDefenseActive)
+    byId('ai-lane-plan').textContent=
+      'Observed genuine Rapier pass actions: '+playerSnapshot.observedPassEpochs.length+
+      (fourPassDefenseActive?' / 4':threePassDefenseActive?' / 3':' / 2')+
+      ' · latest action '+(playerSnapshot.observedPassEpochs.at(-1)?.stage??'awaiting real shoe START')+
+      ' · no possession inferred';
+  if(autonomousDefendActive&&lane){
+    byId('ai-lane-plan').textContent=
+      lane.phase==='released-after-physical-contact'?
+      'Away #10 assignment released after real Rapier shoe START at tick '+
+        lane.observedRapierShoeStartTick+
+        ' · regular bounded movement resumed · no official interception':
+      lane.phase==='released-after-observed-flight'?
+      'Away #10 assignment abandoned · '+
+        ({slowed:'measured ball slowed',reversed:'observed ball reversed',
+          'passed-defender':'ball passed the defending corridor'}[lane.releaseReason])+
+        ' at tick '+lane.releasedAtMovementTick+
+        ' · normal bounded movement resumed · no shoe contact inferred':
+      'Away defender autonomously closing measured pass lane · '+
+        (multiPassDefenseActive?'physical pass #'+lane.passSequence+
+          ' ('+lane.passStage+') · ':'')+
+        'decision at tick '+lane.activatedAtTick+' · waypoint ('+
+        fmt(lane.waypoint.x)+', '+fmt(lane.waypoint.y)+') m'+
+        (lane.retargetCount?
+          ' · '+lane.retargetCount+' bounded lateral corrections from observed Rapier flight':
+          '')+
+        ' · real shoe contact not inferred';
+    // ME-PB-31 only reports the measured post-release physical body
+    // distance to its CURRENT normal tactical duty (not its base lineup).
+    const rejoin=playerSnapshot.observedLaneRecovery;
+    if(rejoin)
+      byId('ai-lane-plan').textContent+=
+        ' · duty recovery: '+
+        (rejoin.status==='aligned-with-current-duty'?'aligned':
+          rejoin.status==='blocked-by-observed-player'?'blocked by real player':
+          'returning')+
+        ' · measured duty gap '+fmt(rejoin.distanceToCurrentDutyM)+' m';
+    if(multiPassDefenseActive)
+      byId('ai-lane-plan').textContent=
+        'Observed genuine Rapier pass actions: '+playerSnapshot.observedPassEpochs.length+
+        (fourPassDefenseActive?' / 4':threePassDefenseActive?' / 3':' / 2')+
+        ' · physical pass #'+lane.passSequence+
+        ' ('+lane.passStage+') · '+byId('ai-lane-plan').textContent;
+  }
+  // ME-PB-37: show ownerless post-contact reaction in the EXISTING
+  // LAB-11 diagnostic row, not a new scattered control.
+  const loose=playerSnapshot.observedLooseBallResponse;
+  if(loose)
+    byId('ai-lane-plan').textContent+=
+      ' · post-contact loose ball: '+
+      (loose.phase==='responding'?'responding':'recovery window complete')+
+      ' · '+loose.responders.home+' / '+loose.responders.away+
+      ' · no possession inferred';
+  // ME-PB-38 reports evidence only; continuous contact is NOT possession.
+  const controlEvidence=playerSnapshot.observedControlEvidence;
+  if(controlEvidence)
+    byId('ai-lane-plan').textContent+=
+      ' · shoe co-motion evidence: '+
+      (controlEvidence.sustainedCoMotionObserved?
+       '6+ consecutive contact-aligned ticks observed':
+       controlEvidence.consecutiveTicks+' consecutive qualifying ticks')+
+      ' · no control or possession confirmed';
+  // ME-PB-39: actual shoe END plus measurable separation, not possession.
+  const releaseEvidence=playerSnapshot.observedReleaseEvidence;
+  if(releaseEvidence)
+    byId('ai-lane-plan').textContent+=
+      ' · shoe release evidence: '+
+      (releaseEvidence.currentlyMeasuredUncontested?
+       'uncontested clearance after real shoe END':
+       releaseEvidence.trueShoeEndObserved?
+        'real shoe END; clearance not yet confirmed':
+        'no qualified physical shoe END observed')+
+      ' · no possession or official free-ball verdict';
+  const kick=engine.localAiKickSnapshot?.();
+  if(kick&&shownKickTick!==kick.tick){
+    shownKickTick=kick.tick;
+    byId('ai-kick-outcome').textContent='Home #10 KICK · real Rapier impulse '+
+      fmt(Math.hypot(kick.impulseNs.x,kick.impulseNs.y))+
+      ' N·s at '+fmt(kick.tick*FIXED_DT)+' s (DEV only)';
+    say('Home #10 kicked the real ball · one physical AI action');
+  }
+  const sequence=engine.localAiPassReceiveSnapshot?.();
+  if(sequence&&sequence.events.length>shownPassStageCount){
+    shownPassStageCount=sequence.events.length;
+    const text=sequence.events.map(action=>
+      action.stage==='pass'?
+      'Home #7 PASS → Home #10 · real Rapier impulse '+
+        fmt(Math.hypot(action.impulseNs.x,action.impulseNs.y))+
+        ' N·s at '+fmt(action.tick*FIXED_DT)+' s':
+      'Home #10 CONTROL · real Rapier reception at '+
+        fmt(action.tick*FIXED_DT)+' s').join(' · ');
+    byId('ai-kick-outcome').textContent=text+' (DEV only)';
+    say(sequence.control?
+      'Home #10 controlled the physically passed ball · DEV only':
+      'Home #7 passed the real ball · awaiting Home #10 shoe contact');
+    if(sequence.control){
+      inspectedPlayerId='home-10';
+      byId('player-inspect-choice').value='home-10';
+    }
+  }
+  const exchange=engine.localAiExchangeSnapshot?.();
+  if(exchange&&exchange.events.length>shownExchangeCount){
+    shownExchangeCount=exchange.events.length;
+    const labels=exchange.events.map(e=>
+      e.stage==='pass'?
+        (e.previousPassTick?'Home #7 THIRD PASS':'Home #7 PASS')+
+          ' at '+fmt(e.tick*FIXED_DT)+' s':
+      e.stage==='return-pass'?
+        (e.previousPassTick===exchange.thirdPass?.tick?
+          'Home #10 FOURTH PASS':'Home #10 RETURN')+
+          ' at '+fmt(e.tick*FIXED_DT)+' s':
+      e.stage==='return-control'?'Home #7 CONTROL at '+fmt(e.tick*FIXED_DT)+' s':
+      'OPPONENT SHOE CONTACT ('+e.playerId+') at '+fmt(e.tick*FIXED_DT)+' s');
+    byId('ai-kick-outcome').textContent=labels.join(' · ')+
+      ' · real Rapier START only (DEV · no possession)';
+    say(exchange.oppositionContact?
+      'Physical opposition contact interrupted exchange (not possession)':
+      exchange.fourthPass?'Home #10 made an independent fourth Rapier pass':
+      exchange.thirdPass?'Home #7 made a genuine third Rapier pass toward Home #10':
+      exchange.finalControl?'Home #7 received return on real shoe contact':
+      exchange.returnPass?'Home #10 returned the real ball toward Home #7':
+      'Home #7 passed to Home #10 · awaiting genuine shoe contact');
+    if(exchange.returnPass){
+      inspectedPlayerId=exchange.finalControl?'home-7':'home-10';
+      byId('player-inspect-choice').value=inspectedPlayerId;
+    }
+  }
+  // ME-PB-36: report the actual post-contact velocity trend only after
+  // consecutive completed Rapier ticks. Never call it a steal/possession.
+  const flight=exchange?.oppositionFlightAudit;
+  if(flight&&flight.status!=='observing'&&
+     flight.status!=='insufficient-incoming-flight'&&
+     shownOppositionFlightTick!==flight.tick){
+    shownOppositionFlightTick=flight.tick;
+    byId('ai-kick-outcome').textContent+=
+      ' · observed after real Away shoe contact: '+
+      (flight.status==='confirmed-changed-flight'?
+        'persistent '+flight.classification+' ball flight':
+        'no sustained trajectory change observed')+
+      ' · aggregate Rapier velocity only · no interception or possession';
+  }
+  playerBallReach.observe(snapshot,playerSnapshot); // Observer is independent of real collider contacts.
   history.push(snapshot);
   if (history.length > 1400) history.shift();
 }
@@ -1498,11 +1761,46 @@ byId('metrics-dialog').addEventListener('close',()=>{stopFlightPlayback();byId('
 function compareReplay() {
   try {
     const ticks = engine.snapshot().tick;
-    const repeat = createEngine(rapier, engine.scenario);
+    const withFeet=Boolean(engine.footContactSnapshot);
+    const repeat = createEngine(rapier, engine.scenario,{
+      diagnosticPlayerFootContactsEnabled:withFeet,
+      diagnosticLocalAiKickEnabled:kickDemoActive,
+      diagnosticLocalAiPassReceiveEnabled:passDemoActive,
+      diagnosticLocalAiExchangeEnabled:exchangeDemoActive,
+      diagnosticLocalAiOpponentLaneEnabled:defendDemoActive,
+      diagnosticLocalAiAutonomousDefenseEnabled:autonomousDefendActive,
+      diagnosticLocalAiThirdPassEnabled:threePassDefenseActive,
+      diagnosticLocalAiFourthPassEnabled:fourPassDefenseActive
+    });
     let other = repeat.snapshot();
-    for (let n = 0; n < ticks; n += 1) other = repeat.step();
-    const equal = canonicalSnapshot(other) === canonicalSnapshot(engine.snapshot());
-    repeat.dispose();
+    const replayPlayers=withFeet?createPlayerMovement({
+      experimentalAiKickApproach:kickDemoActive,
+      experimentalAiPassReceiveApproach:passDemoActive,
+      experimentalAiExchangeApproach:exchangeDemoActive,
+      experimentalAiOpponentLane:defendDemoActive,
+      experimentalAiAutonomousDefense:autonomousDefendActive,
+      experimentalAiMultiPassDefense:multiPassDefenseActive,
+      experimentalAiThreePassDefense:threePassDefenseActive,
+      experimentalAiFourPassDefense:fourPassDefenseActive
+    }):null;
+    let equal;
+    try {
+      for (let n = 0; n < ticks; n += 1) {
+        const exchange=multiPassDefenseActive?repeat.localAiExchangeSnapshot?.():null;
+        other=withFeet?repeat.step(replayPlayers.step(other.ball.position,{
+          velocity:other.ball.velocity,
+          footContact:repeat.footContactSnapshot(),
+          ...(multiPassDefenseActive?{
+            passEvent:exchange?.events?.filter(e=>
+              e.stage==='pass'||e.stage==='return-pass').at(-1)??null,
+            oppositionFlightAudit:exchange?.oppositionFlightAudit??null
+          }:{})
+        })):repeat.step();
+      }
+      equal=canonicalSnapshot(other) === canonicalSnapshot(engine.snapshot())&&
+        (!withFeet||JSON.stringify(repeat.footContactSnapshot())===
+          JSON.stringify(engine.footContactSnapshot()));
+    }finally{repeat.dispose();}
     byId('compare-result').textContent = equal
       ? 'PASS · identical canonical physics state after ' + ticks + ' ticks.'
       : 'FAIL · replay state diverged at tick ' + ticks + '.';
@@ -1646,7 +1944,14 @@ pitch.addEventListener('click',event=>{
  renderPlayerReadout();
  topDown();
 });
-byId('preset').addEventListener('change', () => { loadPreset(); if (rapier) { try { restart(); } catch (e) { say(e.message, true); } } });
+byId('preset').addEventListener('change',()=>{
+  // Every selection initializes paused at tick zero. Use Play/Step to
+  // advance; unlike the old one-click buttons, selection never autoplays.
+  try{
+    loadPreset();
+    if(rapier)restart();
+  }catch(e){say(e.message,true);}
+});
 byId('play').addEventListener('click', play);
 byId('pause').addEventListener('click', pause);
 byId('step').addEventListener('click', () => { playing = false; advance(); render(); say('Paused · advanced one tick'); });
