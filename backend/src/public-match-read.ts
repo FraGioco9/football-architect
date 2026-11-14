@@ -181,6 +181,61 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
   provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
 }
 
+
+/**
+ * Read-only, evidence-checked early draw projection for a single club.
+ * Only query competition scopes containing this club; never probe four public API routes.
+ */
+export async function readPublishedClubFixturesBeforeCalendar(db:Database,clubKey:string,season:number){
+ const world=await readWorld(db);
+ if(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(clubKey)||
+    !Number.isSafeInteger(season)||season<1||season>world.seasonNumber)return missing();
+ const affiliations=(await db.prepare(
+  `SELECT DISTINCT competition_id FROM season_match_slots
+   WHERE generation=? AND season_number=? AND (home_club_id=? OR away_club_id=?)
+   ORDER BY competition_id`
+ ).bind(world.generation,season,clubKey,clubKey).all<{competition_id:string}>()).results;
+ const ids=affiliations.map(row=>row.competition_id);
+ const domestic=ids.filter(id=>!id.startsWith('int-'));
+ if(ids.length>2||new Set(ids).size!==ids.length||
+    (ids.length>0&&domestic.length!==1)||ids.some(id=>!(/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(id))))
+  return corrupt();
+ // Reuse the exact proof already enforced by the public competition-read contract.
+ // No HTTP fan-out, no 404 probes for competitions that have not been drawn.
+ const published=await Promise.all(ids.map(id=>readPublishedCompetitionMatches(db,season,id)));
+ const fixtures:{
+  id:string;matchId:string;competitionId:string;season:number;day:number;round:number;
+  phaseId:'league';marker:string;tieId:null;leg:null;neutral:false;
+  homeClubId:string;awayClubId:string;result:null
+ }[]=[];
+ const seen=new Set<string>();
+ for(const scope of published){
+  const games=scope.fixtures.filter(f=>f.phaseId==='league'&&
+   (f.homeClubId===clubKey||f.awayClubId===clubKey));
+  if(games.length!==(scope.competitionId.startsWith('int-')?6:30))return corrupt();
+  for(const f of games){
+   if(!/^[1-9][0-9]*$/.test(f.matchId)||seen.has(f.matchId)||
+      typeof f.homeClubId!=='string'||typeof f.awayClubId!=='string'||
+      f.homeClubId===f.awayClubId||!Number.isSafeInteger(f.day)||f.day<=world.day||f.day>56||
+      !Number.isSafeInteger(f.round)||f.round<1||
+      f.round>(scope.competitionId.startsWith('int-')?6:30))return corrupt();
+   seen.add(f.matchId);
+   fixtures.push({id:f.matchId,matchId:f.matchId,competitionId:scope.competitionId,
+    season,day:f.day,round:Number(f.round),phaseId:'league',marker:f.marker,
+    tieId:null,leg:null,neutral:false,homeClubId:f.homeClubId,awayClubId:f.awayClubId,result:null});
+  }
+ }
+ fixtures.sort((a,b)=>a.day-b.day||a.competitionId.localeCompare(b.competitionId,'en')||
+  a.round-b.round||Number(a.matchId)-Number(b.matchId));
+ const after=await readWorld(db);
+ if(after.generation!==world.generation||after.revision!==world.revision||
+    after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
+  throw new ApiError(409,'stale_world');
+ return {world,competitions:ids,fixtures,
+  sourceHash:ids.length?await canonicalHash(published.map(p=>({
+   competitionId:p.competitionId,sourceKind:p.provenance.sourceKind,sourceHash:p.provenance.sourceHash}))):null};
+}
+
 interface ReservedKnockout extends PublicationSource {
  match_id:string;phase_id:string;tie_id:string;leg:number;slot_id:string;
  marker:string;scheduled_day:number;round_number:number|null;
