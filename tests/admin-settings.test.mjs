@@ -531,7 +531,7 @@ test('raced post-write events revision triggers the original authenticated world
   if(path==='/api/admin/session')return session;
   if(path==='/api/admin/world')return {world:current};
   if(path==='/api/admin/seasons/events'){
-   if(staleEventOnce){staleEventOnce=false;return {world:afterWrite,mode:'legacy',events:[]};}
+   if(staleEventOnce){staleEventOnce=false;return {world:concurrent,mode:'legacy',events:[]};}
    return {world:current,mode:'legacy',events:[]};
   }
   if(path==='/api/admin/seasons/prepare'){current=concurrent;staleEventOnce=true;return {world:afterWrite};}
