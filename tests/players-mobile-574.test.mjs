@@ -127,3 +127,11 @@ test('#574 subview fade is visible at first paint and removed when scrolling end
  assert.match(roster,/\.club-roster \.club-roster-tabs\{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px/);
  assert.match(roster,/\.club-roster \.club-roster-tabs\[data-can-scroll-right="false"\]\{--app-tabs-fade-right:0px\}/);
 });
+
+test('#574 preview subview fade responds to scroll and resizing after first paint',()=>{
+ const preview=read('assets/admin-players-preview.js');
+ assert.match(preview,/groupBar\.dataset\.canScrollLeft=/);
+ assert.match(preview,/groupBar\.dataset\.canScrollRight=/);
+ assert.match(preview,/groupBar\?\.addEventListener\('scroll',syncGroupEdges/);
+ assert.match(preview,/ResizeObserver\(syncGroupEdges\)/);
+});

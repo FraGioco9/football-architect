@@ -47,6 +47,16 @@
  const pagination=root.querySelector('[data-admin-preview-pagination]'),pageLabel=root.querySelector('[data-admin-preview-page]');
  const prev=root.querySelector('[data-admin-preview-prev]'),next=root.querySelector('[data-admin-preview-next]');
  const tabs=[...root.querySelectorAll('[data-admin-preview-view]')],groupTabs=[...root.querySelectorAll('[data-admin-preview-group]')];
+ const groupBar=root.querySelector('.app-players-groups');
+ const syncGroupEdges=()=>{
+  if(!groupBar?.clientWidth)return; // Preserve initial CSS fade until measurable.
+  const max=Math.max(0,groupBar.scrollWidth-groupBar.clientWidth);
+  groupBar.dataset.canScrollLeft=String(max>1&&groupBar.scrollLeft>1);
+  groupBar.dataset.canScrollRight=String(max>1&&groupBar.scrollLeft<max-1);
+ };
+ groupBar?.addEventListener('scroll',syncGroupEdges,{passive:true});
+ window.addEventListener('resize',syncGroupEdges,{passive:true});
+ if(groupBar&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncGroupEdges).observe(groupBar);
  const confirmation=root.querySelector('[data-admin-players-confirmation]'),commit=root.querySelector('[data-admin-players-commit]');
  const regen=root.querySelector('[data-admin-preview-regenerate]'),back=root.querySelector('[data-admin-preview-back]');
  const confirmationDialog=root.querySelector('[data-admin-preview-confirm-dialog]');
@@ -158,6 +168,7 @@
   back.textContent=actions.back;regen.textContent=actions.regenerate;commit.textContent=actions.generate;
   tabs.forEach((tab,i)=>{const active=tab.dataset.adminPreviewView===view;tab.textContent=t.tabs[i];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
   groupTabs.forEach((tab,i)=>{const active=tab.dataset.adminPreviewGroup===group;tab.textContent=t.groups[i];tab.classList.toggle('is-active',active);tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
+  syncGroupEdges();
   renderHead();pagination.hidden=true;
   scroll.setAttribute('aria-busy',String(status==='loading'||busy));
   if(status==='loading')loadingRows();
