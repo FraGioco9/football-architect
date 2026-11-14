@@ -231,3 +231,13 @@ This is a **bounded classification**, not certification of all 300+ owned files.
 **Coverage boundary:** `routes-registry.test.mjs` still validates exhaustive canonical route round-trip; `routes-compatibility.test.mjs` still checks hosting config and generated links; `app-canonical-routes.test.mjs` protects public/DEV canonical paths. No production route or hosting configuration changed.
 
 **Validation:** syntax checked and exact-head CI required; fewer server boots do not by themselves certify a significant end-to-end speed improvement. No test skips, arbitrary retries, shared state between remaining cases, CI selector changes, deploys or remote DB operations.
+
+## Batch A13 — consolidate default DEV HTTP server checks for canonical and removed routes (2026-11-14)
+
+**Precondition:** A11 exact-head CI passed all required workflows. A12 exact-head `32711dbf4690fd1bf132f4f2919b5f09d3097561` had not finished Site/Browser/Admin/FULL at the last inspection, so no PASS is claimed for A12 yet.
+
+**Source-proven redundant setup:** in `tests/app-canonical-routes.test.mjs` two separate cases started the **same default** `createPreviewServer()`: the first fetched all canonical site pages, followed their assets and asserted no legacy `/app` links; the second started another server, fetched 8 invalid `/app` aliases (404) and retested 11 canonical routes (200). Nine canonical routes were already checked in the first test; `/` and `/competitions/it-1/standings` remained unique.
+
+**A13:** preserve all eight removed-alias 404 assertions and the two unique success paths in the existing canonical/asset test. Delete only the second, now fully redundant test case/server boot. File-level **6 → 5 Node cases; 4 → 3 server boots**, with no loss of distinct route behavior. Canonical pages still require HTTP 200, correct same-origin asset fetches and no `/app` links. The five other test topics remain, including public allowlist parity and both **distinct** 404 server modes (`devPreview:false` and `devPreview:true,subdomains:true`): these are not folded into the default server because they test different rendering/security behavior.
+
+This intentionally favors a reusable behavior contract over duplicated host/server setup. No added timeout, retry, skipped assertion, product implementation change, routing/hosting config, workflow selector, migration, remote DB or deployment. Verify exact-head Site/Browser/Admin/FULL and per-file timing before making performance claims.
