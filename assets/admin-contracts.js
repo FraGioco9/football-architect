@@ -1,6 +1,7 @@
 /* Admin Contracts #509: Players-style checkbox list, atomic batch assignments. */
 ((root,factory)=>{const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root.document)api.mount(root)})(typeof window==='undefined'?globalThis:window,()=>{
  'use strict';
+ const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const flags={ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',DEN:'dk',AUT:'at',IRN:'ir',ECU:'ec',EGY:'eg',AUS:'au',CAN:'ca',ALG:'dz',CIV:'ci',NGA:'ng',TUR:'tr',KOR:'kr',PAR:'py',SWE:'se',RUS:'ru',UKR:'ua',POL:'pl',HUN:'hu',WAL:'gb-wls',COD:'cd',GRE:'gr',CMR:'cm',SCO:'gb-sct',SRB:'rs',SVK:'sk',PAN:'pa',MLI:'ml',RSA:'za',VEN:'ve',CHI:'cl'};
  const labels={
   en:{assignHeading:'Assign players to club',playersHeading:'Players',chooseClub:'Choose club',unassigned:'Free Agent',assign:'Assign',nationality:'',player:'Player',age:'Age',positions:'Positions',height:'Height',foot:'Foot',club:'Club',previous:'Previous',next:'Next',of:'of',page:'Page',players:'players',selected:'players selected',all:'Select all on this page',pick:'Select',left:'Left',right:'Right',search:'Search clubs…',loading:'Loading players…',saving:'Assigning…',saved:'Affiliations updated.',empty:'No players available.',limit:'Select at most 50 players per assignment.',failed:'Unable to load affiliations.',apiMissing:'Contracts API unavailable. Update the Worker.',schemaMissing:'Contracts migration missing.',stale:'World or affiliation changed. Reload and select again.',saveFailed:'Assignment failed; no changes were saved.',unavailable:'Contracts unavailable.'},
@@ -126,7 +127,7 @@
      img.tabIndex=0;img.width=20;img.height=15;flagTd.append(img)}
     else flagTd.textContent=p.nationality||'';
     tr.append(flagTd);
-    const name=doc.createElement('td');name.textContent=p.name;name.className='admin-contracts-player-name';tr.append(name);
+    const name=doc.createElement('td');name.textContent=p.name;name.className='admin-contracts-player-name';name.dataset.mobileName=compactPlayerName(p.name);name.setAttribute('aria-label',p.name);tr.append(name);
     const positions=[p.primary_position,...(Array.isArray(p.secondary_positions)?p.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     const values=[positions,Number.isSafeInteger(p.age)?String(p.age):'—',
      Number.isSafeInteger(p.height_cm)?p.height_cm+' cm':'—',

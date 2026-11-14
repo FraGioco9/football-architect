@@ -1,6 +1,10 @@
 /* Public Players directory: approved public D1 projection and stable two-view layout. */
 (() => {
  'use strict';
+ const compactPlayerName=full=>{
+  const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());
+  return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim();
+ };
  const flags=Object.freeze({
   ESP:'es',ARG:'ar',FRA:'fr',ENG:'gb-eng',POR:'pt',BRA:'br',MAR:'ma',BEL:'be',NED:'nl',MEX:'mx',
   COL:'co',SUI:'ch',GER:'de',CRO:'hr',ITA:'it',USA:'us',JPN:'jp',SEN:'sn',NOR:'no',URU:'uy',
@@ -167,11 +171,18 @@
    if(table.dataset.playersTableMode!=='overview')return;
    if(!clubCrestsPromise)clubCrestsPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
     .then(response=>{if(!response.ok)throw Error('club_manifest_unavailable');return response.json()})
-    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320&&manifest.clubCrests&&typeof manifest.clubCrests==='object'?manifest.clubCrests:null)
+    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320&&manifest.clubCrests&&typeof manifest.clubCrests==='object'?manifest:null)
     .catch(()=>null);
-   void clubCrestsPromise.then(catalog=>{
-    if(!catalog||table.dataset.playersTableMode!=='overview')return;
+   void clubCrestsPromise.then(manifest=>{
+    if(!manifest||table.dataset.playersTableMode!=='overview')return;
+    const catalog=manifest.clubCrests;
+    const shortNames=new Map(manifest.clubs.filter(c=>c&&Number.isSafeInteger(c.clubId)&&
+      typeof c.countryId==='string'&&typeof c.compactName==='string'&&c.compactName.trim())
+      .map(c=>[c.countryId+'-'+c.clubId,c.compactName]));
     for(const mark of body.querySelectorAll('[data-player-club-crest]')){
+     const label=mark.parentElement?.querySelector('.app-player-club-name');
+     const compact=shortNames.get(mark.dataset.playerClubCrest);
+     if(label&&compact)label.dataset.mobileClubName=compact;
      if(mark.querySelector('img'))continue;
      const key=mark.dataset.playerClubCrest;
      if(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(key))continue;
@@ -443,8 +454,9 @@
     const link=document.createElement('a');link.className='app-player-club-link';
     link.href='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
     const name=document.createElement('span');name.className='app-player-club-name';
-    name.textContent=player.clubName;link.title=player.clubName;link.append(name);
-    content.append(crest,link);td.append(content);
+    name.textContent=player.clubName;link.title=player.clubName;link.setAttribute('aria-label',player.clubName);link.append(name);
+    const labelAnchor=document.createElement('span');labelAnchor.className='app-players-club-label-anchor';
+    labelAnchor.append(crest,link);content.append(labelAnchor);td.append(content);
    }else{td.textContent='—';}
    tr.append(td);
   }
@@ -455,7 +467,10 @@
     const nameCell=cell(tr,'');
     if(Number.isSafeInteger(player.id)&&player.id>0){
      const link=document.createElement('a');link.className='app-player-name-link';link.href='/players/'+player.id;
-     link.textContent=player.display_name||'—';nameCell.append(link);
+     const fullName=player.display_name||'—',shortName=compactPlayerName(player.display_name);
+     const full=document.createElement('span');full.className='fa-player-full-name';full.textContent=fullName;
+     const short=document.createElement('span');short.className='fa-player-short-name';short.textContent=shortName;
+     link.dataset.mobileName=shortName;link.setAttribute('aria-label',fullName);link.append(full,short);nameCell.append(link);
     }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
