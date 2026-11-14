@@ -119,7 +119,7 @@ try{
    const flag=page.locator('.club-header .club-first-paint-flag');
    assert.equal(await page.locator('.club-header svg.club-country-flag').count(),0,'no club flag before catalog');
    const flagBox=await flag.boundingBox();
-   assert.ok(flagBox&&Math.abs(flagBox.width-25)<0.1&&Math.abs(flagBox.height-20)<0.1,'reserved flag track 25×20');
+   assert.ok(flagBox&&Math.abs(flagBox.width-20)<0.1&&Math.abs(flagBox.height-16)<0.1,'reserved flag track 20×16');
    const colorGeometry=()=>page.evaluate(()=>{
     const colors=document.querySelector('.club-identity .club-colors');
     if(!colors)return null;
@@ -421,7 +421,7 @@ try{
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,
      'No page overflow from reserved color geometry at '+width+'px');
     const afterBox=await page.locator('.club-header svg.club-country-flag').boundingBox();
-    assert.ok(afterBox&&Math.abs(afterBox.width-25)<0.1&&Math.abs(afterBox.height-20)<0.1,'same flag after hydration');
+    assert.ok(afterBox&&Math.abs(afterBox.width-20)<0.1&&Math.abs(afterBox.height-16)<0.1,'same flag after hydration');
    }
   }finally{release();await page.unroute('**/clubs/_shared/manifest.json',handler);await page.close()}
  }

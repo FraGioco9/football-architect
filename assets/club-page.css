@@ -4,8 +4,8 @@ body.app-body{--app-page-pad-top:8px}
 /* QA-16: stable first-paint Overview panels with anonymous skeleton values. */
 .club-first-paint-header .club-crest{visibility:visible}
 /* Anonymous header crest shares the circular standings loading primitive. */
-.club-first-paint-flag{display:inline-flex;width:25px;height:20px;min-width:25px;align-items:center;flex:none}
-.club-first-paint-flag .club-country-flag{display:block;width:25px;height:20px;object-fit:contain;flex:none}
+.club-first-paint-flag{display:inline-flex;width:var(--fa-flag-width);height:var(--fa-flag-height);min-width:var(--fa-flag-width);align-items:center;flex:none}
+.club-first-paint-flag .club-country-flag{display:block;width:var(--fa-flag-width);height:var(--fa-flag-height);object-fit:contain;flex:none}
 .club-first-paint-header h1{min-height:1.15em}
 .club-first-paint-header .club-location{min-height:1.25em}
 .club-first-paint-panel{min-height:160px;visibility:visible}
@@ -83,7 +83,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-country-flag{border-radius:0;clip-path:none}
 
 /* Country flags retain the 5:4 canonical viewport. */
-.club-country-flag{width:25px;height:20px;aspect-ratio:5/4;object-fit:contain}
+.club-country-flag{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4;object-fit:contain}
 
 /* Club Identity: a single row-sizing model. Short facts share one height;
    long content (rivalries, description, wrapping values) grows naturally. */
@@ -138,8 +138,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition-entry .club-competition-name .app-link:hover,.club-competition-entry .club-competition-name .app-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:620px){.club-competition-cup-mark{width:50px;height:50px;flex-basis:50px}}
 
-/* Country flag parity: header stays 25×20 at first paint and after hydration. */
-.club-header .club-country-flag{display:block;width:25px!important;height:20px!important;min-width:25px;max-width:25px;min-height:20px;max-height:20px;aspect-ratio:5/4;flex:none}
+/* Country flag parity: header stays at shared 20×16 from first paint through hydration. */
+.club-header .club-country-flag{display:block;width:var(--fa-flag-width)!important;height:var(--fa-flag-height)!important;min-width:var(--fa-flag-width);max-width:var(--fa-flag-width);min-height:var(--fa-flag-height);max-height:var(--fa-flag-height);aspect-ratio:5/4;flex:none}
 
 
 /* QA-16 V01: skeleton bars hint at text, never fill entire long rows. */
@@ -606,9 +606,11 @@ body.app-body{--app-page-pad-top:8px}
 .club-roster-table td:nth-child(2){text-align:left;font-weight:650}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
-.club-roster-player-link{color:inherit;text-decoration:none;text-underline-offset:3px;text-decoration-thickness:1px}
-.club-roster-player-link:hover,.club-roster-player-link:focus-visible{text-decoration:underline}
-.club-roster-player-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* Club Roster Technical is selected with data-roster-group (not the public
+ * directory's html[data-players-group]); mirror the shared mobile widths. */
+@media(max-width:720px){.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1364px}}
+@media(max-width:420px){.club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1272px}}
+/* Player name links reuse the shared, layout-stable inline-flex underline in app.css. */
 @media(max-width:620px){
  /* The horizontal viewport reveals two complete subviews plus half of the next.
   * Keep the player count outside the scrolling strip. */

@@ -30,7 +30,7 @@ const selected=(value,allowed)=>{
  return codes.length>0&&codes.length<=allowed.size&&new Set(codes).size===codes.length&&codes.every(code=>allowed.has(code));
 };
 const validators=Object.freeze({
- page:value=>/^[1-9][0-9]{0,3}$/.test(value),
+ offset:value=>/^(?:0|[1-9][0-9]{0,5})$/.test(value)&&Number(value)<=499900&&Number(value)%50===0,
  sort:value=>SORTS.has(value),
  order:value=>value==='asc'||value==='desc',
  name:value=>{try{nameValue(value);return true}catch{return false}},
@@ -84,7 +84,7 @@ export function parsePublicPlayerQuery(raw=''){
  if(heightMin!==undefined)filters.heightMin=heightMin;
  if(heightMax!==undefined)filters.heightMax=heightMax;
  if(values.foot!==undefined)filters.foot=values.foot;
- return {page:values.page===undefined?1:Number(values.page),filters};
+ return {page:values.offset===undefined?1:Number(values.offset)/50+1,filters};
 }
 export function isAllowedPublicPlayersPath(raw){
  if(typeof raw!=='string'||!raw.startsWith('/api/players'))return false;

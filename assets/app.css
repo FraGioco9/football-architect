@@ -5,7 +5,7 @@
  * Keep source order: later refinements intentionally override earlier rules.
  * Compact declarations and media bodies retain existing source contracts.
  */
-:root{--fa-flag-width:25px;--fa-flag-height:20px;--fa-crest-shield-shape:polygon(50% 1%,91% 16%,90% 59%,79% 80%,50% 99%,21% 80%,10% 59%,9% 16%);--fa-crest-shield-fill:#7F9F96}
+:root{--fa-flag-width:20px;--fa-flag-height:16px;--fa-crest-shield-shape:polygon(50% 1%,91% 16%,90% 59%,79% 80%,50% 99%,21% 80%,10% 59%,9% 16%);--fa-crest-shield-fill:#7F9F96}
 html[data-theme="light"]{--fa-crest-shield-fill:#789688}
 /* HOME-01: historical UX-SHELL proportions, adapted to the Graphite & Petrol site. */
 html:has(>body.app-body){overflow:hidden;scrollbar-gutter:auto}
@@ -1150,7 +1150,7 @@ svg.site-chevron>path{translate:0 .5px}
 .app-rules-outcome{padding:7px 10px;border-radius:5px}
 .app-rules-metric{padding:9px 12px}
 .app-rules-metric dd{font-size:19px}
-.app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}
+.app-world-flag-frame{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4}
 .app-world-flag{width:100%;height:100%;object-fit:contain}
 
 /* UI-HOVER-02: Search-derived hover applies only to actual editable fields, not cards, labels or feedback. */
@@ -1556,15 +1556,15 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 /* Player directory: fixed flag/name columns; every remaining column receives a share of the available width. */
 .app-players-table-scroll{width:100%;max-width:100%;min-width:0;margin-top:var(--app-page-section-gap);overflow-x:auto;border:1px solid var(--border);border-radius:var(--fa-radius-panel);background:var(--surface);scrollbar-width:thin}
 .app-players-table-scroll:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px;width:100%;min-width:782px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.app-players-table{--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px;width:100%;min-width:782px;table-layout:fixed;border-collapse:separate;border-spacing:0;color:var(--text);font-size:14px;font-variant-numeric:tabular-nums}
 .app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
-.app-players-table th,.app-players-table td{box-sizing:border-box;padding:10px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
-.app-players-table thead th{height:44px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
+.app-players-table th,.app-players-table td{box-sizing:border-box;padding:2px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
+.app-players-table thead th{height:42px;padding-block:2px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
 /* Sort is still interactive, but labels never display arrows, hover highlights,
  * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
-.app-players-sort-button{display:flex;align-items:center;justify-content:center;gap:0;line-height:1.2;box-sizing:border-box;width:100%;min-width:0;height:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.app-players-sort-button{display:flex;align-items:center;justify-content:center;gap:0;line-height:1.2;box-sizing:border-box;width:100%;min-width:0;height:36px;min-height:36px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .app-players-sort-button:hover,.app-players-sort-button:active,.app-players-sort-button:focus{color:inherit;background:transparent;box-shadow:none;outline:none;text-shadow:none;filter:none}
 .app-players-sort-button:focus-visible{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 /* The label owns the alignment; an active chevron sits beside it without shifting text. */
@@ -1578,14 +1578,57 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 
 .app-players-table th:nth-child(2) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button,.app-players-table[data-players-table-mode="attributes"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
 /* Preserve real table row geometry during loading: five empty rows, no data skeletons. */
-.app-players-table tbody tr:not(.app-players-empty-row){height:44px}
-.app-players-table .app-players-loading-row td{height:44px;padding:0 16px}
+.app-players-table tbody tr:not(.app-players-empty-row){height:36px}
+.app-players-table .app-players-loading-row td{height:36px;padding:0 16px}
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
 .app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
 .app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
 .app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
+/* Public Overview seven-column order: flag, Player, Positions, Age, Height,
+ * Foot, Club. The third col is the SAME fixed Positions width used by Attributes. */
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:982px}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) col.app-players-view-third-column{width:var(--app-players-positions-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(3){width:var(--app-players-positions-width);text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.16)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.19)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.17)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.48)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(3),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(7){text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5){text-align:center}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(3) .app-players-sort-button,
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button{justify-content:flex-start}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5) .app-players-sort-button{justify-content:center}
+/* Shared six-column player tables (Club Roster and Admin preview) match the
+ * first three fixed tracks from public /players: Flag | Player | Positions.
+ * Their remaining columns are Age | Height | Foot (Club is public-only). */
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) col.app-players-view-third-column{width:var(--app-players-positions-width)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(3){width:var(--app-players-positions-width)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.28)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.36)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.36)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(3),
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6){text-align:left}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5){text-align:center}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(3) .app-players-sort-button,
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button{justify-content:flex-start}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(5) .app-players-sort-button{justify-content:center}
+
+/* The 24px crest sits in a centered 28px track independent of hover underline metrics. */
+.app-players-club-cell{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-players-club-content{display:flex;align-items:center;min-width:0;max-width:100%;height:28px;gap:8px}
+.app-players-club-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;overflow:hidden}
+.app-players-club-mark::before{content:"";display:block;width:20px;height:23px;clip-path:var(--fa-crest-shield-shape);background:var(--muted);opacity:.45}
+.app-players-club-crest{position:absolute;inset:0;display:block;width:24px;height:24px;object-fit:contain}
+.app-players-table .app-player-club-link{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-players-table .app-player-club-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Positions contains position codes and is left-aligned like Player, including the static Overview header. */
 .app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4){text-align:left}
 /* Foot is a descriptive value (Left / Right), so align its heading and values with other text columns. */
@@ -1597,14 +1640,22 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 @media(max-width:720px){.app-players-table th,.app-players-table td{padding-inline:10px}}
 
 /* D1-backed Players directory: matching row heights, country flags and optional pagination. */
-.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650}
-.app-players-nationality-flag{display:block;width:24px;height:18px;object-fit:contain;margin-inline:auto}
+.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650;vertical-align:middle;line-height:18px}
+/* #532 compact shared player tables: center proportionate flags in first-paint and loaded rows. */
+.app-players-table tbody td:first-child{text-align:center;vertical-align:middle}
+.app-players-nationality-flag{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto}
 .app-players-pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px}
 .app-players-pagination[hidden]{display:none}
 .app-players-page-count{min-width:88px;text-align:center;font-size:13px;color:var(--muted)}
 .app-players-page-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 112px;width:112px;min-width:112px;max-width:112px;height:36px;min-height:36px;font:inherit;font-size:13px;font-weight:650;text-align:center;white-space:nowrap;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--fa-radius-panel);padding:7px 8px;cursor:pointer}
 .app-players-page-button:not(:disabled):hover{border-color:var(--focus)}
 .app-players-page-button:disabled{opacity:.45;cursor:default}
+.app-players-page-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* #532: manual progressive loading only in the public directory; preview keeps numbered pagination. */
+.app-players-pagination[data-players-progress]{min-height:48px;gap:12px;flex-wrap:wrap}
+.app-players-pagination[data-players-progress] .app-players-page-count{min-width:0}
+.app-players-pagination[data-players-progress] .app-players-page-button{flex:0 0 auto;width:auto;min-width:112px;max-width:none;padding-inline:16px}
+.app-players-end-sentinel{display:block;width:100%;height:1px;flex:none;pointer-events:none}
 @media(max-width:420px){.app-players-pagination{gap:8px}.app-players-page-button{flex-basis:88px;width:88px;min-width:88px;max-width:88px}.app-players-page-count{min-width:0;overflow-wrap:anywhere}}
 
 /* PLAYERS-505: same active-tab treatment as Standings, with an always-reserved toolbar.
@@ -1626,6 +1677,29 @@ html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1462px}
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+4){font-variant-numeric:tabular-nums}
+/* #532: responsive player-table column geometry. Desktop approved widths stay
+ * unchanged; smaller viewports use compact columns and deliberate horizontal
+ * scrolling, never hidden columns or a changed reading/sort order. */
+@media(max-width:720px){
+ .app-players-table-scroll{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+ .app-players-table{--app-players-flag-width:44px;--app-players-name-width:216px;--app-players-positions-width:176px;min-width:720px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:900px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1364px}
+ .app-players-table tbody td:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .app-players-table :is(.app-player-name-link,.club-roster-player-link){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) tbody td:nth-child(4),
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) tbody td:nth-child(3),
+ .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+/* 320–420px: make the name and first numeric column visible sooner while
+ * preserving readable attribute columns, consistent first paint and iOS scroll. */
+@media(max-width:420px){
+ .app-players-table{--app-players-flag-width:40px;--app-players-name-width:192px;--app-players-positions-width:160px;min-width:680px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:856px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1272px}
+}
+@media(max-width:720px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:896px}}
+@media(max-width:420px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:840px}}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
  .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
@@ -1796,10 +1870,12 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{background:rgba(16,34,29,.38)}
 @media(max-width:800px){.app-players-preview-page .app-players-header{flex-wrap:wrap;align-items:flex-start}.app-players-preview-actions{width:100%;justify-content:flex-start}.app-players-preview-message{text-align:left}}
 
-/* Name-only player detail links (#502). No row-wide underline or focus overlay. */
-.app-players-table .app-player-name-link{color:inherit;text-decoration:none;font:inherit;display:inline}
-.app-players-table .app-player-name-link:hover{text-decoration:underline;text-underline-offset:3px}
-.app-players-table .app-player-name-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* Player names stay centered independently of the hover/focus underline.
+ * The decorative line is absolutely positioned and never changes line-box height. */
+.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link){position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;color:inherit;font:inherit;line-height:18px;text-decoration:none;overflow-wrap:anywhere}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link)::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:currentColor;opacity:0;pointer-events:none}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):is(:hover,:focus-visible)::after{opacity:1}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
 
 /* UI-VIEWS-01 (#559): view/subview controls only. No Club History content styles.
  * Desktop: narrower view buttons. Mobile: preserve the established 2.5-tab

@@ -231,9 +231,11 @@ test('Players view and group slugs are explicit even for both default selections
  };
  assert.equal(run({view:'overview',group:'technical',page:1},''),'/players?view=overview');
  assert.equal(run({view:'attributes',group:'technical',page:1},'?view=attributes'),'/players?view=attributes&group=technical');
- assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&page=2');
+ assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&offset=50');
  assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
- assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&page=2');
+ assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&offset=50');
+ assert.equal(run({view:'overview',group:'technical',page:3},'?page=3'),'/players?view=overview&offset=100');
+ assert.equal(run({view:'overview',group:'technical',page:1},'?page=2'),'/players?view=overview','obsolete page URL is scrubbed');
 });
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
@@ -245,6 +247,32 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
 
+test('#532 public Overview renders Flag Player Positions Age Height Foot Club and a crest',()=>{
+ const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),js=read('assets/players-directory.js'),css=read('assets/app.css');
+ const head=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</thead>',html.indexOf('<table class="app-players-table"')));
+ assert.deepEqual([...head.matchAll(/data-players-sort="([^"]+)"/g)].map(m=>m[1]),['nationality','name','positions','age','height','foot']);
+ assert.ok(head.indexOf('data-players-sort="foot"')<head.indexOf('app-players-club-col'));
+ assert.equal((html.match(/colspan="7"/g)||[]).length,5);
+ assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
+ assert.match(js,/addHeader\(t\.columns\[2\],'positions'\);\s*addHeader\(t\.columns\[1\],'age'\);addHeader\(t\.columns\[3\],'height'\);addHeader\(t\.columns\[4\],'foot'\)/);
+ assert.match(js,/if\(state\.view==='overview'\)\{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\)/);
+ assert.match(js,/clubCell\(tr,player\);\s*\}else \{/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\] col\.app-players-view-third-column\{width:var\(--app-players-positions-width\)\}/);
+ assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/);
+ assert.match(js,/fetch\('\/clubs\/_shared\/manifest\.json',\{credentials:'omit',cache:'force-cache'\}\)/);
+ assert.match(js,/Object\.hasOwn\(catalog,key\)\|\|catalog\[key\]!==path/);
+ assert.match(js,/crest\.dataset\.playerClubCrest=player\.clubKey/);
+ assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+id\+'\/overview'/);
+ assert.match(css,/\.app-players-club-content\{display:flex;align-items:center;[^}]*height:28px;gap:8px/);
+ assert.match(css,/\.app-players-club-crest\{[^}]*width:24px;height:24px;object-fit:contain/);
+ assert.match(css,/\.app-players-club-mark\{[^}]*flex:0 0 24px;width:24px;height:24px;overflow:hidden/);
+ assert.match(css,/\.app-players-club-mark::before\{[^}]*width:20px;height:23px/);
+ assert.match(js,/image\.src='\/'\+path;image\.alt='';image\.width=24;image\.height=24/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
+ assert.doesNotMatch(css,/\.app-players-table \.app-player-club-link:hover\{text-decoration:underline/);
+ assert.ok(gen.indexOf('data-players-sort=\\\"foot')<gen.indexOf('app-players-club-col'));
+});
 test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
@@ -286,7 +314,7 @@ test('Players Attributes always show fixed-width Positions after the name withou
  assert.match(html,/addSort\(positions,'positions',\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'\)/);
  assert.match(html,/row\.append\(positions\);\s*for\(const key of keys\)/,'Positions must precede stats on first paint');
  assert.match(html,/colSpan=keys\.length\+3/);
- assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:6/);
+ assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
  assert.match(renderer,/addHeader\(t\.columns\[2\],'positions'\);\s*for\(const key of groups\[state\.group\]\)addHeader\(attributeName\(key\),key\)/);
  assert.match(renderer,/const positionsShown=\[player\.primary_position,\.\.\.\(Array\.isArray\(player\.secondary_positions\)\?player\.secondary_positions:\[\]\)\]\.filter\(Boolean\)/);
  assert.match(renderer,/else \{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\);\s*for\(const key of groups\[state\.group\]\)/);
@@ -360,7 +388,7 @@ test('Players main tabs are compact and centered; existing top margins alone are
 });
 
 
-test('Players collection uses a validated page query, without changing the public response',()=>{
+test('Players collection uses a validated offset query, without changing the public response',()=>{
  const server=read('backend/src/index.ts'),client=read('assets/players-directory.js'),integration=read('backend/tests/players-generation-runtime.test.ts');
  assert.ok(server.includes("if(url.pathname==='/api/players')"));
  assert.ok(server.includes('parsePublicPlayerQuery(url.search)'));
@@ -368,7 +396,7 @@ test('Players collection uses a validated page query, without changing the publi
  assert.ok(!server.includes('playersPage=url.pathname.match'),'old page path should not be routed');
  assert.ok(client.includes("fetch('/api/players?'+query.toString()"));
  assert.ok(!client.includes("fetch('/api/players/page/'+page"));
- for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview']){
+ for(const path of ['?offset=0','?offset=50','?offset=100','?offset=1','?offset=01','?offset=-50','?offset=500000','?offset=50&offset=100','?page=1','?page=2','?page=2&offset=50','?view=overview']){
   assert.ok(integration.includes(path),'missing integration case '+path);
  }
  assert.ok(integration.includes('expect(legacy.status).toBe(404)'));
@@ -397,7 +425,7 @@ test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and plain
  assert.doesNotMatch(code,/stepButtons/);
  assert.match(code,/state\.filters=nextFilters;state\.page=1;\s*syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
- assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
+ assert.match(code,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
  assert.match(code,/renderCount\(lastCount\)/);
  for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{name:'),lng);
@@ -476,7 +504,7 @@ test('Players nationality and positions use searchable multi-select with seconda
 });
 test('Players parser validates safe multiple nationality/position values, secondary scopes and height ranges',async()=>{
  const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
- const query=parsePublicPlayerQuery('?nationality=ITA%2CENG&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=165&heightMax=195&ageMin=18&foot=left&page=3');
+ const query=parsePublicPlayerQuery('?nationality=ITA%2CENG&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=165&heightMax=195&ageMin=18&foot=left&offset=100');
  assert.deepEqual(query,{page:3,filters:{nationality:['ITA','ENG'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',ageMin:18,heightMin:165,heightMax:195,foot:'left'}});
  assert.ok(isAllowedPublicPlayersPath('/api/players?nationality=ITA%2CENG&nationalityScope=any'));
  for(const invalid of ['?nationalityScope=any','?positionScope=any','?nationality=ITA%2CITA','?nationality=ITA%2CXYZ','?position=ST%2CST','?position=ST%2CXX','?heightMin=90','?heightMax=251','?ageMin=30&ageMax=20','?heightMin=220&heightMax=190','?nationality=%49TA','?position=ST%2cRW','?nationality=ITA&nationality=ENG','?foot=up']){
@@ -492,9 +520,10 @@ test('Players SQL count/page share identical secondary and multiple filters with
  // Player identities survive world reset: no filters means no WHERE clause.
  assert.match(sql,/const where=predicates\.length\?' WHERE '\+predicates\.join\(' AND '\):''/);
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
- assert.match(sql,/SELECT id,payload_json FROM generated_players'\+where/);
+ assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id'\+where/);
  assert.doesNotMatch(sql,/WHERE world_generation=\?/);
- assert.match(sql,/'created_at DESC,id ASC'/);
+ assert.match(sql,/:\'id DESC\'/,'default public sorting follows descending numeric IDs');
+ assert.doesNotMatch(sql,/:\'created_at DESC,id ASC\'/);
  assert.match(sql,/ORDER BY '\+orderBy\+' LIMIT \? OFFSET \?'/);
  assert.match(sql,/json_extract\(payload_json,'\$\.height_cm'\)>=\?/);
  assert.match(types,/nationality\?:string\[\]/);
@@ -608,11 +637,11 @@ test('Players reserve five completely empty, full-height rows while loading',()=
  const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
  const table=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
  assert.equal((table.match(/class="app-players-loading-row"/g)||[]).length,5);
- assert.equal((table.match(/colspan="6"/g)||[]).length,5);
+ assert.equal((table.match(/colspan="7"/g)||[]).length,5);
  assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
  assert.match(table,/class="sr-only" data-players-status role="status"/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:44px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
  assert.doesNotMatch(css,/\.app-players-skeleton-line|\.app-players-skeleton-row/);
  assert.match(js,/function showLoadingRows\(\)/);
  assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
@@ -664,6 +693,215 @@ test('Players column buttons provide persistent URL ordering on complete server-
  const firstPaint=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
  assert.match(firstPaint,/th\.setAttribute\('aria-sort',active\?/);
 });
+test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loading rows',async()=>{
+ const sql=read('backend/src/public-players-read.ts'),js=read('assets/players-directory.js');
+ const {parsePublicPlayerQuery}=await import('../backend/src/public-players-filters.mjs');
+ assert.deepEqual(parsePublicPlayerQuery('').filters,{},'default API query sends no explicit sort');
+ assert.deepEqual(parsePublicPlayerQuery('?offset=50').filters,{},'offset deep links share the default ordering');
+ assert.match(sql,/:\'id DESC\'/,'newest numeric player ID is first when no sort selected');
+ assert.match(sql,/sortExpression\+' COLLATE NOCASE '\+\(filters\.order==='desc'\?'DESC':'ASC'\)\+', id ASC'/,'explicit sorts preserve stable tie-breaking');
+ const load=js.slice(js.indexOf('  async function load(page){'),js.indexOf('  function changeView(view){'));
+ assert.match(load,/current=null;status='loading'/,'old rows are cleared before a sort refresh');
+ assert.match(load,/renderHead\(\);showLoadingRows\(\)/,'sort-triggered load renders placeholders first');
+ assert.match(js,/for\(let n=0;n<5;n\+\+\)/,'refresh reserves exactly five loading rows');
+ assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sort resets to the first complete server page');
+});
+
+test('PLAYERS-SCROLL-01 sort clears 150 loaded rows to exactly five loading rows without retained height',()=>{
+ const js=read('assets/players-directory.js'),css=read('assets/app.css');
+ const load=js.slice(js.indexOf('  async function load(page){'),js.indexOf('  async function appendNext(){'));
+ assert.doesNotMatch(load,/scroll\.style\.minHeight\s*=/,'sorting must never preserve the previous 50/150+ row viewport height');
+ assert.doesNotMatch(js,/scroll\.style\.minHeight\s*=/,'no stale inline height locks across load paths');
+ assert.match(load,/current=null;status='loading'/,'old result state is invalidated before fetching the sort');
+ assert.match(load,/renderHead\(\);showLoadingRows\(\)/,'placeholder rows render before the API resolves');
+ const show=js.slice(js.indexOf('  function showLoadingRows(){'),js.indexOf('  function message(value){'));
+ assert.ok(show.startsWith('  function showLoadingRows(){'),'use the production function, not a reimplementation');
+ const element=()=>({children:[],dataset:{},append(node){this.children.push(node)},setAttribute(){}});
+ const document={
+  createDocumentFragment(){return element()},
+  createElement(){return element()}
+ };
+ const oldRows=Array.from({length:150},()=>element());
+ const body={rows:oldRows,replaceChildren(fragment){this.rows=fragment.children}};
+ const pager={hidden:false},scroll={attributes:{},setAttribute(k,v){this.attributes[k]=v}};
+ const showLoading=new Function('document','body','pager','scroll','cols','locale',
+  show+';return showLoadingRows;')(document,body,pager,scroll,()=>7,()=>({loading:'Loading players…'}));
+ showLoading();
+ assert.equal(body.rows.length,5,'only five rows remain after a sort refresh');
+ assert.ok(body.rows.every(row=>row.className==='app-players-loading-row'&&row.children.length===1&&row.children[0].colSpan===7));
+ assert.ok(body.rows.every(row=>!oldRows.includes(row)),'all prior loaded rows have been detached');
+ assert.equal(pager.hidden,true);
+ assert.equal(scroll.attributes['aria-busy'],'true');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
+ assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sorting always starts a fresh first page');
+});
+
+test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL pagination contracts',()=>{
+ const js=read('assets/players-directory.js'),css=read('assets/app.css');
+ assert.match(js,/const loadMore=document.createElement\('button'\)/);
+ assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
+ assert.match(js,/async function fetchBatch\(page\)/);
+ assert.match(js,/pageSize!==50/);
+ assert.match(js,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
+ assert.match(js,/const validOffset=rawOffset!==null/);
+ assert.doesNotMatch(js,/legacyPage|validLegacy/,'page URLs are not interpreted');
+ assert.match(js,/data\.count>0&&page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
+ assert.match(js,/async function appendNext\(\)/);
+ assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
+ assert.match(js,/history\.replaceState\(\{\.\.\.base,faPlayersReturn:/,'store only position metadata for browser Back');
+ assert.match(js,/navigationType==='back_forward'/,'restore only on cold history traversal');
+ assert.match(js,/body\.querySelector\('a\.app-player-name-link/,'return focus to the player link');
+ assert.match(js,/if\(!current\|\|appendPending\|\|appendError\|\|loadedThrough>=current\.totalPages\)return/);
+ assert.match(js,/if\(seq!==ticket\)return/,'ignore stale append responses');
+ assert.match(js,/data\.players\.some\(player=>seen\.has\(player\.id\)\)/,'detect shifted OFFSET duplicates');
+ assert.match(js,/new IntersectionObserver\(entries=>/,'auto-load at scroll end');
+ assert.match(js,/root:scrollPane\|\|null,rootMargin:'0px 0px 120px 0px'/,'observe correct shell');
+ assert.match(js,/addEventListener\('scroll',/,'passive fallback');
+ assert.match(js,/new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
+ assert.doesNotMatch(js,/\/api\/players\/cursor/,'no breaking cursor API');
+ assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('offset',String\(\(state\.page-1\)\*50\)\)/);
+ assert.doesNotMatch(js,/query\.set\('page'/,'offset-only client API');
+ assert.doesNotMatch(js,/const loaded=t\.loaded/,'no Loaded X of Y counter');
+ assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.loadingMore|t\.end/,'no loading or end-of-results messages');
+ assert.match(js,/pager\.hidden=current\.players\.length===0\|\|loadedThrough>=current\.totalPages/,'hide footer at end');
+ assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=true;loadMore\.disabled=true;return;/,'hide fallback during auto-loading');
+ assert.match(css,/\.app-players-end-sentinel\{/);
+ assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
+ for(const lang of ['en','it','de','es','fr']){
+  const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
+  assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);
+  assert.doesNotMatch(labels,/,loadingMore:|,end:/);
+ }
+});
+test('PLAYERS-SCROLL-01 offset query rejects obsolete page URLs',async()=>{
+ const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
+ for(const [query,page] of [['?offset=0',1],['?offset=50',2],['?offset=100',3],['?offset=499900',9999],['?offset=50&sort=age&order=desc',2]]){
+  assert.equal(parsePublicPlayerQuery(query).page,page);
+  assert.equal(isAllowedPublicPlayersPath('/api/players'+query),true);
+ }
+ assert.deepEqual(parsePublicPlayerQuery('?offset=50&nationality=ITA'),{page:2,filters:{nationality:['ITA']}});
+ assert.equal(parsePublicPlayerQuery('').page,1,'unspecified offset defaults to zero');
+ for(const query of ['?offset=','?offset=01','?offset=000','?offset=-50','?offset=1','?offset=51','?offset=499950',
+  '?offset=500000','?offset=50&offset=50','?offset=50&page=2','?page=2&offset=50','?page=1','?page=2','?page=9999','?offset=x']){
+  assert.throws(()=>parsePublicPlayerQuery(query),{name:'TypeError'},query);
+  assert.equal(isAllowedPublicPlayersPath('/api/players'+query),false,query);
+ }
+});
+
+test('PLAYERS-SCROLL-01 near-end detection loads only when visible and idle',()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  function maybeLoadOnScroll(){'),end=js.indexOf("  if(typeof IntersectionObserver==='function')",begin);
+ assert.ok(begin>=0&&end>begin);
+ let calls=0;
+ const rect={top:700,bottom:701};
+ const pane={getBoundingClientRect:()=>({bottom:600})};
+ const sentinel={getBoundingClientRect:()=>rect};
+ const pager={hidden:false};
+ const current={totalPages:3};
+ const fire=new Function('current','status','appendPending','appendError','loadedThrough','pager','scrollPane','sentinel','window','appendNext',
+  js.slice(begin,end)+';return maybeLoadOnScroll;');
+ const mk=(opts={})=>fire(current,opts.status||'ready',!!opts.pending,opts.error||'',opts.through??1,pager,pane,sentinel,
+   {innerHeight:600},()=>{calls++});
+ mk()();assert.equal(calls,1,'inside prefetch margin');
+ rect.top=800;mk()();assert.equal(calls,1,'not close enough');
+ rect.top=700;
+ mk({pending:true})();mk({error:'network'})();mk({through:3})();mk({status:'loading'})();
+ assert.equal(calls,1,'no parallel, failed, completed or loading requests');
+});
+
+test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invalidation and deep links',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function appendNext(){'),end=js.indexOf('  function changeView(view){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const source=js.slice(begin,end);
+ const build=(initial,next)=>new Function('initial','next',`
+  let current={...initial,players:[...initial.players]},loadedThrough=initial.page,ticket=0,appendPending=false,appendError='';
+  let requests=0,appended=[],progressUpdates=0;
+  const fetchBatch=async page=>{requests++;return next(page)};
+  const body={append(rows){appended.push(...rows)}};\n   const hydrateClubCrests=()=>{};
+  const playerRows=players=>players.map(player=>player.id);
+  const renderProgress=()=>{progressUpdates++};
+  ${source}
+  return {appendNext,retry:()=>{appendError=''},snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates}),invalidate:()=>{ticket++}};
+ `)(initial,next);
+ const first=Array.from({length:50},(_,i)=>({id:100-i}));
+ const second=Array.from({length:1},(_,i)=>({id:50-i}));
+ const base={page:1,count:51,pageSize:50,totalPages:2,players:first};
+ const make=(page,players,count=51)=>({page,count,pageSize:50,totalPages:2,players});
+ const success=build(base,async page=>make(page,second));
+ await success.appendNext();
+ assert.equal(success.snapshot().ids.length,51);
+ assert.deepEqual(success.snapshot().appended,[50]);
+ assert.equal(success.snapshot().loadedThrough,2);
+ await success.appendNext();assert.equal(success.snapshot().requests,1,'no next request after EOF');
+ let resolve;
+ const deferred=new Promise(done=>{resolve=done});
+ const concurrent=build(base,()=>deferred);
+ const firstCall=concurrent.appendNext();const secondCall=concurrent.appendNext();
+ assert.equal(concurrent.snapshot().requests,1,'only one in-flight append');
+ resolve(make(2,second));await Promise.all([firstCall,secondCall]);
+ assert.equal(concurrent.snapshot().ids.length,51);
+ const duplicate=build(base,async page=>make(page,[{id:100}]));
+ await duplicate.appendNext();
+ assert.equal(duplicate.snapshot().appendError,'stale','duplicate must request a restart');
+ assert.deepEqual(duplicate.snapshot().ids,first.map(p=>p.id));
+ const changed=build(base,async page=>make(page,second,52));
+ await changed.appendNext();assert.equal(changed.snapshot().appendError,'stale');
+ let fail=true;
+ const retry=build(base,async page=>{if(fail){fail=false;throw Error('network')}return make(page,second)});
+ await retry.appendNext();assert.equal(retry.snapshot().appendError,'network');
+ await retry.appendNext();assert.equal(retry.snapshot().requests,1,'automatic scroll does not retry silently');
+ retry.retry(); // The explicit Retry control clears the error before another request.
+ await retry.appendNext();assert.equal(retry.snapshot().appendError,'');
+ assert.equal(retry.snapshot().ids.length,51);
+ let release;
+ const pending=new Promise(done=>{release=done});
+ const obsolete=build(base,()=>pending);
+ const task=obsolete.appendNext();obsolete.invalidate();release(make(2,second));await task;
+ assert.equal(obsolete.snapshot().ids.length,50,'superseded append does not commit');
+ const deep=build({page:3,count:151,pageSize:50,totalPages:4,players:first},async page=>({...make(page,second),count:151,totalPages:4}));
+ await deep.appendNext();assert.equal(deep.snapshot().loadedThrough,4,'direct page 3 loads only segment 4 next');
+});
+test('PLAYERS-TABLE-532 scales headers and text to fit 24px club crests',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px;font-weight:700/);
+ assert.match(css,/\.app-players-sort-button\{[^}]*height:36px;min-height:36px/);
+ assert.match(css,/\.app-players-table\{[^}]*font-size:14px/,'data labels scale to 14px with the larger rows');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/,'36px body rows fit 24px crests');
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/,'first-paint and refresh rows retain matching height');
+ assert.doesNotMatch(css,/\.app-players-table thead th\{height:44px/);
+ assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-table thead th\{[^}]*height:/,'Roster inherits the shared header styles');
+});
+
+test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags in public, Roster and Admin preview',()=>{
+ const css=read('assets/app.css');
+ const directory=read('assets/players-directory.js');
+ const club=read('assets/club-model.js');
+ const preview=read('assets/admin-players-preview.js');
+ assert.match(css,/\.app-players-table th,\.app-players-table td\{[^}]*padding:2px 16px;/,'shared compact vertical padding');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table tbody td:first-child\{text-align:center;vertical-align:middle\}/);
+ assert.match(css,/\.app-players-nationality-flag\{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto\}/);
+ assert.match(directory,/image\.width=20;image\.height=15;image\.alt=/);
+ assert.match(preview,/image\.width=20;image\.height=15;image\.src=/);
+ assert.match(club,/app-players-nationality-flag[^\n]+width="20" height="15"/);
+ assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
+ assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
+ assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'name cell stays vertically centered');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
+ assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
+ assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
+ assert.match(css,/\.app-players-table thead th\{height:42px/,'compact headings remain stable across all player tables');
+ // Preserve all responsive and first-paint geometry and five empty loading rows.
+ assert.equal((read('players/index.html').match(/class="app-players-loading-row"/g)||[]).length,5);
+ assert.match(css,/@media\(max-width:720px\)\{\.app-players-table th,\.app-players-table td\{padding-inline:10px\}\}/);
+});
+
 test('Players search clear X uses a pointer cursor on supported WebKit/Blink browsers',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  assert.match(html,/data-players-filter="name" maxlength="80"/);
@@ -743,8 +981,8 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
 
 test('Players table header geometry and independent sort-label anchoring',()=>{
  const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),js=read('assets/players-directory.js');
- assert.match(css,/\.app-players-table thead th\{height:44px;padding-block:5px;[^}]*font-size:12px;font-weight:700;line-height:1.2/);
- assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:32px;min-height:32px/);
+ assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px;font-weight:700;line-height:1.2/);
+ assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:36px;min-height:36px/);
  assert.match(css,/\.app-players-sort-label\{position:relative;display:inline-block;max-width:100%/);
  assert.match(css,/\.app-players-sort-chevron\{position:absolute;display:block;left:calc\(100% \+ 7px\);top:50%/);
  assert.match(css,/\.app-players-flag-col \.app-players-sort-chevron\{left:0\}/);
@@ -755,8 +993,8 @@ test('Players table header geometry and independent sort-label anchoring',()=>{
  assert.match(html,/wrapper\.textContent=label;button\.append\(wrapper\)/);
  assert.match(html,/chevron\.append\(path\);wrapper\.append\(chevron\)/);
  assert.match(gen,/app-players-sort-label/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:44px/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/);
 });
 
 test('Players filter close matches the canonical search and calendar popup X',()=>{

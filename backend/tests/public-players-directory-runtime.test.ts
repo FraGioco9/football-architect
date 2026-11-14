@@ -10,7 +10,7 @@ const attrs=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((key,i)=>[ke
 const stored={first_name:'Andrea',last_name:'Rossi',nationality:'ITA',secondary_nationality:'FRA',
  age:18,initial_age:16,career_status:'active',height_cm:180,preferred_foot:'right',primary_position:'CM',
  secondary_positions:['DM'],attributes:attrs,development_aptitude:99,seed:'never-expose'};
-function mockDb(){
+function mockDb(clubKey:string|null=null){
  const calls:{sql:string;params:unknown[]}[]=[];
  const db={prepare(sql:string){
   const statement=(params:unknown[])=>({
@@ -23,7 +23,7 @@ function mockDb(){
    },
    async all(){
     calls.push({sql,params});
-    return {results:[{id:42,payload_json:JSON.stringify(stored)}],meta:{changes:0}};
+    return {results:[{id:42,payload_json:JSON.stringify(stored),club_key:clubKey}],meta:{changes:0}};
    },
    async run(){return {results:[],meta:{changes:0}}}
   });
@@ -47,11 +47,26 @@ test('public page uses persisted numeric IDs, includes approved JSON and exclude
  assert.doesNotMatch(JSON.stringify(player),/initial_age|development_aptitude|seed|preview_id|known_as/);
 });
 
+test('public directory exposes verified current club identity on the same paginated query',async()=>{
+ const free=await readPublicPlayers(mockDb(null).db,1);
+ assert.equal(free.players[0].clubKey,null);
+ assert.equal(free.players[0].clubName,null);
+ const {db,calls}=mockDb('IT-1');
+ const assigned=await readPublicPlayers(db,1);
+ assert.equal(assigned.players[0].clubKey,'IT-1');
+ assert.ok(typeof assigned.players[0].clubName==='string'&&assigned.players[0].clubName.length>0);
+ assert.doesNotMatch(JSON.stringify(assigned.players[0]),/salary|expiry|contract_id|development_aptitude/);
+ const page=calls.find(c=>c.sql.includes('LIMIT ? OFFSET ?'))!;
+ assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.deepEqual(page.params,[50,0]);
+ await assert.rejects(readPublicPlayers(mockDb('BAD-99').db,1),/players_unavailable/);
+});
+
 test('public directory count and pagination include persisted players independent of world generation',async()=>{
  const {db,calls}=mockDb();
  await readPublicPlayers(db,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  assert.doesNotMatch(count.sql,/world_generation|WHERE/);
  assert.doesNotMatch(page.sql,/world_generation|WHERE/);
  assert.doesNotMatch(count.sql,/json_extract/);
@@ -68,13 +83,13 @@ test('public directory rejects invalid page numbers before database reads',async
 });
 
 test('shared filter parser rejects duplicates, unknown inputs, encoded values and inverted ages',()=>{
- const valid=parsePublicPlayerQuery('?position=ST&nationality=ITA&ageMin=18&ageMax=24&foot=left&page=2');
+ const valid=parsePublicPlayerQuery('?position=ST&nationality=ITA&ageMin=18&ageMax=24&foot=left&offset=50');
  assert.deepEqual(valid,{page:2,filters:{nationality:['ITA'],position:['ST'],ageMin:18,ageMax:24,foot:'left'}});
  assert.deepEqual(parsePublicPlayerQuery('?nationality=ITA%2CFRA&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=175&heightMax=195').filters,
   {nationality:['ITA','FRA'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',heightMin:175,heightMax:195});
  assert.deepEqual(parsePublicPlayerQuery(''),{page:1,filters:{}});
  assert.deepEqual(parsePublicPlayerQuery('?name=Andrea').filters,{name:'Andrea'});
- for(const raw of ['?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
+ for(const raw of ['?page=1','?page=2','?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
   '?foot=both','?ageMin=121','?ageMin=-1','?ageMin=01','?ageMin=22&ageMax=21','?ageMin=10&ageMin=20',
   '?view=overview','?page=1&page=2','?name=%25','?nationality=%49TA','?page=1&','?page=1#x',
   '?ageMax=21.5','?foot=right&foo=bar']){
@@ -88,7 +103,8 @@ test('shared filter parser rejects duplicates, unknown inputs, encoded values an
   assert.equal(isAllowedPublicPlayersPath('/api/players'+bad),false,bad);
  }
  assert.equal(isAllowedPublicPlayersPath('/api/players?foot=right&ageMin=0'),true);
- assert.equal(isAllowedPublicPlayersPath('/api/players?page=1'),true);
+ assert.equal(isAllowedPublicPlayersPath('/api/players?offset=0'),true);
+ assert.equal(isAllowedPublicPlayersPath('/api/players?page=1'),false);
  assert.equal(isAllowedPublicPlayersPath('/api/players/page/1'),false);
 });
 test('all filters are bound into COUNT and page queries before pagination, without leaking any private data',async()=>{
@@ -97,13 +113,13 @@ test('all filters are bound into COUNT and page queries before pagination, witho
  const result=await readPublicPlayers(db,1,filters);
  assert.equal(result.count,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  for(const token of ["'$.nationality'","'$.primary_position'","'$.age'","'$.preferred_foot'"]){
   assert.ok(count.sql.includes(token),token);assert.ok(page.sql.includes(token),token);
  }
  assert.deepEqual(count.params,['ITA','CM',18,30,'right']);
  assert.deepEqual(page.params,['ITA','CM',18,30,'right',50,0]);
- assert.match(page.sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
+ assert.match(page.sql,/ORDER BY id DESC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(JSON.stringify(result.players),/initial_age|development_aptitude|seed/);
 });
 
@@ -114,7 +130,7 @@ test('validated name search and sparse public attributes keep COUNT and page SQL
  const {db,calls}=mockDb();
  await readPublicPlayers(db,1,query.filters);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  for(const stmt of [count,page]){
   assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.passing'\)>=\?/);
   assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.vision'\)<=\?/);
