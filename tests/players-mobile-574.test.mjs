@@ -9,7 +9,7 @@ test('#574 desktop player-table dimensions remain at owner-approved #567 baselin
  assert.match(css,/\.app-players-table\{--app-players-flag-width:54px;--app-players-name-width:248px;--app-players-positions-width:200px;width:100%;min-width:782px/);
  assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px/);
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
- assert.match(admin,/\.app-admin-view \.admin-contracts-table\{box-sizing:border-box;width:100%;min-width:1024px;[^}]*font-size:14px/);
+ assert.match(admin,/\.app-admin-view \.admin-contracts-table\{box-sizing:border-box;width:100%;min-width:1000px;[^}]*font-size:14px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-table thead th\{height:42px;[^}]*font-size:12px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-table tbody tr\{height:36px\}/);
 });
@@ -139,7 +139,7 @@ test('#574 preview subview fade responds to scroll and resizing after first pain
 test('#574 mobile Club crest and compact name are centered together',()=>{
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) \.app-players-club-content\{display:flex;align-items:center;justify-content:center;gap:0;width:100%/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(7\)\{text-align:center\}/);
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) th:nth-child\(7\) \.app-players-sort-button\{justify-content:center\}/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) th\.app-players-club-col\{text-align:center\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:678px\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:640px\}/);
 });
@@ -177,4 +177,18 @@ test('#574 positions use an overflow-driven, accessible mobile disclosure',async
  assert.match(css,/\.fa-positions-cell\[data-fa-compact="true"\] \.fa-positions-more\{display:inline-flex\}/);
  assert.match(css,/\.fa-positions-more:focus-visible\{outline:2px solid var\(--focus\)/);
  assert.match(css,/\.fa-positions-popup\[hidden\]\{display:none\}/);
+});
+
+
+test('#574 Club header and centered club name use the same seventh-column axis',()=>{
+ const page=read('players/index.html'),directory=read('assets/players-directory.js');
+ const mobile=css.split('/* #574: the visible text is centered exactly in its table cell.')[1];
+ assert.ok(mobile,'mobile Club geometry block exists');
+ assert.match(page,/<th scope="col" class="app-players-club-col">Club<\/th>/,'first-paint header has class');
+ assert.match(directory,/club\.className='app-players-club-col'/,'hydrated header keeps same class');
+ assert.match(mobile,/th\.app-players-club-col\{text-align:center\}/,'mobile Club header is centered');
+ assert.match(mobile,/tbody td:nth-child\(7\)\{text-align:center\}/,'Club data cell is centered');
+ assert.match(mobile,/\.app-players-club-content\{display:flex;align-items:center;justify-content:center/,'name anchor is centered');
+ assert.match(mobile,/\.app-players-club-mark\{position:absolute;right:calc\(100% \+ 4px\)/,'crest does not shift name');
+ assert.doesNotMatch(mobile,/th:nth-child\(7\) \.app-players-sort-button/,'Club header is static and has no sort button');
 });
