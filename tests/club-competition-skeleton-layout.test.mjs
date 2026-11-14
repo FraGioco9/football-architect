@@ -31,7 +31,11 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-competition-list \.club-competition-entry\{[^}]*align-items:center;padding:0;margin:0;border:0;/);
  assert.doesNotMatch(css,/\.club-competition-list \.club-competition-entry\+\.club-competition-entry\{[^}]*padding/,'following competition rows have no padding');
  assert.doesNotMatch(css,/@container club-competition-panel \(max-width:800px\)\{\s*\.club-competition-list \.club-competition-entry\{[^}]*padding/,'stacked rows retain zero padding');
- assert.match(css,/\.club-competition-list \.club-competition-metrics,[\s\S]*?justify-content:flex-start;[\s\S]*?align-self:stretch;/);
+ assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*grid-template-rows:minmax\(16px,auto\) minmax\(59px,auto\);/,'Each summary reserves shared label and value tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics,[\s\S]*?display:grid;grid-template-rows:subgrid;grid-row:1\/3;/,'Status and Next match use identical row tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics dt,[\s\S]*?grid-row:1;align-self:start;/,'Both labels start on track one');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*grid-row:2;/,'Status value starts on track two');
+ assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-row:2;/,'Fixture value starts on track two');
  assert.match(css,/\.club-competition-list \.club-competition-logo\{[^}]*width:60px;height:60px;flex:0 0 60px/);
  assert.match(css,/\.club-competition-list \.club-competition-cup-mark\{[^}]*width:60px;height:60px;flex:0 0 60px/);
  assert.match(css,/\.club-competition-list \.club-competition-name\{font-size:17px;font-weight:700/);
