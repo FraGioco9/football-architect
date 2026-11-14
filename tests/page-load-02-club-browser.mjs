@@ -350,16 +350,19 @@ try{
      for(const key of ['identity','logo','status','next'])
       assert.ok(Math.abs(state[key].x-parity.before[key].x)<1.5,
        'First paint '+key+' horizontal slot moved at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
-     for(const key of ['status','next'])assert.ok(Math.abs(state[key].y-parity.before[key].y)<1.5,
-      'First paint '+key+' label moved vertically at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
-     assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
-      'First paint Next match first line moved vertically at '+width+'px for '+state.value);
+     // Both headings share a single grid track, including with wrapped values.
+     assert.ok(Math.abs(state.status.y-state.next.y)<1.5,
+      'Status and Next match labels must share the same row at '+width+'px: '+state.value);
+     // Growing multi-line fixtures expand the shared track; the short fixture
+     // retains its exact first-paint line origin.
+     if(state.lineCount<=1.1)assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
+      'First paint Next match first line moved for a short fixture at '+width+'px for '+state.value);
      const centered=rect=>rect.y+rect.height/2;
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.nextBlock))<1.5,
       'Status and longer Next match are vertically centered on the same row at '+width+'px');
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.summary))<1.5,
       'Status remains centered within the grown row summary at '+width+'px');
-     assert.equal(state.minHeight,'59px','Hydrated Next match reserves the same first-line slot as first paint at '+width+'px for '+state.value);
+     assert.equal(state.minHeight,'0px','Hydrated Next match does not reserve invisible height under its visible content at '+width+'px for '+state.value);
      if(comp.availableWidth>800)assert.ok(Math.abs(centered(state.identity)-centered(state.summary))<1.5,
       'wide row centers the crest/name and both summary blocks together at '+width+'px');
      assert.ok(state.visible&&state.contained,'Long fixture must wrap completely inside panel: '+JSON.stringify({width,...state}));

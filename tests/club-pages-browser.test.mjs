@@ -902,15 +902,21 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const second=first.cloneNode(true);
       second.querySelector('.club-competition-name').textContent='Sovereign International Championship — Group B';
       second.querySelector('.club-competition-tier').textContent='International';
-      second.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals';
+      second.querySelector('[data-club-position]').textContent='1st';
       second.querySelector('.club-competition-next-content').innerHTML='<span class="club-competition-next-empty">No upcoming match.</span>';
       list.append(second);
       const pos=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),b=row.getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height}};
       const measure=row=>{
        const a=pos(row,'.club-competition-metrics dt'),b=pos(row,'.club-competition-metrics dd');
        const c=pos(row,'.club-competition-next>.club-competition-label'),d=pos(row,'.club-competition-next-content');
+       const crest=pos(row,'.club-competition-logo');
+       const end=row.querySelector('.club-competition-next-content').lastElementChild.getBoundingClientRect();
+       const rowTop=row.getBoundingClientRect().top,crestCenter=crest.y+crest.h/2;
+       const statusVisualCenter=(a.y+b.y+b.h)/2,nextVisualCenter=(c.y+end.bottom-rowTop)/2;
        return {x1:a.x,x2:c.x,labelDelta:Math.abs(a.y-c.y),valueDelta:Math.abs(b.y-d.y),
-        centerDelta:Math.abs(a.x+a.w/2-b.x-b.w/2),nextDelta:Math.abs(c.x-d.x)};
+        centerDelta:Math.abs(a.x+a.w/2-b.x-b.w/2),nextDelta:Math.abs(c.x-d.x),
+        crestStatusDelta:Math.abs(crestCenter-statusVisualCenter),
+        crestNextDelta:Math.abs(crestCenter-nextVisualCenter)};
       };
       const rows=[measure(first),measure(second)];
       const pending=first.cloneNode(true);
@@ -939,8 +945,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       &&Math.abs(competitionGridProbe.rows[0].x2-competitionGridProbe.rows[1].x2)<1.5
       &&competitionGridProbe.parity.every(slot=>slot.x<1.5&&slot.y<1.5)
       &&competitionGridProbe.barOffset<1.5
-      &&competitionGridProbe.lineDeltas.every(delta=>delta<1.5),
-      'Two membership rows and skeleton positions share the canonical grid at '+width+': '+JSON.stringify(competitionGridProbe));
+      &&competitionGridProbe.lineDeltas.every(delta=>delta<1.5)
+      &&(width!==1440||competitionGridProbe.rows.every(row=>row.crestStatusDelta<8&&row.crestNextDelta<8)),
+      'Visible Status and Next match groups center with each row crest, not only their bounding boxes, at '+width+': '+JSON.stringify(competitionGridProbe));
 
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');
      if(width===1440||width===390){
