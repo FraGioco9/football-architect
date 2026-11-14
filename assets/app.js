@@ -1412,6 +1412,11 @@
     attributes: true, attributeFilter: ["lang"]
   });
   renderView();
+  // Mobile player names and scroll fades are scoped to pages with player tables.
+  const mobileTablePath=(window.location.pathname||'').replace(/\/+$/,'');
+  if((mobileTablePath==='/players'||mobileTablePath.startsWith('/clubs/')||
+      mobileTablePath==='/admin/contracts'||mobileTablePath==='/admin/players/preview')&&
+     document.querySelector('.app-players-table-scroll'))void import('/assets/players-mobile.js');
   // Global progress is read independently of the historical season in this URL.
   // Reuse the existing allowlisted adapter; static shell rendering never awaits an API.
   void import('/assets/world-clock-adapter.js').then(()=>window.faWorldClockAdapter?.mountWorldState({window,document,onChange:()=>{rewriteAppLinks();renderWorldProgress()}})).catch(()=>{});
