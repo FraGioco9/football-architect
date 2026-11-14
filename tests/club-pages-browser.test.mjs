@@ -730,6 +730,54 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      for(const status of ['Semifinals','Eliminated in the quarter-finals','Ausgeschieden in der Qualifikationsrunde','Eliminado en la ronda de clasificación','Éliminé au tour de qualification','Eliminato al turno di qualificazione']){
       assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(['[data-club-position]','.club-competition-next a'])});const match=document.querySelector('.club-competition-next a').getBoundingClientRect(),round=document.querySelector('.club-competition-next small').getBoundingClientRect(),name=document.querySelector('.club-competition-name').getBoundingClientRect(),tier=document.querySelector('.club-competition-tier').getBoundingClientRect();const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&baselines.every(Number.isFinite)&&Math.abs(round.top-match.bottom-3)<1.5&&Math.abs(tier.top-name.bottom-3)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
+
+     // Actual app geometry: both membership rows share horizontal tracks; a
+     // runtime pending row reserves the same slots as hydrated values.
+     const competitionGridProbe=await run(`(()=>{
+      const list=document.querySelector('.club-competition-list'),first=list.querySelector('.club-competition-entry');
+      const second=first.cloneNode(true);
+      second.querySelector('.club-competition-name').textContent='Sovereign International Championship — Group B';
+      second.querySelector('.club-competition-tier').textContent='International';
+      second.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals';
+      second.querySelector('.club-competition-next-content').innerHTML='<span class="club-competition-next-empty">No upcoming match.</span>';
+      list.append(second);
+      const pos=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),b=row.getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height}};
+      const measure=row=>{
+       const a=pos(row,'.club-competition-metrics dt'),b=pos(row,'.club-competition-metrics dd');
+       const c=pos(row,'.club-competition-next>.club-competition-label'),d=pos(row,'.club-competition-next-content');
+       return {x1:a.x,x2:c.x,labelDelta:Math.abs(a.y-c.y),valueDelta:Math.abs(b.y-d.y),
+        centerDelta:Math.abs(a.x+a.w/2-b.x-b.w/2),nextDelta:Math.abs(c.x-d.x)};
+      };
+      const rows=[measure(first),measure(second)];
+      const pending=first.cloneNode(true);
+      pending.querySelector('.club-competition-logo').outerHTML='<span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span>';
+      pending.querySelector('.club-competition-name').innerHTML='<span class="club-fp-bar club-fp-competition-name"></span>';
+      pending.querySelector('.club-competition-tier').innerHTML='<span class="club-fp-bar club-fp-competition-tier"></span>';
+      pending.querySelector('.club-competition-metrics dd').innerHTML='<span class="club-fp-bar club-fp-competition-position"></span>';
+      pending.querySelector('.club-competition-next-content').innerHTML='<span class="club-fp-bar club-fp-competition-fixture"></span><span class="club-fp-bar club-fp-competition-round"></span>';
+      const skeletonList=document.createElement('div');
+      skeletonList.className='club-competition-list club-fp-competition';skeletonList.append(pending);list.after(skeletonList);
+      const selectors=['.club-competition-identity','.club-competition-name','.club-competition-tier','.club-competition-metrics dt',
+       '.club-competition-metrics dd','.club-competition-next>.club-competition-label','.club-competition-next-content'];
+      const parity=selectors.map(selector=>{const a=pos(first,selector),b=pos(pending,selector);return {selector,x:Math.abs(a.x-b.x),y:Math.abs(a.y-b.y)}});
+      const statusBar=pos(pending,'.club-fp-competition-position');
+      const line=parseFloat(getComputedStyle(first.querySelector('.club-competition-metrics dd')).lineHeight);
+      const barOffset=Math.abs(statusBar.y-pos(first,'.club-competition-metrics dd').y-(line-12)/2);
+      const fixture=pos(pending,'.club-fp-competition-fixture'),round=pos(pending,'.club-fp-competition-round');
+      const fixtureLine=parseFloat(getComputedStyle(first.querySelector('.club-competition-next a')).lineHeight);
+      const roundLine=parseFloat(getComputedStyle(first.querySelector('.club-competition-next small')).lineHeight);
+      const lineDeltas=[Math.abs(fixture.h-fixtureLine),Math.abs(round.h-roundLine),Math.abs(round.y-fixture.y-fixture.h-3)];
+      skeletonList.remove();second.remove();
+      return {rows,parity,barOffset,lineDeltas};
+     })()`);
+     assert.ok(competitionGridProbe.rows.every(row=>row.labelDelta<1.5&&row.valueDelta<1.5&&row.centerDelta<1.5&&row.nextDelta<1.5)
+      &&Math.abs(competitionGridProbe.rows[0].x1-competitionGridProbe.rows[1].x1)<1.5
+      &&Math.abs(competitionGridProbe.rows[0].x2-competitionGridProbe.rows[1].x2)<1.5
+      &&competitionGridProbe.parity.every(slot=>slot.x<1.5&&slot.y<1.5)
+      &&competitionGridProbe.barOffset<1.5
+      &&competitionGridProbe.lineDeltas.every(delta=>delta<1.5),
+      'Two membership rows and skeleton positions share the canonical grid at '+width+': '+JSON.stringify(competitionGridProbe));
+
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');
      if(width===1440||width===390){
       const capture=async label=>{
