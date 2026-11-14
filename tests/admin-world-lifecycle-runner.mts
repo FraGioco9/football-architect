@@ -14,6 +14,7 @@ import {createPasswordService} from '../backend/src/password-core.ts';
 import {PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS} from '../backend/src/footballer-public-projection.ts';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {verifyAdminWorldLifecycle} from './admin-world-lifecycle-browser.mjs';
+import {verifyRealContractRoster} from './perf-api-01-real-contract-roster.mjs';
 import {preflightAnonymousLocalApi,collectAnonymousBrowser} from '../tools/perf-api-01-requests.mjs';
 
 const require=createRequire(new URL('../backend/package.json',import.meta.url));
@@ -109,6 +110,10 @@ try{
  assert.deepEqual(result,{unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true});
  assert.ok(!workerLogs.includes(password)&&!workerLogs.includes(legacyPassword),'No credential in Worker logs');
  console.log('Unified Admin real Worker/D1 browser lifecycle PASS: '+JSON.stringify(result));
+ // With the explicit synthetic seed, prove the real protected Contracts POST
+ // affects an already-open anonymous Roster via the cross-tab signal.
+ // Both writes happen only in disposable local D1 and restore the seeded state.
+ if(populatedAudit)await verifyRealContractRoster(browser,{origin,email,password});
  // Optional diagnostic on this same disposable Worker/D1 and already-started
  // Chromium; never enable on all PRs or against the shared DEV/Preview pool.
  if(populatedAudit){
