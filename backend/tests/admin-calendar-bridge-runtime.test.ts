@@ -166,12 +166,12 @@ it('closes and archives exactly one fully verified season and replays the same c
 it('resets a staged V2 draw and republishes both scopes with new-generation match IDs',async()=>{
  // beforeEach has already prepared Season 1 and officially staged its domestic draw on day 2.
  const priorGeneration=world.generation;
- const priorLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first<{match_id:string}>();
- const priorKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first<{match_id:string}>();
+ const priorLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ const priorKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
  expect(priorLeague).toBeTruthy();
  expect(priorKnockout).toBeTruthy();
- expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first<{n:number}>())!.n).toBe(3840);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first<{n:number}>())!.n).toBe(56);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(56);
  await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
 
  // Run the real guarded command, not a direct test-fixture table truncation.
@@ -181,7 +181,7 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
  expect(world.generation).not.toBe(priorGeneration);
  for(const table of ['seasons','season_domestic_stages','season_draws','season_calendars',
    'season_match_slots','season_knockout_match_slots','season_day_outcomes','season_knockout_ties']){
-  expect((await db.prepare('SELECT count(*) n FROM '+table).first<{n:number}>())!.n).toBe(0);
+  expect((await db.prepare('SELECT count(*) n FROM '+table).first())!.n).toBe(0);
  }
  await expect(readPublicMatch(db,priorLeague!.match_id)).rejects.toMatchObject({status:404});
  await expect(readPublicMatch(db,priorKnockout!.match_id)).rejects.toMatchObject({status:404});
@@ -196,10 +196,10 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-recreate-day2-00001',now)).world;
  world=(await stageDomesticCalendar(db,session,meta(),'bridge-recreate-domestic-00001',now)).world;
 
- expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first<{n:number}>())!.n).toBe(3840);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first<{n:number}>())!.n).toBe(56);
- const newLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first<{match_id:string}>();
- const newKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first<{match_id:string}>();
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(56);
+ const newLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ const newKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
  expect(newLeague!.match_id).not.toBe(priorLeague!.match_id);
  expect(newKnockout!.match_id).not.toBe(priorKnockout!.match_id);
  expect(await readPublicMatch(db,newLeague!.match_id)).toMatchObject({status:'scheduled',provenance:{sourceKind:'domestic'}});
@@ -208,14 +208,14 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
 
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-recreate-day3-00001',now)).world;
  world=(await executeInternationalDraw(db,session,meta(),'bridge-recreate-international-00001',now)).world;
- expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first<{n:number}>())!.n).toBe(3984);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first<{n:number}>())!.n).toBe(98);
- expect((await db.prepare('SELECT count(*) n FROM season_match_slots WHERE source_kind=\'international\'').first<{n:number}>())!.n).toBe(144);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots WHERE source_kind=\'international\'').first<{n:number}>())!.n).toBe(42);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(98);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots WHERE source_kind=\'international\'').first())!.n).toBe(144);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots WHERE source_kind=\'international\'').first())!.n).toBe(42);
  const distinct=await db.prepare(`SELECT count(DISTINCT match_id) n FROM (
    SELECT match_id FROM season_match_slots UNION ALL
    SELECT match_id FROM season_knockout_match_slots
- )`).first<{n:number}>();
+ )`).first();
  expect(distinct!.n).toBe(4082);
  const cup=await readPublishedCompetitionMatches(db,1,'int-1');
  expect(cup.fixtures).toHaveLength(93);
@@ -224,8 +224,8 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
  expect(await readPublicMatch(db,final!.matchId)).toMatchObject({status:'awaiting_participants',result:null});
 
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-recreate-publish-00001',now)).world;
- expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first<{n:number}>())!.n).toBe(3984);
- expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first<{n:number}>())!.n).toBe(98);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(98);
  expect((await db.prepare('PRAGMA foreign_key_check').all()).results).toEqual([]);
  expect(world).toMatchObject({phase:'active',day:3});
 },120000);
