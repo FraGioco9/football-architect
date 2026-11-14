@@ -22,6 +22,48 @@ export function projectClubFixtures(fixtures,clubKey,season,day){
 }
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const bad=()=>{throw TypeError('Invalid authoritative club fixture payload')};
+
+/** Only committed, publicly released league slots, before full calendar publication. */
+async function readCommittedClubFixtures({clubKey,season,fetchJson,manifest,signal,allowed,base}){
+ const published=await Promise.all(allowed.map(async id=>{
+  let data;
+  try{data=await fetchJson('/api/matches/seasons/'+season+'/competitions/'+id,{signal});}
+  catch(error){if(String(error?.message||error).includes('HTTP 404'))return null;throw error;}
+  if(!object(data)||data.schemaVersion!==1||data.providerId!=='authoritative-world'||
+     data.season!==season||data.competitionId!==id||data.status!=='published'||
+     data.provenance?.kind!=='authoritative'||!['domestic','international','calendar'].includes(data.provenance.sourceKind)||
+     !/^[a-f0-9]{64}$/.test(data.provenance.sourceHash)||!Array.isArray(data.fixtures))bad();
+  const games=data.fixtures.filter(f=>f.phaseId==='league');
+  if(games.length!==(id.startsWith('int-')?72:240)||new Set(data.fixtures.map(f=>f.matchId)).size!==data.fixtures.length)bad();
+  if(games.some(f=>!object(f)||!f.homeClubId||!f.awayClubId||f.homeClubId===f.awayClubId||
+    !/^[1-9][0-9]*$/.test(f.matchId)||!Number.isSafeInteger(f.day)||f.day<1||f.day>56||
+    !Number.isSafeInteger(f.round)||f.round<1||f.round>(id.startsWith('int-')?6:30)))bad();
+  return {id,games};
+ }));
+ if(signal?.aborted)throw Error('Club Fixtures cancelled');
+ const ids=new Set(),rows=[],seen=new Set();
+ for(const scope of published){
+  if(!scope)continue;
+  const games=scope.games.filter(f=>f.homeClubId===clubKey||f.awayClubId===clubKey);
+  if(!games.length)continue;
+  if(games.length!==(scope.id.startsWith('int-')?6:30)||ids.has(scope.id))bad();
+  ids.add(scope.id);
+  for(const f of games){
+   if(seen.has(f.matchId))bad();seen.add(f.matchId);
+   const home=f.homeClubId===clubKey;
+   rows.push(Object.freeze({id:f.matchId,matchId:f.matchId,competitionId:scope.id,season,
+    day:f.day,round:f.round,phaseId:'league',marker:f.marker??'',tieId:null,leg:null,
+    opponentId:home?f.awayClubId:f.homeClubId,venue:home?'home':'away',
+    goalsFor:null,goalsAgainst:null,resolution:null,penalties:null}));
+  }
+ }
+ if([...ids].filter(id=>!id.startsWith('int-')).length>1||ids.size>2)bad();
+ const competitions=[...ids].map(id=>manifest.competitions?.find(c=>c.id===id));
+ if(competitions.some(x=>!x))bad();
+ rows.sort((a,b)=>a.day-b.day||compare(a.competitionId,b.competitionId)||a.round-b.round||Number(a.matchId)-Number(b.matchId));
+ return {...base,competitions,rows,coverage:rows.length?'partial':'unpublished'};
+}
+
 export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,signal}){
  const allowed=competitionIdsForClub(clubKey);
  if(!validPublicWorld(world)||typeof fetchJson!=='function')throw TypeError('Invalid club fixture read');
@@ -35,6 +77,8 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
  if(payload.status==='empty'){
   if(!['season-not-prepared','calendar-unpublished'].includes(payload.reason)||payload.data!==null||
     payload.provenance?.kind!=='none'||payload.provenance?.sourceRef!==null||payload.provenance?.resultAuthority!==null)bad();
+  if(payload.reason==='calendar-unpublished')
+   return readCommittedClubFixtures({clubKey,season,fetchJson,manifest,signal,allowed,base});
   return {...base,coverage:'unpublished'};
  }
  if(payload.status==='unavailable'){
