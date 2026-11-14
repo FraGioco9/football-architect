@@ -37,7 +37,10 @@ export function mountClubFixtures({host,manifest}){
   if(!node)return;hideTip();tipTarget=node;tooltip.textContent=node.getAttribute('aria-label');tooltip.hidden=false;node.setAttribute('aria-describedby',tooltip.id);
   const r=node.getBoundingClientRect(),width=tooltip.offsetWidth,height=tooltip.offsetHeight;
   tooltip.style.left=Math.max(8,Math.min(innerWidth-width-8,r.left+r.width/2-width/2))+'px';
-  tooltip.style.top=Math.max(8,r.bottom+height+12<innerHeight?r.bottom+8:r.top-height-8)+'px';
+  const gap=8,edge=8,above=r.top-height-gap,below=r.bottom+gap;
+  // Favor the top edge; fall back below when a top placement would clip.
+  const top=above>=edge?above:below+height<=innerHeight-edge?below:r.top>=innerHeight-r.bottom?above:below;
+  tooltip.style.top=Math.max(edge,Math.min(innerHeight-height-edge,top))+'px';
  };
  const navigate=(key,value)=>{
   const chosen=season();if(chosen===null)return;

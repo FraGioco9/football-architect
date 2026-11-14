@@ -1222,6 +1222,10 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   assert.equal(await run("[...document.querySelectorAll('[data-club-fixture-id]')].filter(n=>Number(n.querySelector('.club-fixture-meta span').textContent.replace(/\\D/g,''))>16).every(n=>n.querySelector('strong').textContent==='—')"),true);
   await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
   assert.equal(await run("document.activeElement.getAttribute('aria-describedby')"),'club-fixture-venue-tooltip');
+  const position=await run("(()=>{const node=document.activeElement,original=node.getBoundingClientRect;node.getBoundingClientRect=()=>({left:100,right:132,top:160,bottom:192,width:32,height:32});node.blur();node.focus({preventScroll:true});const tip=document.getElementById('club-fixture-venue-tooltip'),top=parseFloat(tip.style.top);node.getBoundingClientRect=original;return top+tip.offsetHeight<=152})()");
+  assert.equal(position,true,'fixture tooltip prefers the space above the venue');
+  const fallback=await run("(()=>{const node=document.activeElement,original=node.getBoundingClientRect;node.getBoundingClientRect=()=>({left:100,right:132,top:5,bottom:37,width:32,height:32});node.blur();node.focus({preventScroll:true});const tip=document.getElementById('club-fixture-venue-tooltip'),top=parseFloat(tip.style.top);node.getBoundingClientRect=original;return top>=45&&top+tip.offsetHeight<=innerHeight-8})()");
+  assert.equal(fallback,true,'fixture tooltip falls below when the top would clip');
   await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').hidden"),true);
   // MOBILE-QA #527: cover intermediate real-device widths beyond the 320/390 baselines.
   for(const [width,lang,theme] of [[320,'it','dark'],[375,'en','dark'],[390,'de','light'],[430,'fr','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
