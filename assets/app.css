@@ -1897,3 +1897,10 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  }
  body.app-body .app-competition-tabs:not(.app-players-tabs) .app-competition-tab{font-size:12px}
 }
+
+/* PLAYERS-MOBILE-01 (#574): keep the scrolling table inside the phone viewport.
+ * A border on width:100% must not add to its outer width. All desktop geometry
+ * and the approved responsive table column tracks remain unchanged. */
+@media(max-width:720px){
+ .app-players-table-scroll{box-sizing:border-box;scroll-padding-inline:10px}
+}

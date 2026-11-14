@@ -209,3 +209,32 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 .app-admin-view .admin-contracts-pagination{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:14px;margin-top:12px}
 .app-admin-view [data-contracts-page]{display:inline-block;min-width:100px;min-height:1.2em;text-align:center;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 @media(max-width:620px){.app-admin-view [data-contracts-selected-count]{width:100%}.app-admin-view .admin-contracts-dropdown{max-width:none;min-width:0;flex:1 1 175px}.app-admin-view .admin-contracts-apply{min-width:100px}}
+
+/* PLAYERS-MOBILE-01 (#574): Contracts uses the same three compact player tracks
+ * as /players, Roster and Admin Preview. Keep the selection column accessible
+ * and the wide table in its own horizontal touch scroller. Desktop is untouched. */
+@media(max-width:720px){
+ .app-admin-view .admin-contracts-table{min-width:888px}
+ .app-admin-view .admin-contracts-table :is(th,td){padding-inline:10px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(1){width:44px;padding-inline:10px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(2){width:44px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(3){width:216px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(4){width:176px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(5){width:70px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(6){width:78px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(7){width:80px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:180px}
+ .app-admin-view .admin-contracts-table tbody td:nth-child(3),
+ .app-admin-view .admin-contracts-table tbody td:nth-child(8){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:420px){
+ .app-admin-view .admin-contracts-table{min-width:810px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(1){width:40px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(2){width:40px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(3){width:192px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(4){width:160px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(5){width:68px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(6){width:72px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(7){width:76px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:162px}
+}
