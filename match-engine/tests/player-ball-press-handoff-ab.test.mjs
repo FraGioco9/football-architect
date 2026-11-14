@@ -483,8 +483,7 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
       blockedTicks:pursuit.experimentalDetour.blockedTicks,
       blockerId:pursuit.experimentalDetour.blockerId,
       activeWaypoint:pursuit.experimentalDetour.activeWaypoint,
-      lastDecision:pursuit.experimentalDetour.lastDecision,
-      spacingSupport:pursuit.experimentalDetour.spacingSupport
+      lastDecision:pursuit.experimentalDetour.lastDecision
      }:null,
      minimumCarrierClearanceM:round(clearance),
      nearbyBodies:[620,640,660].includes(tick)?
@@ -512,9 +511,6 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    'detour must not affect movement before the first genuine carry');
   assert.ok(minimumClearance>=0.98-1e-6,
    'experimental carrier must preserve 0.98m hard separation');
-  assert.ok(firstAcceptedWaypointTick!==null&&
-   firstAcceptedWaypointTick<678,
-   'early two-leg path must activate before the prior tick 678');
   const late=rows.find(row=>row.tick===693);
   assert.ok(late&&late.displacementFromBaselineM>0.25,
    'persistent detour must leave the blocked position by at least 0.25m');
