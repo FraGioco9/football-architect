@@ -45,7 +45,7 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
- const first=await db.prepare('SELECT match_id FROM season_match_slots LIMIT 1').first<{match_id:string}>();
+ const first=await db.prepare('SELECT match_id FROM season_match_slots LIMIT 1').first();
  const match=await readPublicMatch(db,first!.match_id);
  expect(match).toMatchObject({status:'scheduled',stageId:'league',provenance:{sourceKind:'domestic'}});
  expect(match.result).toBeNull();

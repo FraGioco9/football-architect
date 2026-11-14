@@ -47,7 +47,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3984);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='international'").first()).n).toBe(144);
- const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first<{match_id:string}>();
+ const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first();
  expect(await readPublicMatch(db,cup!.match_id)).toMatchObject({status:'scheduled',result:null,provenance:{sourceKind:'international'}});
  expect((await readPublishedCompetitionMatches(db,1,'int-1')).fixtures).toHaveLength(72);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
