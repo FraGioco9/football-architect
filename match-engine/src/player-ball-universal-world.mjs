@@ -242,7 +242,24 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
  const ensureOpen=()=>{if(closed)throw new Error('Universal ball session disposed');};
  function record(physics,contacts,movement){
   const action=autonomousActions?engine.uniformAutonomousActionSnapshot():null;
+  const rejection=autonomousActions?
+   engine.physicalRejectionAuditSnapshot():null;
   const localAction=action?.tick===physics.tick?action:null;
+  if(autonomousActions&&physics.tick>0&&(
+     rejection?.physicsTick!==physics.tick||
+     rejection.actionSelected!==(localAction!==null)||
+     (localAction&&(!rejection.passedInputGates||
+       rejection.actorId!==localAction.playerId))))
+   throw new Error('No-action audit must originate at this physical tick');
+  if(rejection&&(
+     rejection.exclusiveShoeStart!==(contacts.started.length===1&&
+      contacts.active.length===1&&
+      contacts.started[0]===contacts.active[0])||
+     rejection.actorId!==(contacts.started.length===1&&
+      contacts.active.length===1&&
+      contacts.started[0]===contacts.active[0]?
+       contacts.started[0]:null)))
+   throw new Error('Pre-impulse diagnostic disagrees with Rapier shoe START');
   if(localAction&&(!contacts.started.includes(localAction.playerId)||
      contacts.started.length!==1||contacts.active.length!==1||
      contacts.active[0]!==localAction.playerId||
@@ -272,6 +289,7 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    physicalPlayerPositions:projectPhysicalPlayerPositions(movement),
    ...(autonomousCarry?{actualCarryChallengerShoeGeometry}:{}),
    localAutonomousAction:localAction,
+   physicalRejectionAudit:rejection,
    autonomousActionMode:autonomousActions,
    autonomousCarryMode:autonomousCarry,
    ...(autonomousCarrySupport?{autonomousCarrySupportMode:true}:{}),

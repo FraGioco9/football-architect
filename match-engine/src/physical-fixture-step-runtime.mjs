@@ -587,6 +587,17 @@ export function createPhysicalFixtureStepRuntime(
       !Object.isFrozen(p)||!Number.isFinite(p.x)||!Number.isFinite(p.y)))
    throw new Error('Untrusted same-tick read-only player positions');
   const physicalContactFeed=observeContact(frame.footContact);
+  const rejection=frame.physicalRejectionAudit;
+  if(autonomousActions&&frame.physicsTick>0&&(
+     rejection?.physicsTick!==frame.physicsTick||
+     !Object.isFrozen(rejection)||
+     rejection.actionSelected!==(frame.localAutonomousAction!==null)||
+     rejection.authorizesPhysicalAction!==false||
+     (frame.localAutonomousAction&&(
+      !rejection.passedInputGates||rejection.noActionReason!==null))||
+     (!frame.localAutonomousAction&&
+      typeof rejection.noActionReason!=='string')))
+   throw new Error('Real-tick physical rejection evidence missing');
   const contactDecisionObservation=observeAutonomousDutyContact(
    physicalContactFeed,frame.autonomousMovement,
    frame.localAutonomousAction,autonomousActions);
@@ -830,6 +841,7 @@ export function createPhysicalFixtureStepRuntime(
    contactDecisionObservation,
    physicalActionOutcome,
    localAutonomousAction:frame.localAutonomousAction,
+   physicalRejectionAudit:rejection,
    autonomousActionMode:autonomousActions,
    autonomousCarryMode:autonomousCarry,
     ...(autonomousCarrySupport?{autonomousCarrySupportMode:true}:{}),

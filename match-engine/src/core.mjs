@@ -28,7 +28,7 @@ import {FOOT_SOLVER_EVIDENCE_VERSION,summarizeFootSolverEvidence}
 import {FOOT_MOMENTUM_AUDIT_VERSION,summarizeFootMomentumAudit}
  from './player-foot-contact-momentum.mjs';
 import {createFootContactQualification} from './player-foot-contact-qualification.mjs';
-import {selectUniformAutonomousContactAction,
+import {selectUniformAutonomousContactAction,inspectPhysicalActionRejection,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from './player-ball-uniform-autonomous-action.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
@@ -466,7 +466,7 @@ export function createEngine(RAPIER, input = {}, {
   if(magnusSpin)body.setAngvel(magnusSpin,true);
   let tick = 0;
   let localAiKickEvent = null;
-  let uniformAutonomousAction=null;
+  let uniformAutonomousAction=null,physicalRejectionAudit=null;
   let lastUniformAutonomousActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
   let localAiPassEvent=null,localAiReceptionEvent=null;
   let localAiPassReceiveEvents=Object.freeze([]);
@@ -859,13 +859,24 @@ export function createEngine(RAPIER, input = {}, {
     // Rapier collision START. Apply the selected uniform action on this SAME
     // Rapier body, only after collision/force audits. No possession/goal/score.
     if(diagnosticAutonomousFixtureActionEnabled){
-      const decision=selectUniformAutonomousContactAction({
+      const physicalInput={
        tick,contactStarted:footContactState.started,
        contactActive:footContactState.active,
        playerFrame,ballPosition:body.translation(),ballVelocity:body.linvel(),
        ballRadiusM:BALL_RADIUS,
        lastActionTick:lastUniformAutonomousActionTick,
        allowPhysicalCarry:diagnosticAutonomousCarryEnabled
+      };
+      // Source-bound real Rapier START/ACTIVE, sampled before any kick impulse.
+      const gates=inspectPhysicalActionRejection(physicalInput);
+      const decision=selectUniformAutonomousContactAction(physicalInput);
+      if(decision&&(!gates.passedInputGates||
+         gates.actorId!==decision.playerId))
+       throw new Error('Original physical input and selected action disagree');
+      physicalRejectionAudit=Object.freeze({
+       ...gates,actionSelected:decision!==null,
+       noActionReason:decision?null:
+        (gates.firstFailedGate??'not-selected-after-input-gates')
       });
       if(decision){
        body.applyImpulse(decision.impulseNs,true);
@@ -897,7 +908,8 @@ export function createEngine(RAPIER, input = {}, {
       footContactQualificationSnapshot:()=>footContactQualification.snapshot()
     }:{}),
     ...(diagnosticAutonomousFixtureActionEnabled?{
-      uniformAutonomousActionSnapshot:()=>uniformAutonomousAction
+      uniformAutonomousActionSnapshot:()=>uniformAutonomousAction,
+      physicalRejectionAuditSnapshot:()=>physicalRejectionAudit
     }:{}),
     ...(diagnosticLocalAiKickEnabled?{localAiKickSnapshot:()=>localAiKickEvent}:{}),
     ...(diagnosticLocalAiPassReceiveEnabled?{

@@ -82,7 +82,23 @@ function collect(summary,frame,c){
  if(shortfall===0&&toGoal>0&&Math.abs(ball.y)<=20)
   summary.inZoneFrames++;
  const action=frame.localAutonomousAction;
+ const rejection=frame.physicalRejectionAudit;
  const actualStarts=frame.physicalContactFeed.started;
+ assert.equal(rejection.physicsTick,t);
+ assert.equal(rejection.actionSelected,action!==null);
+ assert.equal(rejection.authorizesPhysicalAction,false);
+ assert.equal(rejection.physicalActionExecuted,false);
+ assert.equal(rejection.sourceAuthenticatedByShape,false);
+ assert.ok(Object.isFrozen(rejection));
+ if(action){
+  assert.equal(rejection.noActionReason,null);
+  assert.equal(rejection.passedInputGates,true);
+  assert.equal(rejection.actorId,action.playerId);
+ }else{
+  assert.ok(typeof rejection.noActionReason==='string');
+  summary.rejected[rejection.noActionReason]=
+   (summary.rejected[rejection.noActionReason]??0)+1;
+ }
  summary.shoeStarts+=actualStarts.length;
  for(const v of actualStarts)assert.ok(
   frame.physicalContactFeed.active.some(k=>k.engineId===v.engineId&&
@@ -167,11 +183,13 @@ function collect(summary,frame,c){
  }
 }
 const empty=()=>({advance:0,minShortfall:Infinity,inZoneFrames:0,
- shoeStarts:0,actions:[],realShots:[],relayFrames:0,checkpoints:[]});
+ shoeStarts:0,actions:[],realShots:[],relayFrames:0,checkpoints:[],
+ rejected:{}});
 const compact=a=>Object.freeze({
  maxAdvanceM:round(a.advance),minShortfallM:round(a.minShortfall),
  inZoneFrames:a.inZoneFrames,realShoeStarts:a.shoeStarts,
  actions:a.actions,realShots:a.realShots,relayFrames:a.relayFrames,
+ rejected:Object.freeze(Object.fromEntries(Object.entries(a.rejected).sort())),
  checkpoints:a.checkpoints.filter(x=>[599,600,601,640,680,693,694,720]
   .includes(x.tick))
 });
@@ -235,6 +253,12 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
    }
    assert.deepEqual(a.checkpoints.map(x=>x.tick),[...CHECKS]);
    assert.deepEqual(b.checkpoints.map(x=>x.tick),[...CHECKS]);
+   for(const report of [a,b]){
+    const noActionCount=Object.values(report.rejected).reduce(
+     (sum,n)=>sum+n,0);
+    assert.equal(noActionCount+report.actions.length,720);
+    assert.ok(report.rejected['no-exclusive-shoe-start']>0);
+   }
    for(const report of [a,b]){
     const samples=report.checkpoints.filter(x=>BASELINE_TICKS.has(x.tick));
     assert.deepEqual(samples.map(x=>x.tick),[...BASELINE_TICKS]);
