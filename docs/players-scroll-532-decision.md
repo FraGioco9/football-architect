@@ -53,3 +53,8 @@
 - User-requested additional compression: shared player-table body and five reserved skeleton rows are now **34px**, with vertical cell padding **4px** (previously 38px / 6px). Header, column widths and font sizes are unchanged. This applies to public Players, Club Roster and Admin preview.
 - Name cells keep an explicit 18px line-box vertically centered. The name link is an inline-flex box with fixed text geometry; a 1px hover/focus underline is drawn by an absolutely positioned `::after` below the text, so the underline does not affect row layout or name centering. The Club Roster specific decoration override was removed.
 - Site/Worker contract regression tests were also updated to current approved `offset` and `id DESC` semantics after detecting stale expectations in the previous CI. Manual responsive visual QA remains pending.
+
+## Latest player-row compactness adjustment
+
+- Shared public Players, Club Roster and Admin preview row height and five first-paint/sort loading rows: **30px** (previously 34px), with vertical table-cell padding **2px**. Column widths, fonts, flags, and 44px headers are unchanged.
+- The separate absolute underline on player-name links now uses **`bottom: 0` instead of `bottom: -2px`**, bringing it 2px closer to the text while keeping the centered line box stable on hover/focus. Visual Safari QA is still outstanding.

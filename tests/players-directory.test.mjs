@@ -614,8 +614,8 @@ test('Players reserve five completely empty, full-height rows while loading',()=
  assert.equal((table.match(/colspan="6"/g)||[]).length,5);
  assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
  assert.match(table,/class="sr-only" data-players-status role="status"/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:34px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:34px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px;padding:0 16px\}/);
  assert.doesNotMatch(css,/\.app-players-skeleton-line|\.app-players-skeleton-row/);
  assert.match(js,/function showLoadingRows\(\)/);
  assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
@@ -812,9 +812,9 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  const directory=read('assets/players-directory.js');
  const club=read('assets/club-model.js');
  const preview=read('assets/admin-players-preview.js');
- assert.match(css,/\.app-players-table th,\.app-players-table td\{[^}]*padding:4px 16px;/,'shared compact vertical padding');
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:34px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:34px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table th,\.app-players-table td\{[^}]*padding:2px 16px;/,'shared compact vertical padding');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px;padding:0 16px\}/);
  assert.match(css,/\.app-players-table tbody td:first-child\{text-align:center;vertical-align:middle\}/);
  assert.match(css,/\.app-players-nationality-flag\{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto\}/);
  assert.match(directory,/image\.width=20;image\.height=15;image\.alt=/);
@@ -824,7 +824,8 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
  assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'name cell stays vertically centered');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:-2px;height:1px/,'underline is out of flow');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
@@ -925,8 +926,8 @@ test('Players table header geometry and independent sort-label anchoring',()=>{
  assert.match(html,/wrapper\.textContent=label;button\.append\(wrapper\)/);
  assert.match(html,/chevron\.append\(path\);wrapper\.append\(chevron\)/);
  assert.match(gen,/app-players-sort-label/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:34px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:34px/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px/);
 });
 
 test('Players filter close matches the canonical search and calendar popup X',()=>{
