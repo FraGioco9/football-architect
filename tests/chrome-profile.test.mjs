@@ -23,10 +23,20 @@ test('Chrome profile records failed CDP commands and keeps original rejection',a
  const profile=createChromeProfile('failure',{clock:()=>time,log:()=>{}});
  await assert.rejects(profile.measureCDP('Runtime.evaluate',{},async()=>{time+=7;throw Error('CDP failure');}),/CDP failure/);
  const result=profile.emit();
+ assert.equal(result.pngScreenshots,0);
  assert.deepEqual(result.observed['runtime-evaluate'],{calls:1,elapsedMs:7});
  assert.equal(result.wallMs,7);
 });
 test('Chrome profile requires an explicit label',()=>{
  assert.throws(()=>createChromeProfile(''),/non-empty suite/);
  assert.throws(()=>createChromeProfile(null),/non-empty suite/);
+});
+
+test('Site Chrome readiness contract keeps the 10-second budget with 50ms checks',async()=>{
+ const {readFileSync}=await import('node:fs');
+ for(const path of ['club-pages-browser.test.mjs','theme-browser.test.mjs']){
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  assert.ok(source.includes('for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}'),path);
+  assert.ok(!source.includes('for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}'),path);
+ }
 });

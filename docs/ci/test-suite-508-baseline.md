@@ -341,3 +341,20 @@ This intentionally favors a reusable behavior contract over duplicated host/serv
 **Contracts preserved:** No removed tests, no changed polling conditions or intervals, timeouts, assertions, fixture preparation, screenshot/image outputs, matrices (viewport, language, theme), console evidence, product code, CI workflow or selectors. Expected Site file count 162; prior 1,307 plus 3 profiler cases = 1,310 if other counts unchanged.
 
 **Interpretation:** Readiness-wait and Runtime.evaluate spans overlap, so buckets must not be summed; wall minus sums is **not** a safe measure of startup time. These measurements are not speedups or causal evidence. Compare repeated same-HEAD runs to choose a future safe optimization (startup, screenshots, polling, or fixture staging). Retain all Site, Browser Chromium/WebKit, Worker/D1, security, surnames, first names, generator and FULL exact-head gates. No deployment, remote database or merge; Draft/HOLD.
+
+## Batch A26 — bounded readiness polling experiment; guarded main sync (2026-11-14)
+
+**A25 exact-head evidence:** All required workflows succeeded on `83a268cc69bc66face0bfad561b247ec0902b95b`. Site 162 Node files / 1,310 tests PASS (run 43627623518); Browser Chromium/WebKit, Worker/D1, FULL, first-name catalog, surnames and generator also PASS. A25 Node TAP duration 337.756s. The new Chrome profiler measured:
+
+| Site case | Wall | Readiness wait (overlaps evaluations) | Runtime.evaluate (overlaps waits) | PNG CDP | JPEG CDP | Counts |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Club | 118.441s | 95.464s / 867 waits | 37.784s / 4,465 calls | 1.450s / 18 calls | 0.764s / 14 calls | 299 navigations |
+| Theme | 94.895s | 63.381s / 526 waits | 20.419s / 3,341 calls | 8.315s / 153 calls | 2.507s / 64 calls | 265 navigations |
+
+All categories are *overlapping measurements*, not additive elapsed time. The Club case's originally unused PNG local counter emitted zero despite 18 observed `Page.captureScreenshot` calls; A26 derives its structured `pngScreenshots` from actual observed CDP invocations instead. No visual screenshot or assertion is removed.
+
+**A26 experimental change:** In the existing Club and Theme readiness loops alone, keep the same nominal `200×50ms = 100×100ms = 10 seconds` limit but check readiness every 50ms instead of 100ms. No assertion, readiness predicate, screenshot, fixture, locale, theme, viewport, browser launch, staging, WebKit or workflow selector changes. A new small static contract test ensures both suites retain a 10-second polling budget; stopwatch tests keep unchanged failure propagation and the PNG metric is verified for zero-count cases. This is a bounded performance *hypothesis*: faster polling can increase DevTools calls, and shared-runner variation prevents declaring a speedup from one comparison. Verify full exact-head CI and inspect CHROME_PROFILE timings before keeping or reverting.
+
+**Main integration:** Current `main@e8c343716c70de5511b11759ff6fe2f6c3f7b8ce` adds mobile Players layout work across 18 paths. Only `tools/ci-test-ownership.json` overlaps this PR: preserve the new `tests/players-mobile-574.test.mjs` Site owner and the branch's Chrome helper/test owners, **without restoring** `tests/club-identity-trafford.test.mjs` previously deliberately removed by #508. The remaining 17 main paths are copied exactly, with main as second parent of one guarded integration commit. No reset or discarded source changes.
+
+**Safety:** PR #598 remains Draft/HOLD. No merge, remote database or deploy. Whole-suite issue #508 acceptance checklist stays unsigned until full source review and repeated reliable benchmarks.

@@ -106,7 +106,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       return out.result.value;
     };
     const waitUnprofiled=async expr=>{
-      for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
+      // Preserve the same nominal 10-second readiness budget, checking every 50ms.
+      for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}
       throw Error("Timed out: "+expr+"; "+await run("document.body.textContent.slice(0,500)"));
     };
     const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));
@@ -1147,7 +1148,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     console.log('A03-04E BROWSER PASS: migrated router/club/directory/standings links preserve canonical destinations, temporal query and history; legacy calendar links and cup historical links covered by executable VM fixtures');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
-    profile.emit({pngScreenshots:screenshots});
+    profile.emit();
     socket?.close();proc.kill('SIGTERM');
     await new Promise(resolve=>server.close(resolve));await new Promise(resolve=>devServer.close(resolve));
     await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:100});

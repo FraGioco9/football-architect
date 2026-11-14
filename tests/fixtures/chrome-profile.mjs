@@ -23,7 +23,8 @@ export function createChromeProfile(suite,{clock=()=>performance.now(),log=conso
  const emit=(details={})=>{
   const observed=Object.fromEntries([...buckets.entries()].sort(([a],[b])=>a.localeCompare(b))
    .map(([name,data])=>[name,{calls:data.calls,elapsedMs:Math.round(data.elapsedMs)}]));
-  const result={suite,wallMs:Math.round(Math.max(0,clock()-started)),observed,...details};
+  const result={suite,wallMs:Math.round(Math.max(0,clock()-started)),observed,
+   pngScreenshots:observed['screenshot:png']?.calls||0,...details};
   log('CHROME_PROFILE|'+JSON.stringify(result));
   return result;
  };
