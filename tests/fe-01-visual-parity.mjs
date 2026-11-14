@@ -10,7 +10,7 @@ assert.match(base||"",/^[0-9a-f]{40}$/);
 const files=["assets/landing.css","assets/app.css","assets/account.css","assets/clubs-directory.css","assets/club-page.css","assets/competition-awards.css","assets/admin-settings.css"];
 const changes=new Map();
 for(const file of files){
- const older=execFileSync("git",["show",base+":"+file],{encoding:"utf8",maxBuffer:3e6});
+ let older=execFileSync("git",["show",base+":"+file],{encoding:"utf8",maxBuffer:3e6});
  const newer=readFileSync(file,"utf8");
  // Normalize only the approved #532 sitewide 25x20 -> 20x16 flag change.
  // The rest of the PR-base CSS, geometry and focus comparisons remain strict.
