@@ -65,7 +65,7 @@ export function mountClubFixtures({host,manifest}){
   const focused=panel?.contains(document.activeElement)?document.activeElement:null;
   const focusControl=focused?.closest('[data-club-fixture-control]')?.dataset.clubFixtureControl;
   const focusRow=focused?.closest('[data-club-fixture-id]')?.dataset.clubFixtureId;
-  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent')?'.club-fixture-opponent':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
+  const focusPart=focused?.matches('[data-club-venue]')?'[data-club-venue]':focused?.matches('.club-fixture-opponent-name')?'.club-fixture-opponent-name':focused?.matches('.club-fixture-meta a')?'.club-fixture-meta a':null;
   const oldCrests=new Map();
   for(const node of panel?.querySelectorAll('[data-club-crest]')||[]){const key=node.dataset.clubCrest;if(!oldCrests.has(key))oldCrests.set(key,[]);oldCrests.get(key).push(node);}
   const staging=document.createElement('div');staging.innerHTML=ui.render({manifest,lang:lang(),season:displaySeason,

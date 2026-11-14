@@ -1217,7 +1217,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
 
   await run("window.__fixtureFocus=document.querySelector('[data-club-fixture-control=season] button');__fixtureFocus.focus();document.documentElement.lang='it'");await delay(80);assert.equal(await run('document.activeElement===window.__fixtureFocus'),true,'locale redraw retains focused combobox');
   await run("document.documentElement.lang='en'");await delay(60);
-  assert.equal(await run("[...document.querySelectorAll('.club-fixture-opponent')].every(n=>!n.href.includes('/it/1/'))"),true);
+  assert.equal(await run("[...document.querySelectorAll('.club-fixture-opponent-name')].every(n=>!n.href.includes('/it/1/'))"),true);
   assert.equal(await run("document.querySelectorAll('.club-fixture-opponent [data-club-crest]').length"),30,'each repeated opponent retains its own crest host');
   assert.equal(await run("[...document.querySelectorAll('[data-club-fixture-id]')].filter(n=>Number(n.querySelector('.club-fixture-meta span').textContent.replace(/\\D/g,''))>16).every(n=>n.querySelector('strong').textContent==='—')"),true);
   await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
@@ -1263,7 +1263,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const selectors={
     day:loading?'.club-fixture-skeleton-line:first-child':'.club-fixture-meta > span:first-child',
     league:loading?'.club-fixture-skeleton-line:nth-child(2)':'.club-fixture-meta a',
-    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > span:last-child',
+    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > :last-child',
     venue:'.club-fixture-venue',score:'.club-fixture-result strong',status:'.club-fixture-result small'
    };
    const bars={day:'.club-fixture-skeleton-day',league:'.club-fixture-skeleton-league',
