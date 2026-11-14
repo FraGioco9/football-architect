@@ -731,6 +731,34 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(await run(`(()=>{const value=document.querySelector('[data-club-position]'),previous=value.textContent;value.textContent=${JSON.stringify(status)};const box=value,style=getComputedStyle(box),shell=document.querySelector('.fa-shell-content-scroll');const baselines=(${measureBaselines.toString()})(${JSON.stringify(['[data-club-position]','.club-competition-next a'])});const match=document.querySelector('.club-competition-next a').getBoundingClientRect(),round=document.querySelector('.club-competition-next small').getBoundingClientRect(),name=document.querySelector('.club-competition-name').getBoundingClientRect(),tier=document.querySelector('.club-competition-tier').getBoundingClientRect();const fits=box.scrollWidth<=box.clientWidth+1&&box.scrollHeight<=box.clientHeight+1&&shell.scrollWidth<=shell.clientWidth+1&&style.whiteSpace!=='nowrap'&&style.textOverflow!=='ellipsis'&&baselines.every(Number.isFinite)&&Math.abs(round.top-match.bottom-3)<1.5&&Math.abs(tier.top-name.bottom-3)<1.5;value.textContent=previous;return fits})()`),true,'Long localized status stays fully visible at '+width+': '+status);
      }
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');
+
+     // A later competition row with a wrapping status and no next fixture must
+     // keep the same columns and share the vertical label/value tracks.
+     const twoRowAlignment=await run(`(()=>{
+      const list=document.querySelector('.club-competition-list'),first=list.querySelector('.club-competition-entry');
+      const second=first.cloneNode(true);
+      second.dataset.clubCompetitionId='qa-second-row';
+      second.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals';
+      const empty=document.createElement('span');
+      empty.className='club-competition-next-empty';empty.textContent='No upcoming match.';
+      second.querySelector('.club-competition-next-content').replaceChildren(empty);
+      list.append(second);
+      const boxes=[first,second].map(row=>{
+       const at=selector=>row.querySelector(selector).getBoundingClientRect();
+       return {statusLabel:at('.club-competition-metrics dt'),matchLabel:at('.club-competition-next > .club-competition-label'),
+        statusValue:at('.club-competition-metrics dd'),matchValue:at('.club-competition-next-content')};
+      }).map(({statusLabel,matchLabel,statusValue,matchValue})=>({
+       labelDelta:Math.abs(statusLabel.top-matchLabel.top),
+       valueDelta:Math.abs(statusValue.top-matchValue.top),
+       statusX:statusLabel.left,matchX:matchLabel.left
+      }));
+      second.remove();
+      return boxes;
+     })()`);
+     assert.ok(twoRowAlignment.length===2&&twoRowAlignment.every(row=>row.labelDelta<1.5&&row.valueDelta<1.5)
+      &&Math.abs(twoRowAlignment[0].statusX-twoRowAlignment[1].statusX)<1.5
+      &&Math.abs(twoRowAlignment[0].matchX-twoRowAlignment[1].matchX)<1.5,
+      'Both competition rows align Status and Next match at '+width+': '+JSON.stringify(twoRowAlignment));
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
