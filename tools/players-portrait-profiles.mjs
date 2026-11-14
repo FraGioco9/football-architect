@@ -1,14 +1,16 @@
 /**
  * PLAYER-PORTRAITS-02 — offline, deterministic identity specifications for
  * fictional male footballers. Not part of the gameplay generator or public API.
- * This module never reads age, height, position, attributes or aptitude.
+ * Face identity ignores age, height, position and aptitude; only four PUBLIC
+ * athletic attributes are used to derive a separate, subtle body profile.
  */
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import {classifyAthleticBody, describeAthleticBody} from './players-portrait-body.mjs';
 
-export const PORTRAIT_SCHEMA_VERSION = 'player-portraits-v1';
-export const PORTRAIT_PROMPT_VERSION = 'player-portrait-v2';
+export const PORTRAIT_SCHEMA_VERSION = 'player-portraits-v2';
+export const PORTRAIT_PROMPT_VERSION = 'player-portrait-v3';
 
 // Codes are the existing 50-country footballer catalogue, not ethnicity labels.
 export const COUNTRY_NAMES = Object.freeze({
@@ -43,7 +45,8 @@ const requirePlayer=(player)=>{
  const secondary=player.secondary_nationality??null;
  if(secondary!==null&&(!Object.hasOwn(COUNTRY_NAMES,secondary)||secondary===player.nationality))
   throw new TypeError('invalid_secondary_nationality');
- return {player_id:player.id,nationality:player.nationality,secondary_nationality:secondary};
+ return {player_id:player.id,nationality:player.nationality,secondary_nationality:secondary,
+  ...classifyAthleticBody(player.attributes)};
 };
 
 function createTraits(playerId,nonce){
@@ -87,20 +90,20 @@ export function buildAppearanceManifest(players){
  return Object.freeze({schema_version:PORTRAIT_SCHEMA_VERSION,prompt_version:PORTRAIT_PROMPT_VERSION,entries:Object.freeze(entries)});
 }
 
-/** Whitelisted V2 visual prompt. No physical/football stats or player name. */
+/** Whitelisted V3 visual prompt. Descriptors only, never raw stats, age, height or player name. */
 export function buildPortraitPrompt(entry){
  if(!entry||typeof entry!=='object'||typeof entry.appearance_profile!=='string'||
     !Number.isSafeInteger(entry.player_id)||entry.player_id<1||!Object.hasOwn(COUNTRY_NAMES,entry.nationality)||
     (entry.secondary_nationality!=null&&!Object.hasOwn(COUNTRY_NAMES,entry.secondary_nationality)))
   throw new TypeError('invalid_appearance_entry');
+ const physicalDescription=describeAthleticBody(entry);
  const nationalities=`Primary nationality: ${COUNTRY_NAMES[entry.nationality]}. `+
   (entry.secondary_nationality?`Secondary nationality: ${COUNTRY_NAMES[entry.secondary_nationality]}. `:'');
  return `Create an ultra-photorealistic official club media-day photograph of EXACTLY ONE fictional adult male association football player.\n\n`+
   `${nationalities}These are citizenship/background context, NOT ethnicity or physical-feature rules. `+
   `Secondary nationality does not imply mixed ancestry.\n`+
   `Individual appearance reference: ${entry.appearance_profile}\n\n`+
-  `Natural lean and athletic footballer's proportions, ordinary shoulders and arms, modest muscle definition. `+
-  `No bodybuilder physique, oversized biceps or fitness-model chest. Natural asymmetry, skin texture and imperfections.\n\n`+
+  `${physicalDescription} Natural facial asymmetry, skin texture and imperfections.\n\n`+
   `Wear a completely plain pure-white short-sleeved football jersey with a regular, comfortable match fit, `+
   `realistic lightweight fabric, subtle seams and natural folds. No logos, crests, sponsors, numbers, stripes, colored trim, or text.\n\n`+
   `Stand upright, head and torso facing directly forward, level shoulders, relaxed arms resting naturally beside the body, `+
