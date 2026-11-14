@@ -76,7 +76,7 @@ test('#574 mobile names abbreviate without losing original text or accessibility
  assert.match(read('assets/app.js'),/mobileTablePath==='\/players'/);
  assert.match(read('assets/app.js'),/import\('\/assets\/players-mobile\.js'\)/);
  assert.match(read('tools/publication-guard.mjs'),/"players-directory.js","players-mobile.js"/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before/);
+ assert.match(css,/\.app-players-table \.fa-player-full-name,\s*\.app-admin-view \.admin-contracts-table \.fa-player-full-name\{display:none\}/,'mobile hides full names via real spans');
  assert.match(css,/\.app-admin-view \.admin-contracts-table td\.admin-contracts-player-name\[data-mobile-name\]::before/);
 });
 
@@ -99,8 +99,8 @@ test('#574 player initials render with each row, without a follow-up mutation',(
  const directory=read('assets/players-directory.js'),roster=read('assets/club-model.js');
  const preview=read('assets/admin-players-preview.js'),contracts=read('assets/admin-contracts.js');
  for(const source of [directory,roster,preview,contracts])assert.match(source,/compactPlayerName/);
- assert.match(directory,/link\.dataset\.mobileName=compactPlayerName\(player\.display_name\)/);
- assert.match(preview,/link\.dataset\.mobileName=compactPlayerName\(player\.display_name\)/);
+ assert.match(directory,/link\.dataset\.mobileName=shortName/);
+ assert.match(preview,/link\.dataset\.mobileName=shortName/);
  assert.match(contracts,/name\.dataset\.mobileName=compactPlayerName\(p\.name\)/);
  assert.match(roster,/data-mobile-name=/);
  assert.doesNotMatch(read('assets/players-mobile.js'),/replaceChildren\(fullSpan,smallSpan\)/);
@@ -147,7 +147,7 @@ test('#574 Club header and row names are left-aligned on phones with compact tra
  assert.match(mobile,/\.app-player-club-link\{display:inline-flex;align-items:center;justify-content:flex-start;[^}]*height:18px;min-height:18px;line-height:18px/);
  assert.match(mobile,/\.app-player-club-name\{display:inline-block;[^}]*text-align:left/);
  assert.match(css,/\.app-players-club-label-anchor\{display:contents\}/,'desktop treatment unchanged');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/,'Club underline matches Player');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'Club underline matches Player as a text decoration');
  const dir=read('assets/players-directory.js');
  assert.match(dir,/labelAnchor\.append\(crest,link\);content\.append\(labelAnchor\)/);
  assert.match(css,/th:nth-child\(7\)\{width:176px\}/);
@@ -253,24 +253,24 @@ test('#574 repeated overflow checks and resize do not lose +N',async()=>{
  assert.equal(more.textContent,'+2');
 });
 
-test('#574 Player names remain left-aligned and vertically centered on both breakpoints',()=>{
- const docCss=read('assets/app.css');
- assert.match(docCss,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;text-align:left\}/);
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/);
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/);
- assert.doesNotMatch(docCss,/\.app-players-table tbody tr:last-child td:nth-child\(2\) :is\(\.app-player-name-link,\.club-roster-player-link\)\{transform:/);
- assert.doesNotMatch(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*transform:/);
-});
-
-test('#574 name vertical alignment does not depend on a row border or underline',()=>{
- const css=read('assets/app.css');
- const rules=(css.match(/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]+\}/g)||[]).filter(rule=>rule.includes('height:18px'));
- assert.equal(rules.length,1,'one shared fixed-height rule for mobile and desktop');
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
- assert.match(css,/\.app-players-table tbody tr:last-child td\{border-bottom:0\}/);
- assert.match(css,/\.app-players-table th,\.app-players-table td\{box-sizing:border-box;[^}]*border-bottom:1px solid var\(--line\);vertical-align:middle/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/);
- assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*margin:0 auto/,'no horizontal centering');
- assert.doesNotMatch(css,/\.app-player-name-link:hover\{text-decoration:underline/);
+test('#574 Player names follow the same inline baseline as Admin Contracts',()=>{
+ const css=read('assets/app.css'),directory=read('assets/players-directory.js'),preview=read('assets/admin-players-preview.js'),roster=read('assets/club-model.js');
+ const contracts=read('assets/admin-settings.css');
+ assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/);
+ assert.match(contracts,/\.app-admin-view \.admin-contracts-table :is\(th,td\)\{[^}]*vertical-align:middle/);
+ for(const source of [directory,preview]) {
+  assert.match(source,/full\.className='fa-player-full-name'/);
+  assert.match(source,/short\.className='fa-player-short-name'/);
+  assert.match(source,/link\.append\(full,short\)/);
+ }
+ assert.match(roster,/class="fa-player-full-name"/);
+ assert.match(roster,/class="fa-player-short-name"/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto\}/);
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after/,'no absolute underline pseudo-element');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before/,'no generated text pseudo-element');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*transform:/);
+ assert.match(css,/\.fa-player-short-name\{display:none\}/);
+ assert.match(css,/\.app-players-table \.fa-player-full-name,\s*\.app-admin-view \.admin-contracts-table \.fa-player-full-name\{display:none\}/);
+ assert.match(css,/\.app-players-table \.fa-player-short-name,\s*\.app-admin-view \.admin-contracts-table \.fa-player-short-name\{display:inline\}/);
 });

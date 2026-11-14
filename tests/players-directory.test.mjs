@@ -890,11 +890,11 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
  assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'player name cell remains left-aligned and vertically centered');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
- assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
- assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/,'Player link follows Admin Contracts inline-text geometry');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after/,'no underline pseudo-element');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'underline stays near glyphs');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline/);
+ assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover::after/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
  assert.match(css,/\.app-players-table thead th\{height:42px/,'compact headings remain stable across all player tables');
  // Preserve all responsive and first-paint geometry and five empty loading rows.

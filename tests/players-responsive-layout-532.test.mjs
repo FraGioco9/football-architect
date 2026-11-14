@@ -45,7 +45,7 @@ test('#532 long text remains single-line without changing layout, first paint or
  assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-players-table:not\(\[data-players-public\]\):not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(4\),\s*\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(3\),\s*\.app-players-table\[data-players-table-mode="attributes"\] tbody td:nth-child\(3\)\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/,'underline stays in place');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px/,'native underline does not change row layout');
  assert.match(css,/\.app-players-table \.(?:app-players-loading-row) td\{height:36px/);
  assert.match(css,/\.app-players-table-scroll\{[^}]*overflow-x:auto/);
 });

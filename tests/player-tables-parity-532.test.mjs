@@ -11,7 +11,7 @@ test('#532 all player tables share approved 36px/42px layout, 14px/12px type and
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
  assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
  assert.match(css,/\.app-players-nationality-flag\{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto\}/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-table\{[^}]*font-size:14px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-table tbody tr\{height:36px\}/);
@@ -32,7 +32,7 @@ test('#532 Club Roster Info follows public Positions-before-Age while preserving
   assert.deepEqual([...table.matchAll(/data-club-roster-sort="([^"]+)"/g)].slice(0,6).map(x=>x[1]),
    ['nationality','name','positions','age','height','foot'],language+' header order');
   assert.match(table,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column">/);
-  assert.match(table,/<a class="club-roster-player-link" href="\/players\/17" data-mobile-name="M. Example" aria-label="Marco Example">Marco Example<\/a><\/td><td>CM, DM<\/td><td>23<\/td>/,language+' data order');
+  assert.match(table,/<a class="club-roster-player-link" href="\/players\/17" data-mobile-name="M. Example" aria-label="Marco Example"><span class="fa-player-full-name">Marco Example<\/span><span class="fa-player-short-name">M. Example<\/span><\/a><\/td><td>CM, DM<\/td><td>23<\/td>/,language+' data order');
   const attrsHtml=model.render(manifest,club,language,'?view=technical',null,1,null,snap);
   assert.match(attrsHtml,/data-roster-mode="attributes"/);
   assert.match(attrsHtml,/data-club-roster-sort="positions"/);

@@ -185,7 +185,11 @@
     target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
     target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
     if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}
-    link.href=target.pathname+target.search;link.textContent=player.display_name||'—';link.dataset.mobileName=compactPlayerName(player.display_name);link.setAttribute('aria-label',player.display_name||'—');
+    link.href=target.pathname+target.search;
+    const fullName=player.display_name||'—',shortName=compactPlayerName(player.display_name);
+    const full=document.createElement('span');full.className='fa-player-full-name';full.textContent=fullName;
+    const short=document.createElement('span');short.className='fa-player-short-name';short.textContent=shortName;
+    link.dataset.mobileName=shortName;link.setAttribute('aria-label',fullName);link.append(full,short);
     nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     if(view==='overview'){

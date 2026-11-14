@@ -1873,17 +1873,13 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{background:rgba(16,34,29,.38)}
 @media(max-width:800px){.app-players-preview-page .app-players-header{flex-wrap:wrap;align-items:flex-start}.app-players-preview-actions{width:100%;justify-content:flex-start}.app-players-preview-message{text-align:left}}
 
-/* Player names stay centered independently of the hover/focus underline.
- * The decorative line is absolutely positioned and never changes line-box height. */
-.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link){position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;color:inherit;font:inherit;line-height:18px;text-decoration:none;overflow-wrap:anywhere}
-.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link)::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:currentColor;opacity:0;pointer-events:none}
-.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):is(:hover,:focus-visible)::after{opacity:1}
+/* Align Player names as inline text, matching Admin Contracts' native
+ * table-cell baseline. The underline is a text decoration, not a generated
+ * flex/absolute box; it cannot influence line-box centering or link geometry. */
+.app-players-table :is(.app-player-name-link,.club-roster-player-link){display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap}
+.app-players-table .app-player-club-link{position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;color:inherit;font:inherit;line-height:18px;text-decoration:none;overflow-wrap:anywhere}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):is(:hover,:focus-visible){text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto}
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
-/* Name links keep their text-width box on desktop and mobile. The table cell
- * centers each fixed 18px box vertically without transforms or inline-baseline
- * offsets. The absolute underline never contributes to the box geometry.
- * Horizontal alignment remains left, including during hover and focus. */
-.app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;text-align:left}
 
 /* UI-VIEWS-01 (#559): view/subview controls only. No Club History content styles.
  * Desktop: narrower view buttons. Mobile: preserve the established 2.5-tab
@@ -1936,9 +1932,8 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 /* #574: mobile labels from render-time attributes; desktop text and full
  * accessibility names remain unchanged. No async DOM replacement. */
 @media(max-width:720px){
- /* The Player link has the same fixed 18px box at every viewport width. */
- .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]{font-size:0}
- .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]::before{content:attr(data-mobile-name);display:block;font-size:14px;line-height:18px;white-space:nowrap}
+ /* Explicit full/short spans preserve the same native text baseline on
+  * mobile and desktop; no font-size:0 or generated ::before content. */
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]{font-size:0}
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]::before{content:attr(data-mobile-name);font-size:14px;line-height:18px}
  .app-players-table .app-player-club-name[data-mobile-club-name]{font-size:0}

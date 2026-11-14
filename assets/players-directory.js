@@ -461,7 +461,10 @@
     const nameCell=cell(tr,'');
     if(Number.isSafeInteger(player.id)&&player.id>0){
      const link=document.createElement('a');link.className='app-player-name-link';link.href='/players/'+player.id;
-     link.textContent=player.display_name||'—';link.dataset.mobileName=compactPlayerName(player.display_name);link.setAttribute('aria-label',player.display_name||'—');nameCell.append(link);
+     const fullName=player.display_name||'—',shortName=compactPlayerName(player.display_name);
+     const full=document.createElement('span');full.className='fa-player-full-name';full.textContent=fullName;
+     const short=document.createElement('span');short.className='fa-player-short-name';short.textContent=shortName;
+     link.dataset.mobileName=shortName;link.setAttribute('aria-label',fullName);link.append(full,short);nameCell.append(link);
     }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
