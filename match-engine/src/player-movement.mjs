@@ -1928,6 +1928,7 @@ export function createPlayerMovement({
  let lastPhysicalCarryAction=null,activeFixtureCarryPursuit=null;
  // Experimental only; normal movement remains unchanged when disabled.
  let carryBlockedConsecutiveTicks=0,carryBlockedSourceId=null;
+ let carryBlockedPursuitSourceTick=null;
  let activeCarryBlockedDetour=null,carryDetourLastDecision=null;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
@@ -3288,6 +3289,16 @@ export function createPlayerMovement({
    Object.freeze({...players[releasedDefenderIndex]}):null;
   const releasedTacticalTarget=releasedDefenderIndex>=0?
    targets[releasedDefenderIndex]:null;
+  // The blocker streak belongs to the single authenticated carry follower,
+  // NOT to the loop over all 22 players. Reset only on source change/end.
+  if(experimentalAutonomousFixtureCarryBlockedDetour){
+   const sourceTick=activeFixtureCarryPursuit?.sourceCarryTick??null;
+   if(sourceTick!==carryBlockedPursuitSourceTick){
+    carryBlockedConsecutiveTicks=0;
+    carryBlockedSourceId=null;
+   }
+   carryBlockedPursuitSourceTick=sourceTick;
+  }
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
@@ -3365,9 +3376,6 @@ export function createPlayerMovement({
        blockerId:blocker.id,side:chosenSide,waypoint,startTick:tick+1
       });
      }
-    }else{
-     carryBlockedConsecutiveTicks=0;
-     carryBlockedSourceId=null;
     }
    }
    // The triggering step is a canonical hard stop. Steering begins on
