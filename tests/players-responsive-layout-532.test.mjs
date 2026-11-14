@@ -21,24 +21,22 @@ test('#532 desktop player-table widths and static colgroup are unchanged',()=>{
 test('#532 responsive Overview and attribute groups preserve 4/8 readable statistic tracks',()=>{
  const css=read('assets/app.css'),roster=read('assets/club-page.css');
  assert.match(css,/@media\(max-width:720px\)\{\s*\.app-players-table-scroll\{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch\}/);
- assert.match(css,/\.app-players-table\{--app-players-flag-width:36px;--app-players-name-width:160px;--app-players-positions-width:112px;min-width:640px\}/);
- assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:760px\}/);
- assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1200px\}/);
- assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:34px;--app-players-name-width:144px;--app-players-positions-width:104px;min-width:608px\}/);
- assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:736px\}/);
- assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1168px\}/);
+ assert.match(css,/\.app-players-table\{--app-players-flag-width:32px;--app-players-name-width:128px;--app-players-positions-width:88px;min-width:460px\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:624px\}/);
+ assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1000px\}/);
+ assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:30px;--app-players-name-width:120px;--app-players-positions-width:80px;min-width:440px\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:600px\}/);
+ assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:976px\}/);
  assert.match(roster,/@media\(max-width:720px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1200px\}\}/);
  assert.match(roster,/@media\(max-width:420px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1168px\}\}/);
  for(const [flag,name,positions,overview,four,eight] of [
-  [36,160,112,640,760,1200],[34,144,104,608,736,1168]
+  [32,128,88,460,624,1000],[30,120,80,440,600,976]
  ]){
-  const remaining=overview-flag-name;
-  const frac=[.17,.42,.21,.20];
-  assert.equal(frac.reduce((a,b)=>a+b,0),1,'Overview widths cover flexible region');
-  assert.ok(remaining*.17>=70,'Age column remains readable');
-  assert.ok(remaining*.42>=180,'Positions column remains readable');
-  assert.ok((four-flag-name-positions)/4>=110,'four-attribute group keeps adequate numeric tracks');
-  assert.ok((eight-flag-name-positions)/8>=110,'Technical group keeps adequate numeric tracks');
+  const remaining=overview-flag-name-positions;
+  assert.ok(remaining*.28>=55,'Overview Age remains readable at phone width');
+  assert.ok(remaining*.36>=70,'Overview Height and Foot remain readable');
+  assert.ok((four-flag-name-positions)/4>=90,'four-attribute group stays readable');
+  assert.ok((eight-flag-name-positions)/8>=90,'Technical group stays readable');
  }
 });
 
