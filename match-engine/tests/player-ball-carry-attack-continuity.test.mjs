@@ -170,6 +170,8 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
   createPhysicalFixtureStepRuntime(R,fixture,scenario,candidate),
   createPhysicalFixtureStepRuntime(R,fixture,scenario,candidate)];
  let pass=false,carry=false,retained=0,first=null,shotCount=0;
+ let eligibleFrames=0,baselineSupportFrames=0;
+ let baselineDutyConflicts=0,firstEligible=null,firstConflict=null;
  try{
   assert.equal(worlds[1].snapshot().autonomousCarryAttackContinuityMode,true);
   assert.equal(Boolean(worlds[0].snapshot().autonomousCarryAttackContinuityMode),false);
@@ -200,7 +202,16 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
    assert.ok(tick-run.carryContinuation.sourceCarryTick<=150);
    assert.equal(real.contactDecisionObservation.duties.find(d=>
     d.engineId===run.playerId)?.movementDuty,'attack-support-intent');
+   eligibleFrames++;
+   if(!firstEligible)firstEligible={tick,playerId:run.playerId};
    const original=prior.contactDecisionObservation.attackSupportRun;
+   if(original?.phase==='post-carry-support')baselineSupportFrames++;
+   const baselineDuty=prior.contactDecisionObservation.duties.find(d=>
+    d.engineId===run.playerId)?.movementDuty??null;
+   if(baselineDuty!=='attack-support-intent'){
+    baselineDutyConflicts++;
+    if(!firstConflict)firstConflict={tick,playerId:run.playerId,baselineDuty};
+   }
    if(original?.playerId!==run.playerId){
     retained++;
     if(!first)first={tick,playerId:run.playerId,
@@ -209,6 +220,10 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
    }
   }
   assert.ok(pass&&carry,'real physical PASS and later CARRY source required');
+  console.log('C2_A_REAL_RAPIER_HANDOFF_DIAGNOSTICS',JSON.stringify({
+   pass,carry,eligibleFrames,baselineSupportFrames,
+   baselineDutyConflicts,retained,firstEligible,firstConflict,shotCount
+  }));
   assert.ok(retained>0,'source-qualified attacking forward must retain duty');
   const [a,b]=worlds.slice(1).map(w=>w.reset());
   try{
