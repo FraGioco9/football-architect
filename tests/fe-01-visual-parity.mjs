@@ -141,8 +141,8 @@ try{
   // Subsequent PRs must continue comparing all view-control properties.
   const viewCss=changes.get("/assets/app.css");
   const viewIntro=viewCss?.after.includes("/* UI-VIEWS-01 (#559):")&&!viewCss.before.includes("/* UI-VIEWS-01 (#559):");
-  const normalize=(sample)=>{
-   const result=comparable(sample,false);
+  const normalize=(sample,updated)=>{
+   const result=comparable(sample,updated);
    if(viewIntro&&route.path.startsWith("/competitions/")&&profile.width>620){
     for(const state of ["regular","focused"]){
      for(const tab of result[state]?.[".app-competition-tab"]||[]){
@@ -161,7 +161,7 @@ try{
     assert.ok(tab.hitHeight>=39.9,"UI-VIEWS-01 desktop view touch height remains 40px");
    }
   }
-  if(JSON.stringify(normalize(a))!==JSON.stringify(normalize(b)))
+  if(JSON.stringify(normalize(a,false))!==JSON.stringify(normalize(b,true)))
    findings.push({route:route.path,profile,before:{regular:a.regular,focused:a.focused,overflow:a.overflow},after:{regular:b.regular,focused:b.focused,overflow:b.overflow}});
   if(a.screenshot&&b.screenshot){
    const left=PNG.sync.read(a.screenshot),right=PNG.sync.read(b.screenshot);
