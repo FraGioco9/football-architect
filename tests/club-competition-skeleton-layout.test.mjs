@@ -26,10 +26,12 @@ test('Club Competitions reuse one semantic row for hydrated, runtime pending and
   'shared renderer plus pending placeholder are the only runtime entry definitions');
 });
 
-test('Club Competitions define a single two-column entry and shared label/value tracks',()=>{
+test('Club Competitions define a single three-column entry and shared label/value tracks',()=>{
  assert.match(css,/container:club-competition-panel\s*\/\s*inline-size/);
- assert.match(css,/\.club-competition-list \.club-competition-entry\{[\s\S]*?grid-template-columns:minmax\(180px,1fr\) minmax\(0,580px\)/);
- assert.match(css,/\.club-competition-list \.club-competition-summary\{[\s\S]*?grid-template-columns:minmax\(205px,220px\) minmax\(0,1fr\)/);
+ assert.match(css,/\.club-competition-list \.club-competition-entry\{[\s\S]*?grid-template-columns:minmax\(180px,1fr\) minmax\(205px,220px\) minmax\(0,340px\)/);
+ assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*display:contents;/,'Summary wrapper does not create a nested layout');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:2;grid-row:1;/,'Status is in direct column two');
+ assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-column:3;grid-row:1;/,'Next match is in direct column three');
  assert.match(css,/\.club-competition-list \.club-competition-metrics>div,\s*\.club-competition-list \.club-competition-next\{[\s\S]*?grid-template-rows:16px minmax\(59px,auto\);row-gap:4px;/,
   'Status and Next match use identical 16px labels and 59px value slots');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dt\{text-align:center\}/,
@@ -41,6 +43,8 @@ test('Club Competitions define a single two-column entry and shared label/value 
  assert.match(css,/@container club-competition-panel \(max-width:800px\)/);
  assert.match(css,/@container club-competition-panel \(max-width:500px\)/);
  assert.match(css,/grid-template-columns:minmax\(92px,40%\) minmax\(0,1fr\)/);
+ assert.match(css,/grid-template-columns:minmax\(261px,276px\) minmax\(0,1fr\)/,'Stacked layouts reserve the same columns for every row');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:1;grid-row:2;padding-left:56px;/);
  assert.match(css,/\.club-competition-list \.club-competition-entry\+\.club-competition-entry\{[^}]*border-top:1px solid var\(--line\);margin:0;padding:0;/);
  assert.doesNotMatch(css,/\.club-competition-layout\s*\{/,'old competing rules for layout class were removed');
  assert.doesNotMatch(css,/grid-template-rows:subgrid/,'layout must not rely on nested subgrids');
