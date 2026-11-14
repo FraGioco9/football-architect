@@ -293,3 +293,16 @@ test('#574 mobile Player text uses the Admin Contracts inline baseline; desktop 
  assert.doesNotMatch(src,/\.app-player-name-link:hover::after/,'no layout-affecting underline pseudo-element');
  assert.match(src,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
 });
+
+test('#574 mobile inline Player names move 2px lower without affecting layout or desktop',()=>{
+ const css=read('assets/app.css');
+ const mobileBlock=css.slice(css.indexOf('/* #574: mobile labels from render-time attributes'),css.indexOf('@media(max-width:420px)',css.indexOf('/* #574: mobile labels from render-time attributes')));
+ assert.match(mobileBlock,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]\{position:relative;top:2px\}/);
+ assert.match(mobileBlock,/td:nth-child\(2\):has\(> :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]\)\{font-size:0\}/);
+ assert.match(mobileBlock,/td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);font-size:14px;line-height:18px;white-space:nowrap\}/);
+ assert.doesNotMatch(css.slice(0,css.indexOf('/* #574: mobile labels from render-time attributes')),/top:2px\}.*app-player-name-link/);
+ assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/,'approved desktop rule unchanged');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+});
