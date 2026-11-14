@@ -430,7 +430,6 @@ export function createPhysicalFixtureStepRuntime(
      k!=='autonomousActions'&&k!=='researchShotAttacker'&&
      k!=='autonomousCarry'&&k!=='autonomousCarrySupport'&&
       k!=='autonomousCarrySupportPressHandoff'&&
-     k!=='autonomousCarryAttackContinuity'&&
       k!=='autonomousCarrySupportBallAccess'&&
       k!=='autonomousCarrySupportLateralAlign'&&
       k!=='autonomousCarrySupportEarlyFacing'&&
@@ -464,12 +463,6 @@ export function createPhysicalFixtureStepRuntime(
      Object.hasOwn(options,'researchShotAttacker')))reject();
  const autonomousCarrySupportPressHandoff=
   options.autonomousCarrySupportPressHandoff===true;
- if(Object.hasOwn(options,'autonomousCarryAttackContinuity')&&
-    (options.autonomousCarryAttackContinuity!==true||
-     !autonomousCarrySupportPressHandoff||
-     Object.hasOwn(options,'researchShotAttacker')))reject();
- const autonomousCarryAttackContinuity=
-  options.autonomousCarryAttackContinuity===true;
  if(Object.hasOwn(options,'autonomousCarrySupportBallAccess')&&
     (options.autonomousCarrySupportBallAccess!==true||
      !autonomousCarrySupportPressHandoff||
@@ -555,8 +548,6 @@ export function createPhysicalFixtureStepRuntime(
      frame.autonomousActionMode!==autonomousActions||
      frame.autonomousCarryMode!==autonomousCarry||
      Boolean(frame.autonomousCarrySupportMode)!==autonomousCarrySupport||
-     Boolean(frame.autonomousCarryAttackContinuityMode)!==
-       autonomousCarryAttackContinuity||
       Boolean(frame.autonomousCarrySupportPressHandoffMode)!==
       autonomousCarrySupportPressHandoff||
      Boolean(frame.autonomousCarrySupportBallAccessMode)!==
@@ -832,9 +823,6 @@ export function createPhysicalFixtureStepRuntime(
    physicalPlayerPositions:positions,
    ...(autonomousCarry?{physicalCarryChallengerShoeGeometry:shoeGeometry}:{}),
    contactDecisionObservation,
-   ...(frame.autonomousMovement.continuityAudit?{
-    continuityAudit:Object.freeze({...frame.autonomousMovement.continuityAudit})
-   }:{}),
    physicalActionOutcome,
    localAutonomousAction:frame.localAutonomousAction,
    autonomousActionMode:autonomousActions,
@@ -842,8 +830,6 @@ export function createPhysicalFixtureStepRuntime(
     ...(autonomousCarrySupport?{autonomousCarrySupportMode:true}:{}),
     ...(autonomousCarrySupportPressHandoff?{
      autonomousCarrySupportPressHandoffMode:true}:{}),
-   ...(autonomousCarryAttackContinuity?{
-    autonomousCarryAttackContinuityMode:true}:{}),
     ...(autonomousCarrySupportBallAccess?{
      autonomousCarrySupportBallAccessMode:true}:{}),
     ...(autonomousCarrySupportLateralAlign?{
@@ -911,8 +897,6 @@ export function createPhysicalFixtureStepRuntime(
     ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
     ...(autonomousCarrySupportPressHandoff?{
      autonomousCarrySupportPressHandoff:true}:{}),
-   ...(autonomousCarryAttackContinuity?{
-    autonomousCarryAttackContinuity:true}:{}),
     ...(autonomousCarrySupportBallAccess?{
      autonomousCarrySupportBallAccess:true}:{}),
     ...(autonomousCarrySupportLateralAlign?{
