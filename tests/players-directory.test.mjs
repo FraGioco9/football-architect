@@ -763,16 +763,38 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('offset',String\(\(state\.page-1\)\*50\)\)/);
  assert.doesNotMatch(js,/query\.set\('page'/,'offset-only client API');
  assert.doesNotMatch(js,/const loaded=t\.loaded/,'no Loaded X of Y counter');
- assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.loadingMore|t\.end/,'no loading or end-of-results messages');
+ assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.end/,'no extra counters or end-of-results messages');
  assert.match(js,/pager\.hidden=current\.players\.length===0\|\|loadedThrough>=current\.totalPages/,'hide footer at end');
- assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=true;loadMore\.disabled=true;return;/,'hide fallback during auto-loading');
+ assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=false;loadMore\.disabled=true;loadMore\.textContent=t\.loadingMore;return;/,'show disabled Loading... during auto-loading');
  assert.match(css,/\.app-players-end-sentinel\{/);
  assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
  for(const lang of ['en','it','de','es','fr']){
   const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
-  assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);
-  assert.doesNotMatch(labels,/,loadingMore:|,end:/);
+  assert.match(labels,/loadMore:/);assert.match(labels,/loadingMore:/);assert.match(labels,/retry:/);
+  assert.doesNotMatch(labels,/,end:/);
  }
+});
+test('PLAYERS-SCROLL-01 Load more shows a disabled loading state only during append',()=>{
+ const js=read('assets/players-directory.js');
+ const source=js.slice(js.indexOf('  function renderProgress(){'),js.indexOf('  function paint(data){'));
+ assert.ok(source.includes('function renderProgress(){'));
+ const run=({pending=false,error='',through=1,total=2,players=50,status='ready'}={})=>{
+  const pager={hidden:false},loadMore={hidden:false,disabled:false,textContent:''};
+  const render=new Function('locale','pager','loadMore','current','status','loadedThrough','appendPending','appendError',
+   source+';return renderProgress;')(
+    ()=>({loadMore:'Load more',loadingMore:'Loading...',retry:'Retry',restart:'Start over'}),
+    pager,loadMore,players===null?null:{players:Array.from({length:players},()=>({})),totalPages:total},
+    status,through,pending,error
+   );
+  render();
+  return {hidden:pager.hidden,buttonHidden:loadMore.hidden,disabled:loadMore.disabled,label:loadMore.textContent};
+ };
+ assert.deepEqual(run(),{hidden:false,buttonHidden:false,disabled:false,label:'Load more'});
+ assert.deepEqual(run({pending:true}),{hidden:false,buttonHidden:false,disabled:true,label:'Loading...'});
+ assert.deepEqual(run({error:'network'}),{hidden:false,buttonHidden:false,disabled:false,label:'Retry'});
+ assert.deepEqual(run({error:'stale'}),{hidden:false,buttonHidden:false,disabled:false,label:'Start over'});
+ assert.equal(run({through:2}).hidden,true,'no append button after final batch');
+ assert.equal(run({players:0}).hidden,true,'no append button for empty results');
 });
 test('PLAYERS-SCROLL-01 offset query rejects obsolete page URLs',async()=>{
  const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
