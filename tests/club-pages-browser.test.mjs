@@ -1263,7 +1263,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const selectors={
     day:loading?'.club-fixture-skeleton-line:first-child':'.club-fixture-meta > span:first-child',
     league:loading?'.club-fixture-skeleton-line:nth-child(2)':'.club-fixture-meta a',
-    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > span:last-child',
+    name:loading?'.club-fixture-skeleton-name-slot':'.club-fixture-opponent > :last-child',
     venue:'.club-fixture-venue',score:'.club-fixture-result strong',status:'.club-fixture-result small'
    };
    const bars={day:'.club-fixture-skeleton-day',league:'.club-fixture-skeleton-league',
