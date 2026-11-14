@@ -359,6 +359,14 @@ body.app-body{--app-page-pad-top:8px}
 /* Long team names wrap in full; never ellipsize the fixture identity. */
 .club-competition-list .club-competition-next-content>a.app-link{display:block;width:100%;max-width:100%}
 .club-competition-list .club-competition-match-name{display:block;white-space:normal;overflow:visible;overflow-wrap:anywhere;-webkit-line-clamp:unset}
+/* Status is centered as a unit, including multi-line values and the loading bar.
+   Next match remains left-aligned. Do not let earlier generic alignment rules
+   center only the label while leaving its value at the column's left edge. */
+.club-competition-list .club-competition-metrics,
+.club-competition-list .club-competition-metrics>div{justify-items:center;text-align:center}
+.club-competition-list .club-competition-metrics dt,
+.club-competition-list .club-competition-metrics dd{justify-self:center;text-align:center}
+.club-competition-list .club-competition-next{justify-items:start;text-align:left}
 .club-competition-list .club-competition-metrics>div{gap:4px}
 .club-competition-list .club-competition-next small{font-size:12px;line-height:1.25}
 @container club-competition-panel (max-width:800px){
@@ -392,7 +400,7 @@ body.app-body{--app-page-pad-top:8px}
 .club-overview-layout>.club-competition.club-first-paint-panel{min-height:0}
 .club-fp-competition .club-competition-name{display:flex;align-items:center;min-block-size:1.3em}
 .club-fp-competition .club-competition-tier{display:flex;align-items:center;min-block-size:1.35em}
-.club-fp-competition .club-fp-competition-position{margin-block-start:calc((1.15em - 12px)/2)}
+.club-fp-competition .club-fp-competition-position{margin-block-start:calc((1.15em - 12px)/2);justify-self:center}
 .club-fp-competition .club-fp-competition-fixture,
 .club-fp-competition .club-fp-competition-round{
  display:flex;align-items:center;background:transparent;border-radius:0;
@@ -416,7 +424,10 @@ body.app-body{--app-page-pad-top:8px}
 .club-fp-competition .club-fp-competition-tier{inline-size:68px;block-size:10px}
 .club-fp-competition .club-fp-competition-position{inline-size:55px}
 .club-fp-competition .club-fp-competition-fixture{inline-size:132px}
-.club-fp-competition .club-fp-competition-round{inline-size:64px;block-size:10px}
+.club-fp-competition .club-fp-competition-round{inline-size:64px}
+/* The 14px/10px dimensions above size only the **painted bars**, not the
+   surrounding hydrated text slots. The round skeleton must preserve the
+   12px font × 1.25 line box defined earlier; do not reapply 10px block-size. */
 /* First paint and hydrated rows reserve the same two-line fixture slot.
    Start-align their labels and values so Next match does not move on hydration. */
 .club-fp-competition .club-competition-next-content{min-block-size:59px;justify-content:flex-start}
