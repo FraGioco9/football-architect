@@ -9,8 +9,8 @@ test('#560 History mobile uses a full-width four-column grid and leaves desktop 
  assert.ok(start>0,'standalone mobile-only History styling is present');
  const mobile=css.slice(start,css.indexOf('/* Club Fixtures:',start));
  assert.match(mobile,/@media\(max-width:620px\)\{/);
- assert.match(mobile,/\.club-history\{margin-top:-12px;min-width:0\}/,
-  'mobile History offsets the container inter-item gap and touches the separator');
+ assert.match(mobile,/\.club-history\{margin-top:14px;min-width:0\}/,
+  'mobile History leaves 14px below the tabs separator before the first row');
  assert.match(css,/\.club-history\{margin-top:14px;min-width:0\}/,
   'desktop keeps the existing 14px section margin');
  assert.match(mobile,/\.club-history-table\{[\s\S]*?display:block;width:100%;min-width:0;max-width:100%/);
