@@ -33,6 +33,9 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.doesNotMatch(css,/@container club-competition-panel \(max-width:800px\)\{\s*\.club-competition-list \.club-competition-entry\{[^}]*padding/,'stacked rows retain zero padding');
  assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*grid-template-rows:minmax\(16px,auto\) minmax\(59px,auto\);/,'Each summary reserves shared label and value tracks');
  assert.match(css,/\.club-competition-list \.club-competition-metrics,[\s\S]*?display:grid;grid-template-rows:subgrid;grid-row:1\/3;/,'Status and Next match use identical row tracks');
+ assert.match(css,/align-items:start;align-content:start;/,'Rows never center summary tracks when their identity grows');
+ assert.match(css,/column-gap:14px;row-gap:4px;padding:0 0 0 56px;/,'Stacked rows keep the desktop label-value gap');
+ assert.match(css,/padding-left:0;column-gap:10px;row-gap:4px;/,'Narrow layout keeps the same label-value gap');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dt,[\s\S]*?grid-row:1;align-self:start;/,'Both labels start on track one');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*grid-row:2;/,'Status value starts on track two');
  assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-row:2;/,'Fixture value starts on track two');
@@ -52,4 +55,11 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-competition-list \.club-competition-match-name\{[^}]*-webkit-line-clamp:unset/);
  assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*min-height:59px;[^}]*justify-content:flex-start;/);
  assert.match(css,/\.club-fp-competition \.club-competition-next-content\{min-block-size:59px;justify-content:flex-start\}/);
+ assert.match(css,/\.club-overview-layout>\.club-competition\.club-first-paint-panel\{min-height:0\}/,'First-paint competition panel does not add phantom height');
+ assert.match(css,/\.club-fp-competition \.club-competition-name\{display:flex;align-items:center;min-block-size:1\.3em\}/,'Name skeleton reserves hydrated line box');
+ assert.match(css,/\.club-fp-competition \.club-competition-tier\{display:flex;align-items:center;min-block-size:1\.35em\}/,'Tier skeleton reserves hydrated line box');
+ assert.match(css,/\.club-fp-competition \.club-fp-competition-position\{margin-block-start:calc\(\(1\.15em - 12px\)\/2\)\}/,'Status bar is centered within the hydrated status text line');
+ assert.match(css,/\.club-fp-competition \.club-fp-competition-fixture\{font-size:14px;line-height:1\.25;block-size:1\.25em\}/,'Fixture skeleton keeps the link line height');
+ assert.match(css,/\.club-fp-competition \.club-fp-competition-round\{font-size:12px;line-height:1\.25;block-size:1\.25em\}/,'Round skeleton keeps the small-text line height');
+ assert.match(css,/\.club-first-paint-panel \.club-fp-competition \.club-competition-next-content>\.club-fp-bar\+\.club-fp-bar\{margin-top:0\}/,'Skeleton flex gap is not doubled');
 });
