@@ -252,3 +252,12 @@ test('#574 repeated overflow checks and resize do not lose +N',async()=>{
  assert.equal(ui.updatePositionCompact(cell,state),2);
  assert.equal(more.textContent,'+2');
 });
+
+test('#574 mobile Player names center vertically without depending on underline',()=>{
+ const docCss=read('assets/app.css');
+ assert.match(docCss,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px\}/,'mobile links are block-level flex with exact 18px geometry');
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/,'short-name glyphs share stable 18px line box');
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/,'underline stays outside layout');
+ assert.doesNotMatch(docCss,/\.app-player-name-link:hover\{text-decoration:underline/);
+});

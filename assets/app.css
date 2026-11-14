@@ -1931,8 +1931,12 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 /* #574: mobile labels from render-time attributes; desktop text and full
  * accessibility names remain unchanged. No async DOM replacement. */
 @media(max-width:720px){
+ /* Player label owns an exact 18px block flex box centered by its table cell.
+  * Avoid inline-flex baseline metrics: the absolute hover underline has no
+  * influence on the label's height or vertical centering. */
+ .app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px}
  .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]{font-size:0}
- .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]::before{content:attr(data-mobile-name);font-size:14px;line-height:18px;white-space:nowrap}
+ .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]::before{content:attr(data-mobile-name);display:block;font-size:14px;line-height:18px;white-space:nowrap}
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]{font-size:0}
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]::before{content:attr(data-mobile-name);font-size:14px;line-height:18px}
  .app-players-table .app-player-club-name[data-mobile-club-name]{font-size:0}
