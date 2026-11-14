@@ -108,6 +108,7 @@ test('CLUB-01 presentation uses every canonical identity in all five languages',
   for(const view of clubViews){
    const selected=model.route(base+'/'+view),html=model.render(manifest,selected,lang,'?season=2&matchday=7');
    assert.ok(html.includes('aria-current="page"'));
+   assert.ok(html.includes('<h1 id="club-title" class="app-page-title">'+c.primaryName.replaceAll('&','&amp;')+'</h1>'),'Club H1 must use primaryName for '+c.countryId+'-'+c.clubId+' / '+view+' / '+lang);
    assert.equal((html.match(/class="app-competition-tab(?: |")/g)||[]).length,view==='roster'?10:5);
    assert.equal((html.match(/class="app-competition-tabs club-tabs"/g)||[]).length,1);
    assert.ok(html.includes(base+'/roster"'));
@@ -311,7 +312,7 @@ test('A01-10 memoized renderer retains all 320 club identities and per-manifest 
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  for(const club of manifest.clubs){const selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');const html=model.render(manifest,selected,'en');assert.equal(model.render(manifest,selected,'en'),html);assert.ok(html.includes('data-club-crest="'+club.countryId+'-'+club.clubId+'"'));}
  const club=manifest.clubs[0],selected=model.route('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
- const changed={...manifest,clubs:manifest.clubs.map((c,i)=>i===0?{...c,fullName:'A01-10 alternate name'}:c)};
+ const changed={...manifest,clubs:manifest.clubs.map((c,i)=>i===0?{...c,primaryName:'A01-10 alternate name'}:c)};
  assert.ok(model.render(changed,selected).includes('A01-10 alternate name'));
  assert.ok(!model.render(manifest,selected).includes('A01-10 alternate name'));
 });

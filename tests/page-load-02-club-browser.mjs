@@ -374,7 +374,8 @@ try{
    assert.equal(final.title,true,'preserve header title node '+view);
    assert.equal(final.tabs,true,'preserve tabs node '+view);
    assert.equal(final.crest,false,'replace anonymous crest slot with canonical crest on hydrate');
-   assert.equal(await page.locator('#club-title').textContent(),identity.fullName,'hydrate club name only from manifest');
+   assert.equal(await page.locator('#club-title').textContent(),identity.primaryName,'hydrate canonical primary name only from manifest');
+    assert.equal(await page.title(),identity.primaryName+' — Football Architect','browser title uses canonical primary name');
    assert.ok((await page.locator('.club-header .club-location').textContent()).includes(identity.city),'hydrate city from manifest');
    if(asset)assert.equal(await page.locator('.club-header .app-club-crest-image').getAttribute('src'),'/'+asset);
    if(view==='overview'){
