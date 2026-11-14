@@ -26,6 +26,19 @@ const port=(portProbe.address() as {port:number}).port;
 await new Promise<void>(r=>portProbe.close(()=>r()));
 let worker:ReturnType<typeof spawn>|undefined,browser:any,preview:ReturnType<typeof createPreviewServer>|undefined;
 const priorTarget=process.env.FA_ADMIN_API_TARGET;
+// Use the standard pull_request event file rather than changing the repository
+// workflow just to pass one opt-in flag. The event is tied to this exact checkout.
+async function auditRequested(){
+ if(process.env.FA_LOCAL_API_AUDIT==='1')return true; // Explicit local-only opt-in.
+ if(process.env.GITHUB_EVENT_NAME!=='pull_request'||!process.env.GITHUB_EVENT_PATH)return false;
+ try{
+  const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
+  const checked=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+  return event.pull_request?.draft===true&&
+   event.pull_request?.head?.sha===checked&&
+   event.pull_request?.body?.includes('<!-- local-anonymous-api-audit -->')===true;
+ }catch{return false}
+}
 let workerLogs='';
 try{
  const handle=await openLocalDatabase(state);
@@ -65,7 +78,7 @@ try{
  console.log('Unified Admin real Worker/D1 browser lifecycle PASS: '+JSON.stringify(result));
  // Optional diagnostic on this same disposable Worker/D1 and already-started
  // Chromium; never enable on all PRs or against the shared DEV/Preview pool.
- if(process.env.FA_LOCAL_API_AUDIT==='1'){
+ if(await auditRequested()){
   await preflightAnonymousLocalApi(origin);
   const routes=['/dashboard','/players','/clubs/it/1/overview','/clubs/it/1/roster'];
   const records=await collectAnonymousBrowser(browser,{base:origin,routes,runs:1});
