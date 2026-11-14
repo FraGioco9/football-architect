@@ -38,6 +38,9 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/padding-left:0;column-gap:10px;row-gap:4px;/,'Narrow layout keeps the same label-value gap');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dt,[\s\S]*?grid-row:1;align-self:start;/,'Both labels start on track one');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*grid-row:2;/,'Status value starts on track two');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics,\s*\.club-competition-list \.club-competition-metrics>div\{justify-items:center;text-align:center\}/,'Status label and value are centered together');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics dt,\s*\.club-competition-list \.club-competition-metrics dd\{justify-self:center;text-align:center\}/,'Both status text tracks center, independent of old generic CSS');
+ assert.match(css,/\.club-competition-list \.club-competition-next\{justify-items:start;text-align:left\}/,'Next match remains start aligned');
  assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-row:2;/,'Fixture value starts on track two');
  assert.match(css,/\.club-competition-list \.club-competition-logo\{[^}]*width:60px;height:60px;flex:0 0 60px/);
  assert.match(css,/\.club-competition-list \.club-competition-cup-mark\{[^}]*width:60px;height:60px;flex:0 0 60px/);
@@ -61,5 +64,6 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-fp-competition \.club-fp-competition-position\{margin-block-start:calc\(\(1\.15em - 12px\)\/2\)\}/,'Status bar is centered within the hydrated status text line');
  assert.match(css,/\.club-fp-competition \.club-fp-competition-fixture\{font-size:14px;line-height:1\.25;block-size:1\.25em\}/,'Fixture skeleton keeps the link line height');
  assert.match(css,/\.club-fp-competition \.club-fp-competition-round\{font-size:12px;line-height:1\.25;block-size:1\.25em\}/,'Round skeleton keeps the small-text line height');
+ assert.doesNotMatch(css,/\.club-fp-competition \.club-fp-competition-round\{inline-size:64px;block-size:10px\}/,'A later placeholder rule cannot overwrite the actual round text-line height');
  assert.match(css,/\.club-first-paint-panel \.club-fp-competition \.club-competition-next-content>\.club-fp-bar\+\.club-fp-bar\{margin-top:0\}/,'Skeleton flex gap is not doubled');
 });
