@@ -116,21 +116,21 @@ test('shared preview supports large authenticated player cohorts without widenin
 });
 
 
-test('shared preview forwards safe Players page query without credentials or cookies',async()=>{
+test('shared preview forwards safe Players offset query without credentials or cookies',async()=>{
  const seen=[];
  const send=async(url,options)=>{
   seen.push({url:url.href,options});
   if(seen.length===1)return context();
   return {status:200,headers:{'set-cookie':['must-not-leak=secret']},body:Buffer.from(JSON.stringify({count:1,page:2,players:[]}))};
  };
- const result=await run(req({path:'/api/players?page=2',headers:{cookie:'fa_player_local='+token,'x-csrf-token':'private'}}),send);
+ const result=await run(req({path:'/api/players?offset=50',headers:{cookie:'fa_player_local='+token,'x-csrf-token':'private'}}),send);
  assert.equal(result.status,200);
  assert.deepEqual(JSON.parse(result.body),{count:1,page:2,players:[]});
  assert.equal(result.headers['set-cookie'],undefined);
- assert.equal(seen[1].url,origin+'/api/players?page=2');
+ assert.equal(seen[1].url,origin+'/api/players?offset=50');
  assert.deepEqual(seen[1].options.headers,{'x-fa-expected-pool':'dev-preview'});
  let attempts=0;
- const invalid=await run(req({path:'/api/players?page=1&filter=x'}),async()=>{attempts++;return context()});
+ const invalid=await run(req({path:'/api/players?page=1'}),async()=>{attempts++;return context()});
  assert.equal(invalid.status,403);assert.equal(attempts,0);
 });
 

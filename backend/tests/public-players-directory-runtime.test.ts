@@ -51,7 +51,7 @@ test('public directory count and pagination include persisted players independen
  const {db,calls}=mockDb();
  await readPublicPlayers(db,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  assert.doesNotMatch(count.sql,/world_generation|WHERE/);
  assert.doesNotMatch(page.sql,/world_generation|WHERE/);
  assert.doesNotMatch(count.sql,/json_extract/);
@@ -68,13 +68,13 @@ test('public directory rejects invalid page numbers before database reads',async
 });
 
 test('shared filter parser rejects duplicates, unknown inputs, encoded values and inverted ages',()=>{
- const valid=parsePublicPlayerQuery('?position=ST&nationality=ITA&ageMin=18&ageMax=24&foot=left&page=2');
+ const valid=parsePublicPlayerQuery('?position=ST&nationality=ITA&ageMin=18&ageMax=24&foot=left&offset=50');
  assert.deepEqual(valid,{page:2,filters:{nationality:['ITA'],position:['ST'],ageMin:18,ageMax:24,foot:'left'}});
  assert.deepEqual(parsePublicPlayerQuery('?nationality=ITA%2CFRA&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=175&heightMax=195').filters,
   {nationality:['ITA','FRA'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',heightMin:175,heightMax:195});
  assert.deepEqual(parsePublicPlayerQuery(''),{page:1,filters:{}});
  assert.deepEqual(parsePublicPlayerQuery('?name=Andrea').filters,{name:'Andrea'});
- for(const raw of ['?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
+ for(const raw of ['?page=1','?page=2','?page=0','?page=01','?page=10000','?nationality=ZZZ','?nationality=ita','?position=CF',
   '?foot=both','?ageMin=121','?ageMin=-1','?ageMin=01','?ageMin=22&ageMax=21','?ageMin=10&ageMin=20',
   '?view=overview','?page=1&page=2','?name=%25','?nationality=%49TA','?page=1&','?page=1#x',
   '?ageMax=21.5','?foot=right&foo=bar']){
@@ -88,7 +88,8 @@ test('shared filter parser rejects duplicates, unknown inputs, encoded values an
   assert.equal(isAllowedPublicPlayersPath('/api/players'+bad),false,bad);
  }
  assert.equal(isAllowedPublicPlayersPath('/api/players?foot=right&ageMin=0'),true);
- assert.equal(isAllowedPublicPlayersPath('/api/players?page=1'),true);
+ assert.equal(isAllowedPublicPlayersPath('/api/players?offset=0'),true);
+ assert.equal(isAllowedPublicPlayersPath('/api/players?page=1'),false);
  assert.equal(isAllowedPublicPlayersPath('/api/players/page/1'),false);
 });
 test('all filters are bound into COUNT and page queries before pagination, without leaking any private data',async()=>{
@@ -97,13 +98,13 @@ test('all filters are bound into COUNT and page queries before pagination, witho
  const result=await readPublicPlayers(db,1,filters);
  assert.equal(result.count,1);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  for(const token of ["'$.nationality'","'$.primary_position'","'$.age'","'$.preferred_foot'"]){
   assert.ok(count.sql.includes(token),token);assert.ok(page.sql.includes(token),token);
  }
  assert.deepEqual(count.params,['ITA','CM',18,30,'right']);
  assert.deepEqual(page.params,['ITA','CM',18,30,'right',50,0]);
- assert.match(page.sql,/ORDER BY created_at DESC,id ASC LIMIT \? OFFSET \?/);
+ assert.match(page.sql,/ORDER BY id DESC LIMIT \? OFFSET \?/);
  assert.doesNotMatch(JSON.stringify(result.players),/initial_age|development_aptitude|seed/);
 });
 
@@ -114,7 +115,7 @@ test('validated name search and sparse public attributes keep COUNT and page SQL
  const {db,calls}=mockDb();
  await readPublicPlayers(db,1,query.filters);
  const count=calls.find(x=>x.sql.includes('COUNT(*)'))!;
- const page=calls.find(x=>x.sql.includes('ORDER BY created_at'))!;
+ const page=calls.find(x=>x.sql.includes('ORDER BY id DESC'))!;
  for(const stmt of [count,page]){
   assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.passing'\)>=\?/);
   assert.match(stmt.sql,/json_extract\(payload_json,'\$\.attributes\.vision'\)<=\?/);

@@ -1560,7 +1560,7 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
-.app-players-table th,.app-players-table td{box-sizing:border-box;padding:6px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
+.app-players-table th,.app-players-table td{box-sizing:border-box;padding:4px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
 /* Sort is still interactive, but labels never display arrows, hover highlights,
  * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
@@ -1578,8 +1578,8 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 
 .app-players-table th:nth-child(2) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button,.app-players-table[data-players-table-mode="attributes"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
 /* Preserve real table row geometry during loading: five empty rows, no data skeletons. */
-.app-players-table tbody tr:not(.app-players-empty-row){height:38px}
-.app-players-table .app-players-loading-row td{height:38px;padding:0 16px}
+.app-players-table tbody tr:not(.app-players-empty-row){height:34px}
+.app-players-table .app-players-loading-row td{height:34px;padding:0 16px}
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}
@@ -1597,7 +1597,7 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 @media(max-width:720px){.app-players-table th,.app-players-table td{padding-inline:10px}}
 
 /* D1-backed Players directory: matching row heights, country flags and optional pagination. */
-.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650}
+.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650;vertical-align:middle;line-height:18px}
 /* #532 compact shared player tables: center proportionate flags in first-paint and loaded rows. */
 .app-players-table tbody td:first-child{text-align:center;vertical-align:middle}
 .app-players-nationality-flag{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto}
@@ -1804,10 +1804,12 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{background:rgba(16,34,29,.38)}
 @media(max-width:800px){.app-players-preview-page .app-players-header{flex-wrap:wrap;align-items:flex-start}.app-players-preview-actions{width:100%;justify-content:flex-start}.app-players-preview-message{text-align:left}}
 
-/* Name-only player detail links (#502). No row-wide underline or focus overlay. */
-.app-players-table .app-player-name-link{color:inherit;text-decoration:none;font:inherit;display:inline}
-.app-players-table .app-player-name-link:hover{text-decoration:underline;text-underline-offset:3px}
-.app-players-table .app-player-name-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* Player names stay centered independently of the hover/focus underline.
+ * The decorative line is absolutely positioned and never changes line-box height. */
+.app-players-table :is(.app-player-name-link,.club-roster-player-link){position:relative;display:inline-flex;align-items:center;vertical-align:middle;min-height:18px;line-height:18px;color:inherit;font:inherit;text-decoration:none;white-space:nowrap}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link)::after{content:"";position:absolute;inset-inline:0;bottom:-2px;height:1px;background:currentColor;opacity:0;pointer-events:none}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link):is(:hover,:focus-visible)::after{opacity:1}
+.app-players-table :is(.app-player-name-link,.club-roster-player-link):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
 
 /* UI-VIEWS-01 (#559): view/subview controls only. No Club History content styles.
  * Desktop: narrower view buttons. Mobile: preserve the established 2.5-tab

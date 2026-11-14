@@ -658,9 +658,7 @@ a.club-fixture-opponent:is(:hover,:focus-visible)>span:last-child{text-decoratio
 .club-roster-table td:nth-child(2){text-align:left;font-weight:650}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"]{min-width:1462px}
 .club-roster-table[data-players-table-mode="attributes"][data-roster-group="technical"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
-.club-roster-player-link{color:inherit;text-decoration:none;text-underline-offset:3px;text-decoration-thickness:1px}
-.club-roster-player-link:hover,.club-roster-player-link:focus-visible{text-decoration:underline}
-.club-roster-player-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* Player name links reuse the shared, layout-stable inline-flex underline in app.css. */
 @media(max-width:620px){
  /* The horizontal viewport reveals two complete subviews plus half of the next.
   * Keep the player count outside the scrolling strip. */

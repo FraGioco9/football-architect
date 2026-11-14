@@ -47,3 +47,9 @@
 - This is a source-level implementation, not proof of Safari visual QA. Globally smaller flags on non-player pages, full responsive column redesign and public Club column are still separate #532 follow-ups.
 
 - **Further compactness adjustment (owner-approved follow-up):** all three shared player-table surfaces now use 38px body and skeleton rows with 6px vertical padding; 44px headers and 20×15px nationality flags remain unchanged. Visual QA on iPhone Safari is still outstanding.
+
+## Additional row-density and hover-centering follow-up
+
+- User-requested additional compression: shared player-table body and five reserved skeleton rows are now **34px**, with vertical cell padding **4px** (previously 38px / 6px). Header, column widths and font sizes are unchanged. This applies to public Players, Club Roster and Admin preview.
+- Name cells keep an explicit 18px line-box vertically centered. The name link is an inline-flex box with fixed text geometry; a 1px hover/focus underline is drawn by an absolutely positioned `::after` below the text, so the underline does not affect row layout or name centering. The Club Roster specific decoration override was removed.
+- Site/Worker contract regression tests were also updated to current approved `offset` and `id DESC` semantics after detecting stale expectations in the previous CI. Manual responsive visual QA remains pending.
