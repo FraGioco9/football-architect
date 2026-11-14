@@ -267,6 +267,7 @@
     "tests/int24-browser-qa.mjs": "browser",
     "tests/international-cups-ui.test.mjs": "site-node",
     "tests/landing.test.mjs": "site-node",
+    "tests/match-detail.test.mjs": "site-node",
     "tests/nav-01-sidebar.test.mjs": "site-node",
     "tests/page-load-02-club-browser.mjs": "browser",
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
