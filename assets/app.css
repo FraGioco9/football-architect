@@ -1560,7 +1560,7 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table col.app-players-flag-column{width:var(--app-players-flag-width)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
-.app-players-table th,.app-players-table td{box-sizing:border-box;padding:8px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
+.app-players-table th,.app-players-table td{box-sizing:border-box;padding:6px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
 .app-players-table thead th{height:44px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
 /* Sort is still interactive, but labels never display arrows, hover highlights,
  * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
@@ -1578,8 +1578,8 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 
 .app-players-table th:nth-child(2) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,.app-players-table:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button,.app-players-table[data-players-table-mode="attributes"] th:nth-child(3) .app-players-sort-button{justify-content:flex-start}
 /* Preserve real table row geometry during loading: five empty rows, no data skeletons. */
-.app-players-table tbody tr:not(.app-players-empty-row){height:42px}
-.app-players-table .app-players-loading-row td{height:42px;padding:0 16px}
+.app-players-table tbody tr:not(.app-players-empty-row){height:38px}
+.app-players-table .app-players-loading-row td{height:38px;padding:0 16px}
 .app-players-table th:first-child{width:var(--app-players-flag-width);padding-inline:8px}
 .app-players-table th:nth-child(2){width:var(--app-players-name-width);text-align:left}
 .app-players-table th:nth-child(3){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.17)}

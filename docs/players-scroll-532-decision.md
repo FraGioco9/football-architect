@@ -42,6 +42,8 @@
 
 ## Subsequent UI block (#532): compact player rows and table flags
 
-- Shared `.app-players-table` rows, covering public Overview/Attributes, club Roster and Admin preview, are **42px** rather than 44px. Shared vertical padding is reduced 10px → 8px; header height, font sizes, widths and input targets remain unchanged. The five first-paint and refresh placeholder rows use the identical 42px height.
+- Shared `.app-players-table` rows, covering public Overview/Attributes, club Roster and Admin preview, were first reduced to 42px and are now **38px** (from 44px originally). Shared vertical padding is now **6px** (previously 8px); header height, font sizes, widths and input targets remain unchanged. The five first-paint and refresh placeholder rows use the identical 38px height.
 - Player-table nationality flags use **20 × 15px** (formerly 24 × 18px) in CSS and intrinsic image dimensions for public, Roster and Admin, with `object-fit:contain` and explicit center alignment in their cells. Flags retain their natural aspect ratio inside the box; the existing 54px flag column remains untouched.
 - This is a source-level implementation, not proof of Safari visual QA. Globally smaller flags on non-player pages, full responsive column redesign and public Club column are still separate #532 follow-ups.
+
+- **Further compactness adjustment (owner-approved follow-up):** all three shared player-table surfaces now use 38px body and skeleton rows with 6px vertical padding; 44px headers and 20×15px nationality flags remain unchanged. Visual QA on iPhone Safari is still outstanding.
