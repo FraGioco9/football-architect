@@ -327,7 +327,8 @@ body.app-body{--app-page-pad-top:8px}
  grid-column:2;grid-row:1;display:grid;
  grid-template-columns:minmax(205px,220px) minmax(0,1fr);
  grid-template-rows:minmax(16px,auto) minmax(59px,auto);
- align-items:start;column-gap:clamp(12px,1.8vw,24px);row-gap:4px;
+ align-items:start;align-content:start;
+ column-gap:clamp(12px,1.8vw,24px);row-gap:4px;
  width:100%;max-width:580px;margin:0;padding:0;
  border:0;justify-self:end;align-self:stretch;min-height:80px;
 }
@@ -367,7 +368,7 @@ body.app-body{--app-page-pad-top:8px}
  .club-competition-list .club-competition-identity{grid-column:1;grid-row:1;min-height:64px}
  .club-competition-list .club-competition-summary{
   grid-column:1;grid-row:2;grid-template-columns:minmax(205px,220px) minmax(0,1fr);
-  gap:14px;padding:0 0 0 56px;max-width:none;
+  column-gap:14px;row-gap:4px;padding:0 0 0 56px;max-width:none;
  }
  /* The panel container controls placement only; visual scale is the same as a singleton. */
 }
@@ -382,9 +383,30 @@ body.app-body{--app-page-pad-top:8px}
  .club-competition-list .club-competition-next-empty{font-size:13px;line-height:1.25}
 }
 @container club-competition-panel (max-width:500px){
- .club-competition-list .club-competition-summary{padding-left:0;gap:10px;grid-template-columns:minmax(92px,40%) minmax(0,1fr)}
+ .club-competition-list .club-competition-summary{padding-left:0;column-gap:10px;row-gap:4px;grid-template-columns:minmax(92px,40%) minmax(0,1fr)}
  .club-competition-list .club-competition-metrics dd{white-space:normal;overflow-wrap:anywhere}
 }
+/* Skeletons use the hydrated name/tier line boxes, not shorter bar heights.
+   The Next match placeholders reserve the same text/small line heights and 3px
+   flex gap as loaded content; avoid stacking an additional skeleton margin. */
+.club-overview-layout>.club-competition.club-first-paint-panel{min-height:0}
+.club-fp-competition .club-competition-name{display:flex;align-items:center;min-block-size:1.3em}
+.club-fp-competition .club-competition-tier{display:flex;align-items:center;min-block-size:1.35em}
+.club-fp-competition .club-fp-competition-position{margin-block-start:calc((1.15em - 12px)/2)}
+.club-fp-competition .club-fp-competition-fixture,
+.club-fp-competition .club-fp-competition-round{
+ display:flex;align-items:center;background:transparent;border-radius:0;
+}
+.club-fp-competition .club-fp-competition-fixture{font-size:14px;line-height:1.25;block-size:1.25em}
+.club-fp-competition .club-fp-competition-round{font-size:12px;line-height:1.25;block-size:1.25em}
+.club-fp-competition .club-fp-competition-fixture::before,
+.club-fp-competition .club-fp-competition-round::before{
+ content:"";display:block;inline-size:100%;block-size:12px;border-radius:5px;
+ background:color-mix(in srgb,var(--muted) 15%,var(--surface));
+}
+.club-fp-competition .club-fp-competition-round::before{block-size:10px}
+@media(max-width:760px){.club-fp-competition .club-fp-competition-fixture{font-size:13px}}
+
 /* Competition skeletons occupy the final crest, name, tier and value slots. */
 .club-fp-competition .club-fp-competition-logo{
  box-sizing:border-box;background:color-mix(in srgb,var(--muted) 15%,var(--surface));
@@ -398,7 +420,7 @@ body.app-body{--app-page-pad-top:8px}
 /* First paint and hydrated rows reserve the same two-line fixture slot.
    Start-align their labels and values so Next match does not move on hydration. */
 .club-fp-competition .club-competition-next-content{min-block-size:59px;justify-content:flex-start}
-.club-first-paint-panel .club-fp-competition .club-competition-next-content>.club-fp-bar+.club-fp-bar{margin-top:3px}
+.club-first-paint-panel .club-fp-competition .club-competition-next-content>.club-fp-bar+.club-fp-bar{margin-top:0}
 @media(prefers-reduced-motion:reduce){.club-fp-competition .club-fp-competition-logo{animation:none}}
 
 /* QA-16 header refinement: compact, stable title/location rhythm. */
