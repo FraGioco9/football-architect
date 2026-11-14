@@ -814,14 +814,14 @@ test('CLUB-FIXTURES: text-only hover and overview navigation, with sized skeleto
  const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
  const row={id:'game',competitionId:'IT-1',day:12,round:4,phaseId:'league',opponentId:'IT-2',venue:'home',goalsFor:null,goalsAgainst:null};
  const rendered=ui.render({manifest,season:1,seasons:[1],snapshot:{coverage:'complete',rows:[row],competitions:[]}});
- assert.match(rendered,/class="club-fixture-opponent" href="\/clubs\/it\/2\/overview"/);
+ assert.match(rendered,/class="club-fixture-opponent-name" href="\/clubs\/it\/2\/overview"/);
  assert.doesNotMatch(rendered,/\/clubs\/it\/2\/fixtures/);
  assert.match(rendered,/href="\/competitions\/it-1\/fixtures\?season=1&amp;matchday=4"/);
  const loading=ui.render();
  for(const part of ['day','league','name','venue','score','status'])
   assert.match(loading,new RegExp('club-fixture-skeleton-'+part));
  const css=read('assets/club-page.css');
- assert.match(css,/a\.club-fixture-opponent:is\(:hover,:focus-visible\)>span:last-child\{text-decoration:underline/);
+ assert.match(css,/\.club-fixture-opponent-name:is\(:hover,:focus-visible\)\{text-decoration:underline/);
  assert.match(css,/\.club-fixture-meta a:is\(:hover,:focus-visible\)\{text-decoration:underline/);
  assert.match(css,/\.club-fixture-opponent\{[^}]*width:fit-content/);
  assert.match(css,/\.club-fixture-select \[data-club-fixture-value\]\{[^}]*white-space:nowrap/);
