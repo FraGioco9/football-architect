@@ -32,9 +32,11 @@ jobs:
         run: npm ci --prefix match-engine --no-audit --no-fund
       # PR #481 is Draft/HOLD: run its authentic C2-b witness quickly, once.
       # Do not repeat it through the full npm test list in the same run.
-      - name: C2-b authentic opt-in Rapier A/B (Draft PR 481)
+      - name: C2-b Rapier A/B + P1 pure intent contract (Draft PR 481)
         if: ${{ github.event.pull_request.number == 481 && github.event.pull_request.draft }}
-        run: node --test match-engine/tests/player-ball-press-handoff-ab.test.mjs
+        run: |
+          node --test match-engine/tests/player-football-intent.test.mjs
+          node --test match-engine/tests/player-ball-press-handoff-ab.test.mjs
       # Keep the original full ME-01 job on review-ready PRs and all other PRs.
       - name: Focused core and route security tests
         if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
