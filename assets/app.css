@@ -1634,6 +1634,26 @@ html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1462px}
 html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"] th:nth-child(n+4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) / 8)}
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+4){font-variant-numeric:tabular-nums}
+/* #532: responsive player-table column geometry. Desktop approved widths stay
+ * unchanged; smaller viewports use compact columns and deliberate horizontal
+ * scrolling, never hidden columns or a changed reading/sort order. */
+@media(max-width:720px){
+ .app-players-table-scroll{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+ .app-players-table{--app-players-flag-width:44px;--app-players-name-width:216px;--app-players-positions-width:176px;min-width:720px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:900px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1364px}
+ .app-players-table tbody td:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .app-players-table :is(.app-player-name-link,.club-roster-player-link){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .app-players-table:not([data-players-table-mode="attributes"]) tbody td:nth-child(4),
+ .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(3){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+/* 320–420px: make the name and first numeric column visible sooner while
+ * preserving readable attribute columns, consistent first paint and iOS scroll. */
+@media(max-width:420px){
+ .app-players-table{--app-players-flag-width:40px;--app-players-name-width:192px;--app-players-positions-width:160px;min-width:680px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:856px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1272px}
+}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
  .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}

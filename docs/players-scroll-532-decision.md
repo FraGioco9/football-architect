@@ -70,3 +70,11 @@
 
 - Public Players Overview/Attributes, club Roster and Admin player preview share a single table header style. The heading row is now **36px** (was 44px), with **11px** heading font size (was 12px) and 2px vertical padding. Sort buttons occupy 30px rather than 32px so they fit the reduced header without shifting headings or chevrons.
 - Table data labels remain 13px, body and five loading rows remain at the approved 30px, and the columns, flag dimensions, sort order, name hover underline, and mobile horizontal scroll are unchanged. This is a shared CSS-only layout adjustment, pending manual desktop/iPhone Safari QA.
+
+## Responsive player-table geometry (#532 next block)
+
+- **Desktop (>720px):** retain the approved fixed 54px flag column, 248px Player column and 200px Positions (Attributes), with Overview min-width 782px, four-attribute min-width 982px and eight-attribute Technical min-width 1462px. Sorting, first-paint colgroup, global server filters and table data are unchanged.
+- **Mobile / tablet (421–720px):** 44px flag, 216px Player and 176px Positions. Minimum widths are 720px Overview, 900px four-attribute groups, 1364px Technical, yielding ~116px per statistic at their minimum width. Club Roster Technical uses the same group-specific width as public Players.
+- **Small phones (up to 420px):** 40px flag, 192px Player and 160px Positions. Minimum widths are 680px Overview, 856px four-attribute groups and 1272px Technical (~110–116px per statistic). This reveals the age column sooner without compressing long attribute labels.
+- Long names and position strings on narrow screens truncate visually rather than increasing the approved 30px player rows; the full underlying text remains in the link or table cell for accessibility. The responsive table viewport allows intentional touch horizontal scroll with contained overscroll. Existing column order, widths during loading, the five 30px placeholders, 36px headers, 11px heading font, 13px body font, flag aspect ratio and hover underline remain untouched.
+- Source-contract checks included; hosted Preview/actual iPhone Safari layout QA remains required before merge.
