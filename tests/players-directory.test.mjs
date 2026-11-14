@@ -314,7 +314,7 @@ test('Players Attributes always show fixed-width Positions after the name withou
  assert.match(html,/addSort\(positions,'positions',\{en:'Positions',it:'Posizioni',de:'Positionen',es:'Posiciones',fr:'Postes'\}\[locale\]\|\|'Positions'\)/);
  assert.match(html,/row\.append\(positions\);\s*for\(const key of keys\)/,'Positions must precede stats on first paint');
  assert.match(html,/colSpan=keys\.length\+3/);
- assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:6/);
+ assert.match(renderer,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
  assert.match(renderer,/addHeader\(t\.columns\[2\],'positions'\);\s*for\(const key of groups\[state\.group\]\)addHeader\(attributeName\(key\),key\)/);
  assert.match(renderer,/const positionsShown=\[player\.primary_position,\.\.\.\(Array\.isArray\(player\.secondary_positions\)\?player\.secondary_positions:\[\]\)\]\.filter\(Boolean\)/);
  assert.match(renderer,/else \{\s*cell\(tr,positionsShown\.join\(', '\)\|\|'—'\);\s*for\(const key of groups\[state\.group\]\)/);
@@ -520,7 +520,7 @@ test('Players SQL count/page share identical secondary and multiple filters with
  // Player identities survive world reset: no filters means no WHERE clause.
  assert.match(sql,/const where=predicates\.length\?' WHERE '\+predicates\.join\(' AND '\):''/);
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
- assert.match(sql,/SELECT id,payload_json FROM generated_players'\+where/);
+ assert.match(sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id'\+where/);
  assert.doesNotMatch(sql,/WHERE world_generation=\?/);
  assert.match(sql,/:\'id DESC\'/,'default public sorting follows descending numeric IDs');
  assert.doesNotMatch(sql,/:\'created_at DESC,id ASC\'/);
@@ -819,7 +819,7 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
   let current={...initial,players:[...initial.players]},loadedThrough=initial.page,ticket=0,appendPending=false,appendError='';
   let requests=0,appended=[],progressUpdates=0;
   const fetchBatch=async page=>{requests++;return next(page)};
-  const body={append(rows){appended.push(...rows)}};
+  const body={append(rows){appended.push(...rows)}};\n   const hydrateClubCrests=()=>{};
   const playerRows=players=>players.map(player=>player.id);
   const renderProgress=()=>{progressUpdates++};
   ${source}
