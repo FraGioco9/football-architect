@@ -1945,12 +1945,12 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:200px}
 }
 
-/* #574 compact phone tracks and center the crest + official short club name as
- * one unit within Club. Do not affect the approved desktop treatment. */
+/* #574 mobile Club: keep the name centered on the column axis while placing
+ * its crest immediately to the left; link underline only covers the text. */
 @media(max-width:720px){
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) tbody td:nth-child(7){text-align:center}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-content{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;gap:6px;width:100%;max-width:none;box-sizing:border-box;margin-inline:auto}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-link{grid-column:2;display:flex;align-items:center;justify-content:center;min-width:0;max-width:none;text-align:center}
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-content{display:flex;align-items:center;gap:4px;width:max-content;max-width:100%;box-sizing:border-box;padding-inline-end:28px;margin-inline:auto}
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-link{display:inline-flex;align-self:center;align-items:center;justify-content:flex-start;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;height:18px;min-height:18px;line-height:18px;text-align:center}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){text-align:center}
  .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7) .app-players-sort-button{justify-content:center}
 }
@@ -1959,12 +1959,10 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  .app-players-table :is(th,td):first-child{padding-inline:4px}
 }
 
-/* #574: center Club text on the column axis, independently of the crest. */
+/* The 28px empty trailing padding balances the leading 24px crest + 4px gap,
+ * leaving the intrinsic-width link itself centered with an 18px line box. */
 @media(max-width:720px){
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-content::after{content:"";grid-column:3;grid-row:1;width:24px;height:1px}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-players-club-mark{grid-column:1;grid-row:1}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-link{grid-row:1}
- .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-name{width:100%;text-align:center}
+ .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) .app-player-club-name{width:auto;text-align:center}
  /* Show a plus button only if the full comma-separated list cannot fit. */
  .fa-positions-layout{display:flex;align-items:center;gap:4px;min-width:0;width:100%;height:28px;white-space:nowrap}
  .fa-positions-full{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -137,19 +137,22 @@ test('#574 preview subview fade responds to scroll and resizing after first pain
 });
 
 test('#574 mobile Club crest and compact name are centered together',()=>{
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) \.app-players-club-content\{display:grid;grid-template-columns:24px minmax\(0,1fr\) 24px;align-items:center/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) \.app-players-club-content\{display:flex;align-items:center;gap:4px;width:max-content;max-width:100%;box-sizing:border-box;padding-inline-end:28px;margin-inline:auto\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(7\)\{text-align:center\}/);
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) th:nth-child\(7\) \.app-players-sort-button\{justify-content:center\}/);
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:654px\}/);
- assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:616px\}/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:678px\}/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:640px\}/);
 });
 
 
-test('#574 Club label center is balanced against its 24px crest on mobile',()=>{
- assert.match(css,/\.app-players-club-content::after\{content:"";grid-column:3;grid-row:1;width:24px/);
- assert.match(css,/\.app-players-club-mark\{grid-column:1;grid-row:1\}/);
- assert.match(css,/\.app-player-club-link\{grid-row:1\}/);
- assert.match(css,/\.app-player-club-name\{width:100%;text-align:center\}/);
+test('#574 mobile Club name remains centered with a text-only, baseline-aligned underline',()=>{
+ const content=/\.app-players-club-content\{display:flex;align-items:center;gap:(\d+)px;[^}]*padding-inline-end:(\d+)px;/.exec(css);
+ assert.ok(content,'Club uses intrinsic centered content, not a full-width stretched link');
+ assert.equal(Number(content[1])+24,Number(content[2]),'trailing space exactly balances crest and gap');
+ assert.match(css,/\.app-player-club-link\{display:inline-flex;align-self:center;align-items:center;justify-content:flex-start;flex:0 1 auto;width:max-content;[^}]*height:18px;min-height:18px;line-height:18px/);
+ assert.match(css,/\.app-player-club-name\{width:auto;text-align:center\}/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/);
+ assert.doesNotMatch(css,/\.app-players-club-content::after\{content:"";grid-column/);
 });
 
 test('#574 positions use an overflow-driven, accessible mobile disclosure',async()=>{
