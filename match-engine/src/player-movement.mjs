@@ -3378,7 +3378,11 @@ export function createPlayerMovement({
         const second={x:p.x+forwardX*advanceM+lateralX*flankM,
          y:p.y+forwardY*advanceM+lateralY*flankM};
         if(!withinPitch(first)||!withinPitch(second))continue;
-        if(corridorSafe(p,first)&&corridorSafe(first,second)){
+        // Only the immediate lateral escape must be traversable NOW.
+        // The forward leg happens later: re-check its safety at each
+        // actual 60Hz step against moving real bodies instead of
+        // requiring a future corridor to be clear in the past.
+        if(corridorSafe(p,first)){
          route=Object.freeze([Object.freeze(first),Object.freeze(second)]);
          chosenSide=side;
          break;
