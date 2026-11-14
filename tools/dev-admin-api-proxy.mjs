@@ -26,7 +26,7 @@ const lanHostAllowed=(host,lanHosts)=>{
 const reply=(res,status,code)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:{code}}));return true};
 export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TARGET,pool=process.env.FA_ADMIN_API_POOL,send,lanEnabled=process.env.FA_DEV_LAN==='1',lanHosts=null}={}){
  const raw=req.url||'';
- if(!/^\/api\/(?:world(?:$|[?/#])|admin(?:\/|$)|player(?:\/|$)|competitions(?:\/|$)|calendar(?:\/|$)|local-dev(?:\/|$)|clubs(?:\/|$)|players(?:[/?]|$))/.test(raw))return false;
+ if(!/^\/api\/(?:world(?:$|[?/#])|admin(?:\/|$)|player(?:\/|$)|competitions(?:\/|$)|calendar(?:\/|$)|local-dev(?:\/|$)|clubs(?:\/|$)|players(?:[/?]|$)|matches(?:\/|$))/.test(raw))return false;
  if(!target)return false;
  // Validate original text too: URL normalizes alternative numeric IP spellings.
  const shared=pool==='dev-preview';
@@ -40,12 +40,18 @@ export async function proxyAdminApi(req,res,{target=process.env.FA_ADMIN_API_TAR
  const clubRoster=/^\/api\/clubs\/((?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40))\/roster$/.test(raw);
  const singlePlayer=/^\/api\/players\/[1-9][0-9]*$/.test(raw)&&Number.isSafeInteger(Number(raw.slice('/api/players/'.length)));
  const playersRead=isAllowedPublicPlayersPath(raw)||singlePlayer;
+ // #612: official published match lists and numeric match details are public GETs.
+ // Keep the proxy as strict as the Worker; reject unsafe, encoded and query paths.
+ const matchList=/^\/api\/matches\/seasons\/([1-9][0-9]*)\/competitions\/((?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12]))$/.exec(raw);
+ const matchDetail=/^\/api\/matches\/([1-9][0-9]*)$/.exec(raw);
+ const matchesRead=(!!matchList&&Number.isSafeInteger(Number(matchList[1])))||
+  (!!matchDetail&&Number.isSafeInteger(Number(matchDetail[1])));
  // Contracts is a protected Admin route. Forward only the exact, bounded GET
  // filters the Worker understands; never turn it into an anonymous LAN read.
  const contractsListQuery=req.method==='GET'&&
   /^\/api\/admin\/contracts\?(?:page=[1-9][0-9]{0,3}|playerId=[1-9][0-9]{0,15})$/.test(raw);
  const contractsPath=contractsListQuery?'/api/admin/contracts':raw;
- const publicRead=playersRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
+ const publicRead=playersRead||matchesRead||clubRoster||clubOverview||clubHistory||clubFixturesRead||/^\/api\/competitions\/(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])\/seasons\/[1-9][0-9]{0,8}$/.test(raw)||/^\/api\/calendar\/seasons\/[1-9][0-9]{0,8}\/days\/(?:[1-9]|[1-4][0-9]|5[0-6])$/.test(raw);
  const anonymousRead=publicRead||raw==='/api/world';
  const localClient=loopback(req.socket.remoteAddress)&&hostPattern.test(req.headers.host||'');
  const lanPublic=lanEnabled&&anonymousRead&&req.method==='GET'&&privateIPv4(req.socket.remoteAddress)&&lanHostAllowed(req.headers.host,lanHosts);
