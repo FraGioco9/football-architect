@@ -156,7 +156,13 @@ export function mountClubFixtures({host,manifest}){
  window.addEventListener('fa:club-fixtures-preview',()=>{lastKey=null;refresh();});
  window.addEventListener('pagehide',()=>{abort?.abort();epoch++;cache.clear();hideTip();lastKey=null;});
  window.addEventListener('pageshow',()=>refresh());
- window.addEventListener('popstate',()=>{lastKey=null;refresh();});
+ // Filter-only Back/Forward keeps the verified season/world identity.
+ // Reuse those rows without a loading flash or cancelling an in-flight read.
+ // A changed season/source still refreshes via the existing identity fence.
+ window.addEventListener('popstate',()=>{
+  if(snapshot.coverage==='error')lastKey=null; // Explicit history navigation may retry a failed read.
+  refresh();
+ });
  const moveTip=()=>{if(tipTarget===document.activeElement)showTip(tipTarget);else hideTip();};
  window.addEventListener('scroll',moveTip,true);window.addEventListener('resize',moveTip);
  return {mount(){
