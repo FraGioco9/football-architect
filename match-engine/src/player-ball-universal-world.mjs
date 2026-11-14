@@ -351,6 +351,8 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
    ...(autonomousCarrySupportPressHandoff?{
     autonomousCarrySupportPressHandoff:true}:{}),
+   ...(autonomousCarryBlockedDetour?{
+    autonomousCarryBlockedDetour:true}:{}),
    ...(autonomousCarrySupportBallAccess?{
     autonomousCarrySupportBallAccess:true}:{}),
    ...(autonomousCarrySupportLateralAlign?{
