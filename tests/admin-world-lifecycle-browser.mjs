@@ -19,8 +19,18 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   assert.equal(await admin.evaluate(async({email,legacyPassword})=>fetch('/api/player/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:legacyPassword})}).then(r=>r.status),{email,legacyPassword}),401);
   await admin.locator('#account-login input[name="email"]').fill(email);
   await admin.locator('#account-login input[name="password"]').fill(password);
-  await admin.locator('#account-login button[type="submit"]').click();
-  await admin.waitForURL(url=>url.pathname==='/admin');
+  const successfulLoginRequests=[];
+  const watchLogin=request=>{
+   const url=new URL(request.url());
+   if(url.origin===origin&&url.pathname==='/api/player/login')
+    successfulLoginRequests.push(request.method());
+  };
+  admin.on('request',watchLogin);
+  try{
+   await admin.locator('#account-login button[type="submit"]').click();
+   await admin.waitForURL(url=>url.pathname==='/admin');
+  }finally{admin.off('request',watchLogin)}
+  assert.deepEqual(successfulLoginRequests,['POST'],'one POST for the successful sign-in');
   await admin.locator('[data-admin-card="calendar"]').click();
   await admin.waitForURL(url=>url.pathname==='/admin/calendar');
   const cookies=await operator.cookies(origin);
@@ -211,7 +221,57 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   await admin.waitForFunction(()=>!document.querySelector('[data-admin-prepare]').disabled);
   await admin.locator('[data-admin-prepare]').click();assert.equal((await prepared).status(),200);
   world=await read();assert.equal(world.seasonNumber,1);assert.equal(world.phase,'preparing');
-  assert.equal(world.generation,deleted.world.generation);assert.deepEqual(errors,[]);
-  return {unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true};
+  assert.equal(world.generation,deleted.world.generation);
+  // PERF-API-01: run a full real Player session/logout authorization cycle
+  // after the Admin world lifecycle; collect method/path only.
+  const accountRequests=[],observe=request=>{
+   const url=new URL(request.url());
+   if(url.origin===origin&&url.pathname.startsWith('/api/'))
+    accountRequests.push({method:request.method(),path:url.pathname});
+  };
+  const accountCount=(path,method='GET')=>accountRequests.filter(x=>x.path===path&&x.method===method).length;
+  admin.on('request',observe);
+  try{
+   const session=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/player/session'&&
+    r.request().method()==='GET'&&r.status()===200);
+   await admin.goto(origin+'/account',{waitUntil:'load'});
+   await session;
+   await admin.locator('#protected[aria-busy="false"]').waitFor({state:'visible'});
+   assert.equal(accountCount('/api/player/session'),1,'Profile has one required authenticated session read');
+   assert.equal(accountCount('/api/player/permissions'),0,'Profile must not duplicate Admin UI permission reads');
+   assert.equal(accountCount('/api/admin/session'),0,'Profile does not fetch privileged Admin sessions');
+   const logout=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/player/logout'&&
+    r.request().method()==='POST');
+   await admin.locator('#logout-button').click();
+   assert.equal((await logout).status(),200);
+   await admin.waitForURL(url=>url.pathname==='/account/login');
+   await admin.waitForFunction(()=>document.documentElement.dataset.accountReady==='true'&&
+    sessionStorage.getItem('fa:player:skip-login-session-probe:v1')===null);
+   assert.equal(accountCount('/api/player/logout','POST'),1,'one guarded logout POST');
+   assert.equal(accountCount('/api/player/session'),1,
+    'Login consumes logout marker without immediately repeating a 401 session probe');
+   assert.equal(accountCount('/api/player/permissions'),0,'Account handoff avoids extra permissions GETs');
+   assert.equal(await admin.evaluate(()=>sessionStorage.getItem('fa:admin:permissions:v1')),null,
+    'Logout purges the per-tab UI grant snapshot');
+   const previous=accountRequests.length;
+   const codes=await admin.evaluate(async()=>{
+    const [player,operator]=await Promise.all([
+     fetch('/api/player/session',{cache:'no-store'}),
+     fetch('/api/admin/session',{cache:'no-store'})
+    ]);
+    return {player:player.status,operator:operator.status};
+   });
+   assert.deepEqual(codes,{player:401,operator:401},
+    'Signed-out cookie has neither Player nor Admin authority');
+   assert.equal(accountRequests.length-previous,2,'Only the explicit 401 verification probes followed logout');
+   console.log('PERF-API-01 real login/profile/logout HTTP PASS: '+JSON.stringify({
+    loginPosts:successfulLoginRequests.length,profileSessionGets:1,
+    logoutPosts:accountCount('/api/player/logout','POST'),redundantLoginSessionGets:0,
+    redundantProfilePermissionGets:accountCount('/api/player/permissions'),
+    revokedPlayerStatus:codes.player,revokedAdminStatus:codes.operator
+   }));
+  }finally{admin.off('request',observe)}
+  assert.deepEqual(errors,[]);
+  return {unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true,sessionInvalidation:true};
  }finally{await operator.close();await visitor.close()}
 }
