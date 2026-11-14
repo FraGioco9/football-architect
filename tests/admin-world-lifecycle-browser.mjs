@@ -272,6 +272,6 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
    }));
   }finally{admin.off('request',observe)}
   assert.deepEqual(errors,[]);
-  return {unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true,sessionInvalidation:true};
+  return {unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true};
  }finally{await operator.close();await visitor.close()}
 }
