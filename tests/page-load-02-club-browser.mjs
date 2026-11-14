@@ -189,10 +189,20 @@ try{
       status:rect('.club-competition-metrics'),statusLabel:rect('.club-competition-metrics dt'),statusValue:rect('.club-competition-metrics dd'),
       statusBar:rect('.club-fp-competition-position'),
       next:rect('.club-competition-next'),nextContent:rect('.club-competition-next-content'),
-      fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round')};
+      fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round'),
+       bottomSpacing:(()=>{
+        const section=panel.closest('.club-competition');
+        const style=getComputedStyle(section),box=section.getBoundingClientRect(),last=row.getBoundingClientRect();
+        return {actual:box.bottom-last.bottom,
+         expected:parseFloat(style.paddingBottom)+parseFloat(style.borderBottomWidth),
+         minHeight:style.minHeight};
+       })()};
     });
     assert.ok(comp&&Object.values(comp).every(Boolean),'first-paint competition has all final membership slots');
     assert.deepEqual(comp.rowPadding,[0,0,0,0],'competition rows are padding-free at first paint and all viewport widths');
+     assert.ok(comp.bottomSpacing.minHeight==='0px'
+      &&Math.abs(comp.bottomSpacing.actual-comp.bottomSpacing.expected)<1.5,
+      'First-paint singleton Competitions ends at the original panel padding with no empty bottom strip at '+width+': '+JSON.stringify(comp.bottomSpacing));
     assert.ok(Math.abs(comp.name.left-comp.copy.left)<2&&Math.abs(comp.tier.left-comp.copy.left)<2,
      'name and tier skeletons begin exactly where hydrated league text begins');
     const centerX=r=>(r.left+r.right)/2;

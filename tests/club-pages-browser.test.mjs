@@ -899,12 +899,21 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      // runtime pending row reserves the same slots as hydrated values.
      const competitionGridProbe=await run(`(()=>{
       const list=document.querySelector('.club-competition-list'),first=list.querySelector('.club-competition-entry');
+      const bottomGap=()=>{
+       const panel=list.closest('.club-competition'),last=list.lastElementChild;
+       const style=getComputedStyle(panel),box=panel.getBoundingClientRect(),row=last.getBoundingClientRect();
+       return {actual:box.bottom-row.bottom,
+        expected:parseFloat(style.paddingBottom)+parseFloat(style.borderBottomWidth),
+        minHeight:style.minHeight};
+      };
+      const singleBottomGap=bottomGap();
       const second=first.cloneNode(true);
       second.querySelector('.club-competition-name').textContent='Sovereign International Championship — Group B';
       second.querySelector('.club-competition-tier').textContent='International';
       second.querySelector('[data-club-position]').textContent='1st';
       second.querySelector('.club-competition-next-content').innerHTML='<a class="app-link"><span class="club-competition-match-name">IJhaven Amsterdam – RC de Gironde</span></a><small>Matchday 3</small>';
       list.append(second);
+      const doubleBottomGap=bottomGap();
       const pos=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),b=row.getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height}};
       const measure=row=>{
        const a=pos(row,'.club-competition-metrics dt'),b=pos(row,'.club-competition-metrics dd');
@@ -938,8 +947,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const roundLine=parseFloat(getComputedStyle(first.querySelector('.club-competition-next small')).lineHeight);
       const lineDeltas=[Math.abs(fixture.h-fixtureLine),Math.abs(round.h-roundLine),Math.abs(round.y-fixture.y-fixture.h-3)];
       skeletonList.remove();second.remove();
-      return {rows,parity,barOffset,lineDeltas};
+      return {rows,parity,barOffset,lineDeltas,singleBottomGap,doubleBottomGap};
      })()`);
+     assert.ok([competitionGridProbe.singleBottomGap,competitionGridProbe.doubleBottomGap]
+      .every(({actual,expected,minHeight})=>minHeight==='0px'&&Math.abs(actual-expected)<1.5),
+      'One or two competitions must end at the normal panel bottom padding, never a minimum-height strip at '+width+': '+JSON.stringify(competitionGridProbe));
      assert.ok(competitionGridProbe.rows.every(row=>row.labelDelta<1.5&&row.valueDelta<8&&row.centerDelta<1.5&&row.nextDelta<1.5)
       &&Math.abs(competitionGridProbe.rows[0].x1-competitionGridProbe.rows[1].x1)<1.5
       &&Math.abs(competitionGridProbe.rows[0].x2-competitionGridProbe.rows[1].x2)<1.5

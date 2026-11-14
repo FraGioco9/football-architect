@@ -26,6 +26,17 @@ test('Club Competitions reuse one semantic row for hydrated, runtime pending and
   'shared renderer plus pending placeholder are the only runtime entry definitions');
 });
 
+test('A single Competitions row determines panel height for both first paint and hydrated pages',()=>{
+ const panelRule=css.match(/\.club-overview-layout>\.club-competition\{([^}]*)\}/)?.[1];
+ assert.ok(panelRule,'Overview Competitions panel has one scoped sizing rule');
+ assert.match(panelRule,/min-height:0;/,'no inherited 160px minimum may create a bottom strip');
+ assert.match(panelRule,/padding:12px 18px;/,'existing horizontal/vertical panel padding is unchanged');
+ assert.match(css,/\.club-first-paint-panel\{min-height:160px;/,
+  'other first-paint panels retain their reserved height');
+ assert.match(firstPaint,/class="app-panel club-competition club-first-paint-panel"/,
+  'first paint uses the exact same scoped panel sizing');
+});
+
 test('Club Competitions define a single three-column entry and shared label/value tracks',()=>{
  assert.match(css,/container:club-competition-panel\s*\/\s*inline-size/);
  assert.match(css,/\.club-competition-list \.club-competition-entry\{[\s\S]*?grid-template-columns:minmax\(180px,1fr\) minmax\(205px,220px\) minmax\(0,340px\)/);
