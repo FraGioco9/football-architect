@@ -224,7 +224,15 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
    pass,carry,eligibleFrames,baselineSupportFrames,
    baselineDutyConflicts,retained,firstEligible,firstConflict,shotCount
   }));
-  assert.ok(retained>0,'source-qualified attacking forward must retain duty');
+  // This ordinary-formation AWAY replay is a negative/parity control:
+  // a real PASS and later CARRY authorize 148 support frames, but none
+  // collides with the selected presser. No change is expected from C2-a
+  // when its narrowly scoped precondition never occurs.
+  assert.ok(eligibleFrames>0,'genuine post-carry support must be exercised');
+  assert.equal(baselineDutyConflicts,0,
+   'this baseline replay must not contain a lost support duty');
+  assert.equal(retained,0,
+   'continuity opt-in must not change an already healthy handoff');
   const [a,b]=worlds.slice(1).map(w=>w.reset());
   try{
    assert.equal(a.snapshot().autonomousCarryAttackContinuityMode,true);
