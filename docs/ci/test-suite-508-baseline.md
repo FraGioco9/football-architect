@@ -200,3 +200,22 @@ No public product code changed as part of A9 beyond *carrying forward main's alr
 **A10 correction:** Capture the approved closed-season test-D1 snapshot **once** after `beforeAll` and restore that snapshot in each `beforeEach` using the project's existing `fixtures/test-world.ts` utility, matching `season-two-persistence-runtime.test.ts`. Restore the legacy player↔operator bridge explicitly because `clearTestWorld` deletes it. Both original tests and all HTTP security, Origin, CSRF, idempotency, Season 1 history retention, Season 2 full activation and closure assertions remain. **No additional 56-day replay**, no shared mutable source state, no production code, migration or CI gate change. Snapshot restoration may add setup time; benchmark new exact-head CI instead of claiming a speedup.
 
 **Scope still open:** A11 should classify other costly setups by whether their mutation and rollback boundaries are meaningfully distinct before consolidating more test scenarios.
+
+## Batch A11 — classify lifecycle setup and order-dependency candidates (2026-11-14)
+
+**A10 exact-head evidence** (`5587d2c1289f1d8b0f146ea8bb6059edcfccbea1`): Worker/D1 Vitest **305/305 PASS across 48 files**, including both independent Season 2 activation cases after snapshot restoration. Overall Vitest **77.69 s** (A9 149.60 s); the change in runner/import time and parallel scheduling prevents attributing this whole-job difference to snapshot isolation. The Season 2 activation file was **30.699 s** (A9 50.704 s), and the previously consolidated admin calendar bridge was **9.357 s** (A9 15.778 s). Those are observations from two unpaired CI jobs, not statistically established speedups. A10 **all required exact-head workflows PASS**: Site, Chromium/WebKit Browser QA, Admin Worker/D1 and Account UI, FULL evidence gate, first names, surnames and Player Generator. Preview packaging was skipped by design; no deployment.
+
+**A11 classification refinement:** `tools/test-suite-508-inventory.mjs` now reports a distinct `lifecycleReview` queue in `--json`. It separates **explicit 56-day loops**, total sporting replay call sites, `beforeAll` and `beforeEach` hook call counts, and calls to `restoreTestWorld`/`clearTestWorld` within each Worker source file. This is a read-only, cross-suite discovery aid: lexical signals do **not** establish how often a path runs, root cause of order dependence, duplication, speed or coverage. Existing ownership mapping/strict drift validation remains; no test, gate, fixture, runtime or scheduler is changed.
+
+**Manual review decision and retention map:**
+
+| Worker source | Setup / lifecycle shape | Contract that remains independently protected | A11 action |
+| --- | --- | --- | --- |
+| `admin-calendar-bridge-runtime.test.ts` | One complete 56-day replay after A9 | Separate administrative staging, sporting boundary, immutable archive, HTTP permission and season closure | Retain |
+| `season-two-persistence-runtime.test.ts` | One completed Season 1 in `beforeAll` plus real Season 2 scenarios; durable baseline restored before each case | Frozen source receipts, source archival, concurrency, rollback and source authorization | Retain |
+| `season-two-activation-runtime.test.ts` | One completed/approved Season 1 in `beforeAll`; A10 now restores the baseline in `beforeEach`; Season 2 progresses via public HTTP | Authentication/Origin/CSRF, actual route, preserved Season 1 history and Season 2 closure | Retain |
+| `lifecycle-command-runtime.test.ts` | Dedicated lifecycle, phase boundary and failure-injection cases | Idempotency, forged receipts, corruption/rollback, concurrency, knockout generation | Retain |
+| `season-two-authority-runtime.test.ts` | One actual Season 1 closure within one test | Approved authority rejection/immutability, provisional Season 2 scheduling with unchanged active world | Retain |
+| `public-sporting-runtime.test.ts` | Read-only public endpoints at different real world states; A5 consolidated overlapping day-13 projections | No future score leakage, historical visibility, corrupted-source rejection, reset/generation isolation | Retain |
+
+This is a **bounded classification**, not certification of all 300+ owned files. Continue feature-level classification of Node, browser and Match Engine suites before closing inventory or equivalence checkboxes. Additional full-season replay deletion requires an independently proven surviving behavior path; do not deduplicate across different security/transaction boundaries.

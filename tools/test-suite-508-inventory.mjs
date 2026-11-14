@@ -29,7 +29,14 @@ const riskPatterns={
  disabledOrFocused:/\b(?:test|it|describe)\.(?:skip|only|todo)\s*\(/g,
  sportingReplays:/\b(?:await\s+through\s*\(\s*\d+|await\s+executeLifecycle\s*\(|await\s+generateSeasonCalendar\s*\()/g,
  d1Rebuilds:/\b(?:applyD1Migrations|clearTestWorld|restoreTestWorld)\s*\(/g,
- explicitWaits:/\b(?:waitForTimeout|setTimeout)\s*\(/g
+ explicitWaits:/\b(?:waitForTimeout|setTimeout)\s*\(/g,
+ // Cost/reproducibility signals. Report loops and setup scope separately:
+ // one full-season replay in beforeAll is different from one per test case.
+ fullSeasonLoops:/\bwhile\s*\(\s*[A-Za-z_$][\w$]*\.day\s*<\s*56\s*\)/g,
+ beforeAllHooks:/\bbeforeAll\s*\(/g,
+ beforeEachHooks:/\bbeforeEach\s*\(/g,
+ testWorldRestores:/\brestoreTestWorld\s*\(/g,
+ testWorldClears:/\bclearTestWorld\s*\(/g
 };
 const rows=[...tracked.map(path=>({path,owner:manifest.tests[path]})),
  ...engine.map(path=>({path,owner:path.includes('browser')?'match-engine-browser':'match-engine-node'}))]
@@ -54,19 +61,31 @@ const replayReview=rows.filter(row=>row.flags.sportingReplays>0)
 const disabledReview=rows.filter(row=>row.flags.disabledOrFocused>0)
  .map(({path,owner,flags})=>({path,owner,count:flags.disabledOrFocused}))
  .sort((a,b)=>a.path.localeCompare(b.path));
+// A lifecycle/rollback suite may legitimately be expensive. This separate
+// review queue exposes setup/isolation signals without conflating source calls
+// with executed test counts, timing, or duplication.
+const lifecycleReview=rows.filter(row=>row.owner==='backend-runtime'&&
+ (row.flags.fullSeasonLoops>0||row.flags.sportingReplays>0||row.flags.testWorldRestores>0))
+ .map(({path,staticTestCalls,flags})=>({path,staticTestCalls,
+  fullSeasonLoops:flags.fullSeasonLoops,
+  sportingReplays:flags.sportingReplays,
+  beforeAllHooks:flags.beforeAllHooks,beforeEachHooks:flags.beforeEachHooks,
+  testWorldRestores:flags.testWorldRestores,testWorldClears:flags.testWorldClears}))
+ .sort((a,b)=>b.fullSeasonLoops-a.fullSeasonLoops||
+  b.sportingReplays-a.sportingReplays||a.path.localeCompare(b.path));
 const report={scope:'TEST-SUITE-01 static inventory; signals require human review',
  scannedFiles:rows.length,ownedFiles:tracked.length,matchEngineFiles:engine.length,
  byOwner:Object.fromEntries(Object.entries(byOwner).sort(([a],[b])=>a.localeCompare(b))),
  staticTestCalls:rows.reduce((n,row)=>n+row.staticTestCalls,0),
  staticAssertCalls:rows.reduce((n,row)=>n+row.staticAssertCalls,0),
  candidateFiles:candidates.length,candidates,
- replayReview,disabledReview,rows};
+ replayReview,lifecycleReview,disabledReview,rows};
 if(process.argv.includes('--json'))process.stdout.write(JSON.stringify(report,null,2)+'\n');
 else {
  console.log('TEST-SUITE-01: '+report.scannedFiles+' source files ('+report.ownedFiles+' ownership-tracked, '+report.matchEngineFiles+' Match Engine).');
  console.log('Owner groups:',JSON.stringify(report.byOwner));
  console.log('Static calls (not executed test/coverage counts): '+report.staticTestCalls+' test/it, '+report.staticAssertCalls+' assert.');
  console.log(report.candidateFiles+' files contain a canonical club name or fixed club ID: review candidates, not defects.');
- console.log(report.replayReview.length+' files contain explicit sporting replay/setup signals; '+report.disabledReview.length+' files contain skip/only/todo markers (check context before acting).');
- console.log('Use --json for source-file details, replay review queue and evidence.');
+ console.log(report.replayReview.length+' files contain explicit sporting replay/setup signals; '+report.lifecycleReview.length+' Worker files merit lifecycle/setup review; '+report.disabledReview.length+' files contain skip/only/todo markers.');
+ console.log('Use --json for source-file details, replay/setup/isolation review queues and evidence.');
 }
