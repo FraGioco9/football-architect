@@ -150,6 +150,14 @@
   pager.append(loadMore,counter,progress);scroll.after(pager);
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
   let loadedThrough=state.page,appendPending=false,appendError='';
+  // Only the starting page is a permalink. No player data enters history state.
+  const navigationType=performance.getEntriesByType?.('navigation')?.[0]?.type;
+  const savedReturn=history.state?.faPlayersReturn;
+  let pendingReturn=navigationType==='back_forward'&&savedReturn?.source===location.pathname+location.search&&
+   savedReturn.startPage===state.page&&Number.isSafeInteger(savedReturn.loadedThrough)&&
+   savedReturn.loadedThrough>=state.page&&savedReturn.loadedThrough<=state.page+4&&
+   Number.isSafeInteger(savedReturn.playerId)&&savedReturn.playerId>0&&
+   Number.isFinite(savedReturn.scrollTop)&&savedReturn.scrollTop>=0?savedReturn:null;
   const cols=()=>state.view==='attributes'?3+groups[state.group].length:6;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
@@ -428,6 +436,7 @@
     loadMore.hidden=false;loadMore.disabled=false;
     loadMore.textContent=appendError==='stale'?t.restart:t.retry;
     progress.textContent=appendError==='stale'?t.changed:t.loadError;
+    counter.textContent=loaded+' · '+progress.textContent;
    }else if(loadedThrough>=current.totalPages){
     loadMore.hidden=true;loadMore.disabled=true;progress.textContent=t.end;
     counter.textContent=t.end+' · '+loaded;
@@ -471,7 +480,28 @@
    try{
     const data=await fetchBatch(page);
     if(seq!==ticket)return;
-    current=data;status='ready';paint(data);scroll.style.minHeight='';
+    // Back from a player detail may create a new document (BFCache miss).
+    // Replay a bounded number of segments before painting, then restore focus/scroll.
+    const hint=pendingReturn;pendingReturn=null;
+    let restoredPage=page,players=data.players;
+    if(hint&&hint.loadedThrough>page){
+     const seen=new Set(players.map(player=>player.id));
+     for(let nextPage=page+1;nextPage<=hint.loadedThrough&&nextPage<=data.totalPages;nextPage++){
+      let batch;
+      try{batch=await fetchBatch(nextPage)}catch{break}
+      if(seq!==ticket)return;
+      if(batch.count!==data.count||batch.totalPages!==data.totalPages||batch.pageSize!==data.pageSize||
+         batch.players.length===0||batch.players.some(player=>seen.has(player.id)))break;
+      players=players.concat(batch.players);restoredPage=nextPage;
+      for(const player of batch.players)seen.add(player.id);
+     }
+    }
+    current={...data,players};loadedThrough=restoredPage;status='ready';paint(current);scroll.style.minHeight='';
+    if(hint&&restoredPage===hint.loadedThrough){
+     const pane=document.querySelector('.fa-shell-content-scroll');
+     if(pane)pane.scrollTop=hint.scrollTop;
+     body.querySelector('a.app-player-name-link[href="/players/'+hint.playerId+'"]')?.focus({preventScroll:true});
+    }
    }catch{
     if(seq===ticket){status='error';message(locale().error);renderProgress();scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
    }
@@ -819,6 +849,20 @@
   table.tHead.addEventListener('click',event=>{
    const key=event.target.closest?.('[data-players-sort]')?.dataset.playersSort;
    cycleSort(key);
+  });
+  // BFCache keeps the live list on Back. On a cold history return, store only
+  // bounded progress/position metadata and re-fetch segments (no private data).
+  body.addEventListener('click',event=>{
+   const link=event.target.closest?.('a.app-player-name-link');
+   if(!link||!body.contains(link)||!current)return;
+   const playerId=Number(link.getAttribute('href')?.split('/').pop());
+   if(!Number.isSafeInteger(playerId)||playerId<1)return;
+   const pane=document.querySelector('.fa-shell-content-scroll');
+   const base=history.state&&typeof history.state==='object'&&!Array.isArray(history.state)?history.state:{};
+   history.replaceState({...base,faPlayersReturn:{
+    source:location.pathname+location.search,startPage:state.page,loadedThrough,
+    scrollTop:pane?.scrollTop||0,playerId
+   }},'',location.href);
   });
   loadMore.addEventListener('click',()=>{
    if(!current){if(status==='error')load(state.page);return;}

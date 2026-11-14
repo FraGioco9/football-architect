@@ -687,6 +687,9 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/pageSize!==50/);
  assert.match(js,/async function appendNext\(\)/);
  assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
+ assert.match(js,/history\.replaceState\(\{\.\.\.base,faPlayersReturn:/,'store only position metadata for browser Back');
+ assert.match(js,/navigationType==='back_forward'/,'restore only on cold history traversal');
+ assert.match(js,/body\.querySelector\('a\.app-player-name-link\[href="\/players\/ '\+hint\.playerId/,'return focus to the player link');
  assert.match(js,/if\(!current\|\|appendPending\|\|appendError==='stale'\|\|loadedThrough>=current\.totalPages\)return/);
  assert.match(js,/if\(seq!==ticket\)return/,'ignore stale append responses');
  assert.match(js,/data\.players\.some\(player=>seen\.has\(player\.id\)\)/,'detect shifted OFFSET duplicates');
