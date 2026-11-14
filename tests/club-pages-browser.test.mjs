@@ -554,12 +554,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
        assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
-       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-14)<=1,
-        'mobile History starts 14px below the view separator at '+width+': '+JSON.stringify(initial));
-       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-14)<=1,
-        'first season row starts 14px after the separator at '+width+': '+JSON.stringify(initial));
-       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-14)<=1,
-        'pre-insertion first-paint History skeleton row is 14px below the separator at '+width+': '+firstPaintGapBefore);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-8)<=1,
+        'mobile History starts 8px below the view separator at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-8)<=1,
+        'first season row starts 8px after the separator at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore-8)<=1,
+        'pre-insertion first-paint History skeleton row is 8px below the separator at '+width+': '+firstPaintGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
