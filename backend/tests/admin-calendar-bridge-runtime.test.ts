@@ -103,14 +103,16 @@ it('moves the independent international draw to day four and publication to day 
  expect(world.day).toBe(6);
 });
 
-it('continues all sporting days through day 56 after staged administrative setup',async()=>{
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
- world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
+it('replays all 56 sporting days, then closes and archives exactly one verified season',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
  const final=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='int-1' AND phase_id='final' LIMIT 1").first();
  expect(final).toBeTruthy();
  expect(await readPublicMatch(db,final.match_id)).toMatchObject({status:'awaiting_participants',result:null});
- world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
+ // This single replay covers both the unclosed day-56 sporting boundary
+ // and subsequent immutable archive/closure. Keep the original invariants.
  expect(world).toMatchObject({day:56,phase:'active'});
  const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
@@ -121,13 +123,6 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(completed.homeParticipant?.clubId).toBeTruthy();
  expect(completed.awayParticipant?.clubId).toBeTruthy();
  expect(completed.result).toBeTruthy();
-},120000);
-
-it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
- world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
- world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
  world=(await archiveSeason(db,session,meta(),'bridge-archive-once-00001',now)).world;
  const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
  expect(saved.world).toMatchObject({day:56,phase:'closed'});
@@ -161,7 +156,6 @@ it('closes and archives exactly one fully verified season and replays the same c
  await expect(closeSeason(db,session,command,'bridge-close-twice-00001',replayNow)).rejects.toMatchObject({status:409});
  await expect(db.prepare("UPDATE season_archives SET results_count=1").run()).rejects.toThrow();
 },120000);
-
 
 it('resets a staged V2 draw and republishes both scopes with new-generation match IDs',async()=>{
  // beforeEach has already prepared Season 1 and officially staged its domestic draw on day 2.

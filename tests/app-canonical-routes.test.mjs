@@ -22,6 +22,15 @@ test('canonical navigation has no /app prefix and all app routes load with asset
         if(url.origin==='http://127.0.0.1:2000')assert.equal((await get(url.pathname)).status,200,url.pathname);
       }
     }
+    // Reject all retired /app aliases through the same canonical DEV HTTP server.
+    // Its successful canonical pages are already checked with asset loading above;
+    // only these additional canonical routes were unique to the old second test.
+    for(const path of ['/app','/app/','/app/index.html','/app/dashboard',
+      '/app/calendar/','/app/settings/index.html','/app/competitions',
+      '/app/competitions/it-1'])
+      assert.equal((await get(path)).status,404,path);
+    for(const path of ['/','/competitions/it-1/standings'])
+      assert.equal((await get(path)).status,200,path);
     assert.ok(read('index.html').includes('href="/dashboard"'));
     assert.equal(existsSync(new URL('../app/index.html',import.meta.url)),false);
   } finally {await new Promise(resolve=>server.close(resolve));}
@@ -60,21 +69,6 @@ test('canonical pages and public artifacts have no physical app directory or leg
     assert.equal(isAllowlistedPublicPath(publicRequestFile('/app'+path)),false);
   }
   assert.doesNotMatch(read('vercel.json'),/\/app(?:\/|["'])/);
-});
-
-test('DEV rejects removed app paths while canonical routes still load', async () => {
-  const server=createPreviewServer();server.listen(0,'127.0.0.1');await once(server,'listening');
-  const get=path=>new Promise((resolve,reject)=>{
-    const req=request({host:'127.0.0.1',port:server.address().port,path,headers:{host:'127.0.0.1:2000'}},res=>{
-      res.resume();res.on('end',()=>resolve(res.statusCode));
-    });req.on('error',reject);req.end();
-  });
-  try {
-    for(const path of ['/app','/app/','/app/index.html','/app/dashboard','/app/calendar/','/app/settings/index.html','/app/competitions','/app/competitions/it-1'])
-      assert.equal(await get(path),404,path);
-    for(const path of ['/','/dashboard','/calendar','/settings','/admin','/admin/calendar','/admin/players','/admin/contracts','/competitions','/players','/competitions/it-1/standings'])
-      assert.equal(await get(path),200,path);
-  } finally {await new Promise(resolve=>server.close(resolve));}
 });
 
 test('404: localized error is a real HTTP error, with one Dashboard link and no asset masking',async()=>{

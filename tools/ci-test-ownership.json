@@ -206,7 +206,6 @@
     "tests/club-fixtures-source.test.mjs": "site-node",
     "tests/club-history-mobile.test.mjs": "site-node",
     "tests/club-history-source.test.mjs": "site-node",
-    "tests/club-identity-trafford.test.mjs": "site-node",
     "tests/club-pages-browser.test.mjs": "site-node",
     "tests/club-pages.test.mjs": "site-node",
     "tests/club-public-read-cache.test.mjs": "site-node",

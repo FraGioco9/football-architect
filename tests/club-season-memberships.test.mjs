@@ -15,10 +15,20 @@ function payload(memberships=[entry('IT-1'),entry('int-1','international')]){
    sourceRef:'club:'+world.generation+':season:2:verified'},
   data:{season:2,memberships}};
 }
-test('QA-16: possible membership IDs are bounded but fetched in one club summary',()=>{
- assert.deepEqual(competitionIdsForClub('IT-17'),['IT-1','IT-2','int-1','int-2']);
- assert.deepEqual(competitionIdsForClub('ENG-40'),['ENG-1','ENG-2','int-1','int-2']);
- assert.throws(()=>competitionIdsForClub('IT-0'),/Invalid club/);
+test('QA-16: all canonical clubs only accept their national divisions and international cups',()=>{
+ const clubs=JSON.parse(read('clubs/_shared/manifest.json')).clubs;
+ assert.equal(clubs.length,320);
+ const nations=new Set();
+ for(const club of clubs){
+  const key=club.countryId+'-'+club.clubId;
+  nations.add(club.countryId);
+  const result=competitionIdsForClub(key);
+  assert.deepEqual(result,[club.countryId+'-1',club.countryId+'-2','int-1','int-2'],key);
+  assert.ok(Object.isFrozen(result),key+' candidates are immutable');
+ }
+ assert.equal(nations.size,8);
+ for(const invalid of ['IT-0','IT-41','IT-01','XX-1','int-1','it-1','IT-1/','',null])
+  assert.throws(()=>competitionIdsForClub(invalid),/Invalid club/,String(invalid));
 });
 test('QA-16: promoted club has current domestic and international competition in compact rows',async()=>{
  const projection=projectClubMemberships(payload(),'IT-17',2,world);
