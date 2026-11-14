@@ -253,38 +253,24 @@ test('#574 repeated overflow checks and resize do not lose +N',async()=>{
  assert.equal(more.textContent,'+2');
 });
 
-test('#574 mobile Player names center vertically without depending on underline',()=>{
+test('#574 Player names remain left-aligned and vertically centered on both breakpoints',()=>{
  const docCss=read('assets/app.css');
- assert.match(docCss,/\.app-players-table tbody td:nth-child\(2\)\{text-align:center;font-weight:650;vertical-align:middle;line-height:18px\}/);
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0 auto;padding:0;line-height:18px;text-align:center;transform:translateY\(\.5px\)\}/,'both mobile and desktop center the intrinsic name link horizontally and vertically');
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/,'short-name glyphs share stable 18px line box');
- assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/,'underline stays outside layout');
- assert.doesNotMatch(docCss,/\.app-player-name-link:hover\{text-decoration:underline/);
+ assert.match(docCss,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;text-align:left\}/);
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/);
+ assert.match(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/);
+ assert.doesNotMatch(docCss,/\.app-players-table tbody tr:last-child td:nth-child\(2\) :is\(\.app-player-name-link,\.club-roster-player-link\)\{transform:/);
+ assert.doesNotMatch(docCss,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*transform:/);
 });
 
-
-test('#574 desktop and mobile Player text center on the row midpoint without moving underline',()=>{
- const links=(css.match(/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]+\}/g)||[]).filter(rule=>rule.includes('height:18px'));
- assert.equal(links.length,1,'one cross-breakpoint fixed-height link rule, no mobile override');
- assert.match(links[0],/display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0 auto;padding:0;line-height:18px;text-align:center;transform:translateY\(\.5px\)/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
- assert.match(css,/\.app-players-table th,\.app-players-table td\{box-sizing:border-box;[^}]*border-bottom:1px solid var\(--line\);vertical-align:middle/);
- assert.match(css,/\.app-players-table tbody tr:last-child td\{border-bottom:0\}/);
- assert.match(css,/\.app-players-table tbody tr:last-child td:nth-child\(2\) :is\(\.app-player-name-link,\.club-roster-player-link\)\{transform:none\}/,'last row without border needs no vertical correction');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/,'underline remains out of flow');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);display:block;font-size:14px;line-height:18px;white-space:nowrap\}/,'mobile label preserves intrinsic line-height');
-});
-
-
-test('#574 Player names are truly horizontally centered at mobile and desktop widths',()=>{
+test('#574 name vertical alignment does not depend on a row border or underline',()=>{
  const css=read('assets/app.css');
- assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:center;font-weight:650;vertical-align:middle;line-height:18px\}/);
- const rule=css.match(/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;[^}]+\}/)?.[0];
- assert.ok(rule,'shared Player link must exist outside media queries');
- assert.match(rule,/justify-content:center/);
- assert.match(rule,/width:max-content;max-width:100%;height:18px/);
- assert.match(rule,/margin:0 auto;padding:0/,'link itself is centered independently of its underline');
- assert.match(rule,/text-align:center/);
+ const rules=(css.match(/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]+\}/g)||[]).filter(rule=>rule.includes('height:18px'));
+ assert.equal(rules.length,1,'one shared fixed-height rule for mobile and desktop');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table tbody tr:last-child td\{border-bottom:0\}/);
+ assert.match(css,/\.app-players-table th,\.app-players-table td\{box-sizing:border-box;[^}]*border-bottom:1px solid var\(--line\);vertical-align:middle/);
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{content:"";position:absolute;inset-inline:0;bottom:0;height:1px/);
- assert.match(css,/\.app-players-table tbody tr:last-child td:nth-child\(2\) :is\(\.app-player-name-link,\.club-roster-player-link\)\{transform:none\}/);
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*margin:0 auto/,'no horizontal centering');
+ assert.doesNotMatch(css,/\.app-player-name-link:hover\{text-decoration:underline/);
 });
