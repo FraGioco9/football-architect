@@ -69,11 +69,11 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',loadingMore:'Loading...',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',club:'Club',freeAgent:'Free Agent',columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',loadingMore:'Caricamento...',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',club:'Club',freeAgent:'Svincolato',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',loadingMore:'Lädt...',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',club:'Verein',freeAgent:'Vereinslos',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',loadingMore:'Cargando...',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',club:'Club',freeAgent:'Agente libre',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',loadingMore:'Chargement...',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',club:'Club',freeAgent:'Sans club',columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',loadingMore:'Loading...',appendLoading:'Loading more players…',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',club:'Club',freeAgent:'Free Agent',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',loadingMore:'Caricamento...',appendLoading:'Caricamento di altri giocatori…',moreLoaded:'Nuovi giocatori: {count}. Visualizzati: {loaded} su {total}.',allLoaded:'Tutti i giocatori caricati',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',club:'Club',freeAgent:'Svincolato',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',loadingMore:'Lädt...',appendLoading:'Weitere Spieler werden geladen…',moreLoaded:'Weitere Spieler: {count}. Angezeigt: {loaded} von {total}.',allLoaded:'Alle Spieler geladen',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',club:'Verein',freeAgent:'Vereinslos',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',loadingMore:'Cargando...',appendLoading:'Cargando más jugadores…',moreLoaded:'Jugadores añadidos: {count}. Mostrados: {loaded} de {total}.',allLoaded:'Todos los jugadores cargados',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',club:'Club',freeAgent:'Agente libre',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',loadingMore:'Chargement...',appendLoading:'Chargement de joueurs supplémentaires…',moreLoaded:'Joueurs ajoutés : {count}. Affichés : {loaded} sur {total}.',allLoaded:'Tous les joueurs chargés',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',club:'Club',freeAgent:'Sans club',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
@@ -152,6 +152,12 @@
   pager.append(loadMore);scroll.after(pager);
   const sentinel=document.createElement('span');sentinel.className='app-players-end-sentinel';
   sentinel.setAttribute('aria-hidden','true');pager.after(sentinel);
+  // Persistent, nonvisual live status: remains accessible when the pager hides at EOF.
+  const appendStatus=document.createElement('span');appendStatus.className='sr-only';
+  appendStatus.dataset.playersAppendStatus='';
+  appendStatus.setAttribute('role','status');appendStatus.setAttribute('aria-live','polite');
+  appendStatus.setAttribute('aria-atomic','true');sentinel.after(appendStatus);
+  const announceAppend=copy=>{appendStatus.textContent=copy;};
   const scrollPane=document.querySelector('.fa-shell-content-scroll');
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
   let loadedThrough=state.page,appendPending=false,appendError='';
@@ -513,7 +519,7 @@
   }
   async function load(page){
    const seq=++ticket;state.page=page;loadedThrough=page;current=null;status='loading';
-   appendPending=false;appendError='';
+   announceAppend('');appendPending=false;appendError='';
    if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
    // No preserved height: replacing many loaded rows with five placeholders must
    // also collapse the table viewport immediately on a sort/filter refresh.
@@ -555,7 +561,9 @@
    const seq=ticket,nextPage=loadedThrough+1;
    const oldCount=current.count,oldTotalPages=current.totalPages,oldPageSize=current.pageSize;
    const seen=new Set(current.players.map(player=>player.id));
-   appendPending=true;appendError='';renderProgress();
+   // Disabling a keyboard-activated fallback must not discard keyboard focus.
+   if(document.activeElement===loadMore)scroll.focus({preventScroll:true});
+   appendPending=true;appendError='';renderProgress();announceAppend(locale().appendLoading);
    try{
     const data=await fetchBatch(nextPage);
     if(seq!==ticket)return; // A filter, sort, page or world refresh superseded this request.
@@ -566,10 +574,20 @@
     current.players.push(...data.players);loadedThrough=nextPage;
     body.append(playerRows(data.players)); // Append, never rebuild the scrolled table.
     hydrateClubCrests();
+    const format=new Intl.NumberFormat(language()||'en');
+    const statusCopy=locale().moreLoaded
+     .replace('{count}',format.format(data.players.length))
+     .replace('{loaded}',format.format(current.players.length))
+     .replace('{total}',format.format(current.count));
+    announceAppend(loadedThrough>=current.totalPages?statusCopy+' '+locale().allLoaded:statusCopy);
    }catch(error){
     if(seq===ticket)appendError=error?.message==='stale_world'?'stale':'network';
    }finally{
-    if(seq===ticket){appendPending=false;renderProgress();if(typeof requestAnimationFrame==='function')requestAnimationFrame(maybeLoadOnScroll);}
+    if(seq===ticket){
+     appendPending=false;renderProgress();
+     if(appendError)announceAppend(appendError==='stale'?locale().changed:locale().loadError);
+     if(typeof requestAnimationFrame==='function')requestAnimationFrame(maybeLoadOnScroll);
+    }
    }
   }
   function changeView(view){

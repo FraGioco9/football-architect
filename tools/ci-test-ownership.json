@@ -274,6 +274,7 @@
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/players-name-pools.test.mjs": "site-node",
     "tests/players-names-catalog.test.mjs": "site-node",
+    "tests/players-scroll-browser-532.mjs": "support",
     "tests/players-responsive-layout-532.test.mjs": "site-node",
     "tests/players-secondary-frequency-audit.test.mjs": "site-node",
     "tests/players-suitability-v2.test.mjs": "site-node",
