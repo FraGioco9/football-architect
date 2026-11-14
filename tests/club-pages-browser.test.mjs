@@ -518,14 +518,16 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>'+
         '<thead><tr><th>Season</th><th>Competition</th><th>Position</th>'+
          ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
-        '<tbody><tr class="club-history-season-row" data-club-history-summary="777">'+
-         '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
+        '<tbody><tr class="club-history-season-row" data-club-history-summary="777-${width}">'+
+         '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777-${width}" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
          '<td class="club-history-total-label">Total</td><td></td>'+
          ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
-        '<tr class="club-history-competition-row" data-club-history-detail="777" hidden>'+
+        '<tr class="club-history-competition-row" data-club-history-detail="777-${width}" hidden>'+
          '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
          '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
          ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+       // Give each viewport an independent synthetic season key: the real
+       // controller retains expanded seasons across viewport changes.
        // Put the synthetic table at the first content position, matching a
        // verified History section rather than after any unavailable notice.
        document.querySelector('.club-history').prepend(wrap);
