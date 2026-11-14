@@ -470,9 +470,10 @@ body.app-body{--app-page-pad-top:8px}
    Headings remain available to assistive technology; the visible labels
    below share the exact locale abbreviations used by the original thead. */
 @media(max-width:620px){
- /* The first season row touches the view separator, including while the
-    anonymous first-paint History row is displayed. */
- .club-history{margin-top:0;min-width:0}
+ /* The club container reserves a 12px inter-item spacing above History;
+    offset that spacing on phones so the first season row touches the
+    separator both before and after hydration. Desktop remains unchanged. */
+ .club-history{margin-top:-12px;min-width:0}
  .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
  .club-history-table{
   --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";

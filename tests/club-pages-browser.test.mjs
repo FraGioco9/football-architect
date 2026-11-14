@@ -531,7 +531,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const section=document.querySelector('.club-history');
        return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
         separatorGap:tabs&&section?section.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
-        firstRowGap:tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        firstRowGap:tabs&&section?.querySelector('tbody > .club-history-season-row')?
+         section.querySelector('tbody > .club-history-season-row').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        firstPaintGap:tabs&&section?.querySelector('.club-history-row-loading')?
+         section.querySelector('.club-history-row-loading').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        parentLayout:section?{display:getComputedStyle(section.parentElement).display,gap:getComputedStyle(section.parentElement).rowGap,sectionMargin:getComputedStyle(section).marginTop,tabMargin:getComputedStyle(tabs).marginBottom}:null,
         tabBorder:tabs?getComputedStyle(tabs).borderBottomWidth:null,
         shellOverflow:document.documentElement.scrollWidth-innerWidth,
         label:getComputedStyle(stats[0],'::before').content,
@@ -546,7 +550,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
         'mobile History starts flush with the view separator at '+width+': '+JSON.stringify(initial));
        assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
-        'first club-history-season-row touches the view separator at '+width+': '+JSON.stringify(initial));
+        'the actual first club-history-season-row touches the view separator at '+width+': '+JSON.stringify(initial));
+       if(initial.firstPaintGap!==null)assert.ok(Math.abs(initial.firstPaintGap)<=1,
+        'first-paint History skeleton row also touches the separator at '+width+': '+JSON.stringify(initial));
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
