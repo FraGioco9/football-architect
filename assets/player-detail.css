@@ -32,7 +32,7 @@
 .app-player-detail-back:hover{text-decoration:underline;text-underline-offset:3px}
 .app-player-detail-back:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .app-player-detail-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;min-width:0;margin-top:12px;padding-bottom:4px}
-.app-player-detail-tabs .app-competition-tab{flex:0 0 var(--fa-tab-width-regular);width:var(--fa-tab-width-regular);min-width:var(--fa-tab-width-regular);max-width:var(--fa-tab-width-regular);white-space:nowrap}
+.app-player-detail-tabs .app-competition-tab{flex:0 0 116px;width:116px;min-width:116px;max-width:116px;white-space:nowrap}
 .app-player-detail-tabs .app-competition-tab.is-active{background:var(--surface-raised);color:var(--text)}
 .app-player-detail-tabs .app-competition-tab:disabled{opacity:.5;cursor:default}
 .app-player-detail-tabs .app-competition-tab:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
