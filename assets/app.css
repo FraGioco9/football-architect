@@ -373,7 +373,7 @@ html[data-theme="light"] .calendar-event--international{background:#EEE8F8;color
 .app-world-mobile-form [data-published-form]{cursor:pointer;touch-action:manipulation}
 
 /* Competition views share the same page and never fabricate data. */
-.app-competition-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
+.app-competition-tabs{--fa-tab-width-regular:100px;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;margin-top:var(--app-page-section-gap);padding:0 0 7px;border-bottom:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--border) transparent;overscroll-behavior-x:contain}
 .app-competition-tabs::-webkit-scrollbar{height:5px}
 .app-competition-tabs::-webkit-scrollbar-track{background:transparent}
 .app-competition-tab{flex:0 0 var(--fa-tab-width-regular);box-sizing:border-box;width:var(--fa-tab-width-regular);min-width:var(--fa-tab-width-regular);max-width:var(--fa-tab-width-regular);overflow:hidden;text-overflow:ellipsis;text-align:center;border:0;border-radius:8px;padding:10px 6px;min-height:40px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
@@ -421,7 +421,7 @@ html[data-competition-view="awards"] #competition-tab-awards{color:var(--text);b
 .app-rules-outcomes + p{margin-top:10px}
 @media(max-width:520px){.app-rules-content{gap:16px}.app-rules-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.app-rules-metric{padding:11px}.app-rules-metric dd{font-size:20px}.app-rules-section{padding-top:14px}.app-rules-outcome{gap:8px;padding:9px}}
 /* Scale the competition tabs as one group, regardless of translated label length. */
-@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(92px,calc((100% - 8px)/2.5))}.app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)}}
+@media(max-width:620px){.app-competition-tabs{--app-competition-tab-mobile-width:max(88px,calc((100% - 8px)/2.9))}.app-competition-tab{flex:0 0 var(--app-competition-tab-mobile-width);width:var(--app-competition-tab-mobile-width);min-width:var(--app-competition-tab-mobile-width);max-width:var(--app-competition-tab-mobile-width);min-height:34px;padding:7px 4px;font-size:clamp(10px,2.55vw,11px)}}
 
 
 /* A partial next tab and edge fades expose horizontal navigation on phones. */
@@ -1610,10 +1610,10 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 /* PLAYERS-505: same active-tab treatment as Standings, with an always-reserved toolbar.
  * Group tabs remain in flow while visually hidden in Overview, so the table never shifts. */
 .app-players-tabs{margin-top:var(--app-page-section-gap);min-height:40px}
-.app-players-tabs .app-competition-tab{position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 136px;width:136px;min-width:136px;max-width:136px;height:40px;min-height:40px;padding:7px 9px;font-size:12px;line-height:1.2;text-align:center;text-decoration:none;transition:background-color .18s ease,color .18s ease}
+.app-players-tabs .app-competition-tab{position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;flex:0 0 116px;width:116px;min-width:116px;max-width:116px;height:40px;min-height:40px;padding:7px 7px;font-size:12px;line-height:1.2;text-align:center;text-decoration:none;transition:background-color .18s ease,color .18s ease}
 .app-players-tabs .app-competition-tab:focus-visible,.app-players-group:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .app-players-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;height:44px;min-width:0;margin-top:0}
-.app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:34px;flex:1 1 auto;gap:8px;max-width:472px;min-width:0}
+.app-players-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:34px;flex:1 1 auto;gap:8px;max-width:424px;min-width:0}
 html:not([data-players-view="attributes"]) .app-players-groups{visibility:hidden;pointer-events:none}
 .app-players-group{box-sizing:border-box;flex:none;width:100%;min-width:0;max-width:none;height:34px;min-height:34px;padding:6px 5px;font-size:11px;white-space:normal;line-height:1.2;transition:background-color .18s ease,color .18s ease}
 .app-players-toolbar+.app-players-table-scroll{margin-top:0}
@@ -1628,7 +1628,7 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 .app-players-table[data-players-table-mode="attributes"] tbody td:nth-child(n+4){font-variant-numeric:tabular-nums}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
- .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
+ .app-players-tabs .app-competition-tab{flex:0 0 min(116px,calc((100% - 4px)/2));width:min(116px,calc((100% - 4px)/2));min-width:0;max-width:116px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
  /* Match the Club Roster mobile subviews: two complete buttons and a partial third,
     with the total count outside the horizontally scrollable strip. */
  .app-players-toolbar{height:44px;align-items:center;gap:8px}
@@ -1638,7 +1638,7 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
  .app-players-groups[data-can-scroll-left="true"]{--app-tabs-fade-left:16px}
  .app-players-groups[data-can-scroll-right="true"]{--app-tabs-fade-right:16px}
  .app-players-groups::-webkit-scrollbar{display:none}
- .app-players-group{flex:0 0 calc(40% - 3.2px);width:calc(40% - 3.2px);min-width:calc(40% - 3.2px);max-width:calc(40% - 3.2px);min-height:34px;height:34px;padding:5px 4px;font-size:clamp(10px,2.8vw,11px);white-space:nowrap}
+ .app-players-group{flex:0 0 calc(38% - 3.2px);width:calc(38% - 3.2px);min-width:calc(38% - 3.2px);max-width:calc(38% - 3.2px);min-height:34px;height:34px;padding:5px 4px;font-size:clamp(10px,2.8vw,11px);white-space:nowrap}
  .app-players-count{align-self:center;flex-basis:102px;min-width:102px;width:102px;margin-top:0;font-size:11px}
  .app-players-count-placeholder{flex-basis:86px;width:86px}
 }

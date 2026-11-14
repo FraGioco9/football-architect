@@ -94,7 +94,7 @@ test('Players attribute groups use one horizontally scrollable mobile strip and 
  assert.match(script,/groupBar\.dataset\.canScrollRight=String\(maximum>1&&groupBar\.scrollLeft<maximum-1\)/);
  assert.match(script,/groupBar\?\.addEventListener\('scroll',syncGroupTabEdges,\{passive:true\}\)/);
  assert.match(script,/window\.addEventListener\('resize',syncGroupTabEdges,\{passive:true\}\)/);
- assert.match(css,/\.app-players-group\{flex:0 0 calc\(40% - 3\.2px\);[^}]*min-height:34px;height:34px;[^}]*white-space:nowrap/,'groups keep one row and expose a partial third');
+ assert.match(css,/\.app-players-group\{flex:0 0 calc\(38% - 3\.2px\);[^}]*min-height:34px;height:34px;[^}]*white-space:nowrap/,'groups keep one row and expose a partial third');
  assert.match(html,/class="app-competition-tab app-players-group/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{/);
  for(const group of ['physical','technical','mental','goalkeeping'])
@@ -235,12 +235,31 @@ test('Players view and group slugs are explicit even for both default selections
  assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
  assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&page=2');
 });
+
+test('UI-VIEWS-01: shared main views and player subviews use compact widths with original label sizes',()=>{
+ const app=read('assets/app.css'),club=read('assets/club-page.css'),detail=read('assets/player-detail.css');
+ assert.match(app,/\.app-competition-tabs\{--fa-tab-width-regular:100px;display:flex/,'main competition and club view width token');
+ assert.match(app,/@media\(max-width:620px\)\{\.app-competition-tabs\{--app-competition-tab-mobile-width:max\(88px,calc\(\(100% - 8px\)\/2\.9\)\)\}/,'mobile view widths stay independent of translations');
+ assert.match(app,/\.app-competition-tab\{[^}]*font-size:12px/,'desktop main label size unchanged');
+ assert.match(app,/\.app-players-tabs \.app-competition-tab\{[^}]*width:116px;[^}]*height:40px;min-height:40px;[^}]*font-size:12px/);
+ assert.match(app,/\.app-players-group\{[^}]*height:34px;min-height:34px;[^}]*font-size:11px/);
+ assert.match(app,/\.app-players-group\{flex:0 0 calc\(38% - 3\.2px\);[^}]*height:34px;[^}]*white-space:nowrap/);
+ assert.match(app,/\.app-players-groups\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
+ assert.match(club,/\.club-tabs \.app-competition-tab\{[^}]*flex:0 0 var\(--fa-tab-width-regular\)/);
+ assert.match(club,/\.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*width:84px;[^}]*height:32px;min-height:32px;[^}]*font-size:11px/);
+ assert.match(club,/\.club-roster \.club-roster-tabs \.app-competition-tab\{flex:0 0 calc\(38% - 3\.2px\);[^}]*height:32px;min-height:32px/);
+ assert.match(club,/\.club-roster \.club-roster-tabs\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
+ assert.match(detail,/\.app-player-detail-tabs\{--fa-tab-width-regular:100px;display:flex/);
+ assert.match(detail,/\.app-player-detail-tabs\{--app-competition-tab-mobile-width:max\(88px,calc\(\(100% - 8px\)\/2\.9\)\)\}/);
+ assert.match(app,/\.app-competition-tab,.club-tabs \.app-competition-tab\{min-height:var\(--fa-control-height-regular\)\}/,'main mobile touch heights are preserved');
+});
+
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*flex:0 0 136px;width:136px;min-width:136px;max-width:136px;height:40px;min-height:40px/);
- assert.match(css,/\.app-players-groups\{[^}]*grid-auto-rows:34px;[^}]*max-width:472px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*flex:0 0 116px;width:116px;min-width:116px;max-width:116px;height:40px;min-height:40px/);
+ assert.match(css,/\.app-players-groups\{[^}]*grid-auto-rows:34px;[^}]*max-width:424px/);
  assert.match(css,/\.app-players-group\{[^}]*height:34px;min-height:34px/);
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(116px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
  assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center/,'mobile subview toolbar reserves one row');
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
@@ -349,10 +368,10 @@ test('Players main tabs are compact and centered; existing top margins alone are
  const css=read('assets/app.css'),html=read('players/index.html');
  assert.match(css,/\.app-players-tabs\{margin-top:var\(--app-page-section-gap\);min-height:40px\}/);
  assert.doesNotMatch(css,/\.app-players-tabs\{[^}]*padding-bottom:0/,'keep shared Standings tab-strip padding');
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*width:136px;[^}]*height:40px;[^}]*text-align:center/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{[^}]*display:flex;align-items:center;justify-content:center;[^}]*width:116px;[^}]*height:40px;[^}]*text-align:center/);
  assert.match(css,/\.app-players-toolbar\{display:flex;align-items:center;[^}]*height:44px;[^}]*margin-top:0\}/,'zero only existing toolbar margin, preserve alignment');
  assert.match(css,/\.app-players-toolbar\+\.app-players-table-scroll\{margin-top:0\}/);
- assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(136px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
+ assert.match(css,/\.app-players-tabs \.app-competition-tab\{flex:0 0 min\(116px,calc\(\(100% - 4px\)\/2\)\);[^}]*height:40px;min-height:40px/);
  assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center/,'mobile toolbar still reserves one row across view switches');
  assert.match(css,/html:not\(\[data-players-view="attributes"\]\) \.app-players-groups\{visibility:hidden;pointer-events:none\}/);
  assert.ok(html.indexOf('class="app-players-toolbar"')<html.indexOf('class="app-players-table-scroll"'),'zero-gap toolbar stays directly before table');
