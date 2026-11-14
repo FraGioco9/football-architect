@@ -12,6 +12,8 @@ import {auditObservedPhysicalPassAttempt}
  from '../src/player-football-pass-physical-audit.mjs';
 import {measureObservedPassingCorridors}
  from '../src/player-football-corridors.mjs';
+import {inspectUniformPolicyGeometry}
+ from '../src/player-ball-uniform-autonomous-action.mjs';
 
 const CASES=Object.freeze([
  Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
@@ -132,6 +134,11 @@ function collect(summary,frame,c){
     duty:frame.contactDecisionObservation.duties.find(d=>
      d.engineId===p.engineId)?.movementDuty}));
   const passDirections=BASELINE_TICKS.has(t)?samplePassDirections(frame,c):null;
+  const policyGeometry=BASELINE_TICKS.has(t)?
+   inspectUniformPolicyGeometry({
+    tick:t,playerId:c.team+'-9',ballPosition:frame.ball.position,
+    physicalPlayerPositions:frame.physicalPlayerPositions
+   }):null;
   summary.checkpoints.push(Object.freeze({
    tick:t,ball:Object.freeze({x:round(ball.x),y:round(ball.y)}),
    shotShortfallM:round(shortfall),focus:Object.freeze(relative),
@@ -141,7 +148,8 @@ function collect(summary,frame,c){
    }):null,
    contactStarts:Object.freeze(actualStarts.map(x=>x.engineId)),
    actualAction:action?.action??null,
-   ...(passDirections?{observedPassDirections:passDirections}:{})
+   ...(passDirections?{observedPassDirections:passDirections}:{}),
+   ...(policyGeometry?{existingPolicyGeometry:policyGeometry}:{})
   }));
  }
 }
@@ -226,6 +234,19 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
      assert.ok(d.focusRawOpponentGapM>=0);
      assert.ok(d.widestRawDirections.length>0);
      assert.ok(Object.isFrozen(d));
+     const policy=sample.existingPolicyGeometry;
+     assert.equal(policy.physicsTick,sample.tick);
+     assert.equal(policy.playerId,c.team+'-9');
+     assert.equal(policy.shotLaneFound,false);
+     assert.equal(policy.shotRange,false);
+     assert.ok(policy.shotRangeShortfallM>0);
+     assert.equal(policy.actualShoeContactVerified,null);
+     assert.equal(policy.physicalActionAuthorized,false);
+     assert.equal(policy.authorizedAffordances.length,0);
+     if(policy.passGeometryRecipientId!==null){
+      assert.ok(policy.passGeometryRecipientId.startsWith(c.team+'-'));
+      assert.notEqual(policy.passGeometryRecipientId,c.team+'-9');
+     }
     }
    }
    if(c.team==='home'){

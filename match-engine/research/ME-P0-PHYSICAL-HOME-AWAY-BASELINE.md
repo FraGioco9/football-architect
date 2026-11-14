@@ -34,3 +34,11 @@ node --test match-engine/tests/player-ball-press-handoff-ab.test.mjs
 The existing ME-01 workflow already covers these tests. Review `C2_3N_REAL_CARRY_PRESS_HANDOFF_AB` and `C2_B_REAL_RAPIER_SHOT_GATE_TIMELINE` on the exact new HEAD. Do not add duplicate 720-tick worlds, promote a negative shot to a pass, loosen the 35 m shooting gate or 0.98 m separation, change the action policy, or alter remote DB/gameplay.
 
 This P0 evidence freeze does not establish C2, approve proposed P1 tactical priorities, or wire P2 intentions to the live mover. Official #480 top-level progress stays **11/20 (55%)**.
+
+## Existing uniform action policy geometry (read-only, no shoe authority)
+
+The existing `src/player-ball-uniform-autonomous-action.mjs` now exposes **`inspectUniformPolicyGeometry`**, reusing its *private, unchanged* `chooseLiveShotLane` and `chooseRecipient` implementations plus the original `SHOT_MAX_RANGE_M`, shot lateral window and exactly the same 22-player lineup. This is NOT a new ranking policy. It is called only from unit tests and the existing physical baseline suite on internal completed frames: the same 599/640/693/720 checkpoints now capture shot-range shortfall, whether the unchanged real policy geometry finds a shot aim point, and which receiver its current algorithm would *geometrically* consider.
+
+An available lane/recipient from this diagnostic is **not** an executable PASS or SHOT. The observer does not check authenticated same-tick exclusive START, shoe gap, cooldown, ball horizontal velocity/height or actual applied impulse; `actualShoeContactVerified:null`, `physicalActionAuthorized:false`, and `authorizedAffordances:[]` prevent false classification. It does not write a mover, select an intent, or apply physics. Its input validation is structural only; only the tests' internal runtime producer establishes provenance. The separate real physical-pass-audit remains the executed action witness.
+
+The HOME/AWAY normal-form checkpoints are still **outside** the existing 35 m shot-range gate for the chosen actors: this explains zero geometrically allowed shot targets there, not the lack of a future shot opportunity. Future P2 behavior improvements must not relax the policy to force C2. The P1 approval gate remains open, and C2/#480 status unchanged.

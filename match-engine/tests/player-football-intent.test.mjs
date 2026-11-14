@@ -9,6 +9,8 @@ import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
 import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
  from '../src/player-football-corridors.mjs';
+import {inspectUniformPolicyGeometry,UNIFORM_POLICY_GEOMETRY_VERSION}
+ from '../src/player-ball-uniform-autonomous-action.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 
 const players=Object.freeze(['home','away'].flatMap((team,ti)=>
@@ -457,5 +459,62 @@ test('P2 corridor delta rejects stale, skipped, changed-team or candidate frames
  shifted[11].team='home';
  assert.throws(()=>compare(prev,{
   ...next,frame:{...next.frame,players:shifted}
+ }),TypeError);
+});
+
+test('P0 existing-policy shot and PASS geometry is diagnostic only',()=>{
+ const ball={x:40,y:0,z:0.11};
+ const makePositions=blocked=>Object.freeze(INITIAL_PLAYERS.map((p,i)=>{
+  let x=p.team==='home'?25: -30,y=20;
+  if(p.id==='home-9'){x=40;y=0;}
+  if(p.id==='home-10'){x=42;y=6;}
+  if(blocked&&p.id==='away-1'){x=45;y=0;}
+  return Object.freeze({engineId:p.id,team:p.team,role:p.role,x,y});
+ }));
+ const open=inspectUniformPolicyGeometry({
+  tick:25,playerId:'home-9',ballPosition:ball,
+  physicalPlayerPositions:makePositions(false)
+ });
+ assert.equal(open.version,UNIFORM_POLICY_GEOMETRY_VERSION);
+ assert.equal(open.shotRange,true);
+ assert.equal(open.shotLaneFound,true);
+ assert.equal(open.shotLaneTarget.y,0);
+ assert.equal(open.shotRangeShortfallM,0);
+ assert.equal(open.actualShoeContactVerified,null);
+ assert.equal(open.physicalActionAuthorized,false);
+ assert.equal(open.physicalActionExecuted,false);
+ assert.equal(open.officialMatchAction,false);
+ assert.equal(open.authorizedAffordances.length,0);
+ const blocked=inspectUniformPolicyGeometry({
+  tick:25,playerId:'home-9',ballPosition:ball,
+  physicalPlayerPositions:makePositions(true)
+ });
+ assert.equal(blocked.shotRange,true);
+ assert.equal(blocked.shotLaneFound,false);
+ assert.equal(blocked.passGeometryRecipientId,'home-10');
+ assert.ok(blocked.passGeometryLaneClearanceM>0);
+ assert.equal(blocked.physicalActionAuthorized,false);
+ assert.deepEqual(inspectUniformPolicyGeometry({
+  tick:25,playerId:'home-9',ballPosition:ball,
+  physicalPlayerPositions:makePositions(true)
+ }),blocked);
+ const far=inspectUniformPolicyGeometry({
+  tick:25,playerId:'away-9',ballPosition:ball,
+  physicalPlayerPositions:makePositions(false)
+ });
+ assert.equal(far.shotRange,false);
+ assert.equal(far.shotLaneFound,false);
+ assert.equal(far.shotLaneTarget,null);
+ assert.throws(()=>inspectUniformPolicyGeometry({
+  tick:25,playerId:'unknown',ballPosition:ball,
+  physicalPlayerPositions:makePositions(false)
+ }),TypeError);
+ assert.throws(()=>inspectUniformPolicyGeometry({
+  tick:25,playerId:'home-9',ballPosition:ball,
+  physicalPlayerPositions:makePositions(false).slice()
+ }),TypeError);
+ assert.throws(()=>inspectUniformPolicyGeometry({
+  tick:25,playerId:'home-9',ballPosition:{...ball,x:NaN},
+  physicalPlayerPositions:makePositions(false)
  }),TypeError);
 });

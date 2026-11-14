@@ -78,6 +78,60 @@ function chooseRecipient(actor,ball,players){
  return choices[0]??null;
 }
 
+
+// P0 ONLY: read-only replay of the EXISTING shot-lane and recipient geometry
+// helpers on a completed fixture observation. This is not a second policy:
+// neither physical shoe START, action cooldown, ball height/velocity nor
+// applied impulses are tested here. Never use to authorize an action.
+export const UNIFORM_POLICY_GEOMETRY_VERSION=
+ 'me-p0-uniform-action-geometry-observation-v1';
+export function inspectUniformPolicyGeometry({
+ tick,playerId,ballPosition,physicalPlayerPositions
+}={}){
+ if(!Number.isSafeInteger(tick)||tick<1||
+    !ids.includes(playerId)||
+    !ballPosition||!finite(ballPosition.x)||!finite(ballPosition.y)||
+    !finite(ballPosition.z)||!Array.isArray(physicalPlayerPositions)||
+    !Object.isFrozen(physicalPlayerPositions)||
+    physicalPlayerPositions.length!==ids.length)
+  throw new TypeError('Same-tick physical observation shape required');
+ const players=Object.freeze(physicalPlayerPositions.map((p,i)=>{
+  const expected=INITIAL_PLAYERS[i];
+  if(!p||!Object.isFrozen(p)||p.engineId!==expected.id||
+     p.team!==expected.team||p.role!==expected.role||
+     !finite(p.x)||!finite(p.y))
+   throw new TypeError('Canonical observed 22-player geometry required');
+  return Object.freeze({id:p.engineId,team:p.team,role:p.role,x:p.x,y:p.y});
+ }));
+ const actor=players.find(p=>p.id===playerId);
+ const goalX=(actor.team==='home'?1:-1)*PLAYER_PITCH.lengthM/2;
+ const toGoal=goalX-ballPosition.x;
+ const lateralShotWindow=Math.abs(ballPosition.y)<=20;
+ const shotRange=Math.abs(toGoal)<=SHOT_MAX_RANGE_M&&lateralShotWindow;
+ const lane=shotRange?chooseLiveShotLane(
+  ballPosition,goalX,actor.team,players):null;
+ const recipient=chooseRecipient(actor,ballPosition,players);
+ return Object.freeze({
+  version:UNIFORM_POLICY_GEOMETRY_VERSION,physicsTick:tick,
+  playerId,team:actor.team,readOnly:true,
+  distanceToGoalLineM:Math.abs(toGoal),
+  shotRangeShortfallM:Math.max(0,Math.abs(toGoal)-SHOT_MAX_RANGE_M),
+  lateralShotWindow,
+  shotRange,shotLaneFound:lane!==null,
+  shotLaneTarget:lane?Object.freeze({...lane.target}):null,
+  shotLaneCenterlineClearanceM:lane?.clearance??null,
+  passGeometryRecipientId:recipient?.player.id??null,
+  passGeometryRecipientTarget:recipient?Object.freeze({
+   x:recipient.player.x,y:recipient.player.y}):null,
+  passGeometryLaneClearanceM:recipient?.laneClearanceM??null,
+  passGeometryOpponentGapM:recipient?.nearestOpponentM??null,
+  // Geometric candidates are NOT verified physical affordances.
+  actualShoeContactVerified:null,physicalActionAuthorized:false,
+  physicalActionExecuted:false,officialMatchAction:false,
+  authorizedAffordances:Object.freeze([])
+ });
+}
+
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
