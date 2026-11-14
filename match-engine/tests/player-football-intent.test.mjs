@@ -6,6 +6,8 @@ import {FOOTBALL_INTENT_VERSION,FOOTBALL_INTENT_PRIORITIES,
  from '../src/player-football-intent.mjs';
 import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
  from '../src/player-football-observation.mjs';
+import {measureObservedPassingCorridors,FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
+ from '../src/player-football-corridors.mjs';
 import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 
 const players=Object.freeze(['home','away'].flatMap((team,ti)=>
@@ -268,4 +270,104 @@ test('P2 preflight rejects inconsistent or forged-looking physical shapes',()=>{
   playerId:'intruder',phase:'ball-opportunity'}),TypeError);
  assert.throws(()=>projectObservedFootballContext(baseFrame,{
   playerId:'home-7',phase:'unknown'}),TypeError);
+});
+
+test('P2 raw passing corridors measure HOME/AWAY blockers without authorizing pass',()=>{
+ const contexts=['home','away'].map(team=>{
+  const side=team==='home'?1:-1;
+  const other=team==='home'?'away':'home';
+  const positions=Object.freeze(INITIAL_PLAYERS.map((p,i)=>{
+   let x=(p.team===team?-40-i:40+i)*side,y=14;
+   if(p.id===team+'-7'){x=0;y=0;}
+   if(p.id===team+'-8'){x=10*side;y=0;}
+   if(p.id===team+'-1'){x=5*side;y=2;}
+   if(p.id===other+'-1'){x=4*side;y=1;}
+   return Object.freeze({engineId:p.id,team:p.team,role:p.role,x,y});
+  }));
+  const frame={
+   physicsTick:30,experimentalLocalOnly:true,matchRuntimeIntegrated:false,
+   officialMatchAction:false,contactSource:'internal-real-rapier-60hz',
+   footContact:{tick:30},autonomousMovement:{physicsTick:30},
+   ball:{position:{x:0,y:0,z:0.11}},physicalPlayerPositions:positions
+  };
+  const observation=projectObservedFootballContext(frame,{
+   playerId:team+'-7',phase:'ball-opportunity'
+  });
+  return {observation,frame,team};
+ });
+ const results=contexts.map(({observation})=>
+  measureObservedPassingCorridors(observation));
+ for(let i=0;i<results.length;i++){
+  const result=results[i],team=contexts[i].team;
+  assert.equal(result.version,FOOTBALL_CORRIDOR_MEASUREMENT_VERSION);
+  assert.equal(result.corridors.length,10);
+  assert.equal(result.corridors[0].targetPlayerId,team+'-1');
+  assert.ok(Object.isFrozen(result)&&Object.isFrozen(result.corridors));
+  assert.equal(result.authorizedAffordances.length,0);
+  assert.equal(result.physicalActionExecuted,false);
+  assert.equal(result.officialMatchAction,false);
+  const target=result.corridors.find(c=>c.targetPlayerId===team+'-8');
+  const other=team==='home'?'away':'home';
+  assert.equal(target.segmentLengthM,10);
+  assert.equal(target.degenerateSegment,false);
+  assert.equal(target.nearestOpponent.playerId,other+'-1');
+  assert.equal(target.nearestOpponent.distanceToSegmentM,1);
+  assert.equal(target.nearestOpponent.segmentFraction,0.4);
+  assert.equal(target.nearestOtherTeammate.playerId,team+'-1');
+  assert.equal(target.nearestOtherTeammate.distanceToSegmentM,2);
+  assert.equal(target.nearestOtherTeammate.segmentFraction,0.5);
+  assert.equal(target.passEligible,null);
+  assert.equal(target.passExecuted,false);
+  assert.equal(target.physicalContactProven,false);
+  assert.ok(Object.isFrozen(target)&&Object.isFrozen(target.nearestOpponent));
+  assert.equal(chooseObservedFootballIntent(contexts[i].observation),null);
+  const reordered={...contexts[i].observation,frame:{
+   ...contexts[i].observation.frame,
+   players:contexts[i].observation.frame.players.toReversed()
+  }};
+  assert.deepEqual(measureObservedPassingCorridors(reordered),result);
+ }
+ const h=results[0].corridors.find(c=>c.targetPlayerId==='home-8');
+ const a=results[1].corridors.find(c=>c.targetPlayerId==='away-8');
+ assert.equal(h.nearestOpponent.distanceToSegmentM,
+  a.nearestOpponent.distanceToSegmentM);
+ assert.equal(h.nearestOtherTeammate.distanceToSegmentM,
+  a.nearestOtherTeammate.distanceToSegmentM);
+});
+
+test('P2 raw corridors reject action candidates and handle zero-length paths',()=>{
+ const positions=Object.freeze(INITIAL_PLAYERS.map((p,i)=>Object.freeze({
+  engineId:p.id,team:p.team,role:p.role,
+  x:p.id==='home-7'||p.id==='home-8'?0:40+i,y:0
+ })));
+ const frame={
+  physicsTick:42,experimentalLocalOnly:true,matchRuntimeIntegrated:false,
+  officialMatchAction:false,contactSource:'internal-real-rapier-60hz',
+  footContact:{tick:42},autonomousMovement:{physicsTick:42},
+  ball:{position:{x:0,y:0,z:0.11}},physicalPlayerPositions:positions
+ };
+ const observed=projectObservedFootballContext(frame,{
+  playerId:'home-7',phase:'ball-opportunity'
+ });
+ const raw=measureObservedPassingCorridors(observed);
+ const sameSpot=raw.corridors.find(c=>c.targetPlayerId==='home-8');
+ assert.equal(sameSpot.segmentLengthM,0);
+ assert.equal(sameSpot.degenerateSegment,true);
+ assert.equal(sameSpot.passEligible,null);
+ assert.ok(Number.isFinite(sameSpot.nearestOpponent.distanceToSegmentM));
+ assert.equal(sameSpot.nearestOpponent.segmentFraction,0);
+ assert.throws(()=>measureObservedPassingCorridors({
+  ...observed,affordances:[{
+   kind:'pass',available:true,evidenceTick:42,targetPlayerId:'home-8'
+  }]
+ }),TypeError);
+ assert.throws(()=>measureObservedPassingCorridors({
+  ...observed,phase:'defend-off-ball'
+ }),TypeError);
+ assert.throws(()=>measureObservedPassingCorridors({
+  ...observed,frame:{...observed.frame,tick:45}
+ }),TypeError);
+ assert.throws(()=>measureObservedPassingCorridors({
+  ...observed,frame:{...observed.frame,players:[]}
+ }),TypeError);
 });
