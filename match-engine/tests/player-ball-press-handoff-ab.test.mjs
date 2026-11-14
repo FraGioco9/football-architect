@@ -212,3 +212,34 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
  console.log('C2_3N_REAL_CARRY_PRESS_HANDOFF_AB',
   JSON.stringify(results));
 });
+
+test('C2 post-cleanup: ordinary HOME/AWAY still rejects retired C2-a flag and preserves physical handoff',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const c of CASES){
+  const ordinary=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+  try{
+   const first=ordinary.snapshot();
+   assert.equal(Object.hasOwn(first,'autonomousCarryAttackContinuityMode'),false);
+   assert.equal(Object.hasOwn(first,'continuityAudit'),false);
+   for(let tick=1;tick<=720;tick++){
+    const frame=ordinary.step();
+    assert.equal(Object.hasOwn(frame,'autonomousCarryAttackContinuityMode'),false);
+    assert.equal(Object.hasOwn(frame,'continuityAudit'),false);
+    assert.equal(frame.officialMatchPossession,false);
+    assert.equal(frame.officialMatchResult,null);
+    const action=frame.localAutonomousAction;
+    if(action){
+     assert.equal(frame.physicalContactFeed.started.length,1);
+     assert.equal(frame.physicalContactFeed.active.length,1);
+     assert.equal(action.physicalTrigger,'same-tick-real-rapier-shoe-start');
+     assert.equal(action.actualPhysicsImpulseApplied,true);
+    }
+   }
+  }finally{ordinary.dispose();}
+  for(const bad of [
+   {...extended,autonomousCarryAttackContinuity:true},
+   {...extended,autonomousCarryAttackContinuity:false}
+  ])assert.throws(()=>createPhysicalFixtureStepRuntime(
+   R,fix(c),initial(c),bad),TypeError);
+ }
+});
