@@ -54,6 +54,8 @@ function actualMovementDuties(frame){
   players:duties,
   playerCount:22,
   attackSupportRun:frame.provisionalAttackSupportRun??null,
+  ...(frame.continuityAudit?{
+   continuityAudit:Object.freeze({...frame.continuityAudit})}:{}),
   carryPursuit:frame.provisionalCarryPursuit??null,
   carryChallengerId:frame.provisionalChallengeCarryRunnerId??null,
   carryChallengerFlank:frame.provisionalCarryChallengeFlank??null,
