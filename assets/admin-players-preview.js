@@ -128,7 +128,7 @@
   if(flag){
    const image=document.createElement('img');image.className='app-players-nationality-flag';
    image.dataset.playerCountry=code;image.alt=window.faPlayersNationality.name(code);image.tabIndex=0;
-   image.width=24;image.height=18;image.src='/assets/flags/'+flag+'.svg';td.append(image);
+   image.width=20;image.height=15;image.src='/assets/flags/'+flag+'.svg';td.append(image);
   }else td.textContent=code||'—';
   row.append(td);
  }
