@@ -9,7 +9,7 @@ import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule,isInitialScheduleVersion} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
-import {matchPublicationStatements} from './match-slot-publication.ts';
+import {matchPublicationStatements,knockoutPublicationStatements} from './match-slot-publication.ts';
 import {dueAdministrativeMilestones,type MilestoneKind} from './domain/calendar/admin-calendar-policy.ts';
 interface Stage {generation:string;algorithm_version:string;seed:string;participants_hash:string;rules_hash:string;fixtures_hash:string;fixtures_json:string}
 interface Event {event_id:string;kind:MilestoneKind;scope:string;scheduled_day:number;event_order:number;status:'scheduled'|'completed';completed_at:number|null;receipt_hash:string|null}
@@ -36,6 +36,7 @@ export async function executeInternationalDraw(db:Database,session:AdminSession,
  const cupFixtures=schedule.fixtures.filter(f=>f.competitionId.startsWith('int-'));
  const hashes=new Map(draws.map(d=>[d.competitionId,d.hash]));
  const matchInserts=await matchPublicationStatements(db,cupFixtures,world.generation,world.seasonNumber,'international',hashes,now);
+ const bracketInserts=await knockoutPublicationStatements(db,world.generation,world.seasonNumber,'international',hashes,now);
  const operationId=crypto.randomUUID(),result:Outcome={world:{...world,revision:world.revision+1},operationId};
  try{
   await db.batch([
@@ -48,6 +49,7 @@ export async function executeInternationalDraw(db:Database,session:AdminSession,
    ...rows.map(r=>abortUnless(db,`SELECT 1 FROM season_admin_events WHERE season_number=${world.seasonNumber} AND event_id=? AND scheduled_day=? AND event_order=? AND status=? AND completed_at IS ? AND receipt_hash IS ?`,[r.event_id,r.scheduled_day,r.event_order,r.status,r.completed_at,r.receipt_hash])),
    ...draws.map(d=>db.prepare('INSERT INTO season_draws VALUES(?,?,?,?,?,?,?,?,?)').bind(world.seasonNumber,d.competitionId,'league',schedule.algorithmVersion,stage.seed,d.hash,d.json,'generated',now)),
    ...matchInserts,
+   ...bracketInserts,
    db.prepare(`UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=${world.seasonNumber} AND event_id='international:draw' AND status='scheduled' AND scheduled_day=?`).bind(now,receipt,world.day),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,'execute-international-draw-v1',world.revision,result.world.revision,JSON.stringify(result),now)

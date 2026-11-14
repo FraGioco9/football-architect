@@ -8,7 +8,7 @@ import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
 import {readWorld} from './world-repository.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
-import {matchPublicationStatements} from './match-slot-publication.ts';
+import {matchPublicationStatements,knockoutPublicationStatements} from './match-slot-publication.ts';
 
 /** Generate only initial league fixtures. Never starts the season or manufactures
  * postseason qualifiers, sporting results, standings or completed history. */
@@ -35,6 +35,7 @@ export async function generateSeasonCalendar(db:Database,session:AdminSession,in
   const draws=await initialDrawOutcomes(schedule,snapshot);
   const hashes=new Map(snapshot.bindings.map(b=>[b.competitionId,calendarHash]));
   const matchInserts=await matchPublicationStatements(db,schedule.fixtures,world.generation,world.seasonNumber,'calendar',hashes,now);
+  const bracketInserts=await knockoutPublicationStatements(db,world.generation,world.seasonNumber,'calendar',hashes,now);
   try{
    await db.batch([
     sessionGuard(db,session,now),
@@ -45,6 +46,7 @@ export async function generateSeasonCalendar(db:Database,session:AdminSession,in
     db.prepare('INSERT INTO season_calendars VALUES(?,?,?,?,?,?)').bind(world.seasonNumber,schedule.algorithmVersion,calendarHash,calendarJson,'generated',now),
     ...draws.map(d=>db.prepare('INSERT INTO season_draws VALUES(?,?,?,?,?,?,?,?,?)').bind(world.seasonNumber,d.competitionId,'league',schedule.algorithmVersion,seed,d.hash,d.json,'generated',now)),
     ...matchInserts,
+    ...bracketInserts,
     db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
     db.prepare(`INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at)
       VALUES(?,?,?,?,?,'generate-calendar-v1',?,?,?,?)`).bind(operationId,world.generation,key,requestHash,session.actor.id,world.revision,result.world.revision,JSON.stringify(result),now),
