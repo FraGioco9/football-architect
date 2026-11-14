@@ -485,7 +485,13 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
       activeWaypoint:pursuit.experimentalDetour.activeWaypoint,
       lastDecision:pursuit.experimentalDetour.lastDecision
      }:null,
-     minimumCarrierClearanceM:round(clearance)});
+     minimumCarrierClearanceM:round(clearance),
+     nearbyBodies:[620,640,660].includes(tick)?
+      b.physicalPlayerPositions.filter(q=>q.engineId!=='away-9')
+       .map(q=>({id:q.engineId,
+        x:round(q.x),y:round(q.y),
+        gapM:round(Math.hypot(carrier.x-q.x,carrier.y-q.y))}))
+       .sort((u,v)=>u.gapM-v.gapM).slice(0,7):undefined});
    }
   }
   // Emit read-only real-physics evidence even on a functional FAIL.
