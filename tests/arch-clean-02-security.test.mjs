@@ -7,9 +7,11 @@ import '../assets/world-clock-adapter.js';
 const hosting=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 
 test('ARCH-CLEAN-02 security: approved hosting routes include exactly two Players-preview redirects',()=>{
-  assert.equal(hosting.redirects.length,36);
+  assert.equal(hosting.redirects.length,37);
+  assert.deepEqual(hosting.redirects[0],{source:'/matches/:id([1-9][0-9]*)/',destination:'/matches/:id',permanent:true});
   for(const suffix of ['/', '/index.html'])assert.deepEqual(hosting.redirects.find(route=>route.source==='/admin/players/preview'+suffix),{source:'/admin/players/preview'+suffix,destination:'/admin/players/preview',permanent:true});
-  assert.equal(hosting.rewrites.length,10);
+  assert.equal(hosting.rewrites.length,11);
+  assert.deepEqual(hosting.rewrites[0],{source:'/matches/:id([1-9][0-9]*)',destination:'/matches/_shared/index.html'});
   assert.equal(hosting.redirects.filter(route=>route.source.startsWith('/admin/:section(calendar|players|contracts)')).length,2);
   assert.equal(hosting.rewrites.filter(route=>route.source==='/admin/:section(calendar|players|contracts)').length,1);
   assert.equal(hosting.rewrites.some(r=>r.destination.includes('/app/')),false);

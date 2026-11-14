@@ -30,7 +30,8 @@ test('#577 uses authoritative match API and never synthesizes results or confirm
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
  assert.match(js,/v\?\.confirmed===true&&Array\.isArray\(v\.starters\)&&v\.starters\.length===11/);
- assert.match(js,/data\.status==='scheduled'&&validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
+ assert.match(js,/const s=data\.status;/);
+ assert.match(js,/s==='scheduled'&&validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture/);
 });
