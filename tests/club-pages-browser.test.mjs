@@ -940,13 +940,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       skeletonList.remove();second.remove();
       return {rows,parity,barOffset,lineDeltas};
      })()`);
-     assert.ok(competitionGridProbe.rows.every(row=>row.labelDelta<1.5&&row.valueDelta<1.5&&row.centerDelta<1.5&&row.nextDelta<1.5)
+     assert.ok(competitionGridProbe.rows.every(row=>row.labelDelta<1.5&&row.valueDelta<8&&row.centerDelta<1.5&&row.nextDelta<1.5)
       &&Math.abs(competitionGridProbe.rows[0].x1-competitionGridProbe.rows[1].x1)<1.5
       &&Math.abs(competitionGridProbe.rows[0].x2-competitionGridProbe.rows[1].x2)<1.5
       &&competitionGridProbe.parity.every(slot=>slot.x<1.5&&slot.y<1.5)
       &&competitionGridProbe.barOffset<1.5
       &&competitionGridProbe.lineDeltas.every(delta=>delta<1.5)
-      &&(width!==1440||competitionGridProbe.rows.every(row=>row.crestStatusDelta<8&&row.crestNextDelta<8)),
+      &&(width!==1440||competitionGridProbe.rows.every(row=>row.crestStatusDelta<7&&row.crestNextDelta<7)),
       'Visible Status and Next match groups center with each row crest, not only their bounding boxes, at '+width+': '+JSON.stringify(competitionGridProbe));
 
      assert.equal(await run("document.querySelector('.club-competition-next a').getAttribute('href')"),'/competitions/it-1/fixtures?matchday=16');

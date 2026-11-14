@@ -38,12 +38,13 @@ test('Club Competitions define a single three-column entry and shared label/valu
   'Status label and value inherit the row tracks');
  assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-template-rows:subgrid;/,
   'Next match label and value inherit the same row tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*grid-row:2;justify-self:stretch;align-self:center;/,'Status value is centered inside the shared row track');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dt\{text-align:center\}/,
   'Status header is centered in its value column');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*text-align:center;/,
   'Status value is centered in the same column, even when wrapped');
- assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-column:1;grid-row:2;align-self:start;/,
-  'Next match and Status values begin at the same shared row origin');
+ assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-column:1;grid-row:2;align-self:center;/,
+  'Next match visible content centers inside the shared value track');
  assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*gap:3px;min-height:0;/,
   'Next match does not reserve invisible empty height beneath the text');
  assert.match(css,/@container club-competition-panel \(max-width:800px\)/);

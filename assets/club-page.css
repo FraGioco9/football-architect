@@ -221,14 +221,14 @@ body.app-body{--app-page-pad-top:8px}
 }
 .club-competition-list .club-competition-metrics dt{text-align:center}
 .club-competition-list .club-competition-metrics dd{
- grid-column:1;grid-row:2;justify-self:stretch;align-self:start;
+ grid-column:1;grid-row:2;justify-self:stretch;align-self:center;
  margin:0;min-width:0;min-height:1.15em;
  font-size:24px;font-weight:700;line-height:1.15;
  font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere;
  text-align:center;
 }
 .club-competition-list .club-competition-next-content{
- grid-column:1;grid-row:2;align-self:start;display:flex;flex-direction:column;
+ grid-column:1;grid-row:2;align-self:center;display:flex;flex-direction:column;
  align-items:flex-start;justify-content:flex-start;gap:3px;min-height:0;
  min-width:0;max-height:none;overflow:visible;text-align:left;
 }
