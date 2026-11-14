@@ -1095,7 +1095,7 @@ test('#532 rapid sort/refetch ignores superseded successful responses and failur
   const renderHead=()=>{},showLoadingRows=()=>loading.push(5);
   const fetchBatch=()=>new Promise((resolve,reject)=>pending.push({resolve,reject}));
   const paint=data=>painted.push(data.players.map(player=>player.id));
-  const syncUrl=()=>{},renderProgress=()=>{},message=()=>{},locale=()=>({error:'error'});
+  const syncUrl=()=>{},renderProgress=()=>{},message=()=>{},announceAppend=()=>{},locale=()=>({error:'error'});
   ${source}
   return {load,pending,snapshot:()=>({ids:current?.players.map(p=>p.id),status,painted,loading})};
  `)();
