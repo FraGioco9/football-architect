@@ -156,16 +156,18 @@ test('#574 Club header and row names are left-aligned on phones with compact tra
  assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{min-width:596px\}/);
 });
 
-test('#574 positions use an overflow-driven, accessible mobile disclosure',async()=>{
+test('#574 positions reveal the maximum whole codes and use a +N disclosure',async()=>{
  const {default:ui}=await import('../assets/players-mobile.js');
- assert.deepEqual(ui.positionCodes(' RB , RWB, LB '),['RB','RWB','LB']);
+ const codes=['CB','RB','RWB','LB'];
+ assert.deepEqual(ui.positionCodes(' CB , RB, RWB, LB '),codes);
+ const measure=(limit)=>(visible,hidden)=>visible.length*7+(hidden?26:0)<=limit;
+ assert.deepEqual(ui.visiblePositionPlan(codes,measure(200)),{visible:'CB, RB, RWB, LB',hidden:0});
+ assert.deepEqual(ui.visiblePositionPlan(codes,measure(80)),{visible:'CB, RB',hidden:2});
+ assert.deepEqual(ui.visiblePositionPlan(codes,measure(52)),{visible:'CB',hidden:3});
  assert.equal(ui.positionsNeedCompact(116,102,3),true);
- assert.equal(ui.positionsNeedCompact(100,102,3),false);
- assert.equal(ui.positionsNeedCompact(116,102,1),false);
- assert.equal(ui.positionsNeedCompact(116,0,3),false,'hidden table should never force a disclosure');
  const code=read('assets/players-mobile.js');
  assert.match(code,/table\.classList\.contains\('admin-contracts-table'\)\?3:2/);
- assert.match(code,/if\(wasCompact\)cell\.dataset\.faCompact='false'/);
+ assert.match(code,/const badge=hidden\?'\+'\+hidden:''/);
  assert.match(code,/positionCells\.set\(cell,state\)/);
  assert.match(code,/aria-label/);
  assert.match(code,/aria-expanded/);
@@ -173,11 +175,26 @@ test('#574 positions use an overflow-driven, accessible mobile disclosure',async
  assert.match(code,/win\.addEventListener\('resize',\(\)=>\{closePopup\(\);schedule\(\)\}/);
  assert.match(code,/win\.addEventListener\('scroll',\(\)=>closePopup\(\),\{capture:true,passive:true\}\)/);
  assert.match(code,/doc\.body\.append\(popup\)/,'tooltip must escape scrolling/masked table');
+ assert.match(code,/mutation\.target\.closest\?\.\('\.fa-positions-layout'\)/,'internal text changes must not retrigger observers');
+ assert.match(code,/const listener=\(\)=>updateFade\(region,false\)/,'horizontal scrolling must not remeasure every player row');
+ assert.match(css,/\.fa-positions-visible\{display:block;flex:0 1 auto/,'+N sits right beside the visible positions');
  assert.match(css,/\.fa-positions-cell\[data-fa-compact="true"\] \.fa-positions-more\{display:inline-flex\}/);
  assert.match(css,/\.fa-positions-more:focus-visible\{outline:2px solid var\(--focus\)/);
  assert.match(css,/\.fa-positions-popup\[hidden\]\{display:none\}/);
 });
 
+test('#574 position tooltip opens above when possible, otherwise below',async()=>{
+ const {default:ui}=await import('../assets/players-mobile.js');
+ const nearBottom={top:420,bottom:442,left:305};
+ const above=ui.tooltipPlacement(nearBottom,165,68,390,500);
+ assert.deepEqual(above,{top:345,left:217});
+ const nearTop={top:18,bottom:40,left:10};
+ const below=ui.tooltipPlacement(nearTop,165,68,390,500);
+ assert.deepEqual(below,{top:47,left:10});
+ const code=read('assets/players-mobile.js');
+ assert.match(code,/const fitsAbove=above>=edge,fitsBelow=below\+height<=viewportHeight-edge/);
+ assert.match(code,/positionCells\.get\(cell\)\?\.full/,'tooltip shows the complete list, not just visible codes');
+});
 
 test('#574 Club header remains left-aligned at first paint and after hydration',()=>{
  const page=read('players/index.html'),directory=read('assets/players-directory.js');
@@ -195,17 +212,29 @@ test('#574 table right fade is visible at first paint and removed at non-scrolla
 });
 
 
-test('#574 overflow disclosure stays stable across repeated measurements',async()=>{
+test('#574 repeated overflow checks and resize do not lose +N',async()=>{
  const {default:ui}=await import('../assets/players-mobile.js');
- const cell={dataset:{}},value={scrollWidth:116,clientWidth:102},codes=['CB','RB','RWB'];
- assert.equal(ui.updatePositionCompact(cell,value,codes),true);
- assert.equal(cell.dataset.faCompact,'true');
- assert.equal(ui.updatePositionCompact(cell,value,codes),true);
- assert.equal(cell.dataset.faCompact,'true','repeat scroll/resize must not drop the plus button');
- value.clientWidth=140;
- assert.equal(ui.updatePositionCompact(cell,value,codes),false);
- assert.equal(cell.dataset.faCompact,'false','plus button should disappear when everything fits');
- value.clientWidth=102;
- assert.equal(ui.updatePositionCompact(cell,value,codes),true);
- assert.equal(cell.dataset.faCompact,'true','plus button returns on shrink');
+ let width=60;
+ const cell={dataset:{}},value={
+  textContent:'',
+  get scrollWidth(){return this.textContent.length*7},
+  get clientWidth(){return width-(cell.dataset.faCompact==='true'?26:0)}
+ };
+ const more={textContent:''},state={value,more,codes:['CB','RB','RWB']};
+ assert.equal(ui.updatePositionCompact(cell,state),2);
+ assert.equal(value.textContent,'CB');
+ assert.equal(more.textContent,'+2');
+ assert.equal(ui.updatePositionCompact(cell,state),2);
+ assert.equal(more.textContent,'+2','repeat layout passes preserve the disclosure');
+ width=98;
+ assert.equal(ui.updatePositionCompact(cell,state),0);
+ assert.equal(value.textContent,'CB, RB, RWB');
+ assert.equal(cell.dataset.faCompact,'false');
+ width=74;
+ assert.equal(ui.updatePositionCompact(cell,state),1);
+ assert.equal(value.textContent,'CB, RB');
+ assert.equal(more.textContent,'+1');
+ width=60;
+ assert.equal(ui.updatePositionCompact(cell,state),2);
+ assert.equal(more.textContent,'+2');
 });

@@ -1970,12 +1970,9 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 @media(max-width:720px){
  /* Show a plus button only if the full comma-separated list cannot fit. */
  .fa-positions-layout{display:flex;align-items:center;gap:4px;min-width:0;width:100%;height:28px;white-space:nowrap}
- .fa-positions-full{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .fa-positions-primary{display:none;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .fa-positions-cell[data-fa-compact="true"] .fa-positions-full{display:none}
- .fa-positions-cell[data-fa-compact="true"] .fa-positions-primary{display:block}
+ .fa-positions-visible{display:block;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .fa-positions-cell[data-fa-compact="true"] .fa-positions-more{display:inline-flex}
- .fa-positions-more{display:none;align-items:center;justify-content:center;flex:0 0 22px;width:22px;height:22px;min-height:22px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;font-weight:700;line-height:1;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+ .fa-positions-more{display:none;align-items:center;justify-content:center;flex:0 0 auto;min-width:22px;width:auto;height:22px;min-height:22px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;line-height:1;cursor:pointer;padding:0 4px;-webkit-tap-highlight-color:transparent}
  .fa-positions-more:hover,.fa-positions-more[aria-expanded="true"]{border-color:var(--focus)}
  .fa-positions-more:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 }
@@ -1983,4 +1980,4 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 .fa-positions-popup[hidden]{display:none}
 
 /* Restored desktop text must not expose mobile-only controls between frames. */
-.fa-positions-primary,.fa-positions-more{display:none}
+.fa-positions-more{display:none}

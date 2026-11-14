@@ -14,14 +14,38 @@
  const positionsNeedCompact=(textWidth,availableWidth,count)=>count>1&&availableWidth>0&&textWidth>availableWidth+1;
  const positionText=cell=>String(cell.textContent||'').trim();
  const positionCodes=full=>full.split(',').map(code=>code.trim()).filter(Boolean);
- // A compact cell must be measured with the full label temporarily visible.
- // Always restore the measured final state, even when compact remained true.
- const updatePositionCompact=(cell,value,codes)=>{
-  const wasCompact=cell.dataset.faCompact==='true';
-  if(wasCompact)cell.dataset.faCompact='false';
-  const compact=positionsNeedCompact(value.scrollWidth,value.clientWidth,codes.length);
-  if(wasCompact||compact!==wasCompact)cell.dataset.faCompact=String(compact);
-  return compact;
+ // Preserve source order and never truncate an intermediate position code.
+ // The fits callback measures the real CSS footprint of the text and +N.
+ const visiblePositionPlan=(codes,fits)=>{
+  for(let count=codes.length;count>=1;count--){
+   const visible=codes.slice(0,count).join(', '),hidden=codes.length-count;
+   if(fits(visible,hidden)||count===1)return {visible,hidden};
+  }
+  return {visible:'—',hidden:0};
+ };
+ const updatePositionCompact=(cell,state)=>{
+  const paint=(visible,hidden)=>{
+   const badge=hidden?'+'+hidden:'';
+   if(state.value.textContent!==visible)state.value.textContent=visible;
+   if(state.more.textContent!==badge)state.more.textContent=badge;
+   const compact=String(hidden>0);
+   if(cell.dataset.faCompact!==compact)cell.dataset.faCompact=compact;
+   return state.value.clientWidth>0&&state.value.scrollWidth<=state.value.clientWidth+1;
+  };
+  const plan=visiblePositionPlan(state.codes,paint);
+  paint(plan.visible,plan.hidden);
+  return plan.hidden;
+ };
+ // Prefer above whenever the full tooltip fits there; below is a fallback.
+ const tooltipPlacement=(rect,width,height,viewportWidth,viewportHeight)=>{
+  const gap=7,edge=8,above=rect.top-height-gap,below=rect.bottom+gap;
+  const fitsAbove=above>=edge,fitsBelow=below+height<=viewportHeight-edge;
+  const top=fitsAbove?above:fitsBelow?below:
+   rect.top-edge>=viewportHeight-rect.bottom-edge
+    ?Math.max(edge,above)
+    :Math.max(edge,Math.min(below,viewportHeight-height-edge));
+  return {top:Math.round(top),
+   left:Math.round(Math.max(edge,Math.min(rect.left,viewportWidth-width-edge)))};
  };
  const positionLabels={
   en:'Show all positions: ',it:'Mostra tutte le posizioni: ',de:'Alle Positionen anzeigen: ',
@@ -49,16 +73,16 @@
     if(restoreFocus&&previous.isConnected)previous.focus({preventScroll:true});
    };
    const showPopup=button=>{
-    const full=button.closest('.fa-positions-cell')?.querySelector('.fa-positions-full')?.textContent?.trim();
+    const cell=button.closest('.fa-positions-cell'),full=cell&&positionCells.get(cell)?.full;
     if(!full)return;
     closePopup();
     activeButton=button;button.setAttribute('aria-expanded','true');
     button.setAttribute('aria-describedby',popup.id);
     popup.textContent=full;popup.hidden=false;
     const rect=button.getBoundingClientRect(),height=popup.offsetHeight,width=popup.offsetWidth;
-    const top=rect.bottom+7+height<=win.innerHeight-8?rect.bottom+7:Math.max(8,rect.top-height-7);
-    popup.style.top=Math.round(top)+'px';
-    popup.style.left=Math.round(Math.max(8,Math.min(rect.left,win.innerWidth-width-8)))+'px';
+    const position=tooltipPlacement(rect,width,height,win.innerWidth,win.innerHeight);
+    popup.style.top=position.top+'px';
+    popup.style.left=position.left+'px';
    };
    doc.addEventListener('click',event=>{
     const trigger=event.target.closest?.('button.fa-positions-more');
@@ -75,15 +99,14 @@
     const full=positionText(cell),codes=positionCodes(full);
     if(codes.length<2)return null;
     const layout=doc.createElement('span');layout.className='fa-positions-layout';
-    const value=doc.createElement('span');value.className='fa-positions-full';value.textContent=full;
-    const primary=doc.createElement('span');primary.className='fa-positions-primary';primary.textContent=codes[0];
+    const value=doc.createElement('span');value.className='fa-positions-visible';value.textContent=full;
     const more=doc.createElement('button');more.type='button';more.className='fa-positions-more';
-    more.textContent='+';more.setAttribute('aria-expanded','false');more.setAttribute('aria-controls',popup.id);
+    more.textContent='';more.setAttribute('aria-expanded','false');more.setAttribute('aria-controls',popup.id);
     const lang=(doc.documentElement.lang||'en').toLowerCase().slice(0,2);
     more.setAttribute('aria-label',(positionLabels[lang]||positionLabels.en)+full);
-    layout.append(value,primary,more);cell.replaceChildren(layout);
+    layout.append(value,more);cell.replaceChildren(layout);
     cell.classList.add('fa-positions-cell');
-    const state={full,value,codes};positionCells.set(cell,state);
+    const state={full,value,more,codes};positionCells.set(cell,state);
     return state;
    };
    const updatePositions=region=>{
@@ -104,20 +127,20 @@
      }
      const state=previous||decoratePosition(cell);
      if(!state||!cell.offsetWidth)continue;
-     // Expand the hidden full text before measuring, so an open '+' state
-     // never oscillates or remains stale after view/viewport changes.
-     const compact=updatePositionCompact(cell,state.value,state.codes);
-     if(!compact&&activeButton&&cell.contains(activeButton))closePopup();
+     // Measure each complete candidate against the remaining space for +N.
+     // Keep the current disclosure open only while some positions are hidden.
+     const hidden=updatePositionCompact(cell,state);
+     if(!hidden&&activeButton&&cell.contains(activeButton))closePopup();
     }
    };
    const mobile=()=>!!win.matchMedia?.('(max-width:720px)').matches;
-   const updateFade=region=>{
+   const updateFade=(region,measurePositions=true)=>{
     // Keep the first-paint CSS right fade while a table is still unmeasurable.
     if(mobile()&&!region.clientWidth)return;
     const state=mobile()?scrollState(region.scrollWidth,region.clientWidth,region.scrollLeft):{left:false,right:false};
     region.dataset.canScrollLeft=String(state.left);
     region.dataset.canScrollRight=String(state.right);
-    updatePositions(region);
+    if(measurePositions)updatePositions(region);
    };
    const observer=typeof win.ResizeObserver==='function'
     ?new win.ResizeObserver(entries=>{for(const entry of entries)updateFade(entry.target)}):null;
@@ -128,7 +151,8 @@
     }
     for(const region of doc.querySelectorAll('.app-players-table-scroll')){
      if(!known.has(region)){
-      const listener=()=>updateFade(region);
+      // Horizontal scrolling changes fade edges, not column widths.
+      const listener=()=>updateFade(region,false);
       known.set(region,listener);
       region.addEventListener('scroll',listener,{passive:true});
       observer?.observe(region);
@@ -147,6 +171,9 @@
    if(typeof win.MutationObserver==='function')new win.MutationObserver(changes=>{
     for(const mutation of changes){
      if(!mutation.addedNodes.length)continue;
+     // Measuring candidates updates text inside our own layout. Never
+     // schedule another frame for those internal, non-data changes.
+     if(mutation.target.closest?.('.fa-positions-layout'))continue;
      if(mutation.target.closest?.('.app-players-table-scroll')){schedule();return;}
      for(const node of mutation.addedNodes){
       if(node.nodeType===1&&(node.matches?.('.app-players-table-scroll')||node.querySelector?.('.app-players-table-scroll'))){schedule();return;}
@@ -157,5 +184,5 @@
   if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
  }
- return {abbreviate,scrollState,positionsNeedCompact,positionCodes,updatePositionCompact,mount};
+ return {abbreviate,scrollState,positionsNeedCompact,positionCodes,visiblePositionPlan,tooltipPlacement,updatePositionCompact,mount};
 });
