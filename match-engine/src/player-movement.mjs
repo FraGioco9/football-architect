@@ -1826,7 +1826,6 @@ export function createPlayerMovement({
  experimentalAutonomousFixtureCarry=false,
  experimentalAutonomousFixtureCarrySupport=false,
  experimentalAutonomousFixtureCarrySupportPressHandoff=false,
- experimentalAutonomousFixtureCarryAttackContinuity=false,
  experimentalAutonomousFixtureCarrySupportBallAccess=false,
  experimentalAutonomousFixtureCarrySupportLateralAlign=false,
  experimentalAutonomousFixtureCarrySupportEarlyFacing=false,
@@ -1848,7 +1847,6 @@ export function createPlayerMovement({
       experimentalAutonomousFixtureCarry,
       experimentalAutonomousFixtureCarrySupport,
       experimentalAutonomousFixtureCarrySupportPressHandoff,
-      experimentalAutonomousFixtureCarryAttackContinuity,
       experimentalAutonomousFixtureCarrySupportBallAccess,
       experimentalAutonomousFixtureCarrySupportLateralAlign,
       experimentalAutonomousFixtureCarrySupportEarlyFacing,
@@ -1882,8 +1880,7 @@ export function createPlayerMovement({
      !experimentalAutonomousFixtureCarrySupportBallAccess)||
     (experimentalAutonomousFixtureCarrySupportBallAccess&&
      !experimentalAutonomousFixtureCarrySupportPressHandoff)||
-    (experimentalAutonomousFixtureCarryAttackContinuity&&
-     !experimentalAutonomousFixtureCarrySupportPressHandoff)||
+
     (experimentalAutonomousFixtureCarrySupportPressHandoff&&
      !experimentalAutonomousFixtureCarrySupport)||
     (experimentalAutonomousFixtureCarrySupport&&
@@ -2009,12 +2006,6 @@ export function createPlayerMovement({
  let observedControlEvidence=null;
  let observedReleaseEvidence=null;
  let pressers={home:'home-10',away:'away-10'};
- // C2-a: read-only source-qualified decision counters in the opt-in world.
- let continuityAudit={eligible:0,preHandoffConflicts:0,
-  c23nResolved:0,residualConflicts:0,c2aResolved:0,
-  retainedSupport:0,excludedAfterReassignment:0,
-  firstPreHandoffConflict:null,firstResidualConflict:null,
-  firstC2aResolution:null,firstExcludedAfterReassignment:null};
  let pressSwitches={home:0,away:0};
  let coverers={home:null,away:null};
  let coverSwitches={home:0,away:0};
@@ -2094,9 +2085,6 @@ export function createPlayerMovement({
     home:summarizeObservedPlayerMotion(players,'home'),
     away:summarizeObservedPlayerMotion(players,'away')
    }),
-   ...(experimentalAutonomousFixtureCarryAttackContinuity?{
-    continuityAudit:Object.freeze({...continuityAudit})
-   }:{}),
    pressers:Object.freeze({...pressers}),
    pressSwitches:Object.freeze({...pressSwitches}),
    coverers:Object.freeze({...coverers}),
@@ -2353,36 +2341,6 @@ export function createPlayerMovement({
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
-  // Observe the identical real PASS/CARRY source inputs used below;
-  // this audit is read-only and cannot influence movement or Rapier.
-  let continuityCandidate=null,continuityTeam=null;
-  let c2aResolvedThisTick=false;
-  if(experimentalAutonomousFixtureCarryAttackContinuity&&
-     lastAutonomousFixturePassAction&&lastPhysicalCarryAction&&
-     lastAutonomousFixturePassAction.team===lastPhysicalCarryAction.team&&
-     tick+1-lastAutonomousFixturePassAction.tick>
-      PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS){
-    continuityTeam=lastAutonomousFixturePassAction.team;
-    continuityCandidate=observedFixtureAttackSupportRun({
-     players,ball,pass:lastAutonomousFixturePassAction,
-     carry:lastPhysicalCarryAction,physicsTick:tick+1,
-     incumbentId:activeFixtureAttackSupportRun?.playerId??null,
-     excludedIds:[]
-    });
-    if(continuityCandidate?.phase==='post-carry-support'){
-     continuityAudit.eligible++;
-     if(continuityCandidate.playerId===nextPressers[continuityTeam]){
-      continuityAudit.preHandoffConflicts++;
-      continuityAudit.firstPreHandoffConflict??=Object.freeze({
-       tick:tick+1,team:continuityTeam,
-       runnerId:continuityCandidate.playerId,
-       presserId:nextPressers[continuityTeam],
-       sourcePassTick:lastAutonomousFixturePassAction.tick,
-       sourceCarryTick:lastPhysicalCarryAction.tick
-      });
-     }
-    }
-  }
   // C2.3n: sealed DEV-only handoff: keep verified post-CARRY support
   // if the real nearby carrier itself qualifies as alternate presser.
   if(experimentalAutonomousFixtureCarrySupportPressHandoff&&
@@ -2404,52 +2362,6 @@ export function createPlayerMovement({
     if(alternate?.id===lastPhysicalCarryAction.playerId&&
        Math.hypot(alternate.x-ball.x,alternate.y-ball.y)<=12)
      nextPressers[team]=alternate.id;
-   }
-  }
-  if(continuityCandidate?.phase==='post-carry-support'&&
-     continuityCandidate.playerId===nextPressers[continuityTeam]){
-    continuityAudit.residualConflicts++;
-    continuityAudit.firstResidualConflict??=Object.freeze({
-     tick:tick+1,team:continuityTeam,
-     runnerId:continuityCandidate.playerId,
-     presserId:nextPressers[continuityTeam],
-     sourcePassTick:lastAutonomousFixturePassAction.tick,
-     sourceCarryTick:lastPhysicalCarryAction.tick
-    });
-  }else if(continuityCandidate?.phase==='post-carry-support'&&
-     continuityCandidate.playerId===
-      (continuityTeam==='home'?home?.id:away?.id))
-    continuityAudit.c23nResolved++;
-  // C2-a DEV-only: a real prior PASS and later genuine same-team
-  // CARRY must still authorize this forward's attacking support.
-  // If presser priority would remove him, use another normal presser
-  // or none. The existing 60Hz mover, shoe and real ball are unchanged.
-  if(experimentalAutonomousFixtureCarryAttackContinuity&&
-     lastAutonomousFixturePassAction&&lastPhysicalCarryAction&&
-     lastAutonomousFixturePassAction.team===lastPhysicalCarryAction.team&&
-     tick+1-lastAutonomousFixturePassAction.tick>
-      PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS){
-   const team=lastAutonomousFixturePassAction.team;
-   const eligible=observedFixtureAttackSupportRun({
-    players,ball,pass:lastAutonomousFixturePassAction,
-    carry:lastPhysicalCarryAction,physicsTick:tick+1,
-    incumbentId:activeFixtureAttackSupportRun?.playerId??null,
-    excludedIds:[]
-   });
-   if(eligible?.phase==='post-carry-support'&&
-      eligible.playerId===nextPressers[team]&&
-      eligible.carryContinuation?.sourceCarryTick===lastPhysicalCarryAction.tick){
-    const alternate=pressingPlayer(players,team,ball,
-     pressers[team],[eligible.playerId]);
-    nextPressers[team]=alternate?.id??null;
-    continuityAudit.c2aResolved++;
-    continuityAudit.firstC2aResolution??=Object.freeze({
-     tick:tick+1,team,runnerId:eligible.playerId,
-     replacementPresserId:nextPressers[team],
-     sourcePassTick:lastAutonomousFixturePassAction.tick,
-     sourceCarryTick:lastPhysicalCarryAction.tick
-    });
-    c2aResolvedThisTick=true;
    }
   }
   const coveringHome=coveringDefender(
@@ -2741,22 +2653,6 @@ export function createPlayerMovement({
      fixtureChaseReceiverId,fixtureChallengeOpponentId,
      nextCoverers.home,nextCoverers.away]
    }):null;
-  // Final observer: C2-a's changed presser is not enough for success.
-  // The runner must still own the actual post-carry movement assignment
-  // AFTER chase/coverer exclusions. No physics or tactical input changed.
-  if(c2aResolvedThisTick){
-   if(activeFixtureAttackSupportRun?.phase==='post-carry-support'&&
-      activeFixtureAttackSupportRun.playerId===continuityCandidate.playerId)
-    continuityAudit.retainedSupport++;
-   else{
-    continuityAudit.excludedAfterReassignment++;
-    continuityAudit.firstExcludedAfterReassignment??=Object.freeze({
-     tick:tick+1,team:continuityTeam,
-     runnerId:continuityCandidate.playerId,
-     selectedSupportId:activeFixtureAttackSupportRun?.playerId??null
-    });
-   }
-  }
   // C2.3q: sealed DEV-only, source-authenticated final shoe approach.
   // The preceding real PASS + later real Rapier shoe CARRY already
   // qualified this forward's current support duty. Mere distance
@@ -3522,7 +3418,6 @@ export function createPlayerMovement({
   experimentalAutonomousFixtureCarry,
   experimentalAutonomousFixtureCarrySupport,
   experimentalAutonomousFixtureCarrySupportPressHandoff,
-  experimentalAutonomousFixtureCarryAttackContinuity,
   experimentalAutonomousFixtureCarrySupportBallAccess,
   experimentalAutonomousFixtureCarrySupportLateralAlign,
   experimentalAutonomousFixtureCarrySupportEarlyFacing,
