@@ -29,12 +29,20 @@ const base=Object.freeze({
 const trial=Object.freeze({...base,autonomousCarryAttackContinuity:true});
 // All variants are initial ball conditions, not subsequent movement inputs.
 // The known y=0 natural PASS/CARRY replay is kept first as a negative control.
+// Never use variants.slice(0,maxCases): it exhausts one x slice first.
 const variants=[];
 for(const x of [4.96,7,10,13])
  for(const y of [0,4,-4,8,-8,12,-12,16,-16,18,-18])
   for(const vy of [0,0.3,-0.3])
    variants.push(Object.freeze({x,y,vy}));
-const scenarios=variants.slice(0,maxCases).map((v,i)=>Object.freeze({
+const sampled=[variants[0],...Array.from({length:maxCases-1},(_,i)=>
+ variants[1+Math.floor((i+0.5)*(variants.length-1)/(maxCases-1))])];
+assert.equal(new Set(sampled).size,maxCases,
+ 'sample must have unique initial ball conditions');
+assert.ok(new Set(sampled.map(v=>v.x)).size>=
+ (maxCases>=12?4:Math.min(2,maxCases)),
+ 'bounded search must span multiple pitch depths');
+const scenarios=sampled.map((v,i)=>Object.freeze({
  preset:'roll',seed:'c2a-genuine-'+String(i).padStart(3,'0'),
  x:v.x,y:v.y,z:0,vx:-0.3,vy:v.vy,vz:0
 }));
@@ -76,11 +84,16 @@ function runSearch(R,scenario){
    if(!firstResidual&&audit.firstResidualConflict)
     firstResidual=audit.firstResidualConflict;
    if(audit.retainedSupport>(lastAudit?.retainedSupport??0)){
-    const witness=audit.firstC2aResolution;
     const support=frame.contactDecisionObservation.attackSupportRun;
-    if(witness&&support?.phase==='post-carry-support'&&
-       support.playerId===witness.runnerId&&
-       duty(frame,witness.runnerId)==='attack-support-intent'){
+    // Use THIS tick's retained runner, not the cumulative first swap:
+    // later authentic contacts may qualify a different runner.
+    if(support?.phase==='post-carry-support'&&
+       duty(frame,support.playerId)==='attack-support-intent'){
+      const witness=Object.freeze({
+       tick:t,team:support.team,runnerId:support.playerId,
+       sourcePassTick:support.sourcePassTick,
+       sourceCarryTick:support.carryContinuation.sourceCarryTick
+      });
       const pass=events.find(e=>e.tick===witness.sourcePassTick&&
        e.action==='pass'&&e.team===witness.team);
       const carry=events.find(e=>e.tick===witness.sourceCarryTick&&
@@ -96,9 +109,14 @@ function runSearch(R,scenario){
    }
    lastAudit=audit;
   }
+  const audit=world.snapshot().continuityAudit;
+  const passes=events.filter(e=>e.action==='pass');
+  const carries=events.filter(e=>e.action==='carry');
+  const sameTeamPassCarry=carries.some(c=>passes.some(p=>
+   p.team===c.team&&p.tick<c.tick));
   return Object.freeze({scenario,firstResidual,positive,
-   audit:world.snapshot().continuityAudit,
-   observedPhysicalActions:events.length});
+   audit,observedPhysicalActions:events.length,
+   passes:passes.length,carries:carries.length,sameTeamPassCarry});
  }finally{world.dispose();}
 }
 // Validate the discovered case afresh against a baseline and two completely
@@ -151,25 +169,58 @@ function verifyPositive(R,result){
 }
 const R=await initializeRapier(rapier);
 let best=null,examined=0,physicalActions=0;
+let withPass=0,withCarry=0,withSameTeamPassCarry=0,withEligible=0;
+let withPreConflict=0,withC23nResolved=0,withResidual=0;
+let withRetained=0,rejectedCounterfactuals=[];
+const score=a=>[
+ a.audit.retainedSupport,a.audit.residualConflicts,
+ a.audit.preHandoffConflicts,a.audit.c23nResolved,
+ a.audit.eligible,Number(a.sameTeamPassCarry),a.observedPhysicalActions
+];
+const better=(a,b)=>{
+ if(!b)return true;
+ const as=score(a),bs=score(b);
+ for(let i=0;i<as.length;i++){
+  if(as[i]!==bs[i])return as[i]>bs[i];
+ }
+ return false;
+};
 for(const scenario of scenarios){
- const outcome=runSearch(R,scenario);
+ const outcome=runSearch(R,scenario),a=outcome.audit;
  examined++;
  physicalActions+=outcome.observedPhysicalActions;
- if(outcome.firstResidual&&!best)best=outcome;
+ if(outcome.passes)withPass++;
+ if(outcome.carries)withCarry++;
+ if(outcome.sameTeamPassCarry)withSameTeamPassCarry++;
+ if(a.eligible)withEligible++;
+ if(a.preHandoffConflicts)withPreConflict++;
+ if(a.c23nResolved)withC23nResolved++;
+ if(a.residualConflicts)withResidual++;
+ if(a.retainedSupport)withRetained++;
+ if(better(outcome,best))best=outcome;
  if(outcome.positive){
   // A positive candidate is not accepted unless independent A/B succeeds.
-  const accepted=verifyPositive(R,outcome);
-  console.log('C2_A_POSITIVE_REAL_RAPIER_WITNESS',JSON.stringify({
-   accepted,examined,outcome
-  }));
-  process.exit(0);
+  try{
+   const accepted=verifyPositive(R,outcome);
+   console.log('C2_A_POSITIVE_REAL_RAPIER_WITNESS',JSON.stringify({
+    accepted,examined,outcome
+   }));
+   process.exit(0);
+  }catch(error){
+   rejectedCounterfactuals.push(Object.freeze({
+    scenario,firstResidual:outcome.firstResidual,
+    reason:String(error.message)
+   }));
+  }
  }
 }
 // Exit nonzero so this diagnostic cannot be mistaken for positive coverage.
 console.log('C2_A_NO_POSITIVE_RAPIER_WITNESS',JSON.stringify({
- examined,ticks,physicalActions,
- firstResidualCandidate:best?.firstResidual??null,
- firstResidualScenario:best?.scenario??null,
- bestAudit:best?.audit??null
+ examined,ticks,physicalActions,initialXValues:[...new Set(sampled.map(v=>v.x))],
+ withPass,withCarry,withSameTeamPassCarry,withEligible,withPreConflict,
+ withC23nResolved,withResidual,withRetained,
+ bestScenario:best?.scenario??null,bestAudit:best?.audit??null,
+ bestSameTeamPassCarry:best?.sameTeamPassCarry??false,
+ rejectedCounterfactuals
 }));
 process.exitCode=2;
