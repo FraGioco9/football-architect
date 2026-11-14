@@ -14,7 +14,10 @@ export async function verifyRealContractRoster(browser,{origin,email,password}){
    r.request().method()==='POST');
   await operator.locator('#account-login button[type="submit"]').click();
   assert.equal((await login).status(),200,'Disposable operator login must succeed');
-  await operator.waitForURL(u=>u.pathname==='/admin');
+  // Direct /account/login intentionally lands on the Profile after success;
+  // only a login initiated from a protected Admin route returns to /admin.
+  await operator.waitForURL(u=>u.pathname==='/account');
+  await operator.locator('#protected[aria-busy="false"]').waitFor({state:'visible'});
 
   const publicRoster=await context.newPage();
   const rosterRequests=[];
