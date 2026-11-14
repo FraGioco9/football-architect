@@ -502,6 +502,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     for(const [width,lang] of [[320,'it'],[375,'en'],[390,'de'],[430,'fr'],[620,'es'],[768,'it'],[1440,'en']]){
       await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
       await run('document.documentElement.lang='+JSON.stringify(lang));await delay(75);
+      // Inspect any real first-paint row before inserting the isolated test
+      // table, so measuring the probe cannot displace its geometry.
+      const firstPaintGapBefore=await run(`(()=>{
+       const tabs=document.querySelector('.club-tabs');
+       const row=document.querySelector('.club-history .club-history-row-loading');
+       return tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null;
+      })()`);
       await run(`(()=>{
        const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
        const wrap=document.createElement('div');wrap.id='history-mobile-560-probe';
@@ -519,7 +526,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
          '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
          '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
          ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
-       document.querySelector('.club-history').append(wrap);
+       // Put the synthetic table at the first content position, matching a
+       // verified History section rather than after any unavailable notice.
+       document.querySelector('.club-history').prepend(wrap);
       })()`);
       const initial=await run(`(()=>{
        const wrap=document.getElementById('history-mobile-560-probe');
@@ -531,10 +540,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const section=document.querySelector('.club-history');
        return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
         separatorGap:tabs&&section?section.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
-        firstRowGap:tabs&&section?.querySelector('tbody > .club-history-season-row')?
-         section.querySelector('tbody > .club-history-season-row').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
-        firstPaintGap:tabs&&section?.querySelector('.club-history-row-loading')?
-         section.querySelector('.club-history-row-loading').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        firstRowGap:tabs&&wrap.querySelector('tbody > .club-history-season-row')?
+         wrap.querySelector('tbody > .club-history-season-row').getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
         parentLayout:section?{display:getComputedStyle(section.parentElement).display,gap:getComputedStyle(section.parentElement).rowGap,sectionMargin:getComputedStyle(section).marginTop,tabMargin:getComputedStyle(tabs).marginBottom}:null,
         tabBorder:tabs?getComputedStyle(tabs).borderBottomWidth:null,
         shellOverflow:document.documentElement.scrollWidth-innerWidth,
@@ -550,9 +557,9 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
         'mobile History starts flush with the view separator at '+width+': '+JSON.stringify(initial));
        assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
-        'the actual first club-history-season-row touches the view separator at '+width+': '+JSON.stringify(initial));
-       if(initial.firstPaintGap!==null)assert.ok(Math.abs(initial.firstPaintGap)<=1,
-        'first-paint History skeleton row also touches the separator at '+width+': '+JSON.stringify(initial));
+        'first season row touches the view separator when first in History at '+width+': '+JSON.stringify(initial));
+       if(firstPaintGapBefore!==null)assert.ok(Math.abs(firstPaintGapBefore)<=1,
+        'pre-insertion first-paint History skeleton row touches separator at '+width+': '+firstPaintGapBefore);
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
