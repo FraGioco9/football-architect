@@ -41,7 +41,7 @@ test('public sporting bridge permits only canonical GET paths and strips operato
  const target='http://127.0.0.1:'+upstream.address().port;
  const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
  try{
-  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/clubs/IT-41/seasons/1/fixtures','/api/clubs/IT-0/seasons/1/fixtures','/api/clubs/IT-01/seasons/1/fixtures','/api/clubs/IT-1/seasons/0/fixtures','/api/clubs/IT-1/seasons/01/fixtures','/api/clubs/IT-1/seasons/9007199254740992/fixtures','/api/clubs/IT-1/seasons/1/fixtures/extra','/api/clubs/IT-1/seasons/1/fixtures?admin=1','/api/clubs/IT-1/seasons/1/fixtures%2Fextra','/api/players/page/0','/api/players/page/1','/api/players/page/1?bad=1','/api/players/page/10000','/api/players?page=0','/api/players?page=-1','/api/players?page=01','/api/players?page=','/api/players?page=10000','/api/players?page=1&sort=unknown','/api/players?page=1&page=2','/api/players?view=overview','/api/players?ageMin=40&ageMax=20','/api/players?position=CF','/api/players?nationality=ZZZ','/api/players?foot=left&foot=right','/api/players?nationality=%49TA']){
+  for(const path of ['/api/competitions/ZZ-1/seasons/1','/api/competitions/IT-1/seasons/0','/api/competitions/IT-1/seasons/1?url=evil','/api/calendar/seasons/1/days/57','/api/calendar/seasons/0/days/1','/api/clubs/IT-41/seasons/1/overview','/api/clubs/IT-1/seasons/0/overview','/api/clubs/IT-1/seasons/1/overview?unsafe=1','/api/clubs/IT-41/history','/api/clubs/IT-0/history','/api/clubs/IT-1/history?unsafe=1','/api/clubs/IT-1/history/extra','/api/clubs/IT-41/seasons/1/fixtures','/api/clubs/IT-0/seasons/1/fixtures','/api/clubs/IT-01/seasons/1/fixtures','/api/clubs/IT-1/seasons/0/fixtures','/api/clubs/IT-1/seasons/01/fixtures','/api/clubs/IT-1/seasons/9007199254740992/fixtures','/api/clubs/IT-1/seasons/1/fixtures/extra','/api/clubs/IT-1/seasons/1/fixtures?admin=1','/api/clubs/IT-1/seasons/1/fixtures%2Fextra','/api/players/page/0','/api/players/page/1','/api/players/page/1?bad=1','/api/players/page/10000','/api/players?page=0','/api/players?page=-1','/api/players?page=01','/api/players?page=','/api/players?page=10000','/api/players?offset=0&sort=unknown','/api/players?offset=0&page=2','/api/players?view=overview','/api/players?ageMin=40&ageMax=20','/api/players?position=CF','/api/players?nationality=ZZZ','/api/players?foot=left&foot=right','/api/players?nationality=%49TA']){
    const res=response();await proxyAdminApi(req(path),res,{target});assert.equal(res.status,/[?%]/.test(path)?403:404);
   }
   const denied=response();await proxyAdminApi({...req('/api/competitions/IT-1/seasons/1'),method:'POST'},denied,{target});assert.equal(denied.status,405);
@@ -88,7 +88,7 @@ test('LAN opt-in serves only anonymous world and competition GETs on a verified 
     ['history query rejected',lanRequest('/api/clubs/IT-1/history?admin=1'),opts],
     ['fixtures query rejected',lanRequest('/api/clubs/IT-1/seasons/1/fixtures?admin=1'),opts],
     ['fixtures POST rejected',{...lanRequest('/api/clubs/IT-1/seasons/1/fixtures'),method:'POST'},opts],
-    ['players query rejected',lanRequest('/api/players?page=1&admin=1'),opts],
+    ['players query rejected',lanRequest('/api/players?offset=0&admin=1'),opts],
     ['history POST rejected',{...lanRequest('/api/clubs/IT-1/history'),method:'POST'},opts]
   ]){
    const res=response();await proxyAdminApi(request,res,options);assert.equal(res.status,403,reason);
@@ -194,13 +194,13 @@ test('Admin Players preview/commit/list bridge preserves authorization and accep
 });
 
 
-test('Players pagination query is forwarded only for canonical GET pages and strips all secrets',async()=>{
+test('Players offset query forwards only canonical GET requests and strips all secrets',async()=>{
  const seen=[];
  const upstream=createServer((req,res)=>{
   seen.push({url:req.url,method:req.method,cookie:req.headers.cookie,origin:req.headers.origin,csrf:req.headers['x-csrf-token']});
   res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['secret=must-not-cross']});
   const query=new URL(req.url,'http://localhost').searchParams;
-  const page=query.has('offset')?Number(query.get('offset'))/50+1:Number(query.get('page')||1);
+  const page=Number(query.get('offset')||0)/50+1;
   res.end(JSON.stringify({count:51,page,pageSize:50,totalPages:2,players:[]}));
  });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
  const target='http://127.0.0.1:'+upstream.address().port;
@@ -211,34 +211,34 @@ test('Players pagination query is forwarded only for canonical GET pages and str
   });q.on('error',reject);q.end();
  });
  try{
-  for(const path of ['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players?offset=0','/api/players?offset=50','/api/players/42']){
+  for(const path of ['/api/players','/api/players?offset=0','/api/players?offset=50','/api/players?offset=100','/api/players/42']){
    const r=await send(path);
    assert.equal(r.status,200,path);assert.equal(r.cookie,undefined);
    const params=new URL(path,'http://localhost').searchParams;
-   const expected=params.has('offset')?Number(params.get('offset'))/50+1:Number(params.get('page')||1);
+   const expected=Number(params.get('offset')||0)/50+1;
    assert.equal(JSON.parse(r.payload).page,expected);
   }
-  assert.deepEqual(seen.map(x=>x.url),['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players?offset=0','/api/players?offset=50','/api/players/42']);
+  assert.deepEqual(seen.map(x=>x.url),['/api/players','/api/players?offset=0','/api/players?offset=50','/api/players?offset=100','/api/players/42']);
   // URLSearchParams encodes comma lists, UTF-8 names and attribute lists. The shared
   // parser validates these paths; the bridge must not reject valid percent escapes.
   const encoded=[
-   '/api/players?page=1&nationality=ITA%2CENG&nationalityScope=any',
-   '/api/players?page=1&position=ST%2CRW&positionScope=any',
-   '/api/players?page=1&attributes=passing_70_x%2Cvision_x_90',
-   '/api/players?page=1&name=Jo%C3%A3o',
-   '/api/players?page=1&name=Andrea+Rossi',
-   '/api/players?page=1&sort=age&order=desc',
-   '/api/players?page=1&sort=passing&order=asc'
+   '/api/players?offset=0&nationality=ITA%2CENG&nationalityScope=any',
+   '/api/players?offset=0&position=ST%2CRW&positionScope=any',
+   '/api/players?offset=0&attributes=passing_70_x%2Cvision_x_90',
+   '/api/players?offset=0&name=Jo%C3%A3o',
+   '/api/players?offset=0&name=Andrea+Rossi',
+   '/api/players?offset=0&sort=age&order=desc',
+   '/api/players?offset=0&sort=passing&order=asc'
   ];
   for(const path of encoded){
    const response=await send(path);
    assert.equal(response.status,200,path);
    assert.equal(response.cookie,undefined);
   }
-  assert.deepEqual(seen.slice(7).map(x=>x.url),encoded,'forward canonical escapes unchanged');
+  assert.deepEqual(seen.slice(5).map(x=>x.url),encoded,'forward canonical escapes unchanged');
   for(const r of seen){assert.equal(r.method,'GET');assert.equal(r.cookie,undefined);assert.equal(r.origin,undefined);assert.equal(r.csrf,undefined)}
   const before=seen.length;
-  for(const path of ['/api/players?offset=1','/api/players?offset=-50','/api/players?offset=50&page=2','/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=unknown','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
+  for(const path of ['/api/players?offset=1','/api/players?offset=-50','/api/players?offset=50&page=2','/api/players?page=1','/api/players?page=2','/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?offset=0&page=2','/api/players?offset=0&sort=unknown','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
    const r=await send(path);assert.equal(r.status,403,path);
   }
   for(const invalid of ['/api/players/page/1','/api/players/0','/api/players/01','/api/players/abc']){

@@ -182,7 +182,7 @@ it('stale world and expired draft cannot create players',async()=>{
 });
 
 it('anonymous /api/players lists approved records only, with safe fields and pagination',async()=>{
- const empty=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
+ const empty=await worker.fetch(new Request(origin+'/api/players?offset=0'),service);
  expect(empty.status).toBe(200);
  expect((await empty.json() as any).count).toBe(0);
  const preview=await createPreview({count:51,seed:'directory-public-51',primaryNationality:'ITA',primaryPosition:'ST'});
@@ -208,7 +208,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
    expect(player).not.toHaveProperty(privateField);
   }
  }
- const second=await worker.fetch(new Request(origin+'/api/players?page=2'),service);
+ const second=await worker.fetch(new Request(origin+'/api/players?offset=50'),service);
  expect(second.status).toBe(200);
  const b=await second.json() as any;
  expect(b).toMatchObject({count:51,page:2,pageSize:50,totalPages:2});
@@ -219,7 +219,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const offsetFirst=await worker.fetch(new Request(origin+'/api/players?offset=0'),service);
  expect(offsetFirst.status).toBe(200);
  expect((await offsetFirst.json() as any).players.map((p:any)=>p.id)).toEqual(a.players.map((p:any)=>p.id));
- const firstExplicit=await worker.fetch(new Request(origin+'/api/players?page=1'),service);
+ const firstExplicit=await worker.fetch(new Request(origin+'/api/players?offset=0'),service);
  expect(firstExplicit.status).toBe(200);
  expect((await firstExplicit.json() as any).players).toHaveLength(50);
  const matched=await worker.fetch(new Request(origin+'/api/players?position=ST&nationality=ITA&ageMin=0&ageMax=120'),service);
@@ -228,7 +228,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  const missed=await worker.fetch(new Request(origin+'/api/players?nationality=ENG&position=GK'),service);
  expect(missed.status).toBe(200);
  expect(await missed.json()).toMatchObject({count:0,page:1,totalPages:1,players:[]});
- const overflow=await worker.fetch(new Request(origin+'/api/players?page=3&nationality=ITA&position=ST'),service);
+ const overflow=await worker.fetch(new Request(origin+'/api/players?offset=100&nationality=ITA&position=ST'),service);
  expect(overflow.status).toBe(200);
  expect(await overflow.json()).toMatchObject({count:51,page:3,totalPages:2,players:[]});
  // The first-click DESC order puts GK first, then right-to-left positions.
@@ -244,7 +244,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  expect(reverse.status).toBe(200);
  expect(((await reverse.json()) as any).players[0].primary_position).toBe('ST');
  // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
- for(const invalidQuery of ['?offset=1','?offset=51','?offset=-50','?offset=500000','?offset=50&page=2','?offset=50&offset=100','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
+ for(const invalidQuery of ['?offset=1','?offset=51','?offset=-50','?offset=500000','?offset=50&page=2','?offset=50&offset=100','?page=1','?page=2','?page=9999','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
   expect(invalid.status,invalidQuery).toBe(422);
   expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
@@ -284,7 +284,7 @@ it('public Players filters support multiselect and opt-in secondary matches acro
  expect(combined.data.players[0].id).toBe(first!.id);
  const noCrossMatch=await get('?nationality=ENG&position=RW&positionScope=any');
  expect(noCrossMatch).toMatchObject({status:200,data:{count:0}});
- const twoNationalities=await get('?nationality=ITA%2CENG&page=2');
+ const twoNationalities=await get('?nationality=ITA%2CENG&offset=50');
  expect(twoNationalities).toMatchObject({status:200,data:{count:51,page:2,totalPages:2}});
  expect(twoNationalities.data.players).toHaveLength(1);
  const twoPositions=await get('?position=ST%2CRW&positionScope=any');
@@ -328,7 +328,7 @@ it('public name substring and multiple attribute ranges filter the active genera
  const combined=await get('?name=Andrea+Filterprobe&attributes=passing_87_87%2Cvision_90_x');
  expect(combined).toMatchObject({status:200,data:{count:1,totalPages:1}});
  expect(combined.data.players[0].id).toBe(first!.id);
- const low=await get('?attributes=passing_1_1&page=2');
+ const low=await get('?attributes=passing_1_1&offset=50');
  expect(low).toMatchObject({status:200,data:{count:50,page:2,totalPages:1,players:[]}});
  const high=await get('?attributes=passing_88_99');
  expect(high).toMatchObject({status:200,data:{count:0,players:[]}});
@@ -366,10 +366,10 @@ it('sorting all generated Players is stable across pages, not limited to the 50 
   const response=await worker.fetch(new Request(origin+'/api/players'+query),service);
   return {status:response.status,data:await response.json() as any};
  };
- const maxAge=await get('?sort=age&order=desc&page=1');
+ const maxAge=await get('?sort=age&order=desc&offset=0');
  expect(maxAge).toMatchObject({status:200,data:{count:51,totalPages:2,page:1}});
  expect(maxAge.data.players[0].id).toBe(first!.id);
- const ascendingLast=await get('?sort=age&order=asc&page=2');
+ const ascendingLast=await get('?sort=age&order=asc&offset=50');
  expect(ascendingLast).toMatchObject({status:200,data:{count:51,totalPages:2,page:2}});
  expect(ascendingLast.data.players).toHaveLength(1);
  expect(ascendingLast.data.players[0].id).toBe(first!.id);

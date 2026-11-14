@@ -235,6 +235,7 @@ test('Players view and group slugs are explicit even for both default selections
  assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
  assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&offset=50');
  assert.equal(run({view:'overview',group:'technical',page:3},'?page=3'),'/players?view=overview&offset=100');
+ assert.equal(run({view:'overview',group:'technical',page:1},'?page=2'),'/players?view=overview','obsolete page URL is scrubbed');
 });
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
@@ -361,7 +362,7 @@ test('Players main tabs are compact and centered; existing top margins alone are
 });
 
 
-test('Players collection uses a validated page query, without changing the public response',()=>{
+test('Players collection uses a validated offset query, without changing the public response',()=>{
  const server=read('backend/src/index.ts'),client=read('assets/players-directory.js'),integration=read('backend/tests/players-generation-runtime.test.ts');
  assert.ok(server.includes("if(url.pathname==='/api/players')"));
  assert.ok(server.includes('parsePublicPlayerQuery(url.search)'));
@@ -369,7 +370,7 @@ test('Players collection uses a validated page query, without changing the publi
  assert.ok(!server.includes('playersPage=url.pathname.match'),'old page path should not be routed');
  assert.ok(client.includes("fetch('/api/players?'+query.toString()"));
  assert.ok(!client.includes("fetch('/api/players/page/'+page"));
- for(const path of ['?page=1','?page=2','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview']){
+ for(const path of ['?offset=0','?offset=50','?offset=100','?offset=1','?offset=01','?offset=-50','?offset=500000','?offset=50&offset=100','?page=1','?page=2','?page=2&offset=50','?view=overview']){
   assert.ok(integration.includes(path),'missing integration case '+path);
  }
  assert.ok(integration.includes('expect(legacy.status).toBe(404)'));
@@ -398,7 +399,7 @@ test('PLAYERS-FILTERS-01 uses expandable sections, multi-select scopes and plain
  assert.doesNotMatch(code,/stepButtons/);
  assert.match(code,/state\.filters=nextFilters;state\.page=1;\s*syncUrl\(\);syncControls\(\);closeFilterDialog\(\);load\(1\)/);
  assert.match(code,/filterSignature\(next\.filters\)!==filterSignature\(state\.filters\)/);
- assert.match(code,/const query=new URLSearchParams\(\{page:String\(page\)\}\)/);
+ assert.match(code,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
  assert.match(code,/if\(state\.filters\?\.\[key\]\)query\.set\(key,state\.filters\[key\]\)/);
  assert.match(code,/renderCount\(lastCount\)/);
  for(const lng of ['en','it','de','es','fr'])assert.ok(code.includes(lng+':{name:'),lng);
@@ -477,7 +478,7 @@ test('Players nationality and positions use searchable multi-select with seconda
 });
 test('Players parser validates safe multiple nationality/position values, secondary scopes and height ranges',async()=>{
  const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
- const query=parsePublicPlayerQuery('?nationality=ITA%2CENG&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=165&heightMax=195&ageMin=18&foot=left&page=3');
+ const query=parsePublicPlayerQuery('?nationality=ITA%2CENG&nationalityScope=any&position=ST%2CRW&positionScope=any&heightMin=165&heightMax=195&ageMin=18&foot=left&offset=100');
  assert.deepEqual(query,{page:3,filters:{nationality:['ITA','ENG'],nationalityScope:'any',position:['ST','RW'],positionScope:'any',ageMin:18,heightMin:165,heightMax:195,foot:'left'}});
  assert.ok(isAllowedPublicPlayersPath('/api/players?nationality=ITA%2CENG&nationalityScope=any'));
  for(const invalid of ['?nationalityScope=any','?positionScope=any','?nationality=ITA%2CITA','?nationality=ITA%2CXYZ','?position=ST%2CST','?position=ST%2CXX','?heightMin=90','?heightMax=251','?ageMin=30&ageMax=20','?heightMin=220&heightMax=190','?nationality=%49TA','?position=ST%2cRW','?nationality=ITA&nationality=ENG','?foot=up']){
@@ -682,13 +683,13 @@ test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loa
 
 test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL pagination contracts',()=>{
  const js=read('assets/players-directory.js'),css=read('assets/app.css');
- assert.match(js,/const loadMore=document.createElement\('button'\),counter=document.createElement\('span'\)/);
+ assert.match(js,/const loadMore=document.createElement\('button'\)/);
  assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
  assert.match(js,/async function fetchBatch\(page\)/);
  assert.match(js,/pageSize!==50/);
  assert.match(js,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
  assert.match(js,/const validOffset=rawOffset!==null/);
- assert.match(js,/validLegacy=rawOffset===null/);
+ assert.doesNotMatch(js,/legacyPage|validLegacy/,'page URLs are not interpreted');
  assert.match(js,/data\.count>0&&page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
  assert.match(js,/async function appendNext\(\)/);
  assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
@@ -706,24 +707,27 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('offset',String\(\(state\.page-1\)\*50\)\)/);
  assert.doesNotMatch(js,/query\.set\('page'/,'offset-only client API');
  assert.doesNotMatch(js,/const loaded=t\.loaded/,'no Loaded X of Y counter');
- assert.match(js,/counter\.textContent=appendPending\?t\.loadingMore:''/);
+ assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.loadingMore|t\.end/,'no loading or end-of-results messages');
+ assert.match(js,/pager\.hidden=current\.players\.length===0\|\|loadedThrough>=current\.totalPages/,'hide footer at end');
+ assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=true;loadMore\.disabled=true;return;/,'hide fallback during auto-loading');
  assert.match(css,/\.app-players-end-sentinel\{/);
  assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
  for(const lang of ['en','it','de','es','fr']){
   const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
-  assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);assert.match(labels,/end:/);
+  assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);
+  assert.doesNotMatch(labels,/,loadingMore:|,end:/);
  }
 });
-test('PLAYERS-SCROLL-01 offset query validates legacy and canonical cases',async()=>{
+test('PLAYERS-SCROLL-01 offset query rejects obsolete page URLs',async()=>{
  const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
  for(const [query,page] of [['?offset=0',1],['?offset=50',2],['?offset=100',3],['?offset=499900',9999],['?offset=50&sort=age&order=desc',2]]){
   assert.equal(parsePublicPlayerQuery(query).page,page);
   assert.equal(isAllowedPublicPlayersPath('/api/players'+query),true);
  }
  assert.deepEqual(parsePublicPlayerQuery('?offset=50&nationality=ITA'),{page:2,filters:{nationality:['ITA']}});
- assert.equal(parsePublicPlayerQuery('?page=2').page,2,'legacy page requests remain valid');
+ assert.equal(parsePublicPlayerQuery('').page,1,'unspecified offset defaults to zero');
  for(const query of ['?offset=','?offset=01','?offset=000','?offset=-50','?offset=1','?offset=51','?offset=499950',
-  '?offset=500000','?offset=50&offset=50','?offset=50&page=2','?page=2&offset=50','?offset=x']){
+  '?offset=500000','?offset=50&offset=50','?offset=50&page=2','?page=2&offset=50','?page=1','?page=2','?page=9999','?offset=x']){
   assert.throws(()=>parsePublicPlayerQuery(query),{name:'TypeError'},query);
   assert.equal(isAllowedPublicPlayersPath('/api/players'+query),false,query);
  }
