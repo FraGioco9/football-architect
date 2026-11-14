@@ -12,6 +12,18 @@ const changes=new Map();
 for(const file of files){
  const older=execFileSync("git",["show",base+":"+file],{encoding:"utf8",maxBuffer:3e6});
  const newer=readFileSync(file,"utf8");
+ // Normalize only the approved #532 sitewide 25x20 -> 20x16 flag change.
+ // The rest of the PR-base CSS, geometry and focus comparisons remain strict.
+ if(file==="assets/app.css"){
+  const oldRoot=":root{--fa-flag-width:25px;--fa-flag-height:20px;";
+  const newRoot=":root{--fa-flag-width:20px;--fa-flag-height:16px;";
+  const oldFrame=".app-world-flag-frame{width:25px;height:20px;aspect-ratio:5/4}";
+  const newFrame=".app-world-flag-frame{width:var(--fa-flag-width);height:var(--fa-flag-height);aspect-ratio:5/4}";
+  if(newer.includes(newRoot)&&newer.includes(newFrame)&&(older.includes(oldRoot)||older.includes(oldFrame))){
+   assert.ok(older.includes(oldRoot)&&older.includes(oldFrame),"FE-01 baseline flag rules must match approved old dimensions");
+   older=older.replace(oldRoot,newRoot).replace(oldFrame,newFrame);
+  }
+ }
  if(older!==newer)changes.set("/"+file,{before:older,after:newer});
 }
 assert.ok(changes.size,"FE-01 CSS source was not changed");
