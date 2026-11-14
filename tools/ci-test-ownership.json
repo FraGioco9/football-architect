@@ -54,7 +54,7 @@
     "backend/tests/international-holder-allocation-proposal.test.ts": "backend-contract",
     "backend/tests/international-holder-review.test.ts": "backend-contract",
     "backend/tests/knockout-progression-runtime.test.ts": "backend-runtime",
-    "backend/tests/knockout-slot-reservations.test.ts": "backend-runtime",
+    "backend/tests/knockout-slot-reservations-runtime.test.ts": "backend-runtime",
     "backend/tests/league-partial.test.ts": "backend-contract",
     "backend/tests/league-standings-runtime.test.ts": "backend-runtime",
     "backend/tests/lifecycle-command-runtime.test.ts": "backend-runtime",
