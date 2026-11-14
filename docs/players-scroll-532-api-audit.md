@@ -19,16 +19,36 @@ Using the equivalent migration tables and 10,000 **synthetic in-memory** generat
 
 The plans demonstrate structural work to profile; they do not predict hosted D1 p50/p95 latency, bytes, cache behavior or production throughput.
 
+## Reproducible local synthetic SQLite measurements (2026-11-14)
+
+Command (Python 3.11+, no dependencies): `python tools/bench-public-players-532.py --sizes 1000,10000,50000 --repeats 13`. The script **only** uses `sqlite3.connect(":memory:")` with deterministic synthetic players; it never opens a user, development, hosted or remote database. Representative run: Python 3.13.5, SQLite 3.46.1, warmed up then 13 timings per case, milliseconds. The synthetic JSON payload is smaller than an actual generated-player record; host CPU, database cache, Cloudflare D1 network and real data distributions differ.
+
+| SQL scenario | 1k median / p95 | 10k median / p95 | 50k median / p95 |
+| --- | ---: | ---: | ---: |
+| `COUNT(*)`, no filter | 0.002 / 0.080 | 0.003 / 0.006 | 0.007 / 0.039 |
+| `COUNT(*)`, JSON nationality | 0.516 / 0.583 | 5.928 / 10.518 | 27.998 / 29.321 |
+| `COUNT(*)`, two JSON skills | 0.619 / 0.992 | 6.847 / 7.518 | 33.937 / 35.449 |
+| First 50, `id DESC` | 0.036 / 0.037 | 0.035 / 0.416 | 0.035 / 0.062 |
+| Last 50, deep `id DESC OFFSET` | 0.080 / 0.265 | 0.587 / 0.693 | 2.904 / 4.234 |
+| First 50, JSON age sort | 0.922 / 1.265 | 8.650 / 13.742 | 40.368 / 43.484 |
+| First 50, nationality filter + age sort | 0.725 / 1.191 | 7.515 / 8.898 | 34.629 / 39.638 |
+
+At 10k, `EXPLAIN QUERY PLAN` shows `SCAN generated_players` for nationality counts, an index/PK-assisted lookup for the default ID order and `USE TEMP B-TREE FOR ORDER BY` for the JSON-age sort. These are **local synthetic timings, not D1 SLO compliance**. No index or API change is justified without representative D1-equivalent data and actual browser memory/network observations.
+
+## Nonvisual append announcements (pending new exact-head CI)
+
+The current approved UI retains a disabled localized Loading... button during append, hides it at EOF and provides no visible appended-count/footer copy. In this PR, an *independent persistent* `.sr-only` `role=status`/polite live region follows the sentinel, outside the pager that hides at EOF. It announces the newly appended count and displayed total, EOF and errors in EN/DE/ES/FR/IT. The existing focusable table scroll region receives keyboard focus before a focused fallback button is disabled. Sorting/filtering clears stale append text. A focused regression test exercises append, EOF/error/retry and focus handoff. This does **not** imply a real VoiceOver/NVDA signoff.
+
 ## Targeted acceptance matrix and limits
 | Area | Evidence | Remaining action |
 | --- | --- | --- |
 | Public API query grammar and legacy URL retirement | Existing parser/DEV/source tests and approved #567 contract | No compatibility rollback; ensure documentation remains consistent |
-| Cardinalities 0, 1, 50, 51 and page 2 | Added runtime DB-adapter tests in this PR | PASS only after exact-head CI |
-| World generation changes | Added rejection test against actual read function | PASS only after exact-head CI |
+| Cardinalities 0, 1, 50, 51 and page 2 | Real public-read contract tests | PASS on previous exact-head #600 SHA `dbcdf11b` (recheck new head after accessibility edits) |
+| World generation changes | Actual read function with synthetic world-generation transition | PASS on previous exact-head #600 SHA `dbcdf11b` (recheck new head) |
 | Concurrent append, EOF, retry, count shift, ID overlap | Existing executable frontend behavior tests in `tests/players-directory.test.mjs` | Full browser smoke remains important |
-| Rapid overlapping sorting/refetch | Added executable stale-success/stale-error test in this PR | PASS only after exact-head CI |
-| Auto-append accessibility | Native Load more/Retry button exists; loading rows have status semantics | Screen-reader announcement of **new appended rows** is not demonstrated; keyboard/VoiceOver test pending |
-| Performance | Source analysis and local illustrative query plans above | Hosted-equivalent D1 `EXPLAIN QUERY PLAN`, p50/p95, bytes, memory/DOM and benchmark baselines remain to be measured |
+| Rapid overlapping sorting/refetch | Executable stale-success/stale-error test | PASS on previous exact-head #600 SHA `dbcdf11b` (recheck new head) |
+| Auto-append accessibility | This PR adds a persistent visually-hidden localized live region with append/EOF/error announcements and keyboard-focus handoff from Load more | CI and actual screen-reader/keyboard AT verification still required; sitewide focus remains #596 |
+| Performance | Measured in-memory synthetic SQLite p50/p95 and plans for 1k/10k/50k; reproducible stdlib-only script included | Real D1 latency/bytes and browser heap/DOM measurements not yet verified |
 
 ## Safe follow-up performance protocol
 1. On a **local throwaway DB only**, load 1k/10k/50k synthetic player rows. Do not change an existing user DB or any remote D1 instance.
