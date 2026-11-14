@@ -253,3 +253,13 @@ This intentionally favors a reusable behavior contract over duplicated host/serv
 **Retention:** `match-engine/tests/player-movement.test.mjs` has 172 static named cases, `physics-diagnostics.test.mjs` 46, with separate contact, spin, diagnostics, determinism and UI contracts. Those are **source-level** counts, not measured runtime counts or proof of duplication. Avoid modifying the active Match Engine implementation/#480 without a separate focused review.
 
 **Validation:** current package script and workflow membership verified at 9 Node + 1 browser; JavaScript syntax validated. The helper is a diagnostic inventory and is not itself a Match Engine runtime test. Required exact-head CI after A14 must still be checked. No production code, targeted workflow trigger, CI selection, database, deploy or merge change.
+
+## Batch A15 — generic INT-24 brackets and invalid-case contracts (2026-11-14)
+
+**Review:** `tests/competition-rules-model.test.mjs` already validates the derived league metrics for all 18 competitions, but its bracket topology and nine invalid-input mutations only exercised the first international competition (`int-1`). The other independently configured cup, `int-2`, has the same format but a different, explicitly bound final event.
+
+**A15:** replace the arbitrary `int-1` fixture with the complete `category === 'international'` catalogue collection (asserting that it contains both cups). Check **all four original bracket invariants** for each cup, and run the **same nine malformed-input mutations for each cup**. The wrong-final mutation selects the *other* cup's actual final marker, which keeps the cross-competition binding test meaningful in both directions. The 4 existing top-level Node tests remain **4**; bracket validation runs on 2 cups instead of 1; 9 invalid cases become 18. Each failed assertion names its cup, with malformed-case labels making failures actionable. No additional competition, duplicate test file, arbitrary name, timeout or external IO.
+
+**Not modified:** published sport rules or calendar, live cup generation, rules registry, competition catalog, data, backend/Worker/D1, Match Engine, CI routing, deploy and remote DB. After the change, check exact-head Site and required FULL evidence. Individual test runtime and overall CI wall time must be measured rather than assumed.
+
+**Previous A14 HEAD** `7aab99a822053b270c13b850c27b392ef180c1e1` had Site, Browser, Player Generator and both name catalog workflows PASS; Admin + FULL were still in progress when A15 was prepared. A15 exact-head result must be checked separately. PR remains Draft/HOLD; no merge authorization.
