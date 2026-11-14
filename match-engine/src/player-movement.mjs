@@ -3284,8 +3284,33 @@ export function createPlayerMovement({
    // exceed free-space braking, and must never be mistaken for normal
    // bounded acceleration or an impulse imparted to the real match ball.
    p.blockedBy=blocker?.id??null;
-   if(blocker){p.vx=0;p.vy=0;}
-   else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
+   if(blocker){
+    // C2-b: only the real, source-authenticated carry follower may try
+    // a bounded lateral step when its direct pursuit step is rejected.
+    // No change to the universal 0.98m collision guard or ball physics.
+    let detour=null;
+    if(activeFixtureCarryPursuit?.playerId===p.id&&dist>1e-8){
+     const forwardX=dx/dist,forwardY=dy/dist;
+     const maxSideSpeed=Math.min(speedLimit,PLAYER_ACCEL_MPS2*PLAYER_DT);
+     const candidates=[1,-1].map(side=>{
+      const sideVx=-forwardY*side*maxSideSpeed;
+      const sideVy=forwardX*side*maxSideSpeed;
+      const candidateX=p.x+sideVx*PLAYER_DT;
+      const candidateY=p.y+sideVy*PLAYER_DT;
+      if(Math.abs(candidateX)>maxX||Math.abs(candidateY)>maxY)return null;
+      const nearest=Math.min(...players.filter(other=>other!==p).map(
+       other=>Math.hypot(candidateX-other.x,candidateY-other.y)));
+      if(nearest<PLAYER_MIN_SEPARATION_M-1e-9)return null;
+      return {x:candidateX,y:candidateY,vx:sideVx,vy:sideVy,
+       nearest,side};
+     }).filter(Boolean);
+     // Prefer the safer side; ties are deterministic.
+     detour=candidates.sort((a,b)=>b.nearest-a.nearest||b.side-a.side)[0]??null;
+    }
+    if(detour){
+     p.x=detour.x;p.y=detour.y;p.vx=detour.vx;p.vy=detour.vy;
+    }else{p.vx=0;p.vy=0;}
+   }else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
    const speed=Math.hypot(p.vx,p.vy);
    // C2.3u: only the *same* source-authenticated near-ball runner
    // may pivot toward the previous true ball. No direct facing write,
