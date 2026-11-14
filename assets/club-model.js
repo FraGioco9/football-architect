@@ -5,6 +5,7 @@
  if(typeof module!=='undefined'&&module.exports)module.exports=model;
 })(typeof window!=='undefined'?window:globalThis,(routes)=>{
  'use strict';
+ const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const fixtureUI=typeof module!=='undefined'&&module.exports&&typeof require==='function'?require('./club-fixtures.js'):globalThis.faClubFixtures;
  const views=['overview','roster','fixtures','stats','history'];
  const rosterFlags=Object.freeze({
@@ -177,7 +178,7 @@
     const cells=mode==='attributes'
      ?'<td>'+escape(positions||'—')+'</td>'+attributeKeys.map(key=>'<td>'+value(player.attributes?.[key])+'</td>').join('')
      :'<td>'+escape(positions||'—')+'</td><td>'+value(player.age)+'</td><td>'+(Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—')+'</td><td>'+escape(player.preferred_foot==='left'?w.left:player.preferred_foot==='right'?w.right:'—')+'</td>';
-    return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'">'+escape(player.display_name)+'</a></td>'+cells+'</tr>';
+    return '<tr><td>'+flag+'</td><td><a class="club-roster-player-link" href="/players/'+id+'" data-mobile-name="'+escape(compactPlayerName(player.display_name))+'" aria-label="'+escape(player.display_name)+'">'+escape(player.display_name)+'</a></td>'+cells+'</tr>';
    }).join('');
   }
   const count=ready?new Intl.NumberFormat(lang).format(snapshot.count)+' '+(snapshot.count===1?w.one:w.many)

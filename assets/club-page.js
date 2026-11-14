@@ -98,7 +98,7 @@
   // Track both scrollable edges on scroll and viewport resize for conditional fades.
   const syncRosterTabEdges=()=>{
    const nav=host.querySelector('.club-roster-tabs');
-   if(!nav)return;
+   if(!nav||!nav.clientWidth)return; // Leave first-paint CSS fade until tab strip has real dimensions.
    const maximum=Math.max(0,nav.scrollWidth-nav.clientWidth);
    nav.dataset.canScrollLeft=String(maximum>1&&nav.scrollLeft>1);
    nav.dataset.canScrollRight=String(maximum>1&&nav.scrollLeft<maximum-1);

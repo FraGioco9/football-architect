@@ -109,6 +109,7 @@ function bootstrapClubFirstPaint(){
   // Match the hydrated Roster: expose fades only at scrollable edges.
   const subviewTabs=roster.querySelector('.club-roster-tabs');
   const syncSubviewFade=()=>{
+   if(!subviewTabs.clientWidth)return; // Hidden first-paint scaffold: keep CSS right-edge fade until visible.
    const max=Math.max(0,subviewTabs.scrollWidth-subviewTabs.clientWidth);
    subviewTabs.dataset.canScrollLeft=String(max>1&&subviewTabs.scrollLeft>1);
    subviewTabs.dataset.canScrollRight=String(max>1&&subviewTabs.scrollLeft<max-1);

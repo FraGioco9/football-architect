@@ -76,8 +76,8 @@ test('#574 mobile names abbreviate without losing original text or accessibility
  assert.match(read('assets/app.js'),/mobileTablePath==='\/players'/);
  assert.match(read('assets/app.js'),/import\('\/assets\/players-mobile\.js'\)/);
  assert.match(read('tools/publication-guard.mjs'),/"players-directory.js","players-mobile.js"/);
- assert.match(css,/\.fa-player-short-name\{display:none\}/);
- assert.match(css,/\.app-players-table \.fa-player-short-name,[\s\S]*?\.app-admin-view \.admin-contracts-table \.fa-player-short-name\{display:inline\}/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before/);
+ assert.match(css,/\.app-admin-view \.admin-contracts-table td\.admin-contracts-player-name\[data-mobile-name\]::before/);
 });
 
 test('#574 table edge fades reflect actual overflow, with no false fade at the ends',async()=>{
@@ -92,4 +92,38 @@ test('#574 table edge fades reflect actual overflow, with no false fade at the e
  assert.match(source,/region\.addEventListener\('scroll'/);
  assert.match(css,/\.app-players-table-scroll\[data-can-scroll-left="true"\]\{--fa-table-fade-left:16px\}/);
  assert.match(css,/\.app-players-table-scroll\[data-can-scroll-right="true"\]\{--fa-table-fade-right:16px\}/);
+});
+
+
+test('#574 player initials render with each row, without a follow-up mutation',()=>{
+ const directory=read('assets/players-directory.js'),roster=read('assets/club-model.js');
+ const preview=read('assets/admin-players-preview.js'),contracts=read('assets/admin-contracts.js');
+ for(const source of [directory,roster,preview,contracts])assert.match(source,/compactPlayerName/);
+ assert.match(directory,/link\.dataset\.mobileName=compactPlayerName\(player\.display_name\)/);
+ assert.match(preview,/link\.dataset\.mobileName=compactPlayerName\(player\.display_name\)/);
+ assert.match(contracts,/name\.dataset\.mobileName=compactPlayerName\(p\.name\)/);
+ assert.match(roster,/data-mobile-name=/);
+ assert.doesNotMatch(read('assets/players-mobile.js'),/replaceChildren\(fullSpan,smallSpan\)/);
+});
+
+test('#574 official club compactName is used only for the mobile Club cell',()=>{
+ const directory=read('assets/players-directory.js');
+ assert.match(directory,/manifest\.clubs/);
+ assert.match(directory,/c\.compactName/);
+ assert.match(directory,/label\.dataset\.mobileClubName=compact/);
+ assert.match(css,/\.app-players-table \.app-player-club-name\[data-mobile-club-name\]::before/);
+ assert.match(css,/th:nth-child\(7\)\{width:260px\}/);
+ assert.match(css,/th:nth-child\(7\)\{width:244px\}/);
+ const manifest=JSON.parse(read('clubs/_shared/manifest.json'));
+ const club=manifest.clubs.find(c=>c.countryId==='ENG'&&c.clubId===4);
+ assert.equal(club.primaryName,'Bournbrook United');
+ assert.equal(club.compactName,'Bournbrook');
+});
+
+test('#574 subview fade is visible at first paint and removed when scrolling ends',()=>{
+ assert.match(css,/\.app-players-groups\{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px/);
+ assert.match(css,/\.app-players-groups\[data-can-scroll-right="false"\]\{--app-tabs-fade-right:0px\}/);
+ const roster=read('assets/club-page.css');
+ assert.match(roster,/\.club-roster \.club-roster-tabs\{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px/);
+ assert.match(roster,/\.club-roster \.club-roster-tabs\[data-can-scroll-right="false"\]\{--app-tabs-fade-right:0px\}/);
 });

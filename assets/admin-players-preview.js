@@ -1,5 +1,6 @@
 /* Admin-only, server-authorized review page. No persistent player records or candidates in browser storage. */
 (()=>{'use strict';
+ const compactPlayerName=full=>{const m=/^(\S+)\s+(.+)$/u.exec(String(full||'').trim());return m&&!/^\p{L}\.$/u.test(m[1])?Array.from(m[1])[0]+'. '+m[2]:String(full||'').trim()};
  const host=document.querySelector('#app-admin'),root=host?.querySelector('[data-admin-players-preview-page]');
  if(!root)return;
  const permissionCache=window.faAdminPermissionsCache?.create(window);
@@ -173,7 +174,7 @@
     target.searchParams.set('returnView',view);target.searchParams.set('returnGroup',group);
     target.searchParams.set('returnPage',String(page+1));target.searchParams.set('returnScroll',String(Math.round(scroll.scrollLeft)));
     if(sort){target.searchParams.set('returnSort',sort);target.searchParams.set('returnOrder',order);}
-    link.href=target.pathname+target.search;link.textContent=player.display_name||'—';
+    link.href=target.pathname+target.search;link.textContent=player.display_name||'—';link.dataset.mobileName=compactPlayerName(player.display_name);link.setAttribute('aria-label',player.display_name||'—');
     nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     if(view==='overview'){

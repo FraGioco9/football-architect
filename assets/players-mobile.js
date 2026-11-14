@@ -15,7 +15,6 @@
   const max=Math.max(0,width-viewport),scrollable=max>1;
   return {left:scrollable&&offset>1,right:scrollable&&offset<max-1};
  };
- const selector='.app-player-name-link,.club-roster-player-link,.admin-contracts-player-name';
  function mount(win){
   const doc=win.document;
   const start=()=>{
@@ -28,18 +27,6 @@
    };
    const observer=typeof win.ResizeObserver==='function'
     ?new win.ResizeObserver(entries=>{for(const entry of entries)updateFade(entry.target)}):null;
-   const decorate=node=>{
-    if(node.dataset.mobileNameReady)return;
-    const full=node.textContent?.trim();
-    if(!full)return;
-    node.dataset.mobileNameReady='true';
-    const shortened=abbreviate(full);
-    if(shortened===full)return;
-    const fullSpan=doc.createElement('span');fullSpan.className='fa-player-full-name';fullSpan.textContent=full;
-    const smallSpan=doc.createElement('span');smallSpan.className='fa-player-short-name';smallSpan.setAttribute('aria-hidden','true');smallSpan.textContent=shortened;
-    node.setAttribute('aria-label',full);
-    node.replaceChildren(fullSpan,smallSpan);
-   };
    const sync=()=>{
     // Roster/Preview can replace entire scrollers; detach observers from old nodes.
     for(const [old,listener] of known){
@@ -52,7 +39,6 @@
       region.addEventListener('scroll',listener,{passive:true});
       observer?.observe(region);
      }
-     if(mobile())for(const node of region.querySelectorAll(selector))decorate(node);
      updateFade(region);
     }
    };
