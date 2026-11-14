@@ -6,6 +6,7 @@ import {runInNewContext} from 'node:vm';
 import model from '../assets/competition-model.js';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const walk=node=>[node,...node.children.flatMap(walk)];
+const domesticManifest=JSON.parse(readFileSync(new URL('../competitions/_shared/manifest.json',import.meta.url),'utf8')).divisions;
 function fixture(id){
  const definition=loadCompetitionCatalogue().find(d=>d.id===id),document={activeElement:null,documentElement:{lang:'en'}};
  function node(tag='div',text=''){
@@ -27,7 +28,7 @@ function fixture(id){
  const panel=node('section'),card=node('article');card.dataset.historyPlayerRecord='seasonGoals';card.dataset.historyScope='season';
  card.append(node('h5','Goals'));panel.append(card);document.body.append(panel);
  document.getElementById=id=>id==='competition-panel-history'?panel:null;document.querySelector=()=>null;
- const window={faRoutesRegistry:routeRegistry,faCompetitionModel:model,faCompetitionContext:{definition,currentDefinition:definition,seasonData:{participants:[{countryId:'IT',clubId:1,primaryName:'Italian Club'},{countryId:'ENG',clubId:1,primaryName:'English Club'}]}},addEventListener(){}};
+ const window={faRoutesRegistry:routeRegistry,faCompetitionModel:model,faCompetitionContext:{definition,currentDefinition:definition,seasonData:{participants:definition.category==='domestic'?domesticManifest.find(d=>d.id===id).clubs.slice(0,2):[{countryId:'IT',clubId:1,primaryName:'Italian Club'},{countryId:'ENG',clubId:1,primaryName:'English Club'}]}},addEventListener(){}};
  runInNewContext(readFileSync(new URL('../assets/competition-history.js',import.meta.url),'utf8'),{window,document});
  return {window,document,panel,card,definition};
 }
@@ -48,10 +49,29 @@ test('SEASON-CUP-DIALOG: actual History details retain country-qualified clubs a
   assert.equal(dialog.open,false);assert.equal(r.document.activeElement,trigger);
  }
 });
-test('SEASON-LEGACY-DIALOG: approved domestic player history retains canonical club and season navigation',()=>{
- const r=fixture('IT-1'),season={seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,playerStats:[{playerId:'p1',playerName:'First',clubId:1,goals:3,assists:0,appearances:1,cleanSheets:0},{playerId:'p2',playerName:'Second',clubId:1,goals:3,assists:0,appearances:1,cleanSheets:0}]};
- r.window.faHistoryPlayerRecords.applyCanonicalHistory({source:'canonical',competitionId:'IT-1',coverage:'complete',provenance:{approved:true},seasons:[season]});
- const trigger=walk(r.card).find(n=>n.dataset.historyDetail==='seasonGoals');r.panel.emit('click',{target:trigger});
- const dialog=walk(r.document.body).find(n=>n.tagName==='dialog'),links=walk(dialog).filter(n=>n.tagName==='a').map(n=>n.href);
- assert.equal(dialog.open,true);assert.ok(links.includes('/clubs/it/1/overview'));assert.ok(links.includes('/competitions/it-1/standings?season=1'));
+test('SEASON-LEGACY-DIALOG: approved domestic player history links every division and preserves focus',()=>{
+ const definitions=loadCompetitionCatalogue().filter(d=>d.category==='domestic');
+ assert.equal(definitions.length,16);
+ for(const definition of definitions){
+  const club=domesticManifest.find(d=>d.id===definition.id)?.clubs[0];
+  assert.ok(club,definition.id+' approved member');
+  const r=fixture(definition.id),row=(playerId,playerName)=>({playerId,playerName,clubId:club.clubId,goals:3,assists:0,appearances:1,cleanSheets:0});
+  const payload={source:'canonical',competitionId:definition.id,coverage:'complete',provenance:{approved:true},seasons:[{seasonId:1,status:'completed',dataStatus:'approved',playerStatsComplete:true,playerStats:[row('p1','First'),row('p2','Second')]}]};
+  const before=JSON.stringify(payload);
+  assert.doesNotThrow(()=>r.window.faHistoryPlayerRecords.applyCanonicalHistory(payload),definition.id);
+  const trigger=walk(r.card).find(n=>n.dataset.historyDetail==='seasonGoals');
+  assert.ok(trigger,definition.id+' history trigger');
+  r.panel.emit('click',{target:trigger});
+  const dialog=walk(r.document.body).find(n=>n.tagName==='dialog');
+  assert.equal(dialog?.open,true,definition.id+' dialog open');
+  const links=walk(dialog).filter(n=>n.tagName==='a').map(n=>n.href);
+  assert.ok(links.includes('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview'),definition.id+' canonical member link');
+  assert.ok(links.includes('/competitions/'+definition.id.toLowerCase()+'/standings?season=1'),definition.id+' season link');
+  assert.equal(JSON.stringify(payload),before,definition.id+' payload remains unchanged');
+  const close=walk(dialog).find(n=>n.className==='app-history-player-close');
+  assert.ok(close,definition.id+' close control');
+  close.emit('click');
+  assert.equal(dialog.open,false,definition.id+' dialog closed');
+  assert.equal(r.document.activeElement,trigger,definition.id+' trigger regains focus');
+ }
 });
