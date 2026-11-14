@@ -767,7 +767,7 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
   const playerRows=players=>players.map(player=>player.id);
   const renderProgress=()=>{progressUpdates++};
   ${source}
-  return {appendNext,snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates}),invalidate:()=>{ticket++}};
+  return {appendNext,retry:()=>{appendError=''},snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates}),invalidate:()=>{ticket++}};
  `)(initial,next);
  const first=Array.from({length:50},(_,i)=>({id:100-i}));
  const second=Array.from({length:1},(_,i)=>({id:50-i}));
@@ -795,6 +795,8 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  let fail=true;
  const retry=build(base,async page=>{if(fail){fail=false;throw Error('network')}return make(page,second)});
  await retry.appendNext();assert.equal(retry.snapshot().appendError,'network');
+ await retry.appendNext();assert.equal(retry.snapshot().requests,1,'automatic scroll does not retry silently');
+ retry.retry(); // The explicit Retry control clears the error before another request.
  await retry.appendNext();assert.equal(retry.snapshot().appendError,'');
  assert.equal(retry.snapshot().ids.length,51);
  let release;
