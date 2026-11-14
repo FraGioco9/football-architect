@@ -95,6 +95,7 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
     key!=='autonomousActions'&&key!=='researchShotAttacker'&&
     key!=='autonomousCarry'&&key!=='autonomousCarrySupport'&&
      key!=='autonomousCarrySupportPressHandoff'&&
+     key!=='autonomousCarryBlockedDetour'&&
      key!=='autonomousCarrySupportBallAccess'&&
      key!=='autonomousCarrySupportLateralAlign'&&
      key!=='autonomousCarrySupportEarlyFacing'&&
@@ -126,6 +127,10 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
      Object.hasOwn(options,'researchShotAttacker')))reject();
  const autonomousCarrySupportPressHandoff=
   options.autonomousCarrySupportPressHandoff===true;
+ if(Object.hasOwn(options,'autonomousCarryBlockedDetour')&&
+    (options.autonomousCarryBlockedDetour!==true||!autonomousCarry||
+     Object.hasOwn(options,'researchShotAttacker')))reject();
+ const autonomousCarryBlockedDetour=options.autonomousCarryBlockedDetour===true;
  if(Object.hasOwn(options,'autonomousCarrySupportBallAccess')&&
     (options.autonomousCarrySupportBallAccess!==true||
      !autonomousCarrySupportPressHandoff||
@@ -209,6 +214,8 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
    experimentalAutonomousFixtureCarrySupport:true}:{}),
   ...(autonomousCarrySupportPressHandoff?{
    experimentalAutonomousFixtureCarrySupportPressHandoff:true}:{}),
+  ...(autonomousCarryBlockedDetour?{
+   experimentalAutonomousFixtureCarryBlockedDetour:true}:{}),
   ...(autonomousCarrySupportBallAccess?{
    experimentalAutonomousFixtureCarrySupportBallAccess:true}:{}),
   ...(autonomousCarrySupportLateralAlign?{
