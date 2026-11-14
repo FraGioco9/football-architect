@@ -66,3 +66,20 @@ The JSON is a local working artifact, not a committed fixture.
 3. Compare actual before/after case counts, assertion behavior, job timings, flakiness and failure diagnostics; run targeted checks during development and a single required FULL gate at the stable exact HEAD. Do not weaken security, migrations, publication, locales or sporting rules.
 
 **Evidence log A0:** 301 ownership-tracked files plus 10 Match Engine test files; three representative suites and four core workflows inspected. Helper Node 22 syntax check and a synthetic three-file inventory fixture passed. Full repository local execution, exact-HEAD CI status, runtime and real coverage deltas are **UNKNOWN**. Tests removed or replaced: **zero**.
+
+## Batch A1 — generalized club/crest tests (2026-11-14)
+
+**Intent:** stop asserting the literal name, nickname, stadium, color or narrative of arbitrary clubs as functional behavior. Canonical asset/identity protections are retained in bulk; the approved color fingerprint remains pinned.
+
+| Removed/replaced test | Surviving/replacement protection |
+| --- | --- |
+| Four single-club cases in `club-identity-trafford.test.mjs` | All 320 club CSV fields and published club identities in `club-colors-integration.test.mjs` and `club-pages.test.mjs`; 320 catalog adapter identities in `world-catalog.test.mjs`; new all-352-rivalry name/CSV/manifest parity and all-320-translation locale/CSV/manifest parity |
+| Literal ENG-2, IT-27, NL-22 identity/color checks in `club-colors-integration.test.mjs` | Existing pinned SHA-256 of approved 320-club color palette and all-club JSON/CSV/manifest comparison |
+| FR-2 asset registration test in `club-crests.test.mjs` | Dynamic discovery and publication manifest/allowlist checks of **all** existing crests |
+| FR-2 duplicate dynamic-load/fallback test | Existing general loading, repeat observation, stale-event handling and missing-asset tests |
+| FR-2-only club header rendering across five locales | Same behavior with representative canonical crest fixtures, each five views and five locales, with absence fallback |
+| ENG-5, DE-3 and ENG-7 bespoke vector/asset tests | One generic all-published-crest accessible title, SVG viewBox and prohibited embedded content test |
+
+**Source-level case delta for these files:** 26 named Node tests before; 20 after (4 deleted, 4 replaced/removed crest cases net, 2 new catalog parity cases). Site file ownership becomes 160 site-node and 300 total manifest entries; Match Engine remains 10, unchanged. These are static counts, **not timing or coverage equivalence proof**.
+
+**Important non-goals:** no modifications to 320 club records, club logos, historical data, sporting model, auth, Worker/D1 migrations, runtime JS, browser test selectors or exact-head CI gates. More suite classification is required before closing section A/B/C. Build/CI evidence must be attached to PR #598 once the updated SHA is tested.

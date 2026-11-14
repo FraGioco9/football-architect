@@ -9,7 +9,12 @@ const sources=()=>({clubs:load('clubs.json'),divisions:load('divisions.json'),in
 test('A01 canonical cardinalities and namespace separation',()=>{
  const c=loadWorldCatalog();
  assert.equal(c.clubs.length,320);assert.equal(c.divisions.length,16);assert.equal(c.competitions.length,18);assert.equal(c.rivalries.length,352);
- assert.equal(c.getClub('IT-1').primaryName,'AC Meneghina');
+ for(const reference of load('clubs.json')){
+  const key=reference.countryId+'-'+reference.clubId;
+  const club=c.getClub(key);
+  assert.ok(club,'world catalog must resolve '+key);
+  assert.equal(club.primaryName,reference.primaryName,key+' must use canonical identity');
+ }
  assert.equal(c.getDivision('IT-1').tier,1);
  assert.equal(c.getCompetition('int-1').capacity,24);
  assert.equal(c.getClubsByCountry('IT').length,40);

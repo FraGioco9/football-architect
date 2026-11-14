@@ -6,17 +6,28 @@ import model from '../assets/competition-model.js';
 import {createRequire} from 'node:module';
 const clubModel=createRequire(import.meta.url)('../assets/club-model.js');
 import {isAllowlistedPublicPath} from '../tools/publication-guard.mjs';
+import {clubCrestAssets} from '../tools/club-crest-assets.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const manifest=()=>JSON.parse(read('competitions/_shared/manifest.json'));
 const expected={'BR-1':'assets/clubs/BR/1/crest.svg','DE-1':'assets/clubs/DE/1/crest.svg','PT-1':'assets/clubs/PT/1/crest.svg'};
 
-test('uploaded club crests are catalogued and explicitly included in public artifacts',()=>{
- for(const [id,path] of Object.entries(expected)){
-  assert.equal(manifest().clubCrests[id],path);
-  assert.equal(isAllowlistedPublicPath(path),true,path);
+
+test('all canonical crest assets are published consistently and unsafe paths are rejected',()=>{
+ const {catalog}=clubCrestAssets();
+ const competitions=manifest().clubCrests;
+ const clubs=JSON.parse(read('clubs/_shared/manifest.json')).clubCrests;
+ const identities=new Set(JSON.parse(read('data/clubs.json')).map(c=>c.countryId+'-'+c.clubId));
+ assert.deepEqual(competitions,catalog,'competition crest registry matches discovered assets');
+ assert.deepEqual(clubs,catalog,'club crest registry matches discovered assets');
+ for(const [id,path] of Object.entries(catalog)){
+  const [country,number]=id.split('-');
+  assert.ok(identities.has(id),'unknown crest identity: '+id);
+  assert.equal(path,'assets/clubs/'+country+'/'+number+'/crest.svg');
+  assert.equal(isAllowlistedPublicPath(path),true,'allowed published crest: '+id);
+  assert.equal(existsSync(new URL('../'+path,import.meta.url)),true,'missing SVG: '+id);
  }
  for(const path of ['assets/clubs/ZZ/1/crest.svg','assets/clubs/DE/41/crest.svg','assets/clubs/DE/1/source.zip'])
-  assert.equal(isAllowlistedPublicPath(path),false,path);
+  assert.equal(isAllowlistedPublicPath(path),false,'unexpected public path: '+path);
 });
 
 test('competition validation rejects arbitrary crest URLs and mismatched club paths',()=>{
@@ -115,58 +126,37 @@ test('reusing an identity host replaces its image and ignores stale load events'
 });
 
 
-test('FR-2 FC Massalia crest is present in generated manifest and public allowlist',()=>{
- const path='assets/clubs/FR/2/crest.svg';
- assert.equal(manifest().clubCrests['FR-2'],path);
- assert.equal(isAllowlistedPublicPath(path),true);
- assert.equal(existsSync(new URL('../'+path,import.meta.url)),true);
-});
 
-test('FR-2 crest loads once, retains the accessible host and falls back on failure',()=>{
- const frPath='assets/clubs/FR/2/crest.svg';
- const s=setup({...expected,'FR-2':frPath});
- const fr=host('FR-2');
- s.insert(fr);
- assert.equal(fr.dataset.clubCrestPending,'true');
- assert.equal(fr.children.length,1);
- assert.equal(fr.children[0].src,'/'+frPath);
- assert.equal(fr.children[0].alt,'');
- fr.children[0].events.load();
- assert.equal(fr.dataset.clubCrestLoaded,'true');
- assert.equal(fr.dataset.clubCrestPending,undefined);
- s.repeat(fr);
- assert.equal(fr.children.length,1,'Re-observation must not duplicate crest images');
- const broken=host('FR-2');
- s.insert(broken);
- assert.equal(broken.children.length,1);
- broken.children[0].events.error();
- assert.equal(broken.children.length,0);
- assert.equal(broken.dataset.clubCrestLoaded,undefined);
- assert.equal(broken.dataset.clubCrestPending,undefined);
-});
-
-test('FR-2 club pages suppress first-paint placeholder and label the real crest in every language',()=>{
- const club={countryId:'FR',clubId:2,primaryName:'FC Massalia',fullName:'Football Club Massalia',compactName:'Massalia',abbr:'MAS',nickname:'Les Phocéens',city:'Marseille',primaryColor:'#6C5B93',secondaryColor:'#C6814F',stadiumName:'Stade du Vieux-Port',
- descriptions:{en:'Club',de:'Club',es:'Club',fr:'Club',it:'Club'},divisionId:null};
- const base={clubs:[club],divisions:[],countryFlags:JSON.parse(read('clubs/_shared/manifest.json')).countryFlags,clubCrests:{'FR-2':'assets/clubs/FR/2/crest.svg'}};
- for(const view of clubModel.views){
-  for(const lang of ['en','de','es','fr','it']){
-   const html=clubModel.render(base,{countryId:'FR',clubId:2,view,base:'/clubs/fr/2'},lang);
-   const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest fa-crest-loading"[^>]*>(?:<img[^>]*>)?<\/span>/g)].map(x=>x[0]);
-   assert.equal(hosts.length,1,view+' '+lang+' retains the single header crest');
-   for(const crest of hosts){
-    assert.match(crest,/data-club-crest="FR-2"/);
-    assert.match(crest,/data-club-crest-pending="true"/);
-    assert.match(crest,/aria-label="[^"]*FC Massalia"/);
-    assert.doesNotMatch(crest.match(/aria-label="([^"]*)"/)?.[1]||'',/placeholder|provisional|Segnaposto|Platzhalter/i);
+test('club pages show one accessible, loadable crest per view and locale with a missing-asset fallback',()=>{
+ const full=JSON.parse(read('clubs/_shared/manifest.json'));
+ const entries=Object.entries(manifest().clubCrests);
+ const cases=[entries[0],entries.at(-1)];
+ assert.ok(cases.every(Boolean),'expected representative published crest fixtures');
+ for(const [id,path] of cases){
+  const original=full.clubs.find(c=>c.countryId+'-'+c.clubId===id);
+  assert.ok(original,'published crest must resolve a canonical club: '+id);
+  const club={...original,divisionId:null};
+  const base={clubs:[club],divisions:[],countryFlags:full.countryFlags,clubCrests:{[id]:path}};
+  const routeBase='/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId;
+  const route=view=>({countryId:club.countryId,clubId:club.clubId,view,base:routeBase});
+  for(const view of clubModel.views){
+   for(const lang of ['en','de','es','fr','it']){
+    const html=clubModel.render(base,route(view),lang);
+    const hosts=[...html.matchAll(/<span class="app-world-club-crest-placeholder club-crest fa-crest-loading"[^>]*>(?:<img[^>]*>)?<\/span>/g)].map(match=>match[0]);
+    assert.equal(hosts.length,1,id+' / '+view+' / '+lang+' has one crest host');
+    const host=hosts[0];
+    assert.ok(host.includes('data-club-crest="'+id+'"'),id+' points to the right asset');
+    assert.ok(host.includes('data-club-crest-pending="true"'),id+' has a reserved image slot');
+    const accessible=host.match(/aria-label="([^"]+)"/)?.[1];
+    assert.ok(accessible?.includes(club.primaryName),id+' / '+lang+' accessible club identity');
+    assert.doesNotMatch(accessible,/placeholder|provisional|Segnaposto|Platzhalter/i);
    }
   }
+  const missing=clubModel.render({...base,clubCrests:{}},route('overview'),'en');
+  assert.equal((missing.match(/data-club-crest-pending="true"/g)||[]).length,0,id+' missing asset falls back');
  }
- const missing=clubModel.render({...base,clubCrests:{}},{countryId:'FR',clubId:2,view:'overview',base:'/clubs/fr/2'},'en');
- assert.equal((missing.match(/data-club-crest-pending="true"/g)||[]).length,0,'Unknown crests keep their visible fallback');
 });
 
-// UI-409 is presentation-only; public identity URLs and loaded crest nodes must be unchanged.
 test('QA-15: known directory crests have a skeleton and missing or failed crests show borderless shields',()=>{
  const app=read('assets/app.css'),detail=read('assets/club-page.css'),directory=read('assets/clubs-directory.css');
  assert.match(app,/--fa-crest-shield-shape:polygon\(/);
@@ -242,29 +232,18 @@ test('UI-409: directory image state is idempotent and failed requests retain the
 });
 
 
-test('ENG-5 Southwark Athletic approved crest is registered in both public manifests',()=>{
- const path='assets/clubs/ENG/5/crest.svg';
- assert.equal(manifest().clubCrests['ENG-5'],path);
- assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['ENG-5'],path);
- assert.equal(isAllowlistedPublicPath(path),true);
- const source=read(path);
- assert.match(source,/<title id="crest-title">Southwark Athletic<\/title>/);
- for(const color of ['#862932','#161616','#ffffff'])assert.ok(source.includes(color),color);
- for(const tag of ['image','text','linearGradient','radialGradient'])assert.equal(source.includes('<'+tag),false,tag);
+
+test('every published crest has accessible canonical vector metadata and no embedded executable content',()=>{
+ const byId=new Map(JSON.parse(read('data/clubs.json')).map(c=>[c.countryId+'-'+c.clubId,c]));
+ for(const [id,path] of Object.entries(manifest().clubCrests)){
+  const svg=read(path),club=byId.get(id);
+  assert.ok(club,'missing canonical club for '+id);
+  assert.match(svg,/<svg\b[^>]*viewBox="[-.\d\s]+"/,id+' vector viewBox');
+  const title=svg.match(/<title\b[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+  assert.ok(title,'missing accessible SVG title for '+id);
+  assert.ok(title===club.primaryName||title===club.fullName||title.startsWith(club.primaryName+' '),
+   id+' title must identify the source club, found '+title);
+  assert.doesNotMatch(svg,/<(?:image|text|script|foreignObject)\b/i,id+' must use safe paths, not embedded images/scripts/text');
+ }
 });
 
-test('DE-3 FC Eving approved crest is catalogued with canonical colors and SVG metadata',()=>{
- const path='assets/clubs/DE/3/crest.svg';
- assert.equal(manifest().clubCrests['DE-3'],path);
- assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['DE-3'],path);
- assert.equal(isAllowlistedPublicPath(path),true);
- const svg=read(path);
- assert.match(svg,/<svg[^>]*viewBox="0 0 1024 1024"/);
- assert.match(svg,/<title id="fc-eving-title">FC Eving<\/title>/);
- assert.match(svg,/<desc id="fc-eving-description">[^<]+<\/desc>/);
- assert.match(svg,/aria-labelledby="fc-eving-title fc-eving-description"/);
- assert.doesNotMatch(svg,/<(?:image|script|foreignObject)\b/i);
- const colors=[...svg.matchAll(/#[0-9a-f]{6}\b/ig)].map(match=>match[0].toUpperCase());
- assert.ok(colors.length>=2);
- assert.deepEqual([...new Set(colors)].sort(),['#87432E','#F3EEE3'].sort());
-});

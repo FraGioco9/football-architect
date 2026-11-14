@@ -56,12 +56,7 @@ test('CLUB-COLORS: official catalog matches the 320 owner-approved color fingerp
  const payload=canonical.map(c=>id(c)+','+c.primaryColor+','+c.secondaryColor).sort().join('\n')+'\n';
  const sha256=createHash('sha256').update(payload,'utf8').digest('hex');
  assert.equal(sha256,expectedFingerprint,'approved palette fingerprint from issue #466');
- const byId=new Map(canonical.map(c=>[id(c),c]));
- assert.deepEqual([byId.get('NL-22').primaryColor,byId.get('NL-22').secondaryColor],['#194979','#D4B46F']);
- assert.deepEqual([byId.get('ENG-2').primaryColor,byId.get('ENG-2').secondaryColor],['#882E2D','#F5F1E9']);
- assert.equal(byId.get('ENG-2').primaryName,'Trafford United');
- assert.equal(byId.get('ENG-2').nickname,'The Foundrymen');
- assert.equal(byId.get('IT-27').abbr,'TRM');
+
 });
 
 test('CLUB-COLORS: hydrated club-page manifest reproduces canonical palette and identities',()=>{
@@ -73,4 +68,51 @@ test('CLUB-COLORS: hydrated club-page manifest reproduces canonical palette and 
   assert.ok(m,'manifest missing '+id(c));
   for(const field of fields)assert.deepEqual(m[field],c[field],id(c)+' manifest '+field);
  }
+});
+
+test('CLUB-CATALOG: rivalry names and references agree across the full published catalog',()=>{
+ const source=JSON.parse(read('data/club-rivalries.json'));
+ const byId=new Map(canonical.map(club=>[id(club),club]));
+ const columns=['rivalryId','clubAId','clubAName','clubBId','clubBName','derbyName','type'];
+ const rows=csvRecords(read('data/club-rivalries.csv'));
+ assert.deepEqual(rows[0].map(value=>value.replace(/^\uFEFF/,'')),columns);
+ assert.equal(rows.length,source.length+1,'one CSV row per rivalry');
+ assert.deepEqual(manifest.rivalries,source,'published rivalries match the canonical source');
+ const csvById=new Map(rows.slice(1).map(row=>[row[0],row]));
+ assert.equal(csvById.size,source.length,'rivalry identifiers must be unique');
+ for(const rivalry of source){
+  const a=byId.get(rivalry.clubAId),b=byId.get(rivalry.clubBId);
+  assert.ok(a&&b,'unknown rivalry endpoint: '+rivalry.rivalryId);
+  assert.equal(rivalry.clubAName,a.primaryName,rivalry.rivalryId+' A display name');
+  assert.equal(rivalry.clubBName,b.primaryName,rivalry.rivalryId+' B display name');
+  assert.deepEqual(csvById.get(rivalry.rivalryId),columns.map(column=>String(rivalry[column])),
+   rivalry.rivalryId+' CSV must agree with JSON');
+ }
+});
+
+test('CLUB-CATALOG: all translated descriptions agree across CSV, JSON and public manifests',()=>{
+ const translations=JSON.parse(read('data/club-descriptions.i18n.json'));
+ const rows=csvRecords(read('data/club-descriptions.i18n.csv'));
+ const languages=['en','de','es','fr','it'];
+ assert.deepEqual(rows[0].map(value=>value.replace(/^\uFEFF/,'')),['countryId','clubId',...languages]);
+ assert.equal(rows.length,canonical.length+1,'one translation record per club');
+ const byId=new Map(canonical.map(club=>[id(club),club]));
+ const published=new Map(manifest.clubs.map(club=>[id(club),club]));
+ const seen=new Set();
+ for(const row of rows.slice(1)){
+  assert.equal(row.length,7,'translation CSV columns');
+  const key=row[0]+'-'+row[1];
+  assert.ok(!seen.has(key),'duplicate translation row: '+key);
+  seen.add(key);
+  const club=byId.get(key),derived=published.get(key);
+  const localized=translations[row[0]]?.[row[1]];
+  assert.ok(club&&derived&&localized,'unknown translation identity: '+key);
+  for(const [offset,lang] of languages.entries()){
+   const text=localized[lang];
+   assert.equal(row[offset+2],text??'',key+' / '+lang+' CSV parity');
+   if(text!==undefined)assert.ok(typeof text==='string'&&text.trim(),key+' / '+lang+' has content');
+   assert.equal(derived.descriptions[lang],text??club.description,key+' / '+lang+' public fallback');
+  }
+ }
+ assert.equal(seen.size,canonical.length,'every club has exactly one translation row');
 });
