@@ -353,10 +353,13 @@ try{
      // Both headings share a single grid track, including with wrapped values.
      assert.ok(Math.abs(state.status.y-state.next.y)<1.5,
       'Status and Next match labels must share the same row at '+width+'px: '+state.value);
-     // Growing multi-line fixtures expand the shared track; the short fixture
-     // retains its exact first-paint line origin.
-     if(state.lineCount<=1.1)assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
-      'First paint Next match first line moved for a short fixture at '+width+'px for '+state.value);
+     // A fixture with a visible match and secondary matchday line has the
+     // same two-line shape as its first-paint bars, so its first-line y is fixed.
+     // "No upcoming match" has only one visible line; it centers in the
+     // reserved value track instead of pretending there is a matchday line.
+     if(state.value!=='No upcoming match'&&state.lineCount<=1.1)
+      assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
+       'First paint Next match first line moved for a one-line fixture plus matchday at '+width+'px for '+state.value);
      const centered=rect=>rect.y+rect.height/2;
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.nextBlock))<1.5,
       'Status and longer Next match are vertically centered on the same row at '+width+'px');
