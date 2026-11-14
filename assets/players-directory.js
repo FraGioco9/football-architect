@@ -155,6 +155,30 @@
   const scrollPane=document.querySelector('.fa-shell-content-scroll');
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
   let loadedThrough=state.page,appendPending=false,appendError='';
+  // One canonical public manifest for every rendered segment; never request a crest per player.
+  let clubCrestsPromise=null;
+  function hydrateClubCrests(){
+   if(table.dataset.playersTableMode!=='overview')return;
+   if(!clubCrestsPromise)clubCrestsPromise=fetch('/clubs/_shared/manifest.json',{credentials:'omit',cache:'force-cache'})
+    .then(response=>{if(!response.ok)throw Error('club_manifest_unavailable');return response.json()})
+    .then(manifest=>Array.isArray(manifest.clubs)&&manifest.clubs.length===320&&manifest.clubCrests&&typeof manifest.clubCrests==='object'?manifest.clubCrests:null)
+    .catch(()=>null);
+   void clubCrestsPromise.then(catalog=>{
+    if(!catalog||table.dataset.playersTableMode!=='overview')return;
+    for(const mark of body.querySelectorAll('[data-player-club-crest]')){
+     if(mark.querySelector('img'))continue;
+     const key=mark.dataset.playerClubCrest;
+     if(!/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(key))continue;
+     const [country,id]=key.split('-'),path='assets/clubs/'+country+'/'+id+'/crest.svg';
+     if(!Object.hasOwn(catalog,key)||catalog[key]!==path)continue;
+     const image=document.createElement('img');image.className='app-players-club-crest';
+     image.src='/'+path;image.alt='';image.width=18;image.height=18;
+     image.loading='lazy';image.decoding='async';
+     image.addEventListener('error',()=>image.remove(),{once:true});
+     mark.append(image);
+    }
+   });
+  }
   // Only the starting page is a permalink. No player data enters history state.
   const navigationType=performance.getEntriesByType?.('navigation')?.[0]?.type;
   const savedReturn=history.state?.faPlayersReturn;
@@ -362,9 +386,9 @@
    addHeader(t.nationality,'nationality',true);
    addHeader(t.columns[0],'name');
    if(state.view==='overview'){
+    addHeader(t.columns[2],'positions');
+    addHeader(t.columns[1],'age');addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
     const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
-    addHeader(t.columns[1],'age');addHeader(t.columns[2],'positions');
-    addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
    }else{
     addHeader(t.columns[2],'positions');
     for(const key of groups[state.group])addHeader(attributeName(key),key);
@@ -407,9 +431,14 @@
    else if(typeof player.clubKey==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(player.clubKey)&&
            typeof player.clubName==='string'&&player.clubName.trim()){
     const [country,id]=player.clubKey.split('-');
+    const content=document.createElement('span');content.className='app-players-club-content';
+    const crest=document.createElement('span');crest.className='app-players-club-mark';
+    crest.dataset.playerClubCrest=player.clubKey;crest.setAttribute('aria-hidden','true');
     const link=document.createElement('a');link.className='app-player-club-link';
     link.href='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
-    link.textContent=player.clubName;link.title=player.clubName;td.append(link);
+    const name=document.createElement('span');name.className='app-player-club-name';
+    name.textContent=player.clubName;link.title=player.clubName;link.append(name);
+    content.append(crest,link);td.append(content);
    }else{td.textContent='—';}
    tr.append(td);
   }
@@ -424,11 +453,11 @@
     }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
-     clubCell(tr,player);
-     cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,positionsShown.join(', ')||'—');
+     cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');
      cell(tr,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
+     clubCell(tr,player);
     }else {
      cell(tr,positionsShown.join(', ')||'—');
      for(const key of groups[state.group])cell(tr,Number.isSafeInteger(player.attributes?.[key])?String(player.attributes[key]):'—');
@@ -463,7 +492,7 @@
    lastCount=data.count;renderCount(lastCount);
    if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);renderProgress();scroll.setAttribute('aria-busy','false');return}
    body.replaceChildren(playerRows(data.players));
-   renderProgress();scroll.setAttribute('aria-busy','false');
+   hydrateClubCrests();renderProgress();scroll.setAttribute('aria-busy','false');
    if(typeof requestAnimationFrame==='function')requestAnimationFrame(maybeLoadOnScroll);
   }
   function refresh(){syncControls();paint(current)}
@@ -535,6 +564,7 @@
     }
     current.players.push(...data.players);loadedThrough=nextPage;
     body.append(playerRows(data.players)); // Append, never rebuild the scrolled table.
+    hydrateClubCrests();
    }catch(error){
     if(seq===ticket)appendError=error?.message==='stale_world'?'stale':'network';
    }finally{
