@@ -70,7 +70,7 @@
   fr:{generate:'Générer',regenerate:'Régénérer',back:'Retour',heading:'Confirmer la génération',cancel:'Annuler',confirm:'Confirmer'}
  };
  const pageSize=50,rankPositions=['GK','RB','RWB','CB','LWB','LB','DM','RM','CM','LM','RW','AM','LW','ST'];
- function columns(){return view==='overview'?['nationality','name','age','positions','height','foot']:['nationality','name','positions',...groups[group]];}
+ function columns(){return view==='overview'?['nationality','name','positions','age','height','foot']:['nationality','name','positions',...groups[group]];}
  function colLabel(key){
   const t=locale();
   if(key==='nationality')return t.nationality;
@@ -177,8 +177,8 @@
     nameCell.append(link);row.append(nameCell);
     const positions=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean).join(', ')||'—';
     if(view==='overview'){
-     addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
      addCell(row,positions);
+     addCell(row,Number.isSafeInteger(player.age)?player.age:Number.isSafeInteger(player.initial_age)?player.initial_age:'—');
      addCell(row,Number.isSafeInteger(player.height_cm)?player.height_cm+' cm':'—');
      addCell(row,player.preferred_foot==='left'?t.left:player.preferred_foot==='right'?t.right:'—');
     }else{

@@ -1604,6 +1604,23 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button{justify-content:flex-start}
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,
 .app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5) .app-players-sort-button{justify-content:center}
+/* Shared six-column player tables (Club Roster and Admin preview) match the
+ * first three fixed tracks from public /players: Flag | Player | Positions.
+ * Their remaining columns are Age | Height | Foot (Club is public-only). */
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) col.app-players-view-third-column{width:var(--app-players-positions-width)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(3){width:var(--app-players-positions-width)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.28)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.36)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-positions-width)) * 0.36)}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(3),
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6){text-align:left}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5){text-align:center}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(3) .app-players-sort-button,
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(6) .app-players-sort-button{justify-content:flex-start}
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(4) .app-players-sort-button,
+.app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) th:nth-child(5) .app-players-sort-button{justify-content:center}
+
 /* The 24px crest sits in a centered 28px track independent of hover underline metrics. */
 .app-players-club-cell{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-players-club-content{display:flex;align-items:center;min-width:0;max-width:100%;height:28px;gap:8px}
