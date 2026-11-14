@@ -105,6 +105,9 @@ it('moves the independent international draw to day four and publication to day 
 it('continues all sporting days through day 56 after staged administrative setup',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
  world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
+ const final=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='int-1' AND phase_id='final' LIMIT 1").first();
+ expect(final).toBeTruthy();
+ expect(await readPublicMatch(db,final.match_id)).toMatchObject({status:'awaiting_participants',result:null});
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
  expect(world).toMatchObject({day:56,phase:'active'});
@@ -112,6 +115,11 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
+ const completed=await readPublicMatch(db,final.match_id);
+ expect(completed).toMatchObject({matchId:final.match_id,status:'completed',stageId:'final'});
+ expect(completed.homeParticipant?.clubId).toBeTruthy();
+ expect(completed.awayParticipant?.clubId).toBeTruthy();
+ expect(completed.result).toBeTruthy();
 },120000);
 
 it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
