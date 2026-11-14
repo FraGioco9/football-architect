@@ -1,4 +1,5 @@
 import { publicRequestFile } from "../tools/publication-guard.mjs";
+import {createChromeProfile} from './fixtures/chrome-profile.mjs';
 // UI-THEME #96: true headless Chrome render QA, isolated loopback server; no npm.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -71,6 +72,7 @@ test("static QA server returns404 for absent Admin API without writing headers t
  }finally{server.closeAllConnections();await new Promise(r=>server.close(r))}
 });
 test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeout:180000},async()=>{
+  const profile=createChromeProfile('site-theme-chrome');
   // Detect Chrome before opening the server, so missing Chrome cannot leave Node hanging.
   const browser=chrome();
   server.listen(0,"127.0.0.1");await once(server,"listening");
@@ -105,10 +107,10 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       const m=JSON.parse(e.data),p=pending.get(m.id);if(!p)return;
       clearTimeout(p.timer);pending.delete(m.id);m.error?p.fail(Error(m.error.message)):p.ok(m.result);
     });
-    const cmd=(method,params={})=>new Promise((ok,fail)=>{
+    const cmd=(method,params={})=>profile.measureCDP(method,params,()=>new Promise((ok,fail)=>{
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
-    });
+    }));
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
     // Protected QA opts in explicitly; user sessions still default OFF.
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:"if(location.origin==="+JSON.stringify(devOrigin)+"&&sessionStorage.getItem('football-architect:debug-enabled')===null)sessionStorage.setItem('football-architect:debug-enabled','on')"});
@@ -117,12 +119,13 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
       return out.result.value;
     };
-    const wait=async expr=>{
+    const waitUnprofiled=async expr=>{
       for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
       let diagnostic="unavailable";
       try{diagnostic=JSON.stringify(await run(`(()=>({url:location.href,body:document.body?.textContent?.slice(0,180),readyState:document.readyState,route:window.faCompetitionRoute?.get?.()||null,preview:sessionStorage.getItem('football-architect:standings-dev-preview'),pending:document.documentElement.dataset.faDevStandingsPending||null,fixturesApi:typeof window.faFixtures,prepare:typeof window.faFixtures?.prepare,fixtureRows:[...document.querySelectorAll('[data-fixture-match]')].map(n=>({id:n.dataset.fixtureMatch,score:n.querySelector('.app-fixture-score')?.textContent||null})),empty:(()=>{const e=document.getElementById('app-fixtures-empty');return e?{hidden:e.hidden,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility,text:e.textContent}:null})(),errors:window.__faRuntimeErrors||[]}))()`));}catch(error){diagnostic=String(error)}
       throw Error("Timed out: "+expr+"; browser state: "+diagnostic);
     };
+    const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));
     // First paint has four decorative archive rows too. Wait for the real
     // season anchors after DEV History hydration before asserting their links.
     // QA-08: desktop international empty standings have an equivalent mobile
@@ -1067,6 +1070,7 @@ test("UI-THEME Chrome render matrix 1440/390/320 Dark/Light (no deploy)",{timeou
     console.log('HISTORY_BROWSER_PASS|16 divisions; archive and records; 5 viewport widths; Dark/Light; 5 locales; season links to Standings; debug OFF/ON');
     console.log("Browser QA PASS: "+checks.join(", ")+"; "+screenshots+" real Chrome PNG screenshots; theme, contrast, search, standings, tooltip CSS and persistence checked.");
   }finally{
+    profile.emit({pngScreenshots:screenshots});
     try{socket?.close();}catch{}
     proc.kill("SIGTERM");devServer.close();server.close();
     await new Promise(ok=>server.once("close",ok));
