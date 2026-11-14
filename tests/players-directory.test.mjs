@@ -778,3 +778,26 @@ test('Players filter close matches the canonical search and calendar popup X',()
  assert.ok(generator.includes('data-players-filter-close'));
  assert.match(js,/filterClose\?\.addEventListener\('click',\(\)=>closeFilterDialog\(\)\)/);
 });
+
+test('UI-VIEWS-01: only view/subview controls change; History content and mobile scroll geometry remain untouched',()=>{
+ const css=read('assets/app.css'),club=read('assets/club-page.css'),detail=read('assets/player-detail.css');
+ const marker='/* UI-VIEWS-01 (#559):';
+ const index=css.lastIndexOf(marker);
+ assert.ok(index>0,'isolated UI view controls block must be present');
+ const viewCss=css.slice(index);
+ assert.match(viewCss,/body\.app-body\{--fa-tab-width-regular:100px\}/,'all shared desktop view buttons use the narrower token');
+ assert.match(viewCss,/body\.app-body \.app-players-tabs:not\(\.club-roster-tabs\) \.app-competition-tab\{[^}]*width:116px;min-width:116px;max-width:116px/,'Players main views shrink without modifying Roster mobile widths');
+ assert.match(viewCss,/@media\(min-width:621px\)\{[\s\S]*?body\.app-body \.app-players-groups\{max-width:424px\}/,'desktop attribute subviews are more compact');
+ assert.match(viewCss,/body\.app-body \.club-roster \.club-roster-tabs \.app-competition-tab\{[^}]*width:84px;min-width:84px;max-width:84px/,'desktop Roster subviews shrink');
+ assert.match(viewCss,/@media\(max-width:620px\)\{[\s\S]*?width:min\(116px,calc\(\(100% - 4px\)\/2\)\)/,'Players main mobile views become compact');
+ assert.match(viewCss,/\.app-competition-tabs:not\(\.app-players-tabs\) \.app-competition-tab\{font-size:12px\}/,'mobile main view labels use 12px');
+ assert.doesNotMatch(viewCss,/\.club-roster \.club-roster-tabs \.app-competition-tab\{font-size:/,'Roster subview label size is not overridden');
+ assert.doesNotMatch(viewCss,/\.app-players-groups \.app-players-group\{font-size:/,'Player attribute subview label size is not overridden');
+ assert.match(css,/\.app-players-group\{flex:0 0 calc\(40% - 3\.2px\);[^}]*font-size:clamp\(10px,2\.8vw,11px\)/,'original mobile Players subview font is retained');
+ assert.match(club,/\.club-roster \.club-roster-tabs \.app-competition-tab\{box-sizing:border-box;[^}]*font-size:11px/,'original Roster subview font is retained');
+ assert.doesNotMatch(viewCss,/\.club-history(?:[\s.{:#-]|$)|club-history-table|club-history-season/,'no History content overrides');
+ assert.match(css,/--app-competition-tab-mobile-width:max\(92px,calc\(\(100% - 8px\)\/2\.5\)\)/,'retain the existing mobile 2.5-tab main view width');
+ assert.match(club,/\.club-roster \.club-roster-tabs \.app-competition-tab\{flex:0 0 calc\(40% - 3\.2px\)/,'retain the 2.5-tab mobile Roster width');
+ assert.match(css,/\.app-players-groups\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/,'keep mobile fade states');
+ assert.match(detail,/\.app-player-detail-tabs \.app-competition-tab\{flex:0 0 var\(--fa-tab-width-regular\)/,'player detail views inherit shared width token');
+});

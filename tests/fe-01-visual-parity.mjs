@@ -135,7 +135,33 @@ try{
    }
    return copy;
   };
-  if(JSON.stringify(comparable(a,false))!==JSON.stringify(comparable(b,true)))
+  // UI-VIEWS-01 (#559) intentionally narrows only main view controls. Normalize
+  // their horizontal geometry *only in the PR that introduces the scoped CSS*,
+  // rather than excluding focus, typography, colors, height or other styles.
+  // Subsequent PRs must continue comparing all view-control properties.
+  const viewCss=changes.get("/assets/app.css");
+  const viewIntro=viewCss?.after.includes("/* UI-VIEWS-01 (#559):")&&!viewCss.before.includes("/* UI-VIEWS-01 (#559):");
+  const normalize=(sample,updated)=>{
+   const result=comparable(sample,updated);
+   if(viewIntro&&route.path.startsWith("/competitions/")&&profile.width>620){
+    for(const state of ["regular","focused"]){
+     for(const tab of result[state]?.[".app-competition-tab"]||[]){
+      tab.css.width="<intentional view width>";
+      tab.css["min-width"]="<intentional view width>";
+      tab.rect[0]=0;tab.rect[2]=0;
+     }
+    }
+   }
+   return result;
+  };
+  if(viewIntro&&route.path.startsWith("/competitions/")&&profile.width>620){
+   for(const tab of b.regular[".app-competition-tab"]||[]){
+    assert.equal(tab.css.width,"100px","UI-VIEWS-01 desktop view widths");
+    assert.equal(tab.css["min-width"],"100px","UI-VIEWS-01 desktop tab minimum widths");
+    assert.ok(tab.hitHeight>=39.9,"UI-VIEWS-01 desktop view touch height remains 40px");
+   }
+  }
+  if(JSON.stringify(normalize(a,false))!==JSON.stringify(normalize(b,true)))
    findings.push({route:route.path,profile,before:{regular:a.regular,focused:a.focused,overflow:a.overflow},after:{regular:b.regular,focused:b.focused,overflow:b.overflow}});
   if(a.screenshot&&b.screenshot){
    const left=PNG.sync.read(a.screenshot),right=PNG.sync.read(b.screenshot);
