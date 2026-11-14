@@ -42,6 +42,8 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect(stage.fixtures_hash).toBe(await canonicalHash(fixtures));
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
+ expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
  expect((await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('completed');
  expect(await stageDomesticCalendar(db,session,original,'domestic-stage-00001',now)).toEqual(result);
  world=result.world;
@@ -60,6 +62,7 @@ it('rolls back domestic staging on audit failure',async()=>{
  try{await expect(stageDomesticCalendar(db,session,command(),'domestic-stage-failure',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_domestic_stage').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_domestic_stages').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(0);
  expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('scheduled');
  expect(await readWorld(db)).toEqual(world);
 });
