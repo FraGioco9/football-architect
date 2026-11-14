@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,waitForApiCompletion,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -79,4 +79,15 @@ test('API baseline only accepts a reachable world and correctly routed anonymous
  for(const sample of [{worldStatus:404,permissionsStatus:401},
   {worldStatus:200,permissionsStatus:404},{worldStatus:503,permissionsStatus:503}])
   assert.equal(typeof validateSamplerBackend(sample),'string');
+});
+
+test('API audit finishes when tracked API reads settle, independently of unrelated page assets',async()=>{
+ let clock=0,records=[{settled:false}];
+ const delay=async ms=>{clock+=ms;if(clock===200)records[0].settled=true;};
+ assert.equal(await waitForApiCompletion(()=>records,{timeoutMs:1000,quietMs:150,now:()=>clock,delay}),true);
+ assert.equal(await waitForApiCompletion(()=>[],{timeoutMs:800,quietMs:150,now:()=>clock,delay}),true,
+  'a complete in-page action with no API calls is valid after the quiet period');
+ records=[{settled:false}];clock=0;
+ assert.equal(await waitForApiCompletion(()=>records,{timeoutMs:350,quietMs:100,now:()=>clock,delay:async ms=>{clock+=ms}}),false,
+  'a pending API request cannot be counted as zero or complete');
 });

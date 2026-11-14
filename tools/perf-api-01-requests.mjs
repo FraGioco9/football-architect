@@ -74,6 +74,22 @@ export function summarizeVisit(requests,{complete=true}={}){
   observedRequestCount:requests.length,incomplete:true};
  return {...summarizeRequests(requests),observedRequestCount:requests.length,incomplete:false};
 }
+// Only API requests belong in a request-count baseline. Global page networkidle
+// can time out while all relevant GETs have already settled (e.g. static assets).
+// Require a short quiet period after the last API start/finish and fail closed
+// when an API request remains pending beyond the deadline.
+export async function waitForApiCompletion(readEntries,{timeoutMs=7000,quietMs=600,now=()=>Date.now(),delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+ const started=now();let previous='',quietSince=started;
+ while(now()-started<timeoutMs){
+  const entries=readEntries();
+  const settled=entries.filter(entry=>entry.settled===true).length;
+  const marker=entries.length+':'+settled;
+  if(marker!==previous){previous=marker;quietSince=now();}
+  if(settled===entries.length&&now()-quietSince>=quietMs)return true;
+  await delay(50);
+ }
+ return false;
+}
 // A static UI-only preview answers /api/player/permissions with 404. That is
 // not the app's anonymous API contract and must not become a performance baseline.
 export function validateSamplerBackend({worldStatus,permissionsStatus}){
@@ -129,16 +145,17 @@ export async function collectAnonymousBrowser(browser,options){
      const identity=actual.pathname+'?'+[...actual.searchParams].sort(([a,av],[b,bv])=>a.localeCompare(b)||av.localeCompare(bv)).map(([key,value])=>JSON.stringify([key,value])).join('&');
      if(!urlVariants.has(identity))urlVariants.set(identity,urlVariants.size+1);
      const entry={method:request.method(),...parsed,urlVariant:urlVariants.get(identity),initiator,status:null,
-      cacheControl:null,responseBytes:null,durationMs:null,failed:false};
+      cacheControl:null,responseBytes:null,durationMs:null,failed:false,settled:false};
      captured.push(entry);byRequest.set(request,entry);
     });
     page.on('response',response=>{
      const entry=byRequest.get(response.request());if(!entry)return;
      entry.status=response.status();entry.cacheControl=response.headers()['cache-control']||null;
     });
-    page.on('requestfailed',request=>{const entry=byRequest.get(request);if(entry)entry.failed=true});
+    page.on('requestfailed',request=>{const entry=byRequest.get(request);if(entry){entry.failed=true;entry.settled=true}});
     page.on('requestfinished',request=>{
      const entry=byRequest.get(request);if(!entry)return;
+     entry.settled=true;
      jobs.push((async()=>{
       try{const sizes=await request.sizes();entry.responseBytes=sizes.responseBodySize}catch{}
       try{const timing=request.timing();if(timing.responseEnd>=0&&timing.startTime>=0)
@@ -149,16 +166,16 @@ export async function collectAnonymousBrowser(browser,options){
     await page.route('**/api/**',req=>['GET','HEAD'].includes(req.request().method())?req.continue():req.abort('blockedbyclient'));
     const visit=async (scenario,action)=>{
      const start=captured.length;
-     let error=null,status=null,networkIdle=false;
+     let error=null,status=null,apiQuiet=false;
      try{
       const response=await action();status=response?.status()??null;
-      try{await page.waitForLoadState('networkidle',{timeout:7000});networkIdle=true}catch{}
+      apiQuiet=await waitForApiCompletion(()=>captured.slice(start));
      }catch(e){error=typeof e?.name==='string'&&/^[A-Za-z][A-Za-z0-9]{0,60}$/.test(e.name)?e.name:'Error'}
      await Promise.allSettled(jobs);
      const observed=captured.slice(start).map(entry=>({...entry}));
-     const complete=error===null&&networkIdle&&(status===null||status<400);
+     const complete=error===null&&apiQuiet&&(status===null||status<400);
      records.push({route:safeRoute,attempt,scenario,pageStatus:status,
-      error:error??(!networkIdle?'NetworkIdleTimeout':status>=400?'PageHttpError':null),
+      error:error??(!apiQuiet?'ApiRequestsUnsettled':status>=400?'PageHttpError':null),
       ...summarizeVisit(observed,{complete}),requests:observed});
     };
     // The navigation target remains exact; only recorded metadata is redacted.
@@ -191,8 +208,9 @@ export async function collectAnonymousBrowser(browser,options){
     await visit('refresh',()=>page.reload({waitUntil:'load',timeout:25000}));
     // A full route change within one tab should reuse only correctly scoped state.
     if(route!=='/dashboard'){
+     const transitionStart=captured.length;
      await page.goto(options.base+'/dashboard',{waitUntil:'load',timeout:25000}).catch(()=>{});
-     await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
+     await waitForApiCompletion(()=>captured.slice(transitionStart)).catch(()=>false);
      await visit('same-tab-return',()=>page.goto(target,{waitUntil:'load',timeout:25000}));
     }
    }finally{await context.close()}
