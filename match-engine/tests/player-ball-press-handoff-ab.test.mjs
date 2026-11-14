@@ -413,9 +413,18 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
  let ordinaryStarts=0,trialStarts=0,ordinarySupport=0,trialSupport=0;
  let minimumClearance=Infinity;
  try{
-  const reset=trial.reset();
-  try{assert.deepEqual(reset.snapshot().ball,trial.snapshot().ball);}
-  finally{reset.dispose();}
+  // reset() disposes its source fixture. Probe a separate session so the
+  // measured trial and its independent replay stay live for all 720 ticks.
+  const resetProbe=createPhysicalFixtureStepRuntime(
+   R,fix(c),initial(c),experimental);
+  try{
+   const reset=resetProbe.reset();
+   try{
+    assert.deepEqual(reset.snapshot().ball,trial.snapshot().ball);
+    assert.deepEqual(reset.snapshot().physicalPlayerPositions,
+     trial.snapshot().physicalPlayerPositions);
+   }finally{reset.dispose();}
+  }finally{resetProbe.dispose();}
   for(let tick=1;tick<=720;tick++){
    const a=ordinary.step(),b=trial.step(),z=replay.step();
    assert.deepEqual(b.ball,z.ball,'detour deterministic ball tick '+tick);
