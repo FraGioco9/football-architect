@@ -474,9 +474,25 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
       carrier.y-b.ball.position.y)),
      blocker:pursuit?.playerId==='away-9'?
       pursuit.actualMoverBlockedBy:null,
+     experimentalDetour:pursuit?.experimentalDetour?{
+      blockedTicks:pursuit.experimentalDetour.blockedTicks,
+      blockerId:pursuit.experimentalDetour.blockerId,
+      activeWaypoint:pursuit.experimentalDetour.activeWaypoint,
+      lastDecision:pursuit.experimentalDetour.lastDecision
+     }:null,
      minimumCarrierClearanceM:round(clearance)});
    }
   }
+  // Emit read-only real-physics evidence even on a functional FAIL.
+  // Never dilute any of the clearance, source or efficacy assertions.
+  console.log('C2_B_OPT_IN_BLOCKED_DETOUR_AB',JSON.stringify({
+   firstDivergenceTick:firstDivergence,
+   firstShoeDifferenceTick:firstShoeDifference,
+   minimumCarrierClearanceM:round(minimumClearance),
+   realShoeStarts:{ordinary:ordinaryStarts,detour:trialStarts},
+   postCarrySupportFrames:{ordinary:ordinarySupport,detour:trialSupport},
+   checkpoints:rows
+  }));
   // No movement/physics difference before a real source-authenticated
   // carry can exist; the previous experiment failed this invariant.
   assert.ok(firstDivergence===null||firstDivergence>=143,
@@ -488,13 +504,5 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    'persistent detour must leave the blocked position by at least 0.25m');
   assert.ok(late.ballGapM<late.baselineBallGapM-0.2,
    'persistent detour must improve authentic carrier-to-ball gap by 0.2m');
-  console.log('C2_B_OPT_IN_BLOCKED_DETOUR_AB',JSON.stringify({
-   firstDivergenceTick:firstDivergence,
-   firstShoeDifferenceTick:firstShoeDifference,
-   minimumCarrierClearanceM:round(minimumClearance),
-   realShoeStarts:{ordinary:ordinaryStarts,detour:trialStarts},
-   postCarrySupportFrames:{ordinary:ordinarySupport,detour:trialSupport},
-   checkpoints:rows
-  }));
  }finally{ordinary.dispose();trial.dispose();replay.dispose();}
 });

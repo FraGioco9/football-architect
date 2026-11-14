@@ -1928,7 +1928,7 @@ export function createPlayerMovement({
  let lastPhysicalCarryAction=null,activeFixtureCarryPursuit=null;
  // Experimental only; normal movement remains unchanged when disabled.
  let carryBlockedConsecutiveTicks=0,carryBlockedSourceId=null;
- let activeCarryBlockedDetour=null;
+ let activeCarryBlockedDetour=null,carryDetourLastDecision=null;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
   if(!experimentalAutonomousFixtureCarry||
@@ -2084,7 +2084,17 @@ export function createPlayerMovement({
     ...(experimentalAutonomousFixtureCarrySupportBallAccess?{
      provisionalCarrySupportBallAccess:activeFixtureCarrySupportBallAccess
     }:{}),
-    provisionalCarryPursuit:activeFixtureCarryPursuit
+    provisionalCarryPursuit:
+     experimentalAutonomousFixtureCarryBlockedDetour&&
+     activeFixtureCarryPursuit?
+      Object.freeze({...activeFixtureCarryPursuit,
+       experimentalDetour:Object.freeze({
+        blockedTicks:carryBlockedConsecutiveTicks,
+        blockerId:carryBlockedSourceId,
+        activeWaypoint:activeCarryBlockedDetour?.waypoint??null,
+        lastDecision:carryDetourLastDecision
+       })
+      }):activeFixtureCarryPursuit
    }:{}),
    observedMotion:Object.freeze({
     home:summarizeObservedPlayerMotion(players,'home'),
@@ -3345,6 +3355,11 @@ export function createPlayerMovement({
         }
        }
       }
+      carryDetourLastDecision=Object.freeze({
+       tick:tick+1,blockerId:blocker.id,
+       accepted:waypoint!==null,
+       reason:waypoint?'safe-corridor':'no-safe-corridor'
+      });
       if(waypoint)activeCarryBlockedDetour=Object.freeze({
        playerId:p.id,sourceCarryTick:activeFixtureCarryPursuit.sourceCarryTick,
        blockerId:blocker.id,side:chosenSide,waypoint,startTick:tick+1
