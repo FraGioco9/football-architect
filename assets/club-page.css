@@ -274,6 +274,11 @@ body.app-body{--app-page-pad-top:8px}
  .club-competition-list .club-competition-next{
   grid-column:2;grid-row:2/4;
  }
+ /* A wrapped fixture changes the compact row's natural height. Keep Status
+    and the fixture's first line on their stable first-paint track instead of
+    vertically recentering them when a match name wraps. */
+ .club-competition-list .club-competition-metrics dd,
+ .club-competition-list .club-competition-next-content{align-self:start}
 }
 @media(max-width:760px){
  .club-overview-layout>.club-competition{padding:12px 16px}

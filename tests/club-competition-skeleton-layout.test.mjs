@@ -48,6 +48,8 @@ test('Club Competitions define a single three-column entry and shared label/valu
  assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*gap:3px;min-height:0;/,
   'Next match does not reserve invisible empty height beneath the text');
  assert.match(css,/@container club-competition-panel \(max-width:800px\)/);
+ assert.match(css,/\.club-competition-list \.club-competition-metrics dd,\s*\.club-competition-list \.club-competition-next-content\{align-self:start\}/,
+  'Compact membership values preserve first-paint y when fixture names wrap');
  assert.match(css,/@container club-competition-panel \(max-width:500px\)/);
  assert.match(css,/grid-template-columns:minmax\(92px,40%\) minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:minmax\(261px,276px\) minmax\(0,1fr\)/,'Stacked layouts reserve the same columns for every row');
