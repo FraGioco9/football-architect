@@ -9,6 +9,7 @@ import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
 import {dueAdministrativeMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
+import {matchPublicationStatements} from './match-slot-publication.ts';
 type Row={event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null};
 export async function stageDomesticCalendar(db:Database,session:AdminSession,input:PrepareRequest,idempotencyInput:string,now:number):Promise<Outcome>{
  const cmd=parsePrepareRequest(input),key=parseIdempotencyKey(idempotencyInput);
@@ -33,6 +34,8 @@ export async function stageDomesticCalendar(db:Database,session:AdminSession,inp
  if(fixtures.length!==3840)throw new ApiError(422,'calendar_event_prerequisites');
  const fixturesJson=JSON.stringify(fixtures),fixturesHash=await canonicalHash(fixtures);
  const receipt=await canonicalHash({schemaVersion:1,season:world.seasonNumber,generation:world.generation,eventId:'domestic:calendar',fixturesHash,seed,participantsHash:snapshot.participantsHash,rulesHash:snapshot.rulesHash});
+ const hashes=new Map(snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-')).map(b=>[b.competitionId,fixturesHash]));
+ const matchInserts=await matchPublicationStatements(db,fixtures,world.generation,world.seasonNumber,'domestic',hashes,now);
  const operationId=crypto.randomUUID(),result:Outcome={world:{...world,revision:world.revision+1},operationId};
  try{
   await db.batch([
@@ -45,6 +48,7 @@ export async function stageDomesticCalendar(db:Database,session:AdminSession,inp
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_domestic_stages WHERE season_number=${world.seasonNumber})=0`,[]),
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=${world.seasonNumber})=0`,[]),
    db.prepare('INSERT INTO season_domestic_stages VALUES(?,?,?,?,?,?,?,?,?)').bind(world.seasonNumber,world.generation,schedule.algorithmVersion,seed,snapshot.participantsHash,snapshot.rulesHash,fixturesHash,fixturesJson,now),
+   ...matchInserts,
    db.prepare(`UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=${world.seasonNumber} AND event_id='domestic:calendar' AND status='scheduled' AND scheduled_day=?`).bind(now,receipt,world.day),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),
    db.prepare('INSERT INTO admin_operations(id,generation,idempotency_key,request_hash,account_id,command,expected_revision,resulting_revision,outcome_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(operationId,world.generation,key,hash,session.actor.id,'stage-domestic-calendar-v1',world.revision,result.world.revision,JSON.stringify(result),now)

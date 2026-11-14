@@ -34,6 +34,7 @@ export async function resetWorld(db:Database,session:AdminSession,input:ResetReq
    db.prepare('DELETE FROM season_archive_summaries'),
    db.prepare('DELETE FROM season_archives'),
    db.prepare('DELETE FROM season_admin_events'),
+   db.prepare('DELETE FROM season_match_slots'),
    db.prepare('DELETE FROM season_domestic_stages'),
    db.prepare('DELETE FROM season_knockout_ties'),
    db.prepare('DELETE FROM season_day_outcomes'),
