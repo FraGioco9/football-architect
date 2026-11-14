@@ -123,12 +123,12 @@
     if(flag){const img=doc.createElement('img');img.src='/assets/flags/'+flag+'.svg';
      img.className='app-players-nationality-flag';img.dataset.playerCountry=p.nationality;
      img.alt=win.faPlayersNationality?.name(p.nationality)||p.nationality;
-     img.tabIndex=0;img.width=24;img.height=18;flagTd.append(img)}
+     img.tabIndex=0;img.width=20;img.height=15;flagTd.append(img)}
     else flagTd.textContent=p.nationality||'';
     tr.append(flagTd);
     const name=doc.createElement('td');name.textContent=p.name;name.className='admin-contracts-player-name';tr.append(name);
     const positions=[p.primary_position,...(Array.isArray(p.secondary_positions)?p.secondary_positions:[])].filter(Boolean).join(', ')||'—';
-    const values=[Number.isSafeInteger(p.age)?String(p.age):'—',positions,
+    const values=[positions,Number.isSafeInteger(p.age)?String(p.age):'—',
      Number.isSafeInteger(p.height_cm)?p.height_cm+' cm':'—',
      p.preferred_foot==='left'?l('left'):p.preferred_foot==='right'?l('right'):'—',clubName(p.clubKey)];
     for(const v of values){const td=doc.createElement('td');td.textContent=v;tr.append(td)}
