@@ -7,7 +7,7 @@ import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
-const clubNames=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));
+const clubNames=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName] as const));
 if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
