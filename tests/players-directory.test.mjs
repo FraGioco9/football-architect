@@ -807,6 +807,17 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  const deep=build({page:3,count:151,pageSize:50,totalPages:4,players:first},async page=>({...make(page,second),count:151,totalPages:4}));
  await deep.appendNext();assert.equal(deep.snapshot().loadedThrough,4,'direct page 3 loads only segment 4 next');
 });
+test('PLAYERS-TABLE-532 compact headers share 36px height and 11px type without resizing player data',()=>{
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-players-table thead th\{height:36px;padding-block:2px;[^}]*font-size:11px;font-weight:700/);
+ assert.match(css,/\.app-players-sort-button\{[^}]*height:30px;min-height:30px/);
+ assert.match(css,/\.app-players-table\{[^}]*font-size:13px/,'player data retains its approved font size');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/,'30px body rows remain unchanged');
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px/,'first-paint and refresh rows retain matching height');
+ assert.doesNotMatch(css,/\.app-players-table thead th\{height:44px/);
+ assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-table thead th\{[^}]*height:/,'Roster inherits the shared header styles');
+});
+
 test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags in public, Roster and Admin preview',()=>{
  const css=read('assets/app.css');
  const directory=read('assets/players-directory.js');
@@ -829,7 +840,7 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
- assert.match(css,/\.app-players-table thead th\{height:44px/,'headers remain readable and stable');
+ assert.match(css,/\.app-players-table thead th\{height:36px/,'compact headings remain stable across all player tables');
  // Preserve all responsive and first-paint geometry and five empty loading rows.
  assert.equal((read('players/index.html').match(/class="app-players-loading-row"/g)||[]).length,5);
  assert.match(css,/@media\(max-width:720px\)\{\.app-players-table th,\.app-players-table td\{padding-inline:10px\}\}/);
@@ -914,8 +925,8 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
 
 test('Players table header geometry and independent sort-label anchoring',()=>{
  const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),js=read('assets/players-directory.js');
- assert.match(css,/\.app-players-table thead th\{height:44px;padding-block:5px;[^}]*font-size:12px;font-weight:700;line-height:1.2/);
- assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:32px;min-height:32px/);
+ assert.match(css,/\.app-players-table thead th\{height:36px;padding-block:2px;[^}]*font-size:11px;font-weight:700;line-height:1.2/);
+ assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:30px;min-height:30px/);
  assert.match(css,/\.app-players-sort-label\{position:relative;display:inline-block;max-width:100%/);
  assert.match(css,/\.app-players-sort-chevron\{position:absolute;display:block;left:calc\(100% \+ 7px\);top:50%/);
  assert.match(css,/\.app-players-flag-col \.app-players-sort-chevron\{left:0\}/);

@@ -65,3 +65,8 @@
 - Club header, identity and first-paint country flag placements resolve to the shared 20×16 size, including the fixed min/max header dimensions; the existing Clubs directory flags were already 20×16, so no change was needed there. Static SVG intrinsic width/height attributes remain unchanged; the stylesheet sizes their frames at first paint without requiring mass regeneration of generated pages.
 - Player detail flag and its skeleton are now **20×15px** (matching player table flag dimensions) in CSS and the renderer image dimensions. Existing title, age, tab, table column, flag tooltip, team crest and hit-area styling is preserved.
 - Regression assertions cover new common flag slots and player-detail first-paint parity; visual mobile Safari QA remains pending.
+
+## Shared player-table header density (approved next step)
+
+- Public Players Overview/Attributes, club Roster and Admin player preview share a single table header style. The heading row is now **36px** (was 44px), with **11px** heading font size (was 12px) and 2px vertical padding. Sort buttons occupy 30px rather than 32px so they fit the reduced header without shifting headings or chevrons.
+- Table data labels remain 13px, body and five loading rows remain at the approved 30px, and the columns, flag dimensions, sort order, name hover underline, and mobile horizontal scroll are unchanged. This is a shared CSS-only layout adjustment, pending manual desktop/iPhone Safari QA.

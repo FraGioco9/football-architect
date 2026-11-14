@@ -1561,10 +1561,10 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table col.app-players-name-column{width:var(--app-players-name-width)}
 .app-players-table[data-players-table-mode="attributes"] col.app-players-view-third-column{width:var(--app-players-positions-width)}
 .app-players-table th,.app-players-table td{box-sizing:border-box;padding:2px 16px;border:0;border-bottom:1px solid var(--line);vertical-align:middle;text-align:center}
-.app-players-table thead th{height:44px;padding-block:5px;background:#172d30;color:var(--muted);font-size:12px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
+.app-players-table thead th{height:36px;padding-block:2px;background:#172d30;color:var(--muted);font-size:11px;font-weight:700;line-height:1.2;letter-spacing:.02em;white-space:nowrap}
 /* Sort is still interactive, but labels never display arrows, hover highlights,
  * click focus boxes or selectable text. Keyboard focus uses a text underline only. */
-.app-players-sort-button{display:flex;align-items:center;justify-content:center;gap:0;line-height:1.2;box-sizing:border-box;width:100%;min-width:0;height:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.app-players-sort-button{display:flex;align-items:center;justify-content:center;gap:0;line-height:1.2;box-sizing:border-box;width:100%;min-width:0;height:30px;min-height:30px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:inherit;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .app-players-sort-button:hover,.app-players-sort-button:active,.app-players-sort-button:focus{color:inherit;background:transparent;box-shadow:none;outline:none;text-shadow:none;filter:none}
 .app-players-sort-button:focus-visible{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 /* The label owns the alignment; an active chevron sits beside it without shifting text. */
