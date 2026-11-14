@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101A1D">
+<title>Match Engine LAB — Football Architect</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script src="/assets/theme.js"></script>
+<script src="/assets/sidebar-evolution.js" defer></script>
+<script src="/assets/profile-navigation.js" defer></script>
+<link rel="stylesheet" href="/assets/landing.css">
+<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/sidebar-evolution.css">
+<link rel="stylesheet" href="/__fa_match_engine__/fixture-lab.css">
+</head>
+<body class="app-body me-lab-page">
+<a class="fa-skip-link" href="#main-content">Skip to laboratory</a>
+<div class="fa-career-shell">
+<!-- ME-01_CANONICAL_SIDEBAR -->
+<div class="fa-shell-workspace">
+<header class="fa-shell-topbar">
+<div class="fa-shell-club"><span class="app-crest" aria-hidden="true">3D</span><strong>Development</strong></div>
+<div class="me-theme-picker app-theme-choices" role="group" aria-label="Appearance">
+<button type="button" class="app-theme-choice" data-theme-choice="dark" aria-pressed="true">Dark</button>
+<button type="button" class="app-theme-choice" data-theme-choice="light" aria-pressed="false">Light</button>
+</div></header>
+<div class="fa-shell-content-scroll">
+<main class="app-main" id="main-content" tabindex="-1">
+<section class="app-view" aria-labelledby="fixture-lab-title">
+<div class="me-fixture-heading">
+<div>
+<h1 class="app-page-title" id="fixture-lab-title">Match Engine LAB</h1>
+<p class="me-fixture-subtitle">Choose where the ball drops. Press Play to see players react.</p>
+</div>
+</div>
+<div class="me-fixture-layout">
+<section class="app-panel me-fixture-panel me-fixture-field" aria-label="Interactive football pitch">
+<div class="me-fixture-field-heading">
+<span class="me-fixture-hint">Click or tap the pitch to set the landing point</span>
+<span class="me-fixture-state" id="fixture-status" role="status" aria-live="polite">Loading…</span>
+</div>
+<canvas id="fixture-pitch" width="1050" height="680" tabindex="0" role="img" aria-label="Interactive 105 by 68 metre pitch. Select a ball drop point by clicking, tapping, or using arrow keys."></canvas>
+<p class="me-fixture-legend">Cyan: home · Amber: away · White: ball · Dashed path: observed shot</p>
+<div class="me-fixture-transport" role="group" aria-label="Simulation controls">
+<button id="fixture-play" type="button" disabled>Play</button>
+<button id="fixture-step" type="button" disabled>Step</button>
+<button id="fixture-reset" type="button" disabled>Reset</button>
+<label for="fixture-speed">Speed</label>
+<select id="fixture-speed" aria-label="Simulation speed">
+<option value="0.5">0.5×</option><option value="1" selected>1×</option>
+<option value="2">2×</option><option value="4">4×</option>
+</select>
+<output id="fixture-time">0.00 s</output>
+</div>
+</section>
+<aside class="app-panel me-fixture-panel me-fixture-controls" aria-label="Create a situation">
+<h2>Create a situation</h2>
+<label for="fixture-drop-height">Drop height</label>
+<select id="fixture-drop-height" aria-label="Ball drop height in metres">
+<option value="1">1 m</option><option value="2" selected>2 m</option><option value="5">5 m</option>
+</select>
+<div class="me-fixture-stat"><span>Landing point</span><strong id="fixture-point">Centre (0, 0)</strong></div>
+<div class="me-fixture-stat"><span>Players responding</span><strong id="fixture-reacting">0 / 22</strong></div>
+<div class="me-fixture-stat"><span>Contacts</span><strong id="fixture-contacts">0</strong></div>
+<div class="me-fixture-stat"><span>Last action</span><strong id="fixture-last-action">None</strong></div>
+<details class="me-fixture-details" id="fixture-details">
+<summary>More physics <svg class="language-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m5 7 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+<div class="me-fixture-stat"><span>Real physics ticks</span><strong id="fixture-ticks">0</strong></div>
+<div class="me-fixture-stat"><span>Passes</span><strong id="fixture-passes">0</strong></div>
+<div class="me-fixture-stat"><span>Shots</span><strong id="fixture-shots">0</strong></div>
+<div class="me-fixture-stat"><span>Clearances</span><strong id="fixture-clearances">0</strong></div>
+<div class="me-fixture-stat"><span>Shot trajectory</span><strong id="fixture-shot-path">—</strong></div>
+<div class="me-fixture-stat"><span>Maximum shot height</span><strong id="fixture-shot-height">—</strong></div>
+<div class="me-fixture-stat"><span>Ball boundary (geometry only)</span><strong id="fixture-boundary">—</strong></div>
+<div class="me-fixture-stat"><span>Next shoe contact</span><strong id="fixture-shot-follow-up">—</strong></div>
+<label class="me-fixture-record-label" for="fixture-history">Recorded frames</label>
+<div class="me-fixture-history">
+<input id="fixture-history" type="range" min="0" max="0" value="0" disabled aria-label="Review recorded frames without changing physics">
+<output id="fixture-tick">0</output>
+</div>
+<button id="fixture-verify" type="button" disabled>Check replay</button>
+<span id="fixture-verify-result" role="status" aria-live="polite"></span>
+<a class="me-fixture-diagnostics-link" href="/dev/match-engine/diagnostics">Older physics experiments</a>
+</details>
+<p class="me-fixture-disclaimer">Experimental physics only. No official match scores or database changes.</p>
+</aside>
+</div>
+</section>
+</main>
+<footer class="app-footer"><span>FOOTBALL ARCHITECT · MATCH ENGINE LAB</span><span>LOCAL DEV ONLY</span></footer>
+</div></div></div>
+<script type="module" src="/__fa_match_engine__/fixture-lab.mjs"></script>
+</body>
+</html>

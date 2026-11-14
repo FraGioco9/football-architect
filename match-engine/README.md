@@ -1,3 +1,842 @@
+# ME-PB-47 — ONE universal global ball-response parameter (2026-11-11)
+
+**Product decision:** ONE shared, numerical match-ball response setting
+for ALL 22 players, ALL shoes and ALL pitches. No player, club,
+footwear, venue, material, or terrain preset. No separate foot
+restitution, foot friction or grass-resistance adjustment in
+the public/shared configuration. Nothing added to LAB controls,
+production, Preview, world APIs or remote D1.
+
+**Implementation (isolated research facade ONLY):**
+\`src/player-ball-global-response.mjs\` provides a single numeric
+\`globalResponse\` (default **1.00**; bounded diagnostic
+range **0.75–1.25**) and an opt-in factory for genuinely physical
+Rapier research worlds. Fixed technical coefficients are derived
+**internally** as foot restitution \`0.12 × globalResponse\`
+and grounded grass rolling deceleration
+\`0.8 ÷ globalResponse m/s²\`. Foot contact friction remains fixed
+at \`0.65\`, and all other material/collider/ball constants remain
+unchanged. A higher value makes the ball **slightly more responsive**
+to foot contact and preserves more horizontal rolling speed.
+**These relationships are provisional research proxies, NOT
+externally calibrated football parameters.**
+
+The only independent optional locator in the research factory
+is \`omittedShoeId\` to perform a controlled leave-one-shoe-out
+counterfactual, never to choose a physical property for that shoe.
+Unknown keys, individualized footwear/grass settings, values outside
+the bounded range, and non-grounded research scenarios fail closed.
+The factory does not accept the old individually tuned internal
+diagnostics; ME-PB-46's previous one-axis studies remain retained as
+**historical tests only**, to document why separate gameplay knobs
+were rejected, not as product controls.
+
+The default \`globalResponse=1.00\` must reproduce the original
+canonical Rapier contact events and ball trajectory EXACTLY, without
+any engine version or normal-world change. Tests run identical
+22-player movement inputs through three real worlds (complete feet,
+Home #10 foot omitted, unrelated Home #1 sham omitted) at 60 Hz,
+in two distinct starting ball configurations under \`0.85,1,1.15\`.
+The baseline genuine Away #10 → Home #10 physical START and END
+witness remains a regression, the neutral sham must stay physically
+identical to the complete world and a distant no-contact ball must
+not manufacture events. A non-opted-in core world remains unchanged.
+All observations are whole-world physics, not a singular foot impulse,
+controlled reception, official interception, dribble or possession.
+
+No merged/deployed code or remote D1 changes. Branch/PR remains
+**Draft/HOLD** pending separate authorization; follow exact-head CI.
+
+---
+
+# ME-PB-46 — bounded real-world foot/grass sensitivity (2026-11-11)
+
+This isolated 60Hz deterministic Rapier *research test* varies TWO
+already supported opt-in parameters, **one at a time**, while keeping
+the accepted normal engine and all existing LAB/football constants
+unchanged: `diagnosticFootRestitution` defaults to **0.12**, tested
+at **0.06** and **0.22**, both within its strict [0, 0.35] allowlist;
+`diagnosticGrassRollDecelerationMps2` defaults to **0.8 m/s²**,
+tested at **0.60** and **1.00 m/s²**, both within [0.3, 2].
+These are NOT yet calibrated turf/shoe gameplay values.
+
+A 3×5 matrix tests the two genuinely sustained ME-PB-45 initial
+balls (x=4.96/vx=-0.3 and x=5.00/vx=-0.3) and one genuine short,
+physically recontact-censored negative (x=4.92/vx=-0.3), each
+under default physics and the four single-axis diagnostic variations.
+A fixed seed is shared across all five variants for each initial
+physical condition: new labels or seed strings are not counted
+as additional physical initial-state evidence.
+
+Every trial runs three independent pinned Rapier worlds with
+identical physical parameters and exactly the same canonical
+22-player input at each tick (full world, omit Home #10 collider,
+distant Home #1 sham omission). Actual real ball/foot START/END
+frames flow through the existing ME-PB-38/39 co-motion and
+measured release, ME-PB-41 distinct real second-shoe START,
+ME-PB-43 matched-world sensitivity and ME-PB-44 post-END,
+no-contact, >=8 consecutive clean-tick observer. A short,
+unqualified, or unfinished shoe episode MUST NOT be promoted
+to a sustained reception; every new real shoe START/END/ACTIVE
+event immediately censors the post-END clean window. The
+sham world must remain bit-identical to the complete world
+for all physical configurations.
+
+**Actual first pinned Rapier sensitivity measurements (15 trials):**
+7 **sustained**, 5 **real but short/censored**, and 3 **genuine
+second START without an eligible END**. Outcomes by one-axis
+diagnostic variant, always in order [x=4.96/-0.3 strong,
+x=5.00/-0.3 strong, x=4.92/-0.3 short]:
+
+| Isolated sensitivity option | A | B | C |
+| --- | --- | --- | --- |
+| Defaults foot=0.12, grass=0.80 | sustained (10 ticks) | sustained (12 ticks) | short (5 ticks) |
+| Lower foot restitution 0.06 | sustained (9) | short (4) | short (4) |
+| Higher foot restitution 0.22 | sustained (12) | short (4) | sustained (9) |
+| Lower grass deceleration 0.60 m/s² | missing END | missing END | missing END |
+| Higher grass deceleration 1.00 m/s² | sustained (10) | short (5) | sustained (11) |
+
+The low-resistance cases have a true second Rapier START but NO
+qualifying END within the bounded 175-tick experiment. The
+three positive/short categories CAN change under these uncalibrated
+diagnostic parameters; such sensitivity **does not justify**
+adopting these values as official gameplay physics. A change in
+whole-ball matched-world velocity still is NOT a unique foot impulse,
+successful reception, or possession. All 15 scenario classifications,
+the original default physical timestamps, the unchanged full/sham
+physics and the no-observer deterministic replays are now locked in
+Node regression tests. No claim of independent calibration.
+
+Baseline classification is **asserted unchanged** from ME-PB-45
+(127/130 + 10 clean ticks, 125/128 + 12 clean ticks, and
+129/134 + 5 short ticks). For the uncalibrated variations,
+classifications are measured independently rather than forced
+to match the baseline. Replayed independent triple-world
+runs plus observer-disabled canonical A/B/C traces must match.
+Invalid restitution/grass bounds and unauthorized non-opted-in
+foot sensitivity fail closed. All source evidence remains
+read-only, with no new ball impulse, physics engine modifications,
+player moves, new LAB page/button, public API, Preview,
+production deploy, or remote D1 writes.
+
+This measures only **marginal whole-physics-world**
+counterfactual sensitivity with matched fixed player inputs,
+NOT isolated foot impulse, controlled reception, interception
+or possession. `officialPossession=false` and
+`individualFootImpulseProven=false` throughout.
+
+---
+
+# ME-PB-45 — independent real initial-condition persistence matrix (2026-11-11)
+
+ME-PB-44 verified 10 consecutive uncontaminated Rapier 60Hz ticks
+after the Home #10 second-shoe physical END, with clean tail censored
+at a new genuine START. ME-PB-45 expands this into a **bounded matrix
+of 20 independent physical initial-condition/movement trials**:
+five actual ball starting X coordinates (4.92–5.00 m) crossed with
+three initial X velocities (-0.2, -0.3, -0.4 m/s), two real initial Y
+offsets, plus (1) ordinary movement without a second shoe START,
+(2) authentic grazing original-shoe-recontact BEFORE an opponent,
+and (3) a physically distant ball without shoe contact.
+The Rapier scenario `seed` is a descriptive identity only; the
+experiment varies actual initial ball states rather than counting
+seed strings as independent randomized physics.
+
+Each trial creates THREE independent pinned Rapier worlds with
+identical 3D ball state and identical canonical 22-player movement
+frames per 60Hz tick, driven by the full world's previous actual
+ball. One world includes all shoes, one omits ONLY Home #10, and one
+omits a distant unrelated Home #1. The experiment reuses the
+existing genuine ME-PB-38 co-motion, ME-PB-39 shoe END/clearance,
+ME-PB-41 distinct second-shoe START, ME-PB-43 physical matched-world
+ablation and ME-PB-44 fully event-free post-END tail observers.
+It must NEVER arm a post-END tail merely because a shoe is near the
+ball. All ball and shoe data come from the actual Rapier integration,
+and an intervening real contact **censors** the clean tail.
+
+Research result classifications are deliberately asymmetric:
+a positive requires genuine sequential Rapier provenance AND
+>=8 consecutive clean post-END samples with >0.01m world position
+difference and >0.1m/s world velocity difference. A short,
+interrupted, absent second contact, prematurely recontacted original
+shoe or no-foot event remains **negative/unqualified**, not an
+invented handoff. Heading changes in the FULL world are reported
+only when BOTH measured horizontal velocities are >=0.2m/s;
+no heading is inferred from a stationary ball. The complete sham
+world must remain physically identical to the full world. Selected
+independent simulations are replayed and compared with all
+diagnostic observers disabled to prove they never steer physics.
+The step has no newly issued ball impulse, collider, player
+teleport, movement algorithm, public gameplay/LAB scene/button,
+Preview, production, remote D1 write or deploy.
+
+**Observed first 20-trial exact-head Rapier matrix:** 4 genuinely
+sustained cases with independently varied ball states (x=4.96,
+vx=-0.2/-0.3; x=5.00, vx=-0.3/-0.4, all y=0 m/s where relevant).
+Every certified case has genuine Away #10 first release, Home #10
+second Rapier START/END, >=10 consecutive contact-free post-END
+frames and an explicitly real new START censor at tick 141.
+11 trials instead have a real second START/END and world ball
+velocity difference, but an intervening genuine contact cuts the
+clean interval to 1–6 ticks (<8, **not sustained**). 2 have a
+genuine second START but no unambiguous completed second shoe
+END and therefore cannot arm a clean tail. 3 never establish
+an eligible second-player episode (ordinary-movement no-second,
+original-shoe-recontact first, and genuinely distant no-contact).
+The regression locks all four groups and selected full-physics
+deterministic replays, including a second independently varied
+positive. Exact numerical values remain logged in the targeted
+GitHub Actions job. Full-world post-END heading drift is a
+measured angle between two nonzero velocities, **not** a causal
+foot attribution or a direction comparison to a stationary ball.
+
+The output is **marginal whole-world physical sensitivity** under
+matched fixed player inputs, never proof of an individual foot's
+isolated impulse, control, interception or official possession.
+All corresponding flags remain false. Exact-head GitHub CI evidence
+is attached to issue #480 after verification.
+
+---
+
+# ME-PB-44 — genuine post-END matched-world trajectory persistence (2026-11-11)
+
+ME-PB-43 showed that a real Home #10 Rapier shoe START **127**,
+END **130** changes the whole world's ball trajectory relative to
+an otherwise matched 21-shoe ablation. ME-PB-44 verifies the actual
+**clean interval AFTER that END**, not mere initial deviation.
+
+Three independently created pinned Rapier worlds — complete 22 shoes,
+Home #10 omitted and a sham with distant Home #1 omitted — receive
+the **same identical 22-player movement frame every tick** (driven by
+the full world's preceding *actual* ball). The entire world uses
+genuine solver movement and genuine shoe START/END/ACTIVE events:
+none is created or patched by the observer. A new immutable
+read-only pure observer requires the true second-shoe END frame,
+matching ME-PB-43 full/ablated ball measurements, a bit-identical
+sham ball state, and consecutive canonical event ledgers. It
+records 3D position/velocity differences, min velocity difference,
+clean-world planar travel, and sustained divergence (>=8 consecutive
+clean frames with >0.01 m position and >0.1 m/s velocity gap).
+
+**Interpretation boundary:** a later genuine new shoe START or other
+physical shoe event immediately **CENSORS** the post-END interval.
+The observed Home #10 **recontact at tick 141** makes the 131–140
+interval (up to ten consecutive 60Hz frames) the only eligible
+uncontaminated post-END window. Even though the world difference
+persists beyond 141, the later trajectory cannot be attributed solely
+to the earlier second contact episode; recontacts introduce new
+physical causes. This is still a **fixed-player-input counterfactual**,
+not two independent adaptive matches, and reports only aggregate
+whole-physics-world marginal differences. No exclusive foot impulse,
+controlled reception, interception, or official possession proven.
+
+QA: independent triple-world deterministic replay; read-only observer
+ON/OFF identical canonical ball/foot streams; true physical shoe-END
+and subsequent recontact provenance; sham/no-touch world negative;
+invalid or stale data fail closed. No new physics, collision API,
+player motion, LAB controls, official game actions, Preview,
+production, remote D1 write or deployment.
+
+---
+
+# ME-PB-43 — matched-world marginal second-shoe ablation (2026-11-11)
+
+After ME-PB-42's genuine physical Away #10 → Home #10 sequence,
+ME-PB-43 executes the already supported **diagnosticOmittedFootId**
+counterfactual with the **same pinned Rapier** solver and **the SAME
+canonical 22-player kinematic frame on every 60Hz physics tick**.
+Three independent worlds receive identical ball initial conditions:
+(A) full 22 shoes, (B) 21 shoes with **Home #10 omitted**, and
+(C) sham control with an unused far-field **Home #1 omitted**.
+Every player, including the omitted shoe's actor, still participates
+in the shared canonical movement; no additional engine flags,
+forces, new contact APIs, synthetic shoes, repositioning, new LAB
+scene or button were introduced.
+
+Both A and B have identical player trajectories by experimental
+design: each movement frame is derived from A's *real previous ball*
+and is applied unchanged to **all** worlds. This is a matched
+kinematic-input comparison, **not** an independently adaptive
+counterfactual football match. Once the balls diverge, the B and C
+worlds deliberately do not independently retarget their players.
+This must be disclosed when interpreting the difference.
+
+An independent immutable observer validates each completed world
+state (same tick, canonical 3D coordinates), the genuine ordered
+Rapier START/END/ACTIVE ledger for both A and B, and that the
+omitted Home #10 physically cannot generate a shoe event in B.
+It measures whole-ball position and velocity vector differences,
+planar differences, speed differences, the first divergent physics
+tick and the genuine A-world Home #10 START/END. One actual
+physical Rapier START remains **tick 127**; END **tick 130**.
+The comparison explicitly accounts for Rapier CCD potentially
+producing motion divergence just BEFORE the START event; such a
+pre-START difference is NOT a fictional foot START or a
+preemptively inferred intervention.
+
+Exact same-world ball/foot replay, sham omission negative
+(including no-target no-contact), observer ON/OFF matched kinematics,
+and guarded invalid states are verified in CI. This quantifies a
+**marginal whole-physics-world response to a physical collider
+ablation**, NOT unique individual-foot impulse attribution,
+control, interception, successful reception or any ball ownership.
+All official possession/control/foot-impulse attribution fields
+remain false. Experimental-only; no official match integration,
+public/Preview/D1 impact, deploy or merge.
+
+---
+
+# ME-PB-42 — measured 60Hz ball trajectory during the SECOND real shoe contact (2026-11-11)
+
+ME-PB-41 independently established a legitimate first-to-second
+collision chain: Away #10 genuine START (tick 1), first real END (19),
+measured uncontested clearance (26), then Home #10 genuine new START
+(127). ME-PB-42 extends **only isolated, test-only Rapier research**,
+using a read-only frozen second-contact episode observer. It takes
+the actual ME-PB-41 positive witness, the prior and current completed
+3D ball snapshots, and a genuine Rapier shoe event frame at each
+consecutive physics tick; no contact is created or retroactively inferred.
+
+The observer reports the total ball speed change, aggregate world
+delta-velocity and delta-momentum, absolute heading-angle change,
+measured planar displacement/path, genuine active contact samples
+and real physical END tick/duration for the second shoe. Every source
+frame must have canonical tick/identity/event continuity. A competing
+shoe, missing genuine END, stale state or expired <=60-tick window
+does **not** prove a completed exclusive second-foot episode. Actual
+observations are frozen, deterministic, and unable to steer physics.
+
+Crucially, even a coincident measured ball delta-velocity is the
+aggregate response of the **whole Rapier world**: terrain/friction,
+gravity, other possible contacts and the shoe may all contribute.
+No exclusive individual-foot impulse is proven. Contact is NOT
+controlled reception, an interception, a tackle, a change of
+possession or an official match action. All control, possession,
+interception, official free-ball, pass and ball-force-attribution
+flags explicitly remain false. No new kick/impulse, collider,
+teleport, movement mode, engine code, LAB scene/button, Preview,
+production endpoint or remote D1 write.
+
+QA: real seeded Rapier replay twice; alternate existing approach
+tactical mode; observer on/off ball and shoe collision traces;
+no-foot-collider control; negative no-second and intervening
+original-shoe recontact; strict forged/stale state rejections.
+Exact-head CI evidence is recorded in issue #480.
+
+---
+
+# ME-PB-41 — genuine second player's shoe START after real ball release (2026-11-11)
+
+A **new, entirely read-only diagnostic evidence observer** and isolated
+real 60Hz Rapier regression prove a distinct second player's genuine
+shoe START **after** the same ball already underwent:
+(1) >=6 qualifying real shoe/ball co-motion ticks,
+(2) a genuine initial shoe END and
+(3) >=3 independently measured uncontested-ball clearance frames.
+
+The observer is armed **only** by the frozen ME-PB-39 snapshot from the
+*first* confirmed physically clear tick. It then consumes every
+consecutive completed Rapier shoe START/END/ACTIVE frame, canonical
+22-player actual pose/velocity and measured ball XYZ/velocity. It
+reconciles each previous active-foot set with the next real event frame,
+validates provenance and ordered canonical IDs and expires after at most
+180 ticks. Only the **first subsequent** genuine active START can
+qualify. A recontact by the original player, a transient/multiple-shoe
+START, a stale/forged frame, nonfinite data or a missed observation
+invalidates a clean second-player witness. A later contact cannot
+retroactively repair an interrupted clearance-to-contact interval.
+
+**Exact independent Rapier positive witness:** grounded x=+4.96 m,
+initial velocity x=-0.3 m/s, existing approach intent without
+the physical AI-kick switch; genuine **Away #10 START tick 1**,
+13 qualifying co-motion ticks, **Away END tick 19**,
+**three-frame uncontested clearance confirmed tick 26**, and
+**Home #10 actual Rapier START tick 127**. No other shoe START
+between the clearance and second-player contact. An independent
+existing exchange-approach intent reproduces the same physical
+contact tick; full-state deterministic replay and an observer-disabled
+A/B trace are identical. The no-foot physics control creates **zero**
+shoe START/END events.
+
+A separate real grazing experiment does register a later Away START,
+but an intervening **original Home #10 recontact** occurs first.
+This must remain **not qualified as uninterrupted handoff**, rather
+than counting a second actor merely because they eventually touched.
+An unqualified contact or stalled ball likewise cannot be promoted
+to ownership. The original LAB-11 remains unchanged and does not
+suddenly claim a release or possession.
+
+The witness is **physical collision evidence only**, NOT controlled
+reception, interception, tackle, change of possession, exclusive force
+attribution or official ball ownership. officialPossession,
+controlConfirmed, interceptionProven, freeBallOfficiallyProven,
+passCreated and ballForceApplied remain **false**. No player teleport,
+new kick, synthetic collider event, physics or movement change, new
+LAB page/button, public gameplay, Preview, production or remote D1
+write. All thresholds are exploratory DEV-only research conditions.
+
+---
+
+
+# ME-PB-40 — isolated REAL Rapier shoe-release witness search (2026-11-11)
+
+ME-PB-39 correctly refuses to invent a shoe END in the established
+LAB-11 exchange, where contact remains active throughout its bounded
+observation window. ME-PB-40 adds an **independent, test-only physical
+release investigation**, not a new user-visible LAB scenario, physics
+coefficient, control mechanism or official football action.
+
+A bounded matrix of pre-existing grounded ball positions and velocities
+is passed unchanged to the same pinned deterministic Rapier engine with
+the same 22-player movement. Every shoe START, ACTIVE and END is read from
+the **real completed Rapier collision-event queue**. A test-only observer
+gate is initialized *only after* a genuine Rapier shoe START; it is
+expressly not a real LAB-11 ownerless-response authorization, a pass, a
+controller/possession claim, a match event or a fabricated collision.
+The gate changes **nothing** in Rapier or player movement.
+
+The ME-PB-38 and ME-PB-39 pure observers consume only completed physical
+frames and actual ball/player positions and velocity. A positive outcome
+requires >=6 consecutive qualifying observed co-motion frames, a real
+Rapier END for the same shoe and >=3 subsequent physically clear frames
+with the existing bounded separation, height and relative-speed rules.
+Tests explicitly reject the absent-END/absent-clearance cases rather
+than synthesizing touch events or overriding the engine, compare
+deterministic full-state replays and verify that the no-foot control
+world creates no shoe events. Actual positive/negative outcome is
+determined by exact-HEAD GitHub Actions, not assumed from fixtures.
+
+This remains a non-calibrated **DEV research witness only**. It never
+produces actual ownership, a change of possession, control, interception,
+official loose-ball status, a goalkeeper save, score or additional force.
+Default engine behavior, LAB-11, production, Preview and D1 are unchanged.
+
+---
+
+# ME-PB-39 — verified shoe END and measured ball separation (2026-11-11)
+
+LAB-11 extends the read-only ME-PB-38 co-motion observer without changing
+movement or Rapier physics. Only the previous **completed 60Hz** physical
+shoe START/END/ACTIVE frame, canonical 22-player poses and the actual
+3D ball position/velocity are admissible. An outfielder who previously
+accumulated >=6 consecutive qualifying shoe/ball co-motion frames can
+subsequently produce an observed **physical contact END**. A proximity
+change or lost co-motion streak alone is not an observed Rapier END.
+Ordered identities, 60Hz tick continuity and the previous active-shoe
+set are verified before interpreting the real END event.
+
+After that END, **three consecutive independent measured samples** must
+show no active shoe colliders, ball center near turf (<=0.28m),
+>0.46m XY distance from **all 22 current shoe proxies**,
+>=0.2m/s actual ball ground speed and >=0.12m/s outward
+relative radial speed from the ended shoe. Only then is a
+**provisional measured-uncontested-ball** observation recorded.
+Recontact, ambiguous shoes, airborne ball, a stationary ball,
+inward velocity or nearby shoes reset current clearance; historical
+observations remain frozen. If genuine Rapier END is never present,
+the system must never fabricate a release. The observer expires
+within the existing 90-tick bounded ownerless response window.
+Thresholds remain provisional research parameters, not match rules.
+
+The result never proves control, lost possession, an interception,
+or official ball freedom. \`controlConfirmed\`, \`officialPossession\`,
+\`interceptionProven\`, \`freeBallOfficiallyProven\` and
+\`ballForceApplied\` are always **false**. No ball impulses, new LAB
+scene, scattered buttons, new player actions, official fixtures,
+Preview, production or remote D1 modifications are introduced.
+
+---
+
+# ME-PB-38 — observed contact-compatible shoe/ball co-motion (2026-11-11)
+
+LAB-11 now has a **read-only**, finite 90-tick observer after the already
+verified actual Away shoe START and terminal opponent-flight audit.
+At movement tick N+1 it inspects only the completed Rapier collision frame N,
+actual canonical 22-player pose/velocity and the same completed 3D ball state.
+An outfielder can accumulate a **provisional sustained co-motion evidence**
+streak only if exactly one genuine Rapier shoe collider is currently active,
+that collider belongs to an already selected post-contact responder,
+ball and shoe are close and low to turf, both are moving in approximately
+the same direction, and observed planar relative speed is small.
+**Six consecutive frames** are needed. No shoe event, a stationary proximity,
+a fast rebound, an airborne ball, conflicting shoes or an interrupted streak
+cannot pass. Thresholds (0.46 m XY, 0.28 m maximum ball-center Z,
+0.75 m/s relative speed, 0.2 m/s minimum motion and 0.75 direction cosine)
+are conservative *uncalibrated DEV research parameters*, not game rules.
+
+Frozen evidence snapshots retain the highest observed streak, expire within
+the existing response window, and never represent exclusive physical force,
+intentional first touch, ball ownership or match possession. The existing
+LAB-11 row displays evidence without a new button or LAB scene. Normal
+physics, default scenarios, official fixtures, D1, Preview and production
+remain unchanged. Node guard tests include provisional positive fixtures
+(**not** claims of Rapier-verified control) and a same-world actual Rapier
+negative/observational replay with the genuine opponent START. The observer
+**always** has controlConfirmed=false, officialPossession=false,
+interceptionProven=false and ballForceApplied=false; future controlled
+possession requires separately verified mechanics and authorization.
+
+---
+
+# ME-PB-37 — two-team ownerless loose-ball reaction after real opposition contact (2026-11-11)
+
+This milestone does **not** add LAB-14 or any new button. The existing
+**LAB-11** is the only opt-in environment in which an already observed
+actual Away shoe START and the **terminal** ME-PB-36 measured-flight audit
+can trigger a tactical **loose-ball response**. This is not an officially
+adjudicated change in possession, a stolen pass, an interception or even
+an assumption that a rebound belongs to either team.
+
+The response selects **one actual outfielder per team** based solely on
+current canonical 22-player XY and the current physical ball XY at the
+first eligible movement tick, with a deterministic distance/ID tie-break.
+It persists those two canonical identities and aims them toward the
+**subsequently measured ball** for at most **90 consecutive 60Hz ticks**.
+The existing player movement acceleration, global 7m/s speed bound,
+turning, pitch limits and hard teammate separation remain in charge.
+There is **no positional teleport, ball impulse, newly invented shoe
+contact, scripted pass or explicit possession owner**. Both teams may
+try to reach the same genuinely loose ball.
+
+The source audit is accepted only after a physically authenticated
+opponent START and a terminal measured-flight result: confirmed
+reverse/slow/redirect, no confirmed persistent change, or insufficient
+incoming flight. Unknown, gapped or forged audits cannot re-arm a new
+response; only one bounded response is created per scene. The existing
+Home #7 and Home #10 passes remain genuine and independently required,
+and the prior physical opponent START still halts the experimental
+exchange. Neither the outcome nor the new player reaction implies a
+scored tackle, official match result or per-foot impulse attribution.
+
+A separate pure contract suite tests canonical roster selection,
+initial actual XY, monotonic tick/hysteresis, terminal statuses,
+immutable snapshots, forced 90-tick timeout and rejection of stale or
+fabricated evidence. Same-world Rapier tests compare the existing
+two-pass opponent-contact scene **with and without** ownerless response,
+check no pre-contact movement changes, verify real post-contact motion,
+physical movement bounds, absence of new fabricated passes, and
+deterministic replay. The existing Chrome LAB-11 row displays the
+responders and explicit 'no possession' status; Reset and Compare remain
+unchanged. Ordinary LAB modes and production football state are
+unaffected. PR stays Draft/HOLD; no merge, deploy or remote D1 writes.
+
+---
+
+# ME-PB-36 — evidence-qualified opposition touch versus altered ball flight (2026-11-11)
+
+This milestone does **NOT** add another LAB scenario, controller action, possession,
+interception, foot force or match event. Existing LAB-11 contains an independently
+verified physical Away #10 shoe START at tick 196 while the Home #10 return pass
+is underway. Previously that true contact safely stopped the *experimental*
+exchange, but did not establish any measurable *flight outcome*.
+
+The new DEV-only `oppositionFlightAudit` observes only the **same-world Rapier
+velocity immediately before/after the actual 60Hz solver step** and the
+subsequent **completed 60Hz ball velocities**, synchronized to the exact Away
+shoe START and preceding **real applied** pass record. The first result is
+explicitly `contact-only-not-interception`. A continuing reversal, substantial
+slowdown or >=30-degree redirect is described as **observed altered flight
+after contact** only after **3 consecutive actual observations** of the same
+kind. If no such stable change occurs in **6 consecutive observed ticks**,
+it records `contact-only-no-confirmed-change`. An incoming speed below
+1.5m/s is **insufficient** to claim a directional change.
+
+Neither solver aggregate velocity delta nor the subsequent trajectory
+isolates a per-player cause: gravity, turf and any other colliders may also
+contribute. All records explicitly mark solver attribution unresolved and
+`interceptionProven:false`, `officialPossession:false`,
+`passCreated:false`. The earlier experiment's conservative halt on a
+real Away touch is unchanged; this is NOT an official match stoppage.
+
+A separate pure Node test suite rejects fabricated/stale foot STARTs,
+unsynchronized pass records, non-finite or gapped velocities and transient
+rebound samples. The real LAB-11 integration must verify both the true
+physical touch and subsequent frozen flight outcome without inventing any
+additional pass, with deterministic two-pass replay. Existing Chrome LAB-11
+status appends the **observed** result without new controls; LAB-01–13,
+physics coefficients, collision handling, movement and score stay untouched.
+No merge, deployment or remote database write is authorized.
+
+---
+
+# ME-PB-35 — fourth actual-physics pass vs observed contact (2026-11-11)
+
+**LAB-13 · AI Defend (Fourth Pass)** is a separate opt-in choice in the
+existing Scenario dropdown, sharing no new action button with ordinary
+LAB-01–12. It starts from the unchanged, normal 22-player formation.
+The first and second genuine Rapier impulses remain Home #7 → Home #10
+and Home #10 → Home #7; the third is the independently shoe-gated
+Home #7 action introduced in LAB-12.
+
+Only in LAB-13, after the genuine third impulse, Home #10 pursues the
+**currently measured physical ball** with normal ≤7 m/s bounded
+movement and existing collision separation. A **fourth** Home #10
+return-pass impulse is permitted only if a **new, different 60Hz Rapier
+shoe START** occurs, the current ball and sender XY/Z are close enough,
+the earlier third impulse is independently recorded, the current Home
+#7 location is valid, and the impulse is within the existing bounded
+10 N·s change. The core calls `applyImpulse` on the REAL Rapier ball
+before adding the linked fourth action record. The defensive ledger
+can only create the fourth task on the subsequently verified,
+**physically applied** event. LAB-13 defers the third active defensive
+lane; earlier LAB-12 assignments/physics remain unchanged.
+
+Crucially, the read-only `postThirdFootStarts` timeline records new
+post-third shoe START observations separately from actually applied
+pass actions; a bounce, contact or ongoing velocity **does not create
+a fourth event, possession, interception or score**. The list is frozen
+and bounded to 12 observations. A contact is labeled as a fourth pass
+only if its same-tick independently applied impulse is recorded.
+Any earlier official gameplay path remains unchanged.
+
+Acceptance requires a fourth **actual** Rapier impulse in the same
+world as the first three, a distinct later Home #10 START, strict
+previous-event linkage, separate defensive response and deterministic
+Node/Chrome replay. Tests must reject the milestone if any of these
+conditions fail; no scripted fake contact or timing-based action.
+
+---
+
+# ME-PB-34 — candidate third *real* Rapier shoe-triggered pass (2026-11-11)
+
+**LAB-12 · AI Defend (Three Passes)** is a separate opt-in entry in the
+existing Scenario dropdown. LAB-11 and all earlier scenarios retain their
+accepted physics and outcomes. In LAB-12 the engine first uses the same
+Home #7 → Home #10 impulse and Home #10 → Home #7 impulse as LAB-11.
+Only after the return has actually occurred, Home #7 approaches the
+measured live ball at normal bounded player speed, without teleporting
+the feet, relocating the ball, or manufacturing a contact event.
+
+The new independent **Home #7 shoe START** must be reported by the
+completed Rapier collision step. Only if current player XY, ball XY/Z,
+previous physical pass ticks, current ball velocity and the new real
+shoe START pass the dedicated guard may the engine call
+`body.applyImpulse` to send the physical ball toward the *current*
+Home #10 location. Its applied impulse is then recorded as `stage:'pass'`,
+`sequence:3`, `previousPassTick` linked to Home #10's genuine return,
+and `appliedByRealRapier:true` strictly after the physical application.
+The existing ME-PB-33 coordinator must independently accept this event
+before a new autonomous Away defensive lane task can be assigned.
+
+The experiment deliberately defers the **second** active defensive lane
+task so the genuine return can physically reach Home #7 before the
+previous LAB-11 Away #10 collision at tick 196. The **first** defensive
+task remains real and archived. The third task begins only on physical
+third-pass evidence, not on the delay or any timer. Normal 22-player
+initial positions, 7 m/s speed bounds, teammate separation and ordinary
+Rapier foot physics remain unchanged; no official match possession,
+interception, score or pass completion is claimed.
+
+Acceptance is deliberately strict: real Rapier test must show three
+distinct ordered shoe START contacts / applied ball impulses in the SAME
+world, then a third independent defensive response and deterministic
+full-world replay. A pure unit test validates the third-pass decision
+guard separately. The browser must select LAB-12, observe the third
+pass, complete Compare replay, Reset, and return to LAB-01 without
+additional buttons. If the physical third START does not occur, the
+milestone **fails** rather than simulating it.
+
+---
+
+# ME-PB-33 — bounded verified pass ledger, prepared for future physical cycles (2026-11-11)
+
+The DEV-only **LAB-11 · AI Defend (Two Passes)** maintains its existing
+two real Rapier kick actions and identical ball/player simulation. This
+milestone generalizes the **read-only defensive event coordinator** rather
+than claiming a third kick that the engine cannot yet physically perform.
+
+A pass epoch now carries a frozen monotonically increasing `sequence`,
+`previousPassTick`, immutable actor/target pair and an observed,
+same-tick Rapier foot-START evidence reference. Subsequent epochs
+alternate Home #7 forward `pass` and Home #10 `return-pass`; they
+must be **independently applied physical impulses** reported by the
+same opt-in engine with a strictly newer real shoe START, not inferred
+from ball motion, nearby players, previous intent or a re-used event.
+The new ledger rejects skipped/stale epochs, wrong players, changed
+signatures, non-finite/zero impulses, missing contact, immediate
+same-tick "second actions" and mismatched actor/receiver continuity.
+
+The historical tasks remain immutable. A new action can supersede the
+currently **closing** duty; an already terminated physical or
+measured-flight release is preserved exactly. Both the live list and
+the defensive history have a hard **8-pass-epoch cap** (at most seven
+archived tasks). Once the limit is reached, further events do not
+increase memory or activate another defender. Normal 7 m/s movement,
+the existing real-world player-separation guard and replay remain
+untouched; no possession, interception, match score or official
+pass-completion decision is inferred.
+
+The DEV UI reads the latest **actual pass event in the engine's ordered
+event history**, instead of a hard-coded two-field fallback, so future
+real kick events can be discovered without expanding the controls.
+LAB-11 still displays `2 / 2` for its **current physical two-pass
+scenario**, and there is no LAB-12, new button, official gameplay,
+deployment or remote DB change.
+
+Verification boundary: **actual Rapier integration tests verify only
+the two physical kicks currently produced** (Home #7 then Home #10)
+and their resulting defender contacts/replays. New third/fourth/eighth
+event tests are *pure schema/guard fixtures*, not generated physical
+third passes; they prove the coordinator's validation and finite
+history contract only. An additional real kick needs a separately
+implemented and physically verified AI action before it may be
+reported as gameplay evidence.
+
+---
+
+# ME-PB-32 — second real physical pass, new defensive task (2026-11-11)
+
+**LAB-11 · AI Defend (Two Passes)** is an isolated **new option in the
+existing Scenario dropdown**; no scattered action buttons or official
+match routes. It uses the same grounded Rapier Home #7 → Home #10
+exchange as LAB-08, with an autonomous, non-pre-positioned Away lane
+defender. Unlike LAB-10, Home #10 makes the ordinary bounded receiving
+run, so a **later genuine independent Home #10 shoe START** may trigger
+a second **real Rapier impulse** back toward Home #7.
+
+The DEV-only pass-cycle observer accepts a fresh action only when the
+engine has actually applied an impulse, the action tick matches the
+**already completed Rapier** collision frame, and its player ID is
+present in the genuine shoe START list. The two allowed stages are the
+first pass (Home #7) and a strictly later **return-pass** (Home #10),
+linked to the previous pass's tick. Repeated or stale events, merely
+ongoing ball motion, proximity, a return-control event, invented
+possession or a reused shoe START **never** re-arm a task.
+
+A later verified pass archives the previous immutable defensive plan
+(with its original physical or observed-flight release preserved),
+then chooses a **new** defender/waypoint from current actual 22-player
+XY and the new real ball velocity. Return-pass flight uses the **current measured signed X direction**
+(not a fixed assumed backward direction), with the same bounded retargeting,
+slow/reverse/passed-defender abandonment, 7m/s movement cap and hard
+player-separation guard. LAB-01–10 retain their accepted behavior
+unchanged. This is **research-only defensive intent**, not a
+guaranteed interception, control, possession or scored result.
+
+Node tests cover the two contact-gated pass records, strict anti-replay
+validation, physically grounded same-world multi-pass replay,
+bounded defender movement, zero-tick/reset and isolation. Chrome LAB
+QA checks both physical stages, Scenario selection, reset and Compare
+replay. The extra LAB mode is opt-in and never calls remote DB or deploy.
+
+---
+
+# ME-PB-31 — actual post-release defensive duty rejoin evidence (2026-11-11)
+
+**LAB-10 · AI Defend (Autonomous)** now audits how its *same moving
+defender* resumes the **currently selected ordinary tactical duty**
+after either the genuine previous-tick Rapier shoe START (ME-PB-27) or
+confirmed stale-flight abandonment (ME-PB-30). The defensive assignment
+is still immutable and terminal; **no new defensive control loop**, no
+re-arm, forced recovery waypoint, body teleport, new collider, ball action
+or gameplay event is introduced.
+
+For every post-release 60 Hz movement tick, the DEV-only observer compares
+the player's **actual XY before and after the existing acceleration,
+turning and teammate-separation guard** to that tick's **actual chosen
+tactical target**. It exposes the measured distance, real progress and
+distance moved, including an actual blocking teammate/opponent ID when the
+existing kinematic guard prevented motion. A player is labelled
+`aligned-with-current-duty` only after **6 consecutive measured ticks**
+within **1 m** of the current duty target, not merely because the assignment
+was released. A `blocked-by-observed-player` label similarly requires
+**6 consecutive actual blocked ticks** away from the duty. Both streaks
+reset on changed measurements; the current target is dynamic, so the UI
+never claims permanent rejoining to a fixed initial formation.
+
+Normal physics, non-AI scenarios and ordinary 22-player movement remain
+unchanged. The existing LAB-10 status appends the current **measured duty
+gap**, with no new buttons. New pure guard tests reject stale frames,
+forged defender IDs and unbounded player jumps; the real 60 Hz Rapier
+roll / physical shoe-contact replay and Chrome LAB-10 Compare replay
+test confirm that this observational audit does not alter motion or
+promote a touch into official possession/interception/score.
+
+---
+
+# ME-PB-30 — abandon an obsolete measured passing lane (2026-11-11)
+
+**LAB-10 AI Defend (Autonomous)** now ends the live defender's assigned
+lane-closing task when successive already-completed **Rapier** 60Hz ball and
+defender-position measurements confirm the ball can no longer use that lane:
+**6 consecutive ticks** below **1.25 m/s** forward X velocity,
+**3 consecutive ticks** at or below **−0.6 m/s** (reversed flight),
+or **4 consecutive ticks** with the real ball at least **2.5 m** beyond
+BOTH the moving defender's current X position and the original crossing
+X waypoint. These thresholds are experimental DEV-only tuning, not
+official game rules. A restored forward flight or change of lost-flight
+reason resets the consecutive-evidence counter; there is no one-frame
+abandonment, re-selection, teleport or automatic restart of the same task.
+
+An already observed **previous-tick Rapier shoe START** has priority and
+still uses the existing separate `released-after-physical-contact` event.
+Without that physical event, the assignment becomes
+`released-after-observed-flight` with a specific, immutable reason
+(`slowed`, `reversed`, `passed-defender`) and a measured movement tick.
+In either case the defender returns to existing ordinary bounded tactical
+movement; no possession, interception, score, tackle, official match
+outcome, external scheduler or synthetic foot contact is inferred.
+
+The existing LAB-10 status now shows the **observed** abandonment reason;
+no scenario option or button has been added. Regression tests cover strict
+finite/monotonic samples, physical-contact precedence, hysteresis,
+no task revival, speed bounds, deterministic replay and independently
+simulated **real Rapier rolling ball** tests for slowing and passing a
+moving defender. Standard LAB scenarios and normal 22-player formation
+remain unchanged.
+
+---
+
+# ME-PB-29 — measured-flight bounded lateral lane retargeting (2026-11-11)
+
+**LAB-10 · AI Defend (Autonomous)** now keeps the *same* live defender but
+can correct its intended **lateral** crossing point when later, already
+completed **real Rapier** ball position and velocity samples put the
+approach corridor at least **0.65 m** away from the current waypoint.
+Every such adjustment is capped at **0.12 m per 60Hz movement tick** and
+spaced by at least **3 ticks**; the longitudinal aim remains unchanged,
+the player still obeys the existing **7 m/s** acceleration/turn/separation
+constraints, and normal LAB modes/initial formation are untouched.
+The on-pitch LAB readout reports the number of measured-flight corrections
+without introducing another button.
+
+The actual previous-tick Rapier defender shoe **START** always releases
+the assignment *before* any attempt to retarget; a released plan can
+never be revived by subsequent ball velocity changes. This remains a
+DEV-only waypoint intention and **does not award interception, possession,
+score or official game action**. The pure decision rejects stale/nonfinite
+inputs and is immutable. Node regression coverage uses an independent real
+**oblique Rapier rolling ball** to verify the lateral motion, cap and exact
+deterministic replay, plus separate altered-velocity/invalid-input and
+real-contact lifecycle tests. Chrome checks preserve the LAB-10 physical
+contact and Compare replay baseline.
+
+---
+
+# ME-PB-28 — consolidated LAB Scenario dropdown (2026-11-11)
+
+The **Scenario** dropdown is now the single entry point for physics setups
+and local-AI trials. It retains **LAB-01 Ball Drop**, **LAB-02 Ball Launch**,
+**LAB-04 Ball Roll (Grass)** and **LAB-05 Ball Bounce (2 m)**; **LAB-03**
+remains the separate **Compare replay** action in Advanced settings. It adds
+**LAB-06 AI Kick**, **LAB-07 AI Pass & Control**, **LAB-08 AI Exchange**,
+**LAB-09 AI Defend (Live Lane)** and **LAB-10 AI Defend (Autonomous)**.
+
+Selecting any scenario prepares its genuine 3D Rapier initial conditions,
+seed, and relevant optional local-AI controller, then **resets to tick zero
+paused**. **Play, Pause, Step, Reset** now work identically across all
+scenarios; **Apply & restart** retains the chosen LAB and accepts Advanced
+input changes; **Compare replay** uses the same selected physics world.
+AI trials show Players (22), their mandatory physical foot-contact switch
+is checked/disabled, and returning to a standard scene restores the
+unchecked editable switch and a collapsed Players panel. No new public
+routes, official possession, scoring, Preview, or remote DB effects.
+
+This replaces the five scattered demo-launch buttons; historical
+one-click-button descriptions below are superseded by this section.
+
+---
+
 # ME-01 — Match Engine Foundation & Visual Laboratory
 
 **Experimental / Draft-HOLD.** This folder is isolated from official fixtures, D1, Admin commands, production pages, players and the existing `temporary-score-v1` authority. Follow #452 for decisions and acceptance evidence.
@@ -25,11 +864,253 @@ node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test
 
 The simplified default screen shows only the **Scenario** selector, **Play/Pause/Step/Reset**, playback **Speed**, large top-down pitch, compact **Time / Height / Ball** indicators and a small **Ball height** chart. Open the native, keyboard-accessible **Advanced settings** section to edit starting coordinates and velocities, set the seed, inspect exact position/velocity and engine version, **Apply & restart** or use **Compare replay (LAB-03)**. The initial Advanced settings panel is intentionally closed; no engine capability has been removed. The same frozen scenario and physics tick are used throughout. The seed is currently a reproducibility identifier, not a source of stochastic motion.
 
+## ME-PB-26 — autonomous defensive closure after observed ball flight (2026-11-11)
+
+**Real-time defense instead of a staged blocker:** In a dedicated opt-in DEV LAB mode, the Away team starts in the **ordinary canonical 22-player starting positions**. The new `AI defend · autonomous` button is available only when AI exchange is active. Away defenders do not teleport into an interception corridor and no Rapier collider has an adjusted tick-zero position. Only **after the first actual Home #7 Rapier shoe-ball START and resulting measured ball velocity** does the deterministic observer pick the closest of Away #9/#10/#11, project a bounded near-recipient interception waypoint from the real moving ball XY/velocity, and assign that *ordinary movement target* to the chosen player. The candidate continues under the existing 60Hz max 7m/s, acceleration, braking, turn-rate and inter-player collision bounds; physical contact remains an entirely separate, independently audited Rapier shoe-ball START. The receiving Home #10 performs a **bounded lateral off-ball support run (5m from its regular lane) AFTER observing the pass**, rather than the earlier experimental close-foot reception. Both participants still start in the original formation and undergo the normal speed/acceleration/turn/collision guards; this explicit controlled trial clears an unintended early receiver shoe rebound so the defender's physical interception can be measured without increasing its speed, adjusting ball physics or teleporting anyone. It is not a finished intelligent receiving tactic. An intended waypoint is never counted as an interception or possession.
+
+**Research boundaries:** `experimentalAiAutonomousDefense` and `diagnosticLocalAiAutonomousDefenseEnabled` must both be opt-in, require the existing local exchange and are mutually exclusive with the older ME-PB-25 pre-positioned Away #7 mode. The pure observed lane planner has no future game state, no client command authority, no official score and no ball physics access. The browser passes the *previous completed* real Rapier snapshot ball velocity to the movement observer. Only genuine contact in the same physical world may stop the live outgoing pass; none is inferred from tactical proximity. The optional visible status shows when the defender made a real observed-flight decision and its measured waypoint; it does not assert a collision.
+
+**Exact-head QA:** negative/no-velocity/invalid-frame tests, dynamic candidate ranking, standard formation at tick zero with valid consecutive Rapier foot frames, physical real-contact scenario versus independent replay and local Chrome button/replay/Reset checks. If the defender cannot reach the ball before the recipient, this remains a measured failure and must not be reported as a successful interception. Normal production/official matches and all previous LAB demos are unchanged; Draft/HOLD, no merge, Preview, deploy or remote DB.
+
+## ME-PB-25 — observed dynamic pass selection and live opposing shoe lane (2026-11-11)
+
+The opt-in local AI exchange no longer hardcodes Home #10 as the outbound recipient: at the *actual* Home #7 Rapier shoe-ball START it evaluates Home #9, #10 and #11 from the real simultaneous 22-player frame, using forward distance, lateral displacement and physical opponent-to-segment proximity; deterministic tie order, explicit absent/invalid target rejection, full immutable candidate scores. It applies an actual 2.7 N·s ground impulse toward the selected real teammate, without guaranteeing reception, pass completion, ball ownership or a match goal. A subsequent return can only be attempted by the chosen recipient after a separate real Rapier shoe START. The baseline demonstration still chooses Home #10 organically and retains 13/153/445 physical events if the observed positions permit.
+
+The distinct **AI defend · live lane** button appears only inside Players after enabling AI exchange. Its dedicated local research flag pre-positions an Away #7 midfielder at (-12.4, 0) from tick zero with the *same starting pose in the player movement state and Rapier foot collider*, rather than teleporting any player after physics begins. All subsequent transitions are canonical bounded 60Hz movements; a true Away foot START during the ball's live outgoing trajectory is reported as physical opposition contact and halts the experimental exchange. This is not a verified possession change or an adjudicated interception. The ordinary 22-player formation, existing ME-PB-22/23/24 demos, normal games, statistics and APIs remain untouched.
+
+ME-PB-25 tests cover pure dynamic target re-ranking under changed real teammate positions, frozen candidate scoring and fail-closed no contact, pre-positioned initial 22-player consistency, strict opt-in, same-world real Rapier defender START with original Home #7 pass, independent double replay and Chrome GUI click/compare/reset/normal-preset restoration. It is *not* multi-target tactical game play or calibrated defender biomechanics. PR Draft/HOLD; no merge, Preview/deploy or remote DB.
+
+## ME-PB-24 — local physical return-pass and opposition contact audit (2026-11-11)
+
+**Research-only extension of ME-PB-23:** a new "AI exchange" DEV LAB button runs Home #7 → Home #10 and attempts a physical *return pass* Home #10 → Home #7. The first Home #7 pass is the existing real Rapier 2.7 N·s START-gated shot. On a later independent actual Rapier Home #10 foot-contact START, the receiver chooses Home #7 as the return target from the current player frame and uses a bounded Rapier ball momentum-change impulse to target 6.5 m/s backwards. A subsequent Home #7 *controlled reception* is recorded only if yet another genuine Rapier shoe START occurs; a missing START stays unreported, never fabricated. No teleporting and no synthetic possession/pass completion. A physical away-player shoe START during the attempted route is recorded as "opponent-contact" and halts future AI impulses, never as an adjudicated ball steal or ownership change.
+
+**Isolation:** the opt-in `diagnosticLocalAiExchangeEnabled` flag requires grounded roll, 22 genuine foot colliders, no missing foot, no competing local kick/pass mode. The autonomous close-press behavior is likewise separate from the default and from ME-PB-22/23. All known applied controller impulses are separate from Rapier solver-only contact and force reports. There is no official gameplay, scheduler integration, player authentication, score, goal, possession or calibrated foot biomechanics. Standard LAB scenarios are byte-for-byte isolated.
+
+**Evidence:** Node real-Rapier double replay/negative/physical-opponent controls, plus real Chrome action-button click, 440-tick scene, physics Compare replay, Reset, default restoration, route allowlist and desktop viewport QA. The meaningful success target is **two separate real shoe-gated passes**; third physical receiver contact is *conditional and explicitly reported only if observed*. The opponent branch is tested with a separate real Rapier negative-control scenario, not a scripted interception outcome in the ordinary exchange scene. All acceptance subject to exact-head Actions results; PR Draft/HOLD, no merge, Preview, deploy, remote DB.
+
+## ME-PB-23 — first local two-player physical pass and controlled reception (2026-11-11)
+
+**New visible gameplay proof:** an isolated **AI pass** button beside the existing AI kick demo in the DEV LAB runs Home #7 (midfielder) to Home #10 (forward). A stationary roll ball initially sits near Home #7, all 22 player tracks still evolve on the accepted deterministic 60Hz system, and only Home #7/#10 use closer 0.38 m pressing targets in this explicitly opted-in research world. Home #7 aims an illustrative 2.7 N·s *real Rapier ground impulse* toward the observed Home #10 position **only following Home #7's genuine Rapier shoe-ball collision START**. On a separate later **real Home #10 Rapier collision START**, the recipient may attempt an actual measured momentum change with a capped, local AI-calculated impulse to reduce horizontal speed toward 0.35 m/s. The control is **not** automatic possession, an inferred pass completion or calibrated foot biomechanics. Both physical actions are recorded as distinct immutable local diagnostic events, after ordinary solver contact auditing, without modifying the main-world physics path.
+
+The LAB visibly shows the pass and subsequent control if both actually occur. Reset recreates the original independent world and Compare replay recreates the exact canonical ball trajectory and Rapier contact trace. Normal LAB-01/02/04/05, default 1.8 m tactical pressing, the earlier AI kick demo, match state, world data, frontend gameplay, previews, deployment and database remain untouched.
+
+**Strict gate:** `diagnosticLocalAiPassReceiveEnabled` defaults false, requires an explicit boolean, enabled 22-player Rapier shoes, grounded roll with no omitted shoe, and is mutually exclusive with the earlier local first-kick trial. `experimentalAiPassReceiveApproach` is also opt-in, mutually exclusive with the kick approach, and never changes the normal movement model. Calls from untrusted ME-PB-18/21 claims are not accepted as executable commands. The new Node suite exercises real Rapier physical events, pass/receive ordering, negative conditions, no teleport on the first kick, one-shot lifecycle, two full independent replays, world reset and LAB controls; Chrome checks actual button, recorded actions, Compare replay, Reset and default restoration. The first release is a local lab research experiment, **not completed passing AI for official matches**.
+
+## ME-PB-22 — first visible deterministic autonomous kick in local LAB (2026-11-11)
+
+**New milestone: actual playing action, not another passive action-provenance audit.** The local app-host DEV Match Engine has a one-click **AI kick demo** beside the Ball height chart heading. It constructs a *disposable* grounded stationary ball near Home #10, enables actual 22-player kinematic Rapier shoe contacts and a Home #10-only close-approach tactic (normal 1.8 m tactical press stays unchanged for every other mode). The player moves on genuine consecutive 60Hz autonomous trajectories and never fires the local action until **Rapier actually reports a Home #10 shoe–ball COLLISION START**, the ball is low and near, and the observed player faces forwards. At that exact contact tick the isolated engine applies a single deterministic **2.4 N·s horizontal impulse directly to the REAL 430 g Rapier ball** with `body.applyImpulse`; the returned canonical ball snapshot immediately contains the changed velocity. Its 2D pitch trajectory is real and shown in the existing canvas, with an explicit outcome line. The demo starts playing automatically on click; Reset repeats its deterministic starting situation. The standard scenarios/feet/ball default are untouched.
+
+**Physical meaning and limits:** `2.4 N·s` is an illustrative manually selected *first prototype action*, not a calibrated biomechanics force. This is a true **engine-applied** impulse after independently recorded physical contact, not a fabricated collision, impulse inferred from a solver contact-force sample, or an external client's alleged command. The solver's contact timeline, force reports, attribution and momentum audits remain the original **pre-impulse physical step**; the separate local kick event explicitly reports the extra known controller-applied impulse, so the two cannot be confused. The local AI decision uses actual validated player position/facing and a real Rapier START, *not* ME-PB-18's unverified requests. No authenticated source, official match control, possession inference, pass completion, goal, shot success, roster attribute or score logic. It is one Home #10 kick in one locally opted-in roll research world, not full football gameplay.
+
+**Safety/compatibility:** A new `diagnosticLocalAiKickEnabled` switch defaults to `false`, must be a boolean, and requires a grounded roll scenario with real opt-in foot colliders; disabled for launch/drop/bounce, airborne ball, foot ablation, normal LAB/default, server, D1, public modes, and official fixtures. The independent experimental approach flag similarly defaults to false; no altered player positional press unless the demo is manually selected. One-shot state is world-local, resettable and never accepts forged ME-PB-18/19/20/21 human/AI claims. The browser button is disabled until Rapier successfully initializes; LAB remains strictly app-host DEV-only.
+
+**Evidence gate:** `player-ball-first-local-kick.test.mjs` covers strict configuration, pure decision negatives, genuine player approach and real Rapier collision START, exact reported and applied impulse versus a matched shoe-only Rapier control, no teleport, no duplicate action, deterministic double independent replay, reset replay, and local UI wiring. CI on the exact PR head must pass before this milestone is accepted. No merge, Preview/deploy/remote DB or production routing changes.
+
+## ME-PB-21 — proposed session/player/controller binding intervals (2026-11-11)
+
+**Issue #480 / PR #481 Draft/HOLD; research-only, no authentication.** Adds `match-engine/src/player-ball-controller-binding-audit.mjs`, the corresponding Node test suite, and test-script registration. It is not imported by Rapier, LAB browser, backend, or official matches. A caller-supplied experiment plan is **untrusted** and must never mint actor identity, controller permission or source authorization.
+
+The immutable plan declares an untrusted match-epoch label and at most 44 canonically ordered proposed bindings: canonical player ID, human/AI declared origin, claimed source label, proposed controller label, and inclusive start/end ticks (within 3600 ticks, at most 601 ticks per interval). Active intervals cannot overlap for a player, controller, or shared human source; adjacent time windows and target-tick handovers are allowed. Source, epoch, controller and player assertions from client-supplied data remain **claims, not credentials**. The plan is copied/frozen so mutation after construction does not alter a reset.
+
+Each real 60Hz ME-PB-20 source-boundary snapshot is revalidated: schema, ordered canonical candidates, no auth/execution fields, reported expiry IDs matching the previous tick, matched/unmatched counts and unchanged trust requirements. A candidate yields only `matches-untrusted-binding-plan` or an explicit missing/mismatched-claim status. Even when the matching proposed controller exists, `authenticatedControllers`, `authorizedCommands`, `appliedBallActions` and the scheduler queue remain zero/empty; confirmed touch and possession remain false. The API has only `observe`, `snapshot` and `reset`, never authenticate, authorize, sign, dispatch or apply physical force.
+
+Tests cover interval overlap, single human-source exclusivity, permitted sequential handovers, old-source rejection after a switch, Home/Away separate controllers, invalid epochs, forged auth, duplicate/stale/unordered inputs, exact-tick expiry, atomic failure and immutable reset. Six independently doubled real Rapier scenarios (medium, fast CCD, grazing with force-unreported tick-32 START, sustained, turf-only and distant) compare experimental read-only audit with an identical shoe-contact world lacking the audit; physical trajectories, Rapier collision events, pair forces and qualification must remain identical. **Still missing:** server-owned session/actor authentication and epoch, authoritative player/controller binding, secure scheduling and cross-session replay defense, and calibrated physical contact/intent eligibility. No UI, gameplay, Preview, database, deployment or merge.
+
+## ME-PB-20 — boundary between declared source and real execution authority (2026-11-11)
+
+**Issue #480 / Draft-HOLD PR #481. Node-only research, no authenticated source or executable command.** Adds `match-engine/src/player-ball-action-source-boundary.mjs` and `match-engine/tests/player-ball-action-source-boundary.test.mjs`, and registers the suite. The module is intentionally **not imported by the Rapier physics core, autonomous player movement, browser LAB, backend, Admin, or official matches**.
+
+**Trust distinction:** A caller may submit an *untrusted claim* with exact version, canonical player, claimed declared origin, ME-PB-19 sequence, issued/target ticks, `claimedSourceRef` and `claimedMatchEpoch`. The observer cross-checks that claim against the matching quarantined record and its canonical order, 60Hz tick, player, origin and sequence. It also independently verifies that ME-PB-19 pending, newly quarantined and expired records reconcile across ticks, and that no fake `sourceVerified`, `commandAuthorized`, possession, solver force or dispatch fields are present. A matching `claimedSourceRef`, including a string named `validated` or `server`, is **just a text match**; a client can forge both strings. It NEVER authenticates an actor, proves permission for that player, validates a match epoch or authorizes a kick.
+
+The boundary has no `authenticate`, `authorize`, `release`, `dispatch`, `mint`, or `applyImpulse` method. It reports only immutable per-candidate binding diagnostic rows and explicit blockers. Every structurally consistent claim remains `sourceAuthenticated:false`, `controllerPermissionProven:false`, `matchEpochAuthoritative:false`, `commandAuthorized:false`, `eligibleForPhysics:false`; the global `sourceVerifiedCount`, `authorizedCommands` and `dispatchedCommands` remain 0, `executableCommands` remains empty and both confirmed touch and inferred possession remain false. Invalid batches are atomic and cannot advance observation time or local claim sequences. The source labels and local sequence tracking offer **no cryptographic assurance or cross-session anti-replay**.
+
+**Separate future trusted integration requirements:** (1) an authenticated human/AI actor source, (2) server-owned match epoch and player/controller permission binding, (3) authoritative next-tick scheduler with cross-session replay defense and no double execution, and (4) independently calibrated physical eligibility/contact rule. Only a separately designed trusted adapter can eventually satisfy these; **nothing in ME-PB-20 grants those permissions**. Claims cannot escape ME-PB-19 quarantine, which continues to expire them unconsumed.
+
+The test suite checks unclaimed and matching human/AI source labels, spoofed authority, wrong player/source/epoch, mismatched or missing expiry, stale/duplicate/out-of-order claims, malformed arrays, atomic failure and isolated reset. Six independent double real 60Hz Rapier replays (medium, CCD-fast, grazing with force-unreported tick-32 START, sustained, turf-only bounce and distant) prove identical ball trajectories, physical collision events, pair-force samples and qualification even when a matching but untrusted source label is supplied. No changes to the physics solver, gameplay, browser, Preview, remote DB, deployment or official player actions.
+
+## ME-PB-19 — unverified command-source quarantine and exact-tick expiry (2026-11-11)
+
+**Issue #480 / Draft-HOLD PR #481; Node-only isolated research.** Adds `match-engine/src/player-ball-action-quarantine.mjs` (pure observer, not imported into Rapier, movement, browser, backend or official matches), `match-engine/tests/player-ball-action-quarantine.test.mjs`, test registration and documentation. **This is NOT an authoritative scheduler.** It never authenticates any actor, authorizes an action, calls the ball engine or emits an executable action. It contains no approve/release/dispatch/impulse method.
+
+ME-PB-18 produces a format-valid but wholly **unverified** `human-candidate` / `ai-candidate` request for exactly the following 60Hz tick. ME-PB-19 independently checks the canonical 22-player movement, strictly aligned proposal envelope and all individual immutable proposal fields, timing, ID ordering, unit aim, bounded effort, monotonic per-declared-origin/player sequences and absence of fabricated authorization, owner, touch or impulse fields. **The declared origin is only a string, never authenticated identity, input permission or intent.** A valid candidate is put into an in-process, max-22 **quarantine** for its target tick and is automatically **expired unconsumed** on that tick. New candidates may enter the same tick, but cannot release earlier entries. The observer state never contains more than the current tick's candidates; rejected malformed batches are atomic and do not advance time or consume sequence counters. Missing/duplicate/out-of-order/stale frames, replayed sequences, forged source claims and force/owner injection fail closed. A reset starts a fresh isolated research epoch but does not confer trust.
+
+Two independently initialized real 60Hz Rapier foot-contact worlds are driven with identical externally sampled 22-player frames in six experiments (medium, high-speed CCD, grazing repeated contacts with genuine force-unreported tick-32 START, sustained contact, turf-only bounce and distant control). In one path the new pure observer processes a single unverified request then expires it at target tick; in the physics control it does not. Ball canonical position/velocity, actual Rapier collision START/END, solver force and event qualification must remain **identical**, including during the exact expiry tick. No solver force gap can be filled by a pending candidate. No pass, shot, clearance, possession or kick is executed.
+
+**Future blockers:** a separate trusted command provenance adapter and authoritative source binding, permission validation, cross-session replay protection and an explicit execution scheduler; then separately grounded physical eligibility/calibration and touch/possession rules. The current quarantine deliberately offers no route to physical actuation; `sourceVerification`, `commandAuthorization` remain `not-established`, while `eligibleCommandCount`, `dispatchedCommandCount`, touch and possession always remain zero/false. No UI/API/gameplay/runtime changes, no Preview, deploy, remote database or merge.
+
+## ME-PB-18 — untrusted explicit ball-action proposal contract (2026-11-11)
+
+**Issue #480 / Draft-HOLD PR #481; Node-only research, no command execution.** Adds `match-engine/src/player-ball-action-proposal.mjs` (pure observer, not imported by Rapier, player movement, browser, backend or official game logic) and `match-engine/tests/player-ball-action-proposal.test.mjs`. A candidate requests a *future* next-tick ball intervention with a strict allowlisted shape: version, **declared/unverified** origin (`human-candidate` or `ai-candidate`), canonical 22-player ID, monotonic in-process per-declared-origin/player sequence, `issuedAtTick`, `targetTick = issuedAtTick + 1`, intended action (`pass`, `shot`, `clearance`), 2D **unit** aim, and normalized `effort01` in `[0,1]`. Aim and effort are **intent parameters**, not physical force, calibrated velocity, kick strengths, or gameplay permissions.
+
+A bounded (max 22 unique canonical players per tick), strictly ordered, consecutive 60Hz observer validates the current canonical player frame and full candidate batch **atomically**. Forged player identities, stale/replayed sequences, duplicate same-player requests, out-of-order frames, invalid direction/power/timing, unknown action kinds, and injected `authorization`, `confirmedTouch`, `ballOwner` or force fields fail closed. Even a syntactically valid `human-candidate` remains **unverified**, because the LAB has no trusted actor binding, authorization, authoritative command scheduler, input transport or replay protection across sessions. The bounded in-process sequence guard is not authentication. No tactical pressing/facing or Rapier pair force can create authorization.
+
+Deterministic real 60Hz Rapier experiments run identical **shoe-contact** worlds in parallel, while the pure proposal observer processes valid declared requests on selected frames. Independently repeated tests verify that this observer never changes ball positions, velocities, real Rapier START/END, reported pair forces, official match state, touch or possession, including medium, high-speed CCD, grazing recontact with the unforced tick-32 START, sustained contact, and turf/distant negative scenarios. The observer always reports `authorization: 'not-established'`, `eligibleForPhysics: false`, `intentEstablished: false`, `confirmedTouch: false`, `possessionInferred: false`.
+
+**Not yet implemented:** verified human/AI command source, source authentication, authoritative scheduling and deduplication across sessions, physical admissibility, calibrated foot impulse, controlled-touch state and possession rules. No UI input, passes, shots, tackles, ownership, physics actuation, match scores, API/remote DB, Preview, deployment or merge.
+
+## ME-PB-17 — measured physical approach vs unavailable action-command provenance (2026-11-11)
+
+**Issue #480 / Draft-HOLD PR #481, Node-only observational research.** Added `match-engine/src/player-foot-action-observability.mjs`, a pure immutable audit **not imported by the engine, LAB browser or official matches**, with `match-engine/tests/player-foot-action-observability.test.mjs` and test-script registration. It consumes the canonical 22-player positional movement frame, the real Rapier START/ACTIVE/END timeline and actual pair-force evidence at the **same 60Hz tick**. It checks source version, exact tick, ordered player identities, genuine events and force-integral nullability. The report retains real physical onset relative-speed/closing/tangential components, tactical *positional* presser role, physical START/ongoing/END and reported pair forces **without promoting any to a deliberate ball intervention**. A positional presser is not a kick-command source. Foreign "ball action" fields injected into the autonomous movement frame are rejected rather than trusted.
+
+**Replayed real Rapier controls:** medium Home, fast CCD Home, grazing repeated contacts including the unforced tick-32 START, sustained contact with many force reports, mirrored Away, turf-only bounce, airborne and distant negatives, all twice independently reproduced. The fast 16m/s CCD position-only witness remains earlier than discrete START/force. No-contact worlds produce no new physical evidence. Invalid/stale input, forged player IDs, fake action claims and inconsistent force counts fail closed. The default non-foot physics remains untouched.
+
+**Deliberate boundary:** An externally sourced **validated action command** (source, player, timestamp, action intent and authority) does not exist in this autonomous positional pipeline. Consequently the audit always returns `actionCommandProvenance: 'absent'`, `actionEligibility: 'not-established'`, `confirmedTouch: false`, `playerIntentInferred: false`, `possessionInferred: false`. It is a **research data-contract gap**, not a playable kick or a rule engine. Relative approach, geometric normal, tactical pressing, solver force, marginal ablation effect and CCD timing cannot substitute for such a command. No gameplay/physics changes, no new browser controls, no UI/API/DB/Preview or deployment.
+
+## ME-PB-16 — leave-one-foot-out matched Rapier counterfactual (2026-11-11)
+
+**DEV / Draft-HOLD PR #481, issue #480.** Adds an explicitly gated diagnostic `diagnosticOmittedFootId` (default `null`) to experimental foot-contact worlds only, and a test-only `player-foot-contact-ablation.test.mjs`. Omitting exactly one existing canonical player shoe is permitted only when **opt-in foot contacts are enabled for a roll scenario**. It never removes that player from the 22-player movement/validation frame, never creates a controller, and never changes the normal no-foot/22-foot configuration. No UI switch, match result, rules, server, Preview or remote data change. Full and ablated experimental worlds both have CCD ON, default physics coefficients and the same sampled 60Hz autonomous 22-player path driven **only** from a no-shoe reference world.
+
+Each of six genuine 3D Rapier scenarios (medium/fast Home, mirrored Away, oblique grazing recontacts, sustained low roll, distant negative) compares **22 physical shoe colliders vs 21 physical shoe colliders**, while a third no-shoe reference world provides exactly the same exogenous player positions. The suite replays all three real worlds independently twice and verifies actual Rapier collision START/END records, reported solver pair-force events, whole-ball position and velocity trajectories and target-omission negative evidence. The 16m/s CCD positional effect may occur *before* the first discrete collision START and must remain labelled as a position-only clamp. Null missing force evidence is never converted into a zero or a touch. Non-contact worlds remain identical. Strict option allowlist and RESET preserve the control; ordinary Rapier default and explicit `null` replay equivalently.
+
+**Interpretation:** This A/B estimates a *marginal influence of a particular shoe **collider's presence*** under fixed exogenous autonomous motion, not the complete exclusive contribution of that player's foot to momentum, not the human intention to kick, and not proof of possession. Other forces/contacts, numerical solver effects, CCD clamping and post-divergence nonlinear dynamics remain possible. A missing collider is an artificial intervention, NOT gameplay input. Real-world/anatomical control and intention are still unavailable; do not promote these measurements to goals, passes, shots, tackles, possession or user steering.
+
+## ME-PB-15 — falsify naive touch gates using real Rapier force gaps (2026-11-11)
+
+**Issue #480, Draft/HOLD PR #481; Node/CI test-only.** `match-engine/tests/player-foot-contact-sufficiency.test.mjs` is not imported by any runtime or browser. It independently replays seven real 60Hz Rapier closed-loop autonomous 22-player physical scenarios twice: grazing recontacts, sustained low shoe contact, medium approach, mirrored Away, turf-only bounce, high airborne and distant negative controls.
+
+The audit independently tracks true `START` and `END` genealogy for each canonical player, reported per-pair force samples *inside* the current episode, missing force-report ticks, repeated START after a real completed END, and force samples during **continuing** episodes without a new START. It explicitly records **reported coverage**, not complete solver or whole-ball force coverage. The prior realistic grazing case includes a **real Home #10 START at tick 32 without a same-tick pair-force event**; the force sample remains **null**, never an invented impulse or a certified kick. A sustained near-shoe contact produces many solver observations but only one START/END episode. Turf bounces without shoe events are not touches. All evidence remains `attribution: unresolved`, `intentInferred: false`, `confirmedTouch: false`, `possessionInferred: false`.
+
+These cases directly disprove the shortcut `Rapier START == force == player-controlled touch`. Even a real per-pair force report in an isolated episode is a physical solver measurement, **not** evidence of intentional contact, exclusive ball momentum change, possession, pass, shot or tackle. There is no gameplay control or physics modification, no new attributes, no API/admin/LAB UI change, no deployment, no remote database access and no merge. Further work may only propose a gameplay control state after explicit rule design and separately grounded calibration, with evidence gaps retained rather than imputed.
+
+## ME-PB-14 — Rapier START versus actual pair-force sample provenance (2026-11-11)
+
+**DEV / test-only, #480 / Draft PR #481.** The new `player-foot-contact-provenance.test.mjs` runs seven genuine 60Hz Rapier worlds (fast 16m/s, very fast 24m/s, medium, slow, turf-only, airborne, distant), each replayed from two independently initialized world sets. Every case drives the same 22 autonomous player trajectories from the no-shoe reference world; the two high-speed cases additionally compare experimental shoe CCD ON/OFF. Default physics and LAB behavior are unchanged.
+
+For each **actual** Rapier simulation tick, the suite independently records discrete ball–shoe `START`, active and `END`, reported pair-force samples, their derived N·s sample magnitudes, actual A/B whole-ball 3D position/velocity differences, and the evidence-only classification. The report distinguishes first discrete START, first reported solver pair-force tick, first whole-ball velocity response, starts without a same-tick force report, and force reports during continuing episodes without a new START. The absence of a force report remains **null / unknown**, never synthetic zero. One or many force samples are not individually calibrated foot impulses. No collision event, CCD clamp, manifold geometry, cross-world deviation or reported force sample alone establishes an intentional kick, an exclusive player cause, a confirmed touch or ball possession.
+
+Hard regressions retain the ME-PB-13 high-speed CCD **position-only** clamp before any recorded Rapier START or force event, the equal CCD ON/OFF first START tick, the absence of a phantom pre-event CCD-OFF divergence, genuine positive real-force controls, and three no-contact negatives. Results are exact-replay observational signals, not a learned foot-control policy. No new runtime module, browser UI, backend, match rules, remote DB operations or publication; **Draft/HOLD and no merge**.
+
+## ME-PB-13 — CCD motion clamp versus discrete event chronology (2026-11-11)
+
+**DEV-only, PR #481 Draft/HOLD, issue #480.** A narrowly gated `diagnosticBallCcdEnabled` option defaults to **true**. The only permitted `false` experiment is an explicitly opted-in `roll` scenario with `diagnosticPlayerFootContactsEnabled: true`. Normal LAB physics, default no-foot physics and all production match behavior continue to use Rapier 0.21 ball CCD **enabled**. The optional flag is not exposed in the browser, admin UI, published endpoints or the game. A source-level safeguard validates boolean type and disallows turning CCD off without the opt-in foot setup; resets preserve the configuration.
+
+The new **test-only** `match-engine/tests/player-foot-contact-ccd.test.mjs` compares three independent 60Hz Rapier worlds with identical ball initial state, gravity, grass, mass, seed and *externally fixed* 22-player trajectories (driven each tick solely from the no-foot control world): **(A) feet OFF + normal CCD ON**, **(B) feet ON + ball CCD ON**, **(C) feet ON + ball CCD OFF**. The same actual player frame feeds B and C. Per-world tick-by-tick canonical snapshots and true Rapier collision/force reports are replayed twice and compared. There are no scripted collisions, teleports, solver impulses, fixture outcomes or claims of ball ownership.
+
+This is a **timing and provenance experiment**, not an automatically verified causal foot-touch event. The high-speed 16 m/s ME-PB-12 regression at tick **4** showed a **0.088703 m difference in the ball's position and no velocity difference** between control and CCD-on trial, even though the first **discrete Rapier collision START** arrived at tick **5**. Official Rapier documentation describes CCD as **motion clamping**: an object's position may be clamped to an intermediate point on its swept trajectory while its velocity is left intact. This is consistent with the original pattern. The new suite also measures position and velocity divergence against a physically simulated CCD-off shoe trial, true CCD-on/off event onset ticks, per-world force-report counts and a *ratio of observed X progress* in the witness tick (explicitly **not** an internal CCD time-of-impact measurement). A measured discrepancy before the collision queue `START` must **never** be interpreted as a confirmed touch. The test must keep the witness's real pre-event absence of a Rapier collision or force report. Tests cover the fixed high-speed case, 24m/s sensitivity, medium and slow approaches, and a turf-only noncontact control, plus CCD-off guard/replay tests.
+
+**Observed matched CCD ON/OFF proof (2026-11-11, 60Hz, real Rapier):** with an identical externally driven 22-player path, **16 m/s** produced an ON-only *position* clamp at tick **4** (**0.088703m**) with **0m/s velocity difference**; the first actual discrete Rapier shoe `START` occurred at tick **5 in BOTH ON and OFF trials**. At **24 m/s**, ON-only positional clamping occurred at tick **3** (**0.218299m**), and both ON/OFF emitted first `START` at tick **4**. With CCD **OFF** no A/B position/velocity divergence existed before either event onset. The observed ratios of X progress inside these early clamp ticks (**0.659706** and **0.448296**) are **NOT direct internal time-of-impact measurements**. The medium 4m/s and slow 0.8m/s controls had no pre-event difference, while terrain-only bounce had no shoe events and identical baselines. With CCD OFF at **24m/s**, the first discrete collision event at tick 4 preceded the first measurable A/B trajectory divergence at tick 27: **a START is not itself proof of immediate impulse or an intentional touch**. The first START tick matching between ON/OFF is evidence *against simply explaining the position clamp as delayed callback delivery*. These are controlled, replayed measurements; they cannot prove the solver's hidden internal timing or provide a per-player impulse. The CI now asserts these positive and negative constraints as regressions.
+
+**Important limits:** Neither contact queue latency at sub-tick resolution nor Rapier's internal computed time of impact is directly exposed by this audit. The discrete difference is a **60Hz tick-index offset**, not proof of an asynchronous delayed callback. Without CCD, Rapier's collision detection may also miss thin/fast colliders; it is **not** a proposed replacement for the normal CCD-on physics. Any alternate fast case behavior remains a diagnostic finding, not possession or a kick. Future interaction rules must use physical event provenance rather than only cross-world trajectory changes. No merge, Preview, deploy or remote DB writes.
+
+**Rapier docs:** [JavaScript CCD / motion clamping](https://rapier.rs/docs/user_guides/javascript/rigid_body_ccd/) and [collision events and force events](https://rapier.rs/docs/user_guides/javascript/advanced_collision_detection/).
+
+## ME-PB-12 — paired real Rapier counterfactual: shoes OFF vs shoes ON (2026-11-11)
+
+**DEV research only — PR #481 Draft/HOLD, issue #480.** New `match-engine/tests/player-foot-contact-ab.test.mjs` is **test-only**; no new runtime/route, physics mutation, UI control, player state, official match results, or database changes.
+
+**Controlled paired design:** Create two independently initialized worlds with **identical ball state, mass, Rapier 60Hz integrator, grass/ground/gravity/aerodynamics settings and fixed seed**. Control world retains the production default **no shoe bodies**. The other world opts into the existing 22-player kinematic Rapier shoe colliders (optional preexisting shoe restitution variant). Crucially, the autonomous 22-player movement frames are computed **once per tick from the control world's pre-step canonical ball position**, and only that same deterministic reference-player schedule is supplied to the shoe-on world. This fixes the player motion externally across both counterfactuals, avoiding a confound in which the shoe-on world's altered ball position itself changes the players' later positions. This is an artificial *fixed-player-path research experiment*; the usual closed-loop actor paths in gameplay may differ and no football causation or ball control follows.
+
+On **every 60Hz tick** compare the real Rapier whole-ball **3D position displacement (m)**, **3D velocity difference (m/s)**, **velocity-direction angle (0–180°, null on zero-speed samples)**, **independently measured ball-mass × cross-world velocity difference (N·s)**, cumulative path-length for both worlds, onset count, real pair-force report tick count, first actual Rapier shoe onset and first measurable ball-trajectory divergence. This cross-world velocity difference is **NOT** an isolated per-foot impulse, a single player's kick, a force measurement or a proof of possession. Later differences also include natural nonlinear propagation through air, grass and ground. Both worlds retain their own actual physical trajectories and solver states; **no scripted forces, teleports, fake collision events, manual player control or manufactured numerical deltas**. For ordinary positive collision scenarios, the worlds agree numerically before their first Rapier shoe event. **Important measured exception:** the high-speed case exhibits physical world divergence **before** the first discrete Rapier collision `START` event. The A/B test now exposes its **first pre-event divergence tick, count and maximal 3D position/velocity differences** as **unclassified** diagnostic evidence, rather than inventing an earlier contact, force or kick. A new pre-event discrepancy in any other scenario fails the gate. The high-speed discrepancy remains **unresolved and requires investigation of Rapier CCD/TOI versus collision-event timing**, not automatic classification as a touch; no quantitative onset timing should be inferred from first trajectory divergence alone. No-contact negative controls must remain canonically identical in both worlds at every tick.
+
+**12 genuinely simulated A/B cases, each independently replayed twice:** initially stationary near the shoe, slow/medium/fast approach, lateral impact, mirrored Away, oblique scenario with Rapier recontacts, two existing restitution perturbations (0.00/0.35), real turf-only bounce, high airborne ball and a distant stationary ball. Positive cases require a real Rapier pair contact and force event and a measurable ball trajectory separation; negatives require **zero shoe onsets/force events/whole-world difference**, including gravity-driven terrain bouncing. An actual repeat requires a Rapier END followed by a new START, never a long-lived contact or multiple force reports. The synthetic/no-contact distinction is asserted, not assumed. Test prints concise `ME_PB_12_AB` measured outcomes with first-onset/difference ticks, peak/final separations, velocities, travelled distances and replay status.
+
+**Scope and interpretation:** The comparison isolates the **effect of enabling the full kinematic shoe-collider subsystem under fixed exogenous autonomous player frames**, not an isolated impulse of a particular player's foot. This does **not** establish a kick or possession rule, real-world calibration, an official match state or tactical feedback. All previous ME-PB-01/11 experiments remain intact. Default LAB contact checkbox stays OFF; UI inspector stays four facts. No merge, Preview, deploy, remote D1 or other publication without separate authorization.
+
+## ME-PB-11 — whole physical collision episode audit (2026-11-11)
+
+**DEV research only, PR #481 Draft/HOLD, issue #480.** New `match-engine/src/player-foot-contact-episode.mjs` and `match-engine/tests/player-foot-contact-episode.test.mjs` are **Node-only research helpers**, not imported by the engine or browser. This is a bounded stateful observer for actual Rapier `START`→`END` episode lifetimes, checked against ME-PB-05 true onset/active/end data, ME-PB-06 actual pair-force reports and ME-PB-10 directional evidence. It **never modifies rigid-body forces, player movement, tactics, the LAB UI or official results**.
+
+For every genuinely completed individual ball–shoe collision episode, it separately records:
+- Rapier `startTick`, `endTick`, `durationTicks`, and zero/single/multi-tick kind. `durationTicks` excludes the terminal END tick; `sampledTickCount = durationTicks+1` is the number of observed diagnostic steps (including the end). Continuous force readings within one episode **do not become extra touches**. Same-player recontacts after a real END open entirely separate accumulation records, never inheriting previous forces.
+- **Whole-ball** momentum change `measured ball mass × (velocity after END - velocity before START)` (3D N·s) and planar opening→closing ball-direction change. These values are **the total response to gravity, turf, aerodynamic forces, all colliders and the solver**, **not** an attributed foot impulse.
+- **Separately**, the vector sum of the *actually reported* Rapier shoe-pair force events × 1/60s, the magnitude of that sum, and the sum of their individual magnitudes. These are **pair-force event integrals** (N·s), not direct per-point solver impulses, and cannot be subtracted from whole-ball momentum to infer other forces or causal attribution. Explicitly record the number of ticks with/without reported pair force and solver-manifold samples. **No force event** means the complete pair impulse measurement is **null**; even partial force coverage is marked incomplete rather than filled with zeros.
+- Any observed overlapping Home/Away pairs are separately retained and marked ambiguous, without a winner, owner, possession or intentional kick assignment.
+
+Only **current-tick completions and currently active at-most-22 pair accumulators** are retained; no unbounded list/log or per-player gameplay state. Versioned, validated 60Hz input, canonical IDs, source identity consistency, actual mass and episode genealogy prevent stale/fabricated data; invalid frames do not advance the observer. Every record stays frozen and marked `attribution: 'unresolved'`, `possessionInferred: false`, `exclusiveFootImpulseProven: false`.
+
+Acceptance includes synthetic unit-isolated multi-tick force integration, missing events, same-player repeat isolation, zero-duration, simultaneous Home/Away and atomic rejection, plus **8 independently replayed real Rapier scenarios**: true short/long recontacts, sustained shoe collision, medium/high impact, mirrored Away, gravity+turf-only bounce, airborne and distant negatives. Each real scenario runs twice, checks canonical ball/episode byte equality, and prints `ME_PB_11_REAL` episode evidence including measured global momentum versus reported pair-force integrals. All comparisons remain **descriptive, not a conservation proof or physical calibration**. Default physics OFF and the existing Players (22) four-fact inspector remain unchanged; **no merge/Preview/deploy/remote D1 without authorization**.
+
+## ME-PB-10 — measured directional response to real shoe contacts (2026-11-11)
+
+**PR #481 Draft/HOLD / issue #480 — DEV laboratory research only.** `match-engine/src/player-foot-contact-direction.mjs` is a **pure, immutable, test-only 60Hz diagnostic helper**. It consumes independently measured *consecutive* canonical ball velocities, the actual Rapier ball–shoe event pairs (ME-PB-02/05), actual Rapier pair-force vectors and solver manifold normals (ME-PB-06), observed ball momentum and measured Rapier ball mass (ME-PB-07), and evidence-only onset/ambiguity classification (ME-PB-08). This module **is not imported by the browser, physics engine or official gameplay**; there is no new DEV route or LAB UI setting. It cannot move a rigid body or infer a ball owner.
+
+Every tick records the real ball's **world-space incoming/outgoing 3D velocity (m/s)**, 3D velocity difference, signed speed change, and an **XY turn angle (0–180°)** computed from the two actual velocity vectors. If either XY speed is approximately zero the planar angle and reversal are **null** (not 0° or a fabricated change). For each independently reported Rapier shoe–ball pair, compare the **absolute direction cosine of pair force vs observed ball Δvelocity**, and the **absolute cosine and projected magnitude of observed ball Δvelocity vs available 3D solver manifold normals**. Abs values intentionally discard manifold ordering/sign. Report the real *pair-net derived impulse* (N·s) separately from the ball Δv; **never equate these, calculate a net "player kick" from them, or attribute ball Δv to one contact**, because gravity, turf, airborne effects, other colliders, possible multiple simultaneous contacts and solver internals also affect the result. Missing pair-force events remain **null**, never zero or a claimed touch. A manifold without a solver contact and a zero-length direction yield null directional comparisons.
+
+The source validates finite quantities, real measured ball mass, consecutive 60Hz ticks, previous ME-PB source versions, matching canonical pair/onset/completion IDs, event flags, force/impulse integrals and independent ball momentum. It returns frozen snapshots with `attribution:'unresolved'`, `possessionInferred:false` and `causalFootImpulseProven:false`. The corresponding **test-only** `match-engine/tests/player-foot-contact-direction.test.mjs` covers analytic reverse/normal-sign/null-force/zero-planar-vector/malformed-input controls and **10 genuine Rapier physical scenarios each replayed twice**, including low/medium/high/lateral approach, Away mirror, verified 6/3/113-tick same-player real recontacts, an uninterrupted 18-tick shoe collision, terrain-only ball bounces, high-ball and distant negatives. A genuine contact requires a Rapier onset; repeated contacts require a **previous real exit**. Every time step checks measured force, normal geometry and ball velocity **independently**, and CI emits compact `ME_PB_10_REAL` evidence for audit. There are no synthetic physical impacts, steering or new possession semantics.
+
+No official score, pass, shot, tackle, goalkeeper save, dribbling or tactical ball retention is introduced. Existing LAB default remains OFF, with its four-fact player inspector, unchanged browser routes and unchanged production physics. No merge, deploy, shared Preview, remote D1, official result or additional UI approved.
+
+## ME-PB-09 — real Rapier episode/recontact vs turf-bounce validation (2026-11-11)
+
+**PR #481 Draft/HOLD / issue #480, DEV-only research QA.** A new **test-only** acceptance harness `match-engine/tests/player-foot-contact-recontacts.test.mjs` drives 16 independently initialized real Rapier 3D worlds at 60Hz with the existing 22 autonomous players, actual kinematic shoe colliders, ME-PB-05 episode lifetimes and ME-PB-08 qualification. It samples stationary, slow, medium and fast approaches, lateral/grazing approaches, three real-foot restitution values 0.00/0.12/0.35, mirrored Away, a genuine airborne noncontact case, a distant ball and a separate **turf-only bounce** (vertical velocity reversal without player collision). No injected ball commands, synthetic physics events, fake players or ownership.
+
+**An actual same-player recontact must have TWO Rapier collision starts for that player separated by an actual matching Rapier collision END.** A long-lived active collision counts as **one episode**, even if Rapier reports force during many consecutive ticks; a ball's change of vertical direction on the grass with no shoe contact is **not** a player collision. End-to-start gaps of 1–12 60Hz steps (<=0.20s) are classified as provisional short-window repeats; larger gaps are separate real recontacts but **not** short-window repeats. Absence of a second physical onset is reported as **not observed**, never simulated or assumed to have happened. The suite captures actual completed episode duration, continuing contact samples, normal/force pairs, possible planar ball-direction reversals and `attribution: unresolved`. A velocity reversal on a collision tick is an observed sign change, **not proof that a specific foot caused it or that a player controlled the ball**.
+
+**Observed real-collision positive regression (ME-PB-09):** in the unmodified autonomous `grazing-angle` case (ball starts at x=-5.25m, y=-0.14m with 2m/s forward and 0.1m/s lateral velocity, default foot restitution 0.12), Rapier generated four independent Home #10 collision episodes. New Rapier starts occurred at **tick 15 after end tick 9 (6 ticks / 0.10s)**, **tick 32 after end tick 29 (3 ticks / 0.05s)** and **tick 167 after end tick 54 (113 ticks / ~1.883s)**. The first two qualify as short-gap repeats, while the third is a distinct long-gap return, **not** a continuous touch or control. The separate slow near-shoe sample had **18 consecutive active solver ticks in ONE collision episode**, not 18 touches; a turf-only bounce had **four upward velocity reversals with zero shoe collision starts**. All findings are fixed-seed real Rapier observations, and the positive/negative distinctions are asserted in CI. They are **not biomechanical calibration, proof of dribbling or evidence of an owner**.
+
+Each physical scenario executes independently **twice** and requires byte-identical canonical ball trajectory and exact collision/qualification/solver streams; all episode counts and gaps must match the real event graph. The normal non-opt-in Rapier world has no contact/qualification observer and remains deterministic. Compact `ME_PB_09_REAL` GitHub Actions evidence prints observed counts, real episode durations and the first few proven recontacts, if any. Existing ME-PB-08 state-machine tests cover synthetically defined 12-tick repeat boundaries, but those tests are **not** physical evidence; this suite explicitly distinguishes them. This step introduces **no new runtime module, route, LAB UI control, persistent logs, official gameplay/possession or deploy**.
+
+## ME-PB-08 — collision event qualification without gameplay possession (2026-11-10)
+
+**PR #481 Draft/HOLD / issue #480, DEV-only.** A separate immutable `createFootContactQualification()` observer classifies **only actual Rapier collision event streams**, synchronized against ME-PB-05 episode timing, ME-PB-06 pair-force evidence and ME-PB-07 momentum-provenance records. Its current-tick evidence labels are `none`, `single-pair-event`, `repeated-event`, `multi-pair-ambiguous` and `zero-sample-uncertain`. **These are not confirmed touches, tactical possession, controls or kick intent.** Classification never changes ball trajectories, autonomous player motion, match events, UI rows, official scores or player attributes.
+
+A new onset is marked **isolated** or **repeat-within-window** for the *same player ID* when its previous completed Rapier collision ended within **12 solver ticks** (0.20s). The 12-tick window is an explicitly **provisional observation heuristic, not a ball-control rule**; only one recent end tick per canonical player is retained (max 22 records), and stale records expire. Completed Rapier events retain their actual zero/single/multi-tick duration; same-step begin/end has zero fully observed active ticks and is classified uncertain. Multiple active pairs, multiple pair-force reports, multiple same-tick onsets or completions produce explicit **multi-pair ambiguity reasons**, without privileging Home, Away, force magnitude or arbitrary player order. A collision onset with **no Rapier pair force report** is recorded with `unreportedOnsetForceIds`, never assigned fabricated zero force or asserted as an impulse. Every snapshot maintains `attribution: unresolved` and `possessionInferred: false`.
+
+All source versions, 60Hz tick consistency, canonical ordered IDs, begin/end/active flags, force-pair counts, real momentum event pairs, finite reported impulses, event-duration shape and mutually consistent classifications are checked **before any observer state mutation**. No rolling telemetry/event log is kept by the engine. The Node suite tests isolated vs repeated events, 12-tick expiry, multiple Home/Away pair events, null-force evidence, zero-duration episodes, malformed input atomicity, 180 actual Rapier ticks with deterministic replay and airborne/distant negative controls. Existing ME-PB-04 stationary/slow/medium/fast/lateral physical acceptance cases now compare the classification snapshot for every tick. Routing remains protected by the local DEV-only module allowlist and host-denial tests.
+
+**Not in scope:** controllable touches, ball retention, dribbling, tackles, goalkeeping, shot/pass attribution, official gameplay, public/shared Preview, deployment, D1 or merge. The experiment remains explicitly opt-in, OFF by default, with the original four-fact Players (22) observer and no extra UI statistics.
+
+## ME-PB-07 — ball momentum provenance and solver-force cross-check (2026-11-10)
+
+**DEV LAB only, Draft/HOLD PR #481 / issue #480.** Adds a pure immutable 60Hz `summarizeFootMomentumAudit()` that independently records **actual canonical ball velocity change × measured 0.43kg mass** (the linear change in momentum, N·s) versus the **magnitudes of real, reported per-pair Rapier net force × fixed step (N·s)**. These are distinct physical observations, and **they are deliberately NEVER equated, subtracted, or used as a proof of a player's impulse**, because gravity, turf, aerodynamic forces, other colliders, contact orientation and discrete solver/CCD details can affect the ball. Summing **unsigned** per-pair impulse magnitudes is **not** a total net impulse on the ball. No Rapier force report means a per-pair **null** impulse—not an invented zero.
+
+For actual force events with a post-solver manifold, the readout additionally reports the **absolute cosine alignment** between the measured total pair-force direction and each available Rapier world manifold normal with solver contacts. Its sign is intentionally discarded: collider ordering and normal orientation are not interpreted as the direction of a shot or controlled foot touch. No nonzero pair force or no valid solver manifold means **null** alignment, not a guessed vector. Multiple Home/Away pair force records are canonical and kept separate, with `attribution: 'unresolved'` and `exclusiveFootMomentumTransferProven: false` always. All entries are frozen current-tick evidence; no growing historical telemetry or extra UI rows.
+
+Strict unit, finite/mass, synchronized clock, order, force-integral and source-version validation guards the observer. Real Rapier tests exercise 180-tick replay, Home/Away mirrors, stationary airborne/distant controls, ambiguity, non-force nulls and malformed sources. ME-PB-04 now checks this audit for **every** velocity/direction scenario and its exact replay. The default LAB, 22-player movement and 4-fact inspector do not change, and the audit does not influence physical commands, possession, goalkeeper actions or official match outcomes. No merge, deploy, Preview or D1 without separate authorization.
+
+## ME-PB-06 — actual Rapier pair-force and contact manifold evidence (2026-11-10)
+
+**DEV LAB only, Draft/HOLD PR #481 / issue #480.** Explicit `Foot contacts (experiment)` now collects **actual Rapier CONTACT_FORCE_EVENTS** for ball–oriented shoe-proxy collider pairs and separately reads the **world-space normal(s) and solver-contact counts from Rapier contact manifolds** after each 60Hz step. The frozen, canonical-ID, current-tick-only `footContactSolverSnapshot()` reports the measured aggregate pair **net force vector (N)**, **sum of force magnitudes (N)**, max contact force magnitude/direction, and each available manifold normal, geometric/solver point counts and Rapier orientation `flipped` flag. It distinguishes a missing force event with explicit **nulls**, not invented zero impulses, and does not attribute the world manifold normal as a user-controlled kick direction.
+
+From each actual Rapier-reported pair force, the observer calculates **force × 1/60s** as a *derived* pair-net impulse vector (N·s) and a separate **sum-of-magnitudes × 1/60s**. These are **not direct raw Rapier per-point solver impulse readings**: aggregating geometric per-contact impulses can be incorrect when Rapier clusters contacts. The reported pair force is a solver event across the simulated physics step, while the ball's total velocity change includes *all* sources (gravity, turf, other colliders, aerodynamic forces) and remains an independent ME-PB-03 measurement. **No single player's kick, possession, intentional touch or exact contact-normal impulse is inferred**. Multiple simultaneously force-reporting ball/shoe pairs remain separate, without choosing an owner or summing them as a single player's action.
+
+All output is independent of the default ball physics and protected behind the DEV local opt-in; no extra UI controls, readouts, player fields, production events or memory-growing history. The Node acceptance suite verifies actual 3D Rapier normal and force reads, correct force-unit conversion, no-force nulls, canonical Home/Away pairs, malformed-unit/ID rejection, exact 180-tick ball/event/force replay, airborne/no-contact negative controls and mirrored actual solver events. The ME-PB-04 speed matrix also compares the new per-pair solver evidence in exact replay. The existing **four-fact Players (22)** inspector is untouched. No merge, public Preview, deploy, D1 or real-match possession logic without separate authorization.
+
+## ME-PB-05 — actual collision episode lifetime and relative direction (2026-11-10)
+
+**Draft/HOLD PR #481 / issue #480.** A strictly observational `createFootContactTimeline()` tracks only the **actual Rapier collision start/end/active events** between the 3D ball and the 22 oriented kinematic shoe proxies. It preserves a separate immutable current-tick account of collision onsets, ongoing event-pair contact durations (measured in **60Hz active samples**), and completed episodes. When a collision ends at tick N after beginning at tick S, reported complete duration is **(N-S) solver ticks**, matching the active steps S…N-1; same-tick start+end is **zero fully observed ticks**, rather than inventing a duration. Multiple concurrently active ball/proxy pairs are explicitly retained and marked ambiguous; no first contact becomes an owner. Durations describe **collision event-pair lifetimes**, not physical shoe-ball penetration time, transfer of possession or individual player intent.
+
+For each real onset the observer also measures the *pre-impact planar relative velocity* of the ball center versus that foot proxy's **actual position change** (including foot yaw) from the previous player tick. The ball-to-foot centerline is a **geometric radial approximation**: closing, separating, tangential and total relative speed are recorded as nonnegative m/s. This line is **not Rapier's true manifold contact normal**, a force, kick direction or controlled touch. A zero-distance radial direction is explicitly indeterminate. Validation rejects stale/nonconsecutive ticks, unknown/duplicate/misordered player IDs, impossible state transitions, mismatched active sets, nonfinite ball positions/velocities and invalid 22-foot motion samples **before mutating the observer**. No historical per-frame array is retained by the engine; only current evidence and open-contact start ticks live in memory.
+
+The focused Node tests cover first-tick baseline, one-tick and multi-tick episodes, same-step begin/end, an explicit **synthetic-only simultaneous Home/Away timeline** for state-machine correctness, centerline approach/retreat/lateral mirrors, moving-shoe relative velocity, malformed-event atomic rejection, 150 real Rapier ticks and exact replay. The ME-PB-04 physical scenario matrix now cross-checks the new durations and onset directions against actual Rapier events for stationary, slow, medium, fast, lateral, mirrored Away and no-contact controls. The four-fact Players (22) UI and default ball physics remain unchanged; **no gameplay possession, new player fields, generated kick forces, production, shared Preview, deployment, D1 or merge** is authorized.
+
+## ME-PB-04 — approach-speed/direction collision acceptance matrix (2026-11-10)
+
+**Draft/HOLD PR #481, issue #480.** Fixed-seed, actual 60Hz Rapier+autonomous 22-player matrix using the existing ME-PB-03 rounded, oriented shoe proxies. It exercises five physically distinct laboratory ball starts: **stationary beside a foot** (0m/s), **slow forward approach** (0.8m/s), **standard roll** (4m/s), **fast roll** (16m/s) and **lateral approach** (3.5m/s). Additionally, mirrored Away-side slow/standard/lateral approaches check that contacts are not biased to Home. A high airborne ball over the shoe and a remote stationary ball serve as **negative controls**.
+
+For each case, the Node matrix compares actual colliding Rapier ball trajectory against the default unmodified physics-only world and **replays the opted-in scenario twice**, verifying every canonical ball snapshot and every collision start/end/active event exactly. Successful physical onset must involve the actual target player's collider, and the Rapier ball position must differ from the no-foot control; simple PB-01 geometric proximity is not treated as impact. Every tick verifies 22 canonical, synchronized player frames, frozen ordered canonical event IDs and finite ball states. The matrix prints compact `ME_PB_04_SCENARIO` JSON evidence in GitHub Actions (initial speed, first true contact tick/time, measured *total* ball Δv on onset, A/B separation and exact replay). These are **experiment measurements, not realism calibration limits, verified individual-player kicks, possession, or production match statistics**.
+
+The test does **not** introduce per-frame UI updates or historical telemetry; the DEV LAB remains exactly four player facts and the unchecked Advanced `Foot contacts (experiment)` opt-in. No extra ball forces, new player attributes, official match changes, shared Preview, D1, merge or deployment. Before future possession work, review multi-contact attribution, sustained/rolling collisions, angle-of-incidence sensitivity and whether the provisional shoe shape/materials need empirically supported calibration.
+
+## ME-PB-03 — directional low-profile foot and measured impact response (2026-11-10)
+
+**Draft/HOLD PR #481, issue #480.** Supersedes ME-PB-02's spherical center-of-player proxy with **one rounded rectangular foot pad per autonomous player** in the isolated, explicitly opted-in DEV Rapier experiment. The pad follows the actual canonical facing angle and actual XY of each player, **0.22m in front of tactical center**, with oriented 3D quaternion updated at the actual 60Hz tick. Provisional rounded shape: core half extents (0.105, 0.052, 0.035)m with 0.020m border radius; vertical center 0.09m. This is one oriented shoe proxy, NOT articulated leg/ankle geometry, left/right foot animation, calibrated biomechanics, or official player shape. No procedural steering or generated foot kicks.
+
+The opt-in contact test also has a **test-only, bounded coefficient-of-restitution sensitivity** from 0 to 0.35 (default 0.12), rejected unless the experiment is enabled. The ball's baseline mass, inertia, turf/drag and normal Rapier world are unaffected. Each actual Rapier collision onset records an immutable **total ball velocity-change magnitude measured across that fixed physics solver step**. This delta includes gravity, turf/other contacts and cannot be attributed as individual kick force or a possession event. No new UI metrics or controls beyond the existing one unchecked Advanced opt-in; the 4-fact Players (22) panel remains unchanged.
+
+Geometry and guard tests check orientation, Home/Away mirror, finite/monotonic yaw steps bounded by actual autonomous turn limits, 22 canonical identities, no teleport, material input bounds, genuine Rapier collision/velocity response, replay and determinism. Default physics behavior remains byte-identical to the accepted baseline. This trial is not authorized to drive official match results, player attributes, Preview or production. No merge without explicit approval.
+
+## ME-PB-02 — historical spherical proxy baseline (superseded by ME-PB-03)
+
+**Draft/HOLD PR #481, issue #480.** Advanced settings contains a single unchecked-by-default **Foot contacts (experiment)** option, applied only when restarting the isolated DEV LAB. When selected, the active Rapier world gains 22 small **kinematic spherical ground-level colliders** (radius 0.16m, center Z 0.17m), each driven every 1/60s exclusively by the next **actual autonomous 22-player XY frame**. Real Rapier collision detection, contact constraints and restitution determine the ball's physical response. The experiment records only genuine Rapier collider start/end/active events; it never infers a confirmed touch from PB-01 XY proximity alone and **never assigns possession**. Default/unselected scenarios, production and match outcomes do not instantiate additional colliders.
+
+Strict `validateFootContactFrame` checks all 22 canonical identities, synchronized ticks/clock, finite XY/velocity, pitch bounds and real bounded physical displacement **before any collider moves**. Impossible teleports, missing frames, stale/repeated steps and forged identities fail closed. Foot collision output is an immutable, canonical, versioned event record, completely separate from the PB-01 geometric reach observer and from the original canonical ball snapshot; no new player fields are introduced. Reset reconstructs the experiment and its event record, and **Compare replay** reruns the same autonomous motion in the same Rapier world to validate both ball trajectory and contact events.
+
+This is a **provisional proxy collision**, not anatomically modeled feet/legs, articulated skeletal dynamics, calibrated collision material properties or official match gameplay. No manual steering, scripted ball impulse, dribble, possession, tackles, goalkeeping saves, scoring, world publication, D1, Preview or deploy. The Players (22) panel retains **exactly four** compact readouts, with no added statistics. Node tests cover actual contact-vs-default physics, Home/Away mirrors, airborne misses, event determinism, input guards, Reset and real 60Hz replay; browser QA tests opt-in without altering the baseline.
+
+## ME-PB-01 — first player/ball reach boundary (2026-11-10)
+
+**DEV-only, Draft/HOLD, issue #480.** This first Player–Ball Interaction step combines real Rapier ball XYZ with the 22 canonical tactical XY players on the same 60Hz tick. The strict pure evaluatePlayerBallReach() reports only grounded geometric reach candidates within a provisional 0.65m center-to-center XY envelope and up to 0.30m underside ground clearance. It rejects invalid/unsynchronised 3D/22-body data, ignores balls outside the pitch or too high, preserves simultaneous Home/Away candidates, sorts by true distance and canonical tie order, and freezes its output. These thresholds are **uncalibrated laboratory placeholders**, not a collision or human foot/body geometry model.
+
+createPlayerBallReachObserver() records only consecutive real 60Hz candidate entry/exit transitions. Tick zero can have nearby players but is only a baseline (no synthetic touch); Reset/Apply rebuilds the observer. The observer runs only in the existing DEV engine with no new UI rows/controls, 3D player collider, forces, impulses, confirmed physical touches, possession, dribble, tackles, saves or official-match integration. The existing ball flight/turf and 22-player movement are not changed.
+
+**Next, after acceptance:** controlled finite-height physical foot contact model with genuine Rapier ball response, then possession/retention rules grounded in actual contact events. Merge, deployment, shared Preview and D1 writes remain independently gated.
+
 ## ME-PLAYER-UI-01 — compact Players (22) observer (2026-11-10)
 
 The optional **Players (22)** interface is now reduced to **four current facts**: ball zone, the two pressing players, a selected player's identity/position/current speed, and that player's actually observed assignment. It is hidden by default. Selecting a player via the native selector or by tapping/clicking its existing marker is strictly observational; no manager steering, new ball force or simulation write. Unselected players do not generate historical readout fields. The previous long wall of >40 diagnostic rows, velocity/path overlay controls and many verbose on-page methodology paragraphs are **removed from the UI**.
 
-The earlier ME-PLAYER-25–34 research observers remain pure and covered by their existing Node deterministic/validation suites; the LAB no longer computes and renders their history every tick. The sections below document prior research milestones, **not currently displayed UI**. Static first paint, Reset/Apply, autonomous movement, Rapier ball replay and protected local routing remain the operational acceptance criteria. PR #465 stays **Draft/HOLD**: no merge, deploy, shared Preview or remote DB writes without explicit authorization.
+The earlier ME-PLAYER-25–34 research observers remain pure and covered by their existing Node deterministic/validation suites; the LAB no longer computes and renders their history every tick. The sections below document prior research milestones, **not currently displayed UI**. Static first paint, Reset/Apply, autonomous movement, Rapier ball replay and protected local routing remain the operational acceptance criteria. Historical ME-PLAYER PR #465 was **squash-merged** as `1782eb61`; the new ME-PB-01 PR is independently **Draft/HOLD** with no deploy, shared Preview or remote DB writes.
 
 ## ME-PLAYER-34 — actual measured step pace by observed duty (2026-11-10)
 

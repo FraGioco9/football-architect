@@ -1,0 +1,7 @@
+# C2-a — Genuine physical source, attacking role continuity
+
+Both pass and shot use the existing same-tick Rapier shoe START+ACTIVE, autonomous policy and physical impulse. A natural ordinary-formation AWAY trial remains 0.681m outside the original 35m shot zone. Post-PASS support can be lost when the same eligible forward becomes his team's presser.
+
+A sealed DEV-only `autonomousCarryAttackContinuity:true` requires existing autonomous action, physical carry, authenticated support and optional presser/support handoff modes. When source-verified previous PASS -> later same-team real Rapier CARRY remains valid inside the same 240/150/480-tick limits and live-ball proximity, keep the forward in attacking support if he would instead be the presser; select an alternative canonical presser or none. He still follows the normal previous REAL ball-based existing support target (2m forward/2.5m lateral). No changes to original player speed, heading, separation, Rapier shoe or ball, contact evidence, action impulses or original 35m range/goal-lane rules; disabled by default. Not possession or a completed sporting action.
+
+Registered C2.3k test extended: real 720-tick 22-player baseline + two independently replayed candidate Rapier worlds, exclusive real shoe START+ACTIVE, source PASS/CARRY, before-source parity, retained support duty, reset and invalid options. Shot count reported honestly. This does not mark C2 complete: C2-b must show genuine natural HOME/AWAY shot; C2-c real 3D ball/boundary flight. PR #481 stays Draft/HOLD; no merge/deployment/D1.

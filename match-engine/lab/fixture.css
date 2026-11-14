@@ -1,0 +1,46 @@
+/* Primary Match Engine LAB: one situation editor, no separate 11v11 page. */
+.me-fixture-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.me-fixture-heading .app-page-title{margin:0;color:var(--text)}
+.me-fixture-subtitle{margin:5px 0 0;font-size:12px;color:var(--muted)}
+.me-fixture-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,275px);gap:12px;align-items:start}
+.me-fixture-panel{min-width:0;padding:clamp(10px,1.2vw,14px)}
+.me-fixture-field-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+.me-fixture-hint,.me-fixture-state{font-size:12px;color:var(--muted);line-height:1.4}
+.me-fixture-state{flex:none;font-weight:700}
+.me-fixture-state.error{color:#cc7b7b}
+#fixture-pitch{display:block;width:100%;height:auto;aspect-ratio:105/68;border-radius:6px;background:#185039;cursor:crosshair;touch-action:manipulation}
+#fixture-pitch:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.me-fixture-legend{margin:9px 0 0;color:var(--muted);font-size:11px}
+.me-fixture-transport{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:13px}
+.me-fixture-transport button,.me-fixture-transport select,#fixture-drop-height,#fixture-verify{
+ appearance:none;min-height:36px;border:1px solid var(--border);border-radius:var(--fa-radius-control);
+ background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;padding:7px 12px;cursor:pointer}
+.me-fixture-transport button:hover:not(:disabled),#fixture-verify:hover:not(:disabled){background:var(--fa-field-hover-bg);border-color:var(--fa-field-hover-border)}
+.me-fixture-transport button:disabled,#fixture-verify:disabled{opacity:.45;cursor:default}
+#fixture-play{background:var(--primary);border-color:var(--primary);color:#fff;min-width:70px}
+#fixture-play:hover:not(:disabled){background:var(--primary-hover)}
+.me-fixture-transport label{margin-left:auto;color:var(--muted);font-size:12px}
+#fixture-time{min-width:52px;color:var(--text);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.me-fixture-controls h2{margin:1px 0 16px;font-size:15px;color:var(--text)}
+.me-fixture-controls>label{display:block;color:var(--muted);font-size:12px;font-weight:650;margin-bottom:5px}
+#fixture-drop-height{width:100%;margin-bottom:10px;min-height:38px}
+.me-fixture-stat{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:39px;border-bottom:1px solid var(--line);font-size:12px}
+.me-fixture-stat>span{color:var(--muted)}
+.me-fixture-stat strong{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
+.me-fixture-details{margin-top:15px}
+.me-fixture-details summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;font-size:12px;color:var(--text);padding:8px 0}
+.me-fixture-details summary::-webkit-details-marker{display:none}
+.me-fixture-details summary::marker{content:""}
+.me-fixture-details[open] summary svg{transform:rotate(180deg)}
+.me-fixture-record-label{display:block;color:var(--muted);font-size:11px;margin-top:12px}
+.me-fixture-history{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+#fixture-history{flex:1;min-width:0}
+#fixture-tick{min-width:35px;text-align:right}
+#fixture-verify{width:100%;margin:10px 0 4px}
+#fixture-verify-result{display:block;min-height:16px;font-size:11px;color:var(--muted)}
+.me-fixture-diagnostics-link{display:inline-block;margin-top:11px;color:var(--text);font-size:11px;text-underline-offset:3px}
+.me-fixture-disclaimer{margin:18px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+@media(max-width:950px){.me-fixture-layout{grid-template-columns:1fr}.me-fixture-controls h2{margin-bottom:10px}}
+@media(max-width:520px){.me-fixture-field-heading{align-items:start;flex-wrap:wrap}
+.me-fixture-transport{gap:6px}.me-fixture-transport button{padding-inline:10px}
+.me-fixture-transport label{margin-left:0}.me-fixture-panel{padding:10px}}

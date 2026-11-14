@@ -19,7 +19,7 @@ const SIDEBAR_END = '</aside>';
 const BOOTSTRAP_TAG = /<script data-nav01-bootstrap>[\s\S]*?<\/script>/;
 const LAB_BOOTSTRAP = '<script src="/__fa_match_engine__/sidebar-first-paint.js"></script>';
 const BOOTSTRAP_SELECTED = "const selected=onPlayers?";
-const LAB_SELECTED = "const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onPlayers?";
+const LAB_SELECTED = "const selected=path.startsWith('/dev/match-engine')?nav.querySelector('[data-me-dev-link]'):onPlayers?";
 
 function asideRange(markup) {
   const start = markup.indexOf(SIDEBAR_START);

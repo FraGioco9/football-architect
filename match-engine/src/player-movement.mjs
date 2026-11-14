@@ -1,6 +1,19 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
+import {localDefenderLineup} from './player-ball-local-targeting.mjs';
+import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {beginObservedLooseBallResponse,advanceObservedLooseBallResponse}
+ from './player-ball-loose-response.mjs';
+import {observeLooseBallControlEvidence}
+ from './player-ball-control-evidence.mjs';
+import {observePostContactRelease}
+ from './player-ball-release-evidence.mjs';
+import {chooseObservedLaneClosure,releaseObservedLaneClosure,
+ retargetObservedLaneClosure,abandonObservedLaneClosure,
+ observeReleasedLaneRejoin,acceptObservedPhysicalPass,
+ supersedeObservedLaneClosure,LOCAL_LANE_PASS_MAX_EVENTS}
+ from './player-ball-lane-closure.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -11,6 +24,11 @@ export const PLAYER_ACCEL_MPS2=9;
 export const PLAYER_BRAKE_MPS2=12;
 export const PLAYER_TURN_RAD_PER_S=6;
 export const PLAYER_PRESS_OFFSET_M=1.8;
+// C2.3c: temporary tactical run AFTER a real in-fixture Rapier pass.
+// This modifies only a normal-speed movement target, never shoe/ball physics.
+export const PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS=240;
+export const PLAYER_POST_CARRY_SUPPORT_MAX_TICKS=150;
+export const PLAYER_POST_CARRY_SUPPORT_TOTAL_MAX_TICKS=480;
 export const PLAYER_PRESS_SWITCH_ADVANTAGE_M=3;
 export const PLAYER_PRESS_START_RANGE_M=30;
 export const PLAYER_PRESS_HOLD_RANGE_M=34;
@@ -138,8 +156,9 @@ export function goalkeeperPosition(team,ballPosition){
 }
 // Pre-existing presser remains assigned until a challenger has a meaningful
 // formation-proximity advantage. Avoid 60Hz press ping-pong on lane boundaries.
-function pressingPlayer(players,team,ball,incumbentId){
- const candidates=players.filter(p=>p.team===team&&p.role!=='goalkeeper');
+function pressingPlayer(players,team,ball,incumbentId,excludedIds=[]){
+ const candidates=players.filter(p=>p.team===team&&p.role!=='goalkeeper'&&
+  !excludedIds.includes(p.id));
  let best=null,bestDist=Infinity;
  for(const p of candidates){
   const d=Math.hypot(p.baseX-ball.x,p.baseY-ball.y);
@@ -437,14 +456,140 @@ export function weakSideBalanceTarget(normalTarget,team,opponentPosition){
     PLAYER_BALANCE_MAX_LATERAL_M,Math.abs(dy)*PLAYER_BALANCE_LANE_GAIN),-halfY,halfY)
  });
 }
-function tacticalTarget(p,ball,isPressing,isCovering,screenOpponent,supportTarget,balanceOpponent){
+// C2.3c: no predicted pass reception, invented possession, or fixed shirt.
+// Compute a LIVE off-ball supporting run only within 240 normal 60Hz ticks
+// following the same session's genuine Rapier pass. The current ball XY
+// determines the forward run; the standard movement/collision controller
+// executes it, and a later shoe START is still needed for any new action.
+export function observedFixtureAttackSupportRun({
+ players,ball,pass,physicsTick,incumbentId=null,excludedIds=[],carry=null
+}){
+ if(pass===null)return null;
+ if(!Array.isArray(players)||players.length!==INITIAL_PLAYERS.length||
+    players.some((p,i)=>p.id!==INITIAL_PLAYERS[i].id||
+     p.team!==INITIAL_PLAYERS[i].team||p.role!==INITIAL_PLAYERS[i].role||
+     ![p.x,p.y,p.baseY].every(finite))||
+    !ball||![ball.x,ball.y].every(finite)||
+    !pass||pass.action!=='pass'||!['home','away'].includes(pass.team)||
+    !Number.isSafeInteger(pass.tick)||pass.tick<1||
+    !INITIAL_PLAYERS.some(p=>p.id===pass.playerId&&p.team===pass.team)||
+    !INITIAL_PLAYERS.some(p=>p.id===pass.recipientId&&
+      p.id!==pass.playerId&&p.team===pass.team)||
+    pass.appliedByRapier!==true||
+    pass.actualPhysicsImpulseApplied!==true||
+    pass.physicalTrigger!=='same-tick-real-rapier-shoe-start'||
+    pass.passTarget?.physicsTick!==pass.tick||
+    pass.passTarget?.recipientId!==pass.recipientId||
+    pass.passTarget?.originPlayerId!==pass.playerId||
+    pass.passTarget?.team!==pass.team||
+    pass.officialMatchAction!==false||
+    !Number.isSafeInteger(physicsTick)||physicsTick<=pass.tick||
+    !Array.isArray(excludedIds)||excludedIds.some(id=>
+      id!==null&&typeof id!=='string')||
+    (incumbentId!==null&&typeof incumbentId!=='string'))
+  throw new TypeError('Authenticated preceding Rapier pass and canonical live movement required');
+ const passAge=physicsTick-pass.tick;
+ const carryRelay=passAge>PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS;
+ if(!carryRelay&&carry!==null)
+  throw new TypeError('Post-carry continuation cannot override unexpired pass support');
+ if(carryRelay){
+  if(!carry||passAge>PLAYER_POST_CARRY_SUPPORT_TOTAL_MAX_TICKS)return null;
+  if(carry.action!=='carry'||carry.team!==pass.team||
+     !INITIAL_PLAYERS.some(p=>p.id===carry.playerId&&
+       p.team===pass.team&&p.role!=='goalkeeper')||
+     !Number.isSafeInteger(carry.tick)||carry.tick>=physicsTick||
+     carry.appliedByRapier!==true||
+     carry.actualPhysicsImpulseApplied!==true||
+     carry.physicalTrigger!=='same-tick-real-rapier-shoe-start'||
+     carry.officialMatchAction!==false||
+     carry.carryTarget?.actorId!==carry.playerId||
+     carry.carryTarget?.team!==carry.team||
+     carry.carryTarget?.physicsTick!==carry.tick||
+     carry.carryTarget?.shortGroundTouchOnly!==true||
+     carry.carryTarget?.physicalRecontactObserved!==false||
+     carry.carryTarget?.dribbleConfirmed!==null||
+     carry.carryTarget?.officialMatchResult!==null||
+     Math.abs(Math.hypot(carry.impulseNs?.x,
+       carry.impulseNs?.y,carry.impulseNs?.z)-0.42)>1e-7)
+    throw new TypeError('Post-pass continuation needs genuine later same-team Rapier carry');
+  // A previous genuine but expired CARRY must never terminate the
+  // match. Forged and future physical events still hard-fail above.
+  if(carry.tick<=pass.tick||
+     physicsTick-carry.tick>PLAYER_POST_CARRY_SUPPORT_MAX_TICKS)
+   return null;
+ }
+ const attack=pass.team==='home'?1:-1;
+ const candidates=players.filter(p=>p.team===pass.team&&
+   p.role==='forward'&&p.id!==pass.playerId&&
+   p.id!==pass.recipientId&&!excludedIds.includes(p.id));
+ if(!candidates.length)return null;
+ // Attackers run ahead of the *current* ball, never toward a stored
+ // synthetic future ball coordinate. Keep a separate lateral pass lane.
+ const aimX=clamp(ball.x+attack*14,-PLAYER_PITCH.lengthM/2+PLAYER_RADIUS_M,
+  PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M);
+ const options=candidates.map(p=>{
+  const lateral=p.baseY<ball.y?-8:8;
+  const target=Object.freeze({
+   x:aimX,
+   y:clamp(ball.y+lateral,-PLAYER_PITCH.widthM/2+PLAYER_RADIUS_M,
+    PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M)
+  });
+  return {p,target,distance:Math.hypot(p.x-target.x,p.y-target.y)};
+ }).sort((a,b)=>a.distance-b.distance||
+  INITIAL_PLAYERS.findIndex(p=>p.id===a.p.id)-
+   INITIAL_PLAYERS.findIndex(p=>p.id===b.p.id));
+ const chosen=options.find(x=>x.p.id===incumbentId)??options[0];
+ // C2.3d: once a REAL preceding pass created this live support run,
+ // its current outfielder may approach the current ball only when both
+ // are genuinely close in that team's valid attacking shot window.
+ // This is STILL a movement target; no fabricated shoe collision,
+ // shot, possession or ball attachment. Otherwise keep off-ball width.
+ const liveBallGapM=Math.hypot(chosen.p.x-ball.x,chosen.p.y-ball.y);
+ const distanceToGoalM=PLAYER_PITCH.lengthM/2-attack*ball.x;
+ const canApproach=!carryRelay&&distanceToGoalM>0&&distanceToGoalM<=35&&
+  Math.abs(ball.y)<=20&&liveBallGapM<=12&&
+  attack*(ball.x-chosen.p.x)>=-1;
+ // Real-carry-only DEV movement target. 45m is NOT a shooting range.
+ const carryApproach=carryRelay&&distanceToGoalM>0&&distanceToGoalM<=45&&
+  Math.abs(ball.y)<=20&&liveBallGapM<=12&&
+  chosen.p.id!==carry.playerId;
+ if(carryRelay&&!carryApproach)return null;
+ const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
+ const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
+ const target=carryApproach?Object.freeze({
+  x:clamp(ball.x+attack*2,-halfX,halfX),
+  y:clamp(ball.y+(chosen.p.baseY<ball.y?-2.5:2.5),-halfY,halfY)
+ }):canApproach?Object.freeze({
+  x:clamp(ball.x-attack*0.26,-halfX,halfX),
+  y:clamp(ball.y,-halfY,halfY)
+ }):chosen.target;
+ const carryContinuation=carryApproach?Object.freeze({
+  sourceCarryTick:carry.tick,carrierId:carry.playerId,team:carry.team,
+  source:'later-exclusive-real-rapier-ground-carry',
+  movementIntentOnly:true
+ }):null;
+ return Object.freeze({
+  playerId:chosen.p.id,team:pass.team,
+  sourcePassTick:pass.tick,physicsTick,
+  target,...(carryContinuation?{carryContinuation}:{}),
+  phase:carryApproach?'post-carry-support':
+   canApproach?'live-shot-window-ball-approach':'off-ball-support',
+  liveBallGapM,possibleShotWindow:canApproach,
+  physicalShoeStartObserved:false,shotExecuted:false,
+  source:'prior-authenticated-exclusive-rapier-pass',
+  movementIntentOnly:true,footballActionExecuted:false,
+  passCompleted:null,officialMatchPossession:false,
+  officialMatchResult:null
+ });
+}
+function tacticalTarget(p,ball,isPressing,isCovering,screenOpponent,supportTarget,balanceOpponent,pressOffsetM=PLAYER_PRESS_OFFSET_M){
  const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
  const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
  // Dedicated keeper intent takes priority over generic shape shifting.
  if(p.role==='goalkeeper')return goalkeeperPosition(p.team,ball);
  if(isPressing){
   // The two teams occupy opposite sides of the ball, not the same point.
-  return {x:clamp(ball.x+(p.team==='home'?-PLAYER_PRESS_OFFSET_M:PLAYER_PRESS_OFFSET_M),-halfX,halfX),
+  return {x:clamp(ball.x+(p.team==='home'?-pressOffsetM:pressOffsetM),-halfX,halfX),
     y:clamp(ball.y,-halfY,halfY)};
  }
  if(isCovering){
@@ -1569,10 +1714,303 @@ function teamShape(players,team,presserId){
   forwardLineX:mean('forward')
  });
 }
-export function createPlayerMovement(){
+
+// C3.3f: a pure, diagnostic-only movement waypoint around an ACTUAL
+// opposing carrier. The caller must first observe a hard mover block by
+// that carrier, after a genuine earlier Rapier carry shoe START and END.
+// No Rapier contact, ball command, kick or possession is inferred here.
+export function observedCarryOpponentFlankWaypoint(challenger,carrier,ball,side){
+ if(!challenger||!carrier||!ball||
+    !['home','away'].includes(challenger.team)||
+    !['home','away'].includes(carrier.team)||
+    challenger.team===carrier.team||challenger.id===carrier.id||
+    !['defender','midfielder','forward'].includes(challenger.role)||
+    ![challenger.x,challenger.y,carrier.x,carrier.y,
+      ball.x,ball.y].every(finite)||
+    ![1,-1].includes(side))
+  throw new TypeError('Actual opposite-team finite carry flank geometry required');
+ const bx=ball.x-carrier.x,by=ball.y-carrier.y,ballGap=Math.hypot(bx,by);
+ // When ball is extremely close, fallback to the canonical attacking
+ // direction of the ACTUAL carrier; no guessed ball flight or velocity.
+ const attack=carrier.team==='home'?1:-1;
+ const ux=ballGap>0.18?bx/ballGap:attack;
+ const uy=ballGap>0.18?by/ballGap:0;
+ const nx=-uy*side,ny=ux*side;
+ const px=challenger.x-carrier.x,py=challenger.y-carrier.y;
+ const lateral=px*nx+py*ny,forward=px*ux+py*uy;
+ // C3.3m: an outside-carrier waypoint can demand a forbidden direct
+ // chord through the 0.98m body guard. Instead, take a short polar arc
+ // from the CURRENT genuine opponent/carrier XY. No fake shoe contact.
+ const ahead=lateral>=0.90;
+ if(ahead&&ballGap>1.10)return null;
+ const nearBallFlankArc=ahead&&ballGap<=1.10;
+ const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
+ const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
+ const observedAngle=Math.atan2(lateral,forward);
+ const sideAngle=observedAngle<0?observedAngle+2*Math.PI:observedAngle;
+ const nextAngle=Math.max(0,sideAngle-(nearBallFlankArc?0.45:0.26));
+ const currentRadiusM=Math.hypot(px,py);
+ const arcRadiusM=nearBallFlankArc?PLAYER_MIN_SEPARATION_M+0.18:
+  Math.max(PLAYER_MIN_SEPARATION_M+0.18,
+   Math.min(currentRadiusM,PLAYER_MIN_SEPARATION_M+0.24));
+ const ringTarget=(angle,r)=>Object.freeze({
+  x:clamp(carrier.x+r*(ux*Math.cos(angle)+nx*Math.sin(angle)),
+   -halfX,halfX),
+  y:clamp(carrier.y+r*(uy*Math.cos(angle)+ny*Math.sin(angle)),
+   -halfY,halfY)
+ });
+ // Static segment clearance is a path intention check, never proof of
+ // a physical collision/absence of collision with the moving carrier.
+ const segmentGap=target=>{
+  const dx=target.x-challenger.x,dy=target.y-challenger.y;
+  const d2=dx*dx+dy*dy;
+  const t=d2>1e-12?clamp(((carrier.x-challenger.x)*dx+
+   (carrier.y-challenger.y)*dy)/d2,0,1):0;
+  return Math.hypot(challenger.x+t*dx-carrier.x,
+   challenger.y+t*dy-carrier.y);
+ };
+ // Preserve the previously accepted HOME/AWAY near-ball carry/recontact
+ // trajectories. The targeted experimental short arc applies ONLY to
+ // previously blocked AWAY carry defenders once the ball truly separates.
+ const bodySafeShortArc=carrier.team==='away'&&!ahead&&ballGap>1.10;
+ if(!bodySafeShortArc){
+  const legacyAngle=Math.max(0,
+   Math.atan2(Math.max(0,lateral),forward)-0.45);
+  const r=PLAYER_MIN_SEPARATION_M+0.18;
+  const alongM=ahead?0.60:-0.55,offsetM=1.16;
+  const target=Object.freeze(nearBallFlankArc?{
+   x:clamp(carrier.x+r*(ux*Math.cos(legacyAngle)+
+    nx*Math.sin(legacyAngle)),-halfX,halfX),
+   y:clamp(carrier.y+r*(uy*Math.cos(legacyAngle)+
+    ny*Math.sin(legacyAngle)),-halfY,halfY)
+  }:{
+   x:clamp(carrier.x+ux*alongM+nx*offsetM,-halfX,halfX),
+   y:clamp(carrier.y+uy*alongM+ny*offsetM,-halfY,halfY)
+  });
+  const waypointCarrierClearanceM=Math.hypot(
+   target.x-carrier.x,target.y-carrier.y);
+  if(waypointCarrierClearanceM<PLAYER_MIN_SEPARATION_M+0.12)return null;
+  return Object.freeze({phase:nearBallFlankArc?'ball-side-shoe-approach':
+   ahead?'along-carrier-flank':'lateral-bypass',
+   target,side,carrierBallGapM:ballGap,waypointCarrierClearanceM,
+   segmentCarrierClearanceM:segmentGap(target),bodySafeShortArc:false,
+   physicalShoeContactObserved:false,movementIntentOnly:true});
+ }
+ let target=ringTarget(nextAngle,arcRadiusM);
+ let segmentCarrierClearanceM=segmentGap(target);
+ if(segmentCarrierClearanceM<PLAYER_MIN_SEPARATION_M){
+  // Clipped/tight geometry: first ask for a radial outward step. If
+  // that also violates the guard, cancel rather than moving a body.
+  if(currentRadiusM<PLAYER_MIN_SEPARATION_M-1e-9)return null;
+  target=ringTarget(sideAngle,Math.max(currentRadiusM+0.12,
+   PLAYER_MIN_SEPARATION_M+0.18));
+  segmentCarrierClearanceM=segmentGap(target);
+ }
+ const waypointCarrierClearanceM=Math.hypot(
+  target.x-carrier.x,target.y-carrier.y);
+ if(waypointCarrierClearanceM<PLAYER_MIN_SEPARATION_M+0.12||
+    segmentCarrierClearanceM<PLAYER_MIN_SEPARATION_M-1e-9)return null;
+ return Object.freeze({phase:nearBallFlankArc?'ball-side-shoe-approach':
+  ahead?'along-carrier-flank':'lateral-bypass',
+  target,side,carrierBallGapM:ballGap,waypointCarrierClearanceM,
+  segmentCarrierClearanceM,bodySafeShortArc:true,
+  physicalShoeContactObserved:false,movementIntentOnly:true});
+}
+
+export function createPlayerMovement({
+ experimentalAiKickApproach=false,experimentalAiPassReceiveApproach=false,
+ experimentalAiExchangeApproach=false,experimentalAiOpponentLane=false,
+ experimentalAiAutonomousDefense=false,experimentalAiMultiPassDefense=false,
+ experimentalAiThreePassDefense=false,experimentalAiFourPassDefense=false,
+ experimentalAutonomousFixtureContactChase=false,
+ experimentalAutonomousFixtureCarry=false,
+ experimentalAutonomousFixtureCarrySupport=false,
+ experimentalAutonomousFixtureCarrySupportPressHandoff=false,
+ experimentalAutonomousFixtureCarryBlockedDetour=false,
+ experimentalAutonomousFixtureCarrySupportBallAccess=false,
+ experimentalAutonomousFixtureCarrySupportLateralAlign=false,
+ experimentalAutonomousFixtureCarrySupportEarlyFacing=false,
+ experimentalAutonomousFixtureCarrySupportShoeCenterTarget=false,
+ experimentalAutonomousFixtureCarrySupportFootLateralLead=false,
+ experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead=false,
+ experimentalAutonomousFixtureCarrySupportTerminalFacingLead=false,
+ experimentalAutonomousFixtureCarrySupportTerminalRunThrough=false,
+ experimentalAutonomousFixtureCarrySupportTerminalLateralSlip=false,
+ experimentalAutonomousFixtureCarrySupportLongitudinalLead=false,
+ researchShotAttacker=null,researchShotBall=null
+}={}){
+ if([experimentalAiKickApproach,experimentalAiPassReceiveApproach,
+      experimentalAiExchangeApproach,experimentalAiOpponentLane,
+      experimentalAiAutonomousDefense,experimentalAiMultiPassDefense,
+      experimentalAiThreePassDefense,
+      experimentalAiFourPassDefense,
+      experimentalAutonomousFixtureContactChase,
+      experimentalAutonomousFixtureCarry,
+      experimentalAutonomousFixtureCarrySupport,
+      experimentalAutonomousFixtureCarrySupportPressHandoff,
+      experimentalAutonomousFixtureCarryBlockedDetour,
+      experimentalAutonomousFixtureCarrySupportBallAccess,
+      experimentalAutonomousFixtureCarrySupportLateralAlign,
+      experimentalAutonomousFixtureCarrySupportEarlyFacing,
+      experimentalAutonomousFixtureCarrySupportShoeCenterTarget,
+      experimentalAutonomousFixtureCarrySupportFootLateralLead,
+      experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead,
+      experimentalAutonomousFixtureCarrySupportTerminalFacingLead,
+      experimentalAutonomousFixtureCarrySupportTerminalRunThrough,
+      experimentalAutonomousFixtureCarrySupportTerminalLateralSlip,
+      experimentalAutonomousFixtureCarrySupportLongitudinalLead]
+      .some(v=>typeof v!=='boolean')||
+    (experimentalAutonomousFixtureCarrySupportLongitudinalLead&&
+     (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
+      experimentalAutonomousFixtureCarrySupportTerminalRunThrough||
+      experimentalAutonomousFixtureCarrySupportTerminalLateralSlip))||
+    (experimentalAutonomousFixtureCarrySupportTerminalLateralSlip&&
+      (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
+      experimentalAutonomousFixtureCarrySupportTerminalRunThrough))||
+    (experimentalAutonomousFixtureCarrySupportTerminalRunThrough&&
+     !experimentalAutonomousFixtureCarrySupportTerminalFacingLead)||
+    (experimentalAutonomousFixtureCarrySupportTerminalFacingLead&&
+     !experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead)||
+    (experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead&&
+     !experimentalAutonomousFixtureCarrySupportFootLateralLead)||
+    (experimentalAutonomousFixtureCarrySupportFootLateralLead&&
+     !experimentalAutonomousFixtureCarrySupportShoeCenterTarget)||
+    (experimentalAutonomousFixtureCarrySupportShoeCenterTarget&&
+     !experimentalAutonomousFixtureCarrySupportEarlyFacing)||
+    (experimentalAutonomousFixtureCarrySupportEarlyFacing&&
+     !experimentalAutonomousFixtureCarrySupportLateralAlign)||
+    (experimentalAutonomousFixtureCarrySupportLateralAlign&&
+     !experimentalAutonomousFixtureCarrySupportBallAccess)||
+    (experimentalAutonomousFixtureCarrySupportBallAccess&&
+     !experimentalAutonomousFixtureCarrySupportPressHandoff)||
+    (experimentalAutonomousFixtureCarrySupportPressHandoff&&
+     !experimentalAutonomousFixtureCarrySupport)||
+    (experimentalAutonomousFixtureCarrySupport&&
+     !experimentalAutonomousFixtureCarry)||
+    (experimentalAutonomousFixtureCarry&&
+      !experimentalAutonomousFixtureContactChase)||
+    (experimentalAutonomousFixtureContactChase&&
+      (!experimentalAiKickApproach||experimentalAiPassReceiveApproach||
+       experimentalAiExchangeApproach||experimentalAiOpponentLane||
+       experimentalAiAutonomousDefense||experimentalAiMultiPassDefense||
+       experimentalAiThreePassDefense||experimentalAiFourPassDefense))||
+    [experimentalAiKickApproach,experimentalAiPassReceiveApproach,
+      experimentalAiExchangeApproach].filter(Boolean).length>1||
+    ((experimentalAiOpponentLane||experimentalAiAutonomousDefense)&&
+      !experimentalAiExchangeApproach)||
+    (experimentalAiOpponentLane&&experimentalAiAutonomousDefense)||
+    (experimentalAiMultiPassDefense&&!experimentalAiAutonomousDefense)||
+    (experimentalAiThreePassDefense&&!experimentalAiMultiPassDefense)||
+    (experimentalAiFourPassDefense&&!experimentalAiThreePassDefense))
+  throw new TypeError('Exclusive boolean experimental autonomous approach switches required');
+ if(researchShotAttacker!==null&&(
+    !experimentalAutonomousFixtureContactChase||
+    !['home','away'].includes(researchShotAttacker)))
+  throw new TypeError('Closed experimental autonomous physical shot situation required');
+ if(researchShotAttacker===null&&researchShotBall!==null)
+  throw new TypeError('Unpaired physical shot research ball state');
+ // The helper validates the actual scenario ball and only one canonical
+ // attacker relocation BEFORE any Rapier/movement tick exists.
  let tick=0;
- const players=INITIAL_PLAYERS.map(p=>({...p}));
+ // Never approach opponents closer solely because the ball is nearby.
+ // This window opens ONLY after the same session has executed a real
+ // Rapier PASS shoe impulse and automatically expires after 300 ticks.
+ let lastAutonomousFixturePhysicalPassTick=null;
+ let lastAutonomousFixtureRecipientId=null;
+ let lastAutonomousFixturePasserTeam=null;
+ let lastAutonomousFixturePassAction=null;
+ let activeFixtureAttackSupportRun=null;
+ let activeFixtureCarrySupportBallAccess=null;
+ let activeFixturePassReceiverRunnerId=null;
+ let activeFixturePassOpponentRunnerId=null;
+ let activeFixtureCarryOpponentRunnerId=null;
+ let activeFixtureCarryOpponentFlank=null;
+ let lastPhysicalCarryAction=null,activeFixtureCarryPursuit=null;
+ // Experimental only; normal movement remains unchanged when disabled.
+ let carryBlockedConsecutiveTicks=0,carryBlockedSourceId=null;
+ let carryBlockedPursuitSourceTick=null;
+ let activeCarryBlockedDetour=null,carryDetourLastDecision=null;
+ let lastAuthenticCarryShoeEndTick=null;
+ const observeAuthenticFixtureCarry=action=>{
+  if(!experimentalAutonomousFixtureCarry||
+     !action||action.tick!==tick||action.action!=='carry'||
+     action.appliedByRapier!==true||
+     action.actualPhysicsImpulseApplied!==true||
+     action.physicalTrigger!=='same-tick-real-rapier-shoe-start'||
+     action.officialMatchAction!==false||
+     !INITIAL_PLAYERS.some(p=>p.id===action.playerId&&
+       p.team===action.team&&p.role!=='goalkeeper')||
+     action.carryTarget?.actorId!==action.playerId||
+     action.carryTarget?.team!==action.team||
+     action.carryTarget?.physicsTick!==tick||
+     action.carryTarget?.shortGroundTouchOnly!==true||
+     action.carryTarget?.physicalRecontactObserved!==false||
+     action.carryTarget?.dribbleConfirmed!==null||
+     action.carryTarget?.officialMatchResult!==null||
+     Math.abs(Math.hypot(action.impulseNs?.x,
+       action.impulseNs?.y,action.impulseNs?.z)-0.42)>1e-7)
+   throw new TypeError('Only an authentic shoe-gated bounded physical carry may trigger same-player pursuit');
+  lastPhysicalCarryAction=action;activeFixtureCarryPursuit=null;
+  lastAuthenticCarryShoeEndTick=null;
+ };
+ // Only the same-world, same-tick genuine Rapier END may release this
+ // actor into the recontact pursuit phase; no artificial collision.
+ const observeAuthenticFixtureCarryShoeEnd=(shoeId,physicsTick)=>{
+  if(!experimentalAutonomousFixtureCarry||
+     !INITIAL_PLAYERS.some(p=>p.id===shoeId)||
+     physicsTick!==tick||!Number.isSafeInteger(physicsTick))
+   throw new TypeError('Only canonical same-tick physical Rapier shoe END allowed');
+  const source=lastPhysicalCarryAction;
+  if(source?.playerId!==shoeId||physicsTick<=source.tick||
+     lastAuthenticCarryShoeEndTick!==null)return false;
+  lastAuthenticCarryShoeEndTick=physicsTick;
+  return true;
+ };
+ const clearFixtureCarryOnOtherAction=action=>{
+  if(!experimentalAutonomousFixtureCarry||!action||
+     action.tick!==tick||action.action==='carry'||
+     action.appliedByRapier!==true||
+     action.actualPhysicsImpulseApplied!==true||
+     action.physicalTrigger!=='same-tick-real-rapier-shoe-start')
+   throw new TypeError('Only an observed authentic non-carry action may stop physical carry pursuit');
+  lastPhysicalCarryAction=null;activeFixtureCarryPursuit=null;
+  lastAuthenticCarryShoeEndTick=null;
+ };
+ const observeAuthenticFixturePass=action=>{
+  if(!experimentalAutonomousFixtureContactChase||
+     !action||action.tick!==tick||action.action!=='pass'||
+     action.appliedByRapier!==true||
+     action.actualPhysicsImpulseApplied!==true||
+     action.physicalTrigger!=='same-tick-real-rapier-shoe-start'||
+     action.officialMatchAction!==false||
+     !INITIAL_PLAYERS.some(p=>p.id===action.playerId&&p.team===action.team)||
+     !INITIAL_PLAYERS.some(p=>p.id===action.recipientId&&p.team===action.team&&p.id!==action.playerId)||
+     action.passTarget?.recipientId!==action.recipientId||
+     action.passTarget?.originPlayerId!==action.playerId||
+     action.passTarget?.physicsTick!==tick||
+     action.passTarget?.physicalPassAttemptOnly!==true)
+   throw new TypeError('Only a same-step real Rapier fixture pass may activate local contact pursuit');
+  lastAutonomousFixturePhysicalPassTick=tick;
+  lastAutonomousFixtureRecipientId=action.recipientId;
+  lastAutonomousFixturePasserTeam=action.team;
+  lastAutonomousFixturePassAction=action;
+  activeFixtureAttackSupportRun=null;
+  lastPhysicalCarryAction=null;activeFixtureCarryPursuit=null;
+  lastAuthenticCarryShoeEndTick=null;
+ };
+ const players=(experimentalAiOpponentLane?
+    localDefenderLineup(INITIAL_PLAYERS):
+    researchShotAttacker?
+     initialResearchShotLineup(INITIAL_PLAYERS,researchShotAttacker,researchShotBall):
+     INITIAL_PLAYERS).map(p=>({...p}));
  let lastBall={x:0,y:0};
+ let observedLaneClosure=null;
+ let observedLaneRecovery=null;
+ let observedLaneHistory=Object.freeze([]);
+ let observedPassEpochs=Object.freeze([]);
+ let observedLooseBallResponse=null;
+ let observedControlEvidence=null;
+ let observedReleaseEvidence=null;
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
  let coverers={home:null,away:null};
@@ -1636,6 +2074,29 @@ export function createPlayerMovement(){
   return Object.freeze({
    version:PLAYER_VERSION,tick,timeS:tick*PLAYER_DT,
    ball:Object.freeze({...lastBall}),
+   ...(experimentalAutonomousFixtureContactChase?{
+    provisionalReceivePassRunnerId:activeFixturePassReceiverRunnerId,
+    provisionalChallengePassRunnerId:activeFixturePassOpponentRunnerId,
+     ...(experimentalAutonomousFixtureCarry?{
+      provisionalChallengeCarryRunnerId:activeFixtureCarryOpponentRunnerId,
+      provisionalCarryChallengeFlank:activeFixtureCarryOpponentFlank
+     }:{}),
+    provisionalAttackSupportRun:activeFixtureAttackSupportRun,
+    ...(experimentalAutonomousFixtureCarrySupportBallAccess?{
+     provisionalCarrySupportBallAccess:activeFixtureCarrySupportBallAccess
+    }:{}),
+    provisionalCarryPursuit:
+     experimentalAutonomousFixtureCarryBlockedDetour&&
+     activeFixtureCarryPursuit?
+      Object.freeze({...activeFixtureCarryPursuit,
+       experimentalDetour:Object.freeze({
+        blockedTicks:carryBlockedConsecutiveTicks,
+        blockerId:carryBlockedSourceId,
+        activeWaypoint:activeCarryBlockedDetour?.waypoint??null,
+        lastDecision:carryDetourLastDecision
+       })
+      }):activeFixtureCarryPursuit
+   }:{}),
    observedMotion:Object.freeze({
     home:summarizeObservedPlayerMotion(players,'home'),
     away:summarizeObservedPlayerMotion(players,'away')
@@ -1750,14 +2211,175 @@ export function createPlayerMovement(){
     home:teamShape(players,'home',pressers.home),
     away:teamShape(players,'away',pressers.away)
    }),
+   ...(experimentalAiAutonomousDefense?{
+    observedLaneClosure,observedLaneRecovery
+   }:{}),
+   ...(experimentalAiMultiPassDefense?{
+    observedLaneHistory,observedPassEpochs,observedLooseBallResponse,
+    observedControlEvidence,observedReleaseEvidence
+   }:{}),
    players:Object.freeze(players.map(p=>Object.freeze({...p})))
   });
  }
- function step(ballPosition={x:0,y:0}){
+ function step(ballPosition={x:0,y:0},observations=null){
   const ball=ballXY(ballPosition);
+  // The measured ball velocity comes from the *previous completed Rapier
+  // step*, never predicted from the intended kick or a future ball point.
+  // After a real pass selects one defender, hold the *assignment* stable.
+  // The waypoint may adjust laterally from subsequent actual Rapier snapshots,
+  // bounded at each movement tick; no future ball point is authoritative.
+  if(experimentalAiMultiPassDefense&&observations?.passEvent&&
+     observedPassEpochs.length<LOCAL_LANE_PASS_MAX_EVENTS){
+    const epoch=acceptObservedPhysicalPass({
+      event:observations.passEvent,contactFrame:observations?.footContact,
+      previousTick:tick,previousEpoch:observedPassEpochs.at(-1)??null
+    });
+    if(epoch){
+      // Archive the previous immutable assignment before a later,
+      // independently observed Rapier pass authorizes a new defensive task.
+      if(observedLaneClosure){
+        // A SAME-TICK real Away shoe START wins over any new pass:
+        // record the completed physical release BEFORE archiving this
+        // old task; the next pass only creates a different task.
+        observedLaneClosure=releaseObservedLaneClosure({
+          plan:observedLaneClosure,
+          contactFrame:observations?.footContact,previousTick:tick
+        });
+        observedLaneHistory=Object.freeze([...observedLaneHistory,
+          supersedeObservedLaneClosure({
+            plan:observedLaneClosure,observedPass:epoch,movementTick:tick+1
+          })]);
+      }
+      observedLaneClosure=null;
+      observedLaneRecovery=null;
+      observedPassEpochs=Object.freeze([...observedPassEpochs,epoch]);
+      // ME-PB-34: one isolated THREE-pass trial allows the return to
+      // reach Home #7 without the second actively assigned defender.
+      // Existing LAB-11 is untouched; the next genuine third shoe START
+      // is the only condition that may issue a new defensive instruction.
+      const decision=(experimentalAiThreePassDefense&&epoch.sequence===2)||
+        (experimentalAiFourPassDefense&&epoch.sequence===3)?
+        null:chooseObservedLaneClosure({
+          players,ballPosition:ball,ballVelocity:observations.velocity,
+          passStage:epoch.stage,passSequence:epoch.sequence
+        });
+      if(decision)observedLaneClosure=Object.freeze({
+        ...decision,activatedAtTick:tick+1,phase:'closing',
+        passEventTick:epoch.tick,passSequence:observedPassEpochs.length
+      });
+    }
+  }else if(experimentalAiAutonomousDefense&&!experimentalAiMultiPassDefense&&
+          !observedLaneClosure&&observations?.velocity){
+    // LAB-10 retains its accepted standalone physics-velocity trigger.
+    const decision=chooseObservedLaneClosure({
+      players,ballPosition:ball,ballVelocity:observations.velocity
+    });
+    if(decision)observedLaneClosure=Object.freeze({
+      ...decision,activatedAtTick:tick+1,phase:'closing'
+    });
+  }
+  // ME-PB-37: only a TERMINAL audit of an actual prior Rapier Away shoe
+  // START may launch two ownerless pursuit intentions. The current
+  // simulated ball XY and actual 22-player XY select both outfielders.
+  // Never trigger on a speculative new pass or a mere proximity cue.
+  if(experimentalAiMultiPassDefense&&observations?.oppositionFlightAudit){
+    const audit=observations.oppositionFlightAudit;
+    if(!observedLooseBallResponse&&
+       tick+1===audit.tick+1&&
+       ['confirmed-changed-flight','contact-only-no-confirmed-change',
+        'insufficient-incoming-flight'].includes(audit.status)){
+      observedLooseBallResponse=beginObservedLooseBallResponse({
+        audit,players,ballPosition:ball,movementTick:tick+1
+      });
+    }else if(observedLooseBallResponse?.phase==='responding'){
+      observedLooseBallResponse=advanceObservedLooseBallResponse({
+        plan:observedLooseBallResponse,audit,players,
+        ballPosition:ball,movementTick:tick+1
+      });
+    }
+  }
+  // ME-PB-38: sample only PREVIOUSLY completed genuine Rapier shoe
+  // frames against the matching measured ball/player state. This observer
+  // never targets an actor, modifies physics or authenticates possession.
+  if(experimentalAiMultiPassDefense&&observedLooseBallResponse&&
+     observations?.footContact&&observations?.velocity&&
+     ballPosition&&Number.isFinite(ballPosition.z)&&
+     tick>=observedLooseBallResponse.initiatedAtMovementTick&&
+     !observedControlEvidence?.terminal){
+    observedControlEvidence=observeLooseBallControlEvidence({
+     previous:observedControlEvidence,
+     response:observedLooseBallResponse,
+     contactFrame:observations.footContact,
+     players,ball:{position:ballPosition,velocity:observations.velocity},
+     movementTick:tick+1
+    });
+  }
+  // ME-PB-39: only the same previously completed Rapier frame can
+  // provide immutable physical END/ball-clearance evidence.
+  if(experimentalAiMultiPassDefense&&observedControlEvidence&&
+     observations?.footContact&&observations?.velocity&&
+     observedControlEvidence.observedPhysicsTick===tick&&
+     observedControlEvidence.observedPhysicsTick===observations.footContact.tick&&
+     !observedReleaseEvidence?.terminal){
+    observedReleaseEvidence=observePostContactRelease({
+     previous:observedReleaseEvidence,
+     controlEvidence:observedControlEvidence,
+     contactFrame:observations.footContact,
+     players,ball:{position:ballPosition,velocity:observations.velocity}
+    });
+  }
+  // At movement tick N+1 consume only the physical foot event from tick N.
+  if(experimentalAiAutonomousDefense&&observedLaneClosure){
+    // Release has absolute priority: a real previous-tick Rapier shoe START
+    // must not be undone by a newer prediction or a retargeted waypoint.
+    observedLaneClosure=releaseObservedLaneClosure({
+      plan:observedLaneClosure,
+      contactFrame:observations?.footContact,
+      previousTick:tick
+    });
+    if(observedLaneClosure.phase==='closing'&&observations?.velocity){
+      // ME-PB-30: physical release above always takes precedence.
+      // The assignment may then end on persistent *observed* slow,
+      // backwards or passed-defender flight, never on a single sample.
+      observedLaneClosure=abandonObservedLaneClosure({
+        plan:observedLaneClosure,ballPosition:ball,
+        ballVelocity:observations.velocity,
+        defender:players.find(p=>p.id===observedLaneClosure.defenderId),
+        movementTick:tick+1
+      });
+      if(observedLaneClosure.phase==='closing')
+        observedLaneClosure=retargetObservedLaneClosure({
+          plan:observedLaneClosure,ballPosition:ball,
+          ballVelocity:observations.velocity,movementTick:tick+1
+        });
+    }
+  }
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
+  // C2.3n: sealed DEV-only handoff: keep verified post-CARRY support
+  // if the real nearby carrier itself qualifies as alternate presser.
+  if(experimentalAutonomousFixtureCarrySupportPressHandoff&&
+     lastAutonomousFixturePassAction&&lastPhysicalCarryAction&&
+     lastAutonomousFixturePassAction.team===lastPhysicalCarryAction.team&&
+     tick+1-lastAutonomousFixturePassAction.tick>
+      PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS){
+   const team=lastAutonomousFixturePassAction.team;
+   const eligible=observedFixtureAttackSupportRun({
+    players,ball,pass:lastAutonomousFixturePassAction,
+    carry:lastPhysicalCarryAction,physicsTick:tick+1,
+    incumbentId:activeFixtureAttackSupportRun?.playerId??null,
+    excludedIds:[]
+   });
+   if(eligible?.phase==='post-carry-support'&&
+      eligible.playerId===nextPressers[team]){
+    const alternate=pressingPlayer(players,team,ball,
+     pressers[team],[eligible.playerId]);
+    if(alternate?.id===lastPhysicalCarryAction.playerId&&
+       Math.hypot(alternate.x-ball.x,alternate.y-ball.y)<=12)
+     nextPressers[team]=alternate.id;
+   }
+  }
   const coveringHome=coveringDefender(
    players,'home',ball,nextPressers.home,coverers.home);
   const coveringAway=coveringDefender(
@@ -1924,7 +2546,630 @@ export function createPlayerMovement(){
     y:clamp(target.y+next.y,-halfY,halfY)
    });
   };
+  // C1.2b: the two pressers must not be steered within the mover's
+  // 0.98m minimum player separation around one ball. Select ONE
+  // dynamically nearest presser for a 0.26m real-shoe approach while
+  // the opposing presser stays on the normal 1.8m defensive offset.
+  // No chosen identity or eventual contact is scripted.
+  const fixturePostPassChase=experimentalAutonomousFixtureContactChase&&
+   lastAutonomousFixturePhysicalPassTick!==null&&
+   tick>lastAutonomousFixturePhysicalPassTick&&
+   tick-lastAutonomousFixturePhysicalPassTick<=300;
+  const pressersNow=['home','away'].map(team=>
+   players.find(p=>p.id===nextPressers[team])??null).filter(Boolean);
+  pressersNow.sort((a,b)=>
+   Math.hypot(a.x-ball.x,a.y-ball.y)-
+    Math.hypot(b.x-ball.x,b.y-ball.y)||
+   INITIAL_PLAYERS.findIndex(p=>p.id===a.id)-
+    INITIAL_PLAYERS.findIndex(p=>p.id===b.id));
+  const receiver=fixturePostPassChase?
+   players.find(p=>p.id===lastAutonomousFixtureRecipientId):null;
+  const fixtureChaseReceiverId=receiver&&receiver.role!=='goalkeeper'?
+   receiver.id:null;
+  const fixtureChasePresserId=fixturePostPassChase&&
+   !fixtureChaseReceiverId?pressersNow[0]?.id??null:null;
+  // C3.3c: the C1.2c live-opponent 30m post-PASS challenger was absent
+  // for real CARRY actions: ordinary 1.8m pressing alone cannot be
+  // assumed to physically contest the ball. Reuse that EXISTING
+  // bounded pursuit solely in the opt-in 22-player physical carry trial.
+  // Gate on an actual prior Rapier shoe START, authentic END in this
+  // same world, and 150-tick carry window; never chase a fake contact.
+  const fixturePostCarryChase=experimentalAutonomousFixtureCarry&&
+   lastPhysicalCarryAction!==null&&
+   lastAuthenticCarryShoeEndTick!==null&&
+   // step() is ABOUT TO emit physics tick (tick+1), not tick.
+   // Match the sealed physical reader's 150-tick expiry exactly;
+   // otherwise one stale defender intent survives a tick too long.
+   tick+1>lastPhysicalCarryAction.tick&&
+   tick+1-lastPhysicalCarryAction.tick<=150&&
+   (lastAutonomousFixturePhysicalPassTick===null||
+    lastPhysicalCarryAction.tick>=lastAutonomousFixturePhysicalPassTick);
+  // Choose dynamically from the true current 22-body XY, not from a
+  // hardcoded opponent or a future position. A newer real carry wins
+  // over an older pass intent; normal/non-carry modes are unchanged.
+  const challengeTeam=fixturePostCarryChase?
+   lastPhysicalCarryAction.team==='home'?'away':'home':
+   fixturePostPassChase?
+    lastAutonomousFixturePasserTeam==='home'?'away':'home':null;
+  const challengers=challengeTeam===null?[]:players.filter(p=>
+   p.team===challengeTeam&&p.role!=='goalkeeper'&&
+   Math.hypot(p.x-ball.x,p.y-ball.y)<=PLAYER_PRESS_START_RANGE_M);
+  challengers.sort((a,b)=>
+   Math.hypot(a.x-ball.x,a.y-ball.y)-
+    Math.hypot(b.x-ball.x,b.y-ball.y)||
+   INITIAL_PLAYERS.findIndex(p=>p.id===a.id)-
+    INITIAL_PLAYERS.findIndex(p=>p.id===b.id));
+  const fixtureChallengeOpponentId=challengers[0]?.id??null;
+  activeFixturePassReceiverRunnerId=fixtureChaseReceiverId;
+  activeFixturePassOpponentRunnerId=fixturePostCarryChase?
+   null:fixtureChallengeOpponentId;
+  activeFixtureCarryOpponentRunnerId=fixturePostCarryChase?
+   fixtureChallengeOpponentId:null;
+  // Only a *previously observed hard step rejection by the real carrier*
+  // may open a lateral bypass. Keep the same stable side for this exact
+  // source carry; never synthesize a contact or reposition a player.
+  const flankCarrier=fixturePostCarryChase?
+   players.find(p=>p.id===lastPhysicalCarryAction.playerId):null;
+  const flankChallenger=fixturePostCarryChase?
+   players.find(p=>p.id===fixtureChallengeOpponentId):null;
+  if(!flankCarrier||!flankChallenger||
+     activeFixtureCarryOpponentFlank?.sourceCarryTick!==
+      lastPhysicalCarryAction.tick||
+     activeFixtureCarryOpponentFlank?.challengerId!==flankChallenger.id||
+     activeFixtureCarryOpponentFlank?.carrierId!==flankCarrier.id)
+   activeFixtureCarryOpponentFlank=null;
+  if(flankCarrier&&flankChallenger){
+   if(!activeFixtureCarryOpponentFlank&&
+      flankChallenger.blockedBy===flankCarrier.id&&
+      Math.hypot(flankCarrier.x-ball.x,flankCarrier.y-ball.y)<=1.5&&
+      Math.hypot(flankChallenger.x-ball.x,flankChallenger.y-ball.y)<=3){
+    const attack=flankCarrier.team==='home'?1:-1;
+    const dx=ball.x-flankCarrier.x,dy=ball.y-flankCarrier.y;
+    const d=Math.hypot(dx,dy);
+    const ux=d>0.18?dx/d:attack,uy=d>0.18?dy/d:0;
+    const oriented=(flankChallenger.x-flankCarrier.x)*(-uy)+
+     (flankChallenger.y-flankCarrier.y)*ux;
+    const side=Math.abs(oriented)>0.04?Math.sign(oriented):
+     flankChallenger.team==='home'?1:-1;
+    activeFixtureCarryOpponentFlank=Object.freeze({
+     sourceCarryTick:lastPhysicalCarryAction.tick,
+     carrierId:flankCarrier.id,challengerId:flankChallenger.id,
+     side,target:null
+    });
+   }
+   if(activeFixtureCarryOpponentFlank){
+    const candidate=observedCarryOpponentFlankWaypoint(
+     flankChallenger,flankCarrier,ball,
+     activeFixtureCarryOpponentFlank.side);
+    activeFixtureCarryOpponentFlank=candidate?Object.freeze({
+     ...activeFixtureCarryOpponentFlank,
+     physicsTick:tick+1,phase:candidate.phase,
+     target:candidate.target,
+     waypointCarrierClearanceM:candidate.waypointCarrierClearanceM,
+     segmentCarrierClearanceM:candidate.segmentCarrierClearanceM,
+     bodySafeShortArc:candidate.bodySafeShortArc,
+     carrierBallGapM:candidate.carrierBallGapM,
+     source:'observed-carrier-hard-step-rejection',
+     movementIntentOnly:true,physicalShoeContactObserved:false,
+     ballControlConfirmed:null,dribbleConfirmed:null,
+     officialMatchPossession:false,officialMatchResult:null
+    }):null;
+   }
+  }
+  activeFixtureAttackSupportRun=lastAutonomousFixturePassAction?
+   observedFixtureAttackSupportRun({
+    players,ball,pass:lastAutonomousFixturePassAction,physicsTick:tick+1,
+     carry:experimentalAutonomousFixtureCarrySupport&&
+      lastPhysicalCarryAction?.team===lastAutonomousFixturePassAction.team&&
+      tick+1-lastAutonomousFixturePassAction.tick>
+       PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS?
+       lastPhysicalCarryAction:null,
+    incumbentId:activeFixtureAttackSupportRun?.playerId??null,
+    excludedIds:[nextPressers.home,nextPressers.away,
+     fixtureChaseReceiverId,fixtureChallengeOpponentId,
+     nextCoverers.home,nextCoverers.away]
+   }):null;
+  // C2.3q: sealed DEV-only, source-authenticated final shoe approach.
+  // The preceding real PASS + later real Rapier shoe CARRY already
+  // qualified this forward's current support duty. Mere distance
+  // cannot create a new task or action. This is a steering target,
+  // not a shoe START, ball possession, dribble or shot.
+  activeFixtureCarrySupportBallAccess=null;
+  if(experimentalAutonomousFixtureCarrySupportBallAccess&&
+     activeFixtureAttackSupportRun?.phase==='post-carry-support'&&
+     activeFixtureAttackSupportRun.carryContinuation?.sourceCarryTick===
+      lastPhysicalCarryAction?.tick&&
+     activeFixtureAttackSupportRun.sourcePassTick===
+      lastAutonomousFixturePassAction?.tick){
+   const run=activeFixtureAttackSupportRun;
+   const actor=players.find(p=>p.id===run.playerId);
+   const currentGap=actor?Math.hypot(actor.x-ball.x,
+    actor.y-ball.y):Infinity;
+   if(actor&&actor.team===run.team&&
+      actor.id!==lastPhysicalCarryAction.playerId&&
+      currentGap<=4){
+    const attack=actor.team==='home'?1:-1;
+    const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
+    const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
+    // C2.3s: only the genuine source-bound near-ball target may
+    // receive a bounded tactical lateral correction. The shoe's
+    // local lateral projection is independent of its 0.22m
+    // forward centre offset. Existing 6rad/s velocity-driven
+    // facing and 7m/s acceleration/integrator are unchanged.
+    const c=Math.cos(actor.facingRad),si=Math.sin(actor.facingRad);
+    const lateral=-si*(ball.x-actor.x)+c*(ball.y-actor.y);
+    const lateralShift=experimentalAutonomousFixtureCarrySupportLateralAlign&&
+      Math.abs(lateral)>0.16?
+      clamp(lateral*0.5,-0.35,0.35):0;
+    // C2.3v: the true shoe centre sits 0.22m ahead of the pre-step
+    // bounded facing. Compensate only the already-authorized 0.26m
+    // ball-access body target, and by <=0.30m in TOTAL. No future
+    // ball position, collider movement, or teleport.
+    const originalTarget=Object.freeze({
+     x:clamp(ball.x-attack*0.26,-halfX,halfX),
+     y:clamp(ball.y+lateralShift,-halfY,halfY)
+    });
+    const rawShoeCenterTarget=Object.freeze({
+     x:clamp(ball.x-0.22*c,-halfX,halfX),
+     y:clamp(ball.y-0.22*si,-halfY,halfY)
+    });
+    const correctionX=rawShoeCenterTarget.x-originalTarget.x;
+    const correctionY=rawShoeCenterTarget.y-originalTarget.y;
+    const correctionLength=Math.hypot(correctionX,correctionY);
+    const maxCorrectionM=0.30;
+    const correctionScale=correctionLength>maxCorrectionM?
+     maxCorrectionM/correctionLength:1;
+    const compensatedTarget=Object.freeze({
+     x:clamp(originalTarget.x+correctionX*correctionScale,-halfX,halfX),
+     y:clamp(originalTarget.y+correctionY*correctionScale,-halfY,halfY)
+    });
+    // C2.3y: a single bounded lateral overshoot of the usual
+    // body destination toward the previous ACTUAL ball's local
+    // side, using only pre-step facing (no future ball). This is
+    // the authenticated support runner's normal steering target.
+    const localShoeLateralErrorM=lateral;
+    const proposedLateralLeadM=clamp(
+     localShoeLateralErrorM*1.75,-0.45,0.45);
+    const leadBase=compensatedTarget;
+    const leadTarget=Object.freeze({
+     x:clamp(leadBase.x-si*proposedLateralLeadM,-halfX,halfX),
+     y:clamp(leadBase.y+c*proposedLateralLeadM,-halfY,halfY)
+    });
+    const footLateralLead=experimentalAutonomousFixtureCarrySupportFootLateralLead?
+     Object.freeze({
+      source:'authenticated-previous-real-ball-pre-step-shoe-lateral',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      realPreviousBall:Object.freeze({x:ball.x,y:ball.y}),
+      preStepFacingRad:actor.facingRad,
+      measuredLocalLateralM:localShoeLateralErrorM,
+      gain:1.75,correctionLimitM:0.45,
+      requestedCorrectionM:proposedLateralLeadM,
+      parentTarget:leadBase,
+      target:leadTarget,
+      appliedCorrectionM:Math.hypot(
+       leadTarget.x-leadBase.x,leadTarget.y-leadBase.y),
+      pureLateralIntentOnly:true,normalBodyIntegratorUnchanged:true,
+      shoeColliderUnchanged:true,physicalContactInferred:false,
+      footballActionExecuted:false,officialMatchResult:null
+     }):null;
+    // C2.3z: optional bounded linear velocity estimate from TWO
+    // consecutive PREVIOUS REAL Rapier samples already consumed by
+    // this mover. Neither the next physical frame nor an invented
+    // ball is ever fed into motion or football actions. Project a
+    // tactical destination only, by <=0.50m; original true body
+    // speed/braking/facing limits and Rapier shoe remain untouched.
+    const ballDelta=Object.freeze({
+     x:ball.x-lastBall.x,y:ball.y-lastBall.y
+    });
+    const horizonTicks=12;
+    const requestedVelocityLead=Object.freeze({
+     x:ballDelta.x*horizonTicks,y:ballDelta.y*horizonTicks
+    });
+    const requestedVelocityLength=Math.hypot(
+     requestedVelocityLead.x,requestedVelocityLead.y);
+    const velocityLeadCapM=0.50;
+    const velocityLeadScale=requestedVelocityLength>velocityLeadCapM?
+     velocityLeadCapM/requestedVelocityLength:1;
+    const velocityParent=leadTarget;
+    const velocityTarget=Object.freeze({
+     x:clamp(velocityParent.x+
+      requestedVelocityLead.x*velocityLeadScale,-halfX,halfX),
+     y:clamp(velocityParent.y+
+      requestedVelocityLead.y*velocityLeadScale,-halfY,halfY)
+    });
+    const observedBallVelocityLead=
+     experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead?
+      Object.freeze({
+       source:'two-prior-consecutive-authentic-rapier-ball-samples',
+       sourcePassTick:run.sourcePassTick,
+       sourceCarryTick:lastPhysicalCarryAction.tick,
+       latestSourcePhysicsTick:tick,
+       earlierSourcePhysicsTick:tick-1,
+       latestObservedBall:Object.freeze({x:ball.x,y:ball.y}),
+       earlierObservedBall:Object.freeze({x:lastBall.x,y:lastBall.y}),
+       observedDisplacementPerTickM:ballDelta,
+       horizonTicks,
+       horizonSeconds:horizonTicks*PLAYER_DT,
+       rawRequestedDisplacementM:requestedVelocityLead,
+       correctionLimitM:velocityLeadCapM,
+       parentTarget:velocityParent,
+       target:velocityTarget,
+       appliedCorrectionM:Math.hypot(
+        velocityTarget.x-velocityParent.x,
+        velocityTarget.y-velocityParent.y),
+       boundedTacticalDestinationOnly:true,
+       futurePhysicalSampleRead:false,
+       physicalContactInferred:false,
+       shoeColliderUnchanged:true,
+       footballActionExecuted:false,officialMatchResult:null
+      }):null;
+    // C2.3aa: ONLY at true <=1.25m final approach, turn the
+    // existing shoe toward a modest estimate of where the already
+    // observed rolling ball is heading. Two genuine PAST Rapier
+    // samples, 6 ticks (0.1s), <=0.30m in XY. This is ONLY a
+    // desired angle: the old 6 rad/s rotation limiter remains.
+    // Body destination, 7m/s movement, Rapier shoe and shot policy
+    // remain completely unchanged relative to C2.3z.
+    const terminalDisplacement=Object.freeze({
+     x:ballDelta.x*6,y:ballDelta.y*6
+    });
+    const terminalDisplacementLength=Math.hypot(
+     terminalDisplacement.x,terminalDisplacement.y);
+    const terminalDisplacementScale=terminalDisplacementLength>0.30?
+     0.30/terminalDisplacementLength:1;
+    const terminalPredictedBall=Object.freeze({
+     x:clamp(ball.x+terminalDisplacement.x*
+      terminalDisplacementScale,-halfX,halfX),
+     y:clamp(ball.y+terminalDisplacement.y*
+      terminalDisplacementScale,-halfY,halfY)
+    });
+    const terminalEligible=experimentalAutonomousFixtureCarrySupportTerminalFacingLead&&
+     currentGap<=1.25;
+    const terminalFacingLead=terminalEligible?
+     Object.freeze({
+      source:'source-bound-two-observed-rapier-ball-terminal-shoe-facing',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      earlierSourcePhysicsTick:tick-1,
+      latestSourcePhysicsTick:tick,
+      earlierObservedBall:Object.freeze({x:lastBall.x,y:lastBall.y}),
+      latestObservedBall:Object.freeze({x:ball.x,y:ball.y}),
+      observedBallDelta:ballDelta,
+      preStepFacingRad:actor.facingRad,
+      bodyBallGapM:currentGap,
+      terminalRadiusM:1.25,
+      predictionTicks:6,
+      predictionSeconds:6*PLAYER_DT,
+      predictionMaxDistanceM:0.30,
+      projectedBallPosition:terminalPredictedBall,
+      desiredFacingRad:Math.atan2(
+       terminalPredictedBall.y-actor.y,
+       terminalPredictedBall.x-actor.x),
+      maxTurnRad:PLAYER_TURN_RAD_PER_S*PLAYER_DT,
+      normalBodyDestinationUnchanged:true,
+      angularSteeringIntentOnly:true,
+      futureActualBallRead:false,
+      rapierShoeUnchanged:true,physicalContactInferred:false,
+      footballActionExecuted:false,officialMatchResult:null
+     }):null;
+    // C2.3ab: when a genuinely PASS→CARRY-authenticated runner
+    // is inside the final 1.25m, do NOT brake to a static ball
+    // centre. The normal mover instead pursues a body destination
+    // 0.55m THROUGH the already-observed, 6-tick estimated
+    // interception point, in the actual actor→ball approach
+    // direction. The total correction over C2.3z is <=0.90m.
+    // The canonical 60Hz velocity integrator, 6rad/s facing,
+    // hard teammate guard, and real Rapier contact remain unchanged.
+    const runwayDirection=Object.freeze({
+     x:terminalPredictedBall.x-actor.x,
+     y:terminalPredictedBall.y-actor.y
+    });
+    const runwayGap=Math.hypot(runwayDirection.x,runwayDirection.y);
+    const runwayUnit=Object.freeze(runwayGap>1e-8?{
+     x:runwayDirection.x/runwayGap,
+     y:runwayDirection.y/runwayGap
+    }:{x:c,y:si});
+    const runwayBeyondBallM=0.55;
+    const rawRunThroughTarget=Object.freeze({
+     x:clamp(terminalPredictedBall.x+
+      runwayBeyondBallM*runwayUnit.x,-halfX,halfX),
+     y:clamp(terminalPredictedBall.y+
+      runwayBeyondBallM*runwayUnit.y,-halfY,halfY)
+    });
+    const runwayParent=velocityTarget;
+    const runwayDx=rawRunThroughTarget.x-runwayParent.x;
+    const runwayDy=rawRunThroughTarget.y-runwayParent.y;
+    const runwayDistance=Math.hypot(runwayDx,runwayDy);
+    const runwayCapM=0.90;
+    const runwayScale=runwayDistance>runwayCapM?
+     runwayCapM/runwayDistance:1;
+    const actualRunThroughTarget=Object.freeze({
+     x:clamp(runwayParent.x+runwayDx*runwayScale,-halfX,halfX),
+     y:clamp(runwayParent.y+runwayDy*runwayScale,-halfY,halfY)
+    });
+    const terminalRunThrough=terminalEligible&&
+     experimentalAutonomousFixtureCarrySupportTerminalRunThrough?
+     Object.freeze({
+      source:'authenticated-terminal-observed-ball-run-through-corridor',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      latestSourcePhysicsTick:tick,earlierSourcePhysicsTick:tick-1,
+      latestActualBall:Object.freeze({x:ball.x,y:ball.y}),
+      earlierActualBall:Object.freeze({x:lastBall.x,y:lastBall.y}),
+      projectedBallPosition:terminalPredictedBall,
+      preStepActor:Object.freeze({
+       x:actor.x,y:actor.y,facingRad:actor.facingRad
+      }),
+      currentBodyGapM:currentGap,
+      maxEligibleBodyGapM:1.25,
+      beyondObservedBallM:runwayBeyondBallM,
+      approachUnit:runwayUnit,
+      rawRunThroughTarget,parentTarget:runwayParent,
+      target:actualRunThroughTarget,
+      maximumTargetCorrectionM:runwayCapM,
+      appliedTargetCorrectionM:Math.hypot(
+       actualRunThroughTarget.x-runwayParent.x,
+       actualRunThroughTarget.y-runwayParent.y),
+      usualPlayerVelocityCapsUnchanged:true,
+      sameRapierShoeCollider:true,
+      tacticalTargetOnly:true,
+      futureActualBallRead:false,
+      physicalContactInferred:false,
+      footballActionExecuted:false,
+      officialMatchResult:null
+     }):null;
+    // C2.3ac: sibling of rejected C2.3ab run-through. Only the
+    // authentic post-PASS→CARRY support runner in its final
+    // <=1.25m corridor may correct the *normal body waypoint*
+    // from the observed BALL-vs-ACTOR relative lateral motion.
+    // Ball delta is two already observed genuine Rapier frames;
+    // actor.vx/vy are canonical pre-step physical mover velocities.
+    // No future state, sideways impulse, direct pose changes,
+    // contact inference, or change to 60Hz acceleration/braking.
+    const relativePerTick=Object.freeze({
+     x:ballDelta.x-actor.vx*PLAYER_DT,
+     y:ballDelta.y-actor.vy*PLAYER_DT
+    });
+    const relativeLateralPerTick=-si*relativePerTick.x+
+     c*relativePerTick.y;
+    const slipHorizonTicks=6;
+    const slipCapM=0.40;
+    const slipRequestedM=clamp(
+     relativeLateralPerTick*slipHorizonTicks,-slipCapM,slipCapM);
+    const slipParentTarget=velocityTarget;
+    const slipTarget=Object.freeze({
+     x:clamp(slipParentTarget.x-si*slipRequestedM,-halfX,halfX),
+     y:clamp(slipParentTarget.y+c*slipRequestedM,-halfY,halfY)
+    });
+    const terminalLateralSlip=terminalEligible&&
+     experimentalAutonomousFixtureCarrySupportTerminalLateralSlip?
+     Object.freeze({
+      source:'authenticated-prior-rapier-ball-relative-lateral-velocity',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      earlierSourcePhysicsTick:tick-1,
+      latestSourcePhysicsTick:tick,
+      earlierRealBall:Object.freeze({x:lastBall.x,y:lastBall.y}),
+      latestRealBall:Object.freeze({x:ball.x,y:ball.y}),
+      preStepActor:Object.freeze({
+       x:actor.x,y:actor.y,vx:actor.vx,vy:actor.vy,
+       facingRad:actor.facingRad
+      }),
+      bodyBallGapM:currentGap,terminalRadiusM:1.25,
+      observedRelativeXYPerTick:relativePerTick,
+      observedLocalLateralPerTick:relativeLateralPerTick,
+      horizonTicks:slipHorizonTicks,
+      horizonSeconds:slipHorizonTicks*PLAYER_DT,
+      lateralCorrectionCapM:slipCapM,
+      requestedLateralCorrectionM:slipRequestedM,
+      parentTarget:slipParentTarget,target:slipTarget,
+      appliedCorrectionM:Math.hypot(
+       slipTarget.x-slipParentTarget.x,
+       slipTarget.y-slipParentTarget.y),
+      tacticalTargetOnly:true,normalMovementIntegratorUnchanged:true,
+      shoeColliderUnchanged:true,usesFutureBall:false,
+      physicalContactInferred:false,footballActionExecuted:false,
+      officialMatchResult:null
+     }):null;
+    // C2.3af DEV-only historical-ball longitudinal lead. The two
+    // genuine PREVIOUS Rapier-ball samples already define the
+    // C2.3aa six-tick/0.30m projected ball. Only a projected ball
+    // farther ahead than the existing tactical body-to-toe reach
+    // (0.22m shoe-centre + 0.105m half-length + 0.020m rounding
+    // + 0.110m ball radius = 0.455m) requests extra forward TARGET.
+    // Neither player pose nor real shoe/collider is directly moved.
+    const projectedBallForwardM=c*(terminalPredictedBall.x-actor.x)+
+     si*(terminalPredictedBall.y-actor.y);
+    const existingToeReachFromBodyM=0.455;
+    const longitudinalCapM=0.40;
+    const forwardExcessM=Math.max(0,
+     projectedBallForwardM-existingToeReachFromBodyM);
+    const longitudinalRequestedM=clamp(forwardExcessM,0,longitudinalCapM);
+    const longitudinalParent=velocityTarget;
+    const longitudinalTarget=Object.freeze({
+     x:clamp(longitudinalParent.x+c*longitudinalRequestedM,
+      -halfX,halfX),
+     y:clamp(longitudinalParent.y+si*longitudinalRequestedM,
+      -halfY,halfY)
+    });
+    const terminalLongitudinalLead=terminalEligible&&
+     experimentalAutonomousFixtureCarrySupportLongitudinalLead?
+     Object.freeze({
+      source:'authenticated-two-previous-rapier-ball-forward-toe-lead',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      earlierSourcePhysicsTick:tick-1,latestSourcePhysicsTick:tick,
+      earlierRealBall:Object.freeze({x:lastBall.x,y:lastBall.y}),
+      latestRealBall:Object.freeze({x:ball.x,y:ball.y}),
+      projectedBallPosition:terminalPredictedBall,
+      preStepActor:Object.freeze({
+       x:actor.x,y:actor.y,facingRad:actor.facingRad
+      }),
+      bodyBallGapM:currentGap,terminalRadiusM:1.25,
+      projectedBallForwardM,existingToeReachFromBodyM,
+      forwardExcessM,correctionCapM:longitudinalCapM,
+      requestedForwardCorrectionM:longitudinalRequestedM,
+      parentTarget:longitudinalParent,target:longitudinalTarget,
+      appliedCorrectionM:Math.hypot(
+       longitudinalTarget.x-longitudinalParent.x,
+       longitudinalTarget.y-longitudinalParent.y),
+      previousRealBallOnly:true,forwardTacticalTargetOnly:true,
+      normalMovementIntegratorUnchanged:true,rapierShoeUnchanged:true,
+      physicalContactInferred:false,footballActionExecuted:false,
+      officialMatchResult:null
+     }):null;
+    const shoeCenterTarget=experimentalAutonomousFixtureCarrySupportShoeCenterTarget?
+     Object.freeze({
+      source:'previous-real-ball-and-pre-step-physical-shoe-center',
+      sourcePassTick:run.sourcePassTick,
+      sourceCarryTick:lastPhysicalCarryAction.tick,
+      preStepFacingRad:actor.facingRad,
+      realPreviousBall:Object.freeze({x:ball.x,y:ball.y}),
+      originalTarget,rawShoeCenterTarget,
+      correctionLimitM:maxCorrectionM,
+      appliedCorrectionM:Math.hypot(
+       compensatedTarget.x-originalTarget.x,
+       compensatedTarget.y-originalTarget.y),
+      target:compensatedTarget,
+      boundedMovementTargetOnly:true,
+      shoeColliderUnchanged:true,physicalContactInferred:false,
+      footballActionExecuted:false,officialMatchResult:null
+     }):null;
+    activeFixtureCarrySupportBallAccess=Object.freeze({
+     playerId:actor.id,team:actor.team,
+     physicsTick:tick+1,sourcePassTick:run.sourcePassTick,
+     sourceCarryTick:lastPhysicalCarryAction.tick,
+     bodyBallGapM:currentGap,
+     target:terminalLongitudinalLead?longitudinalTarget:
+      terminalLateralSlip?slipTarget:
+      terminalRunThrough?actualRunThroughTarget:
+      observedBallVelocityLead?velocityTarget:
+      footLateralLead?leadTarget:
+      shoeCenterTarget?compensatedTarget:originalTarget,
+     ...(shoeCenterTarget?{shoeCenterTarget}:{}),
+     ...(footLateralLead?{footLateralLead}:{}),
+     ...(observedBallVelocityLead?{observedBallVelocityLead}:{}),
+     ...(terminalFacingLead?{terminalFacingLead}:{}),
+     ...(terminalRunThrough?{terminalRunThrough}:{}),
+     ...(terminalLateralSlip?{terminalLateralSlip}:{}),
+     ...(terminalLongitudinalLead?{terminalLongitudinalLead}:{}),
+     ...(experimentalAutonomousFixtureCarrySupportLateralAlign?{
+      lateralAlignment:Object.freeze({
+       source:'canonical-pre-step-oriented-shoe-lateral-projection',
+       measuredBallLateralM:lateral,lateralTargetShiftM:lateralShift,
+       withinOriginalSupportEnvelope:true,
+       movementTargetOnly:true,physicalContactInferred:false,
+       shotExecuted:false,officialMatchResult:null
+      })
+     }:{}),
+     // C2.3u: a real earlier physical PASS→CARRY must already authorize
+     // this live-ball access. Prior actual ball and pre-step actor pose
+     // specify a rotation-only heading; no future ball or new shoe start.
+     ...(experimentalAutonomousFixtureCarrySupportEarlyFacing?{
+      earlyFacing:Object.freeze({
+       source:'previous-actual-rapier-ball-and-authentic-carry-support',
+       sourcePassTick:run.sourcePassTick,
+       sourceCarryTick:lastPhysicalCarryAction.tick,
+       preStepFacingRad:actor.facingRad,
+       desiredFacingRad:terminalFacingLead?.desiredFacingRad??
+        Math.atan2(ball.y-actor.y,ball.x-actor.x),
+       maxTurnRad:PLAYER_TURN_RAD_PER_S*PLAYER_DT,
+       orientationOnly:true,bodyTargetUnchanged:true,
+       futureBallSampleUsed:false,physicalContactInferred:false,
+       footballActionExecuted:false,officialMatchResult:null
+      })
+     }:{}),
+     source:'authenticated-rapier-post-carry-live-ball',
+     movementIntentOnly:true,physicalShoeStartObserved:false,
+     footballActionExecuted:false,officialMatchPossession:false,
+     officialMatchResult:null
+    });
+   }
+  }
+  // C3.2a: ONLY a prior REAL 0.42 Ns shoe touch lets its SAME player
+  // pursue the current live ball. No scripted shoe START or new contact
+  // is inferred; the existing 7m/s mover and 0.98m separation still apply.
+  activeFixtureCarryPursuit=null;
+  if(experimentalAutonomousFixtureCarry&&lastPhysicalCarryAction){
+   const source=lastPhysicalCarryAction;
+   const age=tick+1-source.tick;
+   const actor=players.find(p=>p.id===source.playerId);
+   const attack=source.team==='home'?1:-1;
+   const gap=actor?Math.hypot(actor.x-ball.x,actor.y-ball.y):Infinity;
+   const inFront=actor?attack*(ball.x-actor.x)>=-1.5:false;
+   if(age>=1&&age<=150&&gap<=14&&inFront){
+    const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
+    const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
+    // C3.2b: withdraw until this SAME shoe truly ENDS Rapier contact.
+    // No fixed tick shortcut. Pursue the live ball closely only after real END.
+    const physicallyReleased=lastAuthenticCarryShoeEndTick!==null;
+    const phase=physicallyReleased?'live-ball-recontact':'shoe-release-spacing';
+    const behindBallM=physicallyReleased?0.02:0.8;
+    activeFixtureCarryPursuit=Object.freeze({
+     playerId:actor.id,team:source.team,sourceCarryTick:source.tick,
+     physicsTick:tick+1,actualBallGapM:gap,approachPhase:phase,
+     physicalShoeEndTick:lastAuthenticCarryShoeEndTick,
+     target:Object.freeze({
+      x:clamp(ball.x-attack*behindBallM,-halfX,halfX),
+      y:clamp(ball.y,-halfY,halfY)
+     }),
+     source:'prior-exclusive-real-rapier-short-ground-touch',
+     movementIntentOnly:true,newShoeStartObserved:false,
+     dribbleConfirmed:null,officialMatchPossession:false,
+     officialMatchResult:null
+    });
+   }
+  }
+  // Drop a detour immediately on any new genuine carry source or expiry.
+  if(experimentalAutonomousFixtureCarryBlockedDetour&&
+     activeCarryBlockedDetour&&
+     (!activeFixtureCarryPursuit||
+      activeCarryBlockedDetour.playerId!==activeFixtureCarryPursuit.playerId||
+      activeCarryBlockedDetour.sourceCarryTick!==
+       activeFixtureCarryPursuit.sourceCarryTick||
+      tick+1-activeCarryBlockedDetour.startTick>90))
+   activeCarryBlockedDetour=null;
   const targets=players.map(p=>{
+   if(activeFixtureCarryPursuit?.playerId===p.id){
+    if(experimentalAutonomousFixtureCarryBlockedDetour&&
+       activeCarryBlockedDetour?.playerId===p.id){
+     const wp=activeCarryBlockedDetour.waypoint;
+     if(Math.hypot(p.x-wp.x,p.y-wp.y)>0.16)return wp;
+     activeCarryBlockedDetour=null;
+    }
+    return activeFixtureCarryPursuit.target;
+   }
+   // Verified selected teammate tries to run to the observed ball with
+   // ordinary integrator movement, not an injected collider position.
+   if(fixtureChaseReceiverId===p.id)
+    return tacticalTarget(p,ball,true,false,null,null,null,0.26);
+   if(fixtureChallengeOpponentId===p.id)
+    return activeFixtureCarryOpponentFlank?.target??
+      tacticalTarget(p,ball,true,false,null,null,null,0.26);
+   if(activeFixtureAttackSupportRun?.playerId===p.id)
+    return activeFixtureCarrySupportBallAccess?.playerId===p.id?
+     activeFixtureCarrySupportBallAccess.target:
+     activeFixtureAttackSupportRun.target;
+   // ME-PB-37: after qualified real Away contact, both teams respond to
+   // the currently measured free ball. Targets remain intentions only:
+   // the same 60Hz integrator and hard teammate guard move physical feet.
+   if(observedLooseBallResponse?.phase==='responding'&&
+      p.id===observedLooseBallResponse.responders[p.team])
+     return tacticalTarget(p,ball,true,false,null,null,null,0.26);
+   // ME-PB-34: after the independent Home #10 return pass, Home #7
+   // performs an ordinary-speed ground-ball approach. Only a later
+   // Rapier shoe START can cause a new football impulse. No teleport
+   // or contact/possession claim may come from this target.
+   if(experimentalAiThreePassDefense&&
+      observedPassEpochs.length===2&&p.id==='home-7')
+     return tacticalTarget(p,ball,true,false,null,null,null,0.26);
+   // ME-PB-35: strictly AFTER genuine third kick, Home #10 attempts
+   // to meet the current real ball at bounded normal tactical speed;
+   // a new Home #10 shoe START is still mandatory for any fourth kick.
+   if(experimentalAiFourPassDefense&&
+      observedPassEpochs.length===3&&p.id==='home-10')
+     return tacticalTarget(p,ball,true,false,null,null,null,0.26);
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?
      players.find(other=>other.id===screen.opponentId):null;
@@ -1938,8 +3183,46 @@ export function createPlayerMovement(){
    const balance=nextBalances[p.team];
    const balanceOpponent=balance?.playerId===p.id?
      players.find(other=>other.id===balance.opponentId):null;
+   // Normal defensive pressing stays 1.8 m outside physical touch range.
+   // The explicitly selected LOCAL kick demo approaches the ball with only
+   // Home #10; no other team, formation or default LAB duties are changed.
+   // C1.2b: isolated autonomous-fixture DEV mode. Both teams' genuine
+   // selected pressers approach the observed physical ball with the
+   // SAME ordinary mover caps, heading and collision avoidance. They
+   // still need a real future Rapier shoe START to count as contact.
+   // It does not alter normal game movement or force a reception.
+   const chaseObservedRealPass=pressing&&fixturePostPassChase&&
+     p.id===fixtureChasePresserId;
+   const demoApproach=pressing&&(
+     chaseObservedRealPass||
+     (!fixturePostPassChase&&experimentalAiKickApproach&&p.id==='home-10')||
+     ((experimentalAiPassReceiveApproach||
+       (experimentalAiExchangeApproach&&!experimentalAiAutonomousDefense))&&
+       (p.id==='home-7'||p.id==='home-10'))||
+     (experimentalAiAutonomousDefense&&p.id==='home-7'));
+   // During ME-PB-26 the receiver uses the normal tactical 1.8m press
+   // offset. A synthetic close-range receiving foot would return the
+   // ball before a defender starting from a real 22-player formation
+   // can possibly arrive. We isolate defender reaction without changing
+   // the 7 m/s movement cap or teleporting any collider.
    const normal=tacticalTarget(p,ball,pressing,covering,
-     observedOpponent,supportTarget,balanceOpponent);
+     observedOpponent,supportTarget,balanceOpponent,
+     chaseObservedRealPass?0.26:
+      demoApproach?0.38:PLAYER_PRESS_OFFSET_M);
+   if(observedLaneClosure?.defenderId===p.id&&observedLaneClosure.phase==='closing'){
+     // This still flows through the existing 7 m/s acceleration, 60Hz
+     // maximum turn, teammate collision guard and Rapier shoe transform.
+     // No body or collider is ever teleported into the passing lane.
+     return observedLaneClosure.waypoint;
+   }
+   if(experimentalAiAutonomousDefense&&!experimentalAiMultiPassDefense&&
+      observedLaneClosure?.phase==='closing'&&p.id==='home-10'){
+     // Controlled off-ball supporting run: the receiving forward moves
+     // laterally AFTER the true outbound pass, instead of standing in the
+     // test's exact defensive crossing. This is a normal-speed movement
+     // target, not a ball physics change, teleport or awarded reception.
+     return Object.freeze({x:p.baseX,y:p.baseY+5});
+   }
    if(!(p.id in lineOffsets)){
     // Free forwards also maintain space; keepers and higher-priority
     // support, pressing and covering already returned their own target.
@@ -1996,6 +3279,26 @@ export function createPlayerMovement(){
    .map(p=>[p.id,Object.freeze({
     x:p.x,y:p.y,waypoint:targets[players.indexOf(p)]
    })]));
+  // ME-PB-31: capture real body XY and the *normal* selected tactical
+  // target of this very tick, only AFTER the lane assignment has ended.
+  // This record is observational and never feeds back into steering.
+  const releasedDefenderIndex=experimentalAiAutonomousDefense&&
+   observedLaneClosure?.phase?.startsWith('released-')?
+   players.findIndex(p=>p.id===observedLaneClosure.defenderId):-1;
+  const releasedDefenderBefore=releasedDefenderIndex>=0?
+   Object.freeze({...players[releasedDefenderIndex]}):null;
+  const releasedTacticalTarget=releasedDefenderIndex>=0?
+   targets[releasedDefenderIndex]:null;
+  // The blocker streak belongs to the single authenticated carry follower,
+  // NOT to the loop over all 22 players. Reset only on source change/end.
+  if(experimentalAutonomousFixtureCarryBlockedDetour){
+   const sourceTick=activeFixtureCarryPursuit?.sourceCarryTick??null;
+   if(sourceTick!==carryBlockedPursuitSourceTick){
+    carryBlockedConsecutiveTicks=0;
+    carryBlockedSourceId=null;
+   }
+   carryBlockedPursuitSourceTick=sourceTick;
+  }
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
@@ -2023,14 +3326,85 @@ export function createPlayerMovement(){
    // exceed free-space braking, and must never be mistaken for normal
    // bounded acceleration or an impulse imparted to the real match ball.
    p.blockedBy=blocker?.id??null;
+   if(experimentalAutonomousFixtureCarryBlockedDetour){
+    if(activeFixtureCarryPursuit?.playerId===p.id){
+     carryBlockedConsecutiveTicks=blocker?
+      blocker.id===carryBlockedSourceId?
+       carryBlockedConsecutiveTicks+1:1:0;
+     carryBlockedSourceId=blocker?.id??null;
+     // Only a source-authenticated carry and 12 consecutive true rejections
+     // by the SAME obstacle may activate the waypoint. It persists until
+     // the runner reaches it or its genuine pursuit expires.
+     if(blocker&&!activeCarryBlockedDetour&&
+        carryBlockedConsecutiveTicks>=12&&dist>2.5){
+      const forwardX=dx/dist,forwardY=dy/dist;
+      const cross=forwardX*(blocker.y-p.y)-
+       forwardY*(blocker.x-p.x);
+      const preferredSide=Math.abs(cross)>1e-6?
+       -Math.sign(cross):1;
+      let waypoint=null,chosenSide=null;
+      for(const side of [preferredSide,-preferredSide]){
+       if(waypoint)break;
+       const lateralX=-forwardY*side,lateralY=forwardX*side;
+       for(const [along,offset] of [[1.8,1.5],[1.35,1.55]]){
+        const wx=p.x+forwardX*along+lateralX*offset;
+        const wy=p.y+forwardY*along+lateralY*offset;
+        if(Math.abs(wx)>maxX||Math.abs(wy)>maxY)continue;
+        // A locally clear corridor is an intent, not fabricated contact.
+        // The actual body still uses the universal 0.98m guard every tick.
+        const routeSafe=players.every(q=>q===p||
+         Array.from({length:12},(_,k)=>(k+1)/12).every(frac=>{
+          const sx=p.x+(wx-p.x)*frac;
+          const sy=p.y+(wy-p.y)*frac;
+          return (sx-q.x)**2+(sy-q.y)**2>=
+           PLAYER_MIN_SEPARATION_M**2-1e-9;
+         }));
+        if(routeSafe){
+         waypoint=Object.freeze({x:wx,y:wy});
+         chosenSide=side;
+         break;
+        }
+       }
+      }
+      carryDetourLastDecision=Object.freeze({
+       tick:tick+1,blockerId:blocker.id,
+       accepted:waypoint!==null,
+       reason:waypoint?'safe-corridor':'no-safe-corridor'
+      });
+      if(waypoint)activeCarryBlockedDetour=Object.freeze({
+       playerId:p.id,sourceCarryTick:activeFixtureCarryPursuit.sourceCarryTick,
+       blockerId:blocker.id,side:chosenSide,waypoint,startTick:tick+1
+      });
+     }
+    }
+   }
+   // The triggering step is a canonical hard stop. Steering begins on
+   // the NEXT tick through the same normal acceleration and collision code.
    if(blocker){p.vx=0;p.vy=0;}
    else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
    const speed=Math.hypot(p.vx,p.vy);
-   if(speed>0.05){
-    const desired=Math.atan2(p.vy,p.vx),angle=wrap(desired-p.facingRad);
+   // C2.3u: only the *same* source-authenticated near-ball runner
+   // may pivot toward the previous true ball. No direct facing write,
+   // body movement, future-ball prediction or autonomous football act.
+   const earlyFacing=experimentalAutonomousFixtureCarrySupportEarlyFacing&&
+     activeFixtureCarrySupportBallAccess?.playerId===p.id?
+     activeFixtureCarrySupportBallAccess.earlyFacing:null;
+   if(speed>0.05||earlyFacing){
+    const desired=earlyFacing?earlyFacing.desiredFacingRad:
+     Math.atan2(p.vy,p.vx);
+    const angle=wrap(desired-p.facingRad);
     p.facingRad=wrap(p.facingRad+clamp(angle,
       -PLAYER_TURN_RAD_PER_S*PLAYER_DT,PLAYER_TURN_RAD_PER_S*PLAYER_DT));
    }
+  }
+  if(releasedDefenderIndex>=0){
+   observedLaneRecovery=observeReleasedLaneRejoin({
+    plan:observedLaneClosure,previous:observedLaneRecovery,
+    defenderBefore:releasedDefenderBefore,
+    defenderAfter:players[releasedDefenderIndex],
+    tacticalTarget:releasedTacticalTarget,movementTick:tick+1,
+    maxStepM:PLAYER_MAX_SPEED_MPS*PLAYER_DT
+   });
   }
   // Evaluate progress only after the existing hard kinematic collision
   // guard. A failed path is dropped and enters the ME-PLAYER-18 cooldown.
@@ -2123,5 +3497,33 @@ export function createPlayerMovement(){
   balances=nextBalances;lineResponses=nextLineResponses;
   return snapshot();
  }
- return Object.freeze({snapshot,step,reset:createPlayerMovement});
+ return Object.freeze({snapshot,step,
+  ...(experimentalAutonomousFixtureContactChase?{
+   observeAuthenticFixturePass,
+   ...(experimentalAutonomousFixtureCarry?{
+    observeAuthenticFixtureCarry,observeAuthenticFixtureCarryShoeEnd,
+    clearFixtureCarryOnOtherAction
+   }:{})
+  }:{}),
+  reset:()=>createPlayerMovement({
+  experimentalAiKickApproach,experimentalAiPassReceiveApproach,
+  experimentalAiExchangeApproach,experimentalAiOpponentLane,
+  experimentalAiAutonomousDefense,experimentalAiMultiPassDefense,
+  experimentalAiThreePassDefense,experimentalAiFourPassDefense,
+  experimentalAutonomousFixtureContactChase,
+  experimentalAutonomousFixtureCarry,
+  experimentalAutonomousFixtureCarrySupport,
+  experimentalAutonomousFixtureCarrySupportPressHandoff,
+  experimentalAutonomousFixtureCarrySupportBallAccess,
+  experimentalAutonomousFixtureCarrySupportLateralAlign,
+  experimentalAutonomousFixtureCarrySupportEarlyFacing,
+  experimentalAutonomousFixtureCarrySupportShoeCenterTarget,
+  experimentalAutonomousFixtureCarrySupportFootLateralLead,
+  experimentalAutonomousFixtureCarrySupportObservedBallVelocityLead,
+  experimentalAutonomousFixtureCarrySupportTerminalFacingLead,
+  experimentalAutonomousFixtureCarrySupportTerminalRunThrough,
+  experimentalAutonomousFixtureCarrySupportTerminalLateralSlip,
+  experimentalAutonomousFixtureCarrySupportLongitudinalLead,
+  researchShotAttacker,researchShotBall
+ })});
 }

@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="/assets/app.css">
 <link rel="stylesheet" href="/assets/sidebar-evolution.css">
 <link rel="stylesheet" href="/__fa_match_engine__/lab.css">
+<style>.me-live-lab-link{color:var(--text);text-decoration:underline;text-underline-offset:3px}</style>
 </head>
 <body class="app-body me-lab-page">
 <a class="fa-skip-link" href="#main-content">Skip to laboratory</a>
@@ -35,8 +36,8 @@
         <section class="app-view" aria-labelledby="lab-title">
           <div class="me-page-heading">
             <div>
-              <h1 class="app-page-title" id="lab-title">Match Engine</h1>
-              <p class="me-subtitle">3D physics · 2D visual tests</p>
+              <h1 class="app-page-title" id="lab-title">Physics diagnostics</h1>
+              <p class="me-subtitle">Earlier physics experiments · <a href="/dev/match-engine" class="me-live-lab-link">Back to LAB</a></p>
             </div>
           </div>
           <p id="status" class="me-status" role="status" aria-live="polite">Loading physics…</p>
@@ -56,6 +57,14 @@
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-launch" data-value="launch" aria-selected="false">LAB-02 · Ball Launch</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-roll" data-value="roll" aria-selected="false">LAB-04 · Ball Roll (Grass)</div>
                       <div class="language-option" role="option" tabindex="-1" id="preset-opt-bounce" data-value="bounce" aria-selected="false">LAB-05 · Ball Bounce (2 m)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-kick" data-value="ai-kick" aria-selected="false">LAB-06 · AI Kick</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-pass" data-value="ai-pass" aria-selected="false">LAB-07 · AI Pass &amp; Control</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-exchange" data-value="ai-exchange" aria-selected="false">LAB-08 · AI Exchange</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-defend" data-value="ai-defend" aria-selected="false">LAB-09 · AI Defend (Live Lane)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-defend-auto" data-value="ai-defend-auto" aria-selected="false">LAB-10 · AI Defend (Autonomous)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-defend-multi" data-value="ai-defend-multi" aria-selected="false">LAB-11 · AI Defend (Two Passes)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-defend-three" data-value="ai-defend-three" aria-selected="false">LAB-12 · AI Defend (Three Passes)</div>
+                      <div class="language-option" role="option" tabindex="-1" id="preset-opt-ai-defend-four" data-value="ai-defend-four" aria-selected="false">LAB-13 · AI Defend (Fourth Pass)</div>
                     </div>
                   </div>
                 </div>
@@ -120,6 +129,7 @@
                     <option value="away-10">Away #10</option>
                     <option value="away-11">Away #11</option>
                   </select>
+
                   <div class="me-player-readout" aria-live="off">
                     <div><span>Ball zone</span><strong id="player-ball-sector">Middle third · Centre</strong></div>
                     <div><span>Pressing</span><strong id="player-pressing">Home #10 · Away #10</strong></div>
@@ -127,7 +137,9 @@
                     <div><span>Current duty</span><strong id="player-inspection-duty">Select a player</strong></div>
                   </div>
                 </div>
-                <p class="me-player-note">Players move automatically. Select a marker on the pitch or use the menu to inspect a player; selection never controls movement.</p>
+                <p id="ai-lane-plan" class="me-player-note" role="status" aria-live="polite" hidden></p>
+                <p id="ai-kick-outcome" class="me-player-note" role="status" aria-live="polite" hidden></p>
+                <p class="me-player-note">Players move automatically. LAB-06–LAB-13 use real shoe-ball contacts and experimental Rapier impulses; no official possession or match results.</p>
               </section>
             </section>
             <div class="me-side">
@@ -210,7 +222,10 @@
                       </div>
                     </div>
                   </fieldset>
-                  <div class="me-field me-seed-field"><span class="me-field-caption" id="me-label-seed">Seed</span><input id="seed" value="me01-fixed" maxlength="64" spellcheck="false" aria-labelledby="me-label-seed"></div>
+                  <div class="me-pb-advanced-row">
+                    <div class="me-field me-seed-field"><span class="me-field-caption" id="me-label-seed">Seed</span><input id="seed" value="me01-fixed" maxlength="64" spellcheck="false" aria-labelledby="me-label-seed"></div>
+                    <label class="me-pb-contact-toggle" title="Optional local Rapier physical collisions with provisional foot spheres, not possession. Takes effect on Apply &amp; restart."><input id="foot-contact-optin" type="checkbox"><span>Foot contacts (experiment)</span></label>
+                  </div>
                   <div class="me-button-group me-advanced-actions">
                     <button id="apply" class="me-button me-button-primary" type="button" disabled>Apply &amp; restart</button>
                     <button id="compare" class="me-button" type="button" disabled>Compare replay</button>

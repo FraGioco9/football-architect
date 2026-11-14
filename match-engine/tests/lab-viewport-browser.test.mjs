@@ -2,12 +2,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createPreviewServer} from '../../tools/dev-standings-preview.mjs';
+
+// Chrome sometimes writes DevToolsActivePort before printing anything to
+// stderr. Reading it is a second real CDP endpoint discovery path, not a
+// fallback fake browser or a skipped viewport assertion.
+function parseDevToolsActivePort(content){
+ const lines=typeof content==='string'?content.trim().split(/\r?\n/):[];
+ if(!/^[0-9]{2,5}$/.test(lines[0]??'')||
+    !/^\/devtools\/browser\/[\w-]+$/.test(lines[1]??''))return null;
+ const port=Number(lines[0]);
+ return port>0&&port<=65535?
+  'ws://127.0.0.1:'+port+lines[1]:null;
+}
 
 function chromeBinary() {
   const win=process.platform==='win32'
@@ -20,7 +32,7 @@ function chromeBinary() {
   throw Error('Chrome required: set CHROME_BIN');
 }
 test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights without scrolling',
-  {timeout:90000},async()=>{
+  {timeout:120000},async()=>{
   const browser=chromeBinary();
   const temp=await mkdtemp(join(tmpdir(),'fa-me01-viewport-'));
   const server=createPreviewServer({subdomains:true});
@@ -36,13 +48,26 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
   let socket=null,stderr='';
   proc.stderr.on('data',v=>stderr+=v.toString());
   try {
-    let endpoint;
-    for(let i=0;i<100&&!endpoint;i++){
+    let endpoint,activePortFile=null;
+    // GitHub-hosted Chrome can be late or silent during startup while
+    // other exact-head CI jobs are active. Keep real Chrome mandatory.
+    for(let i=0;i<250&&!endpoint;i++){
       endpoint=stderr.match(/DevTools listening on (ws:\/\/\S+)/)?.[1];
-      if(proc.exitCode!==null)throw Error('Chrome exited: '+stderr.slice(-900));
+      if(!endpoint){
+        activePortFile=await readFile(join(temp,'DevToolsActivePort'),'utf8')
+          .catch(()=>null);
+        endpoint=parseDevToolsActivePort(activePortFile);
+      }
+      if(proc.exitCode!==null||proc.signalCode!==null)
+        throw Error('Chrome exited before DevTools: '+
+         JSON.stringify({exitCode:proc.exitCode,signal:proc.signalCode,
+          stderr:stderr.slice(-900),activePortFile}));
       if(!endpoint)await delay(100);
     }
-    assert.ok(endpoint,'Chrome debugger unavailable: '+stderr.slice(-900));
+    assert.ok(endpoint,'Chrome debugger unavailable after 25 seconds: '+
+      JSON.stringify({browser,pid:proc.pid,exitCode:proc.exitCode,
+       signal:proc.signalCode,stderr:stderr.slice(-900),
+       activePortFile}));
     const host=new URL(endpoint).host;
     let tab;
     for(let i=0;i<40&&!tab;i++){
@@ -85,12 +110,18 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
         try{if(await evaluate(expr))return;}catch{}
         await delay(100);
       }
-      throw Error('Timed out waiting for: '+expr+' '+(await evaluate('document.body?.textContent?.slice(0,300)')));
+      const detail=await evaluate("(()=>({url:location.href,title:document.title,"+
+        "status:document.querySelector('#status')?.textContent,"+
+        "hasLab:!!document.querySelector('#pitch'),"+
+        "hasControls:!!document.querySelector('#advanced-settings'),"+
+        "scripts:[...document.scripts].map(s=>s.src).filter(Boolean),"+
+        "body:document.body?.textContent?.slice(0,300)}))()");
+      throw Error('Timed out waiting for: '+expr+' '+JSON.stringify(detail));
     }
     await cmd('Page.enable');
     await cmd('Runtime.enable');
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-    await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
+    await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine/diagnostics'});
     await waitFor("document.readyState==='complete'&&document.querySelector('#advanced-settings')&&document.querySelector('#pitch')");
     await waitFor("document.querySelector('#status')?.textContent?.startsWith('Ready')");
     for(const [width,height] of [[1280,720],[1366,768],[1440,900],[1600,900],[1920,1080]]) {
@@ -126,6 +157,20 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
           panelHeight:Math.round(sample.advanced.height)})+'\n');
       }
     }
+    // One real accessible dropdown owns every scenario, including five AI LABs.
+    const scenarioCatalog=await evaluate("(()=>{"+
+      "const keys=[...document.querySelectorAll('#preset-options [data-value]')].map(e=>e.dataset.value);"+
+      "const ids=['ai-kick-demo','ai-pass-demo','ai-exchange-demo','ai-defend-demo','ai-defend-auto-demo'];"+
+      "return {keys,noScatteredButtons:ids.every(id=>document.getElementById(id)===null),"+
+        "defaultSelected:document.getElementById('preset').value};"+
+    "})()");
+    assert.deepEqual(scenarioCatalog.keys,[
+      'drop','launch','roll','bounce','ai-kick','ai-pass','ai-exchange',
+      'ai-defend','ai-defend-auto','ai-defend-multi','ai-defend-three','ai-defend-four'
+    ]);
+    assert.equal(scenarioCatalog.noScatteredButtons,true);
+    assert.equal(scenarioCatalog.defaultSelected,'drop');
+    process.stdout.write('ME_LAB_SCENARIO_CATALOG '+JSON.stringify(scenarioCatalog)+'\n');
     // ME-PLAYER-UI-01: 4-line current observer; no historical diagnostic clutter.
     await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     const playersQa=await evaluate("(()=>{"+
@@ -1041,6 +1086,366 @@ test('ME-01: field and OPEN advanced inputs fit normal desktop viewport heights 
       "})()");
     assert.ok(mobile.width>180&&mobile.width<390&&mobile.input>0);
     assert.notEqual(mobile.visibility,'none');
+    // ME-PB-02: genuine physical foot collision trial is opt-in, not another
+    // player-stat row or a hidden user-steering control.
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    const footQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id),opt=el('foot-contact-optin'),preset=el('preset');"+
+      "const initial={unchecked:!opt.checked,rows:document.querySelectorAll('.me-player-readout>div').length};"+
+      "preset.value='roll';preset.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "el('x').value='-6';el('seed').value='pb02-browser';"+
+      "const timeBefore=el('tick').textContent,optInTime=el('tick').textContent;"+
+      "opt.checked=true;const toggledWithoutAdvance=el('tick').textContent===timeBefore;"+
+      "el('apply').click();"+
+      "const active=el('status').textContent.includes('experimental foot collisions');"+
+      "const baselineTime=el('tick').textContent;"+
+      "for(let i=0;i<100;i++)el('step').click();"+
+      "const impactedX=Number(el('position').textContent.split(',')[0]);"+
+      "const impactedTick=el('tick').textContent;"+
+      "el('compare').click();const contactReplay=el('compare-result').textContent;"+
+      "opt.checked=false;el('apply').click();"+
+      "const defaultActive=!el('status').textContent.includes('experimental foot collisions');"+
+      "for(let i=0;i<100;i++)el('step').click();"+
+      "const baselineX=Number(el('position').textContent.split(',')[0]);"+
+      "el('compare').click();const baselineReplay=el('compare-result').textContent;"+
+      "preset.value='drop';preset.dispatchEvent(new Event('change',{bubbles:true}));"+
+      "el('reset').click();"+
+      "return {initial,active,defaultActive,toggledWithoutAdvance,baselineTime,impactedTick,impactedX,baselineX,contactReplay,baselineReplay,restored:!opt.checked&&el('tick').textContent==='0.00 s',rows:document.querySelectorAll('.me-player-readout>div').length};"+
+    "})()");
+    assert.deepEqual(footQa.initial,{unchecked:true,rows:4});
+    assert.equal(footQa.active,true,'foot colliders must require explicit Advanced opt-in and Apply');
+    assert.equal(footQa.defaultActive,true);
+    assert.equal(footQa.toggledWithoutAdvance,true,'checkbox alone must not advance or alter the ball');
+    assert.equal(footQa.baselineTime,'0.00 s');
+    assert.equal(footQa.impactedTick,'1.67 s');
+    assert.ok(Number.isFinite(footQa.impactedX)&&Number.isFinite(footQa.baselineX));
+    assert.ok(Math.abs(footQa.impactedX-footQa.baselineX)>0.05,
+      'real Rapier ball trajectory must change on physical contact: '+JSON.stringify(footQa));
+    assert.match(footQa.contactReplay,/^PASS · identical canonical physics state after 100 ticks/);
+    assert.match(footQa.baselineReplay,/^PASS · identical canonical physics state after 100 ticks/);
+    assert.equal(footQa.restored,true);
+    assert.equal(footQa.rows,4);
+    process.stdout.write('ME_PB_02_RAPIER_BROWSER '+JSON.stringify(footQa)+'\n');
+    // ME-PB-22: verify the ONE-CLICK visible local autonomous kick in
+    // actual headless Chrome; do not rely only on Node physics tests.
+    const kickQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "const btn=el('preset-trigger'),status=el('ai-kick-outcome');"+
+      "const initiallyEnabled=!btn.disabled;btn.click();el('preset-opt-ai-kick').click();el('pause').click();"+
+      "const zero=el('tick').textContent,shown=!el('player-controls').hidden;"+
+      "const selected=el('player-inspect-choice').value;"+
+      "for(let i=0;i<75;i++)el('step').click();"+
+      "const message=status.textContent;const kicked=message.includes('Home #10 KICK');"+
+      "const speed=Number(el('ground-speed').textContent.split(' ')[0]);"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();"+
+      "const reset=el('tick').textContent,resetMessage=status.textContent;"+
+      "const labBeforeApply=el('preset').value;el('apply').click();"+
+      "const labAfterApply=el('preset').value;"+
+      "const feetRequired=el('foot-contact-optin').checked&&el('foot-contact-optin').disabled;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {initiallyEnabled,zero,shown,selected,kicked,message,speed,replay,"+
+      "reset,resetMessage,labBeforeApply,labAfterApply,feetRequired,"+
+      "defaultReady:el('status').textContent.includes('Ball Drop'),"+
+      "ordinaryFeetRestored:!el('foot-contact-optin').checked&&!el('foot-contact-optin').disabled};"+
+    "})()");
+    assert.ok(kickQa.initiallyEnabled&&kickQa.shown);
+    assert.equal(kickQa.zero,'0.00 s');
+    assert.equal(kickQa.selected,'home-10');
+    assert.equal(kickQa.kicked,true,'real Rapier contact-triggered kick must appear in browser: '+JSON.stringify(kickQa));
+    assert.match(kickQa.message,/2\.40 N·s/);
+    assert.ok(Number.isFinite(kickQa.speed));
+    assert.match(kickQa.replay,/^PASS · identical canonical physics state after 75 ticks/);
+    assert.equal(kickQa.reset,'0.00 s');
+    assert.match(kickQa.resetMessage,/approaching the ball/);
+    assert.equal(kickQa.labBeforeApply,'ai-kick');
+    assert.equal(kickQa.labAfterApply,'ai-kick');
+    assert.equal(kickQa.feetRequired,true);
+    assert.equal(kickQa.defaultReady,true);
+    assert.equal(kickQa.ordinaryFeetRestored,true);
+    process.stdout.write('ME_PB_22_REAL_KICK_CHROME '+JSON.stringify(kickQa)+'\n');
+    // ME-PB-23 browser physically executes the second player's real
+    // reception; it must not merely paint a scripted success label.
+    const passQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id),btn=el('preset-trigger'),out=el('ai-kick-outcome');"+
+      "const available=!btn.disabled;btn.click();el('preset-opt-ai-pass').click();el('pause').click();"+
+      "const zero=el('tick').textContent,shown=!el('player-controls').hidden;"+
+      "const sender=el('player-inspect-choice').value;"+
+      "for(let i=0;i<360;i++)el('step').click();"+
+      "const message=out.textContent,pass=message.includes('Home #7 PASS'),"+
+      "control=message.includes('Home #10 CONTROL');"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();"+
+      "const reset=el('tick').textContent,initial=out.textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {available,zero,shown,sender,pass,control,message,replay,"+
+      "reset,initial,defaultReady:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.ok(passQa.available&&passQa.shown);
+    assert.equal(passQa.zero,'0.00 s');
+    assert.equal(passQa.sender,'home-7');
+    assert.ok(passQa.pass&&passQa.control,
+      'the second autonomous player must physically trap the passed Rapier ball: '+JSON.stringify(passQa));
+    assert.match(passQa.replay,/^PASS · identical canonical physics state after 360 ticks/);
+    assert.equal(passQa.reset,'0.00 s');
+    assert.match(passQa.initial,/Home #7 approaching/);
+    assert.equal(passQa.defaultReady,true);
+    process.stdout.write('ME_PB_23_REAL_PASS_RECEIVE_CHROME '+JSON.stringify(passQa)+'\\n');
+    // ME-PB-24 two physical passes. A final controlled reception is only
+    // shown if a third, separate real Rapier START actually occurs.
+    const exchangeQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id),btn=el('preset-trigger');"+
+      "const enabled=!btn.disabled;btn.click();el('preset-opt-ai-exchange').click();el('pause').click();"+
+      "const start=el('tick').textContent;"+
+      "for(let i=0;i<440;i++)el('step').click();"+
+      "const report=el('ai-kick-outcome').textContent;"+
+      "const pass=report.includes('Home #7 PASS'),ret=report.includes('Home #10 RETURN');"+
+      "const control=report.includes('Home #7 CONTROL');"+
+      "const opponent=report.includes('OPPONENT SHOE CONTACT');"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "const prompt=el('ai-kick-outcome').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {enabled,start,pass,ret,control,opponent,report,replay,reset,prompt,"+
+      "restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.ok(exchangeQa.enabled);
+    assert.equal(exchangeQa.start,'0.00 s');
+    assert.ok(exchangeQa.pass&&exchangeQa.ret,
+     'real physical return-pass evidence required: '+JSON.stringify(exchangeQa));
+    assert.match(exchangeQa.replay,/^PASS · identical canonical physics state after 440 ticks/);
+    assert.equal(exchangeQa.reset,'0.00 s');
+    assert.match(exchangeQa.prompt,/physical exchange|preparing first pass/i);
+    assert.equal(exchangeQa.restored,true);
+    process.stdout.write('ME_PB_24_REAL_EXCHANGE_CHROME '+JSON.stringify(exchangeQa)+'\\n');
+    // ME-PB-25: the defender enters this SAME autonomous Rapier exchange.
+    // No fake possession; the label is emitted only on a real Away START.
+    const defendQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "const button=el('preset-trigger'),enabled=!button.disabled;"+
+      "button.click();el('preset-opt-ai-defend').click();el('pause').click();"+
+      "const start=el('tick').textContent;"+
+      "for(let i=0;i<300;i++)el('step').click();"+
+      "const message=el('ai-kick-outcome').textContent;"+
+      "const pass=message.includes('Home #7 PASS');"+
+      "const opponent=message.includes('OPPONENT SHOE CONTACT');"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {enabled,start,pass,opponent,message,replay,reset,"+
+      "restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.ok(defendQa.enabled);
+    assert.equal(defendQa.start,'0.00 s');
+    assert.ok(defendQa.pass&&defendQa.opponent,
+     'live defender must physically interrupt the SAME pass: '+JSON.stringify(defendQa));
+    assert.match(defendQa.replay,/^PASS · identical canonical physics state after 300 ticks/);
+    assert.equal(defendQa.reset,'0.00 s');
+    assert.equal(defendQa.restored,true);
+    process.stdout.write('ME_PB_25_LIVE_DEFENDER_CHROME '+JSON.stringify(defendQa)+'\\n');
+    // ME-PB-26: no staged foot position. Start from the ordinary 22-player
+    // formation and decide to run into the measured ball flight AFTER PASS.
+    const autonomousQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "const btn=el('preset-trigger'),enabled=!btn.disabled;"+
+      "btn.click();el('preset-opt-ai-defend-auto').click();el('pause').click();"+
+      "const zero=el('tick').textContent;"+
+      "const initial=el('ai-lane-plan').textContent;"+
+      "for(let i=0;i<330;i++)el('step').click();"+
+      "const report=el('ai-kick-outcome').textContent;"+
+      "const lane=el('ai-lane-plan').textContent;"+
+      "const pass=report.includes('Home #7 PASS');"+
+      "const closure=lane.includes('assignment released after real Rapier shoe START');"+
+      "const contact=report.includes('OPPONENT SHOE CONTACT');"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "const after=el('ai-lane-plan').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {enabled,zero,initial,pass,closure,contact,report,lane,replay,"+
+      "reset,after,restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.ok(autonomousQa.enabled);
+    assert.equal(autonomousQa.zero,'0.00 s');
+    assert.match(autonomousQa.initial,/normal formation/);
+    assert.ok(autonomousQa.pass&&autonomousQa.closure,
+     'the default-formation Away player must react to measured real ball flight: '+JSON.stringify(autonomousQa));
+    assert.ok(autonomousQa.contact,
+     'must independently record same-world Rapier defensive shoe START: '+JSON.stringify(autonomousQa));
+    assert.match(autonomousQa.lane,/measured duty gap [0-9.]+ m/,
+     'post-release duty distance must come from real completed player movement');
+    assert.match(autonomousQa.replay,/^PASS · identical canonical physics state after 330 ticks/);
+    assert.equal(autonomousQa.reset,'0.00 s');
+    assert.match(autonomousQa.after,/normal formation/);
+    assert.equal(autonomousQa.restored,true);
+    process.stdout.write('ME_PB_26_AUTONOMOUS_LANE_CHROME '+JSON.stringify(autonomousQa)+'\\n');
+    // ME-PB-32: LAB-11 observes two DISTINCT real contact-gated passes in
+    // ONE Rapier world. The initial assignment cannot reactivate on
+    // unchanged ball velocity or a stale pass event.
+    const multiQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "el('preset-trigger').click();el('preset-opt-ai-defend-multi').click();el('pause').click();"+
+      "const start=el('tick').textContent,selected=el('preset').value;"+
+      "const checked=el('foot-contact-optin').checked&&el('foot-contact-optin').disabled;"+
+      "for(let i=0;i<300;i++)el('step').click();"+
+      "const report=el('ai-kick-outcome').textContent;"+
+      "const lane=el('ai-lane-plan').textContent;"+
+      "const first=report.includes('Home #7 PASS'),ret=report.includes('Home #10 RETURN');"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "const after=el('ai-lane-plan').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {start,selected,checked,first,ret,report,lane,replay,reset,after,"+
+      "restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.equal(multiQa.start,'0.00 s');
+    assert.equal(multiQa.selected,'ai-defend-multi');
+    assert.equal(multiQa.checked,true);
+    assert.ok(multiQa.first&&multiQa.ret,
+      'two real Rapier-pass impulses are required: '+JSON.stringify(multiQa));
+    assert.match(multiQa.lane,/physical pass #2 \(return-pass\)/);
+    // ME-PB-36: report post-contact flight as observed physics, never
+    // claim defender possession, interception, or a fifth artificial pass.
+    assert.match(multiQa.report,/observed after real Away shoe contact:/);
+    assert.match(multiQa.report,/no interception or possession/);
+    // ME-PB-37: use existing LAB-11 for real post-contact free-ball
+    // pursuit; no new LAB controls or invented player possession.
+    assert.match(multiQa.lane,/post-contact loose ball:/);
+    assert.match(multiQa.lane,/home-[0-9]+ \/ away-[0-9]+/);
+    assert.match(multiQa.lane,/no possession inferred/);
+    assert.match(multiQa.replay,/^PASS · identical canonical physics state after 300 ticks/);
+    assert.equal(multiQa.reset,'0.00 s');
+    assert.match(multiQa.after,/waiting for measured outgoing ball velocity/);
+    assert.equal(multiQa.restored,true);
+    process.stdout.write('ME_PB_32_TWO_PASS_CHROME '+JSON.stringify(multiQa)+'\\n');
+    // ME-PB-34: isolated real third physical pass. The same LAB dropdown
+    // remains the only entry; no new control can force a pass or shoe START.
+    const tripleQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "el('preset-trigger').click();el('preset-opt-ai-defend-three').click();el('pause').click();"+
+      "const initial=el('tick').textContent,selected=el('preset').value;"+
+      "const checked=el('foot-contact-optin').checked&&el('foot-contact-optin').disabled;"+
+      "for(let i=0;i<450;i++)el('step').click();"+
+      "const outcome=el('ai-kick-outcome').textContent;"+
+      "const lane=el('ai-lane-plan').textContent;"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "const after=el('ai-lane-plan').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {initial,selected,checked,outcome,lane,replay,reset,after,"+
+      "restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.equal(tripleQa.initial,'0.00 s');
+    assert.equal(tripleQa.selected,'ai-defend-three');
+    assert.equal(tripleQa.checked,true);
+    assert.match(tripleQa.outcome,/Home #7 THIRD PASS/,
+     'only a real additional foot START can produce third pass: '+JSON.stringify(tripleQa));
+    assert.match(tripleQa.lane,/physical pass #3 \(pass\)/);
+    assert.match(tripleQa.replay,/^PASS · identical canonical physics state after 450 ticks/);
+    assert.equal(tripleQa.reset,'0.00 s');
+    assert.match(tripleQa.after,/waiting for measured outgoing ball velocity/);
+    assert.equal(tripleQa.restored,true);
+    process.stdout.write('ME_PB_34_THREE_PASS_CHROME '+JSON.stringify(tripleQa)+'\\n');
+    // ME-PB-35: a physical fourth kick requires another separate Home #10
+    // shoe START, not an observed rebound. Only the normal LAB dropdown
+    // exposes the opt-in; Compare and Reset remain standard.
+    const fourthQa=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "el('preset-trigger').click();el('preset-opt-ai-defend-four').click();el('pause').click();"+
+      "const initial=el('tick').textContent,selected=el('preset').value;"+
+      "const checked=el('foot-contact-optin').checked&&el('foot-contact-optin').disabled;"+
+      "for(let i=0;i<720;i++)el('step').click();"+
+      "const outcome=el('ai-kick-outcome').textContent;"+
+      "const lane=el('ai-lane-plan').textContent;"+
+      "el('compare').click();const replay=el('compare-result').textContent;"+
+      "el('reset').click();const reset=el('tick').textContent;"+
+      "const after=el('ai-lane-plan').textContent;"+
+      "el('preset-trigger').click();el('preset-opt-drop').click();"+
+      "return {initial,selected,checked,outcome,lane,replay,reset,after,"+
+      "restored:el('status').textContent.includes('Ball Drop')};"+
+    "})()");
+    assert.equal(fourthQa.initial,'0.00 s');
+    assert.equal(fourthQa.selected,'ai-defend-four');
+    assert.equal(fourthQa.checked,true);
+    assert.match(fourthQa.outcome,/Home #10 FOURTH PASS/,
+      '4th event must be a distinct new real Rapier pass: '+JSON.stringify(fourthQa));
+    assert.match(fourthQa.lane,/physical pass #4 \(return-pass\)/);
+    assert.match(fourthQa.replay,/^PASS · identical canonical physics state after 720 ticks/);
+    assert.equal(fourthQa.reset,'0.00 s');
+    assert.match(fourthQa.after,/waiting for measured outgoing ball velocity/);
+    assert.equal(fourthQa.restored,true);
+    process.stdout.write('ME_PB_35_FOURTH_CHROME '+JSON.stringify(fourthQa)+'\\n');
+
+
+
+
+
+
+
+
+    // ME-PB: the single LAB lets a user place a ball on the pitch, then
+    // physical Rapier movement reacts, no synthetic contact or official goal.
+    await cmd('Page.navigate',{url:'http://app.localhost:2000/dev/match-engine'});
+    await waitFor("document.readyState==='complete'&&document.querySelector('#fixture-pitch')");
+    await waitFor("document.querySelector('#fixture-status')?.textContent==='Ready'");
+    const prepared=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id),p=el('fixture-pitch'),r=p.getBoundingClientRect();"+
+      "const scale=Math.min((p.width-44)/105,(p.height-44)/68);"+
+      "const clientX=r.left+(p.width/2+20*scale)*r.width/p.width;"+
+      "const clientY=r.top+(p.height/2-5*scale)*r.height/p.height;"+
+      "p.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX,clientY}));"+
+      "el('fixture-drop-height').value='5';"+
+      "el('fixture-drop-height').dispatchEvent(new Event('change',{bubbles:true}));"+
+      "return {point:el('fixture-point').textContent,height:el('fixture-drop-height').value,"+
+      "initial:el('fixture-reacting').textContent,ready:el('fixture-status').textContent,"+
+      "legacySeparate:!document.body.textContent.includes('11v11 Live LAB')};"+
+      "})()");
+    assert.equal(prepared.height,'5');
+    assert.equal(prepared.initial,'0 / 22');
+    assert.equal(prepared.ready,'Ready');
+    assert.equal(prepared.legacySeparate,true);
+    const selectedPointXY=prepared.point.match(/^X (-?[0-9.]+) · Y (-?[0-9.]+)$/);
+    assert.ok(selectedPointXY,'selected point is displayed as pitch XY');
+    assert.ok(Math.abs(Number(selectedPointXY[1])-20)<=0.2,'pitch X pointer scale');
+    assert.ok(Math.abs(Number(selectedPointXY[2])+5)<=0.2,'pitch Y pointer scale');
+    const stepped=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "for(let i=0;i<155;i++)el('fixture-step').click();"+
+      "const before=el('fixture-ticks').textContent;"+
+      "const responding=Number(el('fixture-reacting').textContent.split('/')[0]);"+
+      "const allowed=!el('fixture-verify').disabled;"+
+      "el('fixture-verify').click();"+
+      "const verification=el('fixture-verify-result').textContent;"+
+      "el('fixture-play').click();"+
+      "return {before,responding,allowed,verification,button:el('fixture-play').textContent,"+
+      "route:location.pathname,point:el('fixture-point').textContent};"+
+      "})()");
+    assert.equal(stepped.before,'155');
+    assert.ok(stepped.responding>0,'actual autonomous movement must react to selected ball drop');
+    assert.equal(stepped.allowed,true);
+    assert.equal(stepped.verification,'Replay OK');
+    assert.equal(stepped.button,'Pause');
+    assert.equal(stepped.route,'/dev/match-engine');
+    assert.equal(stepped.point,prepared.point);
+    await waitFor("Number(document.querySelector('#fixture-ticks').textContent)>155");
+    const reset=await evaluate("(()=>{"+
+      "const el=id=>document.getElementById(id);"+
+      "const tick=el('fixture-ticks').textContent;"+
+      "el('fixture-play').click();"+
+      "const pause=el('fixture-status').textContent;"+
+      "el('fixture-reset').click();"+
+      "return {tick,pause,resetTick:el('fixture-ticks').textContent,"+
+      "point:el('fixture-point').textContent,height:el('fixture-drop-height').value,"+
+      "status:el('fixture-status').textContent};"+
+      "})()");
+    assert.ok(Number(reset.tick)>155);
+    assert.equal(reset.pause,'Paused');
+    assert.equal(reset.resetTick,'0');
+    assert.equal(reset.point,prepared.point);
+    assert.equal(reset.height,'5');
+    assert.equal(reset.status,'Ready');
+    process.stdout.write('ME_PB_CUSTOM_SITUATION_LAB_PASS '+
+      JSON.stringify({prepared,stepped,reset})+'\n');
+
   }finally{
     try{socket?.close();}catch{}
     proc.kill();

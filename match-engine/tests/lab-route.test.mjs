@@ -31,11 +31,35 @@ async function fetchLocal(server,path,{host='app.localhost:2000',method='GET'}={
 test('ME-01 lab is accessible on local DEV app host with strict headers and assets',async()=>{
  const server=await getServer({subdomains:true});
  try{
-  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
+  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/player-ball-reach.mjs','/__fa_match_engine__/player-ball-first-local-kick.mjs','/__fa_match_engine__/player-ball-local-pass-receive.mjs','/__fa_match_engine__/player-ball-local-exchange.mjs','/__fa_match_engine__/player-ball-local-targeting.mjs','/__fa_match_engine__/player-ball-lane-closure.mjs','/__fa_match_engine__/player-ball-opposition-flight.mjs','/__fa_match_engine__/player-ball-loose-response.mjs','/__fa_match_engine__/player-foot-contact.mjs','/__fa_match_engine__/player-foot-contact-timeline.mjs','/__fa_match_engine__/player-foot-contact-solver.mjs','/__fa_match_engine__/player-foot-contact-momentum.mjs','/__fa_match_engine__/player-foot-contact-qualification.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
    const r=await fetchLocal(server,path);
    assert.equal(r.status,200,path);
    assert.equal(r.headers['cache-control'],'private, no-store');
    assert.match(r.headers['content-security-policy'],/default-src 'none'/);
+  }
+  // A closed, browser-reachable direct import graph is required for the LAB.
+  const coreSource=readFileSync(new URL('../src/core.mjs',import.meta.url),'utf8');
+  const coreImports=[...coreSource.matchAll(/from\s+['"]\.\/([^'"]+\.mjs)['"]/g)].map(m=>m[1]);
+  assert.ok(coreImports.includes('player-ball-uniform-autonomous-action.mjs'));
+  for(const dependency of coreImports){
+   const served=await fetchLocal(server,'/__fa_match_engine__/'+dependency);
+   assert.equal(served.status,200,'Missing core browser import '+dependency);
+   assert.match(served.headers['content-type']||'',/text\/javascript/);
+  }
+  // C3.3g: the nested fixture LAB module import graph MUST be served by
+  // exactly the loopback allowlist. A missing transitive module leaves
+  // the Play page stuck on Loading, despite all Node tests passing.
+  const worldSource=readFileSync(
+   new URL('../src/player-ball-universal-world.mjs',import.meta.url),'utf8');
+  const worldImports=[...worldSource.matchAll(
+   /from\s+['"]\.\/([^'"]+\.mjs)['"]/g)].map(m=>m[1]);
+  assert.ok(worldImports.includes('player-ball-carry-oriented-shoe-geometry.mjs'));
+  for(const dependency of worldImports){
+   const served=await fetchLocal(server,'/__fa_match_engine__/'+dependency);
+   assert.equal(served.status,200,
+    'Missing transitive browser import from universal world: '+dependency);
+   assert.match(served.headers['content-type']||'',/text\/javascript/);
+   assert.equal(served.headers['cache-control'],'private, no-store');
   }
   const wasm=await fetchLocal(server,'/__fa_match_engine__/rapier.es.js',{method:'HEAD'});
   const moduleRoot = new URL('../node_modules/@dimforge/rapier3d-deterministic-compat/', import.meta.url);
@@ -44,11 +68,26 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
     ? JSON.parse(readFileSync(new URL('package.json',moduleRoot),'utf8')) : {};
   assert.equal(wasm.status,200,'compat ESM module missing. Package files='+installedFiles.join(',')+
     ', module='+String(packageMeta.module)+', exports='+JSON.stringify(packageMeta.exports));
-  const page = await fetchLocal(server,'/dev/match-engine');
+  const page = await fetchLocal(server,'/dev/match-engine/diagnostics');
   assert.match(page.body,/LAB-01/);
   assert.match(page.body,/LAB-04 · Ball Roll \(Grass\)/);
   assert.match(page.body,/LAB-05 · Ball Bounce \(2 m\)/);
   assert.match(page.body,/id="players-toggle"/);
+  for(const [name,id] of [
+    ['ai-kick','preset-opt-ai-kick'],['ai-pass','preset-opt-ai-pass'],
+    ['ai-exchange','preset-opt-ai-exchange'],['ai-defend','preset-opt-ai-defend'],
+    ['ai-defend-auto','preset-opt-ai-defend-auto'],
+    ['ai-defend-multi','preset-opt-ai-defend-multi'],
+    ['ai-defend-three','preset-opt-ai-defend-three'],
+    ['ai-defend-four','preset-opt-ai-defend-four']
+  ])assert.match(page.body,new RegExp('id="'+id+'" data-value="'+name+'"'));
+  for(const id of ['ai-kick-demo','ai-pass-demo','ai-exchange-demo',
+    'ai-defend-demo','ai-defend-auto-demo'])
+    assert.doesNotMatch(page.body,new RegExp('id="'+id+'"'));
+  assert.match(page.body,/id="ai-lane-plan"[^>]*hidden/);
+  assert.match(page.body,/id="ai-kick-outcome"/);
+  assert.match(page.body,/id="foot-contact-optin" type="checkbox"/);
+  assert.match(page.body,/Foot contacts \(experiment\)/);
   assert.match(page.body,/id="player-controls"[^>]*hidden/);
   assert.match(page.body,/ME-PLAYER-01 autonomous team movement/);
   assert.match(page.body,/id="player-inspect-choice"[^>]*aria-label="Read-only inspect autonomous player"/);
@@ -133,7 +172,7 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.match(page.body,/class="fa-career-shell"/);
   assert.match(page.body,/class="fa-shell-topbar"/);
   assert.match(page.body,/class="app-panel me-panel/);
-  assert.match(page.body,/id="lab-title">Match Engine<\/h1>/);
+  assert.match(page.body,/id="lab-title">Physics diagnostics<\/h1>/);
   assert.match(page.body,/id="preset-trigger"/);
   assert.match(page.body,/id="speed-trigger"/);
   assert.match(page.body,/id="pitch"/);
@@ -169,7 +208,7 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
     assert.equal((await fetchLocal(server,shared)).status,200,shared);
   }
   const bootstrap = await fetchLocal(server,'/__fa_match_engine__/sidebar-first-paint.js');
-  assert.match(bootstrap.body,/path==='\/dev\/match-engine'/);
+  assert.match(bootstrap.body,/path.startsWith/);
   assert.match(bootstrap.body,/fa-nav01-expanded/);
   const app = await fetchLocal(server,'/dashboard');
   assert.equal(app.status,200);
@@ -180,6 +219,11 @@ test('ME-01 lab is accessible on local DEV app host with strict headers and asse
   assert.match(app.body,/id="app-nav-profile"/);
   const siteHost = await fetchLocal(server,'/dashboard',{host:'localhost:2000'});
   assert.doesNotMatch(siteHost.body,/data-me-dev-link/);
+  assert.ok([403,404].includes(
+   (await fetchLocal(server,
+    '/__fa_match_engine__/player-ball-carry-oriented-shoe-geometry.mjs',
+    {host:'localhost:2000'})).status),
+   'research shoe geometry MUST remain inaccessible from site host');
   assert.equal((await fetchLocal(server,'/dev/match-engine',{method:'POST'})).status,405);
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
@@ -190,6 +234,13 @@ test('ME-01 lab is denied for public mode, shared/non-DEV modes and other hosts'
    const host=options.devPreview===false?'app.localhost:2000':'localhost:2000';
    assert.ok([403,404].includes((await fetchLocal(server,'/dev/match-engine',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/core.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-ball-reach.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-foot-contact.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-foot-contact-timeline.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-foot-contact-solver.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-foot-contact-momentum.mjs',{host})).status));
+   assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/player-foot-contact-qualification.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/aerodynamics.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/magnus.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/calibration-evidence.mjs',{host})).status));
@@ -230,9 +281,9 @@ test('Lab sidebar preserves every canonical section and link, adding only Develo
 test('Lab-first-paint script keeps canonical navigation logic except active DEV route', () => {
   const original=readFileSync(new URL('../../assets/sidebar-first-paint.js',import.meta.url),'utf8');
   const adapted=labFirstPaintBootstrap(original);
-  assert.ok(adapted.includes("const selected=path==='/dev/match-engine'"));
+  assert.ok(adapted.includes("const selected=path.startsWith('/dev/match-engine')"));
   assert.ok(adapted.includes("nav.querySelector('[data-me-dev-link]')"));
-  assert.equal(adapted.replace("const selected=path==='/dev/match-engine'?nav.querySelector('[data-me-dev-link]'):onPlayers?","const selected=onPlayers?"),original);
+  assert.equal(adapted.replace("const selected=path.startsWith('/dev/match-engine')?nav.querySelector('[data-me-dev-link]'):onPlayers?","const selected=onPlayers?"),original);
 });
 
 
@@ -282,7 +333,7 @@ test('ME-01 numeric field chrome uses canonical chevrons and inert captions', ()
   assert.match(css,/\.me-number-arrow:hover:not\(:disabled\)/);
   assert.match(js,/event\.key==='ArrowUp'/);
   assert.match(js,/event\.preventDefault\(\); \/\/ Never use the browser's native step/);
-  assert.match(js,/formatNumericValue\(defaults\[key\]\)/);
+  assert.match(js,/formatNumericValue\(config\.initial\[key\]\)/);
   assert.match(js,/setupNumericFields\(\)/);
   assert.match(js,/input\.addEventListener\('change',\(\)=>normalizeNumericField\(field\)\)/);
   assert.match(js,/input\.addEventListener\('blur',\(\)=>normalizeNumericField\(field\)\)/);
@@ -398,4 +449,66 @@ test('ME-01 compact pitch caps desktop dimensions and uses canonical site chevro
   assert.match(chevron,/viewBox="0 0 20 20"/);
   assert.match(chevron,/d="m5 7 5 5 5-5"/);
   assert.doesNotMatch(chevron,/>⌄</);
+});
+
+// One primary LAB situation editor, no standalone 11v11 route.
+test('ME-PB situation editor primary LAB, old diagnostics optional and loopback-only',async()=>{
+ const server=await getServer({subdomains:true});
+ try{
+  const page=await fetchLocal(server,'/dev/match-engine');
+  assert.equal(page.status,200);
+  assert.match(page.body,/Match Engine LAB/);
+  assert.match(page.body,/Choose where the ball drops/);
+  assert.doesNotMatch(page.body,/11v11 Live LAB/);
+  for(const id of ['fixture-pitch','fixture-play','fixture-step','fixture-reset',
+   'fixture-drop-height','fixture-point','fixture-reacting','fixture-contacts',
+   'fixture-last-action','fixture-details','fixture-history','fixture-verify'])
+   assert.match(page.body,new RegExp('id="'+id+'"'));
+  assert.match(page.body,/Older physics experiments/);
+  assert.match(page.body,/data-me-dev-link aria-current="page"/);
+  const diagnostics=await fetchLocal(server,'/dev/match-engine/diagnostics');
+  assert.equal(diagnostics.status,200);
+  assert.match(diagnostics.body,/Physics diagnostics/);
+  for(const path of [
+   '/__fa_match_engine__/fixture-lab.mjs',
+   '/__fa_match_engine__/fixture-lab.css',
+   '/__fa_match_engine__/physical-fixture-step-runtime.mjs',
+   '/__fa_match_engine__/player-ball-physical-carry-sequence.mjs',
+   '/__fa_match_engine__/player-ball-physical-carry-proximity.mjs',
+   '/__fa_match_engine__/pitch-markings.mjs',
+   '/__fa_match_engine__/player-ball-universal-world.mjs',
+   '/__fa_match_engine__/player-ball-global-response.mjs',
+   '/__fa_match_engine__/temporary-uniform-fixture-squad.mjs',
+   '/__fa_match_engine__/player-ball-action-outcome-observation.mjs',
+   '/__fa_match_engine__/player-ball-shot-boundary-observer.mjs',
+   '/__fa_match_engine__/player-ball-volume-boundary.mjs',
+   '/__fa_match_engine__/research-shot-initial-lineup.mjs'
+  ])assert.equal((await fetchLocal(server,path)).status,200,path);
+  const auditScript=await fetchLocal(server,
+   '/__fa_match_engine__/player-ball-physical-carry-sequence.mjs');
+  assert.match(auditScript.body,/createPhysicalCarryContactSequenceObserver/);
+  const proximityScript=await fetchLocal(server,
+   '/__fa_match_engine__/player-ball-physical-carry-proximity.mjs');
+  assert.match(proximityScript.body,/createPhysicalCarryProximityObserver/);
+  const runtimeScript=await fetchLocal(server,
+   '/__fa_match_engine__/physical-fixture-step-runtime.mjs');
+  assert.match(runtimeScript.body,/from '.\/player-ball-physical-carry-sequence.mjs'/);
+  assert.match(runtimeScript.body,/from '.\/player-ball-physical-carry-proximity.mjs'/);
+  const script=await fetchLocal(server,'/__fa_match_engine__/fixture-lab.mjs');
+  for(const symbol of ['createPhysicalFixtureStepRuntime',
+   'autonomousActions:true','drawPitchMarkings','chooseByClient','setLanding'])
+   assert.match(script.body,new RegExp(symbol));
+  assert.match(script.body,/officialMatchResult!==null/);
+  assert.equal((await fetchLocal(server,'/dev/match-engine/fixture')).status,404);
+  assert.equal((await fetchLocal(server,'/dev/match-engine',{method:'POST'})).status,405);
+  assert.equal((await fetchLocal(server,'/dev/match-engine',{host:'localhost:2000'})).status,404);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+ const publicServer=await getServer({subdomains:true,devPreview:false});
+ try{
+  for(const path of ['/dev/match-engine','/dev/match-engine/diagnostics',
+    '/__fa_match_engine__/fixture-lab.mjs',
+    '/__fa_match_engine__/player-ball-physical-carry-sequence.mjs',
+    '/__fa_match_engine__/player-ball-physical-carry-proximity.mjs'])
+   assert.equal((await fetchLocal(publicServer,path)).status,404);
+ }finally{await new Promise(resolve=>publicServer.close(resolve));}
 });
