@@ -213,6 +213,97 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
   JSON.stringify(results));
 });
 
+
+test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',async()=>{
+ const R=await initializeRapier(rapier);
+ const c=CASES[1];
+ const original=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),opts);
+ const handoff=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+ const verified=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+ const modes=[{name:'baseline',world:original},{name:'handoff',world:handoff}];
+ const stats=modes.map(({name})=>({name,passTick:null,carryTick:null,
+  postCarrySupportFrames:0,bestShortfallM:Infinity,bestTick:null,
+  shotZoneFrames:0,openShotZoneContactFrames:0,realShoeStarts:0,
+  authenticActions:[],naturalShots:[],lastPhysicalStart:null}));
+ try{
+  const seen={baseline:{pass:[],carry:[]},handoff:{pass:[],carry:[]}};
+  for(let tick=1;tick<=720;tick++){
+   const frames=[original.step(),handoff.step(),verified.step()];
+   assert.deepEqual(frames[1],frames[2],
+    'independent real Rapier handoff replay tick '+tick);
+   for(let i=0;i<2;i++){
+    const frame=frames[i],audit=stats[i],ball=frame.ball.position;
+    const progress=PLAYER_PITCH.lengthM/2+ball.x;
+    const shortfall=Math.max(0,progress-SHOT_MAX_RANGE_M);
+    const inRange=progress>0&&progress<=SHOT_MAX_RANGE_M&&
+     Math.abs(ball.y)<=20;
+    if(shortfall<audit.bestShortfallM){
+     audit.bestShortfallM=shortfall;audit.bestTick=tick;
+    }
+    if(inRange)audit.shotZoneFrames++;
+    const starts=frame.physicalContactFeed.started;
+    for(const start of starts){
+     assert.ok(frame.physicalContactFeed.active.some(active=>
+      active.engineId===start.engineId&&active.team===start.team));
+     audit.realShoeStarts++;
+     audit.lastPhysicalStart={tick,playerId:start.engineId,
+      team:start.team,shortfallM:round(shortfall),inRange};
+     if(inRange)audit.openShotZoneContactFrames++;
+    }
+    const action=frame.localAutonomousAction;
+    if(action){
+     assert.equal(starts.length,1);
+     assert.equal(frame.physicalContactFeed.active.length,1);
+     assert.equal(starts[0].engineId,action.playerId);
+     assert.equal(action.tick,tick);
+     assert.equal(action.appliedByRapier,true);
+     assert.equal(action.actualPhysicsImpulseApplied,true);
+     assert.equal(action.physicalTrigger,'same-tick-real-rapier-shoe-start');
+     const record={tick,team:action.team,kind:action.action,
+      playerId:action.playerId,shortfallM:round(shortfall)};
+     audit.authenticActions.push(record);
+     if(action.team==='away'&&action.action==='pass')
+      seen[audit.name].pass.push(action);
+     if(action.team==='away'&&action.action==='carry')
+      seen[audit.name].carry.push(action);
+     if(action.action==='shot'){
+      audit.naturalShots.push(record);
+      assert.equal(frame.physicalShotBoundary.active?.shotTick,tick);
+     }
+    }
+    const support=frame.contactDecisionObservation.attackSupportRun;
+    if(support?.team==='away'&&support.phase==='post-carry-support'){
+     audit.postCarrySupportFrames++;
+     const pass=seen[audit.name].pass.find(x=>
+      x.tick===support.sourcePassTick);
+     const carry=seen[audit.name].carry.find(x=>
+      x.tick===support.carryContinuation.sourceCarryTick);
+     assert.ok(pass&&carry&&pass.tick<carry.tick&&carry.tick<tick,
+      'support must be authorized by prior real PASS and later CARRY');
+     assert.ok(tick-pass.tick>240&&tick-pass.tick<=480);
+     assert.ok(tick-carry.tick<=150);
+     audit.passTick??=pass.tick;
+     audit.carryTick??=carry.tick;
+    }
+    assert.equal(frame.officialMatchPossession,false);
+    assert.equal(frame.officialMatchResult,null);
+    assert.equal(frame.productionScoringConnected,false);
+   }
+  }
+  assert.ok(stats[1].postCarrySupportFrames>stats[0].postCarrySupportFrames,
+   'C2.3n must retain real-source forward support compared with baseline');
+  assert.ok(stats[1].postCarrySupportFrames>0);
+  assert.ok(stats[1].realShoeStarts>0);
+  assert.deepEqual(stats[0].naturalShots,[]);
+  assert.deepEqual(stats[1].naturalShots,[],
+   'ordinary-formation 720-tick negative case is NOT a natural shot');
+  console.log('C2_B_REAL_RAPIER_SHOT_GATE_TIMELINE',JSON.stringify(
+   stats.map(({bestShortfallM,...record})=>({
+    ...record,bestShortfallM:round(bestShortfallM)
+   }))));
+ }finally{original.dispose();handoff.dispose();verified.dispose();}
+});
+
 test('C2 post-cleanup: ordinary HOME/AWAY still rejects retired C2-a flag and preserves physical handoff',async()=>{
  const R=await initializeRapier(rapier);
  for(const c of CASES){
