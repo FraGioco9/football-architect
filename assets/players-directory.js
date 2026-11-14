@@ -449,7 +449,8 @@
     link.href='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
     const name=document.createElement('span');name.className='app-player-club-name';
     name.textContent=player.clubName;link.title=player.clubName;link.setAttribute('aria-label',player.clubName);link.append(name);
-    content.append(crest,link);td.append(content);
+    const labelAnchor=document.createElement('span');labelAnchor.className='app-players-club-label-anchor';
+    labelAnchor.append(crest,link);content.append(labelAnchor);td.append(content);
    }else{td.textContent='—';}
    tr.append(td);
   }
