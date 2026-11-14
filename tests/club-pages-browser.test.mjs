@@ -495,6 +495,155 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     assert.equal(await run("document.activeElement===document.querySelector('.club-tabs [aria-current=\"page\"]')"),true,'Keyboard activation retains focus on the active tab');
     await cmd('Page.reload');await wait("document.readyState==='complete'&&document.documentElement.dataset.clubReady==='true'");
     assert.equal(await run("document.querySelectorAll('.club-history').length"),1);
+    // #560: Club History's true mobile presentation is a four-column grid,
+    // with expansion, localized headings and untruncated competition labels.
+    // A synthetic verified row pair is used to isolate layout from the
+    // asynchronous History endpoint without changing application data.
+    for(const [width,lang] of [[320,'it'],[375,'en'],[390,'de'],[430,'fr'],[620,'es'],[768,'it'],[1440,'en']]){
+      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<=620});
+      await run('document.documentElement.lang='+JSON.stringify(lang));await delay(75);
+      await run(`(()=>{
+       const old=document.getElementById('history-mobile-560-probe');if(old)old.remove();
+       const wrap=document.createElement('div');wrap.id='history-mobile-560-probe';
+       wrap.className='club-history-table-wrap';
+       wrap.innerHTML='<table class="club-history-table" aria-label="History">'+
+        '<colgroup><col class="club-history-col-season"><col class="club-history-col-name"><col class="club-history-col-position">'+
+         Array.from({length:8},()=>'<col class="club-history-col-number">').join('')+'</colgroup>'+
+        '<thead><tr><th>Season</th><th>Competition</th><th>Position</th>'+
+         ['MP','W','D','L','GF','GA','GD','Pts'].map(x=>'<th>'+x+'</th>').join('')+'</tr></thead>'+
+        '<tbody><tr class="club-history-season-row" data-club-history-summary="777">'+
+         '<th scope="row" class="club-history-season-value"><button type="button" class="club-history-expand" data-club-history-toggle="777" aria-expanded="false"><span class="club-history-chevron"></span>Season 777</button></th>'+
+         '<td class="club-history-total-label">Total</td><td></td>'+
+         ['30','18','7','5','54','29','+25',''].map(x=>'<td>'+x+'</td>').join('')+'</tr>'+
+        '<tr class="club-history-competition-row" data-club-history-detail="777" hidden>'+
+         '<td></td><th scope="row" class="club-history-competition-value"><a class="club-history-competition-link" href="/competitions/it-1/standings?season=777"><span class="club-history-competition-text">Very Long International Competition Championship Name For Mobile</span></a></th>'+
+         '<td title="Quarter-finals, second leg">Quarter-finals, second leg</td>'+
+         ['30','18','7','5','54','29','+25','61'].map(x=>'<td>'+x+'</td>').join('')+'</tr></tbody></table>';
+       document.querySelector('.club-history').append(wrap);
+      })()`);
+      const initial=await run(`(()=>{
+       const wrap=document.getElementById('history-mobile-560-probe');
+       const tab=wrap.querySelector('.club-history-table'),row=wrap.querySelector('.club-history-season-row');
+       const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+       const stats=[...row.querySelectorAll('td')].slice(2,9);
+       const tabs=document.querySelector('.club-tabs');
+       const active=tabs?.querySelector('.app-competition-tab.is-active,[aria-current="page"]');
+       const section=document.querySelector('.club-history');
+       return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
+        separatorGap:tabs&&section?section.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        firstRowGap:tabs&&row?row.getBoundingClientRect().top-tabs.getBoundingClientRect().bottom:null,
+        tabBorder:tabs?getComputedStyle(tabs).borderBottomWidth:null,
+        shellOverflow:document.documentElement.scrollWidth-innerWidth,
+        label:getComputedStyle(stats[0],'::before').content,
+        labelGs:getComputedStyle(stats[5],'::before').content,
+        first:box(stats[0]),second:box(stats[1]),
+        fourth:box(stats[3]),fifth:box(stats[4]),
+        detailHidden:wrap.querySelector('.club-history-competition-row').hidden};
+      })()`);
+      assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
+      if(width<=620){
+       assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
+        'mobile History starts flush with the view separator at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
+        'first club-history-season-row touches the view separator at '+width+': '+JSON.stringify(initial));
+       assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
+       assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
+        'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
+       assert.ok(Math.abs(initial.first.top-initial.fourth.top)<=1&&initial.fifth.top>initial.first.top,
+        'four stat cells form the first grid row, then wrap at '+width+': '+JSON.stringify(initial));
+       const expected={it:['PG','GS'],en:['MP','GA'],de:['Sp','T−'],fr:['MJ','BC'],es:['PJ','GC']}[lang];
+       assert.equal(initial.label,'"'+expected[0]+'"','localized played label at '+width);
+       assert.equal(initial.labelGs,'"'+expected[1]+'"','localized against label at '+width);
+      }else{
+       assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
+      }
+      if(width<=620){
+       // Compare the exact seven first-paint skeleton centers to the seven
+       // hydrated aggregate-number centers in their shared grid tracks.
+       const alignment=await run(`(()=>{
+        const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
+        const cells=[...row.children].slice(3,10);
+        const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        const actual=cells.map(cell=>{
+         const range=document.createRange();range.selectNodeContents(cell);
+         const value=rect(range),slot=rect(cell);
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+        });
+        const initial=cells.map(cell=>cell.innerHTML);
+        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        row.classList.add('club-history-row-loading');
+        const skeleton=cells.map(cell=>{
+         const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
+         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
+        });
+        row.classList.remove('club-history-row-loading');
+        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        const header=row.querySelector('th:first-child');
+        const button=header.querySelector('button');
+        const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
+        const nameLeft=range.getBoundingClientRect().left;
+        const original=header.innerHTML;
+        header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
+         '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
+         '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
+        header.innerHTML=original;
+        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft};
+       })()`);
+       for(let i=0;i<7;i++){
+        const data=alignment.actual[i],skeleton=alignment.skeleton[i];
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+         'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
+         'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.height-skeleton.height)<=1,
+         'stat '+i+' keeps the same cell height during loading at '+width);
+       }
+       assert.ok(Math.abs(alignment.nameOffset)<=2,
+        'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
+      }
+      await run("document.querySelector('#history-mobile-560-probe [data-club-history-toggle]').click()");
+      const expanded=await run(`(()=>{
+       const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
+       const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
+       const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const position=row.querySelector('td:nth-child(3)');
+       const positionLabel=getComputedStyle(position,'::before');
+       const positionLayout=getComputedStyle(position);
+       const stat=row.querySelector('td:nth-child(4)');
+       return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
+        positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
+        positionValueSize:positionLayout.fontSize,
+        statTracks:getComputedStyle(stat).gridTemplateRows,
+        rowHeight:r.height,linkWidth:lr.width,linkScroll:link.scrollWidth,linkClient:link.clientWidth,
+        linkHref:link.getAttribute('href'),linkText:link.textContent.trim(),
+        explicitTableRole:wrap.querySelector('table').getAttribute('role'),
+        explicitRowRole:row.getAttribute('role'),explicitCellRole:row.querySelector('td').getAttribute('role'),
+        linkWhiteSpace:getComputedStyle(link).whiteSpace,linkOverflow:getComputedStyle(link).overflow,
+        overflow:document.documentElement.scrollWidth-innerWidth};
+      })()`);
+      assert.equal(expanded.expanded,'true','History remains expandable by click at '+width);
+      assert.equal(expanded.explicitTableRole,'table','responsive table preserves screen-reader semantics at '+width);
+      assert.equal(expanded.explicitRowRole,'row','expanded competition row preserves its semantic role at '+width);
+      assert.equal(expanded.explicitCellRole,'cell','expanded numeric cell preserves its semantic role at '+width);
+      assert.equal(expanded.hidden,false,'History competition row appears at '+width);
+      assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
+      if(width<=620){
+       assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
+       assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
+       assert.equal(expanded.positionAlign,'baseline','position and label share the text baseline at '+width);
+       assert.equal(expanded.positionLabelSize,expanded.positionValueSize,'position label and value use the same font size at '+width);
+       assert.equal(expanded.statTracks,'12px 16px','numeric data and skeletons reserve identical label/value tracks at '+width);
+       assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
+       assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
+       assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);
+      }
+      await run("document.getElementById('history-mobile-560-probe').remove()");
+    }
+    await cmd('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+    await run("document.documentElement.lang='en'");await delay(70);
     // Regression: a spare part of the History competition cell must not behave
     // like the text link (hover underline OR click). Test the actual browser
     // hit areas, not only stylesheet selector strings.
