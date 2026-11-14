@@ -10,7 +10,7 @@ const attrs=Object.fromEntries(PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS.map((key,i)=>[ke
 const stored={first_name:'Andrea',last_name:'Rossi',nationality:'ITA',secondary_nationality:'FRA',
  age:18,initial_age:16,career_status:'active',height_cm:180,preferred_foot:'right',primary_position:'CM',
  secondary_positions:['DM'],attributes:attrs,development_aptitude:99,seed:'never-expose'};
-function mockDb(){
+function mockDb(clubKey:string|null=null){
  const calls:{sql:string;params:unknown[]}[]=[];
  const db={prepare(sql:string){
   const statement=(params:unknown[])=>({
@@ -23,7 +23,7 @@ function mockDb(){
    },
    async all(){
     calls.push({sql,params});
-    return {results:[{id:42,payload_json:JSON.stringify(stored)}],meta:{changes:0}};
+    return {results:[{id:42,payload_json:JSON.stringify(stored),club_key:clubKey}],meta:{changes:0}};
    },
    async run(){return {results:[],meta:{changes:0}}}
   });
@@ -45,6 +45,21 @@ test('public page uses persisted numeric IDs, includes approved JSON and exclude
  assert.deepEqual(player.attributes,attrs);
  assert.deepEqual(Object.keys(player.attributes),PUBLIC_FOOTBALLER_ATTRIBUTE_KEYS);
  assert.doesNotMatch(JSON.stringify(player),/initial_age|development_aptitude|seed|preview_id|known_as/);
+});
+
+test('public directory exposes verified current club identity on the same paginated query',async()=>{
+ const free=await readPublicPlayers(mockDb(null).db,1);
+ assert.equal(free.players[0].clubKey,null);
+ assert.equal(free.players[0].clubName,null);
+ const {db,calls}=mockDb('IT-1');
+ const assigned=await readPublicPlayers(db,1);
+ assert.equal(assigned.players[0].clubKey,'IT-1');
+ assert.ok(typeof assigned.players[0].clubName==='string'&&assigned.players[0].clubName.length>0);
+ assert.doesNotMatch(JSON.stringify(assigned.players[0]),/salary|expiry|contract_id|development_aptitude/);
+ const page=calls.find(c=>c.sql.includes('LIMIT ? OFFSET ?'))!;
+ assert.match(page.sql,/SELECT p\.id,p\.payload_json,a\.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a\.player_id=p\.id/);
+ assert.deepEqual(page.params,[50,0]);
+ await assert.rejects(readPublicPlayers(mockDb('BAD-99').db,1),/players_unavailable/);
 });
 
 test('public directory count and pagination include persisted players independent of world generation',async()=>{

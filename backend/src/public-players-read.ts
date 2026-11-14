@@ -1,14 +1,17 @@
 /** Anonymous page of persisted player identities, projected server-side. No generator metadata. */
 import {ApiError} from './errors.ts';
+import clubs from '../../data/clubs.json' with {type:'json'};
 import type {Database} from './database.ts';
 import {readWorld} from './world-repository.ts';
 import {projectPublicFootballerDirectoryRecord,type InternalFootballer} from './footballer-public-projection.ts';
 import type {PublicPlayerFilters} from './public-players-filters.mjs';
 
 export const PUBLIC_PLAYER_PAGE_SIZE=50;
+const clubNames=new Map(clubs.map(c=>[c.countryId+'-'+c.clubId,c.primaryName]));
+if(clubNames.size!==320)throw Error('Invalid canonical club catalogue');
 const FILTER_ATTRIBUTE_KEYS=new Set('passing technique dribbling shooting crossing tackling marking heading vision positioning decisions composure speed strength stamina agility gk_reflexes gk_handling gk_positioning gk_aerial'.split(' '));
 interface StoredPlayer extends InternalFootballer {age?:number}
-interface StoredRow {id:number;payload_json:string}
+interface StoredRow {id:number;payload_json:string;club_key:string|null}
 interface StoredDetailRow extends StoredRow {club_key:string|null}
 
 /** Count and page over the exact same server-side predicate, never a client-side 50-row filter. */
@@ -97,7 +100,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  const count=countRow?.n??0;
  const totalPages=Math.max(1,Math.ceil(count/PUBLIC_PLAYER_PAGE_SIZE));
  const rows=page<=totalPages
-  ?(await db.prepare('SELECT id,payload_json FROM generated_players'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
+  ?(await db.prepare('SELECT p.id,p.payload_json,a.club_key FROM generated_players p LEFT JOIN player_club_affiliations a ON a.player_id=p.id'+where+' ORDER BY '+orderBy+' LIMIT ? OFFSET ?')
     .bind(...values,PUBLIC_PLAYER_PAGE_SIZE,(page-1)*PUBLIC_PLAYER_PAGE_SIZE).all<StoredRow>()).results
   :[];
  const after=await readWorld(db);
@@ -106,7 +109,10 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
   count,page,pageSize:PUBLIC_PLAYER_PAGE_SIZE,totalPages,
   players:rows.map(row=>{
    const payload=JSON.parse(row.payload_json) as StoredPlayer;
-   return projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age});
+   const clubKey=row.club_key??null;
+   if(clubKey!==null&&!clubNames.has(clubKey))throw new ApiError(503,'players_unavailable');
+   return {...projectPublicFootballerDirectoryRecord(payload,{publicId:row.id,currentAge:payload.age}),
+    clubKey,clubName:clubKey===null?null:clubNames.get(clubKey)!};
   })
  };
 }

@@ -69,11 +69,11 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',club:'Club',freeAgent:'Free Agent',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',club:'Club',freeAgent:'Svincolato',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',club:'Verein',freeAgent:'Vereinslos',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',club:'Club',freeAgent:'Agente libre',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',club:'Club',freeAgent:'Sans club',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
@@ -163,7 +163,7 @@
    savedReturn.loadedThrough>=state.page&&savedReturn.loadedThrough<=state.page+4&&
    Number.isSafeInteger(savedReturn.playerId)&&savedReturn.playerId>0&&
    Number.isFinite(savedReturn.scrollTop)&&savedReturn.scrollTop>=0?savedReturn:null;
-  const cols=()=>state.view==='attributes'?3+groups[state.group].length:6;
+  const cols=()=>state.view==='attributes'?3+groups[state.group].length:7;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
    if(!countNode)return;
@@ -362,6 +362,7 @@
    addHeader(t.nationality,'nationality',true);
    addHeader(t.columns[0],'name');
    if(state.view==='overview'){
+    const club=document.createElement('th');club.scope='col';club.className='app-players-club-col';club.textContent=t.club;row.append(club);
     addHeader(t.columns[1],'age');addHeader(t.columns[2],'positions');
     addHeader(t.columns[3],'height');addHeader(t.columns[4],'foot');
    }else{
@@ -399,6 +400,19 @@
    else td.textContent=player.nationality||'';
    tr.append(td);
   }
+  // Only a canonical affiliation is rendered as a club link.
+  function clubCell(tr,player){
+   const td=document.createElement('td');td.className='app-players-club-cell';
+   if(player.clubKey===null){td.textContent=locale().freeAgent;}
+   else if(typeof player.clubKey==='string'&&/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/.test(player.clubKey)&&
+           typeof player.clubName==='string'&&player.clubName.trim()){
+    const [country,id]=player.clubKey.split('-');
+    const link=document.createElement('a');link.className='app-player-club-link';
+    link.href='/clubs/'+country.toLowerCase()+'/'+id+'/overview';
+    link.textContent=player.clubName;link.title=player.clubName;td.append(link);
+   }else{td.textContent='—';}
+   tr.append(td);
+  }
   function playerRows(players){
    const t=locale(),fragment=document.createDocumentFragment();
    for(const player of players){
@@ -410,6 +424,7 @@
     }else nameCell.textContent=player.display_name||'—';
     const positionsShown=[player.primary_position,...(Array.isArray(player.secondary_positions)?player.secondary_positions:[])].filter(Boolean);
     if(state.view==='overview'){
+     clubCell(tr,player);
      cell(tr,Number.isSafeInteger(player.age)?String(player.age):'—');
      cell(tr,positionsShown.join(', ')||'—');
      cell(tr,Number.isSafeInteger(player.height_cm)?String(player.height_cm)+' cm':'—');

@@ -247,6 +247,23 @@ test('Players primary view controls are larger than the compact attribute subgro
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto/,'mobile subgroup controls scroll in one row');
 });
 
+test('#532 Overview-only Club uses the canonical affiliation without changing Attributes',()=>{
+ const html=read('players/index.html'),js=read('assets/players-directory.js'),css=read('assets/app.css'),generator=read('tools/generate-app-pages.mjs');
+ assert.match(html,/<table class="app-players-table" data-players-public>/);
+ assert.match(html,/<th scope="col" class="app-players-club-col">Club<\/th>/);
+ assert.equal((html.match(/colspan="7"/g)||[]).length,5);
+ assert.match(js,/const cols=\(\)=>state\.view==='attributes'\?3\+groups\[state\.group\]\.length:7/);
+ assert.match(js,/if\(state\.view==='overview'\)\{\s*clubCell\(tr,player\);/);
+ assert.match(js,/player\.clubKey===null/);
+ assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+id\+'\/overview'/);
+ assert.match(css,/\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\)\{--app-players-club-width:200px;min-width:982px\}/);
+ assert.match(css,/--app-players-club-width:176px;min-width:896px/);
+ assert.match(css,/--app-players-club-width:160px;min-width:840px/);
+ assert.match(generator,/app-players-club-col/);
+ assert.match(html,/while\(row\.cells\.length>2\)row\.deleteCell\(2\)/,'direct Attributes preboot drops the Overview Club header');
+ assert.match(html,/colSpan=keys\.length\+3/,'Attributes skeletons stay at their old column count');
+});
+
 test('Players approved hybrid widths retain exact flag/name columns and distribute all remaining space proportionally',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  const fixed='100% - var(--app-players-flag-width) - var(--app-players-name-width)';
@@ -611,7 +628,7 @@ test('Players reserve five completely empty, full-height rows while loading',()=
  const html=read('players/index.html'),css=read('assets/app.css'),js=read('assets/players-directory.js');
  const table=html.slice(html.indexOf('<table class="app-players-table"'),html.indexOf('</table>',html.indexOf('<table class="app-players-table"')));
  assert.equal((table.match(/class="app-players-loading-row"/g)||[]).length,5);
- assert.equal((table.match(/colspan="6"/g)||[]).length,5);
+ assert.equal((table.match(/colspan="7"/g)||[]).length,5);
  assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
  assert.match(table,/class="sr-only" data-players-status role="status"/);
  assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);

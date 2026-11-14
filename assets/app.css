@@ -1586,6 +1586,27 @@ html[data-theme="light"] .app-players-header>.app-page-title{color:var(--text)}
 .app-players-table th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.42)}
 .app-players-table th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.21)}
 .app-players-table th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width)) * 0.20)}
+/* Canonical public Club appears in Overview only; shared Roster/Admin and
+ * public Attributes preserve their previously approved column contracts. */
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-club-width:200px;min-width:982px}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) col.app-players-view-third-column{width:var(--app-players-club-width)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(3){width:var(--app-players-club-width);text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(4){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-club-width)) * 0.17)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(5){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-club-width)) * 0.42)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(6){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-club-width)) * 0.21)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) th:nth-child(7){width:calc((100% - var(--app-players-flag-width) - var(--app-players-name-width) - var(--app-players-club-width)) * 0.20)}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(6){text-align:center}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(3),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(5),
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(7){text-align:left}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th:nth-child(4),th:nth-child(6)) .app-players-sort-button{justify-content:center}
+.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]) :is(th:nth-child(5),th:nth-child(7)) .app-players-sort-button{justify-content:flex-start}
+.app-players-club-cell{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-players-table .app-player-club-link{position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;text-decoration:none}
+.app-players-table .app-player-club-link:hover{text-decoration:underline;text-underline-offset:1px}
+.app-players-table .app-player-club-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+
 /* Positions contains position codes and is left-aligned like Player, including the static Overview header. */
 .app-players-table:not([data-players-table-mode="attributes"]) :is(th,td):nth-child(4){text-align:left}
 /* Foot is a descriptive value (Left / Right), so align its heading and values with other text columns. */
@@ -1654,6 +1675,8 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
  .app-players-table[data-players-table-mode="attributes"]{min-width:856px}
  html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1272px}
 }
+@media(max-width:720px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-club-width:176px;min-width:896px}}
+@media(max-width:420px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){--app-players-club-width:160px;min-width:840px}}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
  .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
