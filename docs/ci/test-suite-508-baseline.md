@@ -178,3 +178,15 @@ The 12-point whole-suite audit is still incomplete. A1–A6 are incremental evid
 **A8 test readiness:** previous `DOMContentLoaded` readiness required only `11` live awards cards, without waiting for retirement of first-paint skeletons. Readiness now requires a known content state, 11 directly mounted live cards, **11 total panel cards**, and no skeleton root. The following strict assertions still independently verify the same 11/11 counts, no skeleton, no fabricated promotion/playoff or recipients; **nothing skipped, weakened or retried**. Persistent duplicate cards remain a failure, not hidden by a timeout. No product, DB, authentication, CI selection, or sporting rule changes.
 
 This is lifecycle synchronization, not a CI speed claim. Verify the new HEAD's required Site, Browser, Admin and FULL workflows; investigate product lifecycle if the panel never converges.
+
+## Batch A9 — consolidate duplicate full-season sporting replay in Worker/D1 (2026-11-14)
+
+**Previous exact-head A8 `48646745918d225938fb4e0598f0f45c5511a5c1`:** Site, Browser Chromium/WebKit, Admin Worker/D1, FULL evidence gate, generator, first names and surnames **all PASS**. A8 Awards hydration readiness passed without removing its strict assertions.
+
+**Independent duplicate found:** `backend/tests/admin-calendar-bridge-runtime.test.ts` executed the full 56-day sporting lifecycle in two separate isolated Vitest cases: one asserted day 56 remained `active`, 56 durable receipts, 4,082 final results and 54 knockout ties; the other performed the *same* admin setup and 56-day sporting replay, then archived/closed the verified season and checked idempotency, immutable archive, provisional next-season candidate and HTTP authorization.
+
+**A9:** remove only the redundant first 56-day replay, move its **four original assertions verbatim** into the second scenario *before* `archiveSeason`. Retain the entire closure/archival, next-season proposal, replay/idempotency, write-protected archives and auth checks. `5 → 4` top-level tests; **2 → 1** complete sporting 56-day replays in this Worker file. A test's dedicated failure label is adjusted to state both phases. This does not conflate alternate error states, skip any gate or share mutable fixture state between cases. The surviving scenario still separately verifies sporting completion while `world.phase === active` prior to archive and closure.
+
+**Verification required:** new exact-head CI (especially Admin Worker/D1, Browser, FULL), and actual per-file timing versus prior A8 logs. Fewer simulation replays do not alone prove faster CI. New main HEAD introduces player suitability code/tests; retained via safe main sync with the new test entered in `tools/ci-test-ownership.json`, while the previously removed Trafford-only test remains absent.
+
+No public product code changed as part of A9 beyond *carrying forward main's already merged additions*. No deploy, remote DB writes or merge authorization.

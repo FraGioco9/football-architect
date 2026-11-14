@@ -89,23 +89,18 @@ it('moves the independent international draw to day four and publication to day 
  expect(world.day).toBe(6);
 });
 
-it('continues all sporting days through day 56 after staged administrative setup',async()=>{
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
- world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
- world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
+it('replays all 56 sporting days, then closes and archives exactly one verified season',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
+ // This single replay covers both the unclosed day-56 sporting boundary
+ // and subsequent immutable archive/closure. Keep the original invariants.
  expect(world).toMatchObject({day:56,phase:'active'});
  const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
-},120000);
-
-it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
- world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
- world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
  world=(await archiveSeason(db,session,meta(),'bridge-archive-once-00001',now)).world;
  const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
  expect(saved.world).toMatchObject({day:56,phase:'closed'});
