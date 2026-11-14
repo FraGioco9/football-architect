@@ -14,6 +14,7 @@ interface MatchRow {
  home_club_id:string;away_club_id:string;source_kind:'calendar'|'domestic'|'international';
  source_hash:string;published_at:number;
 }
+interface MatchNumber {id:number;slot_match_id:string;generation:string;season_number:number}
 interface Stage {generation:string;seed:string;fixtures_hash:string;participants_hash:string;rules_hash:string;created_at:number}
 interface Draw {competition_id:string;outcome_hash:string;created_at:number}
 interface Event {status:string;receipt_hash:string|null;completed_at:number|null}
@@ -62,10 +63,19 @@ async function confirmedPublication(db:Database,row:PublicationSource):Promise<C
 }
 
 export async function readPublicMatch(db:Database,matchId:string){
- if(typeof matchId!=='string'||!isMatchId(matchId))return missing();
+ if(typeof matchId!=='string'||!(/^[1-9][0-9]*$/.test(matchId)||isMatchId(matchId)))return missing();
+ // Internal callers may still supply the immutable digest; public routes accept only numeric IDs.
+ const legacy=isMatchId(matchId),numberId=legacy?0:Number(matchId);
+ if(!legacy&&(!Number.isSafeInteger(numberId)||numberId<1))return missing();
+ const mapping=legacy
+  ?await db.prepare('SELECT * FROM public_match_numbers WHERE slot_match_id=?').bind(matchId).first<MatchNumber>()
+  :await db.prepare('SELECT * FROM public_match_numbers WHERE id=?').bind(numberId).first<MatchNumber>();
+ if(!mapping||!Number.isSafeInteger(mapping.id)||mapping.id<1)return missing();
+ const internalId=mapping.slot_match_id;
  const world=await readWorld(db);
- const row=await db.prepare('SELECT * FROM season_match_slots WHERE match_id=?').bind(matchId).first<MatchRow>();
- if(!row)return readPublicReservedKnockout(db,matchId,world);
+ if(mapping.generation!==world.generation||world.seasonNumber===0||mapping.season_number>world.seasonNumber)return missing();
+ const row=await db.prepare('SELECT * FROM season_match_slots WHERE match_id=?').bind(internalId).first<MatchRow>();
+ if(!row)return readPublicReservedKnockout(db,internalId,world,String(mapping.id));
  if(row.generation!==world.generation||world.seasonNumber===0||
     row.season_number>world.seasonNumber)return missing();
  const season=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
@@ -73,7 +83,7 @@ export async function readPublicMatch(db:Database,matchId:string){
  if(!season||season.generation!==world.generation)return corrupt();
  const expected=await matchIdForSlot({generation:row.generation,season:row.season_number,
   competitionId:row.competition_id,phaseId:row.phase_id,slotId:row.slot_id});
- if(expected!==matchId||row.source_fixture_id!==
+ if(expected!==internalId||row.source_fixture_id!==
   'season:'+row.season_number+':'+row.competition_id+':'+row.marker+':'+row.home_club_id+':'+row.away_club_id)
   return corrupt();
  const calendar=await confirmedPublication(db,row);
@@ -104,7 +114,7 @@ export async function readPublicMatch(db:Database,matchId:string){
  const result=scored?{homeGoals:scored.homeGoals,awayGoals:scored.awayGoals,
   resolution:scored.resolution,extraTime:scored.extraTime??null,penalties:scored.penalties??null,
   winnerClubId:scored.winnerClubId}:null;
- return {schemaVersion:1,providerId:'authoritative-world',matchId,season:row.season_number,
+ return {schemaVersion:1,providerId:'authoritative-world',matchId:String(mapping.id),season:row.season_number,
   competitionId:row.competition_id,stageId:row.phase_id,slotId:row.slot_id,
   round:row.round_number,marker:row.marker,day:row.scheduled_day,
   homeParticipant:{clubId:row.home_club_id},awayParticipant:{clubId:row.away_club_id},
@@ -123,20 +133,24 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
  const world=await readWorld(db);
  if(world.seasonNumber===0||season>world.seasonNumber)return missing();
  const rows=(await db.prepare(
-  'SELECT * FROM season_match_slots WHERE season_number=? AND competition_id=? ORDER BY scheduled_day,round_number,match_id'
+  `SELECT s.*,p.id AS public_id FROM season_match_slots s
+   JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation AND p.season_number=s.season_number
+   WHERE s.season_number=? AND s.competition_id=? ORDER BY s.scheduled_day,s.round_number,s.match_id`
  ).bind(season,competitionId).all<MatchRow>()).results;
  if(rows.length===0)return missing();
  const expected=competitionId.startsWith('int-')?72:240;
  if(rows.length!==expected)return corrupt();
  const sample=rows[0];
- if(rows.some(r=>r.generation!==world.generation||r.source_kind!==sample.source_kind||
+ if(rows.some(r=>!Number.isSafeInteger((r as MatchRow&{public_id:number}).public_id)||r.generation!==world.generation||r.source_kind!==sample.source_kind||
    r.source_hash!==sample.source_hash||r.published_at!==sample.published_at))return corrupt();
  const saved=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
   .bind(season).first<{generation:string}>();
  if(!saved||saved.generation!==world.generation)return corrupt();
  await confirmedPublication(db,sample);
  const brackets=(await db.prepare(
-  'SELECT * FROM season_knockout_match_slots WHERE season_number=? AND competition_id=? ORDER BY scheduled_day,round_number,match_id'
+  `SELECT s.*,p.id AS public_id FROM season_knockout_match_slots s
+   JOIN public_match_numbers p ON p.slot_match_id=s.match_id AND p.generation=s.generation AND p.season_number=s.season_number
+   WHERE s.season_number=? AND s.competition_id=? ORDER BY s.scheduled_day,s.round_number,s.match_id`
  ).bind(season,competitionId).all<ReservedKnockout>()).results;
  const expectedBrackets=competitionId.startsWith('int-')?21:competitionId.endsWith('-1')?2:5;
  if(brackets.length!==expectedBrackets)return corrupt();
@@ -145,7 +159,7 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
  if(definitions.length!==expectedBrackets)return corrupt();
  const canonical=await buildKnockoutSlotReservations(world.generation,season,sample.source_kind);
  for(const bracket of brackets){
-  if(bracket.generation!==world.generation||bracket.source_kind!==sample.source_kind||
+  if(!Number.isSafeInteger((bracket as ReservedKnockout&{public_id:number}).public_id)||bracket.generation!==world.generation||bracket.source_kind!==sample.source_kind||
      bracket.source_hash!==sample.source_hash||bracket.published_at!==sample.published_at)return corrupt();
   await validKnockoutSlot(bracket,canonical);
  }
@@ -156,10 +170,10 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
    throw new ApiError(409,'stale_world');
  return {schemaVersion:1,providerId:'authoritative-world',season,competitionId,
   status:'published',fixtures:[
-   ...rows.map(r=>({matchId:r.match_id,sourceFixtureId:r.source_fixture_id,
+   ...rows.map(r=>({matchId:String((r as MatchRow&{public_id:number}).public_id),sourceFixtureId:r.source_fixture_id,
      marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:'league',
      homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
-   ...brackets.map(r=>({matchId:r.match_id,sourceFixtureId:null,
+   ...brackets.map(r=>({matchId:String((r as ReservedKnockout&{public_id:number}).public_id),sourceFixtureId:null,
      marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:r.phase_id,
      tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,
      participantA:JSON.parse(r.participant_a_json),participantB:JSON.parse(r.participant_b_json)}))
@@ -191,7 +205,7 @@ async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnT
  return expected;
 }
 async function readPublicReservedKnockout(
- db:Database,matchId:string,world:Awaited<ReturnType<typeof readWorld>>,
+ db:Database,matchId:string,world:Awaited<ReturnType<typeof readWorld>>,publicMatchId:string,
 ){
  const row=await db.prepare('SELECT * FROM season_knockout_match_slots WHERE match_id=?')
   .bind(matchId).first<ReservedKnockout>();
@@ -219,7 +233,7 @@ async function readPublicReservedKnockout(
  if(after.generation!==world.generation||after.revision!==world.revision||
   after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
   throw new ApiError(409,'stale_world');
- return {schemaVersion:1,providerId:'authoritative-world',matchId,season:row.season_number,
+ return {schemaVersion:1,providerId:'authoritative-world',matchId:publicMatchId,season:row.season_number,
   competitionId:row.competition_id,stageId:row.phase_id,tieId:row.tie_id,slotId:row.slot_id,
   round:row.round_number,marker:row.marker,day:row.scheduled_day,leg:row.leg,
   neutral:row.home_policy==='neutral',homePolicy:row.home_policy,
