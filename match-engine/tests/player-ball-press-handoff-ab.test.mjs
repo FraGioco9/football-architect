@@ -224,7 +224,8 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
  const stats=modes.map(({name})=>({name,passTick:null,carryTick:null,
   postCarrySupportFrames:0,bestShortfallM:Infinity,bestTick:null,
   shotZoneFrames:0,inRangeShoeStartFrames:0,realShoeStarts:0,
-  authenticActions:[],naturalShots:[],lastPhysicalStart:null}));
+  authenticActions:[],naturalShots:[],lastPhysicalStart:null,
+  approachCheckpoints:[],nearestForwardGapM:Infinity}));
  try{
   const seen={baseline:{pass:[],carry:[]},handoff:{pass:[],carry:[]}};
   for(let tick=1;tick<=720;tick++){
@@ -243,6 +244,23 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      audit.bestShortfallM=shortfall;audit.bestTick=tick;
     }
     if(inRange)audit.shotZoneFrames++;
+    // Read-only, live-physics pursuit audit: no inferred contact/action.
+    if([567,599,600,620,640,660,680,690,693,694,700,720].includes(tick)){
+     const actors=['away-9','away-10','home-7'].map(id=>{
+      const player=frame.physicalPlayerPositions.find(p=>p.engineId===id);
+      assert.ok(player,'real 22-player fixture must contain '+id);
+      const duty=frame.contactDecisionObservation.duties.find(d=>
+       d.engineId===id)?.movementDuty??null;
+      return {id,duty,x:round(player.x),y:round(player.y),
+       ballGapM:round(Math.hypot(player.x-ball.x,player.y-ball.y))};
+     });
+     const attackers=actors.filter(a=>a.id.startsWith('away-'));
+     audit.nearestForwardGapM=Math.min(audit.nearestForwardGapM,
+      ...attackers.map(a=>a.ballGapM));
+     audit.approachCheckpoints.push({tick,ball:{
+      x:round(ball.x),y:round(ball.y),shortfallM:round(shortfall)},
+      actors});
+    }
     const starts=frame.physicalContactFeed.started;
     for(const start of starts){
      assert.ok(frame.physicalContactFeed.active.some(active=>
@@ -301,8 +319,9 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
   // expectation: a future genuine physical shot should be reported,
   // never rejected merely because the earlier witness had zero shots.
   console.log('C2_B_REAL_RAPIER_SHOT_GATE_TIMELINE',JSON.stringify(
-   stats.map(({bestShortfallM,...record})=>({
-    ...record,bestShortfallM:round(bestShortfallM)
+   stats.map(({bestShortfallM,nearestForwardGapM,...record})=>({
+    ...record,bestShortfallM:round(bestShortfallM),
+    nearestForwardGapM:round(nearestForwardGapM)
    }))));
  }finally{original.dispose();handoff.dispose();verified.dispose();}
 });
