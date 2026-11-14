@@ -10,6 +10,8 @@ import {createPhysicalFixtureStepRuntime}
  from '../src/physical-fixture-step-runtime.mjs';
 import {auditObservedPhysicalPassAttempt}
  from '../src/player-football-pass-physical-audit.mjs';
+import {measureObservedPassingCorridors}
+ from '../src/player-football-corridors.mjs';
 
 const CASES=Object.freeze([
  Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
@@ -30,6 +32,39 @@ const round=n=>Number(n.toFixed(3));
 const opts=Object.freeze({autonomousActions:true,autonomousCarry:true,
  autonomousCarrySupport:true});
 const extended=Object.freeze({...opts,autonomousCarrySupportPressHandoff:true});
+const BASELINE_TICKS=new Set([599,640,693,720]);
+// P0 research-only projection of internally produced same-tick REAL physics.
+// These are RAW directions, never verified pass eligibility or an action.
+function samplePassDirections(frame,c){
+ const tick=frame.physicsTick,ball=frame.ball.position;
+ const output=measureObservedPassingCorridors({
+  physicsTick:tick,playerId:c.team+'-9',team:c.team,
+  phase:'ball-opportunity',
+  frame:{tick,ball:{x:ball.x,y:ball.y,z:ball.z},
+   players:frame.physicalPlayerPositions.map(p=>({
+    id:p.engineId,team:p.team,x:p.x,y:p.y}))},
+  affordances:[]
+ });
+ assert.equal(output.corridors.length,10);
+ assert.equal(output.authorizedAffordances.length,0);
+ const receiver=output.corridors.find(p=>p.targetPlayerId===c.team+'-10');
+ assert.ok(receiver?.nearestOpponent);
+ const widest=output.corridors.filter(p=>!p.degenerateSegment)
+  .toSorted((a,b)=>b.nearestOpponent.distanceToSegmentM-
+   a.nearestOpponent.distanceToSegmentM||
+   a.targetPlayerId.localeCompare(b.targetPlayerId))
+  .slice(0,3).map(p=>Object.freeze({
+   receiverId:p.targetPlayerId,segmentLengthM:round(p.segmentLengthM),
+   rawOpponentGapM:round(p.nearestOpponent.distanceToSegmentM)}));
+ return Object.freeze({
+  receiverDirections:10,focusReceiverId:receiver.targetPlayerId,
+  focusNearestOpponentId:receiver.nearestOpponent.playerId,
+  focusRawOpponentGapM:round(receiver.nearestOpponent.distanceToSegmentM),
+  focusSegmentLengthM:round(receiver.segmentLengthM),
+  widestRawDirections:Object.freeze(widest),
+  passEligible:null,physicalPassAttempt:false
+ });
+}
 function collect(summary,frame,c){
  const t=frame.physicsTick;
  assert.equal(frame.officialMatchResult,null);
@@ -96,6 +131,7 @@ function collect(summary,frame,c){
     gapM:round(Math.hypot(p.x-ball.x,p.y-ball.y)),
     duty:frame.contactDecisionObservation.duties.find(d=>
      d.engineId===p.engineId)?.movementDuty}));
+  const passDirections=BASELINE_TICKS.has(t)?samplePassDirections(frame,c):null;
   summary.checkpoints.push(Object.freeze({
    tick:t,ball:Object.freeze({x:round(ball.x),y:round(ball.y)}),
    shotShortfallM:round(shortfall),focus:Object.freeze(relative),
@@ -104,7 +140,8 @@ function collect(summary,frame,c){
     sourceCarryTick:support.carryContinuation?.sourceCarryTick??null
    }):null,
    contactStarts:Object.freeze(actualStarts.map(x=>x.engineId)),
-   actualAction:action?.action??null
+   actualAction:action?.action??null,
+   ...(passDirections?{observedPassDirections:passDirections}:{})
   }));
  }
 }
@@ -177,6 +214,20 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
    }
    assert.deepEqual(a.checkpoints.map(x=>x.tick),[...CHECKS]);
    assert.deepEqual(b.checkpoints.map(x=>x.tick),[...CHECKS]);
+   for(const report of [a,b]){
+    const samples=report.checkpoints.filter(x=>BASELINE_TICKS.has(x.tick));
+    assert.deepEqual(samples.map(x=>x.tick),[...BASELINE_TICKS]);
+    for(const sample of samples){
+     const d=sample.observedPassDirections;
+     assert.equal(d.receiverDirections,10);
+     assert.equal(d.focusReceiverId,c.team+'-10');
+     assert.equal(d.passEligible,null);
+     assert.equal(d.physicalPassAttempt,false);
+     assert.ok(d.focusRawOpponentGapM>=0);
+     assert.ok(d.widestRawDirections.length>0);
+     assert.ok(Object.isFrozen(d));
+    }
+   }
    if(c.team==='home'){
     assert.equal(firstChange,null,'HOME has no eligible carry relay');
     assert.deepEqual(a.actions,b.actions);
