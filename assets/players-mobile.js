@@ -106,6 +106,8 @@
    };
    const mobile=()=>!!win.matchMedia?.('(max-width:720px)').matches;
    const updateFade=region=>{
+    // Keep the first-paint CSS right fade while a table is still unmeasurable.
+    if(mobile()&&!region.clientWidth)return;
     const state=mobile()?scrollState(region.scrollWidth,region.clientWidth,region.scrollLeft):{left:false,right:false};
     region.dataset.canScrollLeft=String(state.left);
     region.dataset.canScrollRight=String(state.right);
