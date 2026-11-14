@@ -465,6 +465,126 @@ body.app-body{--app-page-pad-top:8px}
  .club-history-table thead th{font-size:.73rem}
 }
 
+/* CLUB-HISTORY-MOBILE: preserve the native table markup and all statistics,
+   but lay season/competition rows out as a four-column grid on small screens.
+   Headings remain available to assistive technology; the visible labels
+   below share the exact locale abbreviations used by the original thead. */
+@media(max-width:620px){
+ /* Position the first History row directly below the Club view tabs border,
+    on first paint and after hydration. Desktop spacing stays unchanged. */
+ .club-history{margin-top:0;min-width:0}
+ .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
+ .club-history-table{
+  --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";
+  --club-history-mobile-d:"D";--club-history-mobile-l:"L";
+  --club-history-mobile-gf:"GF";--club-history-mobile-ga:"GA";
+  --club-history-mobile-gd:"GD";--club-history-mobile-pts:"Pts";
+  --club-history-mobile-position:"Pos.";
+  display:block;width:100%;min-width:0;max-width:100%;table-layout:auto;
+ }
+ html:lang(it) .club-history-table{
+  --club-history-mobile-mp:"PG";--club-history-mobile-w:"V";
+  --club-history-mobile-d:"N";--club-history-mobile-l:"P";
+  --club-history-mobile-ga:"GS";--club-history-mobile-gd:"DR";
+  --club-history-mobile-pts:"Pt";
+ }
+ html:lang(de) .club-history-table{
+  --club-history-mobile-mp:"Sp";--club-history-mobile-w:"S";
+  --club-history-mobile-d:"U";--club-history-mobile-l:"N";
+  --club-history-mobile-gf:"T+";--club-history-mobile-ga:"T−";
+  --club-history-mobile-gd:"TD";--club-history-mobile-pts:"Pkt";
+  --club-history-mobile-position:"Pl.";
+ }
+ html:lang(es) .club-history-table{
+  --club-history-mobile-mp:"PJ";--club-history-mobile-w:"G";
+  --club-history-mobile-d:"E";--club-history-mobile-l:"P";
+  --club-history-mobile-ga:"GC";--club-history-mobile-gd:"DG";
+ }
+ html:lang(fr) .club-history-table{
+  --club-history-mobile-mp:"MJ";--club-history-mobile-w:"V";
+  --club-history-mobile-d:"N";--club-history-mobile-l:"D";
+  --club-history-mobile-gf:"BP";--club-history-mobile-ga:"BC";
+  --club-history-mobile-gd:"DB";--club-history-mobile-pts:"Pts";
+  --club-history-mobile-position:"Pl.";
+ }
+ .club-history-table colgroup{display:none}
+ .club-history-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+ .club-history-table tbody{display:block;width:100%}
+ .club-history-table tr{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;height:auto;min-height:0;padding:6px 8px 10px;
+  box-sizing:border-box;border-bottom:1px solid var(--line);
+ }
+ .club-history-table tr>th,.club-history-table tr>td{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-sizing:border-box;width:auto;height:auto;min-height:34px;padding:4px 2px;
+  border:0;white-space:normal;overflow:visible;text-overflow:clip;
+  font-size:12px;line-height:1.25;text-align:center;
+ }
+ .club-history-table .club-history-season-row>th:first-child{
+  grid-column:1/-1;align-items:flex-start;min-height:44px;
+  text-align:left;font-size:14px;
+ }
+ .club-history-table .club-history-season-row .club-history-expand{min-height:44px;align-items:center}
+ .club-history-table .club-history-season-row>td:nth-child(2),
+ .club-history-table .club-history-season-row>td:nth-child(3),
+ .club-history-table .club-history-season-row>td:nth-child(11){display:none}
+ .club-history-table .club-history-competition-row{padding-inline-start:12px}
+ .club-history-table .club-history-competition-row>td:first-child{display:none}
+ .club-history-table .club-history-competition-row>th:nth-child(2){
+  grid-column:1/-1;align-items:flex-start;justify-content:center;
+  padding-inline-start:0;min-height:38px;text-align:left;white-space:normal;
+  overflow:visible;text-overflow:clip;
+ }
+ .club-history-table .club-history-competition-value a.club-history-competition-link{
+  display:inline;max-width:100%;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:anywhere;line-height:1.35;
+ }
+ /* Pos./stage label and its value share a baseline. Long phases wrap only
+    inside the value column; they must not push the label into another line. */
+ .club-history-table .club-history-competition-row td:nth-child(3){
+  grid-column:1/-1;display:grid;grid-template-columns:max-content minmax(0,1fr);
+  align-items:baseline;justify-content:start;column-gap:6px;
+  min-height:28px;white-space:normal;overflow:visible;
+  text-overflow:clip;overflow-wrap:anywhere;text-align:left;
+  font-size:12px;line-height:1.25;color:var(--muted);
+ }
+ .club-history-table .club-history-competition-row td:nth-child(3):empty{display:none}
+ .club-history-table .club-history-competition-row td:nth-child(3):not(:empty)::before{
+  content:var(--club-history-mobile-position);font-size:12px;line-height:inherit;
+  font-weight:600;align-self:baseline;
+ }
+ /* Each statistic has two identical fixed tracks, whether the second track
+    contains a text number or a first-paint skeleton bar. */
+ .club-history-table tr>td:nth-child(n+4){
+  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums;
+ }
+ .club-history-table tr>td:nth-child(n+4)::before{
+  display:block;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+ }
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{
+  align-self:center;justify-self:center;margin-inline:auto;
+ }
+ .club-history-table tr>td:nth-child(4)::before{content:var(--club-history-mobile-mp)}
+ .club-history-table tr>td:nth-child(5)::before{content:var(--club-history-mobile-w)}
+ .club-history-table tr>td:nth-child(6)::before{content:var(--club-history-mobile-d)}
+ .club-history-table tr>td:nth-child(7)::before{content:var(--club-history-mobile-l)}
+ .club-history-table tr>td:nth-child(8)::before{content:var(--club-history-mobile-gf)}
+ .club-history-table tr>td:nth-child(9)::before{content:var(--club-history-mobile-ga)}
+ .club-history-table tr>td:nth-child(10)::before{content:var(--club-history-mobile-gd)}
+ .club-history-table tr>td:nth-child(11)::before{content:var(--club-history-mobile-pts)}
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(2){
+  grid-column:1/-1;display:flex;align-items:flex-start;
+  min-height:28px;text-align:left;white-space:normal;color:var(--muted);
+ }
+ .club-history-table .club-history-season-row:has(.club-history-empty-season)>td:nth-child(n+3){display:none}
+ .club-history-table .club-history-row-loading .club-history-total-label{display:none}
+ .club-history-table .club-history-row-loading .club-history-skeleton-label{min-height:44px}
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{margin-inline:auto}
+ .club-history-table .club-history-competition-row[hidden]{display:none}
+}
+
 /* Club Fixtures: use the existing shell, crest and dropdown tokens. */
 .club-fixtures{min-width:0;min-height:440px;margin-top:14px}
 .club-fixtures[hidden]{display:none}

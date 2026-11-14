@@ -73,6 +73,18 @@
   // Expanded rows persist on language change and world/source redraws.
   const openHistorySeasons=new Set();
   const syncHistoryRows=()=>{
+   // On narrow screens CSS displays native table rows as grids. Explicit roles
+   // retain the table/row/header structure for Safari VoiceOver and other AT.
+   for(const table of host.querySelectorAll('.club-history-table')){
+    if(table.hasAttribute('role'))continue;
+    table.setAttribute('role','table');
+    table.tHead?.setAttribute('role','rowgroup');
+    for(const body of table.tBodies)body.setAttribute('role','rowgroup');
+    for(const row of table.rows)row.setAttribute('role','row');
+    for(const cell of table.querySelectorAll('thead th'))cell.setAttribute('role','columnheader');
+    for(const cell of table.querySelectorAll('tbody th'))cell.setAttribute('role','rowheader');
+    for(const cell of table.querySelectorAll('tbody td'))cell.setAttribute('role','cell');
+   }
    const buttons=host.querySelectorAll('[data-club-history-toggle]');
    for(const button of buttons){
     const season=button.dataset.clubHistoryToggle;
