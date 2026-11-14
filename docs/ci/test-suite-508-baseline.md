@@ -219,3 +219,15 @@ No public product code changed as part of A9 beyond *carrying forward main's alr
 | `public-sporting-runtime.test.ts` | Read-only public endpoints at different real world states; A5 consolidated overlapping day-13 projections | No future score leakage, historical visibility, corrupted-source rejection, reset/generation isolation | Retain |
 
 This is a **bounded classification**, not certification of all 300+ owned files. Continue feature-level classification of Node, browser and Match Engine suites before closing inventory or equivalence checkboxes. Additional full-season replay deletion requires an independently proven surviving behavior path; do not deduplicate across different security/transaction boundaries.
+
+## Batch A12 — consolidate duplicate DEV route/server checks in Node (2026-11-14)
+
+**Previous A11 exact head `861b97079ea9b0081ebfe37b5b3cc007c8470de8`:** all required CI **PASS** (Site, Browser QA, Admin/Worker/D1, FULL, Player Generator, names and surnames); Cloudflare Preview packaging was skipped as designed.
+
+**Demonstrated duplication:** `tests/subpage-routes.test.mjs` contained two Node cases, each creating a local `createPreviewServer` instance and issuing four equivalent redirect requests. They separately asserted explicit view availability and security/path rejection but shared the same DEV HTTP route behavior.
+
+**A12:** merge the two cases into one lifecycle-managed server test. Preserve all previously distinct redirect inputs, including historical query normalization, slash removal, legacy club view redirects, percent-encoded club ID forbidden (403), invalid competition and view (404), and international cup root (200). Preserve the original view-availability checks, now derived from **all `competitionViews`** instead of a seven-item hard-coded subset, so supported new views are covered automatically. Use a common `{status,location}` response normalization that enforces no unexpected redirect on successful views. Original case count **8 → 7** in this file; two Node server boots → one; four repeated HTTP checks are deduplicated. No unique security, redirect, route or view assertion is removed.
+
+**Coverage boundary:** `routes-registry.test.mjs` still validates exhaustive canonical route round-trip; `routes-compatibility.test.mjs` still checks hosting config and generated links; `app-canonical-routes.test.mjs` protects public/DEV canonical paths. No production route or hosting configuration changed.
+
+**Validation:** syntax checked and exact-head CI required; fewer server boots do not by themselves certify a significant end-to-end speed improvement. No test skips, arbitrary retries, shared state between remaining cases, CI selector changes, deploys or remote DB operations.
