@@ -93,13 +93,6 @@ test('all national runtime surname pools avoid two-or-more-letter ALL-CAPS token
      token===token.toLocaleLowerCase('und'),c.code+': '+value);
   }
  }
- assert.ok(pools.surnames.get('AUS').includes('Lamerton'));
- assert.ok(pools.surnames.get('AUS').includes('van der Plaat'));
- assert.ok(pools.surnames.get('AUS').includes('Galli-McRostie'));
- assert.ok(pools.surnames.get('CMR').includes('Abdallah'));
- assert.ok(pools.surnames.get('COD').includes('Abdallah'));
- assert.ok(pools.surnames.get('BRA').includes('da Silva'));
- assert.ok(pools.surnames.get('KOR').includes('I'));
 });
 
 test('missing 439 catalog only: explicit test/demo fallback',()=>withFixture(ctx=>{

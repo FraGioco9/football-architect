@@ -98,3 +98,13 @@ Previous exact HEAD `84ed78a23a2b4cc1d76d093bc7cfe455bbf9b11f`: Browser QA and f
 No runner/CI gate suppression, skipped tests, error-catching or production code change. The browser test still visits desktop and mobile widths and checks legacy URL canonicalization.
 
 **Further evidence:** executed case counts and wall-clock duration on new exact-HEAD CI, diagnosis of any persistent failure, and eventual full suite coverage mapping. Prior failing jobs are **not** marked fixed by these edits alone.
+
+## Batch A3 — stop pinning arbitrary names in the catalog (2026-11-14)
+
+The **all-50-country** format test already validates every given name: exactly 300 distinct entries per country, NFC Latin script, single word, uppercase initial, positive descending weights and recognized provenance. The separate runtime surname test likewise validates **all** national surnames against unapproved ALL-CAPS multi-letter tokens and duplicate normalization. Example name inclusions and precise top/bottom rank values therefore lock current content without protecting the generator's behavior.
+
+- Removed isolated `given_names.some(name===...)` examples across batch F/J/K/D and country notes; removed a RUS three-name/weight micro-snapshot and ENG/WAL first/last name snapshots. Deleted the redundant six-compound-name negative sample loop already covered by the exhaustive per-name Latin/punctuation validation. All 50 country source identities, source file hashes, weights/rank *properties*, cohort/provenance warnings, romanization, source-limits and geographic restrictions are retained.
+- Removed seven one-off surname inclusions across AUS/CMR/COD/BRA/KOR from the exhaustive runtime casing test. The isolated synthetic surname fixture still protects compound casing, particles, apostrophes and sampling order.
+- No changes to generated player data, bank source files, corpus weights, defaults, sampling behavior or security/CI gates. No test cases were skipped. A3 reduces **assertion count**, not top-level test count.
+
+**Current evidence:** static diff and existing full-file test coverage map; re-run exact-HEAD site/generator/catalog checks to establish passing behavior. A successful CI run is **required before claiming equivalence**.
