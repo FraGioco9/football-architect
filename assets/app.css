@@ -1879,6 +1879,10 @@ html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{backgroun
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link)::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:currentColor;opacity:0;pointer-events:none}
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):is(:hover,:focus-visible)::after{opacity:1}
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* Identical Player name geometry on desktop and mobile. Each 36px row has
+ * a 1px bottom border, so its content midpoint sits half a pixel above the
+ * row midpoint. Offset the link by 0.5px, independently of the underline. */
+.app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;transform:translateY(.5px)}
 
 /* UI-VIEWS-01 (#559): view/subview controls only. No Club History content styles.
  * Desktop: narrower view buttons. Mobile: preserve the established 2.5-tab
@@ -1931,10 +1935,7 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
 /* #574: mobile labels from render-time attributes; desktop text and full
  * accessibility names remain unchanged. No async DOM replacement. */
 @media(max-width:720px){
- /* Player label owns an exact 18px block flex box centered by its table cell.
-  * Avoid inline-flex baseline metrics: the absolute hover underline has no
-  * influence on the label's height or vertical centering. */
- .app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px}
+ /* The Player link has the same fixed 18px box at every viewport width. */
  .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]{font-size:0}
  .app-players-table :is(.app-player-name-link,.club-roster-player-link)[data-mobile-name]::before{content:attr(data-mobile-name);display:block;font-size:14px;line-height:18px;white-space:nowrap}
  .app-admin-view .admin-contracts-table td.admin-contracts-player-name[data-mobile-name]{font-size:0}
