@@ -75,8 +75,8 @@
   const syncHistoryRows=()=>{
    // On narrow screens CSS displays native table rows as grids. Explicit roles
    // retain the table/row/header structure for Safari VoiceOver and other AT.
-   const table=host.querySelector('.club-history-table');
-   if(table&&!table.hasAttribute('role')){
+   for(const table of host.querySelectorAll('.club-history-table')){
+    if(table.hasAttribute('role'))continue;
     table.setAttribute('role','table');
     table.tHead?.setAttribute('role','rowgroup');
     for(const body of table.tBodies)body.setAttribute('role','rowgroup');

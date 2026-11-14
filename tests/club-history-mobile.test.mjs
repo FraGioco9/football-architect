@@ -50,6 +50,7 @@ test('#560 History mobile preserves disclosure DOM, statistics and competition l
 
 test('#560 table semantics are explicitly restored when CSS displays mobile grid rows',()=>{
  const js=read('assets/club-page.js');
+ assert.match(js,/for\(const table of host\.querySelectorAll\('\.club-history-table'\)\)\{/);
  assert.match(js,/table\.setAttribute\('role','table'\)/);
  assert.match(js,/table\.tHead\?\.setAttribute\('role','rowgroup'\)/);
  assert.match(js,/for\(const row of table\.rows\)row\.setAttribute\('role','row'\)/);
