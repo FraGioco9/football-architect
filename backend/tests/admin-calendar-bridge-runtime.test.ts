@@ -10,7 +10,7 @@ import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
-import {readPublicMatch} from '../src/public-match-read.ts';
+import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
 import {archiveSeason} from '../src/season-archive-command.ts';
@@ -49,6 +49,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='international'").first()).n).toBe(144);
  const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first<{match_id:string}>();
  expect(await readPublicMatch(db,cup!.match_id)).toMatchObject({status:'scheduled',result:null,provenance:{sourceKind:'international'}});
+ expect((await readPublishedCompetitionMatches(db,1,'int-1')).fixtures).toHaveLength(72);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  const before=meta(),published=await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now);
  world=published.world;

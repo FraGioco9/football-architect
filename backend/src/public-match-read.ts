@@ -107,3 +107,37 @@ export async function readPublicMatch(db:Database,matchId:string){
   status:result?'completed':'scheduled',result,venue:null,kickoff:null,
   provenance:{kind:'authoritative',sourceKind:row.source_kind,sourceHash:row.source_hash}};
 }
+
+/**
+ * Published competition's official fixtures, including during the interval
+ * between domestic and international draws. Does not publish standings or
+ * future match results before a sporting receipt exists.
+ */
+export async function readPublishedCompetitionMatches(db:Database,season:number,competitionId:string){
+ if(!Number.isSafeInteger(season)||season<1||
+    !/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(competitionId))return missing();
+ const world=await readWorld(db);
+ if(world.seasonNumber===0||season>world.seasonNumber)return missing();
+ const rows=(await db.prepare(
+  'SELECT * FROM season_match_slots WHERE season_number=? AND competition_id=? ORDER BY scheduled_day,round_number,match_id'
+ ).bind(season,competitionId).all<MatchRow>()).results;
+ if(rows.length===0)return missing();
+ const expected=competitionId.startsWith('int-')?72:240;
+ if(rows.length!==expected)return corrupt();
+ const sample=rows[0];
+ if(rows.some(r=>r.generation!==world.generation||r.source_kind!==sample.source_kind||
+   r.source_hash!==sample.source_hash||r.published_at!==sample.published_at))return corrupt();
+ const saved=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
+  .bind(season).first<{generation:string}>();
+ if(!saved||saved.generation!==world.generation)return corrupt();
+ await confirmedPublication(db,sample);
+ const after=await readWorld(db);
+ if(after.generation!==world.generation||after.revision!==world.revision||
+   after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
+   throw new ApiError(409,'stale_world');
+ return {schemaVersion:1,providerId:'authoritative-world',season,competitionId,
+  status:'published',fixtures:rows.map(r=>({matchId:r.match_id,sourceFixtureId:r.source_fixture_id,
+   marker:r.marker,day:r.scheduled_day,round:r.round_number,
+   homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
+  provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
+}
