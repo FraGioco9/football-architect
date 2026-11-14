@@ -276,19 +276,20 @@ test('#574 Player names follow the same inline baseline as Admin Contracts',()=>
 });
 
 
-test('#574 mobile Player labels share the Positions 28px centered track, desktop untouched',()=>{
+test('#574 mobile Player text uses the Admin Contracts inline baseline; desktop stays unchanged',()=>{
  const src=read('assets/app.css');
- const mobile=src.split('/* On mobile, match the already centered 28px Positions and Club tracks.')[1];
- assert.ok(mobile,'mobile-only Player centering rules exist');
- const body=src.slice(src.indexOf('/* #574: mobile labels from render-time attributes'));
- assert.ok(body.indexOf('/* On mobile, match the already centered 28px Positions and Club tracks.') < body.indexOf('@media(max-width:420px)'), 'rules belong to the <=720px section');
- assert.match(mobile,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:28px;min-height:28px;margin:0;padding:0;line-height:18px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/);
- assert.match(mobile,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\) > \.fa-player-short-name\{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/);
- assert.match(mobile,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\)\{text-decoration:none\}/);
- assert.match(mobile,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\):is\(:hover,:focus-visible\) > \.fa-player-short-name\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/);
- assert.match(src,/\.fa-positions-layout\{display:flex;align-items:center;gap:4px;min-width:0;width:100%;height:28px/);
- assert.match(src,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'Player remains left aligned');
- assert.match(src,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/,'desktop approved inline rendering preserved');
- assert.doesNotMatch(src,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*translateY/,'no artificial offsets');
+ const mobile=src.split('/* Mobile Player names use the same inline typography as Admin Contracts.')[1];
+ assert.ok(mobile);
+ const scoped=src.slice(src.indexOf('/* #574: mobile labels from render-time attributes'));
+ assert.ok(scoped.indexOf('/* Mobile Player names use the same inline typography as Admin Contracts.')<scoped.indexOf('@media(max-width:420px)'),'mobile only');
+ assert.match(mobile,/td:nth-child\(2\):has\(> :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]\)\{font-size:0\}/,'zero-sized parent strut matches Contracts');
+ assert.match(mobile,/td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]\{display:inline;[^}]*font-size:14px;line-height:18px/,'inline link provides a real 19px focusable text box');
+ assert.match(mobile,/td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\] > :is\(\.fa-player-full-name,\.fa-player-short-name\)\{display:none\}/);
+ assert.match(mobile,/td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);font-size:14px;line-height:18px;white-space:nowrap\}/);
+ assert.doesNotMatch(mobile,/td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]\{[^}]*height:28px/,'no artificial 28px Player-name link box');
+ assert.match(src,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/);
+ assert.match(src,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/,'approved desktop rule retained');
+ assert.match(src,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline/,'native underline retained');
+ assert.doesNotMatch(src,/\.app-player-name-link:hover::after/,'no layout-affecting underline pseudo-element');
  assert.match(src,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
 });
