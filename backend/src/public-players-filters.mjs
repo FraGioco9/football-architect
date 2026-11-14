@@ -31,6 +31,7 @@ const selected=(value,allowed)=>{
 };
 const validators=Object.freeze({
  page:value=>/^[1-9][0-9]{0,3}$/.test(value),
+ offset:value=>/^(?:0|[1-9][0-9]{0,5})$/.test(value)&&Number(value)<=499900&&Number(value)%50===0,
  sort:value=>SORTS.has(value),
  order:value=>value==='asc'||value==='desc',
  name:value=>{try{nameValue(value);return true}catch{return false}},
@@ -62,7 +63,7 @@ export function parsePublicPlayerQuery(raw=''){
   seen.add(key);values[key]=value;
  }
  if((values.nationalityScope&&!values.nationality)||(values.positionScope&&!values.position)||
-    (values.order&&!values.sort))
+    (values.order&&!values.sort)||(values.offset!==undefined&&values.page!==undefined))
   throw new TypeError('invalid_public_request');
  const ageMin=values.ageMin===undefined?undefined:Number(values.ageMin);
  const ageMax=values.ageMax===undefined?undefined:Number(values.ageMax);
@@ -84,7 +85,7 @@ export function parsePublicPlayerQuery(raw=''){
  if(heightMin!==undefined)filters.heightMin=heightMin;
  if(heightMax!==undefined)filters.heightMax=heightMax;
  if(values.foot!==undefined)filters.foot=values.foot;
- return {page:values.page===undefined?1:Number(values.page),filters};
+ return {page:values.offset!==undefined?Number(values.offset)/50+1:values.page===undefined?1:Number(values.page),filters};
 }
 export function isAllowedPublicPlayersPath(raw){
  if(typeof raw!=='string'||!raw.startsWith('/api/players'))return false;
