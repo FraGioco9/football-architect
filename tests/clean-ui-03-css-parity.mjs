@@ -31,6 +31,11 @@ try{
     const response=await page.goto(origin+route,{waitUntil:"load",timeout:25000});
     assert.equal(response?.status(),200,route);
     if(route.startsWith('/competitions/'))await page.waitForFunction(()=>!!window.faCompetitionContext?.definition);
+    // History archive rows arrive after the competition definition. Compare
+    // both stylesheets with the actual archived rows mounted, not a skeleton
+    // in one independent browser context and hydrated rows in the other.
+    if(route==="/competitions/it-1/history")
+      await page.waitForSelector(".app-history-dev-archive-head",{state:"attached"});
     // Compare the hydrated state, not an arbitrary instant during asynchronous
     // standings first paint. The real table may legitimately be concealed by
     // the skeleton while the data provider is pending.
