@@ -547,6 +547,51 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       }else{
        assert.equal(initial.display,'table-row','tablet/desktop preserve the native table at '+width);
       }
+      if(width<=620){
+       // Compare the exact seven first-paint skeleton centers to the seven
+       // hydrated aggregate-number centers in their shared grid tracks.
+       const alignment=await run(`(()=>{
+        const row=document.querySelector('#history-mobile-560-probe .club-history-season-row');
+        const cells=[...row.children].slice(3,10);
+        const rect=n=>{const r=n.getBoundingClientRect();return {cx:r.left+r.width/2,cy:r.top+r.height/2,height:r.height};};
+        const actual=cells.map(cell=>{
+         const range=document.createRange();range.selectNodeContents(cell);
+         const value=rect(range),slot=rect(cell);
+         return {dx:value.cx-slot.cx,dy:value.cy-slot.cy,height:slot.height};
+        });
+        const initial=cells.map(cell=>cell.innerHTML);
+        for(const cell of cells)cell.innerHTML='<span class="club-fp-bar" aria-hidden="true"></span>';
+        row.classList.add('club-history-row-loading');
+        const skeleton=cells.map(cell=>{
+         const bar=rect(cell.querySelector('.club-fp-bar')),slot=rect(cell);
+         return {dx:bar.cx-slot.cx,dy:bar.cy-slot.cy,height:slot.height};
+        });
+        row.classList.remove('club-history-row-loading');
+        cells.forEach((cell,i)=>cell.innerHTML=initial[i]);
+        const header=row.querySelector('th:first-child');
+        const button=header.querySelector('button');
+        const text=button.lastChild;const range=document.createRange();range.selectNodeContents(text);
+        const nameLeft=range.getBoundingClientRect().left;
+        const original=header.innerHTML;
+        header.innerHTML='<span class="club-history-expand club-history-skeleton-label">'+
+         '<span class="club-history-chevron-space" aria-hidden="true"></span>'+
+         '<span class="club-fp-bar" aria-hidden="true"></span></span>';
+        const skeletonNameLeft=header.querySelector('.club-fp-bar').getBoundingClientRect().left;
+        header.innerHTML=original;
+        return {actual,skeleton,nameOffset:skeletonNameLeft-nameLeft};
+       })()`);
+       for(let i=0;i<7;i++){
+        const data=alignment.actual[i],skeleton=alignment.skeleton[i];
+        assert.ok(Math.abs(data.dx-skeleton.dx)<=2,
+         'stat '+i+' skeleton shares hydrated horizontal center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.dy-skeleton.dy)<=3,
+         'stat '+i+' skeleton shares hydrated value-row center at '+width+': '+JSON.stringify(alignment));
+        assert.ok(Math.abs(data.height-skeleton.height)<=1,
+         'stat '+i+' keeps the same cell height during loading at '+width);
+       }
+       assert.ok(Math.abs(alignment.nameOffset)<=2,
+        'season skeleton starts exactly where the loaded name starts at '+width+': '+JSON.stringify(alignment));
+      }
       await run("document.querySelector('#history-mobile-560-probe [data-club-history-toggle]').click()");
       const expanded=await run(`(()=>{
        const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
