@@ -23,7 +23,13 @@ const riskPatterns={
  fixedClubIds:/\b(?:ENG|WAL|IT|ES|DE|FR|PT|NL|BR)-\d{1,3}\b/g,
  globalState:/\b(?:process\.env|process\.chdir|globalThis)\b/g,
  nondeterminism:/\b(?:Math\.random|Date\.now|randomUUID)\s*\(/g,
- externalIO:/\b(?:fetch|createServer|execSync|execFileSync|spawn)\s*\(/g
+ externalIO:/\b(?:fetch|createServer|execSync|execFileSync|spawn)\s*\(/g,
+ // Review signals only. Calls in a file are not a proof of duplicated
+ // scenarios, and setup cost depends on the actual runner and fixture.
+ disabledOrFocused:/\b(?:test|it|describe)\.(?:skip|only|todo)\s*\(/g,
+ sportingReplays:/\b(?:await\s+through\s*\(\s*\d+|await\s+executeLifecycle\s*\(|await\s+generateSeasonCalendar\s*\()/g,
+ d1Rebuilds:/\b(?:applyD1Migrations|clearTestWorld|restoreTestWorld)\s*\(/g,
+ explicitWaits:/\b(?:waitForTimeout|setTimeout)\s*\(/g
 };
 const rows=[...tracked.map(path=>({path,owner:manifest.tests[path]})),
  ...engine.map(path=>({path,owner:path.includes('browser')?'match-engine-browser':'match-engine-node'}))]
@@ -39,17 +45,28 @@ const byOwner={};
 for(const {owner} of rows)byOwner[owner]=(byOwner[owner]||0)+1;
 const candidates=rows.filter(row=>row.catalogNames.length||row.flags.fixedClubIds)
  .map(row=>({path:row.path,owner:row.owner,catalogNames:row.catalogNames.slice(0,8),fixedClubIds:row.flags.fixedClubIds}));
+// Do not rank by keyword count alone: a long-lived integration case can
+// protect a real transaction boundary, so these are manual inspection queues.
+const replayReview=rows.filter(row=>row.flags.sportingReplays>0)
+ .map(({path,owner,staticTestCalls,flags})=>({path,owner,staticTestCalls,
+  sportingReplays:flags.sportingReplays,d1Rebuilds:flags.d1Rebuilds}))
+ .sort((a,b)=>b.sportingReplays-a.sportingReplays||a.path.localeCompare(b.path));
+const disabledReview=rows.filter(row=>row.flags.disabledOrFocused>0)
+ .map(({path,owner,flags})=>({path,owner,count:flags.disabledOrFocused}))
+ .sort((a,b)=>a.path.localeCompare(b.path));
 const report={scope:'TEST-SUITE-01 static inventory; signals require human review',
  scannedFiles:rows.length,ownedFiles:tracked.length,matchEngineFiles:engine.length,
  byOwner:Object.fromEntries(Object.entries(byOwner).sort(([a],[b])=>a.localeCompare(b))),
  staticTestCalls:rows.reduce((n,row)=>n+row.staticTestCalls,0),
  staticAssertCalls:rows.reduce((n,row)=>n+row.staticAssertCalls,0),
- candidateFiles:candidates.length,candidates,rows};
+ candidateFiles:candidates.length,candidates,
+ replayReview,disabledReview,rows};
 if(process.argv.includes('--json'))process.stdout.write(JSON.stringify(report,null,2)+'\n');
 else {
  console.log('TEST-SUITE-01: '+report.scannedFiles+' source files ('+report.ownedFiles+' ownership-tracked, '+report.matchEngineFiles+' Match Engine).');
  console.log('Owner groups:',JSON.stringify(report.byOwner));
  console.log('Static calls (not executed test/coverage counts): '+report.staticTestCalls+' test/it, '+report.staticAssertCalls+' assert.');
  console.log(report.candidateFiles+' files contain a canonical club name or fixed club ID: review candidates, not defects.');
- console.log('Use --json for source-file details and evidence.');
+ console.log(report.replayReview.length+' files contain explicit sporting replay/setup signals; '+report.disabledReview.length+' files contain skip/only/todo markers (check context before acting).');
+ console.log('Use --json for source-file details, replay review queue and evidence.');
 }

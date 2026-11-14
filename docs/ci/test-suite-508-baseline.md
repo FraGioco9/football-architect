@@ -134,3 +134,29 @@ The **all-50-country** format test already validates every given name: exactly 3
 **Net:** 14 → 13 top-level cases in one Worker runtime file; **one fewer expensive 13-day persisted lifecycle replay**, no change to expected scores, policies, request method, data validation, code under test, or CI requirements. All other isolated cases (missing receipts, corrupted hash, reset generation, full season closure, authentication, unsupported routes) remain independent.
 
 **Validation needed:** exact-HEAD Admin Worker/D1 + browser + Site + FULL PASS, then recorded per-file timing from CI to determine the *actual* speed improvement. Reusing a setup in this narrow case does not authorize shared mutable D1 state across test cases.
+
+## Batch A6 — measured CI, browser lifecycle investigation and static cost review (2026-11-14)
+
+**Exact HEAD verification:** `4121f7192d10e533799fae74436c85859eefc908` finished **PASS** for Site, Browser, Admin, FULL, first-name catalog, SURNAMES and player generator. Cloudflare packaging was correctly skipped; no deployment.
+
+### Worker/D1 runtime evidence from actual Admin jobs
+
+| Exact HEAD | Public sporting Worker file | Worker test cases | Per-file duration | Overall Admin Vitest duration |
+| --- | ---: | ---: | ---: | ---: |
+| A2 `9507f21` | `public-sporting-runtime.test.ts` | 14 | 18.324 s | 101.79 s |
+| A4 `af7da1f` | `public-sporting-runtime.test.ts` | 14 | 27.460 s | 122.51 s |
+| A5 `4121f71` | `public-sporting-runtime.test.ts` | 13 | 28.575 s | 130.48 s |
+
+A5 consolidates one exact-day-13 lifecycle replay while retaining assertions, **but measured duration did not decrease** in this sample. The 1.115 s difference versus A4 is not a reliable estimate of overhead or savings: unpaired runners have setup, cache and load variance. **Do not claim performance improvement** based on static replay counts; aggregate multiple equivalent observations before changing runtime gates or making speed claims. The backend Vitest `Duration` includes parallel work and is not the sum of per-file durations.
+
+### Browser QA reliability evidence
+
+- A4 Chromium Browser QA **FAIL** at `tests/canonical-state-browser.mjs:254`: the Debug Settings checkbox initially appeared, was unstable, then became hidden during Playwright `locator.check()` after reopening a mobile overlay. World state at failure was authoritative Season 2/day 21; no page errors were reported.
+- A5 Browser QA **PASS** without modifying that browser test or local Debug widget. The existing browser runner exercised SH-03 Chromium **36** checks, SH-03 WebKit **36** checks, and all remaining Chromium/WebKit suites. This provides evidence of **intermittent behavior**, not proof of a particular race or a reason to hide a regression.
+- Review candidate: local-only `tools/dev-debug-widget.mjs` uses `animationend` **and** an uncancelled 180 ms fallback timer to hide a closing panel. A reopen before its previous timer expires could hide the new panel. This is a plausible mechanism but **not root-cause confirmed**. Keep the browser gate intact; diagnose/reproduce before changing DEV UI or adding arbitrary waits.
+
+### Read-only inventory enhancement
+
+`tools/test-suite-508-inventory.mjs` now reports **manual review queues** for explicit sporting lifecycle replays/D1 rebuilds and focused/skipped/todo test declarations, in addition to ownership, one-off club IDs, names and global state/IO risk flags. The queues are source scans only; a replay or skipped marker is not automatically classified as duplication or a defect. No CI selector, Worker/runtime, migration, fixture, or product code change.
+
+The 12-point whole-suite audit is still incomplete. A1–A6 are incremental evidence, not final coverage certification.
