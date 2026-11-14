@@ -494,7 +494,8 @@ test('Players SQL count/page share identical secondary and multiple filters with
  assert.match(sql,/SELECT COUNT\(\*\) AS n FROM generated_players'\+where/);
  assert.match(sql,/SELECT id,payload_json FROM generated_players'\+where/);
  assert.doesNotMatch(sql,/WHERE world_generation=\?/);
- assert.match(sql,/'created_at DESC,id ASC'/);
+ assert.match(sql,/:\'id DESC\'/,'default public sorting follows descending numeric IDs');
+ assert.doesNotMatch(sql,/:\'created_at DESC,id ASC\'/);
  assert.match(sql,/ORDER BY '\+orderBy\+' LIMIT \? OFFSET \?'/);
  assert.match(sql,/json_extract\(payload_json,'\$\.height_cm'\)>=\?/);
  assert.match(types,/nationality\?:string\[\]/);
@@ -664,6 +665,20 @@ test('Players column buttons provide persistent URL ordering on complete server-
  const firstPaint=html.match(/<script data-players-first-paint>([\s\S]*?)<\/script>/)?.[1];
  assert.match(firstPaint,/th\.setAttribute\('aria-sort',active\?/);
 });
+test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loading rows',async()=>{
+ const sql=read('backend/src/public-players-read.ts'),js=read('assets/players-directory.js');
+ const {parsePublicPlayerQuery}=await import('../backend/src/public-players-filters.mjs');
+ assert.deepEqual(parsePublicPlayerQuery('').filters,{},'default API query sends no explicit sort');
+ assert.deepEqual(parsePublicPlayerQuery('?page=2').filters,{},'deep links share the default ordering');
+ assert.match(sql,/:\'id DESC\'/,'newest numeric player ID is first when no sort selected');
+ assert.match(sql,/sortExpression\+' COLLATE NOCASE '\+\(filters\.order==='desc'\?'DESC':'ASC'\)\+', id ASC'/,'explicit sorts preserve stable tie-breaking');
+ const load=js.slice(js.indexOf('  async function load(page){'),js.indexOf('  function changeView(view){'));
+ assert.match(load,/current=null;status='loading'/,'old rows are cleared before a sort refresh');
+ assert.match(load,/renderHead\(\);showLoadingRows\(\)/,'sort-triggered load renders placeholders first');
+ assert.match(js,/for\(let n=0;n<5;n\+\+\)/,'refresh reserves exactly five loading rows');
+ assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sort resets to the first complete server page');
+});
+
 test('Players search clear X uses a pointer cursor on supported WebKit/Blink browsers',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  assert.match(html,/data-players-filter="name" maxlength="80"/);

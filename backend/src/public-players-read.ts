@@ -90,7 +90,7 @@ export async function readPublicPlayers(db:Database,page:number,filters:PublicPl
  const sortExpression=filters.sort?sortSql.get(filters.sort)!:null;
  const orderBy=sortExpression
   ?sortExpression+' COLLATE NOCASE '+(filters.order==='desc'?'DESC':'ASC')+', id ASC'
-  :'created_at DESC,id ASC';
+  :'id DESC';
  const where=predicates.length?' WHERE '+predicates.join(' AND '):'';
  const countRow=await db.prepare('SELECT COUNT(*) AS n FROM generated_players'+where)
   .bind(...values).first<{n:number}>();

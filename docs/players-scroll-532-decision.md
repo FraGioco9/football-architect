@@ -1,0 +1,41 @@
+# PLAYERS-SCROLL-01 (#532) — Phase A audit and recommendation
+
+**Status:** proposed UX decision, **not implementation authorization**. Source audited on `main@a558a0dd6086f00773ed9ee951f9d12412f127ae` (2026-11-14). No hosted Preview, Safari or D1 performance benchmark is claimed. The independent default-order correction is implemented separately in the same Draft/HOLD PR.
+
+## Existing contract (verified in source)
+
+- `GET /api/players?page=N` returns `{ players, count, page, pageSize, totalPages }`; `PUBLIC_PLAYER_PAGE_SIZE=50` and SQL uses `LIMIT ? OFFSET ?`. The strict shared Worker/DEV parser accepts 1–9999 for `page`; unrecognized, duplicate, malformed parameters are rejected. The public page replaces all rows on Previous/Next, stores `page`, sort, filters and view/group in its URL, and listens for `popstate`.
+- Filters and sorting run **before** LIMIT/OFFSET in D1 for the entire dataset. Each request performs `COUNT(*)` with the same predicates. Many sort/filter expressions use `json_extract(payload_json,...)`; existing generated-player indexes concern world/batch plus the integer primary key, not every expression. Actual `EXPLAIN QUERY PLAN`, measured count cost and byte/request profiles are **pending**.
+- Stable public numeric IDs are `INTEGER PRIMARY KEY AUTOINCREMENT` (migration 0021) and player detail uses `/players/<id>`. World reset preserves persisted player identities; the Worker checks `world.generation` around reads but this alone does not snapshot concurrent player insertions across separate page requests.
+- Admin generation preview has its own client-side pagination and authorization; club roster is a distinct, unpaginated endpoint. Neither should be coupled to the public directory's scroll decision. The current public directory projection does **not** include a club; detail does include nullable `clubKey` through the canonical `player_club_affiliations` relation.
+
+## UX options
+
+| Option | Benefits | Costs and compatibility |
+| --- | --- | --- |
+| 1. Keep numbered Previous/Next | Existing `?page=N` permalinks, bounded DOM/network, clear footer and keyboard navigation | Requires explicit page clicks; less fluid exploration on touch |
+| 2. Automatic infinite scroll with `IntersectionObserver` | Minimal friction on mobile, progressive fetching | Footer access, keyboard/screen-reader discovery, history/scroll restoration, large DOM and duplicate/skip protection are harder; no observer fallback if JS fails |
+| 3. Explicit **Load more** (possible later opt-in hybrid sentinel) | Incremental exploration with clear control and end state, easier keyboard/VoiceOver access, retains existing API in V1 | Must define what deep-linked pages mean and cache/restoration; batch append still needs an upper bound |
+
+**Recommendation for owner approval:** option **3, manual Load more V1**, public `/players` only. Do not activate automatic infinite scroll by default. Keep 50 players per request, the existing strict `page=N` API and all filters/sorts server-authoritative. Explicit button is also the guaranteed fallback if automatic loading is considered later. Keep the current numbered pagination unchanged until the owner approves a replacement.
+
+## Proposed URL and history contract (subject to approval)
+
+1. A direct `/players?page=N&sort=...` opens **page N as the initial 50-row segment**, as it does now. `page` is the initial segment, **not** an offset inside a continuously reloaded list. `page=1` may remain omitted as currently. Invalid pages keep the current strict API/front-end canonicalization.
+2. Activating Load more appends N+1, N+2, etc. **without pushing or replacing `page`**, so an existing copied page link always has the same meaning. The button announces loaded and total counts and turns into a localized end-of-results status after the last segment. An explicit page-jump/link affordance may remain for sharing another starting segment.
+3. Opening `/players/<id>` uses an ordinary link. On Back/Forward in the same live tab, retain loaded row IDs/data and shell scroll position in bounded in-memory history state; restore focus to the originating player link once the table exists. Avoid storing private data or entire player objects in persistent storage. On hard refresh/direct paste, reload **only the URL's initial segment** (not all previously appended pages) and let the user continue with Load more; document this distinction to users. Preserve unrelated valid query parameters and fragments.
+4. Switching filters or sort clears the appended collection, increments a request generation token, renders exactly five reserved loading rows and requests page 1. Switching Overview/Attributes/group while the same server query is current should rerender without a network request. `popstate` must invalidate stale requests and preserve its requested starting segment and scroll target.
+
+## Data consistency, API and performance decision
+
+- **V1 may use existing OFFSET**, but order must be stable: default **`id DESC`** (independently approved in #532); explicit sorts use a deterministic unique ID tie-breaker. Run at most one append request; ignore a response after filters/sort or world source changes; de-duplicate IDs defensively. For inserts while browsing, OFFSET is **not snapshot-stable**: a new high-ID player can shift page boundaries. Detect duplicate IDs and unexpected counts, and reset/restart from the segment when necessary rather than silently claiming completeness.
+- Do not add a breaking cursor parameter to the strict query parser or DEV/proxy allowlists for V1. **Reevaluate optional, versioned cursor/keyset only after profiling**, particularly for deep pages and concurrent inserts. Keyset for arbitrary JSON-derived sort fields needs a typed last-sort-value + ID tuple, fixed direction/null/collation semantics, strict validation and documented expiry/versioning; an ID-only cursor only solves default ordering.
+- On world-generation changes, reset the current collection and invalidate in-flight responses; do **not** purge persistent player identities. On page/cursor invalidation or HTTP 409, show a retry/restart control; never append stale data to a new selection. Count is currently recomputed for every page; consider caching a query-scoped count only after measuring cost and ensuring invalidation semantics.
+- Preserve `/players/<id>` and Admin Preview. The separately requested **Club** column needs a reviewed public directory LEFT JOIN/serialization of nullable club identity plus canonical label/route mapping; it is **not** a prerequisite for the scroll decision and should not manufacture affiliations.
+- Test with 0/1/50/51/many players, deep links, Back/Forward/refresh/player-detail return, simultaneous fetches, network retry, inserts and world reset, keyboard/VoiceOver and iPhone Safari. Include a visible reachable footer and focus indicator. Compare p50/p95 time-to-first-50, requests/bytes per 200 players, COUNT/ORDER BY D1 plans, DOM count, long-scroll memory, scroll restoration and first-paint layout vs the current baseline. A tentative gate is **no >20% regression in p95 time to first data** with bounded rendered rows (target <=250) and exactly one in-flight append, subject to measured baseline and owner sign-off.
+
+## Implementation sequencing / explicit gate
+
+- **Independent, approved work now:** correct server default sort to `id DESC`; add targeted regression tests, verify existing five-row sort loading behavior. Further compact rows, global flag sizes/centering, desktop/mobile columns and canonical Club column require separately reviewed table/API implementation and visual QA under the same issue, not accidental CSS changes.
+- **Await owner decision:** choose numbered pagination vs manual Load more vs automatic/hybrid; approve proposed URL and restoration semantics and DOM/performance thresholds. Only then implement public append loading behind a Draft/HOLD PR, preserving previous page behavior and strict API until migration is verified.
+- No schema migration, remote D1 operation, deployment or merge is authorized by this document.
