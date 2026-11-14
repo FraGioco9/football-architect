@@ -54,7 +54,12 @@ function actualMovementDuties(frame){
   players:duties,
   playerCount:22,
   attackSupportRun:frame.provisionalAttackSupportRun??null,
-  carryPursuit:frame.provisionalCarryPursuit??null,
+  carryPursuit:frame.provisionalCarryPursuit?Object.freeze({
+   ...frame.provisionalCarryPursuit,
+   // Read-only actual rejected-step blocker from this canonical 60Hz mover.
+   actualMoverBlockedBy:frame.players.find(p=>
+    p.id===frame.provisionalCarryPursuit.playerId)?.blockedBy??null
+  }):null,
   carryChallengerId:frame.provisionalChallengeCarryRunnerId??null,
   carryChallengerFlank:frame.provisionalCarryChallengeFlank??null,
   carryChallengerBlockedBy:frame.players.find(p=>
