@@ -9,6 +9,10 @@ test('#560 History mobile uses a full-width four-column grid and leaves desktop 
  assert.ok(start>0,'standalone mobile-only History styling is present');
  const mobile=css.slice(start,css.indexOf('/* Club Fixtures:',start));
  assert.match(mobile,/@media\(max-width:620px\)\{/);
+ assert.match(mobile,/\.club-history\{margin-top:9px;min-width:0\}/,
+  'the view tab 4px bottom padding + 1px border + 9px margin makes 14px');
+ assert.match(css,/\.club-history\{margin-top:14px;min-width:0\}/,
+  'desktop keeps the existing 14px section margin');
  assert.match(mobile,/\.club-history-table\{[\s\S]*?display:block;width:100%;min-width:0;max-width:100%/);
  assert.match(mobile,/\.club-history-table tr\{[\s\S]*?display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(mobile,/\.club-history-table-wrap\{width:100%;max-width:100%;overflow:visible\}/);

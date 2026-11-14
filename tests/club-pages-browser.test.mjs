@@ -526,7 +526,11 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const tab=wrap.querySelector('.club-history-table'),row=wrap.querySelector('.club-history-season-row');
        const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
        const stats=[...row.querySelectorAll('td')].slice(2,9);
+       const tabs=document.querySelector('.club-tabs');
+       const active=tabs?.querySelector('.app-competition-tab.is-active,[aria-current="page"]');
+       const section=document.querySelector('.club-history');
        return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
+        viewGap:active&&section?section.getBoundingClientRect().top-active.getBoundingClientRect().bottom:null,
         shellOverflow:document.documentElement.scrollWidth-innerWidth,
         label:getComputedStyle(stats[0],'::before').content,
         labelGs:getComputedStyle(stats[5],'::before').content,
@@ -536,6 +540,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       })()`);
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
+       assert.ok(initial.viewGap!==null&&Math.abs(initial.viewGap-14)<=1,
+        'view buttons end exactly 14px above History on mobile at '+width+': '+JSON.stringify(initial));
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
