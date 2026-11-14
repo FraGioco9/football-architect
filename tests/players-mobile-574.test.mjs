@@ -268,7 +268,7 @@ test('#574 Player names follow the same inline baseline as Admin Contracts',()=>
  assert.match(roster,/class="fa-player-short-name"/);
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-skip-ink:auto\}/);
  assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after/,'no absolute underline pseudo-element');
- assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before/,'no generated text pseudo-element');
+ assert.match(css,/\.app-players-table tbody td:nth-child\(2\) > :is\(\.app-player-name-link,\.club-roster-player-link\)\[data-mobile-name\]::before\{content:attr\(data-mobile-name\);font-size:14px;line-height:18px/,'mobile generated text matches Admin Contracts only');
  assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{[^}]*transform:/);
  assert.match(css,/\.fa-player-short-name\{display:none\}/);
  assert.match(css,/\.app-players-table \.fa-player-full-name,\s*\.app-admin-view \.admin-contracts-table \.fa-player-full-name\{display:none\}/);
