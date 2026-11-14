@@ -57,3 +57,12 @@ $export.players | Where-Object { $export.pilot_ids -contains $_.id } | Format-Ta
 The export keeps only player numeric ID, display name, primary/secondary nationality and the four **public** athletic attributes. It verifies complete, consistent pagination and duplicate IDs. `pilot_ids` proposes three players deterministically, favoring distinct body archetypes and primary nationalities; selection is provisional until reviewed by the owner. Public export may be unavailable if the hosted Worker is older, network-restricted, or lacks the current public schema. Do not substitute private D1 reads or invent player records.
 
 **Local mock-API test:** 5/5 PASS using an in-memory public response; real hosted API connectivity and the 150 real players are **NOT VERIFIED** in this environment. No portrait images have been generated or stored by this feature.
+
+## Local-only PNG technical preflight (no publishing)
+Run `node --test tests/portrait-png-qa.test.mjs` and `node tools/portrait-png-qa.mjs 44.png 98.png 145.png` on **three separate** candidate images. The CLI uses Node 22 built-ins only; reports one JSON object per file and exits nonzero when any fail. Rejects non-3:4 format, non-RGBA/painted-checkerboard PNG, insufficient genuine alpha, significant disconnected silhouettes, clipped bounds and suspicious red/yellow/magenta edge fringing. Its thresholds are **heuristics**, not guarantees of visual quality or personal identity. Human review must still check face variation, hair/eyes vs stable `appearance_profile`, anatomy and media-day styling. Never commit rejected/generated portraits as game assets without owner approval.
+
+### Historical local sample QA (not stored in Git)
+- Single #44 candidate 1086×1448 RGBA: `fringe_fraction=0.0856`, **FAIL** colored halo.
+- Three-person 1881×836 RGB collage: **FAIL** aspect and missing alpha.
+- Three-person 1881×836 RGBA collage: **FAIL** aspect, fringe `0.0538` and 3 significant components.
+No new approved photo has been generated in this GitHub-only step.
