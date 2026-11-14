@@ -1642,7 +1642,7 @@ html[data-theme="light"] .app-players-table thead th{background:#E8F1EB;color:#3
 @media(max-width:720px){.app-players-table th,.app-players-table td{padding-inline:10px}}
 
 /* D1-backed Players directory: matching row heights, country flags and optional pagination. */
-.app-players-table tbody td:nth-child(2){text-align:left;font-weight:650;vertical-align:middle;line-height:18px}
+.app-players-table tbody td:nth-child(2){text-align:center;font-weight:650;vertical-align:middle;line-height:18px}
 /* #532 compact shared player tables: center proportionate flags in first-paint and loaded rows. */
 .app-players-table tbody td:first-child{text-align:center;vertical-align:middle}
 .app-players-nationality-flag{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto}
@@ -1879,10 +1879,10 @@ html[data-theme="light"] .app-players-preview-confirm-dialog::backdrop{backgroun
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link)::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:currentColor;opacity:0;pointer-events:none}
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):is(:hover,:focus-visible)::after{opacity:1}
 .app-players-table :is(.app-player-name-link,.club-roster-player-link,.app-player-club-link):focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
-/* Identical Player name geometry on desktop and mobile. Each 36px row has
- * a 1px bottom border, so its content midpoint sits half a pixel above the
- * row midpoint. Offset the link by 0.5px, independently of the underline. */
-.app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0;padding:0;line-height:18px;transform:translateY(.5px)}
+/* Center Player names horizontally in their column on desktop and mobile,
+ * with an intrinsically sized link so the underline spans only the text.
+ * The 0.5px vertical adjustment compensates the table row's bottom border. */
+.app-players-table :is(.app-player-name-link,.club-roster-player-link){display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:max-content;max-width:100%;height:18px;min-height:18px;margin:0 auto;padding:0;line-height:18px;text-align:center;transform:translateY(.5px)}
 /* Final tbody row has no bottom border: its content midpoint equals row center. */
 .app-players-table tbody tr:last-child td:nth-child(2) :is(.app-player-name-link,.club-roster-player-link){transform:none}
 
