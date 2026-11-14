@@ -32,22 +32,30 @@ test('Club Competitions define a single three-column entry and shared label/valu
  assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*display:contents;/,'Summary wrapper does not create a nested layout');
  assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:2;grid-row:1;/,'Status is in direct column two');
  assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-column:3;grid-row:1;/,'Next match is in direct column three');
- assert.match(css,/\.club-competition-list \.club-competition-metrics>div,\s*\.club-competition-list \.club-competition-next\{[\s\S]*?grid-template-rows:16px minmax\(59px,auto\);row-gap:4px;/,
-  'Status and Next match use identical 16px labels and 59px value slots');
+ assert.match(css,/grid-template-rows:16px minmax\(40px,auto\);row-gap:4px;align-content:center;/,
+  'The row itself defines the common centered label and content tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics>div\{[^}]*grid-template-rows:subgrid;/,
+  'Status label and value inherit the row tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-template-rows:subgrid;/,
+  'Next match label and value inherit the same row tracks');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dt\{text-align:center\}/,
   'Status header is centered in its value column');
  assert.match(css,/\.club-competition-list \.club-competition-metrics dd\{[^}]*text-align:center;/,
   'Status value is centered in the same column, even when wrapped');
- assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-column:1;grid-row:2;/,
-  'Next match always starts on value row 2');
+ assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*grid-column:1;grid-row:2;align-self:center;/,
+  'Next match centers its visible fixture within the shared value track');
+ assert.match(css,/\.club-competition-list \.club-competition-next-content\{[^}]*gap:3px;min-height:0;/,
+  'Next match does not reserve invisible empty height beneath the text');
  assert.match(css,/@container club-competition-panel \(max-width:800px\)/);
  assert.match(css,/@container club-competition-panel \(max-width:500px\)/);
  assert.match(css,/grid-template-columns:minmax\(92px,40%\) minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:minmax\(261px,276px\) minmax\(0,1fr\)/,'Stacked layouts reserve the same columns for every row');
- assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:1;grid-row:2;padding-left:56px;/);
+ assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:1;grid-row:2\/4;padding-left:56px;/);
  assert.match(css,/\.club-competition-list \.club-competition-entry\+\.club-competition-entry\{[^}]*border-top:1px solid var\(--line\);margin:0;padding:0;/);
  assert.doesNotMatch(css,/\.club-competition-layout\s*\{/,'old competing rules for layout class were removed');
- assert.doesNotMatch(css,/grid-template-rows:subgrid/,'layout must not rely on nested subgrids');
+ assert.match(css,/grid-template-rows:subgrid/,'Children use the canonical row tracks without independent sizing');
+ assert.match(css,/\.club-competition-list \.club-competition-identity\{[^}]*grid-row:1\/3;[^}]*align-self:center;min-height:0;/,
+  'Competition identity is centered against visible data, not a phantom 80px track');
 });
 
 test('Competition skeleton paint sits inside hydrated text line boxes without duplicate spacing',()=>{
