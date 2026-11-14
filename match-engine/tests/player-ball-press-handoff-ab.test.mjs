@@ -8,6 +8,8 @@ import {INITIAL_PLAYERS,PLAYER_PITCH} from '../src/player-movement.mjs';
 import {SHOT_MAX_RANGE_M} from '../src/player-ball-uniform-autonomous-action.mjs';
 import {createPhysicalFixtureStepRuntime}
  from '../src/physical-fixture-step-runtime.mjs';
+import {auditObservedPhysicalPassAttempt}
+ from '../src/player-football-pass-physical-audit.mjs';
 
 const CASES=Object.freeze([
  Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
@@ -307,6 +309,21 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      if(inRange)audit.inRangeShoeStartFrames++;
     }
     const action=frame.localAutonomousAction;
+    const passAudit=auditObservedPhysicalPassAttempt(frame);
+    assert.equal(passAudit.passAttemptObserved,action?.action==='pass');
+    assert.equal(passAudit.pass?.recipientId??null,
+     action?.action==='pass'?action.recipientId:null);
+    assert.equal(passAudit.passEligibility,null);
+    assert.equal(passAudit.authorizedAffordances.length,0);
+    if(tick===1){
+     assert.throws(()=>auditObservedPhysicalPassAttempt({
+      ...frame,physicalContactFeed:{...frame.physicalContactFeed,
+       physicsTick:tick+1}
+     }),TypeError);
+     assert.throws(()=>auditObservedPhysicalPassAttempt({
+      ...frame,ballForceApplied:!frame.ballForceApplied
+     }),TypeError);
+    }
     if(action){
      assert.equal(starts.length,1);
      assert.equal(frame.physicalContactFeed.active.length,1);
