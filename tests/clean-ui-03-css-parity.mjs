@@ -40,6 +40,17 @@ try{
       !['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
     });
     await page.evaluate(async()=>{await document.fonts.ready});
+    // Calendar controls change color after hydration. Capture settled styles
+    // on both sides, never mid-way through a finite CSS color transition.
+    if(route==="/calendar"&&!reducedMotion)await page.evaluate(async()=>{
+      const container=document.querySelector("#world-calendar #calendar-controls");
+      if(!container)return;
+      const elements=[container,...container.querySelectorAll("*")];
+      const running=elements.flatMap(el=>el.getAnimations({subtree:false}))
+       .filter(a=>a.playState==="running"&&Number.isFinite(a.effect?.getComputedTiming().endTime));
+      await Promise.all(running.map(a=>a.finished.catch(()=>{})));
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    });
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
      for(const selector of selectors){
