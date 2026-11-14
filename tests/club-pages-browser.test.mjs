@@ -543,10 +543,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(initial.detailHidden,true,'History competitions are collapsed initially at '+width);
       if(width<=620){
        assert.equal(initial.tabBorder,'1px','History view tabs preserve their separator at '+width);
-       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap-14)<=1,
-        'History begins 14px BELOW the separator (not the buttons) at '+width+': '+JSON.stringify(initial));
-       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap-14)<=1,
-        'first History row begins 14px below separator at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.separatorGap!==null&&Math.abs(initial.separatorGap)<=1,
+        'mobile History starts flush with the view separator at '+width+': '+JSON.stringify(initial));
+       assert.ok(initial.firstRowGap!==null&&Math.abs(initial.firstRowGap)<=1,
+        'first club-history-season-row touches the view separator at '+width+': '+JSON.stringify(initial));
        assert.equal(initial.display,'grid','mobile season summary must use a 4-column grid at '+width);
        assert.ok(initial.table.width<=initial.wrap.width+1&&initial.shellOverflow<=2,
         'mobile History may not cause horizontal page overflow at '+width+': '+JSON.stringify(initial));
