@@ -73,7 +73,7 @@ test('club fixtures reads the official domestic draw before the full world calen
   day:13+i%30,round:i%30+1,homeClubId:i<30?'IT-1':'IT-5',
   awayClubId:i<30?'IT-2':'IT-6'
  }));
- const packet={schemaVersion:1,providerId:'authoritative-world',season:1,
+ const publishedPacket={schemaVersion:1,providerId:'authoritative-world',season:1,
   competitionId:'IT-1',status:'published',
   provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)},
   fixtures:[...league,{matchId:'241',phaseId:'playout',day:52,homeClubId:null,awayClubId:null}]};
@@ -82,7 +82,7 @@ test('club fixtures reads the official domestic draw before the full world calen
   fetchJson:async path=>{
    requested.push(path);
    if(path.startsWith('/api/clubs/'))return empty;
-   if(path.endsWith('/competitions/IT-1'))return packet;
+   if(path.endsWith('/competitions/IT-1'))return publishedPacket;
    throw Error('Club Fixtures HTTP 404');
   }});
  assert.equal(result.coverage,'partial');
