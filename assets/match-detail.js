@@ -50,7 +50,8 @@
   if(!slot||!label)return;
   const d=clubData(data?.[side+'Participant']);
   const pending=data?.participantA&&side==='home'?data.participantA:data?.participantB&&side==='away'?data.participantB:null;
-  const primary=d?.primaryName||participantFallback(pending),compact=d?.compactName||primary;
+  const publishedClubId=clubKey(data?.[side+'Participant']?.clubId);
+  const primary=d?.primaryName||publishedClubId||participantFallback(pending),compact=d?.compactName||primary;
   label.replaceChildren();const full=document.createElement('span');full.className='app-match-primary-name';full.textContent=primary;
   const short=document.createElement('span');short.className='app-match-compact-name';short.textContent=compact;
   label.append(full,short);
