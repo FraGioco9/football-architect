@@ -5,12 +5,24 @@ on:
       - 'match-engine/**'
       - 'tools/dev-standings-preview.mjs'
       - '.github/workflows/match-engine-01.yml'
+permissions:
+  contents: read
+concurrency:
+  group: match-engine-01-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   match-engine:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify exact PR HEAD
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -18,11 +30,21 @@ jobs:
           cache-dependency-path: match-engine/package-lock.json
       - name: Install pinned physics candidate
         run: npm ci --prefix match-engine --no-audit --no-fund
+      # PR #481 is Draft/HOLD: run its authentic C2-b witness quickly, once.
+      # Do not repeat it through the full npm test list in the same run.
+      - name: C2-b authentic opt-in Rapier A/B (Draft PR 481)
+        if: ${{ github.event.pull_request.number == 481 && github.event.pull_request.draft }}
+        run: node --test match-engine/tests/player-ball-press-handoff-ab.test.mjs
+      # Keep the original full ME-01 job on review-ready PRs and all other PRs.
       - name: Focused core and route security tests
+        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
         run: npm --prefix match-engine test
       - name: Existing routing/preview regressions
+        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
         run: node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs
       - name: Browser viewport fit (Chrome, Advanced settings open and closed)
+        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
         run: node --test match-engine/tests/lab-viewport-browser.test.mjs
       - name: Measured local CPU / memory sample
+        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
         run: npm --prefix match-engine run bench -- 6000
