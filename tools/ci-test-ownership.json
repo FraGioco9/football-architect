@@ -199,6 +199,7 @@
     "tests/club-competition-summary.test.mjs": "site-node",
     "tests/club-crests.test.mjs": "site-node",
     "tests/club-fixtures-source.test.mjs": "site-node",
+    "tests/club-history-mobile.test.mjs": "site-node",
     "tests/club-history-source.test.mjs": "site-node",
     "tests/club-identity-trafford.test.mjs": "site-node",
     "tests/club-pages-browser.test.mjs": "site-node",
