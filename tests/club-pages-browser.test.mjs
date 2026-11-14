@@ -903,7 +903,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       second.querySelector('.club-competition-name').textContent='Sovereign International Championship — Group B';
       second.querySelector('.club-competition-tier').textContent='International';
       second.querySelector('[data-club-position]').textContent='1st';
-      second.querySelector('.club-competition-next-content').innerHTML='<span class="club-competition-next-empty">No upcoming match.</span>';
+      second.querySelector('.club-competition-next-content').innerHTML='<a class="app-link"><span class="club-competition-match-name">IJhaven Amsterdam – RC de Gironde</span></a><small>Matchday 3</small>';
       list.append(second);
       const pos=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),b=row.getBoundingClientRect();return {x:r.x-b.x,y:r.y-b.y,w:r.width,h:r.height}};
       const measure=row=>{
