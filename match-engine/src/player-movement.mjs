@@ -1930,6 +1930,7 @@ export function createPlayerMovement({
  let carryBlockedConsecutiveTicks=0,carryBlockedSourceId=null;
  let carryBlockedPursuitSourceTick=null;
  let activeCarryBlockedDetour=null,carryDetourLastDecision=null;
+ let activeCarrySpacingSupport=null;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
   if(!experimentalAutonomousFixtureCarry||
@@ -2093,7 +2094,13 @@ export function createPlayerMovement({
         blockedTicks:carryBlockedConsecutiveTicks,
         blockerId:carryBlockedSourceId,
         activeWaypoint:activeCarryBlockedDetour?.waypoint??null,
-        lastDecision:carryDetourLastDecision
+        lastDecision:carryDetourLastDecision,
+        spacingSupport:activeCarrySpacingSupport?Object.freeze({
+         playerId:activeCarrySpacingSupport.playerId,
+         startTick:activeCarrySpacingSupport.startTick,
+         expiryTick:activeCarrySpacingSupport.expiryTick,
+         movementIntentOnly:true
+        }):null
        })
       }):activeFixtureCarryPursuit
    }:{}),
@@ -3130,6 +3137,13 @@ export function createPlayerMovement({
        activeFixtureCarryPursuit.sourceCarryTick||
       tick+1-activeCarryBlockedDetour.startTick>90))
    activeCarryBlockedDetour=null;
+  if(experimentalAutonomousFixtureCarryBlockedDetour&&
+     activeCarrySpacingSupport&&
+     (!activeFixtureCarryPursuit||
+      activeCarrySpacingSupport.sourceCarryTick!==
+       activeFixtureCarryPursuit.sourceCarryTick||
+      tick+1>activeCarrySpacingSupport.expiryTick))
+   activeCarrySpacingSupport=null;
   const targets=players.map(p=>{
    if(activeFixtureCarryPursuit?.playerId===p.id){
     if(experimentalAutonomousFixtureCarryBlockedDetour&&
@@ -3150,6 +3164,10 @@ export function createPlayerMovement({
     }
     return activeFixtureCarryPursuit.target;
    }
+   // Opt-in spacing run: no injected contact, only ordinary movement.
+   if(experimentalAutonomousFixtureCarryBlockedDetour&&
+      activeCarrySpacingSupport?.playerId===p.id)
+    return activeCarrySpacingSupport.target;
    // Verified selected teammate tries to run to the observed ball with
    // ordinary integrator movement, not an injected collider position.
    if(fixtureChaseReceiverId===p.id)
@@ -3342,6 +3360,32 @@ export function createPlayerMovement({
       blocker.id===carryBlockedSourceId?
        carryBlockedConsecutiveTicks+1:1:0;
      carryBlockedSourceId=blocker?.id??null;
+     // If real crowding seals the corridor, a nearby unassigned teammate
+     // may clear space on ordinary acceleration-limited physical steps.
+     // Never override a source-selected receiver, challenger or support.
+     if(blocker&&carryBlockedConsecutiveTicks>=12&&dist>2.5&&
+        !activeCarrySpacingSupport){
+      const teammate=players.filter(q=>q!==p&&q.team===p.team&&
+       q.role!=='goalkeeper'&&
+       q.id!==fixtureChaseReceiverId&&
+       q.id!==activeFixtureAttackSupportRun?.playerId&&
+       q.id!==fixtureChallengeOpponentId&&
+       Math.hypot(q.x-p.x,q.y-p.y)<=1.22)
+       .sort((u,v)=>Math.hypot(u.x-p.x,u.y-p.y)-
+        Math.hypot(v.x-p.x,v.y-p.y)||u.id.localeCompare(v.id))[0];
+      if(teammate){
+       const rx=teammate.x-p.x,ry=teammate.y-p.y,rg=Math.hypot(rx,ry);
+       activeCarrySpacingSupport=Object.freeze({
+        playerId:teammate.id,
+        sourceCarryTick:activeFixtureCarryPursuit.sourceCarryTick,
+        startTick:tick+1,expiryTick:tick+55,
+        target:Object.freeze({
+         x:clamp(teammate.x+rx/rg*1.6,-maxX,maxX),
+         y:clamp(teammate.y+ry/rg*1.6,-maxY,maxY)
+        }),movementIntentOnly:true
+       });
+      }
+     }
      // Only a source-authenticated carry and 12 consecutive true rejections
      // by the SAME obstacle may activate the waypoint. It persists until
      // the runner reaches it or its genuine pursuit expires.

@@ -483,7 +483,8 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
       blockedTicks:pursuit.experimentalDetour.blockedTicks,
       blockerId:pursuit.experimentalDetour.blockerId,
       activeWaypoint:pursuit.experimentalDetour.activeWaypoint,
-      lastDecision:pursuit.experimentalDetour.lastDecision
+      lastDecision:pursuit.experimentalDetour.lastDecision,
+      spacingSupport:pursuit.experimentalDetour.spacingSupport
      }:null,
      minimumCarrierClearanceM:round(clearance),
      nearbyBodies:[620,640,660].includes(tick)?
