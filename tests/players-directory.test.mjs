@@ -740,6 +740,11 @@ test('PLAYERS-SCROLL-01 sort clears 150 loaded rows to exactly five loading rows
 test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL pagination contracts',()=>{
  const js=read('assets/players-directory.js'),css=read('assets/app.css');
  assert.match(js,/const loadMore=document.createElement\('button'\)/);
+ assert.match(js,/const appendStatus=document.createElement\('span'\)/);
+ assert.match(js,/appendStatus\.className='sr-only'/);
+ assert.match(js,/appendStatus\.setAttribute\('role','status'\)/);
+ assert.match(js,/appendStatus\.setAttribute\('aria-live','polite'\)/);
+ assert.match(js,/sentinel\.after\(appendStatus\)/,'status remains mounted even after pager hides');
  assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
  assert.match(js,/async function fetchBatch\(page\)/);
  assert.match(js,/pageSize!==50/);
@@ -763,16 +768,40 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('offset',String\(\(state\.page-1\)\*50\)\)/);
  assert.doesNotMatch(js,/query\.set\('page'/,'offset-only client API');
  assert.doesNotMatch(js,/const loaded=t\.loaded/,'no Loaded X of Y counter');
- assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.loadingMore|t\.end/,'no loading or end-of-results messages');
+ assert.doesNotMatch(js,/counter\.textContent|progress\.textContent|t\.end/,'no extra counters or end-of-results messages');
  assert.match(js,/pager\.hidden=current\.players\.length===0\|\|loadedThrough>=current\.totalPages/,'hide footer at end');
- assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=true;loadMore\.disabled=true;return;/,'hide fallback during auto-loading');
+ assert.match(js,/if\(appendPending\)\{\s*loadMore\.hidden=false;loadMore\.disabled=true;loadMore\.textContent=t\.loadingMore;return;/,'show disabled Loading... during auto-loading');
  assert.match(css,/\.app-players-end-sentinel\{/);
  assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
  for(const lang of ['en','it','de','es','fr']){
   const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
   assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);
-  assert.doesNotMatch(labels,/,loadingMore:|,end:/);
+  for(const key of ['loadingMore','moreLoaded','allLoaded'])assert.match(labels,new RegExp(key+':'),'screen reader append announcements localized');
+  assert.match(labels,/loadingMore:/);
+  assert.doesNotMatch(labels,/,end:/);
  }
+});
+test('PLAYERS-SCROLL-01 Load more shows a disabled loading state only during append',()=>{
+ const js=read('assets/players-directory.js');
+ const source=js.slice(js.indexOf('  function renderProgress(){'),js.indexOf('  function paint(data){'));
+ assert.ok(source.includes('function renderProgress(){'));
+ const run=({pending=false,error='',through=1,total=2,players=50,status='ready'}={})=>{
+  const pager={hidden:false},loadMore={hidden:false,disabled:false,textContent:''};
+  const render=new Function('locale','pager','loadMore','current','status','loadedThrough','appendPending','appendError',
+   source+';return renderProgress;')(
+    ()=>({loadMore:'Load more',loadingMore:'Loading...',retry:'Retry',restart:'Start over'}),
+    pager,loadMore,players===null?null:{players:Array.from({length:players},()=>({})),totalPages:total},
+    status,through,pending,error
+   );
+  render();
+  return {hidden:pager.hidden,buttonHidden:loadMore.hidden,disabled:loadMore.disabled,label:loadMore.textContent};
+ };
+ assert.deepEqual(run(),{hidden:false,buttonHidden:false,disabled:false,label:'Load more'});
+ assert.deepEqual(run({pending:true}),{hidden:false,buttonHidden:false,disabled:true,label:'Loading...'});
+ assert.deepEqual(run({error:'network'}),{hidden:false,buttonHidden:false,disabled:false,label:'Retry'});
+ assert.deepEqual(run({error:'stale'}),{hidden:false,buttonHidden:false,disabled:false,label:'Start over'});
+ assert.equal(run({through:2}).hidden,true,'no append button after final batch');
+ assert.equal(run({players:0}).hidden,true,'no append button for empty results');
 });
 test('PLAYERS-SCROLL-01 offset query rejects obsolete page URLs',async()=>{
  const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
@@ -817,13 +846,19 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  const source=js.slice(begin,end);
  const build=(initial,next)=>new Function('initial','next',`
   let current={...initial,players:[...initial.players]},loadedThrough=initial.page,ticket=0,appendPending=false,appendError='';
-  let requests=0,appended=[],progressUpdates=0;
+  let requests=0,appended=[],progressUpdates=0,focusTransfers=0,announcements=[];
+  const loadMore={};
+  const document={activeElement:null};
+  const scroll={focus(){focusTransfers++}};
+  const locale=()=>({appendLoading:'Loading more players…',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',changed:'Player list changed. Start over.',loadError:'Could not load more players'});
+  const language=()=> 'en';
+  const announceAppend=value=>announcements.push(value);
   const fetchBatch=async page=>{requests++;return next(page)};
   const body={append(rows){appended.push(...rows)}};\n   const hydrateClubCrests=()=>{};
   const playerRows=players=>players.map(player=>player.id);
   const renderProgress=()=>{progressUpdates++};
   ${source}
-  return {appendNext,retry:()=>{appendError=''},snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates}),invalidate:()=>{ticket++}};
+  return {appendNext,retry:()=>{appendError=''},focusLoadMore:()=>{document.activeElement=loadMore},snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates,focusTransfers,announcements}),invalidate:()=>{ticket++}};
  `)(initial,next);
  const first=Array.from({length:50},(_,i)=>({id:100-i}));
  const second=Array.from({length:1},(_,i)=>({id:50-i}));
@@ -834,6 +869,7 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  assert.equal(success.snapshot().ids.length,51);
  assert.deepEqual(success.snapshot().appended,[50]);
  assert.equal(success.snapshot().loadedThrough,2);
+ assert.equal(success.snapshot().announcements.at(-1),'New players: 1. Shown: 51 of 51. All players loaded');
  await success.appendNext();assert.equal(success.snapshot().requests,1,'no next request after EOF');
  let resolve;
  const deferred=new Promise(done=>{resolve=done});
@@ -845,12 +881,14 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  const duplicate=build(base,async page=>make(page,[{id:100}]));
  await duplicate.appendNext();
  assert.equal(duplicate.snapshot().appendError,'stale','duplicate must request a restart');
+ assert.equal(duplicate.snapshot().announcements.at(-1),'Player list changed. Start over.');
  assert.deepEqual(duplicate.snapshot().ids,first.map(p=>p.id));
  const changed=build(base,async page=>make(page,second,52));
  await changed.appendNext();assert.equal(changed.snapshot().appendError,'stale');
  let fail=true;
  const retry=build(base,async page=>{if(fail){fail=false;throw Error('network')}return make(page,second)});
  await retry.appendNext();assert.equal(retry.snapshot().appendError,'network');
+ assert.equal(retry.snapshot().announcements.at(-1),'Could not load more players');
  await retry.appendNext();assert.equal(retry.snapshot().requests,1,'automatic scroll does not retry silently');
  retry.retry(); // The explicit Retry control clears the error before another request.
  await retry.appendNext();assert.equal(retry.snapshot().appendError,'');
@@ -862,6 +900,9 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  assert.equal(obsolete.snapshot().ids.length,50,'superseded append does not commit');
  const deep=build({page:3,count:151,pageSize:50,totalPages:4,players:first},async page=>({...make(page,second),count:151,totalPages:4}));
  await deep.appendNext();assert.equal(deep.snapshot().loadedThrough,4,'direct page 3 loads only segment 4 next');
+ const keyboard=build(base,async page=>make(page,second));
+ keyboard.focusLoadMore();await keyboard.appendNext();
+ assert.equal(keyboard.snapshot().focusTransfers,1,'hidden manual fallback must hand off keyboard focus');
 });
 test('PLAYERS-TABLE-532 scales headers and text to fit 24px club crests',()=>{
  const css=read('assets/app.css');
@@ -1041,6 +1082,39 @@ test('UI-VIEWS-01: only view/subview controls change; History content and mobile
 });
 
 
+test('#532 rapid sort/refetch ignores superseded successful responses and failures',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function load(page){');
+ const end=js.indexOf('  async function appendNext(){',begin);
+ assert.ok(begin>=0&&end>begin,'use production refresh implementation');
+ const source=js.slice(begin,end);
+ const fixture=new Function(`
+  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;
+  const state={page:1},pending=[],painted=[],loading=[];
+  const countNode=null,scroll={setAttribute(){}},body={querySelector(){return null}};
+  const renderHead=()=>{},showLoadingRows=()=>loading.push(5);
+  const fetchBatch=()=>new Promise((resolve,reject)=>pending.push({resolve,reject}));
+  const paint=data=>painted.push(data.players.map(player=>player.id));
+  const syncUrl=()=>{},renderProgress=()=>{},message=()=>{},announceAppend=()=>{},locale=()=>({error:'error'});
+  ${source}
+  return {load,pending,snapshot:()=>({ids:current?.players.map(p=>p.id),status,painted,loading})};
+ `)();
+ const result=id=>({count:1,page:1,pageSize:50,totalPages:1,players:[{id}]});
+ const stale=fixture.load(1),latest=fixture.load(1);
+ assert.equal(fixture.pending.length,2);
+ fixture.pending[1].resolve(result(99));await latest;
+ fixture.pending[0].resolve(result(13));await stale;
+ assert.deepEqual(fixture.snapshot().ids,[99],'obsolete response cannot overwrite latest sort');
+ assert.deepEqual(fixture.snapshot().painted,[[99]],'no repaint from stale results');
+ assert.deepEqual(fixture.snapshot().loading,[5,5],'each refresh reserves five rows');
+ const retry=fixture.load(1),final=fixture.load(1);
+ fixture.pending[2].reject(Error('obsolete network response'));await retry;
+ fixture.pending[3].resolve(result(105));await final;
+ assert.deepEqual(fixture.snapshot().ids,[105]);
+ assert.equal(fixture.snapshot().status,'ready','obsolete failure does not replace newer result');
+});
+
+
 test('Players aborts superseded list and Load more GETs without publishing obsolete rows',async()=>{
  const js=read('assets/players-directory.js');
  const begin=js.indexOf('  async function fetchBatch(page){'),end=js.indexOf('  function changeView(view){',begin);
@@ -1054,10 +1128,10 @@ test('Players aborts superseded list and Load more GETs without publishing obsol
  const runner=new Function('fetch','AbortController','painted',[
   "let state={page:1,filters:{},sort:'',order:''},ticket=0,loadedThrough=1;",
   "let current=null,lastCount=null,status='loading',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;",
-  "const filterKeys=[],countNode=null,scroll={setAttribute(){}},body={append(){}};",
+  "const filterKeys=[],countNode=null,scroll={setAttribute(){},focus(){}},loadMore={},document={activeElement:null},body={append(){}};",
   "const renderHead=()=>{},showLoadingRows=()=>{},paint=data=>painted.push(data);",
   "const syncUrl=()=>{},renderProgress=()=>{},hydrateClubCrests=()=>{},playerRows=()=>[];",
-  "const message=()=>{},locale=()=>({error:'error'}),requestAnimationFrame=()=>{};",
+  "const message=()=>{},announceAppend=()=>{},language=()=>'en',locale=()=>({error:'error',appendLoading:'Loading more players...',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',changed:'Changed',loadError:'Unable to load'}),requestAnimationFrame=()=>{};",
   js.slice(begin,end),
   "return {load,appendNext,snapshot:()=>({current,loadedThrough,status,appendPending})};"
  ].join('\n'))(fetch,AbortController,rendered);
