@@ -1039,3 +1039,36 @@ test('UI-VIEWS-01: only view/subview controls change; History content and mobile
  assert.match(css,/\.app-players-groups\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/,'keep mobile fade states');
  assert.match(detail,/\.app-player-detail-tabs \.app-competition-tab\{flex:0 0 var\(--fa-tab-width-regular\)/,'player detail views inherit shared width token');
 });
+
+
+test('#532 rapid sort/refetch ignores superseded successful responses and failures',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function load(page){');
+ const end=js.indexOf('  async function appendNext(){',begin);
+ assert.ok(begin>=0&&end>begin,'use production refresh implementation');
+ const source=js.slice(begin,end);
+ const fixture=new Function(`
+  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',pendingReturn=null;
+  const state={page:1},pending=[],painted=[],loading=[];
+  const countNode=null,scroll={setAttribute(){}},body={querySelector(){return null}};
+  const renderHead=()=>{},showLoadingRows=()=>loading.push(5);
+  const fetchBatch=()=>new Promise((resolve,reject)=>pending.push({resolve,reject}));
+  const paint=data=>painted.push(data.players.map(player=>player.id));
+  const syncUrl=()=>{},renderProgress=()=>{},message=()=>{},locale=()=>({error:'error'});
+  ${source}
+  return {load,pending,snapshot:()=>({ids:current?.players.map(p=>p.id),status,painted,loading})};
+ `)();
+ const result=id=>({count:1,page:1,pageSize:50,totalPages:1,players:[{id}]});
+ const stale=fixture.load(1),latest=fixture.load(1);
+ assert.equal(fixture.pending.length,2);
+ fixture.pending[1].resolve(result(99));await latest;
+ fixture.pending[0].resolve(result(13));await stale;
+ assert.deepEqual(fixture.snapshot().ids,[99],'obsolete response cannot overwrite latest sort');
+ assert.deepEqual(fixture.snapshot().painted,[[99]],'no repaint from stale results');
+ assert.deepEqual(fixture.snapshot().loading,[5,5],'each refresh reserves five rows');
+ const retry=fixture.load(1),final=fixture.load(1);
+ fixture.pending[2].reject(Error('obsolete network response'));await retry;
+ fixture.pending[3].resolve(result(105));await final;
+ assert.deepEqual(fixture.snapshot().ids,[105]);
+ assert.equal(fixture.snapshot().status,'ready','obsolete failure does not replace newer result');
+});
