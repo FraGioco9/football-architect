@@ -2011,7 +2011,8 @@ export function createPlayerMovement({
  let pressers={home:'home-10',away:'away-10'};
  // C2-a: read-only source-qualified decision counters in the opt-in world.
  let continuityAudit={eligible:0,preHandoffConflicts:0,
-  c23nResolved:0,residualConflicts:0,c2aResolved:0};
+  c23nResolved:0,residualConflicts:0,c2aResolved:0,
+  retainedSupport:0,excludedAfterReassignment:0};
  let pressSwitches={home:0,away:0};
  let coverers={home:null,away:null};
  let coverSwitches={home:0,away:0};
@@ -2353,6 +2354,7 @@ export function createPlayerMovement({
   // Observe the identical real PASS/CARRY source inputs used below;
   // this audit is read-only and cannot influence movement or Rapier.
   let continuityCandidate=null,continuityTeam=null;
+  let c2aResolvedThisTick=false;
   if(experimentalAutonomousFixtureCarryAttackContinuity&&
      lastAutonomousFixturePassAction&&lastPhysicalCarryAction&&
      lastAutonomousFixturePassAction.team===lastPhysicalCarryAction.team&&
@@ -2424,6 +2426,7 @@ export function createPlayerMovement({
      pressers[team],[eligible.playerId]);
     nextPressers[team]=alternate?.id??null;
     continuityAudit.c2aResolved++;
+    c2aResolvedThisTick=true;
    }
   }
   const coveringHome=coveringDefender(
@@ -2715,6 +2718,16 @@ export function createPlayerMovement({
      fixtureChaseReceiverId,fixtureChallengeOpponentId,
      nextCoverers.home,nextCoverers.away]
    }):null;
+  // Final observer: C2-a's changed presser is not enough for success.
+  // The runner must still own the actual post-carry movement assignment
+  // AFTER chase/coverer exclusions. No physics or tactical input changed.
+  if(c2aResolvedThisTick){
+   if(activeFixtureAttackSupportRun?.phase==='post-carry-support'&&
+      activeFixtureAttackSupportRun.playerId===continuityCandidate.playerId)
+    continuityAudit.retainedSupport++;
+   else
+    continuityAudit.excludedAfterReassignment++;
+  }
   // C2.3q: sealed DEV-only, source-authenticated final shoe approach.
   // The preceding real PASS + later real Rapier shoe CARRY already
   // qualified this forward's current support duty. Mere distance
