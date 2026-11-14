@@ -275,6 +275,7 @@
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
     "tests/players-directory.test.mjs": "site-node",
+    "tests/players-portrait-profiles.test.mjs": "site-node",
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/players-name-pools.test.mjs": "site-node",
     "tests/players-names-catalog.test.mjs": "site-node",
