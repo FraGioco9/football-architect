@@ -61,7 +61,7 @@ test('Club competition first-paint and pending rendering reuse hydrated competit
  assert.match(css,/\.club-overview-layout>\.club-competition\.club-first-paint-panel\{min-height:0\}/,'First-paint competition panel does not add phantom height');
  assert.match(css,/\.club-fp-competition \.club-competition-name\{display:flex;align-items:center;min-block-size:1\.3em\}/,'Name skeleton reserves hydrated line box');
  assert.match(css,/\.club-fp-competition \.club-competition-tier\{display:flex;align-items:center;min-block-size:1\.35em\}/,'Tier skeleton reserves hydrated line box');
- assert.match(css,/\.club-fp-competition \.club-fp-competition-position\{margin-block-start:calc\(\(1\.15em - 12px\)\/2\)\}/,'Status bar is centered within the hydrated status text line');
+ assert.match(css,/\.club-fp-competition \.club-fp-competition-position\{margin-block-start:calc\(\(1\.15em - 12px\)\/2\);justify-self:center\}/,'Status bar is centered within the hydrated status text line and column');
  assert.match(css,/\.club-fp-competition \.club-fp-competition-fixture\{font-size:14px;line-height:1\.25;block-size:1\.25em\}/,'Fixture skeleton keeps the link line height');
  assert.match(css,/\.club-fp-competition \.club-fp-competition-round\{font-size:12px;line-height:1\.25;block-size:1\.25em\}/,'Round skeleton keeps the small-text line height');
  assert.doesNotMatch(css,/\.club-fp-competition \.club-fp-competition-round\{inline-size:64px;block-size:10px\}/,'A later placeholder rule cannot overwrite the actual round text-line height');
