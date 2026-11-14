@@ -2,7 +2,7 @@ import type {Database} from './database.ts';
 import type {WorldV1} from './types.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
+import {buildInitialSchedule,buildTrustedSeasonSchedule,isInitialScheduleVersion} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
 import {ApiError} from './errors.ts';
 interface SeasonRow {generation:string;participants_hash:string;rules_hash:string;snapshot_json:string}
@@ -18,6 +18,7 @@ export async function loadSeasonSportingEvidence(db:Database,world:WorldV1){
  const draws=(await db.prepare('SELECT competition_id,stage_id,algorithm_version,seed,outcome_hash,outcome_json FROM season_draws WHERE season_number=? ORDER BY competition_id').bind(world.seasonNumber).all<DrawRow>()).results;
  try{
   if(!season||season.generation!==world.generation||season.participants_hash!==snapshot.participantsHash||season.rules_hash!==snapshot.rulesHash||await canonicalHash(JSON.parse(season.snapshot_json))!==await canonicalHash(snapshot)||!calendar||draws.length!==2)return fail();
+  if(!isInitialScheduleVersion(calendar.calendar_version))return fail();
   const value=JSON.parse(calendar.calendar_json),schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,value.seed):await buildTrustedSeasonSchedule(snapshot,value.seed,world.seasonNumber);
   const hash=await canonicalHash(schedule);
   if(calendar.calendar_version!==schedule.algorithmVersion||calendar.calendar_hash!==hash||await canonicalHash(value)!==hash)return fail();

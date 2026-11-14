@@ -10,6 +10,7 @@ import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
+import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
 import {executeLifecycle} from '../src/lifecycle-command.ts';
 import {closeSeason} from '../src/season-close-command.ts';
 import {archiveSeason} from '../src/season-archive-command.ts';
@@ -19,6 +20,7 @@ import {handleAdmin} from '../src/http-admin.ts';
 import {seedUnifiedAdminHttp} from './fixtures/unified-admin-http.ts';
 import {rescheduleSeasonEvent} from '../src/admin-calendar-command.ts';
 import {readWorld} from '../src/world-repository.ts';
+import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
 import {type AdminSession} from '../src/auth.ts';
@@ -43,6 +45,16 @@ it('runs distinct domestic, draw and publication transactions before handing off
  await expect(publishInternationalCalendar(db,session,meta(),'bridge-premature-calendar-00001',now)).rejects.toMatchObject({status:409});
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-00001',now)).world;
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(2);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(98);
+ expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
+ expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='international'").first()).n).toBe(144);
+ const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first();
+ expect(await readPublicMatch(db,cup!.match_id)).toMatchObject({status:'scheduled',result:null,provenance:{sourceKind:'international'}});
+ const sovereign=await readPublishedCompetitionMatches(db,1,'int-1');
+ expect(sovereign.fixtures).toHaveLength(93);
+ const final=sovereign.fixtures.find((f:any)=>f.phaseId==='final');
+ expect(await readPublicMatch(db,final!.matchId)).toMatchObject({status:'awaiting_participants',result:null,participantA:{kind:'tieWinner',tieId:'s1'}});
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  const before=meta(),published=await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now);
  world=published.world;
@@ -63,6 +75,8 @@ it('keeps draw and calendar publication atomic if final audit rejects',async()=>
  try{await expect(executeInternationalDraw(db,session,meta(),'bridge-draw-fail-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_draw').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(56);
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-good-00001',now)).world;
  await db.prepare("CREATE TRIGGER fail_publish BEFORE INSERT ON admin_operations WHEN NEW.command='publish-international-calendar-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(publishInternationalCalendar(db,session,meta(),'bridge-publish-fail-00001',now)).rejects.toMatchObject({status:503})}
@@ -92,6 +106,9 @@ it('moves the independent international draw to day four and publication to day 
 it('continues all sporting days through day 56 after staged administrative setup',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
  world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
+ const final=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='int-1' AND phase_id='final' LIMIT 1").first();
+ expect(final).toBeTruthy();
+ expect(await readPublicMatch(db,final.match_id)).toMatchObject({status:'awaiting_participants',result:null});
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
  expect(world).toMatchObject({day:56,phase:'active'});
@@ -99,6 +116,11 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
+ const completed=await readPublicMatch(db,final.match_id);
+ expect(completed).toMatchObject({matchId:final.match_id,status:'completed',stageId:'final'});
+ expect(completed.homeParticipant?.clubId).toBeTruthy();
+ expect(completed.awayParticipant?.clubId).toBeTruthy();
+ expect(completed.result).toBeTruthy();
 },120000);
 
 it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
@@ -138,4 +160,72 @@ it('closes and archives exactly one fully verified season and replays the same c
  expect(await closeSeason(db,session,command,'bridge-close-once-00001',replayNow)).toEqual(saved);
  await expect(closeSeason(db,session,command,'bridge-close-twice-00001',replayNow)).rejects.toMatchObject({status:409});
  await expect(db.prepare("UPDATE season_archives SET results_count=1").run()).rejects.toThrow();
+},120000);
+
+
+it('resets a staged V2 draw and republishes both scopes with new-generation match IDs',async()=>{
+ // beforeEach has already prepared Season 1 and officially staged its domestic draw on day 2.
+ const priorGeneration=world.generation;
+ const priorLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ const priorKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ expect(priorLeague).toBeTruthy();
+ expect(priorKnockout).toBeTruthy();
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(56);
+ await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
+
+ // Run the real guarded command, not a direct test-fixture table truncation.
+ const staleRequest={...meta(),confirmation:'RESET SEASON 0'};
+ world=(await resetWorld(db,session,staleRequest,'bridge-recreate-reset-00001',now)).world;
+ expect(world).toMatchObject({phase:'unstarted',seasonNumber:0,day:0,revision:0});
+ expect(world.generation).not.toBe(priorGeneration);
+ for(const table of ['seasons','season_domestic_stages','season_draws','season_calendars',
+   'season_match_slots','season_knockout_match_slots','season_day_outcomes','season_knockout_ties']){
+  expect((await db.prepare('SELECT count(*) n FROM '+table).first())!.n).toBe(0);
+ }
+ await expect(readPublicMatch(db,priorLeague!.match_id)).rejects.toMatchObject({status:404});
+ await expect(readPublicMatch(db,priorKnockout!.match_id)).rejects.toMatchObject({status:404});
+ await expect(resetWorld(db,session,staleRequest,'bridge-recreate-stale-reset-00001',now)).rejects.toMatchObject({status:409});
+
+ // Start the next world from the supported backend commands, not from copied SQL fixtures.
+ world=(await prepareSeason(db,session,meta(),'bridge-recreate-prepare-00001',await loadApprovedSnapshot(),now)).world;
+ world=(await initializeAdministrativeEvents(db,session,meta(),'bridge-recreate-init-00001',now)).world;
+ world=(await advanceAdministrativeClock(db,session,'start',meta(),'bridge-recreate-start-00001',now)).world;
+ for(const eventId of ['domestic:entrants','international:entrants'])
+  world=(await completeConfirmationEvent(db,session,{...meta(),eventId},'bridge-recreate-confirm-'+eventId,now)).world;
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-recreate-day2-00001',now)).world;
+ world=(await stageDomesticCalendar(db,session,meta(),'bridge-recreate-domestic-00001',now)).world;
+
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(56);
+ const newLeague=await db.prepare("SELECT match_id FROM season_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ const newKnockout=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='IT-1' LIMIT 1").first();
+ expect(newLeague!.match_id).not.toBe(priorLeague!.match_id);
+ expect(newKnockout!.match_id).not.toBe(priorKnockout!.match_id);
+ expect(await readPublicMatch(db,newLeague!.match_id)).toMatchObject({status:'scheduled',provenance:{sourceKind:'domestic'}});
+ expect(await readPublicMatch(db,newKnockout!.match_id)).toMatchObject({status:'awaiting_participants',result:null});
+ await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
+
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-recreate-day3-00001',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-recreate-international-00001',now)).world;
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(98);
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots WHERE source_kind=\'international\'').first())!.n).toBe(144);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots WHERE source_kind=\'international\'').first())!.n).toBe(42);
+ const distinct=await db.prepare(`SELECT count(DISTINCT match_id) n FROM (
+   SELECT match_id FROM season_match_slots UNION ALL
+   SELECT match_id FROM season_knockout_match_slots
+ )`).first();
+ expect(distinct!.n).toBe(4082);
+ const cup=await readPublishedCompetitionMatches(db,1,'int-1');
+ expect(cup.fixtures).toHaveLength(93);
+ const final=cup.fixtures.find(f=>f.phaseId==='final');
+ expect(final).toBeDefined();
+ expect(await readPublicMatch(db,final!.matchId)).toMatchObject({status:'awaiting_participants',result:null});
+
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-recreate-publish-00001',now)).world;
+ expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first())!.n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first())!.n).toBe(98);
+ expect((await db.prepare('PRAGMA foreign_key_check').all()).results).toEqual([]);
+ expect(world).toMatchObject({phase:'active',day:3});
 },120000);
