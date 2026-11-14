@@ -119,6 +119,7 @@
     "backend/tests/test_player_numeric_ids_migration.py": "migration",
     "backend/tests/test_player_profile_migration.py": "migration",
     "backend/tests/test_player_transfer_export_migration.py": "migration",
+    "backend/tests/test_public_match_numbers_migration.py": "migration",
     "backend/tests/test_season_artifacts_migration.py": "migration",
     "backend/tests/test_world_migration.py": "migration",
     "backend/tests/worker-restart.test.mts": "backend-operator",
