@@ -70,3 +70,12 @@ Acceptance remains in #550: full per-route before/after matrix with timings and 
 | Static asset — `assets/players-directory.js`, `assets/player-detail.js` | `/clubs/_shared/manifest.json` | Crest/club identity manifest is a static asset and must **not** inflate API request counts. |
 
 This is a **focused source-level** review, not the full endpoint inventory or a measured before/after improvement. The complete browser request matrix, authenticated actions, post-write invalidation and Safari/Preview parity remain unverified.
+
+## Measurement integrity and privacy follow-up (2026-11-14)
+
+- Route labels and initiator URLs now use the same allowlisted numeric-selector redaction as API query metadata. Opaque path segments of 24+ characters are obscured; raw query values and navigation error messages are not persisted.
+- Request grouping uses ephemeral, per-browser-context URL variant IDs: different filter values cannot be misclassified as identical API calls, yet no raw query values or unsalted deterministic fingerprints enter the JSON.
+- Failed navigation, HTTP document errors and network-idle timeouts produce `requestCount: null` and `incomplete: true` instead of misleading zero-request results. Successfully settled zero-request scenarios still report `0`.
+- Standalone Node.js 22 pure tests: **7/7 PASS**. A synthetic local Chromium probe in this execution environment returned `ERR_BLOCKED_BY_ADMINISTRATOR`; no Football Architect Network/HAR measurement was obtained. This is not evidence of an application bug or a traffic reduction.
+
+Real before/after counts and Safari/Preview parity remain **NOT MEASURED**. Run against a controlled, isolated local DEV Worker/D1 to collect valid baseline metrics.

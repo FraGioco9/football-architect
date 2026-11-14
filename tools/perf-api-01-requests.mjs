@@ -21,21 +21,33 @@ export const IN_PAGE_SCENARIOS=Object.freeze([
   expectedView:'technical'})
 ]);
 const VISIBLE_PARAMS=new Set(['season','day','week','offset','limit']);
-export function describeApiUrl(input){
- let url;
- try{url=new URL(input)}catch{return null}
- if(!url.pathname.startsWith('/api/'))return null;
- const path=url.pathname.replace(/\/[A-Za-z0-9_%+-]{40,}(?=\/|$)/g,'/:redacted');
+// Raw query values are never persisted. Only short numeric selectors are public.
+// Long opaque path segments (including 32-character tokens) are redacted too.
+function safeDescription(url){
+ const path=url.pathname.replace(/\/[A-Za-z0-9_%+-]{24,}(?=\/|$)/g,'/:redacted');
  const queryKeys=[...new Set(url.searchParams.keys())].sort();
  const allowed=[...url.searchParams].filter(([key,value])=>VISIBLE_PARAMS.has(key)&&/^\d{1,5}$/.test(value))
   .sort(([a,av],[b,bv])=>a.localeCompare(b)||av.localeCompare(bv));
  const normalized=new URLSearchParams(allowed).toString();
  return {path,queryKeys,comparisonKey:path+(normalized?'?'+normalized:'')};
 }
+export function describeApiUrl(input){
+ let url;
+ try{url=new URL(input)}catch{return null}
+ if(!url.pathname.startsWith('/api/'))return null;
+ return safeDescription(url);
+}
+export function describePageUrl(input){
+ try{return safeDescription(new URL(input,'http://app.localhost:2000'))}catch{return null}
+}
+
 export function summarizeRequests(requests){
  const grouped=new Map();
  for(const request of requests){
-  const key=request.method+' '+request.comparisonKey+' ['+(request.queryKeys||[]).join(',')+']';
+  // A per-context, ephemeral URL variant distinguishes different search values
+  // without recording the values or a reversible/unsalted fingerprint.
+  const key=request.method+' '+request.comparisonKey+' ['+(request.queryKeys||[]).join(',')+']'+
+   (request.urlVariant==null?'':' #'+request.urlVariant);
   let row=grouped.get(key);
   if(!row){row={method:request.method,path:request.path,comparisonKey:request.comparisonKey,
    queryKeys:request.queryKeys||[],count:0,statuses:[],initiators:[],cacheControls:[],
@@ -54,6 +66,14 @@ export function summarizeRequests(requests){
   errorResponses:requests.filter(r=>Number.isInteger(r.status)&&r.status>=400).length,
   endpoints};
 }
+// A failed/unfinished navigation is not evidence of zero API requests.
+// Keep partial observations for diagnosis, but exclude them from valid totals.
+export function summarizeVisit(requests,{complete=true}={}){
+ if(!complete)return {requestCount:null,uniqueRequestShapes:null,
+  repeatedRequestCandidates:null,errorResponses:null,endpoints:[],
+  observedRequestCount:requests.length,incomplete:true};
+ return {...summarizeRequests(requests),observedRequestCount:requests.length,incomplete:false};
+}
 function parseArgs(args){
  const [label,...flags]=args;
  if(!['before','after'].includes(label))throw Error('Usage: node tools/perf-api-01-requests.mjs before|after [--runs=1] [--routes=/dashboard,/players] [--base-url=http://app.localhost:2000]');
@@ -70,8 +90,9 @@ function parseArgs(args){
 }
 async function main(args){
  const options=parseArgs(args);
- const {chromium}=await import('playwright');
- const browser=await chromium.launch({headless:true});
+ const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
+ const browser=await chromium.launch({headless:true,
+  ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
  const records=[];
  try{
   for(const route of options.routes)for(let attempt=0;attempt<options.runs;attempt++){
@@ -79,10 +100,16 @@ async function main(args){
    try{
     const page=await context.newPage();
     const captured=[],byRequest=new Map(),jobs=[];
+    const urlVariants=new Map();
     page.on('request',request=>{
      const parsed=describeApiUrl(request.url());if(!parsed)return;
-     let initiator=null;try{initiator=new URL(request.frame().url()).pathname}catch{}
-     const entry={method:request.method(),...parsed,initiator,status:null,
+     let initiator=null;try{initiator=describePageUrl(request.frame().url())?.comparisonKey??null}catch{}
+     if(!initiator||initiator==='blank')initiator=describePageUrl(route)?.comparisonKey??null;
+     const actual=new URL(request.url());
+     // Equality keys stay in process memory; the output contains only a local ID.
+     const identity=actual.pathname+'?'+[...actual.searchParams].sort(([a,av],[b,bv])=>a.localeCompare(b)||av.localeCompare(bv)).map(([key,value])=>JSON.stringify([key,value])).join('&');
+     if(!urlVariants.has(identity))urlVariants.set(identity,urlVariants.size+1);
+     const entry={method:request.method(),...parsed,urlVariant:urlVariants.get(identity),initiator,status:null,
       cacheControl:null,responseBytes:null,durationMs:null,failed:false};
      captured.push(entry);byRequest.set(request,entry);
     });
@@ -103,15 +130,20 @@ async function main(args){
     await page.route('**/api/**',req=>['GET','HEAD'].includes(req.request().method())?req.continue():req.abort('blockedbyclient'));
     const visit=async (scenario,action)=>{
      const start=captured.length;
-     let error=null,status=null;
+     let error=null,status=null,networkIdle=false;
      try{
       const response=await action();status=response?.status()??null;
-      await page.waitForLoadState('networkidle',{timeout:7000}).catch(()=>{});
-     }catch(e){error=String(e).slice(0,240)}
+      try{await page.waitForLoadState('networkidle',{timeout:7000});networkIdle=true}catch{}
+     }catch(e){error=typeof e?.name==='string'&&/^[A-Za-z][A-Za-z0-9]{0,60}$/.test(e.name)?e.name:'Error'}
      await Promise.allSettled(jobs);
      const observed=captured.slice(start).map(entry=>({...entry}));
-     records.push({route,attempt,scenario,pageStatus:status,error,...summarizeRequests(observed),requests:observed});
+     const complete=error===null&&networkIdle&&(status===null||status<400);
+     records.push({route:safeRoute,attempt,scenario,pageStatus:status,
+      error:error??(!networkIdle?'NetworkIdleTimeout':status>=400?'PageHttpError':null),
+      ...summarizeVisit(observed,{complete}),requests:observed});
     };
+    // The navigation target remains exact; only recorded metadata is redacted.
+    const safeRoute=describePageUrl(route)?.comparisonKey??'unavailable';
     const target=options.base+route;
     await visit('direct-load',()=>page.goto(target,{waitUntil:'load',timeout:25000}));
     // Measure genuine in-document route transitions, not only page.goto.
@@ -122,7 +154,7 @@ async function main(args){
      const visible=await control.isVisible().catch(()=>false);
      const disabled=visible&&await control.getAttribute('aria-disabled')==='true';
      if(!visible||disabled){
-      records.push({route,attempt,scenario:scenario.name,skipped:true,
+      records.push({route:safeRoute,attempt,scenario:scenario.name,skipped:true,
        reason:visible?'control-disabled':'control-unavailable',requestCount:null});
       continue;
      }
@@ -150,7 +182,7 @@ async function main(args){
  const head=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
  const result={label:options.label,head,base:options.base,runs:options.runs,
   environment:'Local isolated DEV recommended; anonymous fresh browser context per route/run',
-  caveats:'Counts are observations, not proof of redundant calls. Query values except numeric season/day/week/offset/limit are redacted. The Roster in-page subview is sampled when actionable, with explicit skips otherwise. No real login, post-write, physical iPhone Safari or hosted Preview coverage.',
+  caveats:'Counts are observations, not proof of redundant calls. API/page query values except numeric season/day/week/offset/limit are redacted; per-context URL variant IDs distinguish different hidden values. The Roster in-page subview is sampled when actionable, with explicit skips otherwise. No real login, post-write, physical iPhone Safari or hosted Preview coverage.',
   records};
  mkdirSync('int24-browser-artifacts',{recursive:true});
  const output='int24-browser-artifacts/perf-api-01-'+options.label+'.json';

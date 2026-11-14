@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,summarizeRequests,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -40,4 +40,35 @@ test('Roster in-page audit distinguishes pushState navigation from document relo
  assert.equal(scenario.routePattern.test('/clubs/it/1/overview'),false);
  assert.equal(scenario.selector,'a[data-club-roster-view="technical"]');
  assert.equal(scenario.expectedView,'technical');
+});
+
+test('saved route metadata hides filter values and opaque path identifiers',()=>{
+ const info=describePageUrl('/players?season=2&offset=40&name=Alice&token=private-secret');
+ assert.deepEqual(info,{path:'/players',queryKeys:['name','offset','season','token'],comparisonKey:'/players?offset=40&season=2'});
+ const opaque='abc123abc123abc123abc123abc123ab';
+ assert.equal(describePageUrl('/account/recover/'+opaque+'?code=private-secret').path,'/account/recover/:redacted');
+ assert.equal(describeApiUrl('http://app.localhost:2000/api/players/'+opaque).path,'/api/players/:redacted');
+ assert.ok(!JSON.stringify(info).includes('Alice'));
+});
+
+test('distinct private filters cannot be mistaken for duplicate API calls',()=>{
+ const url=describeApiUrl('http://app.localhost:2000/api/players?name=redacted');
+ const row={...url,method:'GET',status:200};
+ const result=summarizeRequests([{...row,urlVariant:1},{...row,urlVariant:2},{...row,urlVariant:1}]);
+ assert.equal(result.requestCount,3);
+ assert.equal(result.uniqueRequestShapes,2);
+ assert.equal(result.repeatedRequestCandidates,1);
+ assert.equal(JSON.stringify(result).includes('redacted'),false);
+});
+
+test('failed or unfinished navigations never count as zero network requests',()=>{
+ const attempted=[{method:'GET',path:'/api/world',comparisonKey:'/api/world',status:200}];
+ for(const sample of [[],attempted]){
+  const result=summarizeVisit(sample,{complete:false});
+  assert.equal(result.requestCount,null);
+  assert.equal(result.incomplete,true);
+  assert.equal(result.observedRequestCount,sample.length);
+  assert.equal(result.repeatedRequestCandidates,null);
+ }
+ assert.equal(summarizeVisit([],{complete:true}).requestCount,0);
 });
