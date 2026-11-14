@@ -30,8 +30,8 @@ test('Club Competitions define a single three-column entry and shared label/valu
  assert.match(css,/container:club-competition-panel\s*\/\s*inline-size/);
  assert.match(css,/\.club-competition-list \.club-competition-entry\{[\s\S]*?grid-template-columns:minmax\(180px,1fr\) minmax\(205px,220px\) minmax\(0,340px\)/);
  assert.match(css,/\.club-competition-list \.club-competition-summary\{[^}]*display:contents;/,'Summary wrapper does not create a nested layout');
- assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:2;grid-row:1;/,'Status is in direct column two');
- assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-column:3;grid-row:1;/,'Next match is in direct column three');
+ assert.match(css,/\.club-competition-list \.club-competition-metrics\{[^}]*grid-column:2;grid-row:1\/3;/,'Status spans the same two direct row tracks');
+ assert.match(css,/\.club-competition-list \.club-competition-next\{[^}]*grid-column:3;grid-row:1\/3;/,'Next match spans the same two direct row tracks');
  assert.match(css,/grid-template-rows:16px minmax\(40px,auto\);row-gap:4px;align-content:center;/,
   'The row itself defines the common centered label and content tracks');
  assert.match(css,/\.club-competition-list \.club-competition-metrics>div\{[^}]*grid-template-rows:subgrid;/,
