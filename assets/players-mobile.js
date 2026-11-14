@@ -14,6 +14,15 @@
  const positionsNeedCompact=(textWidth,availableWidth,count)=>count>1&&availableWidth>0&&textWidth>availableWidth+1;
  const positionText=cell=>String(cell.textContent||'').trim();
  const positionCodes=full=>full.split(',').map(code=>code.trim()).filter(Boolean);
+ // A compact cell must be measured with the full label temporarily visible.
+ // Always restore the measured final state, even when compact remained true.
+ const updatePositionCompact=(cell,value,codes)=>{
+  const wasCompact=cell.dataset.faCompact==='true';
+  if(wasCompact)cell.dataset.faCompact='false';
+  const compact=positionsNeedCompact(value.scrollWidth,value.clientWidth,codes.length);
+  if(wasCompact||compact!==wasCompact)cell.dataset.faCompact=String(compact);
+  return compact;
+ };
  const positionLabels={
   en:'Show all positions: ',it:'Mostra tutte le posizioni: ',de:'Alle Positionen anzeigen: ',
   es:'Mostrar todas las posiciones: ',fr:'Afficher tous les postes : '
@@ -97,10 +106,7 @@
      if(!state||!cell.offsetWidth)continue;
      // Expand the hidden full text before measuring, so an open '+' state
      // never oscillates or remains stale after view/viewport changes.
-     const wasCompact=cell.dataset.faCompact==='true';
-     if(wasCompact)cell.dataset.faCompact='false';
-     const compact=positionsNeedCompact(state.value.scrollWidth,state.value.clientWidth,state.codes.length);
-     if(compact!==wasCompact)cell.dataset.faCompact=String(compact);
+     const compact=updatePositionCompact(cell,state.value,state.codes);
      if(!compact&&activeButton&&cell.contains(activeButton))closePopup();
     }
    };
@@ -151,5 +157,5 @@
   if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
  }
- return {abbreviate,scrollState,positionsNeedCompact,positionCodes,mount};
+ return {abbreviate,scrollState,positionsNeedCompact,positionCodes,updatePositionCompact,mount};
 });

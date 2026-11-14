@@ -165,7 +165,7 @@ test('#574 positions use an overflow-driven, accessible mobile disclosure',async
  assert.equal(ui.positionsNeedCompact(116,0,3),false,'hidden table should never force a disclosure');
  const code=read('assets/players-mobile.js');
  assert.match(code,/table\.classList\.contains\('admin-contracts-table'\)\?3:2/);
- assert.match(code,/cell\.dataset\.faCompact='false'/);
+ assert.match(code,/if\(wasCompact\)cell\.dataset\.faCompact='false'/);
  assert.match(code,/positionCells\.set\(cell,state\)/);
  assert.match(code,/aria-label/);
  assert.match(code,/aria-expanded/);
@@ -194,3 +194,18 @@ test('#574 table right fade is visible at first paint and removed at non-scrolla
  assert.match(read('assets/players-mobile.js'),/if\(mobile\(\)&&!region\.clientWidth\)return/,'unmeasurable scrollers should preserve CSS initial fade');
 });
 
+
+test('#574 overflow disclosure stays stable across repeated measurements',async()=>{
+ const {default:ui}=await import('../assets/players-mobile.js');
+ const cell={dataset:{}},value={scrollWidth:116,clientWidth:102},codes=['CB','RB','RWB'];
+ assert.equal(ui.updatePositionCompact(cell,value,codes),true);
+ assert.equal(cell.dataset.faCompact,'true');
+ assert.equal(ui.updatePositionCompact(cell,value,codes),true);
+ assert.equal(cell.dataset.faCompact,'true','repeat scroll/resize must not drop the plus button');
+ value.clientWidth=140;
+ assert.equal(ui.updatePositionCompact(cell,value,codes),false);
+ assert.equal(cell.dataset.faCompact,'false','plus button should disappear when everything fits');
+ value.clientWidth=102;
+ assert.equal(ui.updatePositionCompact(cell,value,codes),true);
+ assert.equal(cell.dataset.faCompact,'true','plus button returns on shrink');
+});
