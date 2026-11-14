@@ -832,6 +832,9 @@ export function createPhysicalFixtureStepRuntime(
    physicalPlayerPositions:positions,
    ...(autonomousCarry?{physicalCarryChallengerShoeGeometry:shoeGeometry}:{}),
    contactDecisionObservation,
+   ...(frame.autonomousMovement.continuityAudit?{
+    continuityAudit:Object.freeze({...frame.autonomousMovement.continuityAudit})
+   }:{}),
    physicalActionOutcome,
    localAutonomousAction:frame.localAutonomousAction,
    autonomousActionMode:autonomousActions,
