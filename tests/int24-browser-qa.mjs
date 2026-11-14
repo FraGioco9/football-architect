@@ -471,7 +471,14 @@ try {
      return !!panel.dataset.faContentState&&!!toolbar&&!toolbar.getClientRects().length;
     }
     if(view==='stats')return panel.querySelectorAll('.fa-dev-stats-card').length===3;
-    if(view==='awards')return document.querySelectorAll('#competition-panel-awards > .fa-awards .fa-awards-card').length===11;
+    if(view==='awards'){
+     // Live cards can mount before the first-paint skeleton is retired.
+     // Readiness is the fully reconciled panel, not just 11 live cards.
+     const live=panel.querySelectorAll(':scope > .fa-awards .fa-awards-card').length;
+     const total=panel.querySelectorAll('.fa-awards-card').length;
+     return !!panel.dataset.faContentState&&live===11&&total===11&&
+      !panel.querySelector('[data-competition-skeleton-root]');
+    }
     if(view==='postseason')return panel.querySelectorAll('[data-bracket-tie]').length===11;
     return true;
    },view);

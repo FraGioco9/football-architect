@@ -141,7 +141,10 @@
      }else oldCrest.replaceWith(incoming);
     }
     const title=header.querySelector('#club-title'),nextTitle=stagedHeader.querySelector('#club-title');
-    if(title&&nextTitle&&title.textContent!==nextTitle.textContent)title.textContent=nextTitle.textContent;
+    if(title&&nextTitle){
+     if(title.innerHTML!==nextTitle.innerHTML)title.innerHTML=nextTitle.innerHTML;
+     title.setAttribute('aria-label',nextTitle.getAttribute('aria-label'));
+    }
     for(const selector of ['.club-location']){
      const existing=header.querySelector(selector),next=stagedHeader.querySelector(selector);
      if(existing&&next&&existing.innerHTML!==next.innerHTML)existing.innerHTML=next.innerHTML;
@@ -221,7 +224,8 @@
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
    }
-   const titleName=host.querySelector('#club-title')?.textContent?.trim();
+   // The browser tab retains the primary name regardless of the viewport-specific H1.
+   const titleName=manifest.clubs.find(club=>club.countryId===selected.countryId&&club.clubId===selected.clubId)?.primaryName?.trim();
     const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
     document.title=(titleName&&!/^(?:undefined|null|nan)$/i.test(titleName)?titleName:fallback[language()])+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;

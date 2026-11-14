@@ -35,7 +35,7 @@ try{
    for(const lang of ['de','es','fr','it','en']){
     await page.locator('.club-tabs [aria-current="page"]').focus();
     await page.evaluate(lang=>document.documentElement.lang=lang,lang);
-    await page.waitForFunction(()=>document.title===(document.querySelector('#club-title')?.textContent?.trim()||'Club')+' — Football Architect');
+    await page.waitForFunction(()=>document.documentElement.dataset.clubReady==='true'&&!document.querySelector('#club-title .club-fp-bar'));
     const state=await page.evaluate(()=>({
      sameCrest:window.pageLoad02Crest===document.querySelector('.club-header [data-club-crest] .app-club-crest-image'),
      focused:document.activeElement?.matches('.club-tabs [aria-current="page"]'),
@@ -403,7 +403,10 @@ try{
    assert.equal(final.title,true,'preserve header title node '+view);
    assert.equal(final.tabs,true,'preserve tabs node '+view);
    assert.equal(final.crest,false,'replace anonymous crest slot with canonical crest on hydrate');
-   assert.equal(await page.locator('#club-title').textContent(),identity.primaryName,'hydrate canonical primary name only from manifest');
+   const variant=width<=420?'compact':width<=900?'primary':'full';
+   assert.equal(await page.locator('#club-title [data-club-name]:visible').count(),1,'one visible canonical name at '+width+'px');
+   assert.equal(await page.locator('#club-title [data-club-name]:visible').textContent(),identity[variant+'Name'],'hydrate '+variant+' Club name from manifest at '+width+'px');
+   assert.equal(await page.locator('#club-title').getAttribute('aria-label'),identity.fullName,'keep accessible full club name');
     assert.equal(await page.title(),identity.primaryName+' — Football Architect','browser title uses canonical primary name');
    assert.ok((await page.locator('.club-header .club-location').textContent()).includes(identity.city),'hydrate city from manifest');
    if(asset)assert.equal(await page.locator('.club-header .app-club-crest-image').getAttribute('src'),'/'+asset);
