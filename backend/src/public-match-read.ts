@@ -135,14 +135,35 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
   .bind(season).first<{generation:string}>();
  if(!saved||saved.generation!==world.generation)return corrupt();
  await confirmedPublication(db,sample);
+ const brackets=(await db.prepare(
+  'SELECT * FROM season_knockout_match_slots WHERE season_number=? AND competition_id=? ORDER BY scheduled_day,round_number,match_id'
+ ).bind(season,competitionId).all<ReservedKnockout>()).results;
+ const expectedBrackets=competitionId.startsWith('int-')?21:competitionId.endsWith('-1')?2:5;
+ if(brackets.length!==expectedBrackets)return corrupt();
+ const definitions=(await buildKnockoutSlotReservations(world.generation,season,sample.source_kind))
+  .filter(s=>s.competitionId===competitionId);
+ if(definitions.length!==expectedBrackets)return corrupt();
+ const canonical=await buildKnockoutSlotReservations(world.generation,season,sample.source_kind);
+ for(const bracket of brackets){
+  if(bracket.generation!==world.generation||bracket.source_kind!==sample.source_kind||
+     bracket.source_hash!==sample.source_hash||bracket.published_at!==sample.published_at)return corrupt();
+  await validKnockoutSlot(bracket,canonical);
+ }
+ await confirmedPublication(db,brackets[0]);
  const after=await readWorld(db);
  if(after.generation!==world.generation||after.revision!==world.revision||
    after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
    throw new ApiError(409,'stale_world');
  return {schemaVersion:1,providerId:'authoritative-world',season,competitionId,
-  status:'published',fixtures:rows.map(r=>({matchId:r.match_id,sourceFixtureId:r.source_fixture_id,
-   marker:r.marker,day:r.scheduled_day,round:r.round_number,
-   homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
+  status:'published',fixtures:[
+   ...rows.map(r=>({matchId:r.match_id,sourceFixtureId:r.source_fixture_id,
+     marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:'league',
+     homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
+   ...brackets.map(r=>({matchId:r.match_id,sourceFixtureId:null,
+     marker:r.marker,day:r.scheduled_day,round:r.round_number,phaseId:r.phase_id,
+     tieId:r.tie_id,leg:r.leg,homeClubId:null,awayClubId:null,
+     participantA:JSON.parse(r.participant_a_json),participantB:JSON.parse(r.participant_b_json)}))
+  ].sort((a,b)=>a.day-b.day||a.matchId.localeCompare(b.matchId,'en')),
   provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
 }
 
@@ -156,9 +177,9 @@ interface ResolvedFixture {
  phaseId:string;tieId:string|null;leg:number|null;result:unknown;
 }
 /** Re-derive immutable slot proof from approved brackets, not from its database row. */
-async function validKnockoutSlot(row:ReservedKnockout) {
+async function validKnockoutSlot(row:ReservedKnockout,canonical?:Awaited<ReturnType<typeof buildKnockoutSlotReservations>>) {
  const scope=row.source_kind as BracketScope;
- const expected=(await buildKnockoutSlotReservations(row.generation,row.season_number,scope))
+ const expected=(canonical??await buildKnockoutSlotReservations(row.generation,row.season_number,scope))
   .find(x=>x.matchId===row.match_id);
  if(!expected||row.competition_id!==expected.competitionId||row.phase_id!==expected.phaseId||
   row.tie_id!==expected.tieId||row.leg!==expected.leg||row.slot_id!==expected.slotId||
