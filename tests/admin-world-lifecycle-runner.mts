@@ -1,11 +1,11 @@
 // Real browser + local Wrangler/D1 acceptance. All identities/state are synthetic.
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,readFile} from 'node:fs/promises';
+import {mkdtemp,rm,readFile,mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer} from 'node:net';
 import {createRequire} from 'node:module';
-import {spawn} from 'node:child_process';
+import {spawn,execFileSync} from 'node:child_process';
 import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -13,6 +13,7 @@ import {openLocalDatabase,manageAccount} from '../backend/tools/operator-local.m
 import {createPasswordService} from '../backend/src/password-core.ts';
 import {createPreviewServer} from '../tools/dev-standings-preview.mjs';
 import {verifyAdminWorldLifecycle} from './admin-world-lifecycle-browser.mjs';
+import {preflightAnonymousLocalApi,collectAnonymousBrowser} from '../tools/perf-api-01-requests.mjs';
 
 const require=createRequire(new URL('../backend/package.json',import.meta.url));
 const playwright=await import(process.env.FA_ADMIN_PLAYWRIGHT||require.resolve('playwright'));
@@ -62,6 +63,24 @@ try{
  assert.deepEqual(result,{unifiedPlayerLogin:true,retiredAdminLoginDenied:true,distinctCredentials:true,twoSeasonLifecycle:true,anonymousIsolation:true,historicalNavigation:true,staleResetProjection:true,freshInitialization:true});
  assert.ok(!workerLogs.includes(password)&&!workerLogs.includes(legacyPassword),'No credential in Worker logs');
  console.log('Unified Admin real Worker/D1 browser lifecycle PASS: '+JSON.stringify(result));
+ // Optional diagnostic on this same disposable Worker/D1 and already-started
+ // Chromium; never enable on all PRs or against the shared DEV/Preview pool.
+ if(process.env.FA_LOCAL_API_AUDIT==='1'){
+  await preflightAnonymousLocalApi(origin);
+  const routes=['/dashboard','/players','/clubs/it/1/overview','/clubs/it/1/roster'];
+  const records=await collectAnonymousBrowser(browser,{base:origin,routes,runs:1});
+  const summary=records.map(({route,scenario,requestCount,observedRequestCount,incomplete,errorResponses,repeatedRequestCandidates,skipped})=>({
+   route,scenario,requestCount,observedRequestCount,incomplete:!!incomplete,errorResponses,repeatedRequestCandidates,skipped:!!skipped
+  }));
+  const head=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+  const directory=join(process.env.RUNNER_TEMP||state,'fa-ci-artifacts');
+  await mkdir(directory,{recursive:true});
+  const artifact={schemaVersion:1,head,environment:'disposable local Worker/D1; anonymous Chromium; world reset to synthetic Season 0',
+   caveats:'Current HEAD only, no before/after comparison or production claims; no seeded player list. Numeric selectors and URL variant IDs are only ephemeral.',
+   records};
+  await writeFile(join(directory,'perf-api-01-anonymous-local.json'),JSON.stringify(artifact,null,2)+'\n');
+  console.log('PERF-API-01 REAL LOCAL WORKER/D1 '+JSON.stringify(summary));
+ }
 }finally{
  if(browser)await browser.close();
  if(preview?.listening){preview.closeAllConnections();await new Promise<void>(r=>preview!.close(()=>r()))}

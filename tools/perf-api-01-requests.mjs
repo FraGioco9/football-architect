@@ -82,7 +82,7 @@ export function validateSamplerBackend({worldStatus,permissionsStatus}){
   return 'Account permissions API did not return 200/401 (received '+permissionsStatus+')';
  return null;
 }
-async function preflight(base){
+export async function preflightAnonymousLocalApi(base){
  let world,permissions;
  try{
   [world,permissions]=await Promise.all(['/api/world','/api/player/permissions'].map(async path=>{
@@ -110,14 +110,10 @@ function parseArgs(args){
   throw Error('Routes must be local absolute paths');
  return {label,runs,base:base.origin,routes};
 }
-async function main(args){
- const options=parseArgs(args);
- await preflight(options.base);
- const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
- const browser=await chromium.launch({headless:true,
-  ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
+// Collect anonymous read-only samples with an existing local Chromium instance.
+// The production CLI and the disposable CI Worker share the exact same recorder.
+export async function collectAnonymousBrowser(browser,options){
  const records=[];
- try{
   for(const route of options.routes)for(let attempt=0;attempt<options.runs;attempt++){
    const context=await browser.newContext({serviceWorkers:'block'});
    try{
@@ -201,7 +197,17 @@ async function main(args){
     }
    }finally{await context.close()}
   }
- }finally{await browser.close()}
+ return records;
+}
+
+async function main(args){
+ const options=parseArgs(args);
+ await preflightAnonymousLocalApi(options.base);
+ const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
+ const browser=await chromium.launch({headless:true,
+  ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});
+ let records;
+ try{records=await collectAnonymousBrowser(browser,options)}finally{await browser.close()}
  const head=(()=>{try{return execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}catch{return 'UNKNOWN'}})();
  const result={label:options.label,head,base:options.base,runs:options.runs,
   environment:'Local isolated DEV recommended; anonymous fresh browser context per route/run',
