@@ -1682,9 +1682,9 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
  * scrolling, never hidden columns or a changed reading/sort order. */
 @media(max-width:720px){
  .app-players-table-scroll{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
- .app-players-table{--app-players-flag-width:44px;--app-players-name-width:216px;--app-players-positions-width:176px;min-width:720px}
- .app-players-table[data-players-table-mode="attributes"]{min-width:900px}
- html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1364px}
+ .app-players-table{--app-players-flag-width:36px;--app-players-name-width:160px;--app-players-positions-width:112px;min-width:640px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:760px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1200px}
  .app-players-table tbody td:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .app-players-table :is(.app-player-name-link,.club-roster-player-link){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .app-players-table:not([data-players-public]):not([data-players-table-mode="attributes"]) tbody td:nth-child(4),
@@ -1694,12 +1694,12 @@ html[data-players-group="technical"] .app-players-table[data-players-table-mode=
 /* 320–420px: make the name and first numeric column visible sooner while
  * preserving readable attribute columns, consistent first paint and iOS scroll. */
 @media(max-width:420px){
- .app-players-table{--app-players-flag-width:40px;--app-players-name-width:192px;--app-players-positions-width:160px;min-width:680px}
- .app-players-table[data-players-table-mode="attributes"]{min-width:856px}
- html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1272px}
+ .app-players-table{--app-players-flag-width:34px;--app-players-name-width:144px;--app-players-positions-width:104px;min-width:608px}
+ .app-players-table[data-players-table-mode="attributes"]{min-width:736px}
+ html[data-players-group="technical"] .app-players-table[data-players-table-mode="attributes"]{min-width:1168px}
 }
-@media(max-width:720px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:896px}}
-@media(max-width:420px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:840px}}
+@media(max-width:720px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:744px}}
+@media(max-width:420px){.app-players-table[data-players-public]:not([data-players-table-mode="attributes"]){min-width:700px}}
 @media(max-width:620px){
  .app-players-tabs{margin-top:18px}
  .app-players-tabs .app-competition-tab{flex:0 0 min(136px,calc((100% - 4px)/2));width:min(136px,calc((100% - 4px)/2));min-width:0;max-width:136px;height:40px;min-height:40px;padding:7px 5px;font-size:12px}
@@ -1903,4 +1903,22 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  * and the approved responsive table column tracks remain unchanged. */
 @media(max-width:720px){
  .app-players-table-scroll{box-sizing:border-box;scroll-padding-inline:10px}
+}
+
+/* #574: retain full names on desktop and for assistive technology. Table
+ * edges fade only where scrolling in that direction is possible. */
+.fa-player-short-name{display:none}
+@media(max-width:720px){
+ .app-players-table .fa-player-full-name,
+ .app-admin-view .admin-contracts-table .fa-player-full-name{display:none}
+ .app-players-table .fa-player-short-name,
+ .app-admin-view .admin-contracts-table .fa-player-short-name{display:inline}
+ .app-players-table :is(th,td):first-child{padding-inline:4px}
+ .app-players-table-scroll{
+  --fa-table-fade-left:0px;--fa-table-fade-right:0px;
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 var(--fa-table-fade-left),#000 calc(100% - var(--fa-table-fade-right)),transparent);
+  mask-image:linear-gradient(to right,transparent,#000 var(--fa-table-fade-left),#000 calc(100% - var(--fa-table-fade-right)),transparent)
+ }
+ .app-players-table-scroll[data-can-scroll-left="true"]{--fa-table-fade-left:16px}
+ .app-players-table-scroll[data-can-scroll-right="true"]{--fa-table-fade-right:16px}
 }

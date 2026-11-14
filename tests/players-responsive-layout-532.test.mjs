@@ -21,16 +21,16 @@ test('#532 desktop player-table widths and static colgroup are unchanged',()=>{
 test('#532 responsive Overview and attribute groups preserve 4/8 readable statistic tracks',()=>{
  const css=read('assets/app.css'),roster=read('assets/club-page.css');
  assert.match(css,/@media\(max-width:720px\)\{\s*\.app-players-table-scroll\{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch\}/);
- assert.match(css,/\.app-players-table\{--app-players-flag-width:44px;--app-players-name-width:216px;--app-players-positions-width:176px;min-width:720px\}/);
- assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:900px\}/);
- assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1364px\}/);
- assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:40px;--app-players-name-width:192px;--app-players-positions-width:160px;min-width:680px\}/);
- assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:856px\}/);
- assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1272px\}/);
- assert.match(roster,/@media\(max-width:720px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1364px\}\}/);
- assert.match(roster,/@media\(max-width:420px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1272px\}\}/);
+ assert.match(css,/\.app-players-table\{--app-players-flag-width:36px;--app-players-name-width:160px;--app-players-positions-width:112px;min-width:640px\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:760px\}/);
+ assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1200px\}/);
+ assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:34px;--app-players-name-width:144px;--app-players-positions-width:104px;min-width:608px\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:736px\}/);
+ assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1168px\}/);
+ assert.match(roster,/@media\(max-width:720px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1200px\}\}/);
+ assert.match(roster,/@media\(max-width:420px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1168px\}\}/);
  for(const [flag,name,positions,overview,four,eight] of [
-  [44,216,176,720,900,1364],[40,192,160,680,856,1272]
+  [36,160,112,640,760,1200],[34,144,104,608,736,1168]
  ]){
   const remaining=overview-flag-name;
   const frac=[.17,.42,.21,.20];
