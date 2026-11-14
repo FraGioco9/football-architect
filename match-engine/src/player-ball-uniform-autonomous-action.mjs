@@ -132,6 +132,55 @@ export function inspectUniformPolicyGeometry({
  });
 }
 
+// P0: structural analysis of the ORIGINAL pre-impulse physical input gates.
+// Read-only; a caller-supplied object cannot authenticate genuine Rapier START.
+// Not a replacement for the action selector or an executable P1 affordance.
+export const PHYSICAL_REJECTION_REASONS_VERSION=
+ 'me-p0-physical-rejection-reasons-pure-v1';
+export function inspectPhysicalActionRejection({
+ tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
+ lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,
+ allowPhysicalCarry=false
+}={}){
+ if(!Number.isSafeInteger(tick)||tick<1||
+    !Array.isArray(contactStarted)||!Array.isArray(contactActive)||
+    new Set(contactStarted).size!==contactStarted.length||
+    new Set(contactActive).size!==contactActive.length||
+    contactStarted.some(id=>!ids.includes(id)||!contactActive.includes(id))||
+    contactActive.some(id=>!ids.includes(id))||
+    !playerFrame||playerFrame.version!==PLAYER_VERSION||
+    playerFrame.tick!==tick||!Array.isArray(playerFrame.players)||
+    playerFrame.players.length!==ids.length||
+    !ballPosition||!ballVelocity||
+    !['x','y','z'].every(k=>finite(ballPosition[k])&&finite(ballVelocity[k]))||
+    !Number.isSafeInteger(lastActionTick)||lastActionTick>tick||
+    !finite(ballRadiusM)||ballRadiusM<0.05||ballRadiusM>0.2||
+    typeof allowPhysicalCarry!=='boolean')
+  throw new TypeError('Same-tick canonical input required');
+ const players=playerFrame.players;
+ if(players.some((p,i)=>!p||p.id!==ids[i]||
+    p.team!==INITIAL_PLAYERS[i].team||!finite(p.x)||!finite(p.y)))
+  throw new TypeError('Ordered finite 22-player movement required');
+ const exclusive=contactStarted.length===1&&contactActive.length===1&&
+  contactStarted[0]===contactActive[0];
+ const actor=exclusive?players.find(p=>p.id===contactStarted[0]):null;
+ const gap=actor?Math.hypot(actor.x-ballPosition.x,actor.y-ballPosition.y):null;
+ const firstFailedGate=!exclusive?'no-exclusive-shoe-start':
+  tick-lastActionTick<UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS?'cooldown':
+  ballPosition.z<ballRadiusM-0.015||
+   ballPosition.z>ballRadiusM+MAX_HEIGHT_M?'ball-height':
+  Math.hypot(ballVelocity.x,ballVelocity.y)>14?'ball-speed':
+  !Number.isFinite(gap)||gap>MAX_GAP_M?'shoe-ball-gap':null;
+ return Object.freeze({
+  version:PHYSICAL_REJECTION_REASONS_VERSION,physicsTick:tick,
+  actorId:actor?.id??null,exclusiveShoeStart:exclusive,
+  firstFailedGate,passedInputGates:firstFailedGate===null,
+  sourceAuthenticatedByShape:false,authorizesPhysicalAction:false,
+  physicalActionExecuted:false,readOnly:true,
+  authorizedAffordances:Object.freeze([])
+ });
+}
+
 export function selectUniformAutonomousContactAction({
  tick,contactStarted,contactActive,playerFrame,ballPosition,ballVelocity,
  lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS,ballRadiusM,

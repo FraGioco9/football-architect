@@ -10,6 +10,7 @@ import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
  from '../src/player-football-corridors.mjs';
 import {inspectUniformPolicyGeometry,UNIFORM_POLICY_GEOMETRY_VERSION,
+ inspectPhysicalActionRejection,PHYSICAL_REJECTION_REASONS_VERSION,
  selectUniformAutonomousContactAction,
  UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS}
  from '../src/player-ball-uniform-autonomous-action.mjs';
@@ -567,4 +568,43 @@ test('P0 original physical selector input gates reject fabricated opportunities'
  ])assert.throws(()=>selectUniformAutonomousContactAction({
   ...input,...patch
  }),TypeError);
+});
+
+test('P0 pure rejection reasons agree with unchanged physical selector gates',()=>{
+ const id='home-9',tick=30;
+ const playerFrame={version:PLAYER_VERSION,tick,players:INITIAL_PLAYERS.map(p=>({
+  ...p,x:p.id===id?0:p.x,y:p.id===id?0:p.y
+ }))};
+ const source={tick,contactStarted:[id],contactActive:[id],playerFrame,
+  ballPosition:{x:0,y:0,z:0.11},ballVelocity:{x:0,y:0,z:0},
+  lastActionTick:0,ballRadiusM:0.11,allowPhysicalCarry:false};
+ const valid=inspectPhysicalActionRejection(source);
+ assert.equal(valid.version,PHYSICAL_REJECTION_REASONS_VERSION);
+ assert.equal(valid.passedInputGates,true);
+ assert.equal(valid.firstFailedGate,null);
+ assert.equal(valid.authorizesPhysicalAction,false);
+ assert.equal(valid.physicalActionExecuted,false);
+ assert.equal(valid.sourceAuthenticatedByShape,false);
+ assert.equal(valid.authorizedAffordances.length,0);
+ assert.ok(Object.isFrozen(valid));
+ for(const [patch,reason] of [
+  [{contactStarted:[],contactActive:[]},'no-exclusive-shoe-start'],
+  [{contactActive:[id,'away-1']},'no-exclusive-shoe-start'],
+  [{lastActionTick:29},'cooldown'],
+  [{ballPosition:{x:0,y:0,z:0.25}},'ball-height'],
+  [{ballVelocity:{x:15,y:0,z:0}},'ball-speed'],
+  [{ballPosition:{x:2,y:0,z:0.11}},'shoe-ball-gap'],
+  [{lastActionTick:29,ballPosition:{x:0,y:0,z:0.25}},'cooldown']
+ ]){
+  const result=inspectPhysicalActionRejection({...source,...patch});
+  assert.equal(result.firstFailedGate,reason);
+  assert.equal(result.passedInputGates,false);
+  assert.equal(selectUniformAutonomousContactAction({...source,...patch}),null);
+ }
+ for(const patch of [{tick:31},{ballRadiusM:0},
+  {contactStarted:[id,id]},
+  {contactStarted:['unknown'],contactActive:['unknown']},
+  {ballVelocity:{x:NaN,y:0,z:0}}])
+  assert.throws(()=>inspectPhysicalActionRejection({...source,...patch}),
+   TypeError);
 });
