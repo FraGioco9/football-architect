@@ -501,3 +501,63 @@ test('Admin Players encodes all stable generator controls without PowerShell int
  const bad=Buffer.from(JSON.stringify({count:1,seed:'x',experimentalLegacySecondaryModel:true})).toString('base64url');
  assert.throws(()=>execFileSync(process.execPath,[fileURLToPath(new URL('../tools/players-generation-trial.mjs',import.meta.url)),'--options-base64',bad],{stdio:'pipe'}));
 });
+
+
+test('successful Admin write reuses its verified world instead of repeating authenticated world GET',async()=>{
+ const next={...world,revision:1,seasonNumber:1,phase:'preparing'};
+ let current=world;const paths=[];
+ const c=createAdminController(async(path,options)=>{
+  paths.push(path);
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path==='/api/admin/seasons/events')return {world:current,mode:current.seasonNumber===0?'uninitialized':'legacy',events:[]};
+  if(path==='/api/admin/seasons/prepare'){assert.deepEqual(options.body,{expectedGeneration:world.generation,expectedRevision:0});current=next;return {world:next};}
+  throw Error(path);
+ },()=>{});
+ await c.refresh();assert.equal(paths.filter(p=>p==='/api/admin/world').length,1);
+ paths.length=0;
+ await c.prepare();
+ assert.deepEqual(paths,['/api/admin/seasons/prepare','/api/admin/seasons/events']);
+ assert.equal(c.state().world.revision,1);
+ assert.equal(c.state().events.worldRevision,1);
+ assert.equal(canRunCommand('initialize',c.state().world,c.state().events),true);
+});
+test('raced post-write events revision triggers the original authenticated world check',async()=>{
+ const afterWrite={...world,revision:1,seasonNumber:1,phase:'preparing'};
+ const concurrent={...afterWrite,revision:2};let current=world,staleEventOnce=false;
+ const paths=[];
+ const c=createAdminController(async path=>{
+  paths.push(path);
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path==='/api/admin/seasons/events'){
+   if(staleEventOnce){staleEventOnce=false;return {world:afterWrite,mode:'legacy',events:[]};}
+   return {world:current,mode:'legacy',events:[]};
+  }
+  if(path==='/api/admin/seasons/prepare'){current=concurrent;staleEventOnce=true;return {world:afterWrite};}
+  throw Error(path);
+ },()=>{});
+ await c.refresh();paths.length=0;
+ await c.prepare();
+ assert.deepEqual(paths,['/api/admin/seasons/prepare','/api/admin/seasons/events','/api/admin/world','/api/admin/seasons/events']);
+ assert.equal(c.state().world.revision,2);
+ assert.equal(c.state().events.worldRevision,2);
+});
+test('revoked post-write events authority clears Admin permissions and data',async()=>{
+ const next={...world,revision:1,seasonNumber:1,phase:'preparing'};
+ let current=world,revoked=false;const paths=[];
+ const c=createAdminController(async path=>{
+  paths.push(path);
+  if(path==='/api/admin/session')return session;
+  if(path==='/api/admin/world')return {world:current};
+  if(path==='/api/admin/seasons/events'){if(revoked)throw error(401,'unauthorized');return {world:current,mode:'uninitialized',events:[]};}
+  if(path==='/api/admin/seasons/prepare'){revoked=true;current=next;return {world:next};}
+  throw Error(path);
+ },()=>{});
+ await c.refresh();paths.length=0;await c.prepare();
+ assert.equal(c.state().actor,null);
+ assert.equal(c.state().world,null);
+ assert.deepEqual(c.state().permissions,[]);
+ assert.equal(c.state().message,'signedOut');
+ assert.deepEqual(paths,['/api/admin/seasons/prepare','/api/admin/seasons/events']);
+});

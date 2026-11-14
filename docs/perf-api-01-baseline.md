@@ -131,3 +131,11 @@ On this opt-in PR, the pre-existing FULL local Wrangler/D1 Chromium lifecycle ru
 The same private audit recorder measures Dashboard, Players page 1, Players page 2 (offset=50), age sort, player detail, Club Overview and Club Roster. It also exercises Info-to-Technical and Back on the non-empty 73-member roster; the in-page view must not repeat a completed Roster API GET. These samples compare empty vs populated *data coverage*, not equivalent-code before/after; no speedup is claimed until a measured optimization is available.
 
 Output is the existing sanitized `perf-api-01-anonymous-local.json` under Admin CI diagnostics, augmented with synthetic population counts. Run once with the existing PR-body opt-in, then remove markers to avoid recurring FULL gates. Future regressions or optimizations should use this same populated fixture for comparable before/after evidence.
+
+## Authenticated Admin command world-GET reuse (2026-11-14)
+
+Code-path review identified one deterministically redundant authenticated HTTP call after successful Admin writes: the mutation response contains a validated resulting `world`, then `worldRead()` fetched `/api/admin/world` before reading the separate protected `/api/admin/seasons/events` projection. The controller now accepts that validated response world and relies on the protected events payload's world generation/revision as the normal second check. On this stable path, it eliminates **one authenticated `/api/admin/world` GET per successful operation**. The public world's explicit invalidation read remains intact.
+
+If the post-write protected events response has a different world revision/generation or the read fails for an ordinary availability reason, the original authenticated world and events reread is used. Auth revocation errors 401/403 continue to clear Admin state; session/permission checks on initial and manual refresh remain untouched. Three focused tests cover successful reuse, a concurrent revision fallback, and permission revocation.
+
+This is a measured *controller call sequence* before and after at the test harness level; no claim about production latency savings or full real Worker browser call counts. Existing full local Worker/D1 lifecycle and CI must validate correctness on this new exact head, while manual Chrome/iPhone Safari and broader world invalidation QA remain open.
