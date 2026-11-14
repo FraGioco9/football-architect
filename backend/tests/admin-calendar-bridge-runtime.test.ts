@@ -44,8 +44,8 @@ it('assigns progressive numeric IDs to every published domestic match without ch
  const numbers=(await db.prepare('SELECT id,slot_match_id FROM public_match_numbers WHERE generation=? ORDER BY id')
   .bind(world.generation).all()).results;
  expect(numbers).toHaveLength(3896);
- expect(new Set(numbers.map(r=>r.id)).size).toBe(3896);
- expect(new Set(numbers.map(r=>r.slot_match_id)).size).toBe(3896);
+ expect(new Set(numbers.map((r:{id:number})=>r.id)).size).toBe(3896);
+ expect(new Set(numbers.map((r:{slot_match_id:string})=>r.slot_match_id)).size).toBe(3896);
  for(let i=1;i<numbers.length;i++)expect(numbers[i].id).toBe(numbers[i-1].id+1);
  const domestic=await readPublishedCompetitionMatches(db,1,'IT-1');
  expect(domestic.fixtures).toHaveLength(242);
