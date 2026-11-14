@@ -18,8 +18,10 @@ test("SH-04: necessary responsive restore layers remain intact",()=>{
  assert.equal(count(css,".nav01-filters{grid-template-columns:1fr}"),3);
  assert.ok(css.includes("@media(max-width:720px){.nav01-filters{"));
  const club=read("assets/club-page.css");
- assert.equal(count(club,".club-competition-logo{width:56px;height:56px;flex-basis:56px}"),2);
- assert.equal(count(club,".club-competition-next-content>a.app-link{font-size:13px}"),2);
+ // The canonical Club Competition grid replaces obsolete repeated 56px rules.
+ assert.match(club,/@media\(max-width:760px\)\{[\s\S]*?\.club-competition-list \.club-competition-logo,[\s\S]*?width:44px;height:44px;flex-basis:44px;/);
+ assert.match(club,/\.club-competition-list \.club-competition-next-content>a\.app-link,[\s\S]*?font-size:13px;line-height:1\.25;/);
+ assert.match(club,/\.club-competition-list \.club-competition-entry\{[^}]*grid-template-columns:minmax\(180px,1fr\)/);
 });
 test("SH-04: generated HTML has one link normalization pass after sidebar insertion",()=>{
  const source=read("tools/generate-app-pages.mjs");

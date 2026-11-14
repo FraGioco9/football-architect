@@ -181,18 +181,35 @@ try{
        row:row.getBoundingClientRect().toJSON(),
       identity:rect('.club-competition-identity'),logo:rect('.club-fp-competition-logo'),
       copy:rect('.club-competition-copy'),name:rect('.club-fp-competition-name'),
-      tier:rect('.club-fp-competition-tier'),summary:rect('.club-competition-summary'),
-      status:rect('.club-competition-metrics'),statusValue:rect('.club-competition-metrics dd'),
+      tier:rect('.club-fp-competition-tier'),summary:(()=>{
+       const a=rect('.club-competition-metrics'),b=rect('.club-competition-next');
+       return {left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),
+        top:Math.min(a.top,b.top),bottom:Math.max(a.bottom,b.bottom)};
+      })(),
+      status:rect('.club-competition-metrics'),statusLabel:rect('.club-competition-metrics dt'),statusValue:rect('.club-competition-metrics dd'),
       statusBar:rect('.club-fp-competition-position'),
       next:rect('.club-competition-next'),nextContent:rect('.club-competition-next-content'),
-      fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round')};
+      fixtureBar:rect('.club-fp-competition-fixture'),roundBar:rect('.club-fp-competition-round'),
+       bottomSpacing:(()=>{
+        const section=panel.closest('.club-competition');
+        const style=getComputedStyle(section),box=section.getBoundingClientRect(),last=row.getBoundingClientRect();
+        return {actual:box.bottom-last.bottom,
+         expected:parseFloat(style.paddingBottom)+parseFloat(style.borderBottomWidth),
+         minHeight:style.minHeight};
+       })()};
     });
     assert.ok(comp&&Object.values(comp).every(Boolean),'first-paint competition has all final membership slots');
     assert.deepEqual(comp.rowPadding,[0,0,0,0],'competition rows are padding-free at first paint and all viewport widths');
+     assert.ok(comp.bottomSpacing.minHeight==='0px'
+      &&Math.abs(comp.bottomSpacing.actual-comp.bottomSpacing.expected)<1.5,
+      'First-paint singleton Competitions ends at the original panel padding with no empty bottom strip at '+width+': '+JSON.stringify(comp.bottomSpacing));
     assert.ok(Math.abs(comp.name.left-comp.copy.left)<2&&Math.abs(comp.tier.left-comp.copy.left)<2,
      'name and tier skeletons begin exactly where hydrated league text begins');
-    assert.ok(Math.abs(comp.statusBar.left-comp.statusValue.left)<2&&Math.abs(comp.fixtureBar.left-comp.nextContent.left)<2,
-     'status and fixture skeletons use the hydrated value origins');
+    const centerX=r=>(r.left+r.right)/2;
+    assert.ok(Math.abs(centerX(comp.statusBar)-centerX(comp.statusValue))<2
+     &&Math.abs(centerX(comp.statusBar)-centerX(comp.statusLabel))<2
+     &&Math.abs(comp.fixtureBar.left-comp.nextContent.left)<2,
+     'Status skeleton centers on the hydrated value; Next match starts at the hydrated value origin');
     assert.ok(comp.logo.width===comp.logo.height&&Math.abs(comp.logo.width-(width<=760?44:60))<1,
      'anonymous division crest matches the singleton 60px desktop / 44px mobile size');
     // Compare singleton division and multi-membership identities in the same
@@ -314,7 +331,13 @@ try{
         '<div class="club-competition-summary"><dl class="club-competition-metrics"><div><dt>'+statusLabel+'</dt><dd data-club-position>'+(empty?'4th':value)+'</dd></div></dl>'+
         '<div class="club-competition-next"><span class="club-competition-label">'+nextLabel+'</span><div class="club-competition-next-content">'+nextInfo+'</div></div></div>';
        const dd=row.querySelector('.club-competition-metrics dd'),match=row.querySelector('.club-competition-match-name');
-       const panel=row.closest('.club-competition').getBoundingClientRect(),summary=row.querySelector('.club-competition-summary').getBoundingClientRect();
+       const panel=row.closest('.club-competition').getBoundingClientRect();
+       const summary=(()=>{
+        const a=row.querySelector('.club-competition-metrics').getBoundingClientRect();
+        const b=row.querySelector('.club-competition-next').getBoundingClientRect();
+        return {left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),
+         top:Math.min(a.top,b.top),bottom:Math.max(a.bottom,b.bottom)};
+       })();
        const label=row.querySelector('.club-competition-next>.club-competition-label').getBoundingClientRect();
        const nextContent=row.querySelector('.club-competition-next-content');
        const lastChild=nextContent.lastElementChild.getBoundingClientRect();
@@ -323,7 +346,7 @@ try{
        states.push({value,fixtureTop:box('.club-competition-next-content > *').y,identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
         status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label'),
         statusBlock:box('.club-competition-metrics'),nextBlock:box('.club-competition-next'),
-        summary:box('.club-competition-summary'),visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
+        summary:{x:summary.left,y:summary.top,width:summary.right-summary.left,height:summary.bottom-summary.top},visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
         single:dd.scrollHeight<=parseFloat(getComputedStyle(dd).lineHeight)+1&&dd.scrollWidth<=dd.clientWidth+1,
         statusVisible:dd.scrollHeight<=dd.clientHeight+1&&dd.scrollWidth<=dd.clientWidth+1,
         visible:empty||match.scrollHeight<=match.clientHeight+1&&match.scrollWidth<=match.clientWidth+1,
@@ -337,16 +360,22 @@ try{
      for(const key of ['identity','logo','status','next'])
       assert.ok(Math.abs(state[key].x-parity.before[key].x)<1.5,
        'First paint '+key+' horizontal slot moved at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
-     for(const key of ['status','next'])assert.ok(Math.abs(state[key].y-parity.before[key].y)<1.5,
-      'First paint '+key+' label moved vertically at '+width+'px: '+JSON.stringify({value:state.value,before:parity.before[key],after:state[key]}));
-     assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
-      'First paint Next match first line moved vertically at '+width+'px for '+state.value);
+     // Both headings share a single grid track, including with wrapped values.
+     assert.ok(Math.abs(state.status.y-state.next.y)<1.5,
+      'Status and Next match labels must share the same row at '+width+'px: '+state.value);
+     // A fixture with a visible match and secondary matchday line has the
+     // same two-line shape as its first-paint bars, so its first-line y is fixed.
+     // "No upcoming match" has only one visible line; it centers in the
+     // reserved value track instead of pretending there is a matchday line.
+     if(state.value!=='No upcoming match'&&state.lineCount<=1.1)
+      assert.ok(Math.abs(state.fixtureTop-parity.before.fixture.y)<1.5,
+       'First paint Next match first line moved for a one-line fixture plus matchday at '+width+'px for '+state.value);
      const centered=rect=>rect.y+rect.height/2;
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.nextBlock))<1.5,
       'Status and longer Next match are vertically centered on the same row at '+width+'px');
      assert.ok(Math.abs(centered(state.statusBlock)-centered(state.summary))<1.5,
       'Status remains centered within the grown row summary at '+width+'px');
-     assert.equal(state.minHeight,'59px','Hydrated Next match reserves the same first-line slot as first paint at '+width+'px for '+state.value);
+     assert.equal(state.minHeight,'0px','Hydrated Next match does not reserve invisible height under its visible content at '+width+'px for '+state.value);
      if(comp.availableWidth>800)assert.ok(Math.abs(centered(state.identity)-centered(state.summary))<1.5,
       'wide row centers the crest/name and both summary blocks together at '+width+'px');
      assert.ok(state.visible&&state.contained,'Long fixture must wrap completely inside panel: '+JSON.stringify({width,...state}));

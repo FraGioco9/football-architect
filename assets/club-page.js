@@ -203,7 +203,10 @@
       if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
       const nextUrl=new URL(link.href),next=model.route(nextUrl.pathname);
       if(!next||next.base!==selected.base)return;
-      event.preventDefault();history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
+      event.preventDefault();
+      // An active tab is a no-op: keep the Roster snapshot, URL and scroll position.
+      if(next.view===selected.view)return;
+      history.pushState(null,'',nextUrl.pathname+nextUrl.search+nextUrl.hash);
       if(next.view==='roster')rosterSnapshot={source:'loading'};
       selected=next;paint(true);refreshClubHistory();refreshClubOverview();refreshClubRoster();
       tabs.querySelector('[aria-current="page"]')?.focus({preventScroll:true});

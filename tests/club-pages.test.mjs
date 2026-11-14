@@ -702,6 +702,11 @@ test('CLUB-FIXTURES renderer: localized controls, opponent-only rows, venues and
  }
  const unknown=fixtures.render({manifest,lang:'en',season:1,seasons:[1],snapshot:{coverage:'complete',day:0,rows:[{...row,opponentId:null,goalsFor:null,goalsAgainst:null,resolution:null,penalties:null}],competitions:[]}});
  assert.ok(unknown.includes('Opponent TBD'));assert.ok(!unknown.includes('2–1'));
+ const neutral=fixtures.render({manifest,lang:'en',season:1,seasons:[1],snapshot:{coverage:'complete',day:12,rows:[{...row,venue:'neutral'}],competitions:[]}});
+ assert.match(neutral,/data-club-venue="neutral" aria-label="Neutral"/,'English neutral venue tooltip is concise');
+ assert.doesNotMatch(neutral,/aria-label="Neutral ground"/);
+ const italian=fixtures.render({manifest,lang:'it',season:1,seasons:[1],snapshot:{coverage:'complete',day:12,rows:[{...row,venue:'neutral'}],competitions:[]}});
+ assert.match(italian,/data-club-venue="neutral" aria-label="Campo neutro"/,'existing localized labels remain unchanged');
 });
 
 test('CLUB-FIXTURES next-match action requires a verified unplayed future fixture in the current season',async()=>{

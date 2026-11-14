@@ -191,3 +191,31 @@ test('CLUB-ROSTER-01 keeps subview switching local and explains Worker route mis
  assert.match(js,/host\.querySelectorAll\('a\[href\]'\)/,'pending tabs must not enter href normalization');
  assert.match(js,/if\(document\.documentElement\.dataset\.clubIdentityReady==='true'\)return/,'optional module errors keep hydrated identity');
 });
+
+test('CLUB-ROSTER-01 clicking the already active main tab is inert without a Roster API refresh',()=>{
+ const js=read('assets/club-page.js');
+ const match=js.match(/tabs\.addEventListener\('click',([\s\S]*?\n     \})\);/);
+ assert.ok(match,'the live primary-tab click handler must be present');
+ const counters={navigation:0,paint:0,history:0,overview:0,roster:0};
+ const selected={base:'/clubs/it/1',view:'roster'};
+ const snapshot={source:'ready',count:1,players:[{id:1}]};
+ const model={route:path=>({base:'/clubs/it/1',view:path.split('/').at(-1)})};
+ const history={pushState:()=>counters.navigation++};
+ const makeHandler=new Function(
+  'model','selected','history','paint','refreshClubHistory','refreshClubOverview','refreshClubRoster','snapshot',
+  'let rosterSnapshot=snapshot; const tabs={querySelector:()=>({focus(){}})}; const handler='+match[1]+'; return {handler,getSnapshot:()=>rosterSnapshot};'
+ );
+ const {handler,getSnapshot}=makeHandler(model,selected,history,
+  ()=>counters.paint++,()=>counters.history++,()=>counters.overview++,()=>counters.roster++,snapshot);
+ const click=(view)=>{
+  let prevented=false;
+  handler({target:{closest:()=>({href:'https://example.test/clubs/it/1/'+view})},
+   button:0,defaultPrevented:false,preventDefault(){prevented=true}});
+  return prevented;
+ };
+ assert.equal(click('roster'),true,'the active link must not trigger native navigation');
+ assert.deepEqual(counters,{navigation:0,paint:0,history:0,overview:0,roster:0});
+ assert.equal(getSnapshot(),snapshot,'loaded players must remain untouched');
+ assert.equal(click('history'),true,'switching to a different view still uses client navigation');
+ assert.deepEqual(counters,{navigation:1,paint:1,history:1,overview:1,roster:1});
+});
