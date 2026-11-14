@@ -759,6 +759,45 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       &&Math.abs(twoRowAlignment[0].statusX-twoRowAlignment[1].statusX)<1.5
       &&Math.abs(twoRowAlignment[0].matchX-twoRowAlignment[1].matchX)<1.5,
       'Both competition rows align Status and Next match at '+width+': '+JSON.stringify(twoRowAlignment));
+
+     // Compare actual hydrated slots to the exact pending/first-paint skeleton
+     // classes. Normalize per-row y so the independent panels are comparable.
+     const skeletonParity=await run(`(()=>{
+      const panel=document.querySelector('.club-competition'),hydrated=panel.querySelector('.club-competition-entry');
+      const pendingList=panel.querySelector('.club-competition-list').cloneNode(true);
+      pendingList.classList.add('club-fp-competition');
+      const pending=pendingList.querySelector('.club-competition-entry');
+      pendingList.querySelectorAll('.club-competition-entry').forEach((row,index)=>{if(index)row.remove()});
+      pending.querySelector('.club-competition-logo').outerHTML='<span class="club-competition-logo club-fp-competition-logo" aria-hidden="true"></span>';
+      pending.querySelector('.club-competition-name').innerHTML='<span class="club-fp-bar club-fp-competition-name"></span>';
+      pending.querySelector('.club-competition-tier').innerHTML='<span class="club-fp-bar club-fp-competition-tier"></span>';
+      pending.querySelector('.club-competition-metrics dd').innerHTML='<span class="club-fp-bar club-fp-competition-position"></span>';
+      pending.querySelector('.club-competition-next-content').innerHTML='<span class="club-fp-bar club-fp-competition-fixture"></span><span class="club-fp-bar club-fp-competition-round"></span>';
+      panel.classList.add('club-first-paint-panel');
+      panel.querySelector('.club-competition-list').after(pendingList);
+      const measure=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),base=row.getBoundingClientRect();return {x:r.x-base.x,y:r.y-base.y,h:r.height}};
+      const check=selectors=>selectors.map(selector=>({selector,hydrated:measure(hydrated,selector),pending:measure(pending,selector)}));
+      const positions=check(['.club-competition-identity','.club-competition-name','.club-competition-tier',
+       '.club-competition-metrics dt','.club-competition-metrics dd',
+       '.club-competition-next > .club-competition-label','.club-competition-next-content']);
+      const skeletonBar=measure(pending,'.club-fp-competition-position');
+      const expectedBar=(parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-metrics dd')).lineHeight)-12)/2;
+      const fixture=measure(pending,'.club-fp-competition-fixture');
+      const round=measure(pending,'.club-fp-competition-round');
+      const realFixtureLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next a')).lineHeight);
+      const realRoundLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next small')).lineHeight);
+      pendingList.remove();panel.classList.remove('club-first-paint-panel');
+      return {positions,barDelta:skeletonBar.y-measure(hydrated,'.club-competition-metrics dd').y,
+       expectedBar,fixtureHeight:fixture.h,roundHeight:round.h,
+       expectedFixtureHeight:realFixtureLine,expectedRoundHeight:realRoundLine,
+       fixtureRoundGap:round.y-fixture.y-fixture.h};
+     })()`);
+     assert.ok(skeletonParity.positions.every(p=>Math.abs(p.hydrated.x-p.pending.x)<1.5&&Math.abs(p.hydrated.y-p.pending.y)<1.5)
+      &&Math.abs(skeletonParity.barDelta-skeletonParity.expectedBar)<1.5
+      &&Math.abs(skeletonParity.fixtureHeight-skeletonParity.expectedFixtureHeight)<1.5
+      &&Math.abs(skeletonParity.roundHeight-skeletonParity.expectedRoundHeight)<1.5
+      &&Math.abs(skeletonParity.fixtureRoundGap-3)<1.5,
+      'Skeletons retain hydrated name, tier, Status and Next match slots at '+width+': '+JSON.stringify(skeletonParity));
      if(width===1440||width===390){
       const capture=async label=>{
        await run("document.querySelector('.club-competition').scrollIntoView({block:'center'})");
