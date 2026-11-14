@@ -21,16 +21,16 @@ test('#532 desktop player-table widths and static colgroup are unchanged',()=>{
 test('#532 responsive Overview and attribute groups preserve 4/8 readable statistic tracks',()=>{
  const css=read('assets/app.css'),roster=read('assets/club-page.css');
  assert.match(css,/@media\(max-width:720px\)\{\s*\.app-players-table-scroll\{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch\}/);
- assert.match(css,/\.app-players-table\{--app-players-flag-width:32px;--app-players-name-width:128px;--app-players-positions-width:88px;min-width:460px\}/);
+ assert.match(css,/\.app-players-table\{--app-players-flag-width:32px;--app-players-name-width:128px;--app-players-positions-width:112px;min-width:484px\}/);
+ assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:648px\}/);
+ assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1024px\}/);
+ assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:30px;--app-players-name-width:120px;--app-players-positions-width:104px;min-width:464px\}/);
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:624px\}/);
  assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1000px\}/);
- assert.match(css,/@media\(max-width:420px\)\{\s*\.app-players-table\{--app-players-flag-width:30px;--app-players-name-width:120px;--app-players-positions-width:80px;min-width:440px\}/);
- assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:600px\}/);
- assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:976px\}/);
- assert.match(roster,/@media\(max-width:720px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1200px\}\}/);
- assert.match(roster,/@media\(max-width:420px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1168px\}\}/);
+ assert.match(roster,/@media\(max-width:720px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1024px\}\}/);
+ assert.match(roster,/@media\(max-width:420px\)\{\.club-roster-table\[data-players-table-mode="attributes"\]\[data-roster-group="technical"\]\{min-width:1000px\}\}/);
  for(const [flag,name,positions,overview,four,eight] of [
-  [32,128,88,460,624,1000],[30,120,80,440,600,976]
+  [32,128,112,484,648,1024],[30,120,104,464,624,1000]
  ]){
   const remaining=overview-flag-name-positions;
   assert.ok(remaining*.28>=55,'Overview Age remains readable at phone width');
