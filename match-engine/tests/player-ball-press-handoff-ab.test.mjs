@@ -264,6 +264,25 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
        p.y-carrier.y)}))
       .sort((a,b)=>a.gapM-b.gapM||a.id.localeCompare(b.id))
       .slice(0,3).map(p=>({id:p.id,gapM:round(p.gapM)}));
+     const pursuit=frame.contactDecisionObservation.carryPursuit;
+     const carrierPursuit=pursuit?.playerId==='away-9'?pursuit:null;
+     const pursuitTarget=carrierPursuit?.target??null;
+     const targetGapM=pursuitTarget?Math.hypot(
+      pursuitTarget.x-carrier.x,pursuitTarget.y-carrier.y):null;
+     const targetHeading=pursuitTarget?Math.atan2(
+      pursuitTarget.y-carrier.y,pursuitTarget.x-carrier.x):null;
+     const blockersAlongTarget=targetHeading===null?[]:
+      frame.physicalPlayerPositions.filter(p=>p.engineId!==carrier.engineId)
+       .map(p=>{
+        const dx=p.x-carrier.x,dy=p.y-carrier.y;
+        const alongM=dx*Math.cos(targetHeading)+dy*Math.sin(targetHeading);
+        const crossM=Math.abs(dx*Math.sin(targetHeading)-
+         dy*Math.cos(targetHeading));
+        return {id:p.engineId,alongM,crossM};
+       }).filter(p=>p.alongM>=0&&p.alongM<=3&&p.crossM<=1.5)
+       .sort((a,b)=>a.alongM-b.alongM||a.id.localeCompare(b.id))
+       .slice(0,4).map(p=>({id:p.id,alongM:round(p.alongM),
+        crossM:round(p.crossM)}));
      const carrierPrev=audit.approachCheckpoints.at(-1);
      const displacement=carrierPrev?Math.hypot(
       carrier.x-carrierPrev.actors[0].x,
@@ -271,6 +290,9 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      audit.approachCheckpoints.push({tick,ball:{
       x:round(ball.x),y:round(ball.y),shortfallM:round(shortfall)},
       actors,carrierNearestTeammates:nearestTeammates,
+      carrierPursuitTarget:pursuitTarget?{x:round(pursuitTarget.x),
+       y:round(pursuitTarget.y),gapM:round(targetGapM)}:null,
+      blockersAlongPursuitTarget:blockersAlongTarget,
       carrierDisplacementSincePriorCheckpointM:displacement===null?
        null:round(displacement)});
     }
