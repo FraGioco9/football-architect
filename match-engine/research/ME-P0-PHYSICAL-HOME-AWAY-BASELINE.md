@@ -60,3 +60,19 @@ The registered fast decision suite tests each rejected case against the original
 ## P0 real 60Hz rejected/no-action tick evidence
 
 The pure `inspectPhysicalActionRejection` is now invoked at the **canonical internal real Rapier contact boundary** on the same exact tick and same ball/player inputs as the unchanged physical action selector, **before** any impulse. The immutable `physicalRejectionAudit` carries first-failed input gate or a conservative `not-selected-after-input-gates` fallback, with explicit `actionSelected` and no claimed football authority. The universal world verifies this against its real START/ACTIVE shoe feed; the fixture wrapper exposes the audit read-only. The existing 720-tick HOME/AWAY A/B replay accounts for every frame (selected action + rejection count = 720), preserving original negative ordinary-shot observations. No new physics worlds, thresholds, tactical decisions, contact generation, possession or action authority. P0 acceptance still requires exact-head CI and reviewing real reason totals; no P1 priority approval is implied.
+
+## P0 exact real HOME/AWAY first-blocking reason counts — frozen
+
+Source: **existing** 22-player 720-tick Rapier HOME/AWAY fixture, [ME-01 #43636102036](https://github.com/FraGioco9/football-architect/actions/runs/43636102036) on exact commit `b1a914b4f5e97893ac39f403689e61b5faad49b9` (SUCCESS, 17/17 pure and 5/5 genuine Rapier tests). Values below are parsed from the `C2_3N_REAL_CARRY_PRESS_HANDOFF_AB` line of the **actual completed job log**, not estimated from a geometry snapshot. `baseline` is default-off blocked-carry detour; `handoff` is opt-in experimental detour. Each run counts **720 distinct 60 Hz ticks**, with one source-bound pre-impulse reason or one genuine selected action per tick.
+
+| Fixture | Mode | No exclusive shoe START | Cooldown | Ball height | Ball speed | Shoe gap | Fallback after gates | Selected actions | Total ticks | Natural SHOT |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| HOME | baseline | 715 | 1 | 0 | 0 | 0 | 0 | 4 | 720 | 0 |
+| HOME | handoff | 715 | 1 | 0 | 0 | 0 | 0 | 4 | 720 | 0 |
+| AWAY | baseline | 704 | 2 | 0 | 0 | 0 | 0 | 14 | 720 | 0 |
+| AWAY | handoff | 704 | 2 | 0 | 0 | 0 | 0 | 14 | 720 | 0 |
+
+- **HOME**: genuine shoe STARTs = 5, selected actions at ticks 1 (PASS), 143, 175, 212 (CARRY); 1 rejected cooldown tick. No physical divergence between baseline and handoff.
+- **AWAY**: 14 selected actions, 2 cooldown rejects, 704 ticks without an exclusive shoe START; opt-in handoff first physically diverges at tick **600**, yet the *reason totals stay identical* and there is no natural shot. The final tick 694 action differs in label: baseline PASS vs experimental CARRY (both `home-7`); this does not establish better gameplay.
+- No `ball-height`, `ball-speed`, `shoe-ball-gap` or `not-selected-after-input-gates` rejection occurs in these two specific ordinary formation cases. This **does not prove** those gates are unnecessary, nor does it imply a passing lane or shot eligibility. It means the overwhelmingly dominant blocker in this sample is *absence of a fresh exclusive real Rapier START*, not an excessive shoe-to-ball distance after START. No threshold tuning is justified by these counts alone.
+- The existing tests already assert the full 720-tick accounting and A/B replay determinism. These frozen figures are observational and do **not** authorize synthetic contacts, gameplay changes, or new pass/shot policy. Preserve the negative C2 natural-SHOT finding. P1 qualitative approval remains separate.
