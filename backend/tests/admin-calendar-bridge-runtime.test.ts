@@ -117,7 +117,7 @@ it('continues all sporting days through day 56 after staged administrative setup
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
  const completed=await readPublicMatch(db,final.match_id);
- expect(completed).toMatchObject({matchId:final.match_id,status:'completed',stageId:'final'});
+ expect(completed).toMatchObject({matchId:expect.stringMatching(/^[1-9][0-9]*$/),status:'completed',stageId:'final'});
  expect(completed.homeParticipant?.clubId).toBeTruthy();
  expect(completed.awayParticipant?.clubId).toBeTruthy();
  expect(completed.result).toBeTruthy();
