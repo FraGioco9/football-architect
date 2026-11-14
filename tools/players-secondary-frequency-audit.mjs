@@ -106,7 +106,7 @@ function markdown(r){
    ['better','equivalent','primary'].map(k=>s.suitability.percent[k].toFixed(2)+'%').join(' | ')+' |'),
   '| **Pooled** | '+r.suitability.n+' | '+
    ['better','equivalent','primary'].map(k=>r.suitability.percent[k].toFixed(2)+'%').join(' | ')+' |',
-  '', 'Buckets use the unchanged 70% core + 30% support suitability formula; no quota is enforced.',
+  '', 'Buckets use the role-weighted Suitability 2.0 (65% core + 25% support + 10% additional); no quota is enforced.',
   '', 'The report is informational only; no DB writes, schema changes or player edits.'
  ];
  return lines.join('\n');
