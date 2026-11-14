@@ -60,16 +60,18 @@ An eligible choice returns a frozen intent with:
 
 | Context | Candidate order | No eligible candidate |
 | --- | --- | --- |
-| Ball opportunity | SHOOT → PASS → ADVANCE → REPOSITION | \`null\` |
+| Ball opportunity | SHOOT → PASS → ADVANCE → RETAIN → REPOSITION | \`null\` |
 | Attacking off ball | SUPPORT → REPOSITION | \`null\` |
 | Defending off ball | PRESS → COVER → RECOVER | \`null\` |
+
+**RETAIN** is a targetless intention to avoid unjustified physical action when movement/pass/shot is unavailable. It does not establish possession, stop the canonical mover or freeze the ball. Its output target is `null` and its affordance is untrusted.
 
 These are **ordered discrete alternatives**, not numerical utility/scoring, personality, suitability, player attributes, role tactics, or pressure coefficients. Ineligible candidates never win. Equal kinds use stable target ID (or coordinate) order, not input-array order. Do not extrapolate that an intent is always the correct decision in real football; tie-break/order and role selection remain design review items.
 
 ## P1 QA matrix (pure, no Rapier dependency)
 
 - Shot declared eligible vs blocked; blocked shot falls back to actual same-team pass candidate.
-- Shot/pass unavailable falls to observed advance; all blocked can reposition or return null.
+- Shot/pass unavailable falls to observed advance; RETAIN (without a target) is possible when explicitly declared, otherwise reposition or null.
 - Off-ball teammate support or reposition; opponent press, cover or recover.
 - Both HOME and AWAY symmetry; target coordinates must be derived from observed player frame for player-targeted intents.
 - Reordering candidates changes nothing; input is not mutated; output is frozen and has no physical/official authority.
@@ -98,3 +100,7 @@ The same suite is registered in \`match-engine/package.json\` for the final full
 - What verified observation fields are sufficient for the eligibility adapter, without duplicating the canonical same-tick action policy?
 
 **Current progress: 11/20 (55%). C2 genuine ordinary-formation natural shot remains OPEN.**
+
+## P1 follow-up — targetless RETAIN (pure, draft only)
+
+The bounded pure selector now accepts an available RETAIN with no target, rejects fabricated motion/player targets, and records no physical action, possession, or guaranteed outcome. Fixed SHOOT-over-PASS and PRESS-over-COVER orderings remain unapproved proposals, not live gameplay logic. No P2 adapter, movement wiring, physical contact or engine tuning is included in this change. P1 approval gate stays open until the full qualitative policy is reviewed.

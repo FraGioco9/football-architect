@@ -3,7 +3,7 @@
 // These qualitative priorities are PROPOSED, not approved for runtime wiring.
 export const FOOTBALL_INTENT_VERSION='me-p1-observed-intent-draft-v1';
 export const FOOTBALL_INTENT_PRIORITIES=Object.freeze({
- 'ball-opportunity':Object.freeze(['shoot','pass','advance','reposition']),
+ 'ball-opportunity':Object.freeze(['shoot','pass','advance','retain','reposition']),
  'attack-off-ball':Object.freeze(['support','reposition']),
  'defend-off-ball':Object.freeze(['press','cover','recover'])
 });
@@ -12,6 +12,8 @@ const point=p=>p&&finite(p.x)&&finite(p.y);
 const identifier=v=>typeof v==='string'&&v.length>0&&v.length<=80;
 const safeTick=n=>Number.isSafeInteger(n)&&n>=0;
 const needsPlayer=new Set(['pass','press']);
+// Retention is targetless intent only, never an authoritative possession signal.
+const noTarget=new Set(['retain']);
 const compare=(a,b)=>a<b?-1:a>b?1:0;
 
 function validateObservation(o){
@@ -51,6 +53,9 @@ function validateObservation(o){
      throw new TypeError('Observed pass/press teammate or opponent required');
     if(a.target!==undefined)
      throw new TypeError('Player targets derive from the observed frame');
+   }else if(noTarget.has(a.kind)){
+    if(a.target!==undefined||a.targetPlayerId!==undefined)
+     throw new TypeError('Retain cannot specify a motion or player target');
    }else if(!point(a.target)||a.targetPlayerId!==undefined)
     throw new TypeError('An observed spatial target is required');
   }
@@ -75,13 +80,14 @@ export function chooseObservedFootballIntent(observation){
    kind:a.kind,evidenceTick:a.evidenceTick,
    targetPlayerId:person?.id??null,
    target:person?{x:person.x,y:person.y}:
-    {x:a.target.x,y:a.target.y}
+    noTarget.has(a.kind)?null:{x:a.target.x,y:a.target.y}
   };
  });
  choices.sort((a,b)=>
   priority.indexOf(a.kind)-priority.indexOf(b.kind)||
   compare(a.targetPlayerId??'',b.targetPlayerId??'')||
-  a.target.x-b.target.x||a.target.y-b.target.y||
+  (a.target?.x??0)-(b.target?.x??0)||
+  (a.target?.y??0)-(b.target?.y??0)||
   a.evidenceTick-b.evidenceTick);
  if(choices.length===0)return null;
  const selected=choices[0];
@@ -93,7 +99,7 @@ export function chooseObservedFootballIntent(observation){
   playerId:observation.playerId,team:observation.team,
   phase:observation.phase,intent:selected.kind,
   targetPlayerId:selected.targetPlayerId,
-  target:Object.freeze(selected.target),
+  target:selected.target?Object.freeze(selected.target):null,
   fromDeclaredObservedAffordance:true,
   realShoeContactObserved:false,
   physicalActionExecuted:false,

@@ -24,7 +24,7 @@ const select=(affordances,phase='ball-opportunity',patch={})=>
 
 test('P1 candidate qualitative priorities are explicit, not scored geometry',()=>{
  assert.deepEqual(FOOTBALL_INTENT_PRIORITIES['ball-opportunity'],
-  ['shoot','pass','advance','reposition']);
+  ['shoot','pass','advance','retain','reposition']);
  assert.deepEqual(FOOTBALL_INTENT_PRIORITIES['attack-off-ball'],
   ['support','reposition']);
  assert.deepEqual(FOOTBALL_INTENT_PRIORITIES['defend-off-ball'],
@@ -44,6 +44,15 @@ test('P1 table-driven football intentions use only declared observed affordances
    options:[point('shoot',52.5,0,false),
     player('pass','home-2',false),point('advance',8,2)],
    expected:'advance'},
+  {name:'crowded ball: choose available retention over reposition',
+   phase:'ball-opportunity',options:[
+    player('pass','home-2',false),point('advance',8,2,false),
+    {kind:'retain',available:true,evidenceTick:20},
+    point('reposition',-2,4)],expected:'retain'},
+  {name:'retention unavailable: reposition',
+   phase:'ball-opportunity',options:[
+    {kind:'retain',available:false,evidenceTick:20},
+    point('reposition',-2,4)],expected:'reposition'},
   {name:'crowded ball: reposition instead of forcing a touch',
    phase:'ball-opportunity',
    options:[player('pass','home-2',false),
@@ -87,6 +96,19 @@ test('P1 table-driven football intentions use only declared observed affordances
    assert.ok(Object.isFrozen(result)&&Object.isFrozen(result.target));
   }
  }
+});
+
+test('P1 RETAIN produces no target, physics authority or possession',()=>{
+ const v=select([{kind:'retain',available:true,evidenceTick:20}]);
+ assert.equal(v.intent,'retain');
+ assert.equal(v.target,null);
+ assert.equal(v.targetPlayerId,null);
+ assert.equal(v.physicalActionExecuted,false);
+ assert.equal(v.realShoeContactObserved,false);
+ assert.equal(v.guaranteedFootballOutcome,false);
+ assert.equal(Object.hasOwn(v,'possession'),false);
+ assert.equal(Object.hasOwn(v,'impulseNs'),false);
+ assert.equal(select([{kind:'retain',available:false,evidenceTick:20}]),null);
 });
 
 test('P1 selected teammate/opponent coordinates are from the observed frame',()=>{
@@ -157,6 +179,8 @@ test('P1 rejects future/stale frames, malformed teams and fake player targets',(
   {affordances:[point('press',4,4)],phase:'defend-off-ball'},
   {affordances:[point('support',4,4)],phase:'ball-opportunity'},
   {affordances:[point('advance',NaN,4)]},
+  {affordances:[{kind:'retain',available:true,evidenceTick:20,target:{x:1,y:1}}]},
+  {affordances:[{kind:'retain',available:true,evidenceTick:20,targetPlayerId:'home-2'}]},
   {affordances:[point('advance',0,1),
    point('advance',0,1)]},
   {affordances:[{kind:'shoot',available:1,evidenceTick:20,target:{x:1,y:1}}]},
