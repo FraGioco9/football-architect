@@ -264,8 +264,11 @@ test('#532 public Overview renders Flag Player Positions Age Height Foot Club an
  assert.match(js,/Object\.hasOwn\(catalog,key\)\|\|catalog\[key\]!==path/);
  assert.match(js,/crest\.dataset\.playerClubCrest=player\.clubKey/);
  assert.match(js,/link\.href='\/clubs\/'\+country\.toLowerCase\(\)\+'\/'\+id\+'\/overview'/);
- assert.match(css,/\.app-players-club-content\{display:flex;align-items:center;[^}]*height:22px;gap:7px/);
- assert.match(css,/\.app-players-club-crest\{[^}]*width:18px;height:18px;object-fit:contain/);
+ assert.match(css,/\.app-players-club-content\{display:flex;align-items:center;[^}]*height:28px;gap:8px/);
+ assert.match(css,/\.app-players-club-crest\{[^}]*width:24px;height:24px;object-fit:contain/);
+ assert.match(css,/\.app-players-club-mark\{[^}]*flex:0 0 24px;width:24px;height:24px;overflow:hidden/);
+ assert.match(css,/\.app-players-club-mark::before\{[^}]*width:20px;height:23px/);
+ assert.match(js,/image\.src='\/'\+path;image\.alt='';image\.width=24;image\.height=24/);
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-club-link:hover\{text-decoration:underline/);
  assert.ok(gen.indexOf('data-players-sort=\\\"foot')<gen.indexOf('app-players-club-col'));
@@ -637,8 +640,8 @@ test('Players reserve five completely empty, full-height rows while loading',()=
  assert.equal((table.match(/colspan="7"/g)||[]).length,5);
  assert.doesNotMatch(table,/app-players-skeleton-bar|app-players-skeleton-line/);
  assert.match(table,/class="sr-only" data-players-status role="status"/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
  assert.doesNotMatch(css,/\.app-players-skeleton-line|\.app-players-skeleton-row/);
  assert.match(js,/function showLoadingRows\(\)/);
  assert.match(js,/for\(let n=0;n<5;n\+\+\)/);
@@ -830,13 +833,13 @@ test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invali
  const deep=build({page:3,count:151,pageSize:50,totalPages:4,players:first},async page=>({...make(page,second),count:151,totalPages:4}));
  await deep.appendNext();assert.equal(deep.snapshot().loadedThrough,4,'direct page 3 loads only segment 4 next');
 });
-test('PLAYERS-TABLE-532 compact headers share 36px height and 11px type without resizing player data',()=>{
+test('PLAYERS-TABLE-532 scales headers and text to fit 24px club crests',()=>{
  const css=read('assets/app.css');
- assert.match(css,/\.app-players-table thead th\{height:36px;padding-block:2px;[^}]*font-size:11px;font-weight:700/);
- assert.match(css,/\.app-players-sort-button\{[^}]*height:30px;min-height:30px/);
- assert.match(css,/\.app-players-table\{[^}]*font-size:13px/,'player data retains its approved font size');
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/,'30px body rows remain unchanged');
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px/,'first-paint and refresh rows retain matching height');
+ assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px;font-weight:700/);
+ assert.match(css,/\.app-players-sort-button\{[^}]*height:36px;min-height:36px/);
+ assert.match(css,/\.app-players-table\{[^}]*font-size:14px/,'data labels scale to 14px with the larger rows');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/,'36px body rows fit 24px crests');
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/,'first-paint and refresh rows retain matching height');
  assert.doesNotMatch(css,/\.app-players-table thead th\{height:44px/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-table thead th\{[^}]*height:/,'Roster inherits the shared header styles');
 });
@@ -847,8 +850,8 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  const club=read('assets/club-model.js');
  const preview=read('assets/admin-players-preview.js');
  assert.match(css,/\.app-players-table th,\.app-players-table td\{[^}]*padding:2px 16px;/,'shared compact vertical padding');
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px;padding:0 16px\}/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
  assert.match(css,/\.app-players-table tbody td:first-child\{text-align:center;vertical-align:middle\}/);
  assert.match(css,/\.app-players-nationality-flag\{display:block;width:20px;height:15px;object-fit:contain;margin-inline:auto\}/);
  assert.match(directory,/image\.width=20;image\.height=15;image\.alt=/);
@@ -863,7 +866,7 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
  assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
- assert.match(css,/\.app-players-table thead th\{height:36px/,'compact headings remain stable across all player tables');
+ assert.match(css,/\.app-players-table thead th\{height:42px/,'compact headings remain stable across all player tables');
  // Preserve all responsive and first-paint geometry and five empty loading rows.
  assert.equal((read('players/index.html').match(/class="app-players-loading-row"/g)||[]).length,5);
  assert.match(css,/@media\(max-width:720px\)\{\.app-players-table th,\.app-players-table td\{padding-inline:10px\}\}/);
@@ -948,8 +951,8 @@ test('Players refinement: accessible Name section, sort chevrons, animated divid
 
 test('Players table header geometry and independent sort-label anchoring',()=>{
  const html=read('players/index.html'),gen=read('tools/generate-app-pages.mjs'),css=read('assets/app.css'),js=read('assets/players-directory.js');
- assert.match(css,/\.app-players-table thead th\{height:36px;padding-block:2px;[^}]*font-size:11px;font-weight:700;line-height:1.2/);
- assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:30px;min-height:30px/);
+ assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:12px;font-weight:700;line-height:1.2/);
+ assert.match(css,/\.app-players-sort-button\{display:flex;[^}]*height:36px;min-height:36px/);
  assert.match(css,/\.app-players-sort-label\{position:relative;display:inline-block;max-width:100%/);
  assert.match(css,/\.app-players-sort-chevron\{position:absolute;display:block;left:calc\(100% \+ 7px\);top:50%/);
  assert.match(css,/\.app-players-flag-col \.app-players-sort-chevron\{left:0\}/);
@@ -960,8 +963,8 @@ test('Players table header geometry and independent sort-label anchoring',()=>{
  assert.match(html,/wrapper\.textContent=label;button\.append\(wrapper\)/);
  assert.match(html,/chevron\.append\(path\);wrapper\.append\(chevron\)/);
  assert.match(gen,/app-players-sort-label/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
- assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:30px/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/);
 });
 
 test('Players filter close matches the canonical search and calendar popup X',()=>{

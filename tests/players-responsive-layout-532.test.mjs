@@ -13,8 +13,8 @@ test('#532 desktop player-table widths and static colgroup are unchanged',()=>{
  assert.match(css,/\.app-players-table\[data-players-table-mode="attributes"\]\{min-width:982px\}/);
  assert.match(css,/html\[data-players-group="technical"\] \.app-players-table\[data-players-table-mode="attributes"\]\{min-width:1462px\}/);
  assert.match(html,/<colgroup><col class="app-players-flag-column"><col class="app-players-name-column"><col class="app-players-view-third-column"><\/colgroup>/);
- assert.match(css,/\.app-players-table thead th\{height:36px;padding-block:2px;[^}]*font-size:11px/);
- assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:30px\}/);
+ assert.match(css,/\.app-players-table thead th\{height:42px;padding-block:2px;[^}]*font-size:11px/);
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
  assert.equal((html.match(/class="app-players-loading-row"/g)||[]).length,5);
 });
 
@@ -48,6 +48,6 @@ test('#532 long text remains single-line without changing layout, first paint or
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-players-table:not\(\[data-players-public\]\):not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(4\),\s*\.app-players-table\[data-players-public\]:not\(\[data-players-table-mode="attributes"\]\) tbody td:nth-child\(3\),\s*\.app-players-table\[data-players-table-mode="attributes"\] tbody td:nth-child\(3\)\{white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/,'underline stays in place');
- assert.match(css,/\.app-players-table \.(?:app-players-loading-row) td\{height:30px/);
+ assert.match(css,/\.app-players-table \.(?:app-players-loading-row) td\{height:36px/);
  assert.match(css,/\.app-players-table-scroll\{[^}]*overflow-x:auto/);
 });

@@ -172,7 +172,7 @@
      const [country,id]=key.split('-'),path='assets/clubs/'+country+'/'+id+'/crest.svg';
      if(!Object.hasOwn(catalog,key)||catalog[key]!==path)continue;
      const image=document.createElement('img');image.className='app-players-club-crest';
-     image.src='/'+path;image.alt='';image.width=18;image.height=18;
+     image.src='/'+path;image.alt='';image.width=24;image.height=24;
      image.loading='lazy';image.decoding='async';
      image.addEventListener('error',()=>image.remove(),{once:true});
      mark.append(image);
