@@ -122,3 +122,15 @@ The **all-50-country** format test already validates every given name: exactly 3
 **Safety/coverage:** no sporting rules changed, no fixture source rewritten, no changes to international pots, migration/data/runtime or production access. Existing negative validation and the 18-competition capacity checks survive. Two top-level tests per file remain; no CI selector changes, no skip/try-catch swallowing or changed runner assignment.
 
 **Still pending**: whole-suite duplicate map beyond reviewed domains, reliable before/after runtime comparison, complete A/B/C checklist and exact-head validation for this batch.
+
+## Batch A5 — consolidate overlapping public Worker/D1 API projections (2026-11-14)
+
+**Observed before A5:** prior exact-HEAD `af7da1fa93359acb07fd211af7c180e08004e401` had Site PASS, Player Generator/First Names/Surnames PASS and **Browser QA FAIL** at `tests/canonical-state-browser.mjs:254` on a hidden Debug switch after an in-flight world revision; Admin WebKit and FULL evidence remained pending when inspected. The browser test is not changed by A4 and must be diagnosed as an independent gating failure; **do not presume unrelated flakiness or claim a successful gate**.
+
+| Runtime test | Previous execution | A5 shared execution | Removed-to-surviving checks |
+| --- | --- | --- | --- |
+| `backend/tests/public-sporting-runtime.test.ts`: `uses saved day13 results for partial standings and score-only statistics` plus `projects one global day with the same saved scores as the competition source` | **Two** isolated D1 worlds each run `calendar()` and replay all **13 days** | **One** isolated D1 world, one calendar setup and one `through(13)`; assertions for both public endpoints are in one named scenario | All original score count, played fixtures, rankings, totals, club overview/history, cup, 128 global-day fixtures, 18 competition references, IT-1 per-day parity, and privacy/sensitive-field assertions preserved. The second competition GET is safely reused from the first check. |
+ 
+**Net:** 14 → 13 top-level cases in one Worker runtime file; **one fewer expensive 13-day persisted lifecycle replay**, no change to expected scores, policies, request method, data validation, code under test, or CI requirements. All other isolated cases (missing receipts, corrupted hash, reset generation, full season closure, authentication, unsupported routes) remain independent.
+
+**Validation needed:** exact-HEAD Admin Worker/D1 + browser + Site + FULL PASS, then recorded per-file timing from CI to determine the *actual* speed improvement. Reusing a setup in this narrow case does not authorize shared mutable D1 state across test cases.
