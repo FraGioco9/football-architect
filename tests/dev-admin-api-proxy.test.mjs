@@ -199,7 +199,9 @@ test('Players pagination query is forwarded only for canonical GET pages and str
  const upstream=createServer((req,res)=>{
   seen.push({url:req.url,method:req.method,cookie:req.headers.cookie,origin:req.headers.origin,csrf:req.headers['x-csrf-token']});
   res.writeHead(200,{'Content-Type':'application/json','Set-Cookie':['secret=must-not-cross']});
-  res.end(JSON.stringify({count:51,page:Number(new URL(req.url,'http://localhost').searchParams.get('page')||1),pageSize:50,totalPages:2,players:[]}));
+  const query=new URL(req.url,'http://localhost').searchParams;
+  const page=query.has('offset')?Number(query.get('offset'))/50+1:Number(query.get('page')||1);
+  res.end(JSON.stringify({count:51,page,pageSize:50,totalPages:2,players:[]}));
  });upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
  const target='http://127.0.0.1:'+upstream.address().port;
  const bridge=createServer((req,res)=>proxyAdminApi(req,res,{target}));bridge.listen(0,'127.0.0.1');await once(bridge,'listening');
@@ -209,12 +211,14 @@ test('Players pagination query is forwarded only for canonical GET pages and str
   });q.on('error',reject);q.end();
  });
  try{
-  for(const path of ['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players/42']){
+  for(const path of ['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players?offset=0','/api/players?offset=50','/api/players/42']){
    const r=await send(path);
    assert.equal(r.status,200,path);assert.equal(r.cookie,undefined);
-   assert.equal(JSON.parse(r.payload).page,path.includes('=')?Number(path.split('=').at(-1)):1);
+   const params=new URL(path,'http://localhost').searchParams;
+   const expected=params.has('offset')?Number(params.get('offset'))/50+1:Number(params.get('page')||1);
+   assert.equal(JSON.parse(r.payload).page,expected);
   }
-  assert.deepEqual(seen.map(x=>x.url),['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players/42']);
+  assert.deepEqual(seen.map(x=>x.url),['/api/players','/api/players?page=1','/api/players?page=2','/api/players?page=9999','/api/players?offset=0','/api/players?offset=50','/api/players/42']);
   // URLSearchParams encodes comma lists, UTF-8 names and attribute lists. The shared
   // parser validates these paths; the bridge must not reject valid percent escapes.
   const encoded=[
@@ -231,10 +235,10 @@ test('Players pagination query is forwarded only for canonical GET pages and str
    assert.equal(response.status,200,path);
    assert.equal(response.cookie,undefined);
   }
-  assert.deepEqual(seen.slice(5).map(x=>x.url),encoded,'forward canonical escapes unchanged');
+  assert.deepEqual(seen.slice(7).map(x=>x.url),encoded,'forward canonical escapes unchanged');
   for(const r of seen){assert.equal(r.method,'GET');assert.equal(r.cookie,undefined);assert.equal(r.origin,undefined);assert.equal(r.csrf,undefined)}
   const before=seen.length;
-  for(const path of ['/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=unknown','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
+  for(const path of ['/api/players?offset=1','/api/players?offset=-50','/api/players?offset=50&page=2','/api/players?page=0','/api/players?page=01','/api/players?page=-1','/api/players?page=10000','/api/players?page=1&page=2','/api/players?page=1&sort=unknown','/api/players?nationality=ITA%2CITA','/api/players?name=%25','/api/players?name=Andrea%20Rossi','/api/players?attributes=vision_60_x%2cpassing_20_x']){
    const r=await send(path);assert.equal(r.status,403,path);
   }
   for(const invalid of ['/api/players/page/1','/api/players/0','/api/players/01','/api/players/abc']){

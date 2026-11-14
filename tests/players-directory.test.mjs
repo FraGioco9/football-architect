@@ -231,9 +231,10 @@ test('Players view and group slugs are explicit even for both default selections
  };
  assert.equal(run({view:'overview',group:'technical',page:1},''),'/players?view=overview');
  assert.equal(run({view:'attributes',group:'technical',page:1},'?view=attributes'),'/players?view=attributes&group=technical');
- assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&page=2');
+ assert.equal(run({view:'attributes',group:'mental',page:2},'?view=overview&page=2'),'/players?view=attributes&group=mental&offset=50');
  assert.equal(run({view:'overview',group:'physical',page:1},'?view=attributes&group=physical'),'/players?view=overview');
- assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&page=2');
+ assert.equal(run({view:'attributes',group:'technical',page:2,filters:{nationality:'ITA',foot:'right'}},'?page=1'),'/players?view=attributes&group=technical&nationality=ITA&foot=right&offset=50');
+ assert.equal(run({view:'overview',group:'technical',page:3},'?page=3'),'/players?view=overview&offset=100');
 });
 test('Players primary view controls are larger than the compact attribute subgroup controls',()=>{
  const css=read('assets/app.css');
@@ -669,7 +670,7 @@ test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loa
  const sql=read('backend/src/public-players-read.ts'),js=read('assets/players-directory.js');
  const {parsePublicPlayerQuery}=await import('../backend/src/public-players-filters.mjs');
  assert.deepEqual(parsePublicPlayerQuery('').filters,{},'default API query sends no explicit sort');
- assert.deepEqual(parsePublicPlayerQuery('?page=2').filters,{},'deep links share the default ordering');
+ assert.deepEqual(parsePublicPlayerQuery('?offset=50').filters,{},'offset deep links share the default ordering');
  assert.match(sql,/:\'id DESC\'/,'newest numeric player ID is first when no sort selected');
  assert.match(sql,/sortExpression\+' COLLATE NOCASE '\+\(filters\.order==='desc'\?'DESC':'ASC'\)\+', id ASC'/,'explicit sorts preserve stable tie-breaking');
  const load=js.slice(js.indexOf('  async function load(page){'),js.indexOf('  function changeView(view){'));
@@ -685,23 +686,70 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
  assert.match(js,/async function fetchBatch\(page\)/);
  assert.match(js,/pageSize!==50/);
+ assert.match(js,/const query=new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
+ assert.match(js,/const validOffset=rawOffset!==null/);
+ assert.match(js,/validLegacy=rawOffset===null/);
  assert.match(js,/data\.count>0&&page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
  assert.match(js,/async function appendNext\(\)/);
  assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
  assert.match(js,/history\.replaceState\(\{\.\.\.base,faPlayersReturn:/,'store only position metadata for browser Back');
  assert.match(js,/navigationType==='back_forward'/,'restore only on cold history traversal');
  assert.match(js,/body\.querySelector\('a\.app-player-name-link/,'return focus to the player link');
- assert.match(js,/if\(!current\|\|appendPending\|\|appendError==='stale'\|\|loadedThrough>=current\.totalPages\)return/);
+ assert.match(js,/if\(!current\|\|appendPending\|\|appendError\|\|loadedThrough>=current\.totalPages\)return/);
  assert.match(js,/if\(seq!==ticket\)return/,'ignore stale append responses');
  assert.match(js,/data\.players\.some\(player=>seen\.has\(player\.id\)\)/,'detect shifted OFFSET duplicates');
- assert.doesNotMatch(js,/IntersectionObserver|\/api\/players\/cursor/,'no automatic scroll or breaking API');
- assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('page',String\(state\.page\)\)/);
+ assert.match(js,/new IntersectionObserver\(entries=>/,'auto-load at scroll end');
+ assert.match(js,/root:scrollPane\|\|null,rootMargin:'0px 0px 120px 0px'/,'observe correct shell');
+ assert.match(js,/addEventListener\('scroll',/,'passive fallback');
+ assert.match(js,/new URLSearchParams\(\{offset:String\(\(page-1\)\*50\)\}\)/);
+ assert.doesNotMatch(js,/\/api\/players\/cursor/,'no breaking cursor API');
+ assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('offset',String\(\(state\.page-1\)\*50\)\)/);
+ assert.doesNotMatch(js,/query\.set\('page'/,'offset-only client API');
+ assert.doesNotMatch(js,/const loaded=t\.loaded/,'no Loaded X of Y counter');
+ assert.match(js,/counter\.textContent=appendPending\?t\.loadingMore:''/);
+ assert.match(css,/\.app-players-end-sentinel\{/);
  assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
  for(const lang of ['en','it','de','es','fr']){
   const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
   assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);assert.match(labels,/end:/);
  }
 });
+test('PLAYERS-SCROLL-01 offset query validates legacy and canonical cases',async()=>{
+ const {parsePublicPlayerQuery,isAllowedPublicPlayersPath}=await import('../backend/src/public-players-filters.mjs');
+ for(const [query,page] of [['?offset=0',1],['?offset=50',2],['?offset=100',3],['?offset=499900',9999],['?offset=50&sort=age&order=desc',2]]){
+  assert.equal(parsePublicPlayerQuery(query).page,page);
+  assert.equal(isAllowedPublicPlayersPath('/api/players'+query),true);
+ }
+ assert.deepEqual(parsePublicPlayerQuery('?offset=50&nationality=ITA'),{page:2,filters:{nationality:['ITA']}});
+ assert.equal(parsePublicPlayerQuery('?page=2').page,2,'legacy page requests remain valid');
+ for(const query of ['?offset=','?offset=01','?offset=000','?offset=-50','?offset=1','?offset=51','?offset=499950',
+  '?offset=500000','?offset=50&offset=50','?offset=50&page=2','?page=2&offset=50','?offset=x']){
+  assert.throws(()=>parsePublicPlayerQuery(query),{name:'TypeError'},query);
+  assert.equal(isAllowedPublicPlayersPath('/api/players'+query),false,query);
+ }
+});
+
+test('PLAYERS-SCROLL-01 near-end detection loads only when visible and idle',()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  function maybeLoadOnScroll(){'),end=js.indexOf("  if(typeof IntersectionObserver==='function')",begin);
+ assert.ok(begin>=0&&end>begin);
+ let calls=0;
+ const rect={top:700,bottom:701};
+ const pane={getBoundingClientRect:()=>({bottom:600})};
+ const sentinel={getBoundingClientRect:()=>rect};
+ const pager={hidden:false};
+ const current={totalPages:3};
+ const fire=new Function('current','status','appendPending','appendError','loadedThrough','pager','scrollPane','sentinel','window','appendNext',
+  js.slice(begin,end)+';return maybeLoadOnScroll;');
+ const mk=(opts={})=>fire(current,opts.status||'ready',!!opts.pending,opts.error||'',opts.through??1,pager,pane,sentinel,
+   {innerHeight:600},()=>{calls++});
+ mk()();assert.equal(calls,1,'inside prefetch margin');
+ rect.top=800;mk()();assert.equal(calls,1,'not close enough');
+ rect.top=700;
+ mk({pending:true})();mk({error:'network'})();mk({through:3})();mk({status:'loading'})();
+ assert.equal(calls,1,'no parallel, failed, completed or loading requests');
+});
+
 test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invalidation and deep links',async()=>{
  const js=read('assets/players-directory.js');
  const begin=js.indexOf('  async function appendNext(){'),end=js.indexOf('  function changeView(view){',begin);
