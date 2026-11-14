@@ -1931,6 +1931,7 @@ export function createPlayerMovement({
  let carryBlockedPursuitSourceTick=null;
  let activeCarryBlockedDetour=null,carryDetourLastDecision=null;
  let activeCarrySpacingSupport=null;
+ let carryRouteBlockedTicks=0,carryRouteReroutes=0;
  let lastAuthenticCarryShoeEndTick=null;
  const observeAuthenticFixtureCarry=action=>{
   if(!experimentalAutonomousFixtureCarry||
@@ -2095,6 +2096,7 @@ export function createPlayerMovement({
         blockerId:carryBlockedSourceId,
         activeWaypoint:activeCarryBlockedDetour?.waypoint??null,
         lastDecision:carryDetourLastDecision,
+        reroutes:carryRouteReroutes,
         spacingSupport:activeCarrySpacingSupport?Object.freeze({
          playerId:activeCarrySpacingSupport.playerId,
          startTick:activeCarrySpacingSupport.startTick,
@@ -3324,6 +3326,8 @@ export function createPlayerMovement({
    if(sourceTick!==carryBlockedPursuitSourceTick){
     carryBlockedConsecutiveTicks=0;
     carryBlockedSourceId=null;
+    carryRouteBlockedTicks=0;
+    carryRouteReroutes=0;
    }
    carryBlockedPursuitSourceTick=sourceTick;
   }
@@ -3360,6 +3364,19 @@ export function createPlayerMovement({
       blocker.id===carryBlockedSourceId?
        carryBlockedConsecutiveTicks+1:1:0;
      carryBlockedSourceId=blocker?.id??null;
+     // A new, actual blocker may stop an already-authorized detour.
+     // One bounded replan is permitted after eight rejected body steps,
+     // never by moving the ball, reducing clearance or teleporting feet.
+     if(activeCarryBlockedDetour?.playerId===p.id){
+      carryRouteBlockedTicks=blocker?carryRouteBlockedTicks+1:0;
+      if(carryRouteBlockedTicks>=8&&carryRouteReroutes<1){
+       activeCarryBlockedDetour=null;
+       carryRouteBlockedTicks=0;
+       carryRouteReroutes++;
+       carryBlockedSourceId=blocker.id;
+       carryBlockedConsecutiveTicks=12;
+      }
+     }else carryRouteBlockedTicks=0;
      // If real crowding seals the corridor, a nearby unassigned teammate
      // may clear space on ordinary acceleration-limited physical steps.
      // Never override a source-selected receiver, challenger or support.
