@@ -1,3 +1,4 @@
+import {createChromeProfile} from './fixtures/chrome-profile.mjs';
 // CLUB-01 real browser checks against staged public bytes and the DEV router.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,6 +34,7 @@ function measureBaselines(selectors){
  });
 }
 test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh and crest fallback',{timeout:300000},async()=>{
+ const profile=createChromeProfile('site-club-chrome');
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
@@ -88,10 +90,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const m=JSON.parse(e.data),p=pending.get(m.id);if(!p)return;
       clearTimeout(p.timer);pending.delete(m.id);m.error?p.fail(Error(m.error.message)):p.ok(m.result);
     });
-    const cmd=(method,params={})=>new Promise((ok,fail)=>{
+    const cmd=(method,params={})=>profile.measureCDP(method,params,()=>new Promise((ok,fail)=>{
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
-    });
+    }));
     await cmd('Page.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
@@ -103,10 +105,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
       return out.result.value;
     };
-    const wait=async expr=>{
-      for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
+    const waitUnprofiled=async expr=>{
+      // Preserve the same nominal 10-second readiness budget, checking every 50ms.
+      for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}
       throw Error("Timed out: "+expr+"; "+await run("document.body.textContent.slice(0,500)"));
     };
+    const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));
 
     const visit=async(path,base=origin)=>{
      const expectedPath=new URL(base+path).pathname;
@@ -1058,11 +1062,25 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
     // A03-04C: execute frozen URLs through the real public artifact, not registry helpers.
     const baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes.json',import.meta.url),'utf8'));
+    // Domestic routes are exhaustively checked for all 16 divisions in Node.
+    // In browser, exercise one ordinary route per domestic tier on both widths;
+    // retain every legacy, cross-view and international input.
+    const ordinaryDomestic=baseline.competitionBrowser.filter(({input})=>
+      /^\/competitions\/[a-z]+-[12]\/fixtures\?season=1&matchday=7$/.test(input));
+    const representatives=new Map();
+    for(const row of ordinaryDomestic){
+      const tier=row.input.match(/^\/competitions\/[a-z]+-([12])\//)?.[1];
+      if(!representatives.has(tier))representatives.set(tier,row);
+    }
+    assert.deepEqual([...representatives.keys()].sort(),['1','2'],'both domestic tiers covered in browser');
+    const ordinarySet=new Set(ordinaryDomestic),selected=new Set(representatives.values());
+    const browserCases=baseline.competitionBrowser.filter(row=>!ordinarySet.has(row)||selected.has(row));
+
     const currentUrl=()=>run('location.pathname+location.search+location.hash');
     const competitionReady="document.readyState==='complete'&&!!window.faCompetitionRoute";
     for(const width of [1440,390]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     for(const row of baseline.competitionBrowser){
+     for(const row of browserCases){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
       // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';
@@ -1130,6 +1148,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     console.log('A03-04E BROWSER PASS: migrated router/club/directory/standings links preserve canonical destinations, temporal query and history; legacy calendar links and cup historical links covered by executable VM fixtures');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
+    profile.emit();
     socket?.close();proc.kill('SIGTERM');
     await new Promise(resolve=>server.close(resolve));await new Promise(resolve=>devServer.close(resolve));
     await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:100});

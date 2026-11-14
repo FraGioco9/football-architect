@@ -341,13 +341,25 @@ export function createDebugWidget({controls=[],page="standings"}={}) {
   if(button.hasPointerCapture(event.pointerId))button.releasePointerCapture(event.pointerId);
  });
  button.addEventListener("pointercancel",()=>{press=null});
+ // A close may finish by animationend or by its fallback timeout. Cancel
+ // both before reopening: a late callback must never hide the new panel.
+ let pendingCloseCleanup=null;
  function setOpen(open){
+  if(pendingCloseCleanup){pendingCloseCleanup();pendingCloseCleanup=null}
   button.setAttribute("aria-expanded",String(open));
   if(open){panel.classList.remove("is-closing");panel.hidden=false;backdrop.hidden=false;placePanel();return}
   panel.classList.add("is-closing");backdrop.hidden=true;
-  const finish=()=>{panel.hidden=true;panel.classList.remove("is-closing")};
-  panel.addEventListener("animationend",finish,{once:true});
-  setTimeout(finish,180);
+  let timeoutId;
+  const cleanup=()=>{clearTimeout(timeoutId);panel.removeEventListener("animationend",onAnimationEnd)};
+  const finish=()=>{
+   if(pendingCloseCleanup!==cleanup)return;
+   cleanup();pendingCloseCleanup=null;
+   panel.hidden=true;panel.classList.remove("is-closing");
+  };
+  const onAnimationEnd=event=>{if(event.target===panel)finish()};
+  panel.addEventListener("animationend",onAnimationEnd);
+  pendingCloseCleanup=cleanup;
+  timeoutId=setTimeout(finish,180);
  }
  root.resetWidgetState=()=>{try{sessionStorage.removeItem(POSITION_KEY);sessionStorage.removeItem(SECTIONS_KEY)}catch{return false}for(const section of sections.values())section.open=true;move(innerWidth-SIZE-16,innerHeight-SIZE-16);panel.scrollTop=0;placePanel();return true};
  closeButton.addEventListener("click",()=>setOpen(false));
