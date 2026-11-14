@@ -7,7 +7,7 @@ import {abortUnless,sessionGuard,replay,type Outcome} from './command-guards.ts'
 import {readWorld} from './world-repository.ts';
 import {loadSeasonSnapshotAuthority} from './season-snapshot-authority.ts';
 import {canonicalHash} from './catalogue-snapshot.ts';
-import {buildInitialSchedule,buildTrustedSeasonSchedule} from './initial-schedule.ts';
+import {buildInitialSchedule,buildTrustedSeasonSchedule,isInitialScheduleVersion} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
 import {dueAdministrativeMilestones,type MilestoneKind} from './domain/calendar/admin-calendar-policy.ts';
 interface Stage {generation:string;algorithm_version:string;seed:string;participants_hash:string;rules_hash:string;fixtures_hash:string;fixtures_json:string}
@@ -27,7 +27,8 @@ export async function executeInternationalDraw(db:Database,session:AdminSession,
  if(!stage||stage.generation!==world.generation||stage.participants_hash!==snapshot.participantsHash||stage.rules_hash!==snapshot.rulesHash)throw new ApiError(422,'calendar_event_prerequisites');
  const stored=await db.prepare(`SELECT snapshot_json FROM seasons WHERE season_number=${world.seasonNumber}`).first<{snapshot_json:string}>();
  if(!stored||await canonicalHash(JSON.parse(stored.snapshot_json))!==await canonicalHash(snapshot))throw new ApiError(422,'calendar_event_prerequisites');
- const schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,stage.seed):await buildTrustedSeasonSchedule(snapshot,stage.seed,world.seasonNumber),domestic=schedule.fixtures.filter(f=>!f.competitionId.startsWith('int-'));
+ if(!isInitialScheduleVersion(stage.algorithm_version))throw new ApiError(422,'calendar_event_prerequisites');
+ const schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,stage.seed,stage.algorithm_version):await buildTrustedSeasonSchedule(snapshot,stage.seed,world.seasonNumber,stage.algorithm_version),domestic=schedule.fixtures.filter(f=>!f.competitionId.startsWith('int-'));
  if(stage.algorithm_version!==schedule.algorithmVersion||stage.fixtures_hash!==await canonicalHash(domestic)||await canonicalHash(JSON.parse(stage.fixtures_json))!==stage.fixtures_hash)throw new ApiError(422,'calendar_event_prerequisites');
  const draws=await initialDrawOutcomes(schedule,snapshot);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:'international:draw',domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>[d.competitionId,d.hash])});

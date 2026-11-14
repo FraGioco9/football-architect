@@ -37,6 +37,38 @@ describe('canonical initial sporting schedules',()=>{
   expect(schedule.pendingPhases).toHaveLength(18);
   await expect(validateInitialSchedule(schedule,snapshot)).resolves.toBeUndefined();
  });
+ it('balances domestic home-away streaks across all clubs, rounds and seeded draws',async()=>{
+  const snapshot=await loadApprovedSnapshot();
+  for(let trial=0;trial<8;trial++){
+   const schedule=await buildInitialSchedule(snapshot,seed+':balance:'+trial);
+   expect(schedule.algorithmVersion).toBe('initial-leagues-v2');
+   for(const binding of snapshot.bindings.filter(b=>!b.competitionId.startsWith('int-'))){
+    const games=schedule.fixtures.filter(g=>g.competitionId===binding.competitionId);
+    for(const club of binding.clubIds){
+     const sequence=Array.from({length:30},(_,r)=>{
+      const match=games.find(g=>g.round===r+1&&(g.homeClubId===club||g.awayClubId===club));
+      expect(match).toBeDefined();return match!.homeClubId===club;
+     });
+     expect(sequence.filter(Boolean)).toHaveLength(15);
+     expect(sequence.slice(0,15).filter(Boolean).length).toBeGreaterThanOrEqual(7);
+     expect(sequence.slice(0,15).filter(Boolean).length).toBeLessThanOrEqual(8);
+     for(let r=2;r<30;r++)expect(sequence.slice(r-2,r+1).some(v=>v!==sequence[r])).toBe(true);
+    }
+   }
+  }
+ });
+ it('preserves historical V1 schedules for validation instead of silently rewriting them',async()=>{
+  const snapshot=await loadApprovedSnapshot();
+  const prior=await buildInitialSchedule(snapshot,seed,'initial-leagues-v1');
+  expect(prior.algorithmVersion).toBe('initial-leagues-v1');
+  await expect(validateInitialSchedule(prior,snapshot)).resolves.toBeUndefined();
+  const improved=await buildInitialSchedule(snapshot,seed);
+  expect(improved.algorithmVersion).toBe('initial-leagues-v2');
+  expect(improved.fixtures).not.toEqual(prior.fixtures);
+  const tampered=structuredClone(prior) as any;
+  tampered.algorithmVersion='initial-leagues-v2';
+  await expect(validateInitialSchedule(tampered,snapshot)).rejects.toMatchObject({status:422});
+ });
  it('places international matches before domestic matches on every approved double matchday',async()=>{
   const schedule=await buildInitialSchedule(await loadApprovedSnapshot(),seed);
   for(const day of [16,19,22,25,28,31]){
