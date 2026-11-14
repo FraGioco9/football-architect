@@ -269,7 +269,7 @@ test('#532 public Overview renders Flag Player Positions Age Height Foot Club an
  assert.match(css,/\.app-players-club-mark\{[^}]*flex:0 0 24px;width:24px;height:24px;overflow:hidden/);
  assert.match(css,/\.app-players-club-mark::before\{[^}]*width:20px;height:23px/);
  assert.match(js,/image\.src='\/'\+path;image\.alt='';image\.width=24;image\.height=24/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'text-only native underline preserves centered player names');
  assert.doesNotMatch(css,/\.app-players-table \.app-player-club-link:hover\{text-decoration:underline/);
  assert.ok(gen.indexOf('data-players-sort=\\\"foot')<gen.indexOf('app-players-club-col'));
 });
