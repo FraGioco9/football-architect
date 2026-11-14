@@ -111,8 +111,14 @@ export function buildPortraitPrompt(entry){
   `including both sides of the body. Keep a consistent camera distance and centered vertical 3:4 framing.\n\n`+
   `Authentic professional football media-day photography, soft balanced studio lighting, accurate anatomy and facial details, `+
   `natural colors, not a CGI render or fashion advertisement.\n\n`+
-  `GENUINELY TRANSPARENT BACKGROUND WITH ALPHA CHANNEL and clean hair edges, transparent PNG. `+
-  `No scenery, floor, colored backdrop, artificial checkerboard, cast shadow, watermark or extra objects.`;
+  `CRITICAL IMAGE COMPOSITION: Render exactly ONE individual portrait for this player. Never make a group portrait, collage, triptych, contact sheet or multiple panels. `+
+  `Treat the individual appearance reference as binding: keep the specified complexion, eye color, hair color, hair texture, haircut, facial hair and face structure. `+
+  `Do not replace these traits with a generic athlete's face, and do not reuse a previous player's face. `+
+  `Maintain comfortable transparent padding around all hair, shoulders and arms and a consistent bottom crop at hip level.\\n\\n`+
+  `GENUINELY TRANSPARENT BACKGROUND WITH ALPHA CHANNEL and clean, naturally antialiased hair edges, transparent RGBA PNG. `+
+  `No scenery, floor, colored backdrop, checkerboard texture or painted transparency, cast shadow, watermark or extra objects. `+
+  `NO CHROMATIC EDGE FRINGING: no red, yellow, magenta, blue or green outlines, colored halos, edge glow, matte spill or color contamination around the subject. `+
+  `Outside the silhouette must be completely transparent; partially transparent edges must blend only with the local subject color.`;
 }
 
 function parseArgs(args){

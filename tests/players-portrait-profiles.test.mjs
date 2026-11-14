@@ -49,6 +49,11 @@ test('face ignores stats and nonvisual fields, while body responds only to four 
  assert.match(prompt,/pure-white.*football jersey/);
  assert.match(prompt,/DOWN TO HIP LEVEL/);
  assert.match(prompt,/TRANSPARENT BACKGROUND WITH ALPHA CHANNEL/);
+ assert.match(prompt,/exactly ONE individual portrait/);
+ assert.match(prompt,/Treat the individual appearance reference as binding/);
+ assert.match(prompt,/No CHROMATIC EDGE FRINGING/i);
+ assert.match(prompt,/no red, yellow, magenta, blue or green outlines/);
+ assert.match(prompt,/checkerboard texture or painted transparency/);
 });
 
 test('same permanent ID preserves face across nationality changes and body variations',()=>{

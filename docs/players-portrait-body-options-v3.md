@@ -72,7 +72,9 @@ Stand upright, head and torso facing directly forward, level shoulders, relaxed 
 
 Authentic professional football media-day photography, soft balanced studio lighting, accurate anatomy and facial details, natural colors, not a CGI render or fashion advertisement.
 
-GENUINELY TRANSPARENT BACKGROUND WITH ALPHA CHANNEL and clean hair edges, transparent PNG. No scenery, floor, colored backdrop, artificial checkerboard, cast shadow, watermark or extra objects.
+CRITICAL IMAGE COMPOSITION: Render exactly ONE individual portrait for this player. Never make a group portrait, collage, triptych, contact sheet or multiple panels. Treat the individual appearance reference as binding: keep the specified complexion, eye color, hair color, hair texture, haircut, facial hair and face structure. Do not replace these traits with a generic athlete's face, and do not reuse a previous player's face. Maintain comfortable transparent padding around all hair, shoulders and arms and a consistent bottom crop at hip level.
+
+GENUINELY TRANSPARENT BACKGROUND WITH ALPHA CHANNEL and clean, naturally antialiased hair edges, transparent RGBA PNG. No scenery, floor, colored backdrop, checkerboard texture or painted transparency, cast shadow, watermark or extra objects. NO CHROMATIC EDGE FRINGING: no red, yellow, magenta, blue or green outlines, colored halos, edge glow, matte spill or color contamination around the subject. Outside the silhouette must be completely transparent; partially transparent edges must blend only with the local subject color.
 ```
 
 For a player without secondary nationality, omit the entire optional sentence. With a secondary nationality, inject `Secondary nationality: {SECONDARY_NATIONALITY}.` and a trailing space. Never instruct the model to resemble a named real footballer.
@@ -120,3 +122,10 @@ node tools/players-portrait-profiles.mjs --input .\players-public.json --output 
 ```
 
 The offline CLI does **not** overwrite existing manifests. The anonymous public API may differ from the current DB; direct read-only DEV D1 access was verified separately for this audit.
+
+
+## Image pilot QA — follow-up (2026-11-14)
+
+The initial 3-photo test did **not** pass visual QA: similar facial structures and visible red/yellow segmentation fringe were observed. A separate attempted regeneration also failed to consistently honor single-player identity; some outputs repeated the #44 face and some returned multi-person composites or checkerboard-like backdrops. Those outputs are **NOT approved or published**, and this prompt update is not evidence of a successful image-generation rerun.
+
+Acceptance for any future pilot requires **three individual 3:4 PNG images**, one each for real DEV player ID 44 (Giacinto Lello), 98 (Arthur Kiesel), and 145 (Steven Sellen), with faithful persistent `appearance_profile`, distinct faces, restrained build class, plain white jersey, head-to-hips framing, *real RGBA transparency* and no chromatic edge fringe. Reject repeated player identities, collages, explicit checkerboards, visible red/yellow halos, clipping and exaggerated physiques. Do not add assets or persist identity mappings until human review.
