@@ -154,8 +154,10 @@ body.app-body{--app-page-pad-top:8px}
    The identity is vertically centered against the *visible* Status/Next match
    text, not the empty lower area of their old fixed-height value containers.
    The summary wrapper is layout-transparent. First paint uses these tracks. */
+/* Size the panel to its actual rows. The generic first-paint min-height of
+   160px otherwise leaves an empty strip below a single membership. */
 .club-overview-layout>.club-competition{
- grid-column:1/-1;box-sizing:border-box;width:100%;min-height:160px;
+ grid-column:1/-1;box-sizing:border-box;width:100%;min-height:0;
  padding:12px 18px;container:club-competition-panel / inline-size;
 }
 .club-competition>h2{margin-bottom:6px}
