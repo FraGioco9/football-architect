@@ -246,6 +246,12 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
    'firstC2aResolution','firstExcludedAfterReassignment'])
    assert.equal(audit[key],null,
     'non-conflicting authentic replay has no '+key+' witness');
+  assert.ok(Object.isFrozen(audit),
+   'DEV diagnostic snapshot must be immutable');
+  assert.deepEqual(audit,worlds[2].snapshot().continuityAudit,
+   'independent replay must reproduce identical collision diagnostics');
+  assert.equal(Object.keys(audit).length,11,
+   'diagnostics must expose only bounded counters and first witnesses');
   console.log('C2_A_REAL_RAPIER_PRESS_SELECTION_AUDIT',JSON.stringify(audit));
   assert.ok(eligibleFrames>0,'genuine post-carry support must be exercised');
   assert.equal(baselineDutyConflicts,0,
