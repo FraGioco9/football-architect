@@ -430,6 +430,7 @@ export function createPhysicalFixtureStepRuntime(
      k!=='autonomousActions'&&k!=='researchShotAttacker'&&
      k!=='autonomousCarry'&&k!=='autonomousCarrySupport'&&
       k!=='autonomousCarrySupportPressHandoff'&&
+      k!=='autonomousCarryBlockedDetour'&&
       k!=='autonomousCarrySupportBallAccess'&&
       k!=='autonomousCarrySupportLateralAlign'&&
       k!=='autonomousCarrySupportEarlyFacing'&&
@@ -463,6 +464,10 @@ export function createPhysicalFixtureStepRuntime(
      Object.hasOwn(options,'researchShotAttacker')))reject();
  const autonomousCarrySupportPressHandoff=
   options.autonomousCarrySupportPressHandoff===true;
+ if(Object.hasOwn(options,'autonomousCarryBlockedDetour')&&
+    (options.autonomousCarryBlockedDetour!==true||!autonomousCarry||
+     Object.hasOwn(options,'researchShotAttacker')))reject();
+ const autonomousCarryBlockedDetour=options.autonomousCarryBlockedDetour===true;
  if(Object.hasOwn(options,'autonomousCarrySupportBallAccess')&&
     (options.autonomousCarrySupportBallAccess!==true||
      !autonomousCarrySupportPressHandoff||
@@ -897,6 +902,8 @@ export function createPhysicalFixtureStepRuntime(
     ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
     ...(autonomousCarrySupportPressHandoff?{
      autonomousCarrySupportPressHandoff:true}:{}),
+    ...(autonomousCarryBlockedDetour?{
+     autonomousCarryBlockedDetour:true}:{}),
     ...(autonomousCarrySupportBallAccess?{
      autonomousCarrySupportBallAccess:true}:{}),
     ...(autonomousCarrySupportLateralAlign?{
