@@ -259,8 +259,14 @@ export async function verifyCanonicalStateBrowser(browser,engine){
   apiWorld={...world,revision:5,day:21};
   await page.evaluate(()=>window.dispatchEvent(new Event('fa:world-invalidated')));
   await bounded(oldStarted,'season read after world revision advances');
-  // Reopen the controls only for the following Debug ON/OFF checks.
-  await page.locator('.fa-dev-widget-button').click();
+  // Tab/state refreshes may already leave the Debug panel open. The launcher
+  // toggles visibility, so blindly clicking it would close an open panel and
+  // make the next switch check wait for a hidden control indefinitely.
+  const debugPanel=page.locator('.fa-dev-widget-panel');
+  if(await debugPanel.getAttribute('hidden')!==null)
+   await page.locator('.fa-dev-widget-button').click();
+  await debugPanel.waitFor({state:'visible'});
+  await switcher.waitFor({state:'visible'});
   await switcher.check();await page.waitForFunction(()=>window.faWorldState?.get().source==='dev'&&window.faWorldState.get().current?.season===2);
   assert.notEqual(await page.evaluate(()=>window.faCompetitionContext?.seasonData?.provenance?.kind),'authoritative','ON clears API sporting data');
   apiWorld={...world,revision:6,day:22};
