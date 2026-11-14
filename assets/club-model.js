@@ -190,7 +190,7 @@
   }).join('');
   return '<section class="club-roster" aria-busy="'+pending+'" data-roster-mode="'+mode+'">'+
    '<div class="club-roster-view-row"><nav class="app-competition-tabs app-players-tabs club-roster-tabs" role="tablist" aria-label="'+escape(t.roster)+'">'+viewTabs+'</nav><span class="club-roster-count">'+count+'</span></div>'+
-   '<div class="app-players-table-scroll club-roster-table-scroll"'+(pending?' aria-busy="true"':'')+'>'+
+   '<div class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="'+escape(t.roster)+'" tabindex="0"'+(pending?' aria-busy="true"':'')+'>'+
    '<table class="app-players-table club-roster-table" data-players-table-mode="'+mode+'" data-roster-group="'+group+'" aria-label="'+escape(t.roster)+'">'+
    columns+'<thead><tr>'+labels.map((label,i)=>{
     const key=columnSorts[i],active=sort===key;

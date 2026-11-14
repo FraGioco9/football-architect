@@ -57,3 +57,11 @@ test('#574 first paint and checkbox flow are unchanged at narrow widths',()=>{
  assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px/);
  assert.match(admin,/\.app-admin-view \.admin-contracts-skeleton td\{height:36px\}/);
 });
+
+test('#574 Club Roster scroller is keyboard-focusable both before and after hydration',()=>{
+ const model=read('assets/club-model.js'),generator=read('tools/generate-club-pages.mjs'),shell=read('clubs/_shared/index.html');
+ assert.match(shell,/class="app-players-table-scroll club-roster-table-scroll" role="region" aria-label="Roster" tabindex="0" aria-busy="true"/);
+ assert.ok(generator.includes('role=\\"region\\" aria-label=\\"Roster\\" tabindex=\\"0\\"'));
+ assert.match(model,/role="region" aria-label="'\+escape\(t\.roster\)\+'" tabindex="0"/);
+ assert.match(css,/\.app-players-table-scroll:focus-visible\{outline:2px solid var\(--focus\)/);
+});
