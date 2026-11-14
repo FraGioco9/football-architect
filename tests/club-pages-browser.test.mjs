@@ -750,6 +750,8 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
         statusValue:at('.club-competition-metrics dd'),matchValue:at('.club-competition-next-content')};
       }).map(({summary,statusLabel,matchLabel,statusValue,matchValue})=>({
         labelSummaryDelta:Math.abs(statusLabel.top-summary.top),
+       statusCenterDelta:Math.abs((statusLabel.left+statusLabel.right-statusValue.left-statusValue.right)/2),
+       nextXDelta:Math.abs(matchLabel.left-matchValue.left),
        labelDelta:Math.abs(statusLabel.top-matchLabel.top),
        valueDelta:Math.abs(statusValue.top-matchValue.top),
        statusX:statusLabel.left,matchX:matchLabel.left
@@ -757,7 +759,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       second.remove();
       return boxes;
      })()`);
-     assert.ok(twoRowAlignment.length===2&&twoRowAlignment.every(row=>row.labelSummaryDelta<1.5&&row.labelDelta<1.5&&row.valueDelta<1.5)
+     assert.ok(twoRowAlignment.length===2&&twoRowAlignment.every(row=>row.labelSummaryDelta<1.5&&row.labelDelta<1.5&&row.valueDelta<1.5&&row.statusCenterDelta<1.5&&row.nextXDelta<1.5)
       &&Math.abs(twoRowAlignment[0].statusX-twoRowAlignment[1].statusX)<1.5
       &&Math.abs(twoRowAlignment[0].matchX-twoRowAlignment[1].matchX)<1.5,
       'Both competition rows align Status and Next match at '+width+': '+JSON.stringify(twoRowAlignment));
@@ -783,18 +785,22 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        '.club-competition-metrics dt','.club-competition-metrics dd',
        '.club-competition-next > .club-competition-label','.club-competition-next-content']);
       const skeletonBar=measure(pending,'.club-fp-competition-position');
+      const statusLabelBox=pending.querySelector('.club-competition-metrics dt').getBoundingClientRect();
+      const statusBarBox=pending.querySelector('.club-fp-competition-position').getBoundingClientRect();
+      const statusBarCenterDelta=Math.abs((statusLabelBox.left+statusLabelBox.right-statusBarBox.left-statusBarBox.right)/2);
       const expectedBar=(parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-metrics dd')).lineHeight)-12)/2;
       const fixture=measure(pending,'.club-fp-competition-fixture');
       const round=measure(pending,'.club-fp-competition-round');
       const realFixtureLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next a')).lineHeight);
       const realRoundLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next small')).lineHeight);
       pendingList.remove();panel.classList.remove('club-first-paint-panel');
-      return {positions,barDelta:skeletonBar.y-measure(hydrated,'.club-competition-metrics dd').y,
+      return {positions,statusBarCenterDelta,barDelta:skeletonBar.y-measure(hydrated,'.club-competition-metrics dd').y,
        expectedBar,fixtureHeight:fixture.h,roundHeight:round.h,
        expectedFixtureHeight:realFixtureLine,expectedRoundHeight:realRoundLine,
        fixtureRoundGap:round.y-fixture.y-fixture.h};
      })()`);
      assert.ok(skeletonParity.positions.every(p=>Math.abs(p.hydrated.x-p.pending.x)<1.5&&Math.abs(p.hydrated.y-p.pending.y)<1.5)
+      &&skeletonParity.statusBarCenterDelta<1.5
       &&Math.abs(skeletonParity.barDelta-skeletonParity.expectedBar)<1.5
       &&Math.abs(skeletonParity.fixtureHeight-skeletonParity.expectedFixtureHeight)<1.5
       &&Math.abs(skeletonParity.roundHeight-skeletonParity.expectedRoundHeight)<1.5
