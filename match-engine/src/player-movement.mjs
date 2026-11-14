@@ -3134,8 +3134,18 @@ export function createPlayerMovement({
    if(activeFixtureCarryPursuit?.playerId===p.id){
     if(experimentalAutonomousFixtureCarryBlockedDetour&&
        activeCarryBlockedDetour?.playerId===p.id){
-     const wp=activeCarryBlockedDetour.waypoint;
+     const plan=activeCarryBlockedDetour;
+     const wp=plan.waypoint;
      if(Math.hypot(p.x-wp.x,p.y-wp.y)>0.16)return wp;
+     // Reaching the lateral escape waypoint advances to the forward
+     // leg without redefining the route from a moving ball sample.
+     if(plan.waypoints.length>plan.stage+1){
+      activeCarryBlockedDetour=Object.freeze({
+       ...plan,stage:plan.stage+1,
+       waypoint:plan.waypoints[plan.stage+1]
+      });
+      return activeCarryBlockedDetour.waypoint;
+     }
      activeCarryBlockedDetour=null;
     }
     return activeFixtureCarryPursuit.target;
@@ -3342,30 +3352,54 @@ export function createPlayerMovement({
        forwardY*(blocker.x-p.x);
       const preferredSide=Math.abs(cross)>1e-6?
        -Math.sign(cross):1;
-      let waypoint=null,chosenSide=null;
+      let route=null,chosenSide=null;
+      const withinPitch=point=>
+       Math.abs(point.x)<=maxX&&Math.abs(point.y)<=maxY;
+      // Static geometry is used only to propose a reachable intent.
+      // Every executed 60Hz step still passes the canonical collision
+      // guard, so a newly moving defender cannot be crossed.
+      const corridorSafe=(from,to)=>players.every(q=>q===p||
+       Array.from({length:16},(_,k)=>(k+1)/16).every(frac=>{
+        const sx=from.x+(to.x-from.x)*frac;
+        const sy=from.y+(to.y-from.y)*frac;
+        return (sx-q.x)**2+(sy-q.y)**2>=
+         PLAYER_MIN_SEPARATION_M**2-1e-9;
+       }));
       for(const side of [preferredSide,-preferredSide]){
-       if(waypoint)break;
+       if(route)break;
        const lateralX=-forwardY*side,lateralY=forwardX*side;
-       for(const [along,offset] of [[1.8,1.5],[1.35,1.55]]){
-        const wx=p.x+forwardX*along+lateralX*offset;
-        const wy=p.y+forwardY*along+lateralY*offset;
-        if(Math.abs(wx)>maxX||Math.abs(wy)>maxY)continue;
-        // A locally clear corridor is an intent, not fabricated contact.
-        // The actual body still uses the universal 0.98m guard every tick.
-        const routeSafe=players.every(q=>q===p||
-         Array.from({length:12},(_,k)=>(k+1)/12).every(frac=>{
-          const sx=p.x+(wx-p.x)*frac;
-          const sy=p.y+(wy-p.y)*frac;
-          return (sx-q.x)**2+(sy-q.y)**2>=
-           PLAYER_MIN_SEPARATION_M**2-1e-9;
-         }));
-        if(routeSafe){
-         waypoint=Object.freeze({x:wx,y:wy});
+       // Short pure lateral escape before turning forward avoids the
+       // blocked diagonal segment at the first hard-stop encounter.
+       for(const [escapeM,advanceM,flankM] of [
+        [1.1,2.2,1.6],[1.35,2.2,1.8],[0.85,1.8,1.45]
+       ]){
+        const first={x:p.x+lateralX*escapeM,
+         y:p.y+lateralY*escapeM};
+        const second={x:p.x+forwardX*advanceM+lateralX*flankM,
+         y:p.y+forwardY*advanceM+lateralY*flankM};
+        if(!withinPitch(first)||!withinPitch(second))continue;
+        if(corridorSafe(p,first)&&corridorSafe(first,second)){
+         route=Object.freeze([Object.freeze(first),Object.freeze(second)]);
          chosenSide=side;
          break;
         }
        }
       }
+      // Keep the already-measured late direct corridor as a fallback,
+      // rather than introducing any unconditional behavior change.
+      if(!route)for(const side of [preferredSide,-preferredSide]){
+       if(route)break;
+       const lateralX=-forwardY*side,lateralY=forwardX*side;
+       for(const [along,offset] of [[1.8,1.5],[1.35,1.55]]){
+        const goal={x:p.x+forwardX*along+lateralX*offset,
+         y:p.y+forwardY*along+lateralY*offset};
+        if(!withinPitch(goal)||!corridorSafe(p,goal))continue;
+        route=Object.freeze([Object.freeze(goal)]);
+        chosenSide=side;
+        break;
+       }
+      }
+      const waypoint=route?.[0]??null;
       carryDetourLastDecision=Object.freeze({
        tick:tick+1,blockerId:blocker.id,
        accepted:waypoint!==null,
@@ -3373,7 +3407,8 @@ export function createPlayerMovement({
       });
       if(waypoint)activeCarryBlockedDetour=Object.freeze({
        playerId:p.id,sourceCarryTick:activeFixtureCarryPursuit.sourceCarryTick,
-       blockerId:blocker.id,side:chosenSide,waypoint,startTick:tick+1
+       blockerId:blocker.id,side:chosenSide,waypoint,
+       waypoints:route,stage:0,startTick:tick+1
       });
      }
     }

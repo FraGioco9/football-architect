@@ -410,6 +410,7 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
  const checkpoints=new Set([567,599,600,620,640,660,680,693,694,700,720]);
  const rows=[];
  let firstDivergence=null,firstShoeDifference=null;
+ let firstAcceptedWaypointTick=null;
  let ordinaryStarts=0,trialStarts=0,ordinarySupport=0,trialSupport=0;
  let minimumClearance=Infinity;
  try{
@@ -439,6 +440,10 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    if(firstShoeDifference===null&&JSON.stringify(a.physicalContactFeed.started)!==
      JSON.stringify(b.physicalContactFeed.started))
     firstShoeDifference=tick;
+   const choice=b.contactDecisionObservation.carryPursuit?.
+    experimentalDetour?.lastDecision;
+   if(firstAcceptedWaypointTick===null&&choice?.accepted===true)
+    firstAcceptedWaypointTick=choice.tick;
    ordinaryStarts+=a.physicalContactFeed.started.length;
    trialStarts+=b.physicalContactFeed.started.length;
    if(a.contactDecisionObservation.attackSupportRun?.phase==='post-carry-support')
@@ -488,6 +493,7 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
   console.log('C2_B_OPT_IN_BLOCKED_DETOUR_AB',JSON.stringify({
    firstDivergenceTick:firstDivergence,
    firstShoeDifferenceTick:firstShoeDifference,
+   firstAcceptedWaypointTick,
    minimumCarrierClearanceM:round(minimumClearance),
    realShoeStarts:{ordinary:ordinaryStarts,detour:trialStarts},
    postCarrySupportFrames:{ordinary:ordinarySupport,detour:trialSupport},
@@ -499,6 +505,9 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    'detour must not affect movement before the first genuine carry');
   assert.ok(minimumClearance>=0.98-1e-6,
    'experimental carrier must preserve 0.98m hard separation');
+  assert.ok(firstAcceptedWaypointTick!==null&&
+   firstAcceptedWaypointTick<678,
+   'early two-leg path must activate before the prior tick 678');
   const late=rows.find(row=>row.tick===693);
   assert.ok(late&&late.displacementFromBaselineM>0.25,
    'persistent detour must leave the blocked position by at least 0.25m');
