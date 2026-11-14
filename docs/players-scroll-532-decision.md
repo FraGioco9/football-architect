@@ -94,3 +94,8 @@
 
 - Approved club crest in public Players Overview increased **18×18 → 24×24px**, with a fixed 24×24 mark, 20×23 neutral shield fallback and vertically centered 28px crest/name track with 8px gap. Player and club links keep their approved identical out-of-flow underlines and center alignment.
 - Shared player tables (public Players, Club Roster, Admin preview) now have **36px body and five empty loading rows** rather than 30px. Shared header grows **36→42px**, header font **11→12px**, sort button **30→36px** and body text **13→14px** for proportional readability. Existing flags, Overview/Attributes column order, responsive widths, filters, and offset loading remain unchanged. Manual desktop and iPhone Safari checks are pending.
+
+## Sorting refresh: five rows only, no retained height (#532)
+
+- Fixed the observed issue where sort/sort reset replaced the rows with the five correct blank loading rows but the scroll container kept the full height of a previously loaded 50–150+ row result set. Removed the inline `scroll.style.minHeight` height lock and its stale cleanup; the table now collapses to exactly five 36px loading rows with five matching separators as soon as the sort begins.
+- The existing offset-based server sorting, asynchronous request invalidation, first paint, pagination/automatic append, stable 42px header, fixed column widths, 24px club crest and 14px text remain unchanged. The regression test evaluates the actual `showLoadingRows()` function with 150 old rows, and checks that all old rows are replaced, no height lock remains, and the UI remains busy until the new result arrives.

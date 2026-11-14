@@ -515,7 +515,8 @@
    const seq=++ticket;state.page=page;loadedThrough=page;current=null;status='loading';
    appendPending=false;appendError='';
    if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
-   scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
+   // No preserved height: replacing many loaded rows with five placeholders must
+   // also collapse the table viewport immediately on a sort/filter refresh.
    scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
    try{
     const data=await fetchBatch(page);
@@ -539,14 +540,14 @@
       for(const player of batch.players)seen.add(player.id);
      }
     }
-    current={...data,players};loadedThrough=restoredPage;status='ready';paint(current);scroll.style.minHeight='';
+    current={...data,players};loadedThrough=restoredPage;status='ready';paint(current);
     if(hint&&restoredPage===hint.loadedThrough){
      const pane=document.querySelector('.fa-shell-content-scroll');
      if(pane)pane.scrollTop=hint.scrollTop;
      body.querySelector('a.app-player-name-link[href="/players/'+hint.playerId+'"]')?.focus({preventScroll:true});
     }
    }catch{
-    if(seq===ticket){status='error';message(locale().error);renderProgress();scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
+    if(seq===ticket){status='error';message(locale().error);renderProgress();scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
    }
   }
   async function appendNext(){

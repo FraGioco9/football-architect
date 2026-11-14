@@ -707,6 +707,36 @@ test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loa
  assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sort resets to the first complete server page');
 });
 
+test('PLAYERS-SCROLL-01 sort clears 150 loaded rows to exactly five loading rows without retained height',()=>{
+ const js=read('assets/players-directory.js'),css=read('assets/app.css');
+ const load=js.slice(js.indexOf('  async function load(page){'),js.indexOf('  async function appendNext(){'));
+ assert.doesNotMatch(load,/scroll\.style\.minHeight\s*=/,'sorting must never preserve the previous 50/150+ row viewport height');
+ assert.doesNotMatch(js,/scroll\.style\.minHeight\s*=/,'no stale inline height locks across load paths');
+ assert.match(load,/current=null;status='loading'/,'old result state is invalidated before fetching the sort');
+ assert.match(load,/renderHead\(\);showLoadingRows\(\)/,'placeholder rows render before the API resolves');
+ const show=js.slice(js.indexOf('  function showLoadingRows(){'),js.indexOf('  function message(value){'));
+ assert.ok(show.startsWith('  function showLoadingRows(){'),'use the production function, not a reimplementation');
+ const element=()=>({children:[],dataset:{},append(node){this.children.push(node)},setAttribute(){}});
+ const document={
+  createDocumentFragment(){return element()},
+  createElement(){return element()}
+ };
+ const oldRows=Array.from({length:150},()=>element());
+ const body={rows:oldRows,replaceChildren(fragment){this.rows=fragment.children}};
+ const pager={hidden:false},scroll={attributes:{},setAttribute(k,v){this.attributes[k]=v}};
+ const showLoading=new Function('document','body','pager','scroll','cols','locale',
+  show+';return showLoadingRows;')(document,body,pager,scroll,()=>7,()=>({loading:'Loading players…'}));
+ showLoading();
+ assert.equal(body.rows.length,5,'only five rows remain after a sort refresh');
+ assert.ok(body.rows.every(row=>row.className==='app-players-loading-row'&&row.children.length===1&&row.children[0].colSpan===7));
+ assert.ok(body.rows.every(row=>!oldRows.includes(row)),'all prior loaded rows have been detached');
+ assert.equal(pager.hidden,true);
+ assert.equal(scroll.attributes['aria-busy'],'true');
+ assert.match(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:36px\}/);
+ assert.match(css,/\.app-players-table \.app-players-loading-row td\{height:36px;padding:0 16px\}/);
+ assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sorting always starts a fresh first page');
+});
+
 test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL pagination contracts',()=>{
  const js=read('assets/players-directory.js'),css=read('assets/app.css');
  assert.match(js,/const loadMore=document.createElement\('button'\)/);
