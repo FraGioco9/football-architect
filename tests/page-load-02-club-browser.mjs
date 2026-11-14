@@ -336,7 +336,7 @@ try{
        states.push({value,fixtureTop:box('.club-competition-next-content > *').y,identity:box('.club-competition-identity'),logo:box('.club-competition-logo'),
         status:box('.club-competition-metrics dt'),next:box('.club-competition-next>.club-competition-label'),
         statusBlock:box('.club-competition-metrics'),nextBlock:box('.club-competition-next'),
-        summary:box('.club-competition-summary'),visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
+        summary:{x:summary.left,y:summary.top,width:summary.right-summary.left,height:summary.bottom-summary.top},visibleCenter:(label.top+lastChild.bottom)/2,minHeight,
         single:dd.scrollHeight<=parseFloat(getComputedStyle(dd).lineHeight)+1&&dd.scrollWidth<=dd.clientWidth+1,
         statusVisible:dd.scrollHeight<=dd.clientHeight+1&&dd.scrollWidth<=dd.clientWidth+1,
         visible:empty||match.scrollHeight<=match.clientHeight+1&&match.scrollWidth<=match.clientWidth+1,
