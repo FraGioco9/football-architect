@@ -104,3 +104,11 @@ The same suite is registered in \`match-engine/package.json\` for the final full
 ## P1 follow-up — targetless RETAIN (pure, draft only)
 
 The bounded pure selector now accepts an available RETAIN with no target, rejects fabricated motion/player targets, and records no physical action, possession, or guaranteed outcome. Fixed SHOOT-over-PASS and PRESS-over-COVER orderings remain unapproved proposals, not live gameplay logic. No P2 adapter, movement wiring, physical contact or engine tuning is included in this change. P1 approval gate stays open until the full qualitative policy is reviewed.
+
+## P2 preflight: read-only current-frame projection (Draft/HOLD)
+
+`src/player-football-observation.mjs` exports `projectObservedFootballContext(physicalFrame, {playerId, phase})`. It maps **existing** `physicalFrame.ball.position` and ordered `physicalFrame.physicalPlayerPositions` into the P1 observation shape. It requires matching `physicsTick`, `footContact.tick`, `autonomousMovement.physicsTick`, canonical actor IDs/teams/roles, finite coordinates and the existing fixture-frame metadata. Output is deeply frozen, copied and starts with **zero affordances**. Pure tests include HOME/AWAY, deterministic projection, null selection and rejection of inconsistent timestamps, changed roles/teams, non-finite geometry and unsealed positions.
+
+**Security boundary:** This is only a *structural preflight*. A caller can forge an object of the same shape; this module cannot independently prove Rapier contact/source authenticity. The future P2 runtime wiring must invoke it with the **internally created** fixture frame, never arbitrary API/user-supplied input, and must separately source/validate any candidate affordances before permitting a decision. The existing same-tick Rapier START + physical policy remains authoritative. This file introduces **no** live adapter invocation, available:true candidates, action execution, player movement, physics, possession or score.
+
+The P1 qualitative-priority approval gate remains OPEN. P2's live-decision checklist remains OPEN. No top-level #480 gate is completed by this structural test.

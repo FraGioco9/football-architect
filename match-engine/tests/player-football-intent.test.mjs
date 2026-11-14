@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import {FOOTBALL_INTENT_VERSION,FOOTBALL_INTENT_PRIORITIES,
  chooseObservedFootballIntent}
  from '../src/player-football-intent.mjs';
+import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
+ from '../src/player-football-observation.mjs';
+import {INITIAL_PLAYERS} from '../src/player-movement.mjs';
 
 const players=Object.freeze(['home','away'].flatMap((team,ti)=>
  Array.from({length:11},(_,i)=>Object.freeze({
@@ -190,4 +193,79 @@ test('P1 rejects future/stale frames, malformed teams and fake player targets',(
  ];
  for(const bad of badCases)
   assert.throws(()=>alter(bad),TypeError,JSON.stringify(bad));
+});
+
+test('P2 preflight projects only live same-tick 22-player geometry, no affordances',()=>{
+ const positions=Object.freeze(INITIAL_PLAYERS.map((p,i)=>Object.freeze({
+  engineId:p.id,team:p.team,role:p.role,x:i+0.5,y:-i
+ })));
+ const frame={
+  physicsTick:20,experimentalLocalOnly:true,matchRuntimeIntegrated:false,
+  officialMatchAction:false,contactSource:'internal-real-rapier-60hz',
+  footContact:{tick:20},autonomousMovement:{physicsTick:20},
+  ball:{position:{x:3,y:-4,z:0.11}},
+  physicalPlayerPositions:positions
+ };
+ const input=structuredClone({ball:frame.ball,physicsTick:frame.physicsTick});
+ const home=projectObservedFootballContext(frame,{
+  playerId:'home-7',phase:'ball-opportunity'
+ });
+ const away=projectObservedFootballContext(frame,{
+  playerId:'away-7',phase:'defend-off-ball'
+ });
+ assert.equal(FOOTBALL_OBSERVATION_PROJECTION_VERSION,
+  'me-p2-read-only-observed-frame-draft-v1');
+ assert.equal(home.team,'home');
+ assert.equal(away.team,'away');
+ assert.equal(home.physicsTick,20);
+ assert.deepEqual(home.frame.ball,{x:3,y:-4,z:0.11});
+ assert.deepEqual(home.frame.players[6],{
+  id:'home-7',team:'home',x:6.5,y:-6
+ });
+ assert.equal(home.affordances.length,0);
+ assert.ok(Object.isFrozen(home)&&Object.isFrozen(home.frame)&&
+  Object.isFrozen(home.frame.players)&&Object.isFrozen(home.frame.ball)&&
+  Object.isFrozen(home.affordances));
+ assert.equal(chooseObservedFootballIntent(home),null);
+ assert.equal(chooseObservedFootballIntent(away),null);
+ assert.deepEqual({ball:frame.ball,physicsTick:frame.physicsTick},input);
+ assert.equal(Object.hasOwn(home,'contactStarted'),false);
+ assert.equal(Object.hasOwn(home,'physicalActionExecuted'),false);
+ assert.equal(Object.hasOwn(home,'possession'),false);
+});
+
+test('P2 preflight rejects inconsistent or forged-looking physical shapes',()=>{
+ const positions=Object.freeze(INITIAL_PLAYERS.map((p,i)=>Object.freeze({
+  engineId:p.id,team:p.team,role:p.role,x:i,y:0
+ })));
+ const baseFrame={
+  physicsTick:20,experimentalLocalOnly:true,matchRuntimeIntegrated:false,
+  officialMatchAction:false,contactSource:'internal-real-rapier-60hz',
+  footContact:{tick:20},autonomousMovement:{physicsTick:20},
+  ball:{position:{x:0,y:0,z:0.11}},physicalPlayerPositions:positions
+ };
+ const as=patch=>projectObservedFootballContext(
+  {...baseFrame,...patch},{playerId:'home-7',phase:'ball-opportunity'});
+ const invalid=[
+  {physicsTick:0},{footContact:{tick:21}},
+  {autonomousMovement:{physicsTick:19}},
+  {contactSource:'client-supplied'},
+  {experimentalLocalOnly:false},{matchRuntimeIntegrated:true},
+  {officialMatchAction:true},
+  {ball:{position:{x:Infinity,y:0,z:0.11}}},
+  {ball:{position:{x:0,y:0,z:NaN}}},
+  {physicalPlayerPositions:positions.slice()},
+  {physicalPlayerPositions:Object.freeze(positions.slice(1))},
+  {physicalPlayerPositions:Object.freeze(positions.map((p,i)=>
+   i===4?Object.freeze({...p,engineId:'home-7'}):p))},
+  {physicalPlayerPositions:Object.freeze(positions.map((p,i)=>
+   i===4?Object.freeze({...p,team:'away'}):p))},
+  {physicalPlayerPositions:Object.freeze(positions.map((p,i)=>
+   i===4?Object.freeze({...p,x:NaN}):p))}
+ ];
+ for(const bad of invalid)assert.throws(()=>as(bad),TypeError);
+ assert.throws(()=>projectObservedFootballContext(baseFrame,{
+  playerId:'intruder',phase:'ball-opportunity'}),TypeError);
+ assert.throws(()=>projectObservedFootballContext(baseFrame,{
+  playerId:'home-7',phase:'unknown'}),TypeError);
 });
