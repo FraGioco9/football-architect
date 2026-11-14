@@ -771,6 +771,76 @@ try{
   }finally{release();await ctx.close()}
  }
 
+
+ // PERF-API-01: protected Contracts assignments invalidate public Roster in
+ // another same-origin tab, without polling or any identity in the signal.
+ {
+  const ctx=await browser.newContext({viewport:{width:390,height:844}});
+  let clubKey=null,rosterGets=0,writes=0;
+  try{
+   const generation='11111111-1111-4111-8111-111111111111';
+   await ctx.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await ctx.route('**/api/player/permissions',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})}));
+   await ctx.route('**/api/admin/session',r=>r.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({actor:{id:'fixture'},csrfToken:'a'.repeat(64)})}));
+   await ctx.route('**/api/admin/contracts*',r=>{
+    if(r.request().method()==='POST'){
+     writes++;
+     assert.equal(r.request().headers()['x-csrf-token'],'a'.repeat(64));
+     const body=r.request().postDataJSON();
+     assert.deepEqual(body,{players:[{playerId:1,expectedClubKey:clubKey}],clubKey:writes===1?'IT-1':null,
+      expectedGeneration:generation,expectedRevision:0});
+     clubKey=body.clubKey;
+     return r.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({updated:1,clubKey,playerIds:[1],worldGeneration:generation,worldRevision:0})});
+    }
+    return r.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({count:1,page:1,pageSize:50,totalPages:1,worldGeneration:generation,
+      worldRevision:0,players:[{id:1,name:'Synthetic Player',nationality:'ITA',age:23,
+       primary_position:'CM',secondary_positions:[],height_cm:180,preferred_foot:'right',clubKey}],
+      clubs:[{clubKey:'IT-1',name:'Test Italian Club'}]})});
+   });
+   await ctx.route('**/api/clubs/IT-1/roster',r=>{
+    rosterGets++;
+    const players=clubKey===null?[]:[{id:1,display_name:'Synthetic Player',nationality:'ITA',
+     age:23,primary_position:'CM',secondary_positions:[],height_cm:180,
+     preferred_foot:'right',attributes:{}}];
+    return r.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({schemaVersion:1,clubKey:'IT-1',count:players.length,players})});
+   });
+   const roster=await ctx.newPage();
+   await roster.goto('http://app.localhost:2000/clubs/it/1/roster');
+   await roster.locator('.club-roster[data-roster-mode="empty"][aria-busy="false"]').waitFor();
+   assert.equal(rosterGets,1);
+   const admin=await ctx.newPage();
+   await admin.goto('http://app.localhost:2000/admin/contracts');
+   await admin.locator('[data-contracts-check="1"]').waitFor();
+   await admin.locator('[data-contracts-check="1"]').check();
+   await admin.locator('[data-contracts-trigger]').click();
+   await admin.locator('.admin-contracts-club-menu [data-value="IT-1"]').click();
+   await admin.locator('[data-contracts-save]').click();
+   await roster.bringToFront();
+   await roster.locator('.club-roster-player-link').filter({hasText:'Synthetic Player'}).waitFor();
+   assert.equal(rosterGets,2,'One accepted contract write triggers exactly one fresh Roster GET');
+   await roster.locator('[data-club-roster-view="technical"]').click();
+   await roster.waitForURL(u=>u.searchParams.get('view')==='technical');
+   assert.equal(rosterGets,2,'Roster subview reuses the refreshed data');
+   await admin.bringToFront();
+   await admin.locator('[data-contracts-check="1"]').waitFor();
+   await admin.locator('[data-contracts-check="1"]').check();
+   await admin.locator('[data-contracts-trigger]').click();
+   await admin.locator('.admin-contracts-club-menu [data-value="__unassigned__"]').click();
+   await admin.locator('[data-contracts-save]').click();
+   await roster.bringToFront();
+   await roster.locator('.club-roster[data-roster-mode="empty"][aria-busy="false"]').waitFor();
+   assert.equal(rosterGets,3,'Unassign triggers exactly one more Roster GET');
+   assert.equal(writes,2,'Only two explicit fixture mutations');
+   assert.equal(await admin.evaluate(()=>!!localStorage.getItem('fa:roster-affiliations:v1')),true);
+   checks++;
+  }finally{await ctx.close()}
+ }
+
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
  preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));

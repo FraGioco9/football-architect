@@ -214,6 +214,12 @@
     const data=await res.json();if(ticket!==epoch||!allowed)return;
     if(!res.ok)throw Error(data?.error?.code||'http_'+res.status);
     selected.clear();anchorId=null;select.value='';busy=false;syncSelect();
+    // World revisions do not change on affiliation updates. Publish an
+    // opaque cross-tab hint after a verified write, never personal data.
+    try{win.localStorage.setItem('fa:roster-affiliations:v1',
+     win.crypto?.randomUUID?.()||String(Date.now())+':'+String(Math.random()))}
+    catch{/* Storage may be disabled; reloading still reads the server. */}
+    win.dispatchEvent(new win.Event('fa:roster-affiliations-changed'));
     await load();
    }catch(e){
     if(ticket!==epoch)return;const code=String(e.message||'');

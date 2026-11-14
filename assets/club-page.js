@@ -397,7 +397,34 @@
     if(selected.view==='roster')paint(true);
    })();
   };
+  // Contracts writes do not advance sporting-world revisions. A cross-tab
+  // storage nonce invalidates only a previously loaded roster, not world data.
+  const rosterSignalKey='fa:roster-affiliations:v1';
+  const rosterSignal=()=>{try{return localStorage.getItem(rosterSignalKey)}catch{return null}};
+  let lastRosterSignal=rosterSignal();
+  const invalidateRoster=()=>{
+   rosterAbort?.abort();rosterAbort=null;
+   ++rosterRequest;rosterCacheClubKey=null;rosterSnapshot={source:'loading'};
+   if(selected.view==='roster'){paint(true);refreshClubRoster()}
+  };
+  const checkRosterSignal=()=>{
+   const current=rosterSignal();
+   if(current===null||current===lastRosterSignal)return;
+   lastRosterSignal=current;invalidateRoster();
+  };
+  window.addEventListener('storage',event=>{
+   if(event.key===rosterSignalKey)checkRosterSignal();
+  });
+  window.addEventListener('fa:roster-affiliations-changed',checkRosterSignal);
+  document.addEventListener('visibilitychange',()=>{
+   if(!document.hidden)checkRosterSignal();
+  });
   window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
+  window.addEventListener('pageshow',event=>{
+   if(!event.persisted)return;
+   checkRosterSignal();
+   if(selected.view==='roster'&&rosterCacheClubKey===null)refreshClubRoster();
+  });
   refreshClubRoster();
   // Public source: exactly the club's two domestic candidates plus both cups.
   // Shared world ownership, strict season validation and a reset fence prevent

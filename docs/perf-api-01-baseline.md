@@ -167,3 +167,11 @@ The existing disposable local Worker/D1 authenticated Chromium lifecycle now rec
 After the redirect, two clearly separate **test-initiated**, read-only `/api/player/session` and `/api/admin/session` probes must each return HTTP 401. The cache `fa:admin:permissions:v1` must be cleared after logout. These explicit probes are not counted as automatic requests. Traffic reporting includes no cookies, tokens, credentials, CSRF values or response bodies.
 
 This extends the already-running local Worker/D1 Chromium acceptance rather than adding new infrastructure. No hosted database or deployment is used and no production performance improvement or cross-device parity is claimed. Exact-head CI must confirm the browser behavior before reporting the counts.
+
+## Roster invalidation after authorized Contracts changes (2026-11-14)
+
+The public Club Roster keeps a complete in-document snapshot. Contract assignment/unassignment does not change the sporting world revision, so the world cache token cannot detect a new roster affiliation in an already-open tab. An accepted CSRF-guarded Admin Contracts write now publishes only an **opaque same-origin nonce** in `localStorage` (`fa:roster-affiliations:v1`); no account/club/player identifiers, credentials or contract data are stored.
+
+Another Club Roster tab observes the storage event or rechecks the token when it becomes visible; it aborts an obsolete pending roster GET, clears only its roster snapshot and issues one new anonymous roster GET if the Roster is active. Non-Roster tabs issue no new roster requests; in-page roster categories still reuse the same loaded data. BFCache restore revalidates pagehide-cancelled roster state. This is event-based invalidation, not periodic polling, and neither backend authorization nor the sporting-world contract changes.
+
+The existing Admin browser QA now tests two same-origin tabs with simulated authorized Contracts and anonymous Roster responses: one assignment makes an empty Roster populated, one unassignment returns it to empty, one new GET for each accepted change and zero on the Roster Info-to-Technical switch. These are browser-fixture results, not a real Worker/D1 contract-to-roster HTTP measurement. Existing backend D1 runtime tests independently cover atomic contract mutation. Exact-head CI must confirm the cross-tab behavior.
