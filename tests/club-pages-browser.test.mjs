@@ -524,7 +524,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const initial=await run(`(()=>{
        const wrap=document.getElementById('history-mobile-560-probe');
        const tab=wrap.querySelector('.club-history-table'),row=wrap.querySelector('.club-history-season-row');
-       const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,height:r.height}};
+       const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
        const stats=[...row.querySelectorAll('td')].slice(2,9);
        return {display:getComputedStyle(row).display,table:box(tab),wrap:box(wrap),
         shellOverflow:document.documentElement.scrollWidth-innerWidth,
@@ -552,7 +552,15 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
        const wrap=document.getElementById('history-mobile-560-probe'),button=wrap.querySelector('button');
        const row=wrap.querySelector('.club-history-competition-row'),link=row.querySelector('a');
        const r=row.getBoundingClientRect(),lr=link.getBoundingClientRect();
+       const position=row.querySelector('td:nth-child(3)');
+       const positionLabel=getComputedStyle(position,'::before');
+       const positionLayout=getComputedStyle(position);
+       const stat=row.querySelector('td:nth-child(4)');
        return {expanded:button.getAttribute('aria-expanded'),hidden:row.hidden,
+        positionLayout:positionLayout.display,positionColumns:positionLayout.gridTemplateColumns,
+        positionAlign:positionLayout.alignItems,positionLabelSize:positionLabel.fontSize,
+        positionValueSize:positionLayout.fontSize,
+        statTracks:getComputedStyle(stat).gridTemplateRows,
         rowHeight:r.height,linkWidth:lr.width,linkScroll:link.scrollWidth,linkClient:link.clientWidth,
         linkHref:link.getAttribute('href'),linkText:link.textContent.trim(),
         explicitTableRole:wrap.querySelector('table').getAttribute('role'),
@@ -568,6 +576,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       assert.equal(expanded.linkHref,'/competitions/it-1/standings?season=777');
       if(width<=620){
        assert.ok(expanded.rowHeight>100,'expanded mobile row reveals all eight statistics at '+width);
+       assert.equal(expanded.positionLayout,'grid','position and its label use explicit grid columns at '+width);
+       assert.equal(expanded.positionAlign,'baseline','position and label share the text baseline at '+width);
+       assert.equal(expanded.positionLabelSize,expanded.positionValueSize,'position label and value use the same font size at '+width);
+       assert.equal(expanded.statTracks,'12px 16px','numeric data and skeletons reserve identical label/value tracks at '+width);
        assert.equal(expanded.linkWhiteSpace,'normal','long mobile link may wrap at '+width);
        assert.equal(expanded.linkOverflow,'visible','long mobile link text is not clipped at '+width);
        assert.ok(expanded.overflow<=2,'expanded History must not overflow the page at '+width);

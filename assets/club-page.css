@@ -538,20 +538,31 @@ body.app-body{--app-page-pad-top:8px}
   display:inline;max-width:100%;white-space:normal;overflow:visible;
   text-overflow:clip;overflow-wrap:anywhere;line-height:1.35;
  }
+ /* Pos./stage label and its value share a baseline. Long phases wrap only
+    inside the value column; they must not push the label into another line. */
  .club-history-table .club-history-competition-row td:nth-child(3){
-  grid-column:1/-1;display:flex;flex-direction:row;flex-wrap:wrap;
-  align-items:center;justify-content:flex-start;gap:5px;
+  grid-column:1/-1;display:grid;grid-template-columns:max-content minmax(0,1fr);
+  align-items:baseline;justify-content:start;column-gap:6px;
   min-height:28px;white-space:normal;overflow:visible;
   text-overflow:clip;overflow-wrap:anywhere;text-align:left;
-  font-size:12px;color:var(--muted);
+  font-size:12px;line-height:1.25;color:var(--muted);
  }
  .club-history-table .club-history-competition-row td:nth-child(3):empty{display:none}
  .club-history-table .club-history-competition-row td:nth-child(3):not(:empty)::before{
-  content:var(--club-history-mobile-position);font-size:11px;font-weight:600;
+  content:var(--club-history-mobile-position);font-size:12px;line-height:inherit;
+  font-weight:600;align-self:baseline;
  }
- .club-history-table tr>td:nth-child(n+4){min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums}
+ /* Each statistic has two identical fixed tracks, whether the second track
+    contains a text number or a first-paint skeleton bar. */
+ .club-history-table tr>td:nth-child(n+4){
+  display:grid;grid-template-rows:12px 16px;align-content:center;justify-items:center;
+  min-width:0;min-height:43px;gap:3px;font-variant-numeric:tabular-nums;
+ }
  .club-history-table tr>td:nth-child(n+4)::before{
-  font-size:10px;line-height:1.2;font-weight:600;color:var(--muted);
+  display:block;font-size:10px;line-height:12px;font-weight:600;color:var(--muted);
+ }
+ .club-history-table .club-history-row-loading>td:nth-child(n+4) .club-fp-bar{
+  align-self:center;justify-self:center;margin-inline:auto;
  }
  .club-history-table tr>td:nth-child(4)::before{content:var(--club-history-mobile-mp)}
  .club-history-table tr>td:nth-child(5)::before{content:var(--club-history-mobile-w)}

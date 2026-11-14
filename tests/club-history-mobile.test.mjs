@@ -67,6 +67,9 @@ test('#560 mobile History provides the eight localized numeric labels and noncli
  for(const locale of ['it','de','es','fr'])
   assert.ok(mobile.includes('html:lang('+locale+') .club-history-table'),'translated '+locale+' abbrev');
  assert.match(mobile,/\.club-history-table \.club-history-competition-value a\.club-history-competition-link\{[^}]*white-space:normal;overflow:visible/);
- assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\)\{[^}]*grid-column:1\/-1;[^}]*flex-wrap:wrap/);
+ assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\)\{[^}]*grid-column:1\/-1;display:grid;grid-template-columns:max-content minmax\(0,1fr\);[^}]*align-items:baseline/);
+ assert.match(mobile,/\.club-history-table \.club-history-competition-row td:nth-child\(3\):not\(:empty\)::before\{[^}]*font-size:12px;line-height:inherit;[^}]*align-self:baseline/);
+ assert.match(mobile,/\.club-history-table tr>td:nth-child\(n\+4\)\{[^}]*grid-template-rows:12px 16px;align-content:center;justify-items:center/);
+ assert.match(mobile,/\.club-history-table \.club-history-row-loading>td:nth-child\(n\+4\) \.club-fp-bar\{[^}]*align-self:center;justify-self:center/);
  assert.match(mobile,/\.club-history-table \.club-history-season-row:has\(\.club-history-empty-season\)>td:nth-child\(2\)\{/);
 });
