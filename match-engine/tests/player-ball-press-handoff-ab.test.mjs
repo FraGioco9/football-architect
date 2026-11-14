@@ -257,9 +257,22 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      const attackers=actors.filter(a=>a.id.startsWith('away-'));
      audit.nearestForwardGapM=Math.min(audit.nearestForwardGapM,
       ...attackers.map(a=>a.ballGapM));
+     const carrier=frame.physicalPlayerPositions.find(p=>p.engineId==='away-9');
+     const nearestTeammates=frame.physicalPlayerPositions
+      .filter(p=>p.team==='away'&&p.engineId!==carrier.engineId)
+      .map(p=>({id:p.engineId,gapM:Math.hypot(p.x-carrier.x,
+       p.y-carrier.y)}))
+      .sort((a,b)=>a.gapM-b.gapM||a.id.localeCompare(b.id))
+      .slice(0,3).map(p=>({id:p.id,gapM:round(p.gapM)}));
+     const carrierPrev=audit.approachCheckpoints.at(-1);
+     const displacement=carrierPrev?Math.hypot(
+      carrier.x-carrierPrev.actors[0].x,
+      carrier.y-carrierPrev.actors[0].y):null;
      audit.approachCheckpoints.push({tick,ball:{
       x:round(ball.x),y:round(ball.y),shortfallM:round(shortfall)},
-      actors});
+      actors,carrierNearestTeammates:nearestTeammates,
+      carrierDisplacementSincePriorCheckpointM:displacement===null?
+       null:round(displacement)});
     }
     const starts=frame.physicalContactFeed.started;
     for(const start of starts){
