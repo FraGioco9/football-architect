@@ -738,6 +738,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const list=document.querySelector('.club-competition-list'),first=list.querySelector('.club-competition-entry');
       const second=first.cloneNode(true);
       second.dataset.clubCompetitionId='qa-second-row';
+      second.querySelector('.club-competition-name').textContent='Sovereign International Champions Championship '.repeat(12);
       second.querySelector('[data-club-position]').textContent='Eliminated in the quarter-finals';
       const empty=document.createElement('span');
       empty.className='club-competition-next-empty';empty.textContent='No upcoming match.';
@@ -745,9 +746,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       list.append(second);
       const boxes=[first,second].map(row=>{
        const at=selector=>row.querySelector(selector).getBoundingClientRect();
-       return {statusLabel:at('.club-competition-metrics dt'),matchLabel:at('.club-competition-next > .club-competition-label'),
+       return {summary:at('.club-competition-summary'),statusLabel:at('.club-competition-metrics dt'),matchLabel:at('.club-competition-next > .club-competition-label'),
         statusValue:at('.club-competition-metrics dd'),matchValue:at('.club-competition-next-content')};
-      }).map(({statusLabel,matchLabel,statusValue,matchValue})=>({
+      }).map(({summary,statusLabel,matchLabel,statusValue,matchValue})=>({
+        labelSummaryDelta:Math.abs(statusLabel.top-summary.top),
        labelDelta:Math.abs(statusLabel.top-matchLabel.top),
        valueDelta:Math.abs(statusValue.top-matchValue.top),
        statusX:statusLabel.left,matchX:matchLabel.left
@@ -755,7 +757,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       second.remove();
       return boxes;
      })()`);
-     assert.ok(twoRowAlignment.length===2&&twoRowAlignment.every(row=>row.labelDelta<1.5&&row.valueDelta<1.5)
+     assert.ok(twoRowAlignment.length===2&&twoRowAlignment.every(row=>row.labelSummaryDelta<1.5&&row.labelDelta<1.5&&row.valueDelta<1.5)
       &&Math.abs(twoRowAlignment[0].statusX-twoRowAlignment[1].statusX)<1.5
       &&Math.abs(twoRowAlignment[0].matchX-twoRowAlignment[1].matchX)<1.5,
       'Both competition rows align Status and Next match at '+width+': '+JSON.stringify(twoRowAlignment));
