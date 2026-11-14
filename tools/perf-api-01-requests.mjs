@@ -74,6 +74,28 @@ export function summarizeVisit(requests,{complete=true}={}){
   observedRequestCount:requests.length,incomplete:true};
  return {...summarizeRequests(requests),observedRequestCount:requests.length,incomplete:false};
 }
+// A static UI-only preview answers /api/player/permissions with 404. That is
+// not the app's anonymous API contract and must not become a performance baseline.
+export function validateSamplerBackend({worldStatus,permissionsStatus}){
+ if(worldStatus!==200)return 'Public world API did not return 200 (received '+worldStatus+')';
+ if(permissionsStatus!==200&&permissionsStatus!==401)
+  return 'Account permissions API did not return 200/401 (received '+permissionsStatus+')';
+ return null;
+}
+async function preflight(base){
+ let world,permissions;
+ try{
+  [world,permissions]=await Promise.all(['/api/world','/api/player/permissions'].map(async path=>{
+   const response=await fetch(base+path,{redirect:'error',signal:AbortSignal.timeout(5000),
+    headers:{Accept:'application/json'}});
+   return response;
+  }));
+ }catch{throw Error('Local APIs unavailable; start node tools/dev.mjs --local (Worker + isolated D1)');}
+ const issue=validateSamplerBackend({worldStatus:world.status,permissionsStatus:permissions.status});
+ if(issue)throw Error(issue+'; run node tools/dev.mjs --local, not the static-only preview');
+ if(!world.headers.get('content-type')?.includes('application/json'))
+  throw Error('Public world API response is not JSON; local Worker is unavailable');
+}
 function parseArgs(args){
  const [label,...flags]=args;
  if(!['before','after'].includes(label))throw Error('Usage: node tools/perf-api-01-requests.mjs before|after [--runs=1] [--routes=/dashboard,/players] [--base-url=http://app.localhost:2000]');
@@ -90,6 +112,7 @@ function parseArgs(args){
 }
 async function main(args){
  const options=parseArgs(args);
+ await preflight(options.base);
  const {chromium}=await import(process.env.FA_ACCOUNT_PLAYWRIGHT||'playwright');
  const browser=await chromium.launch({headless:true,
   ...(process.env.FA_ACCOUNT_CHROME?{executablePath:process.env.FA_ACCOUNT_CHROME,args:['--no-sandbox']}: {})});

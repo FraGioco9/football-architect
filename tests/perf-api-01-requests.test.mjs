@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
+import {describeApiUrl,describePageUrl,summarizeRequests,summarizeVisit,validateSamplerBackend,DEFAULT_ROUTES,IN_PAGE_SCENARIOS} from '../tools/perf-api-01-requests.mjs';
 
 test('API audit redacts secret values and ignores static assets',()=>{
  assert.equal(describeApiUrl('http://app.localhost:2000/assets/main.js'),null);
@@ -71,4 +71,12 @@ test('failed or unfinished navigations never count as zero network requests',()=
   assert.equal(result.repeatedRequestCandidates,null);
  }
  assert.equal(summarizeVisit([],{complete:true}).requestCount,0);
+});
+
+test('API baseline only accepts a reachable world and correctly routed anonymous session',()=>{
+ assert.equal(validateSamplerBackend({worldStatus:200,permissionsStatus:401}),null);
+ assert.equal(validateSamplerBackend({worldStatus:200,permissionsStatus:200}),null);
+ for(const sample of [{worldStatus:404,permissionsStatus:401},
+  {worldStatus:200,permissionsStatus:404},{worldStatus:503,permissionsStatus:503}])
+  assert.equal(typeof validateSamplerBackend(sample),'string');
 });

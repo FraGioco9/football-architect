@@ -79,3 +79,11 @@ This is a **focused source-level** review, not the full endpoint inventory or a 
 - Standalone Node.js 22 pure tests: **7/7 PASS**. A synthetic local Chromium probe in this execution environment returned `ERR_BLOCKED_BY_ADMINISTRATOR`; no Football Architect Network/HAR measurement was obtained. This is not evidence of an application bug or a traffic reduction.
 
 Real before/after counts and Safari/Preview parity remain **NOT MEASURED**. Run against a controlled, isolated local DEV Worker/D1 to collect valid baseline metrics.
+
+## CI 404 diagnosis and local baseline guard (2026-11-14)
+
+The exact-head Browser QA log (`43599480085`, Chromium job `132460985991`) has **14 HTTP 404 entries for `/api/player/permissions`**. This is a repeated symptom *within a CI browser test*, **not** 14 same-document calls or evidence of production request duplication. Its workflow starts `tools/dev-standings-preview.mjs` without a Worker API target. The loopback static preview consequently cannot forward this account endpoint (`tools/dev-admin-api-proxy.mjs` returns `false` when no target is configured). The real backend source defines the endpoint and an anonymous request should be a 401, not 404. Do not modify permission cache/security semantics to suppress a static-preview 404.
+
+The sampler now checks anonymous `GET /api/world` (expect 200 JSON) and `GET /api/player/permissions` (expect 401 or 200) **before** launching Chromium. Invalid local API routing fails clearly instead of generating misleading 404-based baselines. These two preliminary GETs are excluded from scenario request counts. Use `node tools/dev.mjs --local` for actual baseline; the standalone static preview is not a valid measurement target.
+
+The current issue still requires actual before/after performance measurements on an isolated real Worker/D1. No public-code optimization or measured performance claim is made by this guard.
