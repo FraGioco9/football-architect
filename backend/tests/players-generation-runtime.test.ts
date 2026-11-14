@@ -244,7 +244,7 @@ it('anonymous /api/players lists approved records only, with safe fields and pag
  expect(reverse.status).toBe(200);
  expect(((await reverse.json()) as any).players[0].primary_position).toBe('ST');
  // Invalid, unknown, duplicate, reversed and ambiguous values all return 422.
- for(const invalidQuery of ['?offset=1','?offset=51','?offset=-50','?offset=500000','?offset=50&page=2','?offset=50&offset=100','?page=1','?page=2','?page=9999','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
+ for(const invalidQuery of ['?offset=1','?offset=01','?offset=51','?offset=-50','?offset=500000','?offset=50&page=2','?page=2&offset=50','?offset=50&offset=100','?page=1','?page=2','?page=9999','?page=0','?page=-1','?page=01','?page=1.5','?page=10000','?page=','?page=2&page=3','?page=2&sort=unknown','?view=overview','?ageMin=25&ageMax=20','?position=CF','?nationality=%49TA']){
   const invalid=await worker.fetch(new Request(origin+'/api/players'+invalidQuery),service);
   expect(invalid.status,invalidQuery).toBe(422);
   expect(await invalid.json()).toMatchObject({error:{code:'invalid_public_request'}});
