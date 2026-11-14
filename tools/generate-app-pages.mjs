@@ -376,3 +376,18 @@ for(const [source,output,mode] of [
  writeOutput(output,renderPlayerDetailPage(html,mode));
 }
 
+// #577: one reusable match shell; identities and outcomes arrive from the verified API.
+{
+ const source=readFileSync(new URL('../players/index.html',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+ const content=readFileSync(new URL('../templates/match-detail-content.html',import.meta.url),'utf8').replace(/\r\n/g,'\n').trimEnd();
+ const begin=source.indexOf('<section id="app-divisions"');
+ const finish=source.indexOf('\n      </main>',begin);
+ if(begin<0||finish<0||!source.includes('/assets/players-directory.js'))throw Error('Match page shell missing');
+ let html=source.slice(0,begin)+content.split('\n').map(line=>'        '+line).join('\n')+source.slice(finish);
+ html=html.replace('<title>Players — Football Architect</title>','<title>Match — Football Architect</title>')
+  .replace('  <script src="/assets/players-directory.js" defer></script>','  <script src="/assets/match-detail.js" defer></script>')
+  .replace('  <script src="/assets/players-nationality-tooltip.js" defer></script>\n','')
+  .replace('</head>','  <link rel="stylesheet" href="/assets/match-detail.css">\n</head>')
+  .replace('const selected=onPlayers?',"const selected=path.startsWith('/matches/')?null:onPlayers?");
+ writeOutput("matches/_shared/index.html",html);
+}

@@ -15,6 +15,7 @@ const country="(?:it|eng|es|de|fr|pt|nl|br)";
 const division=new RegExp("^/competitions/("+country+"-[12])(?:/([^/]+))?/?$");
 const cup=/^\/competitions\/(int-[12])(?:\/([^/]+))?\/?$/;
 const player=/^\/players\/([1-9][0-9]*)\/?$/;
+const match=/^\/matches\/([1-9][0-9]*)\/?$/;
 const club=new RegExp("^/clubs/("+country+")/([1-9]|[1-3][0-9]|40)(?:/([^/]+))?/?$");
 const invalid=(v)=>typeof v!=="string"||v.includes("%")||v.includes("\\")||v.includes("//")||v.includes("\0");
 function parseRoute(pathname){
@@ -25,6 +26,8 @@ function parseRoute(pathname){
  if(m){const view=m[3]||"overview";if(!clubViews.includes(view))return null;const base="/clubs/"+m[1]+"/"+m[2],canonical=base+"/"+view;return {kind:"club",base,view,canonical,redirect:pathname!==canonical};}
  m=player.exec(pathname);
  if(m&&Number.isSafeInteger(Number(m[1]))){const id=Number(m[1]),canonical="/players/"+id;return {kind:"player",id,base:canonical,canonical,redirect:pathname!==canonical};}
+ m=match.exec(pathname);
+ if(m&&Number.isSafeInteger(Number(m[1]))){const id=Number(m[1]),canonical="/matches/"+id;return {kind:"match",id,base:canonical,canonical,redirect:pathname!==canonical};}
  m=cup.exec(pathname);
  if(m&&m[2]&&cupViews.includes(m[2])){const canonical="/competitions/"+m[1]+"/"+m[2];return {kind:"cup",base:"/competitions/"+m[1],view:m[2],canonical,redirect:pathname!==canonical};}
  if(pages.some(p=>pathname==="/"+p))return {kind:"page",canonical:pathname,redirect:false};
@@ -32,6 +35,7 @@ function parseRoute(pathname){
 }
 function buildRoute({kind,id,view="overview",country:clubCountry}){
  if(kind==="player"&&/^[1-9][0-9]*$/.test(String(id))&&Number.isSafeInteger(Number(id)))return "/players/"+id;
+ if(kind==="match"&&/^[1-9][0-9]*$/.test(String(id))&&Number.isSafeInteger(Number(id)))return "/matches/"+id;
  if(kind==="competition"&&/^(?:it|eng|es|de|fr|pt|nl|br)-[12]$/.test(id)&&competitionViews.includes(view))return "/competitions/"+id+"/"+view;
  if(kind==="cup"&&/^(?:int-1|int-2)$/.test(id)&&cupViews.includes(view))return "/competitions/"+id+"/"+view;
  if(kind==="club"&&countries.includes(clubCountry)&&/^(?:[1-9]|[1-3][0-9]|40)$/.test(String(id))&&clubViews.includes(view))return "/clubs/"+clubCountry+"/"+id+"/"+view;
