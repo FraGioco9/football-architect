@@ -2009,6 +2009,9 @@ export function createPlayerMovement({
  let observedControlEvidence=null;
  let observedReleaseEvidence=null;
  let pressers={home:'home-10',away:'away-10'};
+ // C2-a: read-only source-qualified decision counters in the opt-in world.
+ let continuityAudit={eligible:0,preHandoffConflicts:0,
+  c23nResolved:0,residualConflicts:0,c2aResolved:0};
  let pressSwitches={home:0,away:0};
  let coverers={home:null,away:null};
  let coverSwitches={home:0,away:0};
@@ -2088,6 +2091,9 @@ export function createPlayerMovement({
     home:summarizeObservedPlayerMotion(players,'home'),
     away:summarizeObservedPlayerMotion(players,'away')
    }),
+   ...(experimentalAutonomousFixtureCarryAttackContinuity?{
+    continuityAudit:Object.freeze({...continuityAudit})
+   }:{}),
    pressers:Object.freeze({...pressers}),
    pressSwitches:Object.freeze({...pressSwitches}),
    coverers:Object.freeze({...coverers}),
@@ -2344,6 +2350,27 @@ export function createPlayerMovement({
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
+  // Observe the identical real PASS/CARRY source inputs used below;
+  // this audit is read-only and cannot influence movement or Rapier.
+  let continuityCandidate=null,continuityTeam=null;
+  if(experimentalAutonomousFixtureCarryAttackContinuity&&
+     lastAutonomousFixturePassAction&&lastPhysicalCarryAction&&
+     lastAutonomousFixturePassAction.team===lastPhysicalCarryAction.team&&
+     tick+1-lastAutonomousFixturePassAction.tick>
+      PLAYER_POST_PASS_ATTACK_RUN_MAX_TICKS){
+    continuityTeam=lastAutonomousFixturePassAction.team;
+    continuityCandidate=observedFixtureAttackSupportRun({
+     players,ball,pass:lastAutonomousFixturePassAction,
+     carry:lastPhysicalCarryAction,physicsTick:tick+1,
+     incumbentId:activeFixtureAttackSupportRun?.playerId??null,
+     excludedIds:[]
+    });
+    if(continuityCandidate?.phase==='post-carry-support'){
+     continuityAudit.eligible++;
+     if(continuityCandidate.playerId===nextPressers[continuityTeam])
+      continuityAudit.preHandoffConflicts++;
+    }
+  }
   // C2.3n: sealed DEV-only handoff: keep verified post-CARRY support
   // if the real nearby carrier itself qualifies as alternate presser.
   if(experimentalAutonomousFixtureCarrySupportPressHandoff&&
@@ -2367,6 +2394,13 @@ export function createPlayerMovement({
      nextPressers[team]=alternate.id;
    }
   }
+  if(continuityCandidate?.phase==='post-carry-support'&&
+     continuityCandidate.playerId===nextPressers[continuityTeam])
+    continuityAudit.residualConflicts++;
+  else if(continuityCandidate?.phase==='post-carry-support'&&
+     continuityCandidate.playerId===
+      (continuityTeam==='home'?home?.id:away?.id))
+    continuityAudit.c23nResolved++;
   // C2-a DEV-only: a real prior PASS and later genuine same-team
   // CARRY must still authorize this forward's attacking support.
   // If presser priority would remove him, use another normal presser
@@ -2389,6 +2423,7 @@ export function createPlayerMovement({
     const alternate=pressingPlayer(players,team,ball,
      pressers[team],[eligible.playerId]);
     nextPressers[team]=alternate?.id??null;
+    continuityAudit.c2aResolved++;
    }
   }
   const coveringHome=coveringDefender(
