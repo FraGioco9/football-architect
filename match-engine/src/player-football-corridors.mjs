@@ -77,3 +77,61 @@ export function measureObservedPassingCorridors(observation){
   officialMatchAction:false
  });
 }
+
+// Compare two strictly consecutive *observed* completed 60Hz frames, never
+// extrapolate a ball or player. Changes can be caused by the ball, receiver,
+// opponent or teammate moving; they are not evidence of future pass safety.
+// The input must be source-bound by its future internal fixture runtime caller.
+export function measureObservedPassingCorridorChanges(previous,current){
+ const older=measureObservedPassingCorridors(previous);
+ const newer=measureObservedPassingCorridors(current);
+ if(previous.physicsTick!==previous.frame.tick||
+    current.physicsTick!==current.frame.tick||
+    !Number.isSafeInteger(previous.physicsTick+1)||
+    current.physicsTick!==previous.physicsTick+1||
+    previous.playerId!==current.playerId||
+    previous.team!==current.team||
+    previous.phase!==current.phase)
+  throw new TypeError('Consecutive full 60Hz actor observations required');
+ // An observed player ID must not silently switch teams or disappear.
+ const currentTeams=new Map(current.frame.players.map(p=>[p.id,p.team]));
+ if(previous.frame.players.some(p=>currentTeams.get(p.id)!==p.team))
+  throw new TypeError('Identical observed actor/team identities required');
+ const byId=new Map(older.corridors.map(c=>[c.targetPlayerId,c]));
+ const changes=Object.freeze(newer.corridors.map(next=>{
+  const before=byId.get(next.targetPlayerId);
+  if(!before)throw new TypeError('Matching observed receivers required');
+  return Object.freeze({
+   targetPlayerId:next.targetPlayerId,
+   receiverDisplacementM:Math.hypot(next.target.x-before.target.x,
+    next.target.y-before.target.y),
+   segmentLengthDeltaM:next.segmentLengthM-before.segmentLengthM,
+   nearestOpponentPreviousId:before.nearestOpponent?.playerId??null,
+   nearestOpponentCurrentId:next.nearestOpponent?.playerId??null,
+   nearestOpponentChanged:before.nearestOpponent?.playerId!==
+    next.nearestOpponent?.playerId,
+   nearestOpponentCenterlineDistanceDeltaM:
+    next.nearestOpponent&&before.nearestOpponent?
+     next.nearestOpponent.distanceToSegmentM-
+      before.nearestOpponent.distanceToSegmentM:null,
+   nearestTeammatePreviousId:before.nearestOtherTeammate?.playerId??null,
+   nearestTeammateCurrentId:next.nearestOtherTeammate?.playerId??null,
+   nearestTeammateChanged:before.nearestOtherTeammate?.playerId!==
+    next.nearestOtherTeammate?.playerId,
+   nearestTeammateCenterlineDistanceDeltaM:
+    next.nearestOtherTeammate&&before.nearestOtherTeammate?
+     next.nearestOtherTeammate.distanceToSegmentM-
+      before.nearestOtherTeammate.distanceToSegmentM:null,
+   passEligible:null,physicalContactProven:false,passExecuted:false
+  });
+ }));
+ return Object.freeze({
+  version:'me-p2-consecutive-corridor-change-observation-v1',
+  previousTick:previous.physicsTick,currentTick:current.physicsTick,
+  playerId:current.playerId,team:current.team,
+  ballDisplacementM:Math.hypot(
+   newer.origin.x-older.origin.x,newer.origin.y-older.origin.y),
+  changes,readOnly:true,physicalActionExecuted:false,
+  authorizedAffordances:Object.freeze([]),officialMatchAction:false
+ });
+}
