@@ -74,6 +74,10 @@
    try{
     const response=await win.fetch('/api/player/permissions',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
     const value=response.ok?await response.json():null;
+    // The anonymous 401 response has no useful body for this UI. Explicitly
+    // release it instead of leaving an unread fetch stream pending.
+    if(!response.ok&&typeof response.body?.cancel==='function')
+     void response.body.cancel().catch(()=>{});
     if(ticket!==request)return;
     if(response.ok&&Array.isArray(value?.permissions))permissionsCache.write(value.permissions);
     else if(response.status===401){

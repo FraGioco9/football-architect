@@ -87,8 +87,10 @@
    if(!data?.actor||typeof data.actor.id!=='string'||typeof data.actor.email!=='string'||!/^[a-f0-9]{64}$/.test(data.csrfToken))throw Error('invalid response');
    value.actor={id:data.actor.id,email:data.actor.email};csrf=data.csrfToken;
   }
-  async function worldRead(ticket,rechecked=false){
-   const data=await request('/api/admin/world');if(ticket!==epoch)return;
+  async function worldRead(ticket,rechecked=false,postWorld=null){
+   // After a write, the server's validated world is confirmed by the events
+   // endpoint. Do not duplicate the world GET unless that check disagrees.
+   const data=postWorld?{world:postWorld}:await request('/api/admin/world');if(ticket!==epoch)return;
    if(!validWorld(data?.world))throw Error('invalid response');
    if(value.world&&value.world.generation!==data.world.generation&&!rechecked){
     value.world=null;retryKey='';retryFor='';
@@ -98,11 +100,20 @@
    if(!value.world||value.world.generation!==data.world.generation||data.world.revision>=value.world.revision)value.world=data.world;
    value.message='signedIn';
    value.seasonTwo=null;
-   // An unavailable events read must fail closed for event actions, not erase the world read.
+   // A post-write events snapshot is a second protected authority check:
+   // fall back to the full authenticated world read if its version differs.
+   let fullReadNeeded=false;
    try{
     const events=await request('/api/admin/seasons/events');if(ticket!==epoch)return;
-    value.events=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision&&['uninitialized','legacy','administrative','sporting'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events,worldGeneration:events.world.generation,worldRevision:events.world.revision,nextEvent:events.nextEvent??null,remaining:events.remaining??null,blocked:events.blocked===true,closure:events.closure??null,calendarReady:events.calendarReady===true}:null;
-   }catch(error){if(ticket!==epoch)return;if(error?.status===401||error?.status===403&&error.code==='permission_denied')throw error;value.events=null;}
+    const matchingWorld=validWorld(events?.world)&&events.world.generation===value.world.generation&&events.world.revision===value.world.revision;
+    if(postWorld&&!matchingWorld)fullReadNeeded=true;
+    else value.events=matchingWorld&&['uninitialized','legacy','administrative','sporting'].includes(events.mode)&&Array.isArray(events.events)?{mode:events.mode,rows:events.events,worldGeneration:events.world.generation,worldRevision:events.world.revision,nextEvent:events.nextEvent??null,remaining:events.remaining??null,blocked:events.blocked===true,closure:events.closure??null,calendarReady:events.calendarReady===true}:null;
+   }catch(error){
+    if(ticket!==epoch)return;
+    if(error?.status===401||error?.status===403&&error.code==='permission_denied')throw error;
+    if(postWorld)fullReadNeeded=true;else value.events=null;
+   }
+   if(fullReadNeeded)return worldRead(ticket);
    if(value.world?.seasonNumber===1&&value.world.phase==='closed'){
     try{
      const proposal=await request('/api/admin/seasons/next-candidate');if(ticket!==epoch)return;
@@ -128,7 +139,7 @@
      const result=await request('/api/admin/seasons/next-approve',{body:{expectedGeneration:world.generation,expectedRevision:world.revision,snapshotHash:hash},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':globalThis.crypto.randomUUID()}});
      if(ticket!==epoch)return;
      if(!validWorld(result?.world)||result.world.generation!==world.generation||result.world.revision!==world.revision+1)throw Error('invalid response');
-     value.world=result.world;await worldRead(ticket);if(ticket!==epoch)return;
+     value.world=result.world;await worldRead(ticket,false,result.world);if(ticket!==epoch)return;
      value.message='signedIn';value.operation='completed';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
@@ -147,7 +158,7 @@
      if(ticket!==epoch)return;
      if(!validWorld(result?.world)||result.world.generation!==old.generation||result.world.revision!==old.revision+1)throw Error('invalid response');
      value.world=result.world;value.events=null;
-     await worldRead(ticket);if(ticket!==epoch)return;
+     await worldRead(ticket,false,result.world);if(ticket!==epoch)return;
      value.message='signedIn';value.operation='completed';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
@@ -170,7 +181,7 @@
      if(ticket!==epoch)return;
      if(!validWorld(data?.world)||data.world.generation!==old.generation||data.world.revision!==old.revision+1||action==='nextPrepare'&&(data.world.seasonNumber!==2||data.world.day!==0||data.world.phase!=='preparing'))throw Error('invalid response');
      value.world=data.world;value.events=null;retryKey='';retryFor='';
-     await worldRead(ticket);if(ticket!==epoch)return;
+     await worldRead(ticket,false,data.world);if(ticket!==epoch)return;
      value.message='signedIn';value.operation='completed';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}
@@ -196,7 +207,7 @@
      const data=await request('/api/admin/seasons/prepare',{body:{expectedGeneration:value.world.generation,expectedRevision:value.world.revision},headers:{'X-CSRF-Token':csrf,'Idempotency-Key':retryKey}});
      if(ticket!==epoch)return;if(!validWorld(data?.world)||data.world.generation!==value.world.generation||data.world.revision<value.world.revision)throw Error('invalid response');
      value.world=data.world;value.events=null;
-     await worldRead(ticket);if(ticket!==epoch)return;
+     await worldRead(ticket,false,data.world);if(ticket!==epoch)return;
      value.message='prepared';value.operation='completed';retryKey='';retryFor='';
     }catch(error){if(ticket===epoch)failure(error)}
     finally{if(ticket===epoch){value.busy=false;emit()}}

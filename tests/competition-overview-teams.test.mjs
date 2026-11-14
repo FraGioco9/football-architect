@@ -1,26 +1,60 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {competitionSummary,renderCompetitionOverview,renderCompetitionTeams} from "../assets/competition-overview-teams.mjs";
-const division={id:"IT-1",name:"Lega Federale",countryId:"IT",countryName:"Italy",tier:1,
- clubs:Array.from({length:16},(_,i)=>({clubId:i+1,primaryName:"Club "+(i+1),stadiumName:"Stadium "+(i+1)}))};
-test("ROUTE-02 Overview derives approved competition facts without fictional results",()=>{
- const summary=competitionSummary(division);
- assert.equal(summary.participants,16);assert.equal(summary.matchdays,30);assert.equal(summary.matches,240);
- assert.match(renderCompetitionOverview(division),/Lega Federale/);
- assert.doesNotMatch(renderCompetitionOverview(division),/champion|winner|goals scored/i);
+
+const manifest=JSON.parse(readFileSync(new URL("../competitions/_shared/manifest.json",import.meta.url),"utf8"));
+const divisions=manifest.divisions;
+
+test("ROUTE-02 Overview derives approved competition facts without fictional results for every domestic division",()=>{
+ assert.equal(divisions.length,16,"All eight countries and both domestic tiers must be covered");
+ for(const division of divisions){
+  const summary=competitionSummary(division);
+  assert.equal(summary.participants,16,division.id);
+  assert.equal(summary.matchdays,30,division.id);
+  assert.equal(summary.matches,240,division.id);
+  assert.equal(summary.name,division.name,division.id);
+  const overview=renderCompetitionOverview(division);
+  assert.ok(overview.includes(division.name),division.id);
+  assert.doesNotMatch(overview,/champion|winner|goals scored/i,division.id);
+ }
 });
-test("ROUTE-02 Teams lists 16 manifest identities linked to canonical club Overview",()=>{
- const output=renderCompetitionTeams(division);
- assert.equal((output.match(/<li>/g)||[]).length,16);
- assert.match(output,/href="\/clubs\/it\/01\/overview"/);
- assert.match(output,/href="\/clubs\/it\/16\/overview"/);
- assert.match(output,/Stadium 16/);
+
+test("ROUTE-02 Teams lists every approved participant with canonical club Overview links",()=>{
+ assert.equal(divisions.length,16);
+ for(const division of divisions){
+  const summary=competitionSummary(division);
+  const output=renderCompetitionTeams(division);
+  assert.equal(summary.clubs.length,16,division.id);
+  assert.equal((output.match(/<li>/g)||[]).length,16,division.id);
+  for(const club of summary.clubs){
+   const href="/clubs/"+division.countryId.toLowerCase()+"/"+String(club.id).padStart(2,"0")+"/overview";
+   assert.equal(club.href,href,division.id+": "+club.id);
+   assert.ok(output.includes('href="'+href+'"'),division.id+": "+club.id);
+  }
+ }
 });
-test("ROUTE-02 presentation rejects malformed data and escapes HTML",()=>{
- assert.throws(()=>competitionSummary({...division,clubs:division.clubs.slice(1)}));
- assert.throws(()=>competitionSummary({...division,clubs:division.clubs.map(c=>({...c,clubId:1}))}));
- const modified={...division,clubs:division.clubs.map((c,i)=>i?c:{...c,primaryName:"<script>alert(1)</script>"})};
- const output=renderCompetitionTeams(modified);
- assert.doesNotMatch(output,/<script>/);
- assert.match(output,/&lt;script&gt;/);
+
+test("ROUTE-02 every domestic presentation rejects malformed participants and escapes HTML",()=>{
+ assert.equal(divisions.length,16);
+ for(const division of divisions){
+  const mutate=(label,modify)=>{
+   const changed=modify(division);
+   assert.throws(()=>competitionSummary(changed),undefined,division.id+": "+label);
+  };
+  mutate("missing participant",d=>({...d,clubs:d.clubs.slice(1)}));
+  mutate("duplicate club identity",d=>({...d,clubs:d.clubs.map(c=>({...c,clubId:d.clubs[0].clubId}))}));
+  mutate("empty display name",d=>({...d,clubs:d.clubs.map((c,i)=>i?c:{...c,primaryName:""})}));
+  mutate("out-of-range ID",d=>({...d,clubs:d.clubs.map((c,i)=>i?c:{...c,clubId:0})}));
+  const injected={...division,name:"<script>evil()</script>",clubs:division.clubs.map((c,i)=>i?c:{
+   ...c,primaryName:"<script>evil()</script>",stadiumName:"<img src=x onerror=evil()>"
+  })};
+  const teams=renderCompetitionTeams(injected);
+  const overview=renderCompetitionOverview(injected);
+  assert.doesNotMatch(teams,/<script>|<img/,division.id);
+  assert.match(teams,/&lt;script&gt;/,division.id);
+  assert.match(teams,/&lt;img/,division.id);
+  assert.doesNotMatch(overview,/<script>/,division.id);
+  assert.match(overview,/&lt;script&gt;/,division.id);
+ }
 });

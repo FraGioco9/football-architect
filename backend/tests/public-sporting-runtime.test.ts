@@ -179,9 +179,22 @@ it('returns all verified fixtures for one club in one request, without leaking f
  const inactive=await (await clubFixtures('IT-40')).json() as any;
  expect(inactive.data.competitions).toEqual([]);expect(inactive.data.fixtures).toEqual([]);
 },120000);
-it('uses saved day13 results for partial standings and score-only statistics',async()=>{
+it('keeps day13 public calendar, competition, standings and club statistics consistent',async()=>{
  await calendar();await through(13);
  const body=await (await request()).json() as any;
+ // Verify global day 13 and individual competition projections from the SAME
+ // persisted score receipts. Previously this ran another full calendar/13-day
+ // lifecycle in a separate Worker test for the identical world state.
+ const calendarResponse=await worker.fetch(new Request('https://example.invalid/api/calendar/seasons/1/days/13'),{DB:db});
+ expect(calendarResponse.status).toBe(200);
+ const globalDay=await calendarResponse.json() as any;
+ expect(globalDay).toMatchObject({scope:'calendar',selectedSeason:1,day:13,status:'partial'});
+ expect(globalDay.data.fixtures).toHaveLength(128);
+ expect(globalDay.data.fixtures.every((f:any)=>f.day===13&&f.result!==null)).toBe(true);
+ expect(globalDay.data.fixtures.filter((f:any)=>f.competitionId==='IT-1'))
+  .toEqual(body.data.fixtures.filter((f:any)=>f.day===13));
+ expect(globalDay.data.competitions).toHaveLength(18);
+ expect(JSON.stringify(globalDay)).not.toMatch(/"seed"|token|csrf|password|sourceSeedHash/);
  const played=body.data.fixtures.filter((f:any)=>f.result!==null);
  expect(played).toHaveLength(8);
  expect(body.data.standings.rows.every((r:any)=>r.played===1)).toBe(true);
@@ -221,7 +234,7 @@ it('uses saved day13 results for partial standings and score-only statistics',as
  const compactCup=overview13.data.memberships.find((m:any)=>m.competitionId==='int-1');
  expect(compactCup.stats).toEqual((({clubId,...stats}:any)=>stats)(
   cup.data.statistics.teams.find((team:any)=>team.clubId==='IT-1')));
-});
+},30000);
 it('makes real future Playoff pairings public immediately after I06 without scores',async()=>{
  await calendar();
  const calendarModel=(await import('../../assets/world-calendar-model.js')).default as {createSeason:(season:number)=>{days:{day:number;events:{marker:string}[]}[]}};
@@ -305,18 +318,6 @@ it('rejects a self-rehashed corrupted saved score instead of showing a fabricate
  const r=await request();expect(r.status).toBe(503);
  expect(await r.json()).toEqual({error:{code:'sporting_data_unavailable'}});
  expect(await readWorld(db)).toEqual(world);
-});
-it('projects one global day with the same saved scores as the competition source',async()=>{
- await calendar();await through(13);
- const response=await worker.fetch(new Request('https://example.invalid/api/calendar/seasons/1/days/13'),{DB:db});
- expect(response.status).toBe(200);const day=await response.json() as any;
- expect(day).toMatchObject({scope:'calendar',selectedSeason:1,day:13,status:'partial'});
- expect(day.data.fixtures).toHaveLength(128);
- expect(day.data.fixtures.every((f:any)=>f.day===13&&f.result!==null)).toBe(true);
- const competition=await (await request()).json() as any;
- expect(day.data.fixtures.filter((f:any)=>f.competitionId==='IT-1')).toEqual(competition.data.fixtures.filter((f:any)=>f.day===13));
- expect(day.data.competitions).toHaveLength(18);
- expect(JSON.stringify(day)).not.toMatch(/"seed"|token|csrf|password|sourceSeedHash/);
 });
 it('keeps daily calendar unsupported/unpublished states explicit and rejects invalid days/writes',async()=>{
  const read=(season:number,day:number,method='GET')=>worker.fetch(new Request(`https://example.invalid/api/calendar/seasons/${season}/days/${day}`,{method}),{DB:db});

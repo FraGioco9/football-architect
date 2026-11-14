@@ -48,6 +48,11 @@ test('#540 club first paint is neutral and populated club title has no view suff
  assert.match(shell,/club-fp-header-name/,'keep reserved skeleton');
  assert.match(shell,/const fallback=\{en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'\}/);
  const runtime=read('assets/club-page.js');
+ assert.match(runtime,/const titleName=manifest\.clubs\.find/,'browser title must use primaryName independently of H1');
+ assert.match(runtime,/if\(title\.innerHTML!==nextTitle\.innerHTML\)title\.innerHTML=nextTitle\.innerHTML/,'hydration must preserve the responsive name spans');
+ const model=read('assets/club-model.js'),styles=read('assets/club-page.css');
+ for(const name of ['full','primary','compact'])assert.ok(model.includes('data-club-name="'+name+'"'),'H1 includes '+name+' name');
+ for(const width of [900,420])assert.ok(styles.includes('@media(max-width:'+width+'px)'),'responsive Club heading breakpoint');
  assert.match(runtime,/document\.title=\(titleName&&/);
  assert.doesNotMatch(runtime,/document\.title=.*model\.copies\[language\(\)\]\[selected\.view\]/);
 });

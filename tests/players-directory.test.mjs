@@ -86,7 +86,7 @@ test('Players attribute groups use one horizontally scrollable mobile strip and 
  assert.match(css,/\.app-players-toolbar\{height:44px;align-items:center;gap:8px\}/,'mobile toolbar returns to one reserved row');
  assert.match(css,/\.app-players-groups\{display:flex;align-items:center;gap:4px;[^}]*overflow-x:auto;overflow-y:hidden;scrollbar-width:none/,'mobile groups scroll as one unwrapped strip');
  assert.match(css,/\.app-players-groups::-webkit-scrollbar\{display:none\}/,'hide the mobile group scrollbar like Club Roster');
- assert.match(css,/\.app-players-groups\{--app-tabs-fade-left:0px;--app-tabs-fade-right:0px;[^}]*mask-image:linear-gradient/,'mobile tabs inherit the conditional Club Roster mask');
+ assert.match(css,/\.app-players-groups\{--app-tabs-fade-left:0px;--app-tabs-fade-right:16px;[^}]*mask-image:linear-gradient/,'mobile tabs inherit the conditional Club Roster mask');
  assert.match(css,/\.app-players-groups\[data-can-scroll-left="true"\]\{--app-tabs-fade-left:16px\}/);
  assert.match(css,/\.app-players-groups\[data-can-scroll-right="true"\]\{--app-tabs-fade-right:16px\}/);
  const script=read('assets/players-directory.js');
@@ -269,7 +269,7 @@ test('#532 public Overview renders Flag Player Positions Age Height Foot Club an
  assert.match(css,/\.app-players-club-mark\{[^}]*flex:0 0 24px;width:24px;height:24px;overflow:hidden/);
  assert.match(css,/\.app-players-club-mark::before\{[^}]*width:20px;height:23px/);
  assert.match(js,/image\.src='\/'\+path;image\.alt='';image\.width=24;image\.height=24/);
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:0;height:1px/);
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'text-only native underline preserves centered player names');
  assert.doesNotMatch(css,/\.app-players-table \.app-player-club-link:hover\{text-decoration:underline/);
  assert.ok(gen.indexOf('data-players-sort=\\\"foot')<gen.indexOf('app-players-club-col'));
 });
@@ -930,12 +930,12 @@ test('PLAYERS-TABLE-532 uses compact consistent rows and centered smaller flags 
  assert.match(club,/app-players-nationality-flag[^\n]+width="20" height="15"/);
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:44px\}/);
  assert.doesNotMatch(css,/\.app-players-table tbody tr:not\(\.app-players-empty-row\)\{height:42px\}/,'previous 42px height must not remain');
- assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'name cell stays vertically centered');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)\{[^}]*position:relative;display:inline-flex;align-items:center;vertical-align:middle;max-width:100%;min-height:18px;[^}]*font:inherit;line-height:18px/,'link line box is stable');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*position:absolute;inset-inline:0;bottom:0;height:1px/,'underline is out of flow');
- assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after\{[^}]*bottom:-2px/,'underline should stay close to text');
- assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)::after\{opacity:1\}/);
- assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover\{text-decoration:underline/);
+ assert.match(css,/\.app-players-table tbody td:nth-child\(2\)\{text-align:left;font-weight:650;vertical-align:middle;line-height:18px\}/,'player name cell remains left-aligned and vertically centered');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link\)\{display:inline;color:inherit;font:inherit;line-height:inherit;text-decoration:none;white-space:nowrap\}/,'Player link follows Admin Contracts inline-text geometry');
+ assert.doesNotMatch(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\)::after/,'no underline pseudo-element');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline;text-underline-offset:3px;text-decoration-thickness:1px/,'underline stays near glyphs');
+ assert.match(css,/\.app-players-table :is\(\.app-player-name-link,\.club-roster-player-link,\.app-player-club-link\):is\(:hover,:focus-visible\)\{text-decoration-line:underline/);
+ assert.doesNotMatch(css,/\.app-players-table \.app-player-name-link:hover::after/);
  assert.doesNotMatch(read('assets/club-page.css'),/\.club-roster-player-link:hover[^\n]*text-decoration:underline/,'roster does not add an in-flow underline');
  assert.match(css,/\.app-players-table thead th\{height:42px/,'compact headings remain stable across all player tables');
  // Preserve all responsive and first-paint geometry and five empty loading rows.
@@ -1089,7 +1089,7 @@ test('#532 rapid sort/refetch ignores superseded successful responses and failur
  assert.ok(begin>=0&&end>begin,'use production refresh implementation');
  const source=js.slice(begin,end);
  const fixture=new Function(`
-  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',pendingReturn=null;
+  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;
   const state={page:1},pending=[],painted=[],loading=[];
   const countNode=null,scroll={setAttribute(){}},body={querySelector(){return null}};
   const renderHead=()=>{},showLoadingRows=()=>loading.push(5);
@@ -1112,4 +1112,46 @@ test('#532 rapid sort/refetch ignores superseded successful responses and failur
  fixture.pending[3].resolve(result(105));await final;
  assert.deepEqual(fixture.snapshot().ids,[105]);
  assert.equal(fixture.snapshot().status,'ready','obsolete failure does not replace newer result');
+});
+
+
+test('Players aborts superseded list and Load more GETs without publishing obsolete rows',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function fetchBatch(page){'),end=js.indexOf('  function changeView(view){',begin);
+ assert.ok(begin>=0&&end>begin,'exercise the actual directory data-loading functions');
+ const pending=[],rendered=[];
+ const fetch=(url,{signal})=>new Promise((resolve,reject)=>{
+  const entry={url,signal,finish:data=>resolve({ok:true,status:200,json:async()=>data})};
+  signal?.addEventListener('abort',()=>reject(Object.assign(Error('aborted'),{name:'AbortError'})),{once:true});
+  pending.push(entry);
+ });
+ const runner=new Function('fetch','AbortController','painted',[
+  "let state={page:1,filters:{},sort:'',order:''},ticket=0,loadedThrough=1;",
+  "let current=null,lastCount=null,status='loading',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;",
+  "const filterKeys=[],countNode=null,scroll={setAttribute(){},focus(){}},loadMore={},document={activeElement:null},body={append(){}};",
+  "const renderHead=()=>{},showLoadingRows=()=>{},paint=data=>painted.push(data);",
+  "const syncUrl=()=>{},renderProgress=()=>{},hydrateClubCrests=()=>{},playerRows=()=>[];",
+  "const message=()=>{},announceAppend=()=>{},language=()=>'en',locale=()=>({error:'error',appendLoading:'Loading more players...',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',changed:'Changed',loadError:'Unable to load'}),requestAnimationFrame=()=>{};",
+  js.slice(begin,end),
+  "return {load,appendNext,snapshot:()=>({current,loadedThrough,status,appendPending})};"
+ ].join('\n'))(fetch,AbortController,rendered);
+ const packet=players=>({page:1,pageSize:50,count:51,totalPages:2,players});
+ const first=runner.load(1),obsolete=pending[0];
+ assert.equal(pending.length,1);
+ const newer=runner.load(1);
+ assert.equal(obsolete.signal.aborted,true,'new load aborts obsolete GET immediately');
+ assert.equal(pending.length,2);
+ pending[1].finish(packet([{id:101}]));
+ await Promise.all([first,newer]);
+ assert.deepEqual(runner.snapshot().current.players.map(p=>p.id),[101]);
+ assert.equal(rendered.length,1,'old response does not render');
+ const append=runner.appendNext(),obsoleteAppend=pending[2];
+ assert.equal(obsoleteAppend.url.includes('offset=50'),true);
+ const updated=runner.load(1);
+ assert.equal(obsoleteAppend.signal.aborted,true,'new load aborts pending append GET');
+ pending[3].finish(packet([{id:202}]));
+ await Promise.all([append,updated]);
+ assert.deepEqual(runner.snapshot().current.players.map(p=>p.id),[202]);
+ assert.equal(runner.snapshot().appendPending,false);
+ assert.equal(rendered.length,2,'only latest results render');
 });
