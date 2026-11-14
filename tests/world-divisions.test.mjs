@@ -433,7 +433,8 @@ test("FLAG-54 generated competition flags have vector 5:4 viewport",()=>{
 test("CLUB-COMPETITION-FULLWIDTH renders Competition after both top panels",()=>{
  const model=read("assets/club-model.js"),css=read("assets/club-page.css");
  assert.ok(model.includes("'</div><aside class=\"app-panel club-kits\""));
- assert.ok(css.includes(".club-overview-layout>.club-competition{grid-column:1/-1"));
+ assert.match(css,/\.club-overview-layout>\.club-competition\{\s*grid-column:1\/-1;/,
+  'Competitions span the Overview grid regardless of CSS line breaks');
 });
 
 test('standings loading stays active until all overlapping requests finish',()=>{
