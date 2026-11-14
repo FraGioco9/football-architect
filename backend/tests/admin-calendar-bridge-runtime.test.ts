@@ -45,6 +45,7 @@ it('runs distinct domestic, draw and publication transactions before handing off
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-00001',now)).world;
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(2);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(98);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='international'").first()).n).toBe(144);
  const cup=await db.prepare("SELECT match_id FROM season_match_slots WHERE source_kind='international' LIMIT 1").first();
@@ -71,6 +72,7 @@ it('keeps draw and calendar publication atomic if final audit rejects',async()=>
  finally{await db.prepare('DROP TRIGGER fail_draw').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(56);
  world=(await executeInternationalDraw(db,session,meta(),'bridge-draw-good-00001',now)).world;
  await db.prepare("CREATE TRIGGER fail_publish BEFORE INSERT ON admin_operations WHEN NEW.command='publish-international-calendar-v1' BEGIN SELECT RAISE(ABORT,'late failure'); END").run();
  try{await expect(publishInternationalCalendar(db,session,meta(),'bridge-publish-fail-00001',now)).rejects.toMatchObject({status:503})}

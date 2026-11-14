@@ -44,6 +44,7 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect((await db.prepare('SELECT count(*) n FROM season_draws').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(56);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
  const first=await db.prepare('SELECT match_id FROM season_match_slots LIMIT 1').first();
  const match=await readPublicMatch(db,first!.match_id);
@@ -72,6 +73,7 @@ it('rolls back domestic staging on audit failure',async()=>{
  finally{await db.prepare('DROP TRIGGER fail_domestic_stage').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_domestic_stages').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(0);
  expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('scheduled');
  expect(await readWorld(db)).toEqual(world);
 });

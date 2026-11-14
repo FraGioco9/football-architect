@@ -40,6 +40,7 @@ it('atomically saves 3984 actual fixtures, both draw outcomes, server seed, immu
  const draws=(await db.prepare('SELECT * FROM season_draws ORDER BY competition_id').all()).results;
  expect(draws).toHaveLength(2);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3984);
+ expect((await db.prepare('SELECT count(*) n FROM season_knockout_match_slots').first()).n).toBe(98);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='calendar'").first()).n).toBe(3984);
  expect((await db.prepare('SELECT count(DISTINCT match_id) n FROM season_match_slots').first()).n).toBe(3984);
  for(const draw of draws){const outcome=JSON.parse(draw.outcome_json);expect(outcome.fixtures).toHaveLength(72);expect(draw.seed).toBe(value.seed);expect(draw.outcome_hash).toBe(await canonicalHash(outcome));expect(outcome.pots.map((p:string[])=>p.length)).toEqual([8,8,8]);}
@@ -77,7 +78,7 @@ it('rolls back calendar, both draws and world if the final audit fails',async()=
  await db.prepare("CREATE TRIGGER calendar_late_failure BEFORE INSERT ON admin_operations WHEN NEW.command='generate-calendar-v1' BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END").run();
  try{await expect(generate()).rejects.toMatchObject({status:503,code:'calendar_unavailable'})}finally{await db.prepare('DROP TRIGGER calendar_late_failure').run()}
  expect(await readWorld(db)).toEqual(world);
- for(const table of ['season_calendars','season_draws','season_match_slots'])expect((await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n).toBe(0);
+ for(const table of ['season_calendars','season_draws','season_match_slots','season_knockout_match_slots'])expect((await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n).toBe(0);
 });
 it('HTTP requires live authentication, exact Origin, CSRF, idempotency and server-owned command shape',async()=>{
  const config={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
