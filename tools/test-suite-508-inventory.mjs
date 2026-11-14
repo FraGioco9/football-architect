@@ -67,13 +67,43 @@ const riskPatterns={
  testWorldRestores:/\brestoreTestWorld\s*\(/g,
  testWorldClears:/\bclearTestWorld\s*\(/g
 };
+// Filename-derived review candidates only: neither domain nor runner implies
+// actual assertion coverage, duplication, or permission to skip/remove a test.
+const featureRules=[
+ ['match-engine',/^match-engine\//],
+ ['auth-security',/(?:^|[\/_-])(?:auth|account|csrf|password|oauth|session|email|login|permissions|security|profile)(?:[\/_\-.]|$)/],
+ ['players-contracts',/(?:^|[\/_-])(?:player|players|footballer|roster|contracts?|surname|names)(?:[\/_\-.]|$)/],
+ ['club-branding',/(?:^|[\/_-])(?:club|crest|branding|brand|colors|colours|kit)(?:[\/_\-.]|$)/],
+ ['calendar-fixtures',/(?:^|[\/_-])(?:calendar|schedule|fixture|draw|match-slot|day-outcome)(?:[\/_\-.]|$)/],
+ ['international-postseason',/(?:^|[\/_-])(?:int24|international|knockout|cup|postseason|playoff|playout)(?:[\/_\-.]|$)/],
+ ['ci-publication',/(?:^|[\/_-])(?:ci|workflow|publication|migration|provider|guard|parity|audit|test-suite)(?:[\/_\-.]|$)/],
+ ['competition-world',/(?:^|[\/_-])(?:competition|league|standings|history|season|sporting|rules|world)(?:[\/_\-.]|$)/],
+ ['frontend-navigation',/(?:^|[\/_-])(?:page-load|first-paint|responsive|css|layout|accessibility|keyboard|focus|navigation|route|theme|language)(?:[\/_\-.]|$)/],
+ ['admin-backend',/(?:^|[\/_-])(?:admin|operator|d1|worker|repository|database|schema)(?:[\/_\-.]|$)/]
+];
+const featureCandidate=path=>featureRules.find(([,pattern])=>pattern.test(path.toLowerCase()))?.[0]||'crosscutting-review';
+const roleCandidates=Object.freeze({
+ 'site-node':'node-contract-or-integration','backend-contract':'node-backend-contract',
+ 'backend-runtime':'worker-d1-integration','backend-operator':'operator-local-integration',
+ 'backend-import':'import-graph','migration':'sqlite-migration',
+ 'browser':'browser-e2e','manual':'manual-diagnostic','support':'fixture-or-helper',
+ 'match-engine-node':'engine-node-contract','match-engine-browser':'engine-browser-e2e'
+});
+// Explicit literal cross-runner invocation queue. A distinct Match Engine gate
+// can need independent route/preview checks; inventory never disables them.
+const crossRunnerReview=[...new Set(runCommands.filter(command=>command.startsWith('node --test '))
+ .flatMap(command=>command.split(/\s+/).slice(2).filter(path=>manifest.tests[path]==='site-node')))]
+ .sort().map(path=>({path,primaryOwner:'site-node',additionalWorkflow:'match-engine-01.yml',
+  reason:'Literal targeted-workflow invocation of a site-owned Node file; verify independent contract before any deduplication'}));
+
 const rows=[...tracked.map(path=>({path,owner:manifest.tests[path]})),
  ...engine.map(path=>({path,owner:path.includes('browser')?'match-engine-browser':'match-engine-node'}))]
  .map(({path,owner})=>{
   const source=read(path);
   const flags=Object.fromEntries(Object.entries(riskPatterns).map(([key,re])=>[key,[...source.matchAll(re)].length]));
   const catalogNames=canonicalNames.filter(name=>source.includes(name));
-  return {path,owner,staticTestCalls:[...source.matchAll(/\b(?:test|it)\s*\(/g)].length,
+  return {path,owner,featureCandidate:featureCandidate(path),roleCandidate:roleCandidates[owner]||'unreviewed-owner',
+   staticTestCalls:[...source.matchAll(/\b(?:test|it)\s*\(/g)].length,
    staticAssertCalls:[...source.matchAll(/\bassert(?:\.[a-zA-Z]+)+\s*\(/g)].length,
    catalogNames,flags};
  });
@@ -102,10 +132,14 @@ const lifecycleReview=rows.filter(row=>row.owner==='backend-runtime'&&
   testWorldRestores:flags.testWorldRestores,testWorldClears:flags.testWorldClears}))
  .sort((a,b)=>b.fullSeasonLoops-a.fullSeasonLoops||
   b.sportingReplays-a.sportingReplays||a.path.localeCompare(b.path));
+const countBy=field=>Object.fromEntries([...new Set(rows.map(row=>row[field]))].sort()
+ .map(value=>[value,rows.filter(row=>row[field]===value).length]));
 const report={scope:'TEST-SUITE-01 static inventory; signals require human review',
  scannedFiles:rows.length,ownedFiles:tracked.length,matchEngineFiles:engine.length,
  engineExecution,
  byOwner:Object.fromEntries(Object.entries(byOwner).sort(([a],[b])=>a.localeCompare(b))),
+ byFeatureCandidate:countBy('featureCandidate'),byRoleCandidate:countBy('roleCandidate'),
+ crossRunnerReview,
  staticTestCalls:rows.reduce((n,row)=>n+row.staticTestCalls,0),
  staticAssertCalls:rows.reduce((n,row)=>n+row.staticAssertCalls,0),
  candidateFiles:candidates.length,candidates,
@@ -116,6 +150,8 @@ else {
  console.log('Owner groups:',JSON.stringify(report.byOwner));
  console.log('Match Engine execution: '+engineExecution.nodeFiles.length+' Node test files via npm; '+engineExecution.browserFiles.length+' browser test files via targeted workflow.');
  console.log('Static calls (not executed test/coverage counts): '+report.staticTestCalls+' test/it, '+report.staticAssertCalls+' assert.');
+ console.log('Filename/runner review categories:',JSON.stringify(report.byFeatureCandidate),JSON.stringify(report.byRoleCandidate));
+ console.log('Cross-workflow literal invocations for manual overlap review: '+crossRunnerReview.length+' (no automatic removal).');
  console.log(report.candidateFiles+' files contain a canonical club name or fixed club ID: review candidates, not defects.');
  console.log(report.replayReview.length+' files contain explicit sporting replay/setup signals; '+report.lifecycleReview.length+' Worker files merit lifecycle/setup review; '+report.disabledReview.length+' files contain skip/only/todo markers.');
  console.log('Use --json for source-file details, replay/setup/isolation review queues and evidence.');
