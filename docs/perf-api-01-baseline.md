@@ -145,3 +145,9 @@ This is a measured *controller call sequence* before and after at the test harne
 The existing disposable Worker/D1+Chromium Admin lifecycle browser now records actual API request paths around its real authenticated Season 1 Prepare button, after the shell's initial `/api/world` has settled. The recorded command must have 1 POST `/api/admin/seasons/prepare`, 0 authenticated GET `/api/admin/world`, 1 protected GET `/api/admin/seasons/events`, and 1 public GET `/api/world` through `fa:world-invalidated`. The test also waits for both non-busy Admin UI and the public canonical world adapter's matching season/revision.
 
 This is a real browser/Worker-local request-count assertion for a single successful Admin command rather than mocked-controller evidence. It deliberately preserves the public revalidation GET and server authority checks. A failed count fails the existing CI lifecycle test; no new workflow, deployment or remote D1 usage.
+
+## Admin Contracts superseded authenticated list cancellation (2026-11-14)
+
+Changing Contracts pagination previously ignored out-of-date responses using an epoch ticket but allowed the old GET to continue transferring. The client now aborts the in-flight `GET /api/admin/contracts?page=N` when replaced by another list GET, a guarded assignment, or loss of access. The original epoch fence remains. No permission cache or mutation contract is weakened.
+
+Code review confirmed that the selection check **already correctly compares** `data.worldRevision` with `record.worldRevision`; no defect in that comparison was changed. The added existing-suite Chromium browser regression covers clearing selections on revision change, retaining them across same-world page navigation, and actual `requestfailed` transport cancellation of a held superseded page-2 GET, without posting a mutation. No measured production transfer or D1 savings are asserted.

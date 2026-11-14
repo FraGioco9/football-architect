@@ -715,6 +715,62 @@ try{
    assert.deepEqual(errors,[]);checks++;
   }finally{releaseInitialList?.();await context.close()}
  }
+
+ // PERF-API-01: rapid authenticated pagination must abort obsolete reads;
+ // selected affiliations must still be fenced on world revision changes.
+ {
+  const ctx=await browser.newContext(),page=await ctx.newPage();
+  let release=()=>{};
+  try{
+   let revision=0,hold=false,permissionReads=0;
+   const gate=new Promise(resolve=>release=resolve);
+   await page.route('**/api/world',r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+   await page.route('**/api/player/permissions',r=>{
+    permissionReads++;return r.fulfill({status:200,contentType:'application/json',
+     body:JSON.stringify({permissions:['admin.access','admin.world.read','admin.world.write']})});
+   });
+   await page.route('**/api/admin/contracts*',async route=>{
+    assert.equal(route.request().method(),'GET');
+    const n=Number(new URL(route.request().url()).searchParams.get('page'));
+    if(n===2&&hold){hold=false;await gate}
+    const start=n===1?1:51,players=Array.from({length:n===1?50:10},(_,i)=>({
+     id:start+i,name:'Synthetic '+(start+i),nationality:'ITA',age:22,
+     primary_position:'CM',secondary_positions:[],height_cm:180,preferred_foot:'right',clubKey:null
+    }));
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+     count:60,page:n,pageSize:50,totalPages:2,worldGeneration:'11111111-1111-4111-8111-111111111111',
+     worldRevision:revision,players,clubs:[{clubKey:'IT-1',name:'Synthetic Club'}]
+    })}).catch(()=>{});
+   });
+   await page.goto('http://app.localhost:2000/admin/contracts');
+   await page.locator('[data-contracts-check="1"]').waitFor();
+   await page.locator('[data-contracts-check="1"]').check();
+   revision=1;
+   await page.locator('[data-contracts-next]').click();
+   await page.locator('[data-contracts-check="51"]').waitFor();
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^0 /,
+    'Existing world-revision guard clears stale selections');
+   await page.locator('[data-contracts-check="51"]').check();
+   await page.locator('[data-contracts-prev]').click();
+   await page.locator('[data-contracts-check="1"]').waitFor();
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^1 /,
+    'Same-revision navigation preserves selection');
+   hold=true;
+   const pending=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/admin/contracts'&&
+    new URL(r.url()).searchParams.get('page')==='2');
+   const abort=page.waitForEvent('requestfailed',{predicate:r=>new URL(r.url()).pathname==='/api/admin/contracts'&&
+    new URL(r.url()).searchParams.get('page')==='2'});
+   await page.locator('[data-contracts-next]').click();await pending;
+   await page.locator('[data-contracts-prev]').click();await abort;
+   release();
+   await page.locator('[data-contracts-check="1"]').waitFor();
+   assert.equal(await page.locator('[data-contracts-check="51"]').count(),0);
+   assert.match(await page.locator('[data-contracts-selected-count]').textContent(),/^1 /);
+   assert.ok(permissionReads<=2,'Per-tab Admin permission read reuse');
+   checks++;
+  }finally{release();await ctx.close()}
+ }
+
  console.log('Dedicated Admin page browser contracts PASS: '+checks+' cases');
 }finally{
  preview.closeAllConnections();await new Promise(resolve=>preview.close(resolve));
