@@ -22,7 +22,7 @@ test("each INT-24 cup bracket follows approved original seeds",()=>{
   assert.equal(phases.at(-1).ties[0].homePolicy,"neutral",cup.id);
  }
 });
-test("each INT-24 cup rejects invalid rank overlap, points, policies and cyclic ties",()=>{
+test("all 18 competitions reject invalid sporting rules, including INT-24 specifics",()=>{
  assert.equal(internationalCups.length,2,"Both international competitions must be covered");
  const invalidCases=[
   ["negative win points",x=>{x.rules.phases[0].points.win=-1}],
@@ -39,6 +39,25 @@ test("each INT-24 cup rejects invalid rank overlap, points, policies and cyclic 
   const modified=JSON.parse(JSON.stringify(cup));
   mutate(modified,cup);
   assert.equal(validateCompetition(modified).valid,false,cup.id+": "+label);
+ }
+
+ const domestic=items.filter(item=>item.category==="domestic");
+ assert.equal(domestic.length,16,"All domestic competitions must be covered");
+ // The two domestic tiers have different promotion/relegation rules. These
+ // common invalid-input contracts apply independently to every division.
+ const invalidDomesticCases=[
+  ["odd participant capacity",x=>{x.capacity=15}],
+  ["negative league win points",x=>{x.rules.phases[0].points.win=-1}],
+  ["unknown qualification policy",x=>{x.rules.qualificationPolicyId="unknown"}],
+  ["international calendar event in domestic league",x=>{x.rules.phases[0].calendarEvents[0]="I01"}],
+  ["duplicated league calendar event",x=>{x.rules.phases[0].calendarEvents[1]=x.rules.phases[0].calendarEvents[0]}],
+  ["unsupported rank outcome",x=>{x.rules.phases[0].rankOutcomes[0].kind="alien"}],
+  ["rank outside the division",x=>{x.rules.phases[0].rankOutcomes[0].from=0}]
+ ];
+ for(const division of domestic)for(const [label,mutate] of invalidDomesticCases){
+  const modified=JSON.parse(JSON.stringify(division));
+  mutate(modified);
+  assert.equal(validateCompetition(modified).valid,false,division.id+": "+label);
  }
 });
 
