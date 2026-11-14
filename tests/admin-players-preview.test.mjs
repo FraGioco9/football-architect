@@ -86,7 +86,7 @@ test('Preview status is inline with the three actions, and the shared Players pa
  assert.equal((actions.match(/class="app-players-filter-trigger"/g)||[]).length,3);
  assert.match(css,/\.app-players-page-button\{[^}]*flex:0 0 112px;[^}]*width:112px;[^}]*min-width:112px;[^}]*max-width:112px/);
  assert.match(css,/@media\(max-width:420px\)\{\.app-players-pagination\{[^}]*\}\.app-players-page-button\{[^}]*width:88px;[^}]*min-width:88px;[^}]*max-width:88px/);
- assert.match(read('assets/players-directory.js'),/previous.className='app-players-page-button';next.className='app-players-page-button'/);
+ assert.match(read('assets/players-directory.js'),/loadMore.className='app-players-page-button'/,'public directory uses Load more; Admin remains on Previous/Next');
  assert.match(html,/data-admin-preview-prev[^>]*>Previous<\/button>/);
  assert.match(html,/data-admin-preview-next[^>]*>Next<\/button>/);
 });

@@ -69,11 +69,11 @@
   fr:'Vitesse|Force|Endurance|Agilité|Passes|Technique|Dribble|Tir|Centres|Tacles|Marquage|Jeu de tête|Vision|Placement|Décisions|Sang-froid|Réflexes|Prise de balle|Placement|Jeu aérien'
  };
  const labels={
-  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
-  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
-  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
-  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
-  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
+  en:{one:'player',many:'players',loading:'Loading players…',empty:'No players available',error:'Unable to load players',prev:'Previous',next:'Next',page:'Page',loadMore:'Load more',loadingMore:'Loading…',retry:'Retry',restart:'Start over',loadError:'Could not load more players',changed:'Player list changed. Start over.',loaded:'Loaded',end:'End of results',of:'of',left:'Left',right:'Right',tabs:['Overview','Attributes'],groups:['Technical','Mental','Physical','Goalkeeper'],nationality:'Nationality',columns:['Player','Age','Positions','Height','Foot']},
+  it:{one:'giocatore',many:'giocatori',loading:'Caricamento giocatori…',empty:'Nessun giocatore disponibile',error:'Impossibile caricare i giocatori',prev:'Precedente',next:'Successiva',page:'Pagina',loadMore:'Carica altri',loadingMore:'Caricamento…',retry:'Riprova',restart:'Ricomincia',loadError:'Impossibile caricare altri giocatori',changed:'Elenco giocatori aggiornato. Ricomincia.',loaded:'Caricati',end:'Fine dei risultati',of:'di',left:'Sinistro',right:'Destro',tabs:['Panoramica','Attributi'],groups:['Tecnici','Mentali','Fisici','Portiere'],nationality:'Nazionalità',columns:['Giocatore','Età','Posizioni','Altezza','Piede']},
+  de:{one:'Spieler',many:'Spieler',loading:'Spieler werden geladen…',empty:'Keine Spieler verfügbar',error:'Spieler konnten nicht geladen werden',prev:'Zurück',next:'Weiter',page:'Seite',loadMore:'Mehr laden',loadingMore:'Laden…',retry:'Erneut versuchen',restart:'Neu beginnen',loadError:'Weitere Spieler konnten nicht geladen werden',changed:'Spielerliste geändert. Neu beginnen.',loaded:'Geladen',end:'Ende der Ergebnisse',of:'von',left:'Links',right:'Rechts',tabs:['Übersicht','Attribute'],groups:['Technisch','Mental','Physisch','Torwart'],nationality:'Nationalität',columns:['Spieler','Alter','Positionen','Größe','Fuß']},
+  es:{one:'jugador',many:'jugadores',loading:'Cargando jugadores…',empty:'No hay jugadores disponibles',error:'No se pudieron cargar los jugadores',prev:'Anterior',next:'Siguiente',page:'Página',loadMore:'Cargar más',loadingMore:'Cargando…',retry:'Reintentar',restart:'Empezar de nuevo',loadError:'No se pudieron cargar más jugadores',changed:'La lista cambió. Empezar de nuevo.',loaded:'Cargados',end:'Fin de los resultados',of:'de',left:'Izquierdo',right:'Derecho',tabs:['Resumen','Atributos'],groups:['Técnicos','Mentales','Físicos','Portero'],nationality:'Nacionalidad',columns:['Jugador','Edad','Posiciones','Altura','Pie']},
+  fr:{one:'joueur',many:'joueurs',loading:'Chargement des joueurs…',empty:'Aucun joueur disponible',error:'Impossible de charger les joueurs',prev:'Précédent',next:'Suivant',page:'Page',loadMore:'Charger plus',loadingMore:'Chargement…',retry:'Réessayer',restart:'Recommencer',loadError:'Impossible de charger plus de joueurs',changed:'La liste a changé. Recommencer.',loaded:'Chargés',end:'Fin des résultats',of:'sur',left:'Gauche',right:'Droit',tabs:['Vue d’ensemble','Attributs'],groups:['Techniques','Mentaux','Physiques','Gardien'],nationality:'Nationalité',columns:['Joueur','Âge','Postes','Taille','Pied']}
  };
  const language=()=>document.documentElement.lang.toLowerCase().slice(0,2);
  const locale=()=>labels[language()]||labels.en;
@@ -139,11 +139,17 @@
    else if(tab.left<strip.left)groupBar.scrollLeft+=tab.left-strip.left;
    syncGroupTabEdges();
   };
-  const pager=document.createElement('nav');pager.className='app-players-pagination';pager.setAttribute('aria-label','Players pages');
-  const previous=document.createElement('button'),next=document.createElement('button'),counter=document.createElement('span');
-  previous.type='button';next.type='button';previous.className='app-players-page-button';next.className='app-players-page-button';
-  counter.className='app-players-page-count';counter.setAttribute('aria-live','polite');pager.append(previous,counter,next);scroll.after(pager);
+  // Public-only progressive loading: page=N always identifies the first segment.
+  // Admin generation preview deliberately keeps separate Previous/Next pagination.
+  const pager=document.createElement('nav');pager.className='app-players-pagination';pager.dataset.playersProgress='';
+  pager.setAttribute('aria-label','Players results');
+  const loadMore=document.createElement('button'),counter=document.createElement('span'),progress=document.createElement('span');
+  loadMore.type='button';loadMore.className='app-players-page-button';loadMore.dataset.playersLoadMore='';
+  counter.className='app-players-page-count';
+  progress.className='sr-only';progress.setAttribute('role','status');progress.setAttribute('aria-live','polite');
+  pager.append(loadMore,counter,progress);scroll.after(pager);
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
+  let loadedThrough=state.page,appendPending=false,appendError='';
   const cols=()=>state.view==='attributes'?3+groups[state.group].length:6;
   const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=value;tr.append(td);return td};
   function renderCount(count){
@@ -380,14 +386,9 @@
    else td.textContent=player.nationality||'';
    tr.append(td);
   }
-  function paint(data){
-   renderHead();
-   const t=locale();
-   if(!data){if(status==='loading')showLoadingRows();else message(t[status]);return}
-   lastCount=data.count;renderCount(lastCount);
-   if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);scroll.setAttribute('aria-busy','false');return}
-   const fragment=document.createDocumentFragment();
-   for(const player of data.players){
+  function playerRows(players){
+   const t=locale(),fragment=document.createDocumentFragment();
+   for(const player of players){
     const tr=document.createElement('tr');flagCell(tr,player);
     const nameCell=cell(tr,'');
     if(Number.isSafeInteger(player.id)&&player.id>0){
@@ -406,31 +407,94 @@
     }
     fragment.append(tr);
    }
-   body.replaceChildren(fragment);
-   previous.textContent=t.prev;next.textContent=t.next;
-   counter.textContent=t.page+' '+data.page+' '+t.of+' '+data.totalPages+' · '+new Intl.NumberFormat(language()||'en').format(data.count)+' '+(data.count===1?t.one:t.many);
-   previous.disabled=data.page<=1;next.disabled=data.page>=data.totalPages;
-   pager.hidden=data.totalPages<=1;scroll.setAttribute('aria-busy','false');
+   return fragment;
+  }
+  function renderProgress(){
+   const t=locale();
+   if(!current){
+    pager.hidden=status!=='error';
+    if(status==='error'){
+     loadMore.hidden=false;loadMore.disabled=false;loadMore.textContent=t.retry;
+     counter.textContent='';progress.textContent=t.error;
+    }
+    return;
+   }
+   pager.hidden=current.players.length===0;
+   if(pager.hidden)return;
+   const format=n=>new Intl.NumberFormat(language()||'en').format(n);
+   const loaded=t.loaded+' '+format(current.players.length)+' '+t.of+' '+format(current.count);
+   counter.textContent=loaded;
+   if(appendError){
+    loadMore.hidden=false;loadMore.disabled=false;
+    loadMore.textContent=appendError==='stale'?t.restart:t.retry;
+    progress.textContent=appendError==='stale'?t.changed:t.loadError;
+   }else if(loadedThrough>=current.totalPages){
+    loadMore.hidden=true;loadMore.disabled=true;progress.textContent=t.end;
+    counter.textContent=t.end+' · '+loaded;
+   }else{
+    loadMore.hidden=false;loadMore.disabled=appendPending;
+    loadMore.textContent=appendPending?t.loadingMore:t.loadMore;
+    progress.textContent=appendPending?t.loadingMore:'';
+   }
+  }
+  function paint(data){
+   renderHead();
+   const t=locale();
+   if(!data){if(status==='loading')showLoadingRows();else message(t[status]);renderProgress();return}
+   lastCount=data.count;renderCount(lastCount);
+   if(!data.players.length){message(data.count===0&&filterKeys.some(key=>state.filters?.[key])?filterLocale().noMatches:t.empty);renderProgress();scroll.setAttribute('aria-busy','false');return}
+   body.replaceChildren(playerRows(data.players));
+   renderProgress();scroll.setAttribute('aria-busy','false');
   }
   function refresh(){syncControls();paint(current)}
-  async function load(page){
-   const seq=++ticket;state.page=page;current=null;status='loading';
-   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
-   scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
-   scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
+  async function fetchBatch(page){
    const query=new URLSearchParams({page:String(page)});
    for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
    if(state.sort){query.set('sort',state.sort);query.set('order',state.order);}
+   const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+   if(response.status===409)throw new Error('stale_world');
+   if(!response.ok)throw new Error('http_'+response.status);
+   const data=await response.json();
+   if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||
+      data.pageSize!==50||!Number.isSafeInteger(data.totalPages)||data.totalPages<1||
+      !data.players.every(player=>Number.isSafeInteger(player.id)&&player.id>0)||
+      new Set(data.players.map(player=>player.id)).size!==data.players.length)
+    throw new Error('invalid_players_response');
+   return data;
+  }
+  async function load(page){
+   const seq=++ticket;state.page=page;loadedThrough=page;current=null;status='loading';
+   appendPending=false;appendError='';
+   if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
+   scroll.style.minHeight=Math.ceil(scroll.getBoundingClientRect().height)+'px';
+   scroll.setAttribute('aria-busy','true');renderHead();showLoadingRows();
    try{
-    const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error('http_'+response.status);
-    const data=await response.json();
-    if(!data||!Array.isArray(data.players)||!Number.isSafeInteger(data.count)||data.page!==page||!Number.isSafeInteger(data.totalPages)||data.totalPages<1)
-     throw new Error('invalid_players_response');
+    const data=await fetchBatch(page);
     if(seq!==ticket)return;
     current=data;status='ready';paint(data);scroll.style.minHeight='';
    }catch{
-    if(seq===ticket){status='error';message(locale().error);scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
+    if(seq===ticket){status='error';message(locale().error);renderProgress();scroll.style.minHeight='';scroll.setAttribute('aria-busy','false');if(countNode)countNode.replaceChildren()}
+   }
+  }
+  async function appendNext(){
+   if(!current||appendPending||appendError==='stale'||loadedThrough>=current.totalPages)return;
+   const seq=ticket,nextPage=loadedThrough+1;
+   const oldCount=current.count,oldTotalPages=current.totalPages,oldPageSize=current.pageSize;
+   const seen=new Set(current.players.map(player=>player.id));
+   appendPending=true;appendError='';renderProgress();
+   try{
+    const data=await fetchBatch(nextPage);
+    if(seq!==ticket)return; // A filter, sort, page or world refresh superseded this request.
+    if(data.count!==oldCount||data.totalPages!==oldTotalPages||data.pageSize!==oldPageSize||
+       data.players.length===0||data.players.some(player=>seen.has(player.id))){
+     appendError='stale';return; // OFFSET list changed; require a fresh first segment.
+    }
+    current.players.push(...data.players);loadedThrough=nextPage;
+    body.append(playerRows(data.players)); // Append, never rebuild the scrolled table.
+   }catch(error){
+    if(seq===ticket)appendError=error?.message==='stale_world'?'stale':'network';
+   }finally{
+    if(seq===ticket){appendPending=false;renderProgress();}
    }
   }
   function changeView(view){
@@ -756,14 +820,17 @@
    const key=event.target.closest?.('[data-players-sort]')?.dataset.playersSort;
    cycleSort(key);
   });
-  previous.addEventListener('click',()=>{if(current&&current.page>1){state.page=current.page-1;syncUrl();load(state.page)}});
-  next.addEventListener('click',()=>{if(current&&current.page<current.totalPages){state.page=current.page+1;syncUrl();load(state.page)}});
+  loadMore.addEventListener('click',()=>{
+   if(!current){if(status==='error')load(state.page);return;}
+   if(appendError==='stale'){state.page=1;syncUrl('replaceState');load(1);return;}
+   appendNext();
+  });
   window.addEventListener('popstate',()=>{
    if(drawerOpen()){restoreTriggerFocus=false;finishFilterClose();}
    const next=parseLocation(),changed=next.page!==state.page||next.sort!==state.sort||next.order!==state.order||filterSignature(next.filters)!==filterSignature(state.filters);
    state=next;syncControls();syncUrl('replaceState');
    revealActiveGroup();
-   if(changed)load(state.page);else paint(current);
+   if(changed)load(state.page);else paint(current); // Preserve loaded batches on view-only history navigation.
   });
   new MutationObserver(()=>{syncControls();revealActiveGroup();if(current)paint(current);else{renderHead();if(status==='loading')showLoadingRows();else message(locale()[status]);if(status==='loading'&&countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));}})
    .observe(document.documentElement,{attributes:true,attributeFilter:['lang']});

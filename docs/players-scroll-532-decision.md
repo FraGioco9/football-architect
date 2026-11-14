@@ -1,6 +1,6 @@
 # PLAYERS-SCROLL-01 (#532) — Phase A audit and recommendation
 
-**Status:** proposed UX decision, **not implementation authorization**. Source audited on `main@a558a0dd6086f00773ed9ee951f9d12412f127ae` (2026-11-14). No hosted Preview, Safari or D1 performance benchmark is claimed. The independent default-order correction is implemented separately in the same Draft/HOLD PR.
+**Status:** owner approved **manual Load more** on 2026-11-14. Implementation is now in Draft/HOLD PR #567, subject to automated and manual QA; no merge/deploy authorized. Source audited on `main@a558a0dd6086f00773ed9ee951f9d12412f127ae` (2026-11-14). No hosted Preview, Safari or D1 performance benchmark is claimed. The independent default-order correction is implemented separately in the same Draft/HOLD PR.
 
 ## Existing contract (verified in source)
 
@@ -17,7 +17,7 @@
 | 2. Automatic infinite scroll with `IntersectionObserver` | Minimal friction on mobile, progressive fetching | Footer access, keyboard/screen-reader discovery, history/scroll restoration, large DOM and duplicate/skip protection are harder; no observer fallback if JS fails |
 | 3. Explicit **Load more** (possible later opt-in hybrid sentinel) | Incremental exploration with clear control and end state, easier keyboard/VoiceOver access, retains existing API in V1 | Must define what deep-linked pages mean and cache/restoration; batch append still needs an upper bound |
 
-**Recommendation for owner approval:** option **3, manual Load more V1**, public `/players` only. Do not activate automatic infinite scroll by default. Keep 50 players per request, the existing strict `page=N` API and all filters/sorts server-authoritative. Explicit button is also the guaranteed fallback if automatic loading is considered later. Keep the current numbered pagination unchanged until the owner approves a replacement.
+**Owner-approved direction:** option **3, manual Load more V1**, public `/players` only. Do not activate automatic infinite scroll by default. Keep 50 players per request, the existing strict `page=N` API and all filters/sorts server-authoritative. Explicit button is also the guaranteed fallback if automatic loading is considered later. Keep the current numbered pagination unchanged until the owner approves a replacement.
 
 ## Proposed URL and history contract (subject to approval)
 
@@ -37,5 +37,5 @@
 ## Implementation sequencing / explicit gate
 
 - **Independent, approved work now:** correct server default sort to `id DESC`; add targeted regression tests, verify existing five-row sort loading behavior. Further compact rows, global flag sizes/centering, desktop/mobile columns and canonical Club column require separately reviewed table/API implementation and visual QA under the same issue, not accidental CSS changes.
-- **Await owner decision:** choose numbered pagination vs manual Load more vs automatic/hybrid; approve proposed URL and restoration semantics and DOM/performance thresholds. Only then implement public append loading behind a Draft/HOLD PR, preserving previous page behavior and strict API until migration is verified.
+- **Owner approved (2026-11-14):** manual Load more for the public directory. V1 appends to the current 50-row initial segment; preserves the starting `?page=N` URL, current strict API and server-side sorts/filters. One request at a time; retries, stale-response protection, duplicate/changed-count restart and accessible localized progress are implemented in PR #567. BFCache retains live DOM/scroll on same-tab Back; cold refresh opens only the starting segment. Browser/Safari QA and performance measurements remain pending. Admin preview continues using numbered pagination.
 - No schema migration, remote D1 operation, deployment or merge is authorized by this document.

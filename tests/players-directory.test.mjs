@@ -679,6 +679,76 @@ test('PLAYERS-SCROLL-01 defaults to id DESC and sorting refresh retains five loa
  assert.match(js,/state\.page=1;syncUrl\(\);load\(1\)/,'sort resets to the first complete server page');
 });
 
+test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL pagination contracts',()=>{
+ const js=read('assets/players-directory.js'),css=read('assets/app.css');
+ assert.match(js,/const loadMore=document.createElement\('button'\),counter=document.createElement\('span'\)/);
+ assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
+ assert.match(js,/async function fetchBatch\(page\)/);
+ assert.match(js,/pageSize!==50/);
+ assert.match(js,/async function appendNext\(\)/);
+ assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
+ assert.match(js,/if\(!current\|\|appendPending\|\|appendError==='stale'\|\|loadedThrough>=current\.totalPages\)return/);
+ assert.match(js,/if\(seq!==ticket\)return/,'ignore stale append responses');
+ assert.match(js,/data\.players\.some\(player=>seen\.has\(player\.id\)\)/,'detect shifted OFFSET duplicates');
+ assert.doesNotMatch(js,/IntersectionObserver|\/api\/players\/cursor/,'no automatic scroll or breaking API');
+ assert.match(js,/if\(state\.page>1\)url\.searchParams\.set\('page',String\(state\.page\)\)/);
+ assert.match(css,/\.app-players-pagination\[data-players-progress\]\{min-height:48px/);
+ for(const lang of ['en','it','de','es','fr']){
+  const labels=js.match(new RegExp(lang+":\\{one:[^\\n]+"))?.[0]||'';
+  assert.match(labels,/loadMore:/);assert.match(labels,/retry:/);assert.match(labels,/end:/);
+ }
+});
+test('PLAYERS-SCROLL-01 append behavior: EOF, concurrent requests, retry, invalidation and deep links',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function appendNext(){'),end=js.indexOf('  function changeView(view){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const source=js.slice(begin,end);
+ const build=(initial,next)=>new Function('initial','next',`
+  let current={...initial,players:[...initial.players]},loadedThrough=initial.page,ticket=0,appendPending=false,appendError='';
+  let requests=0,appended=[],progressUpdates=0;
+  const fetchBatch=async page=>{requests++;return next(page)};
+  const body={append(rows){appended.push(...rows)}};
+  const playerRows=players=>players.map(player=>player.id);
+  const renderProgress=()=>{progressUpdates++};
+  ${source}
+  return {appendNext,snapshot:()=>({ids:current.players.map(p=>p.id),loadedThrough,appendPending,appendError,requests,appended,progressUpdates}),invalidate:()=>{ticket++}};
+ `)(initial,next);
+ const first=Array.from({length:50},(_,i)=>({id:100-i}));
+ const second=Array.from({length:1},(_,i)=>({id:50-i}));
+ const base={page:1,count:51,pageSize:50,totalPages:2,players:first};
+ const make=(page,players,count=51)=>({page,count,pageSize:50,totalPages:2,players});
+ const success=build(base,async page=>make(page,second));
+ await success.appendNext();
+ assert.equal(success.snapshot().ids.length,51);
+ assert.deepEqual(success.snapshot().appended,[50]);
+ assert.equal(success.snapshot().loadedThrough,2);
+ await success.appendNext();assert.equal(success.snapshot().requests,1,'no next request after EOF');
+ let resolve;
+ const deferred=new Promise(done=>{resolve=done});
+ const concurrent=build(base,()=>deferred);
+ const firstCall=concurrent.appendNext();const secondCall=concurrent.appendNext();
+ assert.equal(concurrent.snapshot().requests,1,'only one in-flight append');
+ resolve(make(2,second));await Promise.all([firstCall,secondCall]);
+ assert.equal(concurrent.snapshot().ids.length,51);
+ const duplicate=build(base,async page=>make(page,[{id:100}]));
+ await duplicate.appendNext();
+ assert.equal(duplicate.snapshot().appendError,'stale','duplicate must request a restart');
+ assert.deepEqual(duplicate.snapshot().ids,first.map(p=>p.id));
+ const changed=build(base,async page=>make(page,second,52));
+ await changed.appendNext();assert.equal(changed.snapshot().appendError,'stale');
+ let fail=true;
+ const retry=build(base,async page=>{if(fail){fail=false;throw Error('network')}return make(page,second)});
+ await retry.appendNext();assert.equal(retry.snapshot().appendError,'network');
+ await retry.appendNext();assert.equal(retry.snapshot().appendError,'');
+ assert.equal(retry.snapshot().ids.length,51);
+ let release;
+ const pending=new Promise(done=>{release=done});
+ const obsolete=build(base,()=>pending);
+ const task=obsolete.appendNext();obsolete.invalidate();release(make(2,second));await task;
+ assert.equal(obsolete.snapshot().ids.length,50,'superseded append does not commit');
+ const deep=build({page:3,count:151,pageSize:50,totalPages:4,players:first},async page=>({...make(page,second),count:151,totalPages:4}));
+ await deep.appendNext();assert.equal(deep.snapshot().loadedThrough,4,'direct page 3 loads only segment 4 next');
+});
 test('Players search clear X uses a pointer cursor on supported WebKit/Blink browsers',()=>{
  const html=read('players/index.html'),css=read('assets/app.css');
  assert.match(html,/data-players-filter="name" maxlength="80"/);
