@@ -992,17 +992,25 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-venue]').focus()");await wait("!document.getElementById('club-fixture-venue-tooltip').hidden");
   assert.equal(await run("document.activeElement.getAttribute('aria-describedby')"),'club-fixture-venue-tooltip');
   await run("document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");assert.equal(await run("document.getElementById('club-fixture-venue-tooltip').hidden"),true);
-  for(const [width,lang,theme] of [[320,'it','dark'],[390,'de','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
+  // MOBILE-QA #527: cover intermediate real-device widths beyond the 320/390 baselines.
+  for(const [width,lang,theme] of [[320,'it','dark'],[375,'en','dark'],[390,'de','light'],[430,'fr','light'],[768,'es','dark'],[1440,'fr','light'],[390,'en','light']]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    await run(`document.documentElement.lang=${JSON.stringify(lang)};document.documentElement.dataset.theme=${JSON.stringify(theme)}`);await delay(60);
    const controls=await run("(()=>{const box=n=>{const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};return {tabs:box(document.querySelector('.club-tabs')),toolbar:box(document.querySelector('.club-fixtures-controls')),next:box(document.querySelector('[data-club-fixtures-next]')),competition:box(document.querySelector('[data-club-fixture-control=competition]')),season:box(document.querySelector('[data-club-fixture-control=season]'))}})()");
    assert.ok(Math.abs(controls.toolbar.top-controls.tabs.bottom-14)<1,'controls sit 14px below view separator at '+width);
-   assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'next command stays at left at '+width);
-   assert.ok(controls.competition.right<=controls.season.left,'competition precedes season at '+width);
-   assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'selectors align right at '+width);
-   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no overflow '+width+' '+lang);
+   if(width<=620){
+    assert.ok(controls.competition.right<=controls.season.left,'mobile competition precedes season at '+width);
+    assert.ok(Math.abs(controls.competition.left-controls.toolbar.left)<1&&Math.abs(controls.season.right-controls.toolbar.right)<1,'mobile selectors fill first row at '+width);
+    assert.ok(controls.next.top>=Math.max(controls.competition.bottom,controls.season.bottom)+7,'mobile next match sits below selectors at '+width);
+    assert.ok(Math.abs((controls.next.left+controls.next.right)-(controls.toolbar.left+controls.toolbar.right))<=2,'mobile next match is centered at '+width);
+   }else{
+    assert.ok(Math.abs(controls.next.left-controls.toolbar.left)<1,'desktop next command stays at left at '+width);
+    assert.ok(controls.competition.right<=controls.season.left,'desktop competition precedes season at '+width);
+    assert.ok(Math.abs(controls.season.right-controls.toolbar.right)<1,'desktop selectors align right at '+width);
+   }
+   assert.equal(await run("document.documentElement.scrollWidth<=innerWidth&&document.querySelector('.fa-shell-content-scroll').scrollWidth<=document.querySelector('.fa-shell-content-scroll').clientWidth+1&&document.querySelector('.club-fixtures').scrollWidth<=document.querySelector('.club-fixtures').clientWidth"),true,'no shell/page/fixtures overflow '+width+' '+lang);
    assert.equal(await run("[...document.querySelectorAll('.club-fixture-result')].every(n=>n.getBoundingClientRect().width>=64)"),true);
-   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,1440].includes(width)){
+   if(process.env.CLUB_FIXTURES_QA_DIR&&[320,375,430,1440].includes(width)){
     mkdirSync(process.env.CLUB_FIXTURES_QA_DIR,{recursive:true});
     const capture=await cmd('Page.captureScreenshot',{format:'png'});
     writeFileSync(join(process.env.CLUB_FIXTURES_QA_DIR,'club-fixtures-'+width+'-'+lang+'-'+theme+'.png'),Buffer.from(capture.data,'base64'));
@@ -1026,12 +1034,12 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const bars={day:'.club-fixture-skeleton-day',league:'.club-fixture-skeleton-league',
     name:'.club-fixture-skeleton-name',venue:'.club-fixture-skeleton-venue',
     score:'.club-fixture-skeleton-score',status:'.club-fixture-skeleton-status'};
-   return {loading,row:rect(row),parts:Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,measure(selector)])),
+   return {loading,row:rect(row),meta:rect(row.querySelector('.club-fixture-meta')),opponent:rect(row.querySelector('.club-fixture-opponent')),parts:Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,measure(selector)])),
     bars:loading?Object.fromEntries(Object.entries(bars).map(([key,selector])=>[key,measure(selector)])):null,
     season:document.querySelector('[data-club-fixture-control=season] [data-club-fixture-value]')?.textContent.trim(),
     selectorSkeleton:!!document.querySelector('[data-club-fixture-control=season] .club-fp-bar')};
   })()`);
-  for(const width of [320,390,768,1440]){
+  for(const width of [320,375,390,430,768,1440]){
    await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
    hold=true;await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=1'});
    await wait("document.querySelectorAll('.club-fixture-loading').length===6");
@@ -1052,8 +1060,23 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    assert.equal(loadedLayout.loading,false);
    assert.equal(loadedLayout.selectorSkeleton,false,'no season bar after hydration at '+width);
    assert.ok(Math.abs(pendingLayout.row.y-loadedLayout.row.y)<=2,'first row stays anchored at '+width);
+   if(width<=620){
+    assert.ok(pendingLayout.opponent.height>=44&&loadedLayout.opponent.height>=44,'reserve three lines and a 44px opponent touch target at '+width);
+    assert.ok(Math.abs(pendingLayout.opponent.height-loadedLayout.opponent.height)<=2,'opponent height stays fixed across hydration at '+width+': '+pendingLayout.opponent.height+' / '+loadedLayout.opponent.height);
+    const metaReserved=width<=360?36:24;
+    assert.ok(pendingLayout.meta.height>=metaReserved&&loadedLayout.meta.height>=metaReserved,'reserve the appropriate two or three metadata lines at '+width);
+    assert.ok(Math.abs(pendingLayout.meta.height-loadedLayout.meta.height)<=2,'fixture metadata height stays fixed across hydration at '+width+': '+pendingLayout.meta.height+' / '+loadedLayout.meta.height);
+    const maximumHeight=width<=360?95:85;
+    assert.ok(pendingLayout.row.height<=maximumHeight&&loadedLayout.row.height<=maximumHeight,'compact fixture first row stays within '+maximumHeight+'px at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
+    assert.ok(Math.abs(pendingLayout.row.height-loadedLayout.row.height)<=2,'row footprint remains fixed through hydration at '+width+': '+pendingLayout.row.height+' / '+loadedLayout.row.height);
+    const rowHeights=await run("[...document.querySelectorAll('[data-club-fixture-id]')].map(n=>n.getBoundingClientRect().height).sort((a,b)=>a-b)");
+    assert.equal(rowHeights.length,30,'all club fixture rows render at '+width);
+    assert.ok(rowHeights[14]<=(width<=360?95:85),'median of 30 club fixture rows stays compact at '+width+': '+rowHeights[14]);
+    assert.ok(rowHeights.at(-1)<=130,'even the longest translated fixture row remains usable at '+width+': '+rowHeights.at(-1));
+   }
    for(const [part,beforeSlot] of Object.entries(pendingLayout.parts)){
     const afterSlot=loadedLayout.parts[part];
+    // Preserve the strict first-paint geometry check, even at 320px.
     assert.ok(Math.abs(beforeSlot.cy-afterSlot.cy)<=8,
      part+' vertical center matches loaded text at '+width+': '+beforeSlot.cy+' / '+afterSlot.cy);
     // Content can introduce a vertical scrollbar; tolerate its grid width change.
@@ -1068,8 +1091,10 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
       'league text starts at reserved slot at '+width);
    }
   }
-  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/390/768/1440; no Season selector skeleton.');
+  console.log('CLUB-FIXTURES geometry PASS: pending/hydrated text slots at 320/375/390/430/768/1440; no Season selector skeleton.');
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
+  assert.equal(await run("getComputedStyle(document.querySelector('[data-club-fixtures-next]')).opacity"),'1','enabled next-match control is not muted');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});
@@ -1078,6 +1103,15 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-fixture-control=season] button').click();document.querySelector('[data-club-fixture-control=season] [data-menu-value=\"1\"]').click()");
   await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   assert.equal(await run("[...document.querySelectorAll('.club-fixture-result strong')].every(n=>n.textContent!=='—')"),true,'closed Season 1 has verified results');
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'historical season must disable next-match action');
+  const mutedNext=await run("(()=>{const n=document.querySelector('[data-club-fixtures-next]'),s=getComputedStyle(n);return {opacity:s.opacity,cursor:s.cursor,pointerEvents:s.pointerEvents,background:s.backgroundColor,border:s.borderColor}})()");
+  assert.equal(mutedNext.opacity,'0.45','historical next-match uses the Matchday muted opacity');
+  assert.equal(mutedNext.cursor,'default','disabled next-match does not show a click cursor');
+  assert.equal(mutedNext.pointerEvents,'none','disabled next-match has no hover/touch interaction');
+  assert.ok(mutedNext.background&&mutedNext.border,'disabled control retains its button geometry');
+  assert.equal(await run("document.querySelector('.club-fixture-row.is-next')"),null,'historical season must not highlight a next match');
+  await run("document.querySelector('[data-club-fixtures-next]').click()");
+  assert.equal(await run("document.querySelector('[data-club-fixture-next]')"),null,'disabled action must not select any match');
   await run('history.back()');await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await run('history.forward()');await wait("location.search==='?season=1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures'});await wait("location.search===''&&document.querySelectorAll('[data-club-fixture-id]').length===30");
@@ -1095,6 +1129,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   failFixtures=false;world={...world,revision:0,seasonNumber:0,day:0,phase:'unstarted'};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=0'});await wait("location.search===''&&document.querySelector('.club-fixtures')?.dataset.clubFixturesState==='unstarted'");
   assert.deepEqual(await run("[...document.querySelectorAll('[data-club-fixture-control=season] [data-menu-value]')].map(n=>n.dataset.menuValue)"),['1'],'world Season 0 still offers only viewed Season 1');
+  assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),true,'Season 0 disables next match');
   assert.deepEqual(await run('window.__errors'),[]);
   useDev=true;
   const devSetup=season=>"sessionStorage.setItem('football-architect:debug-enabled','on');sessionStorage.setItem('football-architect:standings-dev-preview','on');sessionStorage.setItem('football-architect:standings-dev-season','"+season+"');sessionStorage.setItem('football-architect:standings-dev-matchdays','4');sessionStorage.setItem('football-architect:calendar-dev-world-day','16');";

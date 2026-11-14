@@ -11,6 +11,13 @@ assert.match(baseSha||"",/^[0-9a-f]{40}$/,"PR_BASE_SHA must be the exact PR base
 const baseline=execFileSync("git",["show",baseSha+":assets/app.css"],{encoding:"utf8",maxBuffer:2e6});
 const current=readFileSync("assets/app.css","utf8");
 assert.notEqual(baseline,current,"CSS parity must compare a changed stylesheet");
+// Archive rows are asynchronous DEV fixtures. Verify their declarations
+// exactly match main even if an individual context has no archived rows.
+const dynamicHistorySelectors=new Set([".app-history-dev-archive-head",".app-history-dev-archive-club"]);
+for(const selector of dynamicHistorySelectors){
+ const rules=css=>css.split("\n").filter(line=>line.includes(selector));
+ assert.deepEqual(rules(current),rules(baseline),"History archive CSS must be unchanged: "+selector);
+}
 const origin="http://app.localhost:2000";
 const routes=["/calendar","/competitions/it-1/history","/competitions/it-1/standings","/competitions/int-1/postseason"];
 const widths=[320,390,768,1440];
@@ -40,6 +47,17 @@ try{
       !['faDevStandingsPending','faDebugPending','faDevSeasonTransition'].some(key=>state[key]==='true');
     });
     await page.evaluate(async()=>{await document.fonts.ready});
+    // Calendar controls change color after hydration. Capture settled styles
+    // on both sides, never mid-way through a finite CSS color transition.
+    if(route==="/calendar"&&!reducedMotion)await page.evaluate(async()=>{
+      const container=document.querySelector("#world-calendar #calendar-controls");
+      if(!container)return;
+      const elements=[container,...container.querySelectorAll("*")];
+      const running=elements.flatMap(el=>el.getAnimations({subtree:false}))
+       .filter(a=>a.playState==="running"&&Number.isFinite(a.effect?.getComputedTiming().endTime));
+      await Promise.all(running.map(a=>a.finished.catch(()=>{})));
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    });
     const computed=await page.evaluate(({selectors,cssProperties})=>{
      const result={};
      for(const selector of selectors){
@@ -92,6 +110,11 @@ try{
    assert.equal(item.props.transition,before.computed["#calendar-current-week"][index].props.transition);
   }
   for(const selector of selectors){
+   // The independently hydrated DEV History fixtures may mount no rows in
+   // one context. Their exact stylesheet declarations are checked above;
+   // compare computed values only when the fixture cardinality also matches.
+   if(route==="/competitions/it-1/history"&&dynamicHistorySelectors.has(selector)&&
+      before.computed[selector].length!==comparison[selector].length)continue;
    // Calendar uses centered controls and reserves space for its Week shortcut.
    // Restrict exceptions to Calendar control geometry; all other styles still match main.
    const authorizedCalendar=route==="/calendar"&&
