@@ -242,6 +242,10 @@ test('C2-a DEV attack continuity: genuine post-PASS/CARRY Rapier replay',async()
    'negative replay must not count any retained conflict resolution');
   assert.equal(audit.excludedAfterReassignment,0,
    'negative replay must not lose a forward after C2-a');
+  for(const key of ['firstPreHandoffConflict','firstResidualConflict',
+   'firstC2aResolution','firstExcludedAfterReassignment'])
+   assert.equal(audit[key],null,
+    'non-conflicting authentic replay has no '+key+' witness');
   console.log('C2_A_REAL_RAPIER_PRESS_SELECTION_AUDIT',JSON.stringify(audit));
   assert.ok(eligibleFrames>0,'genuine post-carry support must be exercised');
   assert.equal(baselineDutyConflicts,0,
