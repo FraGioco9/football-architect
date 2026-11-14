@@ -113,7 +113,7 @@ test('P1 independent order, stable tie-break and unchanged input',()=>{
 });
 
 test('P1 genuine different-side context remains symmetric',()=>{
- const away={...base,playerId:'away-7',team:'away'};
+ const away={playerId:'away-7',team:'away'};
  const pass=select([player('pass','away-2')],'ball-opportunity',away);
  assert.equal(pass.team,'away');
  assert.equal(pass.targetPlayerId,'away-2');
