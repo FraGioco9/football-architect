@@ -34,7 +34,7 @@ function route(url:URL){
  const search=changedQuery?(params.size?'?'+params.toString():''):url.search;
  if(path!==original||changedQuery)return {redirect:path+search};
  const target=parseRoute(path);
- if(target?.kind==='match')return {file:'/matches/_shared/index.html'};
+ if((target?.kind as string|undefined)==='match')return {file:'/matches/_shared/index.html'};
  if(target?.kind==='club')return {file:'/clubs/_shared/index.html'};
  if(target?.kind==='competition'||target?.kind==='cup')return {file:target.base+'/index.html'};
  return {file:path==='/'?'/index.html':/\.[a-z0-9]+$/i.test(path)?path:path+'/index.html'};
