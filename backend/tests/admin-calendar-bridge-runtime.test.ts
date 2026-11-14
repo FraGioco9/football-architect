@@ -40,6 +40,23 @@ beforeEach(async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day2-00001',now)).world;
  world=(await stageDomesticCalendar(db,session,meta(),'bridge-domestic-00001',now)).world;
 });
+it('assigns progressive numeric IDs to every published domestic match without changing the internal digest',async()=>{
+ const numbers=(await db.prepare('SELECT id,slot_match_id FROM public_match_numbers WHERE generation=? ORDER BY id')
+  .bind(world.generation).all()).results;
+ expect(numbers).toHaveLength(3896);
+ expect(new Set(numbers.map(r=>r.id)).size).toBe(3896);
+ expect(new Set(numbers.map(r=>r.slot_match_id)).size).toBe(3896);
+ for(let i=1;i<numbers.length;i++)expect(numbers[i].id).toBe(numbers[i-1].id+1);
+ const domestic=await readPublishedCompetitionMatches(db,1,'IT-1');
+ expect(domestic.fixtures).toHaveLength(242);
+ expect(domestic.fixtures.every(f=>/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
+ const match=domestic.fixtures.find(f=>f.phaseId==='league')!;
+ const data=await readPublicMatch(db,match.matchId);
+ expect(data).toMatchObject({matchId:match.matchId,status:'scheduled',result:null});
+ await expect(readPublicMatch(db,'0')).rejects.toMatchObject({status:404});
+ await expect(readPublicMatch(db,'999999999999999999999999')).rejects.toMatchObject({status:404});
+});
+
 it('runs distinct domestic, draw and publication transactions before handing off to sporting day 4',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await expect(publishInternationalCalendar(db,session,meta(),'bridge-premature-calendar-00001',now)).rejects.toMatchObject({status:409});
