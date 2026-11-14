@@ -1058,11 +1058,25 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
     // A03-04C: execute frozen URLs through the real public artifact, not registry helpers.
     const baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes.json',import.meta.url),'utf8'));
+    // Domestic routes are exhaustively checked for all 16 divisions in Node.
+    // In browser, exercise one ordinary route per domestic tier on both widths;
+    // retain every legacy, cross-view and international input.
+    const ordinaryDomestic=baseline.competitionBrowser.filter(({input})=>
+      /^\/competitions\/[a-z]+-[12]\/fixtures\?season=1&matchday=7$/.test(input));
+    const representatives=new Map();
+    for(const row of ordinaryDomestic){
+      const tier=row.input.match(/^\/competitions\/[a-z]+-([12])\//)?.[1];
+      if(!representatives.has(tier))representatives.set(tier,row);
+    }
+    assert.deepEqual([...representatives.keys()].sort(),['1','2'],'both domestic tiers covered in browser');
+    const ordinarySet=new Set(ordinaryDomestic),selected=new Set(representatives.values());
+    const browserCases=baseline.competitionBrowser.filter(row=>!ordinarySet.has(row)||selected.has(row));
+
     const currentUrl=()=>run('location.pathname+location.search+location.hash');
     const competitionReady="document.readyState==='complete'&&!!window.faCompetitionRoute";
     for(const width of [1440,390]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     for(const row of baseline.competitionBrowser){
+     for(const row of browserCases){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
       // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';

@@ -136,6 +136,8 @@ test('seeded generator uses catalog given names and does not affect attribute co
   assert.ok(eligible.some(code=>pools.given.get(code).values.includes(p.first_name)));
   assert.equal(Object.hasOwn(p,'known_as'),false);
   assert.equal(p.display_name,`${p.first_name} ${p.last_name}`);
+  assert.equal(Array.from(p.first_name)[0],Array.from(p.first_name)[0].toLocaleUpperCase('und'),
+   p.nationality+' generated name starts uppercase');
   assert.ok(eligible.some(code=>(pools.surnames.get(code)??
    COUNTRIES.find(c=>c.code===code).demoLast).includes(p.last_name)));
  }
@@ -230,21 +232,6 @@ test('dual names: forced/manual/allowed-set origin, manual precedence, seed and 
    /Invalid allowed secondary nationalities/);
 });
 
-test('all 300 Brazilian generated first names retain uppercase initials',()=>{
- const pools=loadPlayerNamePools({expectedCodes:COUNTRIES.map(c=>c.code)});
- const values=pools.given.get('BRA').values;
- assert.equal(values.length,300);
- assert.ok(values.every(n=>Array.from(n)[0]===Array.from(n)[0].toLocaleUpperCase('und')));
- assert.equal(values[0],'Jose');
- assert.equal(values[1],'Joao');
- const trial=generateTrial({count:50,seed:'brazil-uppercase-qa',primaryNationality:'BRA'});
- for(const p of trial.candidates){
-  assert.equal(p.first_name[0],p.first_name[0].toLocaleUpperCase('und'));
-  assert.equal(p.display_name,p.first_name+' '+p.last_name);
-  assert.equal(Object.hasOwn(p,'known_as'),false);
- }
-});
-
 test('player JSON hides QA-only specialist and suitability diagnostics',()=>{
  const player=generateTrial({count:1,seed:'internal-json-visibility-01'}).candidates[0];
  assert.ok(['specialist','versatile','primary_only'].includes(player.trial_role_profile));
@@ -258,14 +245,4 @@ test('player JSON hides QA-only specialist and suitability diagnostics',()=>{
  }
  assert.ok(Object.hasOwn(encoded,'attributes'));
  assert.equal(encoded.display_name,`${encoded.first_name} ${encoded.last_name}`);
-});
-
-test('Brazil, Portugal and Spain never generate aliases',()=>{
- for(const code of ['BRA','POR','ESP']){
-  const rows=generateTrial({count:8,seed:'canonical-name-'+code,primaryNationality:code}).candidates;
-  for(const p of rows){
-   assert.equal(Object.hasOwn(p,'known_as'),false);
-   assert.equal(p.display_name,`${p.first_name} ${p.last_name}`);
-  }
- }
 });

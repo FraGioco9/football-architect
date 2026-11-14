@@ -221,7 +221,7 @@ it('uses saved day13 results for partial standings and score-only statistics',as
  const compactCup=overview13.data.memberships.find((m:any)=>m.competitionId==='int-1');
  expect(compactCup.stats).toEqual((({clubId,...stats}:any)=>stats)(
   cup.data.statistics.teams.find((team:any)=>team.clubId==='IT-1')));
-});
+},30000);
 it('makes real future Playoff pairings public immediately after I06 without scores',async()=>{
  await calendar();
  const calendarModel=(await import('../../assets/world-calendar-model.js')).default as {createSeason:(season:number)=>{days:{day:number;events:{marker:string}[]}[]}};

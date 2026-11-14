@@ -83,3 +83,18 @@ The JSON is a local working artifact, not a committed fixture.
 **Source-level case delta for these files:** 26 named Node tests before; 20 after (4 deleted, 4 replaced/removed crest cases net, 2 new catalog parity cases). Site file ownership becomes 160 site-node and 300 total manifest entries; Match Engine remains 10, unchanged. These are static counts, **not timing or coverage equivalence proof**.
 
 **Important non-goals:** no modifications to 320 club records, club logos, historical data, sporting model, auth, Worker/D1 migrations, runtime JS, browser test selectors or exact-head CI gates. More suite classification is required before closing section A/B/C. Build/CI evidence must be attached to PR #598 once the updated SHA is tested.
+
+## Batch A2 — representative browser categories, generator invariants and bounded runtime (2026-11-14)
+
+Previous exact HEAD `84ed78a23a2b4cc1d76d093bc7cfe455bbf9b11f`: Browser QA and first/surname catalogs **PASS**; Site **FAIL** on a 10-second wait for `window.faCompetitionRoute` in the club page browser test (Node lane 1305 PASS / 1 FAIL); Admin **FAIL** on a Vitest 5-second timeout in `public-sporting-runtime.test.ts` after replaying 13 sporting days (304 PASS / 1 FAIL). FULL gate therefore failed by evidence propagation. These are observed failures, **not proof of a product regression or confirmed flakiness**.
+
+| Existing check | Batch A2 behavior-preserving change | Rationale / retained coverage |
+| --- | --- | --- |
+| `tests/club-pages-browser.test.mjs`: two viewports × sixteen equivalent domestic direct fixtures URLs | One representative direct route per domestic tier per viewport; **all** baseline special cases (legacy query, HTML, season, cross-view, international, bad matchday) remain | All 16 domestic route contracts still exhaustively exercised in `tests/world-divisions.test.mjs`, `tests/club-pages.test.mjs` and route registry tests; browser matrix continues validating behavior, not individual country IDs |
+| `tests/players-name-pools.test.mjs`: one BRA-only uppercase and one BRA/POR/ESP-only no-alias test | Remove two country-specific cases and enforce generated uppercase in existing seeded-catalog integration case | `tests/players-names-catalog.test.mjs` validates capitalized NFC Latin single names for **all 50 countries**; generator integration tests enforce `display_name`, no `known_as`, nationality source, determinism and attribute isolation |
+| `tests/players-names-catalog.test.mjs`: four top-ranked names and one optional example in Batch E | Drop five incidental individual-name assertions | Entire 300-name-by-50-country schema, ranking and source provenance contracts still checked; Batch E retains romanization standards and cohort warnings |
+| `backend/tests/public-sporting-runtime.test.ts`: day13 multi-step real-worker test with default 5-second Vitest timeout | Explicit **30-second bounded test timeout** (other full-lifecycle tests already use up to 120 seconds) | Identical sporting-day assertions and D1 isolation; startup variance is not an external 5-second performance contract |
+
+No runner/CI gate suppression, skipped tests, error-catching or production code change. The browser test still visits desktop and mobile widths and checks legacy URL canonicalization.
+
+**Further evidence:** executed case counts and wall-clock duration on new exact-HEAD CI, diagnosis of any persistent failure, and eventual full suite coverage mapping. Prior failing jobs are **not** marked fixed by these edits alone.

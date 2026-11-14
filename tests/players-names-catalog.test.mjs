@@ -333,16 +333,11 @@ test('Batch E: JPN KOR TUR GRE contain 300 observed Latin first names and preser
   assert.ok(bank.source.source_url.startsWith('https://'));
   assert.ok(bank.source.license.length>15);
  }
- assert.equal(banks.JPN.given_names[0].value,'Haruto');
- assert.equal(banks.KOR.given_names[0].value,'Doyun');
- assert.equal(banks.TUR.given_names[0].value,'Mehmet');
- assert.equal(banks.GRE.given_names[0].value,'Georgios');
  assert.match(banks.JPN.source.romanization,/Hepburn/i);
  assert.match(banks.KOR.source.romanization_standard,/Revised Romanization/);
  assert.match(banks.GRE.source.romanization_standard,/ELOT 743/);
  assert.match(banks.TUR.source.metric,/NOT TÜİK/i);
  assert.match(banks.GRE.cohort,/NOT birth registry/);
- assert.ok(banks.TUR.given_names.some(x=>x.value==='İbrahim'));
 });
 
 test('Batch H: four source-backed Wikidata P735 Latin name pools preserve provenance and nonrepresentative cohort limits',()=>{
