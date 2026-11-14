@@ -1,3 +1,4 @@
+import {captureTestWorld,restoreTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
@@ -17,6 +18,7 @@ import {playerCsrfFor} from '../src/player-auth.ts';
 import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='6'.repeat(64),config={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:'http://localhost:2000'};
 let world:Awaited<ReturnType<typeof readWorld>>,session:AdminSession,csrf:string;
+let baseline:Awaited<ReturnType<typeof captureTestWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
 const call=(path:string,body?:unknown,headers:Record<string,string>={})=>worker.fetch(new Request('http://localhost:2000'+path,{method:body===undefined?'GET':'POST',headers:{Cookie:'fa_player_local='+token,Origin:config.PLAYER_ORIGIN,'Content-Type':'application/json','X-CSRF-Token':csrf,'Idempotency-Key':crypto.randomUUID(),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),config);
 async function command(path:string,extra:Record<string,unknown>={}){const r=await call(path,{...meta(),...extra});expect(r.status).toBe(200);const data=await r.json() as any;world=data.world;return data}
@@ -41,8 +43,18 @@ beforeAll(async()=>{
  world=(await archiveSeason(db,session,meta(),'activation-source-close-archive',now)).world;
  world=(await closeSeason(db,session,meta(),'activation-source-close',now)).world;
  const proposal=await readSeasonTwoCandidate(db);world=(await approveSeasonTwoSnapshot(db,session,{...meta(),snapshotHash:proposal.snapshot.snapshotHash},'activation-source-approve',now)).world;
+ // Generate the approved, closed Season 1 only once. Reuse the durable D1
+ // snapshot so neither test can inherit mutations from another test case.
+ baseline=await captureTestWorld(db);
 },120000);
-beforeEach(async()=>{world=await readWorld(db)});
+beforeEach(async()=>{
+ await restoreTestWorld(db,baseline);
+ // clearTestWorld drops this legacy operator bridge; restore it explicitly,
+ // as done by the other Season 2 persistence integration suite.
+ await db.prepare('INSERT INTO player_admin_operator_links(player_account_id,legacy_admin_account_id,linked_at) VALUES(?,?,?)')
+  .bind('activation-player',session.actor.id,now-10).run();
+ world=await readWorld(db);
+});
 it('protects the activation route with login, CSRF, exact Origin and current revision',async()=>{
  expect((await call('/api/admin/seasons/next-prepare',meta(),{Cookie:''})).status).toBe(401);
  expect((await call('/api/admin/seasons/next-prepare',meta(),{'X-CSRF-Token':''})).status).toBe(403);
