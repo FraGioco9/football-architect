@@ -160,7 +160,7 @@
   const announceAppend=copy=>{appendStatus.textContent=copy;};
   const scrollPane=document.querySelector('.fa-shell-content-scroll');
   let state=parseLocation(),ticket=0,current=null,lastCount=null,status='loading';
-  let loadedThrough=state.page,appendPending=false,appendError='';
+  let loadedThrough=state.page,appendPending=false,appendError='',batchAbort=null;
   // One canonical public manifest for every rendered segment; never request a crest per player.
   let clubCrestsPromise=null;
   function hydrateClubCrests(){
@@ -506,7 +506,7 @@
    const query=new URLSearchParams({offset:String((page-1)*50)});
    for(const key of filterKeys)if(state.filters?.[key])query.set(key,state.filters[key]);
    if(state.sort){query.set('sort',state.sort);query.set('order',state.order);}
-   const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',headers:{Accept:'application/json'}});
+   const response=await fetch('/api/players?'+query.toString(),{method:'GET',credentials:'omit',signal:batchAbort?.signal,headers:{Accept:'application/json'}});
    if(response.status===409)throw new Error('stale_world');
    if(!response.ok)throw new Error('http_'+response.status);
    const data=await response.json();
@@ -518,7 +518,11 @@
    return data;
   }
   async function load(page){
-   const seq=++ticket;state.page=page;loadedThrough=page;current=null;status='loading';
+   const seq=++ticket;
+   // A new sort/filter/page supersedes initial reads, restored batches and Load more.
+   // The existing ticket still fences late responses if transport abort races.
+   batchAbort?.abort();batchAbort=new AbortController();
+   state.page=page;loadedThrough=page;current=null;status='loading';
    announceAppend('');appendPending=false;appendError='';
    if(countNode)countNode.replaceChildren(Object.assign(document.createElement('span'),{className:'app-players-count-placeholder'}));
    // No preserved height: replacing many loaded rows with five placeholders must

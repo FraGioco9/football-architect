@@ -1330,6 +1330,17 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
   assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
   assert.equal(await run("getComputedStyle(document.querySelector('[data-club-fixtures-next]')).opacity"),'1','enabled next-match control is not muted');
+  // Filter-only Back/Forward must not issue extra requests or repaint a loading skeleton.
+  const stableFixtureReads=fixtureReads;
+  await run("window.__fixtureHistoryLoading=0;window.__fixtureHistoryObserver=new MutationObserver(()=>{if(document.querySelector('.club-fixture-loading'))window.__fixtureHistoryLoading++});window.__fixtureHistoryObserver.observe(document.getElementById('club-page'),{subtree:true,childList:true})");
+  await run('history.back()');
+  await wait("!new URLSearchParams(location.search).has('competition')&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run('history.forward()');
+  await wait("new URLSearchParams(location.search).get('competition')==='IT-1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await delay(80);
+  assert.equal(fixtureReads,stableFixtureReads,'filter-only history navigation reuses the same fixtures API read');
+  assert.equal(await run('window.__fixtureHistoryLoading'),0,'filter-only history navigation does not flash loading rows');
+  await run('window.__fixtureHistoryObserver.disconnect()');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});

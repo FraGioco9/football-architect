@@ -15,7 +15,7 @@
   const select=el('[data-contracts-select]'),trigger=el('[data-contracts-trigger]');
   const menu=el('.admin-contracts-club-menu'),menuItems=el('[data-contracts-club-options]'),search=el('[data-contracts-club-search]');
   const status=el('[data-contracts-message]'),save=el('[data-contracts-save]'),permissionCache=win.faAdminPermissionsCache?.create(win);
-  const selected=new Map();let allowed=false,busy=false,epoch=0,page=1,record=null,clubs=null,options=[],active=0,anchorId=null;
+  const selected=new Map();let allowed=false,busy=false,epoch=0,page=1,record=null,clubs=null,options=[],active=0,anchorId=null,readAbort=null;
   const t=()=>labels[doc.documentElement.lang]||labels.en,l=k=>t()[k]??labels.en[k];
   const clubName=key=>key===null?l('unassigned'):(clubs?.find(c=>c.clubKey===key)?.name||key);
   const report=value=>{status.textContent=value||''};
@@ -149,15 +149,18 @@
    el('[data-contracts-total]').textContent='';el('[data-contracts-page]').textContent='';controls();
   }
   function paint(yes){
+   if(!yes){epoch++;readAbort?.abort();readAbort=null}
    allowed=yes;host.hidden=!yes;root.hidden=!yes;host.dataset.adminAccess=yes?'granted':'denied';
    win.faAdminAccess=yes;win.dispatchEvent(new win.CustomEvent('fa:admin-access',{detail:yes}));if(!yes)clear();
   }
   async function load(){
    if(!allowed)return false;
+   readAbort?.abort();
+   const controller=new win.AbortController();readAbort=controller;
    const ticket=++epoch;loading();report('');controls();
    try{
-    const res=await win.fetch('/api/admin/contracts?page='+page,{credentials:'same-origin',cache:'no-store'}),data=await res.json();
-    if(ticket!==epoch||!allowed)return false;
+    const res=await win.fetch('/api/admin/contracts?page='+page,{credentials:'same-origin',cache:'no-store',signal:controller.signal}),data=await res.json();
+    if(ticket!==epoch||controller.signal.aborted||!allowed)return false;
     if(!res.ok){if([401,403].includes(res.status))permissionCache?.clear();throw Error(data?.error?.code||'http_'+res.status)}
     if(!Array.isArray(data?.players)||!Array.isArray(data?.clubs)||typeof data.worldGeneration!=='string'||!Number.isSafeInteger(data.worldRevision))throw Error('invalid_contract_data');
     if(record&&(data.worldGeneration!==record.worldGeneration||data.worldRevision!==record.worldRevision)){
@@ -167,13 +170,13 @@
     record=data;page=data.page;clubs=data.clubs;populate();render();
     return true;
    }catch(e){
-    if(ticket!==epoch)return false;clear();rows.setAttribute('aria-busy','false');
+    if(ticket!==epoch||controller.signal.aborted)return false;clear();rows.setAttribute('aria-busy','false');
     const code=String(e.message||'');
     report(code==='contracts_schema_unavailable'?l('schemaMissing'):
      ['not_found','http_404'].includes(code)?l('apiMissing'):['http_503','admin_unavailable','environment_unavailable'].includes(code)?l('unavailable'):l('failed'));
     if(['unauthorized','permission_denied','http_401','http_403'].includes(code))paint(false);
     return false;
-   }
+   }finally{if(readAbort===controller)readAbort=null}
   }
   // Keep focus on checkboxes while selecting; rebuilding rows here would
   // break keyboard use and the second click in a Shift+click range.
@@ -198,7 +201,9 @@
   async function assign(){
    if(!allowed||busy||!record||!selected.size||!select.value)return;
    const target=select.value==='__unassigned__'?null:select.value;
-   const world=record,players=[...selected.values()],ticket=++epoch;busy=true;closeMenu();controls();report('');
+   const world=record,players=[...selected.values()],ticket=++epoch;
+   readAbort?.abort();readAbort=null;
+   busy=true;closeMenu();controls();report('');
    try{
     const session=await win.fetch('/api/admin/session',{credentials:'same-origin',cache:'no-store'});
     if(!session.ok){if([401,403].includes(session.status))permissionCache?.clear();throw Error('auth_'+session.status)}

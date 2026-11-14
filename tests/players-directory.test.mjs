@@ -1089,7 +1089,7 @@ test('#532 rapid sort/refetch ignores superseded successful responses and failur
  assert.ok(begin>=0&&end>begin,'use production refresh implementation');
  const source=js.slice(begin,end);
  const fixture=new Function(`
-  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',pendingReturn=null;
+  let ticket=0,loadedThrough=1,current=null,status='ready',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;
   const state={page:1},pending=[],painted=[],loading=[];
   const countNode=null,scroll={setAttribute(){}},body={querySelector(){return null}};
   const renderHead=()=>{},showLoadingRows=()=>loading.push(5);
@@ -1112,4 +1112,46 @@ test('#532 rapid sort/refetch ignores superseded successful responses and failur
  fixture.pending[3].resolve(result(105));await final;
  assert.deepEqual(fixture.snapshot().ids,[105]);
  assert.equal(fixture.snapshot().status,'ready','obsolete failure does not replace newer result');
+});
+
+
+test('Players aborts superseded list and Load more GETs without publishing obsolete rows',async()=>{
+ const js=read('assets/players-directory.js');
+ const begin=js.indexOf('  async function fetchBatch(page){'),end=js.indexOf('  function changeView(view){',begin);
+ assert.ok(begin>=0&&end>begin,'exercise the actual directory data-loading functions');
+ const pending=[],rendered=[];
+ const fetch=(url,{signal})=>new Promise((resolve,reject)=>{
+  const entry={url,signal,finish:data=>resolve({ok:true,status:200,json:async()=>data})};
+  signal?.addEventListener('abort',()=>reject(Object.assign(Error('aborted'),{name:'AbortError'})),{once:true});
+  pending.push(entry);
+ });
+ const runner=new Function('fetch','AbortController','painted',[
+  "let state={page:1,filters:{},sort:'',order:''},ticket=0,loadedThrough=1;",
+  "let current=null,lastCount=null,status='loading',appendPending=false,appendError='',batchAbort=null,pendingReturn=null;",
+  "const filterKeys=[],countNode=null,scroll={setAttribute(){},focus(){}},loadMore={},document={activeElement:null},body={append(){}};",
+  "const renderHead=()=>{},showLoadingRows=()=>{},paint=data=>painted.push(data);",
+  "const syncUrl=()=>{},renderProgress=()=>{},hydrateClubCrests=()=>{},playerRows=()=>[];",
+  "const message=()=>{},announceAppend=()=>{},language=()=>'en',locale=()=>({error:'error',appendLoading:'Loading more players...',moreLoaded:'New players: {count}. Shown: {loaded} of {total}.',allLoaded:'All players loaded',changed:'Changed',loadError:'Unable to load'}),requestAnimationFrame=()=>{};",
+  js.slice(begin,end),
+  "return {load,appendNext,snapshot:()=>({current,loadedThrough,status,appendPending})};"
+ ].join('\n'))(fetch,AbortController,rendered);
+ const packet=players=>({page:1,pageSize:50,count:51,totalPages:2,players});
+ const first=runner.load(1),obsolete=pending[0];
+ assert.equal(pending.length,1);
+ const newer=runner.load(1);
+ assert.equal(obsolete.signal.aborted,true,'new load aborts obsolete GET immediately');
+ assert.equal(pending.length,2);
+ pending[1].finish(packet([{id:101}]));
+ await Promise.all([first,newer]);
+ assert.deepEqual(runner.snapshot().current.players.map(p=>p.id),[101]);
+ assert.equal(rendered.length,1,'old response does not render');
+ const append=runner.appendNext(),obsoleteAppend=pending[2];
+ assert.equal(obsoleteAppend.url.includes('offset=50'),true);
+ const updated=runner.load(1);
+ assert.equal(obsoleteAppend.signal.aborted,true,'new load aborts pending append GET');
+ pending[3].finish(packet([{id:202}]));
+ await Promise.all([append,updated]);
+ assert.deepEqual(runner.snapshot().current.players.map(p=>p.id),[202]);
+ assert.equal(runner.snapshot().appendPending,false);
+ assert.equal(rendered.length,2,'only latest results render');
 });

@@ -271,6 +271,7 @@
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
     "tests/page-load-04-club-html.test.mjs": "site-node",
     "tests/page-titles-540.test.mjs": "site-node",
+    "tests/perf-api-01-requests.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
