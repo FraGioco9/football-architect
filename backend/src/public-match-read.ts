@@ -5,6 +5,8 @@ import {canonicalHash} from './catalogue-snapshot.ts';
 import {readWorld} from './world-repository.ts';
 import {isMatchId,matchIdForSlot} from './domain/calendar/match-slot-identity.ts';
 import type {TemporaryResult} from './temporary-simulation.ts';
+import {buildKnockoutSlotReservations,type BracketScope} from './domain/calendar/knockout-slot-reservations.ts';
+import {readPublicSportingSeason} from './public-sporting-read.ts';
 
 interface MatchRow {
  match_id:string;generation:string;season_number:number;competition_id:string;phase_id:string;
@@ -20,7 +22,8 @@ interface Day {generation:string;day:number;calendar_hash:string;simulation_vers
 const missing=():never=>{throw new ApiError(404,'not_found')};
 const corrupt=():never=>{throw new ApiError(503,'match_unavailable')};
 
-async function confirmedPublication(db:Database,row:MatchRow):Promise<Calendar|null> {
+interface PublicationSource {generation:string;season_number:number;competition_id:string;source_kind:'calendar'|'domestic'|'international';source_hash:string;published_at:number}
+async function confirmedPublication(db:Database,row:PublicationSource):Promise<Calendar|null> {
  const calendar=await db.prepare('SELECT calendar_hash,created_at FROM season_calendars WHERE season_number=?')
   .bind(row.season_number).first<Calendar>();
  if(row.source_kind==='calendar'){
@@ -62,7 +65,8 @@ export async function readPublicMatch(db:Database,matchId:string){
  if(typeof matchId!=='string'||!isMatchId(matchId))return missing();
  const world=await readWorld(db);
  const row=await db.prepare('SELECT * FROM season_match_slots WHERE match_id=?').bind(matchId).first<MatchRow>();
- if(!row||row.generation!==world.generation||world.seasonNumber===0||
+ if(!row)return readPublicReservedKnockout(db,matchId,world);
+ if(row.generation!==world.generation||world.seasonNumber===0||
     row.season_number>world.seasonNumber)return missing();
  const season=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
   .bind(row.season_number).first<{generation:string}>();
@@ -140,4 +144,68 @@ export async function readPublishedCompetitionMatches(db:Database,season:number,
    marker:r.marker,day:r.scheduled_day,round:r.round_number,
    homeClubId:r.home_club_id,awayClubId:r.away_club_id})),
   provenance:{kind:'authoritative',sourceKind:sample.source_kind,sourceHash:sample.source_hash}};
+}
+
+interface ReservedKnockout extends PublicationSource {
+ match_id:string;phase_id:string;tie_id:string;leg:number;slot_id:string;
+ marker:string;scheduled_day:number;round_number:number|null;
+ home_policy:string;rules_version:string;participant_a_json:string;participant_b_json:string;
+}
+interface ResolvedFixture {
+ id:string;marker:string;day:number;homeClubId:string;awayClubId:string;
+ phaseId:string;tieId:string|null;leg:number|null;result:unknown;
+}
+/** Re-derive immutable slot proof from approved brackets, not from its database row. */
+async function validKnockoutSlot(row:ReservedKnockout) {
+ const scope=row.source_kind as BracketScope;
+ const expected=(await buildKnockoutSlotReservations(row.generation,row.season_number,scope))
+  .find(x=>x.matchId===row.match_id);
+ if(!expected||row.competition_id!==expected.competitionId||row.phase_id!==expected.phaseId||
+  row.tie_id!==expected.tieId||row.leg!==expected.leg||row.slot_id!==expected.slotId||
+  row.marker!==expected.marker||row.scheduled_day!==expected.day||
+  row.round_number!==expected.round||row.home_policy!==expected.homePolicy||
+  row.rules_version!==expected.rulesVersion||
+  row.participant_a_json!==JSON.stringify(expected.participantA)||
+  row.participant_b_json!==JSON.stringify(expected.participantB))return corrupt();
+ return expected;
+}
+async function readPublicReservedKnockout(
+ db:Database,matchId:string,world:Awaited<ReturnType<typeof readWorld>>,
+){
+ const row=await db.prepare('SELECT * FROM season_knockout_match_slots WHERE match_id=?')
+  .bind(matchId).first<ReservedKnockout>();
+ if(!row||row.generation!==world.generation||world.seasonNumber===0||
+    row.season_number>world.seasonNumber)return missing();
+ const season=await db.prepare('SELECT generation FROM seasons WHERE season_number=?')
+  .bind(row.season_number).first<{generation:string}>();
+ if(!season||season.generation!==world.generation)return corrupt();
+ const slot=await validKnockoutSlot(row);
+ await confirmedPublication(db,row);
+ let resolved:ResolvedFixture|null=null;
+ const tie=await db.prepare('SELECT plan_hash FROM season_knockout_ties WHERE season_number=? AND competition_id=? AND phase_id=? AND tie_id=?')
+  .bind(row.season_number,row.competition_id,row.phase_id,row.tie_id).first<{plan_hash:string}>();
+ if(tie){
+  // This existing projection independently reconstructs and verifies the entire
+  // sporting chain (receipts, league ranks, knockout plan and source hashes).
+  const projection=await readPublicSportingSeason(db,row.competition_id,row.season_number);
+  const data=projection.data as {fixtures:ResolvedFixture[]}|null;
+  if(!data||!Array.isArray(data.fixtures))return corrupt();
+  const matching=data.fixtures.filter(f=>f.phaseId===row.phase_id&&f.tieId===row.tie_id&&f.leg===row.leg);
+  if(matching.length!==1||matching[0].marker!==row.marker||matching[0].day!==row.scheduled_day)return corrupt();
+  resolved=matching[0];
+ }
+ const after=await readWorld(db);
+ if(after.generation!==world.generation||after.revision!==world.revision||
+  after.seasonNumber!==world.seasonNumber||after.day!==world.day||after.phase!==world.phase)
+  throw new ApiError(409,'stale_world');
+ return {schemaVersion:1,providerId:'authoritative-world',matchId,season:row.season_number,
+  competitionId:row.competition_id,stageId:row.phase_id,tieId:row.tie_id,slotId:row.slot_id,
+  round:row.round_number,marker:row.marker,day:row.scheduled_day,leg:row.leg,
+  neutral:row.home_policy==='neutral',homePolicy:row.home_policy,
+  participantA:slot.participantA,participantB:slot.participantB,
+  homeParticipant:resolved?{clubId:resolved.homeClubId}:null,
+  awayParticipant:resolved?{clubId:resolved.awayClubId}:null,
+  status:resolved?.result?'completed':resolved?'scheduled':'awaiting_participants',
+  result:resolved?.result??null,venue:null,kickoff:null,
+  provenance:{kind:'authoritative',sourceKind:row.source_kind,sourceHash:row.source_hash}};
 }

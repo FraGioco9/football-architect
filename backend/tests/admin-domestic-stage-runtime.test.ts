@@ -52,7 +52,8 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect(match.result).toBeNull();
  const list=await readPublishedCompetitionMatches(db,1,'IT-1');
  expect(list).toMatchObject({status:'published',competitionId:'IT-1'});
- expect(list.fixtures).toHaveLength(240);
+ expect(list.fixtures).toHaveLength(242);
+ expect(list.fixtures.filter((f:any)=>f.phaseId==='playout')).toHaveLength(2);
  await expect(readPublishedCompetitionMatches(db,1,'int-1')).rejects.toMatchObject({status:404});
  expect((await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('completed');
  expect(await stageDomesticCalendar(db,session,original,'domestic-stage-00001',now)).toEqual(result);
