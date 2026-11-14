@@ -27,6 +27,68 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
   assert.ok(cookies.some(cookie=>cookie.name==='fa_player_local'&&cookie.httpOnly));
   assert.ok(!cookies.some(cookie=>cookie.name.includes('fa_admin')));
   await admin.locator('[data-admin-signed-in]').waitFor({state:'visible'});
+  // PERF-API-01: same-tab authorized Admin navigation on the real disposable
+  // Worker/D1. Record request methods and paths only (no credentials/bodies).
+  // The landing/calendar navigation has already verified and cached UI
+  // permissions; protected Worker endpoints still independently authorize.
+  const navHttp=[],recordNav=request=>{
+   const url=new URL(request.url());
+   if(url.origin===origin&&url.pathname.startsWith('/api/'))
+    navHttp.push({method:request.method(),path:url.pathname});
+  };
+  const countNav=(list,path,method='GET')=>list.filter(row=>row.path===path&&row.method===method).length;
+  let contractsNav,playersNav,calendarNav;
+  admin.on('request',recordNav);
+  try{
+   const contractsAt=navHttp.length;
+   const contractsResult=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/contracts'&&
+    r.request().method()==='GET');
+   await admin.goto(origin+'/admin/contracts',{waitUntil:'load'});
+   assert.equal((await contractsResult).status(),200,'Authorized Contracts list is available from local D1');
+   await admin.locator('#app-admin[data-admin-access="granted"]').waitFor({state:'visible'});
+   await admin.locator('[data-contracts-rows][aria-busy="false"]').waitFor({state:'attached'});
+   await admin.waitForFunction(()=>window.faWorldState?.get?.().worldStatus==='ready');
+   contractsNav=navHttp.slice(contractsAt);
+   assert.equal(countNav(contractsNav,'/api/admin/contracts'),1,'Contracts reads its list exactly once');
+   assert.equal(contractsNav.filter(row=>row.path.startsWith('/api/admin/')&&row.path!=='/api/admin/contracts').length,0,
+    'Contracts navigation does not fetch Calendar world/session/events');
+   assert.equal(countNav(contractsNav,'/api/player/permissions'),0,
+    'Established same-tab UI permission cache avoids a second read');
+   const playersAt=navHttp.length;
+   await admin.goto(origin+'/admin/players',{waitUntil:'load'});
+   await admin.locator('#app-admin[data-admin-access="granted"] [data-admin-players]').waitFor({state:'visible'});
+   await admin.waitForFunction(()=>window.faWorldState?.get?.().worldStatus==='ready');
+   playersNav=navHttp.slice(playersAt);
+   assert.equal(playersNav.filter(row=>row.path.startsWith('/api/admin/')).length,0,
+    'Opening the Players generator does not trigger a privileged read or mutation');
+   assert.equal(countNav(playersNav,'/api/player/permissions'),0,
+    'Players generator reuses the per-tab permission snapshot');
+   const calendarAt=navHttp.length;
+   await admin.goto(origin+'/admin/calendar',{waitUntil:'load'});
+   await admin.locator('[data-admin-signed-in]').waitFor({state:'visible'});
+   await admin.waitForFunction(()=>document.querySelector('#app-admin [data-admin-settings]')?.getAttribute('aria-busy')==='false'&&
+    !!document.querySelector('[data-admin-world]')?.textContent?.trim());
+   await admin.waitForFunction(()=>window.faWorldState?.get?.().worldStatus==='ready');
+   calendarNav=navHttp.slice(calendarAt);
+   assert.equal(countNav(calendarNav,'/api/admin/session'),1,
+    'Calendar fresh document independently confirms the operator session');
+   assert.equal(countNav(calendarNav,'/api/admin/world'),1,
+    'Calendar reads the authenticated world once');
+   assert.equal(countNav(calendarNav,'/api/admin/seasons/events'),1,
+    'Calendar reads protected events authority once');
+   assert.equal(countNav(calendarNav,'/api/player/permissions'),0,
+    'Known per-tab UI grants do not need another permissions fetch');
+   assert.equal(navHttp.filter(row=>row.method!=='GET').length,0,
+    'Read-only Admin route changes never execute a mutation');
+   console.log('PERF-API-01 authenticated Admin navigation HTTP PASS: '+JSON.stringify({
+    contracts:contractsNav.length,contractsListGets:countNav(contractsNav,'/api/admin/contracts'),
+    players:playersNav.length,playersAdminGets:playersNav.filter(row=>row.path.startsWith('/api/admin/')).length,
+    calendar:calendarNav.length,calendarAdminWorldGets:countNav(calendarNav,'/api/admin/world'),
+    calendarEventsGets:countNav(calendarNav,'/api/admin/seasons/events'),
+    repeatedPermissionsGets:countNav(contractsNav,'/api/player/permissions')+
+     countNav(playersNav,'/api/player/permissions')+countNav(calendarNav,'/api/player/permissions')
+   }));
+  }finally{admin.off('request',recordNav)}
   const read=()=>admin.evaluate(()=>fetch('/api/world',{cache:'no-store'}).then(r=>r.json()).then(x=>x.world));
   const click=async(action,path)=>{
    const selector=action==='approve'?'[data-admin-next-season-approve]':action==='reset'?'[data-admin-reset]':action==='prepare'?'[data-admin-prepare]':`[data-admin-command="${action}"]`;
