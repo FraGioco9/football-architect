@@ -290,6 +290,7 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      audit.approachCheckpoints.push({tick,ball:{
       x:round(ball.x),y:round(ball.y),shortfallM:round(shortfall)},
       actors,carrierNearestTeammates:nearestTeammates,
+      actualMoverBlockedBy:carrierPursuit?.actualMoverBlockedBy??null,
       carrierPursuitTarget:pursuitTarget?{x:round(pursuitTarget.x),
        y:round(pursuitTarget.y),gapM:round(targetGapM)}:null,
       blockersAlongPursuitTarget:blockersAlongTarget,
