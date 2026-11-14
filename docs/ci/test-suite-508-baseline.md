@@ -170,3 +170,11 @@ The 12-point whole-suite audit is still incomplete. A1–A6 are incremental evid
 **Fix:** Track the active close's cleanup and cancel **both** fallback timer and event listener before reopening or starting another close. Ignore bubbled child animation events; guard stale finish callbacks. No changes to public output or animation duration. **Regression coverage:** extend existing `tests/canonical-state-browser.mjs` SH-03 Chromium/WebKit flow to reopen a mobile Debug panel immediately after close and assert it stays visible past 180 ms, then close it and continue the original world-state assertions. No new test file, no skipped gates, no added retry loops.
 
 **Next evidence required:** current new exact-head Browser/Worker/Site/FULL workflows must PASS. Runtime benchmarks for A5 are still inconclusive; do not use this browser reliability fix to claim CI speed improvement.
+
+## Batch A8 — preserve Browser Awards strict assertions; align readiness to settled panel (2026-11-14)
+
+**Observed previous A7 exact HEAD** `e4a9433a120e17f43d45e16bfd9a71619af2351e`: SH-03 Chromium PASS (36 checks); later Chromium Browser QA FAIL at `tests/int24-browser-qa.mjs:511` because **22** Awards cards were present when exactly **11** live cards were directly mounted. FULL correctly FAIL as downstream gate. Site, first names, surnames and player generator PASS. The Awards test and renderer were unchanged in A7; this does not establish the cause of the residual skeleton.
+
+**A8 test readiness:** previous `DOMContentLoaded` readiness required only `11` live awards cards, without waiting for retirement of first-paint skeletons. Readiness now requires a known content state, 11 directly mounted live cards, **11 total panel cards**, and no skeleton root. The following strict assertions still independently verify the same 11/11 counts, no skeleton, no fabricated promotion/playoff or recipients; **nothing skipped, weakened or retried**. Persistent duplicate cards remain a failure, not hidden by a timeout. No product, DB, authentication, CI selection, or sporting rule changes.
+
+This is lifecycle synchronization, not a CI speed claim. Verify the new HEAD's required Site, Browser, Admin and FULL workflows; investigate product lifecycle if the panel never converges.
