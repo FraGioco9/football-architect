@@ -139,3 +139,9 @@ Code-path review identified one deterministically redundant authenticated HTTP c
 If the post-write protected events response has a different world revision/generation or the read fails for an ordinary availability reason, the original authenticated world and events reread is used. Auth revocation errors 401/403 continue to clear Admin state; session/permission checks on initial and manual refresh remain untouched. Three focused tests cover successful reuse, a concurrent revision fallback, and permission revocation.
 
 This is a measured *controller call sequence* before and after at the test harness level; no claim about production latency savings or full real Worker browser call counts. Existing full local Worker/D1 lifecycle and CI must validate correctness on this new exact head, while manual Chrome/iPhone Safari and broader world invalidation QA remain open.
+
+## Real authenticated Admin command HTTP count and public invalidation (2026-11-14)
+
+The existing disposable Worker/D1+Chromium Admin lifecycle browser now records actual API request paths around its real authenticated Season 1 Prepare button, after the shell's initial `/api/world` has settled. The recorded command must have 1 POST `/api/admin/seasons/prepare`, 0 authenticated GET `/api/admin/world`, 1 protected GET `/api/admin/seasons/events`, and 1 public GET `/api/world` through `fa:world-invalidated`. The test also waits for both non-busy Admin UI and the public canonical world adapter's matching season/revision.
+
+This is a real browser/Worker-local request-count assertion for a single successful Admin command rather than mocked-controller evidence. It deliberately preserves the public revalidation GET and server authority checks. A failed count fails the existing CI lifecycle test; no new workflow, deployment or remote D1 usage.

@@ -42,8 +42,41 @@ export async function verifyAdminWorldLifecycle(browser,{origin,publicOrigin=ori
    const body=await response.json();if(!response.ok)throw Error(path+': '+response.status+' '+JSON.stringify(body));return body.world;
   },path);
   let world=await read();assert.equal(world.seasonNumber,0);
-  world=await click('prepare','/api/admin/seasons/prepare');
+  // Measure only the actual authenticated button path after the shell's cold
+  // canonical world read, not this test's explicit helper GETs.
+  await admin.waitForFunction(()=>window.faWorldState?.get?.().worldStatus==='ready');
+  const prepareHttp=[];
+  const recordPrepare=request=>{
+   const url=new URL(request.url());
+   if(url.origin===origin&&url.pathname.startsWith('/api/'))
+    prepareHttp.push({method:request.method(),path:url.pathname});
+  };
+  admin.on('request',recordPrepare);
+  try{
+   // Register observers before the real command, including the public world
+   // revalidation which must not be suppressed by authenticated GET reuse.
+   const eventsRead=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/seasons/events'&&r.request().method()==='GET'&&r.status()===200);
+   const worldRead=admin.waitForResponse(r=>new URL(r.url()).pathname==='/api/world'&&r.request().method()==='GET'&&r.status()===200);
+   world=await click('prepare','/api/admin/seasons/prepare');
+   await Promise.all([eventsRead,worldRead]);
+   await admin.waitForFunction(()=>window.faWorldState?.get?.().world?.seasonNumber===1&&
+    window.faWorldState?.get?.().world?.phase==='preparing'&&
+    document.querySelector('#app-admin [data-admin-settings]')?.getAttribute('aria-busy')==='false');
+  }finally{admin.off('request',recordPrepare)}
   assert.equal(world.seasonNumber,1);assert.equal(world.phase,'preparing');
+  const count=(path,method='GET')=>prepareHttp.filter(x=>x.path===path&&x.method===method).length;
+  assert.equal(count('/api/admin/seasons/prepare','POST'),1,'one guarded Admin season preparation');
+  assert.equal(count('/api/admin/world'),0,'validated post-write world avoids a redundant protected GET');
+  assert.equal(count('/api/admin/seasons/events'),1,'protected events authority remains checked');
+  assert.equal(count('/api/world'),1,'public world invalidation still performs one canonical revalidation');
+  assert.equal(await admin.evaluate(()=>window.faWorldState.get().world.revision),world.revision,
+   'the public canonical adapter must publish the exact new world revision');
+  console.log('PERF-API-01 authenticated Admin prepare HTTP PASS: '+JSON.stringify({
+   commandPost:count('/api/admin/seasons/prepare','POST'),
+   redundantAdminWorldGets:count('/api/admin/world'),
+   protectedEventsGets:count('/api/admin/seasons/events'),
+   publicInvalidationWorldGets:count('/api/world')
+  }));
   console.log('Unified Admin browser: Player sign-in and Season 1 preparation PASS');
   await click('initialize','/api/admin/seasons/events/initialize');
   await click('eventStart','/api/admin/seasons/events/start');
