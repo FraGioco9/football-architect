@@ -35,9 +35,15 @@ Command (Python 3.11+, no dependencies): `python tools/bench-public-players-532.
 
 At 10k, `EXPLAIN QUERY PLAN` shows `SCAN generated_players` for nationality counts, an index/PK-assisted lookup for the default ID order and `USE TEMP B-TREE FOR ORDER BY` for the JSON-age sort. These are **local synthetic timings, not D1 SLO compliance**. No index or API change is justified without representative D1-equivalent data and actual browser memory/network observations.
 
-## Nonvisual append announcements (pending new exact-head CI)
+## Nonvisual append announcements (automated exact-head CI PASS at `b73c9bb`; new browser metrics pending)
 
 The current approved UI retains a disabled localized Loading... button during append, hides it at EOF and provides no visible appended-count/footer copy. In this PR, an *independent persistent* `.sr-only` `role=status`/polite live region follows the sentinel, outside the pager that hides at EOF. It announces the newly appended count and displayed total, EOF and errors in EN/DE/ES/FR/IT. The existing focusable table scroll region receives keyboard focus before a focused fallback button is disabled. Sorting/filtering clears stale append text. A focused regression test exercises append, EOF/error/retry and focus handoff. This does **not** imply a real VoiceOver/NVDA signoff.
+
+## Browser-only synthetic API / DOM metrics (pending exact-head Browser QA)
+
+The Chromium browser suite now runs `verifyPlayersScrollBrowser` against an **intercepted 1,000-player fixture**. It reports time to first synthetic data, the number and total bytes of mocked API responses, 50/100/250/1,000-row DOM growth, heap observations when exposed by Chromium, and median/p95 append timing. It also activates Load more using the keyboard, checks focus handoff and the status announcements, and reaches EOF without any remote DB. The observer is disabled in this diagnostic to exercise the manual fallback deterministically.
+
+The measurements are CI-runner and synthetic-payload diagnostics only, **not** production Worker/D1 latency, real network bandwidth, or evidence that live assistive technology announces the text. Do not set pass/fail latency budgets from these numbers. Actual D1/Worker p50/p95 and manual NVDA/VoiceOver remain pending.
 
 ## Targeted acceptance matrix and limits
 | Area | Evidence | Remaining action |
