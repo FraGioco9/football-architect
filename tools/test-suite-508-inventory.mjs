@@ -16,6 +16,35 @@ if(missing.length||stale.length){
  throw Error('Test ownership drift: untracked='+(missing.join(',')||'none')+'; stale='+(stale.join(',')||'none'));
 }
 const engine=walk('match-engine/tests').filter(path=>/\.test\.[cm]?[jt]s$/.test(path)).sort();
+// The separately scheduled Match Engine suite is outside the usual ownership
+// manifest. Prove each discovered test has a real workflow execution path.
+const engineScript=JSON.parse(read('match-engine/package.json')).scripts?.test;
+if(typeof engineScript!=='string')throw Error('Match Engine test script missing');
+const engineWorkflow=read('.github/workflows/match-engine-01.yml');
+const runCommands=[...engineWorkflow.matchAll(/^\s+run:\s*(.+)$/gm)].map(m=>m[1].trim());
+if(!runCommands.includes('npm --prefix match-engine test')){
+ throw Error('Match Engine targeted workflow does not run its Node test script');
+}
+const configuredNode=new Set(engineScript.split(/\s+/)
+ .filter(token=>/^tests\/.+\.test\.[cm]?[jt]s$/.test(token))
+ .map(path=>'match-engine/'+path));
+const configuredBrowser=new Set(runCommands
+ .filter(command=>command.startsWith('node --test '))
+ .flatMap(command=>command.split(/\s+/).filter(token=>token.startsWith('match-engine/tests/'))));
+const nodeFiles=engine.filter(path=>!path.includes('browser'));
+const browserFiles=engine.filter(path=>path.includes('browser'));
+const missingNode=nodeFiles.filter(path=>!configuredNode.has(path));
+const missingBrowser=browserFiles.filter(path=>!configuredBrowser.has(path));
+const staleNode=[...configuredNode].filter(path=>!nodeFiles.includes(path));
+const staleBrowser=[...configuredBrowser].filter(path=>!browserFiles.includes(path));
+if(!engine.length||missingNode.length||missingBrowser.length||staleNode.length||staleBrowser.length){
+ throw Error('Match Engine test execution drift: missing-node='+missingNode.join(',')+
+  '; missing-browser='+missingBrowser.join(',')+'; stale-node='+staleNode.join(',')+
+  '; stale-browser='+staleBrowser.join(','));
+}
+const engineExecution={workflow:'match-engine-01.yml',
+ nodeScript:'match-engine/package.json#scripts.test',
+ nodeFiles,browserFiles};
 const clubs=JSON.parse(read('data/clubs.json'));
 const canonicalNames=[...new Set(clubs.flatMap(club=>[club.primaryName,club.fullName])
   .filter(name=>typeof name==='string'&&name.trim().length>=8))].sort();
@@ -75,6 +104,7 @@ const lifecycleReview=rows.filter(row=>row.owner==='backend-runtime'&&
   b.sportingReplays-a.sportingReplays||a.path.localeCompare(b.path));
 const report={scope:'TEST-SUITE-01 static inventory; signals require human review',
  scannedFiles:rows.length,ownedFiles:tracked.length,matchEngineFiles:engine.length,
+ engineExecution,
  byOwner:Object.fromEntries(Object.entries(byOwner).sort(([a],[b])=>a.localeCompare(b))),
  staticTestCalls:rows.reduce((n,row)=>n+row.staticTestCalls,0),
  staticAssertCalls:rows.reduce((n,row)=>n+row.staticAssertCalls,0),
@@ -84,6 +114,7 @@ if(process.argv.includes('--json'))process.stdout.write(JSON.stringify(report,nu
 else {
  console.log('TEST-SUITE-01: '+report.scannedFiles+' source files ('+report.ownedFiles+' ownership-tracked, '+report.matchEngineFiles+' Match Engine).');
  console.log('Owner groups:',JSON.stringify(report.byOwner));
+ console.log('Match Engine execution: '+engineExecution.nodeFiles.length+' Node test files via npm; '+engineExecution.browserFiles.length+' browser test files via targeted workflow.');
  console.log('Static calls (not executed test/coverage counts): '+report.staticTestCalls+' test/it, '+report.staticAssertCalls+' assert.');
  console.log(report.candidateFiles+' files contain a canonical club name or fixed club ID: review candidates, not defects.');
  console.log(report.replayReview.length+' files contain explicit sporting replay/setup signals; '+report.lifecycleReview.length+' Worker files merit lifecycle/setup review; '+report.disabledReview.length+' files contain skip/only/todo markers.');
