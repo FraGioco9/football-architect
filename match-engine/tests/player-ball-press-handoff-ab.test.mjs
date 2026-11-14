@@ -392,3 +392,93 @@ test('C2 post-cleanup: ordinary HOME/AWAY still rejects retired C2-a flag and pr
    R,fix(c),initial(c),bad),TypeError);
  }
 });
+
+test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async()=>{
+ const R=await initializeRapier(rapier),c=CASES[1];
+ const experimental={...extended,autonomousCarryBlockedDetour:true};
+ for(const bad of [
+  {autonomousCarryBlockedDetour:true},
+  {...opts,autonomousCarryBlockedDetour:false},
+  {...extended,autonomousCarryBlockedDetour:false},
+  {...extended,autonomousCarryBlockedDetour:true,
+   researchShotAttacker:'away'}
+ ])assert.throws(()=>createPhysicalFixtureStepRuntime(
+  R,fix(c),initial(c),bad),TypeError);
+ const ordinary=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),extended);
+ const trial=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),experimental);
+ const replay=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),experimental);
+ const checkpoints=new Set([567,599,600,620,640,660,680,693,694,700,720]);
+ const rows=[];
+ let firstDivergence=null,firstShoeDifference=null;
+ let ordinaryStarts=0,trialStarts=0,ordinarySupport=0,trialSupport=0;
+ let minimumClearance=Infinity;
+ try{
+  const reset=trial.reset();
+  try{assert.deepEqual(reset.snapshot().ball,trial.snapshot().ball);}
+  finally{reset.dispose();}
+  for(let tick=1;tick<=720;tick++){
+   const a=ordinary.step(),b=trial.step(),z=replay.step();
+   assert.deepEqual(b.ball,z.ball,'detour deterministic ball tick '+tick);
+   assert.deepEqual(b.physicalPlayerPositions,z.physicalPlayerPositions,
+    'detour deterministic players tick '+tick);
+   assert.deepEqual(b.physicalContactFeed,z.physicalContactFeed);
+   assert.deepEqual(b.localAutonomousAction,z.localAutonomousAction);
+   if(firstDivergence===null&&(
+    JSON.stringify(a.ball)!==JSON.stringify(b.ball)||
+    JSON.stringify(a.physicalPlayerPositions)!==
+     JSON.stringify(b.physicalPlayerPositions)))firstDivergence=tick;
+   if(firstShoeDifference===null&&JSON.stringify(a.physicalContactFeed.started)!==
+     JSON.stringify(b.physicalContactFeed.started))
+    firstShoeDifference=tick;
+   ordinaryStarts+=a.physicalContactFeed.started.length;
+   trialStarts+=b.physicalContactFeed.started.length;
+   if(a.contactDecisionObservation.attackSupportRun?.phase==='post-carry-support')
+    ordinarySupport++;
+   if(b.contactDecisionObservation.attackSupportRun?.phase==='post-carry-support')
+    trialSupport++;
+   for(const frame of [a,b]){
+    assert.equal(frame.officialMatchPossession,false);
+    assert.equal(frame.officialMatchResult,null);
+    const start=frame.physicalContactFeed.started;
+    if(frame.localAutonomousAction){
+     assert.equal(start.length,1);
+     assert.equal(frame.localAutonomousAction.physicalTrigger,
+      'same-tick-real-rapier-shoe-start');
+     assert.equal(frame.localAutonomousAction.actualPhysicsImpulseApplied,true);
+    }
+   }
+   const carrier=b.physicalPlayerPositions.find(p=>p.engineId==='away-9');
+   const clearance=Math.min(...b.physicalPlayerPositions.filter(
+    p=>p.engineId!=='away-9').map(p=>Math.hypot(
+     carrier.x-p.x,carrier.y-p.y)));
+   minimumClearance=Math.min(minimumClearance,clearance);
+   if(checkpoints.has(tick)){
+    const base=a.physicalPlayerPositions.find(p=>p.engineId==='away-9');
+    const pursuit=b.contactDecisionObservation.carryPursuit;
+    rows.push({tick,baseline:{x:round(base.x),y:round(base.y)},
+     detour:{x:round(carrier.x),y:round(carrier.y)},
+     displacementFromBaselineM:round(Math.hypot(
+      carrier.x-base.x,carrier.y-base.y)),
+     ballGapM:round(Math.hypot(carrier.x-b.ball.position.x,
+      carrier.y-b.ball.position.y)),
+     blocker:pursuit?.playerId==='away-9'?
+      pursuit.actualMoverBlockedBy:null,
+     minimumCarrierClearanceM:round(clearance)});
+   }
+  }
+  // No movement/physics difference before a real source-authenticated
+  // carry can exist; the previous experiment failed this invariant.
+  assert.ok(firstDivergence===null||firstDivergence>=143,
+   'detour must not affect movement before the first genuine carry');
+  assert.ok(minimumClearance>=0.98-1e-6,
+   'experimental carrier must preserve 0.98m hard separation');
+  console.log('C2_B_OPT_IN_BLOCKED_DETOUR_AB',JSON.stringify({
+   firstDivergenceTick:firstDivergence,
+   firstShoeDifferenceTick:firstShoeDifference,
+   minimumCarrierClearanceM:round(minimumClearance),
+   realShoeStarts:{ordinary:ordinaryStarts,detour:trialStarts},
+   postCarrySupportFrames:{ordinary:ordinarySupport,detour:trialSupport},
+   checkpoints:rows
+  }));
+ }finally{ordinary.dispose();trial.dispose();replay.dispose();}
+});
