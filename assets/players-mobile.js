@@ -19,7 +19,7 @@
  function mount(win){
   const doc=win.document;
   const start=()=>{
-   const known=new WeakSet();
+   const known=new Map();
    const mobile=()=>!!win.matchMedia?.('(max-width:720px)').matches;
    const updateFade=region=>{
     const state=mobile()?scrollState(region.scrollWidth,region.clientWidth,region.scrollLeft):{left:false,right:false};
@@ -41,10 +41,15 @@
     node.replaceChildren(fullSpan,smallSpan);
    };
    const sync=()=>{
+    // Roster/Preview can replace entire scrollers; detach observers from old nodes.
+    for(const [old,listener] of known){
+     if(!old.isConnected){old.removeEventListener('scroll',listener);observer?.unobserve(old);known.delete(old);}
+    }
     for(const region of doc.querySelectorAll('.app-players-table-scroll')){
      if(!known.has(region)){
-      known.add(region);
-      region.addEventListener('scroll',()=>updateFade(region),{passive:true});
+      const listener=()=>updateFade(region);
+      known.set(region,listener);
+      region.addEventListener('scroll',listener,{passive:true});
       observer?.observe(region);
      }
      if(mobile())for(const node of region.querySelectorAll(selector))decorate(node);

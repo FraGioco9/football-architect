@@ -73,7 +73,9 @@ test('#574 mobile names abbreviate without losing original text or accessibility
   ['João Van Dijk','J. Van Dijk'],["Anna D'Amico","A. D'Amico"],
   ['N. Rossi','N. Rossi'],['Pelé','Pelé']
  ])assert.equal(ui.abbreviate(full),short);
- assert.match(read('assets/app.js'),/if\(document\.querySelector\('\.app-players-table-scroll'\)\)void import\('\/assets\/players-mobile\.js'\)/);
+ assert.match(read('assets/app.js'),/mobileTablePath==='\/players'/);
+ assert.match(read('assets/app.js'),/import\('\/assets\/players-mobile\.js'\)/);
+ assert.match(read('tools/publication-guard.mjs'),/"players-directory.js","players-mobile.js"/);
  assert.match(css,/\.fa-player-short-name\{display:none\}/);
  assert.match(css,/\.app-players-table \.fa-player-short-name,[\s\S]*?\.app-admin-view \.admin-contracts-table \.fa-player-short-name\{display:inline\}/);
 });
