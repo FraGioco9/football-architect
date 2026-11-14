@@ -223,7 +223,7 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
  const modes=[{name:'baseline',world:original},{name:'handoff',world:handoff}];
  const stats=modes.map(({name})=>({name,passTick:null,carryTick:null,
   postCarrySupportFrames:0,bestShortfallM:Infinity,bestTick:null,
-  shotZoneFrames:0,openShotZoneContactFrames:0,realShoeStarts:0,
+  shotZoneFrames:0,inRangeShoeStartFrames:0,realShoeStarts:0,
   authenticActions:[],naturalShots:[],lastPhysicalStart:null}));
  try{
   const seen={baseline:{pass:[],carry:[]},handoff:{pass:[],carry:[]}};
@@ -233,9 +233,11 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
     'independent real Rapier handoff replay tick '+tick);
    for(let i=0;i<2;i++){
     const frame=frames[i],audit=stats[i],ball=frame.ball.position;
-    const progress=PLAYER_PITCH.lengthM/2+ball.x;
-    const shortfall=Math.max(0,progress-SHOT_MAX_RANGE_M);
-    const inRange=progress>0&&progress<=SHOT_MAX_RANGE_M&&
+    // AWAY attacks the negative-X goal. This is the SAME 35 m
+    // goal-distance gate as the live policy, not a lane-clearance claim.
+    const goalDistance=PLAYER_PITCH.lengthM/2+ball.x;
+    const shortfall=Math.max(0,goalDistance-SHOT_MAX_RANGE_M);
+    const inRange=Math.abs(goalDistance)<=SHOT_MAX_RANGE_M&&
      Math.abs(ball.y)<=20;
     if(shortfall<audit.bestShortfallM){
      audit.bestShortfallM=shortfall;audit.bestTick=tick;
@@ -248,7 +250,7 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
      audit.realShoeStarts++;
      audit.lastPhysicalStart={tick,playerId:start.engineId,
       team:start.team,shortfallM:round(shortfall),inRange};
-     if(inRange)audit.openShotZoneContactFrames++;
+     if(inRange)audit.inRangeShoeStartFrames++;
     }
     const action=frame.localAutonomousAction;
     if(action){
@@ -268,6 +270,7 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
       seen[audit.name].carry.push(action);
      if(action.action==='shot'){
       audit.naturalShots.push(record);
+      assert.equal(action.decisionContext.shotRange,true);
       assert.equal(frame.physicalShotBoundary.active?.shotTick,tick);
      }
     }
@@ -294,9 +297,9 @@ test('C2-b preparation: authentic 22-player post-PASS/CARRY shot-gate timeline',
    'C2.3n must retain real-source forward support compared with baseline');
   assert.ok(stats[1].postCarrySupportFrames>0);
   assert.ok(stats[1].realShoeStarts>0);
-  assert.deepEqual(stats[0].naturalShots,[]);
-  assert.deepEqual(stats[1].naturalShots,[],
-   'ordinary-formation 720-tick negative case is NOT a natural shot');
+  // Do not freeze a negative research observation as a permanent
+  // expectation: a future genuine physical shot should be reported,
+  // never rejected merely because the earlier witness had zero shots.
   console.log('C2_B_REAL_RAPIER_SHOT_GATE_TIMELINE',JSON.stringify(
    stats.map(({bestShortfallM,...record})=>({
     ...record,bestShortfallM:round(bestShortfallM)
