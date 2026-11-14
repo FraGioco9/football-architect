@@ -782,25 +782,29 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const measure=(row,selector)=>{const r=row.querySelector(selector).getBoundingClientRect(),base=row.getBoundingClientRect();return {x:r.x-base.x,y:r.y-base.y,h:r.height}};
       const check=selectors=>selectors.map(selector=>({selector,hydrated:measure(hydrated,selector),pending:measure(pending,selector)}));
       const positions=check(['.club-competition-identity','.club-competition-name','.club-competition-tier',
-       '.club-competition-metrics dt','.club-competition-metrics dd',
+       '.club-competition-metrics dt',
        '.club-competition-next > .club-competition-label','.club-competition-next-content']);
       const skeletonBar=measure(pending,'.club-fp-competition-position');
       const statusLabelBox=pending.querySelector('.club-competition-metrics dt').getBoundingClientRect();
       const statusBarBox=pending.querySelector('.club-fp-competition-position').getBoundingClientRect();
       const statusBarCenterDelta=Math.abs((statusLabelBox.left+statusLabelBox.right-statusBarBox.left-statusBarBox.right)/2);
+      const hydratedStatusBox=hydrated.querySelector('.club-competition-metrics dd').getBoundingClientRect();
+      const hydratedStatusCenterDelta=Math.abs((hydratedStatusBox.left+hydratedStatusBox.right-statusBarBox.left-statusBarBox.right)/2);
+      const statusValueYDelta=Math.abs(measure(hydrated,'.club-competition-metrics dd').y-measure(pending,'.club-competition-metrics dd').y);
       const expectedBar=(parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-metrics dd')).lineHeight)-12)/2;
       const fixture=measure(pending,'.club-fp-competition-fixture');
       const round=measure(pending,'.club-fp-competition-round');
       const realFixtureLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next a')).lineHeight);
       const realRoundLine=parseFloat(getComputedStyle(hydrated.querySelector('.club-competition-next small')).lineHeight);
       pendingList.remove();panel.classList.remove('club-first-paint-panel');
-      return {positions,statusBarCenterDelta,barDelta:skeletonBar.y-measure(hydrated,'.club-competition-metrics dd').y,
+      return {positions,statusBarCenterDelta,hydratedStatusCenterDelta,statusValueYDelta,barDelta:skeletonBar.y-measure(hydrated,'.club-competition-metrics dd').y,
        expectedBar,fixtureHeight:fixture.h,roundHeight:round.h,
        expectedFixtureHeight:realFixtureLine,expectedRoundHeight:realRoundLine,
        fixtureRoundGap:round.y-fixture.y-fixture.h};
      })()`);
      assert.ok(skeletonParity.positions.every(p=>Math.abs(p.hydrated.x-p.pending.x)<1.5&&Math.abs(p.hydrated.y-p.pending.y)<1.5)
       &&skeletonParity.statusBarCenterDelta<1.5
+      &&skeletonParity.hydratedStatusCenterDelta<1.5&&skeletonParity.statusValueYDelta<1.5
       &&Math.abs(skeletonParity.barDelta-skeletonParity.expectedBar)<1.5
       &&Math.abs(skeletonParity.fixtureHeight-skeletonParity.expectedFixtureHeight)<1.5
       &&Math.abs(skeletonParity.roundHeight-skeletonParity.expectedRoundHeight)<1.5
