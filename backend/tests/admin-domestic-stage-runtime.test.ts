@@ -7,6 +7,7 @@ import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.t
 import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
+import {readPublicMatch} from '../src/public-match-read.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -44,6 +45,10 @@ it('stages only 3840 domestic fixtures and an immutable receipt, never a cup dra
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
  expect((await db.prepare('SELECT count(*) n FROM season_match_slots').first()).n).toBe(3840);
  expect((await db.prepare("SELECT count(*) n FROM season_match_slots WHERE source_kind='domestic'").first()).n).toBe(3840);
+ const first=await db.prepare('SELECT match_id FROM season_match_slots LIMIT 1').first<{match_id:string}>();
+ const match=await readPublicMatch(db,first!.match_id);
+ expect(match).toMatchObject({status:'scheduled',stageId:'league',provenance:{sourceKind:'domestic'}});
+ expect(match.result).toBeNull();
  expect((await db.prepare("SELECT status,receipt_hash FROM season_admin_events WHERE event_id='domestic:calendar'").first()).status).toBe('completed');
  expect(await stageDomesticCalendar(db,session,original,'domestic-stage-00001',now)).toEqual(result);
  world=result.world;

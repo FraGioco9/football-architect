@@ -11,6 +11,7 @@ import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory,rea
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
+import {readPublicMatch} from './public-match-read.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -48,6 +49,17 @@ export default {
       } catch (error) {
         if (error instanceof ApiError) return json(error.status, { error: { code: error.code } });
         return json(503, { error: { code: 'world_unavailable' } });
+      }
+    }
+    const matchDetail=url.pathname.match(/^\\/api\\/matches\\/(m1_[0-9a-f]{32})$/);
+    if(matchDetail){
+      const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
+      if(url.search)return json(422,{error:{code:'invalid_public_request'}});
+      try{return json(200,await readPublicMatch(requireDatabase(env.DB),matchDetail[1]))}
+      catch(error){
+        if(error instanceof ApiError&&(error.code==='not_found'||error.code==='stale_world'))
+         return json(error.status,{error:{code:error.code}});
+        return json(503,{error:{code:'match_unavailable'}});
       }
     }
     const playerDetail=url.pathname.match(/^\/api\/players\/([1-9][0-9]*)$/);
