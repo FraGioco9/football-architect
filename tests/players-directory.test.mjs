@@ -685,6 +685,7 @@ test('PLAYERS-SCROLL-01 progressive loading preserves 50-row API and URL paginat
  assert.match(js,/loadMore\.dataset\.playersLoadMore=''/);
  assert.match(js,/async function fetchBatch\(page\)/);
  assert.match(js,/pageSize!==50/);
+ assert.match(js,/data\.count>0&&page>data\.totalPages&&data\.players\.length===0/,'expired numeric pages recover to page one');
  assert.match(js,/async function appendNext\(\)/);
  assert.match(js,/body\.append\(playerRows\(data\.players\)\)/);
  assert.match(js,/history\.replaceState\(\{\.\.\.base,faPlayersReturn:/,'store only position metadata for browser Back');
