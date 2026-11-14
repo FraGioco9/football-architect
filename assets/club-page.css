@@ -350,6 +350,18 @@ body.app-body{--app-page-pad-top:8px}
 .club-header h1{margin-bottom:14px;line-height:1.15}
 @media(max-width:620px){.club-header h1{margin-bottom:10px}}
 .club-header .club-location{line-height:1.25}
+/* Responsive Club heading: one canonical name is visible at each width.
+   The H1 aria-label retains the full name for assistive technology. */
+.club-header #club-title [data-club-name]{display:none}
+.club-header #club-title [data-club-name="full"]{display:inline}
+@media(max-width:900px){
+ .club-header #club-title [data-club-name="full"]{display:none}
+ .club-header #club-title [data-club-name="primary"]{display:inline}
+}
+@media(max-width:420px){
+ .club-header #club-title [data-club-name="primary"]{display:none}
+ .club-header #club-title [data-club-name="compact"]{display:inline}
+}
 
 
 /* Predictive first paint: use known value formats, not arbitrary long bars.

@@ -424,7 +424,10 @@
    const empty='empty'+selected.view[0].toUpperCase()+selected.view.slice(1);
    content='<section class="app-panel club-empty"><p>'+escape(t[empty])+'</p></section>';
   }
-  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title">'+escape(c.primaryName)+'</h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
+  return '<header class="club-header">'+crest()+'<div><h1 id="club-title" class="app-page-title" aria-label="'+escape(c.fullName)+'">'+
+   '<span data-club-name="full">'+escape(c.fullName)+'</span>'+
+   '<span data-club-name="primary">'+escape(c.primaryName)+'</span>'+
+   '<span data-club-name="compact">'+escape(c.compactName)+'</span></h1><p class="club-location">'+flag('header')+escape(c.city)+', '+escape(country)+'</p></div></header>'+tabs+
    content;
  }
  return {views,copies,route,render};
