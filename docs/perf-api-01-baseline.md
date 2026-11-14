@@ -87,3 +87,9 @@ The exact-head Browser QA log (`43599480085`, Chromium job `132460985991`) has *
 The sampler now checks anonymous `GET /api/world` (expect 200 JSON) and `GET /api/player/permissions` (expect 401 or 200) **before** launching Chromium. Invalid local API routing fails clearly instead of generating misleading 404-based baselines. These two preliminary GETs are excluded from scenario request counts. Use `node tools/dev.mjs --local` for actual baseline; the standalone static preview is not a valid measurement target.
 
 The current issue still requires actual before/after performance measurements on an isolated real Worker/D1. No public-code optimization or measured performance claim is made by this guard.
+
+## Focused stable navigation cleanup (2026-11-14)
+
+Source inspection identified an avoidable **UI refresh** on Club Fixtures `popstate`: the controller cleared `lastKey` on *every* history navigation, including Back/Forward between competition-filter values for the same club, season, source and world generation/revision/day. The existing `createClubPublicReadCache` normally prevents a second HTTP GET for completed data, so **no API request reduction is claimed** for this fix. However, the redundant refresh can synchronously replace valid rows with the loading skeleton, abort the current consumer, and repaint from cache.
+
+The controller now retains the verified identity on ordinary `popstate` and lets `refresh()` decide from the existing season/world/source key. A changed season/source still refreshes; an error state may retry on history navigation. The existing Chromium Club Fixtures flow now checks a real filter-only Back/Forward sequence for **zero additional fixture endpoint calls and zero loading-skeleton flashes** while keeping all 30 rows. This test is a regression guard, **not** a substitute for an isolated real-Worker before/after baseline. Dedicated exact-head CI results remain necessary.
