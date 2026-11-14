@@ -40,3 +40,20 @@ Use only public 1–99 integer values, reject missing/out-of-range metrics. `mob
 - Local Node 22 body-classification unit smoke: **4/4 PASS**. Expanded integrated portrait test suite adds deterministic body attribution, invalid-input, no-internal-field and boundary checks. The original 150-player and 1,000-player cohorts remain **synthetic**; do not claim full-project or exact-head CI PASS before it completes.
 - The **actual 150 persisted players have not been read or checked**: live player records belong to environment-specific D1 and are not in this repository. Verify only after an approved public export is supplied.
 - No actual photographs generated or installed; alpha quality, visual diversity, image licensing, costs, storage and player-detail fallback behavior still need separate approvals.
+
+## Public API export and deterministic three-player pilot
+
+This step operates only against the **anonymous, already-public** players API. It never accesses Admin APIs, private drafts or D1 directly, sends no cookies, refuses cross-origin redirects, and never modifies remote state. The official Preview Worker may run older source than the latest main; the exporter recognizes both current `/api/players?page=N` and legacy `/api/players/page/N` public page paths. It deliberately refuses to overwrite an existing output file.
+
+Run from PowerShell with Node.js 22, using the exact Preview origin (public GET only):
+
+```powershell
+node tools/export-public-players-for-portraits.mjs --source https://preview.football-architect.workers.dev/ --output .\players-public.json
+node tools/players-portrait-profiles.mjs --input .\players-public.json --output .\players-appearance-manifest.json
+$export = Get-Content .\players-public.json -Raw | ConvertFrom-Json
+$export.players | Where-Object { $export.pilot_ids -contains $_.id } | Format-Table id,display_name,nationality,secondary_nationality
+```
+
+The export keeps only player numeric ID, display name, primary/secondary nationality and the four **public** athletic attributes. It verifies complete, consistent pagination and duplicate IDs. `pilot_ids` proposes three players deterministically, favoring distinct body archetypes and primary nationalities; selection is provisional until reviewed by the owner. Public export may be unavailable if the hosted Worker is older, network-restricted, or lacks the current public schema. Do not substitute private D1 reads or invent player records.
+
+**Local mock-API test:** 5/5 PASS using an in-memory public response; real hosted API connectivity and the 150 real players are **NOT VERIFIED** in this environment. No portrait images have been generated or stored by this feature.
