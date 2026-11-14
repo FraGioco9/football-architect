@@ -470,9 +470,9 @@ body.app-body{--app-page-pad-top:8px}
    Headings remain available to assistive technology; the visible labels
    below share the exact locale abbreviations used by the original thead. */
 @media(max-width:620px){
- /* Tabs use 4px bottom padding and a 1px separator: 9px margin yields
-    exactly 14px from the view buttons to History content. */
- .club-history{margin-top:9px;min-width:0}
+ /* Measure from the separator line (the nav border-bottom), not from
+    the view buttons. The first History row begins 14px below that line. */
+ .club-history{margin-top:14px;min-width:0}
  .club-history-table-wrap{width:100%;max-width:100%;overflow:visible}
  .club-history-table{
   --club-history-mobile-mp:"MP";--club-history-mobile-w:"W";
