@@ -5,19 +5,35 @@ import {validateSeasonOneSelection} from '../backend/catalogues/season-one-selec
 import {loadSeasonOnePreview} from '../tools/load-season-one-preview.mjs';
 import {loadCompetitionCatalogue} from '../tools/competition-catalogue.mjs';
 const selection=JSON.parse(readFileSync(new URL('../backend/catalogues/season-1.participants.json',import.meta.url),'utf8'));
-test('Season 1 source supplies all 18 canonical competitions while preview remains unapproved',()=>{
+test('Season 1 preview projects all domestic bindings and international quotas without approval',()=>{
  validateSeasonOneSelection(selection);
  const definitions=loadCompetitionCatalogue();
  assert.equal(definitions.length,18);
- for(const binding of selection.bindings){
-  const definition=definitions.find(d=>d.id===binding.competitionId);
-  assert.ok(definition);assert.equal(binding.clubIds.length,definition.capacity);
+ const byId=new Map(selection.bindings.map(binding=>[binding.competitionId,binding]));
+ assert.equal(byId.size,18,'unique competition IDs');
+ for(const definition of definitions){
+  const binding=byId.get(definition.id);
+  assert.ok(binding,'missing '+definition.id);
+  assert.equal(binding.clubIds.length,definition.capacity,definition.id+' capacity');
  }
  const preview=loadSeasonOnePreview();
- assert.equal(preview.approved,false);assert.equal(selection.productionApproval,false);
+ assert.equal(preview.approved,false);
+ assert.equal(selection.productionApproval,false);
  assert.equal(preview.allocations.length,16);
- assert.deepEqual(preview.allocations.find(a=>a.divisionId==='IT-1').clubIds,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
- assert.deepEqual(selection.bindings.find(b=>b.competitionId==='int-2').clubIds.filter(id=>id.startsWith('IT-')),['IT-4','IT-5','IT-6']);
+ const allocations=new Map(preview.allocations.map(row=>[row.divisionId,row]));
+ assert.equal(allocations.size,16);
+ for(const definition of definitions.filter(item=>item.category==='domestic')){
+  const source=byId.get(definition.id);
+  const projection=allocations.get(definition.id);
+  assert.ok(source&&projection,'missing domestic preview '+definition.id);
+  const expected=source.clubIds.map(id=>Number(id.split('-')[1])).sort((a,b)=>a-b);
+  assert.deepEqual(projection.clubIds,expected,definition.id+' preview matches approved initial selection');
+ }
+ for(const [cupId,from] of [['int-1',0],['int-2',3]]){
+  const expected=selection.countries.flatMap(country=>
+   byId.get(country+'-1').clubIds.slice(from,from+3));
+  assert.deepEqual(byId.get(cupId).clubIds,expected,cupId+' national quota uses initial top-tier table');
+ }
 });
 test('Season 1 rejects incomplete, duplicate, synthetic, wrongly scoped and production-labelled input',()=>{
  for(const mutate of [s=>s.season=2,s=>s.productionApproval=true,s=>s.countries[1]='IT',s=>s.bindings.pop(),

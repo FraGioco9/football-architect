@@ -108,3 +108,17 @@ The **all-50-country** format test already validates every given name: exactly 3
 - No changes to generated player data, bank source files, corpus weights, defaults, sampling behavior or security/CI gates. No test cases were skipped. A3 reduces **assertion count**, not top-level test count.
 
 **Current evidence:** static diff and existing full-file test coverage map; re-run exact-HEAD site/generator/catalog checks to establish passing behavior. A successful CI run is **required before claiming equivalence**.
+
+## Batch A4 — sporting/qualification and initial-selection contract generalization (2026-11-14)
+
+**Last observed verified exact HEAD before A4:** `f60a4c23674cb07cf80e2444457aea0562595d2d`: Site, Browser, Admin, Node first names, surnames, player trial and required FULL evidence gate all **PASS**. This is historical evidence, not a PASS claim for a later A4 commit.
+
+| Test file / lane | Replaced brittle assertion or gap | New general invariant and retained failure evidence |
+| --- | --- | --- |
+| `backend/tests/next-season-membership.test.ts` (`backend-contract`, Node) | IT-1-only promotion/relegation inclusion, exclusion and cup qualifier prefix assertions | One **all-eight-country** source-derived test verifies both next-season divisions, 3 promotions/3 relegations, each 32-club preserved universe, cup qualification based on **final standings** instead of provisional new ranking, 48 distinct cup participants, input immutability and frozen output |
+| Same file, negative test | Four isolated IT ID mutations with no checked error reason | Four grouped source-derived invalid evidence cases plus invalid season, all requiring the stable **422 `qualification_evidence_invalid`** contract |
+| `tests/season-one-selection.test.mjs` (`site-node`) | One fixed IT-1 1–16 list and fixed IT cup trio | Every domestic preview binding must correspond to its canonical 16-club initial selection; both cups' quota must match three club IDs per nation drawn from all **eight** original top-division orders; production approval stays false |
+
+**Safety/coverage:** no sporting rules changed, no fixture source rewritten, no changes to international pots, migration/data/runtime or production access. Existing negative validation and the 18-competition capacity checks survive. Two top-level tests per file remain; no CI selector changes, no skip/try-catch swallowing or changed runner assignment.
+
+**Still pending**: whole-suite duplicate map beyond reviewed domains, reliable before/after runtime comparison, complete A/B/C checklist and exact-head validation for this batch.
