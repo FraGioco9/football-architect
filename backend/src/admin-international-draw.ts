@@ -29,7 +29,7 @@ export async function executeInternationalDraw(db:Database,session:AdminSession,
  const stored=await db.prepare(`SELECT snapshot_json FROM seasons WHERE season_number=${world.seasonNumber}`).first<{snapshot_json:string}>();
  if(!stored||await canonicalHash(JSON.parse(stored.snapshot_json))!==await canonicalHash(snapshot))throw new ApiError(422,'calendar_event_prerequisites');
  if(!isInitialScheduleVersion(stage.algorithm_version))throw new ApiError(422,'calendar_event_prerequisites');
- const schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,stage.seed,stage.algorithm_version):await buildTrustedSeasonSchedule(snapshot,stage.seed,world.seasonNumber,stage.algorithm_version),domestic=schedule.fixtures.filter(f=>!f.competitionId.startsWith('int-'));
+ const schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,stage.seed):await buildTrustedSeasonSchedule(snapshot,stage.seed,world.seasonNumber),domestic=schedule.fixtures.filter(f=>!f.competitionId.startsWith('int-'));
  if(stage.algorithm_version!==schedule.algorithmVersion||stage.fixtures_hash!==await canonicalHash(domestic)||await canonicalHash(JSON.parse(stage.fixtures_json))!==stage.fixtures_hash)throw new ApiError(422,'calendar_event_prerequisites');
  const draws=await initialDrawOutcomes(schedule,snapshot);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:'international:draw',domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>[d.competitionId,d.hash])});

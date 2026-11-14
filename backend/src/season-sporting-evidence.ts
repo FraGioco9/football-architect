@@ -19,7 +19,7 @@ export async function loadSeasonSportingEvidence(db:Database,world:WorldV1){
  try{
   if(!season||season.generation!==world.generation||season.participants_hash!==snapshot.participantsHash||season.rules_hash!==snapshot.rulesHash||await canonicalHash(JSON.parse(season.snapshot_json))!==await canonicalHash(snapshot)||!calendar||draws.length!==2)return fail();
   if(!isInitialScheduleVersion(calendar.calendar_version))return fail();
-  const value=JSON.parse(calendar.calendar_json),schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,value.seed,calendar.calendar_version):await buildTrustedSeasonSchedule(snapshot,value.seed,world.seasonNumber,calendar.calendar_version);
+  const value=JSON.parse(calendar.calendar_json),schedule=world.seasonNumber===1?await buildInitialSchedule(snapshot,value.seed):await buildTrustedSeasonSchedule(snapshot,value.seed,world.seasonNumber);
   const hash=await canonicalHash(schedule);
   if(calendar.calendar_version!==schedule.algorithmVersion||calendar.calendar_hash!==hash||await canonicalHash(value)!==hash)return fail();
   const expectedDraws=await initialDrawOutcomes(schedule,snapshot);

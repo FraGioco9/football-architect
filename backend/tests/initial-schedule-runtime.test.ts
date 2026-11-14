@@ -57,17 +57,15 @@ describe('canonical initial sporting schedules',()=>{
    }
   }
  });
- it('preserves historical V1 schedules for validation instead of silently rewriting them',async()=>{
+ it('accepts only V2 schedules and rejects legacy V1 payloads without silent rewrites',async()=>{
   const snapshot=await loadApprovedSnapshot();
-  const prior=await buildInitialSchedule(snapshot,seed,'initial-leagues-v1');
-  expect(prior.algorithmVersion).toBe('initial-leagues-v1');
-  await expect(validateInitialSchedule(prior,snapshot)).resolves.toBeUndefined();
-  const improved=await buildInitialSchedule(snapshot,seed);
-  expect(improved.algorithmVersion).toBe('initial-leagues-v2');
-  expect(improved.fixtures).not.toEqual(prior.fixtures);
-  const tampered=structuredClone(prior) as any;
-  tampered.algorithmVersion='initial-leagues-v2';
-  await expect(validateInitialSchedule(tampered,snapshot)).rejects.toMatchObject({status:422});
+  const v2=await buildInitialSchedule(snapshot,seed);
+  expect(v2.algorithmVersion).toBe('initial-leagues-v2');
+  await expect(validateInitialSchedule(v2,snapshot)).resolves.toBeUndefined();
+  const legacy=structuredClone(v2) as any;
+  legacy.algorithmVersion='initial-leagues-v1';
+  await expect(validateInitialSchedule(legacy,snapshot)).rejects.toMatchObject({status:422});
+  await expect(validateInitialSchedule({...v2,algorithmVersion:'unknown'},snapshot)).rejects.toMatchObject({status:422});
  });
  it('places international matches before domestic matches on every approved double matchday',async()=>{
   const schedule=await buildInitialSchedule(await loadApprovedSnapshot(),seed);
