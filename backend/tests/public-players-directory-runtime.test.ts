@@ -166,3 +166,65 @@ test('Players server-side sorting uses an allowlisted SQL expression with stable
   assert.deepEqual(page.params,[50,0]);
  }
 });
+
+
+/** #532 acceptance: run the real public read against a deterministic, read-only
+ * DB adapter. Vary the result cardinality without relying on remote D1 state.
+ */
+function mockSizedDirectory(size:number,changeGeneration=false){
+ const calls:{sql:string;params:unknown[]}[]=[];
+ let worldReads=0;
+ const statement=(sql:string,params:unknown[])=>({
+  bind(...next:unknown[]){return statement(sql,next)},
+  async first(){
+   calls.push({sql,params});
+   if(sql.includes('FROM world_state')){
+    worldReads++;
+    return {schema_version:1,
+     generation:changeGeneration&&worldReads>1?'550e8400-e29b-41d4-a716-446655440001':generation,
+     revision:0,season_number:0,day:0,phase:'unstarted'};
+   }
+   if(sql.includes('COUNT(*)'))return {n:size};
+   return null;
+  },
+  async all(){
+   calls.push({sql,params});
+   const limit=Number(params[params.length-2]),offset=Number(params[params.length-1]);
+   return {results:Array.from({length:Math.max(0,Math.min(limit,size-offset))},(_,i)=>({
+    id:size-offset-i,payload_json:JSON.stringify(stored),club_key:null
+   }))};
+  },
+  async run(){return {results:[],meta:{changes:0}}}
+ });
+ const db={prepare(sql:string){return statement(sql,[])},async batch(){return []}} as unknown as Database;
+ return {db,calls};
+}
+
+test('#532 directory returns correct 0/1/50/51 cardinalities and page boundaries',async()=>{
+ for(const count of [0,1,50,51]){
+  const {db,calls}=mockSizedDirectory(count);
+  const first=await readPublicPlayers(db,1);
+  const second=await readPublicPlayers(db,2);
+  assert.equal(first.count,count);
+  assert.equal(first.page,1);
+  assert.equal(first.pageSize,50);
+  assert.equal(first.totalPages,Math.max(1,Math.ceil(count/50)));
+  assert.equal(first.players.length,Math.min(50,count));
+  assert.equal(second.page,2);
+  assert.equal(second.players.length,Math.max(0,count-50));
+  assert.equal(new Set(first.players.concat(second.players).map(p=>p.id)).size,count);
+  assert.equal(first.players[0]?.id,count||undefined);
+  const pageReads=calls.filter(call=>call.sql.includes('LIMIT ? OFFSET ?'));
+  assert.equal(pageReads.length,count===51?2:1,'avoid fetching beyond the final page');
+  assert.equal(Number(pageReads[0].params.at(-1)),0);
+  if(count===51)assert.equal(Number(pageReads[1].params.at(-1)),50);
+  assert.equal(calls.filter(call=>call.sql.includes('COUNT(*)')).length,2,
+   'each request currently recomputes COUNT(*); profile this before optimizing');
+ }
+});
+
+test('#532 directory rejects a world-generation transition between count and read',async()=>{
+ const {db,calls}=mockSizedDirectory(51,true);
+ await assert.rejects(readPublicPlayers(db,1),/stale_world/);
+ assert.equal(calls.filter(call=>call.sql.includes('FROM world_state')).length,2);
+});

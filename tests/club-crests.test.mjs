@@ -268,3 +268,19 @@ test('DE-3 FC Eving approved crest is catalogued with canonical colors and SVG m
  assert.ok(colors.length>=2);
  assert.deepEqual([...new Set(colors)].sort(),['#87432E','#F3EEE3'].sort());
 });
+
+
+test('ENG-7 Walton Rovers approved crest is integrated with canonical palette and named vector layers',()=>{
+ const path='assets/clubs/ENG/7/crest.svg';
+ assert.equal(manifest().clubCrests['ENG-7'],path);
+ assert.equal(JSON.parse(read('clubs/_shared/manifest.json')).clubCrests['ENG-7'],path);
+ assert.equal(isAllowlistedPublicPath(path),true);
+ const svg=read(path);
+ assert.match(svg,/<svg[^>]*viewBox="0 0 1024 1024"/);
+ assert.match(svg,/<title id="crest-title">Walton Rovers<\/title>/);
+ assert.match(svg,/aria-labelledby="crest-title crest-description"/);
+ assert.equal((svg.match(/inkscape:groupmode="layer"/g)||[]).length,10);
+ const colors=[...svg.matchAll(/#[0-9a-f]{6}\b/ig)].map(m=>m[0].toUpperCase());
+ assert.deepEqual([...new Set(colors)].sort(),['#005A3B','#EDE7E0']);
+ assert.doesNotMatch(svg,/<(?:image|text|script|foreignObject)\b/i);
+});

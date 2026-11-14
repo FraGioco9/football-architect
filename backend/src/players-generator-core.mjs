@@ -93,6 +93,24 @@ const profiles={
  LW:['speed dribbling agility technique','crossing shooting passing vision'],
  ST:['shooting positioning composure heading','speed strength technique agility']
 };
+// Additional role-relevant attributes: four distinct skills beyond each role's
+// four essential and four supporting skills. No hidden ability or growth inputs.
+const roleAdditional={
+ GK:'passing technique vision stamina',
+ RB:'strength decisions vision dribbling',
+ CB:'stamina agility vision technique',
+ LB:'strength decisions vision dribbling',
+ RWB:'marking decisions strength vision',
+ LWB:'marking decisions strength vision',
+ DM:'technique agility composure heading',
+ CM:'shooting agility tackling crossing',
+ AM:'speed stamina crossing positioning',
+ RM:'shooting vision decisions tackling',
+ LM:'shooting vision decisions tackling',
+ RW:'stamina decisions composure positioning',
+ LW:'stamina decisions composure positioning',
+ ST:'passing vision decisions dribbling'
+};
 const positionCompatibility={
  GK:['','', ''],
  RB:['RWB','CB RM','LB LWB DM CM RW'],
@@ -134,7 +152,7 @@ const versatileShare=.55; // proposed, not numerically approved; Draft/HOLD
 // #518: under approved A's rarer secondaries, soften primary-only role expression
 // to keep natural secondary-equivalent/better aptitude within approved #399 bands.
 // No assigned aptitude bucket, position swap, or change to the suitability formula.
-const roleExpression={mean:13,sd:12,maxAbs:35,maxAttributeShift:25};
+const roleExpression={mean:13.5,sd:12,maxAbs:35,maxAttributeShift:25};
 const GENERATION_PROFILES=Object.freeze({
  specialist:Object.freeze({primary:.70,secondary:.30}),
  versatile:Object.freeze({primary:.50,secondary:.50})
@@ -216,15 +234,17 @@ function attributePriority(role,attribute){
  if(keeperAttributes.includes(attribute))return 'D';
  const [a,b]=profiles[role].map(s=>s.split(' '));return a.includes(attribute)?'A':b.includes(attribute)?'B':'C';
 }
-// The user-facing primary-position suitability contract. It is always derived
-// from the final attributes; the selected target is trial-only generation input.
+// Suitability 2.0: current role-specific ability from actual football skills,
+// NOT an overall. Development aptitude, age and market value are never inputs.
+// The preselected target remains a trial-only generation input.
 export function calculatePositionSuitability(attributes,position){
  if(!POSITIONS.includes(position))throw Error('Invalid suitability position');
  const essential=position==='GK'?keeperAttributes:profiles[position][0].split(' ');
  const support=position==='GK'?
   ['agility','positioning','decisions','composure']:profiles[position][1].split(' ');
+ const additional=roleAdditional[position].split(' ');
  const average=keys=>keys.reduce((sum,key)=>sum+attributes[key],0)/keys.length;
- return .70*average(essential)+.30*average(support);
+ return .65*average(essential)+.25*average(support)+.10*average(additional);
 }
 const PRIMARY_SUITABILITY_MAX=90; // approved hard cap on generated primary fit, NOT on skills
 function choosePrimarySuitabilityTarget(spec,seed,index){
