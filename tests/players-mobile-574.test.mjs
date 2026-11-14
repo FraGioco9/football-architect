@@ -183,17 +183,31 @@ test('#574 positions reveal the maximum whole codes and use a +N disclosure',asy
  assert.match(css,/\.fa-positions-popup\[hidden\]\{display:none\}/);
 });
 
-test('#574 position tooltip opens above when possible, otherwise below',async()=>{
+test('#574 position tooltip centers on its +N trigger and prefers above',async()=>{
  const {default:ui}=await import('../assets/players-mobile.js');
- const nearBottom={top:420,bottom:442,left:305};
- const above=ui.tooltipPlacement(nearBottom,165,68,390,500);
- assert.deepEqual(above,{top:345,left:217});
- const nearTop={top:18,bottom:40,left:10};
- const below=ui.tooltipPlacement(nearTop,165,68,390,500);
- assert.deepEqual(below,{top:47,left:10});
+ const centered=ui.tooltipPlacement({top:300,bottom:322,left:140,width:22},120,56,390,500);
+ assert.deepEqual(centered,{top:237,left:91,placement:'above'},'center aligns with the trigger midpoint');
+ const nearBottom=ui.tooltipPlacement({top:420,bottom:442,left:305,width:22},165,68,390,500);
+ assert.deepEqual(nearBottom,{top:345,left:217,placement:'above'},'clamped at right edge');
+ const nearTop=ui.tooltipPlacement({top:18,bottom:40,left:10,width:22},165,68,390,500);
+ assert.deepEqual(nearTop,{top:47,left:8,placement:'below'},'clamped at left edge');
  const code=read('assets/players-mobile.js');
  assert.match(code,/const fitsAbove=above>=edge,fitsBelow=below\+height<=viewportHeight-edge/);
- assert.match(code,/positionCells\.get\(cell\)\?\.full/,'tooltip shows the complete list, not just visible codes');
+ assert.match(code,/const centeredLeft=rect\.left\+triggerWidth\/2-width\/2/);
+ assert.match(code,/popup\.dataset\.placement=position\.placement/);
+ assert.match(code,/positionCells\.get\(cell\)\?\.full/,'tooltip shows all positions');
+});
+
+test('#574 position tooltip opens and closes with site animation, respecting reduced motion',()=>{
+ const code=read('assets/players-mobile.js');
+ assert.match(css,/\.fa-positions-popup\{[^}]*animation:app-world-tooltip-in 170ms ease-out both\}/);
+ assert.match(css,/\.fa-positions-popup\.is-closing\{animation:app-world-tooltip-out 130ms ease-in both\}/);
+ assert.match(css,/\.fa-positions-popup\[hidden\]\{display:none\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.fa-positions-popup,\.fa-positions-popup\.is-closing\{animation:none!important\}\}/);
+ assert.match(code,/event\.animationName==='app-world-tooltip-out'&&!activeButton/);
+ assert.match(code,/popup\.classList\.add\('is-closing'\)/);
+ assert.match(code,/popup\.classList\.remove\('is-closing'\)/);
+ assert.match(code,/\(prefers-reduced-motion: reduce\)/);
 });
 
 test('#574 Club header remains left-aligned at first paint and after hydration',()=>{

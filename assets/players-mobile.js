@@ -44,8 +44,11 @@
    rect.top-edge>=viewportHeight-rect.bottom-edge
     ?Math.max(edge,above)
     :Math.max(edge,Math.min(below,viewportHeight-height-edge));
-  return {top:Math.round(top),
-   left:Math.round(Math.max(edge,Math.min(rect.left,viewportWidth-width-edge)))};
+  const triggerWidth=Number.isFinite(rect.width)?rect.width:Math.max(0,(rect.right||rect.left)-rect.left);
+  const centeredLeft=rect.left+triggerWidth/2-width/2;
+  const left=Math.max(edge,Math.min(centeredLeft,viewportWidth-width-edge));
+  return {top:Math.round(top),left:Math.round(left),
+   placement:fitsAbove?'above':fitsBelow?'below':top<=rect.top?'above':'below'};
  };
  const positionLabels={
   en:'Show all positions: ',it:'Mostra tutte le posizioni: ',de:'Alle Positionen anzeigen: ',
@@ -64,18 +67,26 @@
    popup.setAttribute('role','tooltip');popup.hidden=true;
    doc.body.append(popup);
    let activeButton=null;
+   popup.addEventListener('animationend',event=>{
+    if(event.animationName==='app-world-tooltip-out'&&!activeButton){
+     popup.hidden=true;popup.classList.remove('is-closing');
+    }
+   });
    const closePopup=(restoreFocus=false)=>{
     if(!activeButton)return;
     const previous=activeButton;activeButton=null;
     previous.setAttribute('aria-expanded','false');
     previous.removeAttribute('aria-describedby');
-    popup.hidden=true;
+    if(win.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+     popup.hidden=true;popup.classList.remove('is-closing');
+    }else popup.classList.add('is-closing');
     if(restoreFocus&&previous.isConnected)previous.focus({preventScroll:true});
    };
    const showPopup=button=>{
     const cell=button.closest('.fa-positions-cell'),full=cell&&positionCells.get(cell)?.full;
     if(!full)return;
     closePopup();
+    popup.classList.remove('is-closing');
     activeButton=button;button.setAttribute('aria-expanded','true');
     button.setAttribute('aria-describedby',popup.id);
     popup.textContent=full;popup.hidden=false;
@@ -83,6 +94,7 @@
     const position=tooltipPlacement(rect,width,height,win.innerWidth,win.innerHeight);
     popup.style.top=position.top+'px';
     popup.style.left=position.left+'px';
+    popup.dataset.placement=position.placement;
    };
    doc.addEventListener('click',event=>{
     const trigger=event.target.closest?.('button.fa-positions-more');

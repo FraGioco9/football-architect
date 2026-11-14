@@ -1976,8 +1976,12 @@ body.app-body .app-players-tabs:not(.club-roster-tabs) .app-competition-tab{
  .fa-positions-more:hover,.fa-positions-more[aria-expanded="true"]{border-color:var(--focus)}
  .fa-positions-more:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 }
-.fa-positions-popup{position:fixed;z-index:1100;box-sizing:border-box;max-width:min(280px,calc(100vw - 16px));width:max-content;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;box-shadow:0 6px 18px #0005;pointer-events:none}
+.fa-positions-popup{position:fixed;z-index:1100;box-sizing:border-box;max-width:min(280px,calc(100vw - 16px));width:max-content;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;box-shadow:0 6px 18px #0005;pointer-events:none;animation:app-world-tooltip-in 170ms ease-out both}
+.fa-positions-popup[data-placement="above"]{transform-origin:bottom center}
+.fa-positions-popup[data-placement="below"]{transform-origin:top center}
+.fa-positions-popup.is-closing{animation:app-world-tooltip-out 130ms ease-in both}
 .fa-positions-popup[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.fa-positions-popup,.fa-positions-popup.is-closing{animation:none!important}}
 
 /* Restored desktop text must not expose mobile-only controls between frames. */
 .fa-positions-more{display:none}
