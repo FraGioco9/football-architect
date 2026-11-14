@@ -150,10 +150,10 @@ body.app-body{--app-page-pad-top:8px}
 .club-first-paint-panel .club-fp-competition .club-fp-bar{max-inline-size:132px}
 .club-competition .club-fp-bar{max-inline-size:132px}
 
-/* Club Overview / Competitions: one canonical grid, no legacy flex/subgrid overrides.
-   Both verified and first-paint entries use the same DOM and grid tracks.
-   Keep logo/name | centered Status | left-aligned Next match; on narrow panels
-   the identity spans the first row and the two values remain side by side. */
+/* Club Overview / Competitions: one THREE-COLUMN grid per membership row.
+   The visual identity, Status and Next match occupy direct tracks of that row.
+   The existing .club-competition-summary DOM wrapper is layout-transparent.
+   Pending/first-paint membership rows share the same structure and tracks. */
 .club-overview-layout>.club-competition{
  grid-column:1/-1;box-sizing:border-box;width:100%;min-height:160px;
  padding:12px 18px;container:club-competition-panel / inline-size;
@@ -161,8 +161,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-competition>h2{margin-bottom:6px}
 .club-competition-list{display:flex;flex-direction:column;margin-top:8px;gap:0}
 .club-competition-list .club-competition-entry{
- display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,580px);
- column-gap:clamp(16px,2.4vw,32px);align-items:start;min-height:80px;
+ display:grid;grid-template-columns:minmax(180px,1fr) minmax(205px,220px) minmax(0,340px);
+ column-gap:clamp(12px,1.8vw,24px);align-items:start;min-height:80px;
  width:100%;padding:0;margin:0;border:0;
 }
 .club-competition-list .club-competition-entry+.club-competition-entry{
@@ -195,17 +195,12 @@ body.app-body{--app-page-pad-top:8px}
  text-decoration:underline;text-underline-offset:3px;
 }
 .club-competition-list .club-competition-summary{
- grid-column:2;grid-row:1;display:grid;
- grid-template-columns:minmax(205px,220px) minmax(0,1fr);
- column-gap:clamp(12px,1.8vw,24px);
- width:100%;max-width:580px;min-height:80px;
- box-sizing:border-box;align-self:start;align-content:start;justify-self:end;
- margin:0;padding:0;border:0;
+ /* Layout-only div, no separate sizing context for Status and Next match. */
+ display:contents;
 }
-/* Both child columns own the same explicit label and value tracks. No
-   independent flex centering, implicit rows or nested CSS subgrid required. */
 .club-competition-list .club-competition-metrics{
- display:block;min-width:0;width:100%;margin:0;padding:0;border:0;
+ grid-column:2;grid-row:1;display:block;
+ min-width:0;width:100%;margin:0;padding:0;border:0;
 }
 .club-competition-list .club-competition-metrics>div,
 .club-competition-list .club-competition-next{
@@ -227,7 +222,9 @@ body.app-body{--app-page-pad-top:8px}
  font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere;
  text-align:center;
 }
-.club-competition-list .club-competition-next{text-align:left}
+.club-competition-list .club-competition-next{
+ grid-column:3;grid-row:1;text-align:left;
+}
 .club-competition-list .club-competition-next-content{
  grid-column:1;grid-row:2;align-self:start;display:flex;flex-direction:column;
  align-items:flex-start;justify-content:flex-start;gap:3px;min-height:59px;
@@ -262,16 +259,17 @@ body.app-body{--app-page-pad-top:8px}
 }
 @container club-competition-panel (max-width:800px){
  .club-competition-list .club-competition-entry{
-  grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;
-  row-gap:10px;column-gap:0;
+  grid-template-columns:minmax(261px,276px) minmax(0,1fr);
+  grid-template-rows:auto auto;row-gap:10px;column-gap:14px;
  }
  .club-competition-list .club-competition-identity{
-  grid-column:1;grid-row:1;min-height:64px;
+  grid-column:1/-1;grid-row:1;min-height:64px;
  }
- .club-competition-list .club-competition-summary{
-  grid-column:1;grid-row:2;max-width:none;
-  padding-left:56px;grid-template-columns:minmax(205px,220px) minmax(0,1fr);
-  column-gap:14px;
+ .club-competition-list .club-competition-metrics{
+  grid-column:1;grid-row:2;padding-left:56px;box-sizing:border-box;
+ }
+ .club-competition-list .club-competition-next{
+  grid-column:2;grid-row:2;
  }
 }
 @media(max-width:760px){
@@ -290,10 +288,10 @@ body.app-body{--app-page-pad-top:8px}
  }
 }
 @container club-competition-panel (max-width:500px){
- .club-competition-list .club-competition-summary{
-  padding-left:0;grid-template-columns:minmax(92px,40%) minmax(0,1fr);
-  column-gap:10px;
+ .club-competition-list .club-competition-entry{
+  grid-template-columns:minmax(92px,40%) minmax(0,1fr);column-gap:10px;
  }
+ .club-competition-list .club-competition-metrics{padding-left:0;}
 }
 /* First paint and runtime pending skeletons retain the exact hydrated
    name/tier text lines and status/fixture/round value tracks. Only the painted
