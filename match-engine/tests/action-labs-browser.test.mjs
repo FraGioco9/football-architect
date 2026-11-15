@@ -104,13 +104,13 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   });
   await wait("document.querySelector('#action-labs-dialog')?.open===true");
   await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
-  // Check real PASS and the newly staged HOME SHOT in the SAME browser.
-  // CONTROL/CARRY and contested contact still do not certify outcomes.
+  // Check genuine PASS, mirrored SHOT and separate receiver shoe CONTACT.
+  // These are physical events only, never completed possession or dribble.
   for(const [choice,ticks,marker] of [
    ['pass',1,'genuine Rapier shoe START + PASS impulse'],
    ['shot',35,'Verified HOME SHOT'],
    ['challenge',12,null],
-   ['control',90,null],
+   ['control',90,'Observed: separate teammate shoe-ball contact after real pass'],
    ['carry',35,null]
   ]){
    const result=await evalJs(
@@ -131,6 +131,11 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
     /No .* witness yet|genuine Rapier shoe START|Observed: actual|Observed: separate/,
     'A pending action must not become a fabricated positive');
    assert.match(result.readout,/Tick [0-9]+/);
+   if(choice==='control'){
+    assert.match(result.readout,/Physical PASS tick 1.*intended Home #9/);
+    assert.match(result.readout,/Witnesses 1/);
+    assert.doesNotMatch(result.status,/completed pass|possession confirmed/i);
+   }
    // Explicit negative wording ('No official possession') is correct;
    // only a false positive AWARDED outcome must fail this test.
    assert.doesNotMatch(result.status,/goal scored|tackle successful|official possession (confirmed|awarded)/i);

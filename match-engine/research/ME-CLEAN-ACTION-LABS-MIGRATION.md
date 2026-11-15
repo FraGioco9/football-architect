@@ -68,3 +68,24 @@ or overrides the original physics executor. A genuine alternative
 PASS/CLEARANCE is allowed; no SHOT or goal is pre-awarded.
 Mirrored Node, replay and Chrome negative tests accompany the positive
 open-lane controls. This is not proof of successful defensive tackle.
+
+
+## #620 — CONTROL genuine contact after physical PASS (clean)
+Initial geometry places only canonical HOME #9 at (-5,-3.2) before tick
+zero, so an unchanged authentic HOME #10 PASS from the grounded (-4.96,0)
+ball selects its intended recipient at a viable 3.2m distance.
+The original PASS impulse is applied to the SINGLE Rapier ball at tick 1
+from one exclusive shoe START. Only after that actual recorded physical
+PASS, the research-only HOME #9 movement intent targets the measured
+ball XY; the ordinary mover still enforces acceleration, speed, turning,
+pitch bounds and 0.98m minimum player-body separation.
+
+Rapier's OWN contact event queue then observes a distinct HOME #9 shoe
+START at tick 30. The observer requires exactly that original recipient
+and a later tick; mixed/ambiguous shoe starts, other teammates or an
+opponent-first contact do not certify a receiving event. The receiver
+may issue another independent original physical PASS: it does NOT imply
+a trap, control, completed pass, dribble, official possession or score.
+The normal unstaged formation is a genuine PASS-without-reception negative
+counterfactual. Acceptance requires exact-head Node and real Chrome QA;
+CARRY and real opponent-before-receiver negative remain pending.

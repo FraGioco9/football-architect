@@ -42,7 +42,7 @@ test('five clean Action LABs retain negative authorization boundaries',()=>{
   {tick:1,starts:['home-10'],action:{...action,officialMatchAction:true}}
  ])assert.throws(()=>classifyActionLabEvidence(pass,bad),TypeError);
  const control=getActionLabScenario('control');
- const priorPass={tick:1,playerId:'home-10',team:'home'};
+ const priorPass={tick:1,playerId:'home-10',recipientId:'home-9',team:'home'};
  assert.equal(classifyActionLabEvidence(control,{
   tick:2,starts:['away-10'],priorPass
  }).witnessed,false);
@@ -52,6 +52,18 @@ test('five clean Action LABs retain negative authorization boundaries',()=>{
  assert.equal(classifyActionLabEvidence(control,{
   tick:2,starts:['home-9'],priorPass
  }).verifiedReceivingShoeContact,true);
+ assert.equal(classifyActionLabEvidence(control,{
+  tick:2,starts:['home-8'],priorPass
+ }).witnessed,false);
+ assert.equal(classifyActionLabEvidence(control,{
+  tick:2,starts:['home-9'],priorPass,opponentEarlier:true
+ }).witnessed,false);
+ assert.equal(classifyActionLabEvidence(control,{
+  tick:2,starts:['home-9','away-10'],priorPass
+ }).witnessed,false);
+ assert.throws(()=>classifyActionLabEvidence(control,{
+  tick:1,starts:['home-9'],priorPass
+ }),/prior genuine physical pass/);
  const challenge=getActionLabScenario('challenge');
  assert.equal(classifyActionLabEvidence(challenge,{
   tick:1,starts:['home-10']
@@ -259,77 +271,107 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
 });
 
 
-test('CONTROL research diagnostic: actual original pass and subsequent shoe timeline',
+test('CONTROL: genuine HOME #10 pass then intended HOME #9 shoe START at tick 30, deterministic',
  {timeout:45000},async()=>{
  const R=await initializeRapier(rapier);
- const lab=createControlledActionLab(R,'pass');
- let pass=null,recipient=null,minGap=Infinity,minTick=null;
- const contacts=[],samples=[];
+ const a=createControlledActionLab(R,'control');
+ const b=createControlledActionLab(R,'control');
+ let pass=null,receive=null;
  try{
-  for(let tick=1;tick<=420;tick++){
-   const s=lab.step();
-   if(s.action?.action==='pass'&&!pass){
-    pass={tick,actor:s.action.playerId,
-     target:s.action.passTarget,impulse:s.action.impulseNs};
-    recipient=s.action.passTarget?.recipientId??null;
+  const zero=a.snapshot();
+  assert.equal(zero.physicsTick,0);
+  assert.equal(zero.priorRealPass,null);
+  assert.deepEqual(zero.starts,[]);
+  const receiver=zero.players.find(p=>p.id==='home-9');
+  assert.ok(receiver);
+  assert.equal(receiver.x,-5);
+  assert.equal(receiver.y,-3.2);
+  for(let tick=1;tick<=90;tick++){
+   const f=a.step(),g=b.step();
+   assert.equal(f.physicsTick,tick);
+   assert.deepEqual(f.ball,g.ball);
+   assert.deepEqual(f.starts,g.starts);
+   assert.deepEqual(f.action,g.action);
+   assert.deepEqual(f.evidence,g.evidence);
+   assert.equal(f.officialMatchResult,null);
+   assert.equal(f.officialMatchPossession,false);
+   assert.equal(f.scoreChanged,false);
+   assert.equal(f.evidence.passCompleted,null);
+   assert.equal(f.evidence.officialGoal,false);
+   if(tick===1){
+    assert.deepEqual(f.starts,['home-10']);
+    assert.equal(f.action?.action,'pass');
+    assert.equal(f.action.appliedByRapier,true);
+    assert.equal(f.action.actualPhysicsImpulseApplied,true);
+    assert.equal(f.action.passTarget?.recipientId,'home-9');
+    assert.equal(f.evidence.witnessed,false);
+    assert.equal(f.priorRealPass?.tick,1);
+    assert.equal(f.priorRealPass?.recipientId,'home-9');
+    pass=f.action;
    }
-   if(recipient){
-    const p=s.players.find(x=>x.id===recipient),b=s.ball.position;
-    const gap=Math.hypot(p.x-b.x,p.y-b.y);
-    if(gap<minGap){minGap=gap;minTick=tick;}
-    if(tick===1||tick%30===0)
-     samples.push({tick,b:{x:+b.x.toFixed(2),y:+b.y.toFixed(2)},
-      receiver:{x:+p.x.toFixed(2),y:+p.y.toFixed(2)},gap:+gap.toFixed(2)});
+   if(f.evidence.verifiedReceivingShoeContact){
+    if(!receive)receive={tick,contact:f.starts[0],action:f.action};
+    assert.equal(f.starts.length,1);
+    assert.equal(f.starts[0],'home-9');
+    assert.ok(tick>pass.tick);
+    assert.equal(f.evidence.verifiedShoeImpulse,false,
+     'receiving contact is not a separate CONTROL impulse');
+    assert.equal(f.eventCount,1);
    }
-   if(s.starts.length)contacts.push({tick,starts:s.starts,action:s.action?.action??null});
   }
-  process.stdout.write('ME_CONTROL_RESEARCH '+
-   JSON.stringify({pass,recipient,minGap,minTick,contacts:contacts.slice(0,25),samples})+'\\n');
- }finally{lab.dispose();}
+  assert.equal(receive?.tick,30);
+  assert.equal(receive.contact,pass.passTarget.recipientId);
+  process.stdout.write('ME_CONTROL_REAL_RECEIVING_SHOE '+
+   JSON.stringify({passTick:pass.tick,receiverTick:receive.tick,
+    receiver:receive.contact,secondaryOriginalAction:receive.action?.action??null})+'\\n');
+ }finally{a.dispose();b.dispose();}
+ assert.throws(()=>a.step(),/disposed/);
 });
 
-
-test('CONTROL stage research grid: same Rapier pass impulse followed by real receiver START',
- {timeout:90000},async()=>{
+test('CONTROL: authentic no-reception baseline and forbidden setup never award possession',
+ {timeout:45000},async()=>{
  const R=await initializeRapier(rapier);
  const {createEngine}=await import('../src/core.mjs');
  const {createPlayerMovement}=await import('../src/player-movement.mjs');
- const {CONTROL_RESEARCH_CANDIDATES}=await import('../src/research-control-initial-lineup.mjs');
- const ball={preset:'roll',seed:'me-control-stage-probe',x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
- const outcomes=[];
- for(let slot=0;slot<CONTROL_RESEARCH_CANDIDATES.length;slot++){
-  const core=createEngine(R,ball,{
-   diagnosticPlayerFootContactsEnabled:true,
-   diagnosticAutonomousFixtureActionEnabled:true,
-   diagnosticResearchControlSlot:slot
-  });
-  const mover=createPlayerMovement({
-   researchControlSlot:slot,researchControlBall:ball
-  });
-  const trace={slot,initial:CONTROL_RESEARCH_CANDIDATES[slot],
-   pass:null,starts:[],minimumGap:Infinity,minimumTick:0,
-   end:0};
-  let realPass=null;
-  try{
-   for(let tick=1;tick<=170;tick++){
-    const frame=mover.step(core.snapshot().ball.position,realPass);
-    const after=core.step(frame);
-    const action=core.uniformAutonomousActionSnapshot();
-    if(action?.action==='pass'&&!realPass)realPass=action;
-    const foot=core.footContactSnapshot();
-    if(action?.action==='pass'&&!trace.pass)
-     trace.pass={tick,playerId:action.playerId,
-      recipientId:action.passTarget?.recipientId};
-    const player=frame.players.find(p=>p.id==='home-9');
-    const p=after.ball.position;
-    const gap=Math.hypot(player.x-p.x,player.y-p.y);
-    if(gap<trace.minimumGap){trace.minimumGap=+gap.toFixed(3);trace.minimumTick=tick;}
-    if(foot.started.length)trace.starts.push({
-     tick,ids:foot.started,action:action?.action??null});
+ const {INITIAL_PLAYERS}=await import('../src/player-movement.mjs');
+ const {initialResearchControlLineup}=await import('../src/research-control-initial-lineup.mjs');
+ const ball={preset:'roll',seed:'me-control-negative',x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchControlReceiver:true
+ }),/sole private current-tick/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true,
+  diagnosticResearchControlReceiver:true,
+  diagnosticAutonomousCarryEnabled:true
+ }),/sole private current-tick/);
+ assert.throws(()=>createPlayerMovement({
+  researchControlReceiver:true,researchControlBall:{...ball,x:0}
+ }),/Closed deterministic/);
+ assert.throws(()=>initialResearchControlLineup(INITIAL_PLAYERS,{
+  ...ball,x:30
+ }),/Closed deterministic/);
+ const engine=createEngine(R,ball,{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true
+ });
+ const mover=createPlayerMovement();
+ let initialPass=null,otherContacts=0;
+ try{
+  for(let tick=1;tick<=170;tick++){
+   const frame=mover.step(engine.snapshot().ball.position);
+   engine.step(frame);
+   const action=engine.uniformAutonomousActionSnapshot();
+   const starts=engine.footContactSnapshot().started;
+   if(tick===1){
+    assert.deepEqual(starts,['home-10']);
+    assert.equal(action?.action,'pass');
+    initialPass=action;
    }
-   trace.end=core.snapshot().tick;
-  }finally{core.dispose();}
-  outcomes.push(trace);
- }
- process.stdout.write('ME_CONTROL_GRID '+JSON.stringify(outcomes)+'\\n');
+   if(tick>1)otherContacts+=starts.length;
+  }
+  assert.equal(otherContacts,0,
+   'without staged physical receiver, no reception can be claimed');
+  assert.equal(initialPass.passTarget.recipientId,'home-9');
+ }finally{engine.dispose();}
 });

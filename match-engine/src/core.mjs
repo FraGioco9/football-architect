@@ -83,7 +83,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
-  diagnosticResearchControlSlot = null
+  diagnosticResearchControlReceiver = false
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
@@ -103,19 +103,18 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
     (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
   throw new TypeError('Blocked lane requires genuine bounded research shot');
- if(diagnosticResearchControlSlot!==null&&(
-    !Number.isInteger(diagnosticResearchControlSlot)||
-    diagnosticResearchShotAttacker!==null||
-    diagnosticAutonomousCarryEnabled||
-    !diagnosticPlayerFootContactsEnabled||
-    !diagnosticAutonomousFixtureActionEnabled))
+ if(typeof diagnosticResearchControlReceiver!=='boolean'||
+    (diagnosticResearchControlReceiver&&(
+     diagnosticResearchShotAttacker!==null||
+     diagnosticAutonomousCarryEnabled||
+     !diagnosticPlayerFootContactsEnabled||
+     !diagnosticAutonomousFixtureActionEnabled)))
   throw new TypeError('CONTROL setup must use sole private current-tick Rapier source');
  const stagedShoes=diagnosticResearchShotAttacker!==null?
   initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,
    scenario,{blockedLane:diagnosticResearchShotBlockedLane}):
-  diagnosticResearchControlSlot!==null?
-   initialResearchControlLineup(INITIAL_PLAYERS,scenario,
-    diagnosticResearchControlSlot):INITIAL_PLAYERS;
+  diagnosticResearchControlReceiver?
+   initialResearchControlLineup(INITIAL_PLAYERS,scenario):INITIAL_PLAYERS;
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
   if (typeof diagnosticInitialRollFraction !== 'number' ||
@@ -199,7 +198,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticPlayerFootContactsEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
-    diagnosticResearchControlSlot
+    diagnosticResearchControlReceiver
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

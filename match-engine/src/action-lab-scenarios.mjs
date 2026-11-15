@@ -25,9 +25,9 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
   ['home-7','home-10','away-7'],'opponent-contact'),
  item('control','Control','control',
-  scene('me-action-pass-receive',-19.35),
-  'Watch for a separate teammate shoe-ball START after an actual pass; receiving contact is not guaranteed or official possession.',
-  ['home-7','home-10'],'control'),
+  scene('me-action-pass-receive',-4.96,0,0.3),
+  'A true HOME #10 PASS starts the receiver approach; only a later authentic HOME #9 shoe START counts as receiving contact. Possession or completed reception are never assumed.',
+  ['home-9','home-10','away-10'],'control'),
  item('carry','Carry','carry',scene('me-action-carry-home',-4.96,0,0.3),
   'Observe a source-authenticated short CARRY impulse if physical gates allow it; no completed dribble classification.',
   ['home-10','away-10','home-9'],'carry')
@@ -42,7 +42,7 @@ export function getActionLabScenario(id){
 // A read-only projection. The caller cannot authenticate Rapier events;
 // ONLY the closed createEngine-produced shoe timeline/action does so.
 export function classifyActionLabEvidence(spec,{
- tick,action=null,starts=[],priorPass=null
+ tick,action=null,starts=[],priorPass=null,opponentEarlier=false
 }={}){
  if(!spec||!ACTION_LAB_SCENARIOS.includes(spec)||
     !Number.isSafeInteger(tick)||tick<0||
@@ -57,17 +57,21 @@ export function classifyActionLabEvidence(spec,{
     starts.length!==1||starts[0]!==action.playerId||
     !['pass','shot','carry','clearance'].includes(action.action)))
   throw new TypeError('Never award an action without a single same-tick real shoe START');
+ if(typeof opponentEarlier!=='boolean')throw new TypeError('Boolean contact history required');
  if(priorPass!==null&&(
     !Number.isSafeInteger(priorPass.tick)||priorPass.tick>=tick||
     typeof priorPass.playerId!=='string'||
+    typeof priorPass.recipientId!=='string'||
+    priorPass.recipientId===priorPass.playerId||
+    !priorPass.recipientId.startsWith(priorPass.team+'-')||
     !['home','away'].includes(priorPass.team)))
   throw new TypeError('Invalid prior genuine physical pass');
  const pass=spec.goal==='pass'&&action?.action==='pass';
  const shot=spec.goal==='shot'&&action?.action==='shot';
  const carry=spec.goal==='carry'&&action?.action==='carry';
  const receiver=spec.goal==='control'&&priorPass!==null&&
-  starts.some(id=>id!==priorPass.playerId&&
-    id.startsWith(priorPass.team+'-'));
+  !opponentEarlier&&starts.length===1&&
+  starts[0]===priorPass.recipientId;
  const opposition=spec.goal==='opponent-contact'&&
   starts.some(id=>id.startsWith('away-'));
  const witness=Boolean(pass||shot||carry||receiver||opposition);

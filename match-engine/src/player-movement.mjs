@@ -1575,11 +1575,11 @@ export function createPlayerMovement(options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
-     k!=='researchControlSlot'&&k!=='researchControlBall')||
+     k!=='researchControlReceiver'&&k!=='researchControlBall')||
     ((options.researchShotAttacker??null)===null&&
-     options.researchControlSlot===undefined&&Reflect.ownKeys(options).length>0)||
-    (options.researchControlSlot!==undefined&&(
-     !Number.isInteger(options.researchControlSlot)||
+     options.researchControlReceiver===undefined&&Reflect.ownKeys(options).length>0)||
+    (options.researchControlReceiver!==undefined&&(
+     options.researchControlReceiver!==true||
      !Object.hasOwn(options,'researchControlBall')||
      options.researchShotAttacker!==undefined||
      options.researchShotBall!==undefined||
@@ -1594,9 +1594,9 @@ export function createPlayerMovement(options={}){
  const initial=options.researchShotAttacker?
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
-  options.researchControlSlot!==undefined?
-   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
-    options.researchControlSlot):INITIAL_PLAYERS;
+  options.researchControlReceiver===true?
+   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall):
+   INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};
@@ -1785,7 +1785,7 @@ export function createPlayerMovement(options={}){
   // Research-only receiver reaction, never a received-pass award.
   // A kinematic destination is still subject to acceleration, 7m/s speed,
   // turning, and 0.98m kinematic separation enforced by the original mover.
-  if(priorRealPass!==null&&(options.researchControlSlot===undefined||
+  if(priorRealPass!==null&&(options.researchControlReceiver!==true||
      priorRealPass.action!=='pass'||priorRealPass.playerId!=='home-10'||
      priorRealPass.passTarget?.recipientId!=='home-9'||
      priorRealPass.appliedByRapier!==true||

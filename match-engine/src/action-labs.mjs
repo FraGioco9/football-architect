@@ -30,12 +30,16 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
   diagnosticAutonomousFixtureActionEnabled:true,
   ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
+  ...(spec.mode==='control'?{diagnosticResearchControlReceiver:true}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
  const mover=createPlayerMovement(selectedShotSide?{
   researchShotAttacker:selectedShotSide,researchShotBall:initial,
   ...(blocked?{researchShotBlockedLane:true}:{})
+ }:spec.mode==='control'?{
+  researchControlReceiver:true,researchControlBall:initial
  }:{});
+ let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let shotTrace=null,blockedShotObservation=null;
  function record(physics,playerFrame){
@@ -93,11 +97,14 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
     observed3DFlight:maxZ>shotTrace.origin.z+0.02
    });
   }
-  if(action?.action==='pass'&&!firstRealPass){
+  if(action?.action==='pass'&&!firstRealPass&&
+     starts.length===1&&starts[0]===action.playerId){
    firstRealPass=Object.freeze({
     tick:physics.tick,playerId:action.playerId,
-    team:action.playerId.split('-')[0]
+    team:action.team,recipientId:action.passTarget?.recipientId??null,
+    physicalImpulseApplied:true
    });
+   firstPhysicalPassAction=action;
   }
   return Object.freeze({
    scenarioId:id,shotSide:selectedShotSide,shotLane:selectedShotSide?shotLane:null,
@@ -108,6 +115,7 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
    }))),
    starts,action,evidence,eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
+   priorRealPass:firstRealPass,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
@@ -117,7 +125,8 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
  function step(){
   if(disposed)throw new Error('Action LAB disposed');
   const prior=engine.snapshot();
-  const frame=mover.step(prior.ball.position);
+  const frame=mover.step(prior.ball.position,
+   spec.mode==='control'?firstPhysicalPassAction:null);
   const after=engine.step(frame);
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Action LAB must preserve real canonical 60Hz ticks');
@@ -186,7 +195,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    (snap.shotFlight?' · SHOT '+snap.shotFlight.team.toUpperCase()+
     ' · 3D path '+number(snap.shotFlight.path3DM)+' m'+
     ' · peak centre Z '+number(snap.shotFlight.maxCenterZM)+' m':'')+
-   (snap.blockedShotObservation?' · All three SHOT lanes blocked':'');
+   (snap.blockedShotObservation?' · All three SHOT lanes blocked':'')+
+   (session.spec.goal==='control'&&snap.priorRealPass?
+    ' · Physical PASS tick '+snap.priorRealPass.tick+
+    ' → intended '+label(snap.priorRealPass.recipientId):'');
   if(snap.shotFlight?.observed3DFlight){
    status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
     ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
@@ -205,6 +217,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     kind==='control'?
      'Observed: separate teammate shoe-ball contact after real pass. No official possession.':
      'Observed: actual AWAY shoe-ball contact; no successful tackle claimed.';
+  }else if(session.spec.goal==='control'&&snap.priorRealPass){
+   status.textContent='Observed: genuine '+label(snap.priorRealPass.playerId)+
+    ' PASS; awaiting authentic '+label(snap.priorRealPass.recipientId)+
+    ' shoe-ball START. No possession awarded.';
   }else if(snap.eventCount===0&&snap.physicsTick>0){
    status.textContent='No '+session.spec.goal+
     ' witness yet · physical tick '+snap.physicsTick+
