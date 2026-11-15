@@ -563,7 +563,7 @@ test('#623 plain filled Players silhouette has no internal strokes or portrait f
  assert.equal(placeholder.split('<path d="').length-1,2,'Filled head and torso only');
  assert.ok(placeholder.includes(outer[0]),'Torso must reuse Players icon outer path');
  assert.ok(placeholder.includes(outer[2]),'Head must reuse Players icon outer path');
- assert.ok(placeholder.includes('<path d="'+outer[0]+'" transform="translate(-30.72 0) scale(1.12 1)"/>'),'Torso must be widened by 12% horizontally');
+ assert.ok(placeholder.includes('<path d="'+outer[0]+'" transform="translate(-15.36 0) scale(1.06 1)"/>'),'Torso width must be balanced at 106% and centered');
  assert.ok(placeholder.includes('<path d="'+outer[2]+'"/>'),'Head must remain unchanged and unscaled');
  assert.ok(placeholder.includes('viewBox="-20 -12 552 535"'),'SVG viewport and reserved image frame must be unchanged');
  for(const forbidden of ['stroke=','fill-rule=','opacity='])assert.ok(!placeholder.includes(forbidden),'No internal outlines or holes: '+forbidden);
@@ -642,11 +642,30 @@ test('#623 wider portrait frame preserves mobile identity, affiliation and back-
  assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
  assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
  assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
- assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="none" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
+ assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
  assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
   assert.ok(html.includes('data-detail-portrait-photo width="190" height="181"'),path+' image size');
-  assert.ok(html.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="none" width="190" height="181"'),path+' fallback size');
+  assert.ok(html.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),path+' fallback size');
  }
+});
+
+test('#623 wide placeholder maintains head/body proportions on desktop and mobile',()=>{
+ const renderer=read('tools/render-player-detail.mjs');
+ const portrait=renderer.split("const silhouette='")[1]?.split("';")[0];
+ assert.ok(portrait,'canonical placeholder source exists');
+ assert.ok(portrait.includes('preserveAspectRatio="xMidYMax meet"'),'head and torso must preserve source proportions at every width');
+ assert.ok(!portrait.includes('preserveAspectRatio="none"'),'must not stretch the head horizontally');
+ assert.ok(portrait.includes('transform="translate(-15.36 0) scale(1.06 1)"'),'torso shoulders widen 6%, centered in the image');
+ assert.ok(!portrait.includes('scale(1.12 1)'),'old overly wide shoulders must be absent');
+ assert.equal((portrait.match(/<path d="/g)||[]).length,2,'solid two-part silhouette remains');
+ assert.ok(!portrait.includes('stroke='),'no outline or internal details');
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.ok(html.includes(portrait),path+' matches canonical proportional SVG');
+ }
+ const css=read('assets/player-detail.css');
+ assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
 });
