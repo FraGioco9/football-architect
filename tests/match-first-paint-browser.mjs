@@ -14,7 +14,7 @@ const decorated=applyPublishedMatchFirstPaint(shell,match,'123');
 assert.ok(decorated.includes('data-fa-match-first-paint'));
 assert.ok(decorated.indexOf('data-fa-match-first-paint')<decorated.indexOf('</head>'));
 assert.ok(!shell.includes('data-fa-match-first-paint'));
-const cases=[{width:1440,expectedWidth:296},{width:390,expectedWidth:280},{width:320,expectedWidth:280}];
+const cases=[{width:1440,expectedWidth:272},{width:390,expectedWidth:258},{width:320,expectedWidth:258}];
 const engines={chromium,webkit};
 let count=0;
 for(const [engine,driver] of Object.entries(engines)){
@@ -55,7 +55,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
-    // 280px is a maximum on narrow viewports: shell gutters can reduce the
+    // 258px is a maximum on narrow viewports: shell gutters can reduce the
     // available width at 320px without violating the fixed-layout contract.
     assert.ok(first.width<=device.expectedWidth+1,JSON.stringify({engine,theme,device,first}));
     if(device.width>=390)assert.ok(Math.abs(first.width-device.expectedWidth)<1,JSON.stringify({engine,theme,device,first}));
@@ -93,12 +93,17 @@ for(const [engine,driver] of Object.entries(engines)){
      const scores=[grid.querySelector('[data-match-home-score]'),grid.querySelector('[data-match-away-score]')];
      const center=grid.querySelector('.app-match-score-separator');
      const row=grid.getBoundingClientRect();
+     const [leftScore,rightScore]=scores.map(el=>el.getBoundingClientRect());
+     const separatorBox=center.getBoundingClientRect();
      return {names:names.map(el=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return {
       align:style.textAlign,display:style.display,vertical:style.alignItems,
       font:parseFloat(style.fontSize),fits:el.scrollWidth<=el.clientWidth+1,
       height:rect.height,centerOffset:(rect.y+rect.height/2)-(row.y+row.height/2)
      }}),
-      scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent})),
+      scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent,align:getComputedStyle(el).textAlign})),
+      columnGap:getComputedStyle(grid).columnGap,
+      scoreToDash:{left:separatorBox.left-leftScore.right,right:rightScore.left-separatorBox.right},
+      separatorWidth:separatorBox.width,
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
     for(const name of layout.names){
@@ -107,6 +112,10 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.equal(name.height,48);assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
     }
     for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
+    assert.deepEqual(layout.scores.map(s=>s.align),['right','left']);
+    assert.equal(layout.columnGap,'0px');
+    assert.ok(layout.separatorWidth<=8.5,JSON.stringify({engine,theme,device,layout}));
+    assert.ok(Math.abs(layout.scoreToDash.left)<=0.5&&Math.abs(layout.scoreToDash.right)<=0.5,JSON.stringify({engine,theme,device,layout}));
     assert.equal(layout.separator,'–');assert.equal(layout.height,48);
     assert.equal(first.badgeTheme,'competition');
     // The image is intentionally absent until the authorized match payload

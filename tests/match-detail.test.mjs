@@ -130,10 +130,14 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
- assert.match(css,/width:min\(100%,296px\);height:48px/);
- assert.match(css,/width:min\(100%,280px\);height:48px/);
- assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 12px 35px minmax\(0,1fr\)/);
- assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 32px 10px 32px minmax\(0,1fr\)/);
+ assert.match(css,/width:min\(100%,272px\);height:48px/);
+ assert.match(css,/width:min\(100%,258px\);height:48px/);
+ assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 8px 35px minmax\(0,1fr\)/);
+ assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 32px 8px 32px minmax\(0,1fr\)/);
+ assert.match(css,/\.app-match-score-line\{[^}]*column-gap:0;align-items:center/s);
+ assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-score-line\{[^}]*column-gap:0;padding-right:8px/s);
+ assert.match(css,/\.app-match-side-score\[data-match-home-score\]\{text-align:right\}/);
+ assert.match(css,/\.app-match-side-score\[data-match-away-score\]\{text-align:left\}/);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*inset:0 0 0 12px/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*border:1px solid var\(--app-match-edge\)/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*background:var\(--app-match-surface\)/s);
