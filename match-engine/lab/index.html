@@ -64,6 +64,7 @@
                   <button id="pause" class="me-button" type="button" disabled>Pause</button>
                   <button id="step" class="me-button" type="button" disabled>Step</button>
                   <button id="reset" class="me-button" type="button" disabled>Reset</button>
+                  <button id="action-labs-open" class="me-button" type="button" disabled>Action LABs</button>
                 </div>
                 <div class="me-speed-control">
                   <span class="me-field-label" id="speed-label">Speed</span>
@@ -531,6 +532,38 @@
     <p class="me-hint">Teal = previous model; amber = literature candidate. Large circles show synchronized positions; faint lines are complete pre-impact reference paths, solid lines are already travelled positions, and contact markers appear only on impact. The overhead X/Y axes retain equal pixels per metre. Select a speed or spin, use Play/Pause, Reset or drag the time slider. Closing Metrics stops playback. Main LAB play/pause, tick, seed and replay are never changed.</p>
   </section>
   <p class="me-hint">Observations only: 430 g · 0.62 restitution · grass deceleration 0.8 m/s². No default/gameplay physics parameters are changed.</p>
+</dialog>
+<dialog id="action-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="action-labs-title">
+  <div class="me-action-labs-header">
+    <div>
+      <h2 id="action-labs-title">Controlled actions</h2>
+      <p class="me-hint">One genuine 60 Hz Rapier ball and physical shoe contacts. This is not an official match.</p>
+    </div>
+    <button id="action-labs-close" type="button" class="me-button">Close</button>
+  </div>
+  <div class="me-action-labs-toolbar">
+    <label for="action-labs-choice">Action</label>
+    <select id="action-labs-choice" class="me-inspect-select">
+      <option value="pass">LAB-14 · Pass</option>
+      <option value="shot">LAB-15 · Shot</option>
+      <option value="challenge">LAB-16 · Physical challenge</option>
+      <option value="control">LAB-17 · Control</option>
+      <option value="carry">LAB-18 · Carry</option>
+    </select>
+    <div class="me-action-labs-buttons" role="group" aria-label="Action simulation controls">
+      <button id="action-labs-play" class="me-button me-button-primary" type="button">Play</button>
+      <button id="action-labs-pause" class="me-button" type="button">Pause</button>
+      <button id="action-labs-step" class="me-button" type="button">Step</button>
+      <button id="action-labs-reset" class="me-button" type="button">Reset</button>
+    </div>
+  </div>
+  <p class="me-hint" id="action-labs-description"></p>
+  <div class="me-action-labs-pitch-frame">
+    <canvas id="action-labs-pitch" width="1050" height="680" aria-label="Top-down controlled football action with authentic physical ball and highlighted participants"></canvas>
+  </div>
+  <p id="action-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select an action to begin.</p>
+  <p id="action-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
+  <p class="me-hint">Shown markers are a compact view of actors from the canonical 22-player physics. A contact is not automatically a successful tackle, pass completion, dribble, possession or goal.</p>
 </dialog>
 <script type="module" src="/__fa_match_engine__/lab.mjs"></script>
 </body>

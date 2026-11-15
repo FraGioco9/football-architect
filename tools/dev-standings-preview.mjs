@@ -40,6 +40,8 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/rapier-foot-contact-bridge.mjs': 'match-engine/src/rapier-foot-contact-bridge.mjs',
   '/__fa_match_engine__/private-physical-action-executor.mjs': 'match-engine/src/private-physical-action-executor.mjs',
   '/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs': 'match-engine/src/player-ball-uniform-autonomous-action.mjs',
+  '/__fa_match_engine__/action-labs.mjs': 'match-engine/src/action-labs.mjs',
+  '/__fa_match_engine__/action-lab-scenarios.mjs': 'match-engine/src/action-lab-scenarios.mjs',
   '/__fa_match_engine__/player-foot-contact.mjs': 'match-engine/src/player-foot-contact.mjs',
   '/__fa_match_engine__/player-foot-contact-timeline.mjs': 'match-engine/src/player-foot-contact-timeline.mjs',
   '/__fa_match_engine__/player-foot-contact-solver.mjs': 'match-engine/src/player-foot-contact-solver.mjs',

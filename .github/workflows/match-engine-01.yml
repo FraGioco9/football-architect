@@ -24,5 +24,8 @@ jobs:
         run: node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs
       - name: Browser viewport fit (Chrome, Advanced settings open and closed)
         run: node --test match-engine/tests/lab-viewport-browser.test.mjs
+      - name: Five Action LABs clean-stack Chrome interaction (Draft)
+        if: ${{ github.event.pull_request.draft && github.head_ref == 'refactor/621-clean-action-labs' }}
+        run: node --test match-engine/tests/action-labs-browser.test.mjs
       - name: Measured local CPU / memory sample
         run: npm --prefix match-engine run bench -- 6000

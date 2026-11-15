@@ -157,3 +157,18 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-player-readout strong{color:var(--text);font-size:12px;font-weight:650;line-height:1.35;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .me-player-note{margin:0;color:var(--muted);font-size:11px;line-height:1.4}
 @media(max-width:620px){.me-player-readout{grid-template-columns:1fr}}
+
+/* #620: one compact controlled-actions dialog, isolated from physics LAB. */
+.me-action-labs-dialog{box-sizing:border-box;width:min(960px,96vw);max-width:96vw;max-height:95dvh;overflow:auto;padding:18px;border:1px solid var(--line);border-radius:var(--fa-radius-panel,12px);background:var(--surface);color:var(--text)}
+.me-action-labs-dialog::backdrop{background:rgba(0,0,0,.68)}
+.me-action-labs-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.me-action-labs-header h2{font-size:18px;margin:0 0 6px}
+.me-action-labs-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.me-action-labs-toolbar>label{font-size:12px;font-weight:700}
+.me-action-labs-toolbar>select{min-width:190px;max-width:100%;min-height:34px}
+.me-action-labs-buttons{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+.me-action-labs-pitch-frame{margin:8px auto;max-width:840px}
+.me-action-labs-pitch-frame canvas{display:block;width:100%;height:auto;aspect-ratio:105/68;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:#18533b}
+.me-action-labs-status{margin:8px 0 5px;font-size:13px;font-weight:700}
+.me-action-labs-readout{margin:0 0 8px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media(max-width:600px){.me-action-labs-dialog{padding:11px}.me-action-labs-toolbar>select{flex:1 1 100%}.me-action-labs-buttons{margin-left:0}.me-action-labs-buttons>.me-button{min-width:55px}}
