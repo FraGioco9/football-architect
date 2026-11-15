@@ -667,7 +667,7 @@ test('#623 wide placeholder maintains head/body proportions on desktop and mobil
  }
  const css=read('assets/player-detail.css');
  assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile frame unchanged');
 });
 
 test('#634 canonical nationality is compact only in the mobile header and remains accessible',()=>{
