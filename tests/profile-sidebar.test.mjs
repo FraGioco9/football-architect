@@ -82,3 +82,29 @@ test('anonymous Profile navigation avoids redundant 401 requests on Login',()=>{
  assert.match(login,/fa:player:anonymous:v1/);
  assert.match(profile,/window\.sessionStorage\.setItem\('fa:player:skip-login-session-probe:v1','1'\)/);
 });
+
+test('public permissions navigation releases unused 401/503 response bodies without changing authorization',async()=>{
+ const require=createRequire(import.meta.url);
+ const {mount,publicPermissionsCache}=require('../assets/profile-navigation.js');
+ for(const status of [401,503]){
+  const entries=new Map(),calls=[],cleaned=[];
+  const storage={getItem:key=>entries.get(key)??null,setItem:(key,value)=>entries.set(key,value),removeItem:key=>entries.delete(key)};
+  const win={
+   document:{getElementById:id=>id==='app-nav-settings'?{href:'http://app.localhost:2000/settings'}:null},
+   location:{pathname:'/dashboard'},
+   sessionStorage:storage,performance:{getEntriesByType:()=>[{type:'navigate'}]},
+   AbortController,setTimeout,clearTimeout,
+   fetch:async path=>{
+    calls.push(path);
+    return {ok:false,status,body:{cancel:async()=>{cleaned.push(status)}}};
+   }
+  };
+  mount(win);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(calls,['/api/player/permissions'],'one authorization lookup only');
+  assert.deepEqual(cleaned,[status],'failed response body is released promptly');
+  const cached=publicPermissionsCache({...win,performance:{getEntriesByType:()=>[{type:'navigate'}]}}).read();
+  assert.deepEqual(cached,status===401?[]:null,
+   '401 is cached as anonymous; unavailable permissions remain uncached');
+ }
+});

@@ -209,3 +209,30 @@ html[data-theme="light"] .app-admin-view .admin-contracts-table thead th{backgro
 .app-admin-view .admin-contracts-pagination{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:14px;margin-top:12px}
 .app-admin-view [data-contracts-page]{display:inline-block;min-width:100px;min-height:1.2em;text-align:center;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 @media(max-width:620px){.app-admin-view [data-contracts-selected-count]{width:100%}.app-admin-view .admin-contracts-dropdown{max-width:none;min-width:0;flex:1 1 175px}.app-admin-view .admin-contracts-apply{min-width:100px}}
+
+/* PLAYERS-MOBILE-01 (#574): compact touch columns, preserving desktop tracks. */
+@media(max-width:720px){
+ .app-admin-view .admin-contracts-table{min-width:630px}
+ .app-admin-view .admin-contracts-table :is(th,td){padding-inline:6px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(1){width:34px;padding-inline:5px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(2){width:32px;padding-inline:4px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(3){width:128px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(4){width:112px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(5){width:54px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(6){width:66px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(7){width:60px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:144px}
+ .app-admin-view .admin-contracts-table tbody td:nth-child(3),
+ .app-admin-view .admin-contracts-table tbody td:nth-child(8){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:420px){
+ .app-admin-view .admin-contracts-table{min-width:588px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(1){width:32px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(2){width:30px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(3){width:120px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(4){width:104px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(5){width:52px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(6){width:64px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(7){width:58px}
+ .app-admin-view .admin-contracts-table :is(th,td):nth-child(8){width:128px}
+}

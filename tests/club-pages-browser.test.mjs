@@ -1,3 +1,4 @@
+import {createChromeProfile} from './fixtures/chrome-profile.mjs';
 // CLUB-01 real browser checks against staged public bytes and the DEV router.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,6 +34,7 @@ function measureBaselines(selectors){
  });
 }
 test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh and crest fallback',{timeout:300000},async()=>{
+ const profile=createChromeProfile('site-club-chrome');
  const browser=chrome();
  const dir=await mkdtemp(join(tmpdir(),'fa-club-browser-'));
  const artifact=join(dir,'public');const allowed=new Set(stagePublicArtifact(repositoryRoot,artifact));
@@ -88,10 +90,10 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       const m=JSON.parse(e.data),p=pending.get(m.id);if(!p)return;
       clearTimeout(p.timer);pending.delete(m.id);m.error?p.fail(Error(m.error.message)):p.ok(m.result);
     });
-    const cmd=(method,params={})=>new Promise((ok,fail)=>{
+    const cmd=(method,params={})=>profile.measureCDP(method,params,()=>new Promise((ok,fail)=>{
       const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error("CDP timeout "+method));},15000);
       pending.set(id,{ok,fail,timer});socket.send(JSON.stringify({id,method,params}));
-    });
+    }));
     await cmd('Page.enable');
     await cmd('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'faRoutesRegistry',{configurable:true,set(api){window.__faRoutesBootstrap={clubModel:!!window.faClubModel,competitionRoute:!!window.faCompetitionRoute};Object.defineProperty(window,'faRoutesRegistry',{value:api,writable:true,configurable:true});}});`});
     await cmd("Page.addScriptToEvaluateOnNewDocument",{source:`window.__faRuntimeErrors=[];window.addEventListener('error',e=>window.__faRuntimeErrors.push(String(e.message||e.error||'window error')));window.addEventListener('unhandledrejection',e=>window.__faRuntimeErrors.push(String(e.reason?.stack||e.reason||'unhandled rejection')));`});
@@ -103,10 +105,12 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
       if(out.exceptionDetails)throw Error(out.exceptionDetails.exception?.description||out.exceptionDetails.text);
       return out.result.value;
     };
-    const wait=async expr=>{
-      for(let i=0;i<100;i++){try{if(await run(expr))return;}catch{}await delay(100);}
+    const waitUnprofiled=async expr=>{
+      // Preserve the same nominal 10-second readiness budget, checking every 50ms.
+      for(let i=0;i<200;i++){try{if(await run(expr))return;}catch{}await delay(50);}
       throw Error("Timed out: "+expr+"; "+await run("document.body.textContent.slice(0,500)"));
     };
+    const wait=expr=>profile.measure('readiness-wait',()=>waitUnprofiled(expr));
 
     const visit=async(path,base=origin)=>{
      const expectedPath=new URL(base+path).pathname;
@@ -276,13 +280,13 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
      await visit('/clubs/it/1/overview');
      assert.equal(await run('document.documentElement.lang'),lang);
      assert.equal(await run('document.documentElement.dataset.theme'),theme);
-     const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:document.querySelector('#club-title').textContent,browserTitle:document.title,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
+     const measured=await run(`(()=>{const main=document.querySelector('.fa-shell-content-scroll');return {overflow:document.documentElement.scrollWidth>innerWidth+1||main.scrollWidth>main.clientWidth+1,nav:document.querySelectorAll('.club-tabs a').length,title:[...document.querySelectorAll('#club-title [data-club-name]')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.textContent).join('|'),activeNameVariants:[...document.querySelectorAll('#club-title [data-club-name]')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.dataset.clubName),fullAccessibleTitle:document.querySelector('#club-title').getAttribute('aria-label'),headingFont:parseFloat(getComputedStyle(document.querySelector('#club-title')).fontSize),browserTitle:document.title,description:document.querySelector('.club-description').textContent,selected:document.querySelector('[aria-current="page"].app-competition-tab')?.textContent}})()`);
      assert.equal(measured.overflow,false,JSON.stringify({width,theme,lang,measured}));
      assert.equal(measured.nav,5);
      assert.equal(await run("(()=>{const colors=document.querySelector('.club-colors'),label=colors.closest('dd').previousElementSibling.getBoundingClientRect(),group=colors.getBoundingClientRect();return (innerWidth<=360||Math.abs((group.top+group.bottom)-(label.top+label.bottom))<2)&&colors.querySelectorAll('.club-color-value').length===2&&[...colors.querySelectorAll('.club-color-value')].every(pair=>{const square=pair.firstElementChild.getBoundingClientRect(),value=pair.lastElementChild.getBoundingClientRect();return Math.abs((square.top+square.bottom)-(value.top+value.bottom))<2&&square.right<=value.left&&Math.abs(square.top-value.top)<3})})()"),true,'Color squares remain paired and vertically centered with their HEX values; the group aligns with its label');
      assert.equal(await run("(()=>{const row=document.querySelector('.club-fact-description').getBoundingClientRect(),label=document.querySelector('.club-fact-description dt').getBoundingClientRect(),text=document.querySelector('.club-fact-description dd').getBoundingClientRect();return Math.abs(text.left-row.left)<1&&Math.abs(text.width-row.width)<1&&text.top>=label.bottom+7})()"),true,'Description spans the identity width beneath its label: '+JSON.stringify({width,theme,lang}));
      assert.equal(await run("document.querySelectorAll('.fa-shell-nav [aria-current=\"page\"]').length===1&&document.querySelector('[data-nav01-clubs][aria-current=\"page\"]')?.getAttribute('href')==='/clubs'&&!document.querySelector('#app-nav-divisions').hasAttribute('aria-current')"),true,'Club pages select only the NAV-01 Clubs sidebar destination');
-     assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');assert.equal(measured.title,manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1).primaryName);assert.equal(measured.browserTitle,measured.title+' — Football Architect');assert.ok(measured.description.length>50);
+     assert.equal(await run("!!document.querySelector('.club-country-flag')"),true);const flags=await run("Array.from(document.querySelectorAll('.club-country-flag,.club-country-value img')).map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,fit:getComputedStyle(el).objectFit}))");for(const [index,flag] of flags.entries())assert.deepEqual(flag,{width:20,height:16,fit:'contain'},'Header and Club Identity flags must use their approved 5:4 sizes');assert.equal(await run("document.querySelectorAll('.club-country-flag').length"),2);assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>el.tagName.toLowerCase()==='svg'&&el.getAttribute('viewBox')==='0 0 5 4')"),true,'Both flags use the competition 5:4 vector viewport');assert.equal(await run("Array.from(document.querySelectorAll('.club-country-flag')).every(el=>getComputedStyle(el).borderRadius==='0px')"),true,'Club flag artwork must not be double-clipped');const identity=manifest.clubs.find(c=>c.countryId==='IT'&&c.clubId===1);const variant=width<=420?'compact':width<=900?'primary':'full';assert.deepEqual(measured.activeNameVariants,[variant]);assert.equal(measured.title,identity[variant+'Name']);assert.equal(measured.fullAccessibleTitle,identity.fullName);assert.equal(measured.browserTitle,identity.primaryName+' — Football Architect');if(width<=390)assert.ok(measured.headingFont>=18&&measured.headingFont<=24,'phone club H1 must remain legible at '+width+'px');assert.ok(measured.description.length>50);
      assert.equal(await run("document.querySelectorAll('.club-overview-layout .app-panel').length"),3,'Identity, competition and reserved kits panels');
      // Public QA has no source: do not assert a fabricated league/fixture card.
      const verifiedCard=await run("!!document.querySelector('.club-competition-entry[data-club-competition-id] .club-competition-logo')");
@@ -1058,11 +1062,25 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     await wait("document.querySelector('#division-detail-name')?.textContent==='Lega Federale'");
     // A03-04C: execute frozen URLs through the real public artifact, not registry helpers.
     const baseline=JSON.parse(readFileSync(new URL('./fixtures/a03-browser-routes.json',import.meta.url),'utf8'));
+    // Domestic routes are exhaustively checked for all 16 divisions in Node.
+    // In browser, exercise one ordinary route per domestic tier on both widths;
+    // retain every legacy, cross-view and international input.
+    const ordinaryDomestic=baseline.competitionBrowser.filter(({input})=>
+      /^\/competitions\/[a-z]+-[12]\/fixtures\?season=1&matchday=7$/.test(input));
+    const representatives=new Map();
+    for(const row of ordinaryDomestic){
+      const tier=row.input.match(/^\/competitions\/[a-z]+-([12])\//)?.[1];
+      if(!representatives.has(tier))representatives.set(tier,row);
+    }
+    assert.deepEqual([...representatives.keys()].sort(),['1','2'],'both domestic tiers covered in browser');
+    const ordinarySet=new Set(ordinaryDomestic),selected=new Set(representatives.values());
+    const browserCases=baseline.competitionBrowser.filter(row=>!ordinarySet.has(row)||selected.has(row));
+
     const currentUrl=()=>run('location.pathname+location.search+location.hash');
     const competitionReady="document.readyState==='complete'&&!!window.faCompetitionRoute";
     for(const width of [1440,390]){
      await cmd('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<620});
-     for(const row of baseline.competitionBrowser){
+     for(const row of browserCases){
       await cmd('Page.navigate',{url:origin+row.input});await wait(competitionReady);
       // Legacy leg URLs are accepted, but public Fixtures links are now phase-only.
       const groupedLeg=row.matchday==='quarterfinals:2';
@@ -1130,6 +1148,7 @@ test('CLUB-01 browser: desktop/mobile, themes, five languages, keyboard, refresh
     console.log('A03-04E BROWSER PASS: migrated router/club/directory/standings links preserve canonical destinations, temporal query and history; legacy calendar links and cup historical links covered by executable VM fixtures');
     assert.equal(errors.length,0,errors.join('; '));
   }finally{
+    profile.emit();
     socket?.close();proc.kill('SIGTERM');
     await new Promise(resolve=>server.close(resolve));await new Promise(resolve=>devServer.close(resolve));
     await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:100});
@@ -1330,6 +1349,17 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
   await run("document.querySelector('[data-club-fixture-control=competition] button').click();document.querySelector('[data-menu-value=\"IT-1\"]').click()");await wait("location.search.includes('competition=IT-1')");
   assert.equal(await run("document.querySelector('[data-club-fixtures-next]').disabled"),false,'current season has a next-match action');
   assert.equal(await run("getComputedStyle(document.querySelector('[data-club-fixtures-next]')).opacity"),'1','enabled next-match control is not muted');
+  // Filter-only Back/Forward must not issue extra requests or repaint a loading skeleton.
+  const stableFixtureReads=fixtureReads;
+  await run("window.__fixtureHistoryLoading=0;window.__fixtureHistoryObserver=new MutationObserver(()=>{if(document.querySelector('.club-fixture-loading'))window.__fixtureHistoryLoading++});window.__fixtureHistoryObserver.observe(document.getElementById('club-page'),{subtree:true,childList:true})");
+  await run('history.back()');
+  await wait("!new URLSearchParams(location.search).has('competition')&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await run('history.forward()');
+  await wait("new URLSearchParams(location.search).get('competition')==='IT-1'&&document.querySelectorAll('[data-club-fixture-id]').length===30");
+  await delay(80);
+  assert.equal(fixtureReads,stableFixtureReads,'filter-only history navigation reuses the same fixtures API read');
+  assert.equal(await run('window.__fixtureHistoryLoading'),0,'filter-only history navigation does not flash loading rows');
+  await run('window.__fixtureHistoryObserver.disconnect()');
   await run("document.querySelector('[data-club-fixtures-next]').click()");await wait("document.activeElement.hasAttribute('data-club-fixture-next')");
   world={...world,revision:5,seasonNumber:2};
   await cmd('Page.navigate',{url:origin+'/clubs/it/1/fixtures?season=999'});

@@ -98,7 +98,7 @@
   // Track both scrollable edges on scroll and viewport resize for conditional fades.
   const syncRosterTabEdges=()=>{
    const nav=host.querySelector('.club-roster-tabs');
-   if(!nav)return;
+   if(!nav||!nav.clientWidth)return; // Leave first-paint CSS fade until tab strip has real dimensions.
    const maximum=Math.max(0,nav.scrollWidth-nav.clientWidth);
    nav.dataset.canScrollLeft=String(maximum>1&&nav.scrollLeft>1);
    nav.dataset.canScrollRight=String(maximum>1&&nav.scrollLeft<maximum-1);
@@ -141,7 +141,10 @@
      }else oldCrest.replaceWith(incoming);
     }
     const title=header.querySelector('#club-title'),nextTitle=stagedHeader.querySelector('#club-title');
-    if(title&&nextTitle&&title.textContent!==nextTitle.textContent)title.textContent=nextTitle.textContent;
+    if(title&&nextTitle){
+     if(title.innerHTML!==nextTitle.innerHTML)title.innerHTML=nextTitle.innerHTML;
+     title.setAttribute('aria-label',nextTitle.getAttribute('aria-label'));
+    }
     for(const selector of ['.club-location']){
      const existing=header.querySelector(selector),next=stagedHeader.querySelector(selector);
      if(existing&&next&&existing.innerHTML!==next.innerHTML)existing.innerHTML=next.innerHTML;
@@ -221,7 +224,8 @@
    for(const crest of host.querySelectorAll('.club-crest[data-club-crest]')){
     if(!Object.hasOwn(manifest.clubCrests,crest.dataset.clubCrest))crest.dataset.clubCrestFallback='true';
    }
-   const titleName=host.querySelector('#club-title')?.textContent?.trim();
+   // The browser tab retains the primary name regardless of the viewport-specific H1.
+   const titleName=manifest.clubs.find(club=>club.countryId===selected.countryId&&club.clubId===selected.clubId)?.primaryName?.trim();
     const fallback={en:'Club',de:'Verein',es:'Club',fr:'Club',it:'Club'};
     document.title=(titleName&&!/^(?:undefined|null|nan)$/i.test(titleName)?titleName:fallback[language()])+' — Football Architect';
    document.querySelector('.skip-link').textContent=model.copies[language()].skip;
@@ -398,6 +402,33 @@
    })();
   };
   window.addEventListener('pagehide',()=>{rosterAbort?.abort();rosterRequest++;rosterCacheClubKey=null});
+  // Contracts writes do not advance sporting-world revisions. A cross-tab
+  // storage nonce invalidates only a previously loaded roster, not world data.
+  const rosterSignalKey='fa:roster-affiliations:v1';
+  const rosterSignal=()=>{try{return localStorage.getItem(rosterSignalKey)}catch{return null}};
+  let lastRosterSignal=rosterSignal();
+  const invalidateRoster=()=>{
+   rosterAbort?.abort();rosterAbort=null;
+   ++rosterRequest;rosterCacheClubKey=null;rosterSnapshot={source:'loading'};
+   if(selected.view==='roster'){paint(true);refreshClubRoster()}
+  };
+  const checkRosterSignal=()=>{
+   const current=rosterSignal();
+   if(current===null||current===lastRosterSignal)return;
+   lastRosterSignal=current;invalidateRoster();
+  };
+  window.addEventListener('storage',event=>{
+   if(event.key===rosterSignalKey)checkRosterSignal();
+  });
+  window.addEventListener('fa:roster-affiliations-changed',checkRosterSignal);
+  document.addEventListener('visibilitychange',()=>{
+   if(!document.hidden)checkRosterSignal();
+  });
+  window.addEventListener('pageshow',event=>{
+   if(!event.persisted)return;
+   checkRosterSignal();
+   if(selected.view==='roster'&&rosterCacheClubKey===null)refreshClubRoster();
+  });
   refreshClubRoster();
   // Public source: exactly the club's two domestic candidates plus both cups.
   // Shared world ownership, strict season validation and a reset fence prevent

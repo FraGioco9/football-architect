@@ -2,6 +2,7 @@ import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
+import worker from '../src/index.ts';
 import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
@@ -53,6 +54,15 @@ it('assigns progressive numeric IDs to every published domestic match without ch
  const match=domestic.fixtures.find(f=>f.phaseId==='league')!;
  const data=await readPublicMatch(db,match.matchId);
  expect(data).toMatchObject({matchId:match.matchId,status:'scheduled',result:null});
+ const clubResponse=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(clubResponse.status).toBe(200);
+ const clubBody=await clubResponse.json() as any;
+ expect(clubBody).toMatchObject({clubKey:'IT-1',selectedSeason:1,world,status:'partial',
+  provenance:{kind:'authoritative',resultAuthority:'published-draw-v1'},
+  data:{season:1,seasonState:{day:2,phase:'active'},competitions:['IT-1']}});
+ expect(clubBody.data.fixtures).toHaveLength(30);
+ expect(clubBody.data.fixtures.every((f:any)=>f.result===null&&f.phaseId==='league'&&
+  [f.homeClubId,f.awayClubId].includes('IT-1')&&/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
  await expect(readPublicMatch(db,'0')).rejects.toMatchObject({status:404});
  await expect(readPublicMatch(db,'999999999999999999999999')).rejects.toMatchObject({status:404});
 });
@@ -73,8 +83,22 @@ it('runs distinct domestic, draw and publication transactions before handing off
  const final=sovereign.fixtures.find((f:any)=>f.phaseId==='final');
  expect(await readPublicMatch(db,final!.matchId)).toMatchObject({status:'awaiting_participants',result:null,participantA:{kind:'tieWinner',tieId:'s1'}});
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
+ const clubDrawResponse=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(clubDrawResponse.status).toBe(200);
+ const clubDraw=await clubDrawResponse.json() as any;
+ expect(clubDraw).toMatchObject({status:'partial',
+  provenance:{kind:'authoritative',resultAuthority:'published-draw-v1'},
+  data:{competitions:['IT-1','int-1']}});
+ expect(clubDraw.data.fixtures).toHaveLength(36);
+ expect(clubDraw.data.fixtures.filter((f:any)=>f.competitionId==='int-1')).toHaveLength(6);
+ expect(clubDraw.data.fixtures.every((f:any)=>f.result===null&&/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
  const before=meta(),published=await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now);
  world=published.world;
+ const afterPublish=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(afterPublish.status).toBe(200);
+ const publishedClub=await afterPublish.json() as any;
+ expect(publishedClub).toMatchObject({status:'partial',provenance:{resultAuthority:'temporary-score-v1'}});
+ expect(publishedClub.data.fixtures).toHaveLength(36);
  expect(await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now)).toEqual(published);
  const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first();
  expect(JSON.parse(calendar.calendar_json).fixtures).toHaveLength(3984);

@@ -59,44 +59,36 @@ test("ROUTE-02 hosting has exact explicit view rewrites and base redirect",async
  assert.equal(config.rewrites.some(rule=>rule.destination.includes("/app/")),false);
 });
 
-test("ROUTE-02 DEV routes redirect base and serve explicit views",async()=>{
+test("ROUTE-02 / A03-04B: DEV redirects, supported views and security",async()=>{
  const {once}=await import("node:events");
  const {request}=await import("node:http");
  const {createPreviewServer}=await import("../tools/dev-standings-preview.mjs");
  const server=createPreviewServer();server.listen(0,"127.0.0.1");await once(server,"listening");
  const get=path=>new Promise((resolve,reject)=>{
   const req=request({host:"127.0.0.1",port:server.address().port,path,headers:{host:"127.0.0.1:2000"}},res=>{
-   res.resume();res.on("end",()=>resolve({status:res.statusCode,location:res.headers.location}));
+   res.resume();res.on("end",()=>resolve({status:res.statusCode,location:res.headers.location??null}));
   });req.on("error",reject);req.end();
  });
  try{
-  assert.deepEqual(await get("/competitions/it-1"),{status:308,location:"/competitions/it-1/overview"});
-  assert.deepEqual(await get("/competitions/it-1?season=2&view=fixtures&matchday=7"),{status:308,location:"/competitions/it-1/fixtures?season=2&matchday=7"});
-  assert.deepEqual(await get("/competitions/it-1?season=4&view=history&matchday=9"),{status:308,location:"/competitions/it-1/history?season=4"});
-  assert.deepEqual(await get("/competitions/it-1?season=3&view=rules"),{status:308,location:"/competitions/it-1/rules?season=3"});
-  for(const view of ["standings","fixtures","stats","history","rules","awards","postseason"])
-   assert.equal((await get("/competitions/it-1/"+view)).status,200,view);
-  assert.deepEqual(await get("/competitions/it-1/fixtures/?season=2"),{status:308,location:"/competitions/it-1/fixtures?season=2"});
-  assert.equal((await get("/competitions/it-1/not-a-view")).status,404);
- }finally{await new Promise(resolve=>server.close(resolve));}
-});
-
-test("A03-04B: DEV redirect and security oracle",async()=>{
- const {once}=await import("node:events");
- const {request}=await import("node:http");
- const {createPreviewServer}=await import("../tools/dev-standings-preview.mjs");
- const server=createPreviewServer();server.listen(0,"127.0.0.1");await once(server,"listening");
- const get=path=>new Promise((resolve,reject)=>{const req=request({host:"127.0.0.1",port:server.address().port,path,headers:{host:"127.0.0.1:2000"}},res=>{res.resume();res.on("end",()=>resolve({status:res.statusCode,location:res.headers.location??null}));});req.on("error",reject);req.end();});
- try{
+  // Shared server and normalized response shape: every original redirect
+  // and invalid-path/security oracle remains checked, without repeat requests.
   for(const [path,status,location] of [
    ["/competitions/it-1",308,"/competitions/it-1/overview"],
    ["/competitions/it-1?season=2&view=fixtures&matchday=7",308,"/competitions/it-1/fixtures?season=2&matchday=7"],
    ["/competitions/it-1?season=4&view=history&matchday=9",308,"/competitions/it-1/history?season=4"],
+   ["/competitions/it-1?season=3&view=rules",308,"/competitions/it-1/rules?season=3"],
    ["/competitions/it-1/fixtures/?season=2",308,"/competitions/it-1/fixtures?season=2"],
    ["/clubs/it/1?view=stats",308,"/clubs/it/1/stats"],
    ["/clubs/it/%31/overview",403,null],
    ["/competitions/it-3",404,null],
+   ["/competitions/it-1/not-a-view",404,null],
    ["/competitions/int-1",200,null]
   ])assert.deepEqual(await get(path),{status,location},path);
+  // Cover every published domestic view, including new canonical views,
+  // rather than maintaining a separate list of arbitrary samples.
+  for(const view of competitionViews){
+   const path=competitionSubpage("it-1",view);
+   assert.deepEqual(await get(path),{status:200,location:null},path);
+  }
  }finally{await new Promise(resolve=>server.close(resolve));}
 });

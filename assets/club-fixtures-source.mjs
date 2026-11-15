@@ -23,45 +23,43 @@ export function projectClubFixtures(fixtures,clubKey,season,day){
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const bad=()=>{throw TypeError('Invalid authoritative club fixture payload')};
 
-/** Only committed, publicly released league slots, before full calendar publication. */
-async function readCommittedClubFixtures({clubKey,season,fetchJson,manifest,signal,allowed,base}){
- const published=await Promise.all(allowed.map(async id=>{
-  let data;
-  try{data=await fetchJson('/api/matches/seasons/'+season+'/competitions/'+id,{signal});}
-  catch(error){if(String(error?.message||error).includes('HTTP 404'))return null;throw error;}
-  if(!object(data)||data.schemaVersion!==1||data.providerId!=='authoritative-world'||
-     data.season!==season||data.competitionId!==id||data.status!=='published'||
-     data.provenance?.kind!=='authoritative'||!['domestic','international','calendar'].includes(data.provenance.sourceKind)||
-     !/^[a-f0-9]{64}$/.test(data.provenance.sourceHash)||!Array.isArray(data.fixtures))bad();
-  const games=data.fixtures.filter(f=>f.phaseId==='league');
-  if(games.length!==(id.startsWith('int-')?72:240)||new Set(data.fixtures.map(f=>f.matchId)).size!==data.fixtures.length)bad();
-  if(games.some(f=>!object(f)||!f.homeClubId||!f.awayClubId||f.homeClubId===f.awayClubId||
-    !/^[1-9][0-9]*$/.test(f.matchId)||!Number.isSafeInteger(f.day)||f.day<1||f.day>56||
-    !Number.isSafeInteger(f.round)||f.round<1||f.round>(id.startsWith('int-')?6:30)))bad();
-  return {id,games};
- }));
- if(signal?.aborted)throw Error('Club Fixtures cancelled');
- const ids=new Set(),rows=[],seen=new Set();
- for(const scope of published){
-  if(!scope)continue;
-  const games=scope.games.filter(f=>f.homeClubId===clubKey||f.awayClubId===clubKey);
-  if(!games.length)continue;
-  if(games.length!==(scope.id.startsWith('int-')?6:30)||ids.has(scope.id))bad();
-  ids.add(scope.id);
-  for(const f of games){
-   if(seen.has(f.matchId))bad();seen.add(f.matchId);
-   const home=f.homeClubId===clubKey;
-   rows.push(Object.freeze({id:f.matchId,matchId:f.matchId,competitionId:scope.id,season,
-    day:f.day,round:f.round,phaseId:'league',marker:f.marker??'',tieId:null,leg:null,
-    opponentId:home?f.awayClubId:f.homeClubId,venue:home?'home':'away',
-    goalsFor:null,goalsAgainst:null,resolution:null,penalties:null}));
-  }
+/** The backend projects officially committed draws into this ONE club endpoint. */
+function projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base}){
+ const data=payload.data,provenance=payload.provenance;
+ const prefix='club-fixtures-draw:'+world.generation+':season:'+season+':';
+ if(payload.status!=='partial'||payload.reason!==null||
+  provenance?.kind!=='authoritative'||provenance.resultAuthority!=='published-draw-v1'||
+  typeof provenance.sourceRef!=='string'||!provenance.sourceRef.startsWith(prefix)||
+  !/^[a-f0-9]{64}$/.test(provenance.sourceRef.slice(prefix.length))||
+  world.day>12||season!==world.seasonNumber||world.phase!=='active'||
+  !object(data)||data.season!==season||!object(data.seasonState)||
+  data.seasonState.day!==base.day||data.seasonState.phase!==world.phase||
+  !Array.isArray(data.competitions)||!Array.isArray(data.fixtures)||!Array.isArray(manifest?.competitions))bad();
+ const ids=new Set(),competitions=[];
+ for(const id of data.competitions){
+  if(typeof id!=='string'||!allowed.includes(id)||ids.has(id))bad();
+  const definition=manifest.competitions.find(c=>c.id===id);
+  if(!definition)bad();
+  ids.add(id);competitions.push(definition);
  }
- if([...ids].filter(id=>!id.startsWith('int-')).length>1||ids.size>2)bad();
- const competitions=[...ids].map(id=>manifest.competitions?.find(c=>c.id===id));
- if(competitions.some(x=>!x))bad();
- rows.sort((a,b)=>a.day-b.day||compare(a.competitionId,b.competitionId)||a.round-b.round||Number(a.matchId)-Number(b.matchId));
- return {...base,competitions,rows,coverage:rows.length?'partial':'unpublished'};
+ if(ids.size>2||(ids.size>0&&[...ids].filter(id=>!id.startsWith('int-')).length!==1))bad();
+ const seen=new Set(),counts=new Map();
+ for(const f of data.fixtures){
+  if(!object(f)||!ids.has(f.competitionId)||f.season!==season||
+   !/^[1-9][0-9]*$/.test(f.matchId)||f.id!==f.matchId||seen.has(f.id)||
+   f.phaseId!=='league'||f.neutral!==false||f.tieId!==null||f.leg!==null||
+   f.result!==null||typeof f.marker!=='string'||typeof f.homeClubId!=='string'||
+   typeof f.awayClubId!=='string'||f.homeClubId===f.awayClubId||
+   ![f.homeClubId,f.awayClubId].includes(clubKey)||
+   !Number.isSafeInteger(f.day)||f.day<=world.day||f.day>56||
+   !Number.isSafeInteger(f.round)||f.round<1||
+   f.round>(f.competitionId.startsWith('int-')?6:30))bad();
+  seen.add(f.id);counts.set(f.competitionId,(counts.get(f.competitionId)??0)+1);
+ }
+ for(const id of ids)if(counts.get(id)!==(id.startsWith('int-')?6:30))bad();
+ if(!ids.size||data.fixtures.length!==[...counts.values()].reduce((a,b)=>a+b,0))bad();
+ const rows=projectClubFixtures(data.fixtures,clubKey,season,base.day).map(r=>Object.freeze({...r,matchId:r.id}));
+ return {...base,competitions,rows,coverage:'partial'};
 }
 
 export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,signal}){
@@ -77,8 +75,6 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
  if(payload.status==='empty'){
   if(!['season-not-prepared','calendar-unpublished'].includes(payload.reason)||payload.data!==null||
     payload.provenance?.kind!=='none'||payload.provenance?.sourceRef!==null||payload.provenance?.resultAuthority!==null)bad();
-  if(payload.reason==='calendar-unpublished')
-   return readCommittedClubFixtures({clubKey,season,fetchJson,manifest,signal,allowed,base});
   return {...base,coverage:'unpublished'};
  }
  if(payload.status==='unavailable'){
@@ -86,6 +82,8 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
     payload.provenance?.kind!=='none'||payload.provenance?.sourceRef!==null||payload.provenance?.resultAuthority!==null)bad();
   return {...base,coverage:'unavailable'};
  }
+ if(payload.provenance?.resultAuthority==='published-draw-v1')
+  return projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base});
  const closed=season<world.seasonNumber||world.phase==='closed',data=payload.data,provenance=payload.provenance;
  if(payload.status!==(closed?'available':'partial')||payload.reason!==null||
    provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-score-v1'||
