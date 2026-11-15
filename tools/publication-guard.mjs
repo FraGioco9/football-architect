@@ -38,6 +38,8 @@ export function isAllowlistedPublicPath(path,sourceRoot=repositoryRoot) {
  if(rootFiles.has(path)||divisions.includes(path))return true;
  if(path.startsWith("assets/brand/"))
   return /^assets\/brand\/[a-z0-9-]+\.(?:svg|png)$/.test(path);
+ if(path.startsWith("assets/players/portraits/"))
+  return ["assets/players/portraits/44.png","assets/players/portraits/98.png","assets/players/portraits/145.png"].includes(path);
  if(path.startsWith("assets/flags/"))
   return path==="assets/flags/LICENSE"||/^assets\/flags\/[a-z0-9-]+\.svg$/.test(path);
  if(path.startsWith("assets/"))

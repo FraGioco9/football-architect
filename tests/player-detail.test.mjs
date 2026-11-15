@@ -507,3 +507,28 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
  assert.match(css,/@media\(min-width:901px\)\{\.app-player-detail-info-view\{width:min\(100%,680px\)\}\}/);
  assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
 });
+
+test('#623 public player portrait and fallback: exact 3 IDs only, stable geometry, protected preview isolation',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ for(const id of [44,98,145]){
+  const path='assets/players/portraits/'+id+'.png';
+  assert.equal(isAllowlistedPublicPath(path),true,path);
+  assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
+ }
+ for(const path of ['assets/players/portraits/1.png','assets/players/portraits/044.png','assets/players/portraits/99.png','assets/players/portraits/44.jpg','assets/players/portraits/44.svg'])
+  assert.equal(isAllowlistedPublicPath(path),false,path);
+ assert.match(js,/!preview&&state==='ready'&&player/);
+ assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
+ assert.match(js,/portraitImage\.hidden=true;portraitFallback\.hidden=false/);
+ assert.match(js,/portraitImage\.removeAttribute\('src'\)/);
+ assert.match(css,/\.app-player-detail-photo\{display:block;object-fit:cover;object-position:center top\}/);
+ assert.match(css,/\.app-player-detail-photo\[hidden\],\.app-player-detail-silhouette\[hidden\]\{display:none!important\}/);
+ assert.match(css,/\.app-player-detail-portrait\{width:160px;height:181px/);
+ assert.match(css,/\.app-player-detail-portrait\{width:100px;height:114px/);
+ assert.match(renderer,/data-detail-portrait-placeholder/);
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
+  assert.match(html,/data-detail-portrait/);
+  assert.match(html,/data-detail-portrait-placeholder/);
+  assert.match(html,/data-detail-portrait-photo[^>]*hidden/);
+ }
+});

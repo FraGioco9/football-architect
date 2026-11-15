@@ -3,6 +3,35 @@
  const root=document.querySelector('[data-player-detail-mode]');if(!root)return;
  const preview=root.dataset.playerDetailMode==='preview',panel=root.querySelector('[data-player-detail]');
  const headingFallback=panel.querySelector('[data-detail-heading-fallback]');
+ const portraitImage=panel.querySelector('[data-detail-portrait-photo]');
+ const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
+ // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
+ const portraitSources=Object.freeze({44:'/assets/players/portraits/44.png',98:'/assets/players/portraits/98.png',145:'/assets/players/portraits/145.png'});
+ let portraitRequest=0;
+ function resetPortrait(){
+  portraitRequest++;
+  portraitImage.onload=null;portraitImage.onerror=null;
+  portraitImage.hidden=true;portraitFallback.hidden=false;
+  portraitImage.removeAttribute('src');
+ }
+ function resolvePortrait(){
+  resetPortrait();
+  const source=!preview&&state==='ready'&&player&&Number.isSafeInteger(id)
+   &&(!Number.isSafeInteger(player.id)||player.id===id)?portraitSources[id]:null;
+  if(!source)return;
+  const ticket=portraitRequest;
+  portraitImage.onload=()=>{
+   if(ticket!==portraitRequest)return;
+   portraitImage.hidden=false;portraitFallback.hidden=true;
+  };
+  portraitImage.onerror=()=>{
+   if(ticket!==portraitRequest)return;
+   portraitImage.hidden=true;portraitFallback.hidden=false;
+   portraitImage.removeAttribute('src');
+  };
+  portraitImage.src=source;
+  if(portraitImage.complete&&portraitImage.naturalWidth>0)portraitImage.onload();
+ }
  const nameNode=panel.querySelector('[data-detail-name]'),roleNode=panel.querySelector('[data-detail-role]'),subtitle=panel.querySelector('[data-detail-subtitle]');
  const nationalityNode=panel.querySelector('[data-detail-header-nationality]'),ageNode=panel.querySelector('[data-detail-header-age]'),clubNode=panel.querySelector('[data-detail-club]');
  const back=preview?panel.querySelector('[data-detail-back]'):null,statusNode=panel.querySelector('[data-detail-status]');
@@ -313,7 +342,7 @@
   const ticket=++request;
   // Protected draft detail must not expose bfcache-private candidate data
   // until rechecking the active session and server-side draft on return.
-  player=null;selectedPosition=null;state='loading';previewCommitted=false;
+  player=null;selectedPosition=null;state='loading';previewCommitted=false;resetPortrait();
   if(preview)root.hidden=true;
   const skeleton=(extra='')=>{const bar=document.createElement('span');bar.className='app-skeleton-bar'+(extra?' '+extra:'');bar.setAttribute('aria-hidden','true');return bar;};
   nameNode.replaceChildren(skeleton('app-player-detail-name-skeleton'));roleNode.replaceChildren(skeleton());
@@ -339,7 +368,7 @@
    if(!data||typeof data!=='object'||typeof data.display_name!=='string')throw Error('error');
    player=data;selectedPosition=positionCodes()[0]||null;state='ready';
   }catch(error){if(ticket!==request)return;player=null;state=['denied','expired','not-found'].includes(error.message)?error.message:'error';}
-  if(preview)root.hidden=false;render();
+  if(preview)root.hidden=false;render();resolvePortrait();
   if(!preview&&player?.clubKey)void resolveClubCatalog(ticket);
  }
  function syncViewParam(url,target){
