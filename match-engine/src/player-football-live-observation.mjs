@@ -7,6 +7,10 @@ import {chooseObservedFootballIntent}
  from './player-football-intent.mjs';
 import {measureObservedPassingCorridors}
  from './player-football-corridors.mjs';
+import {inspectUniformPolicyGeometry}
+ from './player-ball-uniform-autonomous-action.mjs';
+import {planNextTickPolicyGeometryIntent}
+ from './player-football-policy-geometry-plan.mjs';
 import {PHYSICAL_FIXTURE_CONTACT_FEED_VERSION}
  from './physical-fixture-step-runtime.mjs';
 
@@ -39,16 +43,23 @@ export function observeLiveFixtureFootballContext(frame,contactFeed,fixtureId){
  if(tick===0&&(contactFeed.started.length||contactFeed.active.length))
   throw new TypeError('No tick-zero real contact');
  const actorId=soleStart?contactFeed.started[0].engineId:null;
- // Zero affordances are intentional: P1 QUALITATIVE priorities remain
- // unapproved. Neither a geometric opening nor real START implies PASS/SHOT.
+ // Completed same-tick observation is only a future advisory input.
+ // It cannot authorize an earlier kick or guarantee a later shoe START.
  const context=actorId?
   projectObservedFootballContext(frame,{
    playerId:actorId,phase:'ball-opportunity'
   }):null;
  const corridors=context?measureObservedPassingCorridors(context):null;
- const declaredIntent=context?chooseObservedFootballIntent(context):null;
- if(declaredIntent!==null||corridors?.authorizedAffordances.length)
-  throw new Error('Unapproved football intent or pass eligibility');
+ const geometry=context?inspectUniformPolicyGeometry({
+  tick,playerId:actorId,ballPosition:frame.ball.position,
+  physicalPlayerPositions:frame.physicalPlayerPositions
+ }):null;
+ const nextTickPlan=context?
+  planNextTickPolicyGeometryIntent(context,geometry):null;
+ if((context&&chooseObservedFootballIntent(context)!==null)||
+    corridors?.authorizedAffordances.length||
+    nextTickPlan?.authorizedAffordances.length)
+  throw new Error('No observation can authorize physical action');
  return Object.freeze({
   version:LIVE_FOOTBALL_OBSERVATION_VERSION,
   fixtureId,physicsTick:tick,readOnly:true,
@@ -57,8 +68,10 @@ export function observeLiveFixtureFootballContext(frame,contactFeed,fixtureId){
   observedActorId:actorId,
   observedContext:context,
   passingCorridorGeometry:corridors,
-  // No tactical candidate before an explicit P1 qualitative decision.
-  proposedIntent:null,authorizedAffordances:Object.freeze([]),
+  existingPolicyGeometry:geometry,
+  futureGeometryPlan:nextTickPlan,
+  proposedIntent:nextTickPlan?.proposedIntent??null,
+  authorizedAffordances:Object.freeze([]),
   physicalActionExecuted:false,officialMatchAction:false,
   officialMatchPossession:false,officialMatchResult:null
  });

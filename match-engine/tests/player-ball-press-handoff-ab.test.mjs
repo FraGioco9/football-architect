@@ -98,8 +98,35 @@ function collect(summary,frame,c){
  assert.equal(intentSample.soleRealShoeStartObserved,exclusive);
  assert.equal(intentSample.observedActorId,
   exclusive?actualStarts[0].engineId:null);
- assert.equal(intentSample.proposedIntent,null);
+ const geom=intentSample.existingPolicyGeometry;
+ const plan=intentSample.futureGeometryPlan;
  assert.equal(intentSample.authorizedAffordances.length,0);
+ assert.equal(intentSample.proposedIntent,plan?.proposedIntent??null);
+ if(exclusive){
+  assert.equal(plan.basedOnCompletedTick,t);
+  assert.equal(plan.earliestPlanningTick,t+1);
+  assert.equal(plan.actorId,actualStarts[0].engineId);
+  assert.equal(plan.verifiedFutureShoeStart,false);
+  assert.equal(plan.verifiedFuturePhysicalEligibility,false);
+  assert.equal(plan.authorizedAffordances.length,0);
+  assert.equal(plan.physicalActionExecuted,false);
+  assert.ok(Object.isFrozen(plan));
+  if(geom.shotRange&&geom.shotLaneFound)
+   assert.equal(plan.proposedIntent?.intent,'shoot');
+  else if(geom.passGeometryRecipientId!==null)
+   assert.equal(plan.proposedIntent?.intent,'pass');
+  else assert.equal(plan.proposedIntent,null);
+  if(plan.proposedIntent){
+   assert.equal(plan.proposedIntent.physicsTick,t);
+   assert.equal(plan.proposedIntent.realShoeContactObserved,false);
+   assert.equal(plan.proposedIntent.physicalActionExecuted,false);
+   assert.equal(plan.proposedIntent.officialMatchAction,false);
+  }
+ }else{
+  assert.equal(geom,null);
+  assert.equal(plan,null);
+  assert.equal(intentSample.proposedIntent,null);
+ }
  assert.equal(intentSample.physicalActionExecuted,false);
  assert.equal(intentSample.officialMatchAction,false);
  assert.equal(intentSample.officialMatchPossession,false);

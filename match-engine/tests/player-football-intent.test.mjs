@@ -6,6 +6,8 @@ import {FOOTBALL_INTENT_VERSION,FOOTBALL_INTENT_PRIORITIES,
  from '../src/player-football-intent.mjs';
 import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
  from '../src/player-football-observation.mjs';
+import {planNextTickPolicyGeometryIntent,POLICY_GEOMETRY_PLAN_VERSION}
+ from '../src/player-football-policy-geometry-plan.mjs';
 import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
  from '../src/player-football-corridors.mjs';
@@ -607,4 +609,73 @@ test('P0 pure rejection reasons agree with unchanged physical selector gates',()
   {ballVelocity:{x:NaN,y:0,z:0}}])
   assert.throws(()=>inspectPhysicalActionRejection({...source,...patch}),
    TypeError);
+});
+
+test('P2 policy-backed next-tick geometry advisory selects SHOT or PASS symmetrically',()=>{
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1;
+  const other=team==='home'?'away':'home';
+  const positions=blocked=>Object.freeze(INITIAL_PLAYERS.map(p=>{
+   let x=p.team===team?25*dir:-30*dir,y=20;
+   if(p.id===team+'-9'){x=40*dir;y=0;}
+   if(p.id===team+'-10'){x=42*dir;y=6;}
+   if(blocked&&p.id===other+'-1'){x=45*dir;y=0;}
+   return Object.freeze({engineId:p.id,team:p.team,role:p.role,x,y});
+  }));
+  const prepare=blocked=>{
+   const physicalPlayerPositions=positions(blocked);
+   const frame={
+    physicsTick:30,experimentalLocalOnly:true,
+    matchRuntimeIntegrated:false,officialMatchAction:false,
+    contactSource:'internal-real-rapier-60hz',
+    footContact:{tick:30},autonomousMovement:{physicsTick:30},
+    ball:{position:{x:40*dir,y:0,z:0.11}},
+    physicalPlayerPositions
+   };
+   const observation=projectObservedFootballContext(frame,{
+    playerId:team+'-9',phase:'ball-opportunity'
+   });
+   const geom=inspectUniformPolicyGeometry({
+    tick:30,playerId:team+'-9',ballPosition:frame.ball.position,
+    physicalPlayerPositions
+   });
+   return {observation,geom,
+    advisory:planNextTickPolicyGeometryIntent(observation,geom)};
+  };
+  const open=prepare(false),blocked=prepare(true);
+  assert.equal(open.geom.shotLaneFound,true);
+  assert.equal(open.advisory.version,POLICY_GEOMETRY_PLAN_VERSION);
+  assert.equal(open.advisory.proposedIntent.intent,'shoot');
+  assert.equal(open.advisory.proposedIntent.target.x,52.5*dir);
+  assert.ok(open.advisory.candidateKinds.includes('shoot'));
+  assert.equal(open.advisory.earliestPlanningTick,31);
+  assert.equal(open.advisory.basedOnCompletedTick,30);
+  assert.equal(open.advisory.verifiedFutureShoeStart,false);
+  assert.equal(open.advisory.verifiedFuturePhysicalEligibility,false);
+  assert.equal(open.advisory.authorizedAffordances.length,0);
+  assert.equal(open.advisory.physicalActionExecuted,false);
+  assert.ok(Object.isFrozen(open.advisory));
+  assert.equal(blocked.geom.shotLaneFound,false);
+  assert.equal(blocked.geom.passGeometryRecipientId,team+'-10');
+  assert.deepEqual(blocked.advisory.candidateKinds,['pass']);
+  assert.equal(blocked.advisory.proposedIntent.intent,'pass');
+  assert.equal(blocked.advisory.proposedIntent.targetPlayerId,team+'-10');
+  assert.equal(blocked.advisory.proposedIntent.realShoeContactObserved,false);
+  assert.equal(blocked.advisory.officialMatchPossession,false);
+  assert.deepEqual(planNextTickPolicyGeometryIntent(
+   blocked.observation,blocked.geom),blocked.advisory);
+  assert.throws(()=>planNextTickPolicyGeometryIntent(
+   blocked.observation,{...blocked.geom,physicsTick:31}),TypeError);
+  assert.throws(()=>planNextTickPolicyGeometryIntent(
+   blocked.observation,{...blocked.geom,
+    passGeometryRecipientId:other+'-10'}),TypeError);
+  assert.throws(()=>planNextTickPolicyGeometryIntent(
+   blocked.observation,{...blocked.geom,
+    physicalActionAuthorized:true}),TypeError);
+  assert.throws(()=>planNextTickPolicyGeometryIntent(
+   {...blocked.observation,affordances:[{
+    kind:'pass',available:true,evidenceTick:30,
+    targetPlayerId:team+'-10'
+   }]},blocked.geom),TypeError);
+ }
 });
