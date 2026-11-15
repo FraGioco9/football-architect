@@ -49,12 +49,15 @@
 .app-match-team-link{
  /* Fill the 48px row so letters and scores share the same vertical centre. */
  display:flex;align-items:center;justify-content:center;align-self:stretch;
- min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
  text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0;
  font-variant-numeric:tabular-nums;
 }
-.app-match-team-home,.app-match-team-away{text-align:center}
+/* Shift each abbreviation towards its own score, leaving a controlled 4px
+   inset; centring along the 48px vertical axis remains unchanged. */
+.app-match-team-home{justify-content:flex-end;text-align:center;padding-right:4px}
+.app-match-team-away{justify-content:flex-start;text-align:center;padding-left:4px}
 .app-match-team-link[href]:hover{text-decoration:none;opacity:1}
 .app-match-team-link:not([href]){cursor:default}
 /* Placeholder approximates the height and width of three bold abbreviation

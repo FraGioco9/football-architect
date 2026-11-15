@@ -161,3 +161,14 @@ It is **white only in Dark**; in Light, it takes the exact same computed colour
 as team abbreviations through `var(--app-match-text)`, without text strokes or
 background boxes. First-paint browser QA compares the computed colours in
 both themes and checks the spacing of the score and dash glyphs.
+
+### Team-to-score spacing
+
+Each official abbreviation is placed closer to **its own** score (home
+`justify-content:flex-end`, away `justify-content:flex-start`) with a 4px
+inner inset. This removes excessive unused space between labels and their
+score tracks while keeping the team names aligned vertically on the same
+48px axis and preserving the 26/24px fonts, skeleton dimensions, score-to-dash
+spacing, approved Light/Dark colours, and 284/268px strip widths. The
+browser checks verify both hydrated name-to-score geometry and the matching
+first-paint skeleton alignment.

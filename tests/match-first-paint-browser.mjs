@@ -65,20 +65,22 @@ for(const [engine,driver] of Object.entries(engines)){
     // same two axes as the hydrated abbreviations, without a layout shift.
     const skeletons=await page.locator('.app-match-score-line').evaluate(grid=>{
      const row=grid.getBoundingClientRect();
-     return [...grid.querySelectorAll('.app-match-team-link')].map(el=>{
+     return [...grid.querySelectorAll('.app-match-team-link')].map((el,index)=>{
       const bar=el.querySelector('.app-skeleton-bar');
       const b=bar?.getBoundingClientRect(),label=el.getBoundingClientRect();
       return b?{width:b.width,height:b.height,
-       dx:(b.x+b.width/2)-(label.x+label.width/2),
+       toScore:index===0?label.right-b.right:b.left-label.left,
+       justify:getComputedStyle(el).justifyContent,
        dy:(b.y+b.height/2)-(row.y+row.height/2)}:null;
      });
     });
     const isMobile=device.width<=480;
-    for(const s of skeletons){
+    for(const [i,s] of skeletons.entries()){
      assert.ok(s,JSON.stringify({engine,theme,device,skeletons}));
      assert.ok(Math.abs(s.width-(isMobile?50:54))<=0.5,JSON.stringify({engine,theme,device,skeletons}));
      assert.equal(s.height,isMobile?18:20);
-     assert.ok(Math.abs(s.dx)<=0.5&&Math.abs(s.dy)<=0.5,JSON.stringify({engine,theme,device,skeletons}));
+     assert.equal(s.justify,i===0?'flex-end':'flex-start');
+     assert.ok(Math.abs(s.toScore-4)<=0.5&&Math.abs(s.dy)<=0.5,JSON.stringify({engine,theme,device,skeletons}));
     }
     // Two-digit result columns and centred official three-character
     // abbreviations stay inside the unchanged 48px-high scoreboard.
@@ -98,8 +100,10 @@ for(const [engine,driver] of Object.entries(engines)){
      const rangeFor=el=>{const r=document.createRange();r.selectNodeContents(el);return r.getBoundingClientRect()};
      const homeText=rangeFor(scores[0]),awayText=rangeFor(scores[1]),dashText=rangeFor(center);
      const separatorStyle=getComputedStyle(center);
-     return {names:names.map(el=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return {
-      align:style.textAlign,display:style.display,vertical:style.alignItems,
+     const nameText=names.map(el=>rangeFor(el));
+     const nameScoreGaps={home:leftScore.left-nameText[0].right,away:nameText[1].left-rightScore.right};
+     return {nameScoreGaps,names:names.map(el=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return {
+      align:style.textAlign,display:style.display,vertical:style.alignItems,justify:style.justifyContent,
       font:parseFloat(style.fontSize),fits:el.scrollWidth<=el.clientWidth+1,
       height:rect.height,centerOffset:(rect.y+rect.height/2)-(row.y+row.height/2)
      }}),
@@ -112,13 +116,18 @@ for(const [engine,driver] of Object.entries(engines)){
       separatorWidth:separatorBox.width,
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
-    for(const name of layout.names){
+    for(const [i,name] of layout.names.entries()){
      assert.equal(name.align,'center');assert.equal(name.display,'flex');assert.equal(name.vertical,'center');
+     assert.equal(name.justify,i===0?'flex-end':'flex-start');
      assert.equal(name.font,isMobile?24:26);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
      assert.equal(name.height,48);assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
     }
     for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
     assert.deepEqual(layout.scores.map(s=>s.align),['right','left']);
+    // Each abbreviation has exactly its 4px edge inset; no unneeded
+    // flexible whitespace remains between the name glyph and score track.
+    assert.ok(layout.nameScoreGaps.home>=3.5&&layout.nameScoreGaps.home<=4.5,JSON.stringify({engine,theme,device,layout}));
+    assert.ok(layout.nameScoreGaps.away>=3.5&&layout.nameScoreGaps.away<=4.5,JSON.stringify({engine,theme,device,layout}));
     assert.equal(layout.dashStyle.font,isMobile?19:21);
     assert.equal(layout.dashStyle.opacity,'1');
     if(theme==='dark')assert.equal(layout.dashStyle.color,'rgb(255, 255, 255)');

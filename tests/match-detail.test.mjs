@@ -154,7 +154,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-side-score\{[^}]*font-size:24px/s);
  assert.match(css,/\.app-match-team-link\{[^}]*display:flex;align-items:center;justify-content:center;align-self:stretch/s);
  assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0/s);
- assert.match(css,/\.app-match-team-home,\.app-match-team-away\{text-align:center\}/);
+ assert.match(css,/\.app-match-team-home\{justify-content:flex-end;text-align:center;padding-right:4px\}/);
+ assert.match(css,/\.app-match-team-away\{justify-content:flex-start;text-align:center;padding-left:4px\}/);
+ assert.match(css,/\.app-match-team-link\{[^}]*box-sizing:border-box;min-width:0/s);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:24px;letter-spacing:0\}/);
  assert.match(css,/\.app-match-team-link \.app-skeleton-bar\{[^}]*display:block;flex:0 1 auto;width:54px;max-width:calc\(100% - 4px\);height:20px/s);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link \.app-skeleton-bar\{width:50px;height:18px\}/);
