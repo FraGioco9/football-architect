@@ -1,6 +1,7 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
+import {advanceFreePlayerKinematics,advancePlayerOrientation} from './individual-kinematics.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
@@ -99,13 +100,19 @@ export const PLAYER_REJOIN_HANDOFF_MAX_BLEND=0.7;
 export const PLAYER_OBSERVED_MOTION_THRESHOLD_MPS=0.2;
 export const PLAYER_OBSERVED_VECTOR_SECONDS=0.4;
 export const PLAYER_OBSERVED_PATH_WINDOW_TICKS=120;
+const PLAYER_KINEMATIC_LIMITS=Object.freeze({
+ dt:PLAYER_DT,maxSpeed:PLAYER_MAX_SPEED_MPS,
+ acceleration:PLAYER_ACCEL_MPS2,braking:PLAYER_BRAKE_MPS2,
+ turnRate:PLAYER_TURN_RAD_PER_S,
+ maxX:PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M,
+ maxY:PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M
+});
 const baseFormation=Object.freeze([
  [-48,0],[-35,-22],[-35,-8],[-35,8],[-35,22],
  [-20,-16],[-20,0],[-20,16],[-5,-18],[-5,0],[-5,18]
 ]);
 const role=i=>i===0?'goalkeeper':i<5?'defender':i<8?'midfielder':'forward';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 export const INITIAL_PLAYERS=Object.freeze(['home','away'].flatMap(team=>
  baseFormation.map(([x,y],i)=>Object.freeze({
   id:team+'-'+(i+1),team,number:i+1,role:role(i),
@@ -2066,38 +2073,16 @@ export function createPlayerMovement(options={}){
   // Fixed ordering and collision rejection make every replay byte-stable.
   for(let i=0;i<players.length;i++){
    const p=players[i],target=targets[i];
-   const dx=target.x-p.x,dy=target.y-p.y,dist=Math.hypot(dx,dy);
-   const previousSpeed=Math.hypot(p.vx,p.vy);
-   const speedLimit=Math.min(PLAYER_MAX_SPEED_MPS,Math.sqrt(2*PLAYER_BRAKE_MPS2*dist));
-   const targetVx=dist>1e-8?dx/dist*speedLimit:0;
-   const targetVy=dist>1e-8?dy/dist*speedLimit:0;
-   const dvx=targetVx-p.vx,dvy=targetVy-p.vy,dv=Math.hypot(dvx,dvy);
-   const maxDelta=(speedLimit<previousSpeed?PLAYER_BRAKE_MPS2:PLAYER_ACCEL_MPS2)*PLAYER_DT;
-   const ratio=dv>maxDelta?maxDelta/dv:1;
-   let vx=p.vx+dvx*ratio,vy=p.vy+dvy*ratio;
-   if(Math.hypot(vx,vy)<1e-9){vx=0;vy=0;}
-   const maxX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
-   const maxY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
-   const nextX=clamp(p.x+vx*PLAYER_DT,-maxX,maxX);
-   const nextY=clamp(p.y+vy*PLAYER_DT,-maxY,maxY);
-   if(Math.abs(nextX-(p.x+vx*PLAYER_DT))>1e-9)vx=0;
-   if(Math.abs(nextY-(p.y+vy*PLAYER_DT))>1e-9)vy=0;
+   const candidate=advanceFreePlayerKinematics(p,target,PLAYER_KINEMATIC_LIMITS);
    const blocker=players.find(other=>other!==p&&
-     (nextX-other.x)**2+(nextY-other.y)**2<
+     (candidate.x-other.x)**2+(candidate.y-other.y)**2<
       PLAYER_MIN_SEPARATION_M**2-1e-9);
-   // A rejected kinematic step is a hard stop, not physical collision
-   // dynamics. Record the blocker explicitly: zeroing velocity here can
-   // exceed free-space braking, and must never be mistaken for normal
-   // bounded acceleration or an impulse imparted to the real match ball.
+   // Canonical 22-body hard rejection remains here, never in free stepping.
    p.blockedBy=blocker?.id??null;
    if(blocker){p.vx=0;p.vy=0;}
-   else{p.x=nextX;p.y=nextY;p.vx=vx;p.vy=vy;}
-   const speed=Math.hypot(p.vx,p.vy);
-   if(speed>0.05){
-    const desired=Math.atan2(p.vy,p.vx),angle=wrap(desired-p.facingRad);
-    p.facingRad=wrap(p.facingRad+clamp(angle,
-      -PLAYER_TURN_RAD_PER_S*PLAYER_DT,PLAYER_TURN_RAD_PER_S*PLAYER_DT));
-   }
+   else{p.x=candidate.x;p.y=candidate.y;p.vx=candidate.vx;p.vy=candidate.vy;}
+   p.facingRad=advancePlayerOrientation(p.facingRad,p.vx,p.vy,
+    PLAYER_KINEMATIC_LIMITS);
   }
   // Evaluate progress only after the existing hard kinematic collision
   // guard. A failed path is dropped and enters the ME-PLAYER-18 cooldown.
