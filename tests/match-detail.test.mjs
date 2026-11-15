@@ -56,7 +56,16 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.doesNotMatch(section,/app-match-scoreboard-topline/);
   assert.match(section,/<\/section>\s*<p class="app-match-feedback"/);
   assert.doesNotMatch(section,/data-match-reference|app-match-page-heading|match-page-title|data-match-home-crest|data-match-away-crest/);
-  assert.doesNotMatch(section,/data-match-tab|data-match-panel/);
+  assert.doesNotMatch(section,/data-match-tab|data-match-panel|role="tablist"/);
+  assert.ok(section.includes('<section class="app-match-context" data-match-cards'));
+  assert.ok(section.includes('<section class="app-match-visual" aria-label="Match visualization">'));
+  assert.ok(section.includes('data-match-pitch role="img"'));
+  assert.ok(section.includes('viewBox="0 0 1050 680"'));
+  for(const key of ['overview','lineups','events','stats']){
+   assert.ok(section.includes('data-match-card="'+key+'" data-match-emphasis='));
+   assert.ok(section.includes('data-match-card-summary="'+key+'"></p>'));
+   assert.ok(section.includes('data-match-card-detail="'+key+'"></p>'));
+  }
   assert.doesNotMatch(section,/app-match-score-group/);
   assert.match(section,/data-match-home-score aria-label="Home score" aria-hidden="true"><\/strong>/);
   assert.match(section,/data-match-away-score aria-label="Away score" aria-hidden="true"><\/strong>/);
@@ -132,7 +141,17 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/write\('\.app-match-score-separator'/);
  // A static separator is not a fixture result; numbers remain official-only.
  assert.match(js,/score\.setAttribute\('aria-hidden',String\(!validScore\)\)/);
- assert.doesNotMatch(js,/validLineup|officialState|data-match-status|data-match-extra/);
+ assert.doesNotMatch(js,/officialState|data-match-status|data-match-extra/);
+ for(const snippet of [
+  'function renderContext(tr)',
+  "data.provenance?.kind==='authoritative'",
+  "status==='in_progress'||status==='completed'",
+  'Array.isArray(data.events)',
+  'knownStats(data.statistics)',
+  'validLineup(data.lineups?.home)&&validLineup(data.lineups?.away)',
+  'renderContext(tr);'
+ ])assert.ok(js.includes(snippet),snippet);
+ assert.doesNotMatch(js,/data\.events\.map\(|setInterval\(|requestAnimationFrame\(/);
  assert.match(js,/name\.target='_blank';name\.rel='noopener noreferrer'/);
  assert.match(js,/link\.target='_blank';link\.rel='noopener noreferrer'/);
  assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
@@ -151,6 +170,14 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
+ for(const snippet of [
+  'grid-template-columns:repeat(4,minmax(0,1fr))',
+  'grid-template-columns:repeat(2,minmax(0,1fr))',
+  '.app-match-context-card[data-match-emphasis="medium"]{opacity:.72}',
+  '.app-match-context-card[data-match-emphasis="low"]{opacity:.42}',
+  'aspect-ratio:105 / 68',
+  '.app-match-page[data-match-load="missing"] .app-match-context'
+ ])assert.ok(css.includes(snippet),snippet);
  assert.doesNotMatch(css,/\.app-match-scoreboard-meta|\.app-match-status|\.app-match-extra/);
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
  assert.match(css,/left:-20px;width:min\(100%,284px\);height:48px/);

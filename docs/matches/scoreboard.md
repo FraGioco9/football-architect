@@ -287,3 +287,33 @@ page retains its URL. The test also checks that a club without an
 assigned participant has neither `href` nor new-tab attributes, and that
 the former caption DOM never appears on first paint or after any of the six
 backend states. The standalone feedback area for errors remains.
+
+### Contextual cards above the match field (no selector)
+
+After the unchanged branded scoreboard, the Match page shows four compact
+non-interactive summaries: Overview, Lineups, Events and Stats. No tabs,
+view selectors or click controls are introduced. The four cards are in one
+row on desktop and a two-column grid at 800px and below. First paint
+reserves card sizes and keeps all variable information blank.
+
+Card opacity reflects status and verified-data availability: high 100%,
+medium 72%, low 42%. Before kickoff Overview is emphasized; confirmed
+lineups become high. In progress, Overview is secondary, lineups are high
+only when recorded, and Events/Stats stay secondary until authoritative
+data exists. Completed matches emphasize only recorded information.
+Postponed/cancelled matches emphasize Overview.
+
+Only the verified public API contributes information: season, round and
+sporting day for Overview; both officially confirmed 11-player lineups;
+an events array for actual recorded events; and nonempty home/away
+statistics for Stats. Events and statistics are never revealed before
+in-progress or completed even with deliberately stale test values.
+No fake match events, scorers, ball paths, tactics or statistics.
+
+A permanent empty 105:68 pitch sits below the cards, with standard markings,
+no players/ball or simulation. It is reserved for a future approved Match
+Engine visualization. Cards and pitch hide for missing/error matches, while
+the independent feedback area remains. Labels and accessible pitch description
+support EN/IT/DE/ES/FR. Scoreboard geometry, links, hover underline and
+centred dash remain unchanged. Browser QA covers first paint, responsive
+columns, six match statuses, and no-future-data leakage.
