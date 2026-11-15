@@ -126,7 +126,9 @@ test('controlled PASS/SHOT/CHALLENGE/CONTROL/CARRY play in real DEV Chrome',
    assert.ok(result.status.includes(marker),
     choice+' missing real Rapier evidence: '+JSON.stringify(result));
    assert.match(result.readout,/Tick [0-9]+/);
-   assert.doesNotMatch(result.status,/goal scored|tackle successful|official possession/i);
+   // Explicit negative wording ('No official possession') is correct;
+   // only a false positive AWARDED outcome must fail this test.
+   assert.doesNotMatch(result.status,/goal scored|tackle successful|official possession (confirmed|awarded)/i);
    process.stdout.write('ACTION_LAB_CHROME_PASS '+JSON.stringify({
     choice,status:result.status,readout:result.readout
    })+'\n');
