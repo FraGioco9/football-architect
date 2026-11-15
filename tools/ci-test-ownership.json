@@ -326,6 +326,9 @@
     "tests/world-catalog.test.mjs": "site-node",
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
-    "tests/world-divisions.test.mjs": "site-node"
+    "tests/world-divisions.test.mjs": "site-node",
+    "backend/tests/player-portrait-runtime.test.ts": "backend-runtime",
+    "backend/tests/test_player_portrait_profiles_migration.py": "migration",
+    "tests/player-portrait-core.test.mjs": "site-node"
   }
 }

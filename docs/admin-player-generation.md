@@ -7,7 +7,7 @@ This feature extends `/admin/players` with server-owned previews and explicit ap
 2. The preview response shows the entire proposed cohort in paginated rows. A private, time-limited preview is saved in `player_generation_drafts`, but **`generated_players` remains unchanged**. The browser never supplies an unverified player payload to the commit endpoint.
 3. The operator reviews the exact preview, enters `GENERATE PLAYERS` and clicks Generate in environment. `POST /api/admin/players/commit` transacts live authorization, world generation/season, draft identity, complete insert and approval status as one D1 batch. A repeated commit is idempotent and cannot create duplicates. **Only after a successful commit**, the form advances to a new seed derived from that draft's unique UUID, invalidates the completed preview and enables the next one; the success receipt remains visible. Failed commits do not rotate the seed.
 4. Successful players are stored in `generated_players`, with permanent, monotonically increasing positive integer IDs, initial/current age, all attributes, and development aptitude. `entry_season` is stored as row metadata, and `club_id` is deliberately deferred. `GET /api/admin/players` returns count and the latest 100 generated players to authorized Admins.
-5. Editing any option invalidates the browser draft; expiration, authorization revocation, world reset/season change or mismatched preview identity prevent a commit. A Season 0 reset purges all generated players and outstanding drafts.
+5. Editing any option invalidates the browser draft; expiration, authorization revocation, world reset/season change or mismatched preview identity prevent a commit. A Season 0 reset preserves already committed generated players (and their portrait profiles) and clears only outstanding uncommitted generation drafts.
 
 ## Public directory
 - `GET /api/players` (first page) and `GET /api/players/page/{n}` (50 per page, with bounded path-only page numbers) read the **current world's** approved `generated_players` rows. They never generate or mutate data.
@@ -33,3 +33,13 @@ This feature extends `/admin/players` with server-owned previews and explicit ap
 - Admin browser test: `tests/admin-settings-browser.mjs`
 
 The preview phase does not persist permanent players, and the UI never runs a generation without an explicit approval action.
+
+## Immutable portrait variables — PLAYER-PORTRAITS-04 (#629)
+
+The new additive local-first D1 migration `backend/migrations/0026_player_portrait_profiles.sql` introduces private `player_portrait_profiles` snapshots. After Admin preview approval, `commitPlayerGeneration` reserves permanent IDs from the SQLite AUTOINCREMENT high-water mark, checks the unchanged sequence inside a single D1 batch, and commits **both** player records and their immutable portrait variables in the same transaction. A raced sequence changes fail closed without partial players; the original draft can be retried. No prompt appears in the public player JSON.
+
+Only the face catalogue seeded by permanent ID and the creation-time four athletic ratings determine an initial portrait snapshot. The prompt is **not stored in D1**: an authorized admin read of `GET /api/admin/players/portrait?playerId=N` materializes the V3 media-day prompt from the private snapshot using the version-pinned Worker-safe generator (`backend/src/player-portrait-core.mjs`). It never uses evolving current physical attributes to change an approved appearance. No AI is invoked and no Admin portrait UI is added.
+
+The three previously owner-approved DEV photos can be associated using the separate, guarded **manual** script `backend/manual/portrait-approved-dev-backfill.sql`, only after verifying the selected DEV pool and granting **separate explicit authorization** for applying the migration and writing the backfill. The file is deliberately outside `backend/migrations/`: migrations **never** silently attach DEV IDs 44, 98 or 145 in other environments. Approved WebP bytes are untouched. No cloud upload, external AI job or production DB migration is part of this implementation.
+
+Targeted QA: `node --test tests/player-portrait-core.test.mjs`, `npm --prefix backend test -- player-portrait-runtime`, `python -m unittest discover -s backend/tests -p test_player_portrait_profiles_migration.py`, and exact-head CI. The old GitHub manifest, prompt exporter and PNG pilot utilities are not merged into runtime source.
