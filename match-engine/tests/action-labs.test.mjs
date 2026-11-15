@@ -298,6 +298,12 @@ test('CONTROL: genuine HOME #10 pass then intended HOME #9 shoe START at tick 30
    assert.equal(f.scoreChanged,false);
    assert.equal(f.evidence.passCompleted,null);
    assert.equal(f.evidence.officialGoal,false);
+   if(tick>=30){
+    assert.equal(f.receivingContact?.tick,30);
+    assert.equal(f.receivingContact?.recipientId,'home-9');
+    assert.equal(f.receivingContact?.officialPossession,false);
+    assert.equal(f.receivingContact?.passCompleted,false);
+   }
    if(tick===1){
     assert.deepEqual(f.starts,['home-10']);
     assert.equal(f.action?.action,'pass');

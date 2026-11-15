@@ -41,7 +41,7 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
  }:{});
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
- let shotTrace=null,blockedShotObservation=null;
+ let shotTrace=null,blockedShotObservation=null,receivingContact=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -70,6 +70,14 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
      realShoeStart:true,officialGoal:false
     });
   }
+  if(spec.mode==='control'&&evidence.verifiedReceivingShoeContact&&
+     receivingContact===null)
+   receivingContact=Object.freeze({
+    tick:physics.tick,recipientId:starts[0],
+    passingPlayerId:firstRealPass.playerId,
+    passingTick:firstRealPass.tick,
+    realShoeStart:true,officialPossession:false,passCompleted:false
+   });
   if(evidence.witnessed){
    count++;
    history=Object.freeze([...history,Object.freeze({
@@ -115,7 +123,7 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
    }))),
    starts,action,evidence,eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
-   priorRealPass:firstRealPass,
+   priorRealPass:firstRealPass,receivingContact,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
@@ -198,7 +206,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    (snap.blockedShotObservation?' · All three SHOT lanes blocked':'')+
    (session.spec.goal==='control'&&snap.priorRealPass?
     ' · Physical PASS tick '+snap.priorRealPass.tick+
-    ' → intended '+label(snap.priorRealPass.recipientId):'');
+    ' → intended '+label(snap.priorRealPass.recipientId):'')+
+   (snap.receivingContact?' · Real receiving shoe START tick '+
+    snap.receivingContact.tick:'');
   if(snap.shotFlight?.observed3DFlight){
    status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
     ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
@@ -217,6 +227,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     kind==='control'?
      'Observed: separate teammate shoe-ball contact after real pass. No official possession.':
      'Observed: actual AWAY shoe-ball contact; no successful tackle claimed.';
+  }else if(session.spec.goal==='control'&&snap.receivingContact){
+   status.textContent='Observed: separate teammate shoe-ball contact after real pass. No official possession.';
   }else if(session.spec.goal==='control'&&snap.priorRealPass){
    status.textContent='Observed: genuine '+label(snap.priorRealPass.playerId)+
     ' PASS; awaiting authentic '+label(snap.priorRealPass.recipientId)+
