@@ -77,3 +77,15 @@ correct branded first paint there. A production-approved equivalent edge
 read or server-generated HTML is required before claiming parity. The
 static build does not guess match IDs from a mutable D1 world. No deploy
 or production routing change is authorised by this implementation.
+
+## Local app.first paint
+
+The local `app.localhost:2000` server reuses the same pure style renderer
+as Cloudflare Preview. When `FA_ADMIN_API_TARGET` is configured, it performs
+one **bounded server-only anonymous GET** against the already approved
+local or shared Preview Worker match API, validates the canonical match
+identity and inserts the official palette before returning HTML. Shared DEV
+requires the same `/api/environment` pool handshake as other anonymous
+reads. Unconfigured / invalid / missing / remote-untrusted targets leave
+the neutral shell. This is not an additional browser request, does not
+connect to Production and does not open privileged endpoints on LAN.

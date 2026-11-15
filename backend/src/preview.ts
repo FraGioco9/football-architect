@@ -5,7 +5,7 @@ import {requireDatabase} from './database.ts';
 import {PREVIEW_RETENTION_CRON,pruneExpiredPlayerPreviews} from './player-preview-retention.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
 import {readPublicMatch} from './public-match-read.ts';
-import {applyPublishedMatchFirstPaint} from './match-page-first-paint.ts';
+import {applyPublishedMatchFirstPaint} from '../../tools/match-first-paint.mjs';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
 // Only eligible missing documents receive the friendly HTML; resources keep

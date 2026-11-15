@@ -1,6 +1,8 @@
 import {proxyAdminApi} from './dev-admin-api-proxy.mjs';
 import {addDevelopmentToAppHtml,renderMatchEngineLab,labFirstPaintBootstrap} from '../match-engine/src/sidebar-shell.mjs';
-import {readSharedPublicWorld} from './shared-nonproduction-proxy.mjs';
+import {readSharedPublicWorld,readSharedPublicMatch} from './shared-nonproduction-proxy.mjs';
+import {isPublicMatchId} from '../assets/match-references.mjs';
+import {applyPublishedMatchFirstPaint} from './match-first-paint.mjs';
 import {request as httpRequest} from 'node:http';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
@@ -208,9 +210,36 @@ async function readPublicWorldForFirstPaint(){
   });
  }catch{return null}
 }
+// Only the configured anonymous read-only Worker may identify a match before
+// local HTML paint. Never derive identities from an uncommitted fixture.
+async function readPublicMatchForFirstPaint(matchId){
+ if(!isPublicMatchId(matchId))return null;
+ const target=process.env.FA_ADMIN_API_TARGET;
+ if(!target)return null;
+ try{
+  if(process.env.FA_ADMIN_API_POOL==='dev-preview')return await readSharedPublicMatch(target,matchId);
+  if(!/^http:\/\/(?:127\.0\.0\.1|\[::1\]):[1-9][0-9]{0,4}\/?$/.test(target))return null;
+  const upstream=new URL(target);
+  return await new Promise(resolve=>{
+   const request=httpRequest({hostname:upstream.hostname.replace(/^\[|\]$/g,''),port:upstream.port,
+    path:'/api/matches/'+matchId,method:'GET',timeout:2500,
+    headers:{host:'app.localhost:2000'}},response=>{
+    const chunks=[];let bytes=0;
+    response.on('data',part=>{bytes+=part.length;if(bytes>16384)request.destroy();else chunks.push(part)});
+    response.on('end',()=>{
+     try{resolve(response.statusCode===200?JSON.parse(Buffer.concat(chunks).toString('utf8')):null)}
+     catch{resolve(null)}
+    });
+    response.on('error',()=>resolve(null));
+   });
+   request.on('timeout',()=>request.destroy());request.on('error',()=>resolve(null));request.end();
+  });
+ }catch{return null}
+}
 // Exported solely to test the server without opening a production or LAN socket.
 export function createPreviewServer({ root = ROOT, subdomains = false, devPreview = true,
-  readInitialWorld = readPublicWorldForFirstPaint } = {}) {
+  readInitialWorld = readPublicWorldForFirstPaint,
+  readInitialMatch = readPublicMatchForFirstPaint } = {}) {
   const sharedBackend=process.env.FA_ADMIN_API_POOL==='dev-preview';
   devPreview=devPreview&&!sharedBackend;
   return createServer(async (req, res) => {
@@ -356,6 +385,14 @@ export function createPreviewServer({ root = ROOT, subdomains = false, devPrevie
           html=html.replace(/(<span id="app-competition-season-value">\d+<\/span>)/,'$1'+script);
         }
         body=Buffer.from(html,'utf8');
+      }
+      if(type===TYPES[".html"]&&publicRequestFile(raw)==='matches/_shared/index.html'&&
+         req.method==='GET'&&isLoopback(remote)){
+        const matchId=/^\/matches\/([1-9][0-9]*)$/.exec(raw)?.[1];
+        if(matchId&&isPublicMatchId(matchId)){
+         let published=null;try{published=await readInitialMatch(matchId)}catch{/* no guess */}
+         body=Buffer.from(applyPublishedMatchFirstPaint(body.toString('utf8'),published,matchId),'utf8');
+        }
       }
       if(devPreview&&['dashboard/index.html','settings/index.html','clubs/index.html','players/index.html'].includes(publicRequestFile(raw)))body=Buffer.from(body.toString('utf8').replace('</head>',DEBUG_MODE_BOOTSTRAP+'<script type="module" src="/__fa_dev__/debug-settings.mjs"></script>\n</head>'),'utf8');
       // Mark all preview HTML routes, including dashboard and settings, before their scripts execute.
