@@ -65,12 +65,10 @@ it('saves an immutable appearance for every newly committed permanent ID, never 
   expect('attributes' in snapshot).toBe(false);
   const expected=await buildPortraitSnapshotForPlayer(player);
   expect(snapshot).toEqual(expected);
-  const res=await req('/portrait?playerId='+persisted[i].id);
-  expect(res.status).toBe(200);
-  const json=await res.json() as any;
-  expect(json.playerId).toBe(player.id);
-  expect(json.portraitPrompt).toBe(await renderPortraitPromptFromSnapshot(snapshot));
-  expect(json.portraitPrompt).toContain('pure-white short-sleeved football jersey');
+  // The portrait prompt is rendered directly from its immutable D1 snapshot,
+  // without requiring an Admin HTTP endpoint.
+  const prompt=await renderPortraitPromptFromSnapshot(snapshot);
+  expect(prompt).toContain('pure-white short-sleeved football jersey');
  }
  const replay=await commit(pending.draftId);
  expect(replay.status).toBe(200);
@@ -82,13 +80,15 @@ it('keeps frozen face/body/nationality after changes to gameplay records',async(
  const p=await draft(1,'portrait-frozen');
  expect((await commit(p.draftId)).status).toBe(200);
  const id=(await rows())[0].id;
- const first=await (await req('/portrait?playerId='+id)).json() as any;
+ const before=(await portraits())[0].snapshot_json;
+ const first=await renderPortraitPromptFromSnapshot(JSON.parse(before));
  await db.prepare(`UPDATE generated_players
   SET payload_json=json_set(payload_json,'$.nationality','BRA','$.attributes.strength',99,'$.attributes.stamina',5)
   WHERE id=?`).bind(id).run();
- const after=await (await req('/portrait?playerId='+id)).json() as any;
- expect(after).toEqual(first);
- expect((await portraits())[0].snapshot_json).toBeDefined();
+ const afterSnapshot=(await portraits())[0].snapshot_json;
+ expect(afterSnapshot).toBe(before);
+ const after=await renderPortraitPromptFromSnapshot(JSON.parse(afterSnapshot));
+ expect(after).toBe(first);
 });
 
 it('uses guarded AUTOINCREMENT sequence, including deleted high-water IDs, across repeated batches',async()=>{
@@ -126,7 +126,7 @@ it('rolls back all generated_players if inserting a single portrait fails',async
  expect(await portraits()).toHaveLength(2);
 });
 
-it('rejects invalid previews, unprivileged reads and extra query arguments',async()=>{
+it('rejects invalid previews and keeps the retired portrait API unavailable',async()=>{
  const p=await draft(1,'corrupt-portrait-preview');
  await db.prepare(`UPDATE player_generation_drafts
   SET candidates_json=json_set(candidates_json,'$[0].attributes.strength',0)
@@ -135,6 +135,21 @@ it('rejects invalid previews, unprivileged reads and extra query arguments',asyn
  expect(await portraits()).toHaveLength(0);
  expect(await rows()).toHaveLength(0);
  for(const path of ['/portrait','/portrait?playerId=0','/portrait?playerId=1&extra=y','/portrait?playerId=a','/portrait?playerId=1&playerId=2'])
-  expect((await req(path)).status).toBe(422);
+  expect((await req(path)).status).toBe(404);
  expect((await req('/portrait?playerId=1',undefined,false)).status).not.toBe(200);
+});
+
+it('validates the version-pinned immutable snapshot without exposing a prompt endpoint',async()=>{
+ const p=await draft(1,'versioned-portrait');
+ expect((await commit(p.draftId)).status).toBe(200);
+ const snapshot=JSON.parse((await portraits())[0].snapshot_json);
+ const prompt=await renderPortraitPromptFromSnapshot(snapshot);
+ expect(prompt).toContain('EXACTLY ONE fictional adult male');
+ await expect(renderPortraitPromptFromSnapshot({...snapshot,prompt_version:'player-portrait-v4'}))
+  .rejects.toThrow('invalid_portrait_version');
+ await expect(renderPortraitPromptFromSnapshot({...snapshot,player_id:0}))
+  .rejects.toThrow('invalid_portrait_snapshot');
+ await expect(renderPortraitPromptFromSnapshot({...snapshot,appearance_fingerprint:'0000000000000000'}))
+  .rejects.toThrow('noncanonical_appearance_snapshot');
+ expect((await req('/portrait?playerId='+snapshot.player_id)).status).toBe(404);
 });
