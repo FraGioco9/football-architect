@@ -12,12 +12,13 @@ import {runSpinDecayDiagnostics} from '/__fa_match_engine__/spin-decay-qa.mjs';
 import {reviewSpinRetentionEvidence} from '/__fa_match_engine__/spin-retention-evidence.mjs';
 import {reviewLiftInputContributions} from '/__fa_match_engine__/lift-input-qa.mjs';
 import {runContactImpactDiagnostics} from '/__fa_match_engine__/contact-impact-qa.mjs';
+import {mountControlledActionLabs} from '/__fa_match_engine__/action-labs.mjs';
 import {prepareFlightPlaybackPair,sampleFlightPlaybackPair,flightPlaybackWallTime} from '/__fa_match_engine__/flight-playback.mjs';
 
 const byId = id => document.getElementById(id);
 const pitch = byId('pitch'), elevation = byId('elevation');
 const fields = ['x', 'y', 'z', 'vx', 'vy', 'vz'];
-const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure'];
+const controls = ['play', 'pause', 'step', 'reset', 'apply', 'compare', 'measure', 'action-labs-open'];
 let rapier, engine, history = [], playing = false, lastFrame = 0, accumulator = 0;
 let physicsTickSnapshot = null;
 let playerWorld=createPlayerMovement(),playerSnapshot=playerWorld.snapshot();
@@ -1961,6 +1962,12 @@ byId('compare').addEventListener('click', compareReplay);
 byId('measure').addEventListener('click', measurePhysics);
 setupDropdowns();
 setupNumericFields();
+// Action experiments are isolated from the physics-first LAB engine.
+mountControlledActionLabs({
+ getRapier:()=>rapier,
+ onOpen:()=>{playing=false;if(engine){engine.dispose();engine=null;}},
+ onClose:()=>{if(rapier)try{restart();}catch(e){say(e.message,true);}}
+});
 loadPreset();
 topDown(); // Show the complete static pitch while the WASM physics module loads.
 requestAnimationFrame(frame);

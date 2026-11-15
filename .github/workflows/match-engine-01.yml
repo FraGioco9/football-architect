@@ -30,23 +30,28 @@ jobs:
           cache-dependency-path: match-engine/package-lock.json
       - name: Install pinned physics candidate
         run: npm ci --prefix match-engine --no-audit --no-fund
-      # PR #481 is Draft/HOLD: run its authentic C2-b witness quickly, once.
-      # Do not repeat it through the full npm test list in the same run.
+      # A scoped Draft/HOLD PR uses only its exact-head focused evidence;
+      # keep the accepted physics suite for the underlying PR #481 separate.
       - name: C2-b Rapier A/B + P1 pure intent contract (Draft PR 481)
         if: ${{ github.event.pull_request.number == 481 && github.event.pull_request.draft }}
         run: |
           node --test match-engine/tests/player-football-intent.test.mjs
           node --test match-engine/tests/player-ball-press-handoff-ab.test.mjs
+      - name: Controlled action LAB source and real Rapier scenarios (Draft #620)
+        if: ${{ github.head_ref == 'feat/620-action-labs' && github.event.pull_request.draft }}
+        run: |
+          node --test match-engine/tests/action-labs.test.mjs
+          node --test match-engine/tests/lab-route.test.mjs
       # Keep the original full ME-01 job on review-ready PRs and all other PRs.
       - name: Focused core and route security tests
-        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || (github.event.pull_request.number != 481 && github.head_ref != 'feat/620-action-labs') }}
         run: npm --prefix match-engine test
       - name: Existing routing/preview regressions
-        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || (github.event.pull_request.number != 481 && github.head_ref != 'feat/620-action-labs') }}
         run: node --test tests/app-subdomain-preview.test.mjs tests/app-canonical-routes.test.mjs
       - name: Browser viewport fit (Chrome, Advanced settings open and closed)
-        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || (github.event.pull_request.number != 481 && github.head_ref != 'feat/620-action-labs') }}
         run: node --test match-engine/tests/lab-viewport-browser.test.mjs
       - name: Measured local CPU / memory sample
-        if: ${{ github.event.pull_request.number != 481 || !github.event.pull_request.draft }}
+        if: ${{ !github.event.pull_request.draft || (github.event.pull_request.number != 481 && github.head_ref != 'feat/620-action-labs') }}
         run: npm --prefix match-engine run bench -- 6000
