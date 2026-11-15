@@ -230,9 +230,9 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
  assert.throws(()=>createControlledActionLab(R,'pass',{shotSide:'away'}),
   /mirrored|supported/);
  assert.throws(()=>createControlledActionLab(R,'shot',{shotLane:'none'}),
-  /blocked setups/);
+  /bounded HOME\\/AWAY/);
  assert.throws(()=>createControlledActionLab(R,'pass',{shotLane:'blocked'}),
-  /blocked setups/);
+  /bounded HOME\\/AWAY/);
  const {createEngine}=await import('../src/core.mjs');
  const {createPlayerMovement}=await import('../src/player-movement.mjs');
  const ball={preset:'roll',seed:'shot-unstaged-counterfactual',
