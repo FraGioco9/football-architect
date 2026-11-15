@@ -194,6 +194,9 @@ export function createControlledActionLab(RAPIER,id,{
    players:Object.freeze(playerFrame.players.map(p=>Object.freeze({
     id:p.id,team:p.team,x:p.x,y:p.y
    }))),
+   // M3 read-only canonical motion samples: no second mover or guessed
+   // velocity and no authority outside the existing closed Action LAB.
+   observedMovementPlayers:playerFrame.players,
    starts,action,evidence,eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,

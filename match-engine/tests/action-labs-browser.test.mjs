@@ -395,6 +395,45 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.doesNotMatch(read.status,/scored goal|successful tackle|pass completed/i);
    process.stdout.write('MOVEMENT_LAB_CHROME_SOURCE '+JSON.stringify(read)+'\n');
   }
+  // #628 M3: authenticated HOME PASS must PRECEDE actual HOME #9 motion.
+  const afterPass=await evalJs("(()=>{"+
+   "const c=document.getElementById('movement-labs-choice');"+
+   "const side=document.getElementById('movement-labs-side');"+
+   "c.value='post-pass';c.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<100;i++)document.getElementById('movement-labs-step').click();"+
+   "return {status:document.getElementById('movement-labs-status').textContent,"+
+   "readout:document.getElementById('movement-labs-readout').textContent,"+
+   "side:side.value,sideDisabled:side.disabled};})()");
+  assert.equal(afterPass.side,'home');
+  assert.equal(afterPass.sideDisabled,true);
+  assert.match(afterPass.readout,/Physical PASS tick 1 · post-pass path [0-9.]+ m/);
+  assert.match(afterPass.status,/actual receiver movement after authentic Rapier PASS/);
+  assert.doesNotMatch(afterPass.status,/completed pass|possession awarded|goal scored/i);
+  process.stdout.write('MOVEMENT_LAB_M3_POSTPASS '+JSON.stringify(afterPass)+'\n');
+  for(const [choice,side] of [
+   ['recovery-response','home'],['recovery-response','away'],
+   ['recovery-empty','home'],['recovery-empty','away']
+  ]){
+   const response=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const side=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "side.value="+JSON.stringify(side)+";side.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let i=0;i<180;i++)document.getElementById('movement-labs-step').click();"+
+    "return {status:document.getElementById('movement-labs-status').textContent,"+
+    "readout:document.getElementById('movement-labs-readout').textContent,"+
+    "side:side.value,sideDisabled:side.disabled};})()");
+   assert.equal(response.side,side);assert.equal(response.sideDisabled,false);
+   assert.match(response.readout,/^Tick 180 /);
+   if(choice==='recovery-response'){
+    assert.match(response.readout,/goal-side path [0-9.]+ m · opponent/);
+    assert.match(response.status,/goal-side recovery witness|real assigned goal-side movement/);
+   }else{
+    assert.match(response.status,/Negative control: no current-opponent recovery witness yet/);
+   }
+   assert.doesNotMatch(response.status,/interception confirmed|tackle successful|possession awarded/i);
+   process.stdout.write('MOVEMENT_LAB_M3_RECOVERY '+JSON.stringify({choice,side,...response})+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

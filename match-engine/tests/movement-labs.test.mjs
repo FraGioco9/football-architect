@@ -11,7 +11,7 @@ import {createControlledMovementLab} from '../src/movement-labs.mjs';
 test('#628 M2 scenario catalog is bounded, mirrored, DEV-only and non-authoritative',()=>{
  assert.deepEqual(MOVEMENT_LAB_SCENARIOS.map(x=>x.id),
   ['approach','brake','turn','recovery']);
- assert.equal(new Set(MOVEMENT_LAB_SCENARIOS.map(x=>x.home.seed)).size,4);
+ assert.equal(new Set(MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2').map(x=>x.home.seed)).size,4);
  for(const spec of MOVEMENT_LAB_SCENARIOS){
   assert.ok(Object.isFrozen(spec)&&Object.isFrozen(spec.home));
   assert.equal(spec.officialMatchResult,false);

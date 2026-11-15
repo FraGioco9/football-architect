@@ -3,6 +3,7 @@
 // runner explicitly disables foot colliders, physical action authority and
 // official match mutations. Do not infer a tackle/touch from proximity.
 import {createEngine,FIXED_DT} from './core.mjs';
+import {createControlledActionLab} from './action-labs.mjs';
 import {createPlayerMovement,PLAYER_MIN_SEPARATION_M} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {MOVEMENT_LAB_SCENARIOS,movementLabScenario} from './movement-lab-scenarios.mjs';
@@ -13,11 +14,22 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for movement LAB');
  const scene=movementLabScenario(id,side);
- const engine=createEngine(RAPIER,scene.initial);
- const mover=createPlayerMovement();
+ const postPass=scene.spec.id==='post-pass';
+ // Genuine CONTROL PASS is produced by the pre-accepted Action LAB; no
+ // parallel physical action implementation or second Rapier world.
+ const actionSession=postPass?createControlledActionLab(RAPIER,'control'):null;
+ const engine=postPass?null:createEngine(RAPIER,scene.initial);
+ const mover=postPass?null:createPlayerMovement();
  let disposed=false,latest=null,origin=null,previous=null;
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
- function record(physics,frame){
+ let postPassDistanceM=0,goalSideTravelM=0;
+ const toPhysical=(f)=>Object.freeze({tick:f.physicsTick,ball:f.ball});
+ const toMovement=(f)=>Object.freeze({
+  tick:f.physicsTick,players:f.observedMovementPlayers,
+  recoveries:Object.freeze({home:null,away:null}),
+  screens:Object.freeze({home:null,away:null})
+ });
+ function record(physics,frame,pass=null,receivingContact=null){
   if(physics.tick!==frame.tick)throw new Error('Canonical 60 Hz movement and Rapier tick mismatch');
   const p=frame.players.find(x=>x.id===scene.focusId);
   if(!p)throw new Error('Missing canonical movement focus');
@@ -25,6 +37,13 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   const gapM=Math.hypot(p.x-ball.x,p.y-ball.y);
   if(origin===null)origin=Object.freeze({x:p.x,y:p.y,gapM});
   const speedMps=Math.hypot(p.vx,p.vy);
+  if(pass&&(pass.physicalImpulseApplied!==true||
+     pass.recipientId!==scene.focusId||pass.team!==scene.side||
+     !Number.isSafeInteger(pass.tick)||pass.tick>=physics.tick+1))
+   throw new Error('Only authenticated original physical PASS is admissible');
+  if(previous&&postPass&&pass&&
+     previous.tick>=pass.tick&&physics.tick>pass.tick)
+   postPassDistanceM+=Math.hypot(p.x-previous.x,p.y-previous.y);
   if(previous){
    pathM+=Math.hypot(p.x-previous.x,p.y-previous.y);
    if(!p.blockedBy&&!previous.blockedBy)
@@ -48,14 +67,30 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   const recoveryObserved=Boolean(screen&&recovery&&
     recovery.opponentId===screen.opponentId&&
     recovery.playerIds.length>0);
+  const currentOpponent=recoveryObserved?
+   frame.players.find(other=>other.id===screen.opponentId&&
+    other.team!==scene.side&&other.role!=='goalkeeper'):null;
+  const assigned=Boolean(currentOpponent&&recovery.playerIds.includes(p.id));
+  // Count only consecutive, source-confirmed goalward movement of the
+  // SAME assigned player against the SAME currently sampled opponent.
+  if(assigned&&previous?.assignedOpponentId===currentOpponent.id&&
+    physics.tick===previous.tick+1&&!p.blockedBy){
+   const actualGoalSide=(p.x-previous.x)*(scene.side==='home'?-1:1);
+   if(actualGoalSide>0)goalSideTravelM+=actualGoalSide;
+  }
   const witnessed=scene.spec.id==='approach'?
    origin.gapM-gapM>0.25&&pathM>0.3:
    scene.spec.id==='brake'?
     !p.blockedBy&&maxSpeedMps>0.75&&
     maxSpeedMps-speedMps>0.35&&maxBrakeMps2>0:
-   scene.spec.id==='turn'?totalTurnRad>0.4:recoveryObserved;
+   scene.spec.id==='turn'?totalTurnRad>0.4:
+   scene.spec.id==='recovery'?recoveryObserved:
+   scene.spec.id==='recovery-response'?assigned&&goalSideTravelM>0.15:
+   scene.spec.id==='post-pass'?Boolean(pass&&postPassDistanceM>0.25):
+   false;
   previous=Object.freeze({
-   x:p.x,y:p.y,speedMps,facingRad:p.facingRad,blockedBy:p.blockedBy
+   tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
+   blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null
   });
   latest=Object.freeze({
    scenarioId:scene.spec.id,side:scene.side,focusId:p.id,
@@ -66,26 +101,43 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     focusSpeedMps:speedMps,maxSpeedMps,pathM,
     distanceToBallM:gapM,distanceClosedM:origin.gapM-gapM,
     maxObservedBrakeMps2:maxBrakeMps2,totalTurnRad,
-    minSpacingM,recoveryObserved,witnessed
+    minSpacingM,recoveryObserved,witnessed,
+    observedOpponentId:currentOpponent?.id??null,
+    assignedRecoveryPlayer:assigned,goalSideTravelM,
+    postPassDistanceM,authenticPassTick:pass?.tick??null,
+    observedReceivingShoeContact:Boolean(receivingContact)
    }),
-   readOnly:true,verifiedFootContact:false,
+   readOnly:true,verifiedFootContact:Boolean(pass),
    officialMatchAction:false,officialPossession:false,
    officialMatchResult:null
   });
   return latest;
  }
- record(engine.snapshot(),mover.snapshot());
+ if(postPass){
+  const f=actionSession.snapshot();
+  record(toPhysical(f),toMovement(f),f.priorRealPass,f.receivingContact);
+ }else record(engine.snapshot(),mover.snapshot());
  function snapshot(){if(disposed)throw new Error('Movement LAB disposed');return latest;}
  function step(){
   if(disposed)throw new Error('Movement LAB disposed');
+  if(postPass){
+   const previousTick=latest.tick;
+   const f=actionSession.step();
+   if(f.physicsTick!==previousTick+1)
+    throw new Error('Original CONTROL Rapier and mover ticks must align');
+   return record(toPhysical(f),toMovement(f),f.priorRealPass,
+    f.receivingContact);
+  }
   const prior=engine.snapshot();
   const frame=mover.step(prior.ball.position);
-  const after=engine.step(); // no physical shoe bridge or autonomous action
+  const after=engine.step(); // original position-only lab: shoe source OFF
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Only current, synchronized real physical ticks');
   return record(after,frame);
  }
- function dispose(){if(!disposed){disposed=true;engine.dispose();}}
+ function dispose(){if(!disposed){
+  disposed=true;engine?.dispose();actionSession?.dispose();
+ }}
  return Object.freeze({scene,snapshot,step,dispose});
 }
 
@@ -134,7 +186,31 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
    f.focusId.replace('-', ' #')+' · speed '+two(m.focusSpeedMps)+' m/s'+
    ' · path '+two(m.pathM)+' m · heading change '+
    two(m.totalTurnRad)+' rad · brake peak '+two(m.maxObservedBrakeMps2)+
-   ' m/s² · min 22-body gap '+two(m.minSpacingM)+' m';
+   ' m/s² · min 22-body gap '+two(m.minSpacingM)+' m'+
+   (f.scenarioId==='post-pass'?' · Physical PASS tick '+
+    (m.authenticPassTick??'none')+' · post-pass path '+
+    two(m.postPassDistanceM)+' m':'')+
+   (f.scenarioId==='recovery-response'?' · goal-side path '+
+    two(m.goalSideTravelM)+' m · opponent '+
+    (m.observedOpponentId??'none'):'');
+  if(f.scenarioId==='post-pass'){
+   status.textContent=(m.witnessed?
+    'Observed: actual receiver movement after authentic Rapier PASS.':
+    'No post-PASS movement witness yet.')+
+    ' No official pass completion, possession or goal.';
+   return;
+  }
+  if(f.scenarioId==='recovery-response'){
+   status.textContent=(m.witnessed?
+    'Observed: real assigned goal-side movement against a currently sampled opponent.':
+    'No goal-side recovery witness yet.')+
+    ' No certified interception, tackle or possession.';
+   return;
+  }
+  if(f.scenarioId==='recovery-empty'){
+   status.textContent='Negative control: no current-opponent recovery witness yet. No tackle or possession.';
+   return;
+  }
   status.textContent=(m.witnessed?'Observed: ':'No movement witness yet: ')+
    (f.scenarioId==='approach'?'actual player approach':
     f.scenarioId==='brake'?'actual measured deceleration':
@@ -144,6 +220,8 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();session?.dispose();
+  if(choice.value==='post-pass'){side.value='home';side.disabled=true;}
+  else side.disabled=false;
   session=createControlledMovementLab(getRapier(),choice.value,{
    side:side.value});
   description.textContent=session.scene.spec.description;
