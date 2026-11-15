@@ -537,11 +537,27 @@ test('CONTROL 2b research: real opponent-first vs intended receiver across bound
   });
   let priorPass=null;
   const trace={slot,p:candidates[slot],pass:null,
-   starts:[],firstOpponent:null,firstReceiver:null,errors:[]};
+   starts:[],firstOpponent:null,firstReceiver:null,errors:[],
+   closest:Infinity,closestTick:null,atClosest:null,probe:[]};
   try{
    for(let tick=1;tick<=220;tick++){
     const frame=mover.step(engine.snapshot().ball.position,priorPass);
-    engine.step(frame);
+    const after=engine.step(frame);
+    const opponent=frame.players.find(p=>p.id==='away-7');
+    const recipient=frame.players.find(p=>p.id==='home-9');
+    const ballP=after.ball.position;
+    const gap=Math.hypot(opponent.x-ballP.x,opponent.y-ballP.y);
+    if(gap<trace.closest){trace.closest=+gap.toFixed(4);
+     trace.closestTick=tick;trace.atClosest={
+      ball:{x:+ballP.x.toFixed(3),y:+ballP.y.toFixed(3)},
+      opponent:{x:+opponent.x.toFixed(3),y:+opponent.y.toFixed(3)}
+     };}
+    if(slot===60&&(tick===1||tick%20===0))
+     trace.probe.push({tick,
+      ball:{x:+ballP.x.toFixed(2),y:+ballP.y.toFixed(2)},
+      opponent:{x:+opponent.x.toFixed(2),y:+opponent.y.toFixed(2)},
+      recipient:{x:+recipient.x.toFixed(2),y:+recipient.y.toFixed(2)},
+      gap:+gap.toFixed(3)});
     const action=engine.uniformAutonomousActionSnapshot();
     const starts=engine.footContactSnapshot().started;
     if(tick===1){
