@@ -20,14 +20,16 @@
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
  const logoSources=new Map();
  const svgNS='http://www.w3.org/2000/svg';
- // Build one composite SVG from the approved paths and outline the union of
- // their alpha channels exactly once (never the individual internal layers).
- async function loadLogoPaths(src){
-  if(!logoSources.has(src))logoSources.set(src,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
+ // Keep original approved shapes, but tint only primary-coloured paths
+ // to approved ivory so the small mark stays visible on the primary bar.
+ async function loadLogoPaths(src,surfaceHex,inkHex){
+  const key=src+'|'+surfaceHex+'|'+inkHex;
+  if(!logoSources.has(key))logoSources.set(key,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
    if(!res.ok)throw Error('Logo unavailable');
    const raw=await res.text();
-   if(raw.length>100000||/<!|<\?/.test(raw))throw Error('Logo markup rejected');
-   const parsed=new DOMParser().parseFromString(raw,'image/svg+xml');
+   const content=raw.replace(/^<\?xml version=['"]1\.0['"] encoding=['"][Uu][Tt][Ff]-8['"]\?>\s*/,'');
+   if(content.length>100000||/<!|<\?/.test(content))throw Error('Logo markup rejected');
+   const parsed=new DOMParser().parseFromString(content,'image/svg+xml');
    const rootSvg=parsed.documentElement;
    if(rootSvg.localName!=='svg'||rootSvg.namespaceURI!==svgNS||parsed.querySelector('parsererror'))throw Error('Invalid logo SVG');
    const style=rootSvg.querySelector('style');
@@ -45,32 +47,10 @@
    svg.setAttribute('class','app-match-logo-art');
    svg.setAttribute('aria-hidden','true');
    svg.setAttribute('focusable','false');
-   // The filter runs on ONE group, AFTER the original paths have been composited.
-   // Radius is expressed in SVG user units (~2.5 rendered px at 80px wide).
-   const tag=(name,attributes,parent)=>{
-    const element=document.createElementNS(svgNS,name);
-    for(const [key,value] of Object.entries(attributes))element.setAttribute(key,String(value));
-    parent.append(element);
-    return element;
-   };
-   const defs=tag('defs',{},svg);
-   const pad=Math.max(box[2],box[3])*.15;
-   const filter=tag('filter',{
-    id:'fa-match-logo-union-outline',
-    filterUnits:'userSpaceOnUse','color-interpolation-filters':'sRGB',
-    x:box[0]-pad,y:box[1]-pad,width:box[2]+2*pad,height:box[3]+2*pad
-   },defs);
-   // preserveAspectRatio="xMidYMid meet" fits the longer viewBox dimension
-   // in 80 CSS pixels; use one source-unit radius for a uniform outer edge.
-   const radius=(Math.max(box[2],box[3])*2.5/80).toFixed(2);
-   tag('feMorphology',{in:'SourceAlpha',operator:'dilate',radius,result:'expanded'},filter);
-   tag('feComposite',{in:'expanded',in2:'SourceAlpha',operator:'out',result:'outerRing'},filter);
-   tag('feFlood',{'flood-color':'#F5F1E8',result:'ivory'},filter);
-   tag('feComposite',{in:'ivory',in2:'outerRing',operator:'in',result:'contour'},filter);
-   const merge=tag('feMerge',{},filter);
-   tag('feMergeNode',{in:'contour'},merge);
-   tag('feMergeNode',{in:'SourceGraphic'},merge);
-   const artwork=tag('g',{filter:'url(#fa-match-logo-union-outline)'},svg);
+   if(surfaceHex!=='#243039'&&!/^#[0-9A-F]{6}$/.test(surfaceHex))throw Error('Invalid logo surface');
+   if(inkHex!=='#F5F1E8')throw Error('Invalid logo ink');
+   const palette=new Set(Object.values(colors).map(x=>x.toUpperCase()));
+   if(palette.size!==2||!palette.has(surfaceHex)||!palette.has('#243039'))throw Error('Logo palette mismatch');
    let paths=0;
    const copy=(source,parent)=>{
     for(const child of source.children){
@@ -85,20 +65,20 @@
       const color=colors[child.getAttribute('class')];
       if(!color||!d||!/^[MmZzLlHhVvCcSsQqTtAaEe\d\s.,+\-]+$/.test(d))throw Error('Invalid logo path');
       node.setAttribute('d',d);
-      node.setAttribute('fill',color);
+      // A small contrast treatment (not a modified official asset):
+      // primary-coloured shapes become ivory, graphite details stay graphite.
+      node.setAttribute('fill',color.toUpperCase()===surfaceHex?inkHex:color.toUpperCase());
       if(child.getAttribute('fill-rule')==='evenodd')node.setAttribute('fill-rule','evenodd');
-      // Keep the original approved colours; a single outer ring is applied
-      // later to the composited artwork group, never to this individual path.
       paths++;
      }
      parent.append(node);
     }
    };
-   copy(rootSvg,artwork);
+   copy(rootSvg,svg);
    if(!paths)throw Error('Empty logo');
    return svg;
   }));
-  return logoSources.get(src);
+  return logoSources.get(key);
  }
  function officialState(){
   if(!data)return 'scheduled';
@@ -155,7 +135,7 @@
   delete slot.dataset.matchLogoPresent;
   slot.replaceChildren();
   if(!intended)return;
-  void loadLogoPaths(intended).then(svg=>{
+  void loadLogoPaths(intended,theme.backgroundHex,theme.foregroundHex).then(svg=>{
    if(slot.dataset.matchLogoPath!==intended)return;
    slot.replaceChildren(svg.cloneNode(true));
    slot.dataset.matchLogoPresent='true';

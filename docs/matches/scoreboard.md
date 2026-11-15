@@ -1,88 +1,54 @@
-# #577 — Compact match scoreboard
+# #577 — Small left-logo match scoreboard
 
-The Match Detail page is currently **one centered scoreboard**, without an
-additional title, visible match ID, club crests or other content panels.
+The Match Detail page has one narrow centered scorebar, no page heading or
+visible match ID, and no invented club crests or scores.
 
 ## Layout
 
-A more compact centered bar, **34px high / max 340px wide** on desktop, **30px high / max 310px wide** on narrow screens, with a responsive five-column row:
+Desktop: maximum width **340px**, height **34px**. Narrow screen: maximum
+width **310px**, height **30px**. The single horizontal row is:
 
-`HOME ABBR | HOME SCORE | COMPETITION LOGO | AWAY SCORE | AWAY ABBR`
+`COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-The center uses the existing approved
-`assets/divisions/{id}-{name-slug}/compact.svg` of that division.
-It is rendered at **80px desktop / 68px mobile**, deliberately **protruding
-above and below** the 34px / 30px bar. The bar and the logo's containing
-elements use visible overflow and the image has **no background,
-plate, padding, or round backing**. The logo remains linked to the competition.
-The ivory (#F5F1E8) border is applied **once to the combined silhouette of
-the whole logo**. The browser loads the already-approved compact SVG
-(without modifying the published asset), reconstructs the original shapes
-and approved fill colours as a sanitized inline SVG, then composites all
-paths into one SVG group. A single SVG filter on that group expands its
-`SourceAlpha`, subtracts the original alpha, paints only the outside ring
-ivory, and merges the intact logo on top. The approx. **2.5px** visible
-contour follows the whole emblem; internal layering and colour boundaries
-have **no additional borders**. No backing plate, individual object strokes
-or rectangle outline is introduced.
-The logo's visual center is shifted **8px upward** (7px on mobile)
-relative to the bar, not vertically centered.
-The bar keeps its subtle neutral outline. The SVG remains transparent,
-without a background plate, circular border, or colored rectangle.
-The entire scoreboard and status have been raised: the page's top padding
-is now 16px on desktop / 11px on narrow screens (formerly 36px / 30px);
-status spacing below the bar is 16px / 14px. The wrapper preserves
-visible overflow for the overhanging logo.
+The actual approved competition `compact.svg` is shown at **28px** on
+desktop, **25px** on mobile, on the **far left within the bar**. It no
+longer occupies the centre or protrudes above/below the bar.
 
-The 16 domestic competitions already have `compact.svg` and `primary.svg`
-assets; both are validated with `tools/validate-division-assets.mjs`,
-covered by its integrity check and included by the public artifact allowlist.
-The scoreboard uses `compact.svg` by default; the matching `primary.svg`
-can be selected per competition in the theme config if its shape suits a
-different layout. The SVG itself displays directly on the scoreboard's
-approved competition colour; there is no ivory plate or other artificial
-background behind it.
+**Legibility treatment (no ivory border or backing):** competition logos use
+two approved colours: their `primaryHex` and graphite `#243039`. Because
+the scorebar itself uses `primaryHex`, the scoreboard-specific display
+replaces only paths filled with that primary colour with the approved ivory
+`#F5F1E8`; the existing graphite details remain graphite. The result is
+a small high-contrast two-tone mark against the original competition-coloured
+bar, without changing the canonical SVG assets. No outline, shadow, border
+around the logo, circular badge, separate plaque or ivory background is used.
 
-The international competitions `int-1` and `int-2` have no equivalent
-approved competition SVGs in the current repository. Their central slot
-remains neutral/empty until verified assets are available. An image loading
-error also yields a neutral empty slot; **no unrelated Football Architect
-logo or invented competition crest is displayed**.
+The 16 published domestic division `compact.svg` files remain intact,
+SHA-verified, publication-allowlisted and mapped to the right competitions.
+Runtime reconstruction checks the path-only geometry, original two-colour
+palette and viewBox before displaying. SVGs with the canonical XML
+declaration are supported. The international `int-1` and `int-2` cups
+still have no approved competition logo, so no fallback logo is invented.
 
-The official match status and optional ET/PK annotation appear in a separate
-small centered line **outside** and below the narrow rectangle, without
-increasing the height of the bar.
+Names use each club's canonical `abbr`. Full names remain accessible
+through ARIA labels but no native `title` tooltips are set. The scoreboard
+has no hover transitions, animations, underlines or opacity changes.
+The official match status / ET / PK information remains below the bar.
+The page sits high, with 6px top padding (4px on narrow screens).
 
-Names use the approved **`abbr`** field (the canonical 2–5 character
-abbreviation) from the club manifest at all widths. If unavailable,
-the official compact/primary name or a guarded unresolved-participant
-label is used. Full club names remain in accessible ARIA labels only;
-native browser `title` tooltips are deliberately removed from team
-and competition links. All scoreboard hover animations/transitions
-are disabled, and hover does not change the link underline or logo opacity.
-Scores are displayed individually beside the center and remain `—`
-unless there is a verified completed result.
+## Theming and data
 
-## Competition customization
+`assets/match-scoreboard-themes.mjs` supplies the competition-specific
+background/foreground/accent HEX colours and verifies them against the
+published competition manifest, with at least 4.5:1 text contrast.
 
-`assets/match-scoreboard-themes.mjs` defines a separate theme for each
-of 18 competitions, including a configurable `logoAsset` path for each
-domestic division. All configured paths are validated against pinned
-canonical division slugs and the two approved SVG variants.
+`GET /api/matches/:positiveNumericId` is the sole authority for the
+match. Scores are displayed only for verified completed results. The
+numeric match ID remains in the URL only.
 
-Only official `primaryHex`, `secondaryHex` and `ivoryHex` values
-from the immutable competition manifest are permitted; text contrast
-must reach 4.5:1. International competitions currently use existing
-neutral Graphite/Ivory until their specific branding is approved.
+The shared template generates `matches/_shared/index.html`. Tests
+cover the layout, logo mapping and palette treatment, public asset
+allowlisting, routing and official result authority.
 
-## Data and lifecycle
-
-The page reads the official `GET /api/matches/:positiveNumericId`.
-The numeric ID still identifies the route but is not rendered.
-No fictitious results or scores are produced.
-
-The shared source template generates `matches/_shared/index.html`.
-Tests check logo existence and public allowlisting for all 16 competitions,
-the compact layout, theme validation, routing and official result authority.
-Run exact-head CI, Site checks and Browser QA before merging.
-PR #614 remains Draft/HOLD.
+PR #614 remains Draft/HOLD pending exact-head CI review and explicit
+merge authorization.
