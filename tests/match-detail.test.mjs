@@ -41,13 +41,20 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.doesNotMatch(section,/symbol-mono-white\.svg|data-match-logo-fallback/);
   assert.match(section,/data-match-home-name/);
   assert.match(section,/data-match-away-name/);
+  for(const selector of ['app-match-competition-logo','data-match-home-name','data-match-away-name']){
+   const opening=selector==='app-match-competition-logo'?
+    section.match(/<a class="app-match-competition-logo"[^>]*>/)?.[0]:
+    section.match(new RegExp('<a class="app-match-team-link" '+selector+'[^>]*>'))?.[0];
+   assert.ok(opening,selector);
+   assert.match(opening,/target="_blank"/);assert.match(opening,/rel="noopener noreferrer"/);
+  }
   assert.match(section,/<div class="app-match-team-slot app-match-team-home"><a class="app-match-team-link" data-match-home-name>/);
   assert.match(section,/<div class="app-match-team-slot app-match-team-away"><a class="app-match-team-link" data-match-away-name>/);
   assert.match(section,/data-match-home-score/);
   assert.match(section,/data-match-away-score/);
-  assert.match(section,/data-match-status/);
+  assert.doesNotMatch(section,/data-match-status|data-match-extra|app-match-scoreboard-meta/);
   assert.doesNotMatch(section,/app-match-scoreboard-topline/);
-  assert.match(section,/<\/section>\s*<div class="app-match-scoreboard-meta">/);
+  assert.match(section,/<\/section>\s*<p class="app-match-feedback"/);
   assert.doesNotMatch(section,/data-match-reference|app-match-page-heading|match-page-title|data-match-home-crest|data-match-away-crest/);
   assert.doesNotMatch(section,/data-match-tab|data-match-panel/);
   assert.doesNotMatch(section,/app-match-score-group/);
@@ -125,14 +132,16 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/write\('\.app-match-score-separator'/);
  // A static separator is not a fixture result; numbers remain official-only.
  assert.match(js,/score\.setAttribute\('aria-hidden',String\(!validScore\)\)/);
- assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
- assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
+ assert.doesNotMatch(js,/validLineup|officialState|data-match-status|data-match-extra/);
+ assert.match(js,/name\.target='_blank';name\.rel='noopener noreferrer'/);
+ assert.match(js,/link\.target='_blank';link\.rel='noopener noreferrer'/);
+ assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
  assert.match(js,/const abbreviation=typeof club\?\.abbr==='string'/);
  assert.match(js,/\?club\.abbr:club\?\.compactName\|\|full/);
  assert.match(js,/name\.textContent=abbreviation/);
- assert.match(js,/if\(id\)name\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)\+'\/'\+Number\(id\.split\('-'\)\[1\]\)\+'\/overview'\)/);
- assert.match(js,/else name\.removeAttribute\('href'\)/);
+ assert.match(js,/name\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)\+'\/'\+Number\(id\.split\('-'\)\[1\]\)\+'\/overview'\)/);
+ assert.match(js,/name\.removeAttribute\('href'\);name\.removeAttribute\('target'\);name\.removeAttribute\('rel'\)/);
  const clubs=JSON.parse(read('clubs/_shared/manifest.json')).clubs;
  assert.equal(clubs.length,320);
  assert.ok(clubs.every(c=>/^[A-Z0-9]{2,5}$/.test(c.abbr)),'Approved club abbreviations expected');
@@ -142,6 +151,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
  assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
+ assert.doesNotMatch(css,/\.app-match-scoreboard-meta|\.app-match-status|\.app-match-extra/);
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
  assert.match(css,/left:-20px;width:min\(100%,284px\);height:48px/);
  assert.match(css,/@media\(max-width:308px\)\{\.app-match-scoreboard\{left:clamp\(-20px,calc\(134px - 50vw\),0px\)\}\}/);

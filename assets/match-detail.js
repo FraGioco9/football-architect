@@ -2,11 +2,11 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-match-detail]');if(!root)return;
  const copies={
-  en:{match:'Match',loading:'Loading match…',scheduled:'Scheduled',awaiting_participants:'Awaiting participants',lineups_confirmed:'Lineups confirmed',in_progress:'In progress',completed:'Full time',postponed:'Postponed',cancelled:'Cancelled',tbd:'To be determined',round:'Round',day:'Sporting day',leg:'Leg',penalties:'Penalties',extraTime:'After extra time',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
-  it:{match:'Partita',loading:'Caricamento partita…',scheduled:'In programma',awaiting_participants:'In attesa delle squadre',lineups_confirmed:'Formazioni confermate',in_progress:'In corso',completed:'Terminata',postponed:'Rinviata',cancelled:'Annullata',tbd:'Da determinare',round:'Giornata',day:'Giorno sportivo',leg:'Gara',penalties:'Rigori',extraTime:'Dopo i supplementari',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
-  de:{match:'Spiel',loading:'Spiel wird geladen…',scheduled:'Angesetzt',awaiting_participants:'Teilnehmer ausstehend',lineups_confirmed:'Aufstellungen bestätigt',in_progress:'Läuft',completed:'Abpfiff',postponed:'Verschoben',cancelled:'Abgesagt',tbd:'Noch offen',round:'Spieltag',day:'Sporttag',leg:'Spiel',penalties:'Elfmeterschießen',extraTime:'Nach Verlängerung',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
-  es:{match:'Partido',loading:'Cargando partido…',scheduled:'Programado',awaiting_participants:'Pendiente de participantes',lineups_confirmed:'Alineaciones confirmadas',in_progress:'En juego',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado',tbd:'Por determinar',round:'Jornada',day:'Día deportivo',leg:'Partido',penalties:'Penaltis',extraTime:'Tras prórroga',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
-  fr:{match:'Match',loading:'Chargement du match…',scheduled:'Programmé',awaiting_participants:'Participants en attente',lineups_confirmed:'Compositions confirmées',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé',tbd:'À déterminer',round:'Journée',day:'Jour sportif',leg:'Match',penalties:'Tirs au but',extraTime:'Après prolongation',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
+  en:{match:'Match',tbd:'To be determined',round:'Round',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
+  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
+  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
+  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
+  fr:{match:'Match',tbd:'À déterminer',round:'Journée',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
@@ -16,16 +16,9 @@
  const matchId=(/^\/matches\/([1-9][0-9]*)$/.exec(location.pathname)||[])[1];
  const clubKey=value=>{const m=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(value||'');return m?m[1]+'-'+Number(m[2]):null};
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
- const validLineup=lineup=>lineup?.confirmed===true&&Array.isArray(lineup.starters)&&lineup.starters.length===11;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
  // Use the approved SVG directly: its primary and secondary fills are
  // identical in Dark and Light, without recolouring or injected outlines.
- function officialState(){
-  if(!data)return 'scheduled';
-  const status=data.status;
-  if(status==='scheduled'&&validLineup(data.lineups?.home)&&validLineup(data.lineups?.away))return 'lineups_confirmed';
-  return ['awaiting_participants','scheduled','in_progress','completed','postponed','cancelled'].includes(status)?status:'scheduled';
- }
  function showTeam(side){
   const name=find('[data-match-'+side+'-name]');if(!name)return;
   const id=clubKey(data?.[side+'Participant']?.clubId);
@@ -44,8 +37,12 @@
   name.removeAttribute('title');
   // A verified club ID is enough for canonical routing even if the optional
   // club catalog is delayed; missing/unresolved participants are not links.
-  if(id)name.href=href('/clubs/'+id.split('-')[0].toLowerCase()+'/'+Number(id.split('-')[1])+'/overview');
-  else name.removeAttribute('href');
+  if(id){
+   name.href=href('/clubs/'+id.split('-')[0].toLowerCase()+'/'+Number(id.split('-')[1])+'/overview');
+   name.target='_blank';name.rel='noopener noreferrer';
+  }else{
+   name.removeAttribute('href');name.removeAttribute('target');name.removeAttribute('rel');
+  }
  }
  function applyCompetition(){
   const comp=competitions?.competitions?.find(c=>c.id===data?.competitionId);
@@ -54,9 +51,12 @@
   if(link){
    link.setAttribute('aria-label',display);
    link.removeAttribute('title');
-   if(/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(data?.competitionId||''))
+   if(/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(data?.competitionId||'')){
     link.href=href('/competitions/'+data.competitionId.toLowerCase()+'/fixtures');
-   else link.removeAttribute('href');
+    link.target='_blank';link.rel='noopener noreferrer';
+   }else{
+    link.removeAttribute('href');link.removeAttribute('target');link.removeAttribute('rel');
+   }
   }
   const theme=themeResolver?.(comp)||{
    backgroundHex:'#243039',foregroundHex:'#F5F1E8',accentHex:'#F5F1E8',logoAsset:null,kind:'neutral'
@@ -96,10 +96,9 @@
    const feedback=find('[data-match-feedback]');if(feedback){feedback.hidden=false;feedback.textContent=errorKind==='missing'?tr.notFound:tr.error}
    document.title=tr.match+' — Football Architect';return;
   }
-  if(!data){write('[data-match-status]',tr.loading);return}
+  if(!data)return
   root.dataset.matchLoad='ready';
   applyCompetition();
-  write('[data-match-status]',tr[officialState()]);
   // Scores are shown ONLY when provided as a verified completed result.
   const result=data.status==='completed'?data.result:null;
   const validScore=Number.isSafeInteger(result?.homeGoals)&&Number.isSafeInteger(result?.awayGoals)&&result.homeGoals>=0&&result.awayGoals>=0;
@@ -112,9 +111,6 @@
    const score=find('[data-match-'+side+'-score]');
    if(score)score.setAttribute('aria-hidden',String(!validScore));
   }
-  const extra=validScore&&result?.penalties&&Number.isSafeInteger(result.penalties.home)&&Number.isSafeInteger(result.penalties.away)
-   ?tr.penalties+' '+result.penalties.home+'–'+result.penalties.away:validScore&&result?.extraTime?tr.extraTime:'';
-  write('[data-match-extra]',extra);
   showTeam('home');showTeam('away');document.title=tr.match+' — Football Architect';
  }
  async function load(){

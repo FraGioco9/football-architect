@@ -182,7 +182,7 @@ geometry are untouched.
 **The separator axis is now centred on the page.** The 48px competition
 badge made it 20px right of the bar centre. The 284/268px scoreboard keeps
 its dimensions, but shifts 20px left to align the reserved separator track
-with the centre of the match content and status below it. Below 308px
+with the centre of the main content box. Below 308px
 viewport width the offset is clamped to prevent horizontal clipping.
 
 ### Pre-kickoff score visibility
@@ -255,8 +255,24 @@ from the badge, making the centre dash line up with the **main content axis**,
 not the viewport or the sidebar. Chromium/WebKit browser tests measure the
 actual main content-box centre, including its horizontal padding.
 
-The page displays **seven sporting status labels**: awaiting participants,
-scheduled, lineups confirmed (derived from scheduled when both lineups are
-confirmed), in progress, completed, postponed, cancelled. There are six
-backend status values (lineups confirmed is a derived UI state). Including
-loading, not found and temporary error produces **ten user-visible states**.
+The match backend can still return six sporting statuses: awaiting
+participants, scheduled, in progress, completed, postponed and cancelled.
+The scoreboard no longer prints these labels. `data-match-load` still
+tracks loading/ready/missing for rendering; missing/error notices are kept
+in the separate feedback area.
+
+### Open links in a separate tab; remove scoreboard captions
+
+The competition logo and both resolved club-abbreviation links open their
+canonical competition/club pages in a **new browser tab**, using native
+`target="_blank" rel="noopener noreferrer"` on both source and generated
+markup, retained by the controller when the URL becomes available. Missing
+participants are not linked.
+
+The entire `app-match-scoreboard-meta` row is removed, including Scheduled,
+In progress, Full time, lineups-confirmed and any extra-time/penalties caption
+that previously occupied that location. The related CSS, status-generation
+and unused translation copy are removed too. All authoritative match states
+and recorded results remain intact in the model, but no messages are
+rendered under the scoreboard. Missing/error feedback remains separately
+visible and is not suppressed. No extra vertical gap is reserved.

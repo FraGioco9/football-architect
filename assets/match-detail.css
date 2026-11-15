@@ -92,21 +92,12 @@
  text-align:center;color:#FFFFFF;
  font-size:21px;line-height:1;font-weight:700;opacity:1;
 }
-.app-match-scoreboard-meta{
- display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
- gap:4px 8px;max-width:284px;min-height:18px;margin:9px auto 0;
- color:var(--muted);text-align:center;
-}
-.app-match-status{font-size:10px;line-height:1.35;font-weight:700;letter-spacing:.025em}
-.app-match-extra{font-size:10px;line-height:1.35}
-.app-match-extra:empty{display:none}
 .app-match-feedback{
  max-width:340px;margin:12px auto 0!important;padding:12px 14px;
  border:1px solid var(--border);border-radius:var(--fa-radius-control,10px);
  color:var(--muted);
 }
-.app-match-page[data-match-load="missing"] .app-match-scoreboard,
-.app-match-page[data-match-load="missing"] .app-match-scoreboard-meta{display:none}
+.app-match-page[data-match-load="missing"] .app-match-scoreboard{display:none}
 .app-match-page .app-match-scoreboard a:focus-visible{
  outline:2px solid var(--app-match-text);outline-offset:3px;
 }
@@ -136,7 +127,6 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-team-link .app-skeleton-bar{width:50px;height:18px}
  .app-match-side-score{font-size:22px}
  .app-match-score-separator{font-size:19px}
- .app-match-scoreboard-meta{max-width:268px;margin-top:8px}
 }
 /* Preserve viewport margins below the supported 320px QA breakpoint. */
 @media(max-width:308px){.app-match-scoreboard{left:clamp(-20px,calc(134px - 50vw),0px)}}
