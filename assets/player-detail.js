@@ -5,13 +5,15 @@
  const headingFallback=panel.querySelector('[data-detail-heading-fallback]');
  const portraitImage=panel.querySelector('[data-detail-portrait-photo]');
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
+ // An inline SVG is an SVGElement (not an HTMLElement). Its .hidden property
+ // is not a reliable reflected attribute; use the real attribute so CSS [hidden] works.
  // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
  const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;
   portraitImage.onload=null;portraitImage.onerror=null;
-  portraitImage.hidden=true;portraitFallback.hidden=false;
+  portraitImage.hidden=true;portraitFallback.removeAttribute('hidden');
   portraitImage.removeAttribute('src');
  }
  function resolvePortrait(){
@@ -22,11 +24,11 @@
   const ticket=portraitRequest;
   portraitImage.onload=()=>{
    if(ticket!==portraitRequest)return;
-   portraitImage.hidden=false;portraitFallback.hidden=true;
+   portraitImage.hidden=false;portraitFallback.setAttribute('hidden','');
   };
   portraitImage.onerror=()=>{
    if(ticket!==portraitRequest)return;
-   portraitImage.hidden=true;portraitFallback.hidden=false;
+   portraitImage.hidden=true;portraitFallback.removeAttribute('hidden');
    portraitImage.removeAttribute('src');
   };
   portraitImage.src=source;
