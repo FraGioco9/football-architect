@@ -2,12 +2,16 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-match-detail]');if(!root)return;
  const copies={
-  en:{match:'Match',tbd:'To be determined',round:'Round',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
-  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
-  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
-  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
-  fr:{match:'Match',tbd:'À déterminer',round:'Journée',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
+  en:{match:'Match',tbd:'To be determined',round:'Round',overview:'Overview',lineups:'Lineups',events:'Events',stats:'Stats',season:'Season',day:'Day',notAvailable:'Not available',confirmed:'Confirmed',available:'Available',eventSingular:'event',eventPlural:'events',pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
+  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',overview:'Panoramica',lineups:'Formazioni',events:'Eventi',stats:'Statistiche',season:'Stagione',day:'Giorno',notAvailable:'Non disponibili',confirmed:'Confermate',available:'Disponibili',eventSingular:'evento',eventPlural:'eventi',pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
+  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',overview:'Übersicht',lineups:'Aufstellungen',events:'Ereignisse',stats:'Statistiken',season:'Saison',day:'Tag',notAvailable:'Nicht verfügbar',confirmed:'Bestätigt',available:'Verfügbar',eventSingular:'Ereignis',eventPlural:'Ereignisse',pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
+  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',overview:'Resumen',lineups:'Alineaciones',events:'Eventos',stats:'Estadísticas',season:'Temporada',day:'Día',notAvailable:'No disponible',confirmed:'Confirmadas',available:'Disponible',eventSingular:'evento',eventPlural:'eventos',pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
+  fr:{match:'Match',tbd:'À déterminer',round:'Journée',overview:'Aperçu',lineups:'Compositions',events:'Événements',stats:'Statistiques',season:'Saison',day:'Jour',notAvailable:'Indisponible',confirmed:'Confirmées',available:'Disponible',eventSingular:'événement',eventPlural:'événements',pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
+ const validLineup=lineup=>lineup?.confirmed===true&&Array.isArray(lineup.starters)&&lineup.starters.length===11;
+ const knownStats=stats=>stats&&typeof stats==='object'&&!Array.isArray(stats)&&
+  stats.home&&typeof stats.home==='object'&&Object.keys(stats.home).length>0&&
+  stats.away&&typeof stats.away==='object'&&Object.keys(stats.away).length>0;
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
  const text=()=>copies[lang()];
@@ -89,6 +93,38 @@
   slot.append(img);
   img.src=intended;
  }
+ function renderContext(tr){
+  for(const key of ['overview','lineups','events','stats'])
+   write('[data-match-card-title="'+key+'"]',tr[key]);
+  write('[data-match-visual-title]',tr.match);
+  const pitch=find('[data-match-pitch]');
+  if(pitch)pitch.setAttribute('aria-label',tr.pitch);
+  if(!data)return;
+  // These are factual summaries, not selectable tabs. The empty pitch is
+  // always present; no live simulation or gameplay state is inferred.
+  const status=data.status,playing=status==='in_progress'||status==='completed';
+  const authoritative=data.provenance?.kind==='authoritative';
+  const lineups=authoritative&&validLineup(data.lineups?.home)&&validLineup(data.lineups?.away);
+  const events=authoritative&&playing&&Array.isArray(data.events);
+  const stats=authoritative&&playing&&knownStats(data.statistics);
+  const emphasis={
+   overview:playing?'medium':'high',
+   lineups:lineups?'high':status==='scheduled'||status==='in_progress'?'medium':'low',
+   events:events?'high':status==='in_progress'?'medium':'low',
+   stats:stats?'high':status==='in_progress'?'medium':'low'
+  };
+  for(const [key,value] of Object.entries(emphasis)){
+   const card=find('[data-match-card="'+key+'"]');
+   if(card)card.dataset.matchEmphasis=value;
+  }
+  const overview=[tr.season+' '+data.season];
+  if(Number.isSafeInteger(data.round)&&data.round>0)overview.push(tr.round+' '+data.round);
+  write('[data-match-card-summary="overview"]',overview.join(' · '));
+  write('[data-match-card-detail="overview"]',Number.isSafeInteger(data.day)&&data.day>0?tr.day+' '+data.day:'');
+  write('[data-match-card-summary="lineups"]',lineups?tr.confirmed:tr.notAvailable);
+  write('[data-match-card-summary="events"]',events?data.events.length+' '+(data.events.length===1?tr.eventSingular:tr.eventPlural):tr.notAvailable);
+  write('[data-match-card-summary="stats"]',stats?tr.available:tr.notAvailable);
+ }
  function render(){
   const tr=text();
   if(errorKind){
@@ -96,7 +132,8 @@
    const feedback=find('[data-match-feedback]');if(feedback){feedback.hidden=false;feedback.textContent=errorKind==='missing'?tr.notFound:tr.error}
    document.title=tr.match+' — Football Architect';return;
   }
-  if(!data)return
+  renderContext(tr);
+  if(!data)return;
   root.dataset.matchLoad='ready';
   applyCompetition();
   // Scores are shown ONLY when provided as a verified completed result.

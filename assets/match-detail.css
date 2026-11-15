@@ -130,3 +130,40 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 /* Preserve viewport margins below the supported 320px QA breakpoint. */
 @media(max-width:308px){.app-match-scoreboard{left:clamp(-20px,calc(134px - 50vw),0px)}}
+
+/* #577 — Four factual contextual cards; never acting as view tabs. */
+.app-match-context{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
+ max-width:1120px;margin:28px auto 0;
+}
+.app-match-context-card{
+ box-sizing:border-box;min-width:0;min-height:98px;padding:15px 16px;
+ border:1px solid var(--border);border-radius:var(--fa-radius-panel,12px);
+ background:var(--surface);color:var(--text);opacity:1;cursor:default;
+}
+.app-match-context-card[data-match-emphasis="medium"]{opacity:.72}
+.app-match-context-card[data-match-emphasis="low"]{opacity:.42}
+.app-match-context-title{margin:0;font-size:14px;line-height:1.35;font-weight:750;letter-spacing:-.01em}
+.app-match-context-summary{
+ min-height:18px;margin:10px 0 0;font-size:12px;line-height:1.5;font-weight:650;overflow-wrap:anywhere;
+}
+.app-match-context-detail{
+ min-height:15px;margin:3px 0 0;font-size:11px;line-height:1.4;
+ color:var(--muted);overflow-wrap:anywhere;
+}
+/* The static pitch reserves space for future verified visualisation. */
+.app-match-visual{max-width:1120px;min-width:0;margin:24px auto 0}
+.app-match-visual-title{margin:0 0 12px;color:var(--text);font-size:15px;line-height:1.4;font-weight:750}
+.app-match-pitch{
+ box-sizing:border-box;width:100%;aspect-ratio:105 / 68;
+ overflow:hidden;border:1px solid var(--border);border-radius:12px;
+ background:#205C43;color:rgba(255,255,255,.74);
+}
+.app-match-pitch svg{display:block;width:100%;height:100%}
+.app-match-page[data-match-load="missing"] .app-match-context,
+.app-match-page[data-match-load="missing"] .app-match-visual{display:none}
+@media(max-width:800px){
+ .app-match-context{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:24px}
+ .app-match-context-card{min-height:88px;padding:12px 13px}
+ .app-match-visual{margin-top:20px}
+}
