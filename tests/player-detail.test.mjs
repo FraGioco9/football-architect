@@ -612,3 +612,21 @@ test('#623 portrait reserve stays blank at first paint, until missing image is c
  assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.setAttribute('hidden','')"),'reset must hide both photo and SVG');
  assert.ok(!js.includes('portraitFallback.hidden='),'do not use hidden expando on SVG');
 });
+
+
+test('#623 approved portraits use adjustable top-anchored 125% crop without resizing the image slot',()=>{
+ const css=read('assets/player-detail.css');
+ const photoRule=css.split('.app-player-detail-photo{')[1]?.split('}')[0];
+ const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(photoRule,'photo rule must exist');
+ assert.ok(photoRule.includes('object-fit:cover;object-position:center top'),'photo must remain top aligned');
+ assert.ok(photoRule.includes('transform-origin:50% 0'),'scale from the top so the head is not cropped');
+ assert.ok(photoRule.includes('scale(var(--app-player-photo-scale,1.25))'),'all approved portraits default to 125% zoom');
+ assert.ok(photoRule.includes('var(--app-player-photo-offset-x,0px)'),'future horizontal alignment can be tuned per player');
+ assert.ok(photoRule.includes('var(--app-player-photo-offset-y,0px)'),'future vertical alignment can be tuned per player');
+ assert.ok(frameRule.includes('width:160px;height:181px'),'desktop portrait dimensions unchanged');
+ assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
+ assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:100px;height:114px;flex-basis:100px}'),'mobile portrait dimensions unchanged');
+ assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
+});
