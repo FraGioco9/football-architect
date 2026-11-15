@@ -37,6 +37,10 @@ const VIRTUAL = Object.freeze({
 const MATCH_ENGINE_LAB = Object.freeze({
   '/dev/match-engine': 'match-engine/lab/index.html',
   '/__fa_match_engine__/core.mjs': 'match-engine/src/core.mjs',
+  '/__fa_match_engine__/rapier-foot-contact-bridge.mjs': 'match-engine/src/rapier-foot-contact-bridge.mjs',
+  '/__fa_match_engine__/player-foot-contact.mjs': 'match-engine/src/player-foot-contact.mjs',
+  '/__fa_match_engine__/player-foot-contact-timeline.mjs': 'match-engine/src/player-foot-contact-timeline.mjs',
+  '/__fa_match_engine__/player-foot-contact-solver.mjs': 'match-engine/src/player-foot-contact-solver.mjs',
   '/__fa_match_engine__/aerodynamics.mjs': 'match-engine/src/aerodynamics.mjs',
   '/__fa_match_engine__/magnus.mjs': 'match-engine/src/magnus.mjs',
   '/__fa_match_engine__/calibration-evidence.mjs': 'match-engine/src/calibration-evidence.mjs',
