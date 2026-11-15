@@ -25,11 +25,15 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.match(section,/data-match-detail/);
   assert.match(section,/app-match-scoreboard/);
   assert.match(section,/data-match-competition-logo/);
-  assert.match(section,/data-match-home-crest/);
-  assert.match(section,/data-match-away-crest/);
-  assert.match(section,/data-match-score/);
+  assert.match(section,/data-match-home-name/);
+  assert.match(section,/data-match-away-name/);
+  assert.match(section,/data-match-home-score/);
+  assert.match(section,/data-match-away-score/);
   assert.match(section,/data-match-status/);
+  assert.doesNotMatch(section,/data-match-reference|app-match-page-heading|match-page-title|data-match-home-crest|data-match-away-crest/);
   assert.doesNotMatch(section,/data-match-tab|data-match-panel/);
+  const columns=['data-match-home-name','data-match-home-score','data-match-competition-logo','data-match-away-score','data-match-away-name'];
+  for(let i=1;i<columns.length;i++)assert.ok(section.indexOf(columns[i-1])<section.indexOf(columns[i]),'Wrong scoreboard order '+columns[i]);
  }
  assert.doesNotMatch(html,/\btemporary-score-v1\b|<script\b[^>]*src="https?:/);
  assert.match(read('tools/generate-app-pages.mjs'),/writeOutput\("matches\/_shared\/index\.html"/);
@@ -77,5 +81,13 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
+ assert.match(js,/const compact=club\?\.compactName\|\|full/);
+ assert.match(js,/data-match-home-score/);
+ assert.match(js,/data-match-away-score/);
+ assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
+ const css=read('assets/match-detail.css');
+ assert.match(css,/width:min\(100%,560px\)/);
+ assert.match(css,/margin:0 auto/);
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\) 38px 48px 38px minmax\(0,1fr\)/);
 });

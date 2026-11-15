@@ -25,38 +25,33 @@
   return ['awaiting_participants','scheduled','in_progress','completed','postponed','cancelled'].includes(status)?status:'scheduled';
  }
  function showTeam(side){
-  const slot=find('[data-match-'+side+'-crest]'),name=find('[data-match-'+side+'-name]');if(!slot||!name)return;
+  const name=find('[data-match-'+side+'-name]');if(!name)return;
   const id=clubKey(data?.[side+'Participant']?.clubId);
   const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
   const participant=side==='home'?data?.participantA:data?.participantB;
   let fallback=text().tbd;
   if(!id&&participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&participant.rank>0)
    fallback=text().round+' '+participant.rank;
-  const full=club?.primaryName||id||fallback,compact=club?.compactName||full;
-  name.replaceChildren();
-  const primary=document.createElement('span');primary.className='app-match-primary-name';primary.textContent=full;
-  const small=document.createElement('span');small.className='app-match-compact-name';small.textContent=compact;
-  name.append(primary,small);
+  const full=club?.primaryName||id||fallback;
+  // Compact names are the approved public club labels, never generated abbreviations.
+  const compact=club?.compactName||full;
+  name.textContent=compact;
+  name.setAttribute('aria-label',full);
+  name.title=full;
   if(club)name.href=href('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
   else name.removeAttribute('href');
-  slot.replaceChildren();
-  const crest=club&&clubs?.clubCrests?.[id];
-  const approvedPath=club?'assets/clubs/'+club.countryId+'/'+club.clubId+'/crest.svg':null;
-  if(crest===approvedPath){
-   const img=document.createElement('img');img.src='/'+crest;img.alt='';img.width=78;img.height=78;
-   img.addEventListener('error',()=>{img.remove()},{once:true});slot.append(img);
-  }else{
-   const blank=document.createElement('span');blank.className='app-match-crest-skeleton';slot.append(blank);
-  }
  }
  function applyCompetition(){
   const comp=competitions?.competitions?.find(c=>c.id===data?.competitionId);
-  const display=comp?.name||data?.competitionId||'';
-  write('[data-match-competition]',display);
-  const link=find('[data-match-competition]');
-  if(link&&/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(data?.competitionId||''))
-   link.href=href('/competitions/'+data.competitionId.toLowerCase()+'/fixtures');
-  else link?.removeAttribute('href');
+  const display=comp?.name||data?.competitionId||text().match;
+  const link=find('[data-match-competition-link]');
+  if(link){
+   link.setAttribute('aria-label',display);
+   link.title=display;
+   if(/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(data?.competitionId||''))
+    link.href=href('/competitions/'+data.competitionId.toLowerCase()+'/fixtures');
+   else link.removeAttribute('href');
+  }
   const theme=themeResolver?.(comp)||{
    backgroundHex:'#243039',foregroundHex:'#F5F1E8',accentHex:'#F5F1E8',logoAsset:null,kind:'neutral'
   };
@@ -70,35 +65,30 @@
   const slot=find('[data-match-competition-logo]');if(!slot)return;
   slot.replaceChildren();
   if(theme.logoAsset){
-   const img=document.createElement('img');img.src='/'+theme.logoAsset;img.alt='';img.width=54;img.height=54;
+   const img=document.createElement('img');img.src='/'+theme.logoAsset;img.alt='';img.width=42;img.height=42;
    img.addEventListener('error',()=>{img.remove()},{once:true});slot.append(img);
   }
  }
  function render(){
-  const tr=text();write('[data-match-label="match"]',tr.match);
-  const board=find('.app-match-scoreboard');
+  const tr=text();
   if(errorKind){
    root.dataset.matchLoad='missing';
    const feedback=find('[data-match-feedback]');if(feedback){feedback.hidden=false;feedback.textContent=errorKind==='missing'?tr.notFound:tr.error}
    document.title=tr.match+' — Football Architect';return;
   }
   if(!data){write('[data-match-status]',tr.loading);return}
-  root.dataset.matchLoad='ready';write('[data-match-reference]','#'+matchId);
+  root.dataset.matchLoad='ready';
   applyCompetition();
-  const stage=data.stageId==='league'?'':String(data.stageId||'');
-  const round=Number.isSafeInteger(data.round)&&data.round>0?tr.round+' '+data.round:'';
-  const leg=Number.isSafeInteger(data.leg)&&data.leg>0?tr.leg+' '+data.leg:'';
-  write('[data-match-stage]',[stage,round,leg].filter(Boolean).join(' · ')||'—');
-  write('[data-match-day]',Number.isSafeInteger(data.day)?tr.day+' '+data.day:'—');
   write('[data-match-status]',tr[officialState()]);
   // Scores are shown ONLY when provided as a verified completed result.
   const result=data.status==='completed'?data.result:null;
   const validScore=Number.isSafeInteger(result?.homeGoals)&&Number.isSafeInteger(result?.awayGoals)&&result.homeGoals>=0&&result.awayGoals>=0;
-  write('[data-match-score]',validScore?result.homeGoals+' : '+result.awayGoals:'— : —');
+  write('[data-match-home-score]',validScore?result.homeGoals:'—');
+  write('[data-match-away-score]',validScore?result.awayGoals:'—');
   const extra=validScore&&result?.penalties&&Number.isSafeInteger(result.penalties.home)&&Number.isSafeInteger(result.penalties.away)
    ?tr.penalties+' '+result.penalties.home+'–'+result.penalties.away:validScore&&result?.extraTime?tr.extraTime:'';
   write('[data-match-extra]',extra);
-  showTeam('home');showTeam('away');document.title=tr.match+' #'+matchId+' — Football Architect';
+  showTeam('home');showTeam('away');document.title=tr.match+' — Football Architect';
  }
  async function load(){
   if(!numeric(matchId)){errorKind='missing';render();return}

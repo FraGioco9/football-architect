@@ -1,46 +1,50 @@
-# #577 — Scoreboard-first Match Detail
+# #577 — Compact match scoreboard
 
-This is the first independent piece of the rebuilt Match Detail UI. The page currently
-shows **only** the scoreboard, without placeholder Overview / Lineups / Statistics tabs.
+The Match Detail page is currently **one centered scoreboard**, without an
+additional title, visible match ID, club crests or other content panels.
 
 ## Layout
 
-A stable first-paint scoreboard reserves space for competition identity, future approved
-competition logo, home/away crests and names, official result/status and optional verified
-extra-time/penalty result. Desktop uses three columns; smaller displays show approved
-compact club names, with no page-width overflow. Club/competition identity links are
-created only from known manifest/official match identities.
+Maximum width 560px, centered horizontally, with a responsive five-column row:
 
-## Per-competition themes
+`COMPACT HOME NAME | HOME SCORE | COMPETITION LOGO | AWAY SCORE | COMPACT AWAY NAME`
 
-Edit the explicit entry for one of the 18 competitions in
-`assets/match-scoreboard-themes.mjs`:
+The competition logo occupies the fixed central slot (48px desktop / 40px
+mobile); it is an accessible link to the competition and retains its size
+on initial paint. Until an approved competition logo SVG exists, the
+slot uses only a neutral empty outline, **not a fabricated logo**.
+The official match status and optional ET/PK annotation appear in a small
+centered line below the scoreboard.
 
-- `surface` chooses the approved `primaryHex` or `secondaryHex` background.
-- `ink` chooses an approved contrast-safe foreground (default `ivoryHex`).
-- `accent` chooses an approved secondary/ivory accent.
-- `logoAsset` is `null` until an **approved**, public SVG exists at
-  `assets/competitions/{competition-id-lowercase}/logo.svg`. The runtime
-  never invents a logo, downloads third-party branding or displays a fake icon.
+Names use approved `compactName` from the club manifest at **all widths**.
+If unavailable, the official name or a guarded unresolved-participant
+label is used. Full club names remain available as accessible labels
+and title tooltips. Scores are displayed individually beside the center,
+and remain `—` unless there is a verified completed result.
 
-At runtime, all chosen values resolve to the **same competition's existing
-approved manifest HEX values**; a minimum 4.5:1 text contrast is required.
-Unknown competition IDs, corrupted colour fields and the two international
-cups (which currently have no approved palette/logo values) fall back to
-the site's already-used Graphite/Ivory neutrals `#243039` and `#F5F1E8`.
-No hard-coded new competition colours are introduced. The logo placeholder
-is intentionally empty until real assets are supplied and approved.
+## Competition customization
 
-## Data boundaries
+`assets/match-scoreboard-themes.mjs` defines a separate editable theme
+for each of 18 competitions. Only official `primaryHex`, `secondaryHex`
+and `ivoryHex` values from the immutable manifest are permitted;
+foreground/background must meet 4.5:1 contrast. International competitions
+currently use existing neutral Graphite/Ivory values until approved
+competition-specific colors are provided.
 
-The match is loaded from `GET /api/matches/:positiveNumericId`; no fake
-kickoff, score, live event or lineup can be created. A score appears only
-for a validated completed result. The `lineups_confirmed` label is derived
-only when **both** official confirmed XI exist, not from a clock or guess.
-Theming is presentation-only and never affects the official backend.
+The central logo is configured as `logoAsset`. It remains null until
+an approved SVG is added at
+`assets/competitions/{competition-id-lowercase}/logo.svg`.
+There are no official competition logos in the repository yet.
 
-## QA / release
+## Data and lifecycle
 
-Use `node --test tests/match-detail.test.mjs`, site generator checks,
-publication guard, browser QA and full exact-head CI. PR #614 stays Draft/HOLD:
-no merge, preview deploy or remote DB work is included in this step.
+The page reads the official `GET /api/matches/:positiveNumericId`.
+The numeric ID still identifies the route, **but is not rendered**.
+Status reflects only attested states; both official XI are needed to
+display confirmed lineups. No fictitious results or scores are produced.
+
+The shared source template generates
+`matches/_shared/index.html`. Tests cover alignment, the five-column
+order, theme validation, routing, full/compact text identity, and
+only-official completed scores. Run the exact-head CI, Site checks
+and Browser QA before merging. PR #614 remains Draft/HOLD.
