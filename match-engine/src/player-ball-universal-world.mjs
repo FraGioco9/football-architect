@@ -8,6 +8,8 @@ import {resolveGlobalBallResponse,DEFAULT_GLOBAL_BALL_RESPONSE}
  from './player-ball-global-response.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_DT,PLAYER_VERSION}
  from './player-movement.mjs';
+import {chooseNextTickPhysicalShotMovementCue}
+ from './player-football-shot-movement-intent.mjs';
 import {measureOrientedCarryShoeBallGeometry}
  from './player-ball-carry-oriented-shoe-geometry.mjs';
 
@@ -105,7 +107,8 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
      key!=='autonomousCarrySupportTerminalFacingLead'&&
      key!=='autonomousCarrySupportTerminalRunThrough'&&
      key!=='autonomousCarrySupportTerminalLateralSlip'&&
-     key!=='autonomousCarrySupportLongitudinalLead'))reject();
+     key!=='autonomousCarrySupportLongitudinalLead'&&
+     key!=='experimentalFootballShotMovement'))reject();
  if(Object.hasOwn(options,'autonomousActions')&&options.autonomousActions!==true)
   reject();
  const value=Object.hasOwn(options,'globalResponse')?
@@ -113,6 +116,11 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
  const response=resolveGlobalBallResponse(value);
  const initial=normalizeScenario(scenario);
  const autonomousActions=options.autonomousActions===true;
+ if(Object.hasOwn(options,'experimentalFootballShotMovement')&&
+    (options.experimentalFootballShotMovement!==true||
+     !autonomousActions||Object.hasOwn(options,'researchShotAttacker')))reject();
+ const experimentalFootballShotMovement=
+  options.experimentalFootballShotMovement===true;
  if(Object.hasOwn(options,'autonomousCarry')&&
    (options.autonomousCarry!==true||!autonomousActions||
     Object.hasOwn(options,'researchShotAttacker')))reject();
@@ -209,6 +217,8 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
  const mover=createPlayerMovement({
   experimentalAiKickApproach:true,
   ...(autonomousActions?{experimentalAutonomousFixtureContactChase:true}:{}),
+  ...(experimentalFootballShotMovement?{
+   experimentalFootballShotMovement:true}:{}),
   ...(autonomousCarry?{experimentalAutonomousFixtureCarry:true}:{}),
   ...(autonomousCarrySupport?{
    experimentalAutonomousFixtureCarrySupport:true}:{}),
@@ -334,7 +344,14 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
   ensureOpen();if(args.length)reject();
   try{
    const before=engine.snapshot();
-   const players=mover.step(before.ball.position);
+   if(before.tick!==latest.physicsTick||
+      before.ball.position.x!==latest.ball.position.x||
+      before.ball.position.y!==latest.ball.position.y)
+    throw new Error('Stale original Rapier ball snapshot');
+   const shotCue=experimentalFootballShotMovement?
+    chooseNextTickPhysicalShotMovementCue(latest):null;
+   const players=mover.step(before.ball.position,shotCue?
+    {footballShotMovementCue:shotCue}:null);
    if(players.tick!==before.tick+1||
       players.players.length!==INITIAL_PLAYERS.length||
       Math.abs(players.timeS-players.tick*PLAYER_DT)>1e-8)
@@ -365,6 +382,8 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
   const fresh=createUniversalMatchBallSession(RAPIER,initial,{
    globalResponse:response.value,
    ...(autonomousActions?{autonomousActions:true}:{}),
+   ...(experimentalFootballShotMovement?{
+    experimentalFootballShotMovement:true}:{}),
    ...(autonomousCarry?{autonomousCarry:true}:{}),
    ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
    ...(autonomousCarrySupportPressHandoff?{

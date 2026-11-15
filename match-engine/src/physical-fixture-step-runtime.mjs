@@ -477,7 +477,8 @@ export function createPhysicalFixtureStepRuntime(
       k!=='autonomousCarrySupportTerminalFacingLead'&&
       k!=='autonomousCarrySupportTerminalRunThrough'&&
       k!=='autonomousCarrySupportTerminalLateralSlip'&&
-       k!=='autonomousCarrySupportLongitudinalLead'))reject();
+       k!=='autonomousCarrySupportLongitudinalLead'&&
+       k!=='experimentalFootballShotMovement'))reject();
  if(Object.hasOwn(options,'autonomousActions')&&options.autonomousActions!==true)
   reject();
  if(Object.hasOwn(options,'researchShotAttacker')&&(
@@ -493,6 +494,11 @@ export function createPhysicalFixtureStepRuntime(
     Object.hasOwn(options,'researchShotAttacker')))reject();
  const initial=normalizeScenario(scenario);
  const autonomousActions=options.autonomousActions===true;
+ if(Object.hasOwn(options,'experimentalFootballShotMovement')&&
+    (options.experimentalFootballShotMovement!==true||
+     !autonomousActions||Object.hasOwn(options,'researchShotAttacker')))reject();
+ const experimentalFootballShotMovement=
+  options.experimentalFootballShotMovement===true;
  const autonomousCarry=options.autonomousCarry===true;
  const autonomousCarrySupport=options.autonomousCarrySupport===true;
  if(Object.hasOwn(options,'autonomousCarrySupportPressHandoff')&&
@@ -953,6 +959,8 @@ export function createPhysicalFixtureStepRuntime(
   const fresh=createPhysicalFixtureStepRuntime(RAPIER,resetFixture,initial,{
    globalResponse:response,
    ...(autonomousActions?{autonomousActions:true}:{}),
+   ...(experimentalFootballShotMovement?{
+    experimentalFootballShotMovement:true}:{}),
    ...(autonomousCarry?{autonomousCarry:true}:{}),
     ...(autonomousCarrySupport?{autonomousCarrySupport:true}:{}),
     ...(autonomousCarrySupportPressHandoff?{

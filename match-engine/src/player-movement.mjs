@@ -1837,6 +1837,7 @@ export function createPlayerMovement({
  experimentalAutonomousFixtureCarrySupportTerminalRunThrough=false,
  experimentalAutonomousFixtureCarrySupportTerminalLateralSlip=false,
  experimentalAutonomousFixtureCarrySupportLongitudinalLead=false,
+ experimentalFootballShotMovement=false,
  researchShotAttacker=null,researchShotBall=null
 }={}){
  if([experimentalAiKickApproach,experimentalAiPassReceiveApproach,
@@ -1858,8 +1859,11 @@ export function createPlayerMovement({
       experimentalAutonomousFixtureCarrySupportTerminalFacingLead,
       experimentalAutonomousFixtureCarrySupportTerminalRunThrough,
       experimentalAutonomousFixtureCarrySupportTerminalLateralSlip,
-      experimentalAutonomousFixtureCarrySupportLongitudinalLead]
+      experimentalAutonomousFixtureCarrySupportLongitudinalLead,
+      experimentalFootballShotMovement]
       .some(v=>typeof v!=='boolean')||
+    (experimentalFootballShotMovement&&
+     !experimentalAutonomousFixtureContactChase)||
     (experimentalAutonomousFixtureCarrySupportLongitudinalLead&&
      (!experimentalAutonomousFixtureCarrySupportTerminalFacingLead||
       experimentalAutonomousFixtureCarrySupportTerminalRunThrough||
@@ -2223,6 +2227,21 @@ export function createPlayerMovement({
  }
  function step(ballPosition={x:0,y:0},observations=null){
   const ball=ballXY(ballPosition);
+  const cue=experimentalFootballShotMovement?
+   observations?.footballShotMovementCue??null:null;
+  if(cue&&(
+     cue.version!=='me-p2-source-bound-shot-approach-v1'||
+     cue.sourceTick!==tick||cue.decisionTick!==tick+1||
+     cue.ballX!==ball.x||cue.ballY!==ball.y||
+     cue.targetKind!=='existing-canonical-ball-approach'||
+     cue.readOnly!==true||cue.physicalActionAuthorized!==false||
+     cue.impulseAuthorized!==false||cue.officialMatchAction!==false||
+     !players.some(p=>p.id===cue.playerId&&p.team===cue.team&&
+      p.role!=='goalkeeper')))
+   throw new TypeError('Stale or untrusted previous shot movement cue');
+  if(!experimentalFootballShotMovement&&
+     observations&&Object.hasOwn(observations,'footballShotMovementCue'))
+   throw new TypeError('Shot movement must remain opt-in');
   // The measured ball velocity comes from the *previous completed Rapier
   // step*, never predicted from the intended kick or a future ball point.
   // After a real pass selects one defender, hold the *assignment* stable.
@@ -3151,6 +3170,14 @@ export function createPlayerMovement({
     return activeFixtureCarrySupportBallAccess?.playerId===p.id?
      activeFixtureCarrySupportBallAccess.target:
      activeFixtureAttackSupportRun.target;
+   // Intent changes only this mover target. Live press, cover, screen,
+   // support and specialized physical follow-up duties win precedence.
+   if(cue?.playerId===p.id&&
+      p.id!==nextPressers.home&&p.id!==nextPressers.away&&
+      p.id!==nextCoverers.home&&p.id!==nextCoverers.away&&
+      p.id!==nextScreens[p.team]?.defenderId&&
+      p.id!==nextSupports[p.team]?.playerId)
+    return tacticalTarget(p,ball,true,false,null,null,null,0.38);
    // ME-PB-37: after qualified real Away contact, both teams respond to
    // the currently measured free ball. Targets remain intentions only:
    // the same 60Hz integrator and hard teammate guard move physical feet.
@@ -3524,6 +3551,7 @@ export function createPlayerMovement({
   experimentalAutonomousFixtureCarrySupportTerminalRunThrough,
   experimentalAutonomousFixtureCarrySupportTerminalLateralSlip,
   experimentalAutonomousFixtureCarrySupportLongitudinalLead,
+  experimentalFootballShotMovement,
   researchShotAttacker,researchShotBall
  })});
 }

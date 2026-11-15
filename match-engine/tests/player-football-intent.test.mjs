@@ -8,6 +8,8 @@ import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
  from '../src/player-football-observation.mjs';
 import {planNextTickPolicyGeometryIntent,POLICY_GEOMETRY_PLAN_VERSION}
  from '../src/player-football-policy-geometry-plan.mjs';
+import {chooseNextTickPhysicalShotMovementCue,SHOT_MOVEMENT_CUE_VERSION}
+ from '../src/player-football-shot-movement-intent.mjs';
 import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
  from '../src/player-football-corridors.mjs';
@@ -677,5 +679,44 @@ test('P2 policy-backed next-tick geometry advisory selects SHOT or PASS symmetri
     kind:'pass',available:true,evidenceTick:30,
     targetPlayerId:team+'-10'
    }]},blocked.geom),TypeError);
+ }
+});
+
+test('P2 intent-only shot approach requires canonical mirrored physical shoe and open shot',()=>{
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,id=team+'-9',tick=30;
+  const positions=Object.freeze(INITIAL_PLAYERS.map(p=>Object.freeze({
+   engineId:p.id,team:p.team,role:p.role,
+   x:p.id===id?40*dir:(p.team===team?25*dir:-30*dir),
+   y:p.id===id?0:20
+  })));
+  const frame={
+   physicsTick:tick,experimentalLocalOnly:true,
+   matchRuntimeIntegrated:false,officialMatchAction:false,
+   contactSource:'internal-real-rapier-60hz',
+   footContact:{tick,started:[id],active:[id]},
+   autonomousMovement:{physicsTick:tick},
+   ball:{position:{x:40*dir,y:0,z:0.11}},
+   physicalPlayerPositions:positions
+  };
+  const cue=chooseNextTickPhysicalShotMovementCue(frame);
+  assert.equal(cue.version,SHOT_MOVEMENT_CUE_VERSION);
+  assert.equal(cue.playerId,id);
+  assert.equal(cue.decisionTick,tick+1);
+  assert.equal(cue.sourceTick,tick);
+  assert.equal(cue.physicalActionAuthorized,false);
+  assert.equal(cue.impulseAuthorized,false);
+  assert.ok(Object.isFrozen(cue));
+  assert.deepEqual(chooseNextTickPhysicalShotMovementCue(frame),cue);
+  for(const [footContact,ball] of [
+   [{tick,started:[],active:[]},frame.ball],
+   [{tick,started:[id],active:[id,'away-1']},frame.ball],
+   [frame.footContact,{position:{x:0,y:0,z:0.11}}]
+  ])assert.equal(chooseNextTickPhysicalShotMovementCue({
+   ...frame,footContact,ball
+  }),null);
+  assert.throws(()=>chooseNextTickPhysicalShotMovementCue({
+   ...frame,contactSource:'user-injected-contact'
+  }),TypeError);
  }
 });
