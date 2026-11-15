@@ -317,3 +317,14 @@ the independent feedback area remains. Labels and accessible pitch description
 support EN/IT/DE/ES/FR. Scoreboard geometry, links, hover underline and
 centred dash remain unchanged. Browser QA covers first paint, responsive
 columns, six match statuses, and no-future-data leakage.
+
+### Narrow viewport correction (320px)
+
+The match shell has a narrower padded main content box on 320px devices.
+Keeping the scoreboard constrained to 100% of that box reduced its width
+to 226px and clipped the 50px abbreviation skeletons. On mobile the bar
+now uses width = min(268px, viewport width - 40px), preserving 268×48 at
+the supported 320px viewport while occupying safe surrounding gutters.
+It remains offset 20px left so the centre en dash stays aligned with the
+actual main content axis; no browser horizontal clipping is expected.
+The old below-308px offset guard is no longer required and was removed.

@@ -118,7 +118,10 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;--app-match-edge:#243039;
 }
 @media(max-width:480px){
- .app-match-scoreboard{width:min(100%,268px);height:48px}
+ /* At 320px the main content box is narrower than 268px; let the fixed
+    badge/abbreviation/score grid use safe viewport gutters while preserving
+    the match main-content centre axis (the 20px badge offset). */
+ .app-match-scoreboard{width:min(268px,calc(100vw - 40px));height:48px}
  .app-match-score-line{
   grid-template-columns:48px minmax(0,1fr) 32px 18px 32px minmax(0,1fr);
   column-gap:0;padding-right:8px;
@@ -128,8 +131,6 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-side-score{font-size:22px}
  .app-match-score-separator{font-size:19px}
 }
-/* Preserve viewport margins below the supported 320px QA breakpoint. */
-@media(max-width:308px){.app-match-scoreboard{left:clamp(-20px,calc(134px - 50vw),0px)}}
 
 /* #577 — Four factual contextual cards; never acting as view tabs. */
 .app-match-context{

@@ -95,11 +95,12 @@ for(const [engine,driver] of Object.entries(engines)){
      'the centre dash remains visible before hydration');
     // The match section adds no artificial top space in either breakpoint.
     assert.equal(await page.locator('.app-match-page').evaluate(el=>getComputedStyle(el).paddingTop),'0px');
-    // 268px is a maximum on narrow viewports: shell gutters can reduce the
-    // available width at 320px without violating the fixed-layout contract.
-    assert.ok(first.width<=device.expectedWidth+1,JSON.stringify({engine,theme,device,first}));
-    if(device.width>=390)assert.ok(Math.abs(first.width-device.expectedWidth)<1,JSON.stringify({engine,theme,device,first}));
-    else assert.ok(first.width>=250,JSON.stringify({engine,theme,device,first}));
+    // The fixed 268px mobile bar may extend into safe viewport gutters at
+    // 320px; shrinking it to the narrow padded main would clip abbreviations.
+    const expectedBoardWidth=device.width<=480?
+     Math.min(device.expectedWidth,device.width-40):device.expectedWidth;
+    assert.ok(Math.abs(first.width-expectedBoardWidth)<=1,
+     JSON.stringify({engine,theme,device,first,expectedBoardWidth}));
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
     // Skeletons reserve a typographically proportional block centred on the
     // same two axes as the hydrated abbreviations, without a layout shift.
