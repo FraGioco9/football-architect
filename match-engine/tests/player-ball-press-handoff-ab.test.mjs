@@ -16,6 +16,8 @@ import {inspectUniformPolicyGeometry}
  from '../src/player-ball-uniform-autonomous-action.mjs';
 import {LIVE_FOOTBALL_OBSERVATION_VERSION}
  from '../src/player-football-live-observation.mjs';
+import {PRE_MOVEMENT_INTENT_CHECKPOINT_VERSION}
+ from '../src/physical-fixture-step-runtime.mjs';
 
 const CASES=Object.freeze([
  Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
@@ -88,6 +90,39 @@ function collect(summary,frame,c){
  const actualStarts=frame.physicalContactFeed.started;
  // P2: new observation must come from the sealed same-tick Rapier feed;
  // even a real shoe START is not a fabricated available PASS/SHOT.
+ const checkpoint=frame.preMovementIntentCheckpoint;
+ assert.equal(checkpoint.version,PRE_MOVEMENT_INTENT_CHECKPOINT_VERSION);
+ assert.equal(checkpoint.fixtureId,frame.fixtureId);
+ assert.equal(checkpoint.basedOnCompletedTick,t-1);
+ assert.equal(checkpoint.decisionTick,t);
+ assert.equal(checkpoint.source,'previous-completed-private-rapier-frame');
+ assert.equal(checkpoint.physicalActionAuthorized,false);
+ assert.equal(checkpoint.physicalActionExecuted,false);
+ assert.equal(checkpoint.moverChanged,false);
+ assert.equal(checkpoint.rapierImpulseChanged,false);
+ assert.equal(checkpoint.officialMatchPossession,false);
+ assert.equal(checkpoint.officialMatchAction,false);
+ assert.ok(Object.isFrozen(checkpoint));
+ assert.ok(Object.isFrozen(checkpoint.press));
+ assert.ok(Object.isFrozen(checkpoint.cover));
+ for(const duty of [...checkpoint.press,...checkpoint.cover]){
+  assert.ok(Object.isFrozen(duty));
+  assert.equal(duty.sourceMovementTick,t-1);
+  assert.equal(duty.physicalActionAuthorized,false);
+  assert.ok(['home','away'].includes(duty.team));
+ }
+ if(summary.priorCompletedFrame){
+  const previous=summary.priorCompletedFrame;
+  for(const kind of ['press','cover'])
+   assert.deepEqual(checkpoint[kind],previous.contactDecisionObservation.duties
+    .filter(d=>d.movementDuty===kind).map(d=>({
+     engineId:d.engineId,team:d.team,intent:kind,
+     sourceMovementTick:t-1,physicalActionAuthorized:false
+    })));
+  assert.deepEqual(checkpoint.onBallAdvisory,
+   previous.footballIntentObservation.futureGeometryPlan?.proposedIntent??null);
+ }
+ summary.priorCompletedFrame=frame;
  const intentSample=frame.footballIntentObservation;
  const active=frame.physicalContactFeed.active;
  const exclusive=actualStarts.length===1&&active.length===1&&
