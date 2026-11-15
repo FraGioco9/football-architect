@@ -182,8 +182,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
  assert.match(css,/left:-20px;width:min\(100%,284px\);height:48px/);
  assert.doesNotMatch(css,/@media\(max-width:308px\)/);
- assert.ok(css.includes("width:min(268px,calc(100vw - 40px));height:48px"));
- assert.ok(css.includes("width:min(268px,calc(100vw - 40px));height:48px"));
+ assert.ok(css.includes("width:min(268px,calc(100vw - 40px));height:48px;"));
+ assert.ok(css.includes("left:calc(50% - 20px);transform:translateX(-50%);margin:0;"));
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 20px 35px minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 32px 18px 32px minmax\(0,1fr\)/);
  assert.match(css,/\.app-match-score-line\{[^}]*column-gap:0;align-items:center/s);

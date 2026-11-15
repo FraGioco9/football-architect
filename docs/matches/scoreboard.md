@@ -328,3 +328,14 @@ the supported 320px viewport while occupying safe surrounding gutters.
 It remains offset 20px left so the centre en dash stays aligned with the
 actual main content axis; no browser horizontal clipping is expected.
 The old below-308px offset guard is no longer required and was removed.
+
+### 320px scoreboard centering QA fix
+
+The 268px mobile bar overhangs the padded `main` content box at 320px.
+Auto margins collapsed to zero, leaving the centre dash 21px right of the
+content axis. Mobile now uses `left:calc(50% - 20px)`,
+`transform:translateX(-50%)`, and zero margins; this centres the
+bar against the actual padded main axis while retaining the 20px logo
+compensation. The 268×48px geometry, abbreviation font and crest size
+stay unchanged; browser QA still measures ≤0.5px dash misalignment and
+requires no horizontal viewport clipping.

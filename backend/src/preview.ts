@@ -36,6 +36,8 @@ function route(url:URL){
  const search=changedQuery?(params.size?'?'+params.toString():''):url.search;
  if(path!==original||changedQuery)return {redirect:path+search};
  const target=parseRoute(path);
+ // The classic JS registry has a runtime 'player' branch that TS may omit from its inferred union.
+ if((target?.kind as string|undefined)==='player')return {file:'/players/_shared/index.html'};
  if((target?.kind as string|undefined)==='match')return {file:'/matches/_shared/index.html'};
  if(target?.kind==='club')return {file:'/clubs/_shared/index.html'};
  if(target?.kind==='competition'||target?.kind==='cup')return {file:target.base+'/index.html'};

@@ -31,7 +31,7 @@ async function fetchLocal(server,path,{host='app.localhost:2000',method='GET'}={
 test('ME-01 lab is accessible on local DEV app host with strict headers and assets',async()=>{
  const server=await getServer({subdomains:true});
  try{
-  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
+  for(const path of ['/dev/match-engine','/__fa_match_engine__/core.mjs','/__fa_match_engine__/action-labs.mjs','/__fa_match_engine__/action-lab-scenarios.mjs','/__fa_match_engine__/research-shot-initial-lineup.mjs','/__fa_match_engine__/research-control-initial-lineup.mjs','/__fa_match_engine__/research-carry-initial-lineup.mjs','/__fa_match_engine__/rapier-foot-contact-bridge.mjs','/__fa_match_engine__/private-physical-action-executor.mjs','/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs','/__fa_match_engine__/player-foot-contact.mjs','/__fa_match_engine__/player-foot-contact-timeline.mjs','/__fa_match_engine__/player-foot-contact-solver.mjs','/__fa_match_engine__/aerodynamics.mjs','/__fa_match_engine__/magnus.mjs','/__fa_match_engine__/calibration-evidence.mjs','/__fa_match_engine__/universal-ball-readiness.mjs','/__fa_match_engine__/calibration-dataset-intake.mjs','/__fa_match_engine__/ball3d-trajectory-adapter.mjs','/__fa_match_engine__/literature-aero-candidate.mjs','/__fa_match_engine__/flight-playback.mjs','/__fa_match_engine__/aero-model-review.mjs','/__fa_match_engine__/spin-axis-qa.mjs','/__fa_match_engine__/spin-decay-qa.mjs','/__fa_match_engine__/spin-retention-evidence.mjs','/__fa_match_engine__/lift-input-qa.mjs','/__fa_match_engine__/contact-impact-qa.mjs','/__fa_match_engine__/player-movement.mjs','/__fa_match_engine__/lab.mjs','/__fa_match_engine__/lab.css','/__fa_match_engine__/sidebar-first-paint.js','/__fa_match_engine__/pitch-markings.mjs','/__fa_match_engine__/numeric-controls.mjs','/__fa_match_engine__/rebound-metrics.mjs','/__fa_match_engine__/physics-diagnostics.mjs']){
    const r=await fetchLocal(server,path);
    assert.equal(r.status,200,path);
    assert.equal(r.headers['cache-control'],'private, no-store');
@@ -190,6 +190,13 @@ test('ME-01 lab is denied for public mode, shared/non-DEV modes and other hosts'
    const host=options.devPreview===false?'app.localhost:2000':'localhost:2000';
    assert.ok([403,404].includes((await fetchLocal(server,'/dev/match-engine',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/core.mjs',{host})).status));
+   for(const file of ['action-labs.mjs','action-lab-scenarios.mjs',
+     'research-shot-initial-lineup.mjs','research-control-initial-lineup.mjs',
+     'research-carry-initial-lineup.mjs']){
+    const result=await fetchLocal(server,'/__fa_match_engine__/'+file,{host});
+    assert.ok([403,404].includes(result.status),
+     'Action LAB code must remain DEV-only: '+file+' '+result.status);
+   }
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/aerodynamics.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/magnus.mjs',{host})).status));
    assert.ok([403,404].includes((await fetchLocal(server,'/__fa_match_engine__/calibration-evidence.mjs',{host})).status));
@@ -326,6 +333,16 @@ test('ME-01 custom lab dropdown script parses and references shared menu semanti
 });
 
 test('ME-01 paths are excluded from all public artifacts and canonical route allowlists',()=>{
+ const actionSources=['action-labs.mjs','action-lab-scenarios.mjs',
+  'research-shot-initial-lineup.mjs','research-control-initial-lineup.mjs',
+  'research-carry-initial-lineup.mjs'];
+ for(const file of actionSources){
+  assert.equal(isAllowlistedPublicPath('match-engine/src/'+file),false,file);
+  assert.equal(isAllowlistedPublicPath('__fa_match_engine__/'+file),false,file);
+ }
+ const actionUiSource=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
+ assert.match(actionUiSource,/Action LAB controls are missing/);
+ assert.doesNotMatch(actionUiSource,/\binvalid\(\)/);
  for(const path of ['match-engine/lab/index.html','match-engine/lab/lab.css','match-engine/src/core.mjs','match-engine/src/lab.mjs','__fa_match_engine__/rapier.es.js','__fa_match_engine__/lab.css','__fa_match_engine__/sidebar-first-paint.js','match-engine/src/pitch-markings.mjs','__fa_match_engine__/pitch-markings.mjs','match-engine/src/numeric-controls.mjs','__fa_match_engine__/numeric-controls.mjs','match-engine/src/rebound-metrics.mjs','__fa_match_engine__/rebound-metrics.mjs','match-engine/src/physics-diagnostics.mjs','__fa_match_engine__/physics-diagnostics.mjs'])
    assert.equal(isAllowlistedPublicPath(path),false,path);
  assert.equal(planPublicFiles().some(x=>x.startsWith('match-engine/')||x.startsWith('__fa_match_engine__/')),false);
