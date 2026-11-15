@@ -1817,9 +1817,11 @@ export function createPlayerMovement(options={}){
    tick-priorRealPass.tick<180&&
    (options.researchControlOppositionSlot===undefined||
     options.researchControlOppositionSlot<50);
-  const opponentApproaching=receiverApproaching&&
-   options.researchControlOppositionSlot!==undefined;
-  const opponentGuarding=options.researchControlOppositionSlot>=50;
+  const slot=options.researchControlOppositionSlot;
+  const opponentApproaching=priorRealPass!==null&&
+   tick-priorRealPass.tick<350&&
+   (slot>=75||(receiverApproaching&&slot!==undefined));
+  const opponentGuarding=slot>=50&&slot<75;
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};

@@ -10,10 +10,13 @@ const grid=[-2.95,-2.7,-2.45,-2.2,-1.95].flatMap(x=>
  [-0.5,-1,-1.5,-2,-2.5].map(y=>({x,y})));
 const downstream=[-5.4,-5.2,-5,-4.8,-4.6].flatMap(x=>
  [-8.5,-9,-9.5,-10,-10.5].map(y=>({x,y})));
+const chase=[-2.95,-2.6,-2.25,-1.9,-1.55].flatMap(x=>
+ [-2,-3,-4,-5,-6].map(y=>({x,y})));
 export const RESEARCH_CONTROL_OPPONENT_CANDIDATES=Object.freeze([
  ...grid.map(p=>Object.freeze({...p,longPass:false,downstream:false})),
  ...grid.map(p=>Object.freeze({...p,longPass:true,downstream:false})),
- ...downstream.map(p=>Object.freeze({...p,longPass:true,downstream:true}))
+ ...downstream.map(p=>Object.freeze({...p,longPass:true,downstream:true})),
+ ...chase.map(p=>Object.freeze({...p,longPass:true,downstream:false,lateChase:true}))
 ]);
 export function initialResearchControlLineup(players,ball,oppositionSlot=null){
  if(oppositionSlot!==null&&
