@@ -243,7 +243,7 @@ for(const [engine,driver] of Object.entries(engines)){
        el.style.textDecorationLine='none';
        const withoutUnderline=range.getBoundingClientRect();
        el.style.removeProperty('text-decoration-line');
-       return {href:el.getAttribute('href'),underlined:originalDecoration,
+       return {href:el.hasAttribute('href')?new URL(el.getAttribute('href'),location.href).pathname:null,underlined:originalDecoration,
         thickness:originalThickness,offset,
         outerHeight:outer.height,deltaX:withUnderline.x-withoutUnderline.x,
         deltaY:withUnderline.y-withoutUnderline.y,
