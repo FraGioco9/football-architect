@@ -39,7 +39,7 @@
    ?club.abbr:club?.compactName||full;
   name.textContent=abbreviation;
   name.setAttribute('aria-label',full);
-  name.title=full;
+  name.removeAttribute('title');
   if(club)name.href=href('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
   else name.removeAttribute('href');
  }
@@ -49,7 +49,7 @@
   const link=find('[data-match-competition-link]');
   if(link){
    link.setAttribute('aria-label',display);
-   link.title=display;
+   link.removeAttribute('title');
    if(/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(data?.competitionId||''))
     link.href=href('/competitions/'+data.competitionId.toLowerCase()+'/fixtures');
    else link.removeAttribute('href');

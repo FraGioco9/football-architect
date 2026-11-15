@@ -1,6 +1,7 @@
 /* #577 — Low-profile centered scoreboard; approved division logo intentionally
    overhangs the narrow bar without any plate or artificial logo background. */
-.app-match-page{min-width:0;padding-top:36px;overflow:visible}
+.app-match-page{min-width:0;padding-top:16px;overflow:visible}
+.app-match-logo-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 .app-match-scoreboard{
  --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#F5F1E8;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
@@ -41,17 +42,14 @@
 .app-match-competition-logo img{
  display:block;width:80px;height:80px;max-width:none;
  object-fit:contain;background:none;border:0;
- /* Thicker ivory silhouette contour, with no rectangular/circular plate. */
- filter:drop-shadow(2px 0 0 #F5F1E8)
-        drop-shadow(-2px 0 0 #F5F1E8)
-        drop-shadow(0 2px 0 #F5F1E8)
-        drop-shadow(0 -2px 0 #F5F1E8);
+ /* A real 2.5px alpha-mask contour, not stacked drop-shadows or an image-box border. */
+ filter:url(#fa-match-logo-ivory-outline);
 }
 .app-match-competition-logo[href]:hover{opacity:.88}
 .app-match-competition-logo:not([href]){cursor:default}
 .app-match-scoreboard-meta{
  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
- gap:4px 8px;max-width:340px;min-height:18px;margin:22px auto 0;
+ gap:4px 8px;max-width:340px;min-height:18px;margin:16px auto 0;
  color:var(--muted);text-align:center;
 }
 .app-match-status{font-size:10px;line-height:1.35;font-weight:650}
@@ -68,7 +66,7 @@
  outline:2px solid var(--app-match-ink);outline-offset:3px;
 }
 @media(max-width:480px){
- .app-match-page{padding-top:30px}
+ .app-match-page{padding-top:11px}
  .app-match-scoreboard{width:min(100%,310px);height:30px;padding:0 8px;border-radius:5px}
  .app-match-score-line{
   grid-template-columns:minmax(0,1fr) 20px 60px 20px minmax(0,1fr);
@@ -79,5 +77,5 @@
  .app-match-competition-logo{width:60px;height:28px}
  .app-match-competition-logo>span{top:calc(50% - 7px)}
  .app-match-competition-logo>span,.app-match-competition-logo img{width:68px;height:68px}
- .app-match-scoreboard-meta{max-width:310px;margin-top:18px}
+ .app-match-scoreboard-meta{max-width:310px;margin-top:14px}
 }

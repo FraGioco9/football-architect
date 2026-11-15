@@ -217,6 +217,20 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
           </div>
         </section>
                 <section id="app-divisions" class="app-view app-match-page" aria-label="Match" data-match-detail data-match-load="loading">
+          <svg class="app-match-logo-filter-defs" aria-hidden="true" focusable="false" width="0" height="0" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="fa-match-logo-ivory-outline" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+                <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="expanded"/>
+                <feComposite in="expanded" in2="SourceAlpha" operator="out" result="outer-ring"/>
+                <feFlood flood-color="#F5F1E8" result="ivory"/>
+                <feComposite in="ivory" in2="outer-ring" operator="in" result="contour"/>
+                <feMerge>
+                  <feMergeNode in="contour"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
           <section class="app-match-scoreboard" data-scoreboard-theme="neutral" aria-label="Match scoreboard">
             <div class="app-match-score-line">
               <a class="app-match-team-link app-match-team-home" data-match-home-name><span class="app-skeleton-bar" aria-hidden="true"></span></a>

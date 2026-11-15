@@ -33,6 +33,10 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.match(section,/data-match-detail/);
   assert.match(section,/app-match-scoreboard/);
   assert.match(section,/data-match-competition-logo/);
+  assert.match(section,/<filter id="fa-match-logo-ivory-outline"/);
+  assert.match(section,/<feMorphology in="SourceAlpha" operator="dilate" radius="2\.5"/);
+  assert.match(section,/<feComposite in="expanded" in2="SourceAlpha" operator="out"/);
+  assert.match(section,/<feMergeNode in="SourceGraphic"\/>/);
   assert.doesNotMatch(section,/symbol-mono-white\.svg|data-match-logo-fallback/);
   assert.match(section,/data-match-home-name/);
   assert.match(section,/data-match-away-name/);
@@ -121,10 +125,17 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/width:80px;height:80px/);
  assert.match(css,/width:68px;height:68px/);
  assert.match(css,/top:calc\(50% - 8px\)/);
+ assert.match(css,/\.app-match-page\{min-width:0;padding-top:16px;overflow:visible\}/);
+ assert.match(css,/\.app-match-page\{padding-top:11px\}/);
+ assert.match(css,/\.app-match-logo-filter-defs\{position:absolute;width:0;height:0/);
+ assert.match(css,/margin:16px auto 0/);
+ assert.match(css,/max-width:310px;margin-top:14px/);
  assert.match(css,/border:1px solid color-mix\(in srgb,var\(--app-match-ink\) 18%,var\(--app-match-surface\)\)/);
  assert.doesNotMatch(css,/border:1px solid #F5F1E8/);
- for(const direction of ['2px 0 0','-2px 0 0','0 2px 0','0 -2px 0'])
-  assert.ok(css.includes('drop-shadow('+direction+' #F5F1E8)'),direction);
- assert.match(css,/\.app-match-competition-logo img\{[^}]*filter:drop-shadow\(/s);
+ assert.match(css,/\.app-match-competition-logo img\{[^}]*filter:url\(#fa-match-logo-ivory-outline\)/s);
+ assert.doesNotMatch(css,/drop-shadow\(/);
+ assert.doesNotMatch(js,/\.title\s*=/);
+ assert.match(js,/name\.removeAttribute\('title'\)/);
+ assert.match(js,/link\.removeAttribute\('title'\)/);
  assert.doesNotMatch(css,/background:#F5F1E8|border-radius:50%/);
 });

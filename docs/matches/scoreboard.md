@@ -15,13 +15,19 @@ It is rendered at **80px desktop / 68px mobile**, deliberately **protruding
 above and below** the 34px / 30px bar. The bar and the logo's containing
 elements use visible overflow and the image has **no background,
 plate, padding, or round backing**. The logo remains linked to the competition.
-The **logo's actual SVG silhouette**, not the bar, has a thicker **2px ivory**
-(`#F5F1E8`) contour using directional CSS `drop-shadow()` filters.
+The logo has a true **2.5px ivory (#F5F1E8) silhouette contour**,
+drawn by an inline SVG alpha-mask filter: dilate SourceAlpha, subtract
+SourceAlpha to keep only the exterior ring, flood the ring with ivory,
+then merge the unmodified source artwork. Unlike chained drop-shadows,
+this does not create uneven doubled corners or a backing plate.
 The logo's visual center is shifted **8px upward** (7px on mobile)
 relative to the bar, not vertically centered.
 The bar keeps its subtle neutral outline. The SVG remains transparent,
 without a background plate, circular border, or colored rectangle.
-The page reserves enough top spacing for the protruding SVG without clipping.
+The entire scoreboard and status have been raised: the page's top padding
+is now 16px on desktop / 11px on narrow screens (formerly 36px / 30px);
+status spacing below the bar is 16px / 14px. The wrapper preserves
+visible overflow for the overhanging logo.
 
 The 16 domestic competitions already have `compact.svg` and `primary.svg`
 assets; both are validated with `tools/validate-division-assets.mjs`,
@@ -45,7 +51,9 @@ increasing the height of the bar.
 Names use the approved **`abbr`** field (the canonical 2–5 character
 abbreviation) from the club manifest at all widths. If unavailable,
 the official compact/primary name or a guarded unresolved-participant
-label is used. Full club names remain in accessible labels/title tooltips.
+label is used. Full club names remain in accessible ARIA labels only;
+native browser `title` tooltips are deliberately removed from team
+and competition links.
 Scores are displayed individually beside the center and remain `—`
 unless there is a verified completed result.
 
