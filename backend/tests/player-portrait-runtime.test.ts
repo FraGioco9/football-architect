@@ -8,7 +8,7 @@ import {buildPortraitSnapshotForPlayer,renderPortraitPromptFromSnapshot} from '.
 import type {Database} from '../src/database.ts';
 
 const db=(env as any).DB as Database;
-const origin='http://app.localhost:2000',actor='portrait-generation-admin',email='portrait-admin@example.invalid',token='z'.repeat(64);
+const origin='http://app.localhost:2000',actor='portrait-generation-admin',email='portrait-admin@example.invalid',token='b'.repeat(64);
 const now=Math.floor(Date.now()/1000);
 let csrf='';
 const service={DB:db,PLAYER_MODE:'local',PLAYER_ORIGIN:origin};

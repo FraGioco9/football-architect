@@ -175,10 +175,17 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
      j.value,'pending',NULL,?
     FROM json_each(?) AS j ORDER BY CAST(j.key AS INTEGER)`)
     .bind(now,JSON.stringify(snapshots)),
+   // The two insert counts must match INSIDE the transaction. An unexpected
+   // short insert fails the batch before the approval becomes permanent.
+   abortUnless(db,`SELECT 1 WHERE
+    (SELECT COUNT(*) FROM generated_players WHERE batch_id=? AND world_generation=?)=?
+    AND (SELECT COUNT(*) FROM player_portrait_profiles
+     WHERE player_id IN (SELECT id FROM generated_players WHERE batch_id=? AND world_generation=?))=?`,
+    [id,world.generation,draft.count,id,world.generation,draft.count]),
    db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'")
     .bind(now,id,session.unified!.playerId)
   ]);
-  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[6].meta.changes!==1)
+  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[7].meta.changes!==1)
    throw Error('Uncommitted player or portrait count');
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{
