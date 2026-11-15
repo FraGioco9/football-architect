@@ -43,10 +43,14 @@ for(const [engine,driver] of Object.entries(engines)){
      const bar=getComputedStyle(el,'::before');
      const tileStyle=getComputedStyle(tile);
      const separator=el.querySelector('.app-match-score-separator').getBoundingClientRect();
-     const main=el.closest('.app-match-page').getBoundingClientRect();
+     const mainEl=el.closest('#main-content'),main=mainEl.getBoundingClientRect();
+     const mainCss=getComputedStyle(mainEl);
+     const mainContentMid=(main.left+parseFloat(mainCss.paddingLeft)+main.right-parseFloat(mainCss.paddingRight))/2;
+     const section=el.closest('.app-match-page').getBoundingClientRect();
      return {width:rect.width,height:rect.height,
+      sectionFillsMain:Math.abs(section.left-(main.left+parseFloat(mainCss.paddingLeft)))<=0.5&&Math.abs(section.right-(main.right-parseFloat(mainCss.paddingRight)))<=0.5,
       x:rect.x,viewportWidth:innerWidth,
-      separatorCenterOffset:(separator.x+separator.width/2)-(main.x+main.width/2),
+      separatorCenterOffset:(separator.x+separator.width/2)-mainContentMid,
       surface:css.getPropertyValue('--app-match-surface').trim(),
       barColour:bar.backgroundColor,
       mode:document.documentElement.dataset.theme,
@@ -59,6 +63,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
+    assert.equal(first.sectionFillsMain,true,'match section must share the main content width');
     assert.ok(Math.abs(first.separatorCenterOffset)<=0.5,JSON.stringify({engine,theme,device,first}));
     assert.ok(first.x>=-0.5,JSON.stringify({engine,theme,device,first}));
     assert.ok(first.x+first.width<=first.viewportWidth+0.5,JSON.stringify({engine,theme,device,first}));
@@ -224,10 +229,12 @@ for(const [engine,driver] of Object.entries(engines)){
       const get=selector=>root.querySelector(selector);
       const scores=['home','away'].map(side=>get('[data-match-'+side+'-score]'));
       const dash=get('.app-match-score-separator');
-      const section=root.getBoundingClientRect(),sep=dash.getBoundingClientRect();
+      const main=root.closest('#main-content'),mainRect=main.getBoundingClientRect(),pad=getComputedStyle(main);
+      const mainMid=(mainRect.left+parseFloat(pad.paddingLeft)+mainRect.right-parseFloat(pad.paddingRight))/2;
+      const sep=dash.getBoundingClientRect();
       return {text:[scores[0].textContent,scores[1].textContent,dash.textContent],
        hidden:scores.map(node=>node.getAttribute('aria-hidden')),
-       centreOffset:(sep.left+sep.width/2)-(section.left+section.width/2)};
+       centreOffset:(sep.left+sep.width/2)-mainMid};
      });
      assert.deepEqual(state.text,status==='completed'?['12','3','–']:['','','–'],
       JSON.stringify({engine,theme,status,state}));
@@ -275,7 +282,9 @@ for(const [engine,driver] of Object.entries(engines)){
       const unhovered=await home.boundingBox();
       await home.hover();
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'underline');
-      assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationThickness),'1px');
+      const thickness=await home.evaluate(el=>getComputedStyle(el).textDecorationThickness);
+      assert.ok(thickness==='.1em'||thickness==='0.1em'||Math.abs(parseFloat(thickness)-2.4)<0.15,
+       JSON.stringify({engine,theme,thickness}));
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textUnderlineOffset),'3px');
       const hovered=await home.boundingBox();
       for(const key of ['x','y','width','height'])assert.ok(Math.abs(hovered[key]-unhovered[key])<=0.5,

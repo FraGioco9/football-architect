@@ -241,3 +241,22 @@ still clips oversized text; unresolved, non-clickable labels retain their own
 ellipsis. No font size, position, height or hit-area change is introduced.
 Browser QA now verifies actual link overflow and sufficient space inside the
 slot as well as hover-only decoration and unchanged geometry.
+
+### Underline weight and main-content alignment
+
+Linked team abbreviations have a **hover-only underline** with a thickness
+of **0.1em** (approximately **2.6px** at the 26px desktop font and **2.4px**
+at the 24px mobile font), retaining the 3px offset. The link hit area remains
+the text only and no new padding, border, or baseline displacement is added.
+
+The Match Detail section explicitly occupies the full **padded content width
+of `#main-content`**. The scoreboard keeps its existing -20px optical offset
+from the badge, making the centre dash line up with the **main content axis**,
+not the viewport or the sidebar. Chromium/WebKit browser tests measure the
+actual main content-box centre, including its horizontal padding.
+
+The page displays **seven sporting status labels**: awaiting participants,
+scheduled, lineups confirmed (derived from scheduled when both lineups are
+confirmed), in progress, completed, postponed, cancelled. There are six
+backend status values (lineups confirmed is a derived UI state). Including
+loading, not found and temporary error produces **ten user-visible states**.

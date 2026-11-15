@@ -141,7 +141,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
- assert.match(css,/\.app-match-page\{min-width:0;padding-top:0;overflow:visible\}/);
+ assert.match(css,/\.app-match-page\{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible\}/);
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
  assert.match(css,/left:-20px;width:min\(100%,284px\);height:48px/);
  assert.match(css,/@media\(max-width:308px\)\{\.app-match-scoreboard\{left:clamp\(-20px,calc\(134px - 50vw\),0px\)\}\}/);
@@ -179,7 +179,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-team-link \.app-skeleton-bar\{[^}]*display:block;width:54px;max-width:100%;height:20px/s);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link \.app-skeleton-bar\{width:50px;height:18px\}/);
  assert.match(css,/\.app-match-team-link \.app-skeleton-bar\{[^}]*margin:0;border-radius:4px/s);
- assert.match(css,/\.app-match-team-link\{[^}]*min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap/s);
+ assert.match(css,/\.app-match-team-link\{[^}]*width:max-content;min-width:0;max-width:100%/);
+ assert.doesNotMatch(css,/\.app-match-team-link\{[^}]*overflow:hidden;text-overflow:ellipsis/s);
  assert.match(css,/--app-match-text:var\(--app-match-accent\)/);
  assert.match(css,/--app-match-edge:var\(--app-match-surface\)/);
  assert.match(css,/--app-match-logo-surface:color-mix\(in srgb,var\(--app-match-surface\) 5%,#F5F1E8 95%\)/);
@@ -187,7 +188,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/html\[data-theme="light"\] \.app-match-scoreboard\[data-scoreboard-theme="neutral"\]/);
  assert.match(css,/\.app-match-scoreboard,\.app-match-scoreboard \*\{transition:none!important;animation:none!important\}/);
  assert.match(css,/\.app-match-team-link\[href\]\{cursor:pointer\}/);
- assert.match(css,/\.app-match-team-link\[href\]:hover\{[^}]*text-decoration-line:underline;text-decoration-thickness:1px;[^}]*text-underline-offset:3px/s);
+ assert.match(css,/\.app-match-team-link\[href\]:hover\{[^}]*text-decoration-line:underline;text-decoration-thickness:\.1em;[^}]*text-underline-offset:3px/s);
  assert.doesNotMatch(css,/\.app-match-team-link\[href\]\{[^}]*text-decoration-line:underline/s);
  assert.doesNotMatch(css,/\.app-match-team-link\[href\](?::hover)?\{[^}]*padding|\.app-match-team-link\[href\](?::hover)?\{[^}]*margin/s);
  assert.match(css,/\.app-match-competition-logo\[href\]:hover\{opacity:1\}/);

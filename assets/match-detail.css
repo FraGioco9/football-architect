@@ -1,5 +1,5 @@
 /* #577 — Flat, overlapping-badge scoreboard. One branded bar, no score capsule. */
-.app-match-page{min-width:0;padding-top:0;overflow:visible}
+.app-match-page{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
  --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
@@ -8,8 +8,9 @@
  --app-match-logo-surface:#F5F1E8;
  --app-match-radius:6px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
- /* The 48px logo tile makes the score axis 20px right of bar centre.
-    Offset the whole strip so the separator aligns with the page centre. */
+ /* This section spans #main-content's padded content width. The 48px
+    logo tile puts the score axis 20px right of bar centre, so shift
+    the strip 20px left to centre the dash in main (not the viewport). */
  left:-20px;width:min(100%,284px);height:48px;margin:0 auto;padding:0;
  background:transparent;color:var(--app-match-text);
 }
@@ -69,7 +70,7 @@
    changes the inline link's bounding box or shifts its baseline. */
 .app-match-team-link[href]{cursor:pointer}
 .app-match-team-link[href]:hover{
- text-decoration-line:underline;text-decoration-thickness:1px;
+ text-decoration-line:underline;text-decoration-thickness:.1em;
  text-underline-offset:3px;text-decoration-skip-ink:auto;opacity:1;
 }
 .app-match-team-link:not([href]){cursor:default;overflow:hidden;text-overflow:ellipsis}
