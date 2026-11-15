@@ -20,10 +20,12 @@
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
  const logoSources=new Map();
  const svgNS='http://www.w3.org/2000/svg';
- // Keep original approved shapes, but tint only primary-coloured paths
- // to approved ivory so the small mark stays visible on the primary bar.
- async function loadLogoPaths(src,surfaceHex,inkHex){
-  const key=src+'|'+surfaceHex+'|'+inkHex;
+ // Theme-specific presentation only: dark swaps primary paths to ivory;
+ // light preserves the approved primary + secondary artwork on a pale
+ // competition-tinted surface. Source SVGs remain byte-identical.
+ async function loadLogoPaths(src,surfaceHex,inkHex,appearance){
+  if(!['dark','light'].includes(appearance))throw Error('Unsupported scoreboard appearance');
+  const key=src+'|'+surfaceHex+'|'+inkHex+'|'+appearance;
   if(!logoSources.has(key))logoSources.set(key,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
    if(!res.ok)throw Error('Logo unavailable');
    const raw=await res.text();
@@ -65,9 +67,10 @@
       const color=colors[child.getAttribute('class')];
       if(!color||!d||!/^[MmZzLlHhVvCcSsQqTtAaEe\d\s.,+\-]+$/.test(d))throw Error('Invalid logo path');
       node.setAttribute('d',d);
-      // A small contrast treatment (not a modified official asset):
-      // primary-coloured shapes become ivory, graphite details stay graphite.
-      node.setAttribute('fill',color.toUpperCase()===surfaceHex?inkHex:color.toUpperCase());
+      // Dark: primary elements switch to ivory to stand out on the primary
+      // bar; Light: original primary/graphite paths stay unchanged.
+      const original=color.toUpperCase();
+      node.setAttribute('fill',appearance==='dark'&&original===surfaceHex?inkHex:original);
       if(child.getAttribute('fill-rule')==='evenodd')node.setAttribute('fill-rule','evenodd');
       paths++;
      }
@@ -106,6 +109,7 @@
   else name.removeAttribute('href');
  }
  function applyCompetition(){
+  const appearance=document.documentElement.dataset.theme==='light'?'light':'dark';
   const comp=competitions?.competitions?.find(c=>c.id===data?.competitionId);
   const display=comp?.name||data?.competitionId||text().match;
   const link=find('[data-match-competition-link]');
@@ -130,17 +134,18 @@
   // Brand assets are already published at assets/divisions/<slug>/compact.svg.
   // Do not request an unapproved path or show an unrelated Football Architect logo.
   const intended=theme.logoAsset?'/'+theme.logoAsset:'';
-  if(slot.dataset.matchLogoPath===intended)return;
-  slot.dataset.matchLogoPath=intended;
+  const intendedKey=intended+'|'+appearance;
+  if(slot.dataset.matchLogoPath===intendedKey)return;
+  slot.dataset.matchLogoPath=intendedKey;
   delete slot.dataset.matchLogoPresent;
   slot.replaceChildren();
   if(!intended)return;
-  void loadLogoPaths(intended,theme.backgroundHex,theme.foregroundHex).then(svg=>{
-   if(slot.dataset.matchLogoPath!==intended)return;
+  void loadLogoPaths(intended,theme.backgroundHex,theme.foregroundHex,appearance).then(svg=>{
+   if(slot.dataset.matchLogoPath!==intendedKey)return;
    slot.replaceChildren(svg.cloneNode(true));
    slot.dataset.matchLogoPresent='true';
   }).catch(()=>{
-   if(slot.dataset.matchLogoPath===intended){
+   if(slot.dataset.matchLogoPath===intendedKey){
     slot.replaceChildren();
     delete slot.dataset.matchLogoPresent;
    }
@@ -190,6 +195,6 @@
   }
   data=item;errorKind=null;render();
  }
- new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang','data-theme']});
  render();void load();
 })();

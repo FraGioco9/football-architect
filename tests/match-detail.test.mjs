@@ -80,6 +80,14 @@ test('#577 every competition has an explicit theme and only approved HEX roles a
     assert.ok(allowed.includes(theme[field]),competition.id+': '+field);
    assert.equal(theme.backgroundHex,competition.primaryHex);
    assert.equal(theme.foregroundHex,competition.ivoryHex);
+   assert.equal(theme.accentHex,competition.secondaryHex);
+   // The light surface is 16% competition primary + 84% ivory. Graphite
+   // text must remain legible for all 16 independently-branded divisions.
+   const tint='#'+[1,3,5].map(i=>Math.round(
+    Number.parseInt(competition.primaryHex.slice(i,i+2),16)*.16+
+    Number.parseInt(competition.ivoryHex.slice(i,i+2),16)*.84
+   ).toString(16).padStart(2,'0')).join('').toUpperCase();
+   assert.ok(contrastRatio(tint,competition.secondaryHex)>=4.5,competition.id+' light contrast');
   }
  }
 });
@@ -98,10 +106,13 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
  assert.match(js,/import\('\/assets\/match-scoreboard-themes\.mjs'\)/);
  assert.match(js,/const intended=theme\.logoAsset\?'\/'\+theme\.logoAsset:''/);
- assert.match(js,/loadLogoPaths\(intended,theme\.backgroundHex,theme\.foregroundHex\)/);
+ assert.match(js,/loadLogoPaths\(intended,theme\.backgroundHex,theme\.foregroundHex,appearance\)/);
+ assert.match(js,/const appearance=document\.documentElement\.dataset\.theme==='light'\?'light':'dark'/);
+ assert.match(js,/attributeFilter:\['lang','data-theme'\]/);
+ assert.match(js,/const intendedKey=intended\+'\|'\+appearance/);
  assert.match(js,/cloneNode\(true\)/);
  assert.match(js,/copy\(rootSvg,svg\)/);
- assert.match(js,/node\.setAttribute\('fill',color\.toUpperCase\(\)===surfaceHex\?inkHex:color\.toUpperCase\(\)\)/);
+ assert.match(js,/node\.setAttribute\('fill',appearance==='dark'&&original===surfaceHex\?inkHex:original\)/);
  assert.match(js,/palette\.has\(surfaceHex\)/);
  assert.match(js,/palette\.has\('#243039'\)/);
  assert.match(js,/inkHex!=='#F5F1E8'/);
@@ -138,7 +149,16 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-scoreboard,\.app-match-scoreboard \*\{transition:none!important;animation:none!important\}/);
  assert.match(css,/\.app-match-team-link\[href\]:hover\{text-decoration:none;opacity:1\}/);
  assert.match(css,/\.app-match-competition-logo\[href\]:hover\{opacity:1\}/);
- assert.match(css,/border:1px solid color-mix\(in srgb,var\(--app-match-ink\) 18%,var\(--app-match-surface\)\)/);
+ assert.match(css,/html\[data-theme="light"\] \.app-match-scoreboard\{/);
+ assert.match(css,/--app-match-text:var\(--app-match-accent\)/);
+ assert.match(css,/background:color-mix\(in srgb,var\(--app-match-surface\) 16%,#F5F1E8 84%\)/);
+ assert.match(css,/border-color:var\(--app-match-surface\)/);
+ assert.match(css,/box-shadow:inset 0 -2px var\(--app-match-surface\)/);
+ assert.match(css,/border:1px solid var\(--app-match-accent\)/);
+ assert.match(css,/box-shadow:inset 0 -2px var\(--app-match-accent\)/);
+ assert.match(css,/color:var\(--app-match-text\)!important/);
+ assert.match(css,/html\[data-theme="light"\] \.app-match-scoreboard\[data-scoreboard-theme="neutral"\]\{/);
+ assert.match(css,/--app-match-text:#243039/);
  assert.doesNotMatch(css,/border:1px solid #F5F1E8|background:#F5F1E8|border-radius:50%/);
  assert.doesNotMatch(css,/drop-shadow\(|filter:url\(/);
  assert.doesNotMatch(js,/\.title\s*=/);
