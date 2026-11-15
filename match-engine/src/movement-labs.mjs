@@ -30,18 +30,30 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
  let postPassDistanceM=0,goalSideTravelM=0;
  let measuredOpponentPathM=0,minContestedPlayerGapM=Infinity;
+ let supportRunPathM=0,supportNetAdvanceM=0;
  const contestedOpponentId=physicalContest?'away-7':null;
  const toPhysical=(f)=>Object.freeze({tick:f.physicsTick,ball:f.ball});
  const toMovement=(f)=>Object.freeze({
   tick:f.physicsTick,players:f.observedMovementPlayers,
   recoveries:Object.freeze({home:null,away:null}),
-  screens:Object.freeze({home:null,away:null})
+  screens:Object.freeze({home:null,away:null}),
+  supports:Object.freeze({home:null,away:null})
  });
  function record(physics,frame,pass=null,receivingContact=null,
   opposingShoe=null){
   if(physics.tick!==frame.tick)throw new Error('Canonical 60 Hz movement and Rapier tick mismatch');
-  const p=frame.players.find(x=>x.id===scene.focusId);
+  const supportScene=scene.spec.id==='support-lane'||
+   scene.spec.id==='support-neutral';
+  const support=supportScene?frame.supports?.[scene.side]??null:null;
+  const p=frame.players.find(x=>x.id===(support?.playerId??scene.focusId));
   if(!p)throw new Error('Missing canonical movement focus');
+  if(support&&(!frame.players.some(x=>x.id===support.playerId&&
+      x.team===scene.side)||!support.target||
+      !Number.isFinite(support.target.x)||
+      !Number.isFinite(support.target.y)||
+      !Number.isFinite(support.clearanceM)||
+      !Number.isFinite(support.teammateClearanceM)))
+   throw new Error('Original support assignment must come from real XY');
   const ball=physics.ball.position;
   const gapM=Math.hypot(p.x-ball.x,p.y-ball.y);
   if(origin===null)origin=Object.freeze({x:p.x,y:p.y,gapM});
@@ -71,6 +83,19 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    Math.hypot(p.x-contestedOpponent.x,p.y-contestedOpponent.y):null;
   if(contestedGapM!==null)
    minContestedPlayerGapM=Math.min(minContestedPlayerGapM,contestedGapM);
+  // Only continuous real XY of the SAME chosen player in the SAME lane
+  // is measurable support progress. The current target alone is intent.
+  if(support&&previous?.supportPlayerId===p.id&&
+     previous.supportLane===support.lane&&
+     previous.tick+1===physics.tick){
+   const movement=Math.hypot(p.x-previous.x,p.y-previous.y);
+   const priorDistance=Math.hypot(previous.x-support.target.x,
+    previous.y-support.target.y);
+   const currentDistance=Math.hypot(p.x-support.target.x,
+    p.y-support.target.y);
+   supportRunPathM+=movement;
+   supportNetAdvanceM+=Math.max(0,priorDistance-currentDistance);
+  }
   const speedMps=Math.hypot(p.vx,p.vy);
   if(pass&&(pass.physicalImpulseApplied!==true||
      pass.recipientId!==scene.focusId||pass.team!==scene.side||
@@ -123,13 +148,17 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    scene.spec.id==='recovery-response'?assigned&&goalSideTravelM>0.15:
    scene.spec.id==='post-pass'?Boolean(pass&&postPassDistanceM>0.25):
    physicalContest?Boolean(pass&&opposingShoe&&
-    measuredOpponentPathM>0.25):false;
+    measuredOpponentPathM>0.25):
+   scene.spec.id==='support-lane'?Boolean(support&&
+    supportRunPathM>0.5&&supportNetAdvanceM>0.35):false;
   previous=Object.freeze({
    tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
    blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null,
    opponentXY:contestedOpponent?Object.freeze({
     x:contestedOpponent.x,y:contestedOpponent.y
-   }):null
+   }):null,
+   supportPlayerId:support?.playerId??null,
+   supportLane:support?.lane??null
   });
   latest=Object.freeze({
    scenarioId:scene.spec.id,side:scene.side,focusId:p.id,
@@ -150,7 +179,15 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     minContestedPlayerGapM:physicalContest?minContestedPlayerGapM:null,
     actualOpposingShoeTick:opposingShoe?.tick??null,
     verifiedRapierOpponentShoeStart:Boolean(opposingShoe),
-    verifiedRapierPlayerBodyContact:false
+    verifiedRapierPlayerBodyContact:false,
+    supportPlayerId:support?.playerId??null,
+    supportLane:support?.lane??null,
+    supportTarget:support?.target??null,
+    supportOppClearanceM:support?.clearanceM??null,
+    supportTeammateClearanceM:support?.teammateClearanceM??null,
+    supportRunPathM,supportNetAdvanceM,
+    supportDistanceToTargetM:support?
+     Math.hypot(p.x-support.target.x,p.y-support.target.y):null
    }),
    readOnly:true,verifiedFootContact:Boolean(pass),
    officialMatchAction:false,officialPossession:false,
@@ -249,7 +286,23 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
    (f.scenarioId==='opponent-contact'?' · real opponent '+m.contestedOpponentId+
     ' · observed path '+two(m.measuredOpponentPathM)+' m'+
     ' · opponent shoe START '+(m.actualOpposingShoeTick??'none')+
-    ' · closest player gap '+two(m.minContestedPlayerGapM)+' m':'');
+    ' · closest player gap '+two(m.minContestedPlayerGapM)+' m':'')+
+   (f.scenarioId==='support-lane'||f.scenarioId==='support-neutral'?
+    ' · support '+(m.supportPlayerId??'none')+
+    ' · lane '+(m.supportLane??'none')+
+    ' · observed path '+two(m.supportRunPathM)+' m'+
+    ' · target advance '+two(m.supportNetAdvanceM)+' m'+
+    ' · observed opponent clearance '+
+      (m.supportOppClearanceM===null?'none':two(m.supportOppClearanceM))+' m'+
+    ' · teammate clearance '+
+      (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'');
+  if(f.scenarioId==='support-lane'||f.scenarioId==='support-neutral'){
+   status.textContent=(m.witnessed?
+    'Observed: real original support-runner progress toward sampled open lane.':
+    'No current support movement witness.')+
+    ' Position only: playable PASS, reception and possession unverified.';
+   return;
+  }
   if(f.scenarioId==='opponent-contact'){
    status.textContent=(m.witnessed?
     'Observed: original opposing Rapier shoe-ball START after genuine PASS and actual opponent motion.':

@@ -487,6 +487,33 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    "c.value='post-pass';c.dispatchEvent(new Event('change',{bubbles:true}));"+
    "return !document.getElementById('movement-labs-side').disabled;})()");
   assert.equal(unlocked,true);
+  // M6: real free runner and original support clearance HOME/AWAY
+  // from one canonical 22-player mover, never a fake pass completion.
+  for(const [kind,team] of [
+   ['support-lane','home'],['support-lane','away'],
+   ['support-neutral','home'],['support-neutral','away']
+  ]){
+   const data=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(kind)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(team)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<220;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,tick:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(data.choice,kind);assert.equal(data.side,team);
+   assert.match(data.tick,/^Tick 220 /);
+   if(kind==='support-lane'){
+    assert.match(data.tick,/support (home|away)-[0-9]+ · lane (positive-y|negative-y)/);
+    assert.match(data.tick,/target advance [0-9.]+ m/);
+    assert.match(data.status,/Observed: real original support-runner progress/);
+   }else{
+    assert.match(data.tick,/support none · lane none · observed path 0.00 m/);
+    assert.match(data.status,/No current support movement witness/);
+   }
+   assert.doesNotMatch(data.status,/completed pass|official possession|goal awarded/i);
+   process.stdout.write('MOVEMENT_LAB_M6_SUPPORT '+JSON.stringify(data)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

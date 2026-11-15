@@ -28,7 +28,11 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
    'HOME-controlled original PASS, actual AWAY #7 movement and genuine subsequent opponent shoe-ball START. No body collision, tackle or interception is certified.',
    CONTROL_LAB_STARTS.home,9,'M5'),
   shoeSourceEnabled:true
- })
+ }),
+ // M6 observation-only: original free support assignment from 22 actual
+ // player XY in the opposing third. No forced teammate route, pass or action.
+ spec('support-lane','Support lane','Read the original chosen free teammate and measure current movement into its sampled opponent/teammate-aware lane.',scene('me-m6-support-lane',27,0),9,'M6'),
+ spec('support-neutral','No support assignment','Negative: original central-ball territory must not invent a support lane or pass receiver.',scene('me-m6-support-neutral',0,0),9,'M6')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');
