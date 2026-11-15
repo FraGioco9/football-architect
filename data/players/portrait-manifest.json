@@ -1,0 +1,81 @@
+{
+  "schema_version": "player-portraits-v2",
+  "prompt_version": "player-portrait-v3",
+  "players": {
+    "44": {
+      "player_id": 44,
+      "display_name": "Giacinto Lello",
+      "nationality": "ITA",
+      "secondary_nationality": null,
+      "appearance_traits": {
+        "face": "long oval face",
+        "complexion": "deep brown complexion",
+        "hairTexture": "coily hair",
+        "hairStyle": "closely trimmed haircut",
+        "hairColor": "auburn hair",
+        "eyes": "green eyes",
+        "eyebrows": "fine eyebrows",
+        "nose": "narrow nose",
+        "jaw": "square jawline",
+        "facialHair": "clean-shaven face",
+        "detail": "subtle smile lines"
+      },
+      "appearance_fingerprint": "49d9a18b0f2df2bb",
+      "body_profile": "balanced-athletic",
+      "body_conditioning": "natural",
+      "status": "approved",
+      "portrait_asset": "assets/players/portraits/44.webp",
+      "appearance_profile": "A long oval face, deep brown complexion, auburn hair with coily hair in a closely trimmed haircut, green eyes, fine eyebrows, narrow nose, square jawline, clean-shaven face, and subtle smile lines."
+    },
+    "98": {
+      "player_id": 98,
+      "display_name": "Arthur Kiesel",
+      "nationality": "GER",
+      "secondary_nationality": null,
+      "appearance_traits": {
+        "face": "rounded face",
+        "complexion": "light olive complexion",
+        "hairTexture": "slightly wavy hair",
+        "hairStyle": "short curly top",
+        "hairColor": "dark blond hair",
+        "eyes": "brown eyes",
+        "eyebrows": "gently arched eyebrows",
+        "nose": "straight nose",
+        "jaw": "narrow jawline",
+        "facialHair": "short mustache and stubble",
+        "detail": "faint natural under-eye creases"
+      },
+      "appearance_fingerprint": "927b9d9ee029f2e3",
+      "body_profile": "lean-athletic",
+      "body_conditioning": "endurance",
+      "status": "approved",
+      "portrait_asset": "assets/players/portraits/98.webp",
+      "appearance_profile": "A rounded face, light olive complexion, dark blond hair with slightly wavy hair in a short curly top, brown eyes, gently arched eyebrows, straight nose, narrow jawline, short mustache and stubble, and faint natural under-eye creases."
+    },
+    "145": {
+      "player_id": 145,
+      "display_name": "Steven Sellen",
+      "nationality": "ENG",
+      "secondary_nationality": null,
+      "appearance_traits": {
+        "face": "rounded face",
+        "complexion": "very deep brown complexion",
+        "hairTexture": "loose curly hair",
+        "hairStyle": "medium length natural haircut",
+        "hairColor": "blond hair",
+        "eyes": "brown eyes",
+        "eyebrows": "thick eyebrows",
+        "nose": "straight nose",
+        "jaw": "rounded jawline",
+        "facialHair": "clean-shaven face",
+        "detail": "subtle freckles"
+      },
+      "appearance_fingerprint": "db6cf3b4ea78f434",
+      "body_profile": "power-athletic",
+      "body_conditioning": "natural",
+      "status": "approved",
+      "portrait_asset": "assets/players/portraits/145.webp",
+      "appearance_profile": "A rounded face, very deep brown complexion, blond hair with loose curly hair in a medium length natural haircut, brown eyes, thick eyebrows, straight nose, rounded jawline, clean-shaven face, and subtle freckles."
+    }
+  }
+}
