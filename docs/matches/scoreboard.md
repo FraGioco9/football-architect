@@ -5,22 +5,26 @@ additional title, visible match ID, club crests or other content panels.
 
 ## Layout
 
-Maximum width 560px, centered horizontally, with a responsive five-column row:
+A centered **42px-high** narrow bar (38px on small screens), maximum width **440px**, with a responsive five-column row:
 
-`COMPACT HOME NAME | HOME SCORE | COMPETITION LOGO | AWAY SCORE | COMPACT AWAY NAME`
+`HOME ABBR | HOME SCORE | COMPETITION LOGO | AWAY SCORE | AWAY ABBR`
 
-The competition logo occupies the fixed central slot (48px desktop / 40px
-mobile), links to the competition and uses the existing **approved**
+The center uses the existing approved
 `assets/divisions/{id}-{name-slug}/compact.svg` of that division.
+It is rendered at **96px desktop / 82px mobile**, deliberately **protruding
+above and below** the 42px / 38px bar. The bar and the logo's containing
+elements use visible overflow and the image has **no background,
+plate, padding, or round backing**. The logo remains linked to the competition.
+The page reserves enough top spacing for the protruding SVG without clipping.
 
 The 16 domestic competitions already have `compact.svg` and `primary.svg`
 assets; both are validated with `tools/validate-division-assets.mjs`,
 covered by its integrity check and included by the public artifact allowlist.
 The scoreboard uses `compact.svg` by default; the matching `primary.svg`
 can be selected per competition in the theme config if its shape suits a
-different layout. A small ivory plate (`#F5F1E8`, already approved) behind
-the SVG prevents brand-coloured paths from disappearing into the league's
-primary-colour background.
+different layout. The SVG itself displays directly on the scoreboard's
+approved competition colour; there is no ivory plate or other artificial
+background behind it.
 
 The international competitions `int-1` and `int-2` have no equivalent
 approved competition SVGs in the current repository. Their central slot
@@ -28,11 +32,13 @@ remains neutral/empty until verified assets are available. An image loading
 error also yields a neutral empty slot; **no unrelated Football Architect
 logo or invented competition crest is displayed**.
 
-The official match status and optional ET/PK annotation appear in a small
-centered line below the scoreboard.
+The official match status and optional ET/PK annotation appear in a separate
+small centered line **outside** and below the narrow rectangle, without
+increasing the height of the bar.
 
-Names use approved `compactName` from the club manifest at all widths.
-If unavailable, the official name or a guarded unresolved-participant
+Names use the approved **`abbr`** field (the canonical 2–5 character
+abbreviation) from the club manifest at all widths. If unavailable,
+the official compact/primary name or a guarded unresolved-participant
 label is used. Full club names remain in accessible labels/title tooltips.
 Scores are displayed individually beside the center and remain `—`
 unless there is a verified completed result.

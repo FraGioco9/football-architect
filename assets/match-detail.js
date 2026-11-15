@@ -33,9 +33,11 @@
   if(!id&&participant?.kind==='leagueRank'&&Number.isSafeInteger(participant.rank)&&participant.rank>0)
    fallback=text().round+' '+participant.rank;
   const full=club?.primaryName||id||fallback;
-  // Compact names are the approved public club labels, never generated abbreviations.
-  const compact=club?.compactName||full;
-  name.textContent=compact;
+  // Use the canonical club abbreviation (manifest field "abbr") on both
+  // desktop and mobile; retain the primary name for accessible descriptions.
+  const abbreviation=typeof club?.abbr==='string'&&/^[A-Z0-9]{2,5}$/.test(club.abbr)
+   ?club.abbr:club?.compactName||full;
+  name.textContent=abbreviation;
   name.setAttribute('aria-label',full);
   name.title=full;
   if(club)name.href=href('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
@@ -72,7 +74,7 @@
   slot.replaceChildren();
   if(!intended)return;
   const img=document.createElement('img');
-  img.alt='';img.width=42;img.height=42;img.decoding='async';
+  img.alt='';img.width=96;img.height=96;img.decoding='async';
   img.addEventListener('error',()=>{
    if(slot.contains(img)){delete slot.dataset.matchLogoPresent;img.remove();}
   },{once:true});
