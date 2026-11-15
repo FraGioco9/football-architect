@@ -2,6 +2,7 @@ import {seedUnifiedOperator} from './fixtures/unified-operator.ts';
 import {clearTestWorld} from './fixtures/test-world.ts';
 import {beforeAll,beforeEach,it,expect} from 'vitest';
 import {env} from 'cloudflare:workers';
+import worker from '../src/index.ts';
 import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
@@ -40,6 +41,32 @@ beforeEach(async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day2-00001',now)).world;
  world=(await stageDomesticCalendar(db,session,meta(),'bridge-domestic-00001',now)).world;
 });
+it('assigns progressive numeric IDs to every published domestic match without changing the internal digest',async()=>{
+ const numbers=(await db.prepare('SELECT id,slot_match_id FROM public_match_numbers WHERE generation=? ORDER BY id')
+  .bind(world.generation).all()).results;
+ expect(numbers).toHaveLength(3896);
+ expect(new Set(numbers.map((r:{id:number})=>r.id)).size).toBe(3896);
+ expect(new Set(numbers.map((r:{slot_match_id:string})=>r.slot_match_id)).size).toBe(3896);
+ for(let i=1;i<numbers.length;i++)expect(numbers[i].id).toBe(numbers[i-1].id+1);
+ const domestic=await readPublishedCompetitionMatches(db,1,'IT-1');
+ expect(domestic.fixtures).toHaveLength(242);
+ expect(domestic.fixtures.every(f=>/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
+ const match=domestic.fixtures.find(f=>f.phaseId==='league')!;
+ const data=await readPublicMatch(db,match.matchId);
+ expect(data).toMatchObject({matchId:match.matchId,status:'scheduled',result:null});
+ const clubResponse=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(clubResponse.status).toBe(200);
+ const clubBody=await clubResponse.json() as any;
+ expect(clubBody).toMatchObject({clubKey:'IT-1',selectedSeason:1,world,status:'partial',
+  provenance:{kind:'authoritative',resultAuthority:'published-draw-v1'},
+  data:{season:1,seasonState:{day:2,phase:'active'},competitions:['IT-1']}});
+ expect(clubBody.data.fixtures).toHaveLength(30);
+ expect(clubBody.data.fixtures.every((f:any)=>f.result===null&&f.phaseId==='league'&&
+  [f.homeClubId,f.awayClubId].includes('IT-1')&&/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
+ await expect(readPublicMatch(db,'0')).rejects.toMatchObject({status:404});
+ await expect(readPublicMatch(db,'999999999999999999999999')).rejects.toMatchObject({status:404});
+});
+
 it('runs distinct domestic, draw and publication transactions before handing off to sporting day 4',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
  await expect(publishInternationalCalendar(db,session,meta(),'bridge-premature-calendar-00001',now)).rejects.toMatchObject({status:409});
@@ -56,8 +83,22 @@ it('runs distinct domestic, draw and publication transactions before handing off
  const final=sovereign.fixtures.find((f:any)=>f.phaseId==='final');
  expect(await readPublicMatch(db,final!.matchId)).toMatchObject({status:'awaiting_participants',result:null,participantA:{kind:'tieWinner',tieId:'s1'}});
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
+ const clubDrawResponse=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(clubDrawResponse.status).toBe(200);
+ const clubDraw=await clubDrawResponse.json() as any;
+ expect(clubDraw).toMatchObject({status:'partial',
+  provenance:{kind:'authoritative',resultAuthority:'published-draw-v1'},
+  data:{competitions:['IT-1','int-1']}});
+ expect(clubDraw.data.fixtures).toHaveLength(36);
+ expect(clubDraw.data.fixtures.filter((f:any)=>f.competitionId==='int-1')).toHaveLength(6);
+ expect(clubDraw.data.fixtures.every((f:any)=>f.result===null&&/^[1-9][0-9]*$/.test(f.matchId))).toBe(true);
  const before=meta(),published=await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now);
  world=published.world;
+ const afterPublish=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
+ expect(afterPublish.status).toBe(200);
+ const publishedClub=await afterPublish.json() as any;
+ expect(publishedClub).toMatchObject({status:'partial',provenance:{resultAuthority:'temporary-score-v1'}});
+ expect(publishedClub.data.fixtures).toHaveLength(36);
  expect(await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now)).toEqual(published);
  const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first();
  expect(JSON.parse(calendar.calendar_json).fixtures).toHaveLength(3984);
@@ -103,26 +144,31 @@ it('moves the independent international draw to day four and publication to day 
  expect(world.day).toBe(6);
 });
 
-it('replays all 56 sporting days, then closes and archives exactly one verified season',async()=>{
- world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
- world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
+it('continues all sporting days through day 56 after staged administrative setup',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-full-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-full-draw',now)).world;
  const final=await db.prepare("SELECT match_id FROM season_knockout_match_slots WHERE competition_id='int-1' AND phase_id='final' LIMIT 1").first();
  expect(final).toBeTruthy();
  expect(await readPublicMatch(db,final.match_id)).toMatchObject({status:'awaiting_participants',result:null});
- world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
- while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
- // This single replay covers both the unclosed day-56 sporting boundary
- // and subsequent immutable archive/closure. Keep the original invariants.
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
  expect(world).toMatchObject({day:56,phase:'active'});
  const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
  const completed=await readPublicMatch(db,final.match_id);
- expect(completed).toMatchObject({matchId:final.match_id,status:'completed',stageId:'final'});
+ expect(completed).toMatchObject({matchId:expect.stringMatching(/^[1-9][0-9]*$/),status:'completed',stageId:'final'});
  expect(completed.homeParticipant?.clubId).toBeTruthy();
  expect(completed.awayParticipant?.clubId).toBeTruthy();
  expect(completed.result).toBeTruthy();
+},120000);
+
+it('closes and archives exactly one fully verified season and replays the same closure',async()=>{
+ world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-close-day3',now)).world;
+ world=(await executeInternationalDraw(db,session,meta(),'bridge-close-draw',now)).world;
+ world=(await publishInternationalCalendar(db,session,meta(),'bridge-close-publish',now)).world;
+ while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-close-day-'+(world.day+1)+'-key',now)).world;
  world=(await archiveSeason(db,session,meta(),'bridge-archive-once-00001',now)).world;
  const command=meta(),saved=await closeSeason(db,session,command,'bridge-close-once-00001',now);
  expect(saved.world).toMatchObject({day:56,phase:'closed'});
@@ -156,6 +202,7 @@ it('replays all 56 sporting days, then closes and archives exactly one verified 
  await expect(closeSeason(db,session,command,'bridge-close-twice-00001',replayNow)).rejects.toMatchObject({status:409});
  await expect(db.prepare("UPDATE season_archives SET results_count=1").run()).rejects.toThrow();
 },120000);
+
 
 it('resets a staged V2 draw and republishes both scopes with new-generation match IDs',async()=>{
  // beforeEach has already prepared Season 1 and officially staged its domestic draw on day 2.

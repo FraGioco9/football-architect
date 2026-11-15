@@ -63,7 +63,7 @@ function node(tag='div'){
   focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
  return n;
 }
-function setup(d=divisions[0],registry=routeRegistry){
+function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null}={}){
  const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
  const choices=rulesView.fixturesDisplayChoices(definition).map(c=>({...node('button'),id:"app-fixtures-round-option-"+c.value,dataset:{fixtureRoundChoice:String(c.value),menuValue:String(c.value)}}));
@@ -71,9 +71,10 @@ function setup(d=divisions[0],registry=routeRegistry){
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
  const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
+ if(source){window.faWorldState={get:()=>source};window.faCompetitionContext.selectedSeason=1;}
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
- runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,MutationObserver:class{observe(){}}});
+ runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,fetch:fetchImpl,MutationObserver:class{observe(){}}});
  return {view:window.faFixtures,fields,route,choices,window,events,document};
 }
 const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
@@ -525,4 +526,28 @@ test('Fixtures loading navigation changes the requested matchday before a schedu
  assert.equal(r.route.get().matchday,2);
  r.view.prepare(schedule(divisions[0]))();
  assert.equal(r.fields.get('app-fixtures-round').value,'2');
+});
+
+test('published domestic Fixtures appear at day 2, before worldwide calendar publication',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
+ const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
+  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
+ }));
+ let requests=0;
+ const view=setup(division,routeRegistry,{source,fetchImpl:async path=>{
+  requests++;assert.equal(path,'/api/matches/seasons/1/competitions/IT-1');
+  return {ok:true,status:200,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',season:1,competitionId:'IT-1',
+   status:'published',fixtures:committed,provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)}
+  })};
+ }});
+ await new Promise(resolve=>setImmediate(resolve));
+ const displayed=view.fields.get('app-fixtures-list').children;
+ assert.equal(requests,1);
+ assert.equal(displayed.filter(row=>row.dataset.fixtureMatch).length,8);
+ assert.equal(view.fields.get('app-fixtures-empty').hidden,true);
+ assert.equal(view.fields.get('app-fixtures-toolbar').hidden,false);
 });

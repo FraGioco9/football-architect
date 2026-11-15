@@ -49,8 +49,8 @@ const requirePlayer=(player)=>{
   ...classifyAthleticBody(player.attributes)};
 };
 
-function createTraits(playerId,nonce){
- const digest=hash(`football-architect:portrait-identity:v1:${playerId}:${nonce}`);
+function createTraits(playerId){
+ const digest=hash(`football-architect:portrait-identity:v1:${playerId}:0`);
  const traits={};
  for(const [index,key] of keys.entries())traits[key]=VARIANTS[key][digest[index]%VARIANTS[key].length];
  return traits;
@@ -59,33 +59,29 @@ function portraitSentence(traits){
  return `A ${traits.face}, ${traits.complexion}, ${traits.hairColor} with ${traits.hairTexture} in a ${traits.hairStyle}, ${traits.eyes}, ${traits.eyebrows}, ${traits.nose}, ${traits.jaw}, ${traits.facialHair}, and ${traits.detail}.`;
 }
 
-/** Build a frozen, unique-on-this-cohort appearance manifest. The existing
- * published manifest, rather than regeneration, is authoritative thereafter.
- * Sort by numeric ID to make input pagination/order irrelevant.
+/** The canonical face is determined by the permanent ID alone, not the
+ * other players in a cohort. This makes singleton, offline and future Worker
+ * generation produce the same immutable face for a given player ID.
+ */
+function canonicalAppearanceEntry(player){
+ const traits=createTraits(player.player_id);
+ const signature=hash(JSON.stringify(traits)).toString('hex');
+ return Object.freeze({...player,appearance_profile:portraitSentence(traits),
+  appearance_fingerprint:signature.slice(0,16)});
+}
+
+/** Build a frozen, versioned sorted manifest with no cohort-based face reseeding.
+ * A coincidental repeated trait combination is not a reason to change a player's
+ * face when a different player is added to a later generation batch.
  */
 export function buildAppearanceManifest(players){
  if(!Array.isArray(players)||players.length<1)throw new TypeError('players_must_be_nonempty_array');
  const normalized=players.map(requirePlayer).sort((a,b)=>a.player_id-b.player_id);
- const ids=new Set(),signatures=new Set(),entries=[];
+ const ids=new Set(),entries=[];
  for(const player of normalized){
   if(ids.has(player.player_id))throw new TypeError('duplicate_player_id');
   ids.add(player.player_id);
-  let candidate=null;
-  for(let nonce=0;nonce<128;nonce++){
-   const traits=createTraits(player.player_id,nonce);
-   const signature=hash(JSON.stringify(traits)).toString('hex');
-   if(!signatures.has(signature)){
-    signatures.add(signature);
-    candidate={
-     ...player,
-     appearance_profile:portraitSentence(traits),
-     appearance_fingerprint:signature.slice(0,16)
-    };
-    break;
-   }
-  }
-  if(!candidate)throw new Error('appearance_diversity_exhausted');
-  entries.push(Object.freeze(candidate));
+  entries.push(canonicalAppearanceEntry(player));
  }
  return Object.freeze({schema_version:PORTRAIT_SCHEMA_VERSION,prompt_version:PORTRAIT_PROMPT_VERSION,entries:Object.freeze(entries)});
 }
@@ -96,6 +92,16 @@ export function buildPortraitPrompt(entry){
     !Number.isSafeInteger(entry.player_id)||entry.player_id<1||!Object.hasOwn(COUNTRY_NAMES,entry.nationality)||
     (entry.secondary_nationality!=null&&!Object.hasOwn(COUNTRY_NAMES,entry.secondary_nationality)))
   throw new TypeError('invalid_appearance_entry');
+ // Fail closed on arbitrary or injected facial descriptions; the manifest
+ // must originate from the versioned, ID-keyed generator.
+ const canonical=canonicalAppearanceEntry(requirePlayer({
+  id:entry.player_id,nationality:entry.nationality,
+  secondary_nationality:entry.secondary_nationality,
+  attributes:{strength:58,speed:58,agility:58,stamina:58}
+ }));
+ if(entry.appearance_profile!==canonical.appearance_profile||
+    entry.appearance_fingerprint!==canonical.appearance_fingerprint)
+  throw new TypeError('noncanonical_appearance_entry');
  const physicalDescription=describeAthleticBody(entry);
  const nationalities=`Primary nationality: ${COUNTRY_NAMES[entry.nationality]}. `+
   (entry.secondary_nationality?`Secondary nationality: ${COUNTRY_NAMES[entry.secondary_nationality]}. `:'');
@@ -119,6 +125,16 @@ export function buildPortraitPrompt(entry){
   `No scenery, floor, colored backdrop, checkerboard texture or painted transparency, cast shadow, watermark or extra objects. `+
   `NO CHROMATIC EDGE FRINGING: no red, yellow, magenta, blue or green outlines, colored halos, edge glow, matte spill or color contamination around the subject. `+
   `Outside the silhouette must be completely transparent; partially transparent edges must blend only with the local subject color.`;
+}
+
+/** Prepare a prompt specification for ONE permanent player, independent of
+ * how many players were created in that batch. No image model or network calls.
+ * At player commit, store the snapshot once; do not recalculate it on transfers.
+ */
+export function buildPortraitSpecificationForPlayer(player){
+ const entry=canonicalAppearanceEntry(requirePlayer(player));
+ return Object.freeze({schema_version:PORTRAIT_SCHEMA_VERSION,prompt_version:PORTRAIT_PROMPT_VERSION,
+  ...entry,portrait_prompt:buildPortraitPrompt(entry)});
 }
 
 function parseArgs(args){

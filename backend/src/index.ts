@@ -11,7 +11,7 @@ import {readPublicSportingSeason,readPublicCalendarDay,readPublicClubHistory,rea
 import { projectWorld } from './public-projections.ts';
 import {readPublicPlayers,readPublicPlayer} from './public-players-read.ts';
 import {readPublicClubRoster} from './public-club-roster-read.ts';
-import {readPublicMatch,readPublishedCompetitionMatches} from './public-match-read.ts';
+import {readPublicMatch,readPublishedCompetitionMatches,readPublishedClubFixturesBeforeCalendar} from './public-match-read.ts';
 import {parsePublicPlayerQuery} from './public-players-filters.mjs';
 import { readWorld, type WorldDatabase } from './world-repository.ts';
 
@@ -62,7 +62,7 @@ export default {
         return json(503,{error:{code:'match_unavailable'}});
       }
     }
-    const matchDetail=url.pathname.match(/^\/api\/matches\/(m1_[0-9a-f]{32})$/);
+    const matchDetail=url.pathname.match(/^\/api\/matches\/([1-9][0-9]*)$/);
     if(matchDetail){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search)return json(422,{error:{code:'invalid_public_request'}});
@@ -121,7 +121,26 @@ export default {
     if(clubFixtures){
       const denied=routeMethod(request,'GET','public',false);if(denied)return denied;
       if(url.search||!Number.isSafeInteger(Number(clubFixtures[2])))return json(422,{error:{code:'invalid_public_request'}});
-      try{return json(200,await readPublicClubFixtures(requireDatabase(env.DB),clubFixtures[1],Number(clubFixtures[2])))}
+      try{
+        const db=requireDatabase(env.DB),clubKey=clubFixtures[1],season=Number(clubFixtures[2]);
+        const projection=await readPublicClubFixtures(db,clubKey,season);
+        if(projection.status==='empty'&&projection.reason==='calendar-unpublished'){
+          const draw=await readPublishedClubFixturesBeforeCalendar(db,clubKey,season);
+          if(draw.fixtures.length){
+            if(draw.world.generation!==projection.world.generation||
+               draw.world.revision!==projection.world.revision||
+               draw.world.seasonNumber!==projection.world.seasonNumber||
+               draw.world.day!==projection.world.day||draw.world.phase!==projection.world.phase)
+              throw new ApiError(409,'stale_world');
+            return json(200,{...projection,status:'partial',reason:null,
+              provenance:{kind:'authoritative',resultAuthority:'published-draw-v1',
+                sourceRef:'club-fixtures-draw:'+projection.world.generation+':season:'+season+':'+draw.sourceHash},
+              data:{season,seasonState:{day:projection.world.day,phase:projection.world.phase},
+                competitions:draw.competitions,fixtures:draw.fixtures}});
+          }
+        }
+        return json(200,projection);
+      }
       catch(error){
         if(error instanceof ApiError&&error.code==='stale_world')return json(409,{error:{code:'stale_world'}});
         return json(503,{error:{code:'sporting_data_unavailable'}});

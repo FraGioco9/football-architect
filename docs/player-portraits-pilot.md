@@ -1,6 +1,6 @@
 # PLAYER-PORTRAITS-02 — deterministic appearance profile pilot
 
-**Status:** Offline source-only prototype / Draft-HOLD. No generation API, public page, D1/R2 change, image generation or remote data read.
+**Status (2026-11-15):** Offline deterministic portrait-planning module, Draft/HOLD PR #609. The initial three owner-approved photographs (#44, #98, #145) are **already published as code assets** by merged PR #625. This PR does not create or publish images, mutate remote D1/R2, or call an AI service. Next integration into the permanent player commit is tracked by #629.
 
 ## Approved visual contract
 
@@ -15,7 +15,7 @@
 
 `buildAppearanceManifest(players)` takes an array of public player records: permanent positive numeric `id`, `nationality`, optional `secondary_nationality`, and public `attributes.strength`, `attributes.speed`, `attributes.stamina`, `attributes.agility` (integers 1–99). All other fields are ignored. It returns sorted deterministic player-ID face profiles, a separate body archetype/conditioning descriptor, a face fingerprint, and versioned schema and prompt version. `buildPortraitPrompt(entry)` produces the approved V3 studio-photo prompt for each entry; **never** raw stat numbers.
 
-An individual **face** is derived from a versioned SHA-256 seed based only on the player ID. Nationality is included solely as context in the image prompt, not mapped to ethnicity, skin tone or face structure. Export and preserve the reviewed manifest: approved player identities and images must not be regenerated during transfers or season changes. A new future player should receive an additional immutable manifest entry. An approved manifest is a photographic snapshot: later attribute changes do not silently regenerate an approved image. Different textual profiles do not guarantee different generated faces: visual similarity and true-alpha QA remain manual gates.
+An individual **face** is derived from a versioned SHA-256 seed based only on the player ID; no cohort-specific collision reseeding is allowed. `buildPortraitSpecificationForPlayer(player)` returns a complete versioned single-player plan and AI prompt after the permanent ID is known, with no external calls. Nationality is included solely as context in the image prompt, not mapped to ethnicity, skin tone or face structure. Export and preserve the reviewed manifest: approved player identities and images must not be regenerated during transfers or season changes. A new future player should receive an additional immutable manifest entry. An approved manifest is a photographic snapshot: later attribute changes do not silently regenerate an approved image. Different textual profiles do not guarantee different generated faces: visual similarity and true-alpha QA remain manual gates.
 
 Use a read-only, **authorized public players export**, not private Admin drafts or D1 tooling. The tool performs no remote calls. The input may be a JSON array or an object `{ "players": [...] }`. It refuses to overwrite an existing output file.
 
@@ -38,8 +38,8 @@ Use only public 1–99 integer values, reject missing/out-of-range metrics. `mob
 ## Evidence and limits
 
 - Local Node 22 body-classification unit smoke: **4/4 PASS**. Expanded integrated portrait test suite adds deterministic body attribution, invalid-input, no-internal-field and boundary checks. The original 150-player and 1,000-player cohorts remain **synthetic**; do not claim full-project or exact-head CI PASS before it completes.
-- The **actual 150 persisted players have not been read or checked**: live player records belong to environment-specific D1 and are not in this repository. Verify only after an approved public export is supplied.
-- No actual photographs generated or installed; alpha quality, visual diversity, image licensing, costs, storage and player-detail fallback behavior still need separate approvals.
+- The original synthetic-only baseline was superseded by the **2026-11-14 explicitly authorized read-only DEV D1 audit of all 150 persisted players** (IDs 44–193; body-class split recorded in `docs/players-portrait-body-options-v3.md`). The snapshot does not prove future distributions.
+- The three approved pilot photos were independently reviewed and integrated through #625. This PR covers prompt-planning for future players; remaining photo QA, model costs, runtime job scheduling and any storage changes remain separate approvals.
 
 ## Public API export and deterministic three-player pilot
 
@@ -66,3 +66,7 @@ Run `node --test tests/portrait-png-qa.test.mjs` and `node tools/portrait-png-qa
 - Three-person 1881×836 RGB collage: **FAIL** aspect and missing alpha.
 - Three-person 1881×836 RGBA collage: **FAIL** aspect, fringe `0.0538` and 3 significant components.
 No new approved photo has been generated in this GitHub-only step.
+
+## Next phase: commit-time prompt snapshot (#629)
+
+Use `buildPortraitSpecificationForPlayer` only **after** the Admin transaction allocates the permanent positive numeric player ID. The preview is intentionally ID-less and must never lock in a face. The portrait plan must be written once as private, versioned metadata, atomically with creating the player, without changing existing gameplay fields or public response shapes. Future stat or nationality changes must not mutate already persisted plans. AI image generation, paid model calls, storage, and deployments are **not** part of PR #609.

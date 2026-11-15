@@ -1,6 +1,6 @@
 # PLAYER-PORTRAITS-02 — Body archetypes, conditioning and photographic prompt V3
 
-**Status:** Specification and read-only DEV/Preview audit; PR [#609](https://github.com/FraGioco9/football-architect/pull/609) is **Draft/HOLD**. This document is descriptive, not a deployment, database migration, image-generation request or acceptance of generated photos.
+**Status (2026-11-15):** Specification and read-only DEV/Preview audit; PR [#609](https://github.com/FraGioco9/football-architect/pull/609) stays **Draft/HOLD**. The three reviewed player photo assets have since been integrated in merged PR #625. This document defines rules for future portraits; #629 tracks freezing a prompt on permanent player creation. No deploy, model call or database mutation is implied.
 
 **Code authority:** `tools/players-portrait-body.mjs` and `tools/players-portrait-profiles.mjs`. Schema `player-portraits-v2`, prompt `player-portrait-v3`.
 
@@ -129,3 +129,7 @@ The offline CLI does **not** overwrite existing manifests. The anonymous public 
 The initial 3-photo test did **not** pass visual QA: similar facial structures and visible red/yellow segmentation fringe were observed. A separate attempted regeneration also failed to consistently honor single-player identity; some outputs repeated the #44 face and some returned multi-person composites or checkerboard-like backdrops. Those outputs are **NOT approved or published**, and this prompt update is not evidence of a successful image-generation rerun.
 
 Acceptance for any future pilot requires **three individual 3:4 PNG images**, one each for real DEV player ID 44 (Giacinto Lello), 98 (Arthur Kiesel), and 145 (Steven Sellen), with faithful persistent `appearance_profile`, distinct faces, restrained build class, plain white jersey, head-to-hips framing, *real RGBA transparency* and no chromatic edge fringe. Reject repeated player identities, collages, explicit checkerboards, visible red/yellow halos, clipping and exaggerated physiques. Do not add assets or persist identity mappings until human review.
+
+## Future creation-time persistence boundary — #629
+
+The actual player-creation flow stores temporary candidate previews without a final numeric ID, then allocates player IDs in an atomic D1 commit. Thus the definitive prompt/face belongs **after** that allocation. Use the single-ID planner from #609 to freeze a private versioned snapshot once with the new player; do not expose it through anonymous public APIs. Do not use nationality as a skin-tone/ethnicity lookup; nationality is context only. No online image model call, storage write, or background generation belongs to this specification.

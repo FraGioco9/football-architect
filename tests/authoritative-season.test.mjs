@@ -140,7 +140,7 @@ test('CLUB-FIXTURES: selects only club games with stable canonical ordering and 
  assert.deepEqual(rows.map(x=>x.id),['a','b']);assert.equal(rows[1].opponentId,'IT-2');assert.equal(rows[1].venue,'away');assert.equal(rows[1].goalsFor,2);assert.equal(rows[1].goalsAgainst,1);
  assert.throws(()=>projectClubFixtures(games,'IT-1',1,1),/Future/);
 });
-test('CLUB-FIXTURES: Season 0 skips API and unpublished source uses exactly one club read',async()=>{
+test('CLUB-FIXTURES: Season 0 skips API; an unpublished club performs exactly one read',async()=>{
  const {readClubFixtures}=await import('../assets/club-fixtures-source.mjs');
  const unstarted={...world,revision:0,seasonNumber:0,phase:'unstarted',day:0};let calls=0;
  const zero=await readClubFixtures({clubKey:'IT-1',season:0,world:unstarted,fetchJson:async()=>{calls++},manifest});
@@ -152,11 +152,14 @@ test('CLUB-FIXTURES: Season 0 skips API and unpublished source uses exactly one 
   provenance:{kind:'none',resultAuthority:null,sourceRef:null},data:null};
  const paths=[];
  const result=await readClubFixtures({clubKey:'IT-1',season:1,world,manifest,fetchJson:async path=>{
-  paths.push(path);return unpublished;
+  paths.push(path);
+  if(path==='/api/clubs/IT-1/seasons/1/fixtures')return unpublished;
+  throw Error('HTTP 404');
  }});
  assert.equal(result.coverage,'unpublished');
  assert.deepEqual(result.rows,[]);
- assert.deepEqual(paths,['/api/clubs/IT-1/seasons/1/fixtures'],'unpublished season never fans out to competition endpoints');
+ assert.deepEqual(paths,['/api/clubs/IT-1/seasons/1/fixtures'],
+  'Unpublished club fixtures must never request per-competition APIs');
 });
 
 test('CLUB-FIXTURES: viewed Season 0 remains unstarted after world advancement',async()=>{

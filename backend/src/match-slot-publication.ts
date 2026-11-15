@@ -46,7 +46,12 @@ export async function matchPublicationStatements(
  const targetGroups=kind==='calendar'?18:kind==='domestic'?16:2;
  if(groups.size!==targetGroups||sourceHashes.size!==targetGroups)
   throw new RangeError('Missing competition fixtures');
- return [...groups.values()].map(rows=>db.prepare(insertSql).bind(JSON.stringify(rows)));
+ // Repeated publication of the same immutable slot preserves its existing public number.
+ return [...groups.values()].map(rows=>db.prepare(insertSql).bind(JSON.stringify(rows))).concat(
+  db.prepare(`INSERT OR IGNORE INTO public_match_numbers(slot_match_id,generation,season_number)
+   SELECT match_id,generation,season_number FROM season_match_slots
+   WHERE generation=? AND season_number=? AND source_kind=?
+   ORDER BY competition_id,scheduled_day,match_id`).bind(generation,season,kind));
 }
 
 /** The caller must include these in the same D1 batch as official draw publication. */
@@ -78,5 +83,9 @@ export async function knockoutPublicationStatements(
  json(json_extract(value,'$.participantB')),json_extract(value,'$.sourceKind'),
  json_extract(value,'$.sourceHash'),json_extract(value,'$.publishedAt')
  FROM json_each(?)`;
- return [...grouped.values()].map(rows=>db.prepare(sql).bind(JSON.stringify(rows)));
+ return [...grouped.values()].map(rows=>db.prepare(sql).bind(JSON.stringify(rows))).concat(
+  db.prepare(`INSERT OR IGNORE INTO public_match_numbers(slot_match_id,generation,season_number)
+   SELECT match_id,generation,season_number FROM season_knockout_match_slots
+   WHERE generation=? AND season_number=? AND source_kind=?
+   ORDER BY competition_id,scheduled_day,match_id`).bind(generation,season,kind));
 }

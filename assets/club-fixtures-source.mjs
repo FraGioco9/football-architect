@@ -22,6 +22,46 @@ export function projectClubFixtures(fixtures,clubKey,season,day){
 }
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const bad=()=>{throw TypeError('Invalid authoritative club fixture payload')};
+
+/** The backend projects officially committed draws into this ONE club endpoint. */
+function projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base}){
+ const data=payload.data,provenance=payload.provenance;
+ const prefix='club-fixtures-draw:'+world.generation+':season:'+season+':';
+ if(payload.status!=='partial'||payload.reason!==null||
+  provenance?.kind!=='authoritative'||provenance.resultAuthority!=='published-draw-v1'||
+  typeof provenance.sourceRef!=='string'||!provenance.sourceRef.startsWith(prefix)||
+  !/^[a-f0-9]{64}$/.test(provenance.sourceRef.slice(prefix.length))||
+  world.day>12||season!==world.seasonNumber||world.phase!=='active'||
+  !object(data)||data.season!==season||!object(data.seasonState)||
+  data.seasonState.day!==base.day||data.seasonState.phase!==world.phase||
+  !Array.isArray(data.competitions)||!Array.isArray(data.fixtures)||!Array.isArray(manifest?.competitions))bad();
+ const ids=new Set(),competitions=[];
+ for(const id of data.competitions){
+  if(typeof id!=='string'||!allowed.includes(id)||ids.has(id))bad();
+  const definition=manifest.competitions.find(c=>c.id===id);
+  if(!definition)bad();
+  ids.add(id);competitions.push(definition);
+ }
+ if(ids.size>2||(ids.size>0&&[...ids].filter(id=>!id.startsWith('int-')).length!==1))bad();
+ const seen=new Set(),counts=new Map();
+ for(const f of data.fixtures){
+  if(!object(f)||!ids.has(f.competitionId)||f.season!==season||
+   !/^[1-9][0-9]*$/.test(f.matchId)||f.id!==f.matchId||seen.has(f.id)||
+   f.phaseId!=='league'||f.neutral!==false||f.tieId!==null||f.leg!==null||
+   f.result!==null||typeof f.marker!=='string'||typeof f.homeClubId!=='string'||
+   typeof f.awayClubId!=='string'||f.homeClubId===f.awayClubId||
+   ![f.homeClubId,f.awayClubId].includes(clubKey)||
+   !Number.isSafeInteger(f.day)||f.day<=world.day||f.day>56||
+   !Number.isSafeInteger(f.round)||f.round<1||
+   f.round>(f.competitionId.startsWith('int-')?6:30))bad();
+  seen.add(f.id);counts.set(f.competitionId,(counts.get(f.competitionId)??0)+1);
+ }
+ for(const id of ids)if(counts.get(id)!==(id.startsWith('int-')?6:30))bad();
+ if(!ids.size||data.fixtures.length!==[...counts.values()].reduce((a,b)=>a+b,0))bad();
+ const rows=projectClubFixtures(data.fixtures,clubKey,season,base.day).map(r=>Object.freeze({...r,matchId:r.id}));
+ return {...base,competitions,rows,coverage:'partial'};
+}
+
 export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,signal}){
  const allowed=competitionIdsForClub(clubKey);
  if(!validPublicWorld(world)||typeof fetchJson!=='function')throw TypeError('Invalid club fixture read');
@@ -42,6 +82,8 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
     payload.provenance?.kind!=='none'||payload.provenance?.sourceRef!==null||payload.provenance?.resultAuthority!==null)bad();
   return {...base,coverage:'unavailable'};
  }
+ if(payload.provenance?.resultAuthority==='published-draw-v1')
+  return projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base});
  const closed=season<world.seasonNumber||world.phase==='closed',data=payload.data,provenance=payload.provenance;
  if(payload.status!==(closed?'available':'partial')||payload.reason!==null||
    provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-score-v1'||

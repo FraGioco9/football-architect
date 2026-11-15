@@ -119,6 +119,7 @@
     "backend/tests/test_player_numeric_ids_migration.py": "migration",
     "backend/tests/test_player_profile_migration.py": "migration",
     "backend/tests/test_player_transfer_export_migration.py": "migration",
+    "backend/tests/test_public_match_numbers_migration.py": "migration",
     "backend/tests/test_season_artifacts_migration.py": "migration",
     "backend/tests/test_world_migration.py": "migration",
     "backend/tests/worker-restart.test.mts": "backend-operator",
@@ -272,12 +273,11 @@
     "tests/page-load-03c-first-paint.test.mjs": "site-node",
     "tests/page-load-04-club-html.test.mjs": "site-node",
     "tests/page-titles-540.test.mjs": "site-node",
+    "tests/perf-api-01-real-contract-roster.mjs": "support",
+    "tests/perf-api-01-requests.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
-    "tests/export-public-players-for-portraits.test.mjs": "site-node",
-    "tests/players-portrait-profiles.test.mjs": "site-node",
-    "tests/portrait-png-qa.test.mjs": "site-node",
     "tests/players-directory.test.mjs": "site-node",
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/players-mobile-574.test.mjs": "site-node",
@@ -322,6 +322,9 @@
     "tests/world-catalog.test.mjs": "site-node",
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
-    "tests/world-divisions.test.mjs": "site-node"
+    "tests/world-divisions.test.mjs": "site-node",
+    "tests/export-public-players-for-portraits.test.mjs": "site-node",
+    "tests/players-portrait-profiles.test.mjs": "site-node",
+    "tests/portrait-png-qa.test.mjs": "site-node"
   }
 }
