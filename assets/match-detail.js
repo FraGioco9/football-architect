@@ -18,6 +18,63 @@
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
  const validLineup=lineup=>lineup?.confirmed===true&&Array.isArray(lineup.starters)&&lineup.starters.length===11;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
+ const logoSources=new Map();
+ const svgNS='http://www.w3.org/2000/svg';
+ // The published division SVGs are approved, path-only assets; render with
+ // a stroke on EACH path, not a filter around the union of all silhouettes.
+ async function loadLogoPaths(src){
+  if(!logoSources.has(src))logoSources.set(src,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
+   if(!res.ok)throw Error('Logo unavailable');
+   const raw=await res.text();
+   if(raw.length>100000||/<!|<\?/.test(raw))throw Error('Logo markup rejected');
+   const parsed=new DOMParser().parseFromString(raw,'image/svg+xml');
+   const rootSvg=parsed.documentElement;
+   if(rootSvg.localName!=='svg'||rootSvg.namespaceURI!==svgNS||parsed.querySelector('parsererror'))throw Error('Invalid logo SVG');
+   const style=rootSvg.querySelector('style');
+   if(!style||rootSvg.querySelectorAll('style').length!==1)throw Error('Invalid logo palette');
+   const colors=Object.create(null);
+   for(const hit of style.textContent.matchAll(/\.s([01])\s*\{\s*fill:\s*(#[0-9a-fA-F]{6})\s*\}/g))
+    colors['s'+hit[1]]=hit[2];
+   if(!colors.s0||!colors.s1)throw Error('Unapproved logo palette');
+   const viewBox=rootSvg.getAttribute('viewBox');
+   if(!viewBox||!/^[-\d. ]+$/.test(viewBox))throw Error('Invalid logo dimensions');
+   const svg=document.createElementNS(svgNS,'svg');
+   svg.setAttribute('viewBox',viewBox);
+   svg.setAttribute('class','app-match-logo-art');
+   svg.setAttribute('aria-hidden','true');
+   svg.setAttribute('focusable','false');
+   let paths=0;
+   const copy=(source,parent)=>{
+    for(const child of source.children){
+     if(child.localName==='style'&&source===rootSvg)continue;
+     if(child.namespaceURI!==svgNS||!['g','path'].includes(child.localName))throw Error('Unexpected logo object');
+     const node=document.createElementNS(svgNS,child.localName);
+     const transform=child.getAttribute('transform');
+     if(transform)node.setAttribute('transform',transform);
+     if(child.localName==='g')copy(child,node);
+     else{
+      const d=child.getAttribute('d');
+      const color=colors[child.getAttribute('class')];
+      if(!color||!d||!/^[MmZzLlHhVvCcSsQqTtAaEe\d\s.,+\-]+$/.test(d))throw Error('Invalid logo path');
+      node.setAttribute('d',d);
+      node.setAttribute('fill',color);
+      if(child.getAttribute('fill-rule')==='evenodd')node.setAttribute('fill-rule','evenodd');
+      node.setAttribute('stroke','#F5F1E8');
+      node.setAttribute('stroke-width','5');
+      node.setAttribute('stroke-linejoin','round');
+      node.setAttribute('vector-effect','non-scaling-stroke');
+      node.setAttribute('paint-order','stroke fill');
+      paths++;
+     }
+     parent.append(node);
+    }
+   };
+   copy(rootSvg,svg);
+   if(!paths)throw Error('Empty logo');
+   return svg;
+  }));
+  return logoSources.get(src);
+ }
  function officialState(){
   if(!data)return 'scheduled';
   const status=data.status;
@@ -73,14 +130,16 @@
   delete slot.dataset.matchLogoPresent;
   slot.replaceChildren();
   if(!intended)return;
-  const img=document.createElement('img');
-  img.alt='';img.width=80;img.height=80;img.decoding='async';
-  img.addEventListener('error',()=>{
-   if(slot.contains(img)){delete slot.dataset.matchLogoPresent;img.remove();}
-  },{once:true});
-  slot.dataset.matchLogoPresent='true';
-  slot.append(img);
-  img.src=intended;
+  void loadLogoPaths(intended).then(svg=>{
+   if(slot.dataset.matchLogoPath!==intended)return;
+   slot.replaceChildren(svg.cloneNode(true));
+   slot.dataset.matchLogoPresent='true';
+  }).catch(()=>{
+   if(slot.dataset.matchLogoPath===intended){
+    slot.replaceChildren();
+    delete slot.dataset.matchLogoPresent;
+   }
+  });
  }
  function render(){
   const tr=text();

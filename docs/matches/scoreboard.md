@@ -15,11 +15,16 @@ It is rendered at **80px desktop / 68px mobile**, deliberately **protruding
 above and below** the 34px / 30px bar. The bar and the logo's containing
 elements use visible overflow and the image has **no background,
 plate, padding, or round backing**. The logo remains linked to the competition.
-The logo has a true **2.5px ivory (#F5F1E8) silhouette contour**,
-drawn by an inline SVG alpha-mask filter: dilate SourceAlpha, subtract
-SourceAlpha to keep only the exterior ring, flood the ring with ivory,
-then merge the unmodified source artwork. Unlike chained drop-shadows,
-this does not create uneven doubled corners or a backing plate.
+The ivory (#F5F1E8) border is painted on **each original SVG path/object**,
+not on the combined alpha silhouette of the entire emblem. The browser loads
+the already-approved compact SVG (without modifying the published assets),
+rebuilds its path-only geometry and original approved fill colours as a
+sanitized inline SVG, and applies `stroke="#F5F1E8"`,
+`stroke-width="5"`, `vector-effect="non-scaling-stroke"` and
+`paint-order="stroke fill"` to every path. The visible exterior stroke
+is about **2.5px** at any responsive size. Inner logo objects, including
+overlapping pieces, receive their **own** ivory edge. There is no
+SVG-wide filter, backing plate, extra logo or box outline.
 The logo's visual center is shifted **8px upward** (7px on mobile)
 relative to the bar, not vertically centered.
 The bar keeps its subtle neutral outline. The SVG remains transparent,
@@ -53,7 +58,8 @@ abbreviation) from the club manifest at all widths. If unavailable,
 the official compact/primary name or a guarded unresolved-participant
 label is used. Full club names remain in accessible ARIA labels only;
 native browser `title` tooltips are deliberately removed from team
-and competition links.
+and competition links. All scoreboard hover animations/transitions
+are disabled, and hover does not change the link underline or logo opacity.
 Scores are displayed individually beside the center and remain `—`
 unless there is a verified completed result.
 
