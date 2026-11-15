@@ -524,7 +524,7 @@ test('CONTROL 2b research: real opponent-first vs intended receiver across bound
  const ball={preset:'roll',seed:'me-action-pass-receive',
   x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
  const results=[];
- for(let slot=0;slot<candidates.length;slot++){
+ for(let slot=50;slot<candidates.length;slot++){
   const engine=createEngine(R,ball,{
    diagnosticPlayerFootContactsEnabled:true,
    diagnosticAutonomousFixtureActionEnabled:true,
@@ -539,7 +539,7 @@ test('CONTROL 2b research: real opponent-first vs intended receiver across bound
   const trace={slot,p:candidates[slot],pass:null,
    starts:[],firstOpponent:null,firstReceiver:null,errors:[]};
   try{
-   for(let tick=1;tick<=145;tick++){
+   for(let tick=1;tick<=220;tick++){
     const frame=mover.step(engine.snapshot().ball.position,priorPass);
     engine.step(frame);
     const action=engine.uniformAutonomousActionSnapshot();

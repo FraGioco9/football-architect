@@ -1814,7 +1814,9 @@ export function createPlayerMovement(options={}){
      priorRealPass.tick>tick))
    throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
   const receiverApproaching=priorRealPass!==null&&
-   tick-priorRealPass.tick<180;
+   tick-priorRealPass.tick<180&&
+   (options.researchControlOppositionSlot===undefined||
+    options.researchControlOppositionSlot<50);
   const opponentApproaching=receiverApproaching&&
    options.researchControlOppositionSlot!==undefined;
   const home=pressingPlayer(players,'home',ball,pressers.home);

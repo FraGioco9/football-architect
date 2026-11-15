@@ -8,9 +8,12 @@ export const CONTROL_RECEIVER_INITIAL=Object.freeze({
 });
 const grid=[-2.95,-2.7,-2.45,-2.2,-1.95].flatMap(x=>
  [-0.5,-1,-1.5,-2,-2.5].map(y=>({x,y})));
+const downstream=[-5.4,-5.2,-5,-4.8,-4.6].flatMap(x=>
+ [-8.5,-9,-9.5,-10,-10.5].map(y=>({x,y})));
 export const RESEARCH_CONTROL_OPPONENT_CANDIDATES=Object.freeze([
- ...grid.map(p=>Object.freeze({...p,longPass:false})),
- ...grid.map(p=>Object.freeze({...p,longPass:true}))
+ ...grid.map(p=>Object.freeze({...p,longPass:false,downstream:false})),
+ ...grid.map(p=>Object.freeze({...p,longPass:true,downstream:false})),
+ ...downstream.map(p=>Object.freeze({...p,longPass:true,downstream:true}))
 ]);
 export function initialResearchControlLineup(players,ball,oppositionSlot=null){
  if(oppositionSlot!==null&&
