@@ -104,11 +104,11 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   });
   await wait("document.querySelector('#action-labs-dialog')?.open===true");
   await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
-  // Real PASS is confirmed on the clean stack. The other four physical
-  // trials must remain honest when their staged positive gates are absent.
+  // Check real PASS and the newly staged HOME SHOT in the SAME browser.
+  // CONTROL/CARRY and contested contact still do not certify outcomes.
   for(const [choice,ticks,marker] of [
    ['pass',1,'genuine Rapier shoe START + PASS impulse'],
-   ['shot',35,null],
+   ['shot',35,'Verified HOME SHOT'],
    ['challenge',12,null],
    ['control',90,null],
    ['carry',35,null]
@@ -138,6 +138,21 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
     choice,status:result.status,readout:result.readout
    })+'\n');
   }
+  const away=await evalJs(
+   "(()=>{const side=document.getElementById('action-labs-shot-side');"+
+   "const btn=document.getElementById('action-labs-step');"+
+   "side.value='away';side.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<35;i++)btn.click();"+
+   "return {side:side.value,sideVisible:!document.getElementById('action-labs-shot-side-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(away.side,'away');
+  assert.equal(away.sideVisible,true);
+  assert.match(away.status,/Verified AWAY SHOT: exclusive shoe START \\+ real Rapier impulse; observed 3D flight/);
+  assert.match(away.readout,/SHOT AWAY · 3D path/);
+  assert.doesNotMatch(away.status,/goal scored|official possession confirmed/i);
+  process.stdout.write('ACTION_LAB_CHROME_AWAY_SHOT '+JSON.stringify(away)+'\\n');
   const close=await evalJs("(()=>{"+
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
