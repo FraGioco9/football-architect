@@ -130,6 +130,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
+ assert.match(css,/\.app-match-page\{min-width:0;padding-top:0;overflow:visible\}/);
+ assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
  assert.match(css,/width:min\(100%,284px\);height:48px/);
  assert.match(css,/width:min\(100%,268px\);height:48px/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 20px 35px minmax\(0,1fr\)/);

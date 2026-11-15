@@ -172,3 +172,17 @@ score tracks while keeping the team names aligned vertically on the same
 spacing, approved Light/Dark colours, and 284/268px strip widths. The
 browser checks verify both hydrated name-to-score geometry and the matching
 first-paint skeleton alignment.
+
+### Section top padding and visual alignment decision
+
+The Match Detail section now has **0px padding-top** at all breakpoints
+(previously 6px desktop / 4px mobile). Scoreboard dimensions and logo
+geometry are untouched.
+
+**Alignment remains intentionally unchanged** pending owner selection:
+centering the full 284/268px bar makes the score separator sit **20px to the
+right** of the page centre because the 48px competition badge is included
+in the six-column grid. Centering on the separator would shift the complete
+bar 20px to the left, leaving the score/status axis centred in the page but
+moving the protruding badge closer to the mobile edge. No such translation
+is introduced in this padding-only change.

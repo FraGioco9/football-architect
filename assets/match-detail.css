@@ -1,5 +1,5 @@
 /* #577 — Flat, overlapping-badge scoreboard. One branded bar, no score capsule. */
-.app-match-page{min-width:0;padding-top:6px;overflow:visible}
+.app-match-page{min-width:0;padding-top:0;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
  --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
@@ -114,7 +114,6 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;--app-match-edge:#243039;
 }
 @media(max-width:480px){
- .app-match-page{padding-top:4px}
  .app-match-scoreboard{width:min(100%,268px);height:48px}
  .app-match-score-line{
   grid-template-columns:48px minmax(0,1fr) 32px 18px 32px minmax(0,1fr);

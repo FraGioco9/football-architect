@@ -55,6 +55,8 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
+    // The match section adds no artificial top space in either breakpoint.
+    assert.equal(await page.locator('.app-match-page').evaluate(el=>getComputedStyle(el).paddingTop),'0px');
     // 268px is a maximum on narrow viewports: shell gutters can reduce the
     // available width at 320px without violating the fixed-layout contract.
     assert.ok(first.width<=device.expectedWidth+1,JSON.stringify({engine,theme,device,first}));
