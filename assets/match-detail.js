@@ -20,8 +20,8 @@
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
  const logoSources=new Map();
  const svgNS='http://www.w3.org/2000/svg';
- // The published division SVGs are approved, path-only assets; render with
- // a stroke on EACH path, not a filter around the union of all silhouettes.
+ // Build one composite SVG from the approved paths and outline the union of
+ // their alpha channels exactly once (never the individual internal layers).
  async function loadLogoPaths(src){
   if(!logoSources.has(src))logoSources.set(src,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
    if(!res.ok)throw Error('Logo unavailable');
@@ -38,11 +38,39 @@
    if(!colors.s0||!colors.s1)throw Error('Unapproved logo palette');
    const viewBox=rootSvg.getAttribute('viewBox');
    if(!viewBox||!/^[-\d. ]+$/.test(viewBox))throw Error('Invalid logo dimensions');
+   const box=viewBox.trim().split(/\s+/).map(Number);
+   if(box.length!==4||!box.every(Number.isFinite)||box[2]<=0||box[3]<=0)throw Error('Invalid logo viewBox');
    const svg=document.createElementNS(svgNS,'svg');
    svg.setAttribute('viewBox',viewBox);
    svg.setAttribute('class','app-match-logo-art');
    svg.setAttribute('aria-hidden','true');
    svg.setAttribute('focusable','false');
+   // The filter runs on ONE group, AFTER the original paths have been composited.
+   // Radius is expressed in SVG user units (~2.5 rendered px at 80px wide).
+   const tag=(name,attributes,parent)=>{
+    const element=document.createElementNS(svgNS,name);
+    for(const [key,value] of Object.entries(attributes))element.setAttribute(key,String(value));
+    parent.append(element);
+    return element;
+   };
+   const defs=tag('defs',{},svg);
+   const pad=Math.max(box[2],box[3])*.15;
+   const filter=tag('filter',{
+    id:'fa-match-logo-union-outline',
+    filterUnits:'userSpaceOnUse','color-interpolation-filters':'sRGB',
+    x:box[0]-pad,y:box[1]-pad,width:box[2]+2*pad,height:box[3]+2*pad
+   },defs);
+   // preserveAspectRatio="xMidYMid meet" fits the longer viewBox dimension
+   // in 80 CSS pixels; use one source-unit radius for a uniform outer edge.
+   const radius=(Math.max(box[2],box[3])*2.5/80).toFixed(2);
+   tag('feMorphology',{in:'SourceAlpha',operator:'dilate',radius,result:'expanded'},filter);
+   tag('feComposite',{in:'expanded',in2:'SourceAlpha',operator:'out',result:'outerRing'},filter);
+   tag('feFlood',{'flood-color':'#F5F1E8',result:'ivory'},filter);
+   tag('feComposite',{in:'ivory',in2:'outerRing',operator:'in',result:'contour'},filter);
+   const merge=tag('feMerge',{},filter);
+   tag('feMergeNode',{in:'contour'},merge);
+   tag('feMergeNode',{in:'SourceGraphic'},merge);
+   const artwork=tag('g',{filter:'url(#fa-match-logo-union-outline)'},svg);
    let paths=0;
    const copy=(source,parent)=>{
     for(const child of source.children){
@@ -59,17 +87,14 @@
       node.setAttribute('d',d);
       node.setAttribute('fill',color);
       if(child.getAttribute('fill-rule')==='evenodd')node.setAttribute('fill-rule','evenodd');
-      node.setAttribute('stroke','#F5F1E8');
-      node.setAttribute('stroke-width','5');
-      node.setAttribute('stroke-linejoin','round');
-      node.setAttribute('vector-effect','non-scaling-stroke');
-      node.setAttribute('paint-order','stroke fill');
+      // Keep the original approved colours; a single outer ring is applied
+      // later to the composited artwork group, never to this individual path.
       paths++;
      }
      parent.append(node);
     }
    };
-   copy(rootSvg,svg);
+   copy(rootSvg,artwork);
    if(!paths)throw Error('Empty logo');
    return svg;
   }));

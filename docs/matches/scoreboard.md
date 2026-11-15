@@ -15,16 +15,16 @@ It is rendered at **80px desktop / 68px mobile**, deliberately **protruding
 above and below** the 34px / 30px bar. The bar and the logo's containing
 elements use visible overflow and the image has **no background,
 plate, padding, or round backing**. The logo remains linked to the competition.
-The ivory (#F5F1E8) border is painted on **each original SVG path/object**,
-not on the combined alpha silhouette of the entire emblem. The browser loads
-the already-approved compact SVG (without modifying the published assets),
-rebuilds its path-only geometry and original approved fill colours as a
-sanitized inline SVG, and applies `stroke="#F5F1E8"`,
-`stroke-width="5"`, `vector-effect="non-scaling-stroke"` and
-`paint-order="stroke fill"` to every path. The visible exterior stroke
-is about **2.5px** at any responsive size. Inner logo objects, including
-overlapping pieces, receive their **own** ivory edge. There is no
-SVG-wide filter, backing plate, extra logo or box outline.
+The ivory (#F5F1E8) border is applied **once to the combined silhouette of
+the whole logo**. The browser loads the already-approved compact SVG
+(without modifying the published asset), reconstructs the original shapes
+and approved fill colours as a sanitized inline SVG, then composites all
+paths into one SVG group. A single SVG filter on that group expands its
+`SourceAlpha`, subtracts the original alpha, paints only the outside ring
+ivory, and merges the intact logo on top. The approx. **2.5px** visible
+contour follows the whole emblem; internal layering and colour boundaries
+have **no additional borders**. No backing plate, individual object strokes
+or rectangle outline is introduced.
 The logo's visual center is shifted **8px upward** (7px on mobile)
 relative to the bar, not vertically centered.
 The bar keeps its subtle neutral outline. The SVG remains transparent,
