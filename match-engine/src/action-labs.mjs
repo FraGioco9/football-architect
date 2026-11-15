@@ -247,7 +247,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  if(!dialog||!select||!shotSide||!shotSideLabel||!shotLaneChoice||
     !shotLaneLabel||!controlSceneChoice||!controlSceneLabel||
     !challengeSceneChoice||!challengeSceneLabel||
-    !canvas||!status||!summary||!description)invalid();
+    !canvas||!status||!summary||!description||
+    !go||!pause||!step||!reset||
+    !by('action-labs-open')||!by('action-labs-close'))
+  throw new Error('Action LAB controls are missing');
  if(select.options.length!==ACTION_LAB_SCENARIOS.length||
     ACTION_LAB_SCENARIOS.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');

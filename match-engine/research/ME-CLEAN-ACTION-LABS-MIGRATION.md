@@ -8,28 +8,82 @@ Do not retarget the historical #621 directly to #626: its branch contains the 71
 
 All five Action LABs instantiate exactly **one** `createEngine` from the clean core, with **both** opt-ins `diagnosticPlayerFootContactsEnabled:true` and `diagnosticAutonomousFixtureActionEnabled:true`. They use only the existing canonical `createPlayerMovement()` for real 22-player 60Hz foot frames, and actual `footContactSnapshot()` + `uniformAutonomousActionSnapshot()`. The separate prior physics LAB engine is disposed while the dialog is open and reinitialized on close. No new ball world, artificial START, manually injected impulse, official scores, possession, tackle or dribble confirmation.
 
-## Five LABs: distinguish presentation from acceptance
+## Five LABs — current verified evidence (2026-11-15)
 
-- PASS: original shoe-origin pass. **Must have** one genuine Rapier START + applied same-tick impulse. HOME mirrored source tests in the clean core and original #626 HOME/AWAY private action test prove this baseline.
-- SHOT: the canonical starting formation has no player automatically in the attacking-third shot window. Merely placing the ball at x=30 **does not stage a real shoe shot**. Render as **unobserved** until a genuinely eligible shoe START and open original shot lane. Additional controlled HOME/AWAY starting arrangements and actual SHOT flight witness remain OPEN.
-- CHALLENGE: physically measured AWAY foot-ball START is an opponent's foot collision, **not** a tackle, interception or change in possession. Do not infer defensive success.
-- CONTROL: needs a **separate same-team receiving shoe START after a real prior pass**; the old bespoke local receive script is not copied. No trap, official possession or pass completion is awarded.
-- CARRY: allows the original bounded carry action flag, but only a genuine chosen `carry` plus the same-tick shoe START and Rapier impulse counts; if original physical policy instead selects PASS, **do not award dribble**.
+| LAB | Clean original-source observation | Certified? |
+| --- | --- | --- |
+| PASS | Exclusive #10 Rapier START and original same-world PASS impulse at tick 1 | **Yes** — not pass completion |
+| SHOT | HOME/AWAY #10 START at tick 1 and original SHOT with measured 3D flight; blocked lanes choose non-SHOT | **Yes** — not a scored goal |
+| CHALLENGE | HOME/AWAY #10 genuine shoe contact; no-contact alternative has 0 START/0 actions through 90 ticks | **Contact only** — no tackle or interception |
+| CONTROL | HOME #10 PASS tick 1; intended HOME #9 START tick 30; alternate world has AWAY #7 START + CLEARANCE tick 91, so later HOME #9 START tick 204 is rejected | **Shoe events only** — no completed reception |
+| CARRY | HOME/AWAY #10 START and original 0.42 N·s CARRY, 1.212 m measured ground path in 70 ticks; unstaged setup chooses PASS | **Physical touch** — no certified dribble |
 
-The scenario catalog and controller are pure/DEV-only; the classifier only validates structural source records. Their physical origin is trusted exclusively when they come from the encapsulated Rapier engine. The Chrome UI must show **Waiting/No witness** when the real action has not occurred.
+No official goal, possession, score, tackle, pass completion, dribble, or natural
+11v11 tactical success is awarded by any controlled LAB.
 
-## QA and incomplete work
+## Exact-head QA / remaining acceptance gates
 
-- [ ] Current clean-stack exact-head targeted Node and Chrome PASS, no regressions in original LAB
-- [ ] PASS positive physical witness, Chrome verified
-- [ ] CONTROL receiving shoe witness without legacy simulator
-- [ ] SHOT HOME/AWAY staged physical positive, 3D trajectory after authentic real shoe START
-- [ ] CARRY source-bound positive, contested vs unopposed negative
-- [ ] CHALLENGE opposing real contact (no successful tackle), negative/no-contact/ambiguous START
-- [ ] Full Chrome + iPhone Safari manual QA after positive scenarios
-- [ ] Once independently approved, integrate in dependency order and retire old #621 without losing its original research
+- [x] Clean-stack targeted CI at [`171f85a`](https://github.com/FraGioco9/football-architect/commit/171f85a889a380a9a520129e12125ebd5c5cfb2e): [ME-01 #43741585891](https://github.com/FraGioco9/football-architect/actions/runs/43741585891) **295/295 Node**, **9/9 routing**, original LAB viewport and all five Chrome Action LAB interactions
+- [x] Regressions across 13 Action LAB combinations ×61 60 Hz ticks, stable 22 players, minimum 1.15 m body separation (canonical floor 0.98 m), no official state writes
+- [x] Real Chrome requestAnimationFrame Play/Pause/Step/Reset verified; mobile-sized Chrome 320/375/390 px without horizontal overflow, modal scroll as needed
+- [x] Source and option guards cover absent, multi-START and ACTIVE-ambiguous input, stale tick and cooldown. These are pure **counterfactual policy inputs**, not observed simultaneous physical Rapier contacts
+- [x] Site, Admin, Browser QA, ME targeted and #622 FULL workflow complete **SUCCESS** at their respective checked HEADs; stacked #624/#626/#627 FULL gate remains **non-green by design** because the base is not `main`
+- [ ] QA on an **actual iPhone using Safari**: Chrome device emulation and GitHub Ubuntu Chrome cannot certify Safari
+- [ ] Verify the latest `main` and ordered PR head/base leases before an explicitly authorized merge of #622 → #624 → #626 → #627; do not retarget/flatten the stack to trick FULL
+- [ ] Execute authorized integration and post-merge FULL only after user approval
 
-Do not mark #480 C2/C3/C4 complete. The old accepted 11/20 technical count is unchanged. All PRs remain Draft/HOLD; no merging, deployment or remote DB writes.
+## Manual iPhone Safari QA checklist — not yet executed
+
+Use an **authorized DEV-only LAB URL reachable by the iPhone**, not a production
+page or a public `/__fa_match_engine__/` route. Since the existing local preview
+binds to `127.0.0.1`, it is not automatically reachable from another device;
+a separately approved secure DEV delivery path is needed for hardware testing.
+
+1. Open the original match-engine LAB, verify its sidebar and existing
+   LAB-01/02/04/05 selectors remain functional
+2. Open *Controlled actions*: check the dialog fits portrait and landscape,
+   scrolling reveals buttons and status, and there is no horizontal overflow
+3. Select each of Pass, Shot, Challenge, Control, Carry; verify Side/Lane/Scene
+   controls appear only where applicable, and changing them resets to tick 0
+4. In Pass, press Play; verify 60 Hz time advances visibly, Pause freezes,
+   Step advances one tick, Reset restores the original state and clears witnesses
+5. Verify SHOT HOME/AWAY, blocked lane, CHALLENGE contact vs No contact,
+   CONTROL Receiving shoe vs Opponent first, CARRY HOME/AWAY; all status
+   messages must avoid fake goal/tackle/interception/possession claims
+6. Close the modal by Close and by Safari's native dialog dismissal as
+   available. Check original LAB resumes without duplicate animation,
+   missing layout or scroll lock. Reopen once and test again
+
+**Acceptance:** record device, iOS/Safari versions, orientation, any failing
+step and screenshot; mark #620 step 5b complete only after actual device
+evidence. Chrome emulation alone is insufficient.
+
+## Review and integration isolation
+
+- **Stack:** [#622](https://github.com/FraGioco9/football-architect/pull/622) (pure policy, base `main`) →
+  [#624](https://github.com/FraGioco9/football-architect/pull/624) (physical shoe queue) →
+  [#626](https://github.com/FraGioco9/football-architect/pull/626) (same-world physical executor) →
+  [#627](https://github.com/FraGioco9/football-architect/pull/627) (five controlled LABs).
+  At this checkpoint their HEADs are respectively `baed69d`, `f283576`,
+  `5ff17a8`, `171f85a`. Reverify exact SHA and main before any merge.
+- The latest `main` advanced to `dc3c7e0` while #622 is based on the
+  previous `0485aa1`; `main` and #622 have **one commit of divergence**.
+  GitHub reported the PR mergeable at the read time, but update/conflict
+  safety is an independent **pre-integration check**.
+- The DEV-only `/dev/match-engine` and `/__fa_match_engine__/` route
+  authentication must keep the new Action LAB modules private. No public
+  feature, production API, DB or gameplay scoring should change.
+- Historical #621 and #481 research is preserved and not imported en masse.
+  The originals' 71+ commit research surface and the clean extraction are
+  deliberately separate.
+- The original technical baseline for #480 remains OPEN; the Action LAB
+  claims are narrow physical evidence, not C2/C3/C4 football outcomes.
+- No merger, auto-merge, deploy, production DB edit, PR base retarget or
+  direct `main` write is authorized by this QA/review work.
+
+> **Historical engineering notes below describe the implementation in the order
+> it was developed. Earlier “pending” statements in those dated sections
+> are not current acceptance status; use the checked evidence above.**
 
 ## #620 — clean mirrored SHOT LAB initial situation
 
