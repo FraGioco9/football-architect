@@ -712,9 +712,15 @@ test('#634 mobile header grid reserves portrait and prevents nationality wrappin
  assert.match(mobile,/\.app-player-detail-header-meta\{[^}]*flex-wrap:nowrap;gap:6px;white-space:nowrap/);
  assert.match(mobile,/\.app-player-detail-nationality-skeleton\{width:30px\}/);
  assert.match(mobile,/\.app-player-detail-back\{grid-column:2;grid-row:3;margin-left:0/);
+ const appCss=read('assets/app.css');
+ assert.match(appCss,/@media\(max-width:390px\)\{\s*\.fa-career-shell\{grid-template-columns:52px minmax\(0,1fr\)/);
+ assert.match(appCss,/--app-page-pad-inline:16px/);
+ assert.match(css,/@media\(max-width:390px\)\{\s*\.app-player-detail-heading\{grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/\.app-player-detail-identity\{grid-column:1;grid-row:2;align-items:center;text-align:center;width:100%\}/);
  for(const width of [320,375,390,430,620]){
-  const identityWidth=width-120-15;
-  assert.ok(identityWidth>=185,'reserved mobile identity width: '+width);
+  const sidebar=width<=390?52:58,contentWidth=width-sidebar-32;
+  const identityWidth=width<=390?contentWidth:contentWidth-120-15;
+  assert.ok(identityWidth>=205,'mobile identity cannot overflow fixed portrait/sidebar: '+width);
  }
  assert.match(css,/\.app-player-detail-heading\{display:flex;align-items:center;gap:18px/,'desktop baseline unchanged');
  for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
