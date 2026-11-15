@@ -399,6 +399,7 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   const afterPass=await evalJs("(()=>{"+
    "const c=document.getElementById('movement-labs-choice');"+
    "const side=document.getElementById('movement-labs-side');"+
+   "side.value='home';side.dispatchEvent(new Event('change',{bubbles:true}));"+
    "c.value='post-pass';c.dispatchEvent(new Event('change',{bubbles:true}));"+
    "for(let i=0;i<100;i++)document.getElementById('movement-labs-step').click();"+
    "return {status:document.getElementById('movement-labs-status').textContent,"+
