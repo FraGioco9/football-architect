@@ -40,6 +40,10 @@ test('Action LAB catalog is clean, isolated, explicit and truthful',()=>{
    officialMatchAction:false},starts:['home-10','away-10']
  }),TypeError);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
+ const primary=readFileSync(new URL('../lab/fixture.html',import.meta.url),'utf8');
+ const browser=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
+ assert.match(primary,/href="\/dev\/match-engine\/diagnostics#actions"/);
+ assert.match(browser,/location\.hash==='\#actions'/);
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));

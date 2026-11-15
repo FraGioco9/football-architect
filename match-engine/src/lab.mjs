@@ -1976,6 +1976,9 @@ try {
   rapier = await initializeRapier(moduleNamespace);
   restart();
   for (const id of controls) byId(id).disabled = false;
+  // The main /dev/match-engine LAB opens a single action-specific world
+  // only after Rapier is initialized. Fragments never reach the server.
+  if(location.hash==='#actions')byId('action-labs-open').click();
 } catch (error) {
   say('Physics library failed to initialize: ' + error.message + '. Run npm --prefix match-engine ci locally.', true);
 }
