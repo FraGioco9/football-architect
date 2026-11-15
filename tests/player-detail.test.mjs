@@ -579,7 +579,9 @@ test('#623 plain filled Players silhouette has no internal strokes or portrait f
 test('#623 photo load hides inline SVG through the hidden attribute and error re-exposes fallback',()=>{
  const script=read('assets/player-detail.js');
  assert.ok(script.includes("portraitImage.hidden=false;portraitFallback.setAttribute('hidden','')"),'success must set the SVG hidden attribute');
- assert.equal(script.split("portraitFallback.removeAttribute('hidden')").length-1,2,'initial reset and error must restore the SVG');
+ assert.ok(script.includes("portraitImage.hidden=true;portraitFallback.setAttribute('hidden','')"),'loading reset must hide the SVG');
+ assert.equal(script.split("portraitFallback.removeAttribute('hidden')").length-1,2,'missing approved image and image load error reveal the SVG');
+ assert.ok(script.includes("if(state==='ready')portraitFallback.removeAttribute('hidden')"),'unmapped players reveal SVG only after player data loads');
  assert.ok(!script.includes('portraitFallback.hidden='),'avoid SVG expando hidden property');
  const css=read('assets/player-detail.css');
  assert.ok(css.includes('.app-player-detail-silhouette[hidden]{display:none!important}'),'CSS must hide the SVG with the actual attribute');
@@ -588,4 +590,25 @@ test('#623 photo load hides inline SVG through the hidden attribute and error re
   assert.ok(html.includes('data-detail-portrait-placeholder'));
   assert.ok(html.includes('data-detail-portrait-photo'));
  }
+});
+
+
+test('#623 portrait reserve stays blank at first paint, until missing image is confirmed',()=>{
+ const renderer=read('tools/render-player-detail.mjs'),js=read('assets/player-detail.js');
+ const pages=['players/_shared/index.html','admin/players/preview/player/index.html'];
+ const placeholder=renderer.split("const silhouette='")[1]?.split("';")[0];
+ assert.ok(placeholder,'rendered silhouette missing');
+ assert.ok(placeholder.includes('data-detail-portrait-placeholder hidden viewBox='),'first-paint SVG must start hidden');
+ assert.ok(renderer.includes('data-detail-portrait-photo width="160" height="181" alt="" decoding="async" hidden'),'photo must start hidden');
+ for(const page of pages){
+  const markup=read(page);
+  assert.ok(markup.includes(placeholder),page+' must match initial hidden state of renderer');
+ }
+ assert.ok(js.includes("if(!source){"),'fallback is shown only after source resolution');
+ assert.ok(js.includes("if(state==='ready')portraitFallback.removeAttribute('hidden')"),'player without approved photo receives fallback after load');
+ assert.ok(js.includes("portraitImage.onerror=()=>{"),'failed photo uses fallback');
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.removeAttribute('hidden')"),'photo failure must reveal SVG');
+ assert.ok(js.includes("portraitImage.hidden=false;portraitFallback.setAttribute('hidden','')"),'successful photo must hide SVG');
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.setAttribute('hidden','')"),'reset must hide both photo and SVG');
+ assert.ok(!js.includes('portraitFallback.hidden='),'do not use hidden expando on SVG');
 });

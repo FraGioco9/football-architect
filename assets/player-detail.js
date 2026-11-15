@@ -5,22 +5,26 @@
  const headingFallback=panel.querySelector('[data-detail-heading-fallback]');
  const portraitImage=panel.querySelector('[data-detail-portrait-photo]');
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
- // An inline SVG is an SVGElement (not an HTMLElement). Its .hidden property
- // is not a reliable reflected attribute; use the real attribute so CSS [hidden] works.
+ // SVGElement.hidden is not reliably reflected in the DOM; use the actual
+ // hidden attribute. Keep both photo and fallback hidden until resolved.
  // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
  const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;
   portraitImage.onload=null;portraitImage.onerror=null;
-  portraitImage.hidden=true;portraitFallback.removeAttribute('hidden');
+  portraitImage.hidden=true;portraitFallback.setAttribute('hidden','');
   portraitImage.removeAttribute('src');
  }
  function resolvePortrait(){
   resetPortrait();
   const source=!preview&&state==='ready'&&player&&Number.isSafeInteger(id)
    &&(!Number.isSafeInteger(player.id)||player.id===id)?portraitSources[id]:null;
-  if(!source)return;
+  if(!source){
+   // Once a player is known, a missing portrait uses the silhouette.
+   if(state==='ready')portraitFallback.removeAttribute('hidden');
+   return;
+  }
   const ticket=portraitRequest;
   portraitImage.onload=()=>{
    if(ticket!==portraitRequest)return;
