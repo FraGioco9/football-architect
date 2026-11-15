@@ -18,7 +18,7 @@ paths are modified, recoloured, masked, or given an artificial outline.
 
 The main strip is **flat** (no gradient, bottom accent or decorative
 second border). Scores and team abbreviations share its surface with no
-separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **22px desktop / 20px mobile**, bold and **centred horizontally and vertically** in the 48px row. Score columns reserve **35px desktop / 32px mobile** each for two-digit results; the centre dash remains in its separate 12px/10px track. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
+separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **26px desktop / 24px mobile**, bold and **centred horizontally and vertically** in the 48px row. Score columns reserve **35px desktop / 32px mobile** each for two-digit results; the centre dash remains in its separate 12px/10px track. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
 space before data arrives; no layout jumping or invented score data.
 
 ## Theme
@@ -130,3 +130,14 @@ on both axes, centred against the score numerals rather than baseline-aligned.
 The 296/280px widths, two-digit score columns, competition badge and themes
 are unchanged. Match-first-paint browser QA asserts the name rows have a
 48px height and a vertical-centre delta no greater than 0.5px.
+
+### Enlarged type and aligned loading placeholders
+
+Names now render at **26px desktop / 24px mobile**, with zero extra letter
+spacing, keeping the official three-character abbreviations in their fixed
+columns. The loading skeleton has a **54×20px desktop / 50×18px mobile**
+block, following the same flex centring as the hydrated names (instead of the
+old 30×10px bar). Both placeholders and loaded text remain centred in the
+unchanged 48px row; no scoreboard width, score digits, logo or brand changes.
+Browser QA checks skeleton centre offsets and dimensions before hydration as
+well as loaded name alignment in Dark and Light on desktop/mobile.

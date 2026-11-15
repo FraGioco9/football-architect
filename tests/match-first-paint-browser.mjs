@@ -61,11 +61,30 @@ for(const [engine,driver] of Object.entries(engines)){
     if(device.width>=390)assert.ok(Math.abs(first.width-device.expectedWidth)<1,JSON.stringify({engine,theme,device,first}));
     else assert.ok(first.width>=250,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
-    // Two-digit result columns and centred abbreviations stay inside the
-    // unchanged 48px-high scoreboard, even before match hydration.
+    // Skeletons reserve a typographically proportional block centred on the
+    // same two axes as the hydrated abbreviations, without a layout shift.
+    const skeletons=await page.locator('.app-match-score-line').evaluate(grid=>{
+     const row=grid.getBoundingClientRect();
+     return [...grid.querySelectorAll('.app-match-team-link')].map(el=>{
+      const bar=el.querySelector('.app-skeleton-bar');
+      const b=bar?.getBoundingClientRect(),label=el.getBoundingClientRect();
+      return b?{width:b.width,height:b.height,
+       dx:(b.x+b.width/2)-(label.x+label.width/2),
+       dy:(b.y+b.height/2)-(row.y+row.height/2)}:null;
+     });
+    });
+    const isMobile=device.width<=480;
+    for(const s of skeletons){
+     assert.ok(s,JSON.stringify({engine,theme,device,skeletons}));
+     assert.ok(Math.abs(s.width-(isMobile?50:54))<=0.5,JSON.stringify({engine,theme,device,skeletons}));
+     assert.equal(s.height,isMobile?18:20);
+     assert.ok(Math.abs(s.dx)<=0.5&&Math.abs(s.dy)<=0.5,JSON.stringify({engine,theme,device,skeletons}));
+    }
+    // Two-digit result columns and centred official three-character
+    // abbreviations stay inside the unchanged 48px-high scoreboard.
     await page.evaluate(()=>{
-     document.querySelector('[data-match-home-name]').textContent='TRAFC';
-     document.querySelector('[data-match-away-name]').textContent='UNION';
+     document.querySelector('[data-match-home-name]').textContent='TRA';
+     document.querySelector('[data-match-away-name]').textContent='UNI';
      document.querySelector('[data-match-home-score]').textContent='12';
      document.querySelector('[data-match-away-score]').textContent='34';
     });
@@ -82,10 +101,9 @@ for(const [engine,driver] of Object.entries(engines)){
       scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent})),
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
-    const isMobile=device.width<=480;
     for(const name of layout.names){
      assert.equal(name.align,'center');assert.equal(name.display,'flex');assert.equal(name.vertical,'center');
-     assert.equal(name.font,isMobile?20:22);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
+     assert.equal(name.font,isMobile?24:26);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
      assert.equal(name.height,48);assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
     }
     for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
