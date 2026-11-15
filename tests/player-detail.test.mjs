@@ -522,10 +522,10 @@ test('#623 public player portrait and fallback: exact 3 IDs only, stable geometr
  assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
  assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.removeAttribute('hidden')"));
  assert.match(js,/portraitImage\.removeAttribute\('src'\)/);
- assert.match(css,/\.app-player-detail-photo\{display:block;object-fit:cover;object-position:center top\}/);
+ assert.match(css,/\.app-player-detail-photo\{display:block;object-fit:cover;object-position:center top;/);
  assert.match(css,/\.app-player-detail-photo\[hidden\],\.app-player-detail-silhouette\[hidden\]\{display:none!important\}/);
- assert.match(css,/\.app-player-detail-portrait\{width:160px;height:181px/);
- assert.match(css,/\.app-player-detail-portrait\{width:100px;height:114px/);
+ assert.match(css,/\.app-player-detail-portrait\{width:190px;height:181px/);
+ assert.match(css,/\.app-player-detail-portrait\{width:120px;height:114px/);
  assert.match(renderer,/data-detail-portrait-placeholder/);
  for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
   assert.match(html,/data-detail-portrait/);
@@ -599,7 +599,7 @@ test('#623 portrait reserve stays blank at first paint, until missing image is c
  const placeholder=renderer.split("const silhouette='")[1]?.split("';")[0];
  assert.ok(placeholder,'rendered silhouette missing');
  assert.ok(placeholder.includes('data-detail-portrait-placeholder hidden viewBox='),'first-paint SVG must start hidden');
- assert.ok(renderer.includes('data-detail-portrait-photo width="160" height="181" alt="" decoding="async" hidden'),'photo must start hidden');
+ assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181" alt="" decoding="async" hidden'),'photo must start hidden');
  for(const page of pages){
   const markup=read(page);
   assert.ok(markup.includes(placeholder),page+' must match initial hidden state of renderer');
@@ -614,19 +614,39 @@ test('#623 portrait reserve stays blank at first paint, until missing image is c
 });
 
 
-test('#623 approved portraits use adjustable top-anchored 145% crop without resizing the image slot',()=>{
+test('#623 approved portraits use adjustable top-anchored 150% crop in wider, height-stable image slot',()=>{
  const css=read('assets/player-detail.css');
  const photoRule=css.split('.app-player-detail-photo{')[1]?.split('}')[0];
  const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
  assert.ok(photoRule,'photo rule must exist');
  assert.ok(photoRule.includes('object-fit:cover;object-position:center top'),'photo must remain top aligned');
  assert.ok(photoRule.includes('transform-origin:50% 0'),'scale from the top so the head is not cropped');
- assert.ok(photoRule.includes('scale(var(--app-player-photo-scale,1.45))'),'all approved portraits default to 145% zoom');
+ assert.ok(photoRule.includes('scale(var(--app-player-photo-scale,1.50))'),'all approved portraits default to 150% zoom');
  assert.ok(photoRule.includes('var(--app-player-photo-offset-x,0px)'),'future horizontal alignment can be tuned per player');
  assert.ok(photoRule.includes('var(--app-player-photo-offset-y,0px)'),'future vertical alignment can be tuned per player');
- assert.ok(frameRule.includes('width:160px;height:181px'),'desktop portrait dimensions unchanged');
+ assert.ok(frameRule.includes('width:190px;height:181px'),'desktop portrait expands horizontally while retaining height');
  assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
  assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:100px;height:114px;flex-basis:100px}'),'mobile portrait dimensions unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait expands horizontally while retaining height');
  assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
+});
+
+test('#623 wider portrait frame preserves mobile identity, affiliation and back-link alignment',()=>{
+ const css=read('assets/player-detail.css');
+ const renderer=read('tools/render-player-detail.mjs');
+ const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(frame?.includes('width:190px;height:181px;flex:0 0 190px'),'desktop portrait reserves 190px width');
+ assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
+ assert.ok(frame?.includes('border:0'),'portrait still has no box border');
+ const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
+ assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
+ assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
+ assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
+ assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="none" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
+ assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.ok(html.includes('data-detail-portrait-photo width="190" height="181"'),path+' image size');
+  assert.ok(html.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="none" width="190" height="181"'),path+' fallback size');
+ }
 });
