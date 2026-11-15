@@ -40,3 +40,9 @@ npm --prefix backend run test:contracts
 The backend runtime fixture test additionally covers Season 0, unpublished calendar, live results and 36 expected domestic+international league fixtures from one club. Browser QA verifies the new route is used without a fallback to per-competition HTTP calls.
 
 **Parallel:** PR #542 for mobile QA #527 modifies Club Fixtures CSS, the next-match action and responsive checks. The #545 PR is based on the latest main, separate from #542, and does not claim the pending mobile improvements. Integrate/rebase carefully after the owner authorizes the necessary merges. No automatic merge, deploy or remote D1 operations.
+
+## #615 — Single club API during partial draw publication
+
+Before the full world calendar exists, the backend obtains an evidence-checked view of **already committed** domestic and international draws using internal D1 reads. The existing `GET /api/clubs/{club}/seasons/{n}/fixtures` returns `status:'partial'`, `provenance.resultAuthority:'published-draw-v1'`, and official future league rows with numeric `id`/`matchId`, `result:null`, and the normal club fixture data shape. The provenance hash is constructed from verified competition publication hashes. If no official draw exists, the endpoint retains its `calendar-unpublished` empty response. After calendar publication, the original scored/archived authority and contract remain unchanged.
+
+The browser calls **only the club endpoint**, including during partial publication; it no longer probes four competition APIs. The Worker discovers only published scopes containing this club and reuses existing validated public competition draw logic internally. Zero per-competition HTTP requests, no staged fixture leakage, no fabricated results, no new database writes. Source, season, world, count and fixture identity checks fail closed. Deploy the matching site and Worker versions together only with separate authorization; the PR remains Draft/HOLD on #612.

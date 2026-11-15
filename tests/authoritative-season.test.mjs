@@ -140,7 +140,7 @@ test('CLUB-FIXTURES: selects only club games with stable canonical ordering and 
  assert.deepEqual(rows.map(x=>x.id),['a','b']);assert.equal(rows[1].opponentId,'IT-2');assert.equal(rows[1].venue,'away');assert.equal(rows[1].goalsFor,2);assert.equal(rows[1].goalsAgainst,1);
  assert.throws(()=>projectClubFixtures(games,'IT-1',1,1),/Future/);
 });
-test('CLUB-FIXTURES: Season 0 skips API; an unpublished club probes only the four public competition scopes',async()=>{
+test('CLUB-FIXTURES: Season 0 skips API; an unpublished club performs exactly one read',async()=>{
  const {readClubFixtures}=await import('../assets/club-fixtures-source.mjs');
  const unstarted={...world,revision:0,seasonNumber:0,phase:'unstarted',day:0};let calls=0;
  const zero=await readClubFixtures({clubKey:'IT-1',season:0,world:unstarted,fetchJson:async()=>{calls++},manifest});
@@ -158,12 +158,8 @@ test('CLUB-FIXTURES: Season 0 skips API; an unpublished club probes only the fou
  }});
  assert.equal(result.coverage,'unpublished');
  assert.deepEqual(result.rows,[]);
- assert.deepEqual(paths,['/api/clubs/IT-1/seasons/1/fixtures',
-  '/api/matches/seasons/1/competitions/IT-1',
-  '/api/matches/seasons/1/competitions/IT-2',
-  '/api/matches/seasons/1/competitions/int-1',
-  '/api/matches/seasons/1/competitions/int-2'
- ],'unpublished season checks all four authorized competition scopes without fabricating matches');
+ assert.deepEqual(paths,['/api/clubs/IT-1/seasons/1/fixtures'],
+  'Unpublished club fixtures must never request per-competition APIs');
 });
 
 test('CLUB-FIXTURES: viewed Season 0 remains unstarted after world advancement',async()=>{
