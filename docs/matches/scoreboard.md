@@ -10,7 +10,7 @@ Its dimensions, page centring and first-paint reserved columns remain fixed.
 
 The main strip begins **12px behind** the 48×48 badge, so the badge projects
 12px to the left of the strip but **never extends the overall scoreboard width**.
-The badge is 48×48px, with its original unmodified SVG displayed at **44×44px**, centred horizontally and vertically (2px inset per side). The tile is flat ivory in Dark and a 5% primary /
+The badge is 48×48px (including its 1px outline), with its original unmodified SVG displayed at **44×44px**, centred horizontally and vertically (2px inset per side). The inner slot uses 100% of the **46×46px available content box**, not a competing 48×48px grid item that can push the image off-centre. The tile is flat ivory in Dark and a 5% primary /
 95% ivory tint in Light. Its own **1px complete outline** uses the very same
 border colour and 6px radius as the main strip. It sits on top of the strip;
 the underlying outline is obscured by the badge where they overlap. No crest
