@@ -551,22 +551,23 @@ test('#623 optimized approved WebPs have SHA-256 provenance and appear in the pu
 
 test('#623 plain filled Players silhouette has no internal strokes or portrait frame border',()=>{
  const source=read('players/index.html'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
- const icon=source.match(/<a class="fa-shell-link" href="\\/players"[\\s\\S]*?<\\/svg>/)?.[0];
- assert.ok(icon,'Players sidebar silhouette icon missing');
- const d=icon.match(/<path fill-rule="evenodd" d="([^"]+)"\\/>/)?.[1];
+ const from=source.indexOf('<a class="fa-shell-link" href="/players"');
+ assert.ok(from>=0,'Players sidebar icon missing');
+ const icon=source.slice(from,source.indexOf('</svg>',from)+6);
+ const d=icon.split('fill-rule="evenodd" d="')[1]?.split('"/>')[0];
  assert.ok(d,'Players sidebar silhouette path missing');
- const outer=d.split(/(?= M\\d+,)/).map(p=>p.trim());
+ const outer=d.split(' M').map((part,i)=>i?'M'+part:part.trim());
  assert.equal(outer.length,4);
- const placeholder=renderer.match(/const silhouette='([^']+)';/)?.[1];
+ const placeholder=renderer.split("const silhouette='")[1]?.split("';")[0];
  assert.ok(placeholder,'Placeholder missing from renderer');
- assert.equal((placeholder.match(/<path d="/g)||[]).length,2,'Filled head + torso only');
+ assert.equal(placeholder.split('<path d="').length-1,2,'Filled head and torso only');
  assert.ok(placeholder.includes(outer[0]),'Torso must reuse Players icon outer path');
  assert.ok(placeholder.includes(outer[2]),'Head must reuse Players icon outer path');
- assert.doesNotMatch(placeholder,/stroke=|fill-rule=|opacity=/,'No outlines, internal features or cutouts');
- assert.match(placeholder,/fill="currentColor"/);
- assert.match(css,/\\.app-player-detail-portrait\\{[^}]*border:0;/);
- assert.doesNotMatch(css,/\\.app-player-detail-portrait\\{[^}]*border:1px/);
- for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
+ for(const forbidden of ['stroke=','fill-rule=','opacity='])assert.ok(!placeholder.includes(forbidden),'No internal outlines or holes: '+forbidden);
+ assert.ok(placeholder.includes('fill="currentColor"'));
+ const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(frameRule&&frameRule.includes('border:0;'),'Portrait box has no visible border');
+ assert.ok(!frameRule.includes('border:1px'),'Old 1px border must be removed');
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')])
   assert.ok(html.includes(placeholder),'Renderer and generated HTML silhouette must be identical');
- }
 });
