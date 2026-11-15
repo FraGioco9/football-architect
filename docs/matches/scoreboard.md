@@ -19,7 +19,7 @@ paths are modified, recoloured, masked, or given an artificial outline.
 The main strip is **flat** (no gradient, bottom accent or decorative
 second border). Scores and team abbreviations share its surface with no
 separate capsule or score box. Numbers are optically stronger than
-abbreviations, with a subdued centre dash. All six columns reserve
+abbreviations, with a subdued centre dash. Team abbreviations use **16px desktop / 14px mobile** bold type, with slightly reduced letter spacing to keep approved 2–5-character abbreviations inside their reserved grid columns without moving the scores. All six columns reserve
 space before data arrives; no layout jumping or invented score data.
 
 ## Theme

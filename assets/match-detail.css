@@ -47,7 +47,7 @@
 .app-match-team-link{
  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
- font-size:12px;line-height:1;font-weight:800;letter-spacing:.055em;
+ font-size:16px;line-height:1;font-weight:800;letter-spacing:.035em;
  font-variant-numeric:tabular-nums;
 }
 .app-match-team-home{text-align:right}
@@ -106,7 +106,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
   grid-template-columns:48px minmax(0,1fr) 23px 10px 23px minmax(0,1fr);
   column-gap:4px;padding-right:8px;
  }
- .app-match-team-link{font-size:11px;letter-spacing:.025em}
+ .app-match-team-link{font-size:14px;letter-spacing:.015em}
  .app-match-side-score{font-size:22px}
  .app-match-score-separator{font-size:12px}
  .app-match-scoreboard-meta{max-width:310px;margin-top:8px}
