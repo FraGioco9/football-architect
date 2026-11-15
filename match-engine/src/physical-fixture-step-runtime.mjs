@@ -21,6 +21,8 @@ import {createPhysicalBallVolumeBoundaryObserver,
  from './player-ball-volume-boundary.mjs';
 import {createTemporaryUniformFixtureSquad}
  from './temporary-uniform-fixture-squad.mjs';
+import {observeLiveFixtureFootballContext}
+ from './player-football-live-observation.mjs';
 import {createProvisionalActionOutcomeObserver,
  PROVISIONAL_ACTION_OBSERVATION_TICKS}
  from './player-ball-action-outcome-observation.mjs';
@@ -587,6 +589,8 @@ export function createPhysicalFixtureStepRuntime(
       !Object.isFrozen(p)||!Number.isFinite(p.x)||!Number.isFinite(p.y)))
    throw new Error('Untrusted same-tick read-only player positions');
   const physicalContactFeed=observeContact(frame.footContact);
+  const footballIntentObservation=observeLiveFixtureFootballContext(
+   frame,physicalContactFeed,identity.id);
   const rejection=frame.physicalRejectionAudit;
   if(autonomousActions&&frame.physicsTick>0&&(
      rejection?.physicsTick!==frame.physicsTick||
@@ -833,6 +837,7 @@ export function createPhysicalFixtureStepRuntime(
    canonicalBall:canonicalSnapshot(frame.ballSnapshot),
    footContact:frame.footContact,
    physicalContactFeed,
+   footballIntentObservation,
    physicalShotBoundary,
    physicalBallVolumeBoundary,
    physicalCarryContactSequence,physicalCarryProximity,

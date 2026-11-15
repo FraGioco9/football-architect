@@ -14,6 +14,8 @@ import {measureObservedPassingCorridors}
  from '../src/player-football-corridors.mjs';
 import {inspectUniformPolicyGeometry}
  from '../src/player-ball-uniform-autonomous-action.mjs';
+import {LIVE_FOOTBALL_OBSERVATION_VERSION}
+ from '../src/player-football-live-observation.mjs';
 
 const CASES=Object.freeze([
  Object.freeze({team:'home',country:'IT',x:-4.96,vx:0.3}),
@@ -84,6 +86,38 @@ function collect(summary,frame,c){
  const action=frame.localAutonomousAction;
  const rejection=frame.physicalRejectionAudit;
  const actualStarts=frame.physicalContactFeed.started;
+ // P2: new observation must come from the sealed same-tick Rapier feed;
+ // even a real shoe START is not a fabricated available PASS/SHOT.
+ const intentSample=frame.footballIntentObservation;
+ const active=frame.physicalContactFeed.active;
+ const exclusive=actualStarts.length===1&&active.length===1&&
+  actualStarts[0].engineId===active[0].engineId;
+ assert.equal(intentSample.version,LIVE_FOOTBALL_OBSERVATION_VERSION);
+ assert.equal(intentSample.physicsTick,t);
+ assert.equal(intentSample.fixtureId,frame.fixtureId);
+ assert.equal(intentSample.soleRealShoeStartObserved,exclusive);
+ assert.equal(intentSample.observedActorId,
+  exclusive?actualStarts[0].engineId:null);
+ assert.equal(intentSample.proposedIntent,null);
+ assert.equal(intentSample.authorizedAffordances.length,0);
+ assert.equal(intentSample.physicalActionExecuted,false);
+ assert.equal(intentSample.officialMatchAction,false);
+ assert.equal(intentSample.officialMatchPossession,false);
+ assert.equal(intentSample.officialMatchResult,null);
+ assert.ok(Object.isFrozen(intentSample));
+ if(exclusive){
+  assert.equal(intentSample.observedContext.playerId,
+   actualStarts[0].engineId);
+  assert.equal(intentSample.observedContext.physicsTick,t);
+  assert.equal(intentSample.observedContext.frame.tick,t);
+  assert.equal(intentSample.observedContext.affordances.length,0);
+  assert.equal(intentSample.passingCorridorGeometry.corridors.length,10);
+  assert.equal(intentSample.passingCorridorGeometry.authorizedAffordances.length,0);
+  assert.ok(Object.isFrozen(intentSample.observedContext));
+ }else{
+  assert.equal(intentSample.observedContext,null);
+  assert.equal(intentSample.passingCorridorGeometry,null);
+ }
  assert.equal(rejection.physicsTick,t);
  assert.equal(rejection.actionSelected,action!==null);
  assert.equal(rejection.authorizesPhysicalAction,false);
@@ -240,6 +274,8 @@ test('C2.3n genuine HOME/AWAY 720-tick Rapier opt-out vs bounded press handoff',
       'independent 22-body replay '+t);
      assert.deepEqual(z.physicalContactFeed,y.physicalContactFeed);
      assert.deepEqual(z.localAutonomousAction,y.localAutonomousAction);
+     assert.deepEqual(z.footballIntentObservation,
+      y.footballIntentObservation,'independent P2 read-only replay '+t);
     }
     const same=JSON.stringify(x.physicalPlayerPositions)===
      JSON.stringify(y.physicalPlayerPositions)&&
