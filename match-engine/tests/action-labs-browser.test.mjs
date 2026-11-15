@@ -104,6 +104,44 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   });
   await wait("document.querySelector('#action-labs-dialog')?.open===true");
   await wait("document.querySelector('#action-labs-status')?.textContent?.startsWith('Ready')");
+  // Actual requestAnimationFrame transport, not a mock clock or forged ticks.
+  const ready=await evalJs("(()=>{const play=document.getElementById('action-labs-play');"+
+   "const pause=document.getElementById('action-labs-pause');"+
+   "return {playDisabled:play.disabled,pauseDisabled:pause.disabled,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()");
+  assert.equal(ready.playDisabled,false);
+  assert.equal(ready.pauseDisabled,true);
+  assert.match(ready.readout,/Tick 0/);
+  const launched=await evalJs("(()=>{document.getElementById('action-labs-play').click();"+
+   "return {playing:document.getElementById('action-labs-play').disabled,"+
+   "pauseEnabled:!document.getElementById('action-labs-pause').disabled};})()");
+  assert.equal(launched.playing,true);
+  assert.equal(launched.pauseEnabled,true);
+  await wait("Number(document.getElementById('action-labs-readout').textContent.split(' ')[1])>=5");
+  const paused=await evalJs("(()=>{document.getElementById('action-labs-pause').click();"+
+   "const r=document.getElementById('action-labs-readout').textContent;"+
+   "return {tick:Number(r.split(' ')[1]),playDisabled:document.getElementById('action-labs-play').disabled,"+
+   "pauseDisabled:document.getElementById('action-labs-pause').disabled};})()");
+  assert.ok(paused.tick>=5);
+  assert.equal(paused.playDisabled,false);
+  assert.equal(paused.pauseDisabled,true);
+  await delay(220);
+  const held=await evalJs("Number(document.getElementById('action-labs-readout').textContent.split(' ')[1])");
+  assert.equal(held,paused.tick,'Pause must freeze genuine animation ticks');
+  const stepped=await evalJs("(()=>{document.getElementById('action-labs-step').click();"+
+   "const r=document.getElementById('action-labs-readout').textContent;"+
+   "return {tick:Number(r.split(' ')[1]),paused:document.getElementById('action-labs-pause').disabled};})()");
+  assert.equal(stepped.tick,paused.tick+1,'Step advances exactly one 60Hz world tick');
+  assert.equal(stepped.paused,true);
+  const resetState=await evalJs("(()=>{document.getElementById('action-labs-reset').click();"+
+   "return {readout:document.getElementById('action-labs-readout').textContent,"+
+   "playEnabled:!document.getElementById('action-labs-play').disabled,"+
+   "pauseDisabled:document.getElementById('action-labs-pause').disabled};})()");
+  assert.match(resetState.readout,/^Tick 0 /);
+  assert.equal(resetState.playEnabled,true);
+  assert.equal(resetState.pauseDisabled,true);
+  process.stdout.write('ACTION_LAB_CHROME_TRANSPORT '+
+   JSON.stringify({pausedTick:paused.tick,stepTick:stepped.tick,reset:resetState.readout})+'\\n');
   // Check genuine PASS, mirrored SHOT and separate receiver shoe CONTACT.
   // These are physical events only, never completed possession or dribble.
   for(const [choice,ticks,marker] of [
@@ -276,6 +314,42 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    process.stdout.write('ACTION_LAB_CHROME_BLOCKED_'+side.toUpperCase()+
     ' '+JSON.stringify(blocked)+'\\n');
   }
+  // Phone-size Chrome layout regression only. This is NOT real iPhone Safari QA.
+  for(const [width,height] of [[320,568],[375,667],[390,844]]){
+   await send('Emulation.setDeviceMetricsOverride',{
+    width,height,deviceScaleFactor:2,mobile:true
+   });
+   const mobile=await evalJs("(()=>{"+
+    "const d=document.getElementById('action-labs-dialog');"+
+    "const r=d.getBoundingClientRect();"+
+    "const canvas=document.getElementById('action-labs-pitch').getBoundingClientRect();"+
+    "const controls=[...document.querySelectorAll('#action-labs-dialog button')].filter(el=>el.getBoundingClientRect().width>0);"+
+    "const toolbar=document.querySelector('.me-action-labs-toolbar');"+
+    "return {innerWidth:innerWidth,dialogWidth:r.width,dialogLeft:r.left,dialogRight:r.right,"+
+    "dialogScrollWidth:d.scrollWidth,dialogClientWidth:d.clientWidth,"+
+    "canvasLeft:canvas.left,canvasRight:canvas.right,"+
+    "controlsVisible:controls.every(el=>el.getBoundingClientRect().width>30),"+
+    "toolbarScrollWidth:toolbar.scrollWidth,toolbarClientWidth:toolbar.clientWidth,"+
+    "opened:d.open,canScroll:d.scrollHeight>d.clientHeight};})()");
+   assert.equal(mobile.opened,true);
+   assert.ok(mobile.innerWidth>=width-1&&mobile.innerWidth<=width+1,
+    'Chrome mobile viewport not applied '+JSON.stringify(mobile));
+   assert.ok(mobile.dialogLeft>=-2&&mobile.dialogRight<=width+2,
+    'Action dialog exceeds phone viewport '+JSON.stringify(mobile));
+   assert.ok(mobile.dialogScrollWidth<=mobile.dialogClientWidth+3,
+    'Action dialog horizontal overflow '+JSON.stringify(mobile));
+   assert.ok(mobile.toolbarScrollWidth<=mobile.toolbarClientWidth+3,
+    'Action toolbar horizontal overflow '+JSON.stringify(mobile));
+   assert.ok(mobile.canvasLeft>=mobile.dialogLeft-2&&
+    mobile.canvasRight<=mobile.dialogRight+2,
+    'Action field exceeds dialog '+JSON.stringify(mobile));
+   assert.equal(mobile.controlsVisible,true);
+   process.stdout.write('ACTION_LAB_CHROME_PHONE_VIEWPORT '+
+    JSON.stringify({width,height,...mobile})+'\\n');
+  }
+  await send('Emulation.setDeviceMetricsOverride',{
+   width:1440,height:900,deviceScaleFactor:1,mobile:false
+  });
   const close=await evalJs("(()=>{"+
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");

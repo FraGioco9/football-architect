@@ -171,3 +171,60 @@ test('CHALLENGE rejects stale, absent, ambiguous START/ACTIVE and cooldown; pure
   assert.equal(world.uniformAutonomousActionSnapshot(),null);
  }finally{world.dispose();}
 });
+
+test('all five Action LAB modes preserve canonical 22 players, 60Hz and 0.98m separation',
+ {timeout:80000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {PLAYER_MIN_SEPARATION_M}=await import('../src/player-movement.mjs');
+ const cases=[
+  ['pass',{}],
+  ['shot',{shotSide:'home'}],
+  ['shot',{shotSide:'away'}],
+  ['shot',{shotSide:'home',shotLane:'blocked'}],
+  ['shot',{shotSide:'away',shotLane:'blocked'}],
+  ['challenge',{challengeSide:'home'}],
+  ['challenge',{challengeSide:'away'}],
+  ['challenge',{challengeSide:'home',challengeScene:'no-contact'}],
+  ['challenge',{challengeSide:'away',challengeScene:'no-contact'}],
+  ['control',{}],
+  ['control',{controlScene:'opponent-first'}],
+  ['carry',{carrySide:'home'}],
+  ['carry',{carrySide:'away'}]
+ ];
+ let minimum=Infinity;
+ for(const [id,options] of cases){
+  const lab=createControlledActionLab(R,id,options);
+  try{
+   const initial=lab.snapshot();
+   const names=initial.players.map(p=>p.id);
+   assert.equal(names.length,22);
+   assert.equal(new Set(names).size,22);
+   for(let tick=0;tick<=60;tick++){
+    const snap=tick===0?initial:lab.step();
+    assert.equal(snap.physicsTick,tick);
+    assert.ok(Math.abs(snap.timeS-tick/60)<1e-9);
+    assert.equal(snap.players.length,22);
+    assert.deepEqual(snap.players.map(p=>p.id),names);
+    assert.equal(snap.officialMatchResult,null);
+    assert.equal(snap.officialMatchPossession,false);
+    assert.equal(snap.scoreChanged,false);
+    assert.equal(snap.readOnlyEvidence,true);
+    for(let j=0;j<snap.players.length;j++){
+     const p=snap.players[j];
+     assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));
+     for(let k=0;k<j;k++){
+      const q=snap.players[k],gap=Math.hypot(p.x-q.x,p.y-q.y);
+      minimum=Math.min(minimum,gap);
+      assert.ok(gap>=PLAYER_MIN_SEPARATION_M-1e-7,
+       id+' '+JSON.stringify(options)+' tick '+tick+
+       ' overlap '+p.id+'/'+q.id+' gap='+gap.toFixed(7));
+     }
+    }
+   }
+  }finally{lab.dispose();}
+ }
+ process.stdout.write('ME_ACTION_LABS_SEPARATION_60HZ '+
+  JSON.stringify({variants:cases.length,checkedTicksPerVariant:61,
+   minimumM:+minimum.toFixed(5),canonicalLimitM:PLAYER_MIN_SEPARATION_M,
+   officialStateMutations:0})+'\\n');
+});
