@@ -130,3 +130,14 @@ html:not([data-player-detail-view="info"]) .app-player-detail-info-view{display:
  .app-player-detail-identity{align-self:center;justify-content:center}
  .app-player-detail-page[data-player-detail-mode="public"] .app-player-detail-subtitle{display:none}
 }
+
+/* At 320–390px the permanent sidebar leaves too little room beside a 120px portrait.
+   Keep the approved photo size and stack identity/club without horizontal clipping. */
+@media(max-width:390px){
+ .app-player-detail-heading{grid-template-columns:minmax(0,1fr);justify-items:center}
+ .app-player-detail-portrait{grid-column:1;grid-row:1}
+ .app-player-detail-identity{grid-column:1;grid-row:2;align-items:center;text-align:center;width:100%}
+ .app-player-detail-header-meta{justify-content:center;flex-wrap:wrap;white-space:normal}
+ .app-player-detail-affiliation{grid-column:1;grid-row:3}
+ .app-player-detail-back{grid-column:1;grid-row:4;justify-self:center}
+}
