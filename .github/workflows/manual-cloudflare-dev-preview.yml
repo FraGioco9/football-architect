@@ -148,7 +148,7 @@ jobs:
       - name: Read-only same-origin smoke checks
         run: |
           set -euo pipefail
-          for path in /api/environment /api/world /api/players /account/login /players; do
+          for path in /api/environment /api/world /api/players /account/login /players /players/44; do
             status="$(curl --silent --show-error --max-time 25 --max-redirs 0 --output "$RUNNER_TEMP/fa-response.json" --write-out '%{http_code}' "$PREVIEW_ORIGIN$path")"
             [[ "$status" == 200 ]] || { echo "Unhealthy Preview $path: HTTP $status"; exit 1; }
             if [[ "$path" == /api/environment ]]; then
