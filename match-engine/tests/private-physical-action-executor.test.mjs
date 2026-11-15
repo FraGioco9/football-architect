@@ -1,0 +1,111 @@
+// #480/#620: closed same-world Rapier source -> physical action impulse.
+// Targeted tests are from real 22-actor Rapier shoes, not supplied START arrays.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as rapier from '@dimforge/rapier3d-deterministic-compat';
+import {initializeRapier,createEngine,BALL_RADIUS,canonicalSnapshot}
+ from '../src/core.mjs';
+import {INITIAL_PLAYERS,createPlayerMovement} from '../src/player-movement.mjs';
+import {footProxyTransform} from '../src/player-foot-contact.mjs';
+
+const mirrorScenario=team=>{
+ const actor=INITIAL_PLAYERS.find(p=>p.id===team+'-10');
+ const pose=footProxyTransform(actor);
+ const x=pose.x+0.20*Math.cos(actor.facingRad);
+ const y=pose.y+0.20*Math.sin(actor.facingRad);
+ return Object.freeze({preset:'roll',seed:'action-source-'+team,
+  x,y,z:0,vx:0,vy:0,vz:0});
+};
+const d3=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+
+test('closed original selector kicks real Rapier ball only after an exclusive HOME/AWAY shoe START', {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away']){
+  const scenario=mirrorScenario(team);
+  const physical=createEngine(R,scenario,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true
+  });
+  const physicsOnly=createEngine(R,scenario,{
+   diagnosticPlayerFootContactsEnabled:true
+  });
+  const replay=createEngine(R,scenario,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true
+  });
+  try{
+   const playerFrame=createPlayerMovement().step(scenario);
+   const peerFrame=createPlayerMovement().step(scenario);
+   const duplicateFrame=createPlayerMovement().step(scenario);
+   assert.equal(physical.uniformAutonomousActionSnapshot(),null);
+   assert.equal(physical.physicalRejectionAuditSnapshot(),null);
+   const after=physical.step(playerFrame);
+   const noImpulse=physicsOnly.step(peerFrame);
+   const again=replay.step(duplicateFrame);
+   const contacts=physical.footContactSnapshot();
+   const a=physical.uniformAutonomousActionSnapshot();
+   const audit=physical.physicalRejectionAuditSnapshot();
+   assert.deepEqual(contacts.started,[team+'-10'],
+    'the real current Rapier collider, never supplied geometry, must fire START');
+   assert.deepEqual(contacts.active,[team+'-10']);
+   assert.equal(a?.tick,1);
+   assert.equal(a?.playerId,team+'-10');
+   assert.equal(a?.action,'pass','existing uniform original policy chose a real pass');
+   assert.equal(a?.physicalTrigger,'same-tick-real-rapier-shoe-start');
+   assert.equal(a?.actionSource,'internal-uniform-22-player-ai');
+   assert.equal(a?.actualPhysicsImpulseApplied,true);
+   assert.equal(a?.appliedByRapier,true);
+   assert.equal(a?.officialMatchAction,false);
+   assert.equal(a?.officialMatchPossession,false);
+   assert.equal(a?.officialMatchResult,null);
+   assert.equal(a?.passTarget?.physicalPassAttemptOnly,true);
+   assert.equal(a?.passTarget?.passCompleted,false);
+   assert.equal(a?.physicalPrerequisites?.exclusiveShoeStart,true);
+   assert.equal(a?.physicalPrerequisites?.originalPhysicalGuardsPassed,true);
+   assert.equal(audit.actionSelected,true);
+   assert.equal(audit.passedInputGates,true);
+   assert.equal(audit.actorId,team+'-10');
+   assert.ok(Object.isFrozen(a)&&Object.isFrozen(audit));
+   assert.ok(d3(after.ball.velocity,noImpulse.ball.velocity)>1,
+    'a real 2.4 Ns post-collision impulse must change genuine Rapier ball velocity');
+   assert.equal(canonicalSnapshot(after),canonicalSnapshot(again));
+   assert.deepEqual(a,replay.uniformAutonomousActionSnapshot());
+   assert.equal(physicsOnly.uniformAutonomousActionSnapshot,undefined);
+   assert.equal(noImpulse.tick,1);
+   assert.throws(()=>physical.step({...playerFrame,tick:3}),TypeError);
+   assert.equal(physical.snapshot().tick,1,
+    'rejected stale frame must not mutate the original real physical state');
+   const reset=physical.reset();
+   try{
+    assert.equal(reset.uniformAutonomousActionSnapshot(),null);
+    assert.equal(reset.footContactSnapshot().tick,0);
+   }finally{reset.dispose();}
+  }finally{
+   physical.dispose();physicsOnly.dispose();replay.dispose();
+  }
+ }
+});
+
+test('actions are explicit opt-in, cannot be enabled without genuine shoe source or official result',async()=>{
+ const R=await initializeRapier(rapier);
+ const s=mirrorScenario('home');
+ assert.throws(()=>createEngine(R,s,{
+  diagnosticAutonomousFixtureActionEnabled:true
+ }),TypeError);
+ assert.throws(()=>createEngine(R,s,{
+  diagnosticAutonomousCarryEnabled:true,
+  diagnosticPlayerFootContactsEnabled:true
+ }),TypeError);
+ assert.throws(()=>createEngine(R,s,{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true,
+  diagnosticAutonomousCarryEnabled:'true'
+ }),TypeError);
+ const normal=createEngine(R,s);
+ try{
+  assert.equal(normal.footContactSnapshot,undefined);
+  assert.equal(normal.uniformAutonomousActionSnapshot,undefined);
+  assert.equal(normal.physicalRejectionAuditSnapshot,undefined);
+  assert.equal(normal.step().tick,1);
+ }finally{normal.dispose();}
+});
