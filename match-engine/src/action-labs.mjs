@@ -25,7 +25,10 @@ export function createControlledActionLab(RAPIER,id){
  const mover=createPlayerMovement(uniform?{
   experimentalAiKickApproach:true,
   experimentalAutonomousFixtureContactChase:true,
-  ...(carry?{experimentalAutonomousFixtureCarry:true}:{}),
+  ...(carry?{
+   experimentalAutonomousFixtureCarry:true,
+   experimentalAutonomousFixtureCarrySupport:true
+  }:{}),
   ...(researchShot?{researchShotAttacker:researchShot,researchShotBall:s}:{})
  }:{
   ...(spec.mode==='control'?{experimentalAiPassReceiveApproach:true}:{}),
