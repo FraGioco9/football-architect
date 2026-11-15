@@ -47,7 +47,7 @@
     "backend/tests/gmail-delivery-runtime.test.ts": "backend-runtime",
     "backend/tests/gmail-email-delivery.test.ts": "backend-contract",
     "backend/tests/hosted-preview-runtime.test.ts": "backend-runtime",
-    "backend/tests/match-page-first-paint.test.ts": "backend-runtime",
+    "backend/tests/match-page-first-paint-runtime.test.ts": "backend-runtime",
     "backend/tests/http-contract-runtime.test.ts": "backend-runtime",
     "backend/tests/http-public-runtime.test.ts": "backend-runtime",
     "backend/tests/import-graph.test.mjs": "backend-import",
