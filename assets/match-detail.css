@@ -6,7 +6,7 @@
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
  width:min(100%,440px);height:42px;margin:0 auto;padding:0 12px;
  border-radius:6px;background:var(--app-match-surface);color:var(--app-match-ink);
- border:1px solid #F5F1E8;
+ border:1px solid color-mix(in srgb,var(--app-match-ink) 18%,var(--app-match-surface));
 }
 .app-match-score-line{
  display:grid;grid-template-columns:minmax(0,1fr) 30px 86px 30px minmax(0,1fr);
@@ -41,6 +41,11 @@
 .app-match-competition-logo img{
  display:block;width:96px;height:96px;max-width:none;
  object-fit:contain;background:none;border:0;
+ /* Follow the SVG alpha silhouette, not its rectangular image box. */
+ filter:drop-shadow(1px 0 0 #F5F1E8)
+        drop-shadow(-1px 0 0 #F5F1E8)
+        drop-shadow(0 1px 0 #F5F1E8)
+        drop-shadow(0 -1px 0 #F5F1E8);
 }
 .app-match-competition-logo[href]:hover{opacity:.88}
 .app-match-competition-logo:not([href]){cursor:default}

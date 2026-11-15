@@ -118,6 +118,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/width:96px;height:96px/);
  assert.match(css,/width:82px;height:82px/);
  assert.match(css,/transform:translate\(-50%,-50%\)/);
- assert.match(css,/border:1px solid #F5F1E8/);
+ assert.match(css,/border:1px solid color-mix\(in srgb,var\(--app-match-ink\) 18%,var\(--app-match-surface\)\)/);
+ assert.doesNotMatch(css,/border:1px solid #F5F1E8/);
+ for(const direction of ['1px 0 0','-1px 0 0','0 1px 0','0 -1px 0'])
+  assert.ok(css.includes('drop-shadow('+direction+' #F5F1E8)'),direction);
+ assert.match(css,/\.app-match-competition-logo img\{[^}]*filter:drop-shadow\(/s);
  assert.doesNotMatch(css,/background:#F5F1E8|border-radius:50%/);
 });
