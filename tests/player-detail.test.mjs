@@ -627,11 +627,11 @@ test('#623 approved portraits use adjustable top-anchored 150% crop in wider, he
  assert.ok(frameRule.includes('width:190px;height:181px'),'desktop portrait expands horizontally while retaining height');
  assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
  assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
- assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait expands horizontally while retaining height');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait expands horizontally while retaining height');
  assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
 });
 
-test('#623 wider portrait frame preserves mobile identity, affiliation and back-link alignment',()=>{
+test('#623 wider portrait frame preserves mobile grid identity, affiliation and back-link alignment',()=>{
  const css=read('assets/player-detail.css');
  const renderer=read('tools/render-player-detail.mjs');
  const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
@@ -639,9 +639,9 @@ test('#623 wider portrait frame preserves mobile identity, affiliation and back-
  assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
  assert.ok(frame?.includes('border:0'),'portrait still has no box border');
  const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
- assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
- assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
- assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
+ assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px;grid-column:1;grid-row:1}'),'mobile portrait reserves 120px width');
+ assert.ok(mobile?.includes('.app-player-detail-affiliation{grid-column:1/-1;grid-row:2;min-width:0;width:100%;max-width:none;min-height:80px;margin-left:0'),'club panel uses a full mobile grid row');
+ assert.ok(mobile?.includes('.app-player-detail-back{grid-column:2;grid-row:3;margin-left:0'),'preview back link follows the mobile grid');
  assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
  assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
