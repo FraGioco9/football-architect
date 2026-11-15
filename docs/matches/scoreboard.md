@@ -1,59 +1,55 @@
-# #577 — Unified match scoreboard, without a score panel
+# #577 — Match scoreboard: flat bar and overlapping 48px badge
 
-The Match Detail page has one branded scoreboard with an outer size of
-**340×48px max on desktop** / **310×48px max on mobile**. The scorebar
-remains centred on the page without a visible match ID or heading.
+The Match Detail scoreboard is a single compact, competition-branded strip,
+**340×48px maximum on desktop** and **310×48px maximum on mobile**.
+Its dimensions, page centring and first-paint reserved columns remain fixed.
 
-## Appearance
+## Layout
 
 `48×48 COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-The score is set **directly on the competition-coloured bar**. There is
-no separate score box, capsule, background, score border, or island.
-The home/away numbers use the same accessible, theme-aware text colours
-as the team abbreviations; the dash is slightly less prominent. Grid
-slots reserve width at first paint, and the official match data later
-fills the existing structure without moving it.
+The main strip begins **12px behind** the 48×48 badge, so the badge projects
+12px to the left of the strip but **never extends the overall scoreboard width**.
+The badge is 48×48px, centred vertically, flat ivory in Dark and a 5% primary /
+95% ivory tint in Light. Its own **1px complete outline** uses the very same
+border colour and 6px radius as the main strip. It sits on top of the strip;
+the underlying outline is obscured by the badge where they overlap. No crest
+paths are modified, recoloured, masked, or given an artificial outline.
 
-The original canonical compact division SVG remains untouched, is
-**48×48px on desktop and mobile**, and is displayed directly in the
-**48×48px** left logo tile. The tile has an official ivory background in
-Dark, and an 8% primary / 92% ivory background in Light.
+The main strip is **flat** (no gradient, bottom accent or decorative
+second border). Scores and team abbreviations share its surface with no
+separate capsule or score box. Numbers are optically stronger than
+abbreviations, with a subdued centre dash. All six columns reserve
+space before data arrives; no layout jumping or invented score data.
 
-**A continuous visual perimeter** is now applied to both the scoreboard
-and the tile: a 1px outline of the same competition border colour
-on all four tile edges, including the upper-left and lower-left corners
-and the inside separator at the right. The tile is flush against the bar
-with a shared 6px corner radius. The border is on the *tile*, never on
-individual elements of the SVG, and does not change the crest's colours.
-The discreet 2px lower accent to the right of the tile is retained.
-
-## Colours and dimensions
+## Theme
 
 | Element | Dark | Light |
 |---|---|---|
-| Main bar | Subtle blend of primary/secondary | Pale primary/ivory wash |
-| Logo tile | Official ivory | 8% primary + 92% ivory |
-| Logo | Original primary/secondary | Same unchanged SVG |
-| Abbreviations and score | Ivory | Official secondary graphite |
-| Outer border, tile outline, lower accent | Secondary graphite | Primary |
+| Bar | Competition primary (solid) | 16% competition primary / 84% ivory (solid) |
+| 48px badge | Ivory | 5% primary / 95% ivory |
+| Logo | Original approved SVG colours | Same, unchanged |
+| Text and score | Ivory | Approved secondary graphite |
+| Main and badge outlines | Secondary graphite | Competition primary |
+| Desktop / mobile width | 340px / 310px max | Same |
 | Height | 48px | 48px |
-| Width (desktop / mobile) | 340px max / 310px max | Same |
 
-All 16 domestic competitions retain their distinct approved primary
-HEX values. The two international cups have no approved distinct logos;
-the neutral placeholder has no fabricated crest.
+Each of the 16 domestic competitions retains its own official primary HEX;
+unapproved or international branding falls back to neutral, without
+fabricating an emblem. Contrast and the entire approved palette remain
+checked by the match-detail regression tests.
 
-## Behaviour
+## Behaviour and source
 
-The official `GET /api/matches/:positiveNumericId` response remains the
-sole authority for results and team participants. Home/away abbreviations
-come from the approved club catalog; full club names remain in accessible
-ARIA labels. No native tooltips, hover animations, underline effects,
-logo recolouring or alternative assets are introduced.
+The verified `GET /api/matches/:positiveNumericId` response remains the
+sole source of scores, participants and status. Abbreviations are from the
+canonical club catalogue; full team and competition names remain accessible
+via ARIA. Do not add title tooltips or hover animation.
 
-`templates/match-detail-content.html` is the source for the generated
-`matches/_shared/index.html`. Focused tests cover exact 48px branding,
-direct score cells, continuous border, Light/Dark roles, public asset
-allowlisting, routing and verified-result-only behaviour. PR #614 stays
-Draft/HOLD; merge and deploy require separate approval.
+The markup source is `templates/match-detail-content.html`; the generated
+`matches/_shared/index.html` uses exactly the same six columns. The new
+visual system only changes `assets/match-detail.css`; JS data contracts,
+published SVGs, routing and generated HTML are untouched.
+
+PR #614 remains **Draft/HOLD** pending owner visual acceptance, exact-head
+CI and separate merge authorisation. No remote DB or deployment operations.
