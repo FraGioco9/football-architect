@@ -49,7 +49,9 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.doesNotMatch(section,/data-match-reference|app-match-page-heading|match-page-title|data-match-home-crest|data-match-away-crest/);
   assert.doesNotMatch(section,/data-match-tab|data-match-panel/);
   assert.doesNotMatch(section,/app-match-score-group/);
-  assert.match(section,/class="app-match-score-separator" aria-hidden="true">–<\/span>/);
+  assert.match(section,/data-match-home-score aria-label="Home score" aria-hidden="true"><\/strong>/);
+  assert.match(section,/data-match-away-score aria-label="Away score" aria-hidden="true"><\/strong>/);
+  assert.match(section,/class="app-match-score-separator" aria-hidden="true"><\/span>/);
   const columns=['data-match-competition-logo','data-match-home-name','data-match-home-score','app-match-score-separator','data-match-away-score','data-match-away-name'];
   for(let i=1;i<columns.length;i++)assert.ok(section.indexOf(columns[i-1])<section.indexOf(columns[i]),'Wrong scoreboard order '+columns[i]);
  }
@@ -116,6 +118,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/loadLogoPaths|DOMParser|setAttribute\('fill'|feMorphology|fa-match-logo-union-outline|\.dataset\.theme|\.matchLogoPath===intendedKey/);
  assert.doesNotMatch(js,/symbol-mono-white\.svg|data-match-logo-fallback/);
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
+ assert.match(js,/write\('\[data-match-home-score\]',validScore\?result\.homeGoals:''\)/);
+ assert.match(js,/write\('\[data-match-away-score\]',validScore\?result\.awayGoals:''\)/);
+ assert.match(js,/write\('\.app-match-score-separator',validScore\?'–':''\)/);
+ assert.match(js,/score\.setAttribute\('aria-hidden',String\(!validScore\)\)/);
  assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
@@ -132,7 +138,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  const css=read('assets/match-detail.css');
  assert.match(css,/\.app-match-page\{min-width:0;padding-top:0;overflow:visible\}/);
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);
- assert.match(css,/width:min\(100%,284px\);height:48px/);
+ assert.match(css,/left:-20px;width:min\(100%,284px\);height:48px/);
+ assert.match(css,/@media\(max-width:308px\)\{\.app-match-scoreboard\{left:clamp\(-20px,calc\(134px - 50vw\),0px\)\}\}/);
  assert.match(css,/width:min\(100%,268px\);height:48px/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 20px 35px minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 32px 18px 32px minmax\(0,1fr\)/);

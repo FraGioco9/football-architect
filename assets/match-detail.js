@@ -101,8 +101,15 @@
   // Scores are shown ONLY when provided as a verified completed result.
   const result=data.status==='completed'?data.result:null;
   const validScore=Number.isSafeInteger(result?.homeGoals)&&Number.isSafeInteger(result?.awayGoals)&&result.homeGoals>=0&&result.awayGoals>=0;
-  write('[data-match-home-score]',validScore?result.homeGoals:'—');
-  write('[data-match-away-score]',validScore?result.awayGoals:'—');
+  // Keep the three score slots empty until a verified completed result exists.
+  // Never imply that a scheduled, postponed or unreported match is 0–0.
+  write('[data-match-home-score]',validScore?result.homeGoals:'');
+  write('[data-match-away-score]',validScore?result.awayGoals:'');
+  write('.app-match-score-separator',validScore?'–':'');
+  for(const side of ['home','away']){
+   const score=find('[data-match-'+side+'-score]');
+   if(score)score.setAttribute('aria-hidden',String(!validScore));
+  }
   const extra=validScore&&result?.penalties&&Number.isSafeInteger(result.penalties.home)&&Number.isSafeInteger(result.penalties.away)
    ?tr.penalties+' '+result.penalties.home+'–'+result.penalties.away:validScore&&result?.extraTime?tr.extraTime:'';
   write('[data-match-extra]',extra);

@@ -179,10 +179,21 @@ The Match Detail section now has **0px padding-top** at all breakpoints
 (previously 6px desktop / 4px mobile). Scoreboard dimensions and logo
 geometry are untouched.
 
-**Alignment remains intentionally unchanged** pending owner selection:
-centering the full 284/268px bar makes the score separator sit **20px to the
-right** of the page centre because the 48px competition badge is included
-in the six-column grid. Centering on the separator would shift the complete
-bar 20px to the left, leaving the score/status axis centred in the page but
-moving the protruding badge closer to the mobile edge. No such translation
-is introduced in this padding-only change.
+**The separator axis is now centred on the page.** The 48px competition
+badge made it 20px right of the bar centre. The 284/268px scoreboard keeps
+its dimensions, but shifts 20px left to align the reserved separator track
+with the centre of the match content and status below it. Below 308px
+viewport width the offset is clamped to prevent horizontal clipping.
+
+### Pre-kickoff score visibility
+
+At first paint, the score cells and middle en dash are truly **empty** in both
+the generated HTML and the shared source template. After hydration, they stay
+empty for `awaiting_participants`, `scheduled`, `lineups_confirmed`,
+`in_progress` without an authoritative completed result, `postponed` and
+`cancelled`. The controller writes both scores **and** the en dash only when
+there is a verified `completed` result with valid nonnegative goal counts.
+The blank score slots remain in the six-track grid, so names and logo do not
+jump as data arrives; ARIA hides empty score nodes. The bar alignment is
+independent of score visibility. There is no fabricated 0–0 or placeholder
+dash on cold navigation or refresh.

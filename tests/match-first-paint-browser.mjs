@@ -42,7 +42,11 @@ for(const [engine,driver] of Object.entries(engines)){
      const css=getComputedStyle(el);
      const bar=getComputedStyle(el,'::before');
      const tileStyle=getComputedStyle(tile);
+     const separator=el.querySelector('.app-match-score-separator').getBoundingClientRect();
+     const main=el.closest('.app-match-page').getBoundingClientRect();
      return {width:rect.width,height:rect.height,
+      x:rect.x,viewportWidth:innerWidth,
+      separatorCenterOffset:(separator.x+separator.width/2)-(main.x+main.width/2),
       surface:css.getPropertyValue('--app-match-surface').trim(),
       barColour:bar.backgroundColor,
       mode:document.documentElement.dataset.theme,
@@ -55,6 +59,11 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
+    assert.ok(Math.abs(first.separatorCenterOffset)<=0.5,JSON.stringify({engine,theme,device,first}));
+    assert.ok(first.x>=-0.5,JSON.stringify({engine,theme,device,first}));
+    assert.ok(first.x+first.width<=first.viewportWidth+0.5,JSON.stringify({engine,theme,device,first}));
+    for(const selector of ['[data-match-home-score]','[data-match-away-score]','.app-match-score-separator'])
+     assert.equal(await page.locator(selector).textContent(),'',selector+' must begin blank');
     // The match section adds no artificial top space in either breakpoint.
     assert.equal(await page.locator('.app-match-page').evaluate(el=>getComputedStyle(el).paddingTop),'0px');
     // 268px is a maximum on narrow viewports: shell gutters can reduce the
@@ -91,6 +100,7 @@ for(const [engine,driver] of Object.entries(engines)){
      document.querySelector('[data-match-away-name]').textContent='UNI';
      document.querySelector('[data-match-home-score]').textContent='12';
      document.querySelector('[data-match-away-score]').textContent='34';
+     document.querySelector('.app-match-score-separator').textContent='–';
     });
     const layout=await page.locator('.app-match-score-line').evaluate(grid=>{
      const names=[grid.querySelector('[data-match-home-name]'),grid.querySelector('[data-match-away-name]')];

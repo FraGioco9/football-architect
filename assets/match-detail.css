@@ -8,7 +8,9 @@
  --app-match-logo-surface:#F5F1E8;
  --app-match-radius:6px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
- width:min(100%,284px);height:48px;margin:0 auto;padding:0;
+ /* The 48px logo tile makes the score axis 20px right of bar centre.
+    Offset the whole strip so the separator aligns with the page centre. */
+ left:-20px;width:min(100%,284px);height:48px;margin:0 auto;padding:0;
  background:transparent;color:var(--app-match-text);
 }
 /* The bar starts 12px behind the left badge: the 48px tile visibly
@@ -125,3 +127,5 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-score-separator{font-size:19px}
  .app-match-scoreboard-meta{max-width:268px;margin-top:8px}
 }
+/* Preserve viewport margins below the supported 320px QA breakpoint. */
+@media(max-width:308px){.app-match-scoreboard{left:clamp(-20px,calc(134px - 50vw),0px)}}
