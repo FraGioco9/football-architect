@@ -204,6 +204,7 @@ for(const [engine,driver] of Object.entries(engines)){
     await page.route('**/api/matches/123',route=>route.fulfill({
      status:200,contentType:'application/json',
      body:JSON.stringify({...match,status:currentStatus,
+      homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
       // These are test-only, deliberately inconsistent stale goals. The
       // public controller must ignore them before a completed result.
       result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9}})
@@ -227,6 +228,41 @@ for(const [engine,driver] of Object.entries(engines)){
       JSON.stringify({engine,theme,status,state}));
      assert.deepEqual(state.hidden,status==='completed'?['false','false']:['true','true']);
      assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));
+     // Real authorised club IDs link to club pages even before a score
+     // exists. Underlining must neither move text nor change on hover.
+     if(status==='scheduled'){
+      const links=page.locator('[data-match-home-name], [data-match-away-name]');
+      const linked=await links.evaluateAll(nodes=>nodes.map(el=>{
+       const style=getComputedStyle(el);
+       const range=document.createRange();range.selectNodeContents(el);
+       const withUnderline=range.getBoundingClientRect();
+       const originalDecoration=style.textDecorationLine;
+       const originalThickness=style.textDecorationThickness;
+       const offset=style.textUnderlineOffset;
+       const outer=el.getBoundingClientRect();
+       el.style.textDecorationLine='none';
+       const withoutUnderline=range.getBoundingClientRect();
+       el.style.removeProperty('text-decoration-line');
+       return {href:el.getAttribute('href'),underlined:originalDecoration,
+        thickness:originalThickness,offset,
+        outerHeight:outer.height,deltaX:withUnderline.x-withoutUnderline.x,
+        deltaY:withUnderline.y-withoutUnderline.y,
+        deltaWidth:withUnderline.width-withoutUnderline.width,
+        deltaHeight:withUnderline.height-withoutUnderline.height};
+      }));
+      assert.deepEqual(linked.map(x=>x.href),['/clubs/it/1/overview','/clubs/it/2/overview']);
+      for(const link of linked){
+       assert.equal(link.underlined,'underline');
+       assert.equal(link.thickness,'1px');assert.equal(link.offset,'3px');
+       assert.equal(link.outerHeight,48);
+       for(const k of ['deltaX','deltaY','deltaWidth','deltaHeight'])assert.ok(Math.abs(link[k])<=0.1,JSON.stringify({engine,theme,linked}));
+      }
+      const home=page.locator('[data-match-home-name]');
+      await home.hover();
+      assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'underline');
+      await home.click();
+      await page.waitForURL(url=>url.pathname==='/clubs/it/1/overview');
+     }
     }
    }finally{await ctx.close()}
   }

@@ -42,7 +42,9 @@
   name.textContent=abbreviation;
   name.setAttribute('aria-label',full);
   name.removeAttribute('title');
-  if(club)name.href=href('/clubs/'+club.countryId.toLowerCase()+'/'+club.clubId+'/overview');
+  // A verified club ID is enough for canonical routing even if the optional
+  // club catalog is delayed; missing/unresolved participants are not links.
+  if(id)name.href=href('/clubs/'+id.split('-')[0].toLowerCase()+'/'+Number(id.split('-')[1])+'/overview');
   else name.removeAttribute('href');
  }
  function applyCompetition(){

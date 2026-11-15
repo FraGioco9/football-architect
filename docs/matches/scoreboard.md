@@ -206,3 +206,16 @@ keep both numeric score cells blank **while retaining the centre en dash**.
 A verified completed fixture renders both numbers with the same separator.
 This is repeated for Dark and Light in Chromium and WebKit and checks ARIA
 visibility.
+
+### Team abbreviations: permanent underlined club links
+
+Known published club IDs now always produce canonical `/clubs/{country}/{id}/overview`
+links, even if the optional club manifest is late. Pending/unresolved teams
+stay plain text with no misleading link. Links show a **permanent 1px text
+underline** with **3px underline offset**, including on hover; no extra
+padding, border, margin, font or positioning changes are introduced. The
+underline draws under the text rather than affecting its 48px flex row,
+so the label-to-score distances and vertical centring stay identical.
+The browser suite verifies actual two-club links, clicking into Club Overview,
+computed text decoration and unchanged text bounds with and without it in
+Dark/Light on Chromium/WebKit.

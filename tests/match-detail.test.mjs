@@ -129,6 +129,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/const abbreviation=typeof club\?\.abbr==='string'/);
  assert.match(js,/\?club\.abbr:club\?\.compactName\|\|full/);
  assert.match(js,/name\.textContent=abbreviation/);
+ assert.match(js,/if\(id\)name\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)\+'\/'\+Number\(id\.split\('-'\)\[1\]\)\+'\/overview'\)/);
+ assert.match(js,/else name\.removeAttribute\('href'\)/);
  const clubs=JSON.parse(read('clubs/_shared/manifest.json')).clubs;
  assert.equal(clubs.length,320);
  assert.ok(clubs.every(c=>/^[A-Z0-9]{2,5}$/.test(c.abbr)),'Approved club abbreviations expected');
@@ -178,7 +180,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/background:color-mix\(in srgb,var\(--app-match-surface\) 16%,#F5F1E8 84%\)/);
  assert.match(css,/html\[data-theme="light"\] \.app-match-scoreboard\[data-scoreboard-theme="neutral"\]/);
  assert.match(css,/\.app-match-scoreboard,\.app-match-scoreboard \*\{transition:none!important;animation:none!important\}/);
- assert.match(css,/\.app-match-team-link\[href\]:hover\{text-decoration:none;opacity:1\}/);
+ assert.match(css,/\.app-match-team-link\[href\]\{text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:auto;cursor:pointer\}/);
+ assert.match(css,/\.app-match-team-link\[href\]:hover\{text-decoration-line:underline;opacity:1\}/);
+ assert.doesNotMatch(css,/\.app-match-team-link\[href\]\{[^}]*padding|\.app-match-team-link\[href\]\{[^}]*margin/s);
  assert.match(css,/\.app-match-competition-logo\[href\]:hover\{opacity:1\}/);
  assert.doesNotMatch(css,/gradient\(|\.app-match-scoreboard::after|\.app-match-competition-logo::after|app-match-score-group|app-match-score-surface|app-match-score-text/);
  assert.doesNotMatch(css,/\.app-match-side-score\{[^}]*border:|\.app-match-side-score\{[^}]*background:/s);
