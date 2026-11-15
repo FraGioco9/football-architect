@@ -6,7 +6,7 @@
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
  width:min(100%,440px);height:42px;margin:0 auto;padding:0 12px;
  border-radius:6px;background:var(--app-match-surface);color:var(--app-match-ink);
- border:1px solid color-mix(in srgb,var(--app-match-ink) 18%,var(--app-match-surface));
+ border:1px solid #F5F1E8;
 }
 .app-match-score-line{
  display:grid;grid-template-columns:minmax(0,1fr) 30px 86px 30px minmax(0,1fr);

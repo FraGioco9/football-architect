@@ -15,6 +15,8 @@ It is rendered at **96px desktop / 82px mobile**, deliberately **protruding
 above and below** the 42px / 38px bar. The bar and the logo's containing
 elements use visible overflow and the image has **no background,
 plate, padding, or round backing**. The logo remains linked to the competition.
+The bar has a crisp **1px ivory (#F5F1E8) outline** while the competition
+logo remains transparent, without an ivory backing plate.
 The page reserves enough top spacing for the protruding SVG without clipping.
 
 The 16 domestic competitions already have `compact.svg` and `primary.svg`

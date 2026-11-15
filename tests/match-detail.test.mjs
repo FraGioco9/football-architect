@@ -118,5 +118,6 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/width:96px;height:96px/);
  assert.match(css,/width:82px;height:82px/);
  assert.match(css,/transform:translate\(-50%,-50%\)/);
+ assert.match(css,/border:1px solid #F5F1E8/);
  assert.doesNotMatch(css,/background:#F5F1E8|border-radius:50%/);
 });
