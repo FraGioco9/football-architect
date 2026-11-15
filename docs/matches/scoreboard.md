@@ -230,3 +230,14 @@ The underline is **absent by default**, appears only on link hover, and is
 drawn 3px below the text at 1px thickness; it changes no dimensions.
 This replaces the previously permanent underline while preserving team
 links, skeleton positions, typography and centred score separator.
+
+### Hover underline visibility regression
+
+The link itself must **not** use `overflow:hidden`: at `line-height:1`, the
+underline painted 3px below the glyphs was clipped even though computed
+`text-decoration-line` correctly reported `underline` on hover. The text-sized
+link now has `overflow:visible`, while the outer non-interactive 48px cell
+still clips oversized text; unresolved, non-clickable labels retain their own
+ellipsis. No font size, position, height or hit-area change is introduced.
+Browser QA now verifies actual link overflow and sufficient space inside the
+slot as well as hover-only decoration and unchanged geometry.

@@ -58,7 +58,9 @@
 .app-match-team-away{justify-content:flex-start;padding-left:4px}
 .app-match-team-link{
  display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;
- overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ /* Do not clip the underline: it paints below the 1em text line box.
+    The parent slot still bounds the label horizontally and vertically. */
+ overflow:visible;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
  text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0;
  font-variant-numeric:tabular-nums;
@@ -70,7 +72,7 @@
  text-decoration-line:underline;text-decoration-thickness:1px;
  text-underline-offset:3px;text-decoration-skip-ink:auto;opacity:1;
 }
-.app-match-team-link:not([href]){cursor:default}
+.app-match-team-link:not([href]){cursor:default;overflow:hidden;text-overflow:ellipsis}
 /* Skeletons sit at the same 4px inward edge, but never behave as links. */
 .app-match-team-link .app-skeleton-bar{
  display:block;width:54px;max-width:100%;height:20px;

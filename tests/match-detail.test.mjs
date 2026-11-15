@@ -168,6 +168,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-side-score\{[^}]*font-size:24px/s);
  assert.match(css,/\.app-match-team-slot\{[^}]*display:flex;align-items:center;align-self:stretch/s);
  assert.match(css,/\.app-match-team-link\{[^}]*display:inline-block;flex:0 1 auto;width:max-content/s);
+ assert.match(css,/\.app-match-team-link\{[^}]*overflow:visible;white-space:nowrap/s);
+ assert.doesNotMatch(css,/\.app-match-team-link\{[^}]*overflow:hidden/s);
+ assert.match(css,/\.app-match-team-link:not\(\[href\]\)\{cursor:default;overflow:hidden;text-overflow:ellipsis\}/);
  assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0/s);
  assert.match(css,/\.app-match-team-home\{justify-content:flex-end;padding-right:4px\}/);
  assert.match(css,/\.app-match-team-away\{justify-content:flex-start;padding-left:4px\}/);

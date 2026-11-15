@@ -259,6 +259,19 @@ for(const [engine,driver] of Object.entries(engines)){
        assert.ok(Math.abs(link.textWidth-link.linkWidth)<=1,JSON.stringify({engine,theme,linked}));
       }
       const home=page.locator('[data-match-home-name]');
+      const beforeHover=await home.evaluate(el=>({
+       decoration:getComputedStyle(el).textDecorationLine,
+       overflow:getComputedStyle(el).overflow,
+       slotOverflow:getComputedStyle(el.parentElement).overflow,
+       lineHeight:getComputedStyle(el).lineHeight,
+       linkHeight:el.getBoundingClientRect().height,
+       slotHeight:el.parentElement.getBoundingClientRect().height,
+       verticalRoom:el.parentElement.getBoundingClientRect().bottom-el.getBoundingClientRect().bottom
+      }));
+      assert.equal(beforeHover.decoration,'none');
+      assert.equal(beforeHover.overflow,'visible','the anchor must not clip underline glyph pixels');
+      assert.equal(beforeHover.slotOverflow,'hidden','outer slot still contains off-column text');
+      assert.ok(beforeHover.verticalRoom>=4,JSON.stringify({engine,theme,beforeHover}));
       const unhovered=await home.boundingBox();
       await home.hover();
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'underline');
