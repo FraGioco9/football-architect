@@ -563,6 +563,9 @@ test('#623 plain filled Players silhouette has no internal strokes or portrait f
  assert.equal(placeholder.split('<path d="').length-1,2,'Filled head and torso only');
  assert.ok(placeholder.includes(outer[0]),'Torso must reuse Players icon outer path');
  assert.ok(placeholder.includes(outer[2]),'Head must reuse Players icon outer path');
+ assert.ok(placeholder.includes('<path d="'+outer[0]+'" transform="translate(-30.72 0) scale(1.12 1)"/>'),'Torso must be widened by 12% horizontally');
+ assert.ok(placeholder.includes('<path d="'+outer[2]+'"/>'),'Head must remain unchanged and unscaled');
+ assert.ok(placeholder.includes('viewBox="-20 -12 552 535"'),'SVG viewport and reserved image frame must be unchanged');
  for(const forbidden of ['stroke=','fill-rule=','opacity='])assert.ok(!placeholder.includes(forbidden),'No internal outlines or holes: '+forbidden);
  assert.ok(placeholder.includes('fill="currentColor"'));
  const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];

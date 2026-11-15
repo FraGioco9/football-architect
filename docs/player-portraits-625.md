@@ -2,7 +2,7 @@
 
 ## Scope
 
-Public single-player pages display photos for **only** IDs 44, 98 and 145. The simple, fully filled head-and-torso silhouette from the existing `/players` sidebar icon is the first-paint placeholder, fallback on error, and permanent image for all other players and Admin previews. Only the icon's two outer shapes are filled; no interior outlines or details. The portrait frame has **no visible box border**. The existing portrait box remains 160×181 desktop / 100×114 mobile. No extra player API calls, external image hosts or database changes.
+Public single-player pages display photos for **only** IDs 44, 98 and 145. The simple, fully filled head-and-torso silhouette from the existing `/players` sidebar icon is the first-paint placeholder, fallback on error, and permanent image for all other players and Admin previews. Only the icon's two outer shapes are filled; no interior outlines or details. The portrait frame has **no visible box border**. For better correspondence with approved photographs, the **torso/shoulders alone are enlarged 12% horizontally around the SVG center** (x′=1.12x−30.72), while the head remains unscaled and the fixed 160×181 / 100×114 frame is unchanged. The existing portrait box remains 160×181 desktop / 100×114 mobile. No extra player API calls, external image hosts or database changes.
 
 The three **owner-approved PNGs** are preserved unchanged as full-resolution 1086×1448 RGBA conversation attachments. To reduce site traffic, the public images are alpha-preserving, cropped/top-aligned **320×362 WebP derivatives**, created from the approved originals with Lanczos scaling (quality 70, WebP exact alpha).
 
