@@ -52,7 +52,7 @@ test('M7 research opt-in only; same accepted ball World and never shoe/action au
    assert.equal(body.physicalActors.length,22);
    assert.ok(Number.isFinite(body.minPhysicalGapM)&&body.minPhysicalGapM>0);
    assert.ok(Number.isFinite(body.maxCanonicalDriftM));
-   assert.equal(body.playerBodyMatchAuthority,false);
+   assert.equal(body.physicallyAuthoritativeMatchWorld,false);
    assert.equal(body.verifiedMatchBodyCollision,false);
    assert.equal(body.officialTackle,false);
    assert.equal(body.officialPossession,false);
