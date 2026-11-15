@@ -29,7 +29,7 @@ test('#628 M3 includes source-bound post-PASS and actual-opponent recovery witho
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  for(const item of m3)assert.match(html,new RegExp('<option value="'+item.id+'">'));
  const code=readFileSync(new URL('../src/movement-labs.mjs',import.meta.url),'utf8');
- assert.match(code,/createControlledActionLab\(RAPIER,'control',\{controlSide:side\}\)/);
+ assert.match(code,/createControlledActionLab\(RAPIER,'control',\{\s*controlSide:side,/);
  assert.doesNotMatch(code,/setTranslation|setLinvel|player-ball-universal-world/);
 });
 test('#628 M3 genuine physical PASS tick 1 precedes measured actual HOME receiver motion',
