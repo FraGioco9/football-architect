@@ -616,7 +616,7 @@ test('#623 portrait reserve stays blank at first paint, until missing image is c
 
 test('#623 approved portraits use adjustable top-anchored 150% crop in wider, height-stable image slot',()=>{
  const css=read('assets/player-detail.css');
- const photoRule=css.split('.app-player-detail-photo{')[1]?.split('}')[0];
+ const photoRule=css.match(/^\.app-player-detail-photo\{([^}]*)\}/m)?.[1];
  const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
  assert.ok(photoRule,'photo rule must exist');
  assert.ok(photoRule.includes('object-fit:cover;object-position:center top'),'photo must remain top aligned');
