@@ -62,8 +62,10 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(first.separatorCenterOffset)<=0.5,JSON.stringify({engine,theme,device,first}));
     assert.ok(first.x>=-0.5,JSON.stringify({engine,theme,device,first}));
     assert.ok(first.x+first.width<=first.viewportWidth+0.5,JSON.stringify({engine,theme,device,first}));
-    for(const selector of ['[data-match-home-score]','[data-match-away-score]','.app-match-score-separator'])
+    for(const selector of ['[data-match-home-score]','[data-match-away-score]'])
      assert.equal(await page.locator(selector).textContent(),'',selector+' must begin blank');
+    assert.equal(await page.locator('.app-match-score-separator').textContent(),'–',
+     'the centre dash remains visible before hydration');
     // The match section adds no artificial top space in either breakpoint.
     assert.equal(await page.locator('.app-match-page').evaluate(el=>getComputedStyle(el).paddingTop),'0px');
     // 268px is a maximum on narrow viewports: shell gutters can reduce the
@@ -100,7 +102,6 @@ for(const [engine,driver] of Object.entries(engines)){
      document.querySelector('[data-match-away-name]').textContent='UNI';
      document.querySelector('[data-match-home-score]').textContent='12';
      document.querySelector('[data-match-away-score]').textContent='34';
-     document.querySelector('.app-match-score-separator').textContent='–';
     });
     const layout=await page.locator('.app-match-score-line').evaluate(grid=>{
      const names=[grid.querySelector('[data-match-home-name]'),grid.querySelector('[data-match-away-name]')];
@@ -222,7 +223,7 @@ for(const [engine,driver] of Object.entries(engines)){
        hidden:scores.map(node=>node.getAttribute('aria-hidden')),
        centreOffset:(sep.left+sep.width/2)-(section.left+section.width/2)};
      });
-     assert.deepEqual(state.text,status==='completed'?['12','3','–']:['','',''],
+     assert.deepEqual(state.text,status==='completed'?['12','3','–']:['','','–'],
       JSON.stringify({engine,theme,status,state}));
      assert.deepEqual(state.hidden,status==='completed'?['false','false']:['true','true']);
      assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));

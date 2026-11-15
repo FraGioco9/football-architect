@@ -187,16 +187,14 @@ viewport width the offset is clamped to prevent horizontal clipping.
 
 ### Pre-kickoff score visibility
 
-At first paint, the score cells and middle en dash are truly **empty** in both
-the generated HTML and the shared source template. After hydration, they stay
-empty for `awaiting_participants`, `scheduled`, `lineups_confirmed`,
-`in_progress` without an authoritative completed result, `postponed` and
-`cancelled`. The controller writes both scores **and** the en dash only when
-there is a verified `completed` result with valid nonnegative goal counts.
-The blank score slots remain in the six-track grid, so names and logo do not
-jump as data arrives; ARIA hides empty score nodes. The bar alignment is
-independent of score visibility. There is no fabricated 0–0 or placeholder
-dash on cold navigation or refresh.
+The centre en dash is **always visible**, from first paint through hydration,
+including scheduled, postponed, cancelled, in-progress and completed fixtures.
+It is static in the shared template and generated HTML, never inferred from
+match data. The **two numeric score cells** start truly empty and remain
+empty unless a verified `completed` result provides valid nonnegative goals.
+All six grid tracks remain reserved to prevent layout jumps, and ARIA hides
+empty score nodes. The separator remains centred on the page. No 0–0 score
+or placeholder digits are fabricated on cold navigation or refresh.
 
 ### Dynamic controller QA (no backend writes)
 
@@ -204,6 +202,7 @@ The FULL browser runner also loads the real match controller with local
 intercepted responses for `awaiting_participants`, `scheduled`, `in_progress`,
 `postponed`, `cancelled`, and `completed`. Non-completed fixtures deliberately
 carry stale score-shaped values in the test harness; the live client must
-still render all three score positions empty. A verified completed fixture
-renders both numbers and the centred en dash. This is repeated for Dark and
-Light in both Chromium and WebKit and checks ARIA visibility.
+keep both numeric score cells blank **while retaining the centre en dash**.
+A verified completed fixture renders both numbers with the same separator.
+This is repeated for Dark and Light in Chromium and WebKit and checks ARIA
+visibility.

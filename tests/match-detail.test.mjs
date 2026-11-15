@@ -51,7 +51,7 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.doesNotMatch(section,/app-match-score-group/);
   assert.match(section,/data-match-home-score aria-label="Home score" aria-hidden="true"><\/strong>/);
   assert.match(section,/data-match-away-score aria-label="Away score" aria-hidden="true"><\/strong>/);
-  assert.match(section,/class="app-match-score-separator" aria-hidden="true"><\/span>/);
+  assert.match(section,/class="app-match-score-separator" aria-hidden="true">–<\/span>/);
   const columns=['data-match-competition-logo','data-match-home-name','data-match-home-score','app-match-score-separator','data-match-away-score','data-match-away-name'];
   for(let i=1;i<columns.length;i++)assert.ok(section.indexOf(columns[i-1])<section.indexOf(columns[i]),'Wrong scoreboard order '+columns[i]);
  }
@@ -120,7 +120,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
  assert.match(js,/write\('\[data-match-home-score\]',validScore\?result\.homeGoals:''\)/);
  assert.match(js,/write\('\[data-match-away-score\]',validScore\?result\.awayGoals:''\)/);
- assert.match(js,/write\('\.app-match-score-separator',validScore\?'–':''\)/);
+ assert.doesNotMatch(js,/write\('\.app-match-score-separator'/);
+ // A static separator is not a fixture result; numbers remain official-only.
  assert.match(js,/score\.setAttribute\('aria-hidden',String\(!validScore\)\)/);
  assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
