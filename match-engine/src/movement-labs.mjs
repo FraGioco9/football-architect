@@ -24,7 +24,9 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    controlSide:side,
    ...(physicalContest?{controlScene:'opponent-first'}:{})
   }):null;
- const engine=usesOriginalControl?null:createEngine(RAPIER,scene.initial);
+ const nativeBodies=scene.spec.id==='body-world';
+ const engine=usesOriginalControl?null:createEngine(RAPIER,scene.initial,
+  nativeBodies?{diagnosticPlayerBodyCollidersEnabled:true}:{});
  const mover=usesOriginalControl?null:createPlayerMovement();
  let disposed=false,latest=null,origin=null,previous=null;
  let pathM=0,maxSpeedMps=0,maxBrakeMps2=0,totalTurnRad=0;
@@ -40,7 +42,13 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   supports:Object.freeze({home:null,away:null})
  });
  function record(physics,frame,pass=null,receivingContact=null,
-  opposingShoe=null){
+  opposingShoe=null,bodySample=null){
+  if(bodySample&&(
+      bodySample.tick!==physics.tick||
+      bodySample.physicalActors.length!==22||
+      bodySample.sameOriginalRapierBallWorld!==true||
+      bodySample.physicalActors.some((p,i)=>p.id!==frame.players[i].id)))
+   throw new Error('Only this-tick original 22-body Rapier event source accepted');
   if(physics.tick!==frame.tick)throw new Error('Canonical 60 Hz movement and Rapier tick mismatch');
   const supportScene=scene.spec.id==='support-lane'||
    scene.spec.id==='support-neutral';
@@ -150,7 +158,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
    physicalContest?Boolean(pass&&opposingShoe&&
     measuredOpponentPathM>0.25):
    scene.spec.id==='support-lane'?Boolean(support&&
-    supportRunPathM>0.5&&supportNetAdvanceM>0.35):false;
+    supportRunPathM>0.5&&supportNetAdvanceM>0.35):
+   nativeBodies?Boolean(bodySample&&bodySample.actualNativeStarts>0):false;
   previous=Object.freeze({
    tick:physics.tick,x:p.x,y:p.y,speedMps,facingRad:p.facingRad,
    blockedBy:p.blockedBy,assignedOpponentId:assigned?currentOpponent.id:null,
@@ -187,7 +196,20 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
     supportTeammateClearanceM:support?.teammateClearanceM??null,
     supportRunPathM,supportNetAdvanceM,
     supportDistanceToTargetM:support?
-     Math.hypot(p.x-support.target.x,p.y-support.target.y):null
+     Math.hypot(p.x-support.target.x,p.y-support.target.y):null,
+    nativeBodyCount:bodySample?.physicalActors.length??0,
+    nativeBodyStarts:bodySample?.actualNativeStarts??0,
+    nativeBodyEnds:bodySample?.actualNativeEnds??0,
+    nativeBodyLastStarts:bodySample?.currentTickStarts??0,
+    nativeBodyMinPhysicalGapM:bodySample?.minPhysicalGapM??null,
+    nativeBodyMaxMoverDriftM:bodySample?.maxCanonicalDriftM??null,
+    nativeBodyEventSource:bodySample?
+     'native-rapier-collision-event':null,
+    nativeBodyPositionsFedBack:false,
+    isCurrentCanonical22BodyWorld:Boolean(bodySample),
+    // Even when a real research collider event occurs, there is no
+    // authoritative player-body collision in an accepted football match.
+    verifiedMatchBodyCollision:false
    }),
    readOnly:true,verifiedFootContact:Boolean(pass),
    officialMatchAction:false,officialPossession:false,
@@ -199,7 +221,8 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   const f=actionSession.snapshot();
   record(toPhysical(f),toMovement(f),f.priorRealPass,f.receivingContact,
    f.firstOpposingShoe);
- }else record(engine.snapshot(),mover.snapshot());
+ }else record(engine.snapshot(),mover.snapshot(),null,null,null,
+  nativeBodies?engine.nativePlayerBodySnapshot():null);
  function snapshot(){if(disposed)throw new Error('Movement LAB disposed');return latest;}
  function step(){
   if(disposed)throw new Error('Movement LAB disposed');
@@ -213,10 +236,13 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
   }
   const prior=engine.snapshot();
   const frame=mover.step(prior.ball.position);
-  const after=engine.step(); // original position-only lab: shoe source OFF
+  // M7 drives research bodies only with the canonical 60 Hz sampled
+  // velocity in THIS original ball World. Neither ball nor mover is steered.
+  const after=nativeBodies?engine.step(frame):engine.step();
   if(after.tick!==prior.tick+1||frame.tick!==after.tick)
    throw new Error('Only current, synchronized real physical ticks');
-  return record(after,frame);
+  return record(after,frame,null,null,null,
+   nativeBodies?engine.nativePlayerBodySnapshot():null);
  }
  function dispose(){if(!disposed){
   disposed=true;engine?.dispose();actionSession?.dispose();
@@ -295,7 +321,25 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
     ' · observed opponent clearance '+
       (m.supportOppClearanceM===null?'none':two(m.supportOppClearanceM))+' m'+
     ' · teammate clearance '+
-      (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'');
+      (m.supportTeammateClearanceM===null?'none':two(m.supportTeammateClearanceM))+' m':'')+
+   (f.scenarioId==='body-world'||f.scenarioId==='body-off'?
+    ' · Rapier native bodies '+m.nativeBodyCount+
+    ' · genuine starts '+m.nativeBodyStarts+
+    ' · min physical gap '+
+     (m.nativeBodyMinPhysicalGapM===null?'none':
+      two(m.nativeBodyMinPhysicalGapM))+' m'+
+    ' · max mover difference '+
+     (m.nativeBodyMaxMoverDriftM===null?'none':
+      two(m.nativeBodyMaxMoverDriftM))+' m':'');
+  if(f.scenarioId==='body-world'||f.scenarioId==='body-off'){
+   status.textContent=(m.nativeBodyCount===22?
+    (m.nativeBodyStarts>0?
+     'Observed: original-world native Rapier body collider START(s).':
+     'All 22 native Rapier body colliders active; no actual START witnessed yet.'):
+    'Negative control: native body colliders OFF.')+
+    ' Physical XY is not reconciled to canonical mover; no tackle, ball contact or possession.';
+   return;
+  }
   if(f.scenarioId==='support-lane'||f.scenarioId==='support-neutral'){
    status.textContent=(m.witnessed?
     'Observed: real original support-runner progress toward sampled open lane.':

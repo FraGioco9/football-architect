@@ -514,6 +514,34 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.doesNotMatch(data.status,/completed pass|official possession|goal awarded/i);
    process.stdout.write('MOVEMENT_LAB_M6_SUPPORT '+JSON.stringify(data)+'\n');
   }
+  // M7: real Rapier 22-body dynamic colliders share original ball World,
+  // but their solver XY is research-only, not canonically reconciled.
+  for(const [choice,side] of [
+   ['body-world','home'],['body-world','away'],
+   ['body-off','home'],['body-off','away']
+  ]){
+   const native=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let t=0;t<110;t++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(native.choice,choice);assert.equal(native.side,side);
+   assert.match(native.readout,/^Tick 110 /);
+   if(choice==='body-world'){
+    assert.match(native.readout,/Rapier native bodies 22 · genuine starts [0-9]+/);
+    assert.match(native.readout,/min physical gap [0-9.]+ m · max mover difference [0-9.]+ m/);
+    assert.match(native.status,/22 native Rapier body colliders active|original-world native Rapier body collider START/);
+   }else{
+    assert.match(native.readout,/Rapier native bodies 0 · genuine starts 0 · min physical gap none/);
+    assert.match(native.status,/Negative control: native body colliders OFF/);
+   }
+   assert.match(native.status,/Physical XY is not reconciled to canonical mover/);
+   assert.doesNotMatch(native.status,/tackle confirmed|interception successful|possession awarded/i);
+   process.stdout.write('MOVEMENT_LAB_M7_NATIVE_BODIES '+JSON.stringify(native)+'\n');
+  }
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+

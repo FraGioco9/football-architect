@@ -32,7 +32,12 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  // M6 observation-only: original free support assignment from 22 actual
  // player XY in the opposing third. No forced teammate route, pass or action.
  spec('support-lane','Support lane','Read the original chosen free teammate and measure current movement into its sampled opponent/teammate-aware lane.',scene('me-m6-support-lane',27,0),9,'M6'),
- spec('support-neutral','No support assignment','Negative: original central-ball territory must not invent a support lane or pass receiver.',scene('me-m6-support-neutral',0,0),9,'M6')
+ spec('support-neutral','No support assignment','Negative: original central-ball territory must not invent a support lane or pass receiver.',scene('me-m6-support-neutral',0,0),9,'M6'),
+ // M7: same ORIGINAL Rapier ball World, opt-in native 22-body dynamic
+ // colliders (body-body only), or strictly identical default-off control.
+ // This is a research shadow; mover positions are NOT reconciled to Rapier.
+ spec('body-world','22 Rapier body observers','Research opt-in: all 22 native body colliders share the Rapier ball world; real collision events and divergence are measured, but solver positions are not fed back into the mover.',scene('me-m7-body-world',27,0),9,'M7'),
+ spec('body-off','22 bodies OFF','Negative control: same source ball and 22-player mover but NO native player body colliders; no collision can be inferred from close spacing.',scene('me-m7-body-world',27,0),9,'M7')
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');

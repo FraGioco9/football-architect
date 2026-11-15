@@ -4,6 +4,7 @@ import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
 import {createPrivateRapierFootContactBridge}
  from './rapier-foot-contact-bridge.mjs';
+import {createPrivateRapier22BodyBridge} from './rapier-22-body-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
@@ -80,6 +81,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticMagnusLiftEnabled = true,
   diagnosticSpinDecayRatePerS = 0,
   diagnosticPlayerFootContactsEnabled = false,
+  diagnosticPlayerBodyCollidersEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
@@ -92,6 +94,13 @@ export function createEngine(RAPIER, input = {}, {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
     throw new TypeError('Boolean opt-in required for private shoe physics');
+  // M7 cannot yet reconcile physical dynamic-player XY with the canonical
+  // mover or share the original private shoe event queue. Disallow combined
+  // contact authority until that independent release gate is implemented.
+  if(typeof diagnosticPlayerBodyCollidersEnabled!=='boolean'||
+     (diagnosticPlayerBodyCollidersEnabled&&
+      diagnosticPlayerFootContactsEnabled))
+    throw new TypeError('Body-only research mode must exclude shoe contact authority');
   if(typeof diagnosticAutonomousFixtureActionEnabled!=='boolean'||
      typeof diagnosticAutonomousCarryEnabled!=='boolean'||
      (diagnosticAutonomousFixtureActionEnabled&&!diagnosticPlayerFootContactsEnabled)||
@@ -219,7 +228,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticAirDragCd, diagnosticAirDragModel,diagnosticAerodynamicProfile,
     diagnosticMagnusSpinRadS:magnusSpin,
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
-    diagnosticPlayerFootContactsEnabled,
+    diagnosticPlayerFootContactsEnabled,diagnosticPlayerBodyCollidersEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
@@ -260,6 +269,11 @@ export function createEngine(RAPIER, input = {}, {
   // No additional world or colliders on the accepted default-off core.
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes):null;
+  // M7 explicit research-only: 22 genuine native dynamic colliders share
+  // this ball's Rapier World, with body-only collision groups. They NEVER
+  // touch the ball/ground and NEVER bypass accepted shoe/action authority.
+  const bodyBridge=diagnosticPlayerBodyCollidersEnabled?
+    createPrivateRapier22BodyBridge(RAPIER,world,INITIAL_PLAYERS):null;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
@@ -316,12 +330,15 @@ export function createEngine(RAPIER, input = {}, {
   }
   function step(playerFrame) {
     if (disposed) throw new Error('Engine has been disposed');
-    if(!shoeBridge&&playerFrame!==undefined)
-      throw new TypeError('Canonical foot frame requires explicit physics opt-in');
+    if(!shoeBridge&&!bodyBridge&&playerFrame!==undefined)
+      throw new TypeError('Canonical player frame requires explicit physics opt-in');
+    if(bodyBridge&&playerFrame===undefined)
+      throw new TypeError('Rapier body probe requires original current player frame');
     // Private current Rapier state is captured before the only world.step().
     // The bridge never manufactures an event, impulse or match possession.
     const preStepBall=shoeBridge?snapshot().ball:null;
     if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1);
+    if(bodyBridge)bodyBridge.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -366,6 +383,9 @@ export function createEngine(RAPIER, input = {}, {
       shoeBridge.observe(tick+1,preStepBall,{
         position:body.translation(),velocity:body.linvel()
       });
+    }else if(bodyBridge){
+      world.step(bodyBridge.eventQueue);
+      bodyBridge.observe(tick+1);
     }else world.step();
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
@@ -386,6 +406,7 @@ export function createEngine(RAPIER, input = {}, {
       disposed = true;
       actionExecutor?.dispose();
       shoeBridge?.dispose();
+      bodyBridge?.dispose();
       world.free();
     }
   }
@@ -394,6 +415,9 @@ export function createEngine(RAPIER, input = {}, {
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),
       footContactSolverSnapshot:()=>shoeBridge.solver()
+    }:{}),
+    ...(bodyBridge?{
+      nativePlayerBodySnapshot:()=>bodyBridge.snapshot()
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
