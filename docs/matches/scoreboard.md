@@ -5,18 +5,20 @@ additional title, visible match ID, club crests or other content panels.
 
 ## Layout
 
-A centered **42px-high** narrow bar (38px on small screens), maximum width **440px**, with a responsive five-column row:
+A more compact centered bar, **34px high / max 340px wide** on desktop, **30px high / max 310px wide** on narrow screens, with a responsive five-column row:
 
 `HOME ABBR | HOME SCORE | COMPETITION LOGO | AWAY SCORE | AWAY ABBR`
 
 The center uses the existing approved
 `assets/divisions/{id}-{name-slug}/compact.svg` of that division.
-It is rendered at **96px desktop / 82px mobile**, deliberately **protruding
-above and below** the 42px / 38px bar. The bar and the logo's containing
+It is rendered at **80px desktop / 68px mobile**, deliberately **protruding
+above and below** the 34px / 30px bar. The bar and the logo's containing
 elements use visible overflow and the image has **no background,
 plate, padding, or round backing**. The logo remains linked to the competition.
-The **logo's actual SVG silhouette**, not the bar, has a thin ivory
+The **logo's actual SVG silhouette**, not the bar, has a thicker **2px ivory**
 (`#F5F1E8`) contour using directional CSS `drop-shadow()` filters.
+The logo's visual center is shifted **8px upward** (7px on mobile)
+relative to the bar, not vertically centered.
 The bar keeps its subtle neutral outline. The SVG remains transparent,
 without a background plate, circular border, or colored rectangle.
 The page reserves enough top spacing for the protruding SVG without clipping.

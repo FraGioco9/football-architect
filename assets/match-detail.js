@@ -74,7 +74,7 @@
   slot.replaceChildren();
   if(!intended)return;
   const img=document.createElement('img');
-  img.alt='';img.width=96;img.height=96;img.decoding='async';
+  img.alt='';img.width=80;img.height=80;img.decoding='async';
   img.addEventListener('error',()=>{
    if(slot.contains(img)){delete slot.dataset.matchLogoPresent;img.remove();}
   },{once:true});

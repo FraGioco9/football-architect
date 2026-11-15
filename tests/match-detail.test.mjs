@@ -109,18 +109,21 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
- assert.match(css,/width:min\(100%,440px\)/);
- assert.match(css,/height:42px/);
- assert.match(css,/height:38px/);
+ assert.match(css,/width:min\(100%,340px\)/);
+ assert.match(css,/height:34px/);
+ assert.match(css,/height:30px/);
  assert.match(css,/overflow:visible/);
  assert.match(css,/margin:0 auto/);
- assert.match(css,/grid-template-columns:minmax\(0,1fr\) 30px 86px 30px minmax\(0,1fr\)/);
- assert.match(css,/width:96px;height:96px/);
- assert.match(css,/width:82px;height:82px/);
- assert.match(css,/transform:translate\(-50%,-50%\)/);
+ assert.match(css,/width:min\(100%,310px\)/);
+ assert.match(css,/top:calc\(50% - 7px\)/);
+ assert.match(js,/img\.width=80;img\.height=80/);
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\) 22px 70px 22px minmax\(0,1fr\)/);
+ assert.match(css,/width:80px;height:80px/);
+ assert.match(css,/width:68px;height:68px/);
+ assert.match(css,/top:calc\(50% - 8px\)/);
  assert.match(css,/border:1px solid color-mix\(in srgb,var\(--app-match-ink\) 18%,var\(--app-match-surface\)\)/);
  assert.doesNotMatch(css,/border:1px solid #F5F1E8/);
- for(const direction of ['1px 0 0','-1px 0 0','0 1px 0','0 -1px 0'])
+ for(const direction of ['2px 0 0','-2px 0 0','0 2px 0','0 -2px 0'])
   assert.ok(css.includes('drop-shadow('+direction+' #F5F1E8)'),direction);
  assert.match(css,/\.app-match-competition-logo img\{[^}]*filter:drop-shadow\(/s);
  assert.doesNotMatch(css,/background:#F5F1E8|border-radius:50%/);
