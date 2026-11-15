@@ -109,3 +109,90 @@ test('same-world clean Action LAB 22-player actual physics, PASS positive, no un
  }
  process.stdout.write('ME_CLEAN_ACTION_LABS '+JSON.stringify(results)+'\n');
 });
+
+
+test('clean SHOT LAB: real mirrored HOME/AWAY shoe impulses and measured 3D flight',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const a=createControlledActionLab(R,'shot',{shotSide:side});
+  const b=createControlledActionLab(R,'shot',{shotSide:side});
+  try{
+   assert.equal(a.snapshot().physicsTick,0);
+   assert.equal(a.snapshot().action,null);
+   assert.deepEqual(a.snapshot().starts,[]);
+   const actor=a.snapshot().players.find(p=>p.id===side+'-10');
+   assert.ok(Math.abs(actor.x-(side==='home'?29.72:-29.72))<1e-6);
+   let shot=null,flight=false,shotTick=null;
+   for(let tick=1;tick<=90;tick++){
+    const x=a.step(),y=b.step();
+    assert.deepEqual(x.ball,y.ball,'deterministic same-world replay');
+    assert.deepEqual(x.starts,y.starts);
+    assert.deepEqual(x.action,y.action);
+    assert.equal(x.officialMatchResult,null);
+    assert.equal(x.evidence.officialGoal,false);
+    if(x.action?.action==='shot'){
+     assert.equal(x.action.playerId,side+'-10');
+     assert.equal(x.action.team,side);
+     assert.deepEqual(x.starts,[side+'-10']);
+     assert.equal(x.evidence.verifiedShoeImpulse,true);
+     assert.equal(x.action.shotTarget.physicsTick,tick);
+     assert.ok(x.action.shotTarget.laneClearanceM>=2.4);
+     assert.equal(x.action.shotTarget.targetX,side==='home'?52.5:-52.5);
+     assert.ok(x.action.impulseNs.x*(side==='home'?1:-1)>0);
+     assert.ok(x.action.impulseNs.z>0);
+     if(!shot){shot=x.action;shotTick=tick;}
+    }
+    if(x.shotFlight?.observed3DFlight){
+     flight=true;
+     assert.ok(x.shotFlight.path3DM>0);
+     assert.ok(x.shotFlight.maxCenterZM>x.shotFlight.origin.z+0.02);
+     assert.equal(x.shotFlight.shooterId,side+'-10');
+     assert.equal(x.shotFlight.team,side);
+    }
+   }
+   assert.ok(shot,'original selector requires real SHOT for '+side);
+   assert.ok(shotTick>=1&&shotTick<=90);
+   assert.equal(flight,true,'physical post-impulse 3D flight must be observed');
+   process.stdout.write('ME_SHOT_REAL_'+side.toUpperCase()+
+    ' '+JSON.stringify({tick:shotTick,actor:shot.playerId,
+     observedFlight:flight})+'\\n');
+  }finally{a.dispose();b.dispose();}
+ }
+});
+
+test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ assert.throws(()=>createControlledActionLab(R,'shot',{shotSide:'referee'}),
+  /mirrored|supported/);
+ assert.throws(()=>createControlledActionLab(R,'pass',{shotSide:'away'}),
+  /mirrored|supported/);
+ const {createEngine}=await import('../src/core.mjs');
+ const {createPlayerMovement}=await import('../src/player-movement.mjs');
+ const ball={preset:'roll',seed:'shot-unstaged-counterfactual',
+  x:30,y:1,z:0,vx:0,vy:0,vz:0};
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchShotAttacker:'home'
+ }),/genuine private source/);
+ assert.throws(()=>createPlayerMovement({
+  researchShotAttacker:'home',researchShotBall:{...ball,x:0}
+ }),/attacking-third/);
+ const engine=createEngine(R,ball,{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true
+ });
+ const mover=createPlayerMovement();
+ try{
+  let starts=0,shots=0;
+  for(let i=0;i<80;i++){
+   const frame=mover.step(engine.snapshot().ball.position);
+   const after=engine.step(frame);
+   starts+=engine.footContactSnapshot().started.length;
+   if(engine.uniformAutonomousActionSnapshot()?.action==='shot')shots++;
+   assert.equal(after.tick,i+1);
+  }
+  assert.equal(starts,0,'ball alone cannot manufacture shoe START');
+  assert.equal(shots,0,'attacking third does not automatically create SHOT');
+ }finally{engine.dispose();}
+});

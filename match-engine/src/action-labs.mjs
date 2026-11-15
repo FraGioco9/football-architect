@@ -4,22 +4,33 @@
 import {createEngine,FIXED_DT} from './core.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
-import {ACTION_LAB_SCENARIOS,getActionLabScenario,
+import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,getActionLabScenario,
  classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
-export function createControlledActionLab(RAPIER,id){
+export function createControlledActionLab(RAPIER,id,{shotSide='home'}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
+ if(!['home','away'].includes(shotSide)||
+    (id!=='shot'&&shotSide!=='home'))
+  throw new TypeError('Only mirrored HOME/AWAY SHOT setups supported');
+ const selectedShotSide=id==='shot'?shotSide:null;
+ const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:spec.initial;
+ const focus=selectedShotSide==='away'?
+  Object.freeze(['away-10','home-1','home-10']):spec.focus;
  // The same physical authority produces shoe START and applies the original
  // action impulse; diagnostic flags remain explicit and DEV-local.
- const engine=createEngine(RAPIER,spec.initial,{
+ const engine=createEngine(RAPIER,initial,{
   diagnosticPlayerFootContactsEnabled:true,
   diagnosticAutonomousFixtureActionEnabled:true,
+  ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
- const mover=createPlayerMovement();
+ const mover=createPlayerMovement(selectedShotSide?{
+  researchShotAttacker:selectedShotSide,researchShotBall:initial
+ }:{});
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
+ let shotTrace=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -37,6 +48,26 @@ export function createControlledActionLab(RAPIER,id){
     actorId:action?.playerId??starts[0]??null
    })].slice(-12));
   }
+  // Post-impulse ball centres from the single Rapier engine, not a
+  // predicted trajectory or inferred official goal.
+  const p=physics.ball.position;
+  if(action?.action==='shot'&&evidence.verifiedShoeImpulse){
+   shotTrace=Object.freeze({
+    shooterId:action.playerId,team:action.team,tick:physics.tick,
+    origin:Object.freeze({...p}),last:Object.freeze({...p}),
+    samples:1,path3DM:0,maxCenterZM:p.z,observed3DFlight:false
+   });
+  }else if(shotTrace){
+   const prev=shotTrace.last;
+   const travelled=Math.hypot(p.x-prev.x,p.y-prev.y,p.z-prev.z);
+   const maxZ=Math.max(shotTrace.maxCenterZM,p.z);
+   shotTrace=Object.freeze({
+    ...shotTrace,last:Object.freeze({...p}),
+    samples:shotTrace.samples+1,path3DM:shotTrace.path3DM+travelled,
+    maxCenterZM:maxZ,
+    observed3DFlight:maxZ>shotTrace.origin.z+0.02
+   });
+  }
   if(action?.action==='pass'&&!firstRealPass){
    firstRealPass=Object.freeze({
     tick:physics.tick,playerId:action.playerId,
@@ -44,12 +75,13 @@ export function createControlledActionLab(RAPIER,id){
    });
   }
   return Object.freeze({
-   scenarioId:id,physicsTick:physics.tick,timeS:physics.tick*FIXED_DT,
+   scenarioId:id,shotSide:selectedShotSide,physicsTick:physics.tick,timeS:physics.tick*FIXED_DT,
    ball:physics.ball,
    players:Object.freeze(playerFrame.players.map(p=>Object.freeze({
     id:p.id,team:p.team,x:p.x,y:p.y
    }))),
    starts,action,evidence,eventCount:count,events:history,
+   shotFlight:shotTrace,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
@@ -67,7 +99,7 @@ export function createControlledActionLab(RAPIER,id){
   return latest;
  }
  function dispose(){if(!disposed){disposed=true;engine.dispose();}}
- return Object.freeze({spec,snapshot,step,dispose});
+ return Object.freeze({spec,focus,shotSide:selectedShotSide,snapshot,step,dispose});
 }
 const label=id=>id.replace('home-','Home #').replace('away-','Away #');
 const number=n=>Number(n).toFixed(2);
@@ -76,11 +108,13 @@ const number=n=>Number(n).toFixed(2);
 export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  const by=id=>document.getElementById(id);
  const dialog=by('action-labs-dialog'),select=by('action-labs-choice');
+ const shotSide=by('action-labs-shot-side'),
+  shotSideLabel=by('action-labs-shot-side-label');
  const canvas=by('action-labs-pitch'),status=by('action-labs-status');
  const summary=by('action-labs-readout'),description=by('action-labs-description');
  const go=by('action-labs-play'),pause=by('action-labs-pause');
  const step=by('action-labs-step'),reset=by('action-labs-reset');
- if(!dialog||!select||!canvas||!status||!summary||!description)invalid();
+ if(!dialog||!select||!shotSide||!shotSideLabel||!canvas||!status||!summary||!description)invalid();
  if(select.options.length!==ACTION_LAB_SCENARIOS.length||
     ACTION_LAB_SCENARIOS.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');
@@ -96,7 +130,7 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    if(!i)ctx.moveTo(X(p.x),Y(p.y));else ctx.lineTo(X(p.x),Y(p.y));
   }
   ctx.lineWidth=2.2;ctx.strokeStyle='#ffdf88';ctx.stroke();
-  const selected=new Set(session.spec.focus);
+  const selected=new Set(session.focus);
   for(const p of frame.players){
    if(!selected.has(p.id))continue; // keep the controlled scenario compact
    ctx.beginPath();ctx.arc(X(p.x),Y(p.y),8,0,Math.PI*2);
@@ -118,8 +152,15 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   draw(snap);
   summary.textContent='Tick '+snap.physicsTick+' · '+
    number(snap.timeS)+' s · Ball ('+[ball.x,ball.y,ball.z].map(number).join(', ')+
-   ') m · Real shoe STARTs '+snap.starts.length+' · Witnesses '+snap.eventCount;
-  if(snap.evidence.witnessed){
+   ') m · Real shoe STARTs '+snap.starts.length+' · Witnesses '+snap.eventCount+
+   (snap.shotFlight?' · SHOT '+snap.shotFlight.team.toUpperCase()+
+    ' · 3D path '+number(snap.shotFlight.path3DM)+' m'+
+    ' · peak centre Z '+number(snap.shotFlight.maxCenterZM)+' m':'');
+  if(snap.shotFlight?.observed3DFlight){
+   status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
+    ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
+    snap.shotFlight.samples+' physical samples). No goal awarded.';
+  }else if(snap.evidence.witnessed){
    const kind=session.spec.goal;
    status.textContent=kind==='shot'?
     'Verified: genuine Rapier shoe START + SHOT impulse. No goal awarded.':
@@ -144,7 +185,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  session=createControlledActionLab(getRapier(),select.value);
+  shotSideLabel.hidden=select.value!=='shot';
+  session=createControlledActionLab(getRapier(),select.value,{
+   shotSide:select.value==='shot'?shotSide.value:'home'
+  });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
   description.textContent=session.spec.description;
@@ -178,6 +222,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   stop();if(session){session.dispose();session=null;}
   trail=[];onClose();
  });
+ shotSide.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
+  catch(e){stop();status.textContent=e.message;}});
  select.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});
  go.addEventListener('click',()=>{playing=true;go.disabled=true;pause.disabled=false;});

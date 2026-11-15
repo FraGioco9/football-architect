@@ -30,3 +30,25 @@ The scenario catalog and controller are pure/DEV-only; the classifier only valid
 - [ ] Once independently approved, integrate in dependency order and retire old #621 without losing its original research
 
 Do not mark #480 C2/C3/C4 complete. The old accepted 11/20 technical count is unchanged. All PRs remain Draft/HOLD; no merging, deployment or remote DB writes.
+
+## #620 — clean mirrored SHOT LAB initial situation
+
+LAB-15 now offers HOME and AWAY choices within one LAB. Before physics
+tick zero, only canonical forward #10 is placed 0.28 m behind the
+grounded attacking-third ball at x=+30 (HOME) or x=-30 (AWAY), with
+all other 21 canonical players left unchanged. The SAME bounded lineup
+initializes the existing 22-player mover and the shoes in its single
+Rapier world. No shoe or player teleport during a tick, injected START,
+manually selected action, second Rapier world or official scoring.
+
+Existing selector rules for exclusive same-tick shoe START, original
+shot-range and goal-lane clearance, and same-world impulse remain
+unchanged. Ball-centre trajectories after the shot are observed in 3D
+from actual Rapier snapshots. No goal, on-target status or natural C2
+success is inferred.
+
+The targeted tests require mirrored real-physics shot witnesses,
+post-impulse 3D flight and deterministic replay; the unstaged original
+formation is an explicit no-SHOT counterfactual. Exact-HEAD CI and
+Chrome confirmation are required before marking this positive slice
+accepted. Blocked-lane physical setup, CONTROL and CARRY stay open.

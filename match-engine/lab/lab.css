@@ -166,6 +166,9 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 .me-action-labs-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
 .me-action-labs-toolbar>label{font-size:12px;font-weight:700}
 .me-action-labs-toolbar>select{min-width:190px;max-width:100%;min-height:34px}
+.me-action-labs-shot-side{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.me-action-labs-shot-side[hidden]{display:none}
+.me-action-labs-shot-side select{min-height:34px}
 .me-action-labs-buttons{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
 .me-action-labs-pitch-frame{margin:8px auto;max-width:840px}
 .me-action-labs-pitch-frame canvas{display:block;width:100%;height:auto;aspect-ratio:105/68;border:1px solid var(--line);border-radius:var(--fa-radius-control);background:#18533b}

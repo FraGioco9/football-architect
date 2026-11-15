@@ -9,12 +9,16 @@ const item=(id,title,mode,initial,description,focus,goal)=>Object.freeze({
  source:'one-canonical-rapier-ball-and-22-physical-feet',
  officialResult:false
 });
+export const SHOT_LAB_STARTS=Object.freeze({
+ home:scene('me-action-shot-home',30,1,0),
+ away:scene('me-action-shot-away',-30,-1,0)
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
   ['home-10','home-9','away-10'],'pass'),
- item('shot','Shot','shot',scene('me-action-shot-home',30,1,0),
-  'Physical attacking-third shot trial in the original canonical formation. A SHOT is pending until an actual same-tick shoe START and original shot lane; no goal awarded.',
+ item('shot','Shot','shot',SHOT_LAB_STARTS.home,
+  'Only forward #10 starts next to the ball before tick zero; genuine Rapier shoe START, original shot lane and flight required. No goal awarded.',
   ['home-10','away-1','away-10'],'shot'),
  item('challenge','Challenge','challenge',
   scene('me-action-opposition-shoe',4.96),

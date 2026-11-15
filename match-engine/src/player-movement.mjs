@@ -1,6 +1,7 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
+import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -1569,9 +1570,19 @@ function teamShape(players,team,presserId){
   forwardLineX:mean('forward')
  });
 }
-export function createPlayerMovement(){
+export function createPlayerMovement(options={}){
+ if(!options||typeof options!=='object'||Array.isArray(options)||
+    Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&k!=='researchShotBall')||
+    ((options.researchShotAttacker??null)===null&&Reflect.ownKeys(options).length>0)||
+    (options.researchShotAttacker!==undefined&&
+     !['home','away'].includes(options.researchShotAttacker))||
+    (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall')))
+  throw new TypeError('Only paired bounded research shot initial positions allowed');
+ const initial=options.researchShotAttacker?
+  initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
+   options.researchShotBall):INITIAL_PLAYERS;
  let tick=0;
- const players=INITIAL_PLAYERS.map(p=>({...p}));
+ const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
@@ -2123,5 +2134,5 @@ export function createPlayerMovement(){
   balances=nextBalances;lineResponses=nextLineResponses;
   return snapshot();
  }
- return Object.freeze({snapshot,step,reset:createPlayerMovement});
+ return Object.freeze({snapshot,step,reset:()=>createPlayerMovement(options)});
 }

@@ -6,6 +6,8 @@ import {createPrivateRapierFootContactBridge}
  from './rapier-foot-contact-bridge.mjs';
 import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
+import {INITIAL_PLAYERS} from './player-movement.mjs';
+import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
 export const PHYSICS_VERSION = '@dimforge/rapier3d-deterministic-compat@0.21.0';
 export const FIXED_DT = 1 / 60;
@@ -77,7 +79,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticSpinDecayRatePerS = 0,
   diagnosticPlayerFootContactsEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
-  diagnosticAutonomousCarryEnabled = false
+  diagnosticAutonomousCarryEnabled = false,
+  diagnosticResearchShotAttacker = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
@@ -88,6 +91,14 @@ export function createEngine(RAPIER, input = {}, {
      (diagnosticAutonomousCarryEnabled&&!diagnosticAutonomousFixtureActionEnabled))
     throw new TypeError('Physical actions require explicit genuine shoe-source opt-in');
   const scenario = normalizeScenario(input);
+ if(diagnosticResearchShotAttacker!==null&&(
+    !['home','away'].includes(diagnosticResearchShotAttacker)||
+    !diagnosticPlayerFootContactsEnabled||
+    !diagnosticAutonomousFixtureActionEnabled||
+    diagnosticAutonomousCarryEnabled))
+  throw new TypeError('Research shot needs genuine private source/action opt-in');
+ const stagedShoes=diagnosticResearchShotAttacker===null?INITIAL_PLAYERS:
+  initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,scenario);
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
   if (typeof diagnosticInitialRollFraction !== 'number' ||
@@ -169,7 +180,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusSpinRadS:magnusSpin,
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,
-    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
+    diagnosticResearchShotAttacker
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;
@@ -205,7 +217,7 @@ export function createEngine(RAPIER, input = {}, {
     throw new Error('Rapier match-ball mass/inertia mismatch');
   // No additional world or colliders on the accepted default-off core.
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
-    createPrivateRapierFootContactBridge(RAPIER,world,ballCollider):null;
+    createPrivateRapierFootContactBridge(RAPIER,world,ballCollider,stagedShoes):null;
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,

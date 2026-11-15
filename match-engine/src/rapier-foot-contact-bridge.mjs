@@ -4,7 +4,7 @@ import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
  FOOT_CONTACT_HALF_WIDTH_M,FOOT_CONTACT_HALF_HEIGHT_M,
  FOOT_CONTACT_ROUNDING_M,FOOT_CONTACT_FRICTION,
- FOOT_CONTACT_RESTITUTION,initialFootPositions,footProxyTransform,
+ FOOT_CONTACT_RESTITUTION,footProxyTransform,
  validateFootContactFrame} from './player-foot-contact.mjs';
 import {createFootContactTimeline} from './player-foot-contact-timeline.mjs';
 import {summarizeFootSolverEvidence} from './player-foot-contact-solver.mjs';
@@ -14,15 +14,21 @@ const ordered=set=>Object.freeze(INITIAL_PLAYERS
  .filter(p=>set.has(p.id)).map(p=>p.id));
 const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 
-export function createPrivateRapierFootContactBridge(R,world,ballCollider){
+export function createPrivateRapierFootContactBridge(R,world,ballCollider,initialPlayers=INITIAL_PLAYERS){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
     !ballCollider||ballCollider.handle===undefined||
     ballCollider.handle===null)
   throw new TypeError('Existing private Rapier ball world and collider required');
+ if(!Array.isArray(initialPlayers)||initialPlayers.length!==INITIAL_PLAYERS.length||
+    initialPlayers.some((p,i)=>!p||p.id!==INITIAL_PLAYERS[i].id||
+     p.team!==INITIAL_PLAYERS[i].team||p.role!==INITIAL_PLAYERS[i].role||
+     ![p.x,p.y,p.facingRad].every(Number.isFinite)||
+     Math.abs(p.x)>52.5||Math.abs(p.y)>34))
+  throw new TypeError('Ordered canonical 22-player initial shoes required');
  const eventQueue=new R.EventQueue(true);
  const colliders=[],bodies=[],idsByCollider=new Map();
- for(const p of INITIAL_PLAYERS){
+ for(const p of initialPlayers){
   const pose=footProxyTransform(p);
   const body=world.createRigidBody(
    R.RigidBodyDesc.kinematicPositionBased()
@@ -38,7 +44,9 @@ export function createPrivateRapierFootContactBridge(R,world,ballCollider){
   idsByCollider.set(collider.handle,p.id);
  }
  const timeline=createFootContactTimeline();
- let positions=initialFootPositions(),tick=0,disposed=false;
+ let positions=Object.freeze(initialPlayers.map(p=>
+  Object.freeze({x:p.x,y:p.y,facingRad:p.facingRad}))),
+  tick=0,disposed=false;
  let active=new Set(),solver=null;
  let current=Object.freeze({
   version:FOOT_CONTACT_VERSION,tick:0,
