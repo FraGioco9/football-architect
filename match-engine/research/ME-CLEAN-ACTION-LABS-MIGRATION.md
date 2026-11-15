@@ -21,42 +21,60 @@ All five Action LABs instantiate exactly **one** `createEngine` from the clean c
 No official goal, possession, score, tackle, pass completion, dribble, or natural
 11v11 tactical success is awarded by any controlled LAB.
 
+## Scope decision — desktop-only DEV LAB (2026-11-15)
+
+The owner will use the Match Engine LAB **only on desktop**. Safari/iPhone
+hardware, touch, portrait/landscape and phone viewport QA are **out of scope**,
+not failed and not untested acceptance blockers. The already completed historical
+Chrome phone emulation remains useful evidence but is no longer required or
+re-run in the focused browser acceptance suite.
+
+This decision does not change any action physics, user-facing main product,
+official match state, private DEV routing, release authorization or FULL CI
+requirements. Keep the five controlled LABs and the legacy original physics
+LAB regression focused on desktop Chrome.
+
 ## Exact-head QA / remaining acceptance gates
 
-- [x] Clean-stack targeted CI at [`171f85a`](https://github.com/FraGioco9/football-architect/commit/171f85a889a380a9a520129e12125ebd5c5cfb2e): [ME-01 #43741585891](https://github.com/FraGioco9/football-architect/actions/runs/43741585891) **295/295 Node**, **9/9 routing**, original LAB viewport and all five Chrome Action LAB interactions
-- [x] Regressions across 13 Action LAB combinations ×61 60 Hz ticks, stable 22 players, minimum 1.15 m body separation (canonical floor 0.98 m), no official state writes
-- [x] Real Chrome requestAnimationFrame Play/Pause/Step/Reset verified; mobile-sized Chrome 320/375/390 px without horizontal overflow, modal scroll as needed
-- [x] Source and option guards cover absent, multi-START and ACTIVE-ambiguous input, stale tick and cooldown. These are pure **counterfactual policy inputs**, not observed simultaneous physical Rapier contacts
-- [x] Site, Admin, Browser QA, ME targeted and #622 FULL workflow complete **SUCCESS** at their respective checked HEADs; stacked #624/#626/#627 FULL gate remains **non-green by design** because the base is not `main`
-- [ ] QA on an **actual iPhone using Safari**: Chrome device emulation and GitHub Ubuntu Chrome cannot certify Safari
-- [ ] Verify the latest `main` and ordered PR head/base leases before an explicitly authorized merge of #622 → #624 → #626 → #627; do not retarget/flatten the stack to trick FULL
-- [ ] Execute authorized integration and post-merge FULL only after user approval
+- [x] Clean-stack targeted CI at [`b8352a6`](https://github.com/FraGioco9/football-architect/commit/b8352a622e06ec9f7e74d4d7cfe1ff3ffc8c8440):
+  [ME-01 #43742620635](https://github.com/FraGioco9/football-architect/actions/runs/43742620635) **295/295 Node**, **9/9 routing**, original LAB viewport and five desktop Chrome Action LAB interactions
+- [x] Regressions over 13 Action LAB combinations ×61 60Hz ticks,
+  22 stable player identities, minimum measured separation 1.15m
+  against canonical 0.98m and no official result/possession mutations
+- [x] Real desktop Chrome Play, Pause, Step, Reset, scenario/side selectors,
+  dialog open/close and existing original LAB-01/02/04/05 viewport acceptance
+- [x] Source/option guards for absent START, multiple or ACTIVE-ambiguous inputs,
+  stale tick and cooldown; simulated input tests are **not** evidence of
+  physical simultaneous dual-shoe Rapier events
+- [x] iPhone Safari / phone layout QA explicitly **N/A by owner decision**;
+  not a required milestone, not a claim that Safari was tested
+- [x] Prior Site, Admin, Browser, ME targeted and #622 FULL workflows
+  succeeded at their respective checked HEADs. Stacked #624/#626/#627
+  FULL gate is non-green because the base is not `main`
+- [ ] Recheck current `main`, exact HEAD/base SHA leases and complete
+  required FULL evidence before independently authorized ordered integration
+- [ ] Obtain separate explicit merge authorization and run post-merge checks
+  before any release or deployment
 
-## Manual iPhone Safari QA checklist — not yet executed
+## Desktop QA acceptance checklist
 
-Use an **authorized DEV-only LAB URL reachable by the iPhone**, not a production
-page or a public `/__fa_match_engine__/` route. Since the existing local preview
-binds to `127.0.0.1`, it is not automatically reachable from another device;
-a separately approved secure DEV delivery path is needed for hardware testing.
+1. On the authorized DEV-only desktop URL, confirm the original
+   match-engine LAB and LAB-01/02/04/05 still render with correct pitch
+   geometry and existing controls at 1280×720 and 1440×900
+2. Open Controlled actions, select Pass, Shot, Challenge, Control, Carry;
+   check that Side, Lane and Scene controls are displayed only when relevant
+3. Play must advance real 60Hz ticks, Pause freeze, Step advance exactly
+   one tick and Reset return to tick 0 with no phantom witnesses
+4. Confirm SHOT HOME/AWAY and blocked lanes, CHALLENGE actual contact vs
+   No contact, CONTROL Receiving shoe vs Opponent first, CARRY HOME/AWAY
+   and distinct evidence without false goals/tackles/interceptions/possession
+5. Close and reopen the dialog. Confirm the parent LAB stays usable
+   without duplicate animation or stale physics session
+6. Keep the target Node, routing, original Chrome viewport and five Action LAB
+   browser tests GREEN on the exact PR HEAD
 
-1. Open the original match-engine LAB, verify its sidebar and existing
-   LAB-01/02/04/05 selectors remain functional
-2. Open *Controlled actions*: check the dialog fits portrait and landscape,
-   scrolling reveals buttons and status, and there is no horizontal overflow
-3. Select each of Pass, Shot, Challenge, Control, Carry; verify Side/Lane/Scene
-   controls appear only where applicable, and changing them resets to tick 0
-4. In Pass, press Play; verify 60 Hz time advances visibly, Pause freezes,
-   Step advances one tick, Reset restores the original state and clears witnesses
-5. Verify SHOT HOME/AWAY, blocked lane, CHALLENGE contact vs No contact,
-   CONTROL Receiving shoe vs Opponent first, CARRY HOME/AWAY; all status
-   messages must avoid fake goal/tackle/interception/possession claims
-6. Close the modal by Close and by Safari's native dialog dismissal as
-   available. Check original LAB resumes without duplicate animation,
-   missing layout or scroll lock. Reopen once and test again
-
-**Acceptance:** record device, iOS/Safari versions, orientation, any failing
-step and screenshot; mark #620 step 5b complete only after actual device
-evidence. Chrome emulation alone is insufficient.
+**No iPhone/Safari verification needed for acceptance of this desktop-only
+DEV research tool.**
 
 ## Review and integration isolation
 

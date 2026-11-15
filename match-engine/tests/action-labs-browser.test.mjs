@@ -314,42 +314,38 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    process.stdout.write('ACTION_LAB_CHROME_BLOCKED_'+side.toUpperCase()+
     ' '+JSON.stringify(blocked)+'\\n');
   }
-  // Phone-size Chrome layout regression only. This is NOT real iPhone Safari QA.
-  for(const [width,height] of [[320,568],[375,667],[390,844]]){
+  // Desktop-only LAB acceptance (owner scope, #620). No Safari/touch QA.
+  for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{
-    width,height,deviceScaleFactor:2,mobile:true
+    width,height,deviceScaleFactor:1,mobile:false
    });
-   const mobile=await evalJs("(()=>{"+
+   const desktop=await evalJs("(()=>{"+
     "const d=document.getElementById('action-labs-dialog');"+
     "const r=d.getBoundingClientRect();"+
-    "const canvas=document.getElementById('action-labs-pitch').getBoundingClientRect();"+
-    "const controls=[...document.querySelectorAll('#action-labs-dialog button')].filter(el=>el.getBoundingClientRect().width>0);"+
+    "const pitch=document.getElementById('action-labs-pitch').getBoundingClientRect();"+
     "const toolbar=document.querySelector('.me-action-labs-toolbar');"+
-    "return {innerWidth:innerWidth,dialogWidth:r.width,dialogLeft:r.left,dialogRight:r.right,"+
+    "const buttons=[...document.querySelectorAll('#action-labs-dialog button')].filter(el=>el.getBoundingClientRect().width>0);"+
+    "return {viewport:innerWidth,dialogLeft:r.left,dialogRight:r.right,"+
     "dialogScrollWidth:d.scrollWidth,dialogClientWidth:d.clientWidth,"+
-    "canvasLeft:canvas.left,canvasRight:canvas.right,"+
-    "controlsVisible:controls.every(el=>el.getBoundingClientRect().width>30),"+
     "toolbarScrollWidth:toolbar.scrollWidth,toolbarClientWidth:toolbar.clientWidth,"+
-    "opened:d.open,canScroll:d.scrollHeight>d.clientHeight};})()");
-   assert.equal(mobile.opened,true);
-   assert.ok(mobile.innerWidth>=width-1&&mobile.innerWidth<=width+1,
-    'Chrome mobile viewport not applied '+JSON.stringify(mobile));
-   assert.ok(mobile.dialogLeft>=-2&&mobile.dialogRight<=width+2,
-    'Action dialog exceeds phone viewport '+JSON.stringify(mobile));
-   assert.ok(mobile.dialogScrollWidth<=mobile.dialogClientWidth+3,
-    'Action dialog horizontal overflow '+JSON.stringify(mobile));
-   assert.ok(mobile.toolbarScrollWidth<=mobile.toolbarClientWidth+3,
-    'Action toolbar horizontal overflow '+JSON.stringify(mobile));
-   assert.ok(mobile.canvasLeft>=mobile.dialogLeft-2&&
-    mobile.canvasRight<=mobile.dialogRight+2,
-    'Action field exceeds dialog '+JSON.stringify(mobile));
-   assert.equal(mobile.controlsVisible,true);
-   process.stdout.write('ACTION_LAB_CHROME_PHONE_VIEWPORT '+
-    JSON.stringify({width,height,...mobile})+'\\n');
+    "pitchLeft:pitch.left,pitchRight:pitch.right,"+
+    "buttonsVisible:buttons.every(el=>el.getBoundingClientRect().width>30),"+
+    "opened:d.open};})()");
+   assert.equal(desktop.viewport,width);
+   assert.equal(desktop.opened,true);
+   assert.ok(desktop.dialogLeft>=-2&&desktop.dialogRight<=width+2,
+    'Action LAB dialog exceeds desktop viewport '+JSON.stringify(desktop));
+   assert.ok(desktop.dialogScrollWidth<=desktop.dialogClientWidth+3,
+    'Action LAB horizontal overflow '+JSON.stringify(desktop));
+   assert.ok(desktop.toolbarScrollWidth<=desktop.toolbarClientWidth+3,
+    'Action LAB toolbar overflow '+JSON.stringify(desktop));
+   assert.ok(desktop.pitchLeft>=desktop.dialogLeft-2&&
+    desktop.pitchRight<=desktop.dialogRight+2,
+    'Action pitch exceeds dialog '+JSON.stringify(desktop));
+   assert.equal(desktop.buttonsVisible,true);
+   process.stdout.write('ACTION_LAB_CHROME_DESKTOP_VIEWPORT '+
+    JSON.stringify({width,height,...desktop})+'\\n');
   }
-  await send('Emulation.setDeviceMetricsOverride',{
-   width:1440,height:900,deviceScaleFactor:1,mobile:false
-  });
   const close=await evalJs("(()=>{"+
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
