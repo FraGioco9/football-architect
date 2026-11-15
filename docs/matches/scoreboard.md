@@ -1,7 +1,7 @@
 # #577 — Match scoreboard: flat bar and overlapping 48px badge
 
 The Match Detail scoreboard is a single compact, competition-branded strip,
-**272×48px maximum on desktop** and **258×48px maximum on mobile**.
+**284×48px maximum on desktop** and **268×48px maximum on mobile**.
 Its dimensions, page centring and first-paint reserved columns remain fixed.
 
 ## Layout
@@ -18,7 +18,7 @@ paths are modified, recoloured, masked, or given an artificial outline.
 
 The main strip is **flat** (no gradient, bottom accent or decorative
 second border). Scores and team abbreviations share its surface with no
-separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **26px desktop / 24px mobile**, bold and **centred horizontally and vertically** in the 48px row. Score columns reserve **35px desktop / 32px mobile** each for two-digit results, with each score aligned toward the centre. The dash gets an **8px track** and grid column spacing is **0px** on both desktop and mobile. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
+separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **26px desktop / 24px mobile**, bold and **centred horizontally and vertically** in the 48px row. Score columns reserve **35px desktop / 32px mobile** each for two-digit results, with each score aligned toward the centre but inset 3px away from the dash. The larger dash gets a **20px desktop / 18px mobile** track and is **21px desktop / 19px mobile**. It is **pure white in Dark** and **identical in colour to the team names in Light**. Grid column spacing remains **0px**. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
 space before data arrives; no layout jumping or invented score data.
 
 ## Theme
@@ -30,7 +30,7 @@ space before data arrives; no layout jumping or invented score data.
 | Logo | Original approved SVG colours, 44×44px | Same, unchanged |
 | Text and score | Ivory | Approved secondary graphite |
 | Main and badge outlines | Secondary graphite | Competition primary |
-| Desktop / mobile width | 272px / 258px max | Same |
+| Desktop / mobile width | 284px / 268px max | Same |
 | Height | 48px | 48px |
 
 Each of the 16 domestic competitions retains its own official primary HEX;
@@ -151,3 +151,13 @@ inter-column gaps and shrinking the dash track also reduces the scoreboard
 to **272px desktop / 258px mobile**, without shrinking either team-name track.
 First-paint widths remain reserved; font sizes, skeleton, badge and row height
 are unchanged. Contract and browser tests assert this geometry.
+
+### Central dash spacing and theme
+
+The centre en dash is now 21px desktop / 19px mobile. Scores retain their two-digit
+reserved width but gain a 3px inward-edge inset. A 20px / 18px separator track
+gives the dash adequate breathing room, without reintroducing column gaps.
+It is **white only in Dark**; in Light, it takes the exact same computed colour
+as team abbreviations through `var(--app-match-text)`, without text strokes or
+background boxes. First-paint browser QA compares the computed colours in
+both themes and checks the spacing of the score and dash glyphs.

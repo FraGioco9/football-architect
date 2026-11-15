@@ -8,7 +8,7 @@
  --app-match-logo-surface:#F5F1E8;
  --app-match-radius:6px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
- width:min(100%,272px);height:48px;margin:0 auto;padding:0;
+ width:min(100%,284px);height:48px;margin:0 auto;padding:0;
  background:transparent;color:var(--app-match-text);
 }
 /* The bar starts 12px behind the left badge: the 48px tile visibly
@@ -22,9 +22,9 @@
 }
 .app-match-score-line{
  position:relative;z-index:1;box-sizing:border-box;display:grid;
- /* Zero space between columns. Score tracks hold two digits; the narrow
-    dash track separates the scores without adding an extra gap. */
- grid-template-columns:48px minmax(0,1fr) 35px 8px 35px minmax(0,1fr);
+ /* Zero column gaps; a wider central track keeps the large dash clear of
+    both two-digit scores without reducing the team-name columns. */
+ grid-template-columns:48px minmax(0,1fr) 35px 20px 35px minmax(0,1fr);
  column-gap:0;align-items:center;min-width:0;
  width:100%;height:100%;padding-right:8px;
 }
@@ -69,16 +69,16 @@
  font-weight:850;letter-spacing:-.045em;font-variant-numeric:tabular-nums;
  color:var(--app-match-text);
 }
-/* Bring each two-digit score flush against its side of the middle dash. */
-.app-match-side-score[data-match-home-score]{text-align:right}
-.app-match-side-score[data-match-away-score]{text-align:left}
+/* Scores align inward with a 3px inset to leave breathing room at the dash. */
+.app-match-side-score[data-match-home-score]{box-sizing:border-box;text-align:right;padding-right:3px}
+.app-match-side-score[data-match-away-score]{box-sizing:border-box;text-align:left;padding-left:3px}
 .app-match-score-separator{
- text-align:center;color:var(--app-match-text);
- font-size:13px;line-height:1;font-weight:600;opacity:.6;
+ text-align:center;color:#FFFFFF;
+ font-size:21px;line-height:1;font-weight:700;opacity:1;
 }
 .app-match-scoreboard-meta{
  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
- gap:4px 8px;max-width:272px;min-height:18px;margin:9px auto 0;
+ gap:4px 8px;max-width:284px;min-height:18px;margin:9px auto 0;
  color:var(--muted);text-align:center;
 }
 .app-match-status{font-size:10px;line-height:1.35;font-weight:700;letter-spacing:.025em}
@@ -104,20 +104,22 @@ html[data-theme="light"] .app-match-scoreboard{
 html[data-theme="light"] .app-match-scoreboard::before{
  background:color-mix(in srgb,var(--app-match-surface) 16%,#F5F1E8 84%);
 }
+/* In Light, the dash shares exactly the same text colour as both teams. */
+html[data-theme="light"] .app-match-score-separator{color:var(--app-match-text)}
 .app-match-scoreboard[data-scoreboard-theme="neutral"]{--app-match-edge:#243039}
 html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;--app-match-edge:#243039;
 }
 @media(max-width:480px){
  .app-match-page{padding-top:4px}
- .app-match-scoreboard{width:min(100%,258px);height:48px}
+ .app-match-scoreboard{width:min(100%,268px);height:48px}
  .app-match-score-line{
-  grid-template-columns:48px minmax(0,1fr) 32px 8px 32px minmax(0,1fr);
+  grid-template-columns:48px minmax(0,1fr) 32px 18px 32px minmax(0,1fr);
   column-gap:0;padding-right:8px;
  }
  .app-match-team-link{font-size:24px;letter-spacing:0}
  .app-match-team-link .app-skeleton-bar{width:50px;height:18px}
  .app-match-side-score{font-size:22px}
- .app-match-score-separator{font-size:12px}
- .app-match-scoreboard-meta{max-width:258px;margin-top:8px}
+ .app-match-score-separator{font-size:19px}
+ .app-match-scoreboard-meta{max-width:268px;margin-top:8px}
 }
