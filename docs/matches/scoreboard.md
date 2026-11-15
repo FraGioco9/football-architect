@@ -100,3 +100,11 @@ in the test harness and supplies an injected HTML response, while keeping
 match hydration disabled until the parser-time styles are inspected. It
 checks direct navigation and refresh, 48px reserved badge and fixed scoreboard
 height/width. It is not a deployment or a live D1 validation.
+
+### Neutral-state first paint regression fix
+
+A parser-time palette must also replace the initial `data-scoreboard-theme="neutral"`
+with the verified `competition` state in the same HTML response. Otherwise
+Light CSS's neutral border override remains graphite until JavaScript loads.
+The FULL browser test checks the real Light border colour, stable refresh and
+the 44px official emblem centred within the 48px bordered tile.

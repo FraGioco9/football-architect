@@ -41,11 +41,13 @@ for(const [engine,driver] of Object.entries(engines)){
      const art=image?.getBoundingClientRect();
      const css=getComputedStyle(el);
      const bar=getComputedStyle(el,'::before');
+     const tileStyle=getComputedStyle(tile);
      return {width:rect.width,height:rect.height,
       surface:css.getPropertyValue('--app-match-surface').trim(),
       barColour:bar.backgroundColor,
       mode:document.documentElement.dataset.theme,
-      tile:{w:box.width,h:box.height},
+      badgeTheme:el.dataset.scoreboardTheme,
+      tile:{w:box.width,h:box.height,borderColour:tileStyle.borderTopColor},
       art:art?{w:art.width,h:art.height,dx:art.x+art.width/2-box.x-box.width/2,
        dy:art.y+art.height/2-box.y-box.height/2}:null};
     });
@@ -55,19 +57,42 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.height,48);
     assert.ok(Math.abs(first.width-device.expectedWidth)<1,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
+    assert.equal(first.badgeTheme,'competition');
     // The image is intentionally absent until the authorized match payload
     // arrives: the reserved badge itself must still be fully sized and centred.
     assert.equal(first.art,null);
     const light=theme==='light';
     assert.ok(first.barColour&&!['transparent','rgba(0, 0, 0, 0)'].includes(first.barColour));
-    if(!light)assert.equal(first.barColour,'rgb(21, 95, 80)');
-    else assert.notEqual(first.barColour,'rgb(36, 48, 57)');
+    if(!light){
+     assert.equal(first.barColour,'rgb(21, 95, 80)');
+     assert.equal(first.tile.borderColour,'rgb(36, 48, 57)');
+    }else{
+     assert.notEqual(first.barColour,'rgb(36, 48, 57)');
+     assert.equal(first.tile.borderColour,'rgb(21, 95, 80)');
+    }
+    // Render the real official SVG inside the reserved tile to verify the
+    // final 44px artwork is precisely centred without changing box geometry.
+    await page.evaluate(async()=>{
+     const slot=document.querySelector('[data-match-competition-logo]');
+     const img=document.createElement('img');
+     img.width=44;img.height=44;img.alt='';
+     img.src='/assets/divisions/it-1-lega-federale/compact.svg';
+     slot.append(img);
+     await img.decode();
+    });
+    const withImage=await sample();
+    assert.ok(withImage.art,JSON.stringify({engine,theme,device}));
+    assert.equal(withImage.art.w,44);assert.equal(withImage.art.h,44);
+    assert.ok(Math.abs(withImage.art.dx)<=0.5,JSON.stringify({engine,theme,device,withImage}));
+    assert.ok(Math.abs(withImage.art.dy)<=0.5,JSON.stringify({engine,theme,device,withImage}));
     // A refresh must begin on the correct competition colour, too.
     await page.reload({waitUntil:'domcontentloaded'});
     const second=await sample();
     assert.equal(second.surface,first.surface);
     assert.equal(second.barColour,first.barColour);
     assert.equal(second.mode,theme);
+    assert.equal(second.badgeTheme,'competition');
+    assert.equal(second.tile.borderColour,first.tile.borderColour);
     count++;
    }finally{await ctx.close()}
   }

@@ -12,6 +12,8 @@ it('parser-time HTML includes only verified competition palette before page mark
  expect(style).toBeLessThan(result.indexOf('</head>'));
  expect(result).toContain('--app-match-surface:#155F50');
  expect(result).toContain('--app-match-accent:#243039');
+ expect(result).toContain('data-scoreboard-theme="competition"');
+ expect(result).not.toContain('data-scoreboard-theme="neutral"');
  expect(result).not.toContain('homeGoals');
  expect(result).not.toContain('IT-1');
  expect(result.match(/data-fa-match-first-paint/g)).toHaveLength(1);

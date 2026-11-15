@@ -12,7 +12,7 @@ export function applyPublishedMatchFirstPaint(html,payload,expectedId){
  // Only the approved, generated match HTML is eligible. Do not modify API
  // responses, arbitrary documents, or malformed/fallback content.
  if(!html.startsWith('<!doctype html>')||!html.includes('<head>')||
-    !html.includes('<section class="app-match-scoreboard"')||
+    !html.includes('<section class="app-match-scoreboard" data-scoreboard-theme="neutral"')||
     !html.includes('</head>'))return html;
  // These are closed-over versioned HEX literals; never embed a request value.
  // Executed by the HTML parser before the scoreboard exists or any defer JS.
@@ -20,5 +20,9 @@ export function applyPublishedMatchFirstPaint(html,payload,expectedId){
   '--app-match-surface:'+theme.backgroundHex+';'+
   '--app-match-ink:'+theme.foregroundHex+';'+
   '--app-match-accent:'+theme.accentHex+'}';
- return html.replace('</head>','<style data-fa-match-first-paint>'+css+'</style>\n</head>');
+ // Also remove the neutral-state CSS override before paint. In Light mode
+ // that override otherwise keeps the logo tile border grey until hydration.
+ const branded=html.replace('data-scoreboard-theme="neutral"',
+  'data-scoreboard-theme="competition"');
+ return branded.replace('</head>','<style data-fa-match-first-paint>'+css+'</style>\n</head>');
 }
