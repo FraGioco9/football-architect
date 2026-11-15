@@ -221,12 +221,15 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <h1 id="match-page-title" class="app-page-title" data-match-label="match">Match</h1>
             <span class="app-match-reference" data-match-reference aria-live="off">#—</span>
           </header>
-          <div class="app-panel app-match-scoreboard">
-            <div class="app-match-context">
-              <a class="app-match-competition" data-match-competition aria-label="Competition"><span class="app-skeleton-bar" aria-hidden="true"></span></a>
-              <span class="app-match-context-secondary" data-match-stage>—</span>
-              <span class="app-match-context-secondary" data-match-day>—</span>
-            </div>
+          <section class="app-match-scoreboard" data-scoreboard-theme="neutral" aria-label="Match scoreboard">
+            <div class="app-match-scoreboard-topline" aria-hidden="true"></div>
+            <header class="app-match-competition-header">
+              <span class="app-match-competition-logo" data-match-competition-logo aria-hidden="true"></span>
+              <span class="app-match-competition-lockup">
+                <a class="app-match-competition" data-match-competition aria-label="Competition"><span class="app-skeleton-bar" aria-hidden="true"></span></a>
+                <span class="app-match-context"><span data-match-stage>—</span><span aria-hidden="true">·</span><span data-match-day>—</span></span>
+              </span>
+            </header>
             <div class="app-match-score-line">
               <div class="app-match-team">
                 <div class="app-match-crest-slot" data-match-home-crest aria-hidden="true"><span class="app-match-crest-skeleton"></span></div>
@@ -242,53 +245,7 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
                 <a class="app-match-team-link" data-match-away-name><span class="app-skeleton-bar" aria-hidden="true"></span></a>
               </div>
             </div>
-          </div>
-          <nav class="app-competition-tabs app-match-tabs" role="tablist" aria-label="Match views" data-match-tabs>
-            <button type="button" class="app-competition-tab is-active" id="match-tab-overview" role="tab" data-match-tab="overview" aria-controls="match-panel-overview" aria-selected="true" tabindex="0">Overview</button>
-            <button type="button" class="app-competition-tab" id="match-tab-lineups" role="tab" data-match-tab="lineups" aria-controls="match-panel-lineups" aria-selected="false" tabindex="-1">Lineups</button>
-            <button type="button" class="app-competition-tab" id="match-tab-stats" role="tab" data-match-tab="stats" aria-controls="match-panel-stats" aria-selected="false" tabindex="-1">Stats</button>
-          </nav>
-          <div class="app-match-panels">
-            <div id="match-panel-overview" role="tabpanel" data-match-panel="overview" aria-labelledby="match-tab-overview">
-              <div class="app-match-two-columns">
-                <section class="app-panel" aria-labelledby="match-details-title">
-                  <h2 id="match-details-title" data-match-label="details">Match details</h2>
-                  <dl class="app-match-details">
-                    <div><dt data-match-label="competition">Competition</dt><dd data-match-detail-value="competition">—</dd></div>
-                    <div><dt data-match-label="season">Season</dt><dd data-match-detail-value="season">—</dd></div>
-                    <div><dt data-match-label="round">Round</dt><dd data-match-detail-value="round">—</dd></div>
-                    <div><dt data-match-label="day">Sporting day</dt><dd data-match-detail-value="day">—</dd></div>
-                    <div><dt data-match-label="kickoff">Kickoff</dt><dd data-match-detail-value="kickoff">—</dd></div>
-                    <div><dt data-match-label="venue">Venue</dt><dd data-match-detail-value="venue">—</dd></div>
-                  </dl>
-                </section>
-                <section class="app-panel" aria-labelledby="match-events-title">
-                  <h2 id="match-events-title" data-match-label="events">Match events</h2>
-                  <div class="app-match-activity" data-match-events><p>Events are not recorded yet.</p></div>
-                </section>
-              </div>
-            </div>
-            <div id="match-panel-lineups" role="tabpanel" data-match-panel="lineups" aria-labelledby="match-tab-lineups" hidden>
-              <div class="app-match-two-columns">
-                <section class="app-panel app-match-lineup" aria-labelledby="match-home-lineup-title">
-                  <h2 id="match-home-lineup-title" data-match-lineup-heading="home">Home lineup</h2>
-                  <p class="app-match-lineup-status" data-match-lineup-status="home">Not confirmed</p>
-                  <div data-match-lineup-players="home" class="app-match-lineup-players"><p>Lineup not available.</p></div>
-                </section>
-                <section class="app-panel app-match-lineup" aria-labelledby="match-away-lineup-title">
-                  <h2 id="match-away-lineup-title" data-match-lineup-heading="away">Away lineup</h2>
-                  <p class="app-match-lineup-status" data-match-lineup-status="away">Not confirmed</p>
-                  <div data-match-lineup-players="away" class="app-match-lineup-players"><p>Lineup not available.</p></div>
-                </section>
-              </div>
-            </div>
-            <div id="match-panel-stats" role="tabpanel" data-match-panel="stats" aria-labelledby="match-tab-stats" hidden>
-              <section class="app-panel" aria-labelledby="match-stats-title">
-                <h2 id="match-stats-title" data-match-label="statistics">Match statistics</h2>
-                <div data-match-stats><p>Match statistics are not available yet.</p></div>
-              </section>
-            </div>
-          </div>
+          </section>
           <p class="app-match-feedback" data-match-feedback role="status" aria-live="polite" hidden></p>
         </section>
       </main>

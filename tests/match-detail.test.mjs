@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
+import {scoreboardThemes,resolveScoreboardTheme,contrastRatio} from '../assets/match-scoreboard-themes.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const catalog=JSON.parse(read('competitions/_shared/manifest.json')).competitions;
 
-test('#577 match URL uses a positive numeric immutable public identity',()=>{
+test('#577 match URLs use only positive numeric public identities',()=>{
  assert.equal(buildRoute({kind:'match',id:1}),'/matches/1');
  assert.equal(parseRoute('/matches/42')?.kind,'match');
  assert.equal(parseRoute('/matches/42/')?.canonical,'/matches/42');
@@ -14,24 +16,66 @@ test('#577 match URL uses a positive numeric immutable public identity',()=>{
  assert.equal(publicRequestFile('/matches/42'),'matches/_shared/index.html');
  assert.equal(publicRequestFile('/matches/42/'),'matches/_shared/index.html');
 });
-test('#577 official match is a single guarded, generated shell',()=>{
- for(const path of ['matches/_shared/index.html','assets/match-detail.js','assets/match-detail.css'])assert.equal(isAllowlistedPublicPath(path),true,path);
+test('#577 scoreboard is the first independently reusable match section',()=>{
+ for(const path of ['matches/_shared/index.html','assets/match-detail.js','assets/match-detail.css','assets/match-scoreboard-themes.mjs'])
+  assert.equal(isAllowlistedPublicPath(path),true,path);
  assert.ok(planPublicFiles().includes('matches/_shared/index.html'));
- const html=read('matches/_shared/index.html');
- assert.match(html,/data-match-detail/);
- for(const section of ['overview','lineups','stats'])assert.match(html,new RegExp('data-match-panel="'+section+'"'));
- assert.match(html,/app-competition-tabs/);
+ const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
+ for(const section of [html,template]){
+  assert.match(section,/data-match-detail/);
+  assert.match(section,/app-match-scoreboard/);
+  assert.match(section,/data-match-competition-logo/);
+  assert.match(section,/data-match-home-crest/);
+  assert.match(section,/data-match-away-crest/);
+  assert.match(section,/data-match-score/);
+  assert.match(section,/data-match-status/);
+  assert.doesNotMatch(section,/data-match-tab|data-match-panel/);
+ }
  assert.doesNotMatch(html,/\btemporary-score-v1\b|<script\b[^>]*src="https?:/);
- const renderer=read('tools/generate-app-pages.mjs');
- assert.match(renderer,/writeOutput\("matches\/_shared\/index\.html"/);
+ assert.match(read('tools/generate-app-pages.mjs'),/writeOutput\("matches\/_shared\/index\.html"/);
 });
-test('#577 uses authoritative match API and never synthesizes results or confirmation',()=>{
+test('#577 every competition has an explicit theme and only approved HEX roles are used',()=>{
+ const ids=catalog.map(x=>x.id).sort();
+ assert.deepEqual(Object.keys(scoreboardThemes).sort(),ids);
+ for(const competition of catalog){
+  const config=scoreboardThemes[competition.id];
+  assert.ok(config,'Missing theme '+competition.id);
+  assert.equal(config.logoAsset,null,'Logo may only be set once approved');
+  const theme=resolveScoreboardTheme(competition);
+  assert.ok(contrastRatio(theme.backgroundHex,theme.foregroundHex)>=4.5);
+  assert.match(theme.backgroundHex,/^#[0-9A-F]{6}$/);
+  assert.match(theme.foregroundHex,/^#[0-9A-F]{6}$/);
+  assert.match(theme.accentHex,/^#[0-9A-F]{6}$/);
+  if(competition.category==='international'){
+   assert.equal(theme.kind,'neutral','No dedicated international colour approved yet');
+   assert.equal(theme.logoAsset,null);
+  }else{
+   const allowed=[competition.primaryHex,competition.secondaryHex,competition.ivoryHex];
+   assert.equal(theme.kind,'competition',competition.id);
+   for(const field of ['backgroundHex','foregroundHex','accentHex'])
+    assert.ok(allowed.includes(theme[field]),competition.id+': '+field);
+   assert.equal(theme.backgroundHex,competition.primaryHex);
+   assert.equal(theme.foregroundHex,competition.ivoryHex);
+  }
+ }
+});
+test('#577 refuses arbitrary palette entries or fake logos',()=>{
+ assert.equal(resolveScoreboardTheme(null).kind,'neutral');
+ assert.equal(resolveScoreboardTheme({id:'ZZ-1'}).kind,'neutral');
+ const sample=catalog.find(x=>x.id==='IT-1');
+ assert.equal(resolveScoreboardTheme({...sample,primaryHex:'#123456'}).kind,'neutral',
+  'A valid-looking but unapproved HEX must be rejected');
+ assert.equal(resolveScoreboardTheme({...sample,primaryHex:'orange'}).kind,'neutral');
+ assert.equal(resolveScoreboardTheme({...sample,ivoryHex:'var(--unsafe)'}).kind,'neutral');
+ assert.equal(resolveScoreboardTheme(sample).logoAsset,null);
+});
+test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
+ assert.match(js,/import\('\/assets\/match-scoreboard-themes\.mjs'\)/);
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
- assert.match(js,/v\?\.confirmed===true&&Array\.isArray\(v\.starters\)&&v\.starters\.length===11/);
- assert.match(js,/const s=data\.status;/);
- assert.match(js,/s==='scheduled'&&validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
+ assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
+ assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
  assert.match(js,/if\(!numeric\(matchId\)\)/);
- assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture/);
+ assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
 });
