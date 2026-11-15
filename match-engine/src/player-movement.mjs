@@ -1577,6 +1577,7 @@ export function createPlayerMovement(options={}){
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
+     k!=='researchControlOppositionSlot'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
@@ -1589,6 +1590,9 @@ export function createPlayerMovement(options={}){
      options.researchShotBlockedLane!==undefined||
      options.researchControlReceiver!==undefined||
      options.researchControlBall!==undefined))||
+    (options.researchControlOppositionSlot!==undefined&&(
+     !Number.isInteger(options.researchControlOppositionSlot)||
+     options.researchControlReceiver!==true))||
     (options.researchControlReceiver!==undefined&&(
      options.researchControlReceiver!==true||
      !Object.hasOwn(options,'researchControlBall')||
@@ -1608,7 +1612,8 @@ export function createPlayerMovement(options={}){
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
   options.researchControlReceiver===true?
-   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall):
+   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
+    options.researchControlOppositionSlot??null):
   options.researchCarrySide!==undefined?
    initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
     options.researchCarryBall):INITIAL_PLAYERS;
@@ -1810,6 +1815,8 @@ export function createPlayerMovement(options={}){
    throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
   const receiverApproaching=priorRealPass!==null&&
    tick-priorRealPass.tick<180;
+  const opponentApproaching=receiverApproaching&&
+   options.researchControlOppositionSlot!==undefined;
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
@@ -1981,6 +1988,8 @@ export function createPlayerMovement(options={}){
   };
   const targets=players.map(p=>{
    if(receiverApproaching&&p.id==='home-9')
+    return Object.freeze({x:ball.x,y:ball.y});
+   if(opponentApproaching&&p.id==='away-7')
     return Object.freeze({x:ball.x,y:ball.y});
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?

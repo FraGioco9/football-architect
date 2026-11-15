@@ -512,3 +512,55 @@ test('CARRY unavailable by original rules: genuine PASS takes priority, not fict
  assert.throws(()=>createControlledActionLab(R,'pass',{carrySide:'away'}),
   /bounded/);
 });
+
+
+test('CONTROL 2b research: real opponent-first vs intended receiver across bounded initial cases',
+ {timeout:100000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {createEngine}=await import('../src/core.mjs');
+ const {createPlayerMovement}=await import('../src/player-movement.mjs');
+ const {RESEARCH_CONTROL_OPPONENT_CANDIDATES:candidates}=await import(
+  '../src/research-control-initial-lineup.mjs');
+ const ball={preset:'roll',seed:'me-action-pass-receive',
+  x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
+ const results=[];
+ for(let slot=0;slot<candidates.length;slot++){
+  const engine=createEngine(R,ball,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true,
+   diagnosticResearchControlReceiver:true,
+   diagnosticResearchControlOppositionSlot:slot
+  });
+  const mover=createPlayerMovement({
+   researchControlReceiver:true,researchControlBall:ball,
+   researchControlOppositionSlot:slot
+  });
+  let priorPass=null;
+  const trace={slot,p:candidates[slot],pass:null,
+   starts:[],firstOpponent:null,firstReceiver:null,errors:[]};
+  try{
+   for(let tick=1;tick<=100;tick++){
+    const frame=mover.step(engine.snapshot().ball.position,priorPass);
+    engine.step(frame);
+    const action=engine.uniformAutonomousActionSnapshot();
+    const starts=engine.footContactSnapshot().started;
+    if(tick===1){
+     trace.pass=action?.action+' '+action?.passTarget?.recipientId;
+     if(action?.action==='pass'&&
+        action?.passTarget?.recipientId==='home-9')
+      priorPass=action;
+    }
+    if(starts.length){
+     trace.starts.push({tick,ids:starts,action:action?.action??null});
+     if(!trace.firstOpponent&&starts.some(x=>x.startsWith('away-')))
+      trace.firstOpponent=tick;
+     if(!trace.firstReceiver&&starts.includes('home-9'))
+      trace.firstReceiver=tick;
+    }
+   }
+  }catch(e){trace.errors.push(e.message);}
+  finally{engine.dispose();}
+  results.push(trace);
+ }
+ process.stdout.write('ME_CONTROL_OPPONENT_GRID '+JSON.stringify(results)+'\\n');
+});
