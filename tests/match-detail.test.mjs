@@ -137,10 +137,12 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 20px 8px 20px minmax\(0,1fr\)/);
  assert.match(css,/\.app-match-score-line\{[^}]*width:calc\(100% \+ 2px\);height:calc\(100% \+ 2px\);margin:-1px/s);
  assert.match(css,/\.app-match-competition-logo\{[^}]*width:48px;height:48px;overflow:hidden/s);
- assert.match(css,/background:#F5F1E8;border-radius:5px 0 0 5px/);
+ assert.match(css,/background:#F5F1E8;border-radius:var\(--app-match-radius\) 0 0 var\(--app-match-radius\)/);
+ assert.match(css,/--app-match-radius:5px/);
+ assert.match(css,/border-radius:var\(--app-match-radius\);background:var\(--app-match-surface\)/);
  assert.match(css,/\.app-match-competition-logo>span\{[^}]*place-items:center;width:48px;height:48px/s);
- assert.match(css,/\.app-match-competition-logo img\{[^}]*width:36px;height:36px/s);
- assert.match(css,/\.app-match-competition-logo img\{width:34px;height:34px\}/);
+ assert.match(css,/\.app-match-competition-logo img\{[^}]*width:48px;height:48px/s);
+ assert.doesNotMatch(css,/@media\(max-width:480px\)[\s\S]*?\.app-match-competition-logo img\{width:(?:34|36)px/);
  assert.match(css,/\.app-match-scoreboard\{width:min\(100%,310px\);height:48px;padding:0/);
  assert.doesNotMatch(css,/left:-8px;top:-5px|\.app-match-logo-art/);
  assert.match(css,/\.app-match-page\{min-width:0;padding-top:6px;overflow:visible\}/);
@@ -153,6 +155,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/background:color-mix\(in srgb,var\(--app-match-surface\) 16%,#F5F1E8 84%\)/);
  assert.match(css,/border-color:var\(--app-match-surface\)/);
  assert.match(css,/box-shadow:inset 0 -2px var\(--app-match-surface\)/);
+ assert.match(css,/html\[data-theme="light"\] \.app-match-competition-logo\{/);
+ assert.match(css,/background:color-mix\(in srgb,var\(--app-match-surface\) 8%,#F5F1E8 92%\)/);
  assert.match(css,/border:1px solid var\(--app-match-accent\)/);
  assert.match(css,/box-shadow:inset 0 -2px var\(--app-match-accent\)/);
  assert.match(css,/color:var\(--app-match-text\)!important/);

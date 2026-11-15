@@ -1,13 +1,13 @@
-/* #577 — Competition-coloured 48px scorebar with a flush-left ivory 48px tile.
-   Approved logos keep their original primary/secondary fills in both themes. */
+/* #577 — Competition-coloured 48px scorebar with a seamless left logo tile.
+   The source logo remains 48x48 and keeps its original colours in both themes. */
 .app-match-page{min-width:0;padding-top:6px;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
  --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
- --app-match-text:var(--app-match-ink);
+ --app-match-text:var(--app-match-ink);--app-match-radius:5px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
  width:min(100%,340px);height:48px;margin:0 auto;padding:0;
- border-radius:5px;background:var(--app-match-surface);color:var(--app-match-text);
+ border-radius:var(--app-match-radius);background:var(--app-match-surface);color:var(--app-match-text);
  border:1px solid var(--app-match-accent);
  box-shadow:inset 0 -2px var(--app-match-accent);
 }
@@ -22,13 +22,13 @@
  position:relative;z-index:2;box-sizing:border-box;
  display:grid;place-items:center;width:48px;height:48px;overflow:hidden;
  color:var(--app-match-text);text-decoration:none;
- background:#F5F1E8;border-radius:5px 0 0 5px;
+ background:#F5F1E8;border-radius:var(--app-match-radius) 0 0 var(--app-match-radius);
 }
 .app-match-competition-logo>span{
  display:grid;place-items:center;width:48px;height:48px;
 }
 .app-match-competition-logo img{
- display:block;width:36px;height:36px;max-width:none;
+ display:block;width:48px;height:48px;max-width:none;
  object-fit:contain;background:none;border:0;filter:none;
 }
 .app-match-competition-logo[href]:hover{opacity:1}
@@ -79,18 +79,22 @@ html[data-theme="light"] .app-match-scoreboard{
  border-color:var(--app-match-surface);
  box-shadow:inset 0 -2px var(--app-match-surface);
 }
+/* The logo tile is part of the light competition palette, not a fixed
+   dark-theme ivory block; the slight primary tint matches the scorebar. */
+html[data-theme="light"] .app-match-competition-logo{
+ background:color-mix(in srgb,var(--app-match-surface) 8%,#F5F1E8 92%);
+}
 /* International competitions lack dedicated primary/secondary palettes. */
 html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;
 }
 @media(max-width:480px){
  .app-match-page{padding-top:4px}
- .app-match-scoreboard{width:min(100%,310px);height:48px;padding:0;border-radius:5px}
+ .app-match-scoreboard{width:min(100%,310px);height:48px;padding:0;border-radius:var(--app-match-radius)}
  .app-match-score-line{
   grid-template-columns:48px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
   column-gap:3px;padding-right:7px;
  }
- .app-match-competition-logo img{width:34px;height:34px}
  .app-match-team-link{font-size:10px;letter-spacing:.025em}
  .app-match-side-score{font-size:16px}
  .app-match-score-separator{font-size:11px}
