@@ -46,9 +46,11 @@
 .app-match-competition-logo[href]:hover{opacity:1}
 .app-match-competition-logo:not([href]){cursor:default}
 .app-match-team-link{
+ /* Fill the 48px row so letters and scores share the same vertical centre. */
+ display:flex;align-items:center;justify-content:center;align-self:stretch;
  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
- text-align:center;font-size:19px;line-height:1;font-weight:800;letter-spacing:.01em;
+ text-align:center;font-size:22px;line-height:1;font-weight:800;letter-spacing:.01em;
  font-variant-numeric:tabular-nums;
 }
 .app-match-team-home,.app-match-team-away{text-align:center}
@@ -106,7 +108,7 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
   grid-template-columns:48px minmax(0,1fr) 32px 10px 32px minmax(0,1fr);
   column-gap:4px;padding-right:8px;
  }
- .app-match-team-link{font-size:17px;letter-spacing:0}
+ .app-match-team-link{font-size:20px;letter-spacing:0}
  .app-match-side-score{font-size:22px}
  .app-match-score-separator{font-size:12px}
  .app-match-scoreboard-meta{max-width:280px;margin-top:8px}

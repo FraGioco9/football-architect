@@ -18,7 +18,7 @@ paths are modified, recoloured, masked, or given an artificial outline.
 
 The main strip is **flat** (no gradient, bottom accent or decorative
 second border). Scores and team abbreviations share its surface with no
-separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **19px desktop / 17px mobile**, bold and **centred** in their columns. Score columns reserve **35px desktop / 32px mobile** each for two-digit results; the centre dash remains in its separate 12px/10px track. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
+separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **22px desktop / 20px mobile**, bold and **centred horizontally and vertically** in the 48px row. Score columns reserve **35px desktop / 32px mobile** each for two-digit results; the centre dash remains in its separate 12px/10px track. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
 space before data arrives; no layout jumping or invented score data.
 
 ## Theme
@@ -122,3 +122,11 @@ The enlarged, centred abbreviations and fixed two-digit score columns are
 checked in `tests/match-detail.test.mjs` and the first-paint browser suite.
 The 48×48 badge, 44×44 SVG, height, palettes and match data contract are
 unchanged. All widths remain reserved at initial paint to avoid layout shift.
+
+### Vertically centred names
+
+Each team abbreviation fills the full scoreboard row and uses flex alignment
+on both axes, centred against the score numerals rather than baseline-aligned.
+The 296/280px widths, two-digit score columns, competition badge and themes
+are unchanged. Match-first-paint browser QA asserts the name rows have a
+48px height and a vertical-centre delta no greater than 0.5px.

@@ -73,12 +73,21 @@ for(const [engine,driver] of Object.entries(engines)){
      const names=[grid.querySelector('[data-match-home-name]'),grid.querySelector('[data-match-away-name]')];
      const scores=[grid.querySelector('[data-match-home-score]'),grid.querySelector('[data-match-away-score]')];
      const center=grid.querySelector('.app-match-score-separator');
-     return {names:names.map(el=>({align:getComputedStyle(el).textAlign,font:parseFloat(getComputedStyle(el).fontSize),fits:el.scrollWidth<=el.clientWidth+1})),
+     const row=grid.getBoundingClientRect();
+     return {names:names.map(el=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return {
+      align:style.textAlign,display:style.display,vertical:style.alignItems,
+      font:parseFloat(style.fontSize),fits:el.scrollWidth<=el.clientWidth+1,
+      height:rect.height,centerOffset:(rect.y+rect.height/2)-(row.y+row.height/2)
+     }}),
       scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent})),
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
     const isMobile=device.width<=480;
-    for(const name of layout.names){assert.equal(name.align,'center');assert.equal(name.font,isMobile?17:19);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));}
+    for(const name of layout.names){
+     assert.equal(name.align,'center');assert.equal(name.display,'flex');assert.equal(name.vertical,'center');
+     assert.equal(name.font,isMobile?20:22);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
+     assert.equal(name.height,48);assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
+    }
     for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
     assert.equal(layout.separator,'–');assert.equal(layout.height,48);
     assert.equal(first.badgeTheme,'competition');

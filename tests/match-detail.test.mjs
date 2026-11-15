@@ -145,9 +145,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/--app-match-logo-surface:#F5F1E8/);
  assert.match(css,/--app-match-radius:6px/);
  assert.match(css,/\.app-match-side-score\{[^}]*font-size:24px/s);
- assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:19px;line-height:1;font-weight:800;letter-spacing:\.01em/s);
+ assert.match(css,/\.app-match-team-link\{[^}]*display:flex;align-items:center;justify-content:center;align-self:stretch/s);
+ assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:22px;line-height:1;font-weight:800;letter-spacing:\.01em/s);
  assert.match(css,/\.app-match-team-home,\.app-match-team-away\{text-align:center\}/);
- assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:17px;letter-spacing:0\}/);
+ assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:20px;letter-spacing:0\}/);
  assert.match(css,/\.app-match-team-link\{[^}]*min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap/s);
  assert.match(css,/--app-match-text:var\(--app-match-accent\)/);
  assert.match(css,/--app-match-edge:var\(--app-match-surface\)/);
