@@ -85,6 +85,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
   diagnosticResearchControlReceiver = false,
+  diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
   diagnosticResearchCarrySide = null
 } = {}) {
@@ -106,6 +107,11 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
     (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
   throw new TypeError('Blocked lane requires genuine bounded research shot');
+ if(!['home','away'].includes(diagnosticResearchControlSide)||
+    (diagnosticResearchControlSide==='away'&&
+     (!diagnosticResearchControlReceiver||
+      diagnosticResearchControlOpponentFirst)))
+  throw new TypeError('AWAY CONTROL requires the genuine receiver fixture');
  if(typeof diagnosticResearchControlOpponentFirst!=='boolean'||
     (diagnosticResearchControlOpponentFirst&&
      !diagnosticResearchControlReceiver))
@@ -128,7 +134,8 @@ export function createEngine(RAPIER, input = {}, {
    scenario,{blockedLane:diagnosticResearchShotBlockedLane}):
   diagnosticResearchControlReceiver?
    initialResearchControlLineup(INITIAL_PLAYERS,scenario,
-    {opponentFirst:diagnosticResearchControlOpponentFirst}):
+    {opponentFirst:diagnosticResearchControlOpponentFirst,
+     side:diagnosticResearchControlSide}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
     scenario):INITIAL_PLAYERS;
@@ -215,7 +222,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticPlayerFootContactsEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
-    diagnosticResearchControlReceiver,
+    diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);

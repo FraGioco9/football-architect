@@ -17,6 +17,12 @@ export const CARRY_LAB_STARTS=Object.freeze({
  home:scene('me-action-carry-home',-4.96,0,0.3),
  away:scene('me-action-carry-away',4.96,0,-0.3)
 });
+// M4: mirror the *before-tick-zero* CONTROL ball and intended recipient.
+// This never fabricates a Rapier START or bypasses the existing action policy.
+export const CONTROL_LAB_STARTS=Object.freeze({
+ home:scene('me-action-pass-receive',-4.96,0,0.3),
+ away:scene('me-action-pass-receive-away',4.96,0,-0.3)
+});
 // #620 CHALLENGE: mirrored real shoe contact and physically empty counterfactual.
 // The no-contact ball starts >15m from every original canonical shoe;
 // no body, source event, momentum or score is constructed for a negative.
@@ -37,7 +43,7 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
   ['home-7','home-10','away-7'],'opponent-contact'),
  item('control','Control','control',
-  scene('me-action-pass-receive',-4.96,0,0.3),
+  CONTROL_LAB_STARTS.home,
   'A true HOME #10 PASS starts the receiver approach; only a later authentic HOME #9 shoe START counts as receiving contact. Possession or completed reception are never assumed.',
   ['home-9','home-10','away-10'],'control'),
  item('carry','Carry','carry',CARRY_LAB_STARTS.home,

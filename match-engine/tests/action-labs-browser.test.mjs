@@ -405,11 +405,29 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    "readout:document.getElementById('movement-labs-readout').textContent,"+
    "side:side.value,sideDisabled:side.disabled};})()");
   assert.equal(afterPass.side,'home');
-  assert.equal(afterPass.sideDisabled,true);
+  assert.equal(afterPass.sideDisabled,false);
   assert.match(afterPass.readout,/Physical PASS tick 1 · post-pass path [0-9.]+ m/);
   assert.match(afterPass.status,/actual receiver movement after authentic Rapier PASS/);
   assert.doesNotMatch(afterPass.status,/completed pass|possession awarded|goal scored/i);
   process.stdout.write('MOVEMENT_LAB_M3_POSTPASS '+JSON.stringify(afterPass)+'\n');
+
+  // M4: independent genuine AWAY #10 Rapier PASS precedes AWAY #9
+  // observed motion. A UI-side mirror is not source authentication.
+  const awayPostPass=await evalJs("(()=>{"+
+   "const side=document.getElementById('movement-labs-side');"+
+   "side.value='away';side.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<100;i++)document.getElementById('movement-labs-step').click();"+
+   "return {side:side.value,disabled:side.disabled,"+
+   "readout:document.getElementById('movement-labs-readout').textContent,"+
+   "status:document.getElementById('movement-labs-status').textContent};})()");
+  assert.equal(awayPostPass.side,'away');
+  assert.equal(awayPostPass.disabled,false);
+  assert.match(awayPostPass.readout,/away #9/);
+  assert.match(awayPostPass.readout,/Physical PASS tick 1 · post-pass path [0-9.]+ m/);
+  assert.match(awayPostPass.status,/Observed: actual receiver movement after authentic Rapier PASS/);
+  assert.doesNotMatch(awayPostPass.status,/completed pass|possession awarded|goal scored/i);
+  process.stdout.write('MOVEMENT_LAB_M4_AWAY_POSTPASS '+JSON.stringify(awayPostPass)+'\n');
+
   for(const [choice,side] of [
    ['recovery-response','home'],['recovery-response','away'],
    ['recovery-empty','home'],['recovery-empty','away']

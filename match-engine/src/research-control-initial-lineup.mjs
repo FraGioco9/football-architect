@@ -11,17 +11,20 @@ export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
  alternative:Object.freeze({id:'home-11',x:-30,y:18}),
  opponent:Object.freeze({id:'away-7',x:-2.95,y:-2})
 });
-export function initialResearchControlLineup(players,ball,{opponentFirst=false}={}){
+export function initialResearchControlLineup(players,ball,{opponentFirst=false,side='home'}={}){
+ if(!['home','away'].includes(side)||(opponentFirst&&side!=='home'))
+  throw new TypeError('Bounded CONTROL side; opponent-first HOME only');
  if(typeof opponentFirst!=='boolean')
   throw new TypeError('Bounded opponent-first flag must be boolean');
  if(!Array.isArray(players)||players.length!==22||!ball||
     ![ball.x,ball.y,ball.z,ball.vx,ball.vy,ball.vz].every(finite)||
-    Math.abs(ball.x+4.96)>1e-6||ball.y!==0||ball.z!==0||
-    Math.abs(ball.vx-0.3)>1e-6||ball.vy!==0||ball.vz!==0)
+    Math.abs(ball.x-(side==='home'?-4.96:4.96))>1e-6||
+    ball.y!==0||ball.z!==0||
+    Math.abs(ball.vx-(side==='home'?0.3:-0.3))>1e-6||ball.vy!==0||ball.vz!==0)
   throw new TypeError('Closed deterministic grounded CONTROL starting setup required');
  const target=opponentFirst?CONTROL_OPPONENT_FIRST_INITIAL.receiver:
   CONTROL_RECEIVER_INITIAL;
- if(players.filter(p=>p.id==='home-9'&&p.team==='home'&&
+ if(players.filter(p=>p.id===side+'-9'&&p.team===side&&
      p.role==='forward').length!==1)
   throw new TypeError('Canonical genuine receiving teammate required');
  if(opponentFirst&&(
@@ -34,7 +37,14 @@ export function initialResearchControlLineup(players,ball,{opponentFirst=false}=
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
  ]:[target];
- const positions=new Map(stagedPositions.map(p=>[p.id,p]));
+ // HOME coordinates and HOME IDs are canonical; reverse pitch X and
+ // mirror team IDs only for the bounded AWAY receiving fixture.
+ const mirror=p=>side==='home'?p:Object.freeze({
+  id:p.id.replace(/^home-/,'away-'),x:-p.x,y:p.y
+ });
+ const positions=new Map(stagedPositions.map(p=>{
+  const position=mirror(p);return [position.id,position];
+ }));
  const staged=players.map(p=>{
   const pos=positions.get(p.id);
   return pos?Object.freeze({...p,x:pos.x,y:pos.y,

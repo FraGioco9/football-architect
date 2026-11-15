@@ -15,7 +15,9 @@ test('#628 M3 includes source-bound post-PASS and actual-opponent recovery witho
   ['recovery-response','recovery-empty','post-pass']);
  assert.equal(m3.filter(x=>x.shoeSourceEnabled).length,1);
  assert.equal(movementLabScenario('post-pass','home').focusId,'home-9');
- assert.throws(()=>movementLabScenario('post-pass','away'),/Only physically verified HOME/);
+ assert.equal(movementLabScenario('post-pass','away').focusId,'away-9');
+ assert.equal(movementLabScenario('post-pass','away').initial.x,4.96);
+ assert.equal(movementLabScenario('post-pass','away').initial.vx,-0.3);
  for(const id of ['recovery-response','recovery-empty']){
   const a=movementLabScenario(id,'home');
   const b=movementLabScenario(id,'away');
@@ -27,7 +29,7 @@ test('#628 M3 includes source-bound post-PASS and actual-opponent recovery witho
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  for(const item of m3)assert.match(html,new RegExp('<option value="'+item.id+'">'));
  const code=readFileSync(new URL('../src/movement-labs.mjs',import.meta.url),'utf8');
- assert.match(code,/createControlledActionLab\(RAPIER,'control'\)/);
+ assert.match(code,/createControlledActionLab\(RAPIER,'control',\{controlSide:side\}\)/);
  assert.doesNotMatch(code,/setTranslation|setLinvel|player-ball-universal-world/);
 });
 test('#628 M3 genuine physical PASS tick 1 precedes measured actual HOME receiver motion',
@@ -65,8 +67,6 @@ test('#628 M3 genuine physical PASS tick 1 precedes measured actual HOME receive
   assert.ok(witnessTick>passTick,'Only actual movement AFTER the source PASS counts');
   assert.ok(a.snapshot().readout.postPassDistanceM>0.25);
   assert.equal(contactSeen,true,'Only the existing authentic receiver shoe witness is accepted');
-  assert.throws(()=>createControlledMovementLab(R,'post-pass',{side:'away'}),
-   /Only physically verified HOME/);
  }finally{a.dispose();b.dispose();}
  assert.throws(()=>a.step(),/disposed/);
 });

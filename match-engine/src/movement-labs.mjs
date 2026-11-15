@@ -17,7 +17,7 @@ export function createControlledMovementLab(RAPIER,id,{side='home'}={}){
  const postPass=scene.spec.id==='post-pass';
  // Genuine CONTROL PASS is produced by the pre-accepted Action LAB; no
  // parallel physical action implementation or second Rapier world.
- const actionSession=postPass?createControlledActionLab(RAPIER,'control'):null;
+ const actionSession=postPass?createControlledActionLab(RAPIER,'control',{controlSide:side}):null;
  const engine=postPass?null:createEngine(RAPIER,scene.initial);
  const mover=postPass?null:createPlayerMovement();
  let disposed=false,latest=null,origin=null,previous=null;
@@ -220,8 +220,7 @@ export function mountControlledMovementLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();session?.dispose();
-  if(choice.value==='post-pass'){side.value='home';side.disabled=true;}
-  else side.disabled=false;
+  side.disabled=false; // Physical CONTROL is now independently proven for both sides.
   session=createControlledMovementLab(getRapier(),choice.value,{
    side:side.value});
   description.textContent=session.scene.spec.description;

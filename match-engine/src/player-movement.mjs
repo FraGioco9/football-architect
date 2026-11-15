@@ -1585,6 +1585,7 @@ export function createPlayerMovement(options={}){
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
+     k!=='researchControlSide'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
@@ -1600,6 +1601,11 @@ export function createPlayerMovement(options={}){
     (options.researchControlOpponentFirst!==undefined&&(
      options.researchControlOpponentFirst!==true||
      options.researchControlReceiver!==true))||
+    (options.researchControlSide!==undefined&&(
+     !['home','away'].includes(options.researchControlSide)||
+     options.researchControlReceiver!==true||
+     (options.researchControlSide==='away'&&
+      options.researchControlOpponentFirst!==undefined)))||
     (options.researchControlReceiver!==undefined&&(
      options.researchControlReceiver!==true||
      !Object.hasOwn(options,'researchControlBall')||
@@ -1620,7 +1626,8 @@ export function createPlayerMovement(options={}){
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
   options.researchControlReceiver===true?
    initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
-    {opponentFirst:options.researchControlOpponentFirst===true}):
+    {opponentFirst:options.researchControlOpponentFirst===true,
+     side:options.researchControlSide??'home'}):
   options.researchCarrySide!==undefined?
    initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
     options.researchCarryBall):INITIAL_PLAYERS;
@@ -1813,8 +1820,10 @@ export function createPlayerMovement(options={}){
   // A kinematic destination is still subject to acceleration, 7m/s speed,
   // turning, and 0.98m kinematic separation enforced by the original mover.
   if(priorRealPass!==null&&(options.researchControlReceiver!==true||
-     priorRealPass.action!=='pass'||priorRealPass.playerId!=='home-10'||
-     priorRealPass.passTarget?.recipientId!=='home-9'||
+     priorRealPass.action!=='pass'||
+     priorRealPass.playerId!==(options.researchControlSide??'home')+'-10'||
+     priorRealPass.passTarget?.recipientId!==
+      (options.researchControlSide??'home')+'-9'||
      priorRealPass.appliedByRapier!==true||
      priorRealPass.actualPhysicsImpulseApplied!==true||
      !Number.isInteger(priorRealPass.tick)||priorRealPass.tick<1||
@@ -1995,7 +2004,8 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
-   if(receiverApproaching&&p.id==='home-9')
+   if(receiverApproaching&&
+      p.id===(options.researchControlSide??'home')+'-9')
     return Object.freeze({x:ball.x,y:ball.y});
    if(opponentApproaching&&p.id==='away-7')
     return Object.freeze({x:ball.x,y:ball.y});

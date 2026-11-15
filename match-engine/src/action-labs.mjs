@@ -177,7 +177,13 @@ export function createControlledActionLab(RAPIER,id,{
    }
   }
   if(action?.action==='pass'&&!firstRealPass&&
-     starts.length===1&&starts[0]===action.playerId){
+     starts.length===1&&starts[0]===action.playerId&&
+     action.appliedByRapier===true&&
+     action.actualPhysicsImpulseApplied===true&&
+     (spec.mode!=='control'||(
+      action.playerId===selectedControlSide+'-10'&&
+      action.team===selectedControlSide&&
+      action.passTarget?.recipientId===selectedControlSide+'-9'))){
    firstRealPass=Object.freeze({
     tick:physics.tick,playerId:action.playerId,
     team:action.team,recipientId:action.passTarget?.recipientId??null,
