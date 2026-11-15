@@ -276,3 +276,14 @@ and unused translation copy are removed too. All authoritative match states
 and recorded results remain intact in the model, but no messages are
 rendered under the scoreboard. Missing/error feedback remains separately
 visible and is not suppressed. No extra vertical gap is reserved.
+
+### Verification additions for new-tab links and absence of captions
+
+The Chromium/WebKit browser check verifies that the competition badge and
+both authorised club abbreviations carry `target="_blank"` and a `rel`
+containing `noopener` and `noreferrer`. Clicking each link must open a
+separate browser tab at the canonical destination while the original match
+page retains its URL. The test also checks that a club without an
+assigned participant has neither `href` nor new-tab attributes, and that
+the former caption DOM never appears on first paint or after any of the six
+backend states. The standalone feedback area for errors remains.

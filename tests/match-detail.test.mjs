@@ -48,8 +48,8 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
    assert.ok(opening,selector);
    assert.match(opening,/target="_blank"/);assert.match(opening,/rel="noopener noreferrer"/);
   }
-  assert.match(section,/<div class="app-match-team-slot app-match-team-home"><a class="app-match-team-link" data-match-home-name>/);
-  assert.match(section,/<div class="app-match-team-slot app-match-team-away"><a class="app-match-team-link" data-match-away-name>/);
+  assert.match(section,/<div class="app-match-team-slot app-match-team-home"><a class="app-match-team-link" data-match-home-name target="_blank" rel="noopener noreferrer">/);
+  assert.match(section,/<div class="app-match-team-slot app-match-team-away"><a class="app-match-team-link" data-match-away-name target="_blank" rel="noopener noreferrer">/);
   assert.match(section,/data-match-home-score/);
   assert.match(section,/data-match-away-score/);
   assert.doesNotMatch(section,/data-match-status|data-match-extra|app-match-scoreboard-meta/);

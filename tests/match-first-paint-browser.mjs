@@ -63,6 +63,8 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
+    assert.equal(await page.locator('.app-match-scoreboard-meta, [data-match-status], [data-match-extra]').count(),0,
+     'no loading or sporting-status captions under the scoreboard');
     assert.equal(first.sectionFillsMain,true,'match section must share the main content width');
     assert.ok(Math.abs(first.separatorCenterOffset)<=0.5,JSON.stringify({engine,theme,device,first}));
     assert.ok(first.x>=-0.5,JSON.stringify({engine,theme,device,first}));
@@ -214,7 +216,7 @@ for(const [engine,driver] of Object.entries(engines)){
     await page.route('**/api/matches/123',route=>route.fulfill({
      status:200,contentType:'application/json',
      body:JSON.stringify({...match,status:currentStatus,
-      homeParticipant:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
+      homeParticipant:currentStatus==='awaiting_participants'?null:{clubId:'IT-1'},awayParticipant:{clubId:'IT-2'},
       // These are test-only, deliberately inconsistent stale goals. The
       // public controller must ignore them before a completed result.
       result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9}})
@@ -224,6 +226,14 @@ for(const [engine,driver] of Object.entries(engines)){
      const response=await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
      assert.equal(response?.status(),200,engine+' '+theme+' '+status);
      await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+     assert.equal(await page.locator('.app-match-scoreboard-meta, [data-match-status], [data-match-extra]').count(),0,
+      'no scheduled/playing/completed/extra-time caption should occupy the former line');
+     if(status==='awaiting_participants'){
+      const unresolved=page.locator('[data-match-home-name]');
+      assert.equal(await unresolved.getAttribute('href'),null);
+      assert.equal(await unresolved.getAttribute('target'),null);
+      assert.equal(await unresolved.getAttribute('rel'),null);
+     }
      const state=await page.evaluate(()=>{
       const root=document.querySelector('[data-match-detail]');
       const get=selector=>root.querySelector(selector);
@@ -298,8 +308,24 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'none');
       await page.mouse.click(outsideX,outsideY);
       assert.equal(new URL(page.url()).pathname,'/matches/123');
-      await home.click();
-      await page.waitForURL(url=>url.pathname==='/clubs/it/1/overview');
+      // Each real link must create a new tab without navigating the match
+      // page. The competition tile is tested alongside both club labels.
+      for(const item of [
+       {link:page.locator('[data-match-competition-link]'),path:'/competitions/it-1/fixtures'},
+       {link:home,path:'/clubs/it/1/overview'},
+       {link:page.locator('[data-match-away-name]'),path:'/clubs/it/2/overview'}
+      ]){
+       const info=await item.link.evaluate(el=>({target:el.target,rel:el.rel,href:el.getAttribute('href')}));
+       assert.equal(info.target,'_blank',JSON.stringify({engine,theme,info}));
+       assert.ok(info.rel.split(/\s+/).includes('noopener')&&info.rel.split(/\s+/).includes('noreferrer'),
+        JSON.stringify({engine,theme,info}));
+       const popupReady=ctx.waitForEvent('page');
+       await item.link.click();
+       const newTab=await popupReady;
+       await newTab.waitForURL(url=>url.pathname===item.path);
+       assert.equal(new URL(page.url()).pathname,'/matches/123');
+       await newTab.close();
+      }
      }
     }
    }finally{await ctx.close()}
