@@ -1,0 +1,57 @@
+name: Match Engine P0 final 22-player matrix
+
+# One deliberate full-engine run for P0 acceptance on Draft PR #481.
+# Subsequent normal match-engine commits do not trigger this extra workflow.
+on:
+  push:
+    branches:
+      - feat/me-pb-01-player-ball-reach
+    paths:
+      - '.github/workflows/match-engine-p0-final-matrix.yml'
+      - 'match-engine/research/ME-P0-FINAL-MATRIX-RUN.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: match-engine-p0-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  complete-22-player-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Assert immutable exact push HEAD
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          printf 'P0_FINAL_MATRIX_EXACT_HEAD=%s\n' "$EXPECTED_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - name: Install locked Rapier dependencies
+        run: npm ci --prefix match-engine --no-audit --no-fund
+      # Tier C: the existing package test script enumerates ALL match-engine
+      # suites, including both actual 22-player physical fixtures and pure
+      # adversarial/non-contact controls. Do not run Tier A/B again here.
+      - name: Tier C complete match-engine test catalog (single execution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix match-engine test 2>&1 | tee p0-final-matrix.log
+      - name: Retain complete evidence on failure or success
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-final-matrix-log-${{ github.sha }}
+          path: p0-final-matrix.log
+          retention-days: 7
+          if-no-files-found: ignore
