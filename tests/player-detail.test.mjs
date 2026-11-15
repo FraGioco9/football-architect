@@ -1,6 +1,7 @@
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
@@ -506,4 +507,165 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
  assert.match(css,/\.app-player-detail-info-view\{margin-top:14px;min-width:0;box-sizing:border-box\}/);
  assert.match(css,/@media\(min-width:901px\)\{\.app-player-detail-info-view\{width:min\(100%,680px\)\}\}/);
  assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
+});
+
+test('#623 public player portrait and fallback: exact 3 IDs only, stable geometry, protected preview isolation',()=>{
+ const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
+ for(const id of [44,98,145]){
+  const path='assets/players/portraits/'+id+'.webp';
+  assert.equal(isAllowlistedPublicPath(path),true,path);
+  assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
+ }
+ for(const path of ['assets/players/portraits/1.png','assets/players/portraits/044.png','assets/players/portraits/99.webp','assets/players/portraits/44.png','assets/players/portraits/44.jpg','assets/players/portraits/44.svg'])
+  assert.equal(isAllowlistedPublicPath(path),false,path);
+ assert.match(js,/!preview&&state==='ready'&&player/);
+ assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.removeAttribute('hidden')"));
+ assert.match(js,/portraitImage\.removeAttribute\('src'\)/);
+ assert.match(css,/\.app-player-detail-photo\{display:block;object-fit:cover;object-position:center top;/);
+ assert.match(css,/\.app-player-detail-photo\[hidden\],\.app-player-detail-silhouette\[hidden\]\{display:none!important\}/);
+ assert.match(css,/\.app-player-detail-portrait\{width:190px;height:181px/);
+ assert.match(css,/\.app-player-detail-portrait\{width:120px;height:114px/);
+ assert.match(renderer,/data-detail-portrait-placeholder/);
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')]){
+  assert.match(html,/data-detail-portrait/);
+  assert.match(html,/data-detail-portrait-placeholder/);
+  assert.match(html,/data-detail-portrait-photo[^>]*hidden/);
+ }
+});
+
+test('#623 optimized approved WebPs have SHA-256 provenance and appear in the public artifact',()=>{
+ const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74"};
+ const published=new Set(planPublicFiles());
+ for(const [id,digest] of Object.entries(expected)){
+  const path='assets/players/portraits/'+id+'.webp';
+  const data=readFileSync(new URL('../'+path,import.meta.url));
+  assert.equal(data.toString('ascii',0,4),'RIFF',path);
+  assert.equal(data.toString('ascii',8,12),'WEBP',path);
+  assert.equal(data.toString('ascii',12,16),'VP8X',path);
+  assert.ok(data.length<50_000,'WebP must be optimized: '+id);
+  assert.equal(createHash('sha256').update(data).digest('hex'),digest,path);
+  assert.ok(published.has(path),'Public artifact missing '+path);
+ }
+});
+
+test('#623 plain filled Players silhouette has no internal strokes or portrait frame border',()=>{
+ const source=read('players/index.html'),renderer=read('tools/render-player-detail.mjs'),css=read('assets/player-detail.css');
+ const from=source.indexOf('<a class="fa-shell-link" href="/players"');
+ assert.ok(from>=0,'Players sidebar icon missing');
+ const icon=source.slice(from,source.indexOf('</svg>',from)+6);
+ const d=icon.split('fill-rule="evenodd" d="')[1]?.split('"/>')[0];
+ assert.ok(d,'Players sidebar silhouette path missing');
+ const outer=d.split(' M').map((part,i)=>i?'M'+part:part.trim());
+ assert.equal(outer.length,4);
+ const placeholder=renderer.split("const silhouette='")[1]?.split("';")[0];
+ assert.ok(placeholder,'Placeholder missing from renderer');
+ assert.equal(placeholder.split('<path d="').length-1,2,'Filled head and torso only');
+ assert.ok(placeholder.includes(outer[0]),'Torso must reuse Players icon outer path');
+ assert.ok(placeholder.includes(outer[2]),'Head must reuse Players icon outer path');
+ assert.ok(placeholder.includes('<path d="'+outer[0]+'" transform="translate(-15.36 0) scale(1.06 1)"/>'),'Torso width must be balanced at 106% and centered');
+ assert.ok(placeholder.includes('<path d="'+outer[2]+'"/>'),'Head must remain unchanged and unscaled');
+ assert.ok(placeholder.includes('viewBox="-20 -12 552 535"'),'SVG viewport and reserved image frame must be unchanged');
+ for(const forbidden of ['stroke=','fill-rule=','opacity='])assert.ok(!placeholder.includes(forbidden),'No internal outlines or holes: '+forbidden);
+ assert.ok(placeholder.includes('fill="currentColor"'));
+ const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(frameRule&&frameRule.includes('border:0;'),'Portrait box has no visible border');
+ assert.ok(!frameRule.includes('border:1px'),'Old 1px border must be removed');
+ for(const html of [read('players/_shared/index.html'),read('admin/players/preview/player/index.html')])
+  assert.ok(html.includes(placeholder),'Renderer and generated HTML silhouette must be identical');
+});
+
+
+test('#623 photo load hides inline SVG through the hidden attribute and error re-exposes fallback',()=>{
+ const script=read('assets/player-detail.js');
+ assert.ok(script.includes("portraitImage.hidden=false;portraitFallback.setAttribute('hidden','')"),'success must set the SVG hidden attribute');
+ assert.ok(script.includes("portraitImage.hidden=true;portraitFallback.setAttribute('hidden','')"),'loading reset must hide the SVG');
+ assert.equal(script.split("portraitFallback.removeAttribute('hidden')").length-1,2,'missing approved image and image load error reveal the SVG');
+ assert.ok(script.includes("if(state==='ready')portraitFallback.removeAttribute('hidden')"),'unmapped players reveal SVG only after player data loads');
+ assert.ok(!script.includes('portraitFallback.hidden='),'avoid SVG expando hidden property');
+ const css=read('assets/player-detail.css');
+ assert.ok(css.includes('.app-player-detail-silhouette[hidden]{display:none!important}'),'CSS must hide the SVG with the actual attribute');
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.ok(html.includes('data-detail-portrait-placeholder'));
+  assert.ok(html.includes('data-detail-portrait-photo'));
+ }
+});
+
+
+test('#623 portrait reserve stays blank at first paint, until missing image is confirmed',()=>{
+ const renderer=read('tools/render-player-detail.mjs'),js=read('assets/player-detail.js');
+ const pages=['players/_shared/index.html','admin/players/preview/player/index.html'];
+ const placeholder=renderer.split("const silhouette='")[1]?.split("';")[0];
+ assert.ok(placeholder,'rendered silhouette missing');
+ assert.ok(placeholder.includes('data-detail-portrait-placeholder hidden viewBox='),'first-paint SVG must start hidden');
+ assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181" alt="" decoding="async" hidden'),'photo must start hidden');
+ for(const page of pages){
+  const markup=read(page);
+  assert.ok(markup.includes(placeholder),page+' must match initial hidden state of renderer');
+ }
+ assert.ok(js.includes("if(!source){"),'fallback is shown only after source resolution');
+ assert.ok(js.includes("if(state==='ready')portraitFallback.removeAttribute('hidden')"),'player without approved photo receives fallback after load');
+ assert.ok(js.includes("portraitImage.onerror=()=>{"),'failed photo uses fallback');
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.removeAttribute('hidden')"),'photo failure must reveal SVG');
+ assert.ok(js.includes("portraitImage.hidden=false;portraitFallback.setAttribute('hidden','')"),'successful photo must hide SVG');
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.setAttribute('hidden','')"),'reset must hide both photo and SVG');
+ assert.ok(!js.includes('portraitFallback.hidden='),'do not use hidden expando on SVG');
+});
+
+
+test('#623 approved portraits use adjustable top-anchored 150% crop in wider, height-stable image slot',()=>{
+ const css=read('assets/player-detail.css');
+ const photoRule=css.match(/^\.app-player-detail-photo\{([^}]*)\}/m)?.[1];
+ const frameRule=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(photoRule,'photo rule must exist');
+ assert.ok(photoRule.includes('object-fit:cover;object-position:center top'),'photo must remain top aligned');
+ assert.ok(photoRule.includes('transform-origin:50% 0'),'scale from the top so the head is not cropped');
+ assert.ok(photoRule.includes('scale(var(--app-player-photo-scale,1.50))'),'all approved portraits default to 150% zoom');
+ assert.ok(photoRule.includes('var(--app-player-photo-offset-x,0px)'),'future horizontal alignment can be tuned per player');
+ assert.ok(photoRule.includes('var(--app-player-photo-offset-y,0px)'),'future vertical alignment can be tuned per player');
+ assert.ok(frameRule.includes('width:190px;height:181px'),'desktop portrait expands horizontally while retaining height');
+ assert.ok(frameRule.includes('overflow:hidden'),'the crop is clipped inside the portrait');
+ assert.ok(frameRule.includes('border:0'),'the borderless portrait remains unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait expands horizontally while retaining height');
+ assert.ok(!css.includes('.app-player-detail-silhouette{transform:'),'fallback SVG must never be photo-zoomed');
+});
+
+test('#623 wider portrait frame preserves mobile identity, affiliation and back-link alignment',()=>{
+ const css=read('assets/player-detail.css');
+ const renderer=read('tools/render-player-detail.mjs');
+ const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(frame?.includes('width:190px;height:181px;flex:0 0 190px'),'desktop portrait reserves 190px width');
+ assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
+ assert.ok(frame?.includes('border:0'),'portrait still has no box border');
+ const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
+ assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
+ assert.ok(mobile?.includes('flex-basis:calc(100% - 135px);max-width:none;min-height:92px;margin-left:135px'),'club panel offsets follow 120px image + 15px gap');
+ assert.ok(mobile?.includes('.app-player-detail-back{margin-left:135px;align-self:flex-start}'),'back link matches new portrait width');
+ assert.ok(renderer.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),'SVG intrinsic geometry follows desktop frame');
+ assert.ok(renderer.includes('data-detail-portrait-photo width="190" height="181"'),'photo intrinsic dimensions follow desktop frame');
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.ok(html.includes('data-detail-portrait-photo width="190" height="181"'),path+' image size');
+  assert.ok(html.includes('data-detail-portrait-placeholder hidden viewBox="-20 -12 552 535" preserveAspectRatio="xMidYMax meet" width="190" height="181"'),path+' fallback size');
+ }
+});
+
+test('#623 wide placeholder maintains head/body proportions on desktop and mobile',()=>{
+ const renderer=read('tools/render-player-detail.mjs');
+ const portrait=renderer.split("const silhouette='")[1]?.split("';")[0];
+ assert.ok(portrait,'canonical placeholder source exists');
+ assert.ok(portrait.includes('preserveAspectRatio="xMidYMax meet"'),'head and torso must preserve source proportions at every width');
+ assert.ok(!portrait.includes('preserveAspectRatio="none"'),'must not stretch the head horizontally');
+ assert.ok(portrait.includes('transform="translate(-15.36 0) scale(1.06 1)"'),'torso shoulders widen 6%, centered in the image');
+ assert.ok(!portrait.includes('scale(1.12 1)'),'old overly wide shoulders must be absent');
+ assert.equal((portrait.match(/<path d="/g)||[]).length,2,'solid two-part silhouette remains');
+ assert.ok(!portrait.includes('stroke='),'no outline or internal details');
+ for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
+  const html=read(path);
+  assert.ok(html.includes(portrait),path+' matches canonical proportional SVG');
+ }
+ const css=read('assets/player-detail.css');
+ assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
 });
