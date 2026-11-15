@@ -1780,8 +1780,21 @@ export function createPlayerMovement(options={}){
    players:Object.freeze(players.map(p=>Object.freeze({...p})))
   });
  }
- function step(ballPosition={x:0,y:0}){
+ function step(ballPosition={x:0,y:0},priorRealPass=null){
   const ball=ballXY(ballPosition);
+  // Research-only receiver reaction, never a received-pass award.
+  // A kinematic destination is still subject to acceleration, 7m/s speed,
+  // turning, and 0.98m kinematic separation enforced by the original mover.
+  if(priorRealPass!==null&&(options.researchControlSlot===undefined||
+     priorRealPass.action!=='pass'||priorRealPass.playerId!=='home-10'||
+     priorRealPass.passTarget?.recipientId!=='home-9'||
+     priorRealPass.appliedByRapier!==true||
+     priorRealPass.actualPhysicsImpulseApplied!==true||
+     !Number.isInteger(priorRealPass.tick)||priorRealPass.tick<1||
+     priorRealPass.tick>tick))
+   throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
+  const receiverApproaching=priorRealPass!==null&&
+   tick-priorRealPass.tick<180;
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
@@ -1952,6 +1965,8 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(receiverApproaching&&p.id==='home-9')
+    return Object.freeze({x:ball.x,y:ball.y});
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?
      players.find(other=>other.id===screen.opponentId):null;

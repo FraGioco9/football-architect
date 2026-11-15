@@ -309,11 +309,13 @@ test('CONTROL stage research grid: same Rapier pass impulse followed by real rec
   const trace={slot,initial:CONTROL_RESEARCH_CANDIDATES[slot],
    pass:null,starts:[],minimumGap:Infinity,minimumTick:0,
    end:0};
+  let realPass=null;
   try{
    for(let tick=1;tick<=170;tick++){
-    const frame=mover.step(core.snapshot().ball.position);
+    const frame=mover.step(core.snapshot().ball.position,realPass);
     const after=core.step(frame);
     const action=core.uniformAutonomousActionSnapshot();
+    if(action?.action==='pass'&&!realPass)realPass=action;
     const foot=core.footContactSnapshot();
     if(action?.action==='pass'&&!trace.pass)
      trace.pass={tick,playerId:action.playerId,
