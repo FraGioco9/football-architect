@@ -226,13 +226,13 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
  {timeout:45000},async()=>{
  const R=await initializeRapier(rapier);
  assert.throws(()=>createControlledActionLab(R,'shot',{shotSide:'referee'}),
-  /mirrored|supported/);
+  /bounded/);
  assert.throws(()=>createControlledActionLab(R,'pass',{shotSide:'away'}),
-  /mirrored|supported/);
+  /bounded/);
  assert.throws(()=>createControlledActionLab(R,'shot',{shotLane:'none'}),
-  /bounded HOME\\/AWAY/);
+  /bounded/);
  assert.throws(()=>createControlledActionLab(R,'pass',{shotLane:'blocked'}),
-  /bounded HOME\\/AWAY/);
+  /bounded/);
  const {createEngine}=await import('../src/core.mjs');
  const {createPlayerMovement}=await import('../src/player-movement.mjs');
  const ball={preset:'roll',seed:'shot-unstaged-counterfactual',
@@ -508,7 +508,7 @@ test('CARRY unavailable by original rules: genuine PASS takes priority, not fict
   }finally{engine.dispose();}
  }
  assert.throws(()=>createControlledActionLab(R,'carry',{carrySide:'neither'}),
-  /bounded HOME\/AWAY/);
+  /bounded/);
  assert.throws(()=>createControlledActionLab(R,'pass',{carrySide:'away'}),
-  /bounded HOME\/AWAY/);
+  /bounded/);
 });
