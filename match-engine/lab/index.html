@@ -38,7 +38,10 @@
               <h1 class="app-page-title" id="lab-title">Match Engine</h1>
               <p class="me-subtitle">3D physics · 2D visual tests</p>
             </div>
-            <button id="action-labs-open" class="me-button" type="button" disabled>Action LABs</button>
+            <div class="me-lab-launches">
+              <button id="action-labs-open" class="me-button" type="button" disabled>Action LABs</button>
+              <button id="movement-labs-open" class="me-button" type="button" disabled>Movement LABs</button>
+            </div>
           </div>
           <p id="status" class="me-status" role="status" aria-live="polite">Loading physics…</p>
           <div class="me-layout">
@@ -588,6 +591,43 @@
   <p id="action-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select an action to begin.</p>
   <p id="action-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
   <p class="me-hint">Shown markers are a compact view of actors from the canonical 22-player physics. A contact is not automatically a successful tackle, pass completion, dribble, possession or goal.</p>
+</dialog>
+<dialog id="movement-labs-dialog" class="me-metrics-dialog me-action-labs-dialog" aria-labelledby="movement-labs-title">
+  <div class="me-action-labs-header">
+    <div>
+      <h2 id="movement-labs-title">Controlled movement</h2>
+      <p class="me-hint">22 canonical kinematic players, one real Rapier ball. No shoe colliders, touch or match outcome.</p>
+    </div>
+    <button id="movement-labs-close" type="button" class="me-button">Close</button>
+  </div>
+  <div class="me-action-labs-toolbar">
+    <label for="movement-labs-choice">Movement</label>
+    <select id="movement-labs-choice" class="me-inspect-select">
+      <option value="approach">M-01 · Approach</option>
+      <option value="brake">M-02 · Brake</option>
+      <option value="turn">M-03 · Turn</option>
+      <option value="recovery">M-04 · Recovery</option>
+    </select>
+    <label class="me-action-labs-shot-side" for="movement-labs-side">Side
+      <select id="movement-labs-side" class="me-inspect-select" aria-label="Movement observation side">
+        <option value="home">HOME</option>
+        <option value="away">AWAY</option>
+      </select>
+    </label>
+    <div class="me-action-labs-buttons" role="group" aria-label="Movement simulation controls">
+      <button id="movement-labs-play" class="me-button me-button-primary" type="button">Play</button>
+      <button id="movement-labs-pause" class="me-button" type="button">Pause</button>
+      <button id="movement-labs-step" class="me-button" type="button">Step</button>
+      <button id="movement-labs-reset" class="me-button" type="button">Reset</button>
+    </div>
+  </div>
+  <p class="me-hint" id="movement-labs-description"></p>
+  <div class="me-action-labs-pitch-frame">
+    <canvas id="movement-labs-pitch" width="1050" height="680" aria-label="Measured 22-player movement with focus player orientation and one physical ball"></canvas>
+  </div>
+  <p id="movement-labs-status" class="me-action-labs-status" role="status" aria-live="polite">Select a movement scene.</p>
+  <p id="movement-labs-readout" class="me-action-labs-readout" aria-live="off">Tick 0</p>
+  <p class="me-hint">Targets do not authorize contacts. Recovery is reported only with a currently observed opponent; no interception or possession is inferred.</p>
 </dialog>
 <script type="module" src="/__fa_match_engine__/lab.mjs"></script>
 </body>

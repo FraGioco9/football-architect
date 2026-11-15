@@ -350,6 +350,68 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
   assert.equal(close,true);
+  // #628 M2: actual desktop movement dialog on the same DEV page.
+  // It has no Rapier shoe colliders; do not confuse measured motion with
+  // the five real shoe-contact Action LABs above.
+  const movementOpened=await evalJs("(()=>{"+
+   "document.getElementById('movement-labs-open').click();"+
+   "return document.getElementById('movement-labs-dialog').open;})()");
+  assert.equal(movementOpened,true);
+  await wait("document.getElementById('movement-labs-readout').textContent.startsWith('Tick 0')");
+  const movedFirst=await evalJs("(()=>{"+
+   "document.getElementById('movement-labs-play').click();"+
+   "return document.getElementById('movement-labs-play').disabled;})()");
+  assert.equal(movedFirst,true);
+  await wait("Number(document.getElementById('movement-labs-readout').textContent.split(' ')[1])>=3");
+  const movementPause=await evalJs("(()=>{"+
+   "document.getElementById('movement-labs-pause').click();"+
+   "return {tick:Number(document.getElementById('movement-labs-readout').textContent.split(' ')[1]),"+
+   "play:document.getElementById('movement-labs-play').disabled,"+
+   "pause:document.getElementById('movement-labs-pause').disabled};})()");
+  assert.equal(movementPause.play,false);assert.equal(movementPause.pause,true);
+  const moveStep=await evalJs("(()=>{"+
+   "document.getElementById('movement-labs-step').click();"+
+   "return Number(document.getElementById('movement-labs-readout').textContent.split(' ')[1]);})()");
+  assert.equal(moveStep,movementPause.tick+1);
+  for(const [choice,side] of [
+   ['approach','home'],['approach','away'],
+   ['brake','home'],['brake','away'],
+   ['turn','home'],['turn','away'],
+   ['recovery','home'],['recovery','away']
+  ]){
+   const read=await evalJs(
+    "(()=>{const c=document.getElementById('movement-labs-choice');"+
+    "const s=document.getElementById('movement-labs-side');"+
+    "c.value="+JSON.stringify(choice)+";c.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "s.value="+JSON.stringify(side)+";s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "for(let i=0;i<18;i++)document.getElementById('movement-labs-step').click();"+
+    "return {choice:c.value,side:s.value,readout:document.getElementById('movement-labs-readout').textContent,"+
+    "status:document.getElementById('movement-labs-status').textContent};})()");
+   assert.equal(read.choice,choice);
+   assert.equal(read.side,side);
+   assert.match(read.readout,/^Tick 18 /);
+   assert.match(read.readout,/min 22-body gap [0-9.]+ m/);
+   assert.match(read.status,/no shoe collider, touch, possession or result/);
+   assert.doesNotMatch(read.status,/scored goal|successful tackle|pass completed/i);
+   process.stdout.write('MOVEMENT_LAB_CHROME_SOURCE '+JSON.stringify(read)+'\n');
+  }
+  for(const [width,height] of [[1280,720],[1440,900]]){
+   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+   const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+
+    "const box=d.getBoundingClientRect();"+
+    "const field=document.getElementById('movement-labs-pitch').getBoundingClientRect();"+
+    "return {open:d.open,left:box.left,right:box.right,scroll:d.scrollWidth,client:d.clientWidth,"+
+    "fieldLeft:field.left,fieldRight:field.right,width:innerWidth};})()");
+   assert.equal(size.open,true);assert.equal(size.width,width);
+   assert.ok(size.left>=-2&&size.right<=width+2,JSON.stringify(size));
+   assert.ok(size.scroll<=size.client+3,JSON.stringify(size));
+   assert.ok(size.fieldLeft>=size.left-2&&size.fieldRight<=size.right+2,JSON.stringify(size));
+  }
+  const motionReset=await evalJs("(()=>{document.getElementById('movement-labs-reset').click();"+
+   "return document.getElementById('movement-labs-readout').textContent;})()");
+  assert.match(motionReset,/^Tick 0 /);
+  await evalJs("document.getElementById('movement-labs-close').click()");
+  await wait("document.getElementById('movement-labs-dialog').open===false");
   await wait("document.querySelector('#status')?.textContent?.startsWith('Ready')");
  }finally{
   try{socket?.close();}catch{}

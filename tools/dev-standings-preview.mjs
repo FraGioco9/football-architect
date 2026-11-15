@@ -64,6 +64,8 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/contact-impact-qa.mjs': 'match-engine/src/contact-impact-qa.mjs',
   '/__fa_match_engine__/player-movement.mjs': 'match-engine/src/player-movement.mjs',
   '/__fa_match_engine__/individual-kinematics.mjs': 'match-engine/src/individual-kinematics.mjs',
+  '/__fa_match_engine__/movement-labs.mjs': 'match-engine/src/movement-labs.mjs',
+  '/__fa_match_engine__/movement-lab-scenarios.mjs': 'match-engine/src/movement-lab-scenarios.mjs',
   '/__fa_match_engine__/lab.mjs': 'match-engine/src/lab.mjs',
   '/__fa_match_engine__/pitch-markings.mjs': 'match-engine/src/pitch-markings.mjs',
   '/__fa_match_engine__/numeric-controls.mjs': 'match-engine/src/numeric-controls.mjs',

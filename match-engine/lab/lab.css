@@ -180,4 +180,6 @@ html[data-theme="light"] .me-status.error{color:#8a4040}
 
 /* Action LAB launch stays inside the existing heading height; never wrap the 60Hz controls. */
 .me-page-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.me-page-heading>#action-labs-open{flex:none;min-height:32px;padding:5px 9px}
+.me-lab-launches{display:flex;align-items:center;gap:6px;flex:none}
+.me-lab-launches>.me-button{min-height:32px;padding:5px 9px}
+@media(max-width:570px){.me-lab-launches{flex-wrap:wrap;justify-content:flex-end}}
