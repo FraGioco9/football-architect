@@ -76,7 +76,7 @@
   slot.replaceChildren();
   if(!intended)return;
   const img=document.createElement('img');
-  img.alt='';img.width=48;img.height=48;img.decoding='async';
+  img.alt='';img.width=44;img.height=44;img.decoding='async';
   img.addEventListener('error',()=>{
    if(slot.dataset.matchLogoPath===intended&&slot.contains(img)){
     delete slot.dataset.matchLogoPresent;

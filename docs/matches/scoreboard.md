@@ -6,11 +6,11 @@ Its dimensions, page centring and first-paint reserved columns remain fixed.
 
 ## Layout
 
-`48×48 COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
+`48×48 IVORY TILE (44×44 LOGO) | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
 The main strip begins **12px behind** the 48×48 badge, so the badge projects
 12px to the left of the strip but **never extends the overall scoreboard width**.
-The badge is 48×48px, centred vertically, flat ivory in Dark and a 5% primary /
+The badge is 48×48px, with its original unmodified SVG displayed at **44×44px**, centred horizontally and vertically (2px inset per side). The tile is flat ivory in Dark and a 5% primary /
 95% ivory tint in Light. Its own **1px complete outline** uses the very same
 border colour and 6px radius as the main strip. It sits on top of the strip;
 the underlying outline is obscured by the badge where they overlap. No crest
@@ -28,7 +28,7 @@ space before data arrives; no layout jumping or invented score data.
 |---|---|---|
 | Bar | Competition primary (solid) | 16% competition primary / 84% ivory (solid) |
 | 48px badge | Ivory | 5% primary / 95% ivory |
-| Logo | Original approved SVG colours | Same, unchanged |
+| Logo | Original approved SVG colours, 44×44px | Same, unchanged |
 | Text and score | Ivory | Approved secondary graphite |
 | Main and badge outlines | Secondary graphite | Competition primary |
 | Desktop / mobile width | 340px / 310px max | Same |

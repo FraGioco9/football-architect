@@ -11,7 +11,7 @@
  width:min(100%,340px);height:48px;margin:0 auto;padding:0;
  background:transparent;color:var(--app-match-text);
 }
-/* The bar starts 12px behind the left badge: the 48px logo visibly
+/* The bar starts 12px behind the left badge: the 48px tile visibly
    projects beyond the bar without increasing the scoreboard's outer width. */
 .app-match-scoreboard::before{
  content:"";position:absolute;inset:0 0 0 12px;box-sizing:border-box;
@@ -37,7 +37,7 @@
  display:grid;place-items:center;width:48px;height:48px;
 }
 .app-match-competition-logo img{
- display:block;width:48px;height:48px;max-width:none;
+ display:block;width:44px;height:44px;max-width:none;
  object-fit:contain;background:none;border:0;filter:none;
 }
 .app-match-competition-logo[href]:hover{opacity:1}
