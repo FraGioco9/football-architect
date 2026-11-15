@@ -148,6 +148,57 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
     choice,status:result.status,readout:result.readout
    })+'\n');
   }
+  const challengeHome=await evalJs(
+   "(()=>{const choice=document.getElementById('action-labs-choice');"+
+   "choice.value='challenge';choice.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const side=document.getElementById('action-labs-shot-side');"+
+   "side.value='home';side.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-challenge-scene');"+
+   "scene.value='contact';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<12;i++)document.getElementById('action-labs-step').click();"+
+   "return {side:side.value,scene:scene.value,"+
+   "sideVisible:!document.getElementById('action-labs-shot-side-label').hidden,"+
+   "sceneVisible:!document.getElementById('action-labs-challenge-scene-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(challengeHome.side,'home');
+  assert.equal(challengeHome.scene,'contact');
+  assert.equal(challengeHome.sideVisible,true);
+  assert.equal(challengeHome.sceneVisible,true);
+  assert.match(challengeHome.status,/Observed: actual HOME shoe-ball START/);
+  assert.match(challengeHome.readout,/Witnesses 1/);
+  assert.doesNotMatch(challengeHome.status,/tackle successful|interception confirmed/i);
+  process.stdout.write('ACTION_LAB_CHROME_CHALLENGE_HOME '+
+   JSON.stringify(challengeHome)+'\\n');
+  const challengeNone=await evalJs(
+   "(()=>{const scene=document.getElementById('action-labs-challenge-scene');"+
+   "scene.value='no-contact';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<90;i++)document.getElementById('action-labs-step').click();"+
+   "const before={status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};"+
+   "document.getElementById('action-labs-reset').click();"+
+   "return {...before,reset:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.match(challengeNone.status,/No opponent-contact witness yet/);
+  assert.match(challengeNone.readout,/Tick 90/);
+  assert.match(challengeNone.readout,/Witnesses 0/);
+  assert.match(challengeNone.reset,/Tick 0/);
+  process.stdout.write('ACTION_LAB_CHROME_CHALLENGE_NO_CONTACT '+
+   JSON.stringify(challengeNone)+'\\n');
+  const challengeAway=await evalJs(
+   "(()=>{const side=document.getElementById('action-labs-shot-side');"+
+   "side.value='away';side.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-challenge-scene');"+
+   "scene.value='contact';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<12;i++)document.getElementById('action-labs-step').click();"+
+   "return {status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.match(challengeAway.status,/Observed: actual AWAY shoe-ball START/);
+  assert.match(challengeAway.readout,/Witnesses 1/);
+  process.stdout.write('ACTION_LAB_CHROME_CHALLENGE_AWAY '+
+   JSON.stringify(challengeAway)+'\\n');
   const carryAway=await evalJs(
    "(()=>{const choice=document.getElementById('action-labs-choice');"+
    "choice.value='carry';choice.dispatchEvent(new Event('change',{bubbles:true}));"+

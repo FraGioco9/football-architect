@@ -17,6 +17,14 @@ export const CARRY_LAB_STARTS=Object.freeze({
  home:scene('me-action-carry-home',-4.96,0,0.3),
  away:scene('me-action-carry-away',4.96,0,-0.3)
 });
+// #620 CHALLENGE: mirrored real shoe contact and physically empty counterfactual.
+// The no-contact ball starts >15m from every original canonical shoe;
+// no body, source event, momentum or score is constructed for a negative.
+export const CHALLENGE_LAB_STARTS=Object.freeze({
+ home:scene('me-action-challenge-home',-4.96),
+ away:scene('me-action-opposition-shoe',4.96),
+ noContact:scene('me-action-challenge-no-contact',0,30)
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
@@ -25,7 +33,7 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   'Only forward #10 starts next to the ball before tick zero; genuine Rapier shoe START, original shot lane and flight required. No goal awarded.',
   ['home-10','away-1','away-10'],'shot'),
  item('challenge','Challenge','challenge',
-  scene('me-action-opposition-shoe',4.96),
+  CHALLENGE_LAB_STARTS.away,
   'Witness an opponent shoe-ball START only. An actual tackle/interception or ball recovery is NOT yet verified.',
   ['home-7','home-10','away-7'],'opponent-contact'),
  item('control','Control','control',
@@ -46,7 +54,8 @@ export function getActionLabScenario(id){
 // A read-only projection. The caller cannot authenticate Rapier events;
 // ONLY the closed createEngine-produced shoe timeline/action does so.
 export function classifyActionLabEvidence(spec,{
- tick,action=null,starts=[],priorPass=null,opponentEarlier=false
+ tick,action=null,starts=[],priorPass=null,opponentEarlier=false,
+ challengeSide='away'
 }={}){
  if(!spec||!ACTION_LAB_SCENARIOS.includes(spec)||
     !Number.isSafeInteger(tick)||tick<0||
@@ -62,6 +71,8 @@ export function classifyActionLabEvidence(spec,{
     !['pass','shot','carry','clearance'].includes(action.action)))
   throw new TypeError('Never award an action without a single same-tick real shoe START');
  if(typeof opponentEarlier!=='boolean')throw new TypeError('Boolean contact history required');
+ if(!['home','away'].includes(challengeSide))
+  throw new TypeError('Known controlled contact side required');
  if(priorPass!==null&&(
     !Number.isSafeInteger(priorPass.tick)||priorPass.tick>=tick||
     typeof priorPass.playerId!=='string'||
@@ -77,7 +88,7 @@ export function classifyActionLabEvidence(spec,{
   !opponentEarlier&&starts.length===1&&
   starts[0]===priorPass.recipientId;
  const opposition=spec.goal==='opponent-contact'&&
-  starts.some(id=>id.startsWith('away-'));
+  starts.length===1&&starts[0].startsWith(challengeSide+'-');
  const witness=Boolean(pass||shot||carry||receiver||opposition);
  return Object.freeze({
   tick,witnessed:witness,kind:spec.goal,

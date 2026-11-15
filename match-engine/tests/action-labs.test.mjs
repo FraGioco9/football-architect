@@ -71,6 +71,24 @@ test('five clean Action LABs retain negative authorization boundaries',()=>{
  assert.equal(classifyActionLabEvidence(challenge,{
   tick:1,starts:['away-10']
  }).observedOpponentShoeContact,true);
+ assert.equal(classifyActionLabEvidence(challenge,{
+  tick:1,starts:['home-10'],challengeSide:'home'
+ }).observedOpponentShoeContact,true);
+ assert.equal(classifyActionLabEvidence(challenge,{
+  tick:1,starts:['home-10'],challengeSide:'away'
+ }).witnessed,false);
+ const ambiguous=classifyActionLabEvidence(challenge,{
+  tick:1,starts:['home-10','away-10'],challengeSide:'away'
+ });
+ assert.equal(ambiguous.realContactObserved,true);
+ assert.equal(ambiguous.witnessed,false);
+ assert.equal(ambiguous.observedOpponentShoeContact,false);
+ assert.throws(()=>classifyActionLabEvidence(challenge,{
+  tick:1,starts:['away-10','away-10']
+ }),/Invalid measured Action LAB frame/);
+ assert.throws(()=>classifyActionLabEvidence(challenge,{
+  tick:1,starts:['away-10'],challengeSide:'unknown'
+ }),/contact side/);
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');

@@ -6,10 +6,12 @@ import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
 import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
+ CHALLENGE_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
 export function createControlledActionLab(RAPIER,id,{
- shotSide='home',shotLane='open',carrySide='home',controlScene='receive'
+ shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
+ challengeSide='away',challengeScene='contact'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -18,18 +20,29 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
     !['receive','opponent-first'].includes(controlScene)||
+    !['home','away'].includes(challengeSide)||
+    !['contact','no-contact'].includes(challengeScene)||
+    (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
     (id!=='shot'&&(shotSide!=='home'||shotLane!=='open'))||
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive'))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedShotSide=id==='shot'?shotSide:null;
  const selectedCarrySide=id==='carry'?carrySide:null;
+ const selectedChallengeSide=id==='challenge'?challengeSide:null;
  const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
-  selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:spec.initial;
+  selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:
+  selectedChallengeSide?(challengeScene==='no-contact'?
+   CHALLENGE_LAB_STARTS.noContact:CHALLENGE_LAB_STARTS[selectedChallengeSide]):
+   spec.initial;
  const blocked=selectedShotSide!==null&&shotLane==='blocked';
  const opposingControl=id==='control'&&controlScene==='opponent-first';
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
+  selectedChallengeSide==='home'?
+   Object.freeze(['home-10','home-9','away-10']):
+  selectedChallengeSide==='away'?
+   Object.freeze(['away-10','away-9','home-10']):
   blocked?Object.freeze(selectedShotSide==='home'?
   ['home-10','away-2','away-1']:['away-10','home-2','home-1']):
   selectedShotSide==='away'?
@@ -81,7 +94,8 @@ export function createControlledActionLab(RAPIER,id,{
    });
   const evidence=classifyActionLabEvidence(spec,{
    tick:physics.tick,action,starts,priorPass:firstRealPass,
-   opponentEarlier:firstOpposingShoe!==null
+   opponentEarlier:firstOpposingShoe!==null,
+   challengeSide:selectedChallengeSide??'away'
   });
   // Observe the original unmodified three-lane geometry ONLY after
   // the real single Rapier shooter START on this exact physics tick.
@@ -173,6 +187,8 @@ export function createControlledActionLab(RAPIER,id,{
   }
   return Object.freeze({
    scenarioId:id,shotSide:selectedShotSide,shotLane:selectedShotSide?shotLane:null,
+   challengeSide:selectedChallengeSide,
+   challengeScene:selectedChallengeSide?challengeScene:null,
    physicsTick:physics.tick,timeS:physics.tick*FIXED_DT,
    ball:physics.ball,
    players:Object.freeze(playerFrame.players.map(p=>Object.freeze({
@@ -205,6 +221,8 @@ export function createControlledActionLab(RAPIER,id,{
   shotLane:selectedShotSide?shotLane:null,
   carrySide:selectedCarrySide,
   controlScene:spec.mode==='control'?controlScene:null,
+  challengeSide:selectedChallengeSide,
+  challengeScene:selectedChallengeSide?challengeScene:null,
   snapshot,step,dispose});
 }
 const label=id=>id.replace('home-','Home #').replace('away-','Away #');
@@ -219,13 +237,16 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   shotLaneChoice=by('action-labs-shot-lane'),
   shotLaneLabel=by('action-labs-shot-lane-label'),
   controlSceneChoice=by('action-labs-control-scene'),
-  controlSceneLabel=by('action-labs-control-scene-label');
+  controlSceneLabel=by('action-labs-control-scene-label'),
+  challengeSceneChoice=by('action-labs-challenge-scene'),
+  challengeSceneLabel=by('action-labs-challenge-scene-label');
  const canvas=by('action-labs-pitch'),status=by('action-labs-status');
  const summary=by('action-labs-readout'),description=by('action-labs-description');
  const go=by('action-labs-play'),pause=by('action-labs-pause');
  const step=by('action-labs-step'),reset=by('action-labs-reset');
  if(!dialog||!select||!shotSide||!shotSideLabel||!shotLaneChoice||
     !shotLaneLabel||!controlSceneChoice||!controlSceneLabel||
+    !challengeSceneChoice||!challengeSceneLabel||
     !canvas||!status||!summary||!description)invalid();
  if(select.options.length!==ACTION_LAB_SCENARIOS.length||
     ACTION_LAB_SCENARIOS.some((s,i)=>select.options[i].value!==s.id))
@@ -299,7 +320,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
      'Verified: genuine Rapier shoe START + CARRY impulse. Dribble unconfirmed.':
     kind==='control'?
      'Observed: separate teammate shoe-ball contact after real pass. No official possession.':
-     'Observed: actual AWAY shoe-ball contact; no successful tackle claimed.';
+     'Observed: actual '+snap.challengeSide.toUpperCase()+
+      ' shoe-ball START; no successful tackle or interception claimed.';
   }else if(session.spec.goal==='control'&&snap.receivingContact){
    status.textContent='Observed: separate teammate shoe-ball contact after real pass. No official possession.';
   }else if(session.spec.goal==='control'&&snap.firstOpposingShoe){
@@ -324,14 +346,17 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  shotSideLabel.hidden=!['shot','carry'].includes(select.value);
+  shotSideLabel.hidden=!['shot','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';
+  challengeSceneLabel.hidden=select.value!=='challenge';
   session=createControlledActionLab(getRapier(),select.value,{
    shotSide:select.value==='shot'?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
    carrySide:select.value==='carry'?shotSide.value:'home',
-   controlScene:select.value==='control'?controlSceneChoice.value:'receive'
+   controlScene:select.value==='control'?controlSceneChoice.value:'receive',
+   challengeSide:select.value==='challenge'?shotSide.value:'away',
+   challengeScene:select.value==='challenge'?challengeSceneChoice.value:'contact'
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
@@ -339,6 +364,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
    session.controlScene==='opponent-first'?
    'A true long PASS targets HOME #9. AWAY #7 approaches only after that physical PASS; observe the opposing shoe first, without awarding an interception, tackle or reception.':
+   session.challengeScene==='no-contact'?
+   'Ball starts far from all 22 canonical shoes. Observe a physically empty contact timeline; do not manufacture action, interception or possession.':
    session.spec.description;
   status.textContent='Ready · '+session.spec.title+
    ' · Play to observe genuine Rapier events; no result is pre-awarded.';
@@ -375,6 +402,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  shotLaneChoice.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});
  controlSceneChoice.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
+  catch(e){stop();status.textContent=e.message;}});
+ challengeSceneChoice.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});
  select.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});

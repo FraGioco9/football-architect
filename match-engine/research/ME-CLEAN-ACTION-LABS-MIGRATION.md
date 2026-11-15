@@ -132,3 +132,21 @@ existing pure classifier; no fabricated collision, interception, tackle,
 pass completion, official possession or score. The standard Receiving
 scene still produces HOME #9's own authentic shoe START at tick 30.
 Exact-head Node/replay and real Chrome results are required for acceptance.
+
+
+## #620 — CHALLENGE negative authorization and mirrored physical contact
+The separate HOME/AWAY CHALLENGE variants reuse the **original** canonical
+forward #10 positions, ball contact, 22 kinematic Rapier shoes and original
+fixture selector. A CHALLENGE witness counts only a **single exclusive**
+real shoe START by the selected side, not any presumed successful tackle,
+interception, possession or score. The bounded No contact alternative has
+an ordinary grounded ball at (0,30), safely remote from the unchanged
+22 players; the 60Hz mover/real Rapier events must show no genuine START.
+The default existing AWAY CHALLENGE remains unchanged. The original
+selector requires exactly one START and one matching active shoe, and
+its pure rejection auditor reports `no-exclusive-shoe-start` for absent,
+multiple, and ambiguous active shoes; these are counterfactual guard tests,
+NOT claimed physically observed simultaneous Rapier collisions. A real
+same-tick duplicate-start fixture would require its own measurable evidence
+without violating >=0.98m player separation; do not manufacture one.
+Original action policy and match scoring remain untouched.
