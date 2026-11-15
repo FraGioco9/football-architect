@@ -188,6 +188,47 @@ for(const [engine,driver] of Object.entries(engines)){
     count++;
    }finally{await ctx.close()}
   }
+  // Exercise the real match controller in a fresh document, not just the
+  // first-paint shell. Stale scores supplied for non-completed statuses must
+  // never display numbers or the centre dash.
+  for(const theme of ['dark','light']){
+   const ctx=await browser.newContext({viewport:{width:390,height:844}});
+   try{
+    await ctx.addInitScript(mode=>localStorage.setItem('football-architect:theme',mode),theme);
+    const page=await ctx.newPage();
+    let currentStatus='scheduled';
+    await page.route('**/matches/123',route=>route.fulfill({
+     status:200,contentType:'text/html',body:decorated
+    }));
+    await page.route('**/api/matches/123',route=>route.fulfill({
+     status:200,contentType:'application/json',
+     body:JSON.stringify({...match,status:currentStatus,
+      // These are test-only, deliberately inconsistent stale goals. The
+      // public controller must ignore them before a completed result.
+      result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9}})
+    }));
+    for(const status of ['awaiting_participants','scheduled','in_progress','postponed','cancelled','completed']){
+     currentStatus=status;
+     const response=await page.goto('http://app.localhost:2000/matches/123',{waitUntil:'domcontentloaded'});
+     assert.equal(response?.status(),200,engine+' '+theme+' '+status);
+     await page.waitForFunction(()=>document.querySelector('[data-match-detail]')?.dataset.matchLoad==='ready');
+     const state=await page.evaluate(()=>{
+      const root=document.querySelector('[data-match-detail]');
+      const get=selector=>root.querySelector(selector);
+      const scores=['home','away'].map(side=>get('[data-match-'+side+'-score]'));
+      const dash=get('.app-match-score-separator');
+      const section=root.getBoundingClientRect(),sep=dash.getBoundingClientRect();
+      return {text:[scores[0].textContent,scores[1].textContent,dash.textContent],
+       hidden:scores.map(node=>node.getAttribute('aria-hidden')),
+       centreOffset:(sep.left+sep.width/2)-(section.left+section.width/2)};
+     });
+     assert.deepEqual(state.text,status==='completed'?['12','3','–']:['','',''],
+      JSON.stringify({engine,theme,status,state}));
+     assert.deepEqual(state.hidden,status==='completed'?['false','false']:['true','true']);
+     assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));
+    }
+   }finally{await ctx.close()}
+  }
  }finally{await browser.close()}
 }
-console.log('MATCH FIRST PAINT PASS: '+count+' Chromium/WebKit × Dark/Light × desktop/mobile direct-load+refresh cases');
+console.log('MATCH FIRST PAINT PASS: '+count+' Chromium/WebKit × Dark/Light × desktop/mobile direct-load+refresh cases, plus real controller score-state QA');

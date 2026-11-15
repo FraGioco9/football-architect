@@ -197,3 +197,13 @@ The blank score slots remain in the six-track grid, so names and logo do not
 jump as data arrives; ARIA hides empty score nodes. The bar alignment is
 independent of score visibility. There is no fabricated 0–0 or placeholder
 dash on cold navigation or refresh.
+
+### Dynamic controller QA (no backend writes)
+
+The FULL browser runner also loads the real match controller with local
+intercepted responses for `awaiting_participants`, `scheduled`, `in_progress`,
+`postponed`, `cancelled`, and `completed`. Non-completed fixtures deliberately
+carry stale score-shaped values in the test harness; the live client must
+still render all three score positions empty. A verified completed fixture
+renders both numbers and the centred en dash. This is repeated for Dark and
+Light in both Chromium and WebKit and checks ARIA visibility.
