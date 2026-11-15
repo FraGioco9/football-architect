@@ -742,3 +742,27 @@ test('C2-b opt-in: authentic carry blocker detour A/B and physical safety',async
    'persistent detour must improve authentic carrier-to-ball gap by 0.2m');
  }finally{ordinary.dispose();trial.dispose();replay.dispose();}
 });
+
+test('P2 opt-in shot approach preserves authentic 22-player baseline without a prior shot lane',async()=>{
+ const R=await initializeRapier(rapier);
+ for(const c of CASES){
+  const normal=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),opts);
+  const trial=createPhysicalFixtureStepRuntime(R,fix(c),initial(c),{
+   ...opts,experimentalFootballShotMovement:true
+  });
+  try{
+   for(let tick=1;tick<=80;tick++){
+    const expected=normal.step(),actual=trial.step();
+    assert.equal(actual.physicsTick,tick);
+    assert.deepEqual(actual,expected,
+     'closed P2 opt-in must not invent a shot, motion or contact at '+c.team+' tick '+tick);
+    assert.equal(actual.officialMatchResult,null);
+    assert.equal(actual.officialMatchPossession,false);
+    assert.equal(actual.preMovementIntentCheckpoint.physicalActionAuthorized,false);
+    assert.equal(actual.preMovementIntentCheckpoint.moverChanged,false);
+   }
+  }finally{normal.dispose();trial.dispose();}
+  assert.throws(()=>createPhysicalFixtureStepRuntime(
+   R,fix(c),initial(c),{experimentalFootballShotMovement:true}),TypeError);
+ }
+});
