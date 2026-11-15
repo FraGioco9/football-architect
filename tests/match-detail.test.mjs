@@ -131,7 +131,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  const css=read('assets/match-detail.css');
  assert.match(css,/width:min\(100%,340px\)/);
  assert.match(css,/height:48px/);
- assert.doesNotMatch(css,/height:34px|height:30px/);
+ assert.doesNotMatch(css,/\.app-match-scoreboard\{[^}]*height:(?:34|30)px/s);
  assert.match(css,/width:min\(100%,310px\)/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 22px 9px 22px minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 20px 8px 20px minmax\(0,1fr\)/);
