@@ -1,6 +1,9 @@
 // ME-PLAYER-01/24 — autonomous movement and current handoff-corridor safety.
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
+import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
+import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -1569,9 +1572,53 @@ function teamShape(players,team,presserId){
   forwardLineX:mean('forward')
  });
 }
-export function createPlayerMovement(){
+export function createPlayerMovement(options={}){
+ if(!options||typeof options!=='object'||Array.isArray(options)||
+    Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
+     k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
+     k!=='researchControlReceiver'&&k!=='researchControlBall'&&
+     k!=='researchControlOpponentFirst'&&
+     k!=='researchCarrySide'&&k!=='researchCarryBall')||
+    ((options.researchShotAttacker??null)===null&&
+     options.researchControlReceiver===undefined&&
+     options.researchCarrySide===undefined&&Reflect.ownKeys(options).length>0)||
+    (options.researchCarrySide!==undefined&&(
+     !['home','away'].includes(options.researchCarrySide)||
+     !Object.hasOwn(options,'researchCarryBall')||
+     options.researchShotAttacker!==undefined||
+     options.researchShotBall!==undefined||
+     options.researchShotBlockedLane!==undefined||
+     options.researchControlReceiver!==undefined||
+     options.researchControlBall!==undefined))||
+    (options.researchControlOpponentFirst!==undefined&&(
+     options.researchControlOpponentFirst!==true||
+     options.researchControlReceiver!==true))||
+    (options.researchControlReceiver!==undefined&&(
+     options.researchControlReceiver!==true||
+     !Object.hasOwn(options,'researchControlBall')||
+     options.researchShotAttacker!==undefined||
+     options.researchShotBall!==undefined||
+     options.researchShotBlockedLane!==undefined||
+     options.researchCarrySide!==undefined||
+     options.researchCarryBall!==undefined))||
+    (options.researchShotAttacker!==undefined&&
+     !['home','away'].includes(options.researchShotAttacker))||
+    (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall'))||
+    (options.researchShotBlockedLane!==undefined&&
+     (options.researchShotBlockedLane!==true||
+      !['home','away'].includes(options.researchShotAttacker))))
+  throw new TypeError('Only paired bounded research shot initial positions allowed');
+ const initial=options.researchShotAttacker?
+  initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
+   options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
+  options.researchControlReceiver===true?
+   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
+    {opponentFirst:options.researchControlOpponentFirst===true}):
+  options.researchCarrySide!==undefined?
+   initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
+    options.researchCarryBall):INITIAL_PLAYERS;
  let tick=0;
- const players=INITIAL_PLAYERS.map(p=>({...p}));
+ const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
@@ -1753,8 +1800,24 @@ export function createPlayerMovement(){
    players:Object.freeze(players.map(p=>Object.freeze({...p})))
   });
  }
- function step(ballPosition={x:0,y:0}){
+ function step(ballPosition={x:0,y:0},priorRealPass=null){
   const ball=ballXY(ballPosition);
+  // Research-only receiver reaction, never a received-pass award.
+  // A kinematic destination is still subject to acceleration, 7m/s speed,
+  // turning, and 0.98m kinematic separation enforced by the original mover.
+  if(priorRealPass!==null&&(options.researchControlReceiver!==true||
+     priorRealPass.action!=='pass'||priorRealPass.playerId!=='home-10'||
+     priorRealPass.passTarget?.recipientId!=='home-9'||
+     priorRealPass.appliedByRapier!==true||
+     priorRealPass.actualPhysicsImpulseApplied!==true||
+     !Number.isInteger(priorRealPass.tick)||priorRealPass.tick<1||
+     priorRealPass.tick>tick))
+   throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
+  const opponentFirst=options.researchControlOpponentFirst===true;
+  const receiverApproaching=priorRealPass!==null&&!opponentFirst&&
+   tick-priorRealPass.tick<180;
+  const opponentApproaching=priorRealPass!==null&&opponentFirst&&
+   tick-priorRealPass.tick<350;
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
@@ -1925,6 +1988,10 @@ export function createPlayerMovement(){
    });
   };
   const targets=players.map(p=>{
+   if(receiverApproaching&&p.id==='home-9')
+    return Object.freeze({x:ball.x,y:ball.y});
+   if(opponentApproaching&&p.id==='away-7')
+    return Object.freeze({x:ball.x,y:ball.y});
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?
      players.find(other=>other.id===screen.opponentId):null;
@@ -2123,5 +2190,5 @@ export function createPlayerMovement(){
   balances=nextBalances;lineResponses=nextLineResponses;
   return snapshot();
  }
- return Object.freeze({snapshot,step,reset:createPlayerMovement});
+ return Object.freeze({snapshot,step,reset:()=>createPlayerMovement(options)});
 }
