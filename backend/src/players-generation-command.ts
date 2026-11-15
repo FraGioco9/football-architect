@@ -9,6 +9,7 @@ import {expiredPlayerPreviewDelete} from './player-preview-retention.ts';
 import {abortUnless} from './atomic-guard.ts';
 import {COUNTRIES,ATTRIBUTES,generateTrialWithCatalog,summarize} from './players-generator-core.mjs';
 import {loadRuntimePlayerCatalog} from './players-catalog.mjs';
+import {buildPortraitSnapshotForPlayer} from './player-portrait-core.mjs';
 
 const nationalityCodes=new Set(COUNTRIES.map((c:{code:string})=>c.code));
 const roles=new Set('GK RB CB LB RWB LWB DM CM AM RM LM RW LW ST'.split(' '));
@@ -129,36 +130,59 @@ export async function commitPlayerGeneration(db:Database,session:AdminSession,in
   .bind(id,session.unified!.playerId).first<Draft>();
  if(!draft)throw new ApiError(404,'players_preview_not_found');
  const world=await readWorld(db);
- if(world.generation!==draft.world_generation||world.seasonNumber!==draft.season_number)throw new ApiError(409,'stale_players_preview');
+ if(world.generation!==draft.world_generation||world.seasonNumber!==draft.season_number)
+  throw new ApiError(409,'stale_players_preview');
  if(draft.status==='committed'){
   const n=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE batch_id=? AND world_generation=?').bind(id,world.generation).first<{n:number}>();
   if(n?.n!==draft.count)throw new ApiError(503,'players_commit_unavailable');
-  // A committed draft is repeatable without a second write.
+  // Idempotent read-back: older already-committed batches may predate portrait migration.
   return {batchId:id,count:draft.count,alreadyCommitted:true,worldGeneration:world.generation};
  }
  if(draft.status!=='preview'||draft.expires_at<=now)throw new ApiError(409,'players_preview_expired');
+
+ // Permanent IDs are assigned from SQLite AUTOINCREMENT high-water (not MAX(id));
+ // explicit allocation lets us generate ID-dependent faces BEFORE the atomic batch.
+ // A transaction-scoped sqlite_sequence guard aborts if another batch got the IDs.
+ let lastId=0,snapshots:Awaited<ReturnType<typeof buildPortraitSnapshotForPlayer>>[]=[];
  try{
-  // One D1 transaction: live session guard + unchanged world/draft + ALL player inserts + status.
-  // All approved gameplay fields persist unchanged; D1 adds the permanent positive integer ID.
+  const row=await db.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0) AS last_id").first<{last_id:number}>();
+  lastId=row?.last_id??0;
+  const candidates=JSON.parse(draft.candidates_json) as any[];
+  if(!Number.isSafeInteger(lastId)||lastId<0||!Array.isArray(candidates)||
+     candidates.length!==draft.count||!Number.isSafeInteger(lastId+draft.count))
+   throw Error('Corrupt player preview or ID high-water');
+  for(let i=0;i<candidates.length;i++)
+   snapshots.push(await buildPortraitSnapshotForPlayer({...candidates[i],id:lastId+i+1}));
+ }catch{throw new ApiError(503,'players_commit_unavailable');}
+ try{
+  // All-or-nothing D1 batch: authorization + current world + uncommitted draft +
+  // unchanged AUTOINCREMENT sequence + approved players + immutable portraits.
+  // If a profile insert fails no permanent player is created either.
   const result=await db.batch([
    sessionGuard(db,session,now),
    abortUnless(db,'SELECT 1 FROM world_state WHERE id=1 AND generation=? AND season_number=?',[world.generation,world.seasonNumber]),
    abortUnless(db,"SELECT 1 FROM player_generation_drafts WHERE id=? AND account_id=? AND status='preview' AND expires_at>? AND world_generation=? AND season_number=?",
     [id,session.unified!.playerId,now,world.generation,world.seasonNumber]),
-   db.prepare(`INSERT INTO generated_players(batch_id,world_generation,entry_season,payload_json,created_at)
-    SELECT ?, ?,?,json_remove(j.value,'$.id','$.preview_id'),?
+   abortUnless(db,"SELECT 1 WHERE COALESCE((SELECT seq FROM sqlite_sequence WHERE name='generated_players'),0)=?",[lastId]),
+   db.prepare(`INSERT INTO generated_players(id,batch_id,world_generation,entry_season,payload_json,created_at)
+    SELECT ?+CAST(j.key AS INTEGER)+1, ?,?,?,json_set(json_remove(j.value,'$.id','$.preview_id'),'$.id',?+CAST(j.key AS INTEGER)+1),?
     FROM json_each((SELECT candidates_json FROM player_generation_drafts WHERE id=?)) AS j
     ORDER BY CAST(j.key AS INTEGER)`)
-    .bind(id,world.generation,world.seasonNumber,now,id),
-   // Keep the allocated integer in the persisted internal JSON within this same D1 transaction.
-   db.prepare("UPDATE generated_players SET payload_json=json_set(payload_json,'$.id',id) WHERE batch_id=? AND world_generation=?")
-    .bind(id,world.generation),
-   db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'").bind(now,id,session.unified!.playerId)
+    .bind(lastId,id,world.generation,world.seasonNumber,lastId,now,id),
+   db.prepare(`INSERT INTO player_portrait_profiles(player_id,schema_version,prompt_version,snapshot_json,status,asset_key,created_at)
+    SELECT CAST(json_extract(j.value,'$.player_id') AS INTEGER),
+     json_extract(j.value,'$.schema_version'),json_extract(j.value,'$.prompt_version'),
+     j.value,'pending',NULL,?
+    FROM json_each(?) AS j ORDER BY CAST(j.key AS INTEGER)`)
+    .bind(now,JSON.stringify(snapshots)),
+   db.prepare("UPDATE player_generation_drafts SET status='committed',committed_at=? WHERE id=? AND account_id=? AND status='preview'")
+    .bind(now,id,session.unified!.playerId)
   ]);
-  if(result[3].meta.changes!==draft.count||result[4].meta.changes!==draft.count||result[5].meta.changes!==1)throw Error('Uncommitted player count');
+  if(result[4].meta.changes!==draft.count||result[5].meta.changes!==draft.count||result[6].meta.changes!==1)
+   throw Error('Uncommitted player or portrait count');
   return {batchId:id,count:draft.count,alreadyCommitted:false,worldGeneration:world.generation};
  }catch{
-  // A raced retry may have been committed; read back exact count and return idempotently.
+  // A racing retry may already have committed. Never write a partial batch.
   const row=await db.prepare('SELECT status FROM player_generation_drafts WHERE id=? AND account_id=?').bind(id,session.unified!.playerId).first<{status:string}>();
   if(row?.status==='committed'){
    const n=await db.prepare('SELECT COUNT(*) AS n FROM generated_players WHERE batch_id=?').bind(id).first<{n:number}>();
