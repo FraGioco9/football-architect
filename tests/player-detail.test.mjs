@@ -520,7 +520,7 @@ test('#623 public player portrait and fallback: exact 3 IDs only, stable geometr
   assert.equal(isAllowlistedPublicPath(path),false,path);
  assert.match(js,/!preview&&state==='ready'&&player/);
  assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
- assert.match(js,/portraitImage\\.hidden=true;portraitFallback\\.removeAttribute\\('hidden'\\)/);
+ assert.ok(js.includes("portraitImage.hidden=true;portraitFallback.removeAttribute('hidden')"));
  assert.match(js,/portraitImage\.removeAttribute\('src'\)/);
  assert.match(css,/\.app-player-detail-photo\{display:block;object-fit:cover;object-position:center top\}/);
  assert.match(css,/\.app-player-detail-photo\[hidden\],\.app-player-detail-silhouette\[hidden\]\{display:none!important\}/);
@@ -576,16 +576,16 @@ test('#623 plain filled Players silhouette has no internal strokes or portrait f
 });
 
 
-test('#623 when photo loads the SVG placeholder is hidden through the DOM attribute, not an SVG expando property',()=>{
- const js=read('assets/player-detail.js');
- assert.match(js,/portraitImage\\.hidden=false;portraitFallback\\.setAttribute\\('hidden',''\\)/);
- assert.equal((js.match(/portraitFallback\\.removeAttribute\\('hidden'\\)/g)||[]).length,2,'loading reset and image failure must reveal fallback');
- assert.doesNotMatch(js,/portraitFallback\\.hidden\\s*=/,'SVGElement.hidden is not reliably reflected to HTML hidden attribute');
+test('#623 photo load hides inline SVG through the hidden attribute and error re-exposes fallback',()=>{
+ const script=read('assets/player-detail.js');
+ assert.ok(script.includes("portraitImage.hidden=false;portraitFallback.setAttribute('hidden','')"),'success must set the SVG hidden attribute');
+ assert.equal(script.split("portraitFallback.removeAttribute('hidden')").length-1,2,'initial reset and error must restore the SVG');
+ assert.ok(!script.includes('portraitFallback.hidden='),'avoid SVG expando hidden property');
  const css=read('assets/player-detail.css');
- assert.match(css,/\\.app-player-detail-silhouette\\[hidden\\]\\{display:none!important\\}/);
+ assert.ok(css.includes('.app-player-detail-silhouette[hidden]{display:none!important}'),'CSS must hide the SVG with the actual attribute');
  for(const path of ['players/_shared/index.html','admin/players/preview/player/index.html']){
   const html=read(path);
-  assert.match(html,/data-detail-portrait-placeholder/);
-  assert.match(html,/data-detail-portrait-photo/);
+  assert.ok(html.includes('data-detail-portrait-placeholder'));
+  assert.ok(html.includes('data-detail-portrait-photo'));
  }
 });
