@@ -130,8 +130,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/width:min\(100%,310px\)/);
  assert.match(css,/grid-template-columns:34px minmax\(0,1fr\) 22px 9px 22px minmax\(0,1fr\)/);
  assert.match(css,/grid-template-columns:30px minmax\(0,1fr\) 20px 8px 20px minmax\(0,1fr\)/);
- assert.match(css,/\.app-match-competition-logo \.app-match-logo-art\{[^}]*width:28px;height:28px/s);
- assert.match(css,/\.app-match-competition-logo \.app-match-logo-art\{width:25px;height:25px\}/);
+ assert.match(css,/\.app-match-competition-logo \.app-match-logo-art\{[^}]*width:44px;height:44px/s);
+ assert.match(css,/position:relative;left:-8px;top:-5px;z-index:2/);
+ assert.match(css,/\.app-match-competition-logo \.app-match-logo-art\{width:38px;height:38px\}/);
  assert.match(css,/\.app-match-page\{min-width:0;padding-top:6px;overflow:visible\}/);
  assert.match(css,/\.app-match-page\{padding-top:4px\}/);
  assert.match(css,/\.app-match-scoreboard,\.app-match-scoreboard \*\{transition:none!important;animation:none!important\}/);

@@ -10,9 +10,11 @@ width **310px**, height **30px**. The single horizontal row is:
 
 `COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-The actual approved competition `compact.svg` is shown at **28px** on
-desktop, **25px** on mobile, on the **far left within the bar**. It no
-longer occupies the centre or protrudes above/below the bar.
+The approved competition `compact.svg` is shown at **44px on desktop**,
+**38px on mobile**, at the **far left of the scorebar**. Its link is
+shifted 8px left and 5px upward. The SVG **overhangs the upper and left
+edges of the bar**; the container uses visible overflow and stacking
+to avoid clipping. No logo outline or backing is used.
 
 **Legibility treatment (no ivory border or backing):** competition logos use
 two approved colours: their `primaryHex` and graphite `#243039`. Because
