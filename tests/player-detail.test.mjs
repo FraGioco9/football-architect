@@ -636,7 +636,7 @@ test('#623 wider portrait frame preserves mobile identity, affiliation and back-
  const renderer=read('tools/render-player-detail.mjs');
  const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
  assert.ok(frame?.includes('width:190px;height:181px;flex:0 0 190px'),'desktop portrait reserves 190px width');
- assert.ok(frame?.includes('overflow:hidden;border-radius:'),'larger image remains clipped to its box');
+ assert.ok(frame?.includes('overflow:hidden;border-radius:0;'),'image is clipped to a sharp-cornered rectangular box');
  assert.ok(frame?.includes('border:0'),'portrait still has no box border');
  const mobile=css.split('@media(max-width:620px){')[1]?.split('@media(max-width:460px)')[0];
  assert.ok(mobile?.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile portrait reserves 120px width');
@@ -668,4 +668,14 @@ test('#623 wide placeholder maintains head/body proportions on desktop and mobil
  const css=read('assets/player-detail.css');
  assert.ok(css.includes('.app-player-detail-portrait{width:190px;height:181px;flex:0 0 190px;'),'desktop frame unchanged');
  assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile frame unchanged');
+});
+
+test('#623 portraits and SVG fallbacks always use square frame corners at every breakpoint',()=>{
+ const css=read('assets/player-detail.css');
+ const frame=css.split('.app-player-detail-portrait{')[1]?.split('}')[0];
+ assert.ok(frame?.includes('border-radius:0;'),'portrait box must have sharp corners');
+ assert.ok(!frame?.includes('border-radius:var(--fa-radius-panel)'),'panel rounding must never apply to player portrait');
+ assert.ok(frame?.includes('border:0;'),'portrait box remains without a border');
+ assert.ok(css.includes('.app-player-detail-portrait{width:120px;height:114px;flex-basis:120px}'),'mobile must reuse square-cornered frame');
+ assert.ok(css.includes('scale(var(--app-player-photo-scale,1.50))'),'photo zoom stays at 150%');
 });
