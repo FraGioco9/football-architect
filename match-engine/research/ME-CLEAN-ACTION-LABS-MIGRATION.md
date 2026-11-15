@@ -111,3 +111,24 @@ Movement is not a completed dribble, second contact, maintained possession
 or a match result. Unstaged control with unchanged CARRY opt-in must select
 PASS instead and never label it a dribble. HOME/AWAY parity, deterministic
 replay and true Chrome UI are required before acceptance.
+
+
+## #620 — genuine CONTROL opponent-before-recipient negative
+The second LAB-17 Scene variant 'Opponent first' is a bounded **initial**
+long-pass lineup: only HOME #9 at (-5,-6.5), HOME #11 at (-30,+18) and
+AWAY #7 at (-2.95,-2) differ before tick zero. Original safe-pass policy
+authentically selects HOME #9 as recipient; original Rapier HOME #10
+shoe START plus 2.4 Ns PASS impulse occurs tick 1. The real AWAY #7
+then targets the actual ball XY ONLY after the prior pass was recorded
+by the closed same-world engine. The original canonical 60Hz mover still
+enforces acceleration, 7m/s speed, turn and >=0.98m player separation.
+
+The same original Rapier world registers a genuine exclusive AWAY #7
+shoe START at tick 91; the original physical policy independently chooses
+CLEARANCE. HOME #9's later genuine shoe START at tick 204 is not a
+reception of that already-interrupted original pass. The Action LAB
+records the first opposing START and feeds its persistent boolean to the
+existing pure classifier; no fabricated collision, interception, tackle,
+pass completion, official possession or score. The standard Receiving
+scene still produces HOME #9's own authentic shoe START at tick 30.
+Exact-head Node/replay and real Chrome results are required for acceptance.

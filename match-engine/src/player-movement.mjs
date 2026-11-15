@@ -1577,7 +1577,7 @@ export function createPlayerMovement(options={}){
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
-     k!=='researchControlOppositionSlot'&&
+     k!=='researchControlOpponentFirst'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
@@ -1590,8 +1590,8 @@ export function createPlayerMovement(options={}){
      options.researchShotBlockedLane!==undefined||
      options.researchControlReceiver!==undefined||
      options.researchControlBall!==undefined))||
-    (options.researchControlOppositionSlot!==undefined&&(
-     !Number.isInteger(options.researchControlOppositionSlot)||
+    (options.researchControlOpponentFirst!==undefined&&(
+     options.researchControlOpponentFirst!==true||
      options.researchControlReceiver!==true))||
     (options.researchControlReceiver!==undefined&&(
      options.researchControlReceiver!==true||
@@ -1613,7 +1613,7 @@ export function createPlayerMovement(options={}){
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
   options.researchControlReceiver===true?
    initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
-    options.researchControlOppositionSlot??null):
+    {opponentFirst:options.researchControlOpponentFirst===true}):
   options.researchCarrySide!==undefined?
    initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
     options.researchCarryBall):INITIAL_PLAYERS;
@@ -1813,15 +1813,11 @@ export function createPlayerMovement(options={}){
      !Number.isInteger(priorRealPass.tick)||priorRealPass.tick<1||
      priorRealPass.tick>tick))
    throw new TypeError('Only earlier actual CONTROL research pass intent allowed');
-  const receiverApproaching=priorRealPass!==null&&
-   tick-priorRealPass.tick<180&&
-   (options.researchControlOppositionSlot===undefined||
-    options.researchControlOppositionSlot<50);
-  const slot=options.researchControlOppositionSlot;
-  const opponentApproaching=priorRealPass!==null&&
-   tick-priorRealPass.tick<350&&
-   (slot>=75||(receiverApproaching&&slot!==undefined));
-  const opponentGuarding=slot>=50&&slot<75;
+  const opponentFirst=options.researchControlOpponentFirst===true;
+  const receiverApproaching=priorRealPass!==null&&!opponentFirst&&
+   tick-priorRealPass.tick<180;
+  const opponentApproaching=priorRealPass!==null&&opponentFirst&&
+   tick-priorRealPass.tick<350;
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
@@ -1996,11 +1992,6 @@ export function createPlayerMovement(options={}){
     return Object.freeze({x:ball.x,y:ball.y});
    if(opponentApproaching&&p.id==='away-7')
     return Object.freeze({x:ball.x,y:ball.y});
-   // Research-only positional interception: the same original opponent
-   // holds its legal pre-tick-zero spot along a pass overrun; still uses
-   // the canonical motion constraints and a real Rapier shoe.
-   if(opponentGuarding&&p.id==='away-7')
-    return Object.freeze({x:p.baseX,y:p.baseY});
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?
      players.find(other=>other.id===screen.opponentId):null;

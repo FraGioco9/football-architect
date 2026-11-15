@@ -165,6 +165,26 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.doesNotMatch(carryAway.status,/confirmed dribble|possession awarded/i);
   process.stdout.write('ACTION_LAB_CHROME_AWAY_CARRY '+
    JSON.stringify(carryAway)+'\\n');
+  const negativeControl=await evalJs(
+   "(()=>{const action=document.getElementById('action-labs-choice');"+
+   "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-control-scene');"+
+   "scene.value='opponent-first';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<220;i++)document.getElementById('action-labs-step').click();"+
+   "return {scene:scene.value,visible:!document.getElementById('action-labs-control-scene-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(negativeControl.scene,'opponent-first');
+  assert.equal(negativeControl.visible,true);
+  assert.match(negativeControl.status,
+   /Observed: genuine Away #7 shoe-ball START before intended Home #9/);
+  assert.match(negativeControl.status,/No verified reception, tackle or interception/);
+  assert.match(negativeControl.readout,/Opposing shoe START tick 91/);
+  assert.match(negativeControl.readout,/Witnesses 0/);
+  assert.doesNotMatch(negativeControl.status,/successful tackle|confirmed interception|pass completed/i);
+  process.stdout.write('ACTION_LAB_CHROME_OPPONENT_FIRST '+
+   JSON.stringify(negativeControl)+'\\n');
   const away=await evalJs(
    "(()=>{const choice=document.getElementById('action-labs-choice');"+
    "choice.value='shot';choice.dispatchEvent(new Event('change',{bubbles:true}));"+

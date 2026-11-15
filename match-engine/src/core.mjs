@@ -85,7 +85,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchShotAttacker = null,
   diagnosticResearchShotBlockedLane = false,
   diagnosticResearchControlReceiver = false,
-  diagnosticResearchControlOppositionSlot = null,
+  diagnosticResearchControlOpponentFirst = false,
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
@@ -106,8 +106,8 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
     (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
   throw new TypeError('Blocked lane requires genuine bounded research shot');
- if(diagnosticResearchControlOppositionSlot!==null&&
-    (!Number.isInteger(diagnosticResearchControlOppositionSlot)||
+ if(typeof diagnosticResearchControlOpponentFirst!=='boolean'||
+    (diagnosticResearchControlOpponentFirst&&
      !diagnosticResearchControlReceiver))
   throw new TypeError('Bounded CONTROL opponent requires genuine receiver scene');
  if(typeof diagnosticResearchControlReceiver!=='boolean'||
@@ -128,7 +128,7 @@ export function createEngine(RAPIER, input = {}, {
    scenario,{blockedLane:diagnosticResearchShotBlockedLane}):
   diagnosticResearchControlReceiver?
    initialResearchControlLineup(INITIAL_PLAYERS,scenario,
-    diagnosticResearchControlOppositionSlot):
+    {opponentFirst:diagnosticResearchControlOpponentFirst}):
   diagnosticResearchCarrySide!==null?
    initialResearchCarryLineup(INITIAL_PLAYERS,diagnosticResearchCarrySide,
     scenario):INITIAL_PLAYERS;
@@ -216,7 +216,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,
-    diagnosticResearchControlOppositionSlot,diagnosticResearchCarrySide
+    diagnosticResearchControlOpponentFirst,diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

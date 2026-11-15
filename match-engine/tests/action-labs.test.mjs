@@ -514,69 +514,118 @@ test('CARRY unavailable by original rules: genuine PASS takes priority, not fict
 });
 
 
-test('CONTROL 2b research: real opponent-first vs intended receiver across bounded initial cases',
- {timeout:100000},async()=>{
+test('CONTROL: real AWAY #7 shoe START precedes HOME #9, never a receiving witness',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ const a=createControlledActionLab(R,'control',{controlScene:'opponent-first'});
+ const b=createControlledActionLab(R,'control',{controlScene:'opponent-first'});
+ let pass=null,opponent=null,laterReceiver=null;
+ try{
+  const zero=a.snapshot();
+  assert.equal(zero.physicsTick,0);
+  assert.equal(zero.controlScene,'opponent-first');
+  assert.equal(zero.eventCount,0);
+  assert.equal(zero.firstOpposingShoe,null);
+  assert.equal(zero.receivingContact,null);
+  assert.deepEqual(zero.starts,[]);
+  const initial=Object.fromEntries(zero.players.map(p=>[p.id,p]));
+  assert.deepEqual([initial['home-9'].x,initial['home-9'].y],[-5,-6.5]);
+  assert.deepEqual([initial['home-11'].x,initial['home-11'].y],[-30,18]);
+  assert.deepEqual([initial['away-7'].x,initial['away-7'].y],[-2.95,-2]);
+  for(let tick=1;tick<=220;tick++){
+   const f=a.step(),g=b.step();
+   assert.equal(f.physicsTick,tick);
+   assert.deepEqual(f.ball,g.ball);
+   assert.deepEqual(f.action,g.action);
+   assert.deepEqual(f.starts,g.starts);
+   assert.deepEqual(f.evidence,g.evidence);
+   assert.deepEqual(f.firstOpposingShoe,g.firstOpposingShoe);
+   assert.equal(f.officialMatchResult,null);
+   assert.equal(f.officialMatchPossession,false);
+   assert.equal(f.evidence.officialPossession,false);
+   assert.equal(f.scoreChanged,false);
+   assert.equal(f.evidence.passCompleted,null);
+   assert.equal(f.evidence.tackleConfirmed,null);
+   assert.equal(f.evidence.officialGoal,false);
+   assert.equal(f.eventCount,0,'no post-opponent original-pass reception');
+   assert.equal(f.evidence.verifiedReceivingShoeContact,false);
+   assert.equal(f.receivingContact,null);
+   if(tick===1){
+    assert.deepEqual(f.starts,['home-10']);
+    assert.equal(f.action?.action,'pass');
+    assert.equal(f.action.passTarget.recipientId,'home-9');
+    assert.equal(f.action.appliedByRapier,true);
+    assert.equal(f.action.actualPhysicsImpulseApplied,true);
+    assert.equal(f.priorRealPass?.tick,1);
+    pass=f.action;
+   }
+   if(tick===91){
+    assert.deepEqual(f.starts,['away-7']);
+    assert.equal(f.action?.action,'clearance',
+     'the original physical action selector chooses opponent clearance');
+    assert.equal(f.action.appliedByRapier,true);
+    assert.equal(f.action.actualPhysicsImpulseApplied,true);
+    assert.equal(f.firstOpposingShoe?.tick,91);
+    assert.equal(f.firstOpposingShoe?.playerId,'away-7');
+    assert.equal(f.firstOpposingShoe?.officialInterception,false);
+    opponent=f.firstOpposingShoe;
+   }
+   if(tick>91)assert.strictEqual(f.firstOpposingShoe,opponent);
+   if(tick===204){
+    assert.deepEqual(f.starts,['home-9'],
+     'the later genuine shoe touch cannot verify the interrupted pass');
+    assert.equal(f.evidence.witnessed,false);
+    laterReceiver=tick;
+   }
+  }
+  assert.equal(pass.tick,1);
+  assert.equal(opponent.tick,91);
+  assert.equal(laterReceiver,204);
+  process.stdout.write('ME_CONTROL_OPPONENT_FIRST '+JSON.stringify({
+   passTick:pass.tick,recipient:pass.passTarget.recipientId,
+   opponentTick:opponent.tick,opponentId:opponent.playerId,
+   laterRecipientStartTick:laterReceiver,
+   falseReceivingWitnesses:a.snapshot().eventCount
+  })+'\\n');
+ }finally{a.dispose();b.dispose();}
+ assert.throws(()=>a.step(),/disposed/);
+});
+
+test('CONTROL opponent-first options do not spoof a Rapier PASS or expose unsafe setup',
+ {timeout:45000},async()=>{
  const R=await initializeRapier(rapier);
  const {createEngine}=await import('../src/core.mjs');
- const {createPlayerMovement}=await import('../src/player-movement.mjs');
- const {RESEARCH_CONTROL_OPPONENT_CANDIDATES:candidates}=await import(
+ const {createPlayerMovement,INITIAL_PLAYERS}=await import('../src/player-movement.mjs');
+ const {initialResearchControlLineup}=await import(
   '../src/research-control-initial-lineup.mjs');
  const ball={preset:'roll',seed:'me-action-pass-receive',
   x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
- const results=[];
- for(let slot=75;slot<candidates.length;slot++){
-  const engine=createEngine(R,ball,{
-   diagnosticPlayerFootContactsEnabled:true,
-   diagnosticAutonomousFixtureActionEnabled:true,
-   diagnosticResearchControlReceiver:true,
-   diagnosticResearchControlOppositionSlot:slot
-  });
-  const mover=createPlayerMovement({
-   researchControlReceiver:true,researchControlBall:ball,
-   researchControlOppositionSlot:slot
-  });
-  let priorPass=null;
-  const trace={slot,p:candidates[slot],pass:null,
-   starts:[],firstOpponent:null,firstReceiver:null,errors:[],
-   closest:Infinity,closestTick:null,atClosest:null,probe:[]};
-  try{
-   for(let tick=1;tick<=350;tick++){
-    const frame=mover.step(engine.snapshot().ball.position,priorPass);
-    const after=engine.step(frame);
-    const opponent=frame.players.find(p=>p.id==='away-7');
-    const recipient=frame.players.find(p=>p.id==='home-9');
-    const ballP=after.ball.position;
-    const gap=Math.hypot(opponent.x-ballP.x,opponent.y-ballP.y);
-    if(gap<trace.closest){trace.closest=+gap.toFixed(4);
-     trace.closestTick=tick;trace.atClosest={
-      ball:{x:+ballP.x.toFixed(3),y:+ballP.y.toFixed(3)},
-      opponent:{x:+opponent.x.toFixed(3),y:+opponent.y.toFixed(3)}
-     };}
-    if(slot===60&&(tick===1||tick%20===0))
-     trace.probe.push({tick,
-      ball:{x:+ballP.x.toFixed(2),y:+ballP.y.toFixed(2)},
-      opponent:{x:+opponent.x.toFixed(2),y:+opponent.y.toFixed(2)},
-      recipient:{x:+recipient.x.toFixed(2),y:+recipient.y.toFixed(2)},
-      gap:+gap.toFixed(3)});
-    const action=engine.uniformAutonomousActionSnapshot();
-    const starts=engine.footContactSnapshot().started;
-    if(tick===1){
-     trace.pass=action?.action+' '+action?.passTarget?.recipientId;
-     if(action?.action==='pass'&&
-        action?.passTarget?.recipientId==='home-9')
-      priorPass=action;
-    }
-    if(starts.length){
-     trace.starts.push({tick,ids:starts,action:action?.action??null});
-     if(!trace.firstOpponent&&starts.some(x=>x.startsWith('away-')))
-      trace.firstOpponent=tick;
-     if(!trace.firstReceiver&&starts.includes('home-9'))
-      trace.firstReceiver=tick;
-    }
-   }
-  }catch(e){trace.errors.push(e.message);}
-  finally{engine.dispose();}
-  results.push(trace);
- }
- process.stdout.write('ME_CONTROL_OPPONENT_GRID '+JSON.stringify(results)+'\\n');
+ assert.throws(()=>createControlledActionLab(R,'pass',{
+  controlScene:'opponent-first'
+ }),/bounded/);
+ assert.throws(()=>createControlledActionLab(R,'control',{
+  controlScene:'fabricated'
+ }),/bounded/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchControlOpponentFirst:true
+ }),/genuine receiver scene/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchControlReceiver:true,
+  diagnosticResearchControlOpponentFirst:true
+ }),/sole private current-tick/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchControlReceiver:true,
+  diagnosticResearchControlOpponentFirst:'true',
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticAutonomousFixtureActionEnabled:true
+ }),/genuine receiver scene/);
+ assert.throws(()=>createPlayerMovement({researchControlOpponentFirst:true}),
+  /paired bounded/);
+ assert.throws(()=>createPlayerMovement({
+  researchControlReceiver:true,researchControlBall:ball,
+  researchControlOpponentFirst:'true'
+ }),/paired bounded/);
+ assert.throws(()=>initialResearchControlLineup(INITIAL_PLAYERS,ball,{
+  opponentFirst:'true'
+ }),/flag must be boolean/);
 });

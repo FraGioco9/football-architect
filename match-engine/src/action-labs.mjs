@@ -9,7 +9,7 @@ import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
 export function createControlledActionLab(RAPIER,id,{
- shotSide='home',shotLane='open',carrySide='home'
+ shotSide='home',shotLane='open',carrySide='home',controlScene='receive'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
@@ -17,15 +17,20 @@ export function createControlledActionLab(RAPIER,id,{
  if(!['home','away'].includes(shotSide)||
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
+    !['receive','opponent-first'].includes(controlScene)||
     (id!=='shot'&&(shotSide!=='home'||shotLane!=='open'))||
-    (id!=='carry'&&carrySide!=='home'))
-  throw new TypeError('Only bounded HOME/AWAY SHOT or CARRY setups supported');
+    (id!=='carry'&&carrySide!=='home')||
+    (id!=='control'&&controlScene!=='receive'))
+  throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
  const selectedShotSide=id==='shot'?shotSide:null;
  const selectedCarrySide=id==='carry'?carrySide:null;
  const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
   selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:spec.initial;
  const blocked=selectedShotSide!==null&&shotLane==='blocked';
- const focus=blocked?Object.freeze(selectedShotSide==='home'?
+ const opposingControl=id==='control'&&controlScene==='opponent-first';
+ const focus=opposingControl?
+  Object.freeze(['home-10','home-9','away-7']):
+  blocked?Object.freeze(selectedShotSide==='home'?
   ['home-10','away-2','away-1']:['away-10','home-2','home-1']):
   selectedShotSide==='away'?
    Object.freeze(['away-10','home-1','home-10']):
@@ -40,6 +45,7 @@ export function createControlledActionLab(RAPIER,id,{
   ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
   ...(spec.mode==='control'?{diagnosticResearchControlReceiver:true}:{}),
+  ...(opposingControl?{diagnosticResearchControlOpponentFirst:true}:{}),
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
@@ -47,14 +53,15 @@ export function createControlledActionLab(RAPIER,id,{
   researchShotAttacker:selectedShotSide,researchShotBall:initial,
   ...(blocked?{researchShotBlockedLane:true}:{})
  }:spec.mode==='control'?{
-  researchControlReceiver:true,researchControlBall:initial
+  researchControlReceiver:true,researchControlBall:initial,
+  ...(opposingControl?{researchControlOpponentFirst:true}:{})
  }:selectedCarrySide?{
   researchCarrySide:selectedCarrySide,researchCarryBall:initial
  }:{});
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
- let carryTrace=null;
+ let firstOpposingShoe=null,carryTrace=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -62,8 +69,19 @@ export function createControlledActionLab(RAPIER,id,{
    throw new Error('Only genuine same-tick Rapier and canonical mover allowed');
   const raw=engine.uniformAutonomousActionSnapshot();
   const action=raw?.tick===physics.tick?raw:null;
+  // Only a genuine post-pass Rapier opponent shoe START is negative evidence.
+  // Neither nearby player positions nor a guessed interception suffice.
+  const opposingStart=spec.mode==='control'&&firstRealPass?
+   starts.find(id=>id.startsWith('away-')):null;
+  if(opposingStart&&!firstOpposingShoe)
+   firstOpposingShoe=Object.freeze({
+    tick:physics.tick,playerId:opposingStart,
+    passingTick:firstRealPass.tick,realShoeStart:true,
+    officialInterception:false,tackleConfirmed:null
+   });
   const evidence=classifyActionLabEvidence(spec,{
-   tick:physics.tick,action,starts,priorPass:firstRealPass
+   tick:physics.tick,action,starts,priorPass:firstRealPass,
+   opponentEarlier:firstOpposingShoe!==null
   });
   // Observe the original unmodified three-lane geometry ONLY after
   // the real single Rapier shooter START on this exact physics tick.
@@ -164,6 +182,7 @@ export function createControlledActionLab(RAPIER,id,{
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
    priorRealPass:firstRealPass,receivingContact,
+   firstOpposingShoe,controlScene:spec.mode==='control'?controlScene:null,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
@@ -184,7 +203,9 @@ export function createControlledActionLab(RAPIER,id,{
  function dispose(){if(!disposed){disposed=true;engine.dispose();}}
  return Object.freeze({spec,focus,shotSide:selectedShotSide,
   shotLane:selectedShotSide?shotLane:null,
-  carrySide:selectedCarrySide,snapshot,step,dispose});
+  carrySide:selectedCarrySide,
+  controlScene:spec.mode==='control'?controlScene:null,
+  snapshot,step,dispose});
 }
 const label=id=>id.replace('home-','Home #').replace('away-','Away #');
 const number=n=>Number(n).toFixed(2);
@@ -196,13 +217,16 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  const shotSide=by('action-labs-shot-side'),
   shotSideLabel=by('action-labs-shot-side-label'),
   shotLaneChoice=by('action-labs-shot-lane'),
-  shotLaneLabel=by('action-labs-shot-lane-label');
+  shotLaneLabel=by('action-labs-shot-lane-label'),
+  controlSceneChoice=by('action-labs-control-scene'),
+  controlSceneLabel=by('action-labs-control-scene-label');
  const canvas=by('action-labs-pitch'),status=by('action-labs-status');
  const summary=by('action-labs-readout'),description=by('action-labs-description');
  const go=by('action-labs-play'),pause=by('action-labs-pause');
  const step=by('action-labs-step'),reset=by('action-labs-reset');
  if(!dialog||!select||!shotSide||!shotSideLabel||!shotLaneChoice||
-    !shotLaneLabel||!canvas||!status||!summary||!description)invalid();
+    !shotLaneLabel||!controlSceneChoice||!controlSceneLabel||
+    !canvas||!status||!summary||!description)invalid();
  if(select.options.length!==ACTION_LAB_SCENARIOS.length||
     ACTION_LAB_SCENARIOS.some((s,i)=>select.options[i].value!==s.id))
   throw new Error('Action LAB menu must match the single scenario catalog');
@@ -250,6 +274,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' → intended '+label(snap.priorRealPass.recipientId):'')+
    (snap.receivingContact?' · Real receiving shoe START tick '+
     snap.receivingContact.tick:'')+
+   (snap.firstOpposingShoe?' · Opposing shoe START tick '+
+    snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
   if(snap.shotFlight?.observed3DFlight){
@@ -276,6 +302,10 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
      'Observed: actual AWAY shoe-ball contact; no successful tackle claimed.';
   }else if(session.spec.goal==='control'&&snap.receivingContact){
    status.textContent='Observed: separate teammate shoe-ball contact after real pass. No official possession.';
+  }else if(session.spec.goal==='control'&&snap.firstOpposingShoe){
+   status.textContent='Observed: genuine '+label(snap.firstOpposingShoe.playerId)+
+    ' shoe-ball START before intended '+label(snap.priorRealPass.recipientId)+
+    '. No verified reception, tackle or interception.';
   }else if(session.spec.goal==='control'&&snap.priorRealPass){
    status.textContent='Observed: genuine '+label(snap.priorRealPass.playerId)+
     ' PASS; awaiting authentic '+label(snap.priorRealPass.recipientId)+
@@ -296,15 +326,19 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   stop();if(session)session.dispose();
   shotSideLabel.hidden=!['shot','carry'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
+  controlSceneLabel.hidden=select.value!=='control';
   session=createControlledActionLab(getRapier(),select.value,{
    shotSide:select.value==='shot'?shotSide.value:'home',
    shotLane:select.value==='shot'?shotLaneChoice.value:'open',
-   carrySide:select.value==='carry'?shotSide.value:'home'
+   carrySide:select.value==='carry'?shotSide.value:'home',
+   controlScene:select.value==='control'?controlSceneChoice.value:'receive'
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
   description.textContent=session.shotLane==='blocked'?
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
+   session.controlScene==='opponent-first'?
+   'A true long PASS targets HOME #9. AWAY #7 approaches only after that physical PASS; observe the opposing shoe first, without awarding an interception, tackle or reception.':
    session.spec.description;
   status.textContent='Ready · '+session.spec.title+
    ' · Play to observe genuine Rapier events; no result is pre-awarded.';
@@ -339,6 +373,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  shotSide.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});
  shotLaneChoice.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
+  catch(e){stop();status.textContent=e.message;}});
+ controlSceneChoice.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});
  select.addEventListener('change',()=>{if(dialog.open)try{resetSession();}
   catch(e){stop();status.textContent=e.message;}});

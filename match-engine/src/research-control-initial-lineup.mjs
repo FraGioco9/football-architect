@@ -1,53 +1,45 @@
-// #620 CONTROL: one bounded starting formation, not a fabricated reception.
-// Exactly one original teammate is 3.2m ahead of the REAL passer's foot.
-// All other identities, roles, initial poses and physical limitations remain.
+// #620 CONTROL: two bounded DEV-only before-tick-zero research formations.
+// No synthetic shoe event, forced action, second ball or player teleport.
+// Original 22 identities, same canonical 60Hz mover and Rapier world.
 import {PLAYER_MIN_SEPARATION_M} from './player-movement.mjs';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 export const CONTROL_RECEIVER_INITIAL=Object.freeze({
  id:'home-9',x:-5,y:-3.2
 });
-const grid=[-2.95,-2.7,-2.45,-2.2,-1.95].flatMap(x=>
- [-0.5,-1,-1.5,-2,-2.5].map(y=>({x,y})));
-const downstream=[-5.4,-5.2,-5,-4.8,-4.6].flatMap(x=>
- [-8.5,-9,-9.5,-10,-10.5].map(y=>({x,y})));
-const chase=[-2.95,-2.6,-2.25,-1.9,-1.55].flatMap(x=>
- [-2,-3,-4,-5,-6].map(y=>({x,y})));
-export const RESEARCH_CONTROL_OPPONENT_CANDIDATES=Object.freeze([
- ...grid.map(p=>Object.freeze({...p,longPass:false,downstream:false})),
- ...grid.map(p=>Object.freeze({...p,longPass:true,downstream:false})),
- ...downstream.map(p=>Object.freeze({...p,longPass:true,downstream:true})),
- ...chase.map(p=>Object.freeze({...p,longPass:true,downstream:false,lateChase:true}))
-]);
-export function initialResearchControlLineup(players,ball,oppositionSlot=null){
- if(oppositionSlot!==null&&
-    (!Number.isInteger(oppositionSlot)||oppositionSlot<0||
-      oppositionSlot>=RESEARCH_CONTROL_OPPONENT_CANDIDATES.length))
-  throw new TypeError('Bounded research opposition initial position required');
+export const CONTROL_OPPONENT_FIRST_INITIAL=Object.freeze({
+ receiver:Object.freeze({id:'home-9',x:-5,y:-6.5}),
+ alternative:Object.freeze({id:'home-11',x:-30,y:18}),
+ opponent:Object.freeze({id:'away-7',x:-2.95,y:-2})
+});
+export function initialResearchControlLineup(players,ball,{opponentFirst=false}={}){
+ if(typeof opponentFirst!=='boolean')
+  throw new TypeError('Bounded opponent-first flag must be boolean');
  if(!Array.isArray(players)||players.length!==22||!ball||
     ![ball.x,ball.y,ball.z,ball.vx,ball.vy,ball.vz].every(finite)||
     Math.abs(ball.x+4.96)>1e-6||ball.y!==0||ball.z!==0||
     Math.abs(ball.vx-0.3)>1e-6||ball.vy!==0||ball.vz!==0)
   throw new TypeError('Closed deterministic grounded CONTROL starting setup required');
- const longPass=oppositionSlot!==null&&
-  RESEARCH_CONTROL_OPPONENT_CANDIDATES[oppositionSlot].longPass;
- const {id,x}=CONTROL_RECEIVER_INITIAL;
- const y=longPass?-6.5:CONTROL_RECEIVER_INITIAL.y;
- if(players.filter(p=>p.id===id&&p.team==='home'&&p.role==='forward').length!==1)
+ const target=opponentFirst?CONTROL_OPPONENT_FIRST_INITIAL.receiver:
+  CONTROL_RECEIVER_INITIAL;
+ if(players.filter(p=>p.id==='home-9'&&p.team==='home'&&
+     p.role==='forward').length!==1)
   throw new TypeError('Canonical genuine receiving teammate required');
- const opponent=oppositionSlot===null?null:
-  RESEARCH_CONTROL_OPPONENT_CANDIDATES[oppositionSlot];
- if(opponent&&players.filter(p=>p.id==='away-7'&&
-    p.role==='midfielder'&&p.team==='away').length!==1)
-  throw new TypeError('Original away-7 midfielder opponent required');
- const staged=players.map(p=>p.id===id?
-  Object.freeze({...p,x,y,baseX:x,baseY:y,vx:0,vy:0,blockedBy:null}):
-  longPass&&p.id==='home-11'?
-   Object.freeze({...p,x:-30,y:18,baseX:-30,baseY:18,
-    vx:0,vy:0,blockedBy:null}):
-  opponent&&p.id==='away-7'?
-   Object.freeze({...p,x:opponent.x,y:opponent.y,
-    baseX:opponent.x,baseY:opponent.y,
-    vx:0,vy:0,blockedBy:null}):p);
+ if(opponentFirst&&(
+    players.filter(p=>p.id==='away-7'&&p.team==='away'&&
+      p.role==='midfielder').length!==1||
+    players.filter(p=>p.id==='home-11'&&p.team==='home'&&
+      p.role==='forward').length!==1))
+  throw new TypeError('Canonical opponent and safe recipient alternative required');
+ const stagedPositions=opponentFirst?[
+  target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
+  CONTROL_OPPONENT_FIRST_INITIAL.opponent
+ ]:[target];
+ const positions=new Map(stagedPositions.map(p=>[p.id,p]));
+ const staged=players.map(p=>{
+  const pos=positions.get(p.id);
+  return pos?Object.freeze({...p,x:pos.x,y:pos.y,
+   baseX:pos.x,baseY:pos.y,vx:0,vy:0,blockedBy:null}):p;
+ });
  for(let i=0;i<staged.length;i++)for(let j=i+1;j<staged.length;j++)
   if(Math.hypot(staged[i].x-staged[j].x,
      staged[i].y-staged[j].y)<PLAYER_MIN_SEPARATION_M-1e-7)
