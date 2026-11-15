@@ -17,7 +17,8 @@ const vector=p=>Object.freeze({x:p.x,y:p.y,z:p.z});
 export function createPrivateRapierFootContactBridge(R,world,ballCollider){
  if(!R||typeof R.EventQueue!=='function'||!world||
     typeof world.createRigidBody!=='function'||
-    !ballCollider||!Number.isInteger(ballCollider.handle))
+    !ballCollider||ballCollider.handle===undefined||
+    ballCollider.handle===null)
   throw new TypeError('Existing private Rapier ball world and collider required');
  const eventQueue=new R.EventQueue(true);
  const colliders=[],bodies=[],idsByCollider=new Map();
