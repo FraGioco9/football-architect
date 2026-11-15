@@ -18,71 +18,8 @@
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
  const validLineup=lineup=>lineup?.confirmed===true&&Array.isArray(lineup.starters)&&lineup.starters.length===11;
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null;
- const logoSources=new Map();
- const svgNS='http://www.w3.org/2000/svg';
- // Theme-specific presentation only: dark swaps primary paths to ivory;
- // light preserves the approved primary + secondary artwork on a pale
- // competition-tinted surface. Source SVGs remain byte-identical.
- async function loadLogoPaths(src,surfaceHex,inkHex,appearance){
-  if(!['dark','light'].includes(appearance))throw Error('Unsupported scoreboard appearance');
-  const key=src+'|'+surfaceHex+'|'+inkHex+'|'+appearance;
-  if(!logoSources.has(key))logoSources.set(key,fetch(src,{credentials:'omit',cache:'force-cache'}).then(async res=>{
-   if(!res.ok)throw Error('Logo unavailable');
-   const raw=await res.text();
-   const content=raw.replace(/^<\?xml version=['"]1\.0['"] encoding=['"][Uu][Tt][Ff]-8['"]\?>\s*/,'');
-   if(content.length>100000||/<!|<\?/.test(content))throw Error('Logo markup rejected');
-   const parsed=new DOMParser().parseFromString(content,'image/svg+xml');
-   const rootSvg=parsed.documentElement;
-   if(rootSvg.localName!=='svg'||rootSvg.namespaceURI!==svgNS||parsed.querySelector('parsererror'))throw Error('Invalid logo SVG');
-   const style=rootSvg.querySelector('style');
-   if(!style||rootSvg.querySelectorAll('style').length!==1)throw Error('Invalid logo palette');
-   const colors=Object.create(null);
-   for(const hit of style.textContent.matchAll(/\.s([01])\s*\{\s*fill:\s*(#[0-9a-fA-F]{6})\s*\}/g))
-    colors['s'+hit[1]]=hit[2];
-   if(!colors.s0||!colors.s1)throw Error('Unapproved logo palette');
-   const viewBox=rootSvg.getAttribute('viewBox');
-   if(!viewBox||!/^[-\d. ]+$/.test(viewBox))throw Error('Invalid logo dimensions');
-   const box=viewBox.trim().split(/\s+/).map(Number);
-   if(box.length!==4||!box.every(Number.isFinite)||box[2]<=0||box[3]<=0)throw Error('Invalid logo viewBox');
-   const svg=document.createElementNS(svgNS,'svg');
-   svg.setAttribute('viewBox',viewBox);
-   svg.setAttribute('class','app-match-logo-art');
-   svg.setAttribute('aria-hidden','true');
-   svg.setAttribute('focusable','false');
-   if(surfaceHex!=='#243039'&&!/^#[0-9A-F]{6}$/.test(surfaceHex))throw Error('Invalid logo surface');
-   if(inkHex!=='#F5F1E8')throw Error('Invalid logo ink');
-   const palette=new Set(Object.values(colors).map(x=>x.toUpperCase()));
-   if(palette.size!==2||!palette.has(surfaceHex)||!palette.has('#243039'))throw Error('Logo palette mismatch');
-   let paths=0;
-   const copy=(source,parent)=>{
-    for(const child of source.children){
-     if(child.localName==='style'&&source===rootSvg)continue;
-     if(child.namespaceURI!==svgNS||!['g','path'].includes(child.localName))throw Error('Unexpected logo object');
-     const node=document.createElementNS(svgNS,child.localName);
-     const transform=child.getAttribute('transform');
-     if(transform)node.setAttribute('transform',transform);
-     if(child.localName==='g')copy(child,node);
-     else{
-      const d=child.getAttribute('d');
-      const color=colors[child.getAttribute('class')];
-      if(!color||!d||!/^[MmZzLlHhVvCcSsQqTtAaEe\d\s.,+\-]+$/.test(d))throw Error('Invalid logo path');
-      node.setAttribute('d',d);
-      // Dark: primary elements switch to ivory to stand out on the primary
-      // bar; Light: original primary/graphite paths stay unchanged.
-      const original=color.toUpperCase();
-      node.setAttribute('fill',appearance==='dark'&&original===surfaceHex?inkHex:original);
-      if(child.getAttribute('fill-rule')==='evenodd')node.setAttribute('fill-rule','evenodd');
-      paths++;
-     }
-     parent.append(node);
-    }
-   };
-   copy(rootSvg,svg);
-   if(!paths)throw Error('Empty logo');
-   return svg;
-  }));
-  return logoSources.get(key);
- }
+ // Use the approved SVG directly: its primary and secondary fills are
+ // identical in Dark and Light, without recolouring or injected outlines.
  function officialState(){
   if(!data)return 'scheduled';
   const status=data.status;
@@ -109,7 +46,6 @@
   else name.removeAttribute('href');
  }
  function applyCompetition(){
-  const appearance=document.documentElement.dataset.theme==='light'?'light':'dark';
   const comp=competitions?.competitions?.find(c=>c.id===data?.competitionId);
   const display=comp?.name||data?.competitionId||text().match;
   const link=find('[data-match-competition-link]');
@@ -134,22 +70,22 @@
   // Brand assets are already published at assets/divisions/<slug>/compact.svg.
   // Do not request an unapproved path or show an unrelated Football Architect logo.
   const intended=theme.logoAsset?'/'+theme.logoAsset:'';
-  const intendedKey=intended+'|'+appearance;
-  if(slot.dataset.matchLogoPath===intendedKey)return;
-  slot.dataset.matchLogoPath=intendedKey;
+  if(slot.dataset.matchLogoPath===intended)return;
+  slot.dataset.matchLogoPath=intended;
   delete slot.dataset.matchLogoPresent;
   slot.replaceChildren();
   if(!intended)return;
-  void loadLogoPaths(intended,theme.backgroundHex,theme.foregroundHex,appearance).then(svg=>{
-   if(slot.dataset.matchLogoPath!==intendedKey)return;
-   slot.replaceChildren(svg.cloneNode(true));
-   slot.dataset.matchLogoPresent='true';
-  }).catch(()=>{
-   if(slot.dataset.matchLogoPath===intendedKey){
-    slot.replaceChildren();
+  const img=document.createElement('img');
+  img.alt='';img.width=48;img.height=48;img.decoding='async';
+  img.addEventListener('error',()=>{
+   if(slot.dataset.matchLogoPath===intended&&slot.contains(img)){
     delete slot.dataset.matchLogoPresent;
+    img.remove();
    }
-  });
+  },{once:true});
+  slot.dataset.matchLogoPresent='true';
+  slot.append(img);
+  img.src=intended;
  }
  function render(){
   const tr=text();
@@ -195,6 +131,6 @@
   }
   data=item;errorKind=null;render();
  }
- new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang','data-theme']});
+ new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
  render();void load();
 })();

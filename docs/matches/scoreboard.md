@@ -10,11 +10,13 @@ width **310px**, height **30px**. The single horizontal row is:
 
 `COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-The approved competition `compact.svg` is shown at **44px on desktop**,
-**38px on mobile**, at the **far left of the scorebar**. Its link is
-shifted 8px left and 5px upward. The SVG **overhangs the upper and left
-edges of the bar**; the container uses visible overflow and stacking
-to avoid clipping. No logo outline or backing is used.
+The competition's **unmodified approved compact.svg** is displayed directly
+as an image at **48px desktop / 42px mobile** on the far left. Its lower
+edge aligns with the bottom of the scoreboard, as though the logo rests on
+the bar. Since the bar is **34px / 30px tall**, the logo protrudes only
+**upward** by roughly 14px / 12px, not outside the left edge. It keeps the
+original primary and secondary fills in Dark and Light alike, with no
+recolouring, outline, shadow, plate or circular background.
 
 ## Competition-specific Dark and Light palettes
 
@@ -26,26 +28,25 @@ setting and respond immediately when the site's appearance changes.
 | Bar surface | Official `primaryHex` | 16% `primaryHex` blended with 84% approved ivory |
 | Abbreviations, goals, divider | Official ivory `#F5F1E8` | Official `secondaryHex` (graphite `#243039`) |
 | Bar border and bottom 2px inset | Official `secondaryHex` | Official `primaryHex` |
-| Left logo | Primary-coloured paths displayed in ivory; secondary paths graphite | Original primary and secondary fills |
+| Left logo | Original primary + secondary fills | The exact same original primary + secondary fills |
 
 This creates a visibly different scoreboard for **each division**, while
 making Light genuinely pale and Dark saturated. The site owns the appearance,
 not individual match data. All 16 contrast-checked divisions meet the
 4.5:1 minimum in both variants.
 
-**Legibility treatment (no logo border or backing):** the small logo is
-rendered directly on the bar. In Dark, approved primary-filled paths become
-ivory so they remain distinguishable from the primary-coloured bar; secondary
-(graphite) paths stay graphite. In Light, the original primary+secondary
-fills are used unchanged. Neither variant introduces shadows, outline rings,
-round badges or separate logo backgrounds. Canonical SVG files never change.
+**Logo integrity:** both appearances load the exact same original SVG.
+Its primary and secondary colours stay untouched. Since the Dark bar also
+uses the primary colour, parts of the crest can blend into the bar while its
+upper, protruding portion remains visible against the surrounding page.
+This is an explicit design trade-off; no artificial third colour, outline,
+round badge, drop shadow or separate background has been introduced.
 
 The 16 published domestic division `compact.svg` files remain intact,
 SHA-verified, publication-allowlisted and mapped to the right competitions.
-Runtime reconstruction checks the path-only geometry, original two-colour
-palette and viewBox before displaying. The dark/light SVG render cache is
-keyed by appearance to avoid stale logo colours on theme changes. SVGs with the canonical XML
-declaration are supported. The international `int-1` and `int-2` cups
+The browser displays the original approved SVG by its validated asset path,
+without reconstructing paths, changing their fill, or caching an alternate
+colour version. SVGs with the canonical XML declaration are supported. The international `int-1` and `int-2` cups
 still have no approved competition logo, so no fallback logo is invented.
 
 Names use each club's canonical `abbr`. Full names remain accessible

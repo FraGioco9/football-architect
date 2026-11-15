@@ -1,5 +1,5 @@
-/* #577 — Slim centered scoreboard with a small, contrast-safe left logo.
-   Official source SVG files stay untouched; no ivory backing or logo outline. */
+/* #577 — Original full-colour competition logo rests on the left edge
+   of the bar, protruding upward. No logo plate, outline or recolouring. */
 .app-match-page{min-width:0;padding-top:6px;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
@@ -12,20 +12,21 @@
  box-shadow:inset 0 -2px var(--app-match-accent);
 }
 .app-match-score-line{
- display:grid;grid-template-columns:34px minmax(0,1fr) 22px 9px 22px minmax(0,1fr);
+ display:grid;grid-template-columns:48px minmax(0,1fr) 22px 9px 22px minmax(0,1fr);
  align-items:center;column-gap:4px;height:100%;min-width:0;
 }
 .app-match-competition-logo{
- position:relative;left:-8px;top:-5px;z-index:2;
- display:grid;place-items:center;width:34px;height:30px;overflow:visible;
+ position:relative;z-index:2;
+ display:grid;place-items:center;width:48px;height:100%;overflow:visible;
  color:var(--app-match-text);text-decoration:none;
 }
 .app-match-competition-logo>span{
- display:grid;place-items:center;width:100%;height:100%;overflow:visible;
+ position:absolute;left:0;bottom:0;display:grid;place-items:end start;
+ width:48px;height:48px;overflow:visible;
 }
-.app-match-competition-logo .app-match-logo-art{
- display:block;width:44px;height:44px;max-width:none;overflow:visible;
- background:none;border:0;filter:none;
+.app-match-competition-logo img{
+ display:block;width:48px;height:48px;max-width:none;
+ object-fit:contain;background:none;border:0;filter:none;
 }
 .app-match-competition-logo[href]:hover{opacity:1}
 .app-match-competition-logo:not([href]){cursor:default}
@@ -83,11 +84,11 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-page{padding-top:4px}
  .app-match-scoreboard{width:min(100%,310px);height:30px;padding:0 7px;border-radius:5px}
  .app-match-score-line{
-  grid-template-columns:30px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
+  grid-template-columns:42px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
   column-gap:3px;
  }
- .app-match-competition-logo{width:30px;height:27px}
- .app-match-competition-logo .app-match-logo-art{width:38px;height:38px}
+ .app-match-competition-logo{width:42px}
+ .app-match-competition-logo>span,.app-match-competition-logo img{width:42px;height:42px}
  .app-match-team-link{font-size:10px;letter-spacing:.025em}
  .app-match-side-score{font-size:16px}
  .app-match-score-separator{font-size:11px}
