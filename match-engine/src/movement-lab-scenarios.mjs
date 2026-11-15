@@ -20,13 +20,24 @@ export const MOVEMENT_LAB_SCENARIOS=Object.freeze([
  Object.freeze({
   ...spec('post-pass','Run after PASS','Original CONTROL Action LAB: authentic HOME or AWAY Rapier PASS, then measured receiver movement. Completion and possession unverified.',CONTROL_LAB_STARTS.home,9,'M3'),
   shoeSourceEnabled:true
+ }),
+ // M5 retains the already accepted original HOME opponent-first CONTROL
+ // scene. One real Rapier ball and the same canonical 22-player mover.
+ Object.freeze({
+  ...spec('opponent-contact','Opposing shoe contest',
+   'HOME-controlled original PASS, actual AWAY #7 movement and genuine subsequent opponent shoe-ball START. No body collision, tackle or interception is certified.',
+   CONTROL_LAB_STARTS.home,9,'M5'),
+  shoeSourceEnabled:true
  })
 ]);
 export function movementLabScenario(id,side='home'){
  if(!['home','away'].includes(side))throw new TypeError('Known HOME/AWAY side required');
  const s=MOVEMENT_LAB_SCENARIOS.find(x=>x.id===id);
  if(!s)throw new RangeError('Unknown Phase M movement scene');
+ if(s.id==='opponent-contact'&&side!=='home')
+  throw new RangeError('Only original genuine HOME opponent-first CONTROL source is verified');
  const initial=s.id==='post-pass'?CONTROL_LAB_STARTS[side]:
+  s.id==='opponent-contact'?CONTROL_LAB_STARTS.home:
   side==='home'?s.home:Object.freeze({
    ...s.home,seed:s.home.seed+'-away',x:-s.home.x
   });

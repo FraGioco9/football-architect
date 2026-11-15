@@ -453,6 +453,40 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    assert.doesNotMatch(response.status,/interception confirmed|tackle successful|possession awarded/i);
    process.stdout.write('MOVEMENT_LAB_M3_RECOVERY '+JSON.stringify({choice,side,...response})+'\n');
   }
+  // M5: the accepted original opponent-first CONTROL must produce real shoe
+  // START after physical PASS, with genuine opponent XY movement.
+  const contest=await evalJs("(()=>{"+
+   "const c=document.getElementById('movement-labs-choice');"+
+   "const s=document.getElementById('movement-labs-side');"+
+   "c.value='opponent-contact';c.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<110;i++)document.getElementById('movement-labs-step').click();"+
+   "return {scene:c.value,side:s.value,disabled:s.disabled,"+
+   "readout:document.getElementById('movement-labs-readout').textContent,"+
+   "status:document.getElementById('movement-labs-status').textContent};})()");
+  assert.equal(contest.scene,'opponent-contact');
+  assert.equal(contest.side,'home');
+  assert.equal(contest.disabled,true,'only source-accepted HOME opposition scene');
+  assert.match(contest.readout,/^Tick 110 /);
+  assert.match(contest.readout,/real opponent away-7 · observed path [0-9.]+ m/);
+  assert.match(contest.readout,/opponent shoe START 91/);
+  assert.match(contest.readout,/closest player gap [0-9.]+ m/);
+  assert.match(contest.status,/Observed: original opposing Rapier shoe-ball START/);
+  assert.match(contest.status,/Body collision, tackle, interception, possession and completed pass NOT verified/);
+  process.stdout.write('MOVEMENT_LAB_M5_OPPOSITION '+JSON.stringify(contest)+'\n');
+  // Reset must erase physical evidence; merely selecting a scene does not
+  // create contact. The ordinary post-PASS choice unlocks HOME/AWAY again.
+  const resetContest=await evalJs("(()=>{"+
+   "document.getElementById('movement-labs-reset').click();"+
+   "return {readout:document.getElementById('movement-labs-readout').textContent,"+
+   "status:document.getElementById('movement-labs-status').textContent};})()");
+  assert.match(resetContest.readout,/^Tick 0 /);
+  assert.match(resetContest.readout,/opponent shoe START none/);
+  assert.match(resetContest.status,/No opponent physical shoe witness yet/);
+  const unlocked=await evalJs("(()=>{"+
+   "const c=document.getElementById('movement-labs-choice');"+
+   "c.value='post-pass';c.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "return !document.getElementById('movement-labs-side').disabled;})()");
+  assert.equal(unlocked,true);
   for(const [width,height] of [[1280,720],[1440,900]]){
    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
    const size=await evalJs("(()=>{const d=document.getElementById('movement-labs-dialog');"+
