@@ -11,8 +11,12 @@ Maximum width 560px, centered horizontally, with a responsive five-column row:
 
 The competition logo occupies the fixed central slot (48px desktop / 40px
 mobile); it is an accessible link to the competition and retains its size
-on initial paint. Until an approved competition logo SVG exists, the
-slot uses only a neutral empty outline, **not a fabricated logo**.
+on initial paint. Until an approved competition logo SVG exists, the slot
+displays the **existing approved Football Architect symbol**
+(`assets/brand/symbol-mono-white.svg`) as an explicitly temporary,
+non-competition-specific fallback. If a future approved logo fails to load,
+the display falls back to this symbol rather than an empty circle.
+This is not intended to represent an official competition crest.
 The official match status and optional ET/PK annotation appear in a small
 centered line below the scoreboard.
 

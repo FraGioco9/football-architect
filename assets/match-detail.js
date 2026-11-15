@@ -63,11 +63,22 @@
    board.dataset.scoreboardTheme=theme.kind;
   }
   const slot=find('[data-match-competition-logo]');if(!slot)return;
-  slot.replaceChildren();
-  if(theme.logoAsset){
-   const img=document.createElement('img');img.src='/'+theme.logoAsset;img.alt='';img.width=42;img.height=42;
-   img.addEventListener('error',()=>{img.remove()},{once:true});slot.append(img);
-  }
+  // Official competition SVGs are not present yet. Use the EXISTING approved
+  // Football Architect symbol until a same-competition logo is registered.
+  const fallback='/assets/brand/symbol-mono-white.svg';
+  const intended=theme.logoAsset?'/'+theme.logoAsset:fallback;
+  const present=slot.querySelector('img');
+  if(present?.getAttribute('src')===intended)return;
+  const img=document.createElement('img');
+  img.alt='';img.width=42;img.height=42;img.decoding='async';
+  if(!theme.logoAsset)img.dataset.matchLogoFallback='';
+  img.addEventListener('error',()=>{
+   if(img.getAttribute('src')!==fallback){
+    img.dataset.matchLogoFallback='';
+    img.src=fallback;
+   }else img.remove();
+  });
+  img.src=intended;slot.replaceChildren(img);
  }
  function render(){
   const tr=text();

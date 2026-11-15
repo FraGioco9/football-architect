@@ -34,11 +34,8 @@
  border-radius:50%;color:var(--app-match-ink);text-decoration:none;
 }
 .app-match-competition-logo>span{display:grid;place-items:center;width:100%;height:100%}
-.app-match-competition-logo>span:empty{
- width:38px;height:38px;border:1px solid color-mix(in srgb,var(--app-match-ink) 30%,transparent);
- border-radius:50%;opacity:.5
-}
 .app-match-competition-logo img{display:block;width:42px;height:42px;object-fit:contain}
+.app-match-competition-logo [data-match-logo-fallback]{width:38px;height:38px}
 .app-match-competition-logo[href]:hover{opacity:.85}
 .app-match-competition-logo:not([href]){cursor:default}
 .app-match-scoreboard-meta{
@@ -57,8 +54,8 @@
  .app-match-team-link{font-size:12px}
  .app-match-side-score{font-size:24px}
  .app-match-competition-logo{width:40px;height:40px}
- .app-match-competition-logo>span:empty{width:32px;height:32px}
  .app-match-competition-logo img{width:36px;height:36px}
+ .app-match-competition-logo [data-match-logo-fallback]{width:34px;height:34px}
  .app-match-status{font-size:10px}
  .app-match-scoreboard-meta{padding-top:6px}
 }

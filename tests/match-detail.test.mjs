@@ -20,11 +20,15 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
  for(const path of ['matches/_shared/index.html','assets/match-detail.js','assets/match-detail.css','assets/match-scoreboard-themes.mjs'])
   assert.equal(isAllowlistedPublicPath(path),true,path);
  assert.ok(planPublicFiles().includes('matches/_shared/index.html'));
+ assert.equal(isAllowlistedPublicPath('assets/brand/symbol-mono-white.svg'),true);
+ assert.match(read('assets/brand/symbol-mono-white.svg'),/<svg[\s>]/);
  const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
  for(const section of [html,template]){
   assert.match(section,/data-match-detail/);
   assert.match(section,/app-match-scoreboard/);
   assert.match(section,/data-match-competition-logo/);
+  assert.match(section,/src="\/assets\/brand\/symbol-mono-white\.svg"/);
+  assert.match(section,/data-match-logo-fallback/);
   assert.match(section,/data-match-home-name/);
   assert.match(section,/data-match-away-name/);
   assert.match(section,/data-match-home-score/);
@@ -77,6 +81,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  const js=read('assets/match-detail.js');
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
  assert.match(js,/import\('\/assets\/match-scoreboard-themes\.mjs'\)/);
+ assert.match(js,/const fallback='\/assets\/brand\/symbol-mono-white\.svg'/);
+ assert.match(js,/const intended=theme\.logoAsset\?'\/'\+theme\.logoAsset:fallback/);
+ assert.match(js,/img\.src=fallback/);
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
  assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
