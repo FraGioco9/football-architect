@@ -1,68 +1,59 @@
-# #577 — Broadcast-style match scoreboard
+# #577 — Unified match scoreboard, without a score panel
 
-The Match Detail page presents one intentionally small, competition-branded
-scoreboard. The outer dimensions stay **340×48px maximum on desktop**,
-**310×48px maximum on mobile**, centred on the page. No page title, match
-ID, extra panel or fabricated club crest appears.
+The Match Detail page has one branded scoreboard with an outer size of
+**340×48px max on desktop** / **310×48px max on mobile**. The scorebar
+remains centred on the page without a visible match ID or heading.
 
-## Visual structure
+## Appearance
 
-The redesigned scoreboard has four deliberate visual zones:
+`48×48 COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-`48×48 COMPETITION LOGO | HOME ABBR | SCORE PANEL | AWAY ABBR`
+The score is set **directly on the competition-coloured bar**. There is
+no separate score box, capsule, background, score border, or island.
+The home/away numbers use the same accessible, theme-aware text colours
+as the team abbreviations; the dash is slightly less prominent. Grid
+slots reserve width at first paint, and the official match data later
+fills the existing structure without moving it.
 
-The score panel contains the actual home score, dash and away score, in
-that order. Its backing is a contrasting, compact centre island: **92×34px
-on desktop** / **86×32px on mobile**. Abbreviations flank it on the same
-baseline. A restrained 2px competition-colour trim spans the bottom of
-the bar **to the right of the logo tile**. The first paint preserves the
-correct geometry while official API data is loading.
+The original canonical compact division SVG remains untouched, is
+**48×48px on desktop and mobile**, and is displayed directly in the
+**48×48px** left logo tile. The tile has an official ivory background in
+Dark, and an 8% primary / 92% ivory background in Light.
 
-The logo's **48×48px tile** sits flush at the left/top edge. The published
-`compact.svg` is displayed **at 48×48px**, with original approved primary
-and secondary fills, no recolouring, alternative symbol, halo, outline,
-shadow, tooltip or hover animation. The left tile and bar share the same
-**6px outer corner radius**.
+**A continuous visual perimeter** is now applied to both the scoreboard
+and the tile: a 1px outline of the same competition border colour
+on all four tile edges, including the upper-left and lower-left corners
+and the inside separator at the right. The tile is flush against the bar
+with a shared 6px corner radius. The border is on the *tile*, never on
+individual elements of the SVG, and does not change the crest's colours.
+The discreet 2px lower accent to the right of the tile is retained.
 
-## Competition-specific palettes
+## Colours and dimensions
 
-The bar uses the authoritative colours for the specific domestic division
-(no universal green/blue skin). The score island is deliberately darker in
-Dark and more prominent in Light. No colour is read from a club kit or
-untrusted match response.
-
-| Surface | Dark | Light |
+| Element | Dark | Light |
 |---|---|---|
-| Main bar | Subtle blend of primary and secondary (88/12 at left → primary at right) | Pale primary/ivory wash (12/88 at left → 20/80 at right) |
-| Logo tile | Ivory `#F5F1E8` | 8% primary + 92% ivory |
-| Original logo | Original primary and secondary | Exactly the same unmodified SVG |
-| Home/away abbreviations | Ivory | Secondary graphite |
-| Score island | Secondary graphite | Primary |
-| Score digits and dash | Ivory | Ivory |
-| Outer border + bottom 2px | Secondary | Primary |
+| Main bar | Subtle blend of primary/secondary | Pale primary/ivory wash |
+| Logo tile | Official ivory | 8% primary + 92% ivory |
+| Logo | Original primary/secondary | Same unchanged SVG |
+| Abbreviations and score | Ivory | Official secondary graphite |
+| Outer border, tile outline, lower accent | Secondary graphite | Primary |
+| Height | 48px | 48px |
+| Width (desktop / mobile) | 340px max / 310px max | Same |
 
-All domestic primary/ivory pairs are checked for at least 4.5:1 contrast
-of score digits, and light-wash/secondary text pairs also pass. The official
-`int-1` and `int-2` tournaments currently have no approved individual
-crest/palette: the neutral fallback retains readable dark and light score
-islands without fabricating a logo.
+All 16 domestic competitions retain their distinct approved primary
+HEX values. The two international cups have no approved distinct logos;
+the neutral placeholder has no fabricated crest.
 
-The site's existing `html[data-theme="light"]` selector determines the
-appearance; the logo remains identical in both themes.
+## Behaviour
 
-## Behaviour and layout invariants
+The official `GET /api/matches/:positiveNumericId` response remains the
+sole authority for results and team participants. Home/away abbreviations
+come from the approved club catalog; full club names remain in accessible
+ARIA labels. No native tooltips, hover animations, underline effects,
+logo recolouring or alternative assets are introduced.
 
-The page uses the official `GET /api/matches/:positiveNumericId` response;
-only verified completed matches show numbers. Club labels use their canonical
-2–5 character abbreviations, and accessible names remain available via ARIA.
-No native tooltips, hover transitions, animations or decorative opacity
-changes. Scheduled/unavailable matches retain score placeholders.
-
-The shared template `templates/match-detail-content.html` produces the
-canonical `matches/_shared/index.html` through
-`tools/generate-app-pages.mjs`. All 16 domestic SVG assets remain approved
-and byte-identical. The 48px logo, 48px scoreboard, dedicated central
-score group, Dark/Light branding, routing and official data are covered by
-focused checks.
-
-PR #614 remains Draft/HOLD; merging and deployment require separate approval.
+`templates/match-detail-content.html` is the source for the generated
+`matches/_shared/index.html`. Focused tests cover exact 48px branding,
+direct score cells, continuous border, Light/Dark roles, public asset
+allowlisting, routing and verified-result-only behaviour. PR #614 stays
+Draft/HOLD; merge and deploy require separate approval.

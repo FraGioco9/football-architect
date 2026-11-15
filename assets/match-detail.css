@@ -1,14 +1,10 @@
-/* #577 — Broadcast-style compact scoreboard. Dimensions and original
-   competition logos are invariant across desktop/mobile and Dark/Light. */
+/* #577 — Unified 48px scoreboard, including a fully outlined 48px
+   logo tile. Scores are directly on the bar, never in a separate panel. */
 .app-match-page{min-width:0;padding-top:6px;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
- --app-match-surface:#243039;
- --app-match-ink:#F5F1E8;
- --app-match-accent:#243039;
+ --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
  --app-match-text:var(--app-match-ink);
- --app-match-score-surface:var(--app-match-accent);
- --app-match-score-text:var(--app-match-ink);
  --app-match-edge:var(--app-match-accent);
  --app-match-logo-surface:#F5F1E8;
  --app-match-radius:6px;
@@ -27,8 +23,8 @@
 }
 .app-match-score-line{
  box-sizing:border-box;display:grid;
- grid-template-columns:48px minmax(0,1fr) 92px minmax(0,1fr);
- column-gap:8px;align-items:center;min-width:0;
+ grid-template-columns:48px minmax(0,1fr) 24px 12px 24px minmax(0,1fr);
+ column-gap:6px;align-items:center;min-width:0;
  width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;
  padding-right:12px;
 }
@@ -38,6 +34,14 @@
  background:var(--app-match-logo-surface);
  border-radius:var(--app-match-radius) 0 0 var(--app-match-radius);
  color:var(--app-match-text);text-decoration:none;
+}
+/* Continue the SAME 1px perimeter border across all four tile edges.
+   Unlike an SVG stroke, this only outlines the 48x48 background tile. */
+.app-match-competition-logo::after{
+ content:"";position:absolute;inset:0;z-index:3;box-sizing:border-box;
+ border:1px solid var(--app-match-edge);
+ border-radius:var(--app-match-radius) 0 0 var(--app-match-radius);
+ pointer-events:none;
 }
 .app-match-competition-logo>span{
  display:grid;place-items:center;width:48px;height:48px;
@@ -51,7 +55,7 @@
 .app-match-team-link{
  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
- font-size:12px;line-height:1;font-weight:800;letter-spacing:.055em;
+ font-size:12px;line-height:1;font-weight:800;letter-spacing:.045em;
  font-variant-numeric:tabular-nums;
 }
 .app-match-team-home{text-align:right}
@@ -62,22 +66,14 @@
  display:inline-block;width:30px;max-width:100%;height:10px;
  background:color-mix(in srgb,var(--app-match-text) 27%,transparent);
 }
-.app-match-score-group{
- box-sizing:border-box;display:grid;
- grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);
- align-items:center;justify-items:center;gap:1px;
- width:92px;height:34px;padding:0 5px;
- border:1px solid color-mix(in srgb,var(--app-match-score-text) 17%,transparent);
- border-radius:5px;background:var(--app-match-score-surface);
- color:var(--app-match-score-text);
-}
 .app-match-side-score{
- min-width:0;text-align:center;font-size:21px;line-height:1;
- font-weight:850;letter-spacing:-.05em;font-variant-numeric:tabular-nums;
+ min-width:0;text-align:center;font-size:22px;line-height:1;
+ font-weight:850;letter-spacing:-.045em;font-variant-numeric:tabular-nums;
+ color:var(--app-match-text);
 }
 .app-match-score-separator{
- text-align:center;color:var(--app-match-score-text);
- font-size:13px;line-height:1;font-weight:600;opacity:.65;
+ text-align:center;color:var(--app-match-text);
+ font-size:14px;line-height:1;font-weight:600;opacity:.65;
 }
 .app-match-scoreboard-meta{
  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
@@ -97,37 +93,28 @@
 .app-match-page .app-match-scoreboard a:focus-visible{
  outline:2px solid var(--app-match-text);outline-offset:3px;
 }
-/* Competition-specific Light: muted brand wash, bold primary score panel,
-   original-colour crest on a paler matching 48px tile. */
+/* Light mode keeps the league-coloured wash and matches the logo tile
+   perimeter to the primary-coloured border of the whole scoreboard. */
 html[data-theme="light"] .app-match-scoreboard{
  --app-match-text:var(--app-match-accent);
- --app-match-score-surface:var(--app-match-surface);
- --app-match-score-text:var(--app-match-ink);
  --app-match-edge:var(--app-match-surface);
  --app-match-logo-surface:color-mix(in srgb,var(--app-match-surface) 8%,#F5F1E8 92%);
  background:linear-gradient(90deg,
   color-mix(in srgb,var(--app-match-surface) 12%,#F5F1E8 88%),
   color-mix(in srgb,var(--app-match-surface) 20%,#F5F1E8 80%));
 }
-.app-match-scoreboard[data-scoreboard-theme="neutral"]{
- --app-match-score-surface:color-mix(in srgb,#243039 78%,#F5F1E8 22%);
-}
 html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
- --app-match-text:#243039;
- --app-match-score-surface:#243039;
- --app-match-score-text:#F5F1E8;
- --app-match-edge:#243039;
+ --app-match-text:#243039;--app-match-edge:#243039;
 }
 @media(max-width:480px){
  .app-match-page{padding-top:4px}
  .app-match-scoreboard{width:min(100%,310px);height:48px}
  .app-match-score-line{
-  grid-template-columns:48px minmax(0,1fr) 86px minmax(0,1fr);
-  column-gap:6px;padding-right:8px;
+  grid-template-columns:48px minmax(0,1fr) 21px 10px 21px minmax(0,1fr);
+  column-gap:4px;padding-right:8px;
  }
- .app-match-team-link{font-size:11px;letter-spacing:.03em}
- .app-match-score-group{width:86px;height:32px;padding:0 4px}
- .app-match-side-score{font-size:19px}
+ .app-match-team-link{font-size:11px;letter-spacing:.025em}
+ .app-match-side-score{font-size:20px}
  .app-match-score-separator{font-size:12px}
  .app-match-scoreboard-meta{max-width:310px;margin-top:8px}
 }
