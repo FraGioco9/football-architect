@@ -1,7 +1,7 @@
 # #577 — Match scoreboard: flat bar and overlapping 48px badge
 
 The Match Detail scoreboard is a single compact, competition-branded strip,
-**340×48px maximum on desktop** and **310×48px maximum on mobile**.
+**296×48px maximum on desktop** and **280×48px maximum on mobile**.
 Its dimensions, page centring and first-paint reserved columns remain fixed.
 
 ## Layout
@@ -18,8 +18,7 @@ paths are modified, recoloured, masked, or given an artificial outline.
 
 The main strip is **flat** (no gradient, bottom accent or decorative
 second border). Scores and team abbreviations share its surface with no
-separate capsule or score box. Numbers are optically stronger than
-abbreviations, with a subdued centre dash. Team abbreviations use **16px desktop / 14px mobile** bold type, with slightly reduced letter spacing to keep approved 2–5-character abbreviations inside their reserved grid columns without moving the scores. All six columns reserve
+separate capsule or score box. Numbers remain optically stronger than abbreviations, with a subdued centre dash. Team abbreviations use **19px desktop / 17px mobile**, bold and **centred** in their columns. Score columns reserve **35px desktop / 32px mobile** each for two-digit results; the centre dash remains in its separate 12px/10px track. The shortened strip keeps fixed geometry from first paint through match hydration, with ellipsis only for exceptionally long names. All six columns reserve
 space before data arrives; no layout jumping or invented score data.
 
 ## Theme
@@ -31,7 +30,7 @@ space before data arrives; no layout jumping or invented score data.
 | Logo | Original approved SVG colours, 44×44px | Same, unchanged |
 | Text and score | Ivory | Approved secondary graphite |
 | Main and badge outlines | Secondary graphite | Competition primary |
-| Desktop / mobile width | 340px / 310px max | Same |
+| Desktop / mobile width | 296px / 280px max | Same |
 | Height | 48px | 48px |
 
 Each of the 16 domestic competitions retains its own official primary HEX;
@@ -116,3 +115,10 @@ Chromium/WebKit first-paint test succeed, this PR remains Draft/HOLD. The
 synthetic test harness validates browser geometry and parser-time styling, but
 live Cloudflare Preview behaviour on the new source cannot be certified before
 an explicitly authorised Preview deployment. No deployment is part of QA.
+
+## Compact typography revision
+
+The enlarged, centred abbreviations and fixed two-digit score columns are
+checked in `tests/match-detail.test.mjs` and the first-paint browser suite.
+The 48×48 badge, 44×44 SVG, height, palettes and match data contract are
+unchanged. All widths remain reserved at initial paint to avoid layout shift.

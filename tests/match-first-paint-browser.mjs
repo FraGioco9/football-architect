@@ -14,7 +14,7 @@ const decorated=applyPublishedMatchFirstPaint(shell,match,'123');
 assert.ok(decorated.includes('data-fa-match-first-paint'));
 assert.ok(decorated.indexOf('data-fa-match-first-paint')<decorated.indexOf('</head>'));
 assert.ok(!shell.includes('data-fa-match-first-paint'));
-const cases=[{width:1440,expectedWidth:340},{width:390,expectedWidth:310},{width:320,expectedWidth:310}];
+const cases=[{width:1440,expectedWidth:296},{width:390,expectedWidth:280},{width:320,expectedWidth:280}];
 const engines={chromium,webkit};
 let count=0;
 for(const [engine,driver] of Object.entries(engines)){
@@ -55,12 +55,32 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
-    // 310px is a maximum on narrow viewports: shell gutters can reduce the
+    // 280px is a maximum on narrow viewports: shell gutters can reduce the
     // available width at 320px without violating the fixed-layout contract.
     assert.ok(first.width<=device.expectedWidth+1,JSON.stringify({engine,theme,device,first}));
     if(device.width>=390)assert.ok(Math.abs(first.width-device.expectedWidth)<1,JSON.stringify({engine,theme,device,first}));
     else assert.ok(first.width>=250,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
+    // Two-digit result columns and centred abbreviations stay inside the
+    // unchanged 48px-high scoreboard, even before match hydration.
+    await page.evaluate(()=>{
+     document.querySelector('[data-match-home-name]').textContent='TRAFC';
+     document.querySelector('[data-match-away-name]').textContent='UNION';
+     document.querySelector('[data-match-home-score]').textContent='12';
+     document.querySelector('[data-match-away-score]').textContent='34';
+    });
+    const layout=await page.locator('.app-match-score-line').evaluate(grid=>{
+     const names=[grid.querySelector('[data-match-home-name]'),grid.querySelector('[data-match-away-name]')];
+     const scores=[grid.querySelector('[data-match-home-score]'),grid.querySelector('[data-match-away-score]')];
+     const center=grid.querySelector('.app-match-score-separator');
+     return {names:names.map(el=>({align:getComputedStyle(el).textAlign,font:parseFloat(getComputedStyle(el).fontSize),fits:el.scrollWidth<=el.clientWidth+1})),
+      scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent})),
+      separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
+    });
+    const isMobile=device.width<=480;
+    for(const name of layout.names){assert.equal(name.align,'center');assert.equal(name.font,isMobile?17:19);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));}
+    for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
+    assert.equal(layout.separator,'–');assert.equal(layout.height,48);
     assert.equal(first.badgeTheme,'competition');
     // The image is intentionally absent until the authorized match payload
     // arrives: the reserved badge itself must still be fully sized and centred.

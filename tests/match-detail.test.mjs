@@ -130,10 +130,10 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/data-match-reference|data-match-home-crest|data-match-away-crest|\+' # '\+matchId/);
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
- assert.match(css,/width:min\(100%,340px\);height:48px/);
- assert.match(css,/width:min\(100%,310px\);height:48px/);
- assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 26px 12px 26px minmax\(0,1fr\)/);
- assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 23px 10px 23px minmax\(0,1fr\)/);
+ assert.match(css,/width:min\(100%,296px\);height:48px/);
+ assert.match(css,/width:min\(100%,280px\);height:48px/);
+ assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 35px 12px 35px minmax\(0,1fr\)/);
+ assert.match(css,/grid-template-columns:48px minmax\(0,1fr\) 32px 10px 32px minmax\(0,1fr\)/);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*inset:0 0 0 12px/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*border:1px solid var\(--app-match-edge\)/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*background:var\(--app-match-surface\)/s);
@@ -145,8 +145,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/--app-match-logo-surface:#F5F1E8/);
  assert.match(css,/--app-match-radius:6px/);
  assert.match(css,/\.app-match-side-score\{[^}]*font-size:24px/s);
- assert.match(css,/\.app-match-team-link\{[^}]*font-size:16px;line-height:1;font-weight:800;letter-spacing:\.035em/s);
- assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:14px;letter-spacing:\.015em\}/);
+ assert.match(css,/\.app-match-team-link\{[^}]*text-align:center;font-size:19px;line-height:1;font-weight:800;letter-spacing:\.01em/s);
+ assert.match(css,/\.app-match-team-home,\.app-match-team-away\{text-align:center\}/);
+ assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-team-link\{font-size:17px;letter-spacing:0\}/);
  assert.match(css,/\.app-match-team-link\{[^}]*min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap/s);
  assert.match(css,/--app-match-text:var\(--app-match-accent\)/);
  assert.match(css,/--app-match-edge:var\(--app-match-surface\)/);
