@@ -257,3 +257,33 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
   assert.equal(shots,0,'attacking third does not automatically create SHOT');
  }finally{engine.dispose();}
 });
+
+
+test('CONTROL research diagnostic: actual original pass and subsequent shoe timeline',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ const lab=createControlledActionLab(R,'pass');
+ let pass=null,recipient=null,minGap=Infinity,minTick=null;
+ const contacts=[],samples=[];
+ try{
+  for(let tick=1;tick<=420;tick++){
+   const s=lab.step();
+   if(s.action?.action==='pass'&&!pass){
+    pass={tick,actor:s.action.playerId,
+     target:s.action.passTarget,impulse:s.action.impulseNs};
+    recipient=s.action.passTarget?.recipientId??null;
+   }
+   if(recipient){
+    const p=s.players.find(x=>x.id===recipient),b=s.ball.position;
+    const gap=Math.hypot(p.x-b.x,p.y-b.y);
+    if(gap<minGap){minGap=gap;minTick=tick;}
+    if(tick===1||tick%30===0)
+     samples.push({tick,b:{x:+b.x.toFixed(2),y:+b.y.toFixed(2)},
+      receiver:{x:+p.x.toFixed(2),y:+p.y.toFixed(2)},gap:+gap.toFixed(2)});
+   }
+   if(s.starts.length)contacts.push({tick,starts:s.starts,action:s.action?.action??null});
+  }
+  process.stdout.write('ME_CONTROL_RESEARCH '+
+   JSON.stringify({pass,recipient,minGap,minTick,contacts:contacts.slice(0,25),samples})+'\\n');
+ }finally{lab.dispose();}
+});
