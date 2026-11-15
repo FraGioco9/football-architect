@@ -5,18 +5,23 @@ visible match ID, and no invented club crests or scores.
 
 ## Layout
 
-Desktop: maximum width **340px**, height **34px**. Narrow screen: maximum
-width **310px**, height **30px**. The single horizontal row is:
+Desktop: maximum width **340px**, height **48px**. Narrow screen: maximum
+width **310px**, height **48px**. The single horizontal row is:
 
 `COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
 
-The competition's **unmodified approved compact.svg** is displayed directly
-as an image at **48px desktop / 42px mobile** on the far left. Its lower
-edge aligns with the bottom of the scoreboard, as though the logo rests on
-the bar. Since the bar is **34px / 30px tall**, the logo protrudes only
-**upward** by roughly 14px / 12px, not outside the left edge. It keeps the
-original primary and secondary fills in Dark and Light alike, with no
-recolouring, outline, shadow, plate or circular background.
+The first column is a **48×48px ivory (#F5F1E8) tile**, flush with the
+scoreboard's left and top edges in both Desktop and Mobile. Its ivory
+surface is fixed in Dark and Light so the **unmodified approved compact.svg**
+remains legible in the competition's original primary + secondary colours.
+The logo image is centered vertically and horizontally, rendered at
+**36×36px on desktop / 34×34px on mobile**. There is no logo overhang,
+recolouring, separate contour, outline, shadow or hover effect. The tile's
+left corners follow the bar radius.
+
+The scoreboard is 48px high on both breakpoints, including its 1px border.
+The grid compensates for that border to let its first 48×48px tile meet the
+actual outer left edge, without affecting the six-column score layout.
 
 ## Competition-specific Dark and Light palettes
 
@@ -28,7 +33,7 @@ setting and respond immediately when the site's appearance changes.
 | Bar surface | Official `primaryHex` | 16% `primaryHex` blended with 84% approved ivory |
 | Abbreviations, goals, divider | Official ivory `#F5F1E8` | Official `secondaryHex` (graphite `#243039`) |
 | Bar border and bottom 2px inset | Official `secondaryHex` | Official `primaryHex` |
-| Left logo | Original primary + secondary fills | The exact same original primary + secondary fills |
+| Logo on ivory 48×48px tile | Original primary + secondary fills | The exact same original primary + secondary fills |
 
 This creates a visibly different scoreboard for **each division**, while
 making Light genuinely pale and Dark saturated. The site owns the appearance,
@@ -36,11 +41,9 @@ not individual match data. All 16 contrast-checked divisions meet the
 4.5:1 minimum in both variants.
 
 **Logo integrity:** both appearances load the exact same original SVG.
-Its primary and secondary colours stay untouched. Since the Dark bar also
-uses the primary colour, parts of the crest can blend into the bar while its
-upper, protruding portion remains visible against the surrounding page.
-This is an explicit design trade-off; no artificial third colour, outline,
-round badge, drop shadow or separate background has been introduced.
+Its primary and secondary colours stay untouched; the 48×48px ivory
+tile provides sufficient separation from the competition-coloured bar.
+No third logo colour, added outline, drop shadow or alternate logo is used.
 
 The 16 published domestic division `compact.svg` files remain intact,
 SHA-verified, publication-allowlisted and mapped to the right competitions.

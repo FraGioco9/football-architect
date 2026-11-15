@@ -1,31 +1,34 @@
-/* #577 — Original full-colour competition logo rests on the left edge
-   of the bar, protruding upward. No logo plate, outline or recolouring. */
+/* #577 — Competition-coloured 48px scorebar with a flush-left ivory 48px tile.
+   Approved logos keep their original primary/secondary fills in both themes. */
 .app-match-page{min-width:0;padding-top:6px;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
  --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
  --app-match-text:var(--app-match-ink);
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
- width:min(100%,340px);height:34px;margin:0 auto;padding:0 9px;
+ width:min(100%,340px);height:48px;margin:0 auto;padding:0;
  border-radius:5px;background:var(--app-match-surface);color:var(--app-match-text);
  border:1px solid var(--app-match-accent);
  box-shadow:inset 0 -2px var(--app-match-accent);
 }
 .app-match-score-line{
- display:grid;grid-template-columns:48px minmax(0,1fr) 22px 9px 22px minmax(0,1fr);
- align-items:center;column-gap:4px;height:100%;min-width:0;
+ box-sizing:border-box;display:grid;
+ grid-template-columns:48px minmax(0,1fr) 22px 9px 22px minmax(0,1fr);
+ align-items:center;column-gap:4px;min-width:0;
+ width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;
+ padding-right:9px;
 }
 .app-match-competition-logo{
- position:relative;z-index:2;
- display:grid;place-items:center;width:48px;height:100%;overflow:visible;
+ position:relative;z-index:2;box-sizing:border-box;
+ display:grid;place-items:center;width:48px;height:48px;overflow:hidden;
  color:var(--app-match-text);text-decoration:none;
+ background:#F5F1E8;border-radius:5px 0 0 5px;
 }
 .app-match-competition-logo>span{
- position:absolute;left:0;bottom:0;display:grid;place-items:end start;
- width:48px;height:48px;overflow:visible;
+ display:grid;place-items:center;width:48px;height:48px;
 }
 .app-match-competition-logo img{
- display:block;width:48px;height:48px;max-width:none;
+ display:block;width:36px;height:36px;max-width:none;
  object-fit:contain;background:none;border:0;filter:none;
 }
 .app-match-competition-logo[href]:hover{opacity:1}
@@ -82,13 +85,12 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 }
 @media(max-width:480px){
  .app-match-page{padding-top:4px}
- .app-match-scoreboard{width:min(100%,310px);height:30px;padding:0 7px;border-radius:5px}
+ .app-match-scoreboard{width:min(100%,310px);height:48px;padding:0;border-radius:5px}
  .app-match-score-line{
-  grid-template-columns:42px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
-  column-gap:3px;
+  grid-template-columns:48px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
+  column-gap:3px;padding-right:7px;
  }
- .app-match-competition-logo{width:42px}
- .app-match-competition-logo>span,.app-match-competition-logo img{width:42px;height:42px}
+ .app-match-competition-logo img{width:34px;height:34px}
  .app-match-team-link{font-size:10px;letter-spacing:.025em}
  .app-match-side-score{font-size:16px}
  .app-match-score-separator{font-size:11px}
