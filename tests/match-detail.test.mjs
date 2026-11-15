@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
-import {scoreboardThemes,resolveScoreboardTheme,contrastRatio} from '../assets/match-scoreboard-themes.mjs';
+import {scoreboardThemes,resolveScoreboardTheme,resolveFirstPaintMatchTheme,contrastRatio} from '../assets/match-scoreboard-themes.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const catalog=JSON.parse(read('competitions/_shared/manifest.json')).competitions;
 
@@ -159,4 +159,15 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/\.title\s*=/);
  assert.match(js,/name\.removeAttribute\('title'\)/);
  assert.match(js,/link\.removeAttribute\('title'\)/);
+});
+
+test('#577 parser-time branding only uses the same approved palette as hydration',()=>{
+ for(const competition of catalog){
+  const initial=resolveFirstPaintMatchTheme(competition.id);
+  const hydrated=resolveScoreboardTheme(competition);
+  if(competition.category==='international')assert.equal(initial,null);
+  else assert.deepEqual(initial,{backgroundHex:hydrated.backgroundHex,
+   foregroundHex:hydrated.foregroundHex,accentHex:hydrated.accentHex});
+ }
+ for(const id of ['ZZ-1','it-1','IT-3',null,'<script>'])assert.equal(resolveFirstPaintMatchTheme(id),null);
 });

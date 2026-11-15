@@ -53,3 +53,27 @@ published SVGs, routing and generated HTML are untouched.
 
 PR #614 remains **Draft/HOLD** pending owner visual acceptance, exact-head
 CI and separate merge authorisation. No remote DB or deployment operations.
+
+## Published competition first paint (hosted Cloudflare Preview)
+
+The shared `/matches/:id` shell cannot infer competition from the numeric URL.
+On the **Cloudflare Preview Worker**, the canonical, published D1 match read
+is verified against the request ID before the HTML response is sent. Its
+competition ID is resolved to the **same approved palette map** used in
+`assets/match-scoreboard-themes.mjs`. A literal, scoped CSS custom-property
+rule is injected into `<head>` before the scoreboard markup. Both Dark and
+Light use the normal existing CSS rules, with no neutral-colour flash.
+
+Only a valid published match gets first-paint branding. A missing match,
+stale world, unsupported cup palette or unavailable DB leaves the neutral
+static shell; never infer staged fixtures or results. No match result or
+participant data is injected, and no public caching is permitted for the
+per-match HTML. Browser JS still uses its existing official match API for
+all mutable match data. No new public API or extra browser fetch is added.
+
+**Hosting boundary:** the current Vercel configuration rewrites these URLs
+to the same static HTML without a Worker lookup; it cannot guarantee the
+correct branded first paint there. A production-approved equivalent edge
+read or server-generated HTML is required before claiming parity. The
+static build does not guess match IDs from a mutable D1 world. No deploy
+or production routing change is authorised by this implementation.

@@ -4,6 +4,8 @@ import {assertEnvironmentPool} from './environment-pool.ts';
 import {requireDatabase} from './database.ts';
 import {PREVIEW_RETENTION_CRON,pruneExpiredPlayerPreviews} from './player-preview-retention.ts';
 import {parseRoute,competitionViews,clubViews} from '../../assets/routes-registry.mjs';
+import {readPublicMatch} from './public-match-read.ts';
+import {applyPublishedMatchFirstPaint} from './match-page-first-paint.ts';
 export interface PreviewEnv extends Env {ASSETS:Pick<typeof globalThis,'fetch'>;PREVIEW_SOURCE_SHA?:string}
 const privateHeaders={'Cache-Control':'private, no-store, max-age=0','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'};
 // Only eligible missing documents receive the friendly HTML; resources keep
@@ -51,7 +53,7 @@ export default {
   if(target.redirect)return new Response(null,{status:308,headers:{...privateHeaders,Location:target.redirect}});
   try{
    // Cookies, authorization, CSRF, verification tokens and caller source never
-   // enter the static binding or its cache key. Bodies are streamed unchanged.
+   // enter the static binding or its cache key. Non-match HTML streams unchanged.
    const response=await env.ASSETS.fetch(new Request(new URL(target.file!,url.origin),{method:request.method}));
    if((response.status===404||target.file==='/404.html'&&response.status===200)&&
      eligibleMissingDocument(request,url,target.file!)){
@@ -71,6 +73,25 @@ export default {
    headers.set('X-Content-Type-Options','nosniff');headers.set('X-Robots-Tag','noindex, nofollow');
    if(target.file!.endsWith('.html')||response.status!==200)for(const [key,value] of Object.entries(privateHeaders))headers.set(key,value);
    if(env.PREVIEW_SOURCE_SHA&&/^[a-f0-9]{40}$/.test(env.PREVIEW_SOURCE_SHA))headers.set('X-FA-Source-SHA',env.PREVIEW_SOURCE_SHA);
+   // Resolve a verified match against the SAME D1 pool before returning HTML.
+   // Do not rely on JS hydration, a build-time D1 snapshot or unauthorised
+   // HTTP fan-out. Failed/unpublished lookup leaves the unchanged neutral shell.
+   if(target.file==='/matches/_shared/index.html'&&response.status===200&&request.method==='GET'){
+    const id=/^\/matches\/([1-9][0-9]*)$/.exec(url.pathname)?.[1];
+    if(id&&Number.isSafeInteger(Number(id))){
+     let published:unknown=null;
+     try{
+      await assertEnvironmentPool(env);
+      published=await readPublicMatch(requireDatabase(env.DB),id);
+     }catch{/* Unpublished, missing or stale world: never guess branding. */}
+     if(published){
+      const html=await response.text();
+      const decorated=applyPublishedMatchFirstPaint(html,published,id);
+      headers.delete('Content-Length');headers.delete('ETag');headers.delete('Content-Encoding');
+      return new Response(decorated,{status:200,headers});
+     }
+    }
+   }
    return new Response(request.method==='HEAD'?null:response.body,{status:response.status,headers});
   }catch{return error(503,'preview_unavailable')}
  },

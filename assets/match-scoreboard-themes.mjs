@@ -89,3 +89,17 @@ export function resolveScoreboardTheme(competition){
   ?choice.logoAsset:null;
  return {backgroundHex,foregroundHex,accentHex,logoAsset,kind:'competition'};
 }
+
+/**
+ * Parser-time branding from the same approved primary palette used by the
+ * hydrated scoreboard. Only known domestic IDs receive competition colours.
+ * International competitions remain neutral until branding is approved.
+ */
+export function resolveFirstPaintMatchTheme(competitionId){
+ if(typeof competitionId!=='string'||!Object.hasOwn(approvedPrimary,competitionId))return null;
+ const hydrated=resolveScoreboardTheme({id:competitionId,
+  primaryHex:approvedPrimary[competitionId],secondaryHex:'#243039',ivoryHex:'#F5F1E8'});
+ return hydrated.kind==='competition'?Object.freeze({
+  backgroundHex:hydrated.backgroundHex,foregroundHex:hydrated.foregroundHex,
+  accentHex:hydrated.accentHex}):null;
+}
