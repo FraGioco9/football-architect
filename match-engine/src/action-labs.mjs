@@ -2,8 +2,8 @@
 // This module never changes a sporting result, official possession or score.
 // The main physics LAB owns its own separate lifecycle; it is closed when
 // this dialog runs so there are never competing running Rapier worlds.
-import {createEngine,createUniformAutonomousBallCoreEngine,FIXED_DT}
- from './core.mjs';
+import {createEngine,FIXED_DT} from './core.mjs';
+import {createUniversalMatchBallSession} from './player-ball-universal-world.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {ACTION_LAB_SCENARIOS,getActionLabScenario,
@@ -15,22 +15,20 @@ export function createControlledActionLab(RAPIER,id){
  const spec=getActionLabScenario(id),s=spec.initial;
  const uniform=['uniform','shot','carry'].includes(spec.mode);
  const carry=spec.mode==='carry',researchShot=spec.mode==='shot'?'home':null;
- const engine=uniform?createUniformAutonomousBallCoreEngine(
-  RAPIER,s,1,researchShot,carry):createEngine(RAPIER,s,{
-   diagnosticPlayerFootContactsEnabled:true,
-   diagnosticLocalAiPassReceiveEnabled:spec.mode==='control',
-   diagnosticLocalAiExchangeEnabled:spec.mode==='challenge',
-   diagnosticLocalAiOpponentLaneEnabled:spec.mode==='challenge'
-  });
- const mover=createPlayerMovement(uniform?{
-  experimentalAiKickApproach:true,
-  experimentalAutonomousFixtureContactChase:true,
-  ...(carry?{
-   experimentalAutonomousFixtureCarry:true,
-   experimentalAutonomousFixtureCarrySupport:true
-  }:{}),
-  ...(researchShot?{researchShotAttacker:researchShot,researchShotBall:s}:{})
- }:{
+ // Reuse the ONE closed canonical 22-player physics producer instead
+ // of hand-rolling Rapier, movement and post-contact handoff a second time.
+ const world=uniform?createUniversalMatchBallSession(RAPIER,s,{
+  autonomousActions:true,
+  ...(carry?{autonomousCarry:true,autonomousCarrySupport:true}:{}),
+  ...(researchShot?{researchShotAttacker:researchShot}:{})
+ }):null;
+ const engine=uniform?null:createEngine(RAPIER,s,{
+  diagnosticPlayerFootContactsEnabled:true,
+  diagnosticLocalAiPassReceiveEnabled:spec.mode==='control',
+  diagnosticLocalAiExchangeEnabled:spec.mode==='challenge',
+  diagnosticLocalAiOpponentLaneEnabled:spec.mode==='challenge'
+ });
+ const mover=uniform?null:createPlayerMovement({
   ...(spec.mode==='control'?{experimentalAiPassReceiveApproach:true}:{}),
   ...(spec.mode==='challenge'?{
    experimentalAiExchangeApproach:true,experimentalAiOpponentLane:true
@@ -38,48 +36,63 @@ export function createControlledActionLab(RAPIER,id){
  });
  let closed=false,eventsSeen=Object.freeze([]),evidenceCount=0;
  function current(physics,players){
-  const foot=engine.footContactSnapshot();
-  const starts=Object.freeze([...foot.started]);
-  const action=uniform?engine.uniformAutonomousActionSnapshot():null;
-  const actual=action?.tick===physics.tick?action:null;
+  const tick=uniform?physics.physicsTick:physics.tick;
+  const starts=Object.freeze([...(uniform?
+   physics.footContact.started:engine.footContactSnapshot().started)]);
+  const action=uniform?physics.localAutonomousAction:null;
+  const actual=action?.tick===tick?action:null;
   const localEvents=spec.mode==='control'?
    engine.localAiPassReceiveSnapshot().events:
    spec.mode==='challenge'?engine.localAiExchangeSnapshot().events:[];
   const event=classifyActionLabEvidence(spec,{
-   tick:physics.tick,action:actual,starts,events:localEvents
+   tick,action:actual,starts,events:localEvents
   });
   if(event.witnessed){
    evidenceCount+=1;
    eventsSeen=Object.freeze([...eventsSeen,
-    Object.freeze({tick:physics.tick,kind:spec.goal,
+    Object.freeze({tick,kind:spec.goal,
      actorId:actual?.playerId??starts[0]??null})].slice(-12));
   }
+  const positions=uniform?physics.physicalPlayerPositions.map(p=>
+   Object.freeze({id:p.engineId,team:p.team,x:p.x,y:p.y})):
+   players.players.map(p=>Object.freeze({
+    id:p.id,team:p.team,x:p.x,y:p.y
+   }));
   return Object.freeze({
-   scenarioId:id,physicsTick:physics.tick,timeS:physics.tick*FIXED_DT,
-   ball:physics.ball,players:Object.freeze(players.players.map(p=>
-    Object.freeze({id:p.id,team:p.team,x:p.x,y:p.y}))),
+   scenarioId:id,physicsTick:tick,timeS:tick*FIXED_DT,
+   ball:physics.ball,players:Object.freeze(positions),
    starts,action:actual,evidence:event,
    eventCount:evidenceCount,events:eventsSeen,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
  }
- let latest=current(engine.snapshot(),mover.snapshot());
+ let latest=uniform?
+  current(world.snapshot(),null):current(engine.snapshot(),mover.snapshot());
  function snapshot(){if(closed)throw new Error('Action LAB disposed');return latest;}
  function step(){
   if(closed)throw new Error('Action LAB disposed');
-  const before=engine.snapshot();
-  const players=uniform?mover.step(before.ball.position):
-   mover.step(before.ball.position,{
+  if(uniform){
+   const before=world.snapshot();
+   const frame=world.step();
+   if(frame.physicsTick!==before.physicsTick+1)
+    throw new Error('Action LAB must preserve canonical 60Hz physical tick');
+   latest=current(frame,null);
+  }else{
+   const before=engine.snapshot();
+   const players=mover.step(before.ball.position,{
     velocity:before.ball.velocity,footContact:engine.footContactSnapshot()
    });
-  const physics=engine.step(players);
-  if(physics.tick!==before.tick+1||players.tick!==physics.tick)
-   throw new Error('Action LAB must preserve same 60Hz physical tick');
-  latest=current(physics,players);
+   const physics=engine.step(players);
+   if(physics.tick!==before.tick+1||players.tick!==physics.tick)
+    throw new Error('Action LAB must preserve existing local 60Hz shoe tick');
+   latest=current(physics,players);
+  }
   return latest;
  }
- function dispose(){if(!closed){closed=true;engine.dispose();}}
+ function dispose(){
+  if(!closed){closed=true;if(uniform)world.dispose();else engine.dispose();}
+ }
  return Object.freeze({spec,snapshot,step,dispose});
 }
 const label=id=>id.replace('home-','Home #').replace('away-','Away #');
