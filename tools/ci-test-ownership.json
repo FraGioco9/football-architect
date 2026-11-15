@@ -242,6 +242,7 @@
     "tests/dev-standings-preview.test.mjs": "site-node",
     "tests/division-allocations.test.mjs": "site-node",
     "tests/division-assets.test.mjs": "site-node",
+    "tests/export-public-players-for-portraits.test.mjs": "site-node",
     "tests/fe-01-design-system.test.mjs": "site-node",
     "tests/fe-01-visual-parity.mjs": "browser",
     "tests/fe-02-responsive-browser.mjs": "browser",
@@ -276,6 +277,7 @@
     "tests/perf-api-01-real-contract-roster.mjs": "support",
     "tests/perf-api-01-requests.test.mjs": "site-node",
     "tests/player-detail.test.mjs": "site-node",
+    "tests/player-portrait-repository.test.mjs": "site-node",
     "tests/player-safe-return-browser.mjs": "browser",
     "tests/player-tables-parity-532.test.mjs": "site-node",
     "tests/players-directory.test.mjs": "site-node",
@@ -283,10 +285,12 @@
     "tests/players-mobile-574.test.mjs": "site-node",
     "tests/players-name-pools.test.mjs": "site-node",
     "tests/players-names-catalog.test.mjs": "site-node",
+    "tests/players-portrait-profiles.test.mjs": "site-node",
     "tests/players-responsive-layout-532.test.mjs": "site-node",
     "tests/players-scroll-browser-532.mjs": "support",
     "tests/players-secondary-frequency-audit.test.mjs": "site-node",
     "tests/players-suitability-v2.test.mjs": "site-node",
+    "tests/portrait-png-qa.test.mjs": "site-node",
     "tests/postseason-preview.test.mjs": "site-node",
     "tests/profile-destination.test.mjs": "site-node",
     "tests/profile-navigation-browser.mjs": "browser",
@@ -322,9 +326,6 @@
     "tests/world-catalog.test.mjs": "site-node",
     "tests/world-clock-adapter.test.mjs": "site-node",
     "tests/world-competition-runtime.test.mjs": "site-node",
-    "tests/world-divisions.test.mjs": "site-node",
-    "tests/export-public-players-for-portraits.test.mjs": "site-node",
-    "tests/players-portrait-profiles.test.mjs": "site-node",
-    "tests/portrait-png-qa.test.mjs": "site-node"
+    "tests/world-divisions.test.mjs": "site-node"
   }
 }

@@ -55,6 +55,12 @@ function createTraits(playerId){
  for(const [index,key] of keys.entries())traits[key]=VARIANTS[key][digest[index]%VARIANTS[key].length];
  return traits;
 }
+/** Return stable, canonical individual traits for a committed permanent ID.
+ * This helper never reads demographics or performs any remote operation. */
+export function appearanceTraitsForPlayerId(playerId){
+ if(!Number.isSafeInteger(playerId)||playerId<1)throw new TypeError('invalid_player_id');
+ return Object.freeze({...createTraits(playerId)});
+}
 function portraitSentence(traits){
  return `A ${traits.face}, ${traits.complexion}, ${traits.hairColor} with ${traits.hairTexture} in a ${traits.hairStyle}, ${traits.eyes}, ${traits.eyebrows}, ${traits.nose}, ${traits.jaw}, ${traits.facialHair}, and ${traits.detail}.`;
 }
