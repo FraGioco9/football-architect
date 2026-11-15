@@ -80,7 +80,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticPlayerFootContactsEnabled = false,
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
-  diagnosticResearchShotAttacker = null
+  diagnosticResearchShotAttacker = null,
+  diagnosticResearchShotBlockedLane = false
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
@@ -97,8 +98,12 @@ export function createEngine(RAPIER, input = {}, {
     !diagnosticAutonomousFixtureActionEnabled||
     diagnosticAutonomousCarryEnabled))
   throw new TypeError('Research shot needs genuine private source/action opt-in');
+ if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
+    (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
+  throw new TypeError('Blocked lane requires genuine bounded research shot');
  const stagedShoes=diagnosticResearchShotAttacker===null?INITIAL_PLAYERS:
-  initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,scenario);
+  initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,
+   scenario,{blockedLane:diagnosticResearchShotBlockedLane});
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
   if (typeof diagnosticInitialRollFraction !== 'number' ||
@@ -181,7 +186,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
-    diagnosticResearchShotAttacker
+    diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

@@ -52,3 +52,19 @@ post-impulse 3D flight and deterministic replay; the unstaged original
 formation is an explicit no-SHOT counterfactual. Exact-HEAD CI and
 Chrome confirmation are required before marking this positive slice
 accepted. Blocked-lane physical setup, CONTROL and CARRY stay open.
+
+
+## #620 — genuine blocked-lane SHOT negative (HOME/AWAY)
+LAB-15 adds a Lane selector, Open/Blocked. In the blocked setup only one
+genuine opposing defender (#2) is also moved BEFORE tick zero, 11m ahead
+of the ball on the centre-goal line, with all 22 player identities, roles,
+>=0.98m initial separation and original mover/physics intact.
+At that cross-section the original three lanes (centre and ±3.1m)
+pass within ~1.6m of the opponent, below the unchanged 2.4m minimum.
+Only a same-tick real Rapier shoe START permits a negative witness:
+the unmodified inspectUniformPolicyGeometry reads the same live canonical
+22-player frame and confirms no valid SHOT lane; it never selects actions
+or overrides the original physics executor. A genuine alternative
+PASS/CLEARANCE is allowed; no SHOT or goal is pre-awarded.
+Mirrored Node, replay and Chrome negative tests accompany the positive
+open-lane controls. This is not proof of successful defensive tackle.

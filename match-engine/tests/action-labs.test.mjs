@@ -161,6 +161,55 @@ test('clean SHOT LAB: real mirrored HOME/AWAY shoe impulses and measured 3D flig
  }
 });
 
+test('mirrored blocked SHOT: real shooter START but original goal lanes reject SHOT',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const side of ['home','away']){
+  const open=createControlledActionLab(R,'shot',{shotSide:side});
+  const blocked=createControlledActionLab(R,'shot',{shotSide:side,shotLane:'blocked'});
+  const replay=createControlledActionLab(R,'shot',{shotSide:side,shotLane:'blocked'});
+  try{
+   assert.equal(blocked.snapshot().physicsTick,0);
+   assert.equal(blocked.snapshot().blockedShotObservation,null);
+   assert.deepEqual(blocked.snapshot().starts,[]);
+   const opponent=blocked.snapshot().players.find(p=>
+    p.id===(side==='home'?'away':'home')+'-2');
+   assert.ok(Math.abs(opponent.x-(side==='home'?41:-41))<1e-6);
+   assert.ok(Math.abs(opponent.y-(side==='home'?0.5111111111:-0.5111111111))<1e-5);
+   assert.equal(open.step().action?.action,'shot','open lane positive control');
+   const f=blocked.step(),g=replay.step();
+   assert.deepEqual(f.starts,[side+'-10']);
+   assert.deepEqual(f.ball,g.ball);
+   assert.deepEqual(f.action,g.action);
+   assert.notEqual(f.action?.action,'shot');
+   assert.equal(f.evidence.witnessed,false);
+   assert.equal(f.shotFlight,null);
+   assert.equal(f.eventCount,0);
+   const witness=f.blockedShotObservation;
+   assert.ok(witness,'original same-tick geometry must reject all 3 lanes');
+   assert.equal(witness.tick,1);
+   assert.equal(witness.playerId,side+'-10');
+   assert.equal(witness.policyGeometry.shotRange,true);
+   assert.equal(witness.policyGeometry.shotLaneFound,false);
+   assert.equal(witness.policyGeometry.physicalActionExecuted,false);
+   assert.equal(witness.realShoeStart,true);
+   assert.equal(f.officialMatchResult,null);
+   for(let t=2;t<=35;t++){
+    const x=blocked.step(),y=replay.step();
+    assert.deepEqual(x.ball,y.ball);
+    assert.deepEqual(x.action,y.action);
+    assert.equal(x.shotFlight,null);
+    assert.equal(x.blockedShotObservation,witness);
+    assert.equal(x.evidence.officialGoal,false);
+    assert.equal(x.scoreChanged,false);
+    assert.notEqual(x.action?.action,'shot');
+   }
+   process.stdout.write('ME_SHOT_BLOCKED_'+side.toUpperCase()+
+    ' '+JSON.stringify({tick:witness.tick,action:witness.actionType})+'\\n');
+  }finally{open.dispose();blocked.dispose();replay.dispose();}
+ }
+});
+
 test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings',
  {timeout:45000},async()=>{
  const R=await initializeRapier(rapier);
@@ -168,6 +217,10 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
   /mirrored|supported/);
  assert.throws(()=>createControlledActionLab(R,'pass',{shotSide:'away'}),
   /mirrored|supported/);
+ assert.throws(()=>createControlledActionLab(R,'shot',{shotLane:'none'}),
+  /blocked setups/);
+ assert.throws(()=>createControlledActionLab(R,'pass',{shotLane:'blocked'}),
+  /blocked setups/);
  const {createEngine}=await import('../src/core.mjs');
  const {createPlayerMovement}=await import('../src/player-movement.mjs');
  const ball={preset:'roll',seed:'shot-unstaged-counterfactual',
@@ -175,6 +228,14 @@ test('SHOT cannot be spoofed by ball coordinates or by ordinary engine settings'
  assert.throws(()=>createEngine(R,ball,{
   diagnosticResearchShotAttacker:'home'
  }),/genuine private source/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchShotBlockedLane:true
+ }),/Blocked lane requires/);
+ assert.throws(()=>createEngine(R,ball,{
+  diagnosticResearchShotBlockedLane:'true'
+ }),/Blocked lane requires/);
+ assert.throws(()=>createPlayerMovement({researchShotBlockedLane:true}),
+  /paired bounded/);
  assert.throws(()=>createPlayerMovement({
   researchShotAttacker:'home',researchShotBall:{...ball,x:0}
  }),/attacking-third/);

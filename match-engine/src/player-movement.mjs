@@ -1572,15 +1572,20 @@ function teamShape(players,team,presserId){
 }
 export function createPlayerMovement(options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||
-    Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&k!=='researchShotBall')||
+    Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
+     k!=='researchShotBall'&&k!=='researchShotBlockedLane')||
     ((options.researchShotAttacker??null)===null&&Reflect.ownKeys(options).length>0)||
     (options.researchShotAttacker!==undefined&&
      !['home','away'].includes(options.researchShotAttacker))||
-    (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall')))
+    (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall'))||
+    (options.researchShotBlockedLane!==undefined&&
+     (options.researchShotBlockedLane!==true||
+      !['home','away'].includes(options.researchShotAttacker))))
   throw new TypeError('Only paired bounded research shot initial positions allowed');
  const initial=options.researchShotAttacker?
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
-   options.researchShotBall):INITIAL_PLAYERS;
+   options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
+  INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};

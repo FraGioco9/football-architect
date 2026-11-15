@@ -155,6 +155,29 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.match(away.readout,/SHOT AWAY · 3D path/);
   assert.doesNotMatch(away.status,/goal scored|official possession confirmed/i);
   process.stdout.write('ACTION_LAB_CHROME_AWAY_SHOT '+JSON.stringify(away)+'\\n');
+  for(const side of ['home','away']){
+   const blocked=await evalJs(
+    "(()=>{const s=document.getElementById('action-labs-choice');"+
+    "s.value='shot';s.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "const team=document.getElementById('action-labs-shot-side');"+
+    "team.value="+JSON.stringify(side)+";team.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "const lanes=document.getElementById('action-labs-shot-lane');"+
+    "lanes.value='blocked';lanes.dispatchEvent(new Event('change',{bubbles:true}));"+
+    "document.getElementById('action-labs-step').click();"+
+    "return {status:document.getElementById('action-labs-status').textContent,"+
+    "readout:document.getElementById('action-labs-readout').textContent,"+
+    "visible:!document.getElementById('action-labs-shot-lane-label').hidden,"+
+    "lane:lanes.value,side:team.value};})()"
+   );
+   assert.equal(blocked.visible,true);
+   assert.equal(blocked.lane,'blocked');
+   assert.equal(blocked.side,side);
+   assert.match(blocked.status,/Observed: genuine (HOME|AWAY) shoe START; original policy finds no open SHOT lane/);
+   assert.match(blocked.readout,/All three SHOT lanes blocked/);
+   assert.doesNotMatch(blocked.status,/Verified .*SHOT|goal scored/i);
+   process.stdout.write('ACTION_LAB_CHROME_BLOCKED_'+side.toUpperCase()+
+    ' '+JSON.stringify(blocked)+'\\n');
+  }
   const close=await evalJs("(()=>{"+
    "document.getElementById('action-labs-close').click();"+
    "return !document.getElementById('action-labs-dialog').open;})()");
