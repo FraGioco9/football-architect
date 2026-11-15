@@ -141,7 +141,11 @@ for(const [engine,driver] of Object.entries(engines)){
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
     for(const [i,name] of layout.names.entries()){
-     assert.equal(name.align,'center');assert.equal(name.display,'inline-block');assert.equal(name.vertical,'center');
+     // A flex item is blockified by CSS layout: inline-block specified on
+     // the child anchor legitimately computes to block within its flex slot.
+     // Its intrinsic text-sized box, not the computed display keyword,
+     // determines the actual clickable area (asserted below).
+     assert.equal(name.align,'center');assert.equal(name.display,'block');assert.equal(name.vertical,'center');
      assert.equal(name.justify,i===0?'flex-end':'flex-start');
      assert.equal(name.font,isMobile?24:26);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
      assert.equal(name.cellHeight,48);assert.ok(name.height<48);

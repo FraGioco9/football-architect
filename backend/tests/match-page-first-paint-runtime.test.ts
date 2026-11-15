@@ -1,7 +1,7 @@
 import {it,expect} from 'vitest';
 import {applyPublishedMatchFirstPaint} from '../src/match-page-first-paint.ts';
 const template='<!doctype html>\n<html lang="en"><head>\n<title>Match</title></head><body>'+
- '<section class="app-match-scoreboard"></section></body></html>';
+ '<section class="app-match-scoreboard" data-scoreboard-theme="neutral"></section></body></html>';
 const published={schemaVersion:1,providerId:'authoritative-world',matchId:'128',
  season:2,competitionId:'IT-1',stageId:'league',day:8,round:4,
  provenance:{kind:'authoritative'},result:{homeGoals:8,awayGoals:0}};
