@@ -78,12 +78,13 @@ for(const [engine,driver] of Object.entries(engines)){
     // same two axes as the hydrated abbreviations, without a layout shift.
     const skeletons=await page.locator('.app-match-score-line').evaluate(grid=>{
      const row=grid.getBoundingClientRect();
-     return [...grid.querySelectorAll('.app-match-team-link')].map((el,index)=>{
-      const bar=el.querySelector('.app-skeleton-bar');
-      const b=bar?.getBoundingClientRect(),label=el.getBoundingClientRect();
+     return [...grid.querySelectorAll('.app-match-team-slot')].map((cell,index)=>{
+      const bar=cell.querySelector('.app-skeleton-bar');
+      const b=bar?.getBoundingClientRect(),box=cell.getBoundingClientRect();
       return b?{width:b.width,height:b.height,
-       toScore:index===0?label.right-b.right:b.left-label.left,
-       justify:getComputedStyle(el).justifyContent,
+       toScore:index===0?box.right-b.right:b.left-box.left,
+       justify:getComputedStyle(cell).justifyContent,
+       cellHeight:box.height,
        dy:(b.y+b.height/2)-(row.y+row.height/2)}:null;
      });
     });
@@ -93,6 +94,7 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.ok(Math.abs(s.width-(isMobile?50:54))<=0.5,JSON.stringify({engine,theme,device,skeletons}));
      assert.equal(s.height,isMobile?18:20);
      assert.equal(s.justify,i===0?'flex-end':'flex-start');
+     assert.equal(s.cellHeight,48);
      assert.ok(Math.abs(s.toScore-4)<=0.5&&Math.abs(s.dy)<=0.5,JSON.stringify({engine,theme,device,skeletons}));
     }
     // Two-digit result columns and centred official three-character
@@ -105,6 +107,7 @@ for(const [engine,driver] of Object.entries(engines)){
     });
     const layout=await page.locator('.app-match-score-line').evaluate(grid=>{
      const names=[grid.querySelector('[data-match-home-name]'),grid.querySelector('[data-match-away-name]')];
+     const slots=[grid.querySelector('.app-match-team-home'),grid.querySelector('.app-match-team-away')];
      const scores=[grid.querySelector('[data-match-home-score]'),grid.querySelector('[data-match-away-score]')];
      const center=grid.querySelector('.app-match-score-separator');
      const row=grid.getBoundingClientRect();
@@ -115,10 +118,11 @@ for(const [engine,driver] of Object.entries(engines)){
      const separatorStyle=getComputedStyle(center);
      const nameText=names.map(el=>rangeFor(el));
      const nameScoreGaps={home:leftScore.left-nameText[0].right,away:nameText[1].left-rightScore.right};
-     return {nameScoreGaps,names:names.map(el=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return {
-      align:style.textAlign,display:style.display,vertical:style.alignItems,justify:style.justifyContent,
+     return {nameScoreGaps,names:names.map((el,i)=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el),slot=getComputedStyle(slots[i]);return {
+      align:style.textAlign,display:style.display,vertical:slot.alignItems,justify:slot.justifyContent,
       font:parseFloat(style.fontSize),fits:el.scrollWidth<=el.clientWidth+1,
-      height:rect.height,centerOffset:(rect.y+rect.height/2)-(row.y+row.height/2)
+      height:rect.height,cellHeight:slots[i].getBoundingClientRect().height,
+      centerOffset:(rect.y+rect.height/2)-(row.y+row.height/2)
      }}),
       scores:scores.map(el=>({width:el.getBoundingClientRect().width,text:el.textContent,align:getComputedStyle(el).textAlign})),
       dashStyle:{font:parseFloat(separatorStyle.fontSize),color:separatorStyle.color,opacity:separatorStyle.opacity},
@@ -130,10 +134,11 @@ for(const [engine,driver] of Object.entries(engines)){
       separator:center.textContent.trim(),height:grid.getBoundingClientRect().height};
     });
     for(const [i,name] of layout.names.entries()){
-     assert.equal(name.align,'center');assert.equal(name.display,'flex');assert.equal(name.vertical,'center');
+     assert.equal(name.align,'center');assert.equal(name.display,'inline-block');assert.equal(name.vertical,'center');
      assert.equal(name.justify,i===0?'flex-end':'flex-start');
      assert.equal(name.font,isMobile?24:26);assert.equal(name.fits,true,JSON.stringify({engine,theme,device,layout}));
-     assert.equal(name.height,48);assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
+     assert.equal(name.cellHeight,48);assert.ok(name.height<48);
+     assert.ok(Math.abs(name.centerOffset)<=0.5,JSON.stringify({engine,theme,device,layout}));
     }
     for(const score of layout.scores){assert.ok(score.width>=(isMobile?32:35)-0.5);assert.equal(score.text.length,2);}
     assert.deepEqual(layout.scores.map(s=>s.align),['right','left']);
@@ -237,29 +242,40 @@ for(const [engine,driver] of Object.entries(engines)){
        const range=document.createRange();range.selectNodeContents(el);
        const withUnderline=range.getBoundingClientRect();
        const originalDecoration=style.textDecorationLine;
-       const originalThickness=style.textDecorationThickness;
-       const offset=style.textUnderlineOffset;
        const outer=el.getBoundingClientRect();
-       el.style.textDecorationLine='none';
-       const withoutUnderline=range.getBoundingClientRect();
-       el.style.removeProperty('text-decoration-line');
-       return {href:el.hasAttribute('href')?new URL(el.getAttribute('href'),location.href).pathname:null,underlined:originalDecoration,
-        thickness:originalThickness,offset,
-        outerHeight:outer.height,deltaX:withUnderline.x-withoutUnderline.x,
-        deltaY:withUnderline.y-withoutUnderline.y,
-        deltaWidth:withUnderline.width-withoutUnderline.width,
-        deltaHeight:withUnderline.height-withoutUnderline.height};
+       const slot=el.parentElement.getBoundingClientRect();
+       return {href:el.hasAttribute('href')?new URL(el.getAttribute('href'),location.href).pathname:null,
+        underlined:originalDecoration,outerHeight:outer.height,
+        slotHeight:slot.height,slotWidth:slot.width,linkWidth:outer.width,
+        textWidth:withUnderline.width,
+        dy:(outer.y+outer.height/2)-(slot.y+slot.height/2)};
       }));
       assert.deepEqual(linked.map(x=>x.href),['/clubs/it/1/overview','/clubs/it/2/overview']);
       for(const link of linked){
-       assert.equal(link.underlined,'underline');
-       assert.equal(link.thickness,'1px');assert.equal(link.offset,'3px');
-       assert.equal(link.outerHeight,48);
-       for(const k of ['deltaX','deltaY','deltaWidth','deltaHeight'])assert.ok(Math.abs(link[k])<=0.1,JSON.stringify({engine,theme,linked}));
+       assert.equal(link.underlined,'none');
+       assert.equal(link.slotHeight,48);
+       assert.ok(link.outerHeight<48&&link.linkWidth<link.slotWidth&&Math.abs(link.dy)<=0.5,
+        JSON.stringify({engine,theme,linked}));
+       assert.ok(Math.abs(link.textWidth-link.linkWidth)<=1,JSON.stringify({engine,theme,linked}));
       }
       const home=page.locator('[data-match-home-name]');
+      const unhovered=await home.boundingBox();
       await home.hover();
       assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'underline');
+      assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationThickness),'1px');
+      assert.equal(await home.evaluate(el=>getComputedStyle(el).textUnderlineOffset),'3px');
+      const hovered=await home.boundingBox();
+      for(const key of ['x','y','width','height'])assert.ok(Math.abs(hovered[key]-unhovered[key])<=0.5,
+       JSON.stringify({engine,theme,key,hovered,unhovered}));
+      // Empty regions in the 48px cell must neither hover nor navigate.
+      const slot=await page.locator('.app-match-team-home').boundingBox();
+      const outsideX=slot.x+3;
+      const outsideY=slot.y+slot.height/2;
+      assert.ok(outsideX<unhovered.x-1,JSON.stringify({engine,theme,slot,unhovered}));
+      await page.mouse.move(outsideX,outsideY);
+      assert.equal(await home.evaluate(el=>getComputedStyle(el).textDecorationLine),'none');
+      await page.mouse.click(outsideX,outsideY);
+      assert.equal(new URL(page.url()).pathname,'/matches/123');
       await home.click();
       await page.waitForURL(url=>url.pathname==='/clubs/it/1/overview');
      }

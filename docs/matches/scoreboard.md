@@ -219,3 +219,14 @@ so the label-to-score distances and vertical centring stay identical.
 The browser suite verifies actual two-club links, clicking into Club Overview,
 computed text decoration and unchanged text bounds with and without it in
 Dark/Light on Chromium/WebKit.
+
+### Link hit area and hover-only underline
+
+The 48px-high score grid cell is now a **non-interactive flex wrapper**,
+responsible for vertical centring and the 4px team-to-score inset. Its
+nested `<a>` is an inline-block intrinsically sized to the abbreviation,
+so pointer hover and click apply **only to the visible text**, not the cell.
+The underline is **absent by default**, appears only on link hover, and is
+drawn 3px below the text at 1px thickness; it changes no dimensions.
+This replaces the previously permanent underline while preserving team
+links, skeleton positions, typography and centred score separator.

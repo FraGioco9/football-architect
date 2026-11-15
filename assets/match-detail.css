@@ -48,27 +48,32 @@
 }
 .app-match-competition-logo[href]:hover{opacity:1}
 .app-match-competition-logo:not([href]){cursor:default}
+.app-match-team-slot{
+ /* A non-interactive grid cell owns all 48px of vertical alignment.
+    Its child link only covers the actual abbreviation text. */
+ display:flex;align-items:center;align-self:stretch;
+ box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden;
+}
+.app-match-team-home{justify-content:flex-end;padding-right:4px}
+.app-match-team-away{justify-content:flex-start;padding-left:4px}
 .app-match-team-link{
- /* Fill the 48px row so letters and scores share the same vertical centre. */
- display:flex;align-items:center;justify-content:center;align-self:stretch;
- box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
  color:var(--app-match-text)!important;text-decoration:none;
  text-align:center;font-size:26px;line-height:1;font-weight:800;letter-spacing:0;
  font-variant-numeric:tabular-nums;
 }
-/* Shift each abbreviation towards its own score, leaving a controlled 4px
-   inset; centring along the 48px vertical axis remains unchanged. */
-.app-match-team-home{justify-content:flex-end;text-align:center;padding-right:4px}
-.app-match-team-away{justify-content:flex-start;text-align:center;padding-left:4px}
-/* A real, permanently visible text underline adds no box height or padding:
-   labels keep their exact baseline and distance from the score. */
-.app-match-team-link[href]{text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:auto;cursor:pointer}
-.app-match-team-link[href]:hover{text-decoration-line:underline;opacity:1}
+/* Decoration is painted under the glyphs only on text hover. It never
+   changes the inline link's bounding box or shifts its baseline. */
+.app-match-team-link[href]{cursor:pointer}
+.app-match-team-link[href]:hover{
+ text-decoration-line:underline;text-decoration-thickness:1px;
+ text-underline-offset:3px;text-decoration-skip-ink:auto;opacity:1;
+}
 .app-match-team-link:not([href]){cursor:default}
-/* Placeholder approximates the height and width of three bold abbreviation
-   glyphs. The flex parent keeps its centre identical before/after hydration. */
+/* Skeletons sit at the same 4px inward edge, but never behave as links. */
 .app-match-team-link .app-skeleton-bar{
- display:block;flex:0 1 auto;width:54px;max-width:calc(100% - 4px);height:20px;
+ display:block;width:54px;max-width:100%;height:20px;
  margin:0;border-radius:4px;
  background:color-mix(in srgb,var(--app-match-text) 27%,transparent);
 }
