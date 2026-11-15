@@ -4,6 +4,8 @@ import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
 import {createPrivateRapierFootContactBridge}
  from './rapier-foot-contact-bridge.mjs';
+import {createPrivatePhysicalActionExecutor}
+ from './private-physical-action-executor.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
 export const PHYSICS_VERSION = '@dimforge/rapier3d-deterministic-compat@0.21.0';
 export const FIXED_DT = 1 / 60;
@@ -73,11 +75,18 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticMagnusSpinRadS = null,
   diagnosticMagnusLiftEnabled = true,
   diagnosticSpinDecayRatePerS = 0,
-  diagnosticPlayerFootContactsEnabled = false
+  diagnosticPlayerFootContactsEnabled = false,
+  diagnosticAutonomousFixtureActionEnabled = false,
+  diagnosticAutonomousCarryEnabled = false
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
     throw new TypeError('Boolean opt-in required for private shoe physics');
+  if(typeof diagnosticAutonomousFixtureActionEnabled!=='boolean'||
+     typeof diagnosticAutonomousCarryEnabled!=='boolean'||
+     (diagnosticAutonomousFixtureActionEnabled&&!diagnosticPlayerFootContactsEnabled)||
+     (diagnosticAutonomousCarryEnabled&&!diagnosticAutonomousFixtureActionEnabled))
+    throw new TypeError('Physical actions require explicit genuine shoe-source opt-in');
   const scenario = normalizeScenario(input);
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
@@ -159,7 +168,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticAirDragCd, diagnosticAirDragModel,diagnosticAerodynamicProfile,
     diagnosticMagnusSpinRadS:magnusSpin,
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
-    diagnosticPlayerFootContactsEnabled
+    diagnosticPlayerFootContactsEnabled,
+    diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;
@@ -196,6 +206,11 @@ export function createEngine(RAPIER, input = {}, {
   // No additional world or colliders on the accepted default-off core.
   const shoeBridge=diagnosticPlayerFootContactsEnabled?
     createPrivateRapierFootContactBridge(RAPIER,world,ballCollider):null;
+  const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
+    createPrivatePhysicalActionExecutor({
+      ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
+      allowPhysicalCarry:diagnosticAutonomousCarryEnabled
+    }):null;
   // A ball rolling in +X has angular velocity +Y; at its bottom contact
   // v_contact=(vx-r*omegaY, vy+r*omegaX). Match zero/half/full contact slip.
   // No setter is invoked for the default zero-spin path.
@@ -307,11 +322,15 @@ export function createEngine(RAPIER, input = {}, {
     }
     applyGrassRollingResistance();
     tick += 1;
+    // Same tick, same private Rapier ball, exclusively from observed shoe
+    // START. The ordinary physics and contact-only modes never kick.
+    if(actionExecutor)actionExecutor.apply(tick,playerFrame);
     return snapshot();
   }
   function dispose() {
     if (!disposed) {
       disposed = true;
+      actionExecutor?.dispose();
       shoeBridge?.dispose();
       world.free();
     }
@@ -321,6 +340,10 @@ export function createEngine(RAPIER, input = {}, {
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),
       footContactSolverSnapshot:()=>shoeBridge.solver()
+    }:{}),
+    ...(actionExecutor?{
+      uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
+      physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot()
     }:{}),
     reset: () => {
     dispose();
