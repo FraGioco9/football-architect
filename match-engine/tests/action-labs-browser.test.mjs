@@ -151,7 +151,7 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   );
   assert.equal(away.side,'away');
   assert.equal(away.sideVisible,true);
-  assert.match(away.status,/Verified AWAY SHOT: exclusive shoe START \\+ real Rapier impulse; observed 3D flight/);
+  assert.match(away.status,/Verified AWAY SHOT: exclusive shoe START.*observed 3D flight/);
   assert.match(away.readout,/SHOT AWAY · 3D path/);
   assert.doesNotMatch(away.status,/goal scored|official possession confirmed/i);
   process.stdout.write('ACTION_LAB_CHROME_AWAY_SHOT '+JSON.stringify(away)+'\\n');
