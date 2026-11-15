@@ -108,3 +108,11 @@ with the verified `competition` state in the same HTML response. Otherwise
 Light CSS's neutral border override remains graphite until JavaScript loads.
 The FULL browser test checks the real Light border colour, stable refresh and
 the 44px official emblem centred within the 48px bordered tile.
+
+### QA release boundary
+
+Until exact-head Site Checks, FULL evidence, Admin checks and the dedicated
+Chromium/WebKit first-paint test succeed, this PR remains Draft/HOLD. The
+synthetic test harness validates browser geometry and parser-time styling, but
+live Cloudflare Preview behaviour on the new source cannot be certified before
+an explicitly authorised Preview deployment. No deployment is part of QA.
