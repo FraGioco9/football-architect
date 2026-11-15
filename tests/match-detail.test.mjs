@@ -20,15 +20,20 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
  for(const path of ['matches/_shared/index.html','assets/match-detail.js','assets/match-detail.css','assets/match-scoreboard-themes.mjs'])
   assert.equal(isAllowlistedPublicPath(path),true,path);
  assert.ok(planPublicFiles().includes('matches/_shared/index.html'));
- assert.equal(isAllowlistedPublicPath('assets/brand/symbol-mono-white.svg'),true);
- assert.match(read('assets/brand/symbol-mono-white.svg'),/<svg[\s>]/);
+ // Approved division assets are published by the canonical DIV-ASSET validator.
+ for(const competition of catalog.filter(c=>c.category==='domestic')){
+  const logo=resolveScoreboardTheme(competition).logoAsset;
+  assert.ok(logo&&logo.endsWith('/compact.svg'),competition.id);
+  assert.equal(isAllowlistedPublicPath(logo),true,logo);
+  assert.ok(planPublicFiles().includes(logo),logo);
+  assert.match(read(logo),/<svg[\s>]/);
+ }
  const html=read('matches/_shared/index.html'),template=read('templates/match-detail-content.html');
  for(const section of [html,template]){
   assert.match(section,/data-match-detail/);
   assert.match(section,/app-match-scoreboard/);
   assert.match(section,/data-match-competition-logo/);
-  assert.match(section,/src="\/assets\/brand\/symbol-mono-white\.svg"/);
-  assert.match(section,/data-match-logo-fallback/);
+  assert.doesNotMatch(section,/symbol-mono-white\.svg|data-match-logo-fallback/);
   assert.match(section,/data-match-home-name/);
   assert.match(section,/data-match-away-name/);
   assert.match(section,/data-match-home-score/);
@@ -48,7 +53,6 @@ test('#577 every competition has an explicit theme and only approved HEX roles a
  for(const competition of catalog){
   const config=scoreboardThemes[competition.id];
   assert.ok(config,'Missing theme '+competition.id);
-  assert.equal(config.logoAsset,null,'Logo may only be set once approved');
   const theme=resolveScoreboardTheme(competition);
   assert.ok(contrastRatio(theme.backgroundHex,theme.foregroundHex)>=4.5);
   assert.match(theme.backgroundHex,/^#[0-9A-F]{6}$/);
@@ -56,9 +60,13 @@ test('#577 every competition has an explicit theme and only approved HEX roles a
   assert.match(theme.accentHex,/^#[0-9A-F]{6}$/);
   if(competition.category==='international'){
    assert.equal(theme.kind,'neutral','No dedicated international colour approved yet');
+   assert.equal(config.logoAsset,null,'International cup logo not yet published');
    assert.equal(theme.logoAsset,null);
   }else{
    const allowed=[competition.primaryHex,competition.secondaryHex,competition.ivoryHex];
+   assert.equal(theme.logoAsset,config.logoAsset,competition.id);
+   assert.match(theme.logoAsset,/^assets\/divisions\/[a-z0-9-]+\/compact\.svg$/);
+   assert.equal(isAllowlistedPublicPath(theme.logoAsset),true);
    assert.equal(theme.kind,'competition',competition.id);
    for(const field of ['backgroundHex','foregroundHex','accentHex'])
     assert.ok(allowed.includes(theme[field]),competition.id+': '+field);
@@ -75,15 +83,15 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
   'A valid-looking but unapproved HEX must be rejected');
  assert.equal(resolveScoreboardTheme({...sample,primaryHex:'orange'}).kind,'neutral');
  assert.equal(resolveScoreboardTheme({...sample,ivoryHex:'var(--unsafe)'}).kind,'neutral');
- assert.equal(resolveScoreboardTheme(sample).logoAsset,null);
+ assert.equal(resolveScoreboardTheme(sample).logoAsset,'assets/divisions/it-1-lega-federale/compact.svg');
 });
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
  assert.match(js,/import\('\/assets\/match-scoreboard-themes\.mjs'\)/);
- assert.match(js,/const fallback='\/assets\/brand\/symbol-mono-white\.svg'/);
- assert.match(js,/const intended=theme\.logoAsset\?'\/'\+theme\.logoAsset:fallback/);
- assert.match(js,/img\.src=fallback/);
+ assert.match(js,/const intended=theme\.logoAsset\?'\/'\+theme\.logoAsset:''/);
+ assert.match(js,/img\.src=intended/);
+ assert.doesNotMatch(js,/symbol-mono-white\.svg|data-match-logo-fallback/);
  assert.match(js,/data\.status==='completed'\?data\.result:null/);
  assert.match(js,/validLineup\(data\.lineups\?\.home\)&&validLineup\(data\.lineups\?\.away\)/);
  assert.match(js,/lineup\?\.confirmed===true&&Array\.isArray\(lineup\.starters\)&&lineup\.starters\.length===11/);
@@ -95,6 +103,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(js,/Math\.random|mockMatch|demoFixture|temporary-score-v1/);
  const css=read('assets/match-detail.css');
  assert.match(css,/width:min\(100%,560px\)/);
+ assert.match(css,/background:#F5F1E8/);
  assert.match(css,/margin:0 auto/);
  assert.match(css,/grid-template-columns:minmax\(0,1fr\) 38px 48px 38px minmax\(0,1fr\)/);
 });

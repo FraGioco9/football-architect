@@ -63,22 +63,22 @@
    board.dataset.scoreboardTheme=theme.kind;
   }
   const slot=find('[data-match-competition-logo]');if(!slot)return;
-  // Official competition SVGs are not present yet. Use the EXISTING approved
-  // Football Architect symbol until a same-competition logo is registered.
-  const fallback='/assets/brand/symbol-mono-white.svg';
-  const intended=theme.logoAsset?'/'+theme.logoAsset:fallback;
-  const present=slot.querySelector('img');
-  if(present?.getAttribute('src')===intended)return;
+  // Brand assets are already published at assets/divisions/<slug>/compact.svg.
+  // Do not request an unapproved path or show an unrelated Football Architect logo.
+  const intended=theme.logoAsset?'/'+theme.logoAsset:'';
+  if(slot.dataset.matchLogoPath===intended)return;
+  slot.dataset.matchLogoPath=intended;
+  delete slot.dataset.matchLogoPresent;
+  slot.replaceChildren();
+  if(!intended)return;
   const img=document.createElement('img');
   img.alt='';img.width=42;img.height=42;img.decoding='async';
-  if(!theme.logoAsset)img.dataset.matchLogoFallback='';
   img.addEventListener('error',()=>{
-   if(img.getAttribute('src')!==fallback){
-    img.dataset.matchLogoFallback='';
-    img.src=fallback;
-   }else img.remove();
-  });
-  img.src=intended;slot.replaceChildren(img);
+   if(slot.contains(img)){delete slot.dataset.matchLogoPresent;img.remove();}
+  },{once:true});
+  slot.dataset.matchLogoPresent='true';
+  slot.append(img);
+  img.src=intended;
  }
  function render(){
   const tr=text();
