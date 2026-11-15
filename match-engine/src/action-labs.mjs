@@ -6,11 +6,12 @@ import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
 import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
- CHALLENGE_LAB_STARTS,
+ CHALLENGE_LAB_STARTS,CONTROL_LAB_STARTS,
  getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
 export function createControlledActionLab(RAPIER,id,{
  shotSide='home',shotLane='open',carrySide='home',controlScene='receive',
+ controlSide='home',
  challengeSide='away',challengeScene='contact'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
@@ -20,6 +21,9 @@ export function createControlledActionLab(RAPIER,id,{
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
     !['receive','opponent-first'].includes(controlScene)||
+    !['home','away'].includes(controlSide)||
+    (id!=='control'&&controlSide!=='home')||
+    (controlScene==='opponent-first'&&controlSide!=='home')||
     !['home','away'].includes(challengeSide)||
     !['contact','no-contact'].includes(challengeScene)||
     (id!=='challenge'&&(challengeSide!=='away'||challengeScene!=='contact'))||
@@ -27,11 +31,13 @@ export function createControlledActionLab(RAPIER,id,{
     (id!=='carry'&&carrySide!=='home')||
     (id!=='control'&&controlScene!=='receive'))
   throw new TypeError('Only bounded SHOT, CARRY or CONTROL scenes supported');
+ const selectedControlSide=spec.mode==='control'?controlSide:null;
  const selectedShotSide=id==='shot'?shotSide:null;
  const selectedCarrySide=id==='carry'?carrySide:null;
  const selectedChallengeSide=id==='challenge'?challengeSide:null;
  const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
   selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:
+  selectedControlSide?CONTROL_LAB_STARTS[selectedControlSide]:
   selectedChallengeSide?(challengeScene==='no-contact'?
    CHALLENGE_LAB_STARTS.noContact:CHALLENGE_LAB_STARTS[selectedChallengeSide]):
    spec.initial;
@@ -39,6 +45,8 @@ export function createControlledActionLab(RAPIER,id,{
  const opposingControl=id==='control'&&controlScene==='opponent-first';
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
+  selectedControlSide==='away'?
+   Object.freeze(['away-10','away-9','home-10']):
   selectedChallengeSide==='home'?
    Object.freeze(['home-10','home-9','away-10']):
   selectedChallengeSide==='away'?
@@ -57,7 +65,10 @@ export function createControlledActionLab(RAPIER,id,{
   diagnosticAutonomousFixtureActionEnabled:true,
   ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
-  ...(spec.mode==='control'?{diagnosticResearchControlReceiver:true}:{}),
+  ...(spec.mode==='control'?{
+   diagnosticResearchControlReceiver:true,
+   diagnosticResearchControlSide:selectedControlSide
+  }:{}),
   ...(opposingControl?{diagnosticResearchControlOpponentFirst:true}:{}),
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
@@ -67,6 +78,7 @@ export function createControlledActionLab(RAPIER,id,{
   ...(blocked?{researchShotBlockedLane:true}:{})
  }:spec.mode==='control'?{
   researchControlReceiver:true,researchControlBall:initial,
+  researchControlSide:selectedControlSide,
   ...(opposingControl?{researchControlOpponentFirst:true}:{})
  }:selectedCarrySide?{
   researchCarrySide:selectedCarrySide,researchCarryBall:initial
@@ -85,7 +97,8 @@ export function createControlledActionLab(RAPIER,id,{
   // Only a genuine post-pass Rapier opponent shoe START is negative evidence.
   // Neither nearby player positions nor a guessed interception suffice.
   const opposingStart=spec.mode==='control'&&firstRealPass?
-   starts.find(id=>id.startsWith('away-')):null;
+   starts.find(id=>id.startsWith(
+    selectedControlSide==='home'?'away-':'home-')):null;
   if(opposingStart&&!firstOpposingShoe)
    firstOpposingShoe=Object.freeze({
     tick:physics.tick,playerId:opposingStart,
@@ -208,6 +221,7 @@ export function createControlledActionLab(RAPIER,id,{
    carryTrace,carrySide:selectedCarrySide,
    priorRealPass:firstRealPass,receivingContact,
    firstOpposingShoe,controlScene:spec.mode==='control'?controlScene:null,
+   controlSide:selectedControlSide,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
   });
@@ -230,6 +244,7 @@ export function createControlledActionLab(RAPIER,id,{
   shotLane:selectedShotSide?shotLane:null,
   carrySide:selectedCarrySide,
   controlScene:spec.mode==='control'?controlScene:null,
+  controlSide:selectedControlSide,
   challengeSide:selectedChallengeSide,
   challengeScene:selectedChallengeSide?challengeScene:null,
   snapshot,step,dispose});
