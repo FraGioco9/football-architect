@@ -156,7 +156,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(css,/gradient\(|\.app-match-scoreboard::after|\.app-match-competition-logo::after|app-match-score-group|app-match-score-surface|app-match-score-text/);
  assert.doesNotMatch(css,/\.app-match-side-score\{[^}]*border:|\.app-match-side-score\{[^}]*background:/s);
  assert.doesNotMatch(css,/drop-shadow\(|filter:url\(|\.app-match-logo-art/);
- assert.doesNotMatch(js,/\.title\s*=/);
+ // Disallow hover tooltips on scoreboard elements; document.title is the legitimate page title.
+ assert.doesNotMatch(js,/(?:name|link|slot|img|board)\.title\s*=/);
+ assert.match(js,/document\.title=tr\.match/);
  assert.match(js,/name\.removeAttribute\('title'\)/);
  assert.match(js,/link\.removeAttribute\('title'\)/);
 });

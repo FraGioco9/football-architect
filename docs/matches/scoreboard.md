@@ -89,3 +89,14 @@ requires the same `/api/environment` pool handshake as other anonymous
 reads. Unconfigured / invalid / missing / remote-untrusted targets leave
 the neutral shell. This is not an additional browser request, does not
 connect to Production and does not open privileged endpoints on LAN.
+
+## Browser first-paint regression QA
+
+The explicit FULL Browser QA lane runs
+`tests/match-first-paint-browser.mjs` against the real static page shell,
+approved palette and browser CSS (Chromium and WebKit, Dark/Light, 1440/
+390/320px). It creates one synthetic **verified match identity** exclusively
+in the test harness and supplies an injected HTML response, while keeping
+match hydration disabled until the parser-time styles are inspected. It
+checks direct navigation and refresh, 48px reserved badge and fixed scoreboard
+height/width. It is not a deployment or a live D1 validation.
