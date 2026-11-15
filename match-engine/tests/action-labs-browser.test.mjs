@@ -139,7 +139,9 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    })+'\n');
   }
   const away=await evalJs(
-   "(()=>{const side=document.getElementById('action-labs-shot-side');"+
+   "(()=>{const choice=document.getElementById('action-labs-choice');"+
+   "choice.value='shot';choice.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const side=document.getElementById('action-labs-shot-side');"+
    "const btn=document.getElementById('action-labs-step');"+
    "side.value='away';side.dispatchEvent(new Event('change',{bubbles:true}));"+
    "for(let i=0;i<35;i++)btn.click();"+
