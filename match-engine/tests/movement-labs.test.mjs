@@ -9,10 +9,10 @@ import {MOVEMENT_LAB_SCENARIOS,movementLabScenario} from '../src/movement-lab-sc
 import {createControlledMovementLab} from '../src/movement-labs.mjs';
 
 test('#628 M2 scenario catalog is bounded, mirrored, DEV-only and non-authoritative',()=>{
- assert.deepEqual(MOVEMENT_LAB_SCENARIOS.map(x=>x.id),
+ assert.deepEqual(MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2').map(x=>x.id),
   ['approach','brake','turn','recovery']);
  assert.equal(new Set(MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2').map(x=>x.home.seed)).size,4);
- for(const spec of MOVEMENT_LAB_SCENARIOS){
+ for(const spec of MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2')){
   assert.ok(Object.isFrozen(spec)&&Object.isFrozen(spec.home));
   assert.equal(spec.officialMatchResult,false);
   assert.equal(spec.shoeSourceEnabled,false);
@@ -45,7 +45,7 @@ test('#628 M2 actual 22-player and Rapier ball scenarios have no synthetic touch
  {timeout:95000},async()=>{
  const R=await initializeRapier(wasm);
  const summary={};
- for(const spec of MOVEMENT_LAB_SCENARIOS){
+ for(const spec of MOVEMENT_LAB_SCENARIOS.filter(x=>x.phase==='M2')){
   for(const side of ['home','away']){
    const a=createControlledMovementLab(R,spec.id,{side});
    const b=createControlledMovementLab(R,spec.id,{side});
