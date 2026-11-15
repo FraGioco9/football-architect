@@ -42,6 +42,7 @@ jobs:
         run: |
           node --test match-engine/tests/action-labs.test.mjs
           node --test match-engine/tests/lab-route.test.mjs
+          node --test match-engine/tests/action-labs-browser.test.mjs
       # Keep the original full ME-01 job on review-ready PRs and all other PRs.
       - name: Focused core and route security tests
         if: ${{ !github.event.pull_request.draft || (github.event.pull_request.number != 481 && github.head_ref != 'feat/620-action-labs') }}
