@@ -381,3 +381,134 @@ test('CONTROL: authentic no-reception baseline and forbidden setup never award p
   assert.equal(initialPass.passTarget.recipientId,'home-9');
  }finally{engine.dispose();}
 });
+
+
+test('CARRY original selector: mirrored genuine Rapier shoe START, 0.42 Ns touch and ground motion',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS}=await import(
+  '../src/player-ball-uniform-autonomous-action.mjs');
+ for(const side of ['home','away']){
+  const a=createControlledActionLab(R,'carry',{carrySide:side});
+  const b=createControlledActionLab(R,'carry',{carrySide:side});
+  try{
+   const zero=a.snapshot();
+   assert.equal(zero.physicsTick,0);
+   assert.equal(zero.players.length,22);
+   assert.equal(zero.carryTrace,null);
+   assert.deepEqual(zero.starts,[]);
+   assert.equal(zero.carrySide,side);
+   for(const no of [9,11]){
+    const attacker=zero.players.find(p=>p.id===side+'-'+no);
+    const marker=zero.players.find(p=>p.id===(side==='home'?'away':'home')+'-'+no);
+    assert.ok(Math.abs(Math.hypot(
+     marker.x-attacker.x,marker.y-attacker.y)-1.15)<1e-8,
+     'actual opponent physically marks original possible pass receiver');
+   }
+   let first=null,moved=false;
+   for(let tick=1;tick<=70;tick++){
+    const x=a.step(),y=b.step();
+    assert.equal(x.physicsTick,tick);
+    assert.deepEqual(x.ball,y.ball);
+    assert.deepEqual(x.starts,y.starts);
+    assert.deepEqual(x.action,y.action);
+    assert.deepEqual(x.carryTrace,y.carryTrace);
+    assert.equal(x.officialMatchResult,null);
+    assert.equal(x.officialMatchPossession,false);
+    assert.equal(x.scoreChanged,false);
+    assert.equal(x.evidence.dribbleConfirmed,null);
+    assert.equal(x.evidence.passCompleted,null);
+    assert.equal(x.evidence.officialGoal,false);
+    if(x.action?.action==='carry'){
+     assert.equal(tick,1,'original exclusive Rapier shoe must touch at tick 1');
+     assert.deepEqual(x.starts,[side+'-10']);
+     assert.equal(x.action.playerId,side+'-10');
+     assert.equal(x.action.team,side);
+     assert.equal(x.action.appliedByRapier,true);
+     assert.equal(x.action.actualPhysicsImpulseApplied,true);
+     assert.equal(x.evidence.verifiedShoeImpulse,true);
+     assert.equal(x.action.carryTarget?.physicsTick,tick);
+     assert.equal(x.action.carryTarget?.dribbleConfirmed,null);
+     assert.equal(x.action.carryTarget?.shortGroundTouchOnly,true);
+     const imp=x.action.impulseNs;
+     assert.ok(Math.abs(Math.hypot(imp.x,imp.y,imp.z)-
+      PROVISIONAL_PHYSICAL_CARRY_IMPULSE_NS)<1e-8);
+     assert.ok(imp.x*(side==='home'?1:-1)>0);
+     if(!first)first=x.action;
+    }
+    if(x.carryTrace?.observedGroundMotion){
+     moved=true;
+     assert.ok(x.carryTrace.path2DM>0.15);
+     assert.ok(x.carryTrace.groundedSamples>=2);
+     assert.equal(x.carryTrace.actorId,side+'-10');
+     assert.equal(x.carryTrace.team,side);
+     assert.equal(x.carryTrace.dribbleConfirmed,null);
+     assert.equal(x.carryTrace.officialPossession,false);
+    }
+   }
+   assert.ok(first,'genuine original physical CARRY impulse not observed');
+   assert.equal(first.tick,1);
+   assert.equal(a.snapshot().eventCount,1);
+   assert.ok(moved,'post impulse same-world ground displacement not observed');
+   const snap=a.snapshot();
+   process.stdout.write('ME_CARRY_REAL_'+side.toUpperCase()+' '+
+    JSON.stringify({tick:first.tick,actor:first.playerId,
+     impulse:first.impulseNs,
+     path2DM:+snap.carryTrace.path2DM.toFixed(3),
+     grounded:snap.carryTrace.groundedSamples,
+     endedByOtherAction:snap.carryTrace.endedByOtherAction})+'\\n');
+  }finally{a.dispose();b.dispose();}
+  assert.throws(()=>a.step(),/disposed/);
+ }
+});
+
+test('CARRY unavailable by original rules: genuine PASS takes priority, not fictitious CARRY',
+ {timeout:45000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {createEngine}=await import('../src/core.mjs');
+ const {createPlayerMovement}=await import('../src/player-movement.mjs');
+ const {CARRY_LAB_STARTS}=await import('../src/action-lab-scenarios.mjs');
+ const {initialResearchCarryLineup}=await import('../src/research-carry-initial-lineup.mjs');
+ const {INITIAL_PLAYERS}=await import('../src/player-movement.mjs');
+ for(const side of ['home','away']){
+  const ball=CARRY_LAB_STARTS[side];
+  assert.throws(()=>createEngine(R,ball,{
+   diagnosticResearchCarrySide:side
+  }),/genuine private shoe source/);
+  assert.throws(()=>createEngine(R,ball,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true,
+   diagnosticResearchCarrySide:'unknown'
+  }),/genuine private shoe source/);
+  assert.throws(()=>createPlayerMovement({
+   researchCarrySide:side,researchCarryBall:{...ball,x:0}
+  }),/original central-ground ball/);
+  assert.throws(()=>initialResearchCarryLineup(INITIAL_PLAYERS,side,
+   {...ball,y:4}),/original central-ground ball/);
+  const engine=createEngine(R,ball,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true,
+   diagnosticAutonomousCarryEnabled:true
+  });
+  const mover=createPlayerMovement();
+  try{
+   const frame=mover.step(engine.snapshot().ball.position);
+   const post=engine.step(frame);
+   const action=engine.uniformAutonomousActionSnapshot();
+   assert.equal(post.tick,1);
+   assert.deepEqual(engine.footContactSnapshot().started,[side+'-10']);
+   assert.equal(action?.playerId,side+'-10');
+   assert.equal(action?.action,'pass',
+    'original open recipient lanes must remain higher priority');
+   assert.equal(action.appliedByRapier,true);
+   assert.equal(action.carryTarget,null);
+   assert.equal(action.passTarget.physicalPassAttemptOnly,true);
+   assert.equal(action.passTarget.passCompleted,false);
+   assert.equal(action.officialMatchPossession,false);
+  }finally{engine.dispose();}
+ }
+ assert.throws(()=>createControlledActionLab(R,'carry',{carrySide:'neither'}),
+  /bounded HOME\/AWAY/);
+ assert.throws(()=>createControlledActionLab(R,'pass',{carrySide:'away'}),
+  /bounded HOME\/AWAY/);
+});

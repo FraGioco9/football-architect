@@ -13,6 +13,10 @@ export const SHOT_LAB_STARTS=Object.freeze({
  home:scene('me-action-shot-home',30,1,0),
  away:scene('me-action-shot-away',-30,-1,0)
 });
+export const CARRY_LAB_STARTS=Object.freeze({
+ home:scene('me-action-carry-home',-4.96,0,0.3),
+ away:scene('me-action-carry-away',4.96,0,-0.3)
+});
 export const ACTION_LAB_SCENARIOS=Object.freeze([
  item('pass','Pass','uniform',scene('me-action-pass-home',-4.96,0,0.3),
   'Real shoe START + teammate-directed impulse; reception is not assumed.',
@@ -28,9 +32,9 @@ export const ACTION_LAB_SCENARIOS=Object.freeze([
   scene('me-action-pass-receive',-4.96,0,0.3),
   'A true HOME #10 PASS starts the receiver approach; only a later authentic HOME #9 shoe START counts as receiving contact. Possession or completed reception are never assumed.',
   ['home-9','home-10','away-10'],'control'),
- item('carry','Carry','carry',scene('me-action-carry-home',-4.96,0,0.3),
-  'Observe a source-authenticated short CARRY impulse if physical gates allow it; no completed dribble classification.',
-  ['home-10','away-10','home-9'],'carry')
+ item('carry','Carry','carry',CARRY_LAB_STARTS.home,
+  'Two actual opponents cover the safe PASS recipients before tick zero. A genuine #10 shoe START may then produce the original short CARRY impulse; never a confirmed dribble.',
+  ['home-10','home-9','home-11','away-9','away-11'],'carry')
 ]);
 export function getActionLabScenario(id){
  const value=ACTION_LAB_SCENARIOS.find(x=>x.id===id);

@@ -3,6 +3,7 @@
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
 import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
+import {initialResearchCarryLineup} from './research-carry-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -1575,15 +1576,27 @@ export function createPlayerMovement(options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
      k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
-     k!=='researchControlReceiver'&&k!=='researchControlBall')||
+     k!=='researchControlReceiver'&&k!=='researchControlBall'&&
+     k!=='researchCarrySide'&&k!=='researchCarryBall')||
     ((options.researchShotAttacker??null)===null&&
-     options.researchControlReceiver===undefined&&Reflect.ownKeys(options).length>0)||
+     options.researchControlReceiver===undefined&&
+     options.researchCarrySide===undefined&&Reflect.ownKeys(options).length>0)||
+    (options.researchCarrySide!==undefined&&(
+     !['home','away'].includes(options.researchCarrySide)||
+     !Object.hasOwn(options,'researchCarryBall')||
+     options.researchShotAttacker!==undefined||
+     options.researchShotBall!==undefined||
+     options.researchShotBlockedLane!==undefined||
+     options.researchControlReceiver!==undefined||
+     options.researchControlBall!==undefined))||
     (options.researchControlReceiver!==undefined&&(
      options.researchControlReceiver!==true||
      !Object.hasOwn(options,'researchControlBall')||
      options.researchShotAttacker!==undefined||
      options.researchShotBall!==undefined||
-     options.researchShotBlockedLane!==undefined))||
+     options.researchShotBlockedLane!==undefined||
+     options.researchCarrySide!==undefined||
+     options.researchCarryBall!==undefined))||
     (options.researchShotAttacker!==undefined&&
      !['home','away'].includes(options.researchShotAttacker))||
     (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall'))||
@@ -1596,7 +1609,9 @@ export function createPlayerMovement(options={}){
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
   options.researchControlReceiver===true?
    initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall):
-   INITIAL_PLAYERS;
+  options.researchCarrySide!==undefined?
+   initialResearchCarryLineup(INITIAL_PLAYERS,options.researchCarrySide,
+    options.researchCarryBall):INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};

@@ -111,7 +111,7 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
    ['shot',35,'Verified HOME SHOT'],
    ['challenge',12,null],
    ['control',90,'Observed: separate teammate shoe-ball contact after real pass'],
-   ['carry',35,null]
+   ['carry',35,'Verified HOME CARRY:']
   ]){
    const result=await evalJs(
     "(()=>{const s=document.getElementById('action-labs-choice');"+
@@ -136,6 +136,11 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
     assert.match(result.readout,/Witnesses 1/);
     assert.doesNotMatch(result.status,/completed pass|possession confirmed/i);
    }
+   if(choice==='carry'){
+    assert.match(result.readout,/CARRY HOME · observed ground path [0-9.]+ m/);
+    assert.match(result.readout,/Witnesses 1/);
+    assert.doesNotMatch(result.status,/confirmed dribble|possession awarded/i);
+   }
    // Explicit negative wording ('No official possession') is correct;
    // only a false positive AWARDED outcome must fail this test.
    assert.doesNotMatch(result.status,/goal scored|tackle successful|official possession (confirmed|awarded)/i);
@@ -143,6 +148,23 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
     choice,status:result.status,readout:result.readout
    })+'\n');
   }
+  const carryAway=await evalJs(
+   "(()=>{const choice=document.getElementById('action-labs-choice');"+
+   "choice.value='carry';choice.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const side=document.getElementById('action-labs-shot-side');"+
+   "side.value='away';side.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<35;i++)document.getElementById('action-labs-step').click();"+
+   "return {side:side.value,visible:!document.getElementById('action-labs-shot-side-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(carryAway.side,'away');
+  assert.equal(carryAway.visible,true);
+  assert.match(carryAway.status,/Verified AWAY CARRY: exclusive real Rapier shoe START/);
+  assert.match(carryAway.readout,/CARRY AWAY · observed ground path/);
+  assert.doesNotMatch(carryAway.status,/confirmed dribble|possession awarded/i);
+  process.stdout.write('ACTION_LAB_CHROME_AWAY_CARRY '+
+   JSON.stringify(carryAway)+'\\n');
   const away=await evalJs(
    "(()=>{const choice=document.getElementById('action-labs-choice');"+
    "choice.value='shot';choice.dispatchEvent(new Event('change',{bubbles:true}));"+

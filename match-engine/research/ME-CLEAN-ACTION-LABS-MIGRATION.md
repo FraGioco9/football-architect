@@ -89,3 +89,25 @@ a trap, control, completed pass, dribble, official possession or score.
 The normal unstaged formation is a genuine PASS-without-reception negative
 counterfactual. Acceptance requires exact-head Node and real Chrome QA;
 CARRY and real opponent-before-receiver negative remain pending.
+
+
+## #620 — genuine CARRY source-bound positive (HOME/AWAY)
+The isolated original carry policy only chooses the small 0.42 Ns
+same-world ground touch if there is a **single authenticated shoe START**,
+no eligible SHOT, and no safe PASS target. The prior canonical formation
+correctly prefers PASS even with the opt-in for CARRY enabled.
+
+For the positive controlled scene the mirrored canonical opponent #9 and
+#11 are *initially* marking the two would-be pass recipients #9/#11 of
+the attacking side at 1.15m (still above the canonical 0.98m minimum
+body separation). These two physical opposing players, all 22 original
+shoe IDs, original 60 Hz mover and the original selector remain present
+in a single Rapier world. No runner-time teleports or injected impulses.
+HOME uses grounded (-4.96,0) moving +X; AWAY mirrors (+4.96,0)
+moving -X. The original policy can authorize a real #10 CARRY only if
+contact and all gates genuinely pass, and the exact measured post-impulse
+2D displacement is accumulated from the single actual Rapier body.
+Movement is not a completed dribble, second contact, maintained possession
+or a match result. Unstaged control with unchanged CARRY opt-in must select
+PASS instead and never label it a dribble. HOME/AWAY parity, deterministic
+replay and true Chrome UI are required before acceptance.

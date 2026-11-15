@@ -5,24 +5,33 @@ import {createEngine,FIXED_DT} from './core.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
-import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,getActionLabScenario,
- classifyActionLabEvidence} from './action-lab-scenarios.mjs';
+import {ACTION_LAB_SCENARIOS,SHOT_LAB_STARTS,CARRY_LAB_STARTS,
+ getActionLabScenario,classifyActionLabEvidence} from './action-lab-scenarios.mjs';
 
-export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='open'}={}){
+export function createControlledActionLab(RAPIER,id,{
+ shotSide='home',shotLane='open',carrySide='home'
+}={}){
  if(!RAPIER||typeof RAPIER.World!=='function')
   throw new TypeError('Rapier required for real Action LAB');
  const spec=getActionLabScenario(id);
  if(!['home','away'].includes(shotSide)||
+    !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
-    (id!=='shot'&&(shotSide!=='home'||shotLane!=='open')))
-  throw new TypeError('Only bounded HOME/AWAY SHOT open/blocked setups supported');
+    (id!=='shot'&&(shotSide!=='home'||shotLane!=='open'))||
+    (id!=='carry'&&carrySide!=='home'))
+  throw new TypeError('Only bounded HOME/AWAY SHOT or CARRY setups supported');
  const selectedShotSide=id==='shot'?shotSide:null;
- const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:spec.initial;
+ const selectedCarrySide=id==='carry'?carrySide:null;
+ const initial=selectedShotSide?SHOT_LAB_STARTS[selectedShotSide]:
+  selectedCarrySide?CARRY_LAB_STARTS[selectedCarrySide]:spec.initial;
  const blocked=selectedShotSide!==null&&shotLane==='blocked';
  const focus=blocked?Object.freeze(selectedShotSide==='home'?
   ['home-10','away-2','away-1']:['away-10','home-2','home-1']):
   selectedShotSide==='away'?
-   Object.freeze(['away-10','home-1','home-10']):spec.focus;
+   Object.freeze(['away-10','home-1','home-10']):
+  selectedCarrySide==='away'?
+   Object.freeze(['away-10','away-9','away-11','home-9','home-11']):
+   spec.focus;
  // The same physical authority produces shoe START and applies the original
  // action impulse; diagnostic flags remain explicit and DEV-local.
  const engine=createEngine(RAPIER,initial,{
@@ -31,6 +40,7 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
   ...(selectedShotSide?{diagnosticResearchShotAttacker:selectedShotSide}:{}),
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
   ...(spec.mode==='control'?{diagnosticResearchControlReceiver:true}:{}),
+  ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
   ...(spec.mode==='carry'?{diagnosticAutonomousCarryEnabled:true}:{})
  });
  const mover=createPlayerMovement(selectedShotSide?{
@@ -38,10 +48,13 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
   ...(blocked?{researchShotBlockedLane:true}:{})
  }:spec.mode==='control'?{
   researchControlReceiver:true,researchControlBall:initial
+ }:selectedCarrySide?{
+  researchCarrySide:selectedCarrySide,researchCarryBall:initial
  }:{});
  let firstPhysicalPassAction=null;
  let disposed=false,firstRealPass=null,count=0,history=Object.freeze([]);
  let shotTrace=null,blockedShotObservation=null,receivingContact=null;
+ let carryTrace=null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -105,6 +118,32 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
     observed3DFlight:maxZ>shotTrace.origin.z+0.02
    });
   }
+  // Carry is a single observed Rapier impulse plus ball motion after it,
+  // not a trap, multi-touch success or virtual dribble.
+  if(action?.action==='carry'&&evidence.verifiedShoeImpulse&&!carryTrace){
+   carryTrace=Object.freeze({
+    tick:physics.tick,actorId:action.playerId,team:action.team,
+    origin:Object.freeze({...p}),last:Object.freeze({...p}),
+    path2DM:0,samples:1,groundedSamples:p.z<=0.15?1:0,
+    observedGroundMotion:false,endedByOtherAction:false,
+    officialPossession:false,dribbleConfirmed:null
+   });
+  }else if(carryTrace&&!carryTrace.endedByOtherAction){
+   if(action&&physics.tick!==carryTrace.tick){
+    carryTrace=Object.freeze({...carryTrace,endedByOtherAction:true});
+   }else{
+    const travelled=Math.hypot(p.x-carryTrace.last.x,
+     p.y-carryTrace.last.y);
+    const distance=carryTrace.path2DM+travelled;
+    const grounded=carryTrace.groundedSamples+(p.z<=0.15?1:0);
+    carryTrace=Object.freeze({
+     ...carryTrace,last:Object.freeze({...p}),
+     path2DM:distance,samples:carryTrace.samples+1,
+     groundedSamples:grounded,
+     observedGroundMotion:distance>0.15&&grounded>=2
+    });
+   }
+  }
   if(action?.action==='pass'&&!firstRealPass&&
      starts.length===1&&starts[0]===action.playerId){
    firstRealPass=Object.freeze({
@@ -123,6 +162,7 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
    }))),
    starts,action,evidence,eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
+   carryTrace,carrySide:selectedCarrySide,
    priorRealPass:firstRealPass,receivingContact,
    officialMatchResult:null,officialMatchPossession:false,
    scoreChanged:false,readOnlyEvidence:true
@@ -143,7 +183,8 @@ export function createControlledActionLab(RAPIER,id,{shotSide='home',shotLane='o
  }
  function dispose(){if(!disposed){disposed=true;engine.dispose();}}
  return Object.freeze({spec,focus,shotSide:selectedShotSide,
-  shotLane:selectedShotSide?shotLane:null,snapshot,step,dispose});
+  shotLane:selectedShotSide?shotLane:null,
+  carrySide:selectedCarrySide,snapshot,step,dispose});
 }
 const label=id=>id.replace('home-','Home #').replace('away-','Away #');
 const number=n=>Number(n).toFixed(2);
@@ -208,11 +249,17 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' · Physical PASS tick '+snap.priorRealPass.tick+
     ' → intended '+label(snap.priorRealPass.recipientId):'')+
    (snap.receivingContact?' · Real receiving shoe START tick '+
-    snap.receivingContact.tick:'');
+    snap.receivingContact.tick:'')+
+   (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
+    ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
   if(snap.shotFlight?.observed3DFlight){
    status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
     ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
     snap.shotFlight.samples+' physical samples). No goal awarded.';
+  }else if(snap.carryTrace?.observedGroundMotion){
+   status.textContent='Verified '+snap.carryTrace.team.toUpperCase()+
+    ' CARRY: exclusive real Rapier shoe START and original ground-touch impulse; observed '+
+    number(snap.carryTrace.path2DM)+' m ball motion. Dribble and possession unconfirmed.';
   }else if(snap.blockedShotObservation){
    status.textContent='Observed: genuine '+snap.shotSide.toUpperCase()+
     ' shoe START; original policy finds no open SHOT lane. No shot or goal awarded.';
@@ -247,11 +294,12 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
  }
  function resetSession(){
   stop();if(session)session.dispose();
-  shotSideLabel.hidden=select.value!=='shot';
+  shotSideLabel.hidden=!['shot','carry'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   session=createControlledActionLab(getRapier(),select.value,{
    shotSide:select.value==='shot'?shotSide.value:'home',
-   shotLane:select.value==='shot'?shotLaneChoice.value:'open'
+   shotLane:select.value==='shot'?shotLaneChoice.value:'open',
+   carrySide:select.value==='carry'?shotSide.value:'home'
   });
   trail=[{x:session.snapshot().ball.position.x,
    y:session.snapshot().ball.position.y}];
