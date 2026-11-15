@@ -8,6 +8,7 @@ import {createPrivatePhysicalActionExecutor}
  from './private-physical-action-executor.mjs';
 import {INITIAL_PLAYERS} from './player-movement.mjs';
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
 export const PHYSICS_VERSION = '@dimforge/rapier3d-deterministic-compat@0.21.0';
 export const FIXED_DT = 1 / 60;
@@ -81,7 +82,8 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticAutonomousFixtureActionEnabled = false,
   diagnosticAutonomousCarryEnabled = false,
   diagnosticResearchShotAttacker = null,
-  diagnosticResearchShotBlockedLane = false
+  diagnosticResearchShotBlockedLane = false,
+  diagnosticResearchControlSlot = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
   if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
@@ -101,9 +103,19 @@ export function createEngine(RAPIER, input = {}, {
  if(typeof diagnosticResearchShotBlockedLane!=='boolean'||
     (diagnosticResearchShotBlockedLane&&diagnosticResearchShotAttacker===null))
   throw new TypeError('Blocked lane requires genuine bounded research shot');
- const stagedShoes=diagnosticResearchShotAttacker===null?INITIAL_PLAYERS:
+ if(diagnosticResearchControlSlot!==null&&(
+    !Number.isInteger(diagnosticResearchControlSlot)||
+    diagnosticResearchShotAttacker!==null||
+    diagnosticAutonomousCarryEnabled||
+    !diagnosticPlayerFootContactsEnabled||
+    !diagnosticAutonomousFixtureActionEnabled))
+  throw new TypeError('CONTROL setup must use sole private current-tick Rapier source');
+ const stagedShoes=diagnosticResearchShotAttacker!==null?
   initialResearchShotLineup(INITIAL_PLAYERS,diagnosticResearchShotAttacker,
-   scenario,{blockedLane:diagnosticResearchShotBlockedLane});
+   scenario,{blockedLane:diagnosticResearchShotBlockedLane}):
+  diagnosticResearchControlSlot!==null?
+   initialResearchControlLineup(INITIAL_PLAYERS,scenario,
+    diagnosticResearchControlSlot):INITIAL_PLAYERS;
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
   if (typeof diagnosticInitialRollFraction !== 'number' ||
@@ -186,7 +198,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
     diagnosticPlayerFootContactsEnabled,
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
-    diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane
+    diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
+    diagnosticResearchControlSlot
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;

@@ -287,3 +287,47 @@ test('CONTROL research diagnostic: actual original pass and subsequent shoe time
    JSON.stringify({pass,recipient,minGap,minTick,contacts:contacts.slice(0,25),samples})+'\\n');
  }finally{lab.dispose();}
 });
+
+
+test('CONTROL stage research grid: same Rapier pass impulse followed by real receiver START',
+ {timeout:90000},async()=>{
+ const R=await initializeRapier(rapier);
+ const {createEngine}=await import('../src/core.mjs');
+ const {createPlayerMovement}=await import('../src/player-movement.mjs');
+ const {CONTROL_RESEARCH_CANDIDATES}=await import('../src/research-control-initial-lineup.mjs');
+ const ball={preset:'roll',seed:'me-control-stage-probe',x:-4.96,y:0,z:0,vx:0.3,vy:0,vz:0};
+ const outcomes=[];
+ for(let slot=0;slot<CONTROL_RESEARCH_CANDIDATES.length;slot++){
+  const core=createEngine(R,ball,{
+   diagnosticPlayerFootContactsEnabled:true,
+   diagnosticAutonomousFixtureActionEnabled:true,
+   diagnosticResearchControlSlot:slot
+  });
+  const mover=createPlayerMovement({
+   researchControlSlot:slot,researchControlBall:ball
+  });
+  const trace={slot,initial:CONTROL_RESEARCH_CANDIDATES[slot],
+   pass:null,starts:[],minimumGap:Infinity,minimumTick:0,
+   end:0};
+  try{
+   for(let tick=1;tick<=170;tick++){
+    const frame=mover.step(core.snapshot().ball.position);
+    const after=core.step(frame);
+    const action=core.uniformAutonomousActionSnapshot();
+    const foot=core.footContactSnapshot();
+    if(action?.action==='pass'&&!trace.pass)
+     trace.pass={tick,playerId:action.playerId,
+      recipientId:action.passTarget?.recipientId};
+    const player=frame.players.find(p=>p.id==='home-9');
+    const p=after.ball.position;
+    const gap=Math.hypot(player.x-p.x,player.y-p.y);
+    if(gap<trace.minimumGap){trace.minimumGap=+gap.toFixed(3);trace.minimumTick=tick;}
+    if(foot.started.length)trace.starts.push({
+     tick,ids:foot.started,action:action?.action??null});
+   }
+   trace.end=core.snapshot().tick;
+  }finally{core.dispose();}
+  outcomes.push(trace);
+ }
+ process.stdout.write('ME_CONTROL_GRID '+JSON.stringify(outcomes)+'\\n');
+});

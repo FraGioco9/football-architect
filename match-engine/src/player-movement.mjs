@@ -2,6 +2,7 @@
 // 22 tactical placeholders at fixed 60Hz, using the actual ball XY position.
 // Research LAB only. No Rapier bodies, ball contact, official world or club data.
 import {initialResearchShotLineup} from './research-shot-initial-lineup.mjs';
+import {initialResearchControlLineup} from './research-control-initial-lineup.mjs';
 export const PLAYER_VERSION='me-player-34-observed-duty-measured-pace-v1';
 export const PLAYER_DT=1/60;
 export const PLAYER_PITCH=Object.freeze({lengthM:105,widthM:68});
@@ -1573,8 +1574,16 @@ function teamShape(players,team,presserId){
 export function createPlayerMovement(options={}){
  if(!options||typeof options!=='object'||Array.isArray(options)||
     Reflect.ownKeys(options).some(k=>k!=='researchShotAttacker'&&
-     k!=='researchShotBall'&&k!=='researchShotBlockedLane')||
-    ((options.researchShotAttacker??null)===null&&Reflect.ownKeys(options).length>0)||
+     k!=='researchShotBall'&&k!=='researchShotBlockedLane'&&
+     k!=='researchControlSlot'&&k!=='researchControlBall')||
+    ((options.researchShotAttacker??null)===null&&
+     options.researchControlSlot===undefined&&Reflect.ownKeys(options).length>0)||
+    (options.researchControlSlot!==undefined&&(
+     !Number.isInteger(options.researchControlSlot)||
+     !Object.hasOwn(options,'researchControlBall')||
+     options.researchShotAttacker!==undefined||
+     options.researchShotBall!==undefined||
+     options.researchShotBlockedLane!==undefined))||
     (options.researchShotAttacker!==undefined&&
      !['home','away'].includes(options.researchShotAttacker))||
     (options.researchShotAttacker!==undefined&&!Object.hasOwn(options,'researchShotBall'))||
@@ -1585,7 +1594,9 @@ export function createPlayerMovement(options={}){
  const initial=options.researchShotAttacker?
   initialResearchShotLineup(INITIAL_PLAYERS,options.researchShotAttacker,
    options.researchShotBall,{blockedLane:options.researchShotBlockedLane===true}):
-  INITIAL_PLAYERS;
+  options.researchControlSlot!==undefined?
+   initialResearchControlLineup(INITIAL_PLAYERS,options.researchControlBall,
+    options.researchControlSlot):INITIAL_PLAYERS;
  let tick=0;
  const players=initial.map(p=>({...p}));
  let lastBall={x:0,y:0};
