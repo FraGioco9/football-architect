@@ -4,8 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as rapier from '@dimforge/rapier3d-deterministic-compat';
-import {initializeRapier,BALL_RADIUS,BALL_MASS_KG,
- BALL_INERTIA_KG_M2,GRAVITY} from '../src/core.mjs';
+import {initializeRapier,createEngine,canonicalSnapshot,
+ BALL_RADIUS,BALL_MASS_KG,BALL_INERTIA_KG_M2,GRAVITY}
+ from '../src/core.mjs';
 import {INITIAL_PLAYERS,PLAYER_DT,createPlayerMovement}
  from '../src/player-movement.mjs';
 import {FOOT_CONTACT_VERSION,FOOT_CONTACT_HALF_LENGTH_M,
@@ -159,4 +160,67 @@ test('foot-contact frame refuses spoofed actor, time gap and impossible teleport
   velocity:{x:0,y:0,z:0}},previous),RangeError);
  // Shape validation is not authentication of an externally supplied list.
  // Only the private closed Rapier producer may provide true shoe authority.
+});
+
+test('opt-in production core reuses ONE genuine Rapier world for shoe events, default remains off',
+ {timeout:30000},async()=>{
+ const R=await initializeRapier(rapier);
+ for(const team of ['home','away']){
+  const actor=INITIAL_PLAYERS.find(p=>p.id===team+'-10');
+  const pose=footProxyTransform(actor);
+  const x=pose.x+0.20*Math.cos(actor.facingRad);
+  const y=pose.y+0.20*Math.sin(actor.facingRad);
+  const scenario={preset:'roll',seed:'contact-core-'+team,
+   x,y,z:0,vx:0,vy:0,vz:0};
+  const ordinary=createEngine(R,scenario);
+  const withShoes=createEngine(R,scenario,{
+   diagnosticPlayerFootContactsEnabled:true
+  });
+  const replay=createEngine(R,scenario,{
+   diagnosticPlayerFootContactsEnabled:true
+  });
+  try{
+   assert.equal('footContactSnapshot' in ordinary,false);
+   assert.equal('footContactSnapshot' in withShoes,true);
+   assert.equal(withShoes.footContactSnapshot().tick,0);
+   assert.throws(()=>ordinary.step({
+    version:'claimed-shoe-frame',tick:1
+   }),TypeError,'ordinary accepted core rejects external shoe frames');
+   const mover=createPlayerMovement();
+   const moverReplay=createPlayerMovement();
+   const one=mover.step({x,y});
+   const two=moverReplay.step({x,y});
+   const frame=withShoes.step(one);
+   const echo=replay.step(two);
+   const feed=withShoes.footContactSnapshot();
+   assert.equal(frame.tick,1);
+   assert.equal(feed.tick,1);
+   assert.deepEqual(feed.started,[team+'-10'],
+    'source MUST be current genuine internal Rapier collider START');
+   assert.deepEqual(feed.active,[team+'-10']);
+   assert.deepEqual(withShoes.footContactTimelineSnapshot().onsets
+    .map(x=>x.id),[team+'-10']);
+   assert.equal(withShoes.footContactSolverSnapshot().tick,1);
+   assert.equal(withShoes.footContactSolverSnapshot().pairs
+    .some(x=>x.id===team+'-10'),true);
+   assert.equal(canonicalSnapshot(frame),canonicalSnapshot(echo));
+   assert.deepEqual(feed,replay.footContactSnapshot());
+   assert.throws(()=>withShoes.step({
+    ...one,tick:3
+   }),TypeError,'stale/forged next-tick frame must not advance Rapier');
+   assert.equal(withShoes.snapshot().tick,1);
+   assert.equal(ordinary.step().tick,1);
+   assert.equal('footContactSnapshot' in ordinary,false);
+   assert.equal(ordinary.snapshot().version,frame.version);
+   const restarted=withShoes.reset();
+   try{
+    assert.equal(restarted.footContactSnapshot().tick,0);
+    assert.equal(restarted.snapshot().tick,0);
+   }finally{restarted.dispose();}
+  }finally{
+   ordinary.dispose();
+   withShoes.dispose();
+   replay.dispose();
+  }
+ }
 });

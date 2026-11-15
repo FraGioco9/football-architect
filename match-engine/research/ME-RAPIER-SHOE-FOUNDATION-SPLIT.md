@@ -14,7 +14,7 @@ The new `tests/player-foot-contact-foundation.test.mjs` constructs a **test-only
 
 ## Unimplemented integration — kept separate
 
-The canonical ball engine's existing `src/core.mjs` on `main` does not yet integrate shoe collider creation or drain the Rapier event queue. The original #481 `core.mjs` extension is interwoven with many experimental local passing/movement/defense options and must **not** be copied wholesale. The next extraction must insert one carefully audited, opt-in physical shoe bridge into the existing ball engine, with exact-HEAD authentic contact regressions and preserved default-off core physics. No separate competing gameplay ball world.
+The second commit adds `src/rapier-foot-contact-bridge.mjs`, a **small, private opt-in shoe bridge** to the *same* existing canonical `src/core.mjs` Rapier world. `diagnosticPlayerFootContactsEnabled:true` adds the original 22 kinematic shoe colliders and one Rapier EventQueue; after the ordinary single `world.step`, the bridge samples the true ball-shoe START/ACTIVE/END and solver events, but it never applies action impulses or changes player motion/official match state. Without explicit opt-in, the original world.step() branch remains intact and adds **zero** extra colliders or Rapier event queues. The bridge refuses injected frames on the ordinary engine and rejects forged IDs/gaps/teleports before the Rapier step. Tick-0 snapshots and the reset/dispose lifecycle remain source-bounded. The existing original #481 `core.mjs` was **not** copied: it remains interwoven with tactical passing/movement/defense experiments. This deliberately smaller bridge separates physical contact **source** from future football **action executor**.
 
 A synthetic claimant can forge a structurally valid collision list; validators alone do **not** authenticate the source. Only a *private* Rapier producer/collector owns provenance. Nothing in this PR grants a kick, an official pass completion, a tackle, a dribble, possession, score, or a natural C2 shot.
 
@@ -22,7 +22,11 @@ A synthetic claimant can forge a structurally valid collision list; validators a
 - [ ] New exact-HEAD ME-01 + existing main baseline regressions PASS.
 - [ ] HOME/AWAY real event START and solver checks PASS, with no invented distance-derived contact.
 - [ ] Original three module blobs identical to #481 source HEAD `82bf5d8`.
-- [ ] Subsequent opt-in core bridge and genuine runtime source/consumer integration; then rebase Action LAB #621.
+- [ ] Verify the new opt-in **same-world** core bridge with real 22-player HOME/AWAY event and untouched default-off ball regression. Then extract private physical action executor and retarget Action LAB #621.
 - [ ] No merge, deploy, DB writes or ready-for-review without distinct authorization.
 
 Legacy accepted #480 physics gates stay 11/20 (55%). #481 and #621 remain preserved Draft/HOLD.
+
+## Same-world integration QA
+
+`tests/player-foot-contact-foundation.test.mjs` additionally creates a real opt-in `createEngine` on the existing canonical ball world and steps a **genuine** `createPlayerMovement` frame. The core's own private EventQueue must report a matching ball-shoe START and solver timeline for HOME and AWAY, independently replay identical snapshots, block stale/forged frames, maintain tick/phase after rejection, and ensure ordinary default-off `createEngine` has no foot API/colliders. The test also verifies reset reinitializes tick 0 and does not retain old contact witnesses. This is still only the contact evidence boundary, not a completed pass, dribble, physical tackle or natural-formation shot.
