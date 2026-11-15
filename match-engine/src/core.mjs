@@ -2,6 +2,8 @@
 import {speedDependentDragCd} from './aerodynamics.mjs';
 import {magnusLift,MAGNUS_SPIN_LIMIT_RAD_S} from './magnus.mjs';
 import {literatureCandidateForces} from './literature-aero-candidate.mjs';
+import {createPrivateRapierFootContactBridge}
+ from './rapier-foot-contact-bridge.mjs';
 export const ENGINE_VERSION = 'me-01-physics-v4';
 export const PHYSICS_VERSION = '@dimforge/rapier3d-deterministic-compat@0.21.0';
 export const FIXED_DT = 1 / 60;
@@ -70,9 +72,12 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticAerodynamicProfile = 'none',
   diagnosticMagnusSpinRadS = null,
   diagnosticMagnusLiftEnabled = true,
-  diagnosticSpinDecayRatePerS = 0
+  diagnosticSpinDecayRatePerS = 0,
+  diagnosticPlayerFootContactsEnabled = false
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
+  if(typeof diagnosticPlayerFootContactsEnabled!=='boolean')
+    throw new TypeError('Boolean opt-in required for private shoe physics');
   const scenario = normalizeScenario(input);
   // Restricted to isolated zero/partial/full-spin roll experiments. Default 0
   // remains byte-for-byte equivalent to the accepted ME-01 physics-v4 path.
@@ -153,7 +158,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticInitialRollFraction, diagnosticGrassRollDecelerationMps2,
     diagnosticAirDragCd, diagnosticAirDragModel,diagnosticAerodynamicProfile,
     diagnosticMagnusSpinRadS:magnusSpin,
-    diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS
+    diagnosticMagnusLiftEnabled,diagnosticSpinDecayRatePerS,
+    diagnosticPlayerFootContactsEnabled
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;
@@ -170,7 +176,7 @@ export function createEngine(RAPIER, input = {}, {
   // Mass is NOT density: the old density=0.4 produced only ~2.23 grams.
   // Model the ball as a thin spherical shell for mass moment of inertia,
   // I=(2/3)*m*r². Rapier's physical collider remains an 11cm sphere.
-  world.createCollider(RAPIER.ColliderDesc.ball(BALL_RADIUS)
+  const ballCollider=world.createCollider(RAPIER.ColliderDesc.ball(BALL_RADIUS)
     .setMassProperties(BALL_MASS_KG,
       {x: 0, y: 0, z: 0},
       {x: BALL_INERTIA_KG_M2, y: BALL_INERTIA_KG_M2, z: BALL_INERTIA_KG_M2},
@@ -187,6 +193,9 @@ export function createEngine(RAPIER, input = {}, {
       Object.values(ballProperties.principalInertiaKgM2)
         .some(value => !Number.isFinite(value) || Math.abs(value - BALL_INERTIA_KG_M2) > 1e-5))
     throw new Error('Rapier match-ball mass/inertia mismatch');
+  // No additional world or colliders on the accepted default-off core.
+  const shoeBridge=diagnosticPlayerFootContactsEnabled?
+    createPrivateRapierFootContactBridge(RAPIER,world,ballCollider):null;
   // A ball rolling in +X has angular velocity +Y; at its bottom contact
   // v_contact=(vx-r*omegaY, vy+r*omegaX). Match zero/half/full contact slip.
   // No setter is invoked for the default zero-spin path.
@@ -236,8 +245,14 @@ export function createEngine(RAPIER, input = {}, {
     const a=body.angvel();
     return Object.freeze({x:a.x,y:a.y,z:a.z});
   }
-  function step() {
+  function step(playerFrame) {
     if (disposed) throw new Error('Engine has been disposed');
+    if(!shoeBridge&&playerFrame!==undefined)
+      throw new TypeError('Canonical foot frame requires explicit physics opt-in');
+    // Private current Rapier state is captured before the only world.step().
+    // The bridge never manufactures an event, impulse or match possession.
+    const preStepBall=shoeBridge?snapshot().ball:null;
+    if(shoeBridge)shoeBridge.prepare(playerFrame,tick+1);
     // User forces are persistent in Rapier. Clear the previous tick's drag
     // BEFORE computing this tick's force, and never apply it on the grass.
     // The default=0 branch is identical to the accepted physics-v4 path.
@@ -277,7 +292,12 @@ export function createEngine(RAPIER, input = {}, {
         }
       }
     }
-    world.step();
+    if(shoeBridge){
+      world.step(shoeBridge.eventQueue);
+      shoeBridge.observe(tick+1,preStepBall,{
+        position:body.translation(),velocity:body.linvel()
+      });
+    }else world.step();
     // Exponential airborne-only decay after integration; zero rate preserves
     // the original physics-v4 path without any angular-velocity setter.
     if(diagnosticSpinDecayRatePerS>0 &&
@@ -292,10 +312,17 @@ export function createEngine(RAPIER, input = {}, {
   function dispose() {
     if (!disposed) {
       disposed = true;
+      shoeBridge?.dispose();
       world.free();
     }
   }
-  return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose, reset: () => {
+  return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
+    ...(shoeBridge?{
+      footContactSnapshot:()=>shoeBridge.snapshot(),
+      footContactTimelineSnapshot:()=>shoeBridge.timeline(),
+      footContactSolverSnapshot:()=>shoeBridge.solver()
+    }:{}),
+    reset: () => {
     dispose();
     return createEngine(RAPIER, scenario, diagnosticOptions);
   }});
