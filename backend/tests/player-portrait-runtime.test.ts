@@ -97,14 +97,16 @@ it('uses guarded AUTOINCREMENT sequence, including deleted high-water IDs, acros
  expect((await commit(two.draftId)).status).toBe(200);
  expect((await commit(one.draftId)).status).toBe(200);
  const initial=await rows();
- expect(initial.map(p=>p.id)).toEqual([1,2,3,4]);
- expect((await portraits()).map(p=>p.player_id)).toEqual([1,2,3,4]);
- await db.prepare('DELETE FROM generated_players WHERE id=4').run();
- expect((await portraits()).map(p=>p.player_id)).toEqual([1,2,3]);
+ const allocated=initial.map(p=>p.id),high=allocated[3];
+ expect(allocated).toHaveLength(4);
+ expect(allocated).toEqual([high-3,high-2,high-1,high]);
+ expect((await portraits()).map(p=>p.player_id)).toEqual(allocated);
+ await db.prepare('DELETE FROM generated_players WHERE id=?').bind(high).run();
+ expect((await portraits()).map(p=>p.player_id)).toEqual(allocated.slice(0,3));
  const three=await draft(1,'batch-after-delete');
  expect((await commit(three.draftId)).status).toBe(200);
- expect((await rows()).map(p=>p.id)).toEqual([1,2,3,5]);
- expect((await portraits()).map(p=>p.player_id)).toEqual([1,2,3,5]);
+ expect((await rows()).map(p=>p.id)).toEqual([...allocated.slice(0,3),high+1]);
+ expect((await portraits()).map(p=>p.player_id)).toEqual([...allocated.slice(0,3),high+1]);
 });
 
 it('rolls back all generated_players if inserting a single portrait fails',async()=>{
