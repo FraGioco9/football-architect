@@ -6,7 +6,7 @@
  const portraitImage=panel.querySelector('[data-detail-portrait-photo]');
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
  // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
- const portraitSources=Object.freeze({44:'/assets/players/portraits/44.png',98:'/assets/players/portraits/98.png',145:'/assets/players/portraits/145.png'});
+ const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;

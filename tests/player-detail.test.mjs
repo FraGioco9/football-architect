@@ -1,6 +1,7 @@
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {parseRoute,buildRoute} from '../assets/routes-registry.mjs';
 import {publicRequestFile,isAllowlistedPublicPath,planPublicFiles} from '../tools/publication-guard.mjs';
@@ -511,11 +512,11 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
 test('#623 public player portrait and fallback: exact 3 IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
  for(const id of [44,98,145]){
-  const path='assets/players/portraits/'+id+'.png';
+  const path='assets/players/portraits/'+id+'.webp';
   assert.equal(isAllowlistedPublicPath(path),true,path);
   assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
  }
- for(const path of ['assets/players/portraits/1.png','assets/players/portraits/044.png','assets/players/portraits/99.png','assets/players/portraits/44.jpg','assets/players/portraits/44.svg'])
+ for(const path of ['assets/players/portraits/1.png','assets/players/portraits/044.png','assets/players/portraits/99.webp','assets/players/portraits/44.png','assets/players/portraits/44.jpg','assets/players/portraits/44.svg'])
   assert.equal(isAllowlistedPublicPath(path),false,path);
  assert.match(js,/!preview&&state==='ready'&&player/);
  assert.match(js,/portraitImage\.onerror=\(\)=>\{/);
@@ -530,5 +531,20 @@ test('#623 public player portrait and fallback: exact 3 IDs only, stable geometr
   assert.match(html,/data-detail-portrait/);
   assert.match(html,/data-detail-portrait-placeholder/);
   assert.match(html,/data-detail-portrait-photo[^>]*hidden/);
+ }
+});
+
+test('#623 optimized approved WebPs have SHA-256 provenance and appear in the public artifact',()=>{
+ const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74"};
+ const published=new Set(planPublicFiles());
+ for(const [id,digest] of Object.entries(expected)){
+  const path='assets/players/portraits/'+id+'.webp';
+  const data=readFileSync(new URL('../'+path,import.meta.url));
+  assert.equal(data.toString('ascii',0,4),'RIFF',path);
+  assert.equal(data.toString('ascii',8,12),'WEBP',path);
+  assert.equal(data.toString('ascii',12,16),'VP8X',path);
+  assert.ok(data.length<50_000,'WebP must be optimized: '+id);
+  assert.equal(createHash('sha256').update(data).digest('hex'),digest,path);
+  assert.ok(published.has(path),'Public artifact missing '+path);
  }
 });
