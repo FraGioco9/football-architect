@@ -27,6 +27,41 @@ import {createProvisionalActionOutcomeObserver,
  PROVISIONAL_ACTION_OBSERVATION_TICKS}
  from './player-ball-action-outcome-observation.mjs';
 
+// P2: one read-only decision checkpoint BEFORE the next mover/Rapier step.
+// This consumes only the last completed trusted fixture frame. PRESS/COVER
+// are existing mover duties, not newly assigned tactical or physics actions.
+export const PRE_MOVEMENT_INTENT_CHECKPOINT_VERSION=
+ 'me-p2-prior-completed-frame-intent-checkpoint-v1';
+function priorCompletedFrameIntentCheckpoint(previous){
+ const tick=previous.physicsTick;
+ const duties=previous.contactDecisionObservation.duties;
+ if(!Number.isSafeInteger(tick)||tick<0||!Array.isArray(duties)||
+    duties.length!==22||duties.some(d=>!Object.isFrozen(d)))
+  throw new Error('P2 checkpoint requires completed canonical 22-player duties');
+ const assigned=kind=>Object.freeze(duties.filter(d=>
+  d.movementDuty===kind).map(d=>Object.freeze({
+   engineId:d.engineId,team:d.team,intent:kind,
+   sourceMovementTick:tick,physicalActionAuthorized:false
+  })));
+ const advisory=previous.footballIntentObservation;
+ if(!advisory||advisory.physicsTick!==tick||
+    advisory.fixtureId!==previous.fixtureId)
+  throw new Error('P2 checkpoint requires source-bound completed observation');
+ const proposed=advisory.futureGeometryPlan?.proposedIntent??null;
+ if(proposed&&proposed.physicsTick!==tick)
+  throw new Error('P2 checkpoint cannot use future geometry');
+ return Object.freeze({
+  version:PRE_MOVEMENT_INTENT_CHECKPOINT_VERSION,
+  fixtureId:previous.fixtureId,basedOnCompletedTick:tick,
+  decisionTick:tick+1,source:'previous-completed-private-rapier-frame',
+  onBallAdvisory:proposed,
+  press:assigned('press'),cover:assigned('cover'),
+  physicalActionAuthorized:false,physicalActionExecuted:false,
+  moverChanged:false,rapierImpulseChanged:false,
+  officialMatchPossession:false,officialMatchAction:false
+ });
+}
+
 export const PHYSICAL_FIXTURE_RUNTIME_VERSION=
  'me-pb-54-universal-ball-fixture-step-runtime-v1';
 const countries='IT|ENG|ES|DE|FR|PT|NL|BR';
@@ -894,11 +929,14 @@ export function createPhysicalFixtureStepRuntime(
  function step(...args){
   ensureOpen();if(args.length)noArgs();
   try{
+   // Single prior-frame checkpoint: no new mover inputs or physics writes.
+   const checkpoint=priorCompletedFrameIntentCheckpoint(last);
    const frame=wrap(source.step());
    if(frame.physicsTick!==last.physicsTick+1||
+      checkpoint.decisionTick!==frame.physicsTick||
       Math.abs(frame.elapsedSeconds-frame.physicsTick*FIXED_DT)>1e-8)
     throw new Error('Nonconsecutive physical fixture clock');
-   last=frame;
+   last=Object.freeze({...frame,preMovementIntentCheckpoint:checkpoint});
    return last;
   }catch(error){dispose();throw error;}
  }
