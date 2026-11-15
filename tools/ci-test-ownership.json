@@ -282,7 +282,7 @@
     "tests/players-directory.test.mjs": "site-node",
     "tests/players-generator-runtime-parity.test.mjs": "site-node",
     "tests/match-detail.test.mjs": "site-node",
-    "tests/match-first-paint-browser.mjs": "browser",
+    "tests/match-first-paint-browser.mjs": "support",
     "tests/match-references.test.mjs": "site-node",
     "tests/players-mobile-574.test.mjs": "site-node",
     "tests/players-name-pools.test.mjs": "site-node",

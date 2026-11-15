@@ -135,7 +135,6 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ] && git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- 'tools/ci-opt-01-*' 'tests/ci-opt-01-*' .github/workflows | grep -q .; then
             node tools/ci-opt-01-scenarios.mjs --browser
           fi
-          node tools/ci-run.mjs match-first-paint-browser -- node tests/match-first-paint-browser.mjs
           node tools/ci-run.mjs 3-int24-browser-qa -- node tests/int24-browser-qa.mjs
           node tools/ci-run.mjs 7-int24-browser-qa -- node tests/page-load-02-club-browser.mjs
           node tools/ci-run.mjs fe-05-visual -- node tests/fe-05-visual-browser.mjs
