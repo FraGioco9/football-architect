@@ -8,7 +8,7 @@ import {resolveGlobalBallResponse,DEFAULT_GLOBAL_BALL_RESPONSE}
  from './player-ball-global-response.mjs';
 import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_DT,PLAYER_VERSION}
  from './player-movement.mjs';
-import {chooseNextTickPhysicalShotMovementCue}
+import {chooseNextTickPhysicalShotMovementCue,requalifyNextTickPhysicalShotMovementCue}
  from './player-football-shot-movement-intent.mjs';
 import {measureOrientedCarryShoeBallGeometry}
  from './player-ball-carry-oriented-shoe-geometry.mjs';
@@ -348,8 +348,14 @@ export function createUniversalMatchBallSession(RAPIER,scenario,options={}){
       before.ball.position.x!==latest.ball.position.x||
       before.ball.position.y!==latest.ball.position.y)
     throw new Error('Stale original Rapier ball snapshot');
-   const shotCue=experimentalFootballShotMovement?
+   const priorCue=experimentalFootballShotMovement?
     chooseNextTickPhysicalShotMovementCue(latest):null;
+   // Current Rapier position and current canonical player geometry must
+   // STILL offer an original-policy shot lane at the pre-mover boundary.
+   const shotCue=priorCue?requalifyNextTickPhysicalShotMovementCue(
+    priorCue,{physicsTick:before.tick,ballPosition:before.ball.position,
+     movementFrame:mover.snapshot()}
+   ):null;
    const players=mover.step(before.ball.position,shotCue?
     {footballShotMovementCue:shotCue}:null);
    if(players.tick!==before.tick+1||

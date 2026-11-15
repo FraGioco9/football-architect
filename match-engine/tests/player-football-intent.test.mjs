@@ -8,7 +8,8 @@ import {projectObservedFootballContext,FOOTBALL_OBSERVATION_PROJECTION_VERSION}
  from '../src/player-football-observation.mjs';
 import {planNextTickPolicyGeometryIntent,POLICY_GEOMETRY_PLAN_VERSION}
  from '../src/player-football-policy-geometry-plan.mjs';
-import {chooseNextTickPhysicalShotMovementCue,SHOT_MOVEMENT_CUE_VERSION}
+import {chooseNextTickPhysicalShotMovementCue,SHOT_MOVEMENT_CUE_VERSION,
+ requalifyNextTickPhysicalShotMovementCue,REQUALIFIED_SHOT_MOVEMENT_CUE_VERSION}
  from '../src/player-football-shot-movement-intent.mjs';
 import {measureObservedPassingCorridors,measureObservedPassingCorridorChanges,
  FOOTBALL_CORRIDOR_MEASUREMENT_VERSION}
@@ -717,6 +718,76 @@ test('P2 intent-only shot approach requires canonical mirrored physical shoe and
   }),null);
   assert.throws(()=>chooseNextTickPhysicalShotMovementCue({
    ...frame,contactSource:'user-injected-contact'
+  }),TypeError);
+ }
+});
+
+test('P2 current pre-step real shot lane requalification HOME/AWAY rejects changed context',()=>{
+ for(const team of ['home','away']){
+  const dir=team==='home'?1:-1,id=team+'-9',tick=30;
+  const positions=Object.freeze(INITIAL_PLAYERS.map(p=>{
+   let x=p.team===team?25*dir:-30*dir,y=20;
+   if(p.id===id){x=40*dir;y=0;}
+   return Object.freeze({engineId:p.id,team:p.team,role:p.role,x,y});
+  }));
+  const prior={
+   physicsTick:tick,experimentalLocalOnly:true,
+   matchRuntimeIntegrated:false,officialMatchAction:false,
+   contactSource:'internal-real-rapier-60hz',
+   footContact:{tick,started:[id],active:[id]},
+   autonomousMovement:{physicsTick:tick},
+   ball:{position:{x:40*dir,y:0,z:0.11}},
+   physicalPlayerPositions:positions
+  };
+  const hint=chooseNextTickPhysicalShotMovementCue(prior);
+  assert.ok(hint);
+  const currentFrame={version:PLAYER_VERSION,tick,
+   players:INITIAL_PLAYERS.map((p,i)=>({
+    id:p.id,team:p.team,role:p.role,x:positions[i].x,y:positions[i].y
+   }))
+  };
+  const current={physicsTick:tick,
+   ballPosition:{x:40*dir,y:0,z:0.11},movementFrame:currentFrame};
+  const result=requalifyNextTickPhysicalShotMovementCue(hint,current);
+  assert.equal(result.version,REQUALIFIED_SHOT_MOVEMENT_CUE_VERSION);
+  assert.equal(result.requalifiedAtPhysicsTick,tick);
+  assert.equal(result.nextMovementTick,tick+1);
+  assert.equal(result.currentOriginalShotLaneFound,true);
+  assert.equal(result.verifiedNextShoeStart,false);
+  assert.equal(result.verifiedPhysicalKickEligibility,false);
+  assert.equal(result.physicalActionAuthorized,false);
+  assert.equal(result.impulseAuthorized,false);
+  assert.ok(Object.isFrozen(result));
+  assert.deepEqual(requalifyNextTickPhysicalShotMovementCue(hint,current),result);
+  assert.equal(requalifyNextTickPhysicalShotMovementCue(null,current),null);
+  const blockerId=team==='home'?'away-1':'home-1';
+  const blocked=currentFrame.players.map(p=>p.id===blockerId?
+   {...p,x:45*dir,y:0}:p);
+  assert.equal(requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,movementFrame:{...currentFrame,players:blocked}
+  }),null,'new opponent closes prior open shot lane');
+  assert.equal(requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,physicsTick:tick+1
+  }),null);
+  assert.equal(requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,ballPosition:{...current.ballPosition,x:39*dir}
+  }),null);
+  assert.equal(requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,ballPosition:{...current.ballPosition,z:0.2}
+  }),null);
+  assert.equal(requalifyNextTickPhysicalShotMovementCue({
+   ...hint,decisionTick:tick+2
+  },current),null);
+  assert.throws(()=>requalifyNextTickPhysicalShotMovementCue({
+   ...hint,impulseAuthorized:true
+  },current),TypeError);
+  assert.throws(()=>requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,movementFrame:{...currentFrame,
+    players:currentFrame.players.map((p,i)=>i===0?
+     {...p,team:'forged'}:p)}
+  }),TypeError);
+  assert.throws(()=>requalifyNextTickPhysicalShotMovementCue(hint,{
+   ...current,ballPosition:{x:NaN,y:0,z:0.11}
   }),TypeError);
  }
 });

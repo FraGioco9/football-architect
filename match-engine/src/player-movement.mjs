@@ -2230,12 +2230,20 @@ export function createPlayerMovement({
   const cue=experimentalFootballShotMovement?
    observations?.footballShotMovementCue??null:null;
   if(cue&&(
-     cue.version!=='me-p2-source-bound-shot-approach-v1'||
+     cue.version!=='me-p2-current-physical-geometry-checked-target-v1'||
      cue.sourceTick!==tick||cue.decisionTick!==tick+1||
      cue.ballX!==ball.x||cue.ballY!==ball.y||
      cue.targetKind!=='existing-canonical-ball-approach'||
-     cue.readOnly!==true||cue.physicalActionAuthorized!==false||
+     cue.readOnly!==true||
+     cue.requalifiedAtPhysicsTick!==tick||
+     cue.nextMovementTick!==tick+1||
+     cue.currentOriginalShotLaneFound!==true||
+     cue.source!=='private-current-pre-step-rapier-ball-and-canonical-mover'||
+     cue.verifiedNextShoeStart!==false||
+     cue.verifiedPhysicalKickEligibility!==false||
+     cue.physicalActionAuthorized!==false||
      cue.impulseAuthorized!==false||cue.officialMatchAction!==false||
+     !Object.isFrozen(cue)||
      !players.some(p=>p.id===cue.playerId&&p.team===cue.team&&
       p.role!=='goalkeeper')))
    throw new TypeError('Stale or untrusted previous shot movement cue');
@@ -3170,14 +3178,6 @@ export function createPlayerMovement({
     return activeFixtureCarrySupportBallAccess?.playerId===p.id?
      activeFixtureCarrySupportBallAccess.target:
      activeFixtureAttackSupportRun.target;
-   // Intent changes only this mover target. Live press, cover, screen,
-   // support and specialized physical follow-up duties win precedence.
-   if(cue?.playerId===p.id&&
-      p.id!==nextPressers.home&&p.id!==nextPressers.away&&
-      p.id!==nextCoverers.home&&p.id!==nextCoverers.away&&
-      p.id!==nextScreens[p.team]?.defenderId&&
-      p.id!==nextSupports[p.team]?.playerId)
-    return tacticalTarget(p,ball,true,false,null,null,null,0.38);
    // ME-PB-37: after qualified real Away contact, both teams respond to
    // the currently measured free ball. Targets remain intentions only:
    // the same 60Hz integrator and hard teammate guard move physical feet.
@@ -3197,6 +3197,16 @@ export function createPlayerMovement({
    if(experimentalAiFourPassDefense&&
       observedPassEpochs.length===3&&p.id==='home-10')
      return tacticalTarget(p,ball,true,false,null,null,null,0.26);
+   // Lower-priority than current authentic pass/loose-ball follow-up
+   // and current PRESS/COVER, screen, support, balance or recovery.
+   if(cue?.playerId===p.id&&
+      p.id!==nextPressers.home&&p.id!==nextPressers.away&&
+      p.id!==nextCoverers.home&&p.id!==nextCoverers.away&&
+      p.id!==nextScreens[p.team]?.defenderId&&
+      p.id!==nextSupports[p.team]?.playerId&&
+      p.id!==nextBalances[p.team]?.playerId&&
+      !nextRecoveries[p.team]?.playerIds?.includes(p.id))
+    return tacticalTarget(p,ball,true,false,null,null,null,0.38);
    const screen=nextScreens[p.team];
    const observedOpponent=screen?.defenderId===p.id?
      players.find(other=>other.id===screen.opponentId):null;
