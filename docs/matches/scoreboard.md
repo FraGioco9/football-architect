@@ -1,80 +1,68 @@
-# #577 — Small left-logo match scoreboard
+# #577 — Broadcast-style match scoreboard
 
-The Match Detail page has one narrow centered scorebar, no page heading or
-visible match ID, and no invented club crests or scores.
+The Match Detail page presents one intentionally small, competition-branded
+scoreboard. The outer dimensions stay **340×48px maximum on desktop**,
+**310×48px maximum on mobile**, centred on the page. No page title, match
+ID, extra panel or fabricated club crest appears.
 
-## Layout
+## Visual structure
 
-Desktop: maximum width **340px**, height **48px**. Narrow screen: maximum
-width **310px**, height **48px**. The single horizontal row is:
+The redesigned scoreboard has four deliberate visual zones:
 
-`COMPETITION LOGO | HOME ABBR | HOME SCORE | – | AWAY SCORE | AWAY ABBR`
+`48×48 COMPETITION LOGO | HOME ABBR | SCORE PANEL | AWAY ABBR`
 
-The first column is a **48×48px tile**, flush with the scoreboard's left
-and top edges on both Desktop and Mobile. The **unmodified compact.svg
-image is exactly 48×48px** on both breakpoints and fills the tile, with
-`object-fit:contain` preserving original proportions and approved colours.
-The tile and scoreboard share the same left corner radius. There is no logo
-overhang, separate contour, outline, shadow or hover effect.
+The score panel contains the actual home score, dash and away score, in
+that order. Its backing is a contrasting, compact centre island: **92×34px
+on desktop** / **86×32px on mobile**. Abbreviations flank it on the same
+baseline. A restrained 2px competition-colour trim spans the bottom of
+the bar **to the right of the logo tile**. The first paint preserves the
+correct geometry while official API data is loading.
 
-In **Dark**, the tile uses the official ivory `#F5F1E8`. In **Light**, it
-uses the competition's light palette: **8% primary + 92% ivory**, deliberately
-a little lighter than the surrounding light scorebar (16% primary + 84%
-ivory). This visually integrates the tile without losing the logo's contrast.
-The original SVG itself does not change between appearances.
+The logo's **48×48px tile** sits flush at the left/top edge. The published
+`compact.svg` is displayed **at 48×48px**, with original approved primary
+and secondary fills, no recolouring, alternative symbol, halo, outline,
+shadow, tooltip or hover animation. The left tile and bar share the same
+**6px outer corner radius**.
 
-The scoreboard is 48px high on both breakpoints, including its 1px border.
-The grid compensates for that border to let its first 48×48px tile meet the
-actual outer left edge, without affecting the six-column score layout.
+## Competition-specific palettes
 
-## Competition-specific Dark and Light palettes
+The bar uses the authoritative colours for the specific domestic division
+(no universal green/blue skin). The score island is deliberately darker in
+Dark and more prominent in Light. No colour is read from a club kit or
+untrusted match response.
 
-The two appearances follow the existing site `html[data-theme="light"]`
-setting and respond immediately when the site's appearance changes.
-
-| Scoreboard element | Dark | Light |
+| Surface | Dark | Light |
 |---|---|---|
-| Bar surface | Official `primaryHex` | 16% `primaryHex` blended with 84% approved ivory |
-| Abbreviations, goals, divider | Official ivory `#F5F1E8` | Official `secondaryHex` (graphite `#243039`) |
-| Bar border and bottom 2px inset | Official `secondaryHex` | Official `primaryHex` |
-| 48×48px logo tile | Official ivory surface, original logo fills | 8% primary + 92% ivory surface, original logo fills |
+| Main bar | Subtle blend of primary and secondary (88/12 at left → primary at right) | Pale primary/ivory wash (12/88 at left → 20/80 at right) |
+| Logo tile | Ivory `#F5F1E8` | 8% primary + 92% ivory |
+| Original logo | Original primary and secondary | Exactly the same unmodified SVG |
+| Home/away abbreviations | Ivory | Secondary graphite |
+| Score island | Secondary graphite | Primary |
+| Score digits and dash | Ivory | Ivory |
+| Outer border + bottom 2px | Secondary | Primary |
 
-This creates a visibly different scoreboard for **each division**, while
-making Light genuinely pale and Dark saturated. The site owns the appearance,
-not individual match data. All 16 contrast-checked divisions meet the
-4.5:1 minimum in both variants.
+All domestic primary/ivory pairs are checked for at least 4.5:1 contrast
+of score digits, and light-wash/secondary text pairs also pass. The official
+`int-1` and `int-2` tournaments currently have no approved individual
+crest/palette: the neutral fallback retains readable dark and light score
+islands without fabricating a logo.
 
-**Logo integrity:** both appearances load the exact same original SVG.
-Its primary and secondary colours stay untouched; the 48×48px tile uses
-the appropriate light/dark palette to separate the logo from the bar.
-No third logo colour, added outline, drop shadow or alternate logo is used.
+The site's existing `html[data-theme="light"]` selector determines the
+appearance; the logo remains identical in both themes.
 
-The 16 published domestic division `compact.svg` files remain intact,
-SHA-verified, publication-allowlisted and mapped to the right competitions.
-The browser displays the original approved SVG by its validated asset path,
-without reconstructing paths, changing their fill, or caching an alternate
-colour version. SVGs with the canonical XML declaration are supported. The international `int-1` and `int-2` cups
-still have no approved competition logo, so no fallback logo is invented.
+## Behaviour and layout invariants
 
-Names use each club's canonical `abbr`. Full names remain accessible
-through ARIA labels but no native `title` tooltips are set. The scoreboard
-has no hover transitions, animations, underlines or opacity changes.
-The official match status / ET / PK information remains below the bar.
-The page sits high, with 6px top padding (4px on narrow screens).
+The page uses the official `GET /api/matches/:positiveNumericId` response;
+only verified completed matches show numbers. Club labels use their canonical
+2–5 character abbreviations, and accessible names remain available via ARIA.
+No native tooltips, hover transitions, animations or decorative opacity
+changes. Scheduled/unavailable matches retain score placeholders.
 
-## Theming and data
+The shared template `templates/match-detail-content.html` produces the
+canonical `matches/_shared/index.html` through
+`tools/generate-app-pages.mjs`. All 16 domestic SVG assets remain approved
+and byte-identical. The 48px logo, 48px scoreboard, dedicated central
+score group, Dark/Light branding, routing and official data are covered by
+focused checks.
 
-`assets/match-scoreboard-themes.mjs` supplies the competition-specific
-background/foreground/accent HEX colours and verifies them against the
-published competition manifest, with at least 4.5:1 text contrast.
-
-`GET /api/matches/:positiveNumericId` is the sole authority for the
-match. Scores are displayed only for verified completed results. The
-numeric match ID remains in the URL only.
-
-The shared template generates `matches/_shared/index.html`. Tests
-cover the layout, logo mapping and palette treatment, public asset
-allowlisting, routing and official result authority.
-
-PR #614 remains Draft/HOLD pending exact-head CI review and explicit
-merge authorization.
+PR #614 remains Draft/HOLD; merging and deployment require separate approval.

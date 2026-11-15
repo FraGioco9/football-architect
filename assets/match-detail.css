@@ -1,28 +1,43 @@
-/* #577 — Competition-coloured 48px scorebar with a seamless left logo tile.
-   The source logo remains 48x48 and keeps its original colours in both themes. */
+/* #577 — Broadcast-style compact scoreboard. Dimensions and original
+   competition logos are invariant across desktop/mobile and Dark/Light. */
 .app-match-page{min-width:0;padding-top:6px;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
- --app-match-surface:#243039;--app-match-ink:#F5F1E8;--app-match-accent:#243039;
- --app-match-text:var(--app-match-ink);--app-match-radius:5px;
+ --app-match-surface:#243039;
+ --app-match-ink:#F5F1E8;
+ --app-match-accent:#243039;
+ --app-match-text:var(--app-match-ink);
+ --app-match-score-surface:var(--app-match-accent);
+ --app-match-score-text:var(--app-match-ink);
+ --app-match-edge:var(--app-match-accent);
+ --app-match-logo-surface:#F5F1E8;
+ --app-match-radius:6px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
  width:min(100%,340px);height:48px;margin:0 auto;padding:0;
- border-radius:var(--app-match-radius);background:var(--app-match-surface);color:var(--app-match-text);
- border:1px solid var(--app-match-accent);
- box-shadow:inset 0 -2px var(--app-match-accent);
+ border:1px solid var(--app-match-edge);border-radius:var(--app-match-radius);
+ background:linear-gradient(90deg,
+  color-mix(in srgb,var(--app-match-surface) 88%,var(--app-match-accent) 12%),
+  var(--app-match-surface) 78%);
+ color:var(--app-match-text);
+}
+.app-match-scoreboard::after{
+ content:"";position:absolute;bottom:0;left:48px;right:0;height:2px;
+ background:var(--app-match-edge);border-radius:0 0 var(--app-match-radius) 0;
+ pointer-events:none;
 }
 .app-match-score-line{
  box-sizing:border-box;display:grid;
- grid-template-columns:48px minmax(0,1fr) 22px 9px 22px minmax(0,1fr);
- align-items:center;column-gap:4px;min-width:0;
+ grid-template-columns:48px minmax(0,1fr) 92px minmax(0,1fr);
+ column-gap:8px;align-items:center;min-width:0;
  width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;
- padding-right:9px;
+ padding-right:12px;
 }
 .app-match-competition-logo{
  position:relative;z-index:2;box-sizing:border-box;
  display:grid;place-items:center;width:48px;height:48px;overflow:hidden;
+ background:var(--app-match-logo-surface);
+ border-radius:var(--app-match-radius) 0 0 var(--app-match-radius);
  color:var(--app-match-text);text-decoration:none;
- background:#F5F1E8;border-radius:var(--app-match-radius) 0 0 var(--app-match-radius);
 }
 .app-match-competition-logo>span{
  display:grid;place-items:center;width:48px;height:48px;
@@ -35,30 +50,41 @@
 .app-match-competition-logo:not([href]){cursor:default}
 .app-match-team-link{
  min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
- color:var(--app-match-text)!important;font-size:11px;line-height:1.2;
- font-weight:800;letter-spacing:.045em;text-decoration:none;
+ color:var(--app-match-text)!important;text-decoration:none;
+ font-size:12px;line-height:1;font-weight:800;letter-spacing:.055em;
+ font-variant-numeric:tabular-nums;
 }
 .app-match-team-home{text-align:right}
 .app-match-team-away{text-align:left}
 .app-match-team-link[href]:hover{text-decoration:none;opacity:1}
 .app-match-team-link:not([href]){cursor:default}
 .app-match-team-link .app-skeleton-bar{
- display:inline-block;width:27px;max-width:100%;height:9px;
- background:color-mix(in srgb,var(--app-match-text) 25%,transparent)
+ display:inline-block;width:30px;max-width:100%;height:10px;
+ background:color-mix(in srgb,var(--app-match-text) 27%,transparent);
+}
+.app-match-score-group{
+ box-sizing:border-box;display:grid;
+ grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);
+ align-items:center;justify-items:center;gap:1px;
+ width:92px;height:34px;padding:0 5px;
+ border:1px solid color-mix(in srgb,var(--app-match-score-text) 17%,transparent);
+ border-radius:5px;background:var(--app-match-score-surface);
+ color:var(--app-match-score-text);
 }
 .app-match-side-score{
- min-width:0;text-align:center;font-size:18px;line-height:1;
- font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;
+ min-width:0;text-align:center;font-size:21px;line-height:1;
+ font-weight:850;letter-spacing:-.05em;font-variant-numeric:tabular-nums;
 }
 .app-match-score-separator{
- text-align:center;font-size:13px;line-height:1;font-weight:600;opacity:.75;
+ text-align:center;color:var(--app-match-score-text);
+ font-size:13px;line-height:1;font-weight:600;opacity:.65;
 }
 .app-match-scoreboard-meta{
  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
  gap:4px 8px;max-width:340px;min-height:18px;margin:9px auto 0;
  color:var(--muted);text-align:center;
 }
-.app-match-status{font-size:10px;line-height:1.35;font-weight:650}
+.app-match-status{font-size:10px;line-height:1.35;font-weight:700;letter-spacing:.025em}
 .app-match-extra{font-size:10px;line-height:1.35}
 .app-match-extra:empty{display:none}
 .app-match-feedback{
@@ -71,32 +97,37 @@
 .app-match-page .app-match-scoreboard a:focus-visible{
  outline:2px solid var(--app-match-text);outline-offset:3px;
 }
-/* Light mode keeps each competition's primary visible as a border and
-   a subtle surface tint; secondary graphite is used for all information. */
+/* Competition-specific Light: muted brand wash, bold primary score panel,
+   original-colour crest on a paler matching 48px tile. */
 html[data-theme="light"] .app-match-scoreboard{
  --app-match-text:var(--app-match-accent);
- background:color-mix(in srgb,var(--app-match-surface) 16%,#F5F1E8 84%);
- border-color:var(--app-match-surface);
- box-shadow:inset 0 -2px var(--app-match-surface);
+ --app-match-score-surface:var(--app-match-surface);
+ --app-match-score-text:var(--app-match-ink);
+ --app-match-edge:var(--app-match-surface);
+ --app-match-logo-surface:color-mix(in srgb,var(--app-match-surface) 8%,#F5F1E8 92%);
+ background:linear-gradient(90deg,
+  color-mix(in srgb,var(--app-match-surface) 12%,#F5F1E8 88%),
+  color-mix(in srgb,var(--app-match-surface) 20%,#F5F1E8 80%));
 }
-/* The logo tile is part of the light competition palette, not a fixed
-   dark-theme ivory block; the slight primary tint matches the scorebar. */
-html[data-theme="light"] .app-match-competition-logo{
- background:color-mix(in srgb,var(--app-match-surface) 8%,#F5F1E8 92%);
+.app-match-scoreboard[data-scoreboard-theme="neutral"]{
+ --app-match-score-surface:color-mix(in srgb,#243039 78%,#F5F1E8 22%);
 }
-/* International competitions lack dedicated primary/secondary palettes. */
 html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;
+ --app-match-score-surface:#243039;
+ --app-match-score-text:#F5F1E8;
+ --app-match-edge:#243039;
 }
 @media(max-width:480px){
  .app-match-page{padding-top:4px}
- .app-match-scoreboard{width:min(100%,310px);height:48px;padding:0;border-radius:var(--app-match-radius)}
+ .app-match-scoreboard{width:min(100%,310px);height:48px}
  .app-match-score-line{
-  grid-template-columns:48px minmax(0,1fr) 20px 8px 20px minmax(0,1fr);
-  column-gap:3px;padding-right:7px;
+  grid-template-columns:48px minmax(0,1fr) 86px minmax(0,1fr);
+  column-gap:6px;padding-right:8px;
  }
- .app-match-team-link{font-size:10px;letter-spacing:.025em}
- .app-match-side-score{font-size:16px}
- .app-match-score-separator{font-size:11px}
+ .app-match-team-link{font-size:11px;letter-spacing:.03em}
+ .app-match-score-group{width:86px;height:32px;padding:0 4px}
+ .app-match-side-score{font-size:19px}
+ .app-match-score-separator{font-size:12px}
  .app-match-scoreboard-meta{max-width:310px;margin-top:8px}
 }
