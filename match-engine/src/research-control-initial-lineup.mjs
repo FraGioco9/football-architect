@@ -6,10 +6,12 @@ const finite=n=>typeof n==='number'&&Number.isFinite(n);
 export const CONTROL_RECEIVER_INITIAL=Object.freeze({
  id:'home-9',x:-5,y:-3.2
 });
-export const RESEARCH_CONTROL_OPPONENT_CANDIDATES=Object.freeze(
- [-2.95,-2.7,-2.45,-2.2,-1.95].flatMap(x=>
-  [-0.5,-1,-1.5,-2,-2.5].map(y=>Object.freeze({x,y})))
-);
+const grid=[-2.95,-2.7,-2.45,-2.2,-1.95].flatMap(x=>
+ [-0.5,-1,-1.5,-2,-2.5].map(y=>({x,y})));
+export const RESEARCH_CONTROL_OPPONENT_CANDIDATES=Object.freeze([
+ ...grid.map(p=>Object.freeze({...p,longPass:false})),
+ ...grid.map(p=>Object.freeze({...p,longPass:true}))
+]);
 export function initialResearchControlLineup(players,ball,oppositionSlot=null){
  if(oppositionSlot!==null&&
     (!Number.isInteger(oppositionSlot)||oppositionSlot<0||
@@ -20,7 +22,10 @@ export function initialResearchControlLineup(players,ball,oppositionSlot=null){
     Math.abs(ball.x+4.96)>1e-6||ball.y!==0||ball.z!==0||
     Math.abs(ball.vx-0.3)>1e-6||ball.vy!==0||ball.vz!==0)
   throw new TypeError('Closed deterministic grounded CONTROL starting setup required');
- const {id,x,y}=CONTROL_RECEIVER_INITIAL;
+ const longPass=oppositionSlot!==null&&
+  RESEARCH_CONTROL_OPPONENT_CANDIDATES[oppositionSlot].longPass;
+ const {id,x}=CONTROL_RECEIVER_INITIAL;
+ const y=longPass?-6.5:CONTROL_RECEIVER_INITIAL.y;
  if(players.filter(p=>p.id===id&&p.team==='home'&&p.role==='forward').length!==1)
   throw new TypeError('Canonical genuine receiving teammate required');
  const opponent=oppositionSlot===null?null:
@@ -30,6 +35,9 @@ export function initialResearchControlLineup(players,ball,oppositionSlot=null){
   throw new TypeError('Original away-7 midfielder opponent required');
  const staged=players.map(p=>p.id===id?
   Object.freeze({...p,x,y,baseX:x,baseY:y,vx:0,vy:0,blockedBy:null}):
+  longPass&&p.id==='home-11'?
+   Object.freeze({...p,x:-30,y:18,baseX:-30,baseY:18,
+    vx:0,vy:0,blockedBy:null}):
   opponent&&p.id==='away-7'?
    Object.freeze({...p,x:opponent.x,y:opponent.y,
     baseX:opponent.x,baseY:opponent.y,

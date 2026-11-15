@@ -539,7 +539,7 @@ test('CONTROL 2b research: real opponent-first vs intended receiver across bound
   const trace={slot,p:candidates[slot],pass:null,
    starts:[],firstOpponent:null,firstReceiver:null,errors:[]};
   try{
-   for(let tick=1;tick<=100;tick++){
+   for(let tick=1;tick<=145;tick++){
     const frame=mover.step(engine.snapshot().ball.position,priorPass);
     engine.step(frame);
     const action=engine.uniformAutonomousActionSnapshot();
