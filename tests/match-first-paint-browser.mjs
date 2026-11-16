@@ -18,7 +18,7 @@ const decorated=applyPublishedMatchFirstPaint(shell,match,'123');
 assert.ok(decorated.includes('data-fa-match-first-paint'));
 assert.ok(decorated.indexOf('data-fa-match-first-paint')<decorated.indexOf('</head>'));
 assert.ok(!shell.includes('data-fa-match-first-paint'));
-const cases=[{width:1440,expectedWidth:284},{width:900,expectedWidth:284},{width:390,expectedWidth:268},{width:320,expectedWidth:268}];
+const cases=[{width:1440,expectedWidth:254},{width:900,expectedWidth:254},{width:390,expectedWidth:254},{width:320,expectedWidth:204}];
 const engines={chromium,webkit};
 let count=0;
 for(const [engine,driver] of Object.entries(engines)){
@@ -59,7 +59,8 @@ for(const [engine,driver] of Object.entries(engines)){
       barColour:bar.backgroundColor,
       mode:document.documentElement.dataset.theme,
       badgeTheme:el.dataset.scoreboardTheme,
-      tile:{w:box.width,h:box.height,borderColour:tileStyle.borderTopColor},
+      tile:{x:box.x,right:box.right,w:box.width,h:box.height,borderColour:tileStyle.borderTopColor},
+      badgeToCore:rect.x-box.right,
       art:art?{w:art.width,h:art.height,dx:art.x+art.width/2-box.x-box.width/2,
        dy:art.y+art.height/2-box.y-box.height/2}:null};
     });
@@ -155,13 +156,16 @@ for(const [engine,driver] of Object.entries(engines)){
      'the centre dash remains visible before hydration');
     // The match section adds no artificial top space in either breakpoint.
     assert.equal(await page.locator('.app-match-page').evaluate(el=>getComputedStyle(el).paddingTop),'0px');
-    // The fixed 268px mobile bar may extend into safe viewport gutters at
-    // 320px; shrinking it to the narrow padded main would clip abbreviations.
-    const expectedBoardWidth=device.width<=480?
-     Math.min(device.expectedWidth,device.width-40):device.expectedWidth;
+    // At 320px the core shrinks to 204px, leaving 56px for the logo and
+    // the 8px tile/strip gap. The five-track group remains exactly centered.
+    const expectedBoardWidth=Math.min(254,device.width-116);
     assert.ok(Math.abs(first.width-expectedBoardWidth)<=1,
      JSON.stringify({engine,theme,device,first,expectedBoardWidth}));
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
+    assert.ok(first.tile.x>=-0.5&&first.tile.right<=first.viewportWidth+0.5,
+     JSON.stringify({engine,theme,device,first}));
+    assert.ok(Math.abs(first.badgeToCore-8)<=0.5,
+     'Ivory logo must be exactly 8px to the left of the symmetric score strip');
     // Skeletons reserve a typographically proportional block centred on the
     // same two axes as the hydrated abbreviations, without a layout shift.
     const skeletons=await page.locator('.app-match-score-line').evaluate(grid=>{
@@ -179,7 +183,8 @@ for(const [engine,driver] of Object.entries(engines)){
     const isMobile=device.width<=480;
     for(const [i,s] of skeletons.entries()){
      assert.ok(s,JSON.stringify({engine,theme,device,skeletons}));
-     assert.ok(Math.abs(s.width-(isMobile?50:54))<=0.5,JSON.stringify({engine,theme,device,skeletons}));
+     const expectedSkeleton=isMobile?Math.min(50,(first.width-82)/2-12):54;
+     assert.ok(Math.abs(s.width-expectedSkeleton)<=0.5,JSON.stringify({engine,theme,device,skeletons,expectedSkeleton}));
      assert.equal(s.height,isMobile?18:20);
      assert.equal(s.justify,i===0?'flex-end':'flex-start');
      assert.equal(s.cellHeight,48);
@@ -202,13 +207,19 @@ for(const [engine,driver] of Object.entries(engines)){
      const [leftScore,rightScore]=scores.map(el=>el.getBoundingClientRect());
      const separatorBox=center.getBoundingClientRect();
      const rangeFor=el=>{const r=document.createRange();r.selectNodeContents(el);return r.getBoundingClientRect()};
-     const ivoryRight=grid.querySelector('.app-match-competition-logo').getBoundingClientRect().right;
+     const ivoryRight=grid.closest('.app-match-scoreboard').querySelector('.app-match-competition-logo').getBoundingClientRect().right;
      const homePadding=parseFloat(getComputedStyle(slots[0]).paddingLeft);
+     const awayPadding=parseFloat(getComputedStyle(slots[1]).paddingRight);
+     const homeBox=slots[0].getBoundingClientRect(),awayBox=slots[1].getBoundingClientRect();
      const homeText=rangeFor(scores[0]),awayText=rangeFor(scores[1]),dashText=rangeFor(center);
      const separatorStyle=getComputedStyle(center);
      const nameText=names.map(el=>rangeFor(el));
      const nameScoreGaps={home:leftScore.left-nameText[0].right,away:nameText[1].left-rightScore.right};
-     return {nameScoreGaps,ivoryToHome:nameText[0].left-ivoryRight,homePadding,
+     return {nameScoreGaps,ivoryToHome:nameText[0].left-ivoryRight,homePadding,awayPadding,
+      coreMid:row.left+row.width/2,separatorMid:separatorBox.left+separatorBox.width/2,
+      homeTrackWidth:homeBox.width,awayTrackWidth:awayBox.width,
+      scoreTracksMirror:Math.abs(leftScore.width-rightScore.width),
+      teamTracksMirror:Math.abs((homeBox.left+awayBox.right)/2-(separatorBox.left+separatorBox.width/2)),
       names:names.map((el,i)=>{const rect=el.getBoundingClientRect(),style=getComputedStyle(el),slot=getComputedStyle(slots[i]);return {
       align:style.textAlign,display:style.display,vertical:slot.alignItems,justify:slot.justifyContent,
       font:parseFloat(style.fontSize),fits:el.scrollWidth<=el.clientWidth+1,
@@ -240,7 +251,14 @@ for(const [engine,driver] of Object.entries(engines)){
     // Each abbreviation has exactly its 4px edge inset; no unneeded
     // flexible whitespace remains between the name glyph and score track.
     assert.ok(layout.nameScoreGaps.home>=3.5&&layout.nameScoreGaps.home<=4.5,JSON.stringify({engine,theme,device,layout}));
-    assert.equal(layout.homePadding,8,'8px Home inset from the ivory competition tile');
+    assert.equal(layout.homePadding,8,'Home track retains its 8px outer inset');
+    assert.equal(layout.awayPadding,8,'Away track mirrors the 8px Home outer inset');
+    assert.ok(Math.abs(layout.coreMid-layout.separatorMid)<=0.5,
+     'Central dash must align precisely with the midpoint of the five-track core');
+    assert.ok(Math.abs(layout.homeTrackWidth-layout.awayTrackWidth)<=0.5,
+     'Team name tracks must have identical widths');
+    assert.ok(layout.scoreTracksMirror<=0.5&&layout.teamTracksMirror<=0.5,
+     'Scores and team tracks must mirror around the central separator');
     assert.ok(layout.ivoryToHome>=7.5,JSON.stringify({engine,theme,device,layout}));
     assert.ok(layout.nameScoreGaps.away>=3.5&&layout.nameScoreGaps.away<=4.5,JSON.stringify({engine,theme,device,layout}));
     assert.equal(layout.dashStyle.font,isMobile?19:21);

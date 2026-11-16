@@ -1,4 +1,4 @@
-/* #577 — Flat, overlapping-badge scoreboard. One branded bar, no score capsule. */
+/* #577 — Five-track symmetric scoreboard, independent ivory badge. */
 .app-match-page{box-sizing:border-box;width:100%;min-width:0;padding-top:0;overflow:visible}
 .app-match-scoreboard,.app-match-scoreboard *{transition:none!important;animation:none!important}
 .app-match-scoreboard{
@@ -8,16 +8,16 @@
  --app-match-logo-surface:#F5F1E8;
  --app-match-radius:6px;
  position:relative;isolation:isolate;box-sizing:border-box;overflow:visible;
- /* This section spans #main-content's padded content width. The 48px
-    logo tile puts the score axis 20px right of bar centre, so shift
-    the strip 20px left to centre the dash in main (not the viewport). */
- left:-20px;width:min(100%,284px);height:48px;margin:0 auto;padding:0;
- background:transparent;color:var(--app-match-text);
+ /* Keep the five-track core on the main content axis, regardless of the
+    independently positioned competition badge. The viewport guard makes
+    the 48px badge visible even at 320px. */
+ left:50%;transform:translateX(-50%);
+ width:min(254px,calc(100vw - 116px));height:48px;margin:0;padding:0;
 }
-/* The bar starts 12px behind the left badge: the 48px tile visibly
-   projects beyond the bar without increasing the scoreboard's outer width. */
+/* The badge sits outside the five-track core, leaving a fixed 8px gap
+   between the ivory tile and the green score strip. */
 .app-match-scoreboard::before{
- content:"";position:absolute;inset:0 0 0 12px;box-sizing:border-box;
+ content:"";position:absolute;inset:0;box-sizing:border-box;
  border:1px solid var(--app-match-edge);
  border-radius:var(--app-match-radius);
  background:var(--app-match-surface);
@@ -25,14 +25,13 @@
 }
 .app-match-score-line{
  position:relative;z-index:1;box-sizing:border-box;display:grid;
- /* Zero column gaps; a wider central track keeps the large dash clear of
-    both two-digit scores without reducing the team-name columns. */
- grid-template-columns:48px minmax(0,1fr) 35px 20px 35px minmax(0,1fr);
+ /* Equal name/score tracks mirror around the dash, with no badge column. */
+ grid-template-columns:minmax(0,1fr) 35px 20px 35px minmax(0,1fr);
  column-gap:0;align-items:center;min-width:0;
- width:100%;height:100%;padding-right:8px;
+ width:100%;height:100%;padding:0;
 }
 .app-match-competition-logo{
- position:relative;z-index:2;box-sizing:border-box;
+ position:absolute;z-index:2;top:0;left:-56px;box-sizing:border-box;
  display:grid;place-items:center;width:48px;height:48px;overflow:hidden;
  background:var(--app-match-logo-surface);
  border:1px solid var(--app-match-edge);border-radius:var(--app-match-radius);
@@ -56,7 +55,7 @@
  box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden;
 }
 .app-match-team-home{justify-content:flex-end;padding:0 4px 0 8px}
-.app-match-team-away{justify-content:flex-start;padding-left:4px}
+.app-match-team-away{justify-content:flex-start;padding:0 8px 0 4px}
 .app-match-team-link{
  display:inline-block;flex:0 1 auto;width:max-content;min-width:0;max-width:100%;
  /* Do not clip the underline: it paints below the 1em text line box.
@@ -118,18 +117,10 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  --app-match-text:#243039;--app-match-edge:#243039;
 }
 @media(max-width:480px){
- /* At 320px the main content box is narrower than 268px; let the fixed
-    badge/abbreviation/score grid use safe viewport gutters while preserving
-    the match main-content centre axis (the 20px badge offset). */
- .app-match-scoreboard{
-  /* Centre relative to main even when 268px exceeds its content width.
-     Auto margins collapse for over-constrained blocks. */
-  width:min(268px,calc(100vw - 40px));height:48px;
-  left:calc(50% - 20px);transform:translateX(-50%);margin:0;
- }
+ /* Compact scoreboard, still perfectly mirrored around the dash. */
  .app-match-score-line{
-  grid-template-columns:48px minmax(0,1fr) 32px 18px 32px minmax(0,1fr);
-  column-gap:0;padding-right:8px;
+  grid-template-columns:minmax(0,1fr) 32px 18px 32px minmax(0,1fr);
+  column-gap:0;padding:0;
  }
  .app-match-team-link{font-size:24px;letter-spacing:0}
  .app-match-team-link .app-skeleton-bar{width:50px;height:18px}
