@@ -7,8 +7,8 @@
  const portraitFallback=panel.querySelector('[data-detail-portrait-placeholder]');
  // SVGElement.hidden is not reliably reflected in the DOM; use the actual
  // hidden attribute. Keep both photo and fallback hidden until resolved.
- // Only owner-approved, static, public photo paths. Protected draft previews always use the placeholder.
- const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp'});
+ // Static public portrait paths are staged on this Draft/HOLD branch; publication needs separate approval. Protected previews always use the placeholder.
+ const portraitSources=Object.freeze({44:'/assets/players/portraits/44.webp',98:'/assets/players/portraits/98.webp',145:'/assets/players/portraits/145.webp',46:'/assets/players/portraits/46.webp',45:'/assets/players/portraits/45.webp',49:'/assets/players/portraits/49.webp',50:'/assets/players/portraits/50.webp',51:'/assets/players/portraits/51.webp',47:'/assets/players/portraits/47.webp',52:'/assets/players/portraits/52.webp',148:'/assets/players/portraits/148.webp',53:'/assets/players/portraits/53.webp',54:'/assets/players/portraits/54.webp',55:'/assets/players/portraits/55.webp',59:'/assets/players/portraits/59.webp',56:'/assets/players/portraits/56.webp',57:'/assets/players/portraits/57.webp',62:'/assets/players/portraits/62.webp',60:'/assets/players/portraits/60.webp',61:'/assets/players/portraits/61.webp',48:'/assets/players/portraits/48.webp',63:'/assets/players/portraits/63.webp',58:'/assets/players/portraits/58.webp'});
  let portraitRequest=0;
  function resetPortrait(){
   portraitRequest++;
