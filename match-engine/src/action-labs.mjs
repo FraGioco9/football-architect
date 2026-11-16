@@ -24,7 +24,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(!['home','away'].includes(shotSide)||
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
-    !['receive','opponent-first'].includes(controlScene)||
+    !['receive','receive-cushion','opponent-first'].includes(controlScene)||
     !['home','away'].includes(controlSide)||
     (id!=='control'&&controlSide!=='home')||
     (controlScene==='opponent-first'&&controlSide!=='home')||
@@ -47,6 +47,7 @@ export function createControlledActionLab(RAPIER,id,{
    spec.initial;
  const blocked=selectedShotSide!==null&&shotLane==='blocked';
  const opposingControl=id==='control'&&controlScene==='opponent-first';
+ const firstTouchCushion=id==='control'&&controlScene==='receive-cushion';
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
   selectedControlSide==='away'?
@@ -71,7 +72,8 @@ export function createControlledActionLab(RAPIER,id,{
   ...(blocked?{diagnosticResearchShotBlockedLane:true}:{}),
   ...(spec.mode==='control'?{
    diagnosticResearchControlReceiver:true,
-   diagnosticResearchControlSide:selectedControlSide
+   diagnosticResearchControlSide:selectedControlSide,
+   ...(firstTouchCushion?{diagnosticResearchReceivingCushionEnabled:true}:{})
   }:{}),
   ...(opposingControl?{diagnosticResearchControlOpponentFirst:true}:{}),
   ...(selectedCarrySide?{diagnosticResearchCarrySide:selectedCarrySide}:{}),
@@ -216,6 +218,7 @@ export function createControlledActionLab(RAPIER,id,{
   const decisionEvidence=decisionObserver.observe({
    physics,playerFrame,foot,action
   });
+  const physicalFirstTouch=engine.researchReceivingCushionSnapshot();
   const contactContinuity=continuityObserver.observe({
    physics,playerFrame,foot,decisionEvidence
   });
@@ -232,6 +235,7 @@ export function createControlledActionLab(RAPIER,id,{
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
+   ...(firstTouchCushion?{physicalFirstTouch}:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -331,6 +335,11 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    ') m · Real shoe STARTs '+snap.starts.length+' · Witnesses '+snap.eventCount+
    (snap.decisionEvidence.current.kind!=='none'?
     ' · Physical candidate '+snap.decisionEvidence.current.kind:'')+
+   (snap.physicalFirstTouch?
+    ' · Real first-touch cushion '+number(Math.hypot(
+     snap.physicalFirstTouch.impulseNs.x,
+     snap.physicalFirstTouch.impulseNs.y))+' Ns'+
+    ' · pressure '+number(snap.physicalFirstTouch.measuredNearestOpponentM)+' m':'')+
    (snap.contactContinuity.active?
     ' · Post-contact '+snap.contactContinuity.active.observedTicks+
     '/60 actual ticks · ball travel '+
@@ -352,7 +361,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(snap.shotFlight?.observed3DFlight){
+  if(snap.physicalFirstTouch){
+   status.textContent='Research: real receiving shoe START → bounded physical first-touch impulse; ball control and possession NOT confirmed.';
+  }else if(snap.shotFlight?.observed3DFlight){
    status.textContent='Verified '+snap.shotFlight.team.toUpperCase()+
     ' SHOT: exclusive shoe START + real Rapier impulse; observed 3D flight ('+
     snap.shotFlight.samples+' physical samples). No goal awarded.';
@@ -416,6 +427,8 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    y:session.snapshot().ball.position.y}];
   description.textContent=session.shotLane==='blocked'?
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
+   session.controlScene==='receive-cushion'?
+   'M25 genuine first-touch: compare original receiving contact with a single bounded Rapier cushioning impulse. Only native shoe START authorizes the attempt; no possession is awarded.':
    session.controlScene==='opponent-first'?
    'A true long PASS targets HOME #9. AWAY #7 approaches only after that physical PASS; observe the opposing shoe first, without awarding an interception, tackle or reception.':
    session.challengeScene==='no-contact'?

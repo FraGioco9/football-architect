@@ -260,6 +260,24 @@ test('clean-stack Action LABs load all five options in real DEV Chrome',
   assert.doesNotMatch(carryAway.status,/confirmed dribble|possession awarded/i);
   process.stdout.write('ACTION_LAB_CHROME_AWAY_CARRY '+
    JSON.stringify(carryAway)+'\\n');
+  const cushionMode=await evalJs(
+   "(()=>{const action=document.getElementById('action-labs-choice');"+
+   "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "const scene=document.getElementById('action-labs-control-scene');"+
+   "scene.value='receive-cushion';scene.dispatchEvent(new Event('change',{bubbles:true}));"+
+   "for(let i=0;i<35;i++)document.getElementById('action-labs-step').click();"+
+   "return {scene:scene.value,visible:!document.getElementById('action-labs-control-scene-label').hidden,"+
+   "status:document.getElementById('action-labs-status').textContent,"+
+   "readout:document.getElementById('action-labs-readout').textContent};})()"
+  );
+  assert.equal(cushionMode.scene,'receive-cushion');
+  assert.equal(cushionMode.visible,true);
+  assert.match(cushionMode.status,/bounded physical first-touch impulse/);
+  assert.match(cushionMode.readout,/Real first-touch cushion/);
+  assert.match(cushionMode.readout,/pressure [0-9.]+ m/);
+  assert.doesNotMatch(cushionMode.status,/possession confirmed|reception granted/i);
+  process.stdout.write('ACTION_LAB_M25_GENUINE_CUSHION_CHROME '+
+   JSON.stringify(cushionMode)+'\\n');
   const negativeControl=await evalJs(
    "(()=>{const action=document.getElementById('action-labs-choice');"+
    "action.value='control';action.dispatchEvent(new Event('change',{bubbles:true}));"+

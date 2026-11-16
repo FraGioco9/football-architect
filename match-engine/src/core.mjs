@@ -94,6 +94,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
+  diagnosticResearchReceivingCushionEnabled = false,
   diagnosticResearchCarrySide = null
 } = {}) {
   if (!RAPIER || typeof RAPIER.World !== 'function') throw new TypeError('Rapier 3D required');
@@ -157,6 +158,17 @@ export function createEngine(RAPIER, input = {}, {
     (diagnosticResearchControlOpponentFirst&&
      !diagnosticResearchControlReceiver))
   throw new TypeError('Bounded CONTROL opponent requires genuine receiver scene');
+ if(typeof diagnosticResearchReceivingCushionEnabled!=='boolean'||
+    (diagnosticResearchReceivingCushionEnabled&&(
+     !diagnosticResearchControlReceiver||
+     !diagnosticPlayerFootContactsEnabled||
+     !diagnosticAutonomousFixtureActionEnabled||
+     diagnosticSharedContactEventsEnabled||
+     diagnosticPlayerBodyCollidersEnabled||
+     diagnosticAutonomousCarryEnabled||
+     diagnosticResearchShotAttacker!==null||
+     diagnosticResearchCarrySide!==null)))
+  throw new TypeError('M25 cushion requires genuine CONTROL-only Rapier action source');
  if(typeof diagnosticResearchControlReceiver!=='boolean'||
     (diagnosticResearchControlReceiver&&(
      diagnosticResearchShotAttacker!==null||
@@ -271,7 +283,8 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticAutonomousFixtureActionEnabled,diagnosticAutonomousCarryEnabled,
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
-    diagnosticResearchControlOpponentFirst,diagnosticResearchCarrySide
+    diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
+    diagnosticResearchCarrySide
   });
   const world = new RAPIER.World(GRAVITY);
   world.timestep = FIXED_DT;
@@ -328,7 +341,9 @@ export function createEngine(RAPIER, input = {}, {
   const actionExecutor=diagnosticAutonomousFixtureActionEnabled?
     createPrivatePhysicalActionExecutor({
       ballBody:body,shoeBridge,ballRadiusM:BALL_RADIUS,
-      allowPhysicalCarry:diagnosticAutonomousCarryEnabled
+      allowPhysicalCarry:diagnosticAutonomousCarryEnabled,
+      researchReceivingCushionSide:diagnosticResearchReceivingCushionEnabled?
+       diagnosticResearchControlSide:null
     }):null;
   // A ball rolling in +X has angular velocity +Y; at its bottom contact
   // v_contact=(vx-r*omegaY, vy+r*omegaX). Match zero/half/full contact slip.
@@ -524,7 +539,8 @@ export function createEngine(RAPIER, input = {}, {
     }:{}),
     ...(actionExecutor?{
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
-      physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot()
+      physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot(),
+      researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot()
     }:{}),
     reset: () => {
     dispose();
