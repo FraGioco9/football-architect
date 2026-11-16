@@ -723,6 +723,48 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
 });
 
+test('#605 official international draw renders six league rounds before the season projection',async()=>{
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
+ const cup=definitions.find(d=>d.id==='int-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:10,seasonNumber:1,day:3,phase:'active'}};
+ const countries=[...new Set(manifest.divisions.filter(d=>d.tier===1).map(d=>d.countryId))];
+ assert.equal(countries.length,8,'official INT24 draws span eight nations');
+ const clubsByCountry=new Map(countries.map(id=>[id,manifest.divisions.find(d=>d.tier===1&&d.countryId===id).clubs.slice(0,3)]));
+ const committed=[],order=[...countries];
+ for(let round=1;round<=6;round++){
+  for(let group=0;group<4;group++)for(let slot=0;slot<3;slot++){
+   const home=clubsByCountry.get(order[group])[slot],away=clubsByCountry.get(order[7-group])[slot];
+   const homeId=rules.clubKey(home),awayId=rules.clubKey(away),marker='I'+String(round).padStart(2,'0');
+   committed.push({matchId:String(committed.length+1),sourceFixtureId:'season:1:int-1:'+marker+':'+homeId+':'+awayId,
+    phaseId:'league',marker,round,day:round+12,homeClubId:homeId,awayClubId:awayId});
+  }
+  order.splice(1,0,order.pop());
+ }
+ let requests=0;
+ const view=setup(cup,routeRegistry,{source,fetchImpl:async path=>{
+  requests++;assert.equal(path,'/api/matches/seasons/1/competitions/int-1');
+  return {ok:true,status:200,json:async()=>({schemaVersion:1,providerId:'authoritative-world',
+   status:'published',season:1,competitionId:'int-1',provenance:{kind:'authoritative'},
+   fixtures:committed})};
+ }});
+ view.window.faCompetitionManifestPromise=Promise.resolve(manifest);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1);
+ assert.equal(view.window.faCompetitionContext.seasonData,null,'the complete season source is not a prerequisite');
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12);
+ assert.equal(view.fields.get('app-fixtures-empty').hidden,true);
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=view.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(links.length,12,'every published cup match has its official link');
+ assert.ok(links.every(link=>/^\\/matches\\/[1-9][0-9]*$/.test(link.href)));
+ view.route.set({matchday:6});
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12,
+  'all six published international rounds remain available');
+ assert.equal(requests,1,'navigation reuses the authoritative draw');
+});
+
 test('#605 scored competition fixtures keep official goals when linked to published IDs',async()=>{
  const division=divisions.find(d=>d.id==='IT-1');
  const source={source:'authoritative',worldStatus:'ready',
