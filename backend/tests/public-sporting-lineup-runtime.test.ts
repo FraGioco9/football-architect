@@ -47,21 +47,21 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
  it('reads published V2-only days and next day without scoring future fixtures',async()=>{
   await prepareAndPublish();
   expect(world.day).toBe(3);
-  const old=(await db.prepare('SELECT COUNT(*) AS n FROM season_day_outcomes').first<{n:number}>())!;
+  const old=(await db.prepare('SELECT COUNT(*) AS n FROM season_day_outcomes').first()) as {n:number};
   expect(old.n).toBe(0);
   const before=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
   expect(before).toMatchObject({status:'partial',selectedSeason:1,
    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1'},
    data:{season:1,standings:{complete:false},statistics:{matchesPlayed:0,playerStatus:'available',players:[]}}});
   expect(before.data?.fixtures).toHaveLength(240);
-  expect(before.data?.fixtures.every(f=>f.result===null)).toBe(true);
+  expect(before.data?.fixtures.every((f:any)=>f.result===null)).toBe(true);
   world=(await executeLineupLifecycleV1(db,session,'advance',cmd(),'lp-day4-00001',now)).world;
   expect(world.day).toBe(4);
   const season=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
   expect(season.data?.standings.rows).toHaveLength(16);
   expect(season.data?.statistics.players).toEqual([]);
   expect(season.data?.fixtures).toHaveLength(240);
-  expect(season.data?.fixtures.every(f=>f.result===null)).toBe(true);
+  expect(season.data?.fixtures.every((f:any)=>f.result===null)).toBe(true);
   const day=await readPublicCalendarDayLineupV1(db,1,4) as any;
   expect(day).toMatchObject({status:'partial',day:4,
    provenance:{resultAuthority:'temporary-lineup-v1'},
@@ -69,17 +69,17 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
   expect(day.data?.fixtures).toEqual([]);
   const overview=await readPublicClubOverviewLineupV1(db,'IT-1',1) as any;
   expect(overview.data?.memberships).toHaveLength(2);
-  expect(overview.data?.memberships.every(m=>m.stats.played===0)).toBe(true);
+  expect(overview.data?.memberships.every((m:any)=>m.stats.played===0)).toBe(true);
   const clubFixtures=await readPublicClubFixturesLineupV1(db,'IT-1',1) as any;
   expect(clubFixtures.data?.fixtures).toHaveLength(36);
-  expect(clubFixtures.data?.fixtures.every(f=>f.result===null)).toBe(true);
+  expect(clubFixtures.data?.fixtures.every((f:any)=>f.result===null)).toBe(true);
   const history=await readPublicClubHistoryLineupV1(db,'IT-1') as any;
   expect(history.data?.overviews).toHaveLength(1);
   expect(history.provenance.resultAuthority).toBe('temporary-lineup-v1');
   const after=await readWorld(db);
   expect(after).toEqual(world); // public GET projections must be read-only
   expect((await db.prepare('SELECT COUNT(*) AS n FROM match_lineup_result_receipts')
-   .first<{n:number}>())!.n).toBe(0);
+   .first())!.n).toBe(0);
  },120000);
  it('refuses unsupported public seasons before preparing the world',async()=>{
   const empty=await readPublicSportingSeasonLineupV1(db,'IT-1',1);
