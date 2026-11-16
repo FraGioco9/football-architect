@@ -650,6 +650,13 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       awayGoals:game.round<=playedDays?game.awayGoals:null,
       kickoff:null
     }));
+    // Same verified fixture projection for public and DEV Standings subviews.
+    const rowsForMode=(sourceRows,sourceFixtures,sourceDefinition)=>{
+      if(window.faStandingsSubViews?.get?.()==='overall')return sourceRows;
+      const projected=window.faStandingsSubViews?.project?.(sourceRows,sourceFixtures,sourceDefinition);
+      if(!projected)throw Error('Unverified DEV standings split');
+      return projected;
+    };
     // Complete all asynchronous preparation before touching the visible table.
     const [tbody,fixturesApi] = await Promise.all([waitForRows(),waitForFixturesApi()]);
     const contextRevision=window.faCompetitionContext?.revision;
@@ -688,8 +695,12 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     const commitPostseason=window.faPostseason?.prepare(rows,postResults,definition);
     // Fast path: reuse the mounted standings DOM, tooltip handlers and club crests.
     // The original preview cleanup remains active for eventual DEV disable/reset.
-    if(restorePrevious?.refresh && restorePrevious.refresh(rows,commitFixtures,commitPostseason,
-      window.faStandingsMobile?.prepare(rows))){publishContext();return restorePrevious;}
+    const displayRows=rowsForMode(rows,fixtureData,definition);
+    if(restorePrevious?.refresh && restorePrevious.refresh(displayRows,commitFixtures,commitPostseason,
+      window.faStandingsMobile?.prepare(displayRows))){
+      restorePrevious.setSubviewSource?.(rows,fixtureData,definition);
+      publishContext();return restorePrevious;
+    }
     const originalIds = new Set([...tbody.rows].map(x => x.dataset.worldClub));
     if (originalIds.size !== competitionModel.profile.capacity || rows.some(r =>
       !originalIds.has(r.club.countryId + "-" + r.club.clubId))) {
@@ -951,6 +962,10 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
     listen(window,"scroll", place, { passive: true });
     listen(document.querySelector(".fa-shell-content-scroll"),"scroll",place,{passive:true});
     listen(document.querySelector(".app-world-standing-scroll"),"scroll",place,{passive:true});
+    let subviewSourceRows=rows,subviewSourceFixtures=fixtureData,subviewSourceDefinition=definition;
+    restore.setSubviewSource=(nextRows,nextFixtures,nextDefinition)=>{
+      subviewSourceRows=nextRows;subviewSourceFixtures=nextFixtures;subviewSourceDefinition=nextDefinition;
+    };
     restore.refresh=(nextRows,nextFixtures,nextPostseason,nextMobile)=>{
       if(restored||!committed)return false;
       const desktop=new Map([...tbody.rows].map(tr=>[tr.dataset.worldClub,tr]));
@@ -1020,6 +1035,13 @@ async function boot(routeId,restorePrevious=null,isCurrent=()=>true) {
       translate();
       return true;
     };
+    const onSubviewChange=()=>{
+      if(restored)return;
+      const projected=rowsForMode(subviewSourceRows,subviewSourceFixtures,subviewSourceDefinition);
+      restore.refresh(projected,null,null,window.faStandingsMobile?.prepare(projected));
+    };
+    listen(window,'fa:standings-subview-change',onSubviewChange);
+    if(window.faStandingsSubViews?.get?.()!=='overall')onSubviewChange();
     publishContext();
     return restore;
     } catch(error){restore();throw error}
