@@ -67,7 +67,8 @@ const proximity=Object.fromEntries(thresholds.map(k=>[
 const sampleTicks=30*240;
 const report={
  version:'m19-measured-original-encounter-causes-v1',
- exactHead:process.env.GITHUB_SHA??null,
+ exactHead:process.env.M19_EXPECTED_HEAD??null,
+ workflowTriggerSha:process.env.GITHUB_SHA??null,
  expectedHead:process.env.M19_EXPECTED_HEAD??null,
  source:'one-original-Rapier-World-shared-native-event-queue-per-run',
  noMovementOrPhysicsMutation:true,noFootballAuthority:true,
