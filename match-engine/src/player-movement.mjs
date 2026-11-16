@@ -20,6 +20,12 @@ export const PLAYER_PRESS_OFFSET_M=1.8;
 export const PLAYER_PRESS_SWITCH_ADVANTAGE_M=3;
 export const PLAYER_PRESS_START_RANGE_M=30;
 export const PLAYER_PRESS_HOLD_RANGE_M=34;
+// M12 opt-in source-bound opponent-aware press to the ACTUAL ball, not an
+// artificially placed other player. No possession/tackle authority.
+export const PLAYER_CONTEST_START_BALL_RANGE_M=6;
+export const PLAYER_CONTEST_HOLD_BALL_RANGE_M=9;
+export const PLAYER_CONTEST_START_OPPONENT_RANGE_M=12;
+export const PLAYER_CONTEST_HOLD_OPPONENT_RANGE_M=15;
 export const PLAYER_FLANK_NARROW_MAX=0.16;
 export const PLAYER_COVER_GOALSIDE_OFFSET_M=6;
 export const PLAYER_COVER_LANE_OFFSET_M=3;
@@ -167,6 +173,39 @@ function pressingPlayer(players,team,ball,incumbentId){
  // a newly assigned presser must satisfy the narrower start threshold.
  if(bestDist>PLAYER_PRESS_START_RANGE_M)return null;
  return best;
+}
+// M12: the two ORIGINAL selected pressers may converge on the ACTUAL ball
+// when both can physically contest it from their current sampled positions.
+// Both teams' real IDs and XY are required. No tactical target is taken
+// from an artificial pair, and no ball possession is ever presumed.
+export function observedOpposingPressConvergence(players,pressers,ball,previous=null){
+ if(!Array.isArray(players)||players.length!==INITIAL_PLAYERS.length||
+    !pressers||!ball||![ball.x,ball.y].every(Number.isFinite))
+  throw new TypeError('Original 22 current XY and physical ball required');
+ const home=players.find(p=>p.id===pressers.home&&p.team==='home'&&
+  p.role!=='goalkeeper');
+ const away=players.find(p=>p.id===pressers.away&&p.team==='away'&&
+  p.role!=='goalkeeper');
+ if(!home||!away)return Object.freeze({
+  active:false,playerIds:null,opponentGapM:null,
+  homeBallGapM:null,awayBallGapM:null
+ });
+ const pair=Object.freeze([home.id,away.id]);
+ const homeBallGapM=Math.hypot(home.x-ball.x,home.y-ball.y);
+ const awayBallGapM=Math.hypot(away.x-ball.x,away.y-ball.y);
+ const opponentGapM=Math.hypot(home.x-away.x,home.y-away.y);
+ const same=previous?.active===true&&
+  previous.playerIds?.[0]===pair[0]&&
+  previous.playerIds?.[1]===pair[1];
+ const ballRange=same?PLAYER_CONTEST_HOLD_BALL_RANGE_M:
+  PLAYER_CONTEST_START_BALL_RANGE_M;
+ const pairRange=same?PLAYER_CONTEST_HOLD_OPPONENT_RANGE_M:
+  PLAYER_CONTEST_START_OPPONENT_RANGE_M;
+ return Object.freeze({
+  active:homeBallGapM<=ballRange&&awayBallGapM<=ballRange&&
+   opponentGapM<=pairRange,
+  playerIds:pair,opponentGapM,homeBallGapM,awayBallGapM
+ });
 }
 // A dedicated defensive screen follows the ball on the goal-facing side
 // only in the team's own third. Selection is deterministic and hysteretic;
@@ -449,13 +488,18 @@ export function weakSideBalanceTarget(normalTarget,team,opponentPosition){
     PLAYER_BALANCE_MAX_LATERAL_M,Math.abs(dy)*PLAYER_BALANCE_LANE_GAIN),-halfY,halfY)
  });
 }
-function tacticalTarget(p,ball,isPressing,isCovering,screenOpponent,supportTarget,balanceOpponent){
+function tacticalTarget(p,ball,isPressing,isCovering,screenOpponent,supportTarget,balanceOpponent,contestedBall=false){
  const halfX=PLAYER_PITCH.lengthM/2-PLAYER_RADIUS_M;
  const halfY=PLAYER_PITCH.widthM/2-PLAYER_RADIUS_M;
  // Dedicated keeper intent takes priority over generic shape shifting.
  if(p.role==='goalkeeper')return goalkeeperPosition(p.team,ball);
  if(isPressing){
-  // The two teams occupy opposite sides of the ball, not the same point.
+  // Only M12's independently observed, simultaneous, real opposing
+  // pressers can close on the actual ball; original default still holds
+  // their opposite-side 1.8m screen. Physical 0.98m guard remains active.
+  if(contestedBall)return {
+   x:clamp(ball.x,-halfX,halfX),y:clamp(ball.y,-halfY,halfY)
+  };
   return {x:clamp(ball.x+(p.team==='home'?-PLAYER_PRESS_OFFSET_M:PLAYER_PRESS_OFFSET_M),-halfX,halfX),
     y:clamp(ball.y,-halfY,halfY)};
  }
@@ -1589,13 +1633,19 @@ export function createPlayerMovement(options={}){
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlSide'&&
      k!=='researchCarrySide'&&k!=='researchCarryBall'&&
-     k!=='researchBodyEncounter')||
+     k!=='researchBodyEncounter'&&
+     k!=='researchOpposingPressConvergence')||
     ((options.researchShotAttacker??null)===null&&
      options.researchControlReceiver===undefined&&
      options.researchCarrySide===undefined&&
-     options.researchBodyEncounter!==true&&Reflect.ownKeys(options).length>0)||
+     options.researchBodyEncounter!==true&&
+     options.researchOpposingPressConvergence!==true&&
+     Reflect.ownKeys(options).length>0)||
     (options.researchBodyEncounter!==undefined&&(
      options.researchBodyEncounter!==true||
+     Reflect.ownKeys(options).length!==1))||
+    (options.researchOpposingPressConvergence!==undefined&&(
+     options.researchOpposingPressConvergence!==true||
      Reflect.ownKeys(options).length!==1))||
     (options.researchCarrySide!==undefined&&(
      !['home','away'].includes(options.researchCarrySide)||
@@ -1648,6 +1698,8 @@ export function createPlayerMovement(options={}){
  let lastBall={x:0,y:0};
  let pressers={home:'home-10',away:'away-10'};
  let pressSwitches={home:0,away:0};
+ let opposingPressConvergence=null;
+ let actualContestActiveTicks=0,actualContestStarts=0;
  let coverers={home:null,away:null};
  let coverSwitches={home:0,away:0};
  let screens={home:null,away:null};
@@ -1715,6 +1767,10 @@ export function createPlayerMovement(options={}){
    }),
    pressers:Object.freeze({...pressers}),
    pressSwitches:Object.freeze({...pressSwitches}),
+   ...(options.researchOpposingPressConvergence===true?{
+    originalOpposingPressConvergence:opposingPressConvergence,
+    actualContestActiveTicks,actualContestStarts
+   }:{}),
    coverers:Object.freeze({...coverers}),
    coverSwitches:Object.freeze({...coverSwitches}),
    screens:Object.freeze({...screens}),
@@ -1853,6 +1909,16 @@ export function createPlayerMovement(options={}){
   const home=pressingPlayer(players,'home',ball,pressers.home);
   const away=pressingPlayer(players,'away',ball,pressers.away);
   const nextPressers={home:home?.id??null,away:away?.id??null};
+  // An opt-in pressure *intent*, calculated from the current positions
+  // of the two independently selected real pressers, not from possession.
+  const currentOpposingContest=options.researchOpposingPressConvergence===true?
+   observedOpposingPressConvergence(players,nextPressers,ball,
+    opposingPressConvergence):null;
+  if(currentOpposingContest?.active){
+   actualContestActiveTicks++;
+   if(!opposingPressConvergence?.active)actualContestStarts++;
+  }
+  opposingPressConvergence=currentOpposingContest;
   const coveringHome=coveringDefender(
    players,'home',ball,nextPressers.home,coverers.home);
   const coveringAway=coveringDefender(
@@ -2044,7 +2110,8 @@ export function createPlayerMovement(options={}){
    const balanceOpponent=balance?.playerId===p.id?
      players.find(other=>other.id===balance.opponentId):null;
    const normal=tacticalTarget(p,ball,pressing,covering,
-     observedOpponent,supportTarget,balanceOpponent);
+     observedOpponent,supportTarget,balanceOpponent,
+     Boolean(pressing&&currentOpposingContest?.active));
    if(!(p.id in lineOffsets)){
     // Free forwards also maintain space; keepers and higher-priority
     // support, pressing and covering already returned their own target.

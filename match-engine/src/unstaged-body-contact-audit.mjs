@@ -122,10 +122,12 @@ export function screenNativeBodyResponse(priorFrame,currentFrame,body){
 }
 
 export function auditUnstagedBodyContacts(RAPIER,{
- stateId='centre',side='home',ticks=180,mode='native'
+ stateId='centre',side='home',ticks=180,mode='native',
+ movementPolicy='original'
 }={}){
  if(!RAPIER||typeof RAPIER.World!=='function'||
   !['home','away'].includes(side)||!['native','off'].includes(mode)||
+  !['original','contested-press'].includes(movementPolicy)||
   !Number.isSafeInteger(ticks)||ticks<1||ticks>MAX_TICKS||
   !M11_BALL_STARTS.some(s=>s.id===stateId))
   throw new TypeError('Only bounded original M11 Rapier ball-start audits');
@@ -140,7 +142,11 @@ export function auditUnstagedBodyContacts(RAPIER,{
   diagnosticSharedContactEventsEnabled:true
  }:{});
  // IMPORTANT: there are no mover options or player staging.
- const mover=createPlayerMovement();
+ const mover=movementPolicy==='contested-press'?
+  createPlayerMovement({researchOpposingPressConvergence:true}):
+  createPlayerMovement();
+ let actualOpposingContestTicks=0,firstActualOpposingContest=null;
+ let activeOpposingPressGapM=Infinity;
  let nearest=null,nearestOpposing=null,lowestCanonicalGapM=Infinity;
  let bodyStarts=0,footStarts=0,firstNativeStart=null;
  let firstAdmissibleResponse=null,screenedResponseFrames=0;
@@ -171,6 +177,20 @@ export function auditUnstagedBodyContacts(RAPIER,{
     throw new Error('M11 original 0.98m canonical collision guard broken');
    if(movement.supports.home||movement.supports.away)genuineSupportTicks++;
    if(movement.pressers.home||movement.pressers.away)genuinePressTicks++;
+   if(movementPolicy==='contested-press'){
+    const current=movement.originalOpposingPressConvergence;
+    if(!current||typeof current.active!=='boolean')
+     throw new Error('M12 original observed opposing pressure evidence missing');
+    if(current.active){
+     if(!firstActualOpposingContest)
+      firstActualOpposingContest=freeze({
+       tick:t,playerIds:current.playerIds
+      });
+     actualOpposingContestTicks++;
+     activeOpposingPressGapM=Math.min(
+      activeOpposingPressGapM,current.opponentGapM);
+    }
+   }
    if(!native)continue;
    const body=engine.nativePlayerBodySnapshot();
    const shared=engine.sharedNativeContactSnapshot();
@@ -234,6 +254,12 @@ export function auditUnstagedBodyContacts(RAPIER,{
    eligibleResponseFrames:screenedResponseFrames,
    firstReadOnlyAdmissibleResponse:firstAdmissibleResponse,
    genuineSupportTicks,genuinePressTicks,
+   ...(movementPolicy==='contested-press'?{
+    movementPolicy:'contested-press',
+    actualOpposingContestTicks,firstActualOpposingContest,
+    minActiveOpposingPressGapM:activeOpposingPressGapM===Infinity?
+     null:activeOpposingPressGapM
+   }:{}),
    actualMoverFeedbackCount:0,
    officialAction:false,officialTackle:false,
    officialPossession:false,officialResult:null

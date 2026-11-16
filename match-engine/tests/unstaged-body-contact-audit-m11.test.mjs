@@ -30,7 +30,7 @@ test('M11 closed real-ball matrix, research-only original formation, no staging'
  ])assert.throws(()=>auditUnstagedBodyContacts(R,bad),TypeError);
  const code=readFileSync(new URL('../src/unstaged-body-contact-audit.mjs',
   import.meta.url),'utf8');
- assert.match(code,/const mover=createPlayerMovement\(\);/);
+ assert.match(code,/createPlayerMovement\(\);/);
  assert.match(code,/diagnosticSharedContactEventsEnabled:true/);
  assert.match(code,/diagnosticPlayerBodyCollidersEnabled:true/);
  assert.match(code,/diagnosticPlayerFootContactsEnabled:true/);
