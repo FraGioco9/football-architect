@@ -321,6 +321,7 @@
     "tests/player-portrait-core.test.mjs": "site-node",
     "tests/player-portrait-v4.test.mjs": "site-node",
     "tests/player-portrait-v41-diversity.test.mjs": "site-node",
+    "tests/player-portrait-chat-export.test.mjs": "site-node",
     "tests/player-portrait-v4-qa.test.mjs": "site-node",
     "tests/player-portrait-chatgpt.test.mjs": "site-node",
     "tests/player-portrait-png-preflight.test.mjs": "site-node",
