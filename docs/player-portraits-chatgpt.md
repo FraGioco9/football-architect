@@ -80,3 +80,20 @@ technical and visual QA plus owner approval before replacing any portrait.
 
 Focused tests:
 `node --test tests/player-portrait-core.test.mjs tests/player-portrait-v4.test.mjs tests/player-portrait-chatgpt.test.mjs`
+
+## V4 Step D — technical QA of PNG + actual WebP pixels
+
+After generating a candidate and converting it to a final WebP, run the
+new read-only QA command (requires Node 22 and FFmpeg on PATH):
+
+    node tools/portrait-v4-qa.mjs --png candidate.png --webp portrait.webp
+
+The decoder checks the genuine WebP pixel alpha, not just RIFF metadata.
+The combined report returns PASS, PASS_WITH_NOTE, FAIL, or INCOMPLETE,
+measured geometry, findings, and original file SHA-256 digests.
+Passing technical QA never means the facial identity or image is owner-approved.
+The old V3 PNG preflight and the frozen V3 portraits remain unchanged.
+
+See [V4 technical QA rules](player-portraits-v4-qa.md) for exact 3–8 px
+top-margin targets, 0–12 px outer allowance, alpha threshold, centered
+silhouette, side clearance, chromatic-fringe notes and manual acceptance.
