@@ -1,21 +1,29 @@
-# #613 — Single-result-engine clean break
+# #613 — Single V2 lineup-aware match authority
 
-**Owner decision (2026-11-16):** `temporary-lineup-v1` replaces the old score-only authority for every played fixture. No dual-mode support, season pin, conversion of old scores or legacy fallback. This is still a **Draft/HOLD PR**; nothing here authorizes remote D1 changes, merge or deployment.
+`temporary-lineup-v1` replaces score-only simulation for **all officially finalized fixtures**. This is a clean break: no dual-mode reader, historical score migration, scoring-version selection, or legacy scoring fallback. The implementation is tracked in [Draft/HOLD PR #642](https://github.com/FraGioco9/football-architect/pull/642).
 
-## Implemented in PR #642
+## Match input and frozen results
 
-- One deterministic 4-3-3 auto-XI for 11+ distinct eligible real affiliates, using canonical positional suitability. A side with 0–10 players uses a neutral team fallback (strength 61), without invented players, appearances or scorers. Mixed and dual fallback matches use the **same** scorer.
-- Frozen per-match receipts record XI identities and attributes, result, goals, 90/120-minute appearances and regulation/ET/PK separation. Verified past scores are never regenerated from current contracts. No modeled assists, cards, shots or possession.
-- One immutable daily evidence chain in `season_lineup_day_outcomes` and per-match `match_lineup_result_receipts` (migrations 0028/0029). Real due fixtures, scores, knockout plans, day/world transitions and audit are committed together under protected Admin guards.
-- HTTP switch in branch commit `4b40466`: `http-admin.ts` routes explicit milestone/calendar publication, sporting advance, archive and close to the V2 commands. `index.ts` routes public Match Detail, competition/standings, Calendar, club Fixtures/History and published match lists to verified frozen V2 readers. Direct old calendar/start HTTP commands return 410; there is **no legacy reader fallback**.
-- Season 2 qualification/prepare authority reads the frozen V2 archived season. World reset is a guarded, atomic operation that can clear current-generation V2 receipts only with a single-batch permit (migration 0030); generated players and current club affiliations survive. The owner already performed Reset Season 0 in their environment; **do not repeat it**.
-- Focused Worker D1 integration tests cover day 13 with real-XI, mixed and fallback fixtures; 56 sporting days, 4,082 match receipts and 54 knockout ties; archive/close, replay, rollback, no future leakage and isolated world reset. At prior head `8126b7e`, 64 Worker files / 344 tests and all relevant CI workflows passed. Later HTTP cutover commits used `[skip ci]` and **have not yet been CI validated at exact HEAD**.
+- Use a deterministic 4-3-3 XI of **11 real eligible affiliated players** when available. Select players by canonical position suitability; use a neutral team-level strength of 61 when one side has fewer than 11. A mixed XI/fallback match uses one engine; fallback sides never invent player IDs, appearances or scorers.
+- Record goals, real XI player appearances/starts/minutes, goal scorers, regulation and extra-time events and penalties in immutable match receipts. Penalty shootouts do not count toward goals. Do not manufacture assists, shots, cards, possession or other unavailable metrics.
+- A verified completed result is read from its frozen receipt, **never recomputed** from the current roster, attributes or match-day seed. Future and unplayed fixtures have no simulated results or player events.
+- Store match receipts in `match_lineup_result_receipts` and immutable daily outcomes in `season_lineup_day_outcomes` (migrations **0028–0029**). Keep sporting, knockout and world-day advancement atomic and protected by Admin authorization and source guards.
 
-## Remaining before closure
+## Official HTTP and season flow
 
-1. **Audit single-authority reachability:** confirm no live/Admin/public endpoint imports the score-only scorer or old history adapters; remove dead imports/branches and reconcile any stale UI/source text. Old modules/tables may be removed only when no supported workflows depend on them; do not create compatibility paths.
-2. **Exact-head QA:** TypeScript, migration and import checks; Worker D1 HTTP dispatch regression (retired routes, published vs finalized Match Detail, player totals, empty/upcoming fixtures, knockout ET/PK), 56-day replay and reset preserving players/contracts; Site/Browser/FULL at the final SHA.
-3. **Review product boundaries:** competition and player statistics must match the frozen receipts; distinguish absent V1 metrics from measured zeros. Any additional Player Detail Stats (#578) screen work must be tracked separately from this core authority.
-4. **Owner-gated activation:** review PR diff + test evidence; obtain separate permission for merge, remote migrations and deployment. No second Reset Season 0 unless specifically authorized.
+- `backend/src/http-admin.ts` routes sporting progression, Admin event/calendar operations, archive and close to V2 commands; direct retired calendar/start endpoints respond with HTTP 410.
+- `backend/src/index.ts` serves public Match Detail, competition and standings, World Calendar, Club Fixtures and Club History through verified V2 evidence.
+- Season 2 approvals, archived qualifications and historical views depend on frozen V2 outcome/knockout proofs. Do not reconstruct old results or bypass official source checks.
 
-**Branch is wired; production/main remain unchanged.** This document records implementation state, not proof of exact-head CI success or authorization to operate on remote data.
+## Reset semantics
+
+- **Reset Season 0 is a separate authenticated and explicitly confirmed destructive operation**, not part of normal match progression or deployment. It uses a short-lived current-generation permit within an atomic batch (migration **0030**) to delete that generation's immutable V2 match receipts and day outcomes. Ordinary updates and deletes remain forbidden.
+- **Stable public numeric match IDs survive reset; finalized match/day receipts do not.** Generated players, committed generator batches and current player-club affiliations/contracts survive. This distinction is intentional.
+- The owner has already performed Reset Season 0; **do not repeat it** without new explicit authorization.
+
+## Review and release boundary
+
+- Core Worker D1 tests cover real-XI, fallback and mixed teams, 56 sporting days, knockout ET/PK, archive/close, Season 2, replay, future-result protection, and guarded reset. The official current-head CI evidence is maintained in PR #642, **not pinned in this source document**.
+- Verify Site, Admin, Browser and FULL CI on the **exact final branch HEAD**. Check public/Admin HTTP contracts, production-disabled behaviors, and manual mobile/desktop behavior before release. Automated WebKit emulation does not imply a physical iPhone Safari test was completed.
+- Competition player-statistics UI is deferred to [#643](https://github.com/FraGioco9/football-architect/issues/643); Player Detail Stats remains tracked by [#578](https://github.com/FraGioco9/football-architect/issues/578). Neither changes frozen recorded match results.
+- Keep PR **Draft/HOLD** until separate owner review/approval. **No automatic merge, remote D1 migration, remote data mutation, reset, or deployment.** Sequence any authorized rollout deliberately: reviewed migrations, compatible application deployment, then authorized functional QA.

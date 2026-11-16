@@ -1,6 +1,7 @@
--- #613: local-only additive proposal, NOT deployed, not called by official day processing.
--- A future authorized finalization batch must guard player affiliations and match identity.
--- Public numeric match IDs survive world reset; these immutable receipts survive too.
+-- #613: additive V2 schema in Draft/HOLD PR; remote D1 migration requires separate approval.
+-- Official finalization atomically guards eligible player affiliations and match identity.
+-- Stable public numeric match IDs survive Reset Season 0; V2 receipts are deleted only
+-- by a separately authorized, generation-scoped atomic reset permit (migration 0030).
 CREATE TABLE IF NOT EXISTS match_lineup_result_receipts (
  public_match_id INTEGER PRIMARY KEY REFERENCES public_match_numbers(id) ON DELETE RESTRICT,
  slot_match_id TEXT NOT NULL CHECK(length(slot_match_id)=35),
