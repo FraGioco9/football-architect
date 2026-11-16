@@ -357,7 +357,7 @@ export function createControlledActionLab(RAPIER,id,{
     ...(tapExperiment?{physicalReceiverTap,realReleaseSequence,
      realOpponentContest}:{}),
     ...(reachExperiment?{realBallReachM32:playerFrame.realBallReachM32}:{}),
-    ...(baseFootwork?{baseFootworkAudit}:{}),
+    ...(basicFootwork?{baseFootworkAudit}:{}),
     ...(goalkeeperSave?{
       goalkeeperDiveIntent:playerFrame.goalkeeperDiveIntent,
       goalkeeperDiveIntentTicks:playerFrame.goalkeeperDiveIntentTicks
