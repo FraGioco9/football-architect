@@ -44,6 +44,8 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
  assert.match(linked,/<a class="club-fixture-native-link" href="\/matches\/123" tabindex="-1" aria-hidden="true"><\/a>/,
   'browser native context menu and modifier/middle click are available on the whole row');
  assert.doesNotMatch(linked,/target="_blank"/,'left click remains in the same tab');
+ assert.doesNotMatch(output({...official,coverage:'loading'}),/\/matches\/|is-match-link|club-fixture-native-link/,
+  'loading Club Fixtures must not expose previously verified match IDs');
  const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
  assert.match(css,/\.club-fixture-native-link\{position:absolute;inset:0;z-index:1;display:block\}/);
  assert.match(css,/\.club-fixture-row\.is-match-link :is\(\.club-fixture-meta a,\.club-fixture-opponent-name,\.club-fixture-score-link,\.club-fixture-venue\)\{position:relative;z-index:2\}/);

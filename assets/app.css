@@ -582,6 +582,9 @@ html:not([data-fa-fixture-hover-suspended]) .app-fixture-match.is-match-link:hov
 }
 .app-fixture-score-link{display:block;color:inherit;text-decoration:none}
 .app-fixture-score-link:focus-visible{outline:none}
+/* Block pointer use immediately on loading transitions; DOM sync removes the
+ * anchor nodes themselves, so keyboard/new-tab navigation is also disabled. */
+html[data-fa-standings-loading="true"] :is(.app-fixture-score-link,.app-fixture-native-link,.fa-bracket-match-link){pointer-events:none}
 .app-fixture-match.is-match-link:has(.app-fixture-score-link:focus-visible){
  outline:2px solid var(--focus);outline-offset:2px;
 }

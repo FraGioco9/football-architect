@@ -954,11 +954,36 @@ test('#605 published Postseason bracket gives each leg its own official match li
   'both legs are full-height native link targets, independent of the clubs');
  assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
   .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
+ // Keep the bracket layout but remove all navigable match targets during loading.
+ r.document.documentElement.dataset.faStandingsLoading='true';
+ r.events['fa:published-match-links-change']();
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
+  'loading removes both legs and the single final link');
+ assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')),
+  'loading removes bracket hover and whole-card click');
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link'||n.className==='app-fixture-native-link').length,0,
+  'loading Fixtures has no score or full-card match links');
+ assert.ok(r.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch)
+  .every(n=>!n.className.includes('is-match-link')));
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ r.route.set({view:'postseason'});
+ r.events['fa:published-match-links-change']();
+ assert.deepEqual(cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href)),hrefs,
+  'every verified knockout leg and final link returns after hydration');
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ assert.ok(r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .some(n=>n.className==='app-fixture-score-link'),
+  'verified Fixtures links return after loading');
+ r.route.set({view:'postseason'});
  r.publishSource({...source,source:'dev'});
  assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
   'DEV source removes all published bracket links');
  assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')));
  const css=read('assets/app.css');
+ assert.match(read('assets/competition-fixtures.js'),/attributeFilter:\['lang','data-fa-standings-loading'\]/);
+ assert.match(css,/html\[data-fa-standings-loading="true"\] :is\(\.app-fixture-score-link,\.app-fixture-native-link,\.fa-bracket-match-link\)\{pointer-events:none\}/);
  assert.match(css,/\.fa-bracket-card\.is-match-link\{position:relative;cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/);
  assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-start:0;width:50%\}/);
  assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{width:100%\}/);
