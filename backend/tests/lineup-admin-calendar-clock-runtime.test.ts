@@ -10,6 +10,7 @@ import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
 import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
+import {publishInternationalCalendarLineupV1} from '../src/admin-calendar-publish-lineup-v1.ts';
 import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
 import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
 import {readWorld} from '../src/world-repository.ts';
@@ -31,7 +32,7 @@ beforeEach(async()=>{
  world=(await initializeAdministrativeEvents(db,session,cmd(),'lineup-auto-init-0001',now)).world;
 });
 describe('#613 one-authority administrative clock and sporting handoff',()=>{
- it('backfills empty V2 days atomically and hands off to the real daily command',async()=>{
+ it('requires explicit calendar publication, then hands off to the real V2 daily command',async()=>{
   world=(await advanceAdministrativeClockLineupV1(
    db,session,'start',cmd(),'lineup-auto-start-0001',now)).world;
   for(const eventId of ['domestic:entrants','international:entrants']){
@@ -48,25 +49,30 @@ describe('#613 one-authority administrative clock and sporting handoff',()=>{
   expect(await count('season_match_slots')).toBe(3984);
   expect(await count('season_knockout_match_slots')).toBe(98);
   const before=world,request=cmd();
-  await db.prepare("CREATE TRIGGER fail_lineup_auto_advance BEFORE INSERT ON admin_operations WHEN NEW.command='advance-admin-calendar-v1' BEGIN SELECT RAISE(ABORT,'late audit failure'); END").run();
+  // Explicit event completion is mandatory, even though a calendar could
+  // be constructed from the already verified domestic/draw records.
+  await expect(advanceAdministrativeClockLineupV1(
+   db,session,'advance',request,'lineup-auto-blocked-before-publish',now
+  )).rejects.toMatchObject({status:409,code:'calendar_event_prerequisites'});
+  await db.prepare("CREATE TRIGGER fail_lineup_auto_publish BEFORE INSERT ON admin_operations WHEN NEW.command='publish-international-calendar-v1' BEGIN SELECT RAISE(ABORT,'late audit failure'); END").run();
   try{
-   await expect(advanceAdministrativeClockLineupV1(
-    db,session,'advance',request,'lineup-auto-day4-0001',now
+   await expect(publishInternationalCalendarLineupV1(
+    db,session,request,'lineup-auto-publish-0001',now
    )).rejects.toMatchObject({status:503});
-  }finally{await db.prepare('DROP TRIGGER fail_lineup_auto_advance').run()}
+  }finally{await db.prepare('DROP TRIGGER fail_lineup_auto_publish').run()}
   expect(await readWorld(db)).toEqual(before);
   expect(await count('season_calendars')).toBe(0);
   expect(await count('season_lineup_day_outcomes')).toBe(0);
   expect(await count('season_day_outcomes')).toBe(0);
-  const published=await advanceAdministrativeClockLineupV1(
-   db,session,'advance',request,'lineup-auto-day4-0001',now);
+  const published=await publishInternationalCalendarLineupV1(
+   db,session,request,'lineup-auto-publish-0001',now);
   world=published.world;
-  expect(world.day).toBe(4);
-  expect(await advanceAdministrativeClockLineupV1(
-   db,session,'advance',request,'lineup-auto-day4-0001',now
+  expect(world.day).toBe(3);
+  expect(await publishInternationalCalendarLineupV1(
+   db,session,request,'lineup-auto-publish-0001',now
   )).toEqual(published);
   const rows=(await db.prepare('SELECT day,simulation_version,outcome_json FROM season_lineup_day_outcomes ORDER BY day').all()).results;
-  expect(rows.map((r:any)=>r.day)).toEqual([1,2,3,4]);
+  expect(rows.map((r:any)=>r.day)).toEqual([1,2,3]);
   expect(rows.every((r:any)=>r.simulation_version==='temporary-lineup-v1'&&
    JSON.parse(r.outcome_json).schemaVersion===2&&
    JSON.parse(r.outcome_json).results.length===0)).toBe(true);
@@ -74,19 +80,19 @@ describe('#613 one-authority administrative clock and sporting handoff',()=>{
   expect(await count('match_lineup_result_receipts')).toBe(0);
   const evidence=await loadSeasonSportingEvidence(db,world);
   const replay=await replayLineupSeasonV1(db,world,evidence,world.day);
-  expect(replay.progression.lastDay).toBe(4);
+  expect(replay.progression.lastDay).toBe(3);
   expect(replay.resultCount).toBe(0);
 
   const start=cmd();
   const next=await executeLineupLifecycleV1(
-   db,session,'advance',start,'lineup-auto-sporting-day5',now
+   db,session,'advance',start,'lineup-auto-sporting-day4',now
   );
   world=next.world;
-  expect(world.day).toBe(5);
-  expect(await count('season_lineup_day_outcomes')).toBe(5);
+  expect(world.day).toBe(4);
+  expect(await count('season_lineup_day_outcomes')).toBe(4);
   expect(await count('season_day_outcomes')).toBe(0);
   expect(await executeLineupLifecycleV1(
-   db,session,'advance',start,'lineup-auto-sporting-day5',now
+   db,session,'advance',start,'lineup-auto-sporting-day4',now
   )).toEqual(next);
  },120000);
 });

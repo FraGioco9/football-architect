@@ -9,7 +9,6 @@ import {canonicalHash} from './catalogue-snapshot.ts';
 import {buildInitialSchedule,buildTrustedSeasonSchedule,type InitialSchedule} from './initial-schedule.ts';
 import {initialDrawOutcomes} from './initial-draws.ts';
 import {dueAdministrativeMilestones,type AdministrativeMilestone} from './domain/calendar/admin-calendar-policy.ts';
-import {planEmptyLineupPreseasonV1} from './lineup-preseason-evidence.ts';
 export interface AdvanceEventRow {
  event_id:string;kind:AdministrativeMilestone['kind'];scope:string;scheduled_day:number;event_order:number;
  status:AdministrativeMilestone['status'];completed_at:number|null;receipt_hash:string|null;
@@ -85,51 +84,11 @@ export async function planAdministrativeAdvanceLineupV1(db:Database,world:WorldV
    }
    receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:event.event_id,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>[d.competitionId,d.hash])});
   }else if(event.kind==='generate-international-calendar'){
-   if(existing||!stage||!schedule||!draws||!completed.has('international:draw'))blocked();
-   const calendarHash=await canonicalHash(schedule);
-   // Automatic calendar publication must not certify a calendar whose league
-   // and knockout matches have never received their canonical public IDs.
-   // These slots are published by the protected domestic/draw commands.
-   // The administrative auto-plan does NOT silently invent unpublished slots.
-   const slotCounts=await Promise.all([
-    db.prepare('SELECT COUNT(*) AS n FROM season_match_slots WHERE generation=? AND season_number=?')
-     .bind(world.generation,world.seasonNumber).first<{n:number}>(),
-    db.prepare('SELECT COUNT(*) AS n FROM season_knockout_match_slots WHERE generation=? AND season_number=?')
-     .bind(world.generation,world.seasonNumber).first<{n:number}>(),
-    db.prepare('SELECT COUNT(*) AS n FROM public_match_numbers WHERE generation=? AND season_number=?')
-     .bind(world.generation,world.seasonNumber).first<{n:number}>()
-   ]);
-   if(slotCounts[0]?.n!==3984||slotCounts[1]?.n!==98||slotCounts[2]?.n!==4082)
-    blocked();
-   for(const [table,count] of [
-    ['season_match_slots',3984],['season_knockout_match_slots',98],
-    ['public_match_numbers',4082]
-   ] as const)guards.push(abortUnless(db,
-    'SELECT 1 WHERE (SELECT COUNT(*) FROM '+table+' WHERE generation=? AND season_number=?)=?',
-    [world.generation,world.seasonNumber,count]));
-   receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:event.event_id,calendarHash,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>d.hash)});
-   writes.push(db.prepare('INSERT INTO season_calendars VALUES(?,?,?,?,?,?)').bind(world.seasonNumber,schedule.algorithmVersion,calendarHash,JSON.stringify(schedule),'generated',now));
-   // No administrative event may be moved into the sporting portion of the season.
-   // All prerequisites have completed before any destination-day match is finalized.
-   if(rows.some(r=>r.scope!=='season'&&r.scheduled_day>world.day))blocked();
-   // No sporting simulation is permitted during administration. The calendar
-   // has no fixtures on days 1–12. Day 13 requires the real match engine.
-   const emptyDays=await planEmptyLineupPreseasonV1({
-    snapshot,schedule,generation:world.generation,throughDay:destinationDay,calendarHash
-   });
-   guards.push(abortUnless(db,
-    'SELECT 1 WHERE (SELECT COUNT(*) FROM season_lineup_day_outcomes WHERE season_number=?)=0',
-    [world.seasonNumber]));
-   guards.push(abortUnless(db,
-    'SELECT 1 WHERE (SELECT COUNT(*) FROM match_lineup_result_receipts WHERE generation=? AND season_number=?)=0',
-    [world.generation,world.seasonNumber]));
-   for(const day of emptyDays){
-    writes.push(db.prepare(
-     'INSERT INTO season_lineup_day_outcomes VALUES(?,?,?,?,?,?,?,?)'
-    ).bind(world.seasonNumber,world.generation,day.day,calendarHash,
-     'temporary-lineup-v1',day.hash,day.json,now));
-   }
-   published=true;
+   // Intentional: the owner requires every due administrative event to
+   // complete explicitly before advancing. Calendar publication has its
+   // own authenticated command that writes empty V2 preseason receipts.
+   // The clock must NEVER publish it implicitly or simulate matches.
+   blocked();
   }else return invalid();
   if(existing){if(event.receipt_hash!==receipt)invalid()}
   else writes.push(db.prepare(`UPDATE season_admin_events SET status='completed',completed_at=?,receipt_hash=? WHERE season_number=${world.seasonNumber} AND event_id=? AND scheduled_day=? AND status='scheduled'`).bind(now,receipt,event.event_id,world.day));

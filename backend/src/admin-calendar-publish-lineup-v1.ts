@@ -43,6 +43,19 @@ export async function publishInternationalCalendarLineupV1(db:Database,session:A
   if(row.competition_id!==want.competitionId||row.stage_id!=='league'||row.seed!==stage.seed||row.algorithm_version!==schedule.algorithmVersion||row.outcome_hash!==want.hash||
     await canonicalHash(JSON.parse(row.outcome_json))!==want.hash)throw new ApiError(422,'calendar_event_prerequisites');
  }
+ // The domestic and international draw commands must already have published
+ // all stable match IDs. Publishing a calendar without them is never allowed.
+ // The counts are also guarded inside the same D1 batch below.
+ const slotCounts=await Promise.all([
+  db.prepare('SELECT COUNT(*) AS n FROM season_match_slots WHERE generation=? AND season_number=?')
+   .bind(world.generation,world.seasonNumber).first<{n:number}>(),
+  db.prepare('SELECT COUNT(*) AS n FROM season_knockout_match_slots WHERE generation=? AND season_number=?')
+   .bind(world.generation,world.seasonNumber).first<{n:number}>(),
+  db.prepare('SELECT COUNT(*) AS n FROM public_match_numbers WHERE generation=? AND season_number=?')
+   .bind(world.generation,world.seasonNumber).first<{n:number}>()
+ ]);
+ if(slotCounts[0]?.n!==3984||slotCounts[1]?.n!==98||slotCounts[2]?.n!==4082)
+  throw new ApiError(409,'calendar_event_prerequisites');
  const calendarJson=JSON.stringify(schedule),calendarHash=await canonicalHash(schedule);
  const receipt=await canonicalHash({schemaVersion:1,generation:world.generation,season:world.seasonNumber,eventId:'international:calendar',calendarHash,domesticHash:stage.fixtures_hash,drawHashes:draws.map(d=>d.outcome_hash)});
  // Calendar publication is NEVER allowed to simulate matches. The approved
@@ -61,6 +74,12 @@ export async function publishInternationalCalendarLineupV1(db:Database,session:A
    abortUnless(db,`SELECT 1 FROM season_domestic_stages WHERE season_number=${world.seasonNumber} AND generation=? AND seed=? AND fixtures_hash=? AND fixtures_json=?`,[stage.generation,stage.seed,stage.fixtures_hash,stage.fixtures_json]),
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_draws WHERE season_number=${world.seasonNumber})=2`,[]),
    ...draws.map(d=>abortUnless(db,`SELECT 1 FROM season_draws WHERE season_number=${world.seasonNumber} AND competition_id=? AND stage_id=? AND seed=? AND outcome_hash=? AND outcome_json=?`,[d.competition_id,d.stage_id,d.seed,d.outcome_hash,d.outcome_json])),
+   ...([
+    ['season_match_slots',3984],['season_knockout_match_slots',98],
+    ['public_match_numbers',4082]
+   ] as const).map(([table,count])=>abortUnless(db,
+    'SELECT 1 WHERE (SELECT COUNT(*) FROM '+table+' WHERE generation=? AND season_number=?)=?',
+    [world.generation,world.seasonNumber,count])),
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=${world.seasonNumber})=0`,[]),
    abortUnless(db,`SELECT 1 WHERE (SELECT count(*) FROM season_lineup_day_outcomes WHERE season_number=${world.seasonNumber})=0`,[]),
    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM match_lineup_result_receipts WHERE generation=? AND season_number=?)=0',[world.generation,world.seasonNumber]),
