@@ -675,7 +675,9 @@ test('#605 scrolling suppresses stale fixture hover until the mouse genuinely mo
  view.events.pointermove({pointerType:'mouse',clientX:205,clientY:122});
  assert.equal(state.faFixtureHoverSuspended,undefined,'a new deliberate move restores hover');
  const css=read('assets/app.css');
- assert.match(css,/html\[data-fa-fixture-hover-suspended\] \.app-fixture-match\.is-match-link\{transition:none\}/);
+ assert.match(css,/\.app-fixture-match\.is-match-link\{cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/,
+  'scroll hover dismissal retains the standard fade-out');
+ assert.doesNotMatch(css,/html\[data-fa-fixture-hover-suspended\] \.app-fixture-match\.is-match-link\{transition:none\}/);
  assert.match(css,/\.app-fixture-match\.is-match-link:has\(\.app-fixture-score-link:focus-visible\)/,
   'keyboard focus remains visible even when mouse hover is suspended');
 });

@@ -583,7 +583,7 @@ html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hove
 .club-fixture-row.is-match-link:has(.club-fixture-score-link:focus-visible){
  outline:2px solid var(--focus);outline-offset:-2px;
 }
-html[data-fa-fixture-hover-suspended] .club-fixture-row.is-match-link{transition:none}
+/* Scroll suppresses hover; keep the standard background fade-out active. */
 @media(prefers-reduced-motion:reduce){.club-fixture-row.is-match-link{transition:none}}
 .club-fixture-result small{color:var(--muted);font-size:10px}
 /* Align loading bars to the text line boxes used by hydrated rows. */

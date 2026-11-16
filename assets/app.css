@@ -581,8 +581,8 @@ html:not([data-fa-fixture-hover-suspended]) .app-fixture-match.is-match-link:hov
 .app-fixture-match.is-match-link:has(.app-fixture-score-link:focus-visible){
  outline:2px solid var(--focus);outline-offset:2px;
 }
-/* Scroll dismisses hover immediately; do not leave a fade-out stuck behind the pointer. */
-html[data-fa-fixture-hover-suspended] .app-fixture-match.is-match-link{transition:none}
+/* Scrolling removes the hover target, but the existing 150ms transition still
+ * fades the accent away. Only reduced-motion users skip this animation. */
 @media(prefers-reduced-motion:reduce){.app-fixture-match.is-match-link{transition:none}}
 .app-fixture-pending{grid-column:2;justify-self:center;text-align:center}
 /* A single pending score occupies the centre track, regardless of surrounding placeholders. */

@@ -68,7 +68,9 @@ test('Complete verified club fixtures need the published lookup authority',()=>{
 test('Club Fixtures scroll dismisses pointer hover without hiding keyboard focus',()=>{
  const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
  const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
- assert.match(css,/html\[data-fa-fixture-hover-suspended\] \.club-fixture-row\.is-match-link\{transition:none\}/);
+ assert.match(css,/\.club-fixture-row\.is-match-link\{cursor:pointer;transition:background-color \.15s ease\}/,
+  'the hover fade-out is preserved during scrolling');
+ assert.doesNotMatch(css,/html\[data-fa-fixture-hover-suspended\] \.club-fixture-row\.is-match-link\{transition:none\}/);
  assert.match(css,/\.club-fixture-row\.is-match-link:has\(\.club-fixture-score-link:focus-visible\)/);
  assert.match(controller,/window\.addEventListener\('scroll',[\s\S]*?faFixtureHoverSuspended='true'/);
  assert.match(controller,/window\.addEventListener\('pointermove',[\s\S]*?event\.pointerType!=='mouse'/);
