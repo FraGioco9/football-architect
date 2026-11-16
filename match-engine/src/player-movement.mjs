@@ -2338,6 +2338,16 @@ export function createPlayerMovement(options={}){
   const targets=players.map(p=>{
    if(b06bGoalKickoffTarget&&p.id===b06bGoalKickoffTarget.team+'-10')
     return Object.freeze({x:p.team==='home'?0.15:-0.15,y:0});
+   // H2b2a DEV mini-research: when the other team took an original
+   // goal kickoff, its forward may otherwise occupy the centre at
+   // HALF-TIME and physically block the authentic AWAY #10 shoe.
+   // Vacate that lane through NORMAL original acceleration/turning and
+   // player separation; never teleport or force a collision event.
+   if(options.researchB06bGoalRestartEnabled===true&&
+      options.researchB06bHalftimeTick!==undefined&&
+      tick>=Math.max(120,options.researchB06bHalftimeTick-240)&&
+      p.id==='home-10'&&!b06bGoalKickoffTarget)
+    return Object.freeze({x:-4,y:3});
    if(options.researchB06bHalftimeTick!==undefined&&
       tick>=options.researchB06bHalftimeTick&&p.id==='away-10')
     return Object.freeze({x:-0.15,y:0});
