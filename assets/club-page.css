@@ -556,6 +556,8 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixtures-next{min-height:44px;margin-right:auto}
 /* Matchday navigation's disabled treatment: visible but muted, without hover feedback. */
 .club-fixtures-next:disabled,.club-fixtures-next:disabled:hover{opacity:.45;cursor:default;pointer-events:none;background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
+/* Keep first-paint Club Fixtures comboboxes inert while fixture rows are pending. */
+.club-fixtures[data-club-fixtures-state="loading"] .club-fixture-select .language-trigger,.club-fixture-select .language-trigger:disabled{opacity:.45;cursor:default;pointer-events:none;transition:none;animation:none;transform:none;box-shadow:none}
 .club-fixtures-list{margin:14px 0 0;padding:0;list-style:none;min-height:336px}
 .club-fixture-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(0,1.8fr) 36px 110px;gap:12px;align-items:center;min-height:64px;padding:10px 12px;box-sizing:border-box;border-bottom:1px solid var(--border);font-size:14px}
 .club-fixture-row.is-next{background:var(--surface);box-shadow:inset 3px 0 var(--fa-shell-accent)}

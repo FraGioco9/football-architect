@@ -1287,6 +1287,9 @@ html[data-fa-standings-loading="true"] #competition-panel-fixtures .app-fixtures
 html[data-fa-standings-loading="true"] #competition-panel-fixtures :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}
 html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] .app-fixtures-skeleton{display:none!important}
 html[data-fa-standings-loading="true"] #competition-panel-fixtures[data-fa-content-state="empty"] #app-fixtures-empty{display:block!important}
+/* An unresolved Fixtures request is not a confirmed empty calendar. The global bootstrap may finish first. */
+#competition-panel-fixtures[data-fa-content-state="unknown"] .app-fixtures-skeleton{display:grid}
+#competition-panel-fixtures[data-fa-content-state="unknown"] :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}
 /* Compatibility with a local server still injecting the old whole-panel visibility gate. */
 html:is([data-fa-dev-standings-pending="true"],[data-fa-debug-pending="true"],[data-fa-dev-season-transition="true"]):not([data-fa-competition-prepaint]):not([data-nav01-fragment="pending"]) #app-divisions #competition-panel-fixtures{visibility:visible!important}
 @media(max-width:620px){
