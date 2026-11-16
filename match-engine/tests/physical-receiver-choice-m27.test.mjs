@@ -82,7 +82,7 @@ test('M27 authentic HOME/AWAY close pressure keeps source original clearance',
     assert.deepEqual(a.ball,b.ball,
      'original physical clearance must be unchanged under genuine close pressure');
     assert.equal(b.officialMatchPossession,false);
-    assert.equal(b.decisionEvidence.verifiedPossession,false);
+    assert.equal(b.decisionEvidence.officialPossession,false);
     if(tick===63){
      decision=b.physicalReceiverChoice;
      assert.ok(decision,'same original native second START required');
@@ -125,7 +125,7 @@ test('M27 authentic HOME/AWAY open-side second shoe can defer a clearance',
     const a=base.step(),b=adapted.step(),c=replay.step();
     assert.deepEqual(b,c,'no scripted outcomes, replay entire real world');
     assert.equal(b.officialMatchPossession,false);
-    assert.equal(b.decisionEvidence.verifiedPossession,false);
+    assert.equal(b.decisionEvidence.officialPossession,false);
     if(tick<63)
      assert.deepEqual(a.ball,b.ball,'before second native shoe no changed physics');
     if(tick===63){
