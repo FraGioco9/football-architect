@@ -66,9 +66,9 @@ Immutable D1 `player_portrait_profiles` snapshot `player-portraits-v2` / `player
 
 Candidate source PNG (conversation attachment, outside GitHub): `player_50_severino_cerboni_draft_corrected.png`, **1086×1448 RGBA**, SHA256 `a6bf21b359f78e40f087fef03d1e252e8a4615ff3b9867445ca53d261c7db9b5`. Source remains unchanged and outside the repository.
 
-Display-only derivative target: `assets/players/portraits/50.webp`, Lanczos resize to 320×427, top crop to 320×362, WebP quality 70/method 6/exact alpha, **13,844 bytes**, SHA256 `ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54`, Git blob SHA1 `ea1598f93300370455e62d5694f849de16496a4c` (verify after upload). Public photo mapping, allowlist, publication requirement and digest test are staged only on this PR. No CSS, frame, protected Admin preview or other portraits changed.
+Display-only derivative target: `assets/players/portraits/50.webp`, Lanczos resize to 320×427, top crop to 320×362, WebP quality 70/method 6/exact alpha, **13,844 bytes**, SHA256 `ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54`, Git blob SHA1 `ea1598f93300370455e62d5694f849de16496a4c` (**verified uploaded Git blob**). Public photo mapping, allowlist, publication requirement and digest test are staged only on this PR. No CSS, frame, protected Admin preview or other portraits changed.
 
-Manual guarded DEV-only SQL is staged at `backend/manual/portrait-50-approved-dev.sql` but **MUST NOT BE EXECUTED** without separate publication authorization. Remaining: uploaded binary integrity/alpha, exact-head CI, desktop/mobile/Safari crop and fallback, portrait approval, merge, deploy, and explicit DEV D1 permission. Keep Draft/HOLD.
+Manual guarded DEV-only SQL is staged at `backend/manual/portrait-50-approved-dev.sql` but **MUST NOT BE EXECUTED** without separate publication authorization. WebP binary committed to PR with exact SHA1; local VP8X/alpha/dimensions/SHA256 checked. Remaining: exact-head CI, desktop/mobile/Safari crop and fallback, portrait approval, merge, deploy, and explicit DEV D1 permission. Keep Draft/HOLD.
 
 
 ## #640 — Matthew Tiamiyu (#47) staged integration — HOLD
