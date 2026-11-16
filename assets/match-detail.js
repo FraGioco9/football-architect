@@ -128,8 +128,19 @@
   for(const side of ['home','away']){
    const id=clubKey(data?.[side+'Participant']?.clubId);
    const club=id&&clubs?.clubs?.find(c=>c.countryId+'-'+c.clubId===id);
-   const title=find('[data-match-side-title="'+side+'"]');
-   if(title)title.textContent=club?.primaryName||id||tr[side];
+   const title=find('[data-match-side-name="'+side+'"]');
+   if(title){
+    title.textContent=club?.primaryName||id||tr[side];
+    // Only a verified club identity can navigate to the canonical overview.
+    // Match the scoreboard links; unresolved participants remain plain text.
+    if(id){
+     title.href=href('/clubs/'+id.split('-')[0].toLowerCase()+'/'+Number(id.split('-')[1])+'/overview');
+     title.target='_blank';title.rel='noopener noreferrer';
+    }else{
+     title.removeAttribute('href');title.removeAttribute('target');title.removeAttribute('rel');
+    }
+    title.removeAttribute('title');
+   }
    const crest=find('[data-match-side-crest="'+side+'"]');
    if(crest){
     // The canonical passive crest renderer accepts only published registry

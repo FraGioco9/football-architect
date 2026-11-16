@@ -64,7 +64,7 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   for(const side of ['home','away']){
    assert.ok(section.includes('data-match-side="'+side+'"'));
    assert.ok(section.includes('data-match-side-crest="'+side+'"'));
-   assert.ok(section.includes('data-match-side-title="'+side+'"></h2>'));
+   assert.ok(section.includes('data-match-side-title="'+side+'"><a class="app-match-side-link" data-match-side-name="'+side+'"></a></h2>'));
    assert.ok(section.includes('data-match-position="'+side+'">–</strong>'));
    assert.ok(section.includes('data-match-form="'+side+'"'));
    assert.ok(section.includes('data-match-form-fact="'+side+'" hidden'));
@@ -162,6 +162,9 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  for(const fragment of ["club?.primaryName||id||tr[side]","crest.dataset.clubCrest=id",
  "data-match-side-crest","renderSides(tr)"])assert.ok(js.includes(fragment),fragment);
  assert.doesNotMatch(js,/assets\/clubs\/.*crest\.svg/);
+ assert.match(js,/title\.href=href\('\/clubs\/'\+id\.split\('-'\)\[0\]\.toLowerCase\(\)/);
+ assert.match(js,/title\.removeAttribute\('href'\);title\.removeAttribute\('target'\);title\.removeAttribute\('rel'\)/);
+ assert.ok(read('assets/match-detail.css').includes('.app-match-side-link[href]:hover'));
  assert.ok(html.includes('src="/assets/club-crests.js" defer'));
  assert.ok(html.includes('window.faClubCrests='));
  assert.ok(read('tools/generate-app-pages.mjs').includes('JSON.stringify(clubCrestAssets().catalog)'));

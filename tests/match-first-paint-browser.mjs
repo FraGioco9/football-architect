@@ -84,6 +84,7 @@ for(const [engine,driver] of Object.entries(engines)){
       stage:{left:frame.left,right:frame.right,width:frame.width,height:frame.height},
       main:{left:main.left,right:main.right,width:main.width},
       firstPaintNames:panels.map(p=>p.querySelector('.app-match-side-title').textContent),
+      firstPaintNameLinks:panels.map(p=>{const a=p.querySelector('.app-match-side-link');return {hasHref:a.hasAttribute('href'),content:a.textContent}}),
       crestSlots:panels.map(p=>p.querySelectorAll('[data-match-side-crest]').length),
       facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
@@ -97,6 +98,7 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
     assert.deepEqual(stage.firstPaintNames,['','']);
+    assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
      const pair=stage.facts[i];
      assert.equal(pair.length,1);
@@ -301,6 +303,16 @@ for(const [engine,driver] of Object.entries(engines)){
        officialClub('IT-1').primaryName);
       assert.deepEqual(await page.locator('[data-match-side-title]').allTextContents(),
        [officialClub('IT-1').primaryName,officialClub('IT-2').primaryName]);
+      const sideLinks=await page.locator('[data-match-side-name]').evaluateAll(els=>els.map(el=>({
+       href:el.hasAttribute('href')?new URL(el.getAttribute('href'),location.href).pathname:null,
+       target:el.getAttribute('target'),rel:el.getAttribute('rel'),
+       decoration:getComputedStyle(el).textDecorationLine,
+       label:el.textContent
+      })));
+      assert.deepEqual(sideLinks,[
+       {href:'/clubs/it/1/overview',target:'_blank',rel:'noopener noreferrer',decoration:'none',label:officialClub('IT-1').primaryName},
+       {href:'/clubs/it/2/overview',target:'_blank',rel:'noopener noreferrer',decoration:'none',label:officialClub('IT-2').primaryName}
+      ]);
       assert.deepEqual(await page.locator('[data-match-side-crest]').evaluateAll(els=>els.map(el=>el.dataset.clubCrest)),
        ['IT-1','IT-2']);
       await page.waitForFunction(()=>[...document.querySelectorAll('[data-match-side-crest]')].every(
@@ -315,6 +327,10 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await unresolved.getAttribute('href'),null);
       assert.equal(await unresolved.getAttribute('target'),null);
       assert.equal(await unresolved.getAttribute('rel'),null);
+      const unresolvedSide=page.locator('[data-match-side-name="home"]');
+      assert.equal(await unresolvedSide.getAttribute('href'),null);
+      assert.equal(await unresolvedSide.getAttribute('target'),null);
+      assert.equal(await unresolvedSide.getAttribute('rel'),null);
      }
      const state=await page.evaluate(()=>{
       const root=document.querySelector('[data-match-detail]');

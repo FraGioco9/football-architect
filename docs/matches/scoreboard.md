@@ -395,3 +395,7 @@ full-content-width alignment, and absence of shifted elements.
 ## Home/Away form availability
 
 The form row contains only the latest five verified prior-day results in this competition, in chronological order. Without any available prior result, the label and row stay hidden (also on first paint and when the published snapshot is unavailable), with Position centred across the panel. If one to four official outcomes exist, only those one to four cells are rendered; five outcomes render five cells. Home and Away are treated independently, with no placeholder results or fabricated fixtures. This remains responsive at every breakpoint.
+
+## Side-panel club title navigation
+
+The full club name in each Home/Away side panel is a text-sized link to the verified club's canonical `/clubs/<country>/<id>/overview` route (new tab, `noopener noreferrer`), consistent with the scoreboard abbreviation. Underlining appears only on hover or keyboard focus. Unknown or unresolved teams show plain, non-interactive text with no fabricated link or tooltip. The h2 heading, crest, stats, lineup and field geometry are unchanged.

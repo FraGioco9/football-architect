@@ -151,6 +151,12 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-team-identity{display:flex;align-items:center;gap:10px;min-height:64px;margin:0 0 16px;min-width:0}
 .app-match-team-crest{flex:0 0 64px;width:64px;height:64px}
 .app-match-side-title{min-width:0;min-height:1.35em;margin:0;font-size:clamp(15px,1.2vw,20px);line-height:1.35;font-weight:750;text-align:left;color:var(--text);overflow-wrap:anywhere}
+.app-match-side-link{color:inherit!important;text-decoration:none;overflow-wrap:anywhere}
+.app-match-side-link[href]{cursor:pointer}
+.app-match-side-link[href]:hover,.app-match-side-link[href]:focus-visible{
+ text-decoration-line:underline;text-decoration-thickness:.1em;text-underline-offset:3px;text-decoration-skip-ink:auto;
+}
+.app-match-side-link:not([href]){cursor:default}
 .app-match-side-stats{display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:8px;align-items:start;width:100%;min-width:0;margin-bottom:14px}
 .app-match-side-fact{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;margin:0}
 .app-match-side-fact[hidden]{display:none}
