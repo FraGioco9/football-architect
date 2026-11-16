@@ -680,13 +680,23 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
   }
  }
  function advance(){
+  // A dead-ball state with unknown legal restart owner is NOT live play.
+  // Leave the last genuine full-ball crossing on screen; otherwise Rapier
+  // continues falling past the finite grass after play has stopped.
+  if(session.spec.mode==='referee'&&
+     session.snapshot().refereeEvidence?.lastEvent&&
+     !session.snapshot().refereeEvidence?.restartApplied)return;
   const f=session.step();const p=f.ball.position;
   trail.push({x:p.x,y:p.y});
   if(trail.length>450)trail.shift();
   render();
+  if(session.spec.mode==='referee'&&
+     f.refereeEvidence?.lastEvent&&!f.refereeEvidence.restartApplied){
+   stop();go.disabled=true;step.disabled=true;
+  }
  }
  function resetSession(){
-  stop();if(session)session.dispose();
+  stop();step.disabled=false;if(session)session.dispose();
   shotSideLabel.hidden=!['shot','cross','save','tackle','interception','trap','dribble','goal','touchline','goal-line-out','carry','challenge'].includes(select.value);
   shotLaneLabel.hidden=select.value!=='shot';
   controlSceneLabel.hidden=select.value!=='control';

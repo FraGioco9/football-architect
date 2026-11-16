@@ -184,6 +184,10 @@ test('clean-stack Action LABs load all fourteen options in real DEV Chrome',
     /No .* witness yet|genuine Rapier shoe START|Observed: actual|Observed: separate/,
     'A pending action must not become a fabricated positive');
    assert.match(result.readout,/Tick [0-9]+/);
+   if(choice==='touchline'||choice==='goal-line-out'){
+    assert.match(result.readout,/^Tick (?:11|12) /,
+     'unresolved dead ball freezes at its actual full-ball boundary tick');
+   }
    if(choice==='control'){
     assert.match(result.readout,/Physical PASS tick 1.*intended Home #9/);
     assert.match(result.readout,/Witnesses 1/);
