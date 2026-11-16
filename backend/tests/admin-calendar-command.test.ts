@@ -12,7 +12,7 @@ test('rescheduling policy is enforced by source-level publication guards',async(
  const {readFileSync}=await import('node:fs');
  const source=readFileSync(new URL('../src/admin-calendar-command.ts',import.meta.url),'utf8');
  assert.match(source,/SELECT season_number FROM season_calendars WHERE season_number=/);
- assert.match(source,/SELECT day FROM season_day_outcomes WHERE season_number=/);
+ assert.match(source,/SELECT day FROM season_lineup_day_outcomes WHERE season_number=/);
  assert.match(source,/SELECT count\(\*\) FROM season_calendars WHERE season_number=/);
- assert.match(source,/SELECT count\(\*\) FROM season_day_outcomes WHERE season_number=/);
+ assert.match(source,/SELECT count\(\*\) FROM season_lineup_day_outcomes WHERE season_number=/);
 });

@@ -33,7 +33,7 @@ export function projectClubMemberships(payload,clubKey,season,world){
  }
  if(!['partial','available'].includes(payload.status)||payload.reason!==null||
    !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
-   payload.provenance.resultAuthority!=='temporary-score-v1'||typeof payload.provenance.sourceRef!=='string'||
+   payload.provenance.resultAuthority!=='temporary-lineup-v1'||typeof payload.provenance.sourceRef!=='string'||
    !payload.provenance.sourceRef.startsWith('club:'+world.generation+':season:'+season+':')||
    !isObject(payload.data)||payload.data.season!==season||!Array.isArray(payload.data.memberships))
   throw TypeError('Invalid authoritative club overview');
@@ -77,7 +77,7 @@ export function projectClubHistoryOverviews(payload,clubKey,world){
   payload.clubKey!==clubKey||!sameWorld(payload.world,world)||
   payload.status!=='available'||payload.reason!==null||
   !isObject(payload.provenance)||payload.provenance.kind!=='authoritative'||
-  payload.provenance.resultAuthority!=='temporary-score-v1'||
+  payload.provenance.resultAuthority!=='temporary-lineup-v1'||
   payload.provenance.sourceRef!=='club-history:'+world.generation+':revision:'+world.revision||
   !isObject(payload.data)||!Array.isArray(payload.data.overviews)||
   payload.data.overviews.length!==world.seasonNumber)

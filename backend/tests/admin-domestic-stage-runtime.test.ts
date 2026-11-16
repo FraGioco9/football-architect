@@ -4,10 +4,10 @@ import {env} from 'cloudflare:workers';
 import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
-import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
-import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
+import {readPublicMatchLineupV1 as readPublicMatchByNumber,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches} from '../src/public-match-read-lineup-v1.ts';
 import {readWorld} from '../src/world-repository.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
@@ -17,6 +17,12 @@ import {digestOpaqueToken} from '../src/session-tokens.ts';
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='9'.repeat(64);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const command=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
+async function readPublicMatch(database:any,id:string){
+ const number=/^[1-9][0-9]*$/.test(id)?id:String((await database.prepare(
+  'SELECT id FROM public_match_numbers WHERE slot_match_id=?'
+ ).bind(id).first() as {id:number}).id);
+ return readPublicMatchByNumber(database,number);
+}
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);

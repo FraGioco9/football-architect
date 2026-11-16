@@ -2,7 +2,7 @@
  * Pure projection only; never an approved snapshot or D1 mutation.
  */
 import {ApiError} from '../../errors.ts';
-import type {Progression} from '../../knockout-progression.ts';
+import type {Progression,FinalizedSportingMatch} from '../../knockout-progression.ts';
 const countries=['IT','ENG','ES','DE','FR','PT','NL','BR'] as const;
 export interface FinishedDivision {competitionId:string;rankedClubIds:readonly string[]}
 export interface CountryPostseason {countryId:string;playoutRelegatedClubId:string;playoffPromotedClubId:string}
@@ -42,7 +42,7 @@ export function proposeNextSeasonMembership(season:number,divisions:readonly Fin
  * into a review-only Season N+1 participant proposal.
  * Caller must first validate all 56 immutable sporting receipts.
  */
-export function membershipCandidateFromProgression(state:Progression):NextSeasonMembership {
+export function membershipCandidateFromProgression<Result extends FinalizedSportingMatch>(state:Progression<Result>):NextSeasonMembership {
  if(state.lastDay!==56||state.results.size!==4082||state.ties.size!==54)return reject();
  const divisions:FinishedDivision[]=[],outcomes:CountryPostseason[]=[];
  for(const c of countries){

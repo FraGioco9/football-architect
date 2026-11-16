@@ -1,11 +1,11 @@
 /** Immutable sporting projections derived only after validating all persisted day receipts. */
 import {ApiError} from './errors.ts';
-import type {Progression} from './knockout-progression.ts';
+import type {Progression,FinalizedSportingMatch} from './knockout-progression.ts';
 import {membershipCandidateFromProgression} from './domain/qualification/next-season-membership.ts';
 import {reviewInternationalHolders} from './domain/qualification/international-holder-review.ts';
 import {proposeHolderAllocation} from './domain/qualification/international-holder-allocation-proposal.ts';
 
-export function seasonArchiveSportingSummary(state:Progression){
+export function seasonArchiveSportingSummary<Result extends FinalizedSportingMatch>(state:Progression<Result>){
  if(state.lastDay!==56||state.results.size!==4082||state.ties.size!==54)throw new ApiError(422,'archive_invalid');
  const candidate=state.schedule.season===1?membershipCandidateFromProgression(state):null;
  const holders=candidate?reviewInternationalHolders(state,candidate):null;

@@ -3,7 +3,7 @@
  * block final approval when a holder is outside the league-derived allocation.
  */
 import {ApiError} from '../../errors.ts';
-import type {Progression} from '../../knockout-progression.ts';
+import type {Progression,FinalizedSportingMatch} from '../../knockout-progression.ts';
 import type {NextSeasonMembership} from './next-season-membership.ts';
 export interface HolderReview {
  readonly competitionId:'int-1'|'int-2';
@@ -13,7 +13,7 @@ export interface HolderReview {
  readonly requiresQualificationPolicyDecision:boolean;
 }
 const invalid=():never=>{throw new ApiError(422,'qualification_evidence_invalid')};
-export function reviewInternationalHolders(state:Progression,candidate:NextSeasonMembership):readonly HolderReview[]{
+export function reviewInternationalHolders<Result extends FinalizedSportingMatch>(state:Progression<Result>,candidate:NextSeasonMembership):readonly HolderReview[]{
  if(state.lastDay!==56||candidate.season!==2||state.results.size!==4082||state.ties.size!==54)return invalid();
  const byCup=new Map(candidate.bindings.filter(b=>b.competitionId.startsWith('int-')).map(b=>[b.competitionId,b.clubIds]));
  if(byCup.size!==2)return invalid();

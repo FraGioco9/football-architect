@@ -10,13 +10,13 @@ const membership=(season,id='IT-1',position=5,points=45)=>({
 const overview=(season,clubKey='IT-17',memberships=[membership(season)])=>({
  schemaVersion:1,providerId:'authoritative-world',clubKey,selectedSeason:season,world,
  status:season===2?'partial':'available',reason:null,
- provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:'+season+':verified'},
+ provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club:'+world.generation+':season:'+season+':verified'},
  data:{season,memberships}
 });
 const stats={clubId:'IT-17',played:32,won:18,drawn:8,lost:6,goalsFor:59,goalsAgainst:31,goalDifference:28,cleanSheets:11};
 const competition=(season,id='IT-1',team=stats)=>({
  schemaVersion:1,providerId:'authoritative-world',competitionId:id,selectedSeason:season,world,status:season===2?'partial':'available',reason:null,
- provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'world:'+world.generation+':season:'+season+':verified'},
+ provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'world:'+world.generation+':season:'+season+':verified'},
  data:{season,seasonState:season===2?{day:20,phase:'active'}:{day:56,phase:'closed'},
   participants:['IT-17'],history:season===2?null:{season,archiveHash:'verified'},
   standings:{complete:season!==2,rows:[{clubId:'IT-17',rank:5,played:32,points:45}]},
@@ -53,7 +53,7 @@ const compact={played:1,won:1,drawn:0,lost:0,goalsFor:2,goalsAgainst:1,goalDiffe
 const historyBatch=(overviews,at=world)=>({
  schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world:at,
  status:'available',reason:null,
- provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+ provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
   sourceRef:'club-history:'+at.generation+':revision:'+at.revision},
  data:{overviews}
 });
@@ -149,7 +149,7 @@ test('CLUB-API-03: single aggregate Club History GET returns every verified seas
  const batch={
   schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-17',world,
   status:'available',reason:null,
-  provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+  provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
    sourceRef:'club-history:'+world.generation+':revision:'+world.revision},
   data:{overviews:[summary1,summary2]}
  };

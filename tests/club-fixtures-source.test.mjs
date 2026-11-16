@@ -12,7 +12,7 @@ const result={homeGoals:2,awayGoals:1,resolution:'regulation',extraTime:null,pen
 const packet=(fixtures=[fixture(13,result),fixture(14)],w=world,season=1)=>({
  schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world:w,
  status:'partial',reason:null,
- provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',
+ provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',
   sourceRef:'club-fixtures:'+w.generation+':season:'+season+':'+('a'.repeat(64))},
  data:{season,seasonState:{day:13,phase:'active'},competitions:['IT-1'],fixtures}
 });
@@ -35,7 +35,7 @@ test('club fixtures source rejects mismatched world, foreign fixtures, future re
   {...packet(),world:otherWorld},
   {...packet(),data:{...packet().data,competitions:['IT-1','IT-1']}},
   {...packet(),data:{...packet().data,seasonState:{day:14,phase:'active'}}},
-  {...packet(),provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'other-source'}}
+  {...packet(),provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'other-source'}}
  ])await assert.rejects(read(payload).run(),/Invalid authoritative club fixture payload/);
 });
 
