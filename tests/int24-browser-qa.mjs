@@ -119,7 +119,10 @@ try {
    const mobile=page.locator('#app-standings-compact-list a[data-published-match]').first();
    const target=await mobile.getAttribute('href');
    assert.match(target,new RegExp('^/matches/[1-9][0-9]*$'));
-   assert.equal(await mobile.isVisible(),true,'compact form link is visible on mobile');
+   // Responsive breakpoint visibility is applied by a resize listener.
+   // The anchor exists before that listener has updated the compact shell;
+   // wait for actual user-visible interactivity, not just its DOM insertion.
+   await mobile.waitFor({state:'visible',timeout:10000});
    assert.equal(officialReads,1,'Standings to Fixtures navigation reuses a single public collection');
    await mobile.click();
    await page.waitForURL(url=>url.pathname===target);
