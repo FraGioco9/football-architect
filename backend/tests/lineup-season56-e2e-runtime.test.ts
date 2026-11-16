@@ -18,6 +18,9 @@ import {executeLineupLifecycleV1} from '../src/lineup-lifecycle-command.ts';
 import {archiveSeasonLineupV1} from '../src/season-archive-command-lineup-v1.ts';
 import {closeSeasonLineupV1} from '../src/season-close-command-lineup-v1.ts';
 import {verifyLineupSeasonArchiveV1} from '../src/lineup-season-archive-proof.ts';
+import {loadSeasonSportingEvidence} from '../src/season-sporting-evidence.ts';
+import {replayLineupSeasonV1} from '../src/lineup-season-replay.ts';
+import {planLineupSportingDayV1} from '../src/lineup-sporting-day-plan.ts';
 import {readClosedSeasonHistory} from '../src/season-archive-read.ts';
 import {readPublicSportingSeasonLineupV1} from '../src/public-sporting-read-lineup-v1.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
@@ -75,9 +78,24 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  expect(milestones.results.every(e=>e.status==='scheduled'&&e.scheduled_day===56)).toBe(true);
 
  for(let day=4;day<=56;day++){
-  const result=await executeLineupLifecycleV1(
-   db,session,'advance',command(),'lineup-season-sport-day-'+day+'-0001',now
-  );
+  let result:{world:World};
+  try{
+   result=await executeLineupLifecycleV1(
+    db,session,'advance',command(),'lineup-season-sport-day-'+day+'-0001',now
+   );
+  }catch(error){
+   // This branch runs only when the real protected writer rejected a day.
+   // Independently replay and plan that exact day for actionable diagnostics
+   // WITHOUT mutating any persisted receipt or suppressing the failure.
+   let diagnostic='planner succeeded, investigate atomic batch/SQL guards';
+   try{
+    const evidence=await loadSeasonSportingEvidence(db,world);
+    const prefix=await replayLineupSeasonV1(db,world,evidence,world.day);
+    await planLineupSportingDayV1(db,world,prefix.progression,
+     evidence.calendar.calendar_hash,now);
+   }catch(sourceError){diagnostic=String(sourceError)}
+   throw new Error('V2 full-season day '+day+' failed: '+String(error)+'; '+diagnostic);
+  }
   world=result.world;
   expect(world.day).toBe(day);
   if([12,13,30,43,55,56].includes(day)){
