@@ -92,6 +92,9 @@ test('six base-action LABs retain negative authorization boundaries',()=>{
  const html=readFileSync(new URL('../lab/index.html',import.meta.url),'utf8');
  const dev=readFileSync(new URL('../../tools/dev-standings-preview.mjs',import.meta.url),'utf8');
  const client=readFileSync(new URL('../src/action-labs.mjs',import.meta.url),'utf8');
+ const unified=readFileSync(new URL('../src/lab.mjs',import.meta.url),'utf8');
+ assert.match(unified,/count!==40/,'4 ball + 6 physical actions + 30 movement entries');
+ assert.doesNotMatch(unified,/count!==39/);
  for(const spec of ACTION_LAB_SCENARIOS)
   assert.match(html,new RegExp('<option value="'+spec.id+'">'));
  assert.match(html,/id="action-labs-dialog"/);

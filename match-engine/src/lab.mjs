@@ -1701,8 +1701,8 @@ function setupUnifiedScenarioMenu(){
    count++;
   }
  }
- if(count!==39||menu.querySelectorAll('.me-scenario-group-label').length!==3)
-  throw new Error('Scenario must show all 4+5+30 existing situations');
+ if(count!==40||menu.querySelectorAll('.me-scenario-group-label').length!==3)
+  throw new Error('Scenario must show all 4 ball + 6 action + 30 movement situations');
 }
 function restoreOriginalScenario(){
  document.querySelector('[data-me-dropdown="preset"]')
