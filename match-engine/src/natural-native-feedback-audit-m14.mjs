@@ -7,6 +7,8 @@ import {createPlayerMovement,INITIAL_PLAYERS,PLAYER_VERSION,
  PLAYER_MAX_SPEED_MPS,PLAYER_MIN_SEPARATION_M,PLAYER_PITCH,
  PLAYER_RADIUS_M} from './player-movement.mjs';
 import {M11_BALL_STARTS} from './unstaged-body-contact-audit.mjs';
+import {validateFootContactFrame,initialFootPositions}
+ from './player-foot-contact.mjs';
 
 const frozen=o=>Object.freeze(o);
 const allBallStates=new Map(M11_BALL_STARTS.map(x=>[x.id,x]));
@@ -125,6 +127,9 @@ export function auditNaturalNativeFeedback(RAPIER,{
  let actualBallConvergenceTicks=0,fullShapeTicks=0;
  const actualBodyPairs=new Set(),actualReasons=new Map();
  const independentNativeActivePairs=new Set();
+ // Native shoes always observe the pre-response canonical frame; the later
+ // solver correction must NOT be retroactively teleported to the shoes.
+ let lastGenuineShoeFrame=initialFootPositions();
  let latestShape=null,latestPressers=null,latestSupports=null;
  try{
   const initial=mover.snapshot();
@@ -144,7 +149,39 @@ export function auditNaturalNativeFeedback(RAPIER,{
    });
    if(invalid.length)throw new Error('M14 source kinematics mismatch '+
     JSON.stringify({stateId,side,mode,tick,invalid}));
+   // Fail closed before a new Rapier step if prior accepted body feedback
+   // would force a shoe to move/turn faster than the actual previous shoe.
+   // This is a physical research limitation, NOT a synthesized contact.
+   let nextFootFrame;
+   try{
+    nextFootFrame=validateFootContactFrame(
+     intended,tick,lastGenuineShoeFrame);
+   }catch(cause){
+    const violations=intended.players.flatMap((p,i)=>{
+     const old=lastGenuineShoeFrame[i];
+     const displacementM=Math.hypot(p.x-old.x,p.y-old.y);
+     const turnRad=Math.abs(Math.atan2(
+      Math.sin(p.facingRad-old.facingRad),
+      Math.cos(p.facingRad-old.facingRad)));
+     return displacementM>PLAYER_MAX_SPEED_MPS*FIXED_DT+1e-5||
+       turnRad>6*FIXED_DT+1e-5?[{
+        id:p.id,displacementM,turnRad,
+        previousShoe:frozen({x:old.x,y:old.y,facingRad:old.facingRad}),
+        proposed:frozen({x:p.x,y:p.y,facingRad:p.facingRad})
+       }]:[];
+    });
+    const error=new Error(
+     'M15 genuine shoe/body next-frame velocity/turn safety BLOCKED '+
+     JSON.stringify({stateId,side,mode,tick,violations}),
+     {cause}
+    );
+    error.code='M15_NATIVE_SHOE_MOTION_BLOCKED';
+    error.auditTick=tick;
+    error.auditViolations=frozen(violations);
+    throw error;
+   }
    const world=engine.step(intended);
+   lastGenuineShoeFrame=nextFootFrame;
    const native=engine.nativePlayerBodySnapshot();
    const queue=engine.sharedNativeContactSnapshot();
    if(world.tick!==tick||native.tick!==tick||queue.tick!==tick||

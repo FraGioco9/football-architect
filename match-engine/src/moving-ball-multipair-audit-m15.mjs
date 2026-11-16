@@ -33,22 +33,38 @@ export function auditMovingBallMultiPairMatrix(RAPIER,{
     !validateSelection(velocityIds,byMotion)||
     !Number.isSafeInteger(ticks)||ticks<1||ticks>240)
   throw new TypeError('M15 requires original bounded states and rolling velocities');
- const rows=[];
+ const rows=[],blocked=[];
  for(const stateId of stateIds)for(const velocityId of velocityIds){
   const motion=byMotion.get(velocityId);
   for(const side of ['home','away'])for(const mode of ['feedback','observe']){
-   const audit=auditNaturalNativeFeedback(RAPIER,{
-    stateId,side,mode,ticks,initialBallVelocity:{vx:motion.vx,vy:motion.vy}
-   });
-   rows.push(freeze({...audit,velocityId}));
+   try{
+    const audit=auditNaturalNativeFeedback(RAPIER,{
+     stateId,side,mode,ticks,initialBallVelocity:{vx:motion.vx,vy:motion.vy}
+    });
+    rows.push(freeze({...audit,velocityId}));
+   }catch(error){
+    // A legitimate unsafe shoe step is a FAIL-CLOSED physical witness.
+    // Do not count the incomplete trial as a successful source test, and
+    // never suppress unrelated exceptions or forge successful collisions.
+    if(error?.code!=='M15_NATIVE_SHOE_MOTION_BLOCKED')throw error;
+    blocked.push(freeze({
+     stateId,side,mode,velocityId,
+     requestedTicks:ticks,blockedAtTick:error.auditTick,
+     reason:'genuine-physical-shoe-body-mismatch',
+     violations:error.auditViolations
+    }));
+   }
   }
  }
  const positive=rows.filter(x=>x.mode==='feedback');
  const negative=rows.filter(x=>x.mode==='observe');
- for(const p of positive){
+ const paired=positive.filter(p=>negative.some(x=>
+  x.stateId===p.stateId&&x.side===p.side&&
+  x.velocityId===p.velocityId));
+ for(const p of paired){
   const n=negative.find(x=>x.stateId===p.stateId&&
    x.side===p.side&&x.velocityId===p.velocityId);
-  if(!n||JSON.stringify(n.initialBall)!==JSON.stringify(p.initialBall)||
+  if(JSON.stringify(n.initialBall)!==JSON.stringify(p.initialBall)||
      n.initialRollingFraction!==1||p.initialRollingFraction!==1||
      !p.original22Unstaged||!n.original22Unstaged||
      !p.singleNativeEventQueue||!n.singleNativeEventQueue||
@@ -57,18 +73,23 @@ export function auditMovingBallMultiPairMatrix(RAPIER,{
      n.firstAppliedFeedback!==null)
    throw new Error('M15 paired original Rapier source/negative-control violated');
  }
- const multiple=positive.filter(x=>x.firstSimultaneousBodyPairs!==null);
+ // Only complete feedback+control pairs can certify positive M15 evidence.
+ const multiple=paired.filter(x=>x.firstSimultaneousBodyPairs!==null);
  const first=multiple[0]??null;
  return freeze({
   version:'m15-moving-ball-authentic-native-multipair-search-v1',
   originalTerritories:stateIds.length,originalRollingProfiles:velocityIds.length,
-  runs:rows.length,ticksPerRun:ticks,rows:freeze(rows),
+  runs:stateIds.length*velocityIds.length*4,
+  completedRuns:rows.length,blockedRuns:blocked.length,
+  allRequestedRunsCompleted:blocked.length===0,
+  completeFeedbackControlPairs:paired.length,
+  ticksPerRun:ticks,rows:freeze(rows),blocked:freeze(blocked),
   feedbackNativeBodyStarts:positive.reduce((n,x)=>n+x.nativeBodyStarts,0),
   feedbackNativeShoeStarts:positive.reduce((n,x)=>n+x.nativeShoeStarts,0),
   actualCanonicalResponses:positive.reduce((n,x)=>n+x.acceptedNativeResponses,0),
   controlsCanonicalResponses:negative.reduce((n,x)=>n+x.acceptedNativeResponses,0),
-  maximumSimultaneousNativeBodyPairs:Math.max(
-   ...positive.map(x=>x.maxSimultaneousBodyPairs)),
+  maximumSimultaneousNativeBodyPairs:Math.max(0,
+   ...paired.map(x=>x.maxSimultaneousBodyPairs)),
   trueMultiPairContactObserved:multiple.length>0,
   realMultiPairFeedbackRuns:multiple.length,
   firstRealMultiPairEvidence:first?freeze({

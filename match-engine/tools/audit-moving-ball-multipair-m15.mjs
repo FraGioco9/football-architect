@@ -11,7 +11,12 @@ process.stdout.write('ME_628_M15_FULL_NATURAL_ROLLING_SEARCH '+
  JSON.stringify({
   originalTerritories:result.originalTerritories,
   authenticRollingProfiles:result.originalRollingProfiles,
-  totalRapierRuns:result.runs,ticksPerRun:result.ticksPerRun,
+  attemptedRapierRuns:result.runs,
+  completeRapierRuns:result.completedRuns,
+  blockedRapierRuns:result.blockedRuns,
+  verifiedFeedbackControlPairs:result.completeFeedbackControlPairs,
+  blockers:result.blocked,
+  ticksPerRun:result.ticksPerRun,
   nativeBodyStarts:result.feedbackNativeBodyStarts,
   nativeShoeStarts:result.feedbackNativeShoeStarts,
   acceptedCanonicalCorrections:result.actualCanonicalResponses,

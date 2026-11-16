@@ -22,7 +22,19 @@ test('M15 fixed 22-player native movement: rolling ball paired with observe-only
  assert.equal(a.originalTerritories,4);
  assert.equal(a.originalRollingProfiles,2);
  assert.equal(a.runs,32);
- assert.equal(a.rows.length,32);
+ assert.equal(a.completedRuns+a.blockedRuns,32);
+ assert.equal(a.rows.length,a.completedRuns);
+ assert.equal(a.blocked.length,a.blockedRuns);
+ assert.ok(a.completedRuns>0);
+ assert.equal(a.allRequestedRunsCompleted,a.blockedRuns===0);
+ for(const blocked of a.blocked){
+  assert.equal(blocked.reason,'genuine-physical-shoe-body-mismatch');
+  assert.ok(blocked.blockedAtTick>=1&&blocked.blockedAtTick<=225);
+  assert.ok(blocked.violations.length>0);
+  assert.ok(blocked.violations.every(x=>x.id.startsWith('home-')||
+   x.id.startsWith('away-')));
+ }
+ assert.ok(a.completeFeedbackControlPairs<=8);
  assert.equal(a.controlsCanonicalResponses,0);
  assert.equal(a.allPlayersOriginal,true);
  assert.equal(a.matchAuthority,false);
@@ -70,7 +82,10 @@ test('M15 fixed 22-player native movement: rolling ball paired with observe-only
   }
  }
  assert.equal(a.trueMultiPairContactObserved,a.rows.some(
-  x=>x.mode==='feedback'&&x.firstSimultaneousBodyPairs!==null));
+  x=>x.mode==='feedback'&&x.firstSimultaneousBodyPairs!==null&&
+   a.rows.some(n=>n.mode==='observe'&&
+    n.stateId===x.stateId&&n.side===x.side&&
+    n.velocityId===x.velocityId)));
  if(a.trueMultiPairContactObserved){
   assert.ok(a.firstRealMultiPairEvidence);
   assert.equal(a.firstRealMultiPairEvidence.pairs.length>=2,true);
@@ -80,7 +95,13 @@ test('M15 fixed 22-player native movement: rolling ball paired with observe-only
  }
  process.stdout.write('ME_628_M15_NATURAL_MOVING_BALL_MATRIX '+
   JSON.stringify({
-   sourceRuns:a.runs,ticks:a.ticksPerRun,realBodyStarts:a.feedbackNativeBodyStarts,
+   attemptedRuns:a.runs,completedRuns:a.completedRuns,
+   blockedRuns:a.blockedRuns,pairedRuns:a.completeFeedbackControlPairs,
+   blockers:a.blocked.map(x=>({
+    state:x.stateId,velocity:x.velocityId,side:x.side,mode:x.mode,
+    tick:x.blockedAtTick,actors:x.violations.map(y=>y.id)
+   })),
+   ticks:a.ticksPerRun,realBodyStarts:a.feedbackNativeBodyStarts,
    realShoeStarts:a.feedbackNativeShoeStarts,
    feedbackCorrections:a.actualCanonicalResponses,
    controlCorrections:a.controlsCanonicalResponses,
