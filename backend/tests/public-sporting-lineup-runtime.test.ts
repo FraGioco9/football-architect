@@ -31,17 +31,17 @@ beforeEach(async()=>{
  world=await readWorld(db);
 });
 async function prepareAndPublish(){
- world=(await prepareSeason(db,session,cmd(),'lp-prepare-00001',await loadApprovedSnapshot(),now)).world;
- world=(await initializeAdministrativeEvents(db,session,cmd(),'lp-init-00001',now)).world;
- world=(await advanceAdministrativeClockLineupV1(db,session,'start',cmd(),'lp-start-00001',now)).world;
+ world=(await prepareSeason(db,session,cmd(),'lp-prepare-00001-v2',await loadApprovedSnapshot(),now)).world;
+ world=(await initializeAdministrativeEvents(db,session,cmd(),'lp-init-00001-v2',now)).world;
+ world=(await advanceAdministrativeClockLineupV1(db,session,'start',cmd(),'lp-start-00001-v2',now)).world;
  for(const eventId of ['domestic:entrants','international:entrants'])
   world=(await completeConfirmationEvent(db,session,{...cmd(),eventId},
-   'lp-confirm-'+eventId,now)).world;
- world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day2-00001',now)).world;
- world=(await stageDomesticCalendar(db,session,cmd(),'lp-domestic-00001',now)).world;
- world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day3-00001',now)).world;
- world=(await executeInternationalDraw(db,session,cmd(),'lp-draw-00001',now)).world;
- world=(await publishInternationalCalendarLineupV1(db,session,cmd(),'lp-publish-00001',now)).world;
+   'lp-confirm--v2'+eventId,now)).world;
+ world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day2-00001-v2',now)).world;
+ world=(await stageDomesticCalendar(db,session,cmd(),'lp-domestic-00001-v2',now)).world;
+ world=(await advanceAdministrativeClockLineupV1(db,session,'advance',cmd(),'lp-day3-00001-v2',now)).world;
+ world=(await executeInternationalDraw(db,session,cmd(),'lp-draw-00001-v2',now)).world;
+ world=(await publishInternationalCalendarLineupV1(db,session,cmd(),'lp-publish-00001-v2',now)).world;
 }
 describe('#613 new V2 public competition, club, calendar projections (unrouted)',()=>{
  it('reads published V2-only days and next day without scoring future fixtures',async()=>{
@@ -55,7 +55,7 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
    data:{season:1,standings:{complete:false},statistics:{matchesPlayed:0,playerStatus:'available',players:[]}}});
   expect(before.data?.fixtures).toHaveLength(240);
   expect(before.data?.fixtures.every((f:any)=>f.result===null)).toBe(true);
-  world=(await executeLineupLifecycleV1(db,session,'advance',cmd(),'lp-day4-00001',now)).world;
+  world=(await executeLineupLifecycleV1(db,session,'advance',cmd(),'lp-day4-00001-v2',now)).world;
   expect(world.day).toBe(4);
   const season=await readPublicSportingSeasonLineupV1(db,'IT-1',1) as any;
   expect(season.data?.standings.rows).toHaveLength(16);
@@ -84,8 +84,8 @@ describe('#613 new V2 public competition, club, calendar projections (unrouted)'
  it('refuses unsupported public seasons before preparing the world',async()=>{
   const empty=await readPublicSportingSeasonLineupV1(db,'IT-1',1);
   expect(empty).toMatchObject({status:'empty',reason:'season-not-prepared',data:null});
-  await expect(readPublicSportingSeasonLineupV1(db,'ZZ-1',1))
-   .rejects.toMatchObject({status:404});
+  expect(()=>readPublicSportingSeasonLineupV1(db,'ZZ-1',1))
+   .toThrowError(/not_found/);
   await expect(readPublicClubHistoryLineupV1(db,'IT-41'))
    .rejects.toMatchObject({status:404});
  },15000);
