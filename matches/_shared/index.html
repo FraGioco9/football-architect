@@ -265,6 +265,29 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             </div>
           </aside>
           <section class="app-match-visual" aria-label="Match visualization">
+            <header class="app-match-view-header">
+              <span class="app-match-view-heading" data-match-label="view">View</span>
+              <div class="app-match-view-selector" role="tablist" aria-label="Match information views" data-match-view-selector>
+                <button type="button" id="fa-match-tab-overview" class="app-match-view-tab" role="tab" data-match-view="overview" aria-selected="true" aria-controls="fa-match-panel-overview" tabindex="0">Overview</button>
+                <button type="button" id="fa-match-tab-stats" class="app-match-view-tab" role="tab" data-match-view="stats" aria-selected="false" aria-controls="fa-match-panel-stats" tabindex="-1">Stats</button>
+                <button type="button" id="fa-match-tab-events" class="app-match-view-tab" role="tab" data-match-view="events" aria-selected="false" aria-controls="fa-match-panel-events" tabindex="-1">Events</button>
+              </div>
+            </header>
+            <div class="app-match-view-content">
+              <section id="fa-match-panel-overview" role="tabpanel" data-match-view-content="overview" aria-labelledby="fa-match-tab-overview" tabindex="0">
+                <div class="app-match-overview-boxes">
+                  <div class="app-match-info-box"><span class="app-match-info-label" data-match-label="competition">Competition</span><strong class="app-match-info-value" data-match-overview="competition"></strong></div>
+                  <div class="app-match-info-box"><span class="app-match-info-label" data-match-label="season">Season</span><strong class="app-match-info-value" data-match-overview="season"></strong></div>
+                  <div class="app-match-info-box"><span class="app-match-info-label" data-match-label="round">Round</span><strong class="app-match-info-value" data-match-overview="round"></strong></div>
+                </div>
+              </section>
+              <section id="fa-match-panel-stats" role="tabpanel" data-match-view-content="stats" aria-labelledby="fa-match-tab-stats" tabindex="0" hidden>
+                <div class="app-match-info-box app-match-info-unavailable" data-match-empty="stats">Official match statistics are not yet available.</div>
+              </section>
+              <section id="fa-match-panel-events" role="tabpanel" data-match-view-content="events" aria-labelledby="fa-match-tab-events" tabindex="0" hidden>
+                <div class="app-match-info-box app-match-info-unavailable" data-match-empty="events">Official match events are not yet available.</div>
+              </section>
+            </div>
             <div class="app-match-pitch" data-match-pitch role="img" aria-label="Empty football pitch; match visualization is not yet available">
               <svg viewBox="0 0 1050 680" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
                 <rect x="18" y="18" width="1014" height="644" fill="none" stroke="currentColor" stroke-width="3"/>

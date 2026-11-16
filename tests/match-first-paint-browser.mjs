@@ -67,7 +67,10 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
-    assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title], [role="tablist"]').count(),0);
+    assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
+    assert.equal(await page.locator('[data-match-view-selector] [role="tab"]').count(),3);
+    assert.equal(await page.locator('[data-match-view="overview"]').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('[data-match-view-content="stats"]').isHidden(),true);
     const pitchBox=await page.locator('[data-match-pitch]').boundingBox();
     const scoreboardBox=await page.locator('.app-match-scoreboard').boundingBox();
     assert.ok(pitchBox&&scoreboardBox,JSON.stringify({engine,theme,device}));
@@ -78,6 +81,8 @@ for(const [engine,driver] of Object.entries(engines)){
      const positions=panels.map(p=>p.getBoundingClientRect());
      const field=pitch.getBoundingClientRect();
      const frame=document.querySelector('.app-match-stage').getBoundingClientRect();
+     const viewTabs=document.querySelector('.app-match-view-selector').getBoundingClientRect();
+     const viewBoxes=document.querySelector('.app-match-view-content').getBoundingClientRect();
      const main=document.querySelector('.app-match-page').getBoundingClientRect();
      const facts=panels.map(panel=>[...panel.querySelectorAll('.app-match-side-stats .app-match-side-fact:not([hidden])')].map(n=>n.getBoundingClientRect()));
      return {panels:panels.length,positions:positions.map(p=>({left:p.left,right:p.right,top:p.top,width:p.width,height:p.height})),
@@ -88,6 +93,8 @@ for(const [engine,driver] of Object.entries(engines)){
       crestSlots:panels.map(p=>p.querySelectorAll('[data-match-side-crest]').length),
       facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
+      viewTabs:{bottom:viewTabs.bottom,left:viewTabs.left,right:viewTabs.right},
+      viewBoxes:{top:viewBoxes.top,bottom:viewBoxes.bottom,left:viewBoxes.left,right:viewBoxes.right},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
       formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
       formsHidden:panels.every(p=>p.querySelector('[data-match-form-fact]').hidden&&p.querySelector('.app-match-side-stats').dataset.formVisible==='false'),
@@ -97,6 +104,10 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.stage.left-stage.main.left)<=1,JSON.stringify(stage));
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
+    assert.ok(stage.viewTabs.bottom<=stage.viewBoxes.top+1,JSON.stringify(stage));
+    assert.ok(stage.viewBoxes.bottom<=stage.field.top+1,JSON.stringify(stage));
+    assert.ok(stage.viewBoxes.left>=stage.field.left-1&&stage.viewBoxes.right<=stage.field.right+1,JSON.stringify(stage));
+    assert.equal(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
@@ -356,6 +367,22 @@ for(const [engine,driver] of Object.entries(engines)){
        [...el.children].map(x=>x.dataset.outcome||'-').join('')
       ));
       assert.deepEqual(form,['wdlww','wldwl']);
+      assert.equal(await page.locator('[data-match-overview="season"]').textContent(),'1');
+      assert.equal(await page.locator('[data-match-overview="round"]').textContent(),'1');
+      assert.ok((await page.locator('[data-match-overview="competition"]').textContent()).length>0);
+      const fieldTop=(await page.locator('[data-match-pitch]').boundingBox()).y;
+      await page.locator('[data-match-view="stats"]').click();
+      assert.equal(await page.locator('[data-match-view="stats"]').getAttribute('aria-selected'),'true');
+      assert.equal(await page.locator('[data-match-view-content="overview"]').isHidden(),true);
+      assert.equal(await page.locator('[data-match-view-content="stats"]').isVisible(),true);
+      assert.match(await page.locator('[data-match-empty="stats"]').textContent(),/not yet available/);
+      await page.locator('[data-match-view="stats"]').press('ArrowRight');
+      assert.equal(await page.locator('[data-match-view="events"]').getAttribute('aria-selected'),'true');
+      assert.equal(await page.locator('[data-match-view-content="events"]').isVisible(),true);
+      await page.locator('[data-match-view="events"]').press('Home');
+      assert.equal(await page.locator('[data-match-view="overview"]').getAttribute('aria-selected'),'true');
+      assert.ok(Math.abs((await page.locator('[data-match-pitch]').boundingBox()).y-fieldTop)<=1,
+       'View selector must not shift the pitch');
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
       await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');

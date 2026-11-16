@@ -399,3 +399,11 @@ The form row contains only the latest five verified prior-day results in this co
 ## Side-panel club title navigation
 
 The full club name in each Home/Away side panel is a text-sized link to the verified club's canonical `/clubs/<country>/<id>/overview` route (new tab, `noopener noreferrer`), consistent with the scoreboard abbreviation. Underlining appears only on hover or keyboard focus. Unknown or unresolved teams show plain, non-interactive text with no fabricated link or tooltip. The h2 heading, crest, stats, lineup and field geometry are unchanged.
+
+## Central information views above the pitch
+
+The Match centre column now displays a compact **View** tab selector followed by one semitransparent content surface before the 105:68 field. The selectable views are **Overview**, **Stats**, and **Events**; only one information panel is visible at a time. The selection changes in place, without routing or affecting the permanent field and Home/Away side panels. Tablist semantics include left/right, Home/End navigation and keyboard focus.
+
+Overview contains three translucent cards for the verified competition name (canonical competition manifest or validated match competition ID), season and positive numeric round, blank until a match read succeeds. Stats and Events are switchable but explicitly say that official data is unavailable, since the published match contract does not expose verified event or statistic collections. No fake data, duplicate scores, added API reads, or fabricated fallback stats. All five locales are supported. The cards are above, not beside or overlaid on, the pitch. First paint reserves the view header and panel height. On narrow screens the cards form two rows. Opacity applies to surfaces only; labels and values remain fully opaque.
+
+This replaces the earlier suggestion to show three separate view boxes as parallel controls. The former 'no tabs' test contract has been updated only for this owner-approved central view selector.
