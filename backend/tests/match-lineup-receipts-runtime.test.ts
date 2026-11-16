@@ -48,8 +48,8 @@ beforeAll(async()=>{
 
 const input=async()=>({
  match:{matchId,season:1,day:13,fixtureId,competitionId:'IT-1',homeClubId:'IT-1',awayClubId:'IT-2',sourceHash},
- world:{generation,revision:2,seasonNumber:1,day:12,phase:'active'},
- seed,context:{mode:'regulation'},now:now+30,
+ world:{generation,revision:2,seasonNumber:1,day:12,phase:'active' as const},
+ seed,context:{mode:'regulation' as const},now:now+30,
 });
 
 describe('#613 local Worker D1 guarded match receipts (not wired to official clock)',()=>{
