@@ -67,6 +67,8 @@ test('M26 genuine same-ball pressure traces, mirrored HOME/AWAY and replay',
    assert.equal(first.officialMatchPossession,false);
    let physical=null,atTouch=null,after=null,minOpponent=Infinity;
    let originalCushion=null;
+   const nativeTimeline=[];
+   let firstActualPass=null;
    for(let t=1;t<=125;t++){
     const control=base.step(),now=pressured.step(),again=replay.step();
     assert.deepEqual(now,again,'real autonomous players and Rapier must replay');
@@ -79,6 +81,8 @@ test('M26 genuine same-ball pressure traces, mirrored HOME/AWAY and replay',
     assert.equal(now.officialMatchPossession,false);
     if(control.physicalFirstTouch&&!originalCushion)
      originalCushion=control.physicalFirstTouch;
+    if(now.priorRealPass&&!firstActualPass)firstActualPass=now.priorRealPass;
+    if(now.starts.length)nativeTimeline.push({tick:t,started:now.starts,action:now.action?.action??null});
     const receiver=now.observedMovementPlayers.find(p=>p.id===side+'-9');
     const opponents=now.observedMovementPlayers.filter(p=>p.team!==side);
     const nearest=Math.min(...opponents.map(p=>dist(receiver,p)));
@@ -96,6 +100,10 @@ test('M26 genuine same-ball pressure traces, mirrored HOME/AWAY and replay',
     if(now.pressureEvidence.completed&&!after)
      after=now.pressureEvidence.completed;
    }
+   process.stdout.write('ME_628_M26_RAW_NATIVE_SOURCE_'+side.toUpperCase()+' '+
+    JSON.stringify({pass:firstActualPass,timeline:nativeTimeline,
+     minOpponent,firstCushion:physical?.tick??null,
+     end:after?.endReason??null})+'\\n');
    assert.ok(originalCushion,'unpressured original M25 must remain intact');
    assert.ok(minOpponent<3,'a real unforced defender must actually approach within 3m');
    assert.ok(physical,'pressured source must generate an exclusive REAL receiver shoe START');
