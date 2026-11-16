@@ -117,8 +117,13 @@ export function createNativeControlEvidenceGateM29(){
     lastBall:null,lastPlayer:null};
   }
   if(active){
-   const id=active.id,sameTickWindow=window?.actorId===id&&
-    window.lastTick===t;
+   const id=active.id,sameTickWindow=(window?.actorId===id&&
+    window.lastTick===t)||(
+     // M28 closes its 120th sample *on* this tick: active becomes null
+     // but its completed report still includes the current native frame.
+     m28.latestCompleted?.actorId===id&&
+     m28.latestCompleted.lastTick===t&&
+     m28.latestCompleted.endReason==='two-second-native-observation-complete');
    // M28's other-shoe/physical-action endpoint does NOT attribute the
    // conflicting tick to the original receiver; M29 must do the same.
    if(sameTickWindow){
