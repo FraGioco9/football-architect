@@ -611,7 +611,8 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
-    const requestController=new AbortController();publishedAbort=requestController;
+    const requestController=typeof AbortController==='function'?new AbortController():null;
+    publishedAbort=requestController;
     // Preserve the fixture boxes, but revoke old Fixtures/knockout and
     // Standings native links while this exact-world lookup is unresolved.
     render();syncKnockoutLinks();notifyPublishedMatchLinks();
