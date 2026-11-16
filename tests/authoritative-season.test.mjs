@@ -83,9 +83,22 @@ test('accepts only real, internally coherent frozen V2 player totals',()=>{
  const player={playerId:58,clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
  raw.data.statistics.players=[player];
  assert.deepEqual(validateAuthoritativeSeason(raw,ctx(),manifest).data.statistics.players,[player]);
+ // Backend lineupTeamStatisticsV1 accepts 1..120 minutes per appearance:
+ // an early substitution is valid and must never blank the entire table.
+ for(const minutes of [1,60,75,89,90,120]){
+  const actual=structuredClone(raw);
+  actual.data.statistics.players=[{...player,minutes}];
+  const validated=validateAuthoritativeSeason(actual,ctx(),manifest);
+  assert.equal(validated.data.statistics.players[0].minutes,minutes);
+  const adapted=adaptAuthoritativeSeason(validated,ctx(),manifest);
+  assert.equal(adapted.statistics.standings.length,16,'valid substitution retains standings');
+  assert.equal(adapted.fixtures.find(f=>f.sourceFixtureId===fixture.id).homeGoals,1,
+   'valid substitution retains official fixture scores');
+ }
  for(const bad of [
-  {...player,goals:2},{...player,starts:0},{...player,minutes:60},
-  {...player,clubId:'FR-1'},{...player,appearances:2,starts:2,minutes:180}
+  {...player,goals:2},{...player,starts:0},{...player,minutes:0},
+  {...player,minutes:121},{...player,clubId:'FR-1'},
+  {...player,appearances:2,starts:2,minutes:180}
  ]){
   const altered=structuredClone(raw);altered.data.statistics.players=[bad];
   assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));

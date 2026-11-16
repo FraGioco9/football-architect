@@ -86,7 +86,9 @@ export function validateAuthoritativeSeason(input,context,manifest){
  for(const p of stats.players){
   if(!object(p)||!count(p.playerId)||p.playerId===0||!ids.includes(p.clubId)||
      !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts!==p.appearances||
-     !count(p.minutes)||p.minutes<90*p.appearances||p.minutes>120*p.appearances||
+     // Frozen V2 appearances may be substituted before 90'; each counted
+     // appearance contributes 1..120 playing minutes, never a mandatory 90.
+     !count(p.minutes)||p.minutes<p.appearances||p.minutes>120*p.appearances||
      !count(p.goals))fail();
   const identity=p.clubId+':'+p.playerId;
   if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
