@@ -77,8 +77,27 @@ try {
     window.dispatchEvent(new CustomEvent('fa:competition-context-change',
      {detail:window.faCompetitionContext}));
    },{snapshot,seasonData});
-   await page.waitForFunction(()=>
-    document.querySelectorAll('#app-standings-body a[data-published-match]').length===16);
+   try{
+    await page.waitForFunction(()=>
+     document.querySelectorAll('#app-standings-body a[data-published-match]').length===16,
+     null,{timeout:10000});
+   }catch(error){
+    const observed=await page.evaluate(()=>({
+     route:window.faCompetitionRoute?.get?.(),
+     context:{season:window.faCompetitionContext?.selectedSeason,
+      provenance:window.faCompetitionContext?.seasonData?.provenance?.kind,
+      fixtures:window.faCompetitionContext?.seasonData?.fixtures?.length,
+      standings:window.faCompetitionContext?.seasonData?.statistics?.standings?.length},
+     world:window.faWorldState?.get?.(),
+     linkResolver:typeof window.faCompetitionMatchLinks?.forFixture,
+     firstFixtureMatchId:window.faCompetitionMatchLinks?.forFixture(
+       window.faCompetitionContext?.seasonData?.fixtures?.[0],1),
+     formDots:document.querySelectorAll('#app-standings-body .app-world-form-dot').length,
+     formLinks:document.querySelectorAll('#app-standings-body a[data-published-match]').length,
+     loading:document.documentElement.dataset.faStandingsLoading
+    }));
+    throw new Error('Official form anchors missing: '+JSON.stringify({observed,officialReads}),{cause:error});
+   }
    assert.equal(await page.locator('#app-standings-body a[data-published-match]').count(),16,
     'real scored desktop form badges must be native official match links');
    const first=await page.locator('#app-standings-body a[data-published-match]').first().getAttribute('href');
