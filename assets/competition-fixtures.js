@@ -535,7 +535,20 @@
     const data=window.faCompetitionContext?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
     // The existing published IDs remain valid when this world's results hydrate.
-    if(!data){rounds=null;postseason=[];currentMatchday=null;publishedSeason=null;publishedIds.clear();publishedLookup=null;render();void readPublishedFixtures();return;}
+    if(!data){
+      // The full sporting-season endpoint is intentionally unavailable until
+      // world-calendar publication. A verified, independently published draw
+      // must survive an unrelated empty/late season-read notification.
+      const source=window.faWorldState?.get?.();
+      const key=[context?.selectedSeason,definition.id,source?.world?.generation,source?.world?.revision].join(':');
+      if(source?.source==='authoritative'&&source.worldStatus==='ready'&&
+         publishedLookup&&publishedKey===key&&publishedSeason===String(context?.selectedSeason)&&rounds){
+        render();return;
+      }
+      rounds=null;postseason=[];currentMatchday=null;
+      publishedSeason=null;publishedIds.clear();publishedLookup=null;
+      render();void readPublishedFixtures();return;
+    }
     const previous=clubs;
     try{
       clubs=new Map(data.participants.map(club=>[international?rules.clubKey(club):club.clubId,club]));
