@@ -63,26 +63,12 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.surface,'#155F50',JSON.stringify({engine,theme,device,first}));
     assert.equal(first.mode,theme,JSON.stringify({engine,theme,device,first}));
     assert.equal(first.height,48);
-    assert.equal(await page.locator('[data-match-card]').count(),4);
-    assert.equal(await page.locator('[data-match-pitch] svg').count(),1);
-    const initialContext=await page.evaluate(()=>{
-     const cards=[...document.querySelectorAll('[data-match-card]')];
-     const grid=document.querySelector('.app-match-context').getBoundingClientRect();
-     const pitch=document.querySelector('[data-match-pitch]').getBoundingClientRect();
-     const columns=getComputedStyle(document.querySelector('.app-match-context')).gridTemplateColumns;
-     return {emphasis:cards.map(el=>el.dataset.matchEmphasis),
-      blank:cards.every(el=>el.querySelector('.app-match-context-summary').textContent===''),
-      widths:cards.map(el=>el.getBoundingClientRect().width),
-      pitchWidth:pitch.width,pitchHeight:pitch.height,
-      cardsBottom:grid.bottom,pitchTop:pitch.top,columns:columns.split(' ').length};
-    });
-    assert.deepEqual(initialContext.emphasis,['high','medium','low','low']);
-    assert.equal(initialContext.blank,true);
-    assert.equal(initialContext.columns,device.width<=800?2:4);
-    assert.ok(initialContext.widths.every(w=>w>=95),JSON.stringify({engine,theme,device,initialContext}));
-    assert.ok(initialContext.pitchTop>=initialContext.cardsBottom);
-    assert.ok(Math.abs(initialContext.pitchWidth/initialContext.pitchHeight-105/68)<.02);
-    assert.equal(await page.locator('[data-match-tab], [data-match-panel], [role="tablist"]').count(),0);
+    assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title], [role="tablist"]').count(),0);
+    const pitchBox=await page.locator('[data-match-pitch]').boundingBox();
+    const scoreboardBox=await page.locator('.app-match-scoreboard').boundingBox();
+    assert.ok(pitchBox&&scoreboardBox,JSON.stringify({engine,theme,device}));
+    assert.ok(pitchBox.y>=scoreboardBox.y+scoreboardBox.height);
+    assert.ok(Math.abs(pitchBox.width/pitchBox.height-105/68)<.02);
     assert.equal(await page.locator('.app-match-scoreboard-meta, [data-match-status], [data-match-extra]').count(),0,
      'no loading or sporting-status captions under the scoreboard');
     assert.equal(first.sectionFillsMain,true,'match section must share the main content width');
@@ -283,24 +269,8 @@ for(const [engine,driver] of Object.entries(engines)){
      assert.deepEqual(state.text,status==='completed'?['12','3','–']:['','','–'],
       JSON.stringify({engine,theme,status,state}));
      assert.deepEqual(state.hidden,status==='completed'?['false','false']:['true','true']);
-     const cards=await page.locator('[data-match-card]').evaluateAll(nodes=>nodes.map(el=>({
-      key:el.dataset.matchCard,emphasis:el.dataset.matchEmphasis,
-      summary:el.querySelector('.app-match-context-summary').textContent
-     })));
-     const expectedEmphasis={
-      awaiting_participants:['high','low','low','low'],
-      scheduled:['high','medium','low','low'],
-      in_progress:['medium','high','medium','medium'],
-      postponed:['high','low','low','low'],
-      cancelled:['high','low','low','low'],
-      completed:['medium','high','high','high']
-     }[status];
-     assert.deepEqual(cards.map(x=>x.emphasis),expectedEmphasis,JSON.stringify({engine,theme,status,cards}));
-     assert.ok(cards[0].summary.includes('Season 1'),JSON.stringify({engine,theme,status,cards}));
-     assert.equal(cards[1].summary,status==='completed'||status==='in_progress'?'Confirmed':'Not available');
-     assert.equal(cards[2].summary,status==='completed'?'1 event':'Not available');
-     assert.equal(cards[3].summary,status==='completed'?'Available':'Not available');
-     assert.equal(await page.locator('.app-match-pitch svg').count(),1);
+     assert.equal(await page.locator('[data-match-card], .app-match-context, [data-match-visual-title]').count(),0);
+     assert.equal(await page.locator('[data-match-pitch] svg').count(),1);
      assert.ok(Math.abs(state.centreOffset)<=0.5,JSON.stringify({engine,theme,status,state}));
      // Real authorised club IDs link to club pages even before a score
      // exists. Underlining must neither move text nor change on hover.
