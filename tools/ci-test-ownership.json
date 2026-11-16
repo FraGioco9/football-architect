@@ -29,7 +29,6 @@
     "backend/tests/auth-runtime.test.ts": "backend-runtime",
     "backend/tests/auth-throttle-policy.test.ts": "backend-contract",
     "backend/tests/calendar-command-runtime.test.ts": "backend-runtime",
-    "backend/tests/calendar-match-links-runtime.test.ts": "backend-runtime",
     "backend/tests/calendar-rules-compat.test.ts": "backend-contract",
     "backend/tests/catalogue-runtime.test.ts": "backend-runtime",
     "backend/tests/cloudflare-email-delivery.test.ts": "backend-contract",

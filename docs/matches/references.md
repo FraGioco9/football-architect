@@ -41,9 +41,10 @@ fabricated scores. The early published-draw projection still provides its
 verified numeric IDs through the existing club API without extra fetches.
 The world/source/season fence in the controller discards stale asynchronous reads.
 
-The score text is the only linked region; crests and opponent names remain
-separate. World Calendar and the competition historic/postseason consumers
-remain for subsequent #605 stages.
+Competition and Club Fixtures show the same full-card petrol hover and open
+the canonical match page on a primary click outside the independent club and
+competition anchors. Unknown or unofficial IDs never create a link.
+The `/calendar` page intentionally displays no match-detail links.
 
 
 For Competition Fixtures, the authoritative-season adapter retains original
@@ -55,26 +56,15 @@ immutable phase/tie/leg slot plus marker and day. The sporting score is never
 replaced by placeholder draw data.
 
 
-## #605 World Calendar day projection
-
-The already-verified calendar day API now optionally returns `matchId` on each
-fixture when a read-only, generation/season/day-scoped join can establish the
-published numeric identity. A single D1 UNION query joins immutable league
-slots and reserved knockout slots to `public_match_numbers`; league matches
-use `source_fixture_id`, knockout matches use phase/tie/leg, and the fixture
-marker/day/competition must agree. If no safe match exists, Calendar retains
-the verified fixture name and result **without a link**.
-
-The Calendar UI links only match name + score, not the entire event/day or
-competition label. No new browser fetches, schema migration or D1 writes.
-
-
 ## #605 Postseason knockout bracket links
 
-The Postseason bracket's independently published match slots now provide
+The Postseason bracket's independently published match slots provide
 separate `/matches/:id` links for the first leg, second leg and single-match
-final. Each leg's existing score cells remain separate navigable targets;
-a one-match final additionally allows the entire card to open that match.
+final. The 18px score cells are not the clickable hit area: the entire
+single-match final card is a native link, while a two-leg tie uses two
+full-height half-card native links (left = first leg, right = second leg).
+Every linked card shares the full-box petrol hover and 150ms fade-out used
+by Competition and Club Fixtures. Club name links remain independent.
 Links use `phaseId + tieId + leg` from the canonical published collection,
 with exact world generation/revision and selected season fencing. Reserved
 knockout slots may open their official match detail even before club participants
@@ -86,3 +76,12 @@ as TBD rows before qualification, for domestic postseason and international
 knockout rounds. These rows derive only their phase/tie/leg from canonical
 approved rules and acquire links strictly from the published official knockout
 match index. They do not invent clubs, results, marker/day or kickoffs.
+
+## #605 World Calendar boundary
+
+The public `/calendar` page does not link to individual matches, including
+knockout matches. Its original day-scoped API and browser rendering have been
+preserved exactly; this feature introduces no new calendar-only database
+lookup, no additional Calendar API fields and no links in Calendar event
+details. Use the competition Fixtures/Postseason and Club Fixtures views for
+match-detail navigation instead.
