@@ -39,7 +39,7 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
  const official={...snapshot,source:'authoritative',coverage:'partial',rows:[{...snapshot.rows[0],id:'123',matchId:'123'}]};
  const output=value=>fixtures.render({manifest:{clubs:[club],clubCrests:{'IT-2':'assets/opponent.svg'}},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:value});
  const linked=output(official);
- assert.match(linked,/<li class="club-fixture-row is-match-link"[^>]*data-club-fixture-id="123"/);
+ assert.match(linked,/<li class="club-fixture-row(?: is-next)? is-match-link"[^>]*data-club-fixture-id="123"/);
  assert.match(linked,/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
  const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
  assert.match(css,/\.club-fixture-row\.is-match-link:hover[\s\S]*?background:color-mix/);
