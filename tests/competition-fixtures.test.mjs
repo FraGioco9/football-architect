@@ -66,6 +66,7 @@ function node(tag='div'){
 function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null}={}){
  const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
+ fields.set('competition-panel-fixtures',node('section'));
  const choices=rulesView.fixturesDisplayChoices(definition).map(c=>({...node('button'),id:"app-fixtures-round-option-"+c.value,dataset:{fixtureRoundChoice:String(c.value),menuValue:String(c.value)}}));
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
@@ -80,6 +81,29 @@ function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null
 const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
 const contents=n=>n.textContent+n.children.map(contents).join('');
+
+test('FIXTURES refresh: unresolved schedule remains skeleton, with no transient empty-state message',()=>{
+ const css=read('assets/app.css');
+ assert.ok(css.includes('#competition-panel-fixtures[data-fa-content-state="unknown"] .app-fixtures-skeleton{display:grid}'));
+ assert.ok(css.includes('#competition-panel-fixtures[data-fa-content-state="unknown"] :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}'));
+ const r=setup(),panel=r.fields.get('competition-panel-fixtures'),empty=r.fields.get('app-fixtures-empty');
+ assert.equal(panel.dataset.faContentState,'unknown');
+ assert.equal(empty.hidden,true,'pre-hydration is not a confirmed empty result');
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ r.route.set({matchday:2});
+ assert.equal(panel.dataset.faContentState,'unknown','global bootstrap completion must not reveal the empty banner');
+ assert.equal(empty.hidden,true);
+ r.view.prepare(schedule(divisions[0]))();
+ assert.equal(panel.dataset.faContentState,'available');
+ assert.equal(empty.hidden,true);
+ r.view.prepare(null)();
+ assert.equal(panel.dataset.faContentState,'unknown','refresh without resolved data restores the skeleton');
+ assert.equal(empty.hidden,true);
+ r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:1,revision:2,seasonData:{season:1,fixtures:null}};
+ r.route.set({matchday:1});
+ assert.equal(panel.dataset.faContentState,'empty','only a matching explicit empty schedule exposes the message');
+ assert.equal(empty.hidden,false);
+});
 
 // Catches a missing clock listener, wrong cup projection/season, or clock-derived scores.
 test('A06-12 X04: actual Fixtures clock events scope navigation without changing supplied outcomes',()=>{
@@ -204,7 +228,7 @@ test('SEASON-2 FIXTURES: promoted domestic clubs replace Season 1 membership wit
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),round=fields.get('app-fixtures-round'),list=fields.get('app-fixtures-list');
-  assert.equal(fields.get('app-fixtures-empty').hidden,false);
+  assert.equal(fields.get('app-fixtures-empty').hidden,true,'unresolved fixture data must not claim an empty calendar');
   const fixtures=schedule(d);fixtures.find(f=>f.round===1).homeGoals=0;fixtures.find(f=>f.round===1).awayGoals=0;
   const commit=view.prepare(fixtures);assert.equal(list.children.length,0,'preparation is detached');commit();
   assert.equal(list.children.length,8);assert.equal(round.disabled,false);

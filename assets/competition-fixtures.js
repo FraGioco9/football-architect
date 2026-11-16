@@ -245,7 +245,7 @@
     const choiceIndex=configured.findIndex(c=>c.value===selected);
     fields.previous.disabled=choiceIndex===0;
     fields.next.disabled=choiceIndex===configured.length-1;
-    fields.empty.hidden=available;fields.list.hidden=!available;fields.summary.hidden=!available;
+    fields.empty.hidden=true;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
       if(international&&isPostseason){
@@ -284,7 +284,7 @@
       if(oldResult&&newResult&&!oldResult.isEqualNode?.(newResult))oldResult.replaceWith(newResult);
       return previous;
     });
-    if(international){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
+    if(international&&available){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
     // Move existing crest hosts into new match rows instead of creating new images.
     // A club appears once per league round, but can appear in multiple postseason legs.
     const usedCrests=new Set();
