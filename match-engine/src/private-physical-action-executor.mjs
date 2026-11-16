@@ -9,13 +9,15 @@ import {calculateRealReceivingCushion}
  from './physical-receiving-cushion-m25.mjs';
 import {choosePhysicalReceiverSecondTouch}
  from './physical-receiver-choice-m27.mjs';
+import {calculatePhysicalReceiverReleaseTap} from './physical-receiver-tap-m30.mjs';
 
 export const PRIVATE_PHYSICAL_ACTION_EXECUTOR_VERSION=
  'me-action-foundation-real-shoe-impulse-v1';
 
 export function createPrivatePhysicalActionExecutor({
  ballBody,shoeBridge,ballRadiusM,allowPhysicalCarry=false,
- researchReceivingCushionSide=null,researchReceivingDecisionSide=null
+ researchReceivingCushionSide=null,researchReceivingDecisionSide=null,
+ researchReceiverTapSide=null
 }={}){
  if(!ballBody||typeof ballBody.translation!=='function'||
     typeof ballBody.linvel!=='function'||
@@ -29,12 +31,15 @@ export function createPrivatePhysicalActionExecutor({
     (researchReceivingCushionSide!==null&&allowPhysicalCarry)||
     (researchReceivingDecisionSide!==null&&(
      !['home','away'].includes(researchReceivingDecisionSide)||
-     researchReceivingDecisionSide!==researchReceivingCushionSide)))
+     researchReceivingDecisionSide!==researchReceivingCushionSide))||
+    (researchReceiverTapSide!==null&&(
+     !['home','away'].includes(researchReceiverTapSide)||
+     researchReceiverTapSide!==researchReceivingDecisionSide)))
   throw new TypeError('Private Rapier body and live shoe source required');
  let tick=0,lastActionTick=-UNIFORM_AUTONOMOUS_ACTION_COOLDOWN_TICKS;
  let action=null,audit=null,closed=false;
  let actualPriorPass=null,interrupted=false,firstCushion=null;
- let firstReceiverChoice=null;
+ let firstReceiverChoice=null,firstReceiverTap=null;
  const ensureOpen=()=>{if(closed)throw new Error('Physical action executor disposed');};
  function apply(nextTick,playerFrame){
   ensureOpen();
@@ -107,6 +112,16 @@ export function createPrivatePhysicalActionExecutor({
   }
   const deferOriginal=firstReceiverChoice?.tick===nextTick&&
    firstReceiverChoice.decision==='defer-clearance-to-keep-ball-near';
+  // M30 exclusively uses this real second Rapier START after M27 defers.
+  const tapCandidate=researchReceiverTapSide===side&&deferOriginal?
+   calculatePhysicalReceiverReleaseTap({
+    choice:firstReceiverChoice,earlierCushion:firstCushion,
+    nativeStarts:contact.started,nativeActive:contact.active,
+    ballPosition:ballBody.translation(),ballVelocity:ballBody.linvel(),
+    receiver:playerFrame?.players?.find(p=>p.id===receiverId),
+    opponents:playerFrame?.players?.filter(p=>p.team!==side),
+    ballRadiusM
+   }):null;
   // M25 preempts same-tick action for cushioning. M27 may instead
   // defer an ORIGINAL second-touch clearance with zero additional impulse.
   const chosen=researchCandidate||deferOriginal?null:originalChoice;
@@ -160,6 +175,27 @@ export function createPrivatePhysicalActionExecutor({
       applied.passTarget?.recipientId===receiverId&&!actualPriorPass)
     actualPriorPass=Object.freeze({tick:nextTick,playerId:applied.playerId});
   }
+  if(tapCandidate){
+   if(applied!==null||researchCandidate!==null||firstReceiverTap||
+      !deferOriginal||!gates.passedInputGates||
+      gates.actorId!==receiverId)
+    throw new TypeError('M30 cannot double-apply an original physical action');
+   const before=Object.freeze({...ballBody.linvel()});
+   ballBody.applyImpulse(tapCandidate.impulseNs,true);
+   const after=Object.freeze({...ballBody.linvel()});
+   firstReceiverTap=Object.freeze({
+    version:'m30-research-native-release-tap-v1',
+    tick:nextTick,originalDecisionTick:firstReceiverChoice.tick,
+    actorId:receiverId,team:side,priorCushionTick:firstCushion.tick,
+    nativeExclusiveShoeStart:true,actualPhysicsImpulseApplied:true,
+    originalClearanceSuppressed:true,...tapCandidate,
+    impulseMagnitudeNs:Math.hypot(
+     tapCandidate.impulseNs.x,tapCandidate.impulseNs.y),
+    realPreBallVelocity:before,realPostBallVelocity:after,
+    officialMatchAction:false,verifiedReception:false,
+    verifiedControl:false,officialPossession:false,matchAuthority:false
+   });
+  }
   tick=nextTick;action=applied;audit=currentAudit;
   return Object.freeze({tick,action,audit});
  }
@@ -169,6 +205,7 @@ export function createPrivatePhysicalActionExecutor({
   rejectionSnapshot:()=>{ensureOpen();return audit;},
   cushionSnapshot:()=>{ensureOpen();return firstCushion;},
   receiverChoiceSnapshot:()=>{ensureOpen();return firstReceiverChoice;},
+  receiverTapSnapshot:()=>{ensureOpen();return firstReceiverTap;},
   dispose:()=>{closed=true;}
  });
 }

@@ -12,6 +12,7 @@ import {createRealSecondTouchFollowThrough}
  from './real-second-touch-follow-through-m28.mjs';
 import {createNativeControlEvidenceGateM29}
  from './native-control-evidence-gate-m29.mjs';
+import {createRealBallReleaseAuditM30} from './real-ball-release-audit-m30.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
@@ -30,7 +31,7 @@ export function createControlledActionLab(RAPIER,id,{
  if(!['home','away'].includes(shotSide)||
     !['home','away'].includes(carrySide)||
     !['open','blocked'].includes(shotLane)||
-    !['receive','receive-cushion','receive-pressure','receive-decide','receive-pressure-decide','opponent-first'].includes(controlScene)||
+    !['receive','receive-cushion','receive-pressure','receive-decide','receive-pressure-decide','receive-release','opponent-first'].includes(controlScene)||
     !['home','away'].includes(controlSide)||
     typeof controlDecisionEnabled!=='boolean'||
     (!controlDecisionEnabled&&controlScene!=='receive-decide')||
@@ -57,12 +58,14 @@ export function createControlledActionLab(RAPIER,id,{
  const opposingControl=id==='control'&&controlScene==='opponent-first';
  const firstTouchCushion=id==='control'&&
   ['receive-cushion','receive-pressure','receive-decide',
-   'receive-pressure-decide'].includes(controlScene);
+   'receive-pressure-decide','receive-release'].includes(controlScene);
  const closePressure=id==='control'&&
   ['receive-pressure','receive-pressure-decide'].includes(controlScene);
- const moderatePressure=id==='control'&&controlScene==='receive-decide';
+ const moderatePressure=id==='control'&&
+   ['receive-decide','receive-release'].includes(controlScene);
+ const tapExperiment=id==='control'&&controlScene==='receive-release';
  const adaptiveDecision=id==='control'&&controlDecisionEnabled&&
-  ['receive-decide','receive-pressure-decide'].includes(controlScene);
+  ['receive-decide','receive-pressure-decide','receive-release'].includes(controlScene);
  const focus=opposingControl?
   Object.freeze(['home-10','home-9','away-7']):
   (closePressure||moderatePressure)?Object.freeze(selectedControlSide==='home'?
@@ -92,6 +95,7 @@ export function createControlledActionLab(RAPIER,id,{
    diagnosticResearchControlSide:selectedControlSide,
    ...(firstTouchCushion?{diagnosticResearchReceivingCushionEnabled:true}:{}),
    ...(adaptiveDecision?{diagnosticResearchReceivingDecisionEnabled:true}:{}),
+   ...(tapExperiment?{diagnosticResearchReceiverTapEnabled:true}:{}),
    ...(closePressure?{diagnosticResearchControlCloseDefender:true}:{}),
    ...(moderatePressure?{diagnosticResearchControlSpaceDefender:true}:{})
   }:{}),
@@ -120,10 +124,11 @@ export function createControlledActionLab(RAPIER,id,{
  const continuityObserver=createRealPostContactBallContinuity();
  const pressureObserver=firstTouchCushion?
   createRealPressuredFirstTouchObserver():null;
- const followThroughObserver=adaptiveDecision?
+ const followThroughObserver=adaptiveDecision&&!tapExperiment?
   createRealSecondTouchFollowThrough():null;
- const controlGateObserver=adaptiveDecision?
+ const controlGateObserver=adaptiveDecision&&!tapExperiment?
   createNativeControlEvidenceGateM29():null;
+ const releaseObserver=tapExperiment?createRealBallReleaseAuditM30():null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -248,8 +253,14 @@ export function createControlledActionLab(RAPIER,id,{
   });
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot();
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot();
+  const physicalReceiverTap=engine.researchReceiverTapSnapshot();
   const postDeferContinuity=followThroughObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,action
+  })??null;
+  const realReleaseSequence=releaseObserver?.observe({
+   physics,playerFrame,foot,
+   solver:engine.footContactSolverSnapshot(),
+   choice:physicalReceiverChoice,tap:physicalReceiverTap,action
   })??null;
   const physicalControlEvidence=controlGateObserver?.observe({
    physics,playerFrame,foot,
@@ -277,6 +288,7 @@ export function createControlledActionLab(RAPIER,id,{
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
    ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
     physicalControlEvidence}:{}),
+    ...(tapExperiment?{physicalReceiverTap,realReleaseSequence}:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -399,6 +411,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.physicalControlEvidence?.latestCompleted?
     ' · M29 '+snap.physicalControlEvidence.latestCompleted.physicalSequenceClassification+
     ' · official control unconfirmed':'')+
+   (snap.realReleaseSequence?.active?
+     ' · M30 real shoe release '+(snap.realReleaseSequence.active.genuineNativeReleaseObserved?
+       'observed':'pending')+' · recontact '+
+       (snap.realReleaseSequence.active.genuineNativeRecontactAfterRelease?'yes':'no'):
+     snap.realReleaseSequence?.latestCompleted?
+      ' · M30 '+snap.realReleaseSequence.latestCompleted.endReason+
+      ' · official control unconfirmed':'')+
    (snap.pressureEvidence?.active?
     ' · Live defender '+number(snap.pressureEvidence.active.lastRealOpponentGapM)+
     ' m · ball gap '+number(snap.pressureEvidence.active.finalBallGapM)+
@@ -434,7 +453,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(snap.physicalReceiverChoice){
+  if(snap.physicalReceiverTap){
+   status.textContent='M30: real bounded second-shoe Rapier tap; watch native END/START. No possession awarded.';
+  }else if(snap.physicalReceiverChoice){
    status.textContent='Research: genuine second shoe START → '+
     (snap.physicalReceiverChoice.physicalImpulseAllowed?
      'original clearance applied under observed pressure.':
@@ -506,7 +527,9 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    y:session.snapshot().ball.position.y}];
   description.textContent=session.shotLane==='blocked'?
    'An opposing defender obstructs all goal-mouth lanes before tick zero. Observe real contact, never a fabricated SHOT.':
-   session.controlScene==='receive-pressure-decide'?
+   session.controlScene==='receive-release'?
+    'M30 research: after genuine second shoe START, apply one bounded real Rapier tap and measure physical release/recontact; no dribble or possession awarded.':
+    session.controlScene==='receive-pressure-decide'?
    'M27 research: the actual nearby defender affects the original receiver second-touch decision; real clearance or hold only, no automatic possession.':
    session.controlScene==='receive-decide'?
    'M27 research: real second-touch original clearance can be deferred if the original ball remains nearby and no defender is close. No automatic possession.':

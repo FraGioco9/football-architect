@@ -96,6 +96,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticResearchControlOpponentFirst = false,
   diagnosticResearchReceivingCushionEnabled = false,
   diagnosticResearchReceivingDecisionEnabled = false,
+   diagnosticResearchReceiverTapEnabled = false,
   diagnosticResearchControlCloseDefender = false,
   diagnosticResearchControlSpaceDefender = false,
   diagnosticResearchCarrySide = null
@@ -166,7 +167,15 @@ export function createEngine(RAPIER, input = {}, {
      !diagnosticResearchReceivingCushionEnabled||
      !diagnosticResearchControlReceiver)))
   throw new TypeError('M27 applies only to original closed CONTROL M25 cushion source');
- if(typeof diagnosticResearchControlSpaceDefender!=='boolean'||
+ if(typeof diagnosticResearchReceiverTapEnabled!=='boolean'||
+     (diagnosticResearchReceiverTapEnabled&&(
+      !diagnosticResearchReceivingDecisionEnabled||
+      !diagnosticResearchReceivingCushionEnabled||
+      !diagnosticResearchControlSpaceDefender||
+      diagnosticResearchControlCloseDefender||
+      diagnosticResearchControlOpponentFirst)))
+   throw new TypeError('M30 requires original isolated M27 space receiving decision');
+  if(typeof diagnosticResearchControlSpaceDefender!=='boolean'||
     (diagnosticResearchControlSpaceDefender&&(
      !diagnosticResearchControlReceiver||
      !diagnosticResearchReceivingCushionEnabled||
@@ -307,7 +316,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchShotAttacker,diagnosticResearchShotBlockedLane,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
-    diagnosticResearchReceivingDecisionEnabled,
+    diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
     diagnosticResearchControlCloseDefender,
     diagnosticResearchControlSpaceDefender,diagnosticResearchCarrySide
   });
@@ -370,6 +379,8 @@ export function createEngine(RAPIER, input = {}, {
       researchReceivingCushionSide:diagnosticResearchReceivingCushionEnabled?
        diagnosticResearchControlSide:null,
       researchReceivingDecisionSide:diagnosticResearchReceivingDecisionEnabled?
+       diagnosticResearchControlSide:null,
+      researchReceiverTapSide:diagnosticResearchReceiverTapEnabled?
        diagnosticResearchControlSide:null
     }):null;
   // A ball rolling in +X has angular velocity +Y; at its bottom contact
@@ -568,7 +579,8 @@ export function createEngine(RAPIER, input = {}, {
       uniformAutonomousActionSnapshot:()=>actionExecutor.actionSnapshot(),
       physicalRejectionAuditSnapshot:()=>actionExecutor.rejectionSnapshot(),
       researchReceivingCushionSnapshot:()=>actionExecutor.cushionSnapshot(),
-      researchReceiverChoiceSnapshot:()=>actionExecutor.receiverChoiceSnapshot()
+      researchReceiverChoiceSnapshot:()=>actionExecutor.receiverChoiceSnapshot(),
+       researchReceiverTapSnapshot:()=>actionExecutor.receiverTapSnapshot()
     }:{}),
     reset: () => {
     dispose();
