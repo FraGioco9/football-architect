@@ -12,7 +12,7 @@ export function basicSourcePositiveRestartSetup(players,attackSide,ball,kind){
   !['x','y','z','vx','vy','vz'].every(k=>finite(ball[k]))||
   ball.z!==0||ball.vz!==0||
   (kind==='throw-in'?
-   Math.abs(ball.x)>1e-8||Math.abs(ball.y-direction*32.5)>1e-8||
+   Math.abs(ball.x)>1e-8||Math.abs(ball.y-direction*29.8)>1e-8||
    ball.vx!==0||ball.vy!==0:
    Math.abs(ball.x-direction*51)>1e-8||
    Math.abs(ball.y-direction*10)>1e-8||
