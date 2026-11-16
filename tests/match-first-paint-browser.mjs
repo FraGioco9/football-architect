@@ -100,7 +100,7 @@ for(const [engine,driver] of Object.entries(engines)){
       firstPaintNameLinks:panels.map(p=>{const a=p.querySelector('.app-match-side-link');return {hasHref:a.hasAttribute('href'),content:a.textContent}}),
       crestSlots:panels.map(p=>p.querySelectorAll('[data-match-side-crest]').length),
       facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
-      field:{left:field.left,right:field.right,top:field.top,width:field.width},
+      field:{left:field.left,right:field.right,top:field.top,width:field.width,height:field.height},
       overlay:{top:overlay.top,bottom:overlay.bottom,left:overlay.left,right:overlay.right},
       overview:{top:overview.top,bottom:overview.bottom,left:overview.left,right:overview.right},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
