@@ -11,7 +11,6 @@ import {canonicalHash} from './catalogue-snapshot.ts';
 import {sportingDayPayload} from './sporting-day-payload.ts';
 import {createProgression,processSportingDay,tieKey,type KnockoutTie} from './knockout-progression.ts';
 import {rankLeagueTable} from './league-standings.ts';
-import {readCalendarPublishedMatchLinks} from './calendar-match-links.ts';
 import type {TemporaryResult} from './temporary-simulation.ts';
 import type {Fixture} from './initial-schedule.ts';
 import {readSeasonDayOutcomes,readSeasonKnockoutTies,readSeasonCalendarHash,countSeasonDayOutcomes,readSeasonArchiveSummary,readSeasonCloseReceipt} from './season-evidence-repository.ts';
@@ -198,11 +197,9 @@ async function readPublicProjection(db:Database,competitionId:string,selectedSea
    const canonical=(await import('../../assets/world-calendar-model.js')).default.createSeason(selectedSeason) as {days:{events:{marker:string}[]}[]};
    const priorities=new Map(canonical.days[calendarDay!-1].events.map((e,i)=>[e.marker,i]));
    all.sort((a,b)=>(Number(priorities.get(a.marker))-Number(priorities.get(b.marker)))||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
-   const verified=projectFixtures(all,plans,storedResults);
-   const officialIds=await readCalendarPublishedMatchLinks(db,world.generation,selectedSeason,calendarDay!,verified);
    const data={season:selectedSeason,seasonState:{day:viewedWorld.day,phase:viewedWorld.phase},day:calendarDay,calendarHash:evidence.calendar.calendar_hash,rulesHash:evidence.snapshot.rulesHash,
     competitions:evidence.snapshot.bindings.map(b=>({id:b.competitionId,rulesVersion:b.rulesVersion,clubIds:[...b.clubIds]})),
-    fixtures:verified.map(f=>officialIds.has(f.id)?{...f,matchId:officialIds.get(f.id)}:f)};
+    fixtures:projectFixtures(all,plans,storedResults)};
    await unchanged(db,world);
    return {...base,status:viewedWorld.phase==='closed'?'available' as const:'partial' as const,reason:null,
     provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:`world:${world.generation}:season:${selectedSeason}:${evidence.calendar.calendar_hash}`},data};

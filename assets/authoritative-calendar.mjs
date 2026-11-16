@@ -24,7 +24,6 @@ export function validateCalendarDay(input,selection,manifest){
  for(const f of d.fixtures){
   const binding=bindings.get(f.competitionId),def=definitions.get(f.competitionId),phase=def?.rules.phases.find(p=>p.id===f.phaseId),event=events.find(e=>e.marker===f.marker&&e.competitionIds.includes(f.competitionId));
   if(!binding||!phase||!event||f.day!==selection.day||!binding.clubIds.includes(f.homeClubId)||!binding.clubIds.includes(f.awayClubId)||f.homeClubId===f.awayClubId||
-    (f.matchId!==undefined&&(typeof f.matchId!=='string'||!/^[1-9][0-9]*$/.test(f.matchId)||!Number.isSafeInteger(Number(f.matchId))))||
     !Number.isInteger(f.round)||f.round<1||f.round>33||f.id!==`season:${selection.season}:${f.competitionId}:${f.marker}:${f.homeClubId}:${f.awayClubId}`||seen.has(f.id)||
     !phase.calendarEvents.includes(f.marker)||typeof f.neutral!=='boolean'||(f.result!==null)!==(selection.day<=viewed.day)||f.result!==null&&!scoreValid(f.result,f))fail();
   if(phase.type==='knockout'){const tie=phase.ties.find(t=>t.id===f.tieId);if(!tie||!Number.isInteger(f.leg)||f.leg<1||f.leg>tie.legs||f.neutral!==(tie.homePolicy==='neutral'))fail()}
@@ -71,17 +70,8 @@ export async function mountAuthoritativeCalendar({root,document=globalThis.docum
     const fixtures=payload.data.fixtures;
     if(!fixtures.length)section.append(make('p',t[3]));
     const list=make('ul');for(const f of fixtures){const row=make('li');row.style.overflowWrap='anywhere';const home=catalog.get(f.homeClubId).primaryName,away=catalog.get(f.awayClubId).primaryName;
-     const score=f.result?f.result.homeGoals+'–'+f.result.awayGoals:t[4];
-     const pens=f.result?.penalties?' ('+f.result.penalties.home+'–'+f.result.penalties.away+')':'';
-     const title=home+' — '+away+' · '+score+pens;
-     row.append(make('span',names.get(f.competitionId)+' · '));
-     if(typeof f.matchId==='string'){
-      const link=make('a',title);link.className='calendar-match-link';
-      const action={en:'Open match',it:'Apri partita',de:'Spiel öffnen',es:'Abrir partido',fr:'Ouvrir le match'};
-      link.setAttribute('aria-label',(action[document.documentElement.lang]||action.en)+': '+home+' — '+away);
-      link.href=window.faAppHref?.('/matches/'+f.matchId)||'/matches/'+f.matchId;
-      row.append(link);
-     }else row.append(make('span',title));
+     row.append(make('span',names.get(f.competitionId)+' · '+home+' — '+away+' · '+(f.result?f.result.homeGoals+'–'+f.result.awayGoals:t[4])));
+     if(f.result?.penalties)row.append(make('span',' ('+f.result.penalties.home+'–'+f.result.penalties.away+')'));
      list.append(row);
     }section.append(list);
    }else section.append(make('p',visibleState==='loading'?t[0]:visibleState==='empty'?t[2]:t[1]));

@@ -40,16 +40,3 @@ test('validates archived Season1 scores against its closed state while actual wo
  for(const f of value.data.fixtures)f.result={homeGoals:0,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:null};
  assert.equal(validateCalendarDay(value,{season:1,day:13},manifest).data.fixtures.length,128);
 });
-
-test('#605 Calendar accepts only canonical published numeric match IDs',()=>{
- const packet=published(13);
- packet.data.fixtures[0].matchId='785';
- assert.equal(validateCalendarDay(packet,{season:1,day:13},manifest).data.fixtures[0].matchId,'785');
- for(const id of ['01','0','9007199254740992','m1_abc','<script>',123]){
-  const bad=published(13);bad.data.fixtures[0].matchId=id;
-  assert.throws(()=>validateCalendarDay(bad,{season:1,day:13},manifest));
- }
- const rendering=readFileSync(new URL('../assets/authoritative-calendar.mjs',import.meta.url),'utf8');
- assert.match(rendering,/className='calendar-match-link'/);
- assert.match(rendering,/link\.href=window\.faAppHref/);
-});
