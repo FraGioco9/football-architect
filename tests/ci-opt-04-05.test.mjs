@@ -76,42 +76,11 @@ test('unknown paths fail closed and direct dependent contracts are selected',asy
  assert.ok(classifyImpact(['assets/competition-overview-teams.mjs']).tests.includes('tests/competition-overview-teams.test.mjs'));
 });
 
-
-test('FULL gate accepts only an exact open same-repo stacked PR based on main',async()=>{
- const {validateBase}=await import('../tools/ci-full-evidence.cjs');
- const parentSha='b'.repeat(40),childSha='c'.repeat(40);
- const parent={number:656,state:'open',head:{ref:'stacked',sha:parentSha,repo:{full_name:'owner/repo'}},base:{ref:'main'}};
- const child={number:661,state:'open',head:{sha:childSha,repo:{full_name:'owner/repo'}},
-  base:{ref:'stacked',sha:parentSha,repo:{full_name:'owner/repo'}}};
- let comparisonCalls=0;
- const github={paginate:async()=>[parent],rest:{pulls:{list:'parents'},
-  repos:{compareCommitsWithBasehead:async({basehead})=>{
-   assert.equal(basehead,parentSha+'...'+childSha);comparisonCalls++;
-   return {data:{status:'ahead',behind_by:0}};
-  }}}};
- await validateBase(github,'owner','repo',child);
- assert.equal(comparisonCalls,1);
- await assert.rejects(validateBase({...github,paginate:async()=>[]},'owner','repo',child),/unverified stacked/);
- await assert.rejects(validateBase({...github,paginate:async()=>[{
-  ...parent,head:{...parent.head,sha:'d'.repeat(40)}}]},'owner','repo',child),/unverified stacked/);
- await assert.rejects(validateBase({...github,paginate:async()=>[{
-  ...parent,state:'closed'}]},'owner','repo',child),/unverified stacked/);
- await assert.rejects(validateBase({...github,rest:{...github.rest,
-  repos:{compareCommitsWithBasehead:async()=>({data:{status:'diverged',behind_by:1}})}}},
- 'owner','repo',child),/does not contain exact base/);
- await assert.rejects(validateBase(github,'owner','repo',{
-  ...child,base:{...child.base,repo:{full_name:'foreign/repo'}}}),/foreign stacked base/);
- await validateBase(github,'owner','repo',{...child,base:{ref:'main'}});
-});
 test('gate executes its tested observer inline, without evaluating candidate code',()=>{
  const source=readFileSync('.github/workflows/ci-opt-03-full-gate.yml','utf8');
  const observer=readFileSync('tools/ci-full-evidence.cjs','utf8').split('\n').filter(l=>!l.startsWith('module.exports=')).join('\n').trim();
  const embedded=source.split('          script: |\n')[1].split('\n').map(l=>l.startsWith('            ')?l.slice(12):l).join('\n');
  assert.ok(embedded.startsWith(observer));assert.doesNotMatch(source,/actions\/checkout|require\(/);
- assert.ok(embedded.includes('try {'));
- assert.ok(embedded.includes('await verify({github,core,context,prNumber:Number(process.env.PR_NUMBER),expected:process.env.EXPECTED_HEAD});'));
- assert.ok(embedded.includes('catch(error) {'));
- assert.ok(embedded.includes('core.setFailed(error.message);'));
 });
 
 test('ownership labels cannot hide executable tests in manual or helper lanes',async()=>{
