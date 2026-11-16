@@ -1,7 +1,7 @@
 /** #613 — replacement-only authenticated world-day command.
- * NOT wired to /admin yet. One V2 authority, no temporary-score-v1 fallback.
- * Before routing to this entrypoint, replace calendar publication/backfill,
- * public sporting/match/archive reads and season closure as a SINGLE cutover.
+ * Routed by the Draft/HOLD branch's Admin dispatcher as the sole official
+ * due-match finalizer. No temporary-score-v1 scoring or fallback.
+ * Deployment and D1 cutover remain separately authorization-gated.
  */
 import {ApiError} from './errors.ts';
 import {hashText,type AdminSession} from './auth.ts';

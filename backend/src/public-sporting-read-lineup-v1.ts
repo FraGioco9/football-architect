@@ -1,5 +1,5 @@
 /** #613: V2-only anonymous sporting projections from independently verified
- * immutable lineup receipts. Candidate, not yet connected to live HTTP routes.
+ * immutable lineup receipts. Wired to HTTP in the Draft/HOLD branch; not deployed.
  * Never re-simulates a match or reads current affiliations on a public GET.
  */
 import {ApiError} from './errors.ts';

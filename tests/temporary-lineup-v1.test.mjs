@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {ATTRIBUTES} from '../backend/src/players-generator-core.mjs';
 import {LINEUP_V1_SLOTS,selectAutomaticXiV1,simulateRegulationV1,simulateMatchV1,buildCandidateMatchReceiptV1} from '../backend/src/temporary-lineup-v1.mjs';
 
@@ -178,4 +179,36 @@ test('candidate receipt rejects mismatched provenance, scorer ghost, and score t
  await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,homeGoals:result.homeGoals+1}),/score reconciliation/);
  await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,
   events:[...result.events,{side:'away',period:'regulation',minute:45,playerId:999,type:'goal'}]}),/scorer reconciliation/);
+});
+
+test('official HTTP routing selects frozen V2 only and retires direct legacy start/calendar',()=>{
+ const source=path=>readFileSync(new URL('../backend/src/'+path,import.meta.url),'utf8');
+ const index=source('index.ts'),admin=source('http-admin.ts');
+ for(const alias of [
+  'readPublicSportingSeasonLineupV1 as readPublicSportingSeason',
+  'readPublicCalendarDayLineupV1 as readPublicCalendarDay',
+  'readPublicClubHistoryLineupV1 as readPublicClubHistory',
+  'readPublicClubFixturesLineupV1 as readPublicClubFixtures',
+  'readPublicMatchLineupV1 as readPublicMatch',
+  'readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches'
+ ])assert.ok(index.includes(alias),'missing official V2 public router: '+alias);
+ for(const name of [
+  'executeLineupLifecycleV1 as executeLifecycle',
+  'advanceAdministrativeClockLineupV1 as advanceAdministrativeClock',
+  'publishInternationalCalendarLineupV1 as publishInternationalCalendar',
+  'closeSeasonLineupV1 as closeSeason',
+  'archiveSeasonLineupV1 as archiveSeason'
+ ])assert.ok(admin.includes(name),'missing protected V2 Admin route: '+name);
+ for(const [name,text] of [['index.ts',index],['http-admin.ts',admin]]){
+  const imports=[...text.matchAll(/from\s+['"]\.\/([^'"]+)['"]/g)].map(m=>m[1]);
+  for(const obsolete of [
+   'temporary-simulation.ts','lifecycle-command.ts','calendar-command.ts',
+   'public-sporting-read.ts','public-match-read.ts','admin-calendar-clock.ts',
+   'admin-calendar-publish.ts','season-archive-command.ts','season-close-command.ts'
+  ])assert.ok(!imports.includes(obsolete),name+' imports old result authority '+obsolete);
+ }
+ assert.match(admin,/if\(path==='\/api\/admin\/seasons\/calendar'\|\|path==='\/api\/admin\/seasons\/start'\)/);
+ assert.match(admin,/legacy_season_command_retired/);
+ assert.match(source('season-two-candidate-read.ts'),/verifyLineupSeasonArchiveV1/);
+ assert.match(source('lineup-sporting-day-plan.ts'),/processSportingDayWithResolver/);
 });
