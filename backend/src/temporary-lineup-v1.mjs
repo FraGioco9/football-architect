@@ -132,3 +132,198 @@ export async function simulateRegulationV1({homeRoster,awayRoster,matchKey,seed,
   events:[...homeEvents.map(event=>({...event,side:'home'})),...awayEvents.map(event=>({...event,side:'away'}))]
    .sort((a,b)=>a.minute-b.minute||a.side.localeCompare(b.side)||a.playerId-b.playerId)};
 }
+
+
+/** Standalone match-context candidate. Same aggregate/extra-time/shootout semantics as temporary-score-v1.
+ * Still unwired: callers must supply authenticated/verified fixture and roster snapshots later.
+ */
+function checkedContextV1(value){
+ if(!value||typeof value!=='object'||Array.isArray(value))error('match context');
+ const keys=Object.keys(value).sort().join(',');
+ if(value.mode==='regulation'&&keys==='mode')return {mode:'regulation'};
+ if(value.mode==='single-knockout'&&keys==='mode')return {mode:'single-knockout'};
+ if(value.mode==='single-knockout'&&keys==='mode,neutral'&&value.neutral===true)
+  return {mode:'single-knockout',neutral:true};
+ if(value.mode==='second-leg'&&keys==='firstLegAwayGoals,firstLegHomeGoals,mode'&&
+  [value.firstLegHomeGoals,value.firstLegAwayGoals].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=100))
+  return {mode:'second-leg',firstLegHomeGoals:value.firstLegHomeGoals,firstLegAwayGoals:value.firstLegAwayGoals};
+ return error('match context');
+}
+const CLUB_KEY_PATTERN=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
+function checkedClubs(homeClubId,awayClubId){
+ if(!CLUB_KEY_PATTERN.test(homeClubId)||!CLUB_KEY_PATTERN.test(awayClubId)||homeClubId===awayClubId)
+  error('match clubs');
+}
+function countExtraTimeGoals(lambda,u){
+ let mass=Math.exp(-lambda/3),total=mass;
+ for(let goals=0;goals<2;goals++){
+  if(u<total)return goals;
+  mass*=lambda/3/(goals+1);total+=mass;
+ }
+ return 2;
+}
+function mergedAppearanceSide(side,events,playedExtraTime,goals){
+ if(side.kind==='team_fallback')return {
+  ...side,unattributedGoals:goals,appearances:[]
+ };
+ const minutes=playedExtraTime?120:90;
+ return {...side,unattributedGoals:0,
+  appearances:side.starters.map(starter=>({
+   playerId:starter.playerId,started:true,minutes,
+   goals:events.filter(event=>event.playerId===starter.playerId).length
+  }))};
+}
+async function sha256(value){
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)));
+ return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+
+/** No player IDs can appear on both teams, even if provided through two mistaken source lists. */
+export async function simulateMatchV1({homeRoster,awayRoster,matchKey,seed,homeClubId,awayClubId,context}){
+ checkedClubs(homeClubId,awayClubId);
+ const verified=checkedContextV1(context);
+ if(!Array.isArray(homeRoster)||!Array.isArray(awayRoster))error('rosters');
+ const homeIds=new Set(homeRoster.map(p=>p?.id));
+ if(awayRoster.some(p=>homeIds.has(p?.id)))error('player affiliated to both clubs');
+ const neutral=verified.mode==='single-knockout'&&verified.neutral===true;
+ const base=await simulateRegulationV1({homeRoster,awayRoster,matchKey,seed,neutral});
+ if(base.kind==='use_existing_temporary_score_v1')
+  return {...base,context:verified}; // Explicit delegation, not a fabricated candidate receipt.
+ const {homeGoals:regHome,awayGoals:regAway}=base.regulation;
+ let homeGoals=regHome,awayGoals=regAway,extraTime=null,penalties=null;
+ let resolution='regulation',playedExtraTime=false;
+ const difference=()=>verified.mode==='second-leg'
+  ?homeGoals+verified.firstLegAwayGoals-awayGoals-verified.firstLegHomeGoals
+  :homeGoals-awayGoals;
+ let delta=difference();
+ const extraEvents=[];
+ if(verified.mode!=='regulation'&&delta===0){
+  playedExtraTime=true;
+  const drawKey=JSON.stringify([LINEUP_SIMULATOR_VERSION,matchKey,seed,verified,base]);
+  const [eh,ea]=await Promise.all([
+   unit(drawKey,'home-extra-time').then(u=>countExtraTimeGoals(base.expectedGoals.home,u)),
+   unit(drawKey,'away-extra-time').then(u=>countExtraTimeGoals(base.expectedGoals.away,u))
+  ]);
+  extraTime={home:eh,away:ea};
+  homeGoals+=eh;awayGoals+=ea;delta=difference();resolution='extra-time';
+  const [homeEvents,awayEvents]=await Promise.all([
+   buildEvents(base.home,eh,drawKey+':et-home'),
+   buildEvents(base.away,ea,drawKey+':et-away')
+  ]);
+  extraEvents.push(...homeEvents.map(event=>({...event,minute:91+((event.minute-1)%30),side:'home',period:'extra-time'})),
+   ...awayEvents.map(event=>({...event,minute:91+((event.minute-1)%30),side:'away',period:'extra-time'})));
+  if(delta===0){
+   const scoreKey=JSON.stringify([LINEUP_SIMULATOR_VERSION,matchKey,seed,verified,base,extraTime]);
+   const [winnerU,sizeU]=await Promise.all([
+    unit(scoreKey,'penalties-winner'),unit(scoreKey,'penalties-size')
+   ]);
+   const winner=3+Math.floor(sizeU*4),loser=winner-1;
+   penalties=winnerU<.5?{home:winner,away:loser}:{home:loser,away:winner};
+   delta=penalties.home-penalties.away;resolution='penalties';
+  }
+ }
+ const events=[...base.events.map(event=>({...event,period:'regulation'})),...extraEvents]
+  .sort((a,b)=>a.minute-b.minute||(a.side<b.side?-1:a.side>b.side?1:0)||a.playerId-b.playerId);
+ const homeEvents=events.filter(event=>event.side==='home');
+ const awayEvents=events.filter(event=>event.side==='away');
+ const home=mergedAppearanceSide(base.home,homeEvents,playedExtraTime,homeGoals);
+ const away=mergedAppearanceSide(base.away,awayEvents,playedExtraTime,awayGoals);
+ return {
+  algorithmVersion:LINEUP_SIMULATOR_VERSION,mode:base.mode,matchKey,homeClubId,awayClubId,
+  sourceSeedHash:await sha256([LINEUP_SIMULATOR_VERSION,seed]),context:verified,neutral,
+  expectedGoals:base.expectedGoals,regulation:{home:regHome,away:regAway},
+  extraTime,penalties,homeGoals,awayGoals,
+  resolution,winnerClubId:delta===0?null:delta>0?homeClubId:awayClubId,
+  home,away,events
+ };
+}
+function deepFreeze(value){
+ if(value&&typeof value==='object'&&!Object.isFrozen(value)){
+  Object.values(value).forEach(deepFreeze);Object.freeze(value);
+ }
+ return value;
+}
+const DIGEST=/^[0-9a-f]{64}$/;
+const COMPETITION=/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/;
+
+/** Validated, fingerprinted, frozen *candidate* receipt; a later authorized D1 transaction
+ * must enforce actual persistence uniqueness, source-revision checks and idempotence.
+ */
+export async function buildCandidateMatchReceiptV1(match,outcome){
+ if(!match||typeof match!=='object'||Array.isArray(match)||!outcome||outcome.algorithmVersion!==LINEUP_SIMULATOR_VERSION)
+  error('receipt inputs');
+ const {matchId,season,day,generation,competitionId,fixtureId,homeClubId,awayClubId,sourceHash}=match;
+ if(!Number.isSafeInteger(matchId)||matchId<1||!Number.isSafeInteger(season)||season<1||
+  !Number.isInteger(day)||day<1||day>56||typeof generation!=='string'||!generation||
+  !COMPETITION.test(competitionId)||typeof fixtureId!=='string'||
+  !fixtureId.startsWith(`season:${season}:${competitionId}:`)||
+  !fixtureId.endsWith(`:${homeClubId}:${awayClubId}`)||
+  !DIGEST.test(sourceHash))error('receipt fixture evidence');
+ checkedClubs(homeClubId,awayClubId);
+ if(outcome.matchKey!==fixtureId||outcome.homeClubId!==homeClubId||outcome.awayClubId!==awayClubId)
+  error('receipt match identity');
+ const {homeGoals,awayGoals,regulation,extraTime,penalties,context,resolution,events}=outcome;
+ checkedContextV1(context);
+ if(!Number.isInteger(homeGoals)||!Number.isInteger(awayGoals)||homeGoals<0||awayGoals<0||
+  !regulation||![regulation.home,regulation.away].every(n=>Number.isInteger(n)&&n>=0&&n<=6)||
+  !['regulation','extra-time','penalties'].includes(resolution)||
+  !DIGEST.test(outcome.sourceSeedHash)||!Array.isArray(events))error('receipt result');
+ const playedExtraTime=extraTime!==null;
+ if(playedExtraTime&&(!extraTime||![extraTime.home,extraTime.away].every(n=>Number.isInteger(n)&&n>=0&&n<=2)))error('extra time goals');
+ if(homeGoals!==regulation.home+(extraTime?.home??0)||awayGoals!==regulation.away+(extraTime?.away??0))
+  error('receipt score reconciliation');
+ if((resolution==='regulation'&&(extraTime!==null||penalties!==null))||
+  (resolution!=='regulation'&&context.mode==='regulation')||
+  (resolution==='extra-time'&&(extraTime===null||penalties!==null))||
+  (resolution==='penalties'&&(extraTime===null||!penalties||
+   ![penalties.home,penalties.away].every(n=>Number.isInteger(n)&&n>=2&&n<=6)||
+   Math.abs(penalties.home-penalties.away)!==1)))error('receipt knockout resolution');
+ const aggregate=context.mode==='second-leg'
+  ?homeGoals+context.firstLegAwayGoals-awayGoals-context.firstLegHomeGoals
+  :homeGoals-awayGoals;
+ const winnerDelta=resolution==='penalties'?penalties.home-penalties.away:aggregate;
+ if(outcome.winnerClubId!==(winnerDelta===0?null:winnerDelta>0?homeClubId:awayClubId)||
+  (context.mode!=='regulation'&&winnerDelta===0)||
+  (resolution==='penalties'&&aggregate!==0)||
+  (resolution==='extra-time'&&aggregate===0)||
+  (context.mode==='regulation'&&playedExtraTime))error('receipt winner');
+ if(outcome.mode!==(outcome.home.kind==='real_xi'
+  ?outcome.away.kind==='real_xi'?'xi_vs_xi':'xi_vs_fallback'
+  :outcome.away.kind==='real_xi'?'fallback_vs_xi':'fallback_vs_fallback'))error('receipt mode');
+ if(outcome.mode==='fallback_vs_fallback')error('legacy fallback has no new receipt');
+ if(events.some(event=>event.type!=='goal'||!['home','away'].includes(event.side)||
+  !Number.isInteger(event.minute)||event.minute<1||event.minute>(playedExtraTime?120:90)||
+  (event.period==='regulation'&&event.minute>90)||
+  (event.period==='extra-time'&&(event.minute<91||!playedExtraTime))||
+  !['regulation','extra-time'].includes(event.period)))error('receipt events');
+ for(const sideName of ['home','away']){
+  const side=outcome[sideName],goals=sideName==='home'?homeGoals:awayGoals;
+  if(!side||!Array.isArray(side.appearances)||!Number.isInteger(side.unattributedGoals)||
+   side.unattributedGoals<0)error('receipt player record');
+  const recorded=events.filter(event=>event.side===sideName);
+  if(recorded.length+side.unattributedGoals!==goals)error('receipt scorer reconciliation');
+  if(side.kind==='team_fallback'){
+   if(side.starters!==null||side.appearances.length!==0||side.unattributedGoals!==goals||recorded.length)
+    error('fallback player attribution');
+  }else if(side.kind==='real_xi'){
+   if(!Array.isArray(side.starters)||side.starters.length!==11||side.appearances.length!==11||
+    side.unattributedGoals!==0)error('receipt XI size');
+   const ids=side.starters.map(p=>p.playerId),unique=new Set(ids);
+   if(unique.size!==11||ids.some(id=>!Number.isSafeInteger(id)||id<=0)||
+    side.appearances.some(p=>!unique.has(p.playerId)||p.started!==true||
+      p.minutes!==(playedExtraTime?120:90)||
+      p.goals!==recorded.filter(event=>event.playerId===p.playerId).length)||
+    new Set(side.appearances.map(p=>p.playerId)).size!==11||
+    recorded.some(event=>!unique.has(event.playerId)))error('receipt player consistency');
+  }else error('receipt side mode');
+ }
+ const participantIds=new Set([...outcome.home.appearances,...outcome.away.appearances].map(p=>p.playerId));
+ if(participantIds.size!==outcome.home.appearances.length+outcome.away.appearances.length)
+  error('duplicate player across clubs');
+ const fixture={matchId,season,day,generation,competitionId,fixtureId,homeClubId,awayClubId,sourceHash};
+ const payload={schemaVersion:1,authority:'candidate-only',algorithmVersion:LINEUP_SIMULATOR_VERSION,
+  fixture,result:outcome};
+ // Copy before freeze, never freeze or mutate the caller's own input objects.
+ const detached=JSON.parse(JSON.stringify(payload));
+ return deepFreeze({...detached,receiptDigest:await sha256(detached)});
+}

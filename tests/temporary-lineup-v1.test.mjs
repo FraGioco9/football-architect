@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ATTRIBUTES} from '../backend/src/players-generator-core.mjs';
-import {LINEUP_V1_SLOTS,selectAutomaticXiV1,simulateRegulationV1} from '../backend/src/temporary-lineup-v1.mjs';
+import {LINEUP_V1_SLOTS,selectAutomaticXiV1,simulateRegulationV1,simulateMatchV1,buildCandidateMatchReceiptV1} from '../backend/src/temporary-lineup-v1.mjs';
 
 const player=(id,role='CM',skill=61)=>({id,primary_position:role,secondary_positions:[],career_status:'active',
  attributes:Object.fromEntries(ATTRIBUTES.map(attr=>[attr,skill]))});
@@ -72,4 +72,101 @@ test('mixed mode only attributes goals to actual XI, reconciles appearances',asy
 test('both fallback sides delegate to unchanged temporary-score-v1',async()=>{
  assert.deepEqual(await play([],[]),{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback'});
  assert.deepEqual(await play(roster().slice(0,10),roster().slice(0,10)),{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback'});
+});
+
+
+const opponentRoster=(skill=61)=>roster(skill).map(p=>({...p,id:p.id+100}));
+const contextPlay=(homeRoster,awayRoster,context,seed='temporary-sim-v1-test-seed')=>
+ simulateMatchV1({homeRoster,awayRoster,context,seed,matchKey:'season:1:IT-1:N01:IT-1:IT-2',
+  homeClubId:'IT-1',awayClubId:'IT-2'});
+const receiptMatch={matchId:17,season:1,day:13,generation:'world-test-generation',
+ competitionId:'IT-1',fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
+ homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'a'.repeat(64)};
+const assertReconciled=(outcome)=>{
+ if(outcome.kind==='use_existing_temporary_score_v1')return;
+ assert.equal(outcome.regulation.home+(outcome.extraTime?.home??0),outcome.homeGoals);
+ assert.equal(outcome.regulation.away+(outcome.extraTime?.away??0),outcome.awayGoals);
+ for(const sideName of ['home','away']){
+  const side=outcome[sideName],goals=outcome[sideName+'Goals'];
+  const scored=outcome.events.filter(e=>e.side===sideName);
+  assert.equal(scored.length+side.unattributedGoals,goals);
+  assert.equal(side.appearances.reduce((sum,p)=>sum+p.goals,0),scored.length);
+  assert.ok(scored.every(e=>e.period==='regulation'?e.minute<=90:e.period==='extra-time'&&e.minute>=91&&e.minute<=120));
+  assert.ok(side.appearances.every(p=>p.minutes===(outcome.extraTime?120:90)));
+ }
+};
+test('full match regulation-only returns stable compatible match-level fields and candidate receipt',async()=>{
+ const result=await contextPlay(roster(),[],{mode:'regulation'});
+ assert.equal(result.algorithmVersion,'temporary-lineup-v1');
+ assert.equal(result.context.mode,'regulation');
+ assert.equal(result.resolution,'regulation');
+ assert.equal(result.extraTime,null);
+ assert.equal(result.penalties,null);
+ assertReconciled(result);
+ const receipt=await buildCandidateMatchReceiptV1(receiptMatch,result);
+ assert.equal(receipt.authority,'candidate-only');
+ assert.match(receipt.receiptDigest,/^[a-f0-9]{64}$/);
+ assert.equal(Object.isFrozen(receipt.result.home.starters),true);
+ assert.deepEqual(receipt,await buildCandidateMatchReceiptV1(receiptMatch,result));
+ assert.throws(()=>{receipt.result.homeGoals=99;},TypeError);
+ const changed={...receiptMatch,sourceHash:'b'.repeat(64)};
+ assert.notEqual((await buildCandidateMatchReceiptV1(changed,result)).receiptDigest,receipt.receiptDigest);
+});
+
+test('single knockout reaches regulation, extra time, and shootouts with real XI or mixed mode',async()=>{
+ const paths=new Set();
+ for(let i=0;i<120;i++){
+  const result=await contextPlay(roster(),[],{mode:'single-knockout'},'knockout-simple-'+String(i).padStart(4,'0'));
+  assertReconciled(result);
+  assert.equal(['IT-1','IT-2'].includes(result.winnerClubId),true);
+  if(result.extraTime){
+   assert.equal(result.home.appearances.length,11);
+   assert.ok(result.home.appearances.every(p=>p.minutes===120));
+  }
+  if(result.penalties){
+   assert.equal(result.resolution,'penalties');
+   assert.equal(Math.abs(result.penalties.home-result.penalties.away),1);
+   assert.equal(result.homeGoals,result.regulation.home+result.extraTime.home);
+  }
+  await buildCandidateMatchReceiptV1(receiptMatch,result);
+  paths.add(result.resolution);
+ }
+ assert.deepEqual([...paths].sort(),['extra-time','penalties','regulation']);
+});
+test('second-leg uses aggregate and not away goals; neutral final removes home advantage',async()=>{
+ const seen=new Set();
+ for(let i=0;i<60;i++){
+  const seed='return-match-simple-'+String(i).padStart(4,'0');
+  const regulation=await contextPlay(roster(),opponentRoster(),{mode:'regulation'},seed);
+  const {home,away}=regulation.regulation;
+  const result=await contextPlay(roster(),opponentRoster(),{mode:'second-leg',
+   firstLegHomeGoals:home,firstLegAwayGoals:away},seed);
+  assert.ok(result.extraTime);
+  assertReconciled(result);
+  await buildCandidateMatchReceiptV1(receiptMatch,result);
+  seen.add(result.resolution);
+ }
+ assert.ok(seen.has('extra-time')&&seen.has('penalties'));
+ const neutral=await contextPlay(roster(),opponentRoster(),{mode:'single-knockout',neutral:true});
+ assert.deepEqual(neutral.expectedGoals,{home:1.25,away:1.25});
+ assertReconciled(neutral);
+ await buildCandidateMatchReceiptV1(receiptMatch,neutral);
+});
+test('no fabricated identities across sides, invalid contexts fail closed, and dual fallback delegates',async()=>{
+ const both=await contextPlay([],[],{mode:'single-knockout'});
+ assert.deepEqual(both,{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback',
+   context:{mode:'single-knockout'}});
+ await assert.rejects(()=>contextPlay(roster(),roster().slice(0,1),null),/context/);
+ await assert.rejects(()=>contextPlay(roster(),[],{mode:'second-leg',firstLegHomeGoals:-1,firstLegAwayGoals:0}),/context/);
+ await assert.rejects(()=>contextPlay(roster(),[],{mode:'regulation',neutral:true}),/context/);
+ await assert.rejects(()=>contextPlay(roster(),roster(),{mode:'regulation'}),/both clubs/);
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,both),/receipt inputs/);
+});
+test('candidate receipt rejects mismatched provenance, scorer ghost, and score tampering',async()=>{
+ const result=await contextPlay(roster(),[],{mode:'regulation'});
+ await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,matchId:0},result),/fixture evidence/);
+ await assert.rejects(()=>buildCandidateMatchReceiptV1({...receiptMatch,homeClubId:'IT-4'},result),/identity/);
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,homeGoals:result.homeGoals+1}),/score reconciliation/);
+ await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,{...result,
+  events:[...result.events,{side:'away',period:'regulation',minute:45,playerId:999,type:'goal'}]}),/scorer reconciliation/);
 });
