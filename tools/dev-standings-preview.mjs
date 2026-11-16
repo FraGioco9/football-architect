@@ -42,6 +42,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/player-ball-uniform-autonomous-action.mjs': 'match-engine/src/player-ball-uniform-autonomous-action.mjs',
   '/__fa_match_engine__/action-labs.mjs': 'match-engine/src/action-labs.mjs',
   '/__fa_match_engine__/physical-football-decision-evidence-m23.mjs': 'match-engine/src/physical-football-decision-evidence-m23.mjs',
+  '/__fa_match_engine__/real-post-contact-ball-continuity-m24.mjs': 'match-engine/src/real-post-contact-ball-continuity-m24.mjs',
   '/__fa_match_engine__/action-lab-scenarios.mjs': 'match-engine/src/action-lab-scenarios.mjs',
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/research-control-initial-lineup.mjs': 'match-engine/src/research-control-initial-lineup.mjs',

@@ -4,6 +4,8 @@
 import {createEngine,FIXED_DT} from './core.mjs';
 import {createPhysicalFootballDecisionObserver}
  from './physical-football-decision-evidence-m23.mjs';
+import {createRealPostContactBallContinuity}
+ from './real-post-contact-ball-continuity-m24.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
@@ -91,6 +93,7 @@ export function createControlledActionLab(RAPIER,id,{
  let firstOpposingShoe=null,carryTrace=null;
  // One read-only observer of the original closed Rapier shoe/ball source.
  const decisionObserver=createPhysicalFootballDecisionObserver();
+ const continuityObserver=createRealPostContactBallContinuity();
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -213,6 +216,9 @@ export function createControlledActionLab(RAPIER,id,{
   const decisionEvidence=decisionObserver.observe({
    physics,playerFrame,foot,action
   });
+  const contactContinuity=continuityObserver.observe({
+   physics,playerFrame,foot,decisionEvidence
+  });
   return Object.freeze({
    scenarioId:id,shotSide:selectedShotSide,shotLane:selectedShotSide?shotLane:null,
    challengeSide:selectedChallengeSide,
@@ -225,7 +231,8 @@ export function createControlledActionLab(RAPIER,id,{
    // M3 read-only canonical motion samples: no second mover or guessed
    // velocity and no authority outside the existing closed Action LAB.
    observedMovementPlayers:playerFrame.players,
-   starts,action,evidence,decisionEvidence,eventCount:count,events:history,
+   starts,action,evidence,decisionEvidence,contactContinuity,
+   eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
    priorRealPass:firstRealPass,receivingContact,
@@ -324,6 +331,14 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
    ') m · Real shoe STARTs '+snap.starts.length+' · Witnesses '+snap.eventCount+
    (snap.decisionEvidence.current.kind!=='none'?
     ' · Physical candidate '+snap.decisionEvidence.current.kind:'')+
+   (snap.contactContinuity.active?
+    ' · Post-contact '+snap.contactContinuity.active.observedTicks+
+    '/60 actual ticks · ball travel '+
+    number(snap.contactContinuity.active.cumulativeBallTravelXYM)+' m':
+    snap.contactContinuity.latestCompleted?
+    ' · Last post-contact: '+
+    snap.contactContinuity.latestCompleted.observedTicks+
+    ' measured ticks · no proven control':'')+
    (snap.shotFlight?' · SHOT '+snap.shotFlight.team.toUpperCase()+
     ' · 3D path '+number(snap.shotFlight.path3DM)+' m'+
     ' · peak centre Z '+number(snap.shotFlight.maxCenterZM)+' m':'')+
