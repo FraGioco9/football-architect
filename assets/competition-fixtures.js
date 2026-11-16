@@ -532,7 +532,7 @@
     {attributes:true,attributeFilter:["lang","data-fa-standings-loading"]});
   function contextChanged(){
     updateDefinition(window.faCompetitionContext?.definition);
-    const data=window.faCompetitionContext?.seasonData;
+    const context=window.faCompetitionContext,data=context?.seasonData;
     if(!international&&data&&data.provenance?.kind!=='authoritative')return; // The protected domestic adapter commits transactionally through prepare().
     // The existing published IDs remain valid when this world's results hydrate.
     if(!data){
