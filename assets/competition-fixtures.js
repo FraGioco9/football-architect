@@ -231,7 +231,9 @@
     const selectedChoice=configured.find(c=>c.value===selected);
     const loading=document.documentElement.dataset.faStandingsLoading==='true';
     // The public draw may still be loading after the global season loader has settled.
-    const unresolved=loading||pendingKey!==null;
+    const source=window.faWorldState?.get?.();
+    const waitingForWorld=source?.source==='authoritative'&&source.worldStatus==='pending'&&!available;
+    const unresolved=loading||pendingKey!==null||waitingForWorld;
     const hasSchedule=available&&([...rounds.values()].some(games=>games.length)||postseason.length>0);
     fields.toolbar.hidden=!unresolved&&!hasSchedule;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
@@ -437,6 +439,11 @@
 
   window.addEventListener('fa:competition-context-change',contextChanged);
   window.addEventListener('fa:source-change',()=>{publishedKey=null;pendingKey=null;fetchSequence++;if(!window.faCompetitionContext?.seasonData)void readPublishedFixtures();});
+  // The authoritative world can become ready after Fixtures mounts without a route or source change.
+  window.faWorldState?.subscribe?.(source=>{
+    if(source?.source==='authoritative'&&source.worldStatus==='ready')void readPublishedFixtures();
+    else render();
+  });
   window.addEventListener('fa:world-clock-snapshot',event=>{
     if(!international||window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')return;
     const calendar=window.faWorldCalendarModel?.projectCompetition(window.faCompetitionContext.selectedSeason,definition.id);

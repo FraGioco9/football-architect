@@ -72,7 +72,7 @@ function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
  const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
- if(source){window.faWorldState={get:()=>source};window.faCompetitionContext.selectedSeason=1;}
+ if(source){const worldListeners=[];window.faWorldState={get:()=>source,subscribe(fn){worldListeners.push(fn)},emit(){for(const fn of worldListeners)fn(source)}};window.faCompetitionContext.selectedSeason=1;}
  const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,fetch:fetchImpl,MutationObserver:class{observe(){}}});
@@ -140,6 +140,38 @@ test('FIXTURES refresh: public draw pending after global bootstrap retains contr
  assert.equal(empty.hidden,true);
  assert.equal(r.fields.get('app-fixtures-list').children.filter(row=>row.dataset.fixtureMatch).length,8);
  assert.equal(r.fields.get('app-fixtures-round').value,'2','selection made while pending survives hydration');
+});
+
+test('FIXTURES refresh: late authoritative world readiness starts draw lookup without navigation',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'pending',world:null};
+ const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
+  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
+ }));
+ let resolveResponse,requests=0;
+ const r=setup(division,routeRegistry,{source,fetchImpl:()=>{
+  requests++;return new Promise(resolve=>{resolveResponse=resolve});
+ }});
+ const panel=r.fields.get('competition-panel-fixtures'),toolbar=r.fields.get('app-fixtures-toolbar'),empty=r.fields.get('app-fixtures-empty');
+ assert.equal(requests,0,'no draw lookup before authoritative world readiness');
+ assert.equal(panel.dataset.faContentState,'unknown');
+ assert.equal(toolbar.hidden,false,'world-read pending still keeps selector visible');
+ assert.equal(empty.hidden,true);
+ source.worldStatus='ready';
+ source.world={generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'};
+ r.window.faWorldState.emit();
+ assert.equal(requests,1,'world readiness alone launches the published-draw lookup');
+ assert.equal(toolbar.hidden,false);
+ resolveResponse({ok:true,status:200,json:async()=>({
+  schemaVersion:1,providerId:'authoritative-world',season:1,competitionId:'IT-1',
+  status:'published',fixtures:committed,provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)}
+ })});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(panel.dataset.faContentState,'available');
+ assert.equal(empty.hidden,true);
+ assert.equal(toolbar.hidden,false);
+ assert.equal(r.fields.get('app-fixtures-list').children.filter(row=>row.dataset.fixtureMatch).length,8);
 });
 
 test('FIXTURES refresh: confirmed 404 after pending draw restores honest empty state',async()=>{
