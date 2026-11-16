@@ -16,6 +16,20 @@ test('skip skeleton only for known empty current season/revision',()=>{
  assert.equal(confirmedEmpty({...panel,dataset:{...panel.dataset,faContentState:'unknown'}},context,{season:'2'}),false);
  assert.equal(confirmedEmpty(null,context,{season:'2'}),false);
 });
+test('Standings table has no hover animation or row hover highlight in either theme',()=>{
+ const css=read('assets/app.css');
+ assert.doesNotMatch(css,/\.app-world-standing-table tbody tr:hover/,
+  'desktop Standings rows do not change background when the pointer passes over them');
+ assert.match(css,/\.app-world-standing-table \.app-world-form-control\{transition:none\}/,
+  'match-form controls inside Standings do not animate on hover');
+ assert.match(css,/\.app-world-standing-table \.app-world-form-control:hover:not\(:focus-visible\)\{background:transparent\}/,
+  'badge hover does not animate a colored background');
+ assert.match(css,/\.app-world-form-control:focus-visible/,
+  'keyboard focus remains visible');
+ assert.match(css,/\.app-world-form-tooltip/,
+  'match-result tooltip remains available');
+});
+
 test('presenters require concrete absence instead of missing responses',()=>{
  assert.match(read('assets/competition-fixtures.js'),/data\.fixtures===null/);
  assert.match(read('assets/competition-fixtures.js'),/available&&\(\(international/);
