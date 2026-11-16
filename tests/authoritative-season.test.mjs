@@ -48,9 +48,36 @@ function source(){
  }
  const zero=id=>({clubId:id,played:0,won:0,drawn:0,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
  return {...empty(),status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},data:{season:1,rulesVersion:definition.rules.version,participants:ids,fixtures,
-  standings:{complete:false,rows:ids.map((id,i)=>({...zero(id),rank:i+1,points:0}))},statistics:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...zero(id),cleanSheets:0})),players:null,playerStatus:'unavailable'},
+  standings:{complete:false,rows:ids.map((id,i)=>({...zero(id),rank:i+1,points:0}))},statistics:{matchesPlayed:0,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...zero(id),cleanSheets:0})),players:[],playerStatus:'available'},
   calendar:Array.from({length:56},(_,i)=>({day:i+1,fixtureIds:fixtures.filter(f=>f.day===i+1).map(f=>f.id),played:0})),history:null}};
 }
+test('accepts only real, internally coherent frozen V2 player totals',()=>{
+ const raw=source(),fixture=raw.data.fixtures[0];
+ raw.world={...world,day:fixture.day};
+ fixture.result={homeGoals:1,awayGoals:0,resolution:'regulation',extraTime:null,penalties:null,winnerClubId:fixture.homeClubId};
+ const home=raw.data.standings.rows.find(t=>t.clubId===fixture.homeClubId);
+ const away=raw.data.standings.rows.find(t=>t.clubId===fixture.awayClubId);
+ Object.assign(home,{played:1,won:1,goalsFor:1,goalDifference:1,points:3});
+ Object.assign(away,{played:1,lost:1,goalsAgainst:1,goalDifference:-1,points:0});
+ for(const team of raw.data.statistics.teams){
+  if(team.clubId===fixture.homeClubId)Object.assign(team,{played:1,won:1,goalsFor:1,goalDifference:1,cleanSheets:1});
+  if(team.clubId===fixture.awayClubId)Object.assign(team,{played:1,lost:1,goalsAgainst:1,goalDifference:-1,cleanSheets:0});
+ }
+ raw.data.statistics.matchesPlayed=1;raw.data.statistics.totalGoals=1;raw.data.statistics.goalsPerMatch=1;
+ raw.data.calendar.find(d=>d.day===fixture.day).played=1;
+ const player={playerId:58,clubId:fixture.homeClubId,appearances:1,starts:1,minutes:90,goals:1};
+ raw.data.statistics.players=[player];
+ assert.deepEqual(validateAuthoritativeSeason(raw,ctx(),manifest).data.statistics.players,[player]);
+ for(const bad of [
+  {...player,goals:2},{...player,starts:0},{...player,minutes:60},
+  {...player,clubId:'FR-1'},{...player,appearances:2,starts:2,minutes:180}
+ ]){
+  const altered=structuredClone(raw);altered.data.statistics.players=[bad];
+  assert.throws(()=>validateAuthoritativeSeason(altered,ctx(),manifest));
+ }
+ const duplicate=structuredClone(raw);duplicate.data.statistics.players=[player,player];
+ assert.throws(()=>validateAuthoritativeSeason(duplicate,ctx(),manifest));
+});
 test('adapts a complete published schedule into existing domestic fixture and table contracts',()=>{
  const raw=source(),data=adaptAuthoritativeSeason(validateAuthoritativeSeason(raw,ctx(),manifest),ctx(),manifest);
  assert.equal(data.fixtures.length,240);assert.equal(data.statistics.standings.length,16);
@@ -85,7 +112,7 @@ test('rejects future scores, wrong rules, standings totals, identities and fabri
   r=>{r.data.rulesVersion='unapproved-v99'},
   r=>{r.data.standings.rows[0].points=3},
   r=>{r.data.participants[0]='FR-40'},
-  r=>{r.data.statistics.players=[]},
+  r=>{r.data.statistics.players=[{playerId:1,clubId:'IT-1',appearances:1,starts:1,minutes:90,goals:1}]},
   r=>{r.data.calendar[0].fixtureIds=['unknown']},
  ];
  for(const change of changes){const raw=source();change(raw);assert.throws(()=>validateAuthoritativeSeason(raw,ctx(),manifest));}

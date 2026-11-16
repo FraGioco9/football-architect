@@ -20,7 +20,7 @@ export function published(competitionId,selectedSeason,currentWorld){
  const played=fixtures.filter(f=>f.result).length,clubPlayed=played/8;
  const row=id=>({clubId:id,played:clubPlayed,won:0,drawn:clubPlayed,lost:0,goalsFor:0,goalsAgainst:0,goalDifference:0});
  return {schemaVersion:1,providerId:'authoritative-world',competitionId,selectedSeason,world:currentWorld,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:`world:${currentWorld.generation}:season:${selectedSeason}:`+'a'.repeat(64)},data:{season:selectedSeason,seasonState:{day:currentWorld.day,phase:'active'},rulesVersion:def.rules.version,participants:ids,fixtures,
-  standings:{complete:false,rows:ids.map((id,i)=>({...row(id),rank:i+1,points:clubPlayed}))},statistics:{matchesPlayed:played,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...row(id),cleanSheets:clubPlayed})),players:null,playerStatus:'unavailable'},
+  standings:{complete:false,rows:ids.map((id,i)=>({...row(id),rank:i+1,points:clubPlayed}))},statistics:{matchesPlayed:played,totalGoals:0,goalsPerMatch:0,teams:ids.map(id=>({...row(id),cleanSheets:clubPlayed})),players:[],playerStatus:'available'},
   calendar:days.map(d=>({day:d.day,fixtureIds:fixtures.filter(f=>f.day===d.day).map(f=>f.id),played:fixtures.filter(f=>f.day===d.day&&f.result).length})),history:null}};
 }
 export function calendarPublished(season,day,currentWorld){

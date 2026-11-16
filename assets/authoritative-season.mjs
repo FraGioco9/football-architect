@@ -79,9 +79,25 @@ export function validateAuthoritativeSeason(input,context,manifest){
   if(!t||r.rank!==i+1||['played','won','drawn','lost','goalsFor','goalsAgainst'].some(k=>r[k]!==t[k])||r.goalDifference!==t.goalsFor-t.goalsAgainst||r.points!==t.won*3+t.drawn)fail();
  });
  const stats=d.statistics,allTotals=totals(ids,fixtures),played=fixtures.filter(f=>f.result!==null),goals=played.reduce((n,f)=>n+f.result.homeGoals+f.result.awayGoals,0);
- if(!object(stats)||stats.matchesPlayed!==played.length||stats.totalGoals!==goals||stats.goalsPerMatch!==(played.length?goals/played.length:0)||stats.players!==null||stats.playerStatus!=='unavailable'||
+ if(!object(stats)||stats.matchesPlayed!==played.length||stats.totalGoals!==goals||stats.goalsPerMatch!==(played.length?goals/played.length:0)||!Array.isArray(stats.players)||stats.playerStatus!=='available'||
     !Array.isArray(stats.teams)||stats.teams.length!==ids.length||new Set(stats.teams.map(t=>t.clubId)).size!==ids.length)fail();
  for(const row of stats.teams){const t=allTotals.get(row.clubId);if(!t||Object.keys(t).some(k=>row[k]!==t[k])||row.goalDifference!==t.goalsFor-t.goalsAgainst)fail()}
+ const playerIdentity=new Set(),playerTotals=new Map();
+ for(const p of stats.players){
+  if(!object(p)||!count(p.playerId)||p.playerId===0||!ids.includes(p.clubId)||
+     !count(p.appearances)||p.appearances===0||!count(p.starts)||p.starts!==p.appearances||
+     !count(p.minutes)||p.minutes<90*p.appearances||p.minutes>120*p.appearances||
+     !count(p.goals))fail();
+  const identity=p.clubId+':'+p.playerId;
+  if(playerIdentity.has(identity))fail();playerIdentity.add(identity);
+  const total=playerTotals.get(p.clubId)??{appearances:0,goals:0};
+  total.appearances+=p.appearances;total.goals+=p.goals;
+  playerTotals.set(p.clubId,total);
+ }
+ for(const [clubId,p] of playerTotals){
+  const t=allTotals.get(clubId);
+  if(!t||p.appearances>11*t.played||p.goals>t.goalsFor)fail();
+ }
  if(!Array.isArray(d.calendar)||d.calendar.length!==56)fail();
  d.calendar.forEach((day,i)=>{
   const expected=fixtures.filter(f=>f.day===i+1);
