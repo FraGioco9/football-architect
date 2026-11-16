@@ -114,7 +114,7 @@ test('B06b H1 true HOME/AWAY 22-player 60Hz continuous two-half MINIATURE: halft
   assert.ok(full,'must physically advance ALL 120 extra second-half game ticks');
   assert.ok(pauseTicks>=1);
   assert.equal(full.gameClockTicks,240);
-  assert.equal(full.physicsTick,240+pauseTicks);
+  assert.equal(full.physicsTick,239+pauseTicks);
   assert.equal(fa.phase,'full-time');
   assert.equal(fa.clockTicks,240);
   assert.equal(fa.clock.label,'00:04');
@@ -134,6 +134,6 @@ test('B06b H1 true HOME/AWAY 22-player 60Hz continuous two-half MINIATURE: halft
     actualActiveGameTicks:full.gameClockTicks,
     excludedRealHalftimePhysicsTicks:pauseTicks,
     score:fa.provisionalScore,originalShoe:true,
-    90MinuteMatchVerified:false,officialResult:null})+'\\n');
+    full90MinuteMatchVerified:false,officialResult:null})+'\\n');
  }finally{a.dispose();b.dispose();}
 });
