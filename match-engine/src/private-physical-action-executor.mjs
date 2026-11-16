@@ -47,7 +47,42 @@ export function createPrivatePhysicalActionExecutor({
    allowPhysicalCarry
   };
   const gates=inspectPhysicalActionRejection(input);
-  const chosen=selectUniformAutonomousContactAction(input);
+  const originalChoice=selectUniformAutonomousContactAction(input);
+  let researchCandidate=null;
+  const side=researchReceivingCushionSide;
+  const receiverId=side===null?null:side+'-9';
+  if(side!==null){
+   const opposite=side==='home'?'away':'home';
+   // An earlier real shoe touch by ANY other player interrupts the original
+   // physical pass before this receiver may try a first-touch cushion.
+   if(actualPriorPass&&nextTick>actualPriorPass.tick&&
+      contact.started.some(id=>id!==receiverId))
+    interrupted=true;
+   if(actualPriorPass&&!interrupted&&!firstCushion&&
+      nextTick>actualPriorPass.tick&&
+      contact.started.length===1&&contact.active.length===1&&
+      contact.started[0]===receiverId&&
+      contact.active[0]===receiverId&&
+      (originalChoice===null||originalChoice.playerId===receiverId)){
+    const p=playerFrame?.players?.find(x=>x.id===receiverId);
+    const opponents=playerFrame?.players?.filter(x=>x.team===opposite);
+    if(!p||p.team!==side||!Array.isArray(opponents)||
+       opponents.length!==11||![p.x,p.y,p.vx,p.vy].every(Number.isFinite)||
+       opponents.some(x=>![x.x,x.y].every(Number.isFinite)))
+     throw new TypeError('M25 requires original 22-player current source');
+    const position=ballBody.translation(),velocity=ballBody.linvel();
+    researchCandidate=calculateRealReceivingCushion({
+     ballVelocity:velocity,playerVelocity:p,
+     ballCentreZ:position.z,ballRadiusM,
+     realBallPlayerGapM:Math.hypot(position.x-p.x,position.y-p.y),
+     nearestOpponentM:Math.min(...opponents.map(x=>
+      Math.hypot(x.x-p.x,x.y-p.y)))
+    });
+   }
+  }
+  // Research mode substitutes the normal same-tick PASS response,
+  // rather than accidentally adding two impulses to one real contact.
+  const chosen=researchCandidate?null:originalChoice;
   if(chosen&&(!gates.passedInputGates||
      gates.actorId!==chosen.playerId||
      !contact.started.includes(chosen.playerId)||
@@ -56,7 +91,8 @@ export function createPrivatePhysicalActionExecutor({
    throw new Error('Rapier exclusive START and original action gates disagree');
   const currentAudit=Object.freeze({
    ...gates,actionSelected:chosen!==null,
-   noActionReason:chosen?null:
+   noActionReason:chosen?null:researchCandidate?
+    'experimental-receiving-cushion-preempts-uniform-action':
     (gates.firstFailedGate??'not-selected-after-input-gates')
   });
   let applied=null;
@@ -71,52 +107,25 @@ export function createPrivatePhysicalActionExecutor({
    });
    lastActionTick=nextTick;
   }
-  if(researchReceivingCushionSide!==null){
-   const side=researchReceivingCushionSide;
-   const opposite=side==='home'?'away':'home',receiverId=side+'-9';
-   // Existing real PASS impulse precedes candidate cushioning. Any other
-   // genuine post-PASS shoe START invalidates untouched pass attribution.
-   if(actualPriorPass&&nextTick>actualPriorPass.tick&&
-      contact.started.some(id=>id!==receiverId))
-    interrupted=true;
-   if(actualPriorPass&&!interrupted&&!firstCushion&&
-      nextTick>actualPriorPass.tick&&chosen===null&&
-      contact.started.length===1&&contact.active.length===1&&
-      contact.started[0]===receiverId&&
-      contact.active[0]===receiverId){
-    const p=playerFrame?.players?.find(x=>x.id===receiverId);
-    const opponents=playerFrame?.players?.filter(x=>x.team===opposite);
-    if(!p||p.team!==side||!Array.isArray(opponents)||
-       opponents.length!==11||![p.x,p.y,p.vx,p.vy].every(Number.isFinite)||
-       opponents.some(x=>![x.x,x.y].every(Number.isFinite)))
-     throw new TypeError('M25 needs original same-tick 22-player source');
-    const position=ballBody.translation(),velocity=ballBody.linvel();
-    const opponentGap=Math.min(...opponents.map(x=>
-      Math.hypot(x.x-p.x,x.y-p.y)));
-    const result=calculateRealReceivingCushion({
-     ballVelocity:velocity,playerVelocity:p,
-     ballCentreZ:position.z,ballRadiusM,
-     realBallPlayerGapM:Math.hypot(position.x-p.x,position.y-p.y),
-     nearestOpponentM:opponentGap
+  if(side!==null){
+   if(researchCandidate!==null){
+    const before=Object.freeze({...ballBody.linvel()});
+    // Exactly one bounded REAL counter-impulse on existing Rapier ball.
+    // Original uniform response was not applied this tick.
+    ballBody.applyImpulse(researchCandidate.impulseNs,true);
+    firstCushion=Object.freeze({
+     version:'m25-research-first-touch-impulse-v1',
+     tick:nextTick,actorId:receiverId,team:side,
+     originalPassTick:actualPriorPass.tick,
+     originalPassActorId:actualPriorPass.playerId,
+     nativeExclusiveShoeStart:true,originalRapierBallBody:true,
+     uniformActionSuppressedForSameRealContact:originalChoice!==null,
+     actualPhysicsImpulseApplied:true,...researchCandidate,
+     realPreBallVelocity:before,
+     realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
+     officialMatchAction:false,officialPossession:false,
+     verifiedReception:false,verifiedBallControl:false
     });
-    if(result!==null){
-     const before=Object.freeze({...velocity});
-     // The ONLY extra write: bounded XY counter-impulse onto the SAME
-     // real Rapier body AFTER this tick's native shoe collision START.
-     ballBody.applyImpulse(result.impulseNs,true);
-     firstCushion=Object.freeze({
-      version:'m25-research-first-touch-impulse-v1',
-      tick:nextTick,actorId:receiverId,team:side,
-      originalPassTick:actualPriorPass.tick,
-      originalPassActorId:actualPriorPass.playerId,
-      nativeExclusiveShoeStart:true,originalRapierBallBody:true,
-      actualPhysicsImpulseApplied:true,...result,
-      realPreBallVelocity:before,
-      realPostBallVelocity:Object.freeze({...ballBody.linvel()}),
-      officialMatchAction:false,officialPossession:false,
-      verifiedReception:false,verifiedBallControl:false
-     });
-    }
    }
    if(applied?.action==='pass'&&applied.team===side&&
       applied.playerId===side+'-10'&&
