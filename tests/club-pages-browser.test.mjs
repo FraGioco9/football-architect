@@ -1178,7 +1178,7 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    fixtureReads++;const season=Number(clubFixtureRoute[1]),raw=payloadFor(season);
    const packet={schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,
     status:raw.status,reason:null,
-    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
+    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club-fixtures:'+world.generation+':season:'+season+':'+('a'.repeat(64))},
     data:{season,seasonState:raw.data.seasonState,competitions:['IT-1'],
      fixtures:raw.data.fixtures.filter(f=>[f.homeClubId,f.awayClubId].includes('IT-1'))}};
    const send=()=>{
@@ -1194,11 +1194,11 @@ test('CLUB-FIXTURES browser: canonical reads, delayed tabs, controls, responsive
    const overviews=Array.from({length:world.seasonNumber},(_,i)=>{
     const season=i+1,raw=payloadFor(season),{clubId,...stats}=raw.data.statistics.teams.find(t=>t.clubId==='IT-1');
     return {schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',selectedSeason:season,world,status:raw.status,reason:null,
-     provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club:'+world.generation+':season:'+season+':x'},
+     provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club:'+world.generation+':season:'+season+':x'},
      data:{season,memberships:[{competitionId:'IT-1',season,category:'domestic',position:stats.played?1:null,points:stats.played,cupStatus:null,nextMatch:null,stats}]}};
    });
    return json(200,{schemaVersion:1,providerId:'authoritative-world',clubKey:'IT-1',world,status:'available',reason:null,
-    provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews}});
+    provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'club-history:'+world.generation+':revision:'+world.revision},data:{overviews}});
   }
   const competition=/^\/api\/competitions\/IT-1\/seasons\/([12])$/.exec(path);
   if(competition){

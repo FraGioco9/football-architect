@@ -509,9 +509,9 @@ test('#535 Info panel constrained to 680px on desktop, fluid on smaller screens'
  assert.doesNotMatch(css,/@media\(max-width:(?:900|760|620|460)px\)[^\n]*\.app-player-detail-info-view\{/);
 });
 
-test('#623 public player portrait and fallback: exact 3 IDs only, stable geometry, protected preview isolation',()=>{
+test('#623 public player portrait and fallback: staged/approved IDs only, stable geometry, protected preview isolation',()=>{
  const js=read('assets/player-detail.js'),css=read('assets/player-detail.css'),renderer=read('tools/render-player-detail.mjs');
- for(const id of [44,98,145]){
+ for(const id of [44,98,145,46,45,49,50,51,47,52,148,53,54,55,59,60,61,56,57,48,63,58]){
   const path='assets/players/portraits/'+id+'.webp';
   assert.equal(isAllowlistedPublicPath(path),true,path);
   assert.ok(js.includes(id+":'/"+path+"'"),'canonical image map missing: '+id);
@@ -535,7 +535,7 @@ test('#623 public player portrait and fallback: exact 3 IDs only, stable geometr
 });
 
 test('#623 optimized approved WebPs have SHA-256 provenance and appear in the public artifact',()=>{
- const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74"};
+ const expected={"44":"a4a05f06df54cff48612ce5cbebc56eee4ccea381ff8b93aa475a5738c015304","98":"7eec047c80a0e9bf662f72caf07cdcccab71dfad7d762698da2adf34c14b546d","145":"7e2c883d0e9776b103b76a64f3957b19cfcc974b9d47bdc5677904fa5e8ebd74","46":"e257210da736f83c444c1d7c7a9a88b59a7901a6c15fb6c10fab6c0eae58d617","45":"6830f96eed85a7ebea555fba09e988179f6548f5db955fbef107bc23802bb63f","49":"eb2ebb852ef2d99d6157dd0e4012236cde78ac04c5a658def3936e2847f82a28","50":"ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54","51":"ce1b90f2e7b115395affe7949d56ba07943dfaab2ffb376d2fbe8a30ceb2a1e3","47":"1110c0aaf7bee8e459f4fee223e8d765314108fb94bfe345310761423aa45d6a","52":"71fedc686de47aec66c77d4f1439acb58bc690a7f93b5fa8b208bedd63ae4118","148":"c340bcf5dc77a0462e4f252c383ec1d624cb47bfa0e6b455dd05dd8fe84ec749","53":"dc088027b0b6462120ee99604429979be22d870da30891250215e5f73e23a457","54":"04bb0e00c838e54cc7394671d4ba71bc9de8c895a5edc97f7cdba0e86a34fca9","55":"fcdcab18571c7c524400c4a57887a51ebfa31714cefe0bba5c9e855ca0f34fda","59":"3ce53bcf1a6b002bf3ee6fa517747cb440bf9f126f12cce65ed0caf01dfaf6fd","62":"11d1752bd9b491df1ed4598ce4468171910c0ef3b07a3b8da962cf50e9427f1c","60":"27b1033f7ed64362334f50d0367606d6d6b8368656c38c3f0f8a3045e113e75e","61":"4b622ed1b27cc1422820b4010b30ebe1a8990073551b6de71634e1a59388d4b3","56":"690054dda2bbe8ca93e79ff7d46ed33183a77a02d7a8862dbe489049fb280698","57":"b46e3af41182915bf150c9e299c73223f6d37877c171c7d21bb0e70c597aaad4","48":"5c4a259ae3f6efd2c6ade48838e969a1177203f5815febdd5bcc327dd77d3db3","63":"4c7f3337c01dd3c6d5de8436c23af7dbaf402649afc3de10770191172db19672","58":"339958014e4c312194d164bb2d4a87f5784cb3b0938ba995134ce3563b226585"};
  const published=new Set(planPublicFiles());
  for(const [id,digest] of Object.entries(expected)){
   const path='assets/players/portraits/'+id+'.webp';
@@ -543,6 +543,9 @@ test('#623 optimized approved WebPs have SHA-256 provenance and appear in the pu
   assert.equal(data.toString('ascii',0,4),'RIFF',path);
   assert.equal(data.toString('ascii',8,12),'WEBP',path);
   assert.equal(data.toString('ascii',12,16),'VP8X',path);
+  assert.equal(data[20]&0x10,0x10,'WebP alpha must be present: '+id);
+  assert.equal(data.readUIntLE(24,3)+1,320,'WebP width must be 320: '+id);
+  assert.equal(data.readUIntLE(27,3)+1,362,'WebP height must be 362: '+id);
   assert.ok(data.length<50_000,'WebP must be optimized: '+id);
   assert.equal(createHash('sha256').update(data).digest('hex'),digest,path);
   assert.ok(published.has(path),'Public artifact missing '+path);

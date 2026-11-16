@@ -23,7 +23,7 @@ function published(day=1){
  const catalog=manifest.divisions.flatMap(d=>d.clubs);
  const competitions=manifest.competitions.map(def=>({id:def.id,rulesVersion:def.rules.version,clubIds:def.category==='domestic'?manifest.divisions.find(d=>d.id===def.id).clubs.map(c=>c.countryId+'-'+c.clubId):catalog.filter(c=>def.id==='int-1'?c.clubId>=1&&c.clubId<=3:c.clubId>=4&&c.clubId<=6).map(c=>c.countryId+'-'+c.clubId)}));
  const fixtures=day===13?manifest.divisions.flatMap(d=>Array.from({length:8},(_,i)=>{const h=d.clubs[i],a=d.clubs[15-i],home=h.countryId+'-'+h.clubId,away=a.countryId+'-'+a.clubId;return {id:`season:1:${d.id}:N01:${home}:${away}`,competitionId:d.id,day:13,marker:'N01',round:1,phaseId:'league',tieId:null,leg:null,neutral:false,homeClubId:home,awayClubId:away,result:null}})):[];
- return {...empty(),day,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-score-v1',sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},data:{season:1,day,calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
+ return {...empty(),day,status:'partial',reason:null,provenance:{kind:'authoritative',resultAuthority:'temporary-lineup-v1',sourceRef:'world:'+world.generation+':season:1:'+'a'.repeat(64)},data:{season:1,day,calendarHash:'a'.repeat(64),rulesHash:'b'.repeat(64),competitions,fixtures}};
 }
 test('accepts canonical global future domestic fixtures and refuses missing/duplicate entries or future results',()=>{
  const raw=published(13);assert.equal(validateCalendarDay(raw,{season:1,day:13},manifest).data.fixtures.length,128);

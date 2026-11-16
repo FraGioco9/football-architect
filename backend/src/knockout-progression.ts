@@ -5,7 +5,8 @@ import calendarModel from '../../assets/world-calendar-model.js';
 import {requireApprovedSnapshot,canonicalHash,type ApprovedSnapshot} from './catalogue-snapshot.ts';
 import {requireGeneratedSchedule,type InitialSchedule,type Fixture} from './initial-schedule.ts';
 import {rankLeagueTable,type LeagueRow} from './league-standings.ts';
-import {simulateTemporaryMatch,type TemporaryResult,type MatchContext} from './temporary-simulation.ts';
+
+
 import {ApiError} from './errors.ts';
 interface Participant {phaseId?:string;rank?:number;tieId?:string}
 interface TieRule {id:string;participants:Participant[];legs:number;homePolicy:string;resolution:string}
@@ -15,7 +16,7 @@ interface Marker {marker:string;round:number|null;phase:string;competitionIds:st
 const definitions=[...legacySeasonOneRules(divisions),...cups] as Definition[];
 type Calendar={days:{day:number;events:Marker[]}[]};
 const contexts=new WeakMap<InitialSchedule,{calendar:Calendar;events:ReadonlyMap<string,Marker&{day:number}>}>();
-function calendarFor(state:Progression){const context=contexts.get(state.schedule);if(!context)throw new ApiError(422,'knockout_prerequisites_incomplete');return context;}
+function calendarFor<Result extends FinalizedSportingMatch>(state:Progression<Result>){const context=contexts.get(state.schedule);if(!context)throw new ApiError(422,'knockout_prerequisites_incomplete');return context;}
 const fail=():never=>{throw new ApiError(422,'knockout_prerequisites_incomplete')};
 const textCompare=(a:string,b:string)=>a<b?-1:a>b?1:0;
 export interface KnockoutTie {
@@ -24,12 +25,29 @@ export interface KnockoutTie {
  homePolicy:string;resolution:string;originalRanks:{clubId:string;rank:number}[];dependencyResultIds:string[];
  fixtures:{fixture:Fixture;leg:number;neutral:boolean}[];
 }
-export interface Progression {
+/** The sporting progression needs actual finalized scores, never a specific scoring algorithm.
+ * The authorized scorer must be supplied explicitly for the new lineup result path.
+ */
+/** Shared final-result contract for the only official result authority.
+ * A scorer is always passed explicitly; bracket progression never scores.
+ */
+export type MatchContext={mode:'regulation'}|
+ {mode:'single-knockout';neutral?:true}|
+ {mode:'second-leg';firstLegHomeGoals:number;firstLegAwayGoals:number};
+export interface FinalizedSportingMatch {
+ fixtureId:string;context:MatchContext;
+ regulation:{home:number;away:number};
+ extraTime:{home:number;away:number}|null;
+ penalties:{home:number;away:number}|null;
+ homeGoals:number;awayGoals:number;winnerClubId:string|null;
+ resolution:'regulation'|'extra-time'|'penalties';
+}
+export interface Progression<Result extends FinalizedSportingMatch=FinalizedSportingMatch> {
  snapshot:ApprovedSnapshot;schedule:InitialSchedule;lastDay:number;
- results:Map<string,TemporaryResult>;ties:Map<string,KnockoutTie>;tables:Map<string,readonly Readonly<LeagueRow>[]>;
+ results:Map<string,Result>;ties:Map<string,KnockoutTie>;tables:Map<string,readonly Readonly<LeagueRow>[]>;
 }
 export const tieKey=(t:Pick<KnockoutTie,'competitionId'|'phaseId'|'tieId'>)=>`${t.competitionId}:${t.phaseId}:${t.tieId}`;
-export function createProgression(snapshot:ApprovedSnapshot,schedule:InitialSchedule):Progression{
+export function createProgression<Result extends FinalizedSportingMatch=FinalizedSportingMatch>(snapshot:ApprovedSnapshot,schedule:InitialSchedule):Progression<Result>{
  requireApprovedSnapshot(snapshot);requireGeneratedSchedule(schedule,snapshot);
  if(!Number.isSafeInteger(schedule.season)||schedule.season<1||schedule.season>1000000)return fail();
  const calendar=calendarModel.createSeason(schedule.season) as Calendar;
@@ -37,18 +55,18 @@ export function createProgression(snapshot:ApprovedSnapshot,schedule:InitialSche
  if(schedule.participantsHash!==snapshot.participantsHash||schedule.rulesHash!==snapshot.rulesHash)return fail();
  return {snapshot,schedule,lastDay:0,results:new Map(),ties:new Map(),tables:new Map()};
 }
-function tieMarkers(state:Progression,phase:PhaseRule,tie:TieRule):string[]{
+function tieMarkers<Result extends FinalizedSportingMatch>(state:Progression<Result>,phase:PhaseRule,tie:TieRule):string[]{
  const {events}=calendarFor(state);
  const list=phase.calendarEvents.length>tie.legs&&tie.participants.some(p=>p.tieId)?phase.calendarEvents.slice(-tie.legs):phase.calendarEvents.slice(0,tie.legs);
  if(![1,2].includes(tie.legs)||list.length!==tie.legs||list.some(m=>!events.has(m)))return fail();return list;
 }
-async function leagueTable(state:Progression,competitionId:string){
+async function leagueTable<Result extends FinalizedSportingMatch>(state:Progression<Result>,competitionId:string){
  let table=state.tables.get(competitionId);if(table)return table;
  const binding=state.snapshot.bindings.find(b=>b.competitionId===competitionId);if(!binding)return fail();
  table=await rankLeagueTable(competitionId,binding.clubIds,state.schedule.fixtures.filter(f=>f.competitionId===competitionId),state.results,state.schedule.seed);
  state.tables.set(competitionId,table);return table;
 }
-async function resolveTie(state:Progression,definition:Definition,phase:PhaseRule,tie:TieRule):Promise<KnockoutTie>{
+async function resolveTie<Result extends FinalizedSportingMatch>(state:Progression<Result>,definition:Definition,phase:PhaseRule,tie:TieRule):Promise<KnockoutTie>{
  const table=await leagueTable(state,definition.id),dependencies:string[]=[];
  const clubs=tie.participants.map(p=>{
   if(p.phaseId==='league'&&Number.isInteger(p.rank)&&p.rank!>0&&p.rank!<=table.length&&!p.tieId)return table[p.rank!-1].clubId;
@@ -72,11 +90,55 @@ async function resolveTie(state:Progression,definition:Definition,phase:PhaseRul
  return {schemaVersion:1,season:state.schedule.season,competitionId:definition.id,phaseId:phase.id,tieId:tie.id,rulesVersion:definition.rules.version,
   sourceCalendarHash:state.schedule.calendarHash,sourceParticipantsHash:state.snapshot.participantsHash,sourceRulesHash:state.snapshot.rulesHash,leagueTableHash:await canonicalHash(table),homePolicy:tie.homePolicy,resolution:tie.resolution,originalRanks,dependencyResultIds:dependencies,fixtures};
 }
-/** Chronological reconstruction. A failed dependency leaves the caller state
- * untouched. Rules and tables determine participants; no caller readiness flag. */
-export async function processSportingDay(state:Progression,day:number):Promise<{results:TemporaryResult[];newTies:KnockoutTie[]}>{
+/** Canonical fixture generator and knockout bracket progression for any trusted
+ * single-result authority. A result is accepted only for the current due fixture
+ * and its source-derived match context. No past/future results can be injected.
+ *
+ * Used both for fresh day planning and historical replay of persisted receipts.
+ * All modifications are made on a private draft; an invalid resolver result
+ * cannot mutate the caller's canonical progression.
+ */
+function validateResolvedMatch(fixture:Fixture,context:MatchContext,score:FinalizedSportingMatch):void{
+ if(!score||score.fixtureId!==fixture.id||JSON.stringify(score.context)!==JSON.stringify(context)||
+  !Number.isSafeInteger(score.homeGoals)||score.homeGoals<0||score.homeGoals>100||
+  !Number.isSafeInteger(score.awayGoals)||score.awayGoals<0||score.awayGoals>100||
+  !score.regulation||!Number.isSafeInteger(score.regulation.home)||score.regulation.home<0||
+  !Number.isSafeInteger(score.regulation.away)||score.regulation.away<0||
+  !['regulation','extra-time','penalties'].includes(score.resolution))return fail();
+ const additional=score.extraTime;
+ if(additional&&(!Number.isSafeInteger(additional.home)||additional.home<0||
+  !Number.isSafeInteger(additional.away)||additional.away<0))return fail();
+ if(score.homeGoals!==score.regulation.home+(additional?.home??0)||
+  score.awayGoals!==score.regulation.away+(additional?.away??0))return fail();
+ const aggregate=context.mode==='second-leg'
+  ?score.homeGoals+context.firstLegAwayGoals-score.awayGoals-context.firstLegHomeGoals
+  :score.homeGoals-score.awayGoals;
+ const penalties=score.penalties;
+ const shootout=score.resolution==='penalties';
+ if((context.mode==='regulation'&&(additional!==null||penalties!==null||score.resolution!=='regulation'))||
+  (score.resolution==='regulation'&&(additional!==null||penalties!==null)&&context.mode!=='regulation')||
+  (score.resolution==='extra-time'&&(additional===null||penalties!==null||aggregate===0))||
+  (shootout&&(additional===null||aggregate!==0||!penalties||
+   !Number.isSafeInteger(penalties.home)||!Number.isSafeInteger(penalties.away)||
+   penalties.home<0||penalties.away<0||penalties.home===penalties.away))||
+  (context.mode!=='regulation'&&score.resolution==='regulation'&&aggregate===0))
+  return fail();
+ const delta=shootout?penalties!.home-penalties!.away:aggregate;
+ const expected=delta===0?null:delta>0?fixture.homeClubId:fixture.awayClubId;
+ if(score.winnerClubId!==expected||(context.mode!=='regulation'&&expected===null))return fail();
+}
+
+export interface SportingFixtureSource {
+ phaseId:string;tieId:string;leg:1|2;neutral:boolean;
+ /** Resolved only in the destination day, not yet persisted. */
+ pendingTie?:KnockoutTie;
+}
+export async function processSportingDayWithResolver<Result extends FinalizedSportingMatch>(
+ state:Progression<Result>,day:number,
+ resolve:(fixture:Fixture,context:MatchContext,source:SportingFixtureSource|null)=>Promise<Result>
+):Promise<{results:Result[];newTies:KnockoutTie[]}>{
  if(!Number.isInteger(day)||day!==state.lastDay+1||day<1||day>56)return fail();
- const working:Progression={...state,results:new Map(state.results),ties:new Map(state.ties),tables:new Map(state.tables)};
+ const working:Progression<Result>={...state,results:new Map(state.results),ties:new Map(state.ties),tables:new Map(state.tables)};
  const {calendar}=calendarFor(state);
  const markerDay=calendar.days[day-1],newTies:KnockoutTie[]=[],due:Fixture[]=state.schedule.fixtures.filter(f=>f.day===day);
  const planned=new Map<string,{tie:KnockoutTie;leg:number;neutral:boolean}>();
@@ -93,7 +155,7 @@ export async function processSportingDay(state:Progression,day:number):Promise<{
  const order=new Map(markerDay.events.map((e,i)=>[e.marker,i]));
  due.sort((a,b)=>(order.get(a.marker)!-order.get(b.marker)!)||a.competitionId.localeCompare(b.competitionId,'en')||a.id.localeCompare(b.id,'en'));
  if(new Set(due.map(f=>f.id)).size!==due.length)return fail();
- const results:TemporaryResult[]=[];
+ const results:Result[]=[];
  for(const f of due){
   if(working.results.has(f.id))return fail();
   const plan=planned.get(f.id);let context:MatchContext={mode:'regulation'};
@@ -103,7 +165,14 @@ export async function processSportingDay(state:Progression,day:number):Promise<{
    if(!score||first.homeClubId!==f.awayClubId||first.awayClubId!==f.homeClubId)return fail();
    context={mode:'second-leg',firstLegHomeGoals:score.homeGoals,firstLegAwayGoals:score.awayGoals};
   }
-  const result=await simulateTemporaryMatch(f,working.schedule.seed,context);results.push(result);working.results.set(f.id,result);
+  const source:SportingFixtureSource|null=plan?{
+   phaseId:plan.tie.phaseId,tieId:plan.tie.tieId,leg:plan.leg as 1|2,
+   neutral:plan.neutral,
+   ...(newTies.includes(plan.tie)?{pendingTie:plan.tie}:{})
+  }:null;
+  const result=await resolve(f,context,source);
+  validateResolvedMatch(f,context,result);
+  results.push(result);working.results.set(f.id,result);
  }
  // Cup brackets are scheduled when the preceding phase is completed, not
  // only when the next leg's matchday starts. Store canonical future pairings

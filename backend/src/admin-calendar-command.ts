@@ -35,7 +35,7 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
  // A published sporting calendar or finalized results forbids retroactive moves,
  // even if an event row were unexpectedly left in scheduled status.
  const published=await db.prepare('SELECT season_number FROM season_calendars WHERE season_number=?').bind(world.seasonNumber).first();
- const finalized=await db.prepare('SELECT day FROM season_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first();
+ const finalized=await db.prepare('SELECT day FROM season_lineup_day_outcomes WHERE season_number=? LIMIT 1').bind(world.seasonNumber).first();
  if(!terminal&&(published||finalized))throw new ApiError(409,'calendar_event_prerequisites');
  const moved=rescheduleAdministrativeMilestone(events,command.eventId,command.day,command.order,world.day);
  const old=events.find(e=>e.id===command.eventId)!,next=moved.find(e=>e.id===command.eventId)!;
@@ -49,7 +49,7 @@ export async function rescheduleSeasonEvent(db:Database,session:AdminSession,inp
    ...rows.map(r=>abortUnless(db,'SELECT 1 FROM season_admin_events WHERE season_number=? AND event_id=? AND kind=? AND scope=? AND scheduled_day=? AND event_order=? AND status=?',[world.seasonNumber,r.event_id,r.kind,r.scope,r.scheduled_day,r.event_order,r.status])),
    ...(terminal?[]:[
     abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_calendars WHERE season_number=?)=0',[world.seasonNumber]),
-    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
+    abortUnless(db,'SELECT 1 WHERE (SELECT count(*) FROM season_lineup_day_outcomes WHERE season_number=?)=0',[world.seasonNumber]),
    ]),
    db.prepare("UPDATE season_admin_events SET scheduled_day=?,event_order=? WHERE season_number=? AND event_id=? AND scheduled_day=? AND event_order=? AND status='scheduled'").bind(next.day,next.order,world.seasonNumber,old.id,old.day,old.order),
    db.prepare('UPDATE world_state SET revision=revision+1 WHERE id=1 AND generation=? AND revision=?').bind(world.generation,world.revision),

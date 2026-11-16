@@ -87,7 +87,7 @@ export async function readClubFixtures({clubKey,season,world,fetchJson,manifest,
   return projectPublishedDraw({payload,clubKey,season,world,manifest,allowed,base});
  const closed=season<world.seasonNumber||world.phase==='closed',data=payload.data,provenance=payload.provenance;
  if(payload.status!==(closed?'available':'partial')||payload.reason!==null||
-   provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-score-v1'||
+   provenance?.kind!=='authoritative'||provenance.resultAuthority!=='temporary-lineup-v1'||
    typeof provenance.sourceRef!=='string'||
    !provenance.sourceRef.startsWith('club-fixtures:'+world.generation+':season:'+season+':')||
    !/^[a-f0-9]{64}$/.test(provenance.sourceRef.split(':').at(-1))||

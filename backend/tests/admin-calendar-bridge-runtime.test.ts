@@ -6,15 +6,15 @@ import worker from '../src/index.ts';
 import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
-import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {executeInternationalDraw} from '../src/admin-international-draw.ts';
-import {publishInternationalCalendar} from '../src/admin-calendar-publish.ts';
-import {readPublicMatch,readPublishedCompetitionMatches} from '../src/public-match-read.ts';
-import {executeLifecycle} from '../src/lifecycle-command.ts';
-import {closeSeason} from '../src/season-close-command.ts';
-import {archiveSeason} from '../src/season-archive-command.ts';
+import {publishInternationalCalendarLineupV1 as publishInternationalCalendar} from '../src/admin-calendar-publish-lineup-v1.ts';
+import {readPublicMatchLineupV1 as readPublicMatchByNumber,readPublishedCompetitionMatchesLineupV1 as readPublishedCompetitionMatches} from '../src/public-match-read-lineup-v1.ts';
+import {executeLineupLifecycleV1 as executeLifecycle} from '../src/lineup-lifecycle-command.ts';
+import {closeSeasonLineupV1 as closeSeason} from '../src/season-close-command-lineup-v1.ts';
+import {archiveSeasonLineupV1 as archiveSeason} from '../src/season-archive-command-lineup-v1.ts';
 import {readSeasonArchives} from '../src/season-archive-read.ts';
 import {readSeasonTwoCandidate} from '../src/season-two-candidate-read.ts';
 import {handleAdmin} from '../src/http-admin.ts';
@@ -24,11 +24,27 @@ import {readWorld} from '../src/world-repository.ts';
 import {resetWorld} from '../src/reset-world-command.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {canonicalHash} from '../src/catalogue-snapshot.ts';
+import {ApiError} from '../src/errors.ts';
 import {type AdminSession} from '../src/auth.ts';
 
 const bindings=env as any,db=bindings.DB,now=Math.floor(Date.now()/1000),token='7'.repeat(64);
 let session:AdminSession,world:Awaited<ReturnType<typeof readWorld>>;
 const meta=()=>({expectedGeneration:world.generation,expectedRevision:world.revision});
+/** The public API is numeric-ID only. Old internal fixture digest references
+ * in this bridge test are resolved through the *published ID index* first.
+ * This is a test-local lookup, not an HTTP digest/legacy alias.
+ */
+async function readPublicMatch(database:any,identity:string){
+ let number=identity;
+ if(!/^[1-9][0-9]*$/.test(identity)){
+  const indexed=await database.prepare('SELECT id FROM public_match_numbers WHERE slot_match_id=?')
+   .bind(identity).first() as {id:number}|null;
+  if(!indexed)throw new ApiError(404,'not_found');
+  number=String(indexed.id);
+ }
+ return readPublicMatchByNumber(database,number);
+}
+
 beforeAll(async()=>{await applyD1Migrations(db,bindings.TEST_MIGRATIONS)});
 beforeEach(async()=>{
  await clearTestWorld(db);
@@ -97,18 +113,18 @@ it('runs distinct domestic, draw and publication transactions before handing off
  const afterPublish=await worker.fetch(new Request('https://example.invalid/api/clubs/IT-1/seasons/1/fixtures'),{DB:db});
  expect(afterPublish.status).toBe(200);
  const publishedClub=await afterPublish.json() as any;
- expect(publishedClub).toMatchObject({status:'partial',provenance:{resultAuthority:'temporary-score-v1'}});
+ expect(publishedClub).toMatchObject({status:'partial',provenance:{resultAuthority:'temporary-lineup-v1'}});
  expect(publishedClub.data.fixtures).toHaveLength(36);
  expect(await publishInternationalCalendar(db,session,before,'bridge-publish-00001',now)).toEqual(published);
  const calendar=await db.prepare('SELECT calendar_json FROM season_calendars').first();
  expect(JSON.parse(calendar.calendar_json).fixtures).toHaveLength(3984);
- const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_day_outcomes ORDER BY day').all()).results;
+ const receipts=(await db.prepare('SELECT day,outcome_json,outcome_hash FROM season_lineup_day_outcomes ORDER BY day').all()).results;
  expect(receipts.map((r:{day:number})=>r.day)).toEqual([1,2,3]);
  for(const r of receipts){expect(JSON.parse(r.outcome_json).results).toEqual([]);expect(r.outcome_hash).toBe(await canonicalHash(JSON.parse(r.outcome_json)));}
  expect((await db.prepare("SELECT count(*) n FROM season_admin_events WHERE status='completed'").first()).n).toBe(5);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-sporting-day4-00001',now)).world;
  expect(world.day).toBe(4);
- expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first()).n).toBe(4);
+ expect((await db.prepare('SELECT count(*) n FROM season_lineup_day_outcomes').first()).n).toBe(4);
 });
 it('keeps draw and calendar publication atomic if final audit rejects',async()=>{
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-day3-00001',now)).world;
@@ -123,7 +139,7 @@ it('keeps draw and calendar publication atomic if final audit rejects',async()=>
  try{await expect(publishInternationalCalendar(db,session,meta(),'bridge-publish-fail-00001',now)).rejects.toMatchObject({status:503})}
  finally{await db.prepare('DROP TRIGGER fail_publish').run()}
  expect((await db.prepare('SELECT count(*) n FROM season_calendars').first()).n).toBe(0);
- expect((await db.prepare('SELECT count(*) n FROM season_day_outcomes').first()).n).toBe(0);
+ expect((await db.prepare('SELECT count(*) n FROM season_lineup_day_outcomes').first()).n).toBe(0);
  expect((await db.prepare("SELECT status FROM season_admin_events WHERE event_id='international:calendar'").first()).status).toBe('scheduled');
 });
 
@@ -137,7 +153,7 @@ it('moves the independent international draw to day four and publication to day 
  world=(await executeInternationalDraw(db,session,meta(),'bridge-moved-draw',now)).world;
  world=(await advanceAdministrativeClock(db,session,'advance',meta(),'bridge-moved-day5',now)).world;
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-moved-publication',now)).world;
- const rows=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
+ const rows=(await db.prepare('SELECT day,outcome_json FROM season_lineup_day_outcomes ORDER BY day').all()).results;
  expect(rows.map((r:{day:number})=>r.day)).toEqual([1,2,3,4,5]);
  expect(rows.every((r:{outcome_json:string})=>JSON.parse(r.outcome_json).results.length===0)).toBe(true);
  world=(await executeLifecycle(db,session,'advance',meta(),'bridge-moved-day6',now)).world;
@@ -153,7 +169,7 @@ it('continues all sporting days through day 56 after staged administrative setup
  world=(await publishInternationalCalendar(db,session,meta(),'bridge-full-publish',now)).world;
  while(world.day<56)world=(await executeLifecycle(db,session,'advance',meta(),'bridge-full-day-'+(world.day+1)+'-key',now)).world;
  expect(world).toMatchObject({day:56,phase:'active'});
- const receipts=(await db.prepare('SELECT day,outcome_json FROM season_day_outcomes ORDER BY day').all()).results;
+ const receipts=(await db.prepare('SELECT day,outcome_json FROM season_lineup_day_outcomes ORDER BY day').all()).results;
  expect(receipts).toHaveLength(56);
  expect(receipts.reduce((n:number,r:{outcome_json:string})=>n+JSON.parse(r.outcome_json).results.length,0)).toBe(4082);
  expect((await db.prepare('SELECT count(*) n FROM season_knockout_ties').first()).n).toBe(54);
@@ -221,7 +237,7 @@ it('resets a staged V2 draw and republishes both scopes with new-generation matc
  expect(world).toMatchObject({phase:'unstarted',seasonNumber:0,day:0,revision:0});
  expect(world.generation).not.toBe(priorGeneration);
  for(const table of ['seasons','season_domestic_stages','season_draws','season_calendars',
-   'season_match_slots','season_knockout_match_slots','season_day_outcomes','season_knockout_ties']){
+   'season_match_slots','season_knockout_match_slots','season_lineup_day_outcomes','season_knockout_ties']){
   expect((await db.prepare('SELECT count(*) n FROM '+table).first())!.n).toBe(0);
  }
  await expect(readPublicMatch(db,priorLeague!.match_id)).rejects.toMatchObject({status:404});

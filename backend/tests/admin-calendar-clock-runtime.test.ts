@@ -5,7 +5,7 @@ import {applyD1Migrations} from 'cloudflare:test';
 import {prepareSeason} from '../src/commands.ts';
 import {loadApprovedSnapshot} from '../src/approved-season-one.ts';
 import {initializeAdministrativeEvents} from '../src/admin-calendar-initialize.ts';
-import {advanceAdministrativeClock} from '../src/admin-calendar-clock.ts';
+import {advanceAdministrativeClockLineupV1 as advanceAdministrativeClock} from '../src/admin-calendar-clock-lineup-v1.ts';
 import {stageDomesticCalendar} from '../src/admin-domestic-stage.ts';
 import {completeConfirmationEvent} from '../src/admin-calendar-confirm.ts';
 import {readWorld} from '../src/world-repository.ts';
