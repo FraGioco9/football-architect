@@ -245,7 +245,7 @@
     window.faFixturesShell?.select(selected);
     if(!number.firstElementChild?.isEqualNode?.(selectedLabel))number.replaceChildren(selectedLabel);
     roundMenu.sync(String(selected));
-    if(!available)roundMenu.close();
+    if(fields.round.disabled)roundMenu.close();
     const choiceIndex=configured.findIndex(c=>c.value===selected);
     fields.previous.disabled=fields.round.disabled||choiceIndex===0;
     fields.next.disabled=fields.round.disabled||choiceIndex===configured.length-1;

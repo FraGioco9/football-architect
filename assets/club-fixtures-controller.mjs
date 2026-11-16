@@ -74,6 +74,8 @@ export function mountClubFixtures({host,manifest}){
    explicitSeason:window.faRoutesRegistry.resolveSeasonQuery(params,state?.get?.().current?.season).explicit,
    seasons,filter,snapshot});
   const incoming=staging.firstElementChild;
+  // Disable mounted comboboxes until fixture data is resolved.
+  for(const control of incoming.querySelectorAll('[data-club-fixture-control]'))control.querySelector('button').disabled=snapshot.coverage==='loading';
   for(const crest of incoming.querySelectorAll('[data-club-crest]')){const old=oldCrests.get(crest.dataset.clubCrest)?.shift();if(old)crest.replaceWith(old);}
   hideTip();
   if(!panel){

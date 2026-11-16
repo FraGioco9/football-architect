@@ -35,15 +35,18 @@ test('Club Fixtures keeps unknown opponents as plain text and restores focus to 
  assert.match(controller,/focused\?\.matches\('\.club-fixture-opponent-name'\)/);
 });
 
-test('Club Fixtures controls stay visible but disabled while the fixture list loads',()=>{
+test('Club Fixtures selectors remain inert through first paint and hydration',()=>{
  const loading=fixtures.render({manifest:{clubs:[]},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:{coverage:'loading',rows:[],competitions:[]}});
- assert.equal((loading.match(/role="combobox"[^>]* disabled>/g)||[]).length,2,'competition and season selectors disabled while loading');
- assert.match(loading,/data-club-fixtures-next disabled>/,'next match action disabled while loading');
- assert.match(loading,/class="club-fixtures-toolbar"/,'toolbar remains rendered during loading');
- const ready=render([club]);
- assert.equal((ready.match(/role="combobox"[^>]* disabled>/g)||[]).length,0,'selectors activate once fixture data resolves');
- assert.doesNotMatch(ready,/data-club-fixtures-next disabled>/,'existing next match rule still applies after hydration');
+ assert.match(loading,/data-club-fixtures-state="loading"/,'static shell has the loading state');
+ assert.match(loading,/class="club-fixtures-toolbar"/,'toolbar reserves space during loading');
+ assert.match(loading,/data-club-fixtures-next disabled>/,'next-match action stays disabled while loading');
+ const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
+ assert.match(css,/\.club-fixtures\[data-club-fixtures-state="loading"\] \.club-fixture-select \.language-trigger/,'static pending comboboxes cannot receive pointer events');
  const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
- assert.match(controller,/trigger\.disabled=incomingTrigger\.disabled/,'preserved combobox DOM syncs its disabled property after refresh');
- assert.match(controller,/if\(snapshot\.coverage==='loading'\)return/,'stale pending menu cannot navigate');
+ assert.match(controller,/control\.querySelector\('button'\)\.disabled=snapshot\.coverage==='loading'/,'mounted combobox buttons are natively disabled during loading');
+ assert.match(controller,/trigger\.disabled=incomingTrigger\.disabled/,'retained comboboxes restore enabled state after loading');
+ assert.match(controller,/if\(snapshot\.coverage==='loading'\)return/,'stale pending menu selections cannot navigate');
+ const hydrated=render([club]);
+ assert.match(hydrated,/data-club-fixtures-state="complete"/,'loaded fixtures exit the first-paint loading gate');
+ assert.doesNotMatch(hydrated,/data-club-fixtures-next disabled>/,'eligible next match remains available when resolved');
 });
