@@ -70,7 +70,10 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.equal((section.match(/class="app-match-info-box"/g)||[]).length,3);
   assert.equal((section.match(/class="app-match-info-box app-match-info-unavailable"/g)||[]).length,2);
   assert.ok(section.indexOf('data-match-view-selector')<section.indexOf('data-match-overview="competition"'));
-  assert.ok(section.indexOf('data-match-overview="round"')<section.indexOf('data-match-pitch role="img"'));
+  assert.ok(section.includes('<div class="app-match-pitch-frame">'));
+  assert.ok(section.includes('<div class="app-match-pitch-overlay">'));
+  assert.ok(section.indexOf('app-match-pitch-overlay')<section.indexOf('data-match-pitch role="img"'));
+  assert.match(section,/data-match-overview="round"[\s\S]*<\/div>\s*<div class="app-match-pitch" data-match-pitch/);
   for(const side of ['home','away']){
    assert.ok(section.includes('data-match-side="'+side+'"'));
    assert.ok(section.includes('data-match-side-crest="'+side+'"'));

@@ -81,6 +81,7 @@ for(const [engine,driver] of Object.entries(engines)){
      const positions=panels.map(p=>p.getBoundingClientRect());
      const field=pitch.getBoundingClientRect();
      const frame=document.querySelector('.app-match-stage').getBoundingClientRect();
+     const overlay=document.querySelector('.app-match-pitch-overlay').getBoundingClientRect();
      const viewTabs=document.querySelector('.app-match-view-selector').getBoundingClientRect();
      const viewBoxes=document.querySelector('.app-match-view-content').getBoundingClientRect();
      const main=document.querySelector('.app-match-page').getBoundingClientRect();
@@ -93,7 +94,8 @@ for(const [engine,driver] of Object.entries(engines)){
       crestSlots:panels.map(p=>p.querySelectorAll('[data-match-side-crest]').length),
       facts: facts.map(pair=>pair.map(x=>({left:x.left,top:x.top,right:x.right}))),
       field:{left:field.left,right:field.right,top:field.top,width:field.width},
-      viewTabs:{bottom:viewTabs.bottom,left:viewTabs.left,right:viewTabs.right},
+      overlay:{top:overlay.top,bottom:overlay.bottom,left:overlay.left,right:overlay.right},
+      viewTabs:{top:viewTabs.top,bottom:viewTabs.bottom,left:viewTabs.left,right:viewTabs.right},
       viewBoxes:{top:viewBoxes.top,bottom:viewBoxes.bottom,left:viewBoxes.left,right:viewBoxes.right},
       lineupCounts:panels.map(p=>p.querySelectorAll('.app-match-lineup-row').length),
       formCounts:panels.map(p=>p.querySelectorAll('.app-match-form-cell').length),
@@ -104,9 +106,12 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.stage.left-stage.main.left)<=1,JSON.stringify(stage));
     assert.ok(Math.abs(stage.stage.width-stage.main.width)<=1,JSON.stringify(stage));
     assert.deepEqual(stage.crestSlots,[1,1]);
-    assert.ok(stage.viewTabs.bottom<=stage.viewBoxes.top+1,JSON.stringify(stage));
-    assert.ok(stage.viewBoxes.bottom<=stage.field.top+1,JSON.stringify(stage));
+    assert.ok(Math.abs(stage.overlay.top-stage.field.top)<=1&&Math.abs(stage.overlay.bottom-(stage.field.top+stage.field.height))<=1,JSON.stringify(stage));
+    assert.ok(stage.viewTabs.top>=stage.field.top-1&&stage.viewTabs.bottom<=stage.viewBoxes.top+1,JSON.stringify(stage));
+    assert.ok(stage.viewBoxes.top>=stage.field.top&&stage.viewBoxes.bottom<=stage.field.top+stage.field.height+1,JSON.stringify(stage));
     assert.ok(stage.viewBoxes.left>=stage.field.left-1&&stage.viewBoxes.right<=stage.field.right+1,JSON.stringify(stage));
+    assert.equal(await page.locator('.app-match-pitch-frame').evaluate(el=>getComputedStyle(el).position),'relative');
+    assert.equal(await page.locator('.app-match-pitch-overlay').evaluate(el=>getComputedStyle(el).position),'absolute');
     assert.equal(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
@@ -382,7 +387,7 @@ for(const [engine,driver] of Object.entries(engines)){
       await page.locator('[data-match-view="events"]').press('Home');
       assert.equal(await page.locator('[data-match-view="overview"]').getAttribute('aria-selected'),'true');
       assert.ok(Math.abs((await page.locator('[data-match-pitch]').boundingBox()).y-fieldTop)<=1,
-       'View selector must not shift the pitch');
+       'Overlay View selector must not shift the pitch');
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
       await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');
