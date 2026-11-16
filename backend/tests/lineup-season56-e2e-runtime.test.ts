@@ -68,7 +68,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
 
  const milestones=await db.prepare(
   "SELECT event_id,status,scheduled_day FROM season_admin_events WHERE scope='season' ORDER BY event_order"
- ).all<{event_id:string;status:string;scheduled_day:number}>();
+ ).all() as Promise<{results:{event_id:string;status:string;scheduled_day:number}[]}>;
  expect(milestones.results.map(e=>e.event_id)).toEqual([
   'season:archive','season:close','season:next-prepare'
  ]);
@@ -132,7 +132,7 @@ it('#613 finalizes full V2 season (56 days, 4082 receipts, 54 ties), archives an
  await expect(readClosedSeasonHistory(db,1)).rejects.toMatchObject({status:409});
  const archivedRow=await db.prepare(
   'SELECT archive_hash,results_count,days_count,ties_count FROM season_archives WHERE season_number=1'
- ).first<{archive_hash:string;results_count:number;days_count:number;ties_count:number}>();
+ ).first() as Promise<{archive_hash:string;results_count:number;days_count:number;ties_count:number}|null>;
  expect(archivedRow).toMatchObject({
   archive_hash:proof.archiveHash,results_count:4082,days_count:56,ties_count:54
  });
