@@ -17,13 +17,14 @@ The existing **owner-approved PNGs** are preserved unchanged as full-resolution 
 | 45 | Paolo Andrian | `assets/players/portraits/45.webp` | `310606cc8bf53b86febd8ca988bca73000947ba1` (local Git blob digest; GitHub upload pending) | `6830f96eed85a7ebea555fba09e988179f6548f5db955fbef107bc23802bb63f` | 12122 B |
 | 50 | Severino Cerboni (candidate, unapproved) | `assets/players/portraits/50.webp` | `ea1598f93300370455e62d5694f849de16496a4c` (local derivative Git digest; upload pending) | `ef25d641280c9e1cfa5d97d0fded878ae33b7694ad845aca071048dc61813b54` | 13844 B |
 | 52 | Emilio Rigotto (candidate, not approved) | `assets/players/portraits/52.webp` | `32d0989f16a389179605f57fad585d39a39745bd` (local digest; upload pending) | `71fedc686de47aec66c77d4f1439acb58bc690a7f93b5fa8b208bedd63ae4118` | 13912 B |
+| 148 | Craig Leaman (V5 candidate, not approved) | `assets/players/portraits/148.webp` | `f4efa024dc1c7b2b58c3e11351645ff8f18257a8` (local expected; GitHub upload pending) | `c340bcf5dc77a0462e4f252c383ec1d624cb47bfa0e6b455dd05dd8fe84ec749` | 12758 B |
 
-The public allowlist and required publication file list are restricted to these nine IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
+The public allowlist and required publication file list are restricted to these ten IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
 
 ### Before merge
 
 - [ ] Exact-head Site, Browser, Admin and FULL CI after committing the binary files
-- [ ] Visual browser smoke at `/players/44`, `/players/98`, `/players/145`, `/players/46`, `/players/45`, `/players/49`, `/players/50`, `/players/47` and an unknown valid ID
+- [ ] Visual browser smoke at `/players/44`, `/players/98`, `/players/145`, `/players/46`, `/players/45`, `/players/49`, `/players/50`, `/players/47`, `/players/52`, `/players/148` and an unknown valid ID
 - [ ] Mobile 390px and iPhone Safari; light/dark; broken image fallback; Admin draft isolation
 - [ ] Separate owner authorization for merge and Preview deployment
 
@@ -88,3 +89,14 @@ User authorized starting PR staging, **not** final portrait approval, merge, dep
 Source portrait (outside repository) `player_52_emilio_rigotto_reframed.png`, 1086×1448 RGBA, SHA256 `989f9fcdc1d870d1c1decda186f07ab29b9078e1300850c8bcd6cd9f08ea66d6`. Display-only derivative locally prepared for `assets/players/portraits/52.webp`: Lanczos resize to 320×427 then top crop to 320×362, WebP quality 70/method 6/exact alpha; 13,912 bytes, SHA256 `71fedc686de47aec66c77d4f1439acb58bc690a7f93b5fa8b208bedd63ae4118`, Git blob SHA1 `32d0989f16a389179605f57fad585d39a39745bd`. PNG stays unmodified outside GitHub. WebP publication file must be uploaded and independently verified before considering integration complete.
 
 Mapping, fail-closed publication allowlist, asset-required guard, exact-byte test and manual DEV-only guarded SQL are staged in this PR. **DO NOT execute SQL.** No CSS, preview fallback, other portraits, merge or deployment changes. Draft/HOLD pending binary upload, exact-head CI, desktop/mobile/Safari QA, owner acceptance and separately authorized publication, merge/deploy and DEV D1 status change.
+
+
+## #640 — Craig Leaman (#148) V5 candidate integration — Draft/HOLD
+
+Owner requested **begin integration** of the technically reviewed ChatGPT-generated V5 candidate; this is NOT owner portrait approval, merge, deployment, public publication or a D1 write. D1 read-only verified identity in generated_players **Craig Leaman**; immutable portrait schema `player-portraits-v2`, prompt `player-portrait-v3`, fingerprint `2c013bc6054a8073`; status=`pending` and asset_key=NULL. Do not modify the frozen snapshot or derive appearance from current gameplay data.
+
+Original source remains outside GitHub and unmodified: `football-architect-148-craig-leaman-candidate-v5.png` (1086×1448 RGBA, SHA256 `570eb909390e54481a15b85aa73e0fbe6cabb0b483ad707022e9cccefdddc55e`). Local display-only derivative prepared with Lanczos resize to 320×427, top crop 320×362, WebP quality 70/method 6/exact alpha; 12,758 bytes; SHA256 `c340bcf5dc77a0462e4f252c383ec1d624cb47bfa0e6b455dd05dd8fe84ec749`; expected Git blob SHA1 `f4efa024dc1c7b2b58c3e11351645ff8f18257a8`.
+
+**Binary upload still required:** `assets/players/portraits/148.webp` is not part of this metadata staging commit; after upload, independently verify the exact Git blob SHA, SHA256, VP8X dimensions and alpha. Until then, allowlist, mapping, test and publication guard are PREPARED ONLY and the new exact-hash test will intentionally fail. Do not claim an integrated asset or green CI prematurely. No other portrait bytes or shared CSS changed.
+
+Manual guarded DEV-only D1 SQL at `backend/manual/portrait-148-approved-dev.sql` is staged but **MUST NOT be executed** until a separate explicit owner decision, successful publication and DEV-only approval. PR stays **Draft/HOLD** pending binary presence, exact-head CI, desktop/mobile/iPhone Safari light/dark crop and fallback QA, portrait acceptance and separate merge/deploy/D1 authorization.
