@@ -926,6 +926,16 @@
     }
     window.addEventListener('fa:competition-context-change',refresh);
     window.addEventListener('fa:published-match-links-change',refresh);
+    // The official collection may finish before the global season loader.
+    // #659 correctly withholds match links while the table is loading.
+    // Rebind verified native W/D/L anchors once that flag clears; otherwise
+    // the initial tooltip-only controls can remain inert until navigation.
+    new MutationObserver(()=>{
+      if(document.documentElement.dataset.faStandingsLoading!=='true'&&
+         window.faCompetitionContext?.seasonData?.provenance?.kind==='authoritative')
+        refresh();
+    }).observe(document.documentElement,{attributes:true,
+      attributeFilter:['data-fa-standings-loading']});
     refresh();
   }
 

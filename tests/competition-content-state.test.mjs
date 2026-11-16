@@ -30,6 +30,19 @@ test('Standings table has no hover animation or row hover highlight in either th
   'match-result tooltip remains available');
 });
 
+test('authoritative Standings rebinds links when loading ends after published list',()=>{
+ const page=read('assets/competition-page.js');
+ const fixtures=read('assets/competition-fixtures.js');
+ assert.match(page,/attributeFilter:\['data-fa-standings-loading'\]/,
+  'Standings observes the exact global loading state');
+ assert.match(page,/faStandingsLoading!=='true'&&[\s\S]*?provenance\?\.kind==='authoritative'\)[\s\S]*?refresh\(\)/,
+  'only settled authoritative standings can rebind native match anchors');
+ assert.match(page,/addEventListener\('fa:published-match-links-change',refresh\)/,
+  'a settled published collection can also rebind result links');
+ assert.match(fixtures,/pendingKey=null;render\(\);syncKnockoutLinks\(\);[\s\S]*?notifyPublishedMatchLinks\(\)/,
+  'published collection completion notifies Standings after the pending key clears');
+});
+
 test('presenters require concrete absence instead of missing responses',()=>{
  assert.match(read('assets/competition-fixtures.js'),/data\.fixtures===null/);
  assert.match(read('assets/competition-fixtures.js'),/available&&\(\(international/);
