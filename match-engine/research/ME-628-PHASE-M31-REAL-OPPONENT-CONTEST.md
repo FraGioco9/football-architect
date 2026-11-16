@@ -36,3 +36,11 @@ shoe IDs, mismatching solver, invalid core/mover option combinations and
 public/non-DEV module exposure. Mirrored HOME/AWAY deterministic replay and
 unchanged original M30 A/B baseline must pass. No merge/deploy/D1 writes;
 PR #633 remains Draft/HOLD.
+
+## Exact-head M31 HOME/AWAY physical result
+
+On the first genuine source run ([ME-01 #43924022382](https://github.com/FraGioco9/football-architect/actions/runs/43924022382)) the new original before-tick-zero M31 fixture **still** produced the authentic M30 receiver tap at tick **63**, native receiver shoe END at tick **65** and new receiver START and original CLEARANCE at tick **136**.
+
+The longer M31 observation (240 native Rapier frames, tick63–302) showed **164 ticks with an opponent within 3 m of the receiver and 113 ticks within 2 m**, minimum *opponent-to-receiver* distance **1.8012m** and minimum actual *opponent-to-ball* distance **1.8383m**. The ball travelled **13.6136m HOME / 13.6138m AWAY**. **No opposing player produced a shoe-ball START, ACTIVE or force sample** on either mirrored source. Both cases classify `genuine-receiver-recontact-without-opponent-start`, not an opposing physical duel. No tackle/interception/control/dribble/official possession. The M31 deterministic negative test now freezes this observation to forbid a future distance-based false-positive.
+
+This M31 step closes **instrumentation and physical pressure comparison**, but leaves **demonstrating a real opposing shoe-ball challenge** OPEN; M32 should work on unforced challenger reach and dynamics, not inflate physical proximity to a tackle. The unrelated multi-pair original body collision gate is also still OPEN.

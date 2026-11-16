@@ -125,6 +125,12 @@ test('M31 original Rapier contested source and M30 baseline: mirrored determinis
    assert.equal(baselineCompleted.firstReceiverIndependentNativeRecontactTick,136);
    assert.equal(baselineCompleted.opposingShoeContactIsNative,false);
    assert.equal(baselineCompleted.verifiedPossession,false);
+   assert.equal(tapTick,63,'original M30 tap remains source-authenticated');
+   assert.ok(completed,'a real tap must generate the complete M31 source window');
+   assert.equal(opponentStart,null,
+    'do not claim an opponent shoe-ball duel from mere proximity');
+   assert.ok(minimumSourceOpponentGap<2,
+    'the original defender genuinely gets close to the ball');
    if(completed){
     assert.equal(completed.observationComplete,true);
     assert.equal(completed.observedTicks,M31_CONTEST_TICKS);
@@ -133,7 +139,17 @@ test('M31 original Rapier contested source and M30 baseline: mirrored determinis
     assert.equal(completed.verifiedInterception,false);
     assert.equal(completed.verifiedTackle,false);
     assert.equal(completed.officialPossession,false);
-    assert.equal(completed.opposingShoeContactIsNative,opponentStart!==null);
+    assert.equal(completed.opposingShoeContactIsNative,false);
+    assert.equal(completed.firstOpposingNativeShoeStartTick,null);
+    assert.equal(completed.realOpponentNativeShoeActiveTicks,0);
+    assert.equal(completed.realOpponentForceTicks,0);
+    assert.equal(completed.firstReceiverNativeEndTick,65);
+    assert.equal(completed.firstReceiverIndependentNativeRecontactTick,136);
+    assert.equal(completed.receiverNextRealAction?.action,'clearance');
+    assert.equal(completed.classification,
+     'genuine-receiver-recontact-without-opponent-start');
+    assert.ok(completed.measuredOpponentWithin3MTicks>0);
+    assert.ok(completed.measuredOpponentWithin2MTicks>0);
     if(opponentStart){
      assert.equal(completed.firstOpposingNativeShoeStartTick,opponentStart.tick);
      assert.equal(completed.firstOpposingNativeShoeStartPlayerId,opponentStart.id);
