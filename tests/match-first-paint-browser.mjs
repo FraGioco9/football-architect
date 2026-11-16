@@ -106,9 +106,14 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.ok(Math.abs(stage.overlay.top-stage.field.top)<=1&&Math.abs(stage.overlay.bottom-(stage.field.top+stage.field.height))<=1,JSON.stringify(stage));
     assert.ok(stage.overview.top>=stage.field.top-1&&stage.overview.bottom<=stage.field.top+stage.field.height+1,JSON.stringify(stage));
     assert.ok(stage.overview.left>=stage.field.left-1&&stage.overview.right<=stage.field.right+1,JSON.stringify(stage));
+    assert.ok(stage.overview.right-stage.overview.left<stage.field.width*.98,JSON.stringify(stage));
+    assert.ok(Math.abs((stage.overview.left+stage.overview.right)/2-(stage.field.left+stage.field.right)/2)<=1,JSON.stringify(stage));
+    assert.ok(Math.abs((stage.overview.top+stage.overview.bottom)/2-(stage.field.top+stage.field.height/2))<=1,JSON.stringify(stage));
+    assert.equal(await page.locator('[data-match-overview="competition"]').getAttribute('href'),null);
+    assert.equal(await page.locator('.app-match-overview-row').count(),3);
     assert.equal(await page.locator('.app-match-pitch-frame').evaluate(el=>getComputedStyle(el).position),'relative');
     assert.equal(await page.locator('.app-match-pitch-overlay').evaluate(el=>getComputedStyle(el).position),'absolute');
-    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','','']);
+    assert.deepEqual(await page.locator('[data-match-overview]').evaluateAll(els=>els.map(el=>el.textContent)),['','','','','','']);
     assert.deepEqual(stage.firstPaintNames,['','']);
     assert.deepEqual(stage.firstPaintNameLinks,[{hasHref:false,content:''},{hasHref:false,content:''}]);
     for(let i=0;i<stage.facts.length;i++){
@@ -290,7 +295,11 @@ for(const [engine,driver] of Object.entries(engines)){
       homeParticipant:currentStatus==='awaiting_participants'?null:{clubId:'IT-1'},
       awayParticipant:{clubId:'IT-2'},
       // A scheduled match may not reveal stale score data.
-      result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9}})
+      result:currentStatus==='completed'?{homeGoals:12,awayGoals:3}:{homeGoals:9,awayGoals:9},
+      kickoff:currentStatus==='postponed'?'2026-11-25T19:30:00+01:00':
+       currentStatus==='cancelled'?'not-a-date':null,
+      venue:currentStatus==='postponed'?{name:'Stadio Aurora'}:
+       currentStatus==='cancelled'?{name:''}:null})
 
     }));
     const leagueFixtures=[{"id":"f1","day":1,"homeClubId":"IT-1","awayClubId":"IT-7","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f2","day":2,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":1}},{"id":"f3","day":4,"homeClubId":"IT-4","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":1,"awayGoals":1}},{"id":"f4","day":5,"homeClubId":"IT-5","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":3,"awayGoals":2}},{"id":"f5","day":7,"homeClubId":"IT-1","awayClubId":"IT-5","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":2}},{"id":"f6","day":8,"homeClubId":"IT-2","awayClubId":"IT-6","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":0}},{"id":"f7","day":11,"homeClubId":"IT-9","awayClubId":"IT-1","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f8","day":12,"homeClubId":"IT-7","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":0,"awayGoals":1}},{"id":"f9","day":13,"homeClubId":"IT-1","awayClubId":"IT-10","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":0}},{"id":"f10","day":14,"homeClubId":"IT-2","awayClubId":"IT-8","competitionId":"IT-1","result":{"homeGoals":2,"awayGoals":3}},{"id":"f11","day":16,"homeClubId":"IT-1","awayClubId":"IT-2","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":99}},{"id":"f12","day":19,"homeClubId":"IT-1","awayClubId":"IT-4","competitionId":"IT-1","result":{"homeGoals":99,"awayGoals":0}}];
@@ -371,6 +380,13 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await page.locator('[data-match-overview="season"]').textContent(),'1');
       assert.equal(await page.locator('[data-match-overview="round"]').textContent(),'1');
       assert.ok((await page.locator('[data-match-overview="competition"]').textContent()).length>0);
+      const overviewCompetition=page.locator('[data-match-overview="competition"]');
+      assert.equal(new URL(await overviewCompetition.getAttribute('href'),page.url()).pathname,'/competitions/it-1/fixtures');
+      assert.equal(await overviewCompetition.getAttribute('target'),'_blank');
+      assert.equal(await overviewCompetition.getAttribute('rel'),'noopener noreferrer');
+      assert.equal(await overviewCompetition.evaluate(el=>getComputedStyle(el).textDecorationLine),'none');
+      assert.equal(await page.locator('[data-match-overview="date"]').textContent(),'');
+      assert.equal(await page.locator('[data-match-overview="stadium"]').textContent(),'');
       assert.equal(await page.locator('[data-match-overview="status"]').textContent(),'Scheduled');
       assert.equal(await page.locator('[data-match-overview-panel]').count(),1);
       assert.equal(await page.locator('[data-match-view-selector], [data-match-view], [data-match-empty]').count(),0);
@@ -385,6 +401,8 @@ for(const [engine,driver] of Object.entries(engines)){
       await page.evaluate(()=>document.documentElement.lang='en');
      }
      if(status==='postponed'){
+      assert.match(await page.locator('[data-match-overview="date"]').textContent(),/25.*Nov.*2026/i);
+      assert.equal(await page.locator('[data-match-overview="stadium"]').textContent(),'Stadio Aurora');
       await page.waitForFunction(()=>document.querySelector('[data-match-form="home"]')?.children.length===2);
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').evaluateAll(els=>els.map(el=>el.dataset.outcome)),['w','d']);
       assert.equal(await page.locator('[data-match-form-fact="home"]').evaluate(el=>el.hidden),false);
@@ -392,6 +410,8 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.equal(await page.locator('[data-match-form="away"] .app-match-form-cell').count(),0);
      }
      if(status==='cancelled'){
+      assert.equal(await page.locator('[data-match-overview="date"]').textContent(),'');
+      assert.equal(await page.locator('[data-match-overview="stadium"]').textContent(),'');
       await page.waitForFunction(()=>document.querySelector('[data-match-position="home"]')?.textContent==='3');
       assert.deepEqual(await page.locator('[data-match-form-fact]').evaluateAll(els=>els.map(el=>el.hidden)),[true,true]);
       assert.equal(await page.locator('.app-match-form-cell').count(),0);

@@ -2,11 +2,11 @@
 (()=>{'use strict';
  const root=document.querySelector('[data-match-detail]');if(!root)return;
  const copies={
-  en:{match:'Match',tbd:'To be determined',round:'Round',home:'Home',away:'Away',position:'Position',form:'Form',lineup:'Lineup',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',status:'Status',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
-  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',lineup:'Formazione',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',status:'Stato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
-  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',home:'Heim',away:'Gast',position:'Platz',form:'Form',lineup:'Aufstellung',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',status:'Status',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
-  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',status:'Estado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
-  fr:{match:'Match',tbd:'À déterminer',round:'Journée',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',status:'Statut',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
+  en:{match:'Match',tbd:'To be determined',round:'Round',home:'Home',away:'Away',position:'Position',form:'Form',lineup:'Lineup',formW:'W',formD:'D',formL:'L',outcomeW:'Win',outcomeD:'Draw',outcomeL:'Loss',overview:'Overview',competition:'Competition',season:'Season',date:'Date',stadium:'Stadium',status:'Status',statusNames:{awaiting_participants:'Awaiting teams',scheduled:'Scheduled',in_progress:'In progress',completed:'Completed',postponed:'Postponed',cancelled:'Cancelled'},pitch:'Empty football pitch; match visualization is not yet available',notFound:'Match not found or not published.',error:'Match information is temporarily unavailable.'},
+  it:{match:'Partita',tbd:'Da determinare',round:'Giornata',home:'Casa',away:'Trasferta',position:'Posizione',form:'Forma',lineup:'Formazione',formW:'V',formD:'N',formL:'P',outcomeW:'Vittoria',outcomeD:'Pareggio',outcomeL:'Sconfitta',overview:'Panoramica',competition:'Competizione',season:'Stagione',date:'Data',stadium:'Stadio',status:'Stato',statusNames:{awaiting_participants:'In attesa delle squadre',scheduled:'Programmata',in_progress:'In corso',completed:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'},pitch:'Campo vuoto; visualizzazione della partita non ancora disponibile',notFound:'Partita inesistente o non pubblicata.',error:'Informazioni sulla partita temporaneamente non disponibili.'},
+  de:{match:'Spiel',tbd:'Noch offen',round:'Spieltag',home:'Heim',away:'Gast',position:'Platz',form:'Form',lineup:'Aufstellung',formW:'S',formD:'U',formL:'N',outcomeW:'Sieg',outcomeD:'Remis',outcomeL:'Niederlage',overview:'Übersicht',competition:'Wettbewerb',season:'Saison',date:'Datum',stadium:'Stadion',status:'Status',statusNames:{awaiting_participants:'Teilnehmer offen',scheduled:'Geplant',in_progress:'Läuft',completed:'Beendet',postponed:'Verschoben',cancelled:'Abgesagt'},pitch:'Leeres Spielfeld; Spielvisualisierung noch nicht verfügbar',notFound:'Spiel nicht gefunden oder nicht veröffentlicht.',error:'Spielinformationen derzeit nicht verfügbar.'},
+  es:{match:'Partido',tbd:'Por determinar',round:'Jornada',home:'Local',away:'Visitante',position:'Posición',form:'Forma',lineup:'Alineación',formW:'G',formD:'E',formL:'P',outcomeW:'Victoria',outcomeD:'Empate',outcomeL:'Derrota',overview:'Resumen',competition:'Competición',season:'Temporada',date:'Fecha',stadium:'Estadio',status:'Estado',statusNames:{awaiting_participants:'Equipos pendientes',scheduled:'Programado',in_progress:'En curso',completed:'Finalizado',postponed:'Aplazado',cancelled:'Cancelado'},pitch:'Campo vacío; visualización del partido todavía no disponible',notFound:'Partido no encontrado o no publicado.',error:'Información del partido temporalmente no disponible.'},
+  fr:{match:'Match',tbd:'À déterminer',round:'Journée',home:'Domicile',away:'Extérieur',position:'Position',form:'Forme',lineup:'Composition',formW:'V',formD:'N',formL:'D',outcomeW:'Victoire',outcomeD:'Nul',outcomeL:'Défaite',overview:'Aperçu',competition:'Compétition',season:'Saison',date:'Date',stadium:'Stade',status:'Statut',statusNames:{awaiting_participants:'Équipes à déterminer',scheduled:'Programmé',in_progress:'En cours',completed:'Terminé',postponed:'Reporté',cancelled:'Annulé'},pitch:'Terrain vide; visualisation du match pas encore disponible',notFound:'Match introuvable ou non publié.',error:'Informations temporairement indisponibles.'}
  };
  const numeric=x=>typeof x==='string'&&/^[1-9][0-9]*$/.test(x)&&Number.isSafeInteger(Number(x));
  const lang=()=>{const code=document.documentElement.lang?.slice(0,2).toLowerCase();return Object.hasOwn(copies,code)?code:'en'};
@@ -16,6 +16,25 @@
  const matchId=(/^\/matches\/([1-9][0-9]*)$/.exec(location.pathname)||[])[1];
  const clubKey=value=>{const m=/^(IT|ENG|ES|DE|FR|PT|NL|BR)-([1-9]|[1-3][0-9]|40)$/.exec(value||'');return m?m[1]+'-'+Number(m[2]):null};
  const href=path=>typeof window.faAppHref==='function'?window.faAppHref(path):path;
+ const competitionHref=id=>/^(?:(?:IT|ENG|ES|DE|FR|PT|NL|BR)-[12]|int-[12])$/.test(id||'')
+  ?href('/competitions/'+id.toLowerCase()+'/fixtures'):null;
+ // Current verified match responses have venue:null and kickoff:null.
+ // Never guess calendar dates from sporting days or venues from home teams.
+ const publishedDate=kickoff=>{
+  if(typeof kickoff!=='string')return '';
+  const m=/^(\d{4})-(\d{2})-(\d{2})(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$/.exec(kickoff);
+  if(!m)return '';
+  const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
+  if(year<1900)return '';
+  const parsed=new Date(Date.UTC(year,month-1,day));
+  if(parsed.getUTCFullYear()!==year||parsed.getUTCMonth()+1!==month||parsed.getUTCDate()!==day)return '';
+  const locale={en:'en-GB',it:'it-IT',de:'de-DE',es:'es-ES',fr:'fr-FR'}[lang()];
+  return new Intl.DateTimeFormat(locale,{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(parsed);
+ };
+ const publishedStadium=venue=>{
+  const name=typeof venue==='string'?venue:venue&&typeof venue==='object'&&!Array.isArray(venue)?venue.name:null;
+  return typeof name==='string'&&name.trim().length>0&&name.trim().length<=120?name.trim():'';
+ };
  let data=null,clubs=null,competitions=null,themeResolver=null,errorKind=null,sideProjection=null;
 
  // Use the approved SVG directly: its primary and secondary fills are
@@ -125,9 +144,18 @@
  // Unknown or unpublished context stays blank rather than being fabricated.
  function renderOverview(tr){
   const comp=competitions?.competitions?.find(c=>c.id===data?.competitionId);
-  write('[data-match-overview="competition"]',data?(comp?.name||data.competitionId):'');
+  const link=find('[data-match-overview="competition"]');
+  if(link){
+   link.textContent=data?(comp?.name||data.competitionId):'';
+   const route=competitionHref(data?.competitionId);
+   if(route){link.href=route;link.target='_blank';link.rel='noopener noreferrer';}
+   else{link.removeAttribute('href');link.removeAttribute('target');link.removeAttribute('rel');}
+   link.removeAttribute('title');
+  }
   write('[data-match-overview="season"]',Number.isSafeInteger(data?.season)&&data.season>0?data.season:'');
   write('[data-match-overview="round"]',Number.isSafeInteger(data?.round)&&data.round>0?data.round:'');
+  write('[data-match-overview="date"]',data?publishedDate(data.kickoff):'');
+  write('[data-match-overview="stadium"]',data?publishedStadium(data.venue):'');
   write('[data-match-overview="status"]',data?(tr.statusNames[data.status]||''):'');
   const panel=find('[data-match-overview-panel]');
   if(panel)panel.setAttribute('aria-label',tr.overview);

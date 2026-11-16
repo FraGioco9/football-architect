@@ -400,16 +400,17 @@ The form row contains only the latest five verified prior-day results in this co
 
 The full club name in each Home/Away side panel is a text-sized link to the verified club's canonical `/clubs/<country>/<id>/overview` route (new tab, `noopener noreferrer`), consistent with the scoreboard abbreviation. Underlining appears only on hover or keyboard focus. Unknown or unresolved teams show plain, non-interactive text with no fabricated link or tooltip. The h2 heading, crest, stats, lineup and field geometry are unchanged.
 
-## One Overview panel, overlaid on the pitch (2026-11-16)
+## One centered Overview box with three rows (2026-11-16)
 
-The match centre column holds an unchanged 105:68 field and **exactly one semi-transparent Overview panel** in its upper area, physically over the field rather than before it. There is **no View selector**, no Stats/Events tabs, and no separate nested card surfaces. One surface uses 80% of the current theme surface and 20% transparency; text is fully opaque. The pitch and both club side panels do not change their dimensions or position. On narrow screens the four facts are arranged two-by-two inside the same panel, within the pitch rectangle. All content areas are reserved on first paint.
+The 105:68 pitch and flanking Home/Away panels retain their dimensions. Exactly **one Overview box** is centered horizontally and vertically over the green field, narrower than the pitch (86% with max-width 560px on wide screens; 96% within the inner field on small screens). Its single semi-transparent themed 80%-opaque surface leaves the field visible underneath. No View selector, separate inner cards or Stats/Events view.
 
-Overview displays exactly four independent pieces of official match context:
-- **Competition**: canonical competition manifest name if available, otherwise the validated public competition ID.
-- **Season**: positive season number from the authoritative match identity.
-- **Round**: positive round number if published; otherwise an empty value, not a fabricated fixture round.
-- **Status**: one localized label for the validated match status (awaiting participants, scheduled, in progress, completed, postponed or cancelled).
+Three visually separated rows contain:
+- **Competition** (clickable canonical Fixtures link), **Season**, **Round**.
+- **Date**, **Stadium**.
+- **Status** (localized verified match state).
 
-These four facts are distinct from the score and club badges in the scoreboard and the Position, Form and Lineup areas at the sides. EN, IT, DE, ES, FR display names and statuses are supported. There is no need to fetch statistics or events or to synthesize match times, venue, referees, formations or scores. More context can be added only if the authoritative match contract supplies it. No new API reads are made.
+The authoritative competition ID must match the same allowlist as the scoreboard emblem link. The Overview text link opens `/competitions/<id>/fixtures` in a new tab with `noopener noreferrer`; the text is underlined only on hover/keyboard focus. Before hydration no link is attached.
 
-The former three-card Overview and selectable Stats/Events were removed at the owner's request. The match page remains Draft/HOLD with no merge or deployment.
+**Date** comes only from a valid ISO `kickoff` calendar date/time published by the match API. It is verified and formatted for the current locale; sporting day numbers are not converted to guessed dates. **Stadium** comes only from the authoritative `venue` name (string or `venue.name`). The backend currently returns `kickoff:null` and `venue:null`, so those values remain blank until the source publishes them. Invalid or unavailable values remain blank. All other fields retain existing validation.
+
+The box reserves cell heights on first paint, retains three compact rows on small screens and does not change the pitch or club panel geometry. Supported languages: EN, IT, DE, ES, FR. Source and browser QA cover centering, hyperlink safety, available/missing match metadata, localization and first paint.

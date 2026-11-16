@@ -269,10 +269,16 @@ new MutationObserver(paint).observe(document.documentElement,{attributes:true,at
             <div class="app-match-pitch-overlay">
               <section class="app-match-overview" aria-label="Overview" data-match-overview-panel>
                 <h3 class="app-match-overview-heading" data-match-label="overview">Overview</h3>
-                <div class="app-match-overview-facts">
-                  <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="competition">Competition</span><strong class="app-match-info-value" data-match-overview="competition"></strong></div>
+                <div class="app-match-overview-row app-match-overview-row-primary">
+                  <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="competition">Competition</span><a class="app-match-info-value app-match-overview-competition-link" data-match-overview="competition"></a></div>
                   <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="season">Season</span><strong class="app-match-info-value" data-match-overview="season"></strong></div>
                   <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="round">Round</span><strong class="app-match-info-value" data-match-overview="round"></strong></div>
+                </div>
+                <div class="app-match-overview-row app-match-overview-row-secondary">
+                  <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="date">Date</span><strong class="app-match-info-value" data-match-overview="date"></strong></div>
+                  <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="stadium">Stadium</span><strong class="app-match-info-value" data-match-overview="stadium"></strong></div>
+                </div>
+                <div class="app-match-overview-row app-match-overview-row-status">
                   <div class="app-match-overview-fact"><span class="app-match-info-label" data-match-label="status">Status</span><strong class="app-match-info-value" data-match-overview="status"></strong></div>
                 </div>
               </section>

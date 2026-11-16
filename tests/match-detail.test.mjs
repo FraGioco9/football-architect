@@ -63,11 +63,16 @@ test('#577 scoreboard is the first independently reusable match section',()=>{
   assert.ok(section.includes('data-match-pitch role="img"'));
   assert.doesNotMatch(section,/role="tablist"|role="tab"|role="tabpanel"|data-match-view-selector|data-match-view-content|data-match-view="(?:overview|stats|events)"/);
   assert.equal((section.match(/class="app-match-overview"/g)||[]).length,1);
-  assert.equal((section.match(/class="app-match-overview-fact"/g)||[]).length,4);
+  assert.equal((section.match(/class="app-match-overview-fact"/g)||[]).length,6);
+  assert.equal((section.match(/class="app-match-overview-row app-match-overview-row-/g)||[]).length,3);
+  assert.ok(section.includes('data-match-overview="competition"></a>'));
+  assert.ok(section.includes('class="app-match-info-value app-match-overview-competition-link"'));
+  assert.ok(section.indexOf('app-match-overview-row-primary')<section.indexOf('app-match-overview-row-secondary'));
+  assert.ok(section.indexOf('app-match-overview-row-secondary')<section.indexOf('app-match-overview-row-status'));
   assert.ok(section.includes('data-match-overview-panel'));
   assert.ok(section.includes('<div class="app-match-pitch-frame">'));
   assert.ok(section.includes('<div class="app-match-pitch-overlay">'));
-  for(const field of ['competition','season','round','status'])
+  for(const field of ['competition','season','round','date','stadium','status'])
    assert.ok(section.includes('data-match-overview="'+field+'"'));
   assert.ok(section.indexOf('app-match-pitch-overlay')<section.indexOf('data-match-pitch role="img"'));
   assert.match(section,/data-match-overview="status"[\s\S]*<\/div>\s*<div class="app-match-pitch" data-match-pitch/);
@@ -171,6 +176,12 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(js,/formFact\.hidden=facts\.form\.length===0/);
  assert.match(js,/form\.replaceChildren\(\.\.\.facts\.form\.map/);
  assert.match(js,/function renderOverview\(tr\)/);
+ assert.match(js,/const competitionHref=id=>/);
+ assert.match(js,/if\(route\)\{link\.href=route;link\.target='_blank';link\.rel='noopener noreferrer';\}/);
+ assert.match(js,/link\.removeAttribute\('href'\);link\.removeAttribute\('target'\);link\.removeAttribute\('rel'\)/);
+ assert.match(js,/const publishedDate=kickoff=>/);
+ assert.match(js,/write\('\[data-match-overview="date"\]',data\?publishedDate\(data\.kickoff\):''\)/);
+ assert.match(js,/write\('\[data-match-overview="stadium"\]',data\?publishedStadium\(data\.venue\):''\)/);
  assert.match(js,/Number\.isSafeInteger\(data\?\.round\)/);
  assert.match(js,/tr\.statusNames\[data\.status\]/);
  assert.doesNotMatch(js,/renderMatchView|activeMatchView|matchViews|data-match-view-selector/);
@@ -230,6 +241,12 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
   '@media(max-width:1000px)'
  ])assert.ok(css.includes(fragment),fragment);
  assert.ok(css.includes('.app-match-page[data-match-load="missing"] .app-match-visual{display:none}'));
+ assert.ok(css.includes('align-items:center;justify-content:center;'));
+ assert.ok(css.includes('width:min(86%,560px)'));
+ assert.ok(css.includes('.app-match-overview-row-primary{grid-template-columns:'));
+ assert.ok(css.includes('.app-match-overview-row-secondary{grid-template-columns:'));
+ assert.ok(css.includes('.app-match-overview-row-status{grid-template-columns:'));
+ assert.ok(css.includes('.app-match-overview-competition-link[href]:hover,'));
  assert.doesNotMatch(css,/app-match-context|app-match-visual-title|match-emphasis/);
  assert.doesNotMatch(css,/\.app-match-scoreboard-meta|\.app-match-status|\.app-match-extra/);
  assert.doesNotMatch(css,/\.app-match-page\{padding-top:(?:4|6)px\}/);

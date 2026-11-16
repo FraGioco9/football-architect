@@ -175,30 +175,29 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-visual{min-width:0;margin:0}
 .app-match-pitch-frame{position:relative;isolation:isolate;width:100%;aspect-ratio:105/68;min-width:0}
 .app-match-pitch-overlay{
- position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:stretch;
- box-sizing:border-box;padding:clamp(6px,1.2vw,12px);gap:8px;pointer-events:none;
+ position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ box-sizing:border-box;padding:clamp(6px,1.2vw,12px);pointer-events:none;
 }
 .app-match-overview{
- box-sizing:border-box;display:flex;flex-direction:column;gap:10px;
- max-width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
- background:color-mix(in srgb,var(--surface) 80%,transparent);
- pointer-events:auto;
+ box-sizing:border-box;display:flex;flex-direction:column;gap:8px;
+ width:min(86%,560px);max-width:100%;max-height:100%;min-width:0;overflow-y:auto;
+ padding:12px 15px;border:1px solid var(--border);border-radius:10px;
+ background:color-mix(in srgb,var(--surface) 80%,transparent);pointer-events:auto;
 }
-.app-match-overview-heading{
- margin:0;color:var(--text);font-size:13px;line-height:1.4;font-weight:750;
-}
-.app-match-overview-facts{
- display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
-}
-.app-match-overview-fact{
- display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
- min-width:0;gap:5px;
-}
+.app-match-overview-heading{margin:0;color:var(--text);font-size:13px;line-height:1.4;font-weight:750;text-align:center}
+.app-match-overview-row{display:grid;gap:10px;min-width:0}
+.app-match-overview-row-primary{grid-template-columns:minmax(0,1.8fr) minmax(0,.8fr) minmax(0,.8fr)}
+.app-match-overview-row-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.app-match-overview-row-status{grid-template-columns:minmax(0,1fr)}
+.app-match-overview-row+.app-match-overview-row{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);padding-top:7px}
+.app-match-overview-fact{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;gap:4px;text-align:center}
 .app-match-info-label{color:var(--muted);font-size:11px;line-height:1.3;font-weight:650}
-.app-match-info-value{
- display:block;min-height:1.3em;max-width:100%;color:var(--text);
- font-size:clamp(11px,1vw,15px);line-height:1.3;font-weight:750;overflow-wrap:anywhere;
-}
+.app-match-info-value{display:block;min-height:1.3em;max-width:100%;color:var(--text);font-size:clamp(11px,1vw,15px);line-height:1.3;font-weight:750;overflow-wrap:anywhere}
+.app-match-overview-competition-link{color:var(--text)!important;text-decoration:none}
+.app-match-overview-competition-link[href]{cursor:pointer}
+.app-match-overview-competition-link[href]:hover,
+.app-match-overview-competition-link[href]:focus-visible{text-decoration-line:underline;text-decoration-thickness:.1em;text-underline-offset:3px}
+.app-match-overview-competition-link:not([href]){cursor:default}
 .app-match-pitch{
  box-sizing:border-box;width:100%;height:100%;aspect-ratio:105 / 68;
  overflow:hidden;border:1px solid var(--border);border-radius:12px;
@@ -222,13 +221,15 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
  .app-match-form-cell{width:clamp(8px,2.6vw,15px);height:clamp(8px,2.6vw,15px);font-size:clamp(7px,1.8vw,10px)}
 }
 @media(max-width:620px){
- .app-match-pitch-overlay{gap:0;padding:6px}
- .app-match-overview{padding:7px 9px;gap:6px}
- .app-match-overview-heading{font-size:12px}
- .app-match-overview-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px}
- .app-match-overview-fact{gap:3px}
- .app-match-info-label{font-size:10px}
- .app-match-info-value{font-size:11px}
+ .app-match-pitch-overlay{padding:6px}
+ .app-match-overview{width:96%;padding:6px 8px;gap:4px}
+ .app-match-overview-heading{font-size:11px;line-height:1.2}
+ .app-match-overview-row{gap:5px}
+ .app-match-overview-row-primary{grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.7fr))}
+ .app-match-overview-row+.app-match-overview-row{padding-top:4px}
+ .app-match-overview-fact{gap:2px}
+ .app-match-info-label{font-size:9px;line-height:1.15}
+ .app-match-info-value{font-size:10px;line-height:1.15;min-height:1.15em}
  .app-match-side{padding:10px 7px 12px}
  .app-match-team-identity{flex-direction:column;justify-content:center;gap:5px;min-height:74px;margin-bottom:10px}
  .app-match-team-crest{width:40px;height:40px;flex-basis:40px}
