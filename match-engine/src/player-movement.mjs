@@ -1781,7 +1781,7 @@ export function createPlayerMovement(options={}){
       (options.researchB06bGoalRestartEnabled!==true||
        options.researchB06bHalftimeTick===undefined||
        options.researchB06bOpeningKickoffEnabled===true))||
-    (options.researchBasicRestartSource!==undefined&&
+    (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
       !Object.hasOwn(options,'researchBasicRestartBall')||
