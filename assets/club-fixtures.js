@@ -137,8 +137,10 @@
    const played=row.goalsFor!==null,score=played?row.goalsFor+'–'+row.goalsAgainst:'—';
    const status=!played?t.scheduled:row.resolution==='penalties'?t.penalties:row.resolution==='extra-time'?t.extra:t.fulltime;
    const venueLabel=row.venue==='neutral'&&t===copy.en?'Neutral':t[row.venue];
-   const canOpenMatch=snapshot.source==='authoritative'&&snapshot.coverage==='partial'&&
-    row.matchId===row.id&&typeof row.matchId==='string'&&/^[1-9][0-9]*$/.test(row.matchId)&&
+   const canOpenMatch=snapshot.source==='authoritative'&&
+    (snapshot.coverage==='partial'&&row.matchId===row.id||
+     snapshot.coverage==='complete'&&snapshot.linkAuthority==='published-match-index-v1')&&
+    typeof row.matchId==='string'&&/^[1-9][0-9]*$/.test(row.matchId)&&
     Number.isSafeInteger(Number(row.matchId));
    const scoreText='<strong aria-label="'+esc(t.result+': '+score)+'">'+esc(score)+'</strong>';
    const scoreContent=canOpenMatch?'<a class="club-fixture-score-link" href="/matches/'+esc(row.matchId)+'" aria-label="'+esc(t.openMatch+': '+name)+'">'+scoreText+'</a>':scoreText;

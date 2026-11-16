@@ -46,3 +46,11 @@ test('Club Fixtures only link official numeric draw scores, not crest or DEV row
   {...official,rows:[{...official.rows[0],id:'9007199254740992',matchId:'9007199254740992'}]}
  ])assert.doesNotMatch(output(invalid),/class="club-fixture-score-link"/);
 });
+
+test('Complete verified club fixtures need the published lookup authority',()=>{
+ const complete={...snapshot,source:'authoritative',coverage:'complete',
+  rows:[{...snapshot.rows[0],id:'source-fixture',matchId:'785'}]};
+ const html=s=>fixtures.render({manifest:{clubs:[club]},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:s});
+ assert.doesNotMatch(html(complete),/club-fixture-score-link/);
+ assert.match(html({...complete,linkAuthority:'published-match-index-v1'}),/href="\/matches\/785"/);
+});

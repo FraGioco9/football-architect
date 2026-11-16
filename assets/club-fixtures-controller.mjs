@@ -1,5 +1,5 @@
 import './club-fixtures.js';
-import {readClubFixtures} from './club-fixtures-source.mjs';
+import {readClubFixtures,attachPublishedClubMatchLinks} from './club-fixtures-source.mjs';
 import {createClubPublicReadCache} from './club-public-read-cache.mjs';
 import './world-clock-adapter.js';
 import './competition-rules-view.js';
@@ -147,7 +147,9 @@ export function mountClubFixtures({host,manifest}){
     catalogue??=fetch('/competitions/_shared/manifest.json',{credentials:'omit'}).then(async r=>{if(!r.ok)throw Error('Competition catalogue unavailable');return r.json();}).catch(e=>{catalogue=null;throw e;});
     const data=await catalogue;
     const result=await readClubFixtures({clubKey,season:selectedSeason,world:current.world,fetchJson:cache.read,manifest:data,signal});
+    // Keep initial verified rows visible while their published IDs are resolved.
     publish(result);
+    if(result.coverage==='complete')publish(await attachPublishedClubMatchLinks(result,{fetchJson:cache.read,signal}));
    }catch{publish({coverage:'error',rows:[],competitions:[]});}
   })();
  }
