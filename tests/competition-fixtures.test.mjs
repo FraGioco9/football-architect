@@ -326,7 +326,7 @@ test('SEASON-2 FIXTURES: promoted domestic clubs replace Season 1 membership wit
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),round=fields.get('app-fixtures-round'),list=fields.get('app-fixtures-list');
-  assert.equal(fields.get('app-fixtures-empty').hidden,true,'unresolved fixture data must not claim an empty calendar');
+  assert.equal(fields.get('app-fixtures-empty').hidden,false,'settled public page without a schedule shows the confirmed empty state');
   const fixtures=schedule(d);fixtures.find(f=>f.round===1).homeGoals=0;fixtures.find(f=>f.round===1).awayGoals=0;
   const commit=view.prepare(fixtures);assert.equal(list.children.length,0,'preparation is detached');commit();
   assert.equal(list.children.length,8);assert.equal(round.disabled,false);
