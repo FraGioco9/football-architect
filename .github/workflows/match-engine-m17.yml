@@ -1,0 +1,46 @@
+name: Match Engine M17 genuine multi-pair source survey
+on:
+  pull_request:
+    paths:
+      - 'match-engine/**'
+      - '.github/workflows/match-engine-m17.yml'
+permissions:
+  contents: read
+jobs:
+  original-native-pair-survey:
+    if: ${{ github.head_ref == 'feat/628-individual-kinematics-foundation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact submitted PR head (never merge-ref)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Assert exact HEAD before native-source audit
+        env:
+          EXPECTED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED"
+          printf 'M17_EXACT_HEAD %s\n' "$EXPECTED"
+      - name: Node 22, locked original physics candidate
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: match-engine/package-lock.json
+      - name: Install source-only original Rapier dependency
+        run: npm ci --prefix match-engine --no-audit --no-fund
+      - name: Full 192 genuine original source Rapier runs (240 ticks each)
+        env:
+          M17_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          M17_EVIDENCE_PATH: match-engine-m17-evidence.json
+        run: npm --prefix match-engine run audit:natural-concurrent-pairs
+      - name: Attach immutable exact-head source report (including negative result)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: me-628-m17-native-concurrent-pair-source
+          path: match-engine-m17-evidence.json
+          if-no-files-found: warn
+          retention-days: 30
