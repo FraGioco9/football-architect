@@ -337,6 +337,8 @@
     "tests/match-lineup-snapshot-v1.test.mjs": "site-node",
     "backend/tests/test_match_lineup_receipt_migration.py": "migration",
     "backend/tests/match-lineup-receipts-runtime.test.ts": "backend-runtime",
-    "tests/match-knockout-binding-v1.test.mjs": "site-node"
+    "tests/match-knockout-binding-v1.test.mjs": "site-node",
+    "tests/lineup-daily-authority-v1.test.mjs": "site-node",
+    "backend/tests/test_season_result_authorities_migration.py": "migration"
   }
 }
