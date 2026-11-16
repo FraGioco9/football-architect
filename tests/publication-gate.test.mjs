@@ -51,6 +51,20 @@ test("INT24-PUBLIC: shared rules and stats are self-contained public dependencie
  }finally{rmSync(root,{recursive:true,force:true})}
 });
 
+test("#605: shipped Club Fixtures includes the published match-reference module and its imports",()=>{
+ const files=planPublicFiles();
+ for(const path of ["assets/club-fixtures-source.mjs","assets/published-match-links.mjs","assets/match-references.mjs"]){
+  assert.ok(files.includes(path),"required browser import missing from public artifact: "+path);
+ }
+ const root=mkdtempSync(join(tmpdir(),"fa-605-fixtures-artifact-"));
+ try{
+  const destination=join(root,"public");
+  stagePublicArtifact(repositoryRoot,destination);
+  for(const path of ["assets/club-fixtures-source.mjs","assets/published-match-links.mjs","assets/match-references.mjs"])
+   assert.ok(existsSync(join(destination,path)),"missing staged fixture dependency: "+path);
+ }finally{rmSync(root,{recursive:true,force:true})}
+});
+
 test("PUBLIC-01: only explicit public assets are eligible; demo fixture is excluded",()=>{
  const files=planPublicFiles();
   const divisionAssets=files.filter(p=>p.startsWith("assets/divisions/"));

@@ -554,10 +554,10 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixture-select [data-club-fixture-value]{display:inline-flex;align-items:center;gap:4px;min-width:0;white-space:nowrap}
 .club-fixture-select .language-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:100%;max-width:min(310px,85vw);max-height:240px;overflow-y:auto;z-index:30}
 .club-fixtures-next{min-height:44px;margin-right:auto}
-/* Matchday navigation's disabled treatment: visible but muted, without hover feedback. */
-.club-fixtures-next:disabled,.club-fixtures-next:disabled:hover{opacity:.45;cursor:default;pointer-events:none;background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 /* Keep first-paint Club Fixtures comboboxes inert while fixture rows are pending. */
 .club-fixtures[data-club-fixtures-state="loading"] .club-fixture-select .language-trigger,.club-fixture-select .language-trigger:disabled{opacity:.45;cursor:default;pointer-events:none;transition:none;animation:none;transform:none;box-shadow:none}
+/* Matchday navigation's disabled treatment: visible but muted, without hover feedback. */
+.club-fixtures-next:disabled,.club-fixtures-next:disabled:hover{opacity:.45;cursor:default;pointer-events:none;background:var(--surface);border-color:var(--border);color:var(--text);transition:none;animation:none;transform:none;box-shadow:none}
 .club-fixtures-list{margin:14px 0 0;padding:0;list-style:none;min-height:336px}
 .club-fixture-row{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(0,1.8fr) 36px 110px;gap:12px;align-items:center;min-height:64px;padding:10px 12px;box-sizing:border-box;border-bottom:1px solid var(--border);font-size:14px}
 .club-fixture-row.is-next{background:var(--surface);box-shadow:inset 3px 0 var(--fa-shell-accent)}
@@ -573,6 +573,24 @@ body.app-body{--app-page-pad-top:8px}
 .club-fixture-venue svg{width:20px;height:20px}
 .club-fixture-result{display:flex;align-items:center;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums;text-align:center}
 .club-fixture-result strong{white-space:nowrap;font-size:16px}
+/* #605: native whole-row link enables browser new-tab context menu and
+ * middle/Ctrl/Cmd-click while keeping club/competition anchors and venue
+ * tooltips independent. The score stays the keyboard focus target. */
+.club-fixture-row.is-match-link{cursor:pointer;transition:background-color .15s ease}
+.club-fixture-row.is-match-link{position:relative}
+.club-fixture-native-link{position:absolute;inset:0;z-index:1;display:block}
+.club-fixture-row.is-match-link :is(.club-fixture-meta a,.club-fixture-opponent-name,.club-fixture-score-link,.club-fixture-venue){position:relative;z-index:2}
+html:not([data-fa-fixture-hover-suspended]) .club-fixture-row.is-match-link:hover,
+.club-fixture-row.is-match-link:has(.club-fixture-score-link:focus-visible){
+ background:color-mix(in srgb,var(--fa-shell-accent) 11%,var(--surface));
+}
+.club-fixture-score-link{display:inline-block;color:inherit;text-decoration:none}
+.club-fixture-score-link:focus-visible{outline:none}
+.club-fixture-row.is-match-link:has(.club-fixture-score-link:focus-visible){
+ outline:2px solid var(--focus);outline-offset:-2px;
+}
+/* Scroll suppresses hover; keep the standard background fade-out active. */
+@media(prefers-reduced-motion:reduce){.club-fixture-row.is-match-link{transition:none}}
 .club-fixture-result small{color:var(--muted);font-size:10px}
 /* Align loading bars to the text line boxes used by hydrated rows. */
 .club-fixture-loading .club-fixture-skeleton-line{display:block;min-width:0;line-height:inherit}

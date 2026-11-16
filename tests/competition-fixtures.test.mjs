@@ -58,12 +58,30 @@ test('FIXTURES-01: all sixteen routes contain labeled 1–30 navigation and an h
 
 function node(tag='div'){
  const n={tagName:tag,children:[],dataset:{},attrs:{},events:{},textContent:'',value:'1',disabled:true,hidden:false,
-  append(...items){this.children.push(...items)},appendChild(item){this.children.push(item);return item},
-  replaceChildren(...items){this.children=[...items]},removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
-  focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+  append(...items){for(const item of items)item.__parent=this;this.children.push(...items)},
+  appendChild(item){item.__parent=this;this.children.push(item);return item},
+  replaceChildren(...items){for(const item of items)item.__parent=this;this.children=[...items]},
+  querySelector(selector){
+   const cls=selector.startsWith('.')?selector.slice(1):null;
+   const seek=parent=>{for(const child of parent.children){
+    if(cls&&child.className?.split(' ').includes(cls))return child;
+    const nested=seek(child);if(nested)return nested;
+   }return null;};
+   return seek(this);
+  },
+  replaceWith(item){const parent=this.__parent,index=parent?.children.indexOf(this)??-1;
+   if(index>=0){parent.children[index]=item;item.__parent=parent;}},
+  removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
+  remove(){if(this.__parent)this.__parent.children=this.__parent.children.filter(item=>item!==this)},
+  click(){this.clicked=true},focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+ n.classList={
+  add(cls){if(!n.className?.split(' ').includes(cls))n.className=[n.className,cls].filter(Boolean).join(' ')},
+  remove(cls){n.className=(n.className||'').split(' ').filter(item=>item!==cls).join(' ')},
+  contains(cls){return (n.className||'').split(' ').includes(cls)}
+ };
  return n;
 }
-function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null}={}){
+function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null,bracket=null}={}){
  const definition=definitions.find(item=>item.id===d.id),configured=rules.fixtureChoices(definition);
  const fields=new Map(['toolbar','current','round','previous','next','list','empty','summary','picker','round-number','round-label'].map(id=>['app-fixtures-'+id,node()]));
  fields.set('competition-panel-fixtures',node('section'));
@@ -71,12 +89,14 @@ function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null
  fields.get('app-fixtures-picker').querySelectorAll=()=>choices;
  let state={season:'1',view:'fixtures',matchday:1};const listeners=[];
  const route={get:()=>state,subscribe:fn=>listeners.push(fn),defaultMatchday(){},set(patch,options){if(patch.matchday!==undefined&&!configured.some(c=>c.value===patch.matchday))return;state={...state,...patch};listeners.forEach(fn=>fn(state))}};
- const events={};const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
- if(source){const worldListeners=[];window.faWorldState={get:()=>source,subscribe(fn){worldListeners.push(fn)},emit(){for(const fn of worldListeners)fn(source)}};window.faCompetitionContext.selectedSeason=1;}
- const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>fields.get(id),createElement:tag=>node(tag)};
+ const events={},sourceListeners=[];let liveSource=source;
+ const window={faRoutesRegistry:registry,faCompetitionRules:rules,faCompetitionRulesView:rulesView,faCompetitionContext:{definition,seasonData:null},faCompetitionModel:competitionModel,faCompetitionDivision:definition.category==='domestic'?d:null,faCompetitionRoute:route,faAppRenderLanguage(){},addEventListener(k,fn){events[k]=fn}};
+ if(source){window.faWorldState={get:()=>liveSource,subscribe(fn){sourceListeners.push(fn);return ()=>{const i=sourceListeners.indexOf(fn);if(i>=0)sourceListeners.splice(i,1);}},emit(){for(const fn of [...sourceListeners])fn(liveSource)}};window.faCompetitionContext.selectedSeason=1;}
+ const document={querySelector:selector=>selector===".app-fixtures-select"?node():null,addEventListener(){},documentElement:{lang:'en',dataset:{faDevSeasons:'2,3,4'}},getElementById:id=>id==='app-postseason-bracket'?bracket:fields.get(id),createElement:tag=>node(tag)};
  runInNewContext(read('assets/competition-tabs.js'),{window,document});
  runInNewContext(read('assets/competition-fixtures.js'),{window,document,Intl,Date,fetch:fetchImpl,MutationObserver:class{observe(){}}});
- return {view:window.faFixtures,fields,route,choices,window,events,document};
+ return {view:window.faFixtures,fields,route,choices,window,events,document,
+  publishSource(next){liveSource=next;for(const callback of [...sourceListeners])callback(next);}};
 }
 const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...f,kickoff:null,
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
@@ -120,7 +140,8 @@ test('FIXTURES refresh: public draw pending after global bootstrap retains contr
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
  const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
-  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,
   homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
  }));
  let release;
@@ -158,7 +179,8 @@ test('FIXTURES refresh: late authoritative world readiness starts draw lookup wi
  const division=divisions.find(d=>d.id==='IT-1');
  const source={source:'authoritative',worldStatus:'pending',world:null};
  const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
-  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,
   homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
  }));
  let resolveResponse,requests=0;
@@ -326,7 +348,7 @@ test('SEASON-2 FIXTURES: promoted domestic clubs replace Season 1 membership wit
 test('FIXTURES-02: eight games per round, stable navigation and real score/null distinctions across every division',()=>{
  for(const d of divisions){
   const {view,fields,route}=setup(d),round=fields.get('app-fixtures-round'),list=fields.get('app-fixtures-list');
-  assert.equal(fields.get('app-fixtures-empty').hidden,false,'settled public page without a schedule shows the confirmed empty state');
+  assert.equal(fields.get('app-fixtures-empty').hidden,false);
   const fixtures=schedule(d);fixtures.find(f=>f.round===1).homeGoals=0;fixtures.find(f=>f.round===1).awayGoals=0;
   const commit=view.prepare(fixtures);assert.equal(list.children.length,0,'preparation is detached');commit();
   assert.equal(list.children.length,8);assert.equal(round.disabled,false);
@@ -665,7 +687,8 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
  const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
-  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,
   homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
  }));
  let requests=0;
@@ -682,4 +705,265 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.equal(displayed.filter(row=>row.dataset.fixtureMatch).length,8);
  assert.equal(view.fields.get('app-fixtures-empty').hidden,true);
  assert.equal(view.fields.get('app-fixtures-toolbar').hidden,false);
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=displayed.flatMap(visit).filter(n=>n.tagName==='a'&&n.className==='app-fixture-score-link');
+ assert.equal(links.length,8,'eight published fixtures show eight stable score links');
+ assert.ok(links.every(n=>/^\/matches\/[1-9][0-9]*$/.test(n.href)));
+ assert.ok(links.every(n=>n.attrs['aria-label']?.startsWith('Open match: ')));
+ const native=displayed.flatMap(visit).filter(n=>n.className==='app-fixture-native-link');
+ assert.equal(native.length,8,'each verified match card includes a native new-tab target');
+ assert.deepEqual(native.map(n=>n.href),links.map(n=>n.href));
+ assert.ok(native.every(n=>n.attrs.tabindex==='-1'&&n.attrs['aria-hidden']==='true'));
+ assert.ok(native.every(n=>n.attrs.target===undefined),'normal clicks do not force a new tab');
+ assert.ok(displayed.filter(row=>row.dataset.fixtureMatch).every(row=>row.className.includes('is-match-link')));
+ const target={closest:selector=>selector.startsWith('a,button')?null:selector==='.app-fixture-match.is-match-link'?displayed[0]:null};
+ view.fields.get('app-fixtures-list').events.click({button:0,target,defaultPrevented:false});
+ assert.equal(links[0].clicked,true,'the entire card opens its native match anchor');
+ links[0].clicked=false;
+ const ownLink={closest:selector=>selector.startsWith('a,button')?links[0]:displayed[0]};
+ view.fields.get('app-fixtures-list').events.click({button:0,target:ownLink,defaultPrevented:false});
+ assert.equal(links[0].clicked,false,'direct club/score anchors are not hijacked');
+ const styles=read('assets/app.css');
+ assert.match(styles,/html:not\(\[data-fa-fixture-hover-suspended\]\) \.app-fixture-match\.is-match-link:hover[\s\S]*?background:color-mix/);
+ assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
+ assert.match(styles,/\.app-fixture-native-link\{position:absolute;inset:0;z-index:1;display:block\}/);
+ assert.match(styles,/\.app-fixture-match\.is-match-link \.app-fixture-name,[\s\S]*?\.app-fixture-score-link\{position:relative;z-index:2\}/);
+});
+
+for(const cupId of ['int-1','int-2'])test('#605 official published '+cupId+' draw renders six rounds before the season projection',async()=>{
+ const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
+ const cup=definitions.find(d=>d.id===cupId);
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:10,seasonNumber:1,day:3,phase:'active'}};
+ const countries=[...new Set(manifest.divisions.filter(d=>d.tier===1).map(d=>d.countryId))];
+ assert.equal(countries.length,8,'official INT24 draws span eight nations');
+ const clubsByCountry=new Map(countries.map(id=>[id,manifest.divisions.find(d=>d.tier===1&&d.countryId===id).clubs.slice(0,3)]));
+ const committed=[],order=[...countries];
+ for(let round=1;round<=6;round++){
+  for(let group=0;group<4;group++)for(let slot=0;slot<3;slot++){
+   const home=clubsByCountry.get(order[group])[slot],away=clubsByCountry.get(order[7-group])[slot];
+   const homeId=rules.clubKey(home),awayId=rules.clubKey(away),marker='I'+String(round).padStart(2,'0');
+   committed.push({matchId:String(committed.length+1),sourceFixtureId:'season:1:'+cupId+':'+marker+':'+homeId+':'+awayId,
+    phaseId:'league',marker,round,day:round+12,homeClubId:homeId,awayClubId:awayId});
+  }
+  order.splice(1,0,order.pop());
+ }
+ let requests=0;
+ const view=setup(cup,routeRegistry,{source,fetchImpl:async path=>{
+  requests++;assert.equal(path,'/api/matches/seasons/1/competitions/'+cupId);
+  return {ok:true,status:200,json:async()=>({schemaVersion:1,providerId:'authoritative-world',
+   status:'published',season:1,competitionId:cupId,provenance:{kind:'authoritative'},
+   fixtures:committed})};
+ }});
+ view.window.faCompetitionManifestPromise=Promise.resolve(manifest);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1);
+ assert.equal(view.window.faCompetitionContext.seasonData,null,'the complete season source is not a prerequisite');
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12);
+ assert.equal(view.fields.get('app-fixtures-empty').hidden,true);
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const links=view.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(links.length,12,'every published cup match has its official link');
+ assert.ok(links.every(link=>link.href.startsWith('/matches/')&&Number.isSafeInteger(Number(link.href.slice(9)))));
+ view.events['fa:competition-context-change']();
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12,
+  'an empty full-season read must not erase an independently published cup draw');
+ view.route.set({matchday:6});
+ assert.equal(view.fields.get('app-fixtures-list').children.filter(n=>n.dataset.fixtureMatch).length,12,
+  'all six published international rounds remain available');
+ assert.equal(requests,1,'navigation reuses the authoritative draw');
+});
+
+test('#605 scored competition fixtures keep official goals when linked to published IDs',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:9,seasonNumber:1,day:17,phase:'active'}};
+ const fixtures=schedule(division,5);
+ const collection=fixtures.map((g,i)=>({
+  matchId:String(i+1),
+  sourceFixtureId:'season:1:IT-1:N'+String(g.round).padStart(2,'0')+':IT-'+g.homeId+':IT-'+g.awayId,
+  phaseId:'league',marker:'N'+String(g.round).padStart(2,'0'),day:g.round+12,round:g.round,
+  homeClubId:'IT-'+g.homeId,awayClubId:'IT-'+g.awayId
+ }));
+ let requests=0;
+ const testView=setup(division,routeRegistry,{source,fetchImpl:async()=>{
+  requests++;return {ok:true,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',status:'published',season:1,
+   competitionId:'IT-1',provenance:{kind:'authoritative'},fixtures:collection})};
+ }});
+ await new Promise(resolve=>setImmediate(resolve));
+ const preHydrationRows=testView.fields.get('app-fixtures-list').children;
+ const preHydrationVisit=n=>[n,...n.children.flatMap(preHydrationVisit)];
+ const preLinks=preHydrationRows.flatMap(preHydrationVisit).filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(requests,1,'official collection is requested before score hydration');
+ assert.equal(preLinks.length,8,'published score links exist before score hydration');
+ const officialFixtures=fixtures.map(game=>({
+  ...game,sourceFixtureId:'season:1:IT-1:N'+String(game.round).padStart(2,'0')+':IT-'+game.homeId+':IT-'+game.awayId,
+  marker:'N'+String(game.round).padStart(2,'0'),day:game.round+12
+ }));
+ testView.window.faCompetitionContext.seasonData={
+  provenance:{kind:'authoritative'},season:1,participants:division.clubs,
+  fixtures:officialFixtures,postseason:[],currentMatchday:1
+ };
+ testView.events['fa:competition-context-change']();
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const matches=testView.fields.get('app-fixtures-list').children;
+ assert.equal(matches.length,8);
+ assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,8);
+ assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-native-link').length,8,
+  'hydrating official scores retains the native new-tab target');
+ assert.ok(matches.every(n=>n.className.includes('is-match-link')),
+  'the full-card click affordance survives authoritative score hydration');
+ assert.equal(requests,1,'same official list is reused when the scored view hydrates');
+ assert.ok(matches.some(n=>/\d+/.test(contents(n))),'verified score nodes are still present');
+});
+
+test('#605 Fixtures starts public match API when world changes from loading to ready',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const boot={source:'authoritative',worldStatus:'loading',world:null};
+ const ready={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
+ const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-1:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,marker:'N'+String(f.round).padStart(2,'0'),
+  homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId
+ }));
+ let requests=0;
+ const r=setup(division,routeRegistry,{source:boot,fetchImpl:async url=>{
+  requests++;assert.equal(url,'/api/matches/seasons/1/competitions/IT-1');
+  return {ok:true,status:200,json:async()=>({schemaVersion:1,providerId:'authoritative-world',
+   status:'published',season:1,competitionId:'IT-1',provenance:{kind:'authoritative'},fixtures:committed})};
+ }});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,0,'unverified world does not authorize an API request');
+ r.publishSource(ready);
+ await new Promise(resolve=>setImmediate(resolve));
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const scoreLinks=r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-score-link');
+ assert.equal(requests,1,'world-ready transition triggers one published match request');
+ assert.equal(scoreLinks.length,8,'verified fixtures become clickable without re-entering the tab');
+ r.publishSource(ready);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1,'repeated world snapshots reuse the same collection');
+ r.publishSource({...ready,source:'dev'});
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,0,
+  'DEV source invalidates published link identities');
+ assert.equal(r.fields.get('app-fixtures-list').children.flatMap(visit).filter(n=>n.className==='app-fixture-native-link').length,0,
+  'DEV source invalidates native card links as well');
+});
+
+test('#605 scrolling suppresses stale fixture hover until the mouse genuinely moves',()=>{
+ const view=setup(divisions[0],routeRegistry);
+ const state=view.document.documentElement.dataset;
+ view.events.pointermove({pointerType:'mouse',clientX:200,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,undefined);
+ view.events.scroll();
+ assert.equal(state.faFixtureHoverSuspended,'true','scroll immediately clears visual hover');
+ view.events.pointermove({pointerType:'mouse',clientX:200,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,'true','scroll-generated stationary pointermove does not restore hover');
+ view.events.pointermove({pointerType:'touch',clientX:210,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,'true','touch does not fake a mouse re-entry');
+ view.events.pointermove({pointerType:'mouse',clientX:203,clientY:120});
+ assert.equal(state.faFixtureHoverSuspended,undefined,'moving the mouse restores hover');
+ view.events.scroll();
+ assert.equal(state.faFixtureHoverSuspended,'true');
+ view.events.pointermove({pointerType:'mouse',clientX:205,clientY:122});
+ assert.equal(state.faFixtureHoverSuspended,undefined,'a new deliberate move restores hover');
+ const css=read('assets/app.css');
+ assert.match(css,/\.app-fixture-match\.is-match-link\{cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/,
+  'scroll hover dismissal retains the standard fade-out');
+ assert.doesNotMatch(css,/html\[data-fa-fixture-hover-suspended\] \.app-fixture-match\.is-match-link\{transition:none\}/);
+ assert.match(css,/\.app-fixture-match\.is-match-link:has\(\.app-fixture-score-link:focus-visible\)/,
+  'keyboard focus remains visible even when mouse hover is suspended');
+});
+
+
+test('#605 published Postseason bracket gives each leg its own official match link',async()=>{
+ const division=divisions.find(d=>d.id==='IT-2');
+ const definition=definitions.find(d=>d.id==='IT-2');
+ const phases=definition.rules.phases.filter(p=>p.type==='knockout');
+ const slots=phases.flatMap(phase=>phase.ties.flatMap(tie=>
+  Array.from({length:tie.legs},(_,i)=>({phase,tie,leg:i+1,matchId:String(241+slotsFor(phase,tie,i))}))));
+ function slotsFor(phase,tie,leg){
+  const preceding=phases.flatMap(p=>p.ties.map(t=>({phase:p,tie:t})));
+  let offset=0;
+  for(const pair of preceding){
+   if(pair.phase===phase&&pair.tie===tie)return offset+leg;
+   offset+=pair.tie.legs;
+  }
+  throw Error('Tie slot missing');
+ }
+ const bracket=node();
+ const cards=phases.flatMap(phase=>phase.ties.map(tie=>{
+  const card=node();card.className='fa-bracket-card';card.dataset.bracketTie=tie.id;
+  card.querySelectorAll=selector=>selector==='.fa-bracket-match-link'
+   ?card.children.filter(child=>child.className==='fa-bracket-match-link'):[];
+  return {phase,tie,card};
+ }));
+ bracket.querySelectorAll=selector=>selector==='[data-bracket-tie]'?cards.map(x=>x.card):[];
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:8,seasonNumber:1,day:2,phase:'active'}};
+ const league=createPreviewStandings(division,30).fixtures.map((f,i)=>({
+  matchId:String(i+1),sourceFixtureId:'season:1:IT-2:N'+String(f.round).padStart(2,'0')+':IT-'+f.homeId+':IT-'+f.awayId,
+  phaseId:'league',round:f.round,day:13+f.round-1,marker:'N'+String(f.round).padStart(2,'0'),
+  homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId
+ }));
+ const knockout=slots.map(({phase,tie,leg,matchId})=>({
+  matchId,sourceFixtureId:null,phaseId:phase.id,tieId:tie.id,leg,
+  marker:'N'+(30+leg),day:51+leg,round:30+leg,homeClubId:null,awayClubId:null
+ }));
+ let requests=0;
+ const r=setup(division,routeRegistry,{source,bracket,fetchImpl:async()=>{
+  requests++;return {ok:true,status:200,json:async()=>({
+   schemaVersion:1,providerId:'authoritative-world',status:'published',season:1,
+   competitionId:'IT-2',provenance:{kind:'authoritative'},fixtures:[...league,...knockout]})};
+ }});
+ r.route.set({view:'postseason'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1,'Postseason reuses the published competition lookup');
+ assert.equal(cards.length,3,'two two-leg semifinal cards and the single final');
+ const hrefs=cards.flatMap(({card})=>card.querySelectorAll('.fa-bracket-match-link').map(x=>x.href));
+ assert.deepEqual(hrefs,slots.map(x=>'/matches/'+x.matchId),
+  'full-size separate first/second-leg targets and the full final exist without squads');
+ // Switching to the normal Fixtures page preserves the reserved match IDs;
+ // its TBD rows must open real official pages, never fabricated pairings.
+ r.route.set({view:'fixtures',matchday:'playoffs'});
+ const visit=n=>[n,...n.children.flatMap(visit)];
+ const pendingLinks=r.fields.get('app-fixtures-list').children.flatMap(visit)
+  .filter(n=>n.className==='app-fixture-score-link');
+ assert.ok(pendingLinks.length>=4,'domestic knockout placeholders have published clickable IDs');
+ assert.ok(pendingLinks.every(a=>/^\/matches\/[1-9][0-9]*$/.test(a.href)));
+ r.route.set({view:'postseason'});
+ assert.ok(cards.every(({card})=>card.classList.contains('is-match-link')));
+ assert.ok(cards.filter(x=>x.tie.legs===1).every(x=>x.card.dataset.faMatchLegs==='1'));
+ assert.ok(cards.filter(x=>x.tie.legs===2).every(x=>x.card.dataset.faMatchLegs==='2'));
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .every(link=>/^Open match: /.test(link.attrs['aria-label']))));
+ r.document.documentElement.lang='it';
+ r.events['fa:competition-route-change']();
+ await Promise.resolve();
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link')
+   .every(link=>/^Apri partita: /.test(link.attrs['aria-label']))),
+  'postseason links update accessible names for the selected locale');
+ const final=cards.find(x=>x.tie.legs===1);
+ assert.equal(final.card.querySelectorAll('.fa-bracket-match-link').length,1,
+  'the single final has one native full-card link');
+ const semis=cards.filter(x=>x.tie.legs===2);
+ assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link').length===2),
+  'both legs are full-height native link targets, independent of the clubs');
+ assert.ok(semis.every(x=>x.card.querySelectorAll('.fa-bracket-match-link')
+  .map(a=>a.dataset.faMatchLeg).join(',')==='1,2'),'leg identities remain distinct');
+ r.publishSource({...source,source:'dev'});
+ assert.ok(cards.every(({card})=>card.querySelectorAll('.fa-bracket-match-link').length===0),
+  'DEV source removes all published bracket links');
+ assert.ok(cards.every(({card})=>!card.classList.contains('is-match-link')));
+ const css=read('assets/app.css');
+ assert.match(css,/\.fa-bracket-card\.is-match-link\{position:relative;cursor:pointer;transition:background-color \.15s ease,border-color \.15s ease\}/);
+ assert.match(css,/\.fa-bracket-match-link\[data-fa-match-leg="1"\]\{inset-inline-start:0;width:50%\}/);
+ assert.match(css,/\.fa-bracket-card\[data-fa-match-legs="1"\] \.fa-bracket-match-link\[data-fa-match-leg="1"\]\{width:100%\}/);
+ assert.doesNotMatch(css,/\.calendar-match-link/);
+ const calendarCode=read('assets/authoritative-calendar.mjs');
+ assert.doesNotMatch(calendarCode,/\/matches\/|calendar-match-link/);
+
 });
