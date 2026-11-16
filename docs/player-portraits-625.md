@@ -21,8 +21,9 @@ The existing **owner-approved PNGs** are preserved unchanged as full-resolution 
 | 148 | Craig Leaman (V5 candidate, not approved) | `assets/players/portraits/148.webp` | `f4efa024dc1c7b2b58c3e11351645ff8f18257a8` (verified GitHub blob) | `c340bcf5dc77a0462e4f252c383ec1d624cb47bfa0e6b455dd05dd8fe84ec749` | 12758 B |
 | 53 | Paolo Lacasa (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/53.webp` | `af4f6b07f973072851fb2d8f819405f7e6626fee` (verified upload) | `dc088027b0b6462120ee99604429979be22d870da30891250215e5f73e23a457` | 12554 B |
 | 54 | Massimo Bottineri (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/54.webp` | `17984461e36616dc7cad8d267eb0eb12622f5372` (verified GitHub blob) | `04bb0e00c838e54cc7394671d4ba71bc9de8c895a5edc97f7cdba0e86a34fca9` | 12962 B |
+| 55 | Mario Bodi (QA-reviewed candidate; not publication-approved) | `assets/players/portraits/55.webp` | `61fcf2101e07465d3b8988efbee0af7617417508` (verified GitHub blob) | `fcdcab18571c7c524400c4a57887a51ebfa31714cefe0bba5c9e855ca0f34fda` | 12142 B |
 
-The public allowlist and required publication file list are restricted to these 13 IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
+The public allowlist and required publication file list are restricted to these 14 IDs while PR #640 remains Draft/HOLD. `tests/player-detail.test.mjs` verifies their SHA256 digests, RIFF/WEBP/VP8X headers, path allowlisting and inclusion in the published artifact, and checks the placeholder/error handling.
 
 ### Before merge
 
