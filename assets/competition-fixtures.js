@@ -289,13 +289,22 @@
     if(available){
       if(international&&isPostseason){
         const phase=definition.rules.phases.find(p=>p.id===selectedChoice.phaseId),legs=Math.max(...phase.ties.map(t=>t.legs));
+        const publishedWorld=window.faWorldState?.get?.();
+        const reservedKey=[navigation.get().season,definition.id,
+          publishedWorld?.world?.generation,publishedWorld?.world?.revision].join(':');
+        const showPublishedReservations=publishedWorld?.source==='authoritative'&&
+          publishedWorld.worldStatus==='ready'&&publishedSeason===navigation.get().season&&
+          publishedKey===reservedKey&&!!publishedLookup;
         for(let leg=1;leg<=legs;leg++){
           const games=postseason.filter(g=>g.phaseId===phase.id&&g.leg===leg);
-          const pending=games.length?games:phase.ties.filter(tie=>tie.legs>=leg).map(tie=>({
+          // DEV and unpublished international phases remain empty exactly as
+          // before. A TBD match row exists only for an official published slot.
+          const pending=games.length?games:showPublishedReservations?
+            phase.ties.filter(tie=>publishedLookup.bySlot[[phase.id,tie.id,leg].join(':')]).map(tie=>({
             phaseId:phase.id,tieId:tie.id,leg,round:phase.id+':'+leg,
             homeId:null,awayId:null,homeGoals:null,awayGoals:null,kickoff:null,
             fixtureSlot:tie.id
-          }));
+          })): [];
           if(!pending.length)continue;
           if(legs>1){const heading=element('li','app-fixture-stage'),title=element('h3');title.append(word(leg===1?'postseasonFirstLeg':'postseasonSecondLeg',leg===1?'First leg':'Second leg'));heading.append(title);matches.push(heading);}
           matches.push(...pending.map(matchRow));
