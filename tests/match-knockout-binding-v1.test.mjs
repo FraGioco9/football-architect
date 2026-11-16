@@ -35,23 +35,34 @@ async function proof({leg=1,twoLegs=false,neutral=false}={}){
   round_number:f.round,home_policy:plan.homePolicy,rules_version:plan.rulesVersion,
   source_hash:match.sourceHash};
  const tie={generation,plan_hash:await canonicalHash(plan),plan_json:JSON.stringify(plan)};
- const priorResult={fixtureId:one.id,algorithmVersion:'temporary-score-v1',provenance:'temporary-simulation',
-  homeGoals:2,awayGoals:1};
- const priorPayload={schemaVersion:1,season:1,generation,day:20,
-  calendarHash:plan.sourceCalendarHash,simulationVersion:'temporary-score-v1',results:[priorResult]};
- const prior={generation,day:20,calendar_hash:plan.sourceCalendarHash,simulation_version:'temporary-score-v1',
-  outcome_hash:await canonicalHash(priorPayload),outcome_json:JSON.stringify(priorPayload)};
+ const frozenFixture={matchId:200,season:1,day:20,generation,competitionId:'int-1',
+  fixtureId:one.id,homeClubId:one.homeClubId,awayClubId:one.awayClubId,sourceHash:'a'.repeat(64)};
+ const priorReceipt={schemaVersion:1,authority:'official',algorithmVersion:'temporary-lineup-v1',
+  rosterSourceDigest:'c'.repeat(64),sourceCandidateDigest:'d'.repeat(64),
+  fixture:frozenFixture,result:{matchKey:one.id,algorithmVersion:'temporary-lineup-v1',
+   context:{mode:'regulation'},resolution:'regulation',homeGoals:2,awayGoals:1}};
+ const firstKey=['football-architect-match-slot-v1',generation,1,'int-1',phaseId,'tie:'+tieId+':leg:1'];
+ const priorSlotId='m1_'+(await hashString(JSON.stringify(firstKey))).slice(0,32);
+ const frozen={public_match_id:200,slot_match_id:priorSlotId,generation,season_number:1,day:20,
+  fixture_id:one.id,algorithm_version:'temporary-lineup-v1',
+  receipt_hash:await hashString(JSON.stringify(priorReceipt)),receipt_json:JSON.stringify(priorReceipt)};
+ const dayPayload={schemaVersion:2,season:1,generation,day:20,calendarHash:plan.sourceCalendarHash,
+  simulationVersion:'temporary-lineup-v1',results:[{fixtureId:one.id,matchId:200,
+    receiptHash:frozen.receipt_hash,homeGoals:2,awayGoals:1}]};
+ const prior={generation,day:20,calendar_hash:plan.sourceCalendarHash,simulation_version:'temporary-lineup-v1',
+  outcome_hash:await canonicalHash(dayPayload),outcome_json:JSON.stringify(dayPayload)};
  const calls=[];
  const db={prepare(sql){
   const st={sql,args:[],bind(...args){this.args=args;return this},async first(){
    if(sql.includes('FROM season_knockout_match_slots'))return slot;
    if(sql.includes('FROM season_knockout_ties'))return tie;
-   if(sql.includes('FROM season_day_outcomes'))return prior;
+   if(sql.includes('FROM match_lineup_result_receipts'))return frozen;
+   if(sql.includes('FROM season_lineup_day_outcomes'))return prior;
    throw Error('Unexpected query '+sql);
   }};
   calls.push(st);return st;
  }};
- return {db,match,slot,tie,prior,published:{slot_match_id:matchId},world,calls};
+ return {db,match,slot,tie,prior,frozen,published:{slot_match_id:matchId},world,calls};
 }
 test('neutral knockout final verifies hashed reservation and actual resolved clubs',async()=>{
  const p=await proof({neutral:true});
@@ -86,11 +97,11 @@ test('first leg is regulation only, second leg reads and guards prior finalized 
  const b=await resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:ctx});
  assert.deepEqual(b.context,ctx);
- assert.equal(b.guards.length,3);
- assert.ok(second.calls.some(c=>c.sql.includes('FROM season_day_outcomes')));
+ assert.equal(b.guards.length,4);
+ assert.ok(second.calls.some(c=>c.sql.includes('FROM season_lineup_day_outcomes')));
  await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
   world:second.world,published:second.published,context:{...ctx,firstLegHomeGoals:9}}),/untrusted context/);
  second.prior.outcome_hash='f'.repeat(64);
  await assert.rejects(()=>resolvePublishedKnockoutV1(second.db,{match:second.match,
-  world:second.world,published:second.published,context:ctx}),/first leg receipt/);
+  world:second.world,published:second.published,context:ctx}),/first leg day receipt/);
 });

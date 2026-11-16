@@ -81,11 +81,15 @@ test('candidate official insert is staged with player/fixture guards, never comm
  assert.ok(calls.some(c=>c.sql.includes('INSERT INTO match_lineup_result_receipts')));
  assert.ok(calls.some(c=>c.sql.includes('NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts')));
 });
-test('two unavailable lineups continue current legacy score authority',async()=>{
+test('two incomplete lineups still produce one immutable match receipt with no imaginary players',async()=>{
  const planned=await planMatchSimulationReceiptV1(makeDatabase([]).db,{
   match,world,seed:'temporary-sim-v1-test-seed',context:{mode:'regulation'},now:123456});
- assert.equal(planned.kind,'legacy_fallback');
- assert.equal(planned.writes,undefined);
+ assert.equal(planned.kind,'lineup_candidate');
+ assert.equal(planned.writes.length,1);
+ assert.equal(planned.receipt.algorithmVersion,'temporary-lineup-v1');
+ assert.equal(planned.receipt.result.mode,'fallback_vs_fallback');
+ assert.deepEqual(planned.receipt.result.home.appearances,[]);
+ assert.deepEqual(planned.receipt.result.away.appearances,[]);
 });
 test('published number mismatch, source tampering, wrong kickoff day blocked',async()=>{
  const badNumber={id:19,slot_match_id:'m1_'+'a'.repeat(32),generation:'not-current',season_number:1};

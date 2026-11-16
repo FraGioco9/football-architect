@@ -43,14 +43,18 @@ export function readFrozenMatchRostersV1(
  db:Database,input:{homeClubId:string;awayClubId:string;world:MatchLineupWorldV1}
 ):Promise<MatchRostersFrozenV1>;
 
-export type MatchReceiptPlanV1 =
- | {kind:'legacy_fallback';guards:Statement[];sourceDigest:string;writes?:never}
- | {kind:'lineup_candidate';guards:Statement[];writes:Statement[];
-    receiptHash:string;sourceDigest:string;receipt:{
-      schemaVersion:1;authority:'official';algorithmVersion:'temporary-lineup-v1';
-      rosterSourceDigest:string;sourceCandidateDigest:string;
-      fixture:Record<string,unknown>;result:Record<string,unknown>;
-    }};
+export interface MatchReceiptPlanV1 {
+ kind:'lineup_candidate';
+ guards:Statement[];
+ writes:Statement[];
+ receiptHash:string;
+ sourceDigest:string;
+ receipt:{
+  schemaVersion:1;authority:'official';algorithmVersion:'temporary-lineup-v1';
+  rosterSourceDigest:string;sourceCandidateDigest:string;
+  fixture:Record<string,unknown>;result:Record<string,unknown>;
+ };
+}
 
 export function planMatchSimulationReceiptV1(
  db:Database,input:{

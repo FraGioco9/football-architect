@@ -107,7 +107,6 @@ export async function simulateRegulationV1({homeRoster,awayRoster,matchKey,seed,
  if(typeof matchKey!=='string'||!matchKey||typeof seed!=='string'||seed.length<16||typeof neutral!=='boolean')error('match identity/seed');
  const home=selectAutomaticXiV1(homeRoster),away=selectAutomaticXiV1(awayRoster);
  const mode=home.kind==='real_xi'?(away.kind==='real_xi'?'xi_vs_xi':'xi_vs_fallback'):(away.kind==='real_xi'?'fallback_vs_xi':'fallback_vs_fallback');
- if(mode==='fallback_vs_fallback')return {kind:'use_existing_temporary_score_v1',mode};
  const delta=home.strength-away.strength;
  const lambdaHome=clamp((neutral?1.25:1.40)+delta/30,.40,2.80);
  const lambdaAway=clamp((neutral?1.25:1.10)-delta/30,.40,2.80);
@@ -187,8 +186,6 @@ export async function simulateMatchV1({homeRoster,awayRoster,matchKey,seed,homeC
  if(awayRoster.some(p=>homeIds.has(p?.id)))error('player affiliated to both clubs');
  const neutral=verified.mode==='single-knockout'&&verified.neutral===true;
  const base=await simulateRegulationV1({homeRoster,awayRoster,matchKey,seed,neutral});
- if(base.kind==='use_existing_temporary_score_v1')
-  return {...base,context:verified}; // Explicit delegation, not a fabricated candidate receipt.
  const {homeGoals:regHome,awayGoals:regAway}=base.regulation;
  let homeGoals=regHome,awayGoals=regAway,extraTime=null,penalties=null;
  let resolution='regulation',playedExtraTime=false;
@@ -290,7 +287,6 @@ export async function buildCandidateMatchReceiptV1(match,outcome){
  if(outcome.mode!==(outcome.home.kind==='real_xi'
   ?outcome.away.kind==='real_xi'?'xi_vs_xi':'xi_vs_fallback'
   :outcome.away.kind==='real_xi'?'fallback_vs_xi':'fallback_vs_fallback'))error('receipt mode');
- if(outcome.mode==='fallback_vs_fallback')error('legacy fallback has no new receipt');
  if(events.some(event=>event.type!=='goal'||!['home','away'].includes(event.side)||
   !Number.isInteger(event.minute)||event.minute<1||event.minute>(playedExtraTime?120:90)||
   (event.period==='regulation'&&event.minute>90)||

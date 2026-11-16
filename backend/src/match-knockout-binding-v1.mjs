@@ -23,12 +23,6 @@ const GUARD_START='INSERT INTO world_state(id,generation) SELECT 2,? WHERE NOT E
 const FAIL_SENTINEL='00000000-0000-4000-8000-000000000000';
 const guard=(db,query,args)=>db.prepare(GUARD_START+query+')').bind(FAIL_SENTINEL,...args);
 
-function validScore(result){
- return result&&result.algorithmVersion==='temporary-score-v1'&&result.provenance==='temporary-simulation'&&
-  Number.isSafeInteger(result.homeGoals)&&result.homeGoals>=0&&result.homeGoals<=100&&
-  Number.isSafeInteger(result.awayGoals)&&result.awayGoals>=0&&result.awayGoals<=100;
-}
-
 /** Matches stored plan fixture, slot publication and (for leg 2) a finalized prior result.
  * No direct writes; returned guards MUST be added to the future single D1 batch.
  */
@@ -80,25 +74,57 @@ export async function resolvePublishedKnockoutV1(db,{match,world,published,conte
   const first=plan.fixtures[0]?.fixture;
   if(!first||first.day>=match.day||first.homeClubId!==f.awayClubId||
     first.awayClubId!==f.homeClubId||plan.fixtures[0].leg!==1)fail('first leg chronology');
-  const receipt=await db.prepare('SELECT generation,day,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_day_outcomes WHERE season_number=? AND day=?')
-   .bind(world.seasonNumber,first.day).first();
-  if(!receipt||receipt.generation!==world.generation||receipt.day!==first.day||
-   receipt.calendar_hash!==plan.sourceCalendarHash||receipt.simulation_version!=='temporary-score-v1'||
-   !hex64.test(receipt.outcome_hash))fail('first leg evidence');
-  let payload;
-  try{payload=JSON.parse(receipt.outcome_json)}catch{fail('first leg JSON')}
-  if(!payload||payload.schemaVersion!==1||payload.season!==world.seasonNumber||
-   payload.generation!==world.generation||payload.day!==first.day||
-   payload.calendarHash!==receipt.calendar_hash||payload.simulationVersion!=='temporary-score-v1'||
-   !Array.isArray(payload.results)||await canonicalHash(payload)!==receipt.outcome_hash)
+  const priorSlot=await publishedSlotId({generation:world.generation,season:world.seasonNumber,
+   competitionId:match.competitionId,phaseId:slot.phase_id,slotId:'tie:'+slot.tie_id+':leg:1'});
+  const frozen=await db.prepare('SELECT public_match_id,slot_match_id,generation,season_number,day,fixture_id,algorithm_version,receipt_hash,receipt_json FROM match_lineup_result_receipts WHERE slot_match_id=? AND generation=? AND season_number=?')
+   .bind(priorSlot,world.generation,world.seasonNumber).first();
+  if(!frozen||frozen.slot_match_id!==priorSlot||frozen.generation!==world.generation||
+   frozen.season_number!==world.seasonNumber||frozen.day!==first.day||
+   frozen.fixture_id!==first.id||frozen.algorithm_version!=='temporary-lineup-v1'||
+   !hex64.test(frozen.receipt_hash))fail('first leg evidence');
+  let prior;
+  try{prior=JSON.parse(frozen.receipt_json)}catch{fail('first leg JSON')}
+  const oldFixture=prior?.fixture,oldResult=prior?.result;
+  if(prior?.schemaVersion!==1||prior.authority!=='official'||
+   prior.algorithmVersion!=='temporary-lineup-v1'||
+   oldFixture?.matchId!==frozen.public_match_id||
+   oldFixture?.fixtureId!==first.id||oldFixture?.generation!==world.generation||
+   oldFixture?.season!==world.seasonNumber||oldFixture?.day!==first.day||
+   oldFixture?.homeClubId!==first.homeClubId||oldFixture?.awayClubId!==first.awayClubId||
+   oldResult?.algorithmVersion!=='temporary-lineup-v1'||
+   oldResult?.context?.mode!=='regulation'||
+   oldResult?.resolution!=='regulation'||oldResult?.matchKey!==first.id||
+   !Number.isSafeInteger(oldResult.homeGoals)||oldResult.homeGoals<0||
+   !Number.isSafeInteger(oldResult.awayGoals)||oldResult.awayGoals<0||
+   await hashString(JSON.stringify(prior))!==frozen.receipt_hash)
    fail('first leg receipt');
-  const results=payload.results.filter(x=>x.fixtureId===first.id);
-  if(results.length!==1||!validScore(results[0]))fail('first leg result');
-  verified={mode:'second-leg',firstLegHomeGoals:results[0].homeGoals,
-   firstLegAwayGoals:results[0].awayGoals};
-  guards.push(guard(db,'SELECT 1 FROM season_day_outcomes WHERE season_number=? AND day=? AND generation=? AND calendar_hash=? AND simulation_version=? AND outcome_hash=? AND outcome_json=?',
-   [world.seasonNumber,first.day,world.generation,receipt.calendar_hash,
-    receipt.simulation_version,receipt.outcome_hash,receipt.outcome_json]));
+  const dayRow=await db.prepare('SELECT generation,day,calendar_hash,simulation_version,outcome_hash,outcome_json FROM season_lineup_day_outcomes WHERE season_number=? AND day=?')
+   .bind(world.seasonNumber,first.day).first();
+  if(!dayRow||dayRow.generation!==world.generation||dayRow.day!==first.day||
+   dayRow.calendar_hash!==plan.sourceCalendarHash||
+   dayRow.simulation_version!=='temporary-lineup-v1'||!hex64.test(dayRow.outcome_hash))
+   fail('first leg day');
+  let dayPayload;
+  try{dayPayload=JSON.parse(dayRow.outcome_json)}catch{fail('first leg day JSON')}
+  if(dayPayload?.schemaVersion!==2||dayPayload.season!==world.seasonNumber||
+   dayPayload.generation!==world.generation||dayPayload.day!==first.day||
+   dayPayload.calendarHash!==plan.sourceCalendarHash||
+   dayPayload.simulationVersion!=='temporary-lineup-v1'||
+   !Array.isArray(dayPayload.results)||
+   await canonicalHash(dayPayload)!==dayRow.outcome_hash)fail('first leg day receipt');
+  const reference=dayPayload.results.filter(x=>x.matchId===frozen.public_match_id||x.fixtureId===first.id);
+  if(reference.length!==1||reference[0].matchId!==frozen.public_match_id||
+   reference[0].fixtureId!==first.id||reference[0].receiptHash!==frozen.receipt_hash||
+   reference[0].homeGoals!==oldResult.homeGoals||reference[0].awayGoals!==oldResult.awayGoals)
+   fail('first leg result link');
+  verified={mode:'second-leg',firstLegHomeGoals:oldResult.homeGoals,
+   firstLegAwayGoals:oldResult.awayGoals};
+  guards.push(guard(db,'SELECT 1 FROM match_lineup_result_receipts WHERE slot_match_id=? AND generation=? AND season_number=? AND day=? AND fixture_id=? AND receipt_hash=? AND receipt_json=?',
+   [priorSlot,world.generation,world.seasonNumber,first.day,first.id,
+    frozen.receipt_hash,frozen.receipt_json]));
+  guards.push(guard(db,'SELECT 1 FROM season_lineup_day_outcomes WHERE season_number=? AND day=? AND generation=? AND calendar_hash=? AND simulation_version=? AND outcome_hash=? AND outcome_json=?',
+   [world.seasonNumber,first.day,world.generation,dayRow.calendar_hash,
+    dayRow.simulation_version,dayRow.outcome_hash,dayRow.outcome_json]));
  }
  if(canonical(context)!==canonical(verified))fail('untrusted context');
  return {context:verified,guards,phaseId:slot.phase_id,tieId:slot.tie_id,leg:slot.leg,

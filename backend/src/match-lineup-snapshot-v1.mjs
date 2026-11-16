@@ -115,9 +115,6 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
   matchKey:match.fixtureId,seed,homeClubId:match.homeClubId,
   awayClubId:match.awayClubId,context
  });
- if(outcome.kind==='use_existing_temporary_score_v1')return {
-  kind:'legacy_fallback',guards:snapshot.guards,sourceDigest:snapshot.sourceDigest
- };
  const candidate=await buildCandidateMatchReceiptV1({
   matchId:match.matchId,fixtureId:match.fixtureId,competitionId:match.competitionId,
   season:match.season,day:match.day,generation:world.generation,sourceHash:match.sourceHash,

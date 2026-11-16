@@ -69,9 +69,17 @@ test('mixed mode only attributes goals to actual XI, reconciles appearances',asy
  }
 });
 
-test('both fallback sides delegate to unchanged temporary-score-v1',async()=>{
- assert.deepEqual(await play([],[]),{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback'});
- assert.deepEqual(await play(roster().slice(0,10),roster().slice(0,10)),{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback'});
+test('two fallback sides also use the ONE new simulator with unattributed team goals',async()=>{
+ for(const side of [[],roster().slice(0,10)]){
+  const result=await play(side,side);
+  assert.equal(result.algorithmVersion,'temporary-lineup-v1');
+  assert.equal(result.mode,'fallback_vs_fallback');
+  assert.deepEqual(result.home.appearances,[]);
+  assert.deepEqual(result.away.appearances,[]);
+  assert.equal(result.home.unattributedGoals,result.regulation.homeGoals);
+  assert.equal(result.away.unattributedGoals,result.regulation.awayGoals);
+  assert.deepEqual(result,await play(side,side));
+ }
 });
 
 
@@ -83,7 +91,6 @@ const receiptMatch={matchId:17,season:1,day:13,generation:'world-test-generation
  competitionId:'IT-1',fixtureId:'season:1:IT-1:N01:IT-1:IT-2',
  homeClubId:'IT-1',awayClubId:'IT-2',sourceHash:'a'.repeat(64)};
 const assertReconciled=(outcome)=>{
- if(outcome.kind==='use_existing_temporary_score_v1')return;
  assert.equal(outcome.regulation.home+(outcome.extraTime?.home??0),outcome.homeGoals);
  assert.equal(outcome.regulation.away+(outcome.extraTime?.away??0),outcome.awayGoals);
  for(const sideName of ['home','away']){
@@ -154,13 +161,15 @@ test('second-leg uses aggregate and not away goals; neutral final removes home a
 });
 test('no fabricated identities across sides, invalid contexts fail closed, and dual fallback delegates',async()=>{
  const both=await contextPlay([],[],{mode:'single-knockout'});
- assert.deepEqual(both,{kind:'use_existing_temporary_score_v1',mode:'fallback_vs_fallback',
-   context:{mode:'single-knockout'}});
+ assert.equal(both.algorithmVersion,'temporary-lineup-v1');
+ assert.equal(both.mode,'fallback_vs_fallback');
+ assertReconciled(both);
+ await buildCandidateMatchReceiptV1(receiptMatch,both);
  await assert.rejects(()=>contextPlay(roster(),roster().slice(0,1),null),/context/);
  await assert.rejects(()=>contextPlay(roster(),[],{mode:'second-leg',firstLegHomeGoals:-1,firstLegAwayGoals:0}),/context/);
  await assert.rejects(()=>contextPlay(roster(),[],{mode:'regulation',neutral:true}),/context/);
  await assert.rejects(()=>contextPlay(roster(),roster(),{mode:'regulation'}),/both clubs/);
- await assert.rejects(()=>buildCandidateMatchReceiptV1(receiptMatch,both),/receipt inputs/);
+ assert.equal((await buildCandidateMatchReceiptV1(receiptMatch,both)).result.mode,'fallback_vs_fallback');
 });
 test('candidate receipt rejects mismatched provenance, scorer ghost, and score tampering',async()=>{
  const result=await contextPlay(roster(),[],{mode:'regulation'});
