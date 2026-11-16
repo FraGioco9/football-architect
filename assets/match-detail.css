@@ -164,6 +164,12 @@ html[data-theme="light"] .app-match-scoreboard[data-scoreboard-theme="neutral"]{
 .app-match-lineup-rows{display:grid;flex:1;grid-template-rows:repeat(11,minmax(18px,1fr));gap:5px;margin:10px 0 0;padding:0;list-style:none}
 .app-match-lineup-row{box-sizing:border-box;display:flex;align-items:center;min-height:18px;padding:0 6px}
 .app-match-lineup-reserved{display:block;width:100%;height:1px;background:var(--line);opacity:.7}
+.app-match-lineup-row{gap:6px;min-width:0;font-size:clamp(10px,.85vw,12px)}
+.app-match-lineup-role{flex:0 0 25px;color:var(--muted);font-size:10px;font-weight:700}
+.app-match-lineup-player{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)!important;text-decoration:none}
+.app-match-lineup-player:hover,.app-match-lineup-player:focus-visible{text-decoration:underline;text-underline-offset:2px}
+.app-match-lineup-rating{flex:0 0 29px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;font-weight:750}
+.app-match-lineup-rows[aria-hidden="true"] .app-match-lineup-row{pointer-events:none}
 .app-match-visual{min-width:0;margin:0}
 .app-match-pitch-frame{position:relative;isolation:isolate;width:100%;aspect-ratio:105/68;min-width:0}
 .app-match-pitch-overlay{
