@@ -95,6 +95,9 @@ test('FIXTURES loading distinguishes unresolved state from confirmed empty sched
  assert.equal(panel.dataset.faContentState,'unknown');
  assert.equal(empty.hidden,true,'a pending load never shows a misleading empty banner');
  assert.equal(toolbar.hidden,false,'matchday selector and arrows remain on screen during loading');
+ assert.equal(r.fields.get('app-fixtures-round').disabled,true);
+ assert.equal(r.fields.get('app-fixtures-previous').disabled,true);
+ assert.equal(r.fields.get('app-fixtures-next').disabled,true);
  r.document.documentElement.dataset.faStandingsLoading='false';
  r.route.set({matchday:2});
  assert.equal(panel.dataset.faContentState,'empty','a completed static load with no schedule shows an honest empty state');
@@ -104,6 +107,8 @@ test('FIXTURES loading distinguishes unresolved state from confirmed empty sched
  assert.equal(panel.dataset.faContentState,'available');
  assert.equal(empty.hidden,true);
  assert.equal(toolbar.hidden,false);
+ assert.equal(r.fields.get('app-fixtures-round').disabled,false);
+ assert.equal(r.fields.get('app-fixtures-next').disabled,false);
  r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:1,revision:2,seasonData:{season:1,fixtures:null}};
  r.view.prepare(null)();
  assert.equal(panel.dataset.faContentState,'empty','explicitly absent fixtures count as confirmed empty');
@@ -124,10 +129,15 @@ test('FIXTURES refresh: public draw pending after global bootstrap retains contr
  assert.equal(typeof release,'function','published fixture request must start');
  assert.equal(panel.dataset.faContentState,'unknown');
  assert.equal(toolbar.hidden,false,'matchday selector stays rendered even without the global loading flag');
+ assert.equal(r.fields.get('app-fixtures-round').disabled,true);
+ assert.equal(r.fields.get('app-fixtures-previous').disabled,true);
+ assert.equal(r.fields.get('app-fixtures-next').disabled,true);
  assert.equal(empty.hidden,true);
  r.document.documentElement.dataset.faStandingsLoading='false';
  r.route.set({matchday:2});
  assert.equal(toolbar.hidden,false,'matchday selector and arrows survive a completed bootstrap');
+ assert.equal(r.fields.get('app-fixtures-round').disabled,true);
+ assert.equal(r.fields.get('app-fixtures-next').disabled,true);
  assert.equal(panel.dataset.faContentState,'unknown');
  assert.equal(empty.hidden,true);
  release({ok:true,status:200,json:async()=>({
@@ -139,7 +149,9 @@ test('FIXTURES refresh: public draw pending after global bootstrap retains contr
  assert.equal(toolbar.hidden,false);
  assert.equal(empty.hidden,true);
  assert.equal(r.fields.get('app-fixtures-list').children.filter(row=>row.dataset.fixtureMatch).length,8);
- assert.equal(r.fields.get('app-fixtures-round').value,'2','selection made while pending survives hydration');
+ assert.equal(r.fields.get('app-fixtures-round').value,'2','requested round from the URL survives hydration');
+ assert.equal(r.fields.get('app-fixtures-round').disabled,false);
+ assert.equal(r.fields.get('app-fixtures-next').disabled,false);
 });
 
 test('FIXTURES refresh: late authoritative world readiness starts draw lookup without navigation',async()=>{
@@ -630,12 +642,22 @@ test('Fixtures navigation is visible while loading and hidden for a loaded empty
 });
 
 
-test('Fixtures loading navigation changes the requested matchday before a schedule arrives',()=>{
+test('Fixtures loading controls stay visible but disabled until actual matches arrive',()=>{
  const r=setup();r.document.documentElement.dataset.faStandingsLoading='true';r.route.set({matchday:1});
- r.fields.get('app-fixtures-next').emit('click');
- assert.equal(r.route.get().matchday,2);
- r.view.prepare(schedule(divisions[0]))();
- assert.equal(r.fields.get('app-fixtures-round').value,'2');
+ const {fields,route,view}=r;
+ assert.equal(fields.get('app-fixtures-toolbar').hidden,false);
+ assert.equal(fields.get('app-fixtures-round').disabled,true);
+ assert.equal(fields.get('app-fixtures-previous').disabled,true);
+ assert.equal(fields.get('app-fixtures-next').disabled,true);
+ fields.get('app-fixtures-next').emit('click');
+ fields.get('app-fixtures-previous').emit('click');
+ assert.equal(route.get().matchday,1,'disabled arrows do not change rounds');
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ view.prepare(schedule(divisions[0]))();
+ assert.equal(fields.get('app-fixtures-round').disabled,false);
+ assert.equal(fields.get('app-fixtures-next').disabled,false);
+ fields.get('app-fixtures-next').emit('click');
+ assert.equal(route.get().matchday,2,'navigation activates after matches appear');
 });
 
 test('published domestic Fixtures appear at day 2, before worldwide calendar publication',async()=>{

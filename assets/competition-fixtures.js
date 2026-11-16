@@ -237,7 +237,7 @@
     const hasSchedule=available&&([...rounds.values()].some(games=>games.length)||postseason.length>0);
     fields.toolbar.hidden=!unresolved&&!hasSchedule;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
-    fields.round.value=String(selected);fields.round.disabled=false;
+    fields.round.value=String(selected);fields.round.disabled=!hasSchedule||unresolved;
     const label=document.getElementById('app-fixtures-round-label');
     if(label)label.hidden=isPostseason;
     const selectedLabel=isPostseason?element('span','',window.faCompetitionRulesView?.fixturesChoiceLabel?.(definition,selectedChoice,document.documentElement.lang)||selectedChoice.labelKey):element('span','',String(selected));
@@ -247,8 +247,8 @@
     roundMenu.sync(String(selected));
     if(!available)roundMenu.close();
     const choiceIndex=configured.findIndex(c=>c.value===selected);
-    fields.previous.disabled=choiceIndex===0;
-    fields.next.disabled=choiceIndex===configured.length-1;
+    fields.previous.disabled=fields.round.disabled||choiceIndex===0;
+    fields.next.disabled=fields.round.disabled||choiceIndex===configured.length-1;
     fields.empty.hidden=true;fields.list.hidden=!available;fields.summary.hidden=!available;
     const matches=[];
     if(available){
@@ -328,6 +328,7 @@
     window.faAppRenderLanguage?.();
   }
   function select(value){
+    if(fields.round.disabled)return;
     const round=/^[1-9]\d*$/.test(String(value))?Number(value):value;
     if(validChoice(round)){
       navigation.set({matchday:displayValue(round)});

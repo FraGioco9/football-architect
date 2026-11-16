@@ -43,6 +43,7 @@ export function mountClubFixtures({host,manifest}){
   tooltip.style.top=Math.max(edge,Math.min(innerHeight-height-edge,top))+'px';
  };
  const navigate=(key,value)=>{
+  if(snapshot.coverage==='loading')return;
   const chosen=season();if(chosen===null)return;
   const url=new URL(location.href);
   if(key==='season'){
@@ -95,7 +96,9 @@ export function mountClubFixtures({host,manifest}){
     const menu=control.querySelector('[role=listbox]'),nextMenu=next.querySelector('[role=listbox]');
     menu.replaceChildren(...nextMenu.childNodes);menu.setAttribute('aria-label',nextMenu.getAttribute('aria-label'));
     control.querySelector('[data-club-fixture-value]').replaceChildren(...next.querySelector('[data-club-fixture-value]').childNodes);
-    control.querySelector('button').setAttribute('aria-label',next.querySelector('button').getAttribute('aria-label'));
+    const trigger=control.querySelector('button'),incomingTrigger=next.querySelector('button');
+    trigger.setAttribute('aria-label',incomingTrigger.getAttribute('aria-label'));
+    trigger.disabled=incomingTrigger.disabled;
     next.replaceWith(control);
    }
    const focusedNext=panel.querySelector('[data-club-fixtures-next]')===document.activeElement;
