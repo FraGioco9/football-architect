@@ -3,6 +3,7 @@
  */
 import {ATTRIBUTES} from './players-generator-core.mjs';
 import {simulateMatchV1,buildCandidateMatchReceiptV1,LINEUP_SIMULATOR_VERSION} from './temporary-lineup-v1.mjs';
+import {resolvePublishedKnockoutV1} from './match-knockout-binding-v1.mjs';
 
 const clubPattern=/^(?:IT|ENG|ES|DE|FR|PT|NL|BR)-(?:[1-9]|[1-3][0-9]|40)$/;
 const hex64=/^[0-9a-f]{64}$/;
@@ -102,10 +103,13 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
   published.season_number!==world.seasonNumber)fail('published match number');
  const league=await db.prepare('SELECT source_fixture_id,competition_id,scheduled_day,home_club_id,away_club_id,source_hash FROM season_match_slots WHERE match_id=?')
   .bind(published.slot_match_id).first();
- if(!league||league.source_fixture_id!==match.fixtureId||league.competition_id!==match.competitionId||
+ if(league&&(league.source_fixture_id!==match.fixtureId||league.competition_id!==match.competitionId||
   league.scheduled_day!==match.day||league.home_club_id!==match.homeClubId||
-  league.away_club_id!==match.awayClubId||league.source_hash!==match.sourceHash)
+  league.away_club_id!==match.awayClubId||league.source_hash!==match.sourceHash))
   fail('published league source');
+ // A missing league slot is not permission to invent a knockout fixture:
+ // independently validate an existing published reservation plus resolved tie proof.
+ const knockout=league?null:await resolvePublishedKnockoutV1(db,{match,world,published,context});
  const outcome=await simulateMatchV1({
   homeRoster:snapshot.homeRoster,awayRoster:snapshot.awayRoster,
   matchKey:match.fixtureId,seed,homeClubId:match.homeClubId,
@@ -127,10 +131,11 @@ export async function planMatchSimulationReceiptV1(db,{match,world,seed,context,
  const receiptHash=await digest(receipt);
  const guards=[
   ...snapshot.guards,
+  ...(knockout?.guards??[]),
   guard(db,'SELECT 1 FROM public_match_numbers WHERE id=? AND slot_match_id=? AND generation=? AND season_number=?',
    [match.matchId,published.slot_match_id,world.generation,world.seasonNumber]),
-  guard(db,'SELECT 1 FROM season_match_slots WHERE match_id=? AND source_fixture_id=? AND competition_id=? AND scheduled_day=? AND home_club_id=? AND away_club_id=? AND source_hash=?',
-   [published.slot_match_id,match.fixtureId,match.competitionId,match.day,match.homeClubId,match.awayClubId,match.sourceHash]),
+  ...(league?[guard(db,'SELECT 1 FROM season_match_slots WHERE match_id=? AND source_fixture_id=? AND competition_id=? AND scheduled_day=? AND home_club_id=? AND away_club_id=? AND source_hash=?',
+   [published.slot_match_id,match.fixtureId,match.competitionId,match.day,match.homeClubId,match.awayClubId,match.sourceHash])]:[]),
   guard(db,'SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM match_lineup_result_receipts WHERE public_match_id=?)',[match.matchId])
  ];
  const insert=db.prepare('INSERT INTO match_lineup_result_receipts(public_match_id,slot_match_id,generation,season_number,day,fixture_id,algorithm_version,receipt_hash,receipt_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
