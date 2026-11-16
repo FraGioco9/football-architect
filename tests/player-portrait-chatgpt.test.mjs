@@ -113,7 +113,8 @@ test('V4 ChatGPT handoff contains the exact canonical V4 prompt once and fixed a
  assert.ok(!result.prompt.includes('NEVER INCLUDE PLAYER NAME'));
  assert.ok(!result.prompt.includes('184'));
  assert.ok(!result.prompt.includes('CB'));
- assert.doesNotMatch(result.prompt,/teenager|teenage|16-year|17-year|age bands/i);
+ assert.doesNotMatch(result.prompt,/teenager|teenage|16-year|17-year/i);
+ assert.match(result.prompt,/Adult male is the only age instruction/i);
  assert.equal(Object.isFrozen(result),true);
 });
 
