@@ -453,7 +453,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.firstOpposingShoe.tick+' · no verified reception':'')+
    (snap.carryTrace?' · CARRY '+snap.carryTrace.team.toUpperCase()+
     ' · observed ground path '+number(snap.carryTrace.path2DM)+' m':'');
-  if(snap.physicalReceiverTap){
+  if(snap.realReleaseSequence?.latestCompleted?.sourceVerifiedSequence){
+   const seq=snap.realReleaseSequence.latestCompleted;
+   status.textContent='M30 observed: real shoe END tick '+seq.firstTrueShoeEndTick+
+    ' and independent exclusive START tick '+seq.firstTrueSubsequentShoeStartTick+
+    '; original action '+(seq.actualActionAfterTap?.action??'none')+
+    '. No official dribble, control or possession.';
+  }else if(snap.physicalReceiverTap){
    status.textContent='M30: real bounded second-shoe Rapier tap; watch native END/START. No possession awarded.';
   }else if(snap.physicalReceiverChoice){
    status.textContent='Research: genuine second shoe START → '+

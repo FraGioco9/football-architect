@@ -119,6 +119,19 @@ test('M30 native HOME/AWAY physical release: source-matched A/B and replay',
    assert.ok(end,'original shoe release audit must end from native evidence');
    assert.equal(end.actorId,side+'-9');
    assert.ok(end.observedTicks>=1&&end.observedTicks<=M30_OBSERVATION_TICKS);
+   // The original source ACTUALLY demonstrated a release then an
+   // independently reacquired genuine shoe START on both mirrored sides.
+   // This is a physics gate, not an official dribble/possession award.
+   assert.equal(end.genuineNativeReleaseObserved,true);
+   assert.equal(end.genuineNativeRecontactAfterRelease,true);
+   assert.equal(end.exclusiveNativeRecontact,true);
+   assert.ok(end.firstTrueShoeEndTick>63);
+   assert.ok(end.firstTrueSubsequentShoeStartTick>end.firstTrueShoeEndTick);
+   assert.ok(end.actualOpposingPressureTicks>0);
+   assert.ok(end.nearestActualDefenderM<3);
+   assert.equal(end.realOpponentFirstShoeStartTick,null);
+   assert.equal(end.actualActionAfterTap?.action,'clearance',
+    'a real later original action is not a successful possession claim');
    assert.equal(end.readOnly,true);
    assert.equal(end.verifiedPossession,false);
    assert.ok(end.originalShoeManifoldTicks>=0);
