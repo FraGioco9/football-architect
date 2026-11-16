@@ -230,8 +230,10 @@
     const isPostseason=typeof selected==='string';
     const selectedChoice=configured.find(c=>c.value===selected);
     const loading=document.documentElement.dataset.faStandingsLoading==='true';
+    // The public draw may still be loading after the global season loader has settled.
+    const unresolved=loading||pendingKey!==null;
     const hasSchedule=available&&([...rounds.values()].some(games=>games.length)||postseason.length>0);
-    fields.toolbar.hidden=!loading&&!hasSchedule;
+    fields.toolbar.hidden=!unresolved&&!hasSchedule;
     fields.current.hidden=!available||currentMatchday===null||selected===currentMatchday;
     fields.round.value=String(selected);fields.round.disabled=false;
     const label=document.getElementById('app-fixtures-round-label');
@@ -314,12 +316,13 @@
     const emptyRound=available&&((international&&!next.some(item=>item.dataset.fixtureMatch))||
       (!international&&!isPostseason&&matches.length===0));
     const panel=document.getElementById('competition-panel-fixtures');
+    const confirmedEmpty=Boolean(absent||emptyRound||(!available&&!unresolved));
     if(panel){
-      panel.dataset.faContentState=absent||emptyRound?'empty':available?'available':'unknown';
+      panel.dataset.faContentState=confirmedEmpty?'empty':available?'available':'unknown';
       panel.dataset.faContentSeason=String(context?.selectedSeason??'');
       panel.dataset.faContentRevision=String(context?.revision??'');
     }
-    if(absent||emptyRound){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
+    if(confirmedEmpty){fields.empty.hidden=false;fields.list.hidden=true;fields.summary.hidden=true;}
     window.faAppRenderLanguage?.();
   }
   function select(value){
@@ -398,6 +401,8 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
+    // Keep navigation and the existing fixture skeleton while the draw request is in flight.
+    render();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
        {credentials:'omit',cache:'no-store',redirect:'error'});
@@ -427,7 +432,7 @@
       publishedSeason=String(season);publishedKey=key;commit();
     }catch{
       if(seq===fetchSequence){publishedSeason=null;publishedKey=null;}
-    }finally{if(pendingKey===key)pendingKey=null;}
+    }finally{if(pendingKey===key){pendingKey=null;render();}}
   }
 
   window.addEventListener('fa:competition-context-change',contextChanged);

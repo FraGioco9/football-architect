@@ -82,27 +82,81 @@ const schedule=(d,played=15)=>createPreviewStandings(d,30).fixtures.map(f=>({...
  homeGoals:f.round<=played?f.homeGoals:null,awayGoals:f.round<=played?f.awayGoals:null}));
 const contents=n=>n.textContent+n.children.map(contents).join('');
 
-test('FIXTURES refresh: unresolved schedule remains skeleton, with no transient empty-state message',()=>{
+test('FIXTURES loading distinguishes unresolved state from confirmed empty schedule',()=>{
  const css=read('assets/app.css');
  assert.ok(css.includes('#competition-panel-fixtures[data-fa-content-state="unknown"] .app-fixtures-skeleton{display:grid}'));
  assert.ok(css.includes('#competition-panel-fixtures[data-fa-content-state="unknown"] :is(#app-fixtures-list,#app-fixtures-empty,#app-fixtures-summary){display:none!important}'));
- const r=setup(),panel=r.fields.get('competition-panel-fixtures'),empty=r.fields.get('app-fixtures-empty');
+ const r=setup(),panel=r.fields.get('competition-panel-fixtures'),empty=r.fields.get('app-fixtures-empty'),toolbar=r.fields.get('app-fixtures-toolbar');
+ assert.equal(panel.dataset.faContentState,'empty','a static page with no pending provider is genuinely empty');
+ assert.equal(empty.hidden,false);
+ assert.equal(toolbar.hidden,true);
+ r.document.documentElement.dataset.faStandingsLoading='true';
+ r.route.set({matchday:2});
  assert.equal(panel.dataset.faContentState,'unknown');
- assert.equal(empty.hidden,true,'pre-hydration is not a confirmed empty result');
+ assert.equal(empty.hidden,true,'a pending load never shows a misleading empty banner');
+ assert.equal(toolbar.hidden,false,'matchday selector and arrows remain on screen during loading');
  r.document.documentElement.dataset.faStandingsLoading='false';
  r.route.set({matchday:2});
- assert.equal(panel.dataset.faContentState,'unknown','global bootstrap completion must not reveal the empty banner');
- assert.equal(empty.hidden,true);
+ assert.equal(panel.dataset.faContentState,'empty','a completed static load with no schedule shows an honest empty state');
+ assert.equal(empty.hidden,false);
+ assert.equal(toolbar.hidden,true);
  r.view.prepare(schedule(divisions[0]))();
  assert.equal(panel.dataset.faContentState,'available');
  assert.equal(empty.hidden,true);
- r.view.prepare(null)();
- assert.equal(panel.dataset.faContentState,'unknown','refresh without resolved data restores the skeleton');
- assert.equal(empty.hidden,true);
+ assert.equal(toolbar.hidden,false);
  r.window.faCompetitionContext={...r.window.faCompetitionContext,selectedSeason:1,revision:2,seasonData:{season:1,fixtures:null}};
- r.route.set({matchday:1});
- assert.equal(panel.dataset.faContentState,'empty','only a matching explicit empty schedule exposes the message');
+ r.view.prepare(null)();
+ assert.equal(panel.dataset.faContentState,'empty','explicitly absent fixtures count as confirmed empty');
  assert.equal(empty.hidden,false);
+});
+
+test('FIXTURES refresh: public draw pending after global bootstrap retains controls, then hydrates',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
+ const committed=createPreviewStandings(division,30).fixtures.map((f,i)=>({
+  matchId:String(i+1),phaseId:'league',round:f.round,day:13+f.round-1,
+  homeClubId:'IT-'+f.homeId,awayClubId:'IT-'+f.awayId,marker:'N'+String(f.round).padStart(2,'0')
+ }));
+ let release;
+ const r=setup(division,routeRegistry,{source,fetchImpl:()=>new Promise(resolve=>{release=resolve})});
+ const panel=r.fields.get('competition-panel-fixtures'),toolbar=r.fields.get('app-fixtures-toolbar'),empty=r.fields.get('app-fixtures-empty');
+ assert.equal(typeof release,'function','published fixture request must start');
+ assert.equal(panel.dataset.faContentState,'unknown');
+ assert.equal(toolbar.hidden,false,'matchday selector stays rendered even without the global loading flag');
+ assert.equal(empty.hidden,true);
+ r.document.documentElement.dataset.faStandingsLoading='false';
+ r.route.set({matchday:2});
+ assert.equal(toolbar.hidden,false,'matchday selector and arrows survive a completed bootstrap');
+ assert.equal(panel.dataset.faContentState,'unknown');
+ assert.equal(empty.hidden,true);
+ release({ok:true,status:200,json:async()=>({
+  schemaVersion:1,providerId:'authoritative-world',season:1,competitionId:'IT-1',
+  status:'published',fixtures:committed,provenance:{kind:'authoritative',sourceKind:'domestic',sourceHash:'a'.repeat(64)}
+ })});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(panel.dataset.faContentState,'available');
+ assert.equal(toolbar.hidden,false);
+ assert.equal(empty.hidden,true);
+ assert.equal(r.fields.get('app-fixtures-list').children.filter(row=>row.dataset.fixtureMatch).length,8);
+ assert.equal(r.fields.get('app-fixtures-round').value,'2','selection made while pending survives hydration');
+});
+
+test('FIXTURES refresh: confirmed 404 after pending draw restores honest empty state',async()=>{
+ const division=divisions.find(d=>d.id==='IT-1');
+ const source={source:'authoritative',worldStatus:'ready',
+  world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:7,seasonNumber:1,day:2,phase:'active'}};
+ let release;
+ const r=setup(division,routeRegistry,{source,fetchImpl:()=>new Promise(resolve=>{release=resolve})});
+ const panel=r.fields.get('competition-panel-fixtures'),toolbar=r.fields.get('app-fixtures-toolbar'),empty=r.fields.get('app-fixtures-empty');
+ assert.equal(panel.dataset.faContentState,'unknown');
+ assert.equal(empty.hidden,true);
+ assert.equal(toolbar.hidden,false);
+ release({ok:false,status:404});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(panel.dataset.faContentState,'empty');
+ assert.equal(empty.hidden,false);
+ assert.equal(toolbar.hidden,true);
 });
 
 // Catches a missing clock listener, wrong cup projection/season, or clock-derived scores.
