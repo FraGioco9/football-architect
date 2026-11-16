@@ -1,0 +1,23 @@
+#628 Phase M14 — unstaged 22-player multi-territory native feedback and shoe/body source audit
+
+## Scope and unchanged physics source
+
+M13 introduced strictly research-only Rapier solver XY feedback from authentic spontaneous opposing-player contacts into the same original canonical 22-player mover. M14 extends physical validation to **new independent original initial ball territories**, HOME/AWAY symmetry, source-real shoe/body cohabitation, and the possibility of simultaneous native player contacts. All new tests are additive to the already accepted five Action LABs and M1–M13 research scenes. M14 does **not** add artificial initial players, enlarge 0.49m body colliders, create event-pair fixtures, teleport the ball, or activate a football result.
+
+## Source and all-player invariants
+
+- Each trial starts with the **original 22 `INITIAL_PLAYERS`**, one original 60Hz Rapier World, and one shared native Rapier event queue feeding the original shoe/ball and body observers. The only variable chosen before tick zero is an authentic M11 ball territory (12 fixed positions, HOME/AWAY mirror). Players independently press and support based on the observed actual ball, using M12's *opt-in* source-driven convergence.
+- Exactly paired experimental modes: **feedback** uses M13's authenticated native solver XY response with 22-player acceptance; **observe** runs the identical original start and Rapier shoe/body sources with same press convergence policy but **no mover feedback authority**. All ordinary match paths, M8 body-encounter and five accepted Action LABs remain unchanged.
+- Every frame verifies **22 ordered original player IDs**, actual previous-to-current 60Hz displacement <=7m/s, speed <=7m/s, 105×68m pitch and the **global >=0.98m planar interplayer gap**. The *post-feedback* snapshot (not just the pre-Rapier intended snapshot) is checked. Real press identities and defensive/midfield/forward lines and team shapes must remain finite and valid on each feedback and observational control frame.
+- Real body START and END events are counted only from Rapier's **single actual shared native queue**, exact tick and native `rapier-body-start/end` source, matching original body-pair IDs and cumulative bridge counters; real shoe STARTs are counted independently from the same source. The audit records the maximum number of **concurrent authentic active body pairs** and any actual same-tick body + shoe START. Neither a pair proximity nor a testing expectation is a real Rapier contact. If multiple simultaneous pairs are not physically observed in the unmodified mover, that acceptance item explicitly remains OPEN.
+- Feedback is submitted only to M13's existing atomic same-tick all-22 source-authenticated gate, then acknowledged once. Record genuine accepted vs rejected responses, first source START, first physically applied correction, and body/shoe event totals. On a no-op or rejected correction no canonical position, velocity or heading may be modified; no tackle, possession, pass, interception, result or gameplay action is awarded.
+
+## Reproduction and tests
+
+`cd match-engine && npm run audit:natural-body-feedback` runs the **full 12 territories × HOME/AWAY × feedback/observe** 225-tick matrix (48 original-world sessions) and prints a detailed `ME_628_M14_FULL_NATURAL_FEEDBACK` record. The focused M14 Node test runs **eight selected original regions × two sides × feedback/observe** (32 sessions), including positive centre / middle-halfspace and untouched flank/box/recovery territories. It also independently replays the original HOME/AWAY centre feedback/observation sessions and rejects a forged **multiple-active-pair** proposal with no native START, ensuring no partial mover write.
+
+The focused audit reports counts observed in reality, not anticipated positive results: body contacts may be absent outside centre and middle-halfspace; concurrent distinct player-pair contact may not occur at all. Preserve those negatives as research constraints instead of widening colliders or forcing action.
+
+## Acceptance boundary
+
+M14 does not enable generic match body collisions outside explicit M12–M13 research options. In particular, its supported same-world/native-foot coexistence is **observation**, not a complete football shoe+body gameplay interaction model. Confirmation of multiple truly concurrent opposing contacts, realistic unstaged multi-ball play, the physically authoritative native-body trajectory across full regulation football actions, and C2–C5/D1–D5 remain outstanding until separately tested. Phase M and phases I/T/F remain OPEN, [PR #633](https://github.com/FraGioco9/football-architect/pull/633) remains Draft/HOLD; no Ready, merge, deploy, remote D1.
