@@ -137,6 +137,7 @@ test('#577 refuses arbitrary palette entries or fake logos',()=>{
 });
 test('#577 never fabricates scores, lineups, competition branding or match outcomes',()=>{
  const js=read('assets/match-detail.js');
+ const html=read('matches/_shared/index.html');
  assert.match(js,/fetch\('\/api\/matches\/'\+matchId/);
  assert.match(js,/import\('\/assets\/match-scoreboard-themes\.mjs'\)/);
  assert.match(js,/const intended=theme\.logoAsset\?'\/'\+theme\.logoAsset:''/);

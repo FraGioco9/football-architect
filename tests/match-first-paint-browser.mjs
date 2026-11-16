@@ -358,7 +358,9 @@ for(const [engine,driver] of Object.entries(engines)){
       assert.deepEqual(form,['wdlww','wldwl']);
       // Language changes update glyphs, not recorded results.
       await page.evaluate(()=>document.documentElement.lang='it');
-      await page.waitForFunction(()=>document.querySelector('[data-match-side-title="home"]')?.textContent==='Casa');
+      await page.waitForFunction(()=>document.querySelector('[data-match-label="position"]')?.textContent==='Posizione');
+      assert.equal(await page.locator('[data-match-side-title="home"]').textContent(),officialClub('IT-1').primaryName,
+       'Localization never replaces an official club name with a generic Home label');
       assert.deepEqual(await page.locator('[data-match-form="home"] .app-match-form-cell').allTextContents(),['V','N','P','V','V']);
       await page.evaluate(()=>document.documentElement.lang='en');
      }
