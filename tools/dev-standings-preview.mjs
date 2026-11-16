@@ -47,6 +47,7 @@ const MATCH_ENGINE_LAB = Object.freeze({
   '/__fa_match_engine__/real-pressured-first-touch-m26.mjs': 'match-engine/src/real-pressured-first-touch-m26.mjs',
   '/__fa_match_engine__/physical-receiver-choice-m27.mjs': 'match-engine/src/physical-receiver-choice-m27.mjs',
   '/__fa_match_engine__/real-second-touch-follow-through-m28.mjs': 'match-engine/src/real-second-touch-follow-through-m28.mjs',
+  '/__fa_match_engine__/native-control-evidence-gate-m29.mjs': 'match-engine/src/native-control-evidence-gate-m29.mjs',
   '/__fa_match_engine__/action-lab-scenarios.mjs': 'match-engine/src/action-lab-scenarios.mjs',
   '/__fa_match_engine__/research-shot-initial-lineup.mjs': 'match-engine/src/research-shot-initial-lineup.mjs',
   '/__fa_match_engine__/research-control-initial-lineup.mjs': 'match-engine/src/research-control-initial-lineup.mjs',

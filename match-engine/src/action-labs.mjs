@@ -10,6 +10,8 @@ import {createRealPressuredFirstTouchObserver}
  from './real-pressured-first-touch-m26.mjs';
 import {createRealSecondTouchFollowThrough}
  from './real-second-touch-follow-through-m28.mjs';
+import {createNativeControlEvidenceGateM29}
+ from './native-control-evidence-gate-m29.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
@@ -120,6 +122,8 @@ export function createControlledActionLab(RAPIER,id,{
   createRealPressuredFirstTouchObserver():null;
  const followThroughObserver=adaptiveDecision?
   createRealSecondTouchFollowThrough():null;
+ const controlGateObserver=adaptiveDecision?
+  createNativeControlEvidenceGateM29():null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -247,6 +251,10 @@ export function createControlledActionLab(RAPIER,id,{
   const postDeferContinuity=followThroughObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,action
   })??null;
+  const physicalControlEvidence=controlGateObserver?.observe({
+   physics,playerFrame,foot,
+   solver:engine.footContactSolverSnapshot(),m28:postDeferContinuity,action
+  })??null;
   const pressureEvidence=pressureObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,action
   })??null;
@@ -267,7 +275,8 @@ export function createControlledActionLab(RAPIER,id,{
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
-   ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity}:{}),
+   ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity,
+    physicalControlEvidence}:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -383,6 +392,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     snap.postDeferContinuity?.latestCompleted?
     ' · M28 measured '+snap.postDeferContinuity.latestCompleted.observedTicks+
     ' native ticks · no official possession':'')+
+   (snap.physicalControlEvidence?.active?
+    ' · M29 native pair '+snap.physicalControlEvidence.active.realActivePairTicks+
+    ' ticks · recontacts '+
+    snap.physicalControlEvidence.active.genuineReleaseThenRecontact:
+    snap.physicalControlEvidence?.latestCompleted?
+    ' · M29 '+snap.physicalControlEvidence.latestCompleted.physicalSequenceClassification+
+    ' · official control unconfirmed':'')+
    (snap.pressureEvidence?.active?
     ' · Live defender '+number(snap.pressureEvidence.active.lastRealOpponentGapM)+
     ' m · ball gap '+number(snap.pressureEvidence.active.finalBallGapM)+
