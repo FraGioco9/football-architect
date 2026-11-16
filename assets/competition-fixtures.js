@@ -31,6 +31,8 @@
   let hasFinal=knockoutPhases.some(p=>p.ties.some(t=>t.legs===1));
   let currentMatchday=null,rounds=null,postseason=[],selected=navigation.get().matchday;
   let publishedSeason=null,publishedKey=null,pendingKey=null,fetchSequence=0,publishedIds=new Set(),publishedLookup=null;
+  // Only verified, fully hydrated published match cards may navigate.
+  const matchLinksReady=()=>document.documentElement.dataset.faStandingsLoading!=='true'&&pendingKey===null;
   let menuHasPostseason=false;
   // Preserve each club crest host (and its loaded image) when the matchday changes.
   const crestHosts=new Map();
@@ -217,7 +219,7 @@
     const liveSource=window.faWorldState?.get?.();
     const liveWorld=liveSource?.world;
     const liveKey=[navigation.get().season,definition.id,liveWorld?.generation,liveWorld?.revision].join(':');
-    if(liveSource?.source==='authoritative'&&liveSource?.worldStatus==='ready'&&
+    if(matchLinksReady()&&liveSource?.source==='authoritative'&&liveSource?.worldStatus==='ready'&&
        publishedSeason===navigation.get().season&&publishedKey===liveKey&&publishedLookup){
       if(game.matchId&&publishedIds.has(game.matchId))publicId=game.matchId;
       else if(game.phaseId==='league'&&typeof game.sourceFixtureId==='string'){
@@ -430,7 +432,7 @@
     if(!root?.querySelectorAll)return;
     const source=window.faWorldState?.get?.(),world=source?.world,route=navigation.get();
     const liveKey=[route.season,definition.id,world?.generation,world?.revision].join(':');
-    const authorized=source?.source==='authoritative'&&source.worldStatus==='ready'&&
+    const authorized=matchLinksReady()&&source?.source==='authoritative'&&source.worldStatus==='ready'&&
       route.season===publishedSeason&&publishedKey===liveKey&&!!publishedLookup;
     const lang=bracketLabels[document.documentElement.lang]||bracketLabels.en;
     // One card represents up to two DIFFERENT matches. Give the first and
@@ -478,7 +480,7 @@
   // Locale changes do not replace the bracket itself; update the link's
   // accessible leg label in place without fetching the match list again.
   new MutationObserver(syncKnockoutLinks).observe(document.documentElement,{
-    attributes:true,attributeFilter:['lang']
+    attributes:true,attributeFilter:['lang','data-fa-standings-loading']
   });
   // Keep the score as the native focusable anchor, but let a primary click
   // elsewhere in a verified match card activate it. Existing club links take
@@ -499,7 +501,7 @@
     hoverPointerX=event.clientX;hoverPointerY=event.clientY;
   },{capture:true,passive:true});
   fields.list.addEventListener('click',event=>{
-    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
+    if(!matchLinksReady()||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
        event.shiftKey||event.altKey)return;
     const target=event.target;
     if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
@@ -603,8 +605,8 @@
     const key=[season,definition.id,source.world.generation,source.world.revision].join(':');
     if(key===publishedKey||key===pendingKey)return;
     pendingKey=key;const seq=++fetchSequence;
-    // Keep the toolbar's geometry and skeleton while the official lookup is unresolved.
-    render();
+    // Retain geometry, but immediately revoke old fixture and bracket links.
+    render();syncKnockoutLinks();
     try{
       const response=await fetch('/api/matches/seasons/'+season+'/competitions/'+definition.id,
        {credentials:'omit',cache:'no-store',redirect:'error'});
@@ -674,7 +676,7 @@
       syncKnockoutLinks();
     }catch{
       if(seq===fetchSequence){publishedSeason=null;publishedKey=null;publishedIds.clear();publishedLookup=null;syncKnockoutLinks();}
-    }finally{if(pendingKey===key){pendingKey=null;render();}}
+    }finally{if(pendingKey===key){pendingKey=null;render();syncKnockoutLinks();}}
   }
 
   // The world can become ready AFTER Fixtures mounted. Source-change is not
