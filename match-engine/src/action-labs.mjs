@@ -8,6 +8,8 @@ import {createRealPostContactBallContinuity}
  from './real-post-contact-ball-continuity-m24.mjs';
 import {createRealPressuredFirstTouchObserver}
  from './real-pressured-first-touch-m26.mjs';
+import {createRealSecondTouchFollowThrough}
+ from './real-second-touch-follow-through-m28.mjs';
 import {createPlayerMovement} from './player-movement.mjs';
 import {drawPitchMarkings} from './pitch-markings.mjs';
 import {inspectUniformPolicyGeometry} from './player-ball-uniform-autonomous-action.mjs';
@@ -116,6 +118,8 @@ export function createControlledActionLab(RAPIER,id,{
  const continuityObserver=createRealPostContactBallContinuity();
  const pressureObserver=firstTouchCushion?
   createRealPressuredFirstTouchObserver():null;
+ const followThroughObserver=adaptiveDecision?
+  createRealSecondTouchFollowThrough():null;
  function record(physics,playerFrame){
   const foot=engine.footContactSnapshot();
   const starts=Object.freeze([...foot.started]);
@@ -240,6 +244,9 @@ export function createControlledActionLab(RAPIER,id,{
   });
   const physicalFirstTouch=engine.researchReceivingCushionSnapshot();
   const physicalReceiverChoice=engine.researchReceiverChoiceSnapshot();
+  const postDeferContinuity=followThroughObserver?.observe({
+   physics,playerFrame,foot,physicalFirstTouch,physicalReceiverChoice,action
+  })??null;
   const pressureEvidence=pressureObserver?.observe({
    physics,playerFrame,foot,physicalFirstTouch,action
   })??null;
@@ -260,7 +267,7 @@ export function createControlledActionLab(RAPIER,id,{
    observedMovementPlayers:playerFrame.players,
    starts,action,evidence,decisionEvidence,contactContinuity,
    ...(firstTouchCushion?{physicalFirstTouch,pressureEvidence}:{}),
-   ...(adaptiveDecision?{physicalReceiverChoice}:{}),
+   ...(adaptiveDecision?{physicalReceiverChoice,postDeferContinuity}:{}),
    eventCount:count,events:history,
    shotFlight:shotTrace,blockedShotObservation,
    carryTrace,carrySide:selectedCarrySide,
@@ -369,6 +376,13 @@ export function mountControlledActionLabs({getRapier,onOpen,onClose}){
     ' · Native choice '+(snap.physicalReceiverChoice.physicalImpulseAllowed?
      'release existing clearance':'hold / no new impulse')+
     ' · defender '+number(snap.physicalReceiverChoice.nearestRealDefenderM)+' m':'')+
+   (snap.postDeferContinuity?.active?
+    ' · M28 physical follow-through '+snap.postDeferContinuity.active.observedTicks+
+    '/120 ticks · ball gap '+
+    number(snap.postDeferContinuity.active.lastActualBallGapM)+' m':
+    snap.postDeferContinuity?.latestCompleted?
+    ' · M28 measured '+snap.postDeferContinuity.latestCompleted.observedTicks+
+    ' native ticks · no official possession':'')+
    (snap.pressureEvidence?.active?
     ' · Live defender '+number(snap.pressureEvidence.active.lastRealOpponentGapM)+
     ' m · ball gap '+number(snap.pressureEvidence.active.finalBallGapM)+
