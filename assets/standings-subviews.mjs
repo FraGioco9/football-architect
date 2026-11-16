@@ -24,7 +24,8 @@ export function projectStandings(rows,fixtures,definition,mode){
   }
   const seen=new Set();
   for(const fixture of fixtures){
-    if(fixture?.phaseId!=='league')continue; // Knockouts never enter league tables.
+    if(fixture?.phaseId!=='league'&&!(fixture?.phaseId==null&&!international))continue;
+    // DEV league-only fixture snapshots predate the phaseId field.
     const home=String(fixture.homeId),away=String(fixture.awayId);
     if(!clubs.has(home)||!clubs.has(away)||home===away||
       !Number.isSafeInteger(fixture.round)||fixture.round<1||fixture.round>roundCount)return null;
@@ -66,7 +67,9 @@ export function projectStandings(rows,fixtures,definition,mode){
     const recent=selected.slice(-5).reverse().map(({fixture,home})=>({
       result:result(home?fixture.homeGoals:fixture.awayGoals,
         home?fixture.awayGoals:fixture.homeGoals),
-      round:fixture.round,homeId:fixture.homeId,awayId:fixture.awayId
+      round:fixture.round,homeId:fixture.homeId,awayId:fixture.awayId,
+      homeGoals:fixture.homeGoals,awayGoals:fixture.awayGoals,
+      isHome:home,kickoff:fixture.kickoff??null
     }));
     resultRows.push({...row,played:selected.length,won,drawn,lost,gf,ga,
       gd:gf-ga,pts:3*won+drawn,recent,position:null,_standingsKey:id});
