@@ -458,6 +458,11 @@
   window.addEventListener('fa:source-change',bracketAfterContext);
   window.addEventListener('fa:published-match-links-change',syncKnockoutLinks);
   window.addEventListener('fa:competition-route-change',bracketAfterContext);
+  // Locale changes do not replace the bracket itself; update the link's
+  // accessible leg label in place without fetching the match list again.
+  new MutationObserver(syncKnockoutLinks).observe(document.documentElement,{
+    attributes:true,attributeFilter:['lang']
+  });
   // Keep the score as the native focusable anchor, but let a primary click
   // elsewhere in a verified match card activate it. Existing club links take
   // precedence; no navigation for unpublished/TBD/DEV rows or modifier clicks.

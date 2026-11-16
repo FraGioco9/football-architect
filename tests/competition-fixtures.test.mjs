@@ -753,6 +753,11 @@ test('#605 published Postseason bracket gives each leg its own official match li
  assert.ok(cells.filter(x=>x.tie.legs===1).every(x=>x.card.classList.contains('is-single-match-link')));
  assert.ok(cells.filter(x=>x.tie.legs===2).every(x=>!x.card.classList.contains('is-single-match-link')));
  assert.ok(cells.every(({cell})=>/^Open match: /.test(cell.querySelector('.fa-bracket-leg-link').attrs['aria-label'])));
+ r.document.documentElement.lang='it';
+ r.events['fa:competition-route-change']();
+ await Promise.resolve();
+ assert.ok(cells.every(({cell})=>/^Apri partita: /.test(cell.querySelector('.fa-bracket-leg-link').attrs['aria-label'])),
+  'postseason links update accessible names for the selected locale');
  const final=cells.find(x=>x.tie.legs===1);
  bracket.events.click({button:0,defaultPrevented:false,target:{
   closest:selector=>selector.startsWith('a,button')?null:selector==='.fa-bracket-score.is-match-link'?null:
