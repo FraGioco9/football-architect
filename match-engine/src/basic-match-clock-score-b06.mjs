@@ -34,7 +34,9 @@ export function basicMatchClockB06(tick){
   readOnlyClock:true
  });
 }
-export function createBasicMatchTimelineB06(){
+export function createBasicMatchTimelineB06({b06bRealHalftimePause=false}={}){
+ if(typeof b06bRealHalftimePause!=='boolean')
+  throw new TypeError('B06b half-time pause is exclusively boolean');
  let tick=-1,lastBall=null,lastEvent=null,lastRestart=null,
   lastSetPiece=null,events=freeze([]),score=freeze({home:0,away:0});
  const eventTicks=new Set();
@@ -66,7 +68,8 @@ export function createBasicMatchTimelineB06(){
  }
  function observe({physics,refereeEvidence}={}){
   const n=physics?.tick,b=physics?.ball?.position;
-  if(!positiveInteger(n)||n!==tick+1||n>B06_FULL_TICKS||
+  if(!positiveInteger(n)||n!==tick+1||
+    n>(b06bRealHalftimePause?B06_FULL_TICKS+7200:B06_FULL_TICKS)||
     physics?.version!==ENGINE_VERSION||!ballXYZ(b)||
     refereeEvidence?.version!==B05_REFEREE_VERSION||
     refereeEvidence.tick!==n||

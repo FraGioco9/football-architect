@@ -1648,6 +1648,7 @@ export function createPlayerMovement(options={}){
      k!=='researchBasicRestartSource'&&
      k!=='researchBasicRestartAttackSide'&&
      k!=='researchBasicRestartBall'&&
+     k!=='researchB06bHalftimeTick'&&
      k!=='researchControlReceiver'&&k!=='researchControlBall'&&
      k!=='researchControlOpponentFirst'&&
      k!=='researchControlCloseDefender'&&
@@ -1667,6 +1668,7 @@ export function createPlayerMovement(options={}){
      options.researchGoalkeeperSaveSide===undefined&&
      options.researchDefensiveSide===undefined&&
      options.researchBasicRestartSource===undefined&&
+     options.researchB06bHalftimeTick===undefined&&
      options.researchBodyEncounter!==true&&
      options.researchOpposingPressConvergence!==true&&
      options.researchUnstagedNativeBodyFeedback!==true&&
@@ -1762,6 +1764,11 @@ export function createPlayerMovement(options={}){
      (options.researchShotBlockedLane!==true||
       options.researchShotWideCross!==undefined||
       !['home','away'].includes(options.researchShotAttacker)))||
+    (options.researchB06bHalftimeTick!==undefined&&(
+      !Number.isSafeInteger(options.researchB06bHalftimeTick)||
+      options.researchB06bHalftimeTick<120||
+      options.researchB06bHalftimeTick>162000||
+      Reflect.ownKeys(options).length!==1))||
     (options.researchBasicRestartSource!==undefined&&(
       !['throw-in','corner','goal-kick'].includes(options.researchBasicRestartSource)||
       !['home','away'].includes(options.researchBasicRestartAttackSide)||
@@ -2292,6 +2299,9 @@ export function createPlayerMovement(options={}){
    });
   };
   const targets=players.map(p=>{
+   if(options.researchB06bHalftimeTick!==undefined&&
+      tick>=options.researchB06bHalftimeTick&&p.id==='away-10')
+    return Object.freeze({x:-0.15,y:0});
    if(b05bStandby&&p.id===b05bStandby.takerId){
     // Before-tick-zero original #9 holds a real tactical standby
     // destination. Kinematics and native Rapier foot contacts remain

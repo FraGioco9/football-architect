@@ -104,6 +104,7 @@ export function createEngine(RAPIER, input = {}, {
   diagnosticBasicRestartEnabled = false,
   diagnosticBasicRestartSource = null,
   diagnosticBasicRestartAttackSide = null,
+  diagnosticB06bHalftimeTick = null,
   diagnosticResearchControlReceiver = false,
   diagnosticResearchControlSide = 'home',
   diagnosticResearchControlOpponentFirst = false,
@@ -155,6 +156,21 @@ export function createEngine(RAPIER, input = {}, {
       !['throw-in','corner','goal-kick'].includes(diagnosticBasicRestartSource)||
       !['home','away'].includes(diagnosticBasicRestartAttackSide))))
    throw new TypeError('B05b authentic source must be tied to bounded DEV restart');
+  if(diagnosticB06bHalftimeTick!==null&&(
+    !Number.isSafeInteger(diagnosticB06bHalftimeTick)||
+    diagnosticB06bHalftimeTick<120||
+    diagnosticB06bHalftimeTick>162000||
+    !diagnosticPlayerFootContactsEnabled||
+    diagnosticAutonomousFixtureActionEnabled||
+    diagnosticAutonomousCarryEnabled||
+    diagnosticBasicRestartEnabled||
+    diagnosticPlayerBodyCollidersEnabled||
+    diagnosticSharedContactEventsEnabled||
+    diagnosticResearchShotAttacker!==null||
+    diagnosticResearchControlReceiver||
+    diagnosticResearchDefensiveSide!==null||
+    diagnosticResearchGoalkeeperSaveSide!==null))
+   throw new TypeError('B06b isolated source-only native 60Hz halftime required');
   const scenario = normalizeScenario(input);
   if(typeof diagnosticResearchBodyEncounter!=='boolean'||
      (diagnosticResearchBodyEncounter&&
@@ -406,6 +422,7 @@ export function createEngine(RAPIER, input = {}, {
     diagnosticResearchDefensiveSide,diagnosticResearchDefensiveKind,
     diagnosticBasicRestartEnabled,diagnosticBasicRestartSource,
     diagnosticBasicRestartAttackSide,
+    diagnosticB06bHalftimeTick,
     diagnosticResearchControlReceiver,diagnosticResearchControlSide,
     diagnosticResearchControlOpponentFirst,diagnosticResearchReceivingCushionEnabled,
     diagnosticResearchReceivingDecisionEnabled,diagnosticResearchReceiverTapEnabled,
@@ -489,6 +506,7 @@ export function createEngine(RAPIER, input = {}, {
   let tick = 0;
   let disposed = false;
   let basicRestartTick = -1;
+  let b06bHalftimePlacement=null,b06bKickoff=null;
   let b05bOutboundAction=null,b05bTake=null,b05bRestartTicket=null;
   const b05bSource=diagnosticBasicRestartSource===null?null:
    basicSourcePositiveRestartSetup(INITIAL_PLAYERS,
@@ -795,6 +813,73 @@ export function createEngine(RAPIER, input = {}, {
     });
     return b05bTake;
   }
+  function b06bOriginalHalftimePlacement(frame){
+    if(disposed||diagnosticB06bHalftimeTick===null||
+       tick!==diagnosticB06bHalftimeTick||b06bHalftimePlacement||
+       !frame||frame.tick!==tick||
+       !Array.isArray(frame.players)||frame.players.length!==22||
+       frame.players.some((p,i)=>{
+        const initial=INITIAL_PLAYERS[i];
+        return p?.id!==initial.id||p.team!==initial.team||
+         p.role!==initial.role||
+         ![p.x,p.y,p.vx,p.vy].every(Number.isFinite);
+       }))
+     throw new TypeError('B06b halftime requires actual exact physical 60Hz tick and 22 canonical players');
+    body.setTranslation({x:0,y:0,z:BALL_RADIUS},true);
+    body.setLinvel({x:0,y:0,z:0},true);
+    body.setAngvel({x:0,y:0,z:0},true);
+    body.resetForces(true);
+    body.resetTorques(true);
+    b06bHalftimePlacement=Object.freeze({
+     physicsTick:tick,phase:'half-time',restartTeam:'away',
+     actualOriginalRapierBallPlaced:true,
+     realShoesNotFabricated:true,playerTeleports:false,
+     source:'private-original-world-native-60hz',
+     matchAuthority:false,officialMatchResult:null,
+     ball:snapshot().ball
+    });
+    return b06bHalftimePlacement;
+  }
+  function b06bOriginalSecondHalfKickoff(frame){
+    if(disposed||diagnosticB06bHalftimeTick===null||
+       !b06bHalftimePlacement||tick<=diagnosticB06bHalftimeTick||
+       frame?.tick!==tick||!Array.isArray(frame.players)||
+       frame.players.length!==22||
+       frame.players.some((p,i)=>{
+        const initial=INITIAL_PLAYERS[i];
+        return p?.id!==initial.id||p.team!==initial.team||
+         p.role!==initial.role||
+         ![p.x,p.y,p.vx,p.vy].every(Number.isFinite);
+       }))
+     throw new TypeError('B06b kickoff requires genuine subsequent original Rapier player tick');
+    if(b06bKickoff)return null;
+    const foot=shoeBridge.snapshot(),solver=shoeBridge.solver();
+    if(foot.tick!==tick||solver?.tick!==tick)
+     throw new TypeError('B06b requires real same-tick original shoe solver');
+    if(foot.started.length!==1||foot.active.length!==1||
+       foot.started[0]!=='away-10'||foot.active[0]!=='away-10')
+     return null;
+    if(!solver.pairs.some(p=>p.id==='away-10'&&
+      p.beganThisTick&&p.collisionActive&&
+      p.manifolds.some(m=>m.geometricContacts>0)))
+     throw new TypeError('B06b refuses source-free second-half contact');
+    const pos=body.translation();
+    if(Math.hypot(pos.x,pos.y)>0.65||Math.abs(pos.z-BALL_RADIUS)>0.3)
+     throw new TypeError('B06b second-half kick requires the original centre-circle ball');
+    const impulse=Object.freeze({x:-0.65,y:0,z:0.04});
+    body.applyImpulse(impulse,true);
+    b06bKickoff=Object.freeze({
+     tick,firstHalfEndPhysicalTick:diagnosticB06bHalftimeTick,
+     team:'away',actorId:'away-10',
+     genuineExclusiveOriginalShoeStart:true,
+     currentRapierContactManifold:true,
+     original22PlayerFrame:true,
+     impulseNs:impulse,originalBallImpulseApplied:true,
+     sameRapierWorldAsFirstHalf:true,
+     officialMatchAction:false,officialPossession:false,officialMatchResult:null
+    });
+    return b06bKickoff;
+  }
   function dispose() {
     if (!disposed) {
       disposed = true;
@@ -808,6 +893,9 @@ export function createEngine(RAPIER, input = {}, {
   return Object.freeze({scenario, ballProperties, snapshot, angularVelocity, step, dispose,
     ...(diagnosticBasicRestartEnabled?{applyBasicRestartAtBoundary}:{}),
     ...(b05bSource?{attemptB05bNativeOutboundKick,attemptB05bOriginalSetPiece}:{}),
+    ...(diagnosticB06bHalftimeTick!==null?{
+     b06bOriginalHalftimePlacement,b06bOriginalSecondHalfKickoff
+    }:{}),
     ...(shoeBridge?{
       footContactSnapshot:()=>shoeBridge.snapshot(),
       footContactTimelineSnapshot:()=>shoeBridge.timeline(),
