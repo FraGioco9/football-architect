@@ -48,10 +48,12 @@ export function initialResearchControlLineup(players,ball,{
  const stagedPositions=opponentFirst?[
   target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,
   CONTROL_OPPONENT_FIRST_INITIAL.opponent
- ]:closeDefender?[target,{
-  ...CONTROL_CLOSE_DEFENDER_INITIAL,
-  id:side==='home'?'away-7':'home-7'
- }]:[target];
+ ]:closeDefender?[
+  target,CONTROL_OPPONENT_FIRST_INITIAL.alternative,{
+   ...CONTROL_CLOSE_DEFENDER_INITIAL,
+   id:side==='home'?'away-7':'home-7'
+  }
+ ]:[target];
  // HOME coordinates and HOME IDs are canonical; reverse pitch X and
  // mirror team IDs only for the bounded AWAY receiving fixture.
  const mirror=p=>side==='home'?p:Object.freeze({
