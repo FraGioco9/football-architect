@@ -723,9 +723,9 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
 });
 
-test('#605 official international draw renders six league rounds before the season projection',async()=>{
+for(const cupId of ['int-1','int-2'])test('#605 official published '+cupId+' draw renders six rounds before the season projection',async()=>{
  const manifest=JSON.parse(read('competitions/_shared/manifest.json'));
- const cup=definitions.find(d=>d.id==='int-1');
+ const cup=definitions.find(d=>d.id===cupId);
  const source={source:'authoritative',worldStatus:'ready',
   world:{generation:'550e8400-e29b-41d4-a716-446655440000',revision:10,seasonNumber:1,day:3,phase:'active'}};
  const countries=[...new Set(manifest.divisions.filter(d=>d.tier===1).map(d=>d.countryId))];
@@ -736,16 +736,16 @@ test('#605 official international draw renders six league rounds before the seas
   for(let group=0;group<4;group++)for(let slot=0;slot<3;slot++){
    const home=clubsByCountry.get(order[group])[slot],away=clubsByCountry.get(order[7-group])[slot];
    const homeId=rules.clubKey(home),awayId=rules.clubKey(away),marker='I'+String(round).padStart(2,'0');
-   committed.push({matchId:String(committed.length+1),sourceFixtureId:'season:1:int-1:'+marker+':'+homeId+':'+awayId,
+   committed.push({matchId:String(committed.length+1),sourceFixtureId:'season:1:'+cupId+':'+marker+':'+homeId+':'+awayId,
     phaseId:'league',marker,round,day:round+12,homeClubId:homeId,awayClubId:awayId});
   }
   order.splice(1,0,order.pop());
  }
  let requests=0;
  const view=setup(cup,routeRegistry,{source,fetchImpl:async path=>{
-  requests++;assert.equal(path,'/api/matches/seasons/1/competitions/int-1');
+  requests++;assert.equal(path,'/api/matches/seasons/1/competitions/'+cupId);
   return {ok:true,status:200,json:async()=>({schemaVersion:1,providerId:'authoritative-world',
-   status:'published',season:1,competitionId:'int-1',provenance:{kind:'authoritative'},
+   status:'published',season:1,competitionId:cupId,provenance:{kind:'authoritative'},
    fixtures:committed})};
  }});
  view.window.faCompetitionManifestPromise=Promise.resolve(manifest);
