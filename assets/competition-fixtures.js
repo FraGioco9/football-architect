@@ -231,6 +231,7 @@
       }
     }
     if(publicId){
+      item.className+=' is-match-link';
       const link=element('a','app-fixture-score-link');
       link.href='/matches/'+publicId;
       const action={en:'Open match',de:'Spiel öffnen',es:'Abrir partido',fr:'Ouvrir le match',it:'Apri partita'};
@@ -314,6 +315,9 @@
       const oldResult=previous.querySelector?.(".app-fixture-result");
       const newResult=item.querySelector?.(".app-fixture-result");
       if(oldResult&&newResult&&!oldResult.isEqualNode?.(newResult))oldResult.replaceWith(newResult);
+      // Reused crest rows must also gain/lose the full-card link affordance
+      // when their official match identity changes.
+      previous.className=item.className;
       return previous;
     });
     if(international){const hasMatches=next.some(item=>item.dataset.fixtureMatch);fields.empty.hidden=hasMatches;fields.list.hidden=!hasMatches;fields.summary.hidden=!hasMatches;}
@@ -368,6 +372,17 @@
     }
     roundMenu.close();render();
     if(route.view==='fixtures')void readPublishedFixtures();
+  });
+  // Keep the score as the native focusable anchor, but let a primary click
+  // elsewhere in a verified match card activate it. Existing club links take
+  // precedence; no navigation for unpublished/TBD/DEV rows or modifier clicks.
+  fields.list.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||
+       event.shiftKey||event.altKey)return;
+    const target=event.target;
+    if(!target?.closest||target.closest('a,button,input,select,textarea,[role="button"]'))return;
+    const card=target.closest('.app-fixture-match.is-match-link');
+    card?.querySelector('.app-fixture-score-link')?.click();
   });
   fields.current.addEventListener("click",()=>{if(!fields.current.hidden){select(currentMatchday);fields.round.focus()}});
   fields.previous.addEventListener("click",()=>{if(!fields.previous.disabled)select(configured[configured.findIndex(c=>c.value===selected)-1].value)});

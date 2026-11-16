@@ -72,7 +72,7 @@ function node(tag='div'){
   replaceWith(item){const parent=this.__parent,index=parent?.children.indexOf(this)??-1;
    if(index>=0){parent.children[index]=item;item.__parent=parent;}},
   removeAttribute(k){delete this.attrs[k]},setAttribute(k,v){this.attrs[k]=String(v)},
-  focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
+  click(){this.clicked=true},focus(){this.focused=true},contains(){return false},addEventListener(k,fn){this.events[k]=fn},emit(k){this.events[k]?.({target:this})}};
  return n;
 }
 function setup(d=divisions[0],registry=routeRegistry,{source=null,fetchImpl=null}={}){
@@ -570,6 +570,17 @@ test('published domestic Fixtures appear at day 2, before worldwide calendar pub
  assert.equal(links.length,8,'eight published fixtures show eight stable score links');
  assert.ok(links.every(n=>/^\/matches\/[1-9][0-9]*$/.test(n.href)));
  assert.ok(links.every(n=>n.attrs['aria-label']?.startsWith('Open match: ')));
+ assert.ok(displayed.filter(row=>row.dataset.fixtureMatch).every(row=>row.className.includes('is-match-link')));
+ const target={closest:selector=>selector.startsWith('a,button')?null:selector==='.app-fixture-match.is-match-link'?displayed[0]:null};
+ view.fields.get('app-fixtures-list').events.click({button:0,target,defaultPrevented:false});
+ assert.equal(links[0].clicked,true,'the entire card opens its native match anchor');
+ links[0].clicked=false;
+ const ownLink={closest:selector=>selector.startsWith('a,button')?links[0]:displayed[0]};
+ view.fields.get('app-fixtures-list').events.click({button:0,target:ownLink,defaultPrevented:false});
+ assert.equal(links[0].clicked,false,'direct club/score anchors are not hijacked');
+ const styles=read('assets/app.css');
+ assert.match(styles,/\.app-fixture-match\.is-match-link:hover[\s\S]*?background:color-mix/);
+ assert.doesNotMatch(styles,/\.app-fixture-score-link:is\(:hover,:focus-visible\)/);
 });
 
 test('#605 scored competition fixtures keep official goals when linked to published IDs',async()=>{
@@ -608,6 +619,8 @@ test('#605 scored competition fixtures keep official goals when linked to publis
  const matches=testView.fields.get('app-fixtures-list').children;
  assert.equal(matches.length,8);
  assert.equal(matches.flatMap(visit).filter(n=>n.className==='app-fixture-score-link').length,8);
+ assert.ok(matches.every(n=>n.className.includes('is-match-link')),
+  'the full-card click affordance survives authoritative score hydration');
  assert.equal(requests,1,'same official list is reused when the scored view hydrates');
  assert.ok(matches.some(n=>/\d+/.test(contents(n))),'verified score nodes are still present');
 });

@@ -87,7 +87,16 @@ export function mountClubFixtures({host,manifest}){
     if(action.disabled||!next)return;
     if(filter!=='all'&&next.competitionId!==filter){const u=new URL(location.href);u.searchParams.delete('competition');history.pushState(null,'',u.pathname+u.search);paint();}
     const row=panel.querySelector('[data-club-fixture-next]');row?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});row?.focus({preventScroll:true});
-   }});
+    return;
+   }
+   // Native opponent and competition anchors retain their own destinations.
+   // The linked score remains the focusable keyboard target; mouse clicks
+   // anywhere else on a verified match row activate that same anchor.
+   if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||
+      e.target.closest('a,button,input,select,textarea,[role="button"]'))return;
+   const card=e.target.closest('.club-fixture-row.is-match-link');
+   card?.querySelector('.club-fixture-score-link')?.click();
+  });
   }else{
    // Keep combobox triggers, handlers and focus stable across source/language reads.
    for(const control of panel.querySelectorAll('[data-club-fixture-control]')){

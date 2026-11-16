@@ -38,13 +38,23 @@ test('Club Fixtures keeps unknown opponents as plain text and restores focus to 
 test('Club Fixtures only link official numeric draw scores, not crest or DEV rows',()=>{
  const official={...snapshot,source:'authoritative',coverage:'partial',rows:[{...snapshot.rows[0],id:'123',matchId:'123'}]};
  const output=value=>fixtures.render({manifest:{clubs:[club],clubCrests:{'IT-2':'assets/opponent.svg'}},lang:'en',season:1,currentSeason:1,seasons:[1],snapshot:value});
- assert.match(output(official),/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
+ const linked=output(official);
+ assert.match(linked,/<li class="club-fixture-row is-match-link"[^>]*data-club-fixture-id="123"/);
+ assert.match(linked,/<a class="club-fixture-score-link" href="\/matches\/123" aria-label="Open match: Opponent FC"><strong/);
+ const css=readFileSync(new URL('assets/club-page.css',root),'utf8');
+ assert.match(css,/\.club-fixture-row\.is-match-link:hover[\s\S]*?background:color-mix/);
+ assert.doesNotMatch(css,/\.club-fixture-score-link:is\(:hover,:focus-visible\) strong/);
+ const controller=readFileSync(new URL('assets/club-fixtures-controller.mjs',root),'utf8');
+ assert.match(controller,/card\?\.querySelector\('\.club-fixture-score-link'\)\?\.click\(\)/);
  for(const invalid of [
   {...official,coverage:'complete'},{...official,source:'dev'},
   {...official,rows:[{...official.rows[0],matchId:'00123'}]},
   {...official,rows:[{...official.rows[0],matchId:'124'}]},
   {...official,rows:[{...official.rows[0],id:'9007199254740992',matchId:'9007199254740992'}]}
- ])assert.doesNotMatch(output(invalid),/class="club-fixture-score-link"/);
+ ]){
+  assert.doesNotMatch(output(invalid),/class="club-fixture-score-link"/);
+  assert.doesNotMatch(output(invalid),/class="club-fixture-row(?: is-next)? is-match-link"/);
+ }
 });
 
 test('Complete verified club fixtures need the published lookup authority',()=>{
