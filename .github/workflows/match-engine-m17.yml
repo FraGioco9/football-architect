@@ -41,6 +41,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: me-628-m17-native-concurrent-pair-source
-          path: match-engine-m17-evidence.json
+          path: match-engine/match-engine-m17-evidence.json
           if-no-files-found: warn
           retention-days: 30
