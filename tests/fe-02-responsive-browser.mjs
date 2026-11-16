@@ -148,9 +148,9 @@ try{
    assert.ok((await tab.boundingBox()).height>=43.9,"Club tab hit area");
   });
  }
- // #527: mobile Player Detail content is visually centered against the portrait.
- // The empty subtitle on public profiles must not displace name, role, nationality or age.
- for(const width of [320,375,390,430,768,1440]){
+ // #634: portrait/identity remain side-by-side from 391px; at narrower widths the sidebar
+ // requires a stacked header that preserves the full portrait and a stable reading order.
+ for(const width of [320,375,390,430,620,768,1440]){
   await visit({width,height:844,language:"it",theme:"dark"},"/players/33",async page=>{
    await page.evaluate(async()=>{await document.fonts.ready});
    const before=await page.evaluate(()=>{
@@ -168,14 +168,24 @@ try{
      rootOverflow:document.documentElement.scrollWidth-innerWidth};
    });
    assert.ok(before,"Player Detail has all header elements at "+width);
-   assert.ok(before.title.left>=before.portrait.right+5,"name remains to the right of the portrait at "+width);
+   if(width<=390){
+    assert.ok(before.title.top>=before.portrait.bottom+4,
+     "compact heading stacks the name below portrait at "+width);
+    const portraitCx=(before.portrait.left+before.portrait.right)/2;
+    const identityCx=(before.identity.left+before.identity.right)/2;
+    assert.ok(Math.abs(identityCx-portraitCx)<=2,
+     "stacked header identity stays centered under portrait at "+width);
+   }else{
+    assert.ok(before.title.left>=before.portrait.right+5,
+     "side-by-side heading keeps name to the right at "+width);
+   }
    assert.ok(before.title.top<=before.role.top&&before.role.top<=before.meta.top,
     "name, position, nationality and age keep their reading order at "+width);
    if(width<=620){
     const contentCenter=(before.title.top+before.meta.bottom)/2;
     assert.equal(before.subtitleDisplay,'none',"unused public subtitle does not skew mobile header at "+width);
-    assert.ok(Math.abs(contentCenter-before.portrait.cy)<=2,
-     "visible identity rows centered vertically against portrait "+JSON.stringify({width,contentCenter,before}));
+    if(width>390)assert.ok(Math.abs(contentCenter-before.portrait.cy)<=2,
+     "visible side-by-side identity rows centered against portrait "+JSON.stringify({width,contentCenter,before}));
    }else{
     assert.notEqual(before.subtitleDisplay,'none',"desktop header retains the original 9411b691 layout at "+width);
    }
