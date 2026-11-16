@@ -61,6 +61,9 @@ for(const [engine,driver] of Object.entries(engines)){
       badgeTheme:el.dataset.scoreboardTheme,
       tile:{x:box.x,right:box.right,w:box.width,h:box.height,borderColour:tileStyle.borderTopColor},
       badgeToCore:rect.x-box.right,
+      barStartsAt:rect.x+parseFloat(bar.left),
+      ivoryProjectsBeyondBar:(rect.x+parseFloat(bar.left))-box.x,
+      badgeBarOverlap:box.right-(rect.x+parseFloat(bar.left)),
       art:art?{w:art.width,h:art.height,dx:art.x+art.width/2-box.x-box.width/2,
        dy:art.y+art.height/2-box.y-box.height/2}:null};
     });
@@ -164,8 +167,12 @@ for(const [engine,driver] of Object.entries(engines)){
     assert.equal(first.tile.w,48);assert.equal(first.tile.h,48);
     assert.ok(first.tile.x>=-0.5&&first.tile.right<=first.viewportWidth+0.5,
      JSON.stringify({engine,theme,device,first}));
-    assert.ok(Math.abs(first.badgeToCore-8)<=0.5,
-     'Ivory logo must be exactly 8px to the left of the symmetric score strip');
+    assert.ok(Math.abs(first.badgeToCore)<=0.5,
+     'The independent ivory tile must touch the symmetric scoreboard core');
+    assert.ok(Math.abs(first.ivoryProjectsBeyondBar-12)<=0.5,
+     'Ivory tile must project 12px beyond the painted bar, like the original');
+    assert.ok(Math.abs(first.badgeBarOverlap-36)<=0.5,
+     'The painted bar must extend 36px behind the independent ivory tile');
     // Skeletons reserve a typographically proportional block centred on the
     // same two axes as the hydrated abbreviations, without a layout shift.
     const skeletons=await page.locator('.app-match-score-line').evaluate(grid=>{

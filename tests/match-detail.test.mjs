@@ -261,7 +261,8 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.doesNotMatch(css,/left:-20px|width:min\(100%,284px\)/);
  assert.doesNotMatch(css,/@media\(max-width:308px\)/);
  assert.ok(css.includes("width:min(254px,calc(100vw - 116px));height:48px;"));
- assert.ok(css.includes("top:0;left:-56px"));
+ assert.ok(css.includes("top:0;left:-48px"));
+ assert.match(css,/\.app-match-scoreboard::before\{[^}]*inset:0 0 0 -36px/s);
  assert.doesNotMatch(css,/.app-match-scoreboard{[^}]*left:-20px/s);
  assert.ok(css.includes("left:50%;transform:translateX(-50%);"));
  assert.match(css,/grid-template-columns:minmax\(0,1fr\) 35px 20px 35px minmax\(0,1fr\)/);
@@ -274,7 +275,7 @@ test('#577 never fabricates scores, lineups, competition branding or match outco
  assert.match(css,/\.app-match-score-separator\{[^}]*text-align:center;color:#FFFFFF;[^}]*font-size:21px;line-height:1;font-weight:700;opacity:1/s);
  assert.match(css,/@media\(max-width:480px\)\{[\s\S]*?\.app-match-score-separator\{font-size:19px\}/);
  assert.match(css,/html\[data-theme="light"\] \.app-match-score-separator\{color:var\(--app-match-text\)\}/);
- assert.match(css,/\.app-match-scoreboard::before\{[^}]*inset:0;/s);
+ assert.match(css,/\.app-match-scoreboard::before\{[^}]*inset:0 0 0 -36px;/s);
  assert.doesNotMatch(css,/\.app-match-scoreboard::before\{[^}]*inset:0 0 0 12px/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*border:1px solid var\(--app-match-edge\)/s);
  assert.match(css,/\.app-match-scoreboard::before\{[^}]*background:var\(--app-match-surface\)/s);
